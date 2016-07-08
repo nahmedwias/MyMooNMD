@@ -335,5 +335,10 @@ std::shared_ptr<const Multigrid> Solver<L, V>::get_multigrid() const
 /* ************************************************************************** */
 
 // explicit instantiations
-template class Solver<BlockMatrix, BlockVector>;
 template class Solver<BlockFEMatrix, BlockVector>;
+// In MPI case we are so dependent on the connection of Matrix and FESpace, that
+// it does not make sense to instantiate the function for BlockMatrix.
+#ifndef _MPI
+template class Solver<BlockMatrix, BlockVector>;
+#endif
+

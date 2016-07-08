@@ -1,13 +1,6 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-
-
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <LocalAssembling2D.h>
-
 #include <Example_TimeNSE2D.h>
 #include <Time_NSE2D.h>
 #include <TimeDiscRout.h>
@@ -30,9 +23,6 @@ int main(int argc, char* argv[])
   // ======================================================================
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
   TDomain Domain(argv[1], parmoon_db);
-  
-  if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
-    TDatabase::ParamDB->PROBLEM_TYPE = 6;
 
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
@@ -40,10 +30,6 @@ int main(int argc, char* argv[])
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
   
-  /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
-  // standard mesh  
-  Domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
-
   // refine grid up to the coarsest level
   size_t n_ref = Domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
@@ -57,7 +43,7 @@ int main(int argc, char* argv[])
   //TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   SetTimeDiscParameters(0);
 
-  Example_TimeNSE2D example( parmoon_db["example"] );
+  Example_TimeNSE2D example( parmoon_db["example"], parmoon_db );
   // create an object of Time_NSE2D class
   Time_NSE2D tnse2d(Domain, parmoon_db, example);
   // assemble everything at the start time

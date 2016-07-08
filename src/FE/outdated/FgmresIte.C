@@ -303,23 +303,23 @@ double *rhs)
   double res, res0, reslast, t1, t2; //temp,tempGlobal;
   double beta,residlast,dnorm0; //end_residual;
 //  double eps = 1e-14;
-#ifdef _MPI  
-  const int* MasterOfDof;
-  int ii, rank;
-  double  resglobal,temp,tempGlobal;
-  
-   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-   MasterOfDof = ParComm->GetMaster();
-   ParComm->CommUpdate(sol, rhs);
-#endif 
+//#ifdef _MPI
+//  const int* MasterOfDof;
+//  int ii, rank;
+//  double  resglobal,temp,tempGlobal;
+//
+//   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
+//   MasterOfDof = ParComm->GetMaster();
+//   ParComm->CommUpdate(sol, rhs);
+//#endif
   int flexible = TDatabase::ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER;
   if(flexible)
   {
     t1 = GetTime();
     if (verbose>1
-#ifdef _MPI
-    && rank==0
-#endif
+//#ifdef _MPI
+//    && rank==0
+//#endif
     )
       OutPut("Entering fgmres" << endl);
     
@@ -332,21 +332,21 @@ double *rhs)
     // compute defect, result in v[0]
     matvecdefect(sqmat, mat, sol, rhs, v[0]);
     
-#ifdef _MPI  
-    ParComm->CommUpdate(v[0], v[0]);
-    res=0.;
-    for(ii=0; ii<N_DOF; ii++)
-      if(MasterOfDof[ii] == rank)
-        res += v[0][ii]*v[0][ii];
-    
-    MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
-    res=res0=reslast = sqrt(resglobal); 
-#else  
+//#ifdef _MPI
+//    ParComm->CommUpdate(v[0], v[0]);
+//    res=0.;
+//    for(ii=0; ii<N_DOF; ii++)
+//      if(MasterOfDof[ii] == rank)
+//        res += v[0][ii]*v[0][ii];
+//
+//    MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+//    res=res0=reslast = sqrt(resglobal);
+//#else
     
     res=(Ddot(N_DOF,v[0],v[0]));    
     res=res0=reslast=sqrt(Ddot(N_DOF,v[0],v[0]));     
      
-#endif  
+//#endif
                                  /* norm of residual */
     beta=res;
  
@@ -375,9 +375,9 @@ double *rhs)
     }
     
     if (verbose>0
-#ifdef _MPI
-    && rank==0
-#endif
+//#ifdef _MPI
+//    && rank==0
+//#endif
     )
       OutPut("fgmres Iteration " << 0 << " " << beta << endl);
     
@@ -406,27 +406,27 @@ double *rhs)
             // rhs for prec in v[i]
             prec->Iterate(sqmat, mat, zv[i], v[i]);
       
-#ifdef _MPI 
-            ParComm->CommUpdate(zv[i], v[i]);
-#endif  
+//#ifdef _MPI
+//            ParComm->CommUpdate(zv[i], v[i]);
+//#endif
             if (k<prec_maxit-1)
             {
               // compute defect
               matvecdefect(sqmat, mat, zv[i], v[i], defect);
-#ifdef _MPI  
-              res=0.;
-              for(ii=0; ii<N_DOF; ii++)
-                if(MasterOfDof[ii] == rank)
-                  res += defect[ii]*defect[ii];
-    
-              MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
-              res=res0=reslast = sqrt(resglobal); 
-#else  
+//#ifdef _MPI
+//              res=0.;
+//              for(ii=0; ii<N_DOF; ii++)
+//                if(MasterOfDof[ii] == rank)
+//                  res += defect[ii]*defect[ii];
+//
+//              MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+//              res=res0=reslast = sqrt(resglobal);
+//#else
    
               res=(Ddot(N_DOF,defect,defect));    
               res=res0=reslast=sqrt(Ddot(N_DOF,defect,defect));     
               
-#endif  
+//#endif
 // 	      printf("res is %lf ---------\n",res);
 // #ifdef _MPI
 //   MPI_Finalize();
@@ -444,35 +444,35 @@ double *rhs)
         //OutPut(sqrt(Ddot(N_DOF,defect,defect))<< endl);
         for(k=0; k<=i; k++)
         {
-#ifdef _MPI  
-          temp=0.;
-          for(ii=0; ii<N_DOF; ii++)
-            if(MasterOfDof[ii] == rank)
-              temp += v[k][ii]*defect[ii];
-       
-          MPI_Allreduce(&temp, &H[k][i], 1, MPI_DOUBLE, MPI_SUM, 
-                        TDatabase::ParamDB->Comm);
-#else  
+//#ifdef _MPI
+//          temp=0.;
+//          for(ii=0; ii<N_DOF; ii++)
+//            if(MasterOfDof[ii] == rank)
+//              temp += v[k][ii]*defect[ii];
+//
+//          MPI_Allreduce(&temp, &H[k][i], 1, MPI_DOUBLE, MPI_SUM,
+//                        TDatabase::ParamDB->Comm);
+//#else
           H[k][i]= Ddot(N_DOF, defect,v[k]);    
-#endif 
+//#endif
 
           Daxpy(N_DOF, -H[k][i], v[k], defect);
-#ifdef _MPI  
-          ParComm->CommUpdate(defect, defect);
-#endif
+//#ifdef _MPI
+//          ParComm->CommUpdate(defect, defect);
+//#endif
         }
 
-#ifdef _MPI    
-        temp=0.;
-        for(ii=0; ii<N_DOF; ii++)
-          if(MasterOfDof[ii] == rank)
-            temp += defect[ii]*defect[ii];    
-    
-        MPI_Allreduce(&temp, &tempGlobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
-        H[i+1][i]= sqrt(tempGlobal);    
-#else   
+//#ifdef _MPI
+//        temp=0.;
+//        for(ii=0; ii<N_DOF; ii++)
+//          if(MasterOfDof[ii] == rank)
+//            temp += defect[ii]*defect[ii];
+//
+//        MPI_Allreduce(&temp, &tempGlobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+//        H[i+1][i]= sqrt(tempGlobal);
+//#else
         H[i+1][i]=sqrt(Ddot(N_DOF,defect,defect));
-#endif     
+//#endif
       
      
         Dcopy(N_DOF, defect, v[i+1]);
@@ -505,9 +505,9 @@ double *rhs)
           Daxpy(N_DOF,1.0,defect,sol);
           t2 = GetTime();
           if (verbose>=1
-#ifdef _MPI
-          && rank==0
-#endif
+//#ifdef _MPI
+//          && rank==0
+//#endif
           )
           {
             OutPut("FGMRES ITE: " << setw(4) << j);
@@ -519,9 +519,9 @@ double *rhs)
             //end_residual=res;
           }
           if (verbose==-2
-#ifdef _MPI
-            && rank==0
-#endif
+//#ifdef _MPI
+//            && rank==0
+//#endif
           )
           {
             OutPut("vanka fgmres ite: " << setw(4) << j);
@@ -535,9 +535,9 @@ double *rhs)
           return(j);
         }
         if (verbose>0
-#ifdef _MPI
-          && rank==0
-#endif
+//#ifdef _MPI
+//          && rank==0
+//#endif
         )
         {
           OutPut("fgmres iteration " << j << " " << res << " " << res/residlast);
@@ -570,25 +570,25 @@ double *rhs)
                                   /* new defect v[0] = b - A*x */
 
       matvecdefect(sqmat, mat, sol, rhs, v[0]);
-#ifdef _MPI 
-      ParComm->CommUpdate(v[0], rhs);
-      // ParComm->CommUpdate(sol, rhs);
-#endif                                 /* norm of residual */
+//#ifdef _MPI
+//      ParComm->CommUpdate(v[0], rhs);
+//      // ParComm->CommUpdate(sol, rhs);
+//#endif                                 /* norm of residual */
  
-#ifdef _MPI  
-      res=0.;
-      for(ii=0; ii<N_DOF; ii++)
-        if(MasterOfDof[ii] == rank)
-          res += v[0][ii]*v[0][ii];
-    
-      MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
-      res=res0=reslast = sqrt(resglobal); 
-#else  
+//#ifdef _MPI
+//      res=0.;
+//      for(ii=0; ii<N_DOF; ii++)
+//        if(MasterOfDof[ii] == rank)
+//          res += v[0][ii]*v[0][ii];
+//
+//      MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+//      res=res0=reslast = sqrt(resglobal);
+//#else
    
       res=(Ddot(N_DOF,v[0],v[0]));    
       res=res0=reslast=sqrt(Ddot(N_DOF,v[0],v[0]));     
      
-#endif  
+//#endif
       beta=res;
 
       if (verbose>1)

@@ -11,8 +11,7 @@
 #include <NSE3D.h>
 #include <MeshPartition.h>
 #include <Chrono.h>
-
-#include <sys/stat.h>
+#include <LoopInfo.h>
 
 //project specific
 #include <CoiledPipe.h>
@@ -62,9 +61,6 @@ int main(int argc, char* argv[])
 
   TFEDatabase3D feDatabase;
 
-  // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1], parmoon_db);
-
   //open OUTFILE, this is where all output is written to (additionally to console)
   if(my_rank==0)
   {
@@ -75,8 +71,7 @@ int main(int argc, char* argv[])
 //  if(my_rank==0) //Only one process should do that.
 //    Database.WriteParamDB(argv[0]);
 
-  // Do a makeshift parameter check and the old parameter check of the Database.
-  NSE3D::check_parameters();
+  // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
 
   // project specific: prepare the coiled geometry
@@ -108,12 +103,11 @@ int main(int argc, char* argv[])
   // Choose and construct example - in this project, this has to be done before
   // initiing the Domain, as the example itself inluences the geometry by setting
   // a global parameter (which is awful).
-  Example_NSE3D example(parmoon_db["example"]);
+  Example_NSE3D example(parmoon_db["example"], parmoon_db);
 
-  // Read in geometry and initialize the mesh.
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"],
-              drift_x, drift_y, drift_z,
-              CoiledPipe::GeoConsts::segment_marks);
+  // Construct domain, thereby read in controls from the input file.
+  TDomain domain(argv[1], parmoon_db,
+                 drift_x, drift_y, drift_z, CoiledPipe::GeoConsts::segment_marks);
 
   // Initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
@@ -162,7 +156,6 @@ int main(int argc, char* argv[])
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
   domain.print_info(std::string("coiled tube"));
-
 
   //print information on the mesh partition on the finest grid
   domain.print_info("NSE3D domain");
@@ -257,6 +250,12 @@ int main(int argc, char* argv[])
   nse3d.assemble_linear_terms();
   nse3d.stop_it(0);  // check initial residuals
 
+  LoopInfo loop_info("nonlinear");
+  loop_info.print_time_every_step = true;
+  loop_info.verbosity_threshold = 1; // full verbosity
+  if(my_rank==0)
+    loop_info.print(0, nse3d.get_full_residual());
+  
   chrono_parts.print_time(std::string("setting up spaces, matrices, linear assemble"));
   chrono_parts.reset();
 
@@ -265,14 +264,8 @@ int main(int argc, char* argv[])
   {
     nse3d.output(k);
 
-    Chrono chrono_nonlinit;
-
-    if(my_rank==0)
-    {
-     Output::info("NONLINEAR ITERATION ", setw(3), k-1);
-     Output::dash(" residuals ",nse3d.get_residuals());
-    }
-
+    if(my_rank == 0)
+      Output::print(); // new line for a new nonlinear iteration
     // solve the system
     nse3d.solve();
 
@@ -298,13 +291,15 @@ int main(int argc, char* argv[])
     
     nse3d.assemble_non_linear_term();
 
-    chrono_nonlinit.print_time(std::string("nonlinear iteration ") + std::to_string(k-1));
-
     // checking residuals
     if(nse3d.stop_it(k))
+    {
+      loop_info.finish(k, nse3d.get_full_residual());
       break;
-
-  }
+    }
+    else
+      loop_info.print(k, nse3d.get_full_residual());
+  } // end for k
 
   chrono_parts.print_time(std::string("solving procedure "));
 

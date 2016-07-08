@@ -3,8 +3,6 @@
 #include <Assemble3D.h>
 #include <LocalAssembling3D.h>
 #include <LinAlg.h>
-#include <FixedPointIte.h>
-#include <FgmresIte.h>
 #include <Output3D.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
@@ -15,6 +13,12 @@
 
 
 #include <sys/stat.h>
+
+#ifdef _MPI
+#include "mpi.h"
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
 
 /* *************************************************************************** */
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
@@ -33,6 +37,10 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default output database - needed here as long as there's no class handling the output
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
+
+  // a default time database
+  ParameterDatabase time_db = ParameterDatabase::default_time_database();
+  db.merge(time_db,true);
 
   return db;
 }
@@ -57,13 +65,6 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
      solution_.length(0), 3),
    p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
      solution_.length(3))
-#ifdef _MPI
-     //default construct parallel infrastructure, will be reset in the body
-     , parMapperVelocity_(),
-     parMapperPressure_(),
-     parCommVelocity_(),
-     parCommPressure_()
-#endif
 {
   // Mass Matrix
   // Output::increaseVerbosity(5);
@@ -91,21 +92,11 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
 #ifdef _MPI
-  velocitySpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
-  pressureSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
-
-  //Must be reset here, because feSpace needs special treatment
-  // This includes copy assignment - all because there is no good
-  // way to communicate Maximum number of subdomains per dof to FESpace...
-  parMapperVelocity_ = TParFEMapper3D(1, &velocitySpace_);
-  parMapperPressure_ = TParFEMapper3D(1, &pressureSpace_);
-
-  parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
-  parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
-
-  //print some information
-  parCommVelocity_.print_info();
-  parCommPressure_.print_info();
+  velocitySpace_.initialize_parallel(maxSubDomainPerDof);
+  pressureSpace_.initialize_parallel(maxSubDomainPerDof);
+  //print some information on the parallel infrastructure
+  velocitySpace_.get_communicator().print_info();
+  pressureSpace_.get_communicator().print_info();
 
 #endif
 }
@@ -250,6 +241,35 @@ void Time_NSE3D::interpolate()
 ///**************************************************************************** */
 void Time_NSE3D::check_parameters()
 {
+ // Check problem_type
+ if(!db_["problem_type"].is(6))
+ {
+   if (db_["problem_type"].is(0))
+   {
+     db_["problem_type"] = 6;
+   }
+   else
+   {
+     Output::warn<2>("The parameter problem_type doesn't correspond to Time_NSE."
+         "It is now reset to the correct value for Time_NSE (=6).");
+     db_["problem_type"] = 6;
+   }
+ }
+
+ // Tell the user he is using IMEX
+ if(db_["time_discretization"].is(4))
+ {
+   if(solver_.is_using_multigrid())
+   {
+     ErrThrow("Multigrid with IMEX-scheme is not implemented yet");
+   }
+   else
+   {
+     Output::info<1>("check_parameters",
+                     "The IMEX scheme has been chosen as a time discretization scheme!\n");
+   }
+ }
+
  if(TDatabase::TimeDB->TIME_DISC == 0)
  {
    ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC
@@ -575,10 +595,10 @@ void Time_NSE3D::assemble_initial_time()
     double *u2  = this->systems_.front().solution_.block(1);
     double *u3  = this->systems_.front().solution_.block(2);
     double *p   = this->systems_.front().solution_.block(3);
-    this->systems_.front().parCommVelocity_.CommUpdate(u1);
-    this->systems_.front().parCommVelocity_.CommUpdate(u2);
-    this->systems_.front().parCommVelocity_.CommUpdate(u3);
-    this->systems_.front().parCommPressure_.CommUpdate(p);
+    this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1, 3);
+    this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
+    this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
+    this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
   #endif
 
   // copy the last right hand side and solution vectors to the old ones
@@ -589,6 +609,8 @@ void Time_NSE3D::assemble_initial_time()
 /**************************************************************************** */
 void Time_NSE3D::assemble_rhs()
 {
+  System_per_grid& s = this->systems_.front();
+
   // TODO Should it be timesteplength or currenttimesteplength
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
 //  const double theta1 = TDatabase::TimeDB->THETA1;
@@ -597,7 +619,6 @@ void Time_NSE3D::assemble_rhs()
   const double theta4 = TDatabase::TimeDB->THETA4;
 
   // reset the right hand side of the grid of interest (finest)
-  System_per_grid& s = this->systems_.front();
   s.rhs_.reset();
 
   // some definitions necessary for assembling
@@ -642,35 +663,11 @@ void Time_NSE3D::assemble_rhs()
              nRhs, rhsArray.data(), rhsSpaces,
              boundary_conditions, boundary_values.data(), localAssembling);
 
-  // copy the non active to the solution vector
-  // since the rhs vector will be passed to the solver
-  // and is modified with matrix vector multiplication
-  // which also uses the non-actives
-  s.solution_.copy_nonactive(s.rhs_);
-
-  /** After copy_nonactive, the solution vectors needs to be Comm-updated
-     * in MPI-case in order to be consistently saved. It is necessary that
-     * the vector is consistently saved because it is the only way to
-     * ensure that its multiplication with an inconsistently saved matrix
-     * (multiplication which appears in the defect and rhs computations)
-     * give the correct results.
-     * When we call copy_nonactive in MPI-case, we have to remember the following:
-     * it can happen that some slave ACTTIVE DoFs are placed in the block of
-     * NON-ACTIVE DoFs (because they are at the interface between processors).
-     * Doing copy_nonactive changes then the value of these DOFs,although they are
-     * actually active.
-     * That's why we have to update the values so that the vector becomes consistent again.
-     */
-  #ifdef _MPI
-    double *u1 = this->systems_.front().solution_.block(0);
-    double *u2 = this->systems_.front().solution_.block(1);
-    double *u3 = this->systems_.front().solution_.block(2);
-    double *p  = this->systems_.front().solution_.block(3);
-    this->systems_.front().parCommVelocity_.CommUpdate(u1);
-    this->systems_.front().parCommVelocity_.CommUpdate(u2);
-    this->systems_.front().parCommVelocity_.CommUpdate(u3);
-    this->systems_.front().parCommPressure_.CommUpdate(p);
-  #endif
+  /* just a temporary vector which is going to be used at the end to
+   * retrieve the nonActive of rhs_. If we dont do it, the nonActive of rhs
+   * will be changed during the following matrix.vector operations and we'll
+   * loose the values of the Dirichlet nodes. */
+  BlockVector temporary = s.rhs_;
 
   // now it is this->systems[i].rhs = f^k
   // scale by time step length and theta4 (only active dofs)
@@ -689,11 +686,11 @@ void Time_NSE3D::assemble_rhs()
   }
 
   // FIXME Find other solution than this submatrix method.
-  // M u^{k-1}
-  s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
-  // -tau*theta2 * A u^{k-1}
+  // M u^{k-1} NOTE : here s.solution_ is exactly u^{k-1}
+  s.massMatrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, 1.0);
+  // -tau*theta2 * A u^{k-1} NOTE : here, s.solution_ is u^{k-1}
   double factor = -tau*theta2;
-  s.matrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, factor);
+  s.matrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, factor);
 
   // scale the BT blocks with time step length
   for(System_per_grid& s : this->systems_)
@@ -723,15 +720,43 @@ void Time_NSE3D::assemble_rhs()
   }
 
   this->oldtau_ = tau;
-  // copy non active from solution into rhs vector
-  s.rhs_.copy_nonactive(s.solution_);
 
-  // Reset old_residual_ for this time step iteration
-  // otherwise, ones compares with the old_residual_ from
-  // the previous time iteration, which is not correct.
+  // retrieve the non active from "temporary" into rhs vector
+  s.rhs_.copy_nonactive(temporary);
+
+  // copy the non active to the solution vector
+  s.solution_.copy_nonactive(s.rhs_);
+
+  /** After copy_nonactive, the solution vectors needs to be Comm-updated
+     * in MPI-case in order to be consistently saved. It is necessary that
+     * the vector is consistently saved because it is the only way to
+     * ensure that its multiplication with an inconsistently saved matrix
+     * (multiplication which appears in the defect and rhs computations)
+     * give the correct results.
+     * When we call copy_nonactive in MPI-case, we have to remember the following:
+     * it can happen that some slave ACTTIVE DoFs are placed in the block of
+     * NON-ACTIVE DoFs (because they are at the interface between processors).
+     * Doing copy_nonactive changes then the value of these DOFs,although they are
+     * actually active.
+     * That's why we have to update the values so that the vector becomes consistent again.
+     */
+  #ifdef _MPI
+    double *u1 = this->systems_.front().solution_.block(0);
+    double *u2 = this->systems_.front().solution_.block(1);
+    double *u3 = this->systems_.front().solution_.block(2);
+    double *p  = this->systems_.front().solution_.block(3);
+    this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1, 3);
+    this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
+    this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
+    this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
+  #endif
+
+  /* Reset old_residual_ for this time step iteration
+  * otherwise, ones compares with the old_residual_ from
+  * the previous time iteration, which is not correct. */
   this->old_residual_ = FixedSizeQueue<10,Residuals>();
 
-  Output::print<5>("assembled the system right hand side ");
+  Output::info<5>("Assemble_rhs()", "End of the assembling of right hand side.");
 }
 
 /**************************************************************************** */
@@ -791,10 +816,36 @@ void Time_NSE3D::assemble_nonlinear_term()
     boundary_values[1] = this->example_.get_bd(1);
     boundary_values[2] = this->example_.get_bd(2);
 
-    TFEFunction3D *fe_functions[3] =
-      { s.u_.GetComponent(0),
-        s.u_.GetComponent(1),
-        s.u_.GetComponent(2)};
+    TFEFunction3D *fe_functions[3] = {nullptr, nullptr,nullptr};
+
+    // The assembly with the extrapolated velocity of IMEX_scheme begins
+    // at step 3
+    bool is_imex = this->imex_scheme(0);
+
+    // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
+    if(!is_imex)
+    {
+      fe_functions[0] = s.u_.GetComponent(0);
+      fe_functions[1] = s.u_.GetComponent(1);
+      fe_functions[2] = s.u_.GetComponent(2);
+    }
+    else
+    {
+      // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
+      // Note : in this function, the non active Dofs are taken care of.
+      // Namely, extrapolated_solution takes the nonActive of the current Rhs.
+      this->construct_extrapolated_solution();
+      TFEVectFunct3D extrapolated_velocity_vector(&this->systems_.front().velocitySpace_,
+                                                  (char*)"", (char*)"",
+                                                  extrapolated_solution_.block(0),
+                                                  extrapolated_solution_.length(0), 3);
+
+      // Construct now the corresponding fe_functions for local assembling
+      fe_functions[0] = extrapolated_velocity_vector.GetComponent(0);
+      fe_functions[1] = extrapolated_velocity_vector.GetComponent(1);
+      fe_functions[2] = extrapolated_velocity_vector.GetComponent(2);
+
+    }
 
     // assemble nonlinear matrices
     LocalAssembling3D
@@ -808,7 +859,7 @@ void Time_NSE3D::assemble_nonlinear_term()
                boundary_conditions, boundary_values.data(), localAssembling);
   }
 
-  Output::print<5>("Assembled the nonlinear matrix only ");
+  Output::info<5>("Assemble non linear terms", "End of the assembling of the nonlinear matrix.");
 }
 
 /**************************************************************************** */
@@ -836,8 +887,8 @@ void Time_NSE3D::assemble_system()
                                  {false, false, false});
   }
 
-  Output::print<5>("Assembled the system matrix which will be passed to the ",
-                   "solver");
+  Output::info<5>("Assemble System", "Assembled the system matrix which"
+      " will be passed to the solver");
 }
 
 /**************************************************************************** */
@@ -849,36 +900,46 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 #else
   int my_rank = 0;
 #endif
+
   // compute, update and display defect and residuals
-  compute_residuals();
+  //  compute_residuals();
 
   // stores current norm of the residual. They are normed per default in
   // the class Residuals
   const double normOfResidual        = this->get_full_residual();
-//  const double normOfImpulseResidual = this->get_impulse_residual();
-//  const double normOfMassResidual    = this->get_mass_residual();
-//  const double oldNormOfResidual     = this->old_residual_[1].fullR;
+  //  const double normOfImpulseResidual = this->get_impulse_residual();
+  //  const double normOfMassResidual    = this->get_mass_residual();
+  //  const double oldNormOfResidual     = this->old_residual_[1].fullR;
   // hold the residual from up to 10 iterations ago
-  const double veryOldNormOfResidual     = this->old_residual_.front().fullResidual;
+  const double veryOldNormOfResidual  = this->old_residual_.front().fullResidual;
 
-//  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
-//  Output::print("impulse_residual:  " , setw(3), normOfImpulseResidual);
-//  Output::print("mass_residual   :  " , setw(3), normOfMassResidual);
-//  Output::print("residual        :  " , setw(3), normOfResidual);
+  //  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
+  //  Output::print("impulse_residual:  " , setw(3), normOfImpulseResidual);
+  //  Output::print("mass_residual   :  " , setw(3), normOfMassResidual);
+  //  Output::print("residual        :  " , setw(3), normOfResidual);
 
   // this is the convergence ratio between actual step and last step
   // TODO : correct oldNormOfResidual to be the residual of last step
   // and print it out
-//  if ( iteration_counter > 0 )
-//  {
-//  Output::print("convergence rate:  " , setw(3), normOfResidual/oldNormOfResidual);
-//  }
+  //  if ( iteration_counter > 0 )
+  //  {
+  //  Output::print("convergence rate:  " , setw(3), normOfResidual/oldNormOfResidual);
+  //  }
 
+  /* Some parameters have to be set up at the first nonlinear iteration */
   if(iteration_counter == 0)
+  {
     initial_residual_ = normOfResidual;
 
-  // Parameters for stopping criteria (desired precision epsilon, max number
-  // of iteration, convergence rate)
+    // saves the solution from previous time step with nonActive of current step
+    this->old_solution_ = this->systems_.front().solution_;
+  }
+
+  /** Parameters for stopping criteria (desired precision epsilon, max number
+   *  of iteration, convergence rate, IMEX_scheme : if IMEX is used, we only
+   *  need to solve the nonlinear iterations for the first time step in order
+   *  to obtain both initial solution and the one after. Then, the extrapolated
+   *  scheme is solved just once, as a linear system. ) */
   double epsilon    = db_["nonlinloop_epsilon"];
   size_t max_It     = db_["nonlinloop_maxit"];
   double conv_speed = db_["nonlinloop_slowfactor"];
@@ -898,23 +959,28 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 
   // Stopping criteria
   if ( (normOfResidual <= epsilon) || (iteration_counter == max_It)
-        || (slow_conv) )
-   {
+      || (slow_conv) )
+  {
     if(slow_conv && my_rank==0)
       Output::print<1>(" SLOW !!! ", normOfResidual/veryOldNormOfResidual);
 
     if(my_rank==0)
     {
-    Output::print("Last nonlinear iteration : ", setw(3), iteration_counter,
-                  "\t\t", "Residual: ", normOfResidual,
-                  "\t\t", "Reduction: ", normOfResidual/initial_residual_);
+      Output::print("Last nonlinear iteration : ", setw(3), iteration_counter,
+                    "\t\t", "Residual: ", normOfResidual,
+                    "\t\t", "Reduction: ", normOfResidual/initial_residual_);
     }
     // descale the matrices, since only the diagonal A block will
     // be reassembled in the next time step
-    this->descale_matrices();
-    return true;
-   }
-   else
+    if (this->imex_scheme(0) && iteration_counter>0)
+      return true; // in these conditions, the matrix are already descaled
+    else
+    {
+      this->descale_matrices();
+      return true;
+    }
+  }
+  else
     return false;
 }
 
@@ -943,7 +1009,7 @@ void Time_NSE3D::compute_residuals()
   //Eliminate all non-master rows in defect_m!
   for(int ui = 0; ui < 3; ++ui)
   {//velocity rows
-    const int* masters = s.parMapperVelocity_.GetMaster();
+    const int* masters = s.velocitySpace_.get_communicator().GetMaster();
     for(size_t i = 0; i<number_u_Dof; ++i)
     {
       if (masters[i]!=my_rank)
@@ -953,7 +1019,7 @@ void Time_NSE3D::compute_residuals()
     }
   }
   {//pressure row
-    const int* masters = s.parMapperPressure_.GetMaster();
+    const int* masters = s.pressureSpace_.get_communicator().GetMaster();
     for(size_t i = 0; i<number_p_Dof; ++i)
     {
       if (masters[i]!=my_rank)
@@ -992,17 +1058,10 @@ void Time_NSE3D::solve()
 #ifdef _MPI
   if(solver_.get_db()["solver_type"].is("direct"))
   {
-    //two vectors of communicators (const for init, non-const for solving)
-    std::vector<const TParFECommunicator3D*> par_comms_init =
-    {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
-    std::vector<TParFECommunicator3D*> par_comms_solv =
-    {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
-    
     //set up a MUMPS wrapper
-    MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
-    
+    MumpsWrapper mumps_wrapper(s.matrix_);
     //kick off the solving process
-    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+    mumps_wrapper.solve(s.rhs_, s.solution_);
   }
 #endif
   // Important: We have to descale the matrices, since they are scaled
@@ -1013,8 +1072,6 @@ void Time_NSE3D::solve()
 
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
        s.p_.project_into_L20();
-
-  this->old_solution_ = s.solution_;
 }
 
 /**************************************************************************** */
@@ -1251,3 +1308,47 @@ void Time_NSE3D::output_problem_size_info() const
   Output::print("dof all     : ", setw(10), n_dof );
   Output::print("active dof  : ", setw(10), 3*nActive);
 }
+
+/**************************************************************************** */
+void Time_NSE3D::construct_extrapolated_solution()
+{
+  this->extrapolated_solution_.reset();
+  this->extrapolated_solution_ = this->old_solution_;
+  this->extrapolated_solution_.scale(-1.);
+  this->extrapolated_solution_.add_scaled(this->systems_.front().solution_,2.);
+  this->extrapolated_solution_.copy_nonactive(this->systems_.front().rhs_);
+  // Now extrapolated_solution_ = 2*u(t-1)-u(t-2), only on the finest mesh
+}
+
+/**************************************************************************** */
+TFEFunction3D* Time_NSE3D::get_velocity_component(int i)
+{
+  if(i==0)
+    return this->systems_.front().u_.GetComponent(0);
+  else if(i==1)
+    return this->systems_.front().u_.GetComponent(1);
+  else  if(i==2)
+    return this->systems_.front().u_.GetComponent(2);
+  else
+    throw std::runtime_error("There are only three velocity components!");
+}
+
+/**************************************************************************** */
+bool Time_NSE3D::imex_scheme(bool print_info)
+{
+  //IMEX-scheme needs to get out of the iteration directly after the 1st solve()
+  bool interruption_condition  = (db_["time_discretization"].is(4))*
+                      (this->current_step_>=3);
+
+  // change maximum number of nonlin_iterations to 1 in IMEX case
+  if (interruption_condition)
+  {
+    db_["nonlinloop_maxit"] = 1;
+    if(print_info) // condition is here just to print it once
+      Output::info<1>("Nonlinear Loop MaxIteration",
+                    "The parameter 'nonlinloop_maxit' was changed to 1."
+                    " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+  }
+  return interruption_condition;
+}
+

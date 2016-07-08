@@ -22,15 +22,14 @@
  *
  * So far the test is adapted to:
  *  - testing the umfpack solver when compiled SEQUENTIAL
+ *  - testing lsc preconditioned fgmres SEQUENTIAL
+ *  - testing multigrid preconditioned fgmres SEQUENTIAL
  *  - testing the mumps solver when compiled MPI
  *
  * The MPI Mumps test contains one example for the three combinations
  * 1 - 2 (hexa), 2 - 12 (hexa), 4 - 2 (hexa) of nstype and velocity space.
  * The tests for 3rd order elements cannot be run, because these elements are
  * not fitted for mpi yet.
- *
- * @todo TODO Enable this test for: pardiso,
- * fgmres with multigrid, fgmres with lsc preconditioner
  *
  * @author Najib Alia
  *
@@ -102,7 +101,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
   SetTimeDiscParameters(0);
 
   // Construct example object
-  Example_TimeNSE3D example(db["example"]);
+  Example_TimeNSE3D example(db["example"],db);
   // Construct Time_NSE3D object
 #ifdef _MPI
   Time_NSE3D tnse3d(domain, db, example, maxSubDomainPerDof);
@@ -131,6 +130,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
     tnse3d.assemble_system();
     for(unsigned int k=0; ; k++)
     {
+      tnse3d.compute_residuals();
       // checking residuals
       if(tnse3d.stop_it(k))
         break;
@@ -201,14 +201,14 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     // New multigrid parameters
     db["multigrid_n_levels"] = 2;
     db["multigrid_cycle_type"] = "V";
-    db["multigrid_smoother"] = "nodal_vanka";
-    db["multigrid_smoother_coarse"] = "nodal_vanka";
-    db["multigrid_correction_damp_factor"] = 0.8;
-    db["multigrid_n_pre_smooth"] = 2;
-    db["multigrid_n_post_smooth"] = 2;
+    db["multigrid_smoother"] = "batch_vanka_store";
+    db["multigrid_smoother_coarse"] = "nodal_vanka_store";
+    db["multigrid_correction_damp_factor"] = 1.0;
+    db["multigrid_n_pre_smooth"] = 1;
+    db["multigrid_n_post_smooth"] = 1;
     db["multigrid_coarse_residual"] = 1.0e-1;
     db["multigrid_coarse_max_n_iterations"] = 5;
-    db["multigrid_vanka_damp_factor"]=0.7;
+    db["multigrid_vanka_damp_factor"]=1.0;
   }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
@@ -310,9 +310,11 @@ int main(int argc, char* argv[])
   db.merge(ParameterDatabase::default_nonlinit_database());
   db["problem_type"].set<size_t>(6);
   db["nonlinloop_slowfactor"]=1.;
+  db.add("boundary_file", "Default_UnitCube", "");
+  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+         {"Default_UnitCube_Hexa","Default_UnitCube_Tetra"});
   db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 6; // flow problem type
-  TDatabase::ParamDB->PROBLEM_TYPE = 6; // to be on the safe side...
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
   TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
@@ -328,8 +330,6 @@ int main(int argc, char* argv[])
   {
     // Construct domain and refine (default = once)
     TDomain domain_hex(db);
-    domain_hex.Init("Default_UnitCube",
-                    "Default_UnitCube_Hexa");
     size_t n_ref = domain_hex.get_n_initial_refinement_steps();
     for(size_t i=0; i< n_ref ; i++)
     {
@@ -351,7 +351,7 @@ int main(int argc, char* argv[])
 #endif
 
     //=============================================================================
-    // EXAMPLE ... (0 to 5)
+    // examples ... (0 to 5)
     size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
@@ -603,10 +603,18 @@ int main(int argc, char* argv[])
   //============= PROGRAM 2 : TETRAHEDRA GRID ==============================
   //=======================================================================
   {
-    // Construct domain and refine (default = once)
+
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(Solver<>::default_solver_database());
+    db.merge(ParameterDatabase::default_nonlinit_database());
+    db["problem_type"].set<size_t>(6);
+    db["nonlinloop_slowfactor"]=1.;
+    db.add("boundary_file", "Default_UnitCube", "");
+    db.add("geo_file", "Default_UnitCube_Tetra", "",
+           {"Default_UnitCube_Hexa","Default_UnitCube_Tetra"});
+    db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
+
     TDomain domain_tet(db);
-    domain_tet.Init("Default_UnitCube",
-                    "Default_UnitCube_Tetra");
     size_t n_ref = domain_tet.get_n_initial_refinement_steps();
     for(size_t i=0; i< n_ref ; i++)
     {
@@ -628,7 +636,7 @@ int main(int argc, char* argv[])
 #endif
 
     //=============================================================================
-    // EXAMPLE ... (0 to 5)
+    // examples ... (0 to 5)
     size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================

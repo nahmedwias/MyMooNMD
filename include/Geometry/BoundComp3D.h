@@ -20,6 +20,9 @@ class TBoundComp3D : public TBoundComp
     // Constructor
     TBoundComp3D(int id);
 
+    // Destructor
+    virtual ~TBoundComp3D(){};
+
     // Methods
     /** return the coordinates {X, Y, Z} of parameter values T and S*/
     virtual int GetXYZofTS(double T, double S, double &X, double &Y,

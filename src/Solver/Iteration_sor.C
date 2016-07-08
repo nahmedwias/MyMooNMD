@@ -20,7 +20,6 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_sor<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
-  this->start_time = std::chrono::high_resolution_clock::now();
   // (D + wL) x^{k+1} = w b - (wU + (w-1)D)x^k
   // D is the diagonal, L is the lower triangular part of A, U is the upper 
   // triangular part of A, w is the relaxation parameter
@@ -37,7 +36,6 @@ std::pair<unsigned int, double> Iteration_sor<L, Vector>::iterate(
   // check for convergence
   double resid = norm(r) / normb;
   // safe initial residual, used to check stopping criteria later
-  this->initial_residual = resid;
   if(this->converged(resid, 0)) 
   {
     return std::pair<unsigned int, double>(0, resid);

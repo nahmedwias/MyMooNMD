@@ -40,10 +40,6 @@ int main(int argc, char* argv[])
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
   
-  /* include the mesh from a mesh generator, for a standard mesh use the 
-   * build-in function. The GEOFILE describes the boundary of the domain. */
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
-   
   // refine grid
   size_t n_ref = domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
@@ -54,7 +50,7 @@ int main(int argc, char* argv[])
     domain.PS("Domain.ps", It_Finest, 0);
   
   // choose example according to the value of db["example"]
-  Example_Darcy2D example(parmoon_db["example"]);
+  Example_Darcy2D example(parmoon_db["example"],parmoon_db);
   
   //=========================================================================
   Darcy2D darcy2d(domain, parmoon_db, example);

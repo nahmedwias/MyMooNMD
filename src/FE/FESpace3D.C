@@ -35,6 +35,11 @@
 
 #include <Edge.h>
 
+#ifdef _MPI
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
+
 /** Constructor */
 TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description) :
      TFESpace(coll, name, description)
@@ -44,6 +49,11 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description) :
   UsedElements = NULL;
   AllElements = NULL;
   ElementForShape = NULL;
+
+# ifdef _MPI
+ MaxSubDomainPerDof = -1;
+# endif
+
 }
 
 // =====================================================================
@@ -217,7 +227,6 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
 
   // construct space
   ConstructSpace(BoundaryCondition);
-
 }
 
 /** constructor for building a space with the given elements */
@@ -2087,6 +2096,8 @@ TFESpace3D::~TFESpace3D()
 
   if(ElementForShape)
     delete[] ElementForShape;
+
+  delete[] HangingNodeArray;
 }
 
 /** return position of all dofs */
@@ -2357,4 +2368,57 @@ void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
     } // endif DOFFound > -1
   } // endfor i
 } // end GetDOFPosition
+
+bool TFESpace3D::CheckMesh() const
+{
+  int N_DOF, *DOF=NULL, found;
+  TBaseCell *Cell;
+  FE3D feid;
+  TFE3D *fe=NULL;
+
+  for (int i=0;i<N_Cells;++i)
+  {
+    Cell = Collection->GetCell(i);
+
+    DOF = GlobalNumbers + BeginIndex[i];
+
+    feid = GetFE3D(i, Cell);
+    fe   = TFEDatabase3D::GetFE3D(feid);
+    N_DOF = fe->GetN_DOF();
+
+    found = 0;
+    for (int j=0;j<N_DOF;++j)
+    {
+      if ( DOF[j] < ActiveBound )
+      {
+        found = 1;
+        break;
+      }
+    }
+
+    if ( found == 0 )
+    {
+      Output::print("index: " , i, 
+                    "\n", Cell->GetVertex(0),
+                    "\n", Cell->GetVertex(1),
+                    "\n", Cell->GetVertex(2),
+                    "\n", Cell->GetVertex(3));
+      // Collection->info();      
+      return false;
+    }
+  }
+
+  return true;
+} 
+
+#ifdef _MPI
+void TFESpace3D::initialize_parallel(int maxSubDomainPerDof)
+{
+  MaxSubDomainPerDof = maxSubDomainPerDof;
+
+  // initialize the mapper and communicator for MPI communications
+  mapper_.reset(new TParFEMapper3D(1, this));
+  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+}
+#endif
 

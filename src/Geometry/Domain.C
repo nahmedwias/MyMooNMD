@@ -73,6 +73,27 @@ ParameterDatabase get_default_domain_parameters()
          "which may be applied to this domain."
          "THIS IS UNUSED AT THE MOMENT!",
          (size_t) 0, size_t (10));
+  
+   db.add("boundary_file", "Default_UnitSquare",
+        "This is a file describing the boundary of the computational domain. "
+        "You probably want to adjust this to be the path to some file which "
+        "typically has the extension 'PRM'. See the documentation for GEO and "
+        "PRM files.",
+        {"Default_UnitSquare", "Default_UnitCube"}
+       );
+   
+   db.add("geo_file", "Default_UnitSquare",
+        "This files describes the computational mesh. You probably want to "
+        "adjust this to be the path to some file which typically has the "
+        "extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM "
+        "files.",
+        {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
+         "Default_UnitCube_Tetra","Default_UnitSquare"});
+   
+   db.add("mesh_tetgen_file", std::string("Wuerfel"),
+         "This files describes the computational mesh. Typically this files"
+         " has the extension 'smesh', 'node' or 'poly'. "
+         " currently only the smesh files are supported");
 
   return db;
 }
@@ -83,22 +104,76 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
     db(get_default_domain_parameters())
 {
   RefLevel = 0;
+  Output::print<4>("domain is initialized");
   db.merge(param_db, false);
+  
+  std::string geoname = db["geo_file"];
+  std::string boundname = db["boundary_file"];
+  std::string smesh = db["mesh_tetgen_file"];
+  
+  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
+      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
+    )
+  {
+    this->Init(boundname.c_str(), geoname.c_str());
+    Output::print<4>("GEO and PRM files are selected");
+  }
+#ifdef __3D__
+  else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
+  {
+    // intialize mesh using tetegen mesh loader
+    TTetGenMeshLoader tetgen(smesh, db);
+    tetgen.Generate(*this);
+  }
+#endif
+  else 
+  {
+    // default cases for the tests
+    this->Init(boundname.c_str(), geoname.c_str());
+  }
 }
 
-
-TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
+//TODO This domain constructor, which is also responsible for read-in of the
+// old database, is to be reomved soon.
+TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db
+                 , double drift_x, double drift_y, double drift_z,
+                 std::vector<double> segment_marks) :
     db(get_default_domain_parameters())
 {
   RefLevel = 0;
   
-  db.merge(param_db, false);
+  db.merge(param_db, true);
 
   // This will be removed as soon as we got entirely rid of the
   // global database.
   /** set variables' value in TDatabase using ParamFile */
   this->ReadParam(ParamFile);
-    
+  
+  std::string geoname = db["geo_file"];
+  std::string boundname = db["boundary_file"];
+  std::string smesh = db["mesh_tetgen_file"];
+  
+  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
+      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
+    )
+  {
+    this->Init(boundname.c_str(), geoname.c_str(),
+               drift_x, drift_y, drift_z, segment_marks);
+  }
+#ifdef __3D__
+  else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
+  {
+    // intialize mesh using tetegen mesh loader
+    TTetGenMeshLoader tetgen(smesh, db);
+    tetgen.Generate(*this);
+  }
+#endif
+  else 
+  {
+    // default cases for the tests
+    this->Init(boundname.c_str(), geoname.c_str(),
+               drift_x, drift_y, drift_z, segment_marks);
+  }
 }
 
 TDomain::~TDomain()

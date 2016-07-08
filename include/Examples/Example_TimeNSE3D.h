@@ -29,7 +29,8 @@ public:
    * This intializes a (Navier-)Stokes example in 2D. It is chosen according
    * to example_code.
    */
-  Example_TimeNSE3D(int example_code);
+  Example_TimeNSE3D(int example_code,
+                    const ParameterDatabase& user_input_parameter_db);
   
   /** @brief initialize your own example
    * 
@@ -76,8 +77,5 @@ private:
   std::function<void(Time_NSE3D &)> post_processing_stat;
   /// TODO @ULRICH Function doing the post processing for a time dependent example.
   
-  // Diffusion coefficient = kinematic viscosity. Should replace
-  // former global parameter 1/RE_NR.
-  double nu;
 };
-#endif // _EXAMPLE_TimeNSE2D_
+#endif // _EXAMPLE_TimeNSE3D_

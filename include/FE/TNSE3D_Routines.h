@@ -15,3 +15,12 @@ double TurbulentViscosity3D(double hK, double* gradU, double* u,
 // compute stabilization for div--div term
 // ======================================================================
 double DivDivStab3D(double u1, double u2, double u3, double hK, double eps);  
+
+// ======================================================================
+/// compute the Frobenious norm tensor
+// ======================================================================
+double frobeniusNormTensor(double* u, double* gradu);
+// ======================================================================
+/// compute turbulence viscosity using Smagorinsky model
+// ======================================================================
+double turbulentViscosity3D(double hK, double* u, double* gradu);

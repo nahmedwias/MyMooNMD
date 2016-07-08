@@ -5,6 +5,10 @@
 //u3(t,x,y,z) = t^4*(2*x*(1-x)+y*(1-y))
 //p(t,x,y,z) = 0
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 void ExampleFile()
 {
   OutPut("Example: Bsp2.h" << endl);
@@ -153,7 +157,7 @@ value = 4*t*t*t*(2*x*(1-x)+y*(1-y));
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  static double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double *coeff, x, y, z;
   double t=TDatabase::TimeDB->CURRENTTIME;

@@ -36,8 +36,12 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
 #ifdef __3D__
-  db["boundary_file"] =std::string("Default_UnitCube");
-  db["geo_file"] = std::string("Default_UnitCube_Tetra");
+  db.add("boundary_file", "Default_UnitCube", "");
+  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+         {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
+#else
+  db.add("boundary_file", "Default_UnitSquare", "");
+  db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
 #endif
 
   db.add("refinement_n_initial_steps", (size_t) 1, "");
@@ -141,27 +145,6 @@ int main(int argc, char* argv[])
   Output::print("Fine function");
   for(auto f : function_fine)
     Output::print(f);
-
-  //CB DEBUG - Old defect restriction
-  double aux[1000];
-
-  std::fill(function_coarse.begin(), function_coarse.end(), 0.0);
-  std::fill(function_fine.begin(), function_fine.end(), 2.0);
-
-  DefectRestriction(
-      &space_coarse, &space_fine,
-      &function_coarse.at(0), &function_fine.at(0),
-      aux);
-
-  Output::print("Coarse function");
-  for(auto c : function_coarse)
-    Output::print(c);
-
-  Output::print("Fine function");
-  for(auto f : function_fine)
-    Output::print(f);
-
-  //END DEBUG
 
   Output::print("Test program finished.");
 }

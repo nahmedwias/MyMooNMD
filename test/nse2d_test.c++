@@ -124,21 +124,22 @@ void check(TDomain &domain, ParameterDatabase db,
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   
-  // we do multigrid tests only for lower order elements, because the higher 
-  // ones take way too long.
-  /// @todo Multigrid, NSE2D, higher order spaces: Is this a programming error 
-  /// which needs to be fixed? If not should we use mdml as default?
-  auto multigrid_velo_orders = {2, 12, 22}; // allowed for multigrid
-  if(std::none_of(multigrid_velo_orders.begin(), multigrid_velo_orders.end(),
-                 [velocity_order](int v){return v == velocity_order; }))
-    return;
-  
+
   db["preconditioner"] = "multigrid";
   db["multigrid_n_levels"] = db["refinement_n_initial_steps"].get<size_t>();
-  db["multigrid_smoother"] = "nodal_vanka";
+  //choose smoother on fine grid according to element
+  std::vector<int> disc_p = {12,13,14,15,22,23,24};
+  if(std::find(disc_p.begin(), disc_p.end(), velocity_order) != disc_p.end())
+    db["multigrid_smoother"] = "cell_vanka_store";
+  else
+    db["multigrid_smoother"] = "batch_vanka_store";
+
+  db["multigrid_type"] = "standard";
   db["multigrid_smoother_coarse"] = "direct_solve";
-  db["multigrid_n_pre_smooth"] = 2;
-  db["multigrid_n_post_smooth"] = 2;
+  db["multigrid_n_pre_smooth"] = 0;
+  db["multigrid_n_post_smooth"] = 1;
+  db["multigrid_correction_damp_factor"] = 1.0;
+  db["multigrid_vanka_damp_factor"] = 1.0;
   time_measureing.reset();
   compute(domain, db, errors);
   time_measureing.print_time("nse2d fgmres(multigrid preconditioner), velocity "
@@ -189,11 +190,14 @@ int main(int argc, char* argv[])
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_slowfactor"] = 1.;
 
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "TwoTriangles", "", {"UnitSquare", "TwoTriangles"});
+    
     // default construct a domain object
     TDomain domain(db);
 
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
-    TDatabase::ParamDB->RE_NR=1;
+    db.add("reynolds_number",1,"");
+    TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
@@ -201,9 +205,6 @@ int main(int argc, char* argv[])
     
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();
     for(unsigned int i=0; i < n_ref; i++)
@@ -285,11 +286,13 @@ int main(int argc, char* argv[])
     db["nonlinloop_slowfactor"] = 1.;
 
     // default construct a domain object
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
     TDomain domain(db);
 
     // parameters used for this test
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
-    TDatabase::ParamDB->RE_NR=1;
+    db.add("reynolds_number",1,"");
+    TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
@@ -297,9 +300,6 @@ int main(int argc, char* argv[])
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
 
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();
     for(unsigned int i=0; i < n_ref; i++)

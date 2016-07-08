@@ -53,13 +53,16 @@ int main(int argc, char* argv[])
 
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
+  db.add("boundary_file", "Default_UnitCube", "");
+  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+         {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
   // default construct a domain object
   TDomain domain(db);
 
 
   // the domain is initialised with default description and default
   // initial mesh
-  domain.Init((char*)"Default_UnitCube", (char*)"Default_UnitCube_Hexa");
+  //domain.Init((char*)"Default_UnitCube", (char*)"Default_UnitCube_Hexa");
 
   // refine grid just once
   domain.RegRefineAll();
@@ -93,8 +96,8 @@ int main(int argc, char* argv[])
   TFESpace3D fe_space_2(coll, (char*)"second_fe_space",
                         (char*)"second_fe_space",
                         BoundaryConditionNewton, second_ansatz_order); //actives only
-  fe_space_1.SetMaxSubDomainPerDof(maxSubDomainPerDof);
-  fe_space_2.SetMaxSubDomainPerDof(maxSubDomainPerDof);
+  fe_space_1.initialize_parallel(maxSubDomainPerDof);
+  fe_space_2.initialize_parallel(maxSubDomainPerDof);
 
   //end blackbox
 
@@ -133,10 +136,7 @@ int main(int argc, char* argv[])
 
   {//start new scope, so that Mumps solver is destructed before MPI_FINALIZE
     //set up a mumps wrapper for the block matrix
-    MumpsWrapper wrap(bfem, {&comm_1, &comm_2});
-
-    //this should fail! - catch
-    //MumpsWrapper wrap_fail(bfem, {&comm_2, &comm_1});
+    MumpsWrapper wrap(bfem);
 
     // //write matrices to file
     //wrap.write_matrix_distributed(std::string("1d"));
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
     }
     nsemat.get_combined_matrix()->write((std::string("2s") +
         std::to_string(mpiRank)).c_str());
-    MumpsWrapper wrap(nsemat, {&comm_1, &comm_1, &comm_2});
+    MumpsWrapper wrap(nsemat);
     wrap.write_matrix_distributed(std::string("2d"));
 
     // Here I used MATLAB to read in the matrices - those gained by get_combined_matrix
@@ -176,11 +176,11 @@ int main(int argc, char* argv[])
     //now create BlockVectors to try the solver with
     BlockVector rhs(nsemat ,true);
     BlockVector sol(nsemat, false);
-    for(int i =0; i<rhs.length(); ++i)
+    for(unsigned int i =0; i<rhs.length(); ++i)
     {//fill rhs with ones
       rhs.at(i) = 1;
     }
-    wrap.solve(rhs, sol, {&comm_1, &comm_1, &comm_2});
+    wrap.solve(rhs, sol );
 
     //hard-coded test, I don't know anything better at the moment...
     Output::print(sol.norm());

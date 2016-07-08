@@ -44,7 +44,8 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
 /** ************************************************************************ */
 CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
            int reference_id)
- : CD2D(domain, param_db, Example_CD2D(param_db["example"]), reference_id)
+ : CD2D(domain, param_db, Example_CD2D(param_db["example"],param_db),
+        reference_id)
 {
 }
 
@@ -155,6 +156,20 @@ CD2D::~CD2D()
 /** ************************************************************************ */
 void CD2D::set_parameters()
 {
+  //set problem_type to CD if not yet set
+  if(!db["problem_type"].is(1))
+  {
+    if (db["problem_type"].is(0))
+    {
+      db["problem_type"] = 1;
+    }
+    else
+    {
+      Output::warn<2>("The parameter problem_type doesn't correspond to CD."
+          "It is now reset to the correct value for CD (=1).");
+      db["problem_type"] = 1;
+    }
+  }
   //////////////// Algebraic flux correction ////////////
   if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 1)
   {//some kind of afc enabled

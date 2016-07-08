@@ -11,6 +11,8 @@
 #include <Time_NSE3D.h>
 #include <MeshPartition.h>
 #include <Chrono.h>
+#include <TetGenMeshLoader.h>
+#include <Output3D.h>
 
 #include <sys/stat.h>
 
@@ -41,6 +43,7 @@ int main(int argc, char* argv[])
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  parmoon_db.merge(ParameterDatabase::default_tetgen_database(), true);
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
@@ -65,15 +68,12 @@ int main(int argc, char* argv[])
   // =====================================================================
   // set the database values and generate mesh
   // =====================================================================
-  // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1],parmoon_db);
-
   //open OUTFILE, this is where all output is written to (additionally to console)
-  if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
-    TDatabase::ParamDB->PROBLEM_TYPE = 6;
+  if(parmoon_db["problem_type"].is(0))
+    parmoon_db["problem_type"] = 6;
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
-  //open OUTFILE, this is where all output is written to (addionally to console)
+  //open OUTFILE, this is where all output is written to (additionally to console)
   if(my_rank==0)
   {
     Output::set_outfile(parmoon_db["outfile"]);
@@ -86,11 +86,9 @@ int main(int argc, char* argv[])
     Database.WriteTimeDB();
   }
 
-  // Do a makeshift parameter check and the old parameter check of the Database.
-  // TODO Adapt the check_parameters() method to the class TNSE3D
-  // NSE3D::check_parameters();
+  // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
-
+  
   // project specific: prepare the coiled geometry
   size_t n_twists                 = parmoon_db["twisted_pipe_n_twists"];
   size_t n_segments_per_twist     = parmoon_db["twisted_pipe_n_segments_per_twist"];
@@ -120,12 +118,11 @@ int main(int argc, char* argv[])
   // Choose and construct example - in this project, this has to be done before
   // initiing the Domain, as the example itself influences the geometry by setting
   // a global parameter (which is awful).
-  Example_TimeNSE3D example(parmoon_db["example"]);
+  Example_TimeNSE3D example(parmoon_db["example"], parmoon_db);
 
-  // Read in geometry and initialize the mesh.
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"],
-              drift_x, drift_y, drift_z,
-              CoiledPipe::GeoConsts::segment_marks);
+  // Construct domain, thereby read in controls from the input file.
+  TDomain domain(argv[1],parmoon_db,
+                 drift_x, drift_y, drift_z, CoiledPipe::GeoConsts::segment_marks);
 
   // Do initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
@@ -133,12 +130,13 @@ int main(int argc, char* argv[])
   {
     domain.RegRefineAll();
   }
+  
+  TCollection* coll = domain.GetCollection(It_Finest,0);
+  TOutput3D output(0,0,0,0,std::addressof(domain),coll);
 
-  // Write grid into a postscript file (before partitioning)
-  //  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
-  //  {
-  //    domain.PS("Domain.ps", It_Finest, 0);
-  //  }
+  // write grid into an Postscript file (before partitioning)
+  if(parmoon_db["output_write_ps"] && my_rank==0)
+    domain.PS("Domain.ps", It_Finest, 0);
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -274,7 +272,8 @@ int main(int argc, char* argv[])
   tnse3d.assemble_initial_time();
 
   double end_time = TDatabase::TimeDB->ENDTIME;
-  int step = 0;
+  tnse3d.current_step_ = 0;
+
   int n_substeps = GetN_SubSteps();
 
   int image = 0;
@@ -289,14 +288,14 @@ int main(int argc, char* argv[])
   {
     Chrono chrono_timeit;
 
-    step++;
-    // Output::print("memory before ":, GetMemory());
+    tnse3d.current_step_++;
+
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
     {
       // setting the time discretization parameters
       SetTimeDiscParameters(1);
-      //      if( step == 1 && my_rank==0) // a few output, not very necessary
+//      if( tnse3d.current_step_ == 1 && my_rank==0) // a few output, not very necessary
       //      {
       //        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
       //        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
@@ -321,26 +320,24 @@ int main(int argc, char* argv[])
 
       for(unsigned int k=0; ; k++)
       {
-        // checking residuals
-        if(tnse3d.stop_it(k))
-        {
-          if (my_rank==0)
-          {
-            Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
-            Output::print<1>("Residuals :", tnse3d.get_residuals());
-          }
-          break;
-        }
+        tnse3d.compute_residuals();
 
-        Chrono chrono_nonlinit;
-
-        if (my_rank==0)
+        if (my_rank==0) // some outputs
         {
           Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
           Output::print<1>("Residuals :", tnse3d.get_residuals());
         }
-        //        break;
+
+        // checking residuals and stop conditions
+        if(tnse3d.stop_it(k))
+          break;
+
+        Chrono chrono_nonlinit;
+
         tnse3d.solve();
+
+        if(tnse3d.imex_scheme(1))
+          continue;
 
         tnse3d.assemble_nonlinear_term();
 
@@ -351,7 +348,7 @@ int main(int argc, char* argv[])
 
       chrono_timeit.print_time(std::string("solving the time iteration ") + std::to_string(tau));
 
-      tnse3d.output(step,image);
+      tnse3d.output(tnse3d.current_step_,image);
 
       if (cells.empty())
       {

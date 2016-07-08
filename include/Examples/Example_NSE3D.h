@@ -29,7 +29,9 @@ class Example_NSE3D : public Example3D
      * This intializes a (Navier-)Stokes example in 3D. It is chosen according
      * to example_code.
      */
-    Example_NSE3D(int example_code);
+    Example_NSE3D(int example_code,
+                  const ParameterDatabase& user_input_parameter_db);
+
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
@@ -67,10 +69,6 @@ class Example_NSE3D : public Example3D
     /// TODO put NSE3D argument const as soon as FEFunctions can be copied properly!
     std::function<void(NSE3D &)> post_processing_stat;
     /// TODO Function doing the post processing for a time dependent example.
-
-    // Diffusion coefficient = kinematic viscosity. Should replace
-    // former global parameter 1/RE_NR.
-    double nu;
 };
 
 

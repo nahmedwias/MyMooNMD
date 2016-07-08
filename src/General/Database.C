@@ -336,8 +336,6 @@ void TDatabase::SetDefaultParameters()
   strcpy(tmp,"MooN_MD_default_outfile");
   ParamDB->OUTFILE=tmp;
   
-  ParamDB->PROBLEM_TYPE = 0;
-  
   ParamDB->timeprofiling = 0; //time profiling
   ParamDB->MapperType = 1;
   ParamDB->DSType = 1;		//Parallel Direct Solver Type
@@ -1085,7 +1083,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("VERSION: ", ParamDB->VERSION);
   printToFile("MAPFILE: ", ParamDB->MAPFILE);
   printToFile("OUTFILE: ", ParamDB->OUTFILE);
-  printToFile("PROBLEM_TYPE: ", ParamDB->PROBLEM_TYPE);
   printToFile("profiling: ", ParamDB->timeprofiling);
   printToFile("MapperType: ", ParamDB->MapperType);
   printToFile("DSType: ", ParamDB->DSType);
@@ -2031,5 +2028,5 @@ TParaDB::~TParaDB()
   delete [] FS_OUTNAME;
   delete [] MATLAB_MATRIX;
   delete [] PODFILE;
-  Output::print<2>("deleted parameter database");
+  Output::print<4>("deleted parameter database");
 }

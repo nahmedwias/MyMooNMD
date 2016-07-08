@@ -3,6 +3,10 @@
 // u(t,x,y,z) = t*(y+z, x-z, 2*x+y)
 // p(t,x,y,z) = 0
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 void ExampleFile()
 {
   OutPut("Example: AnsatzLinConst.h" << endl);
@@ -115,14 +119,13 @@ void U3BoundValue(double x, double y, double z, double &value)
   value = t*(2*x+y);    
 }
 
-
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  static double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double t=TDatabase::TimeDB->CURRENTTIME;
   double *coeff, x, y, z;

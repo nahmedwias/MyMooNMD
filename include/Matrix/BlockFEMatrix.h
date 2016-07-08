@@ -81,6 +81,10 @@
 
 #include <MumpsWrapper.h> //for friend method
 
+#ifdef _MPI
+class TParFECommunicator3D;
+#endif
+
 class BlockFEMatrix : public BlockMatrix
 {
   public:
@@ -599,6 +603,12 @@ class BlockFEMatrix : public BlockMatrix
     virtual std::shared_ptr<TMatrix> get_combined_submatrix(
         std::pair<size_t,size_t> upper_left,
         std::pair<size_t,size_t> lower_right) const override;
+
+#ifdef _MPI
+    /// Return a list of the FE communicators belonging to the FESpaces of
+    /// the rows columns.
+    std::vector<const TParFECommunicator3D*> get_communicators() const;
+#endif
 
     /**
      * Spawns a new BlockFEMatrix taken from the Block diagonal of this,

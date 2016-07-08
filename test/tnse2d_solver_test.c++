@@ -53,9 +53,6 @@ void check(TDomain& domain, int example, int velocity_order, int pressure_order,
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
-
-  TDatabase::ParamDB->EXAMPLE = example;
-
   
 }
 

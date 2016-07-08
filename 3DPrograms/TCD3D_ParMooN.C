@@ -23,7 +23,6 @@ double timeC = 0;
 
 int main(int argc, char *argv[])
 {
-  double start_time = GetTime();
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -57,8 +56,6 @@ int main(int argc, char *argv[])
   
   if(my_rank==0)
     Database.WriteParamDB(argv[1]);
-  // reading mesh
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
   
   // split the number of refinement steps - some have to be done before,
   // some after the domain partitioning
@@ -114,7 +111,7 @@ int main(int argc, char *argv[])
   domain.GenerateEdgeInfo();
 
   // calculate largest possible number of processes which share one dof
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
+  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
   
 #endif
   
@@ -146,7 +143,7 @@ int main(int argc, char *argv[])
   domain.print_info("TCD3D domain");
 
   // Choose example according to the value of
-  Example_TimeCD3D example(parmoon_db["example"]);  
+  Example_TimeCD3D example(parmoon_db["example"],parmoon_db);
   
   // create an object of the class Time_CD3D
 #ifdef _MPI

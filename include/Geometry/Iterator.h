@@ -39,6 +39,7 @@ class TIterator
 
   public:
     // Constructors
+    virtual ~TIterator(){};
 
     // Methods
     /** set all parameters to the given values */

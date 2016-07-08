@@ -3,20 +3,7 @@
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>
 #include <MainUtilities.h>
-
-#include <NSE_MGLevel.h>
-#include <NSE_MGLevel1.h>
-#include <NSE_MGLevel2.h>
-#include <NSE_MGLevel3.h>
-#include <NSE_MGLevel4.h>
-#include <NSE_MGLevel14.h>
 #include <LinAlg.h>
-
-#include <ItMethod.h>
-#include <FgmresIte.h>
-#include <FixedPointIte.h>
-#include <MultiGridIte.h>
-
 #include <DirectSolver.h>
 #include <Output3D.h>
 
@@ -31,6 +18,11 @@
 
 #include <ParameterDatabase.h>
 
+#ifdef _MPI
+#include "mpi.h"
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
 
 ParameterDatabase get_default_NSE3D_parameters()
 {
@@ -49,7 +41,7 @@ ParameterDatabase get_default_NSE3D_parameters()
   db.merge(out_db, true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
-  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
   {
      if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
      {
@@ -82,14 +74,6 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
      p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
         solution_.length(3))
 
-#ifdef _MPI
-     //default construct parallel infrastructure, will be reset in the body
-     , parMapperVelocity_(),
-     parMapperPressure_(),
-     parCommVelocity_(),
-     parCommPressure_()
-#endif
-
 {
   switch(TDatabase::ParamDB->NSTYPE)
   {
@@ -112,21 +96,13 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
 #ifdef _MPI
-  velocitySpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
-  pressureSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
 
-  //Must be reset here, because feSpace needs special treatment
-  // This includes copy assignment - all because there is no good
-  // way to communicate Maximum number of subdomains per dof to FESpace...
-  parMapperVelocity_ = TParFEMapper3D(1, &velocitySpace_);
-  parMapperPressure_ = TParFEMapper3D(1, &pressureSpace_);
-
-  parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
-  parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
+  velocitySpace_.initialize_parallel(maxSubDomainPerDof);
+  pressureSpace_.initialize_parallel(maxSubDomainPerDof);
 
   //print some information
-  parCommVelocity_.print_info();
-  parCommPressure_.print_info();
+  velocitySpace_.get_communicator().print_info();
+  pressureSpace_.get_communicator().print_info();
 
 #endif
 }
@@ -165,6 +141,7 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     errors_()
 {
   this->db.merge(param_db, false);
+  this->check_parameters();
 
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -277,6 +254,12 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
 
 void NSE3D::check_parameters()
 {
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  {
+    Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
+        "nor to Stokes. It is now reset to the default value for NSE (=5).");
+    db["problem_type"] = 5;
+  }
 
   // Some implementation/testing constraints on the used discretization.
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE != 0)
@@ -362,7 +345,7 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
       break;
     // continuous pressure spaces
     case 1: case 2: case 3: case 4: case 5:
-      pressure_order = 1;
+      pressure_order = pressure_order*1;
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
@@ -533,6 +516,11 @@ void NSE3D::assemble_linear_terms()
                nReMatrices, reMatrices.data(), 
                nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
+
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
+
   }// endfor auto grid
 
   //copy non-actives from rhs to solution on finest grid
@@ -551,10 +539,10 @@ void NSE3D::assemble_linear_terms()
   double *u2 = this->systems_.front().solution_.block(1);
   double *u3 = this->systems_.front().solution_.block(2);
   double *p  = this->systems_.front().solution_.block(3);
-  this->systems_.front().parCommVelocity_.CommUpdate(u1);
-  this->systems_.front().parCommVelocity_.CommUpdate(u2);
-  this->systems_.front().parCommVelocity_.CommUpdate(u3);
-  this->systems_.front().parCommPressure_.CommUpdate(p);
+  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1, 3);
+  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
+  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
+  this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
 #endif
 }
 
@@ -668,6 +656,10 @@ void NSE3D::assemble_non_linear_term()
       }
     }
 
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
+
     //TODO: Copying non-actives??
 
   }// endfor auto grid
@@ -720,13 +712,6 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
 
     // stop iteration
-    if(my_rank==0)
-    {
-      Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
-                       " RES : ", normOfResidual, " Reduction : ",
-                       normOfResidual/initial_residual_);
-    }
-
     return true;
   }
   else
@@ -758,7 +743,7 @@ void NSE3D::compute_residuals()
   //Eliminate all non-master rows in defect_m!
   for(int ui = 0; ui < 3; ++ui)
   {//velocity rows
-    const int* masters = s.parMapperVelocity_.GetMaster();
+    const int* masters = s.velocitySpace_.get_communicator().GetMaster();
     for(size_t i = 0; i<n_u_dof; ++i)
     {
       if (masters[i]!=my_rank)
@@ -768,7 +753,7 @@ void NSE3D::compute_residuals()
     }
   }
   {//pressure row
-    const int* masters = s.parMapperPressure_.GetMaster();
+    const int* masters = s.pressureSpace_.get_communicator().GetMaster();
     for(size_t i = 0; i<n_p_dof; ++i)
     {
       if (masters[i]!=my_rank)
@@ -811,19 +796,12 @@ void NSE3D::solve()
   {
     if(damping != 1.0)
       Output::warn("NSE3D::solve", "damping in an MPI context is not tested");
-    //two vectors of communicators (const for init, non-const for solving)
-    std::vector<const TParFECommunicator3D*> par_comms_init =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, 
-       &s.parCommPressure_};
-    std::vector<TParFECommunicator3D*> par_comms_solv =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, 
-       &s.parCommPressure_};
 
     //set up a MUMPS wrapper
-    MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+    MumpsWrapper mumps_wrapper(s.matrix_);
 
     //kick off the solving process
-    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+    mumps_wrapper.solve(s.rhs_, s.solution_);
   }
   else
     this->solver.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential

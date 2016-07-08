@@ -103,13 +103,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(nse2d ParMooN_test_nse2d)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
-  
-  #nse2d multigrid test
-  add_executable(ParMooN_test_nse2d_mg nse2d_multigrid_test.c++)
-  target_link_libraries(ParMooN_test_nse2d_mg parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(nse2d_mg ParMooN_test_nse2d_mg)
-  list(APPEND parmoon_tests ParMooN_test_nse2d_mg)
-  
+   
   #tnse2d test (direct solver)
   add_executable(ParMooN_test_tnse2d tnse2d_test.c++)
   target_link_libraries(ParMooN_test_tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
@@ -121,12 +115,6 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_hdiv parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(hdiv ParMooN_test_hdiv)
   list(APPEND parmoon_tests ParMooN_test_hdiv)
-    
-  #cd3d test sequential
-  add_executable(ParMooN_test_cd3d_seq cd3d_test.c++)
-  target_link_libraries(ParMooN_test_cd3d_seq parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(cd3d_seq ParMooN_test_cd3d_seq)
-  list(APPEND parmoon_tests ParMooN_test_cd3d_seq)
   
   #cd3d solver tests
   set(_EXEC_NAME ParMooN_test_cd3d_solver_seq)
@@ -216,12 +204,6 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   ####### Tests for parallel type: MPI #######
   ###################################################
   
-  # cd3d test mpi (run with 4 processes)
-  add_executable(ParMooN_test_cd3d_mpi cd3d_test.c++)
-  target_link_libraries(ParMooN_test_cd3d_mpi parmoon_3d_MPI ${_EXTERN_LIBRARIES})
-  add_test(NAME cd3d_mpi COMMAND mpirun -n 4 ParMooN_test_cd3d_mpi )
-  list(APPEND parmoon_tests ParMooN_test_cd3d_mpi)
-  
   # 1st mumps solver test mpi (run with 2 processes)
   add_executable(ParMooN_test_mumps_1_mpi mumps_test_1.c++)
   target_link_libraries(ParMooN_test_mumps_1_mpi ${_EXTERN_LIBRARIES})
@@ -246,7 +228,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   # mumps
   add_test(NAME cd3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi mumps)
-  #jacobi - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
+  #jacobi
   add_test(NAME cd3d_mpi_jacobi COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi jacobi)
   #multigrid - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
   add_test(NAME cd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi multigrid)

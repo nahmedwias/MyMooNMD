@@ -234,17 +234,11 @@ void SolveMultipleSystems(double *a, double *b, int N_Eqn,
 void SolveMultipleSystemsNew(double *a, double *b, int N_Eqn, 
                        int LDA, int LDB, int N_Rhs);
 
-/* subroutine for solving a multiple systems of linear equations 
+/* subroutine for solving a multiple systems of linear equations
    using the LAPACK routines*/
 
-void SolveMultipleSystemsLapack(double *a, double *b, int N_Eqn, 
+void SolveMultipleSystemsLapack(double *a, double *b, int N_Eqn,
                        int LDA, int LDB, int N_Rhs);
-
-/* solve diagonal Vanka system */
-void SolveDiagonalVanka2D(double *a, double *b, int N_U, int N_P, int LDA);
-
-/* solve diagonal Vanka system */
-void SolveDiagonalVanka3D(double *a, double *b, int N_U, int N_P, int LDA);
 
 /** matrix * vector for coupled Stokes / Navier-Stokes system */
 void CoupledMatVectMortar(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
@@ -269,7 +263,7 @@ void Prolongate(const TFESpace2D *CoarseSpace, const TFESpace2D *FineSpace,
         double *CoarseFunctions, double *FineFunctions, double *aux);
 
 /** defect restriction from level+1 to level */
-void DefectRestriction(const TFESpace2D *CoarseSpace, 
+void DefectRestriction(const TFESpace2D *CoarseSpace,
                        const TFESpace2D *FineSpace,
                        double *CoarseFunctions, double *FineFunctions,
                        double *aux);
@@ -281,14 +275,14 @@ void DefectRestriction(const TFESpace2D *CoarseSpace,
                        double *FineFunctions, double *aux);
 
 /** function restriction from level+1 to level */
-void RestrictFunction(const TFESpace2D *CoarseSpace, 
+void RestrictFunction(const TFESpace2D *CoarseSpace,
                       const TFESpace2D *FineSpace,
                       double *CoarseFunction, double *FineFunction,
                       double *aux);
 
 /** function restriction from level+1 to level */
-void RestrictFunction(const TFESpace2D *CoarseSpace, 
-                      const TFESpace2D *FineSpace, int N_Functions, 
+void RestrictFunction(const TFESpace2D *CoarseSpace,
+                      const TFESpace2D *FineSpace, int N_Functions,
                       double *CoarseFunction, double *FineFunction,
                       double *aux);
 

@@ -1,7 +1,5 @@
 #include <Time_CD2D.h>
 #include <Database.h>
-#include <MultiGrid2D.h>
-#include <OldSolver.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <AlgebraicFluxCorrection.h>
@@ -87,7 +85,8 @@ TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		int reference_id)
- : Time_CD2D(domain, param_db, Example_TimeCD2D(param_db["example"]), reference_id)
+ : Time_CD2D(domain, param_db, Example_TimeCD2D(param_db["example"],param_db),
+             reference_id)
 {
   
 }
@@ -162,6 +161,20 @@ void Time_CD2D::set_parameters()
     throw("TIME_DISC: 0 is not supported. Chose 1 (backward Euler) or 2 (Crank-Nicolson).");
   }
 
+  //set problem_type to Time_CD if not yet set
+  if(!db["problem_type"].is(2))
+  {
+    if (db["problem_type"].is(0))
+    {
+      db["problem_type"] = 2;
+    }
+    else
+    {
+      Output::warn<2>("The parameter problem_type doesn't correspond to Time_CD."
+          "It is now reset to the correct value for Time_CD (=2).");
+      db["problem_type"] = 2;
+    }
+  }
   //////////////// Algebraic flux correction ////////////
   if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 0)
   {//some kind of afc enabled
