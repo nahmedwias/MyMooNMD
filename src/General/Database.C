@@ -61,9 +61,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <stdlib.h>
-extern "C" {
-#include <amg_solve_main.h>
-}
+
 #ifdef __MORTAR__
   #include <It_Mortar.h>
   #include <RefMortar0Desc.h>
@@ -569,8 +567,6 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->SOLVER_TYPE = 1; 
 
   // parameters for linear iteration
-  ParamDB->SC_SOLVER_SCALAR=AMG_GMRES_FLEX;
-  ParamDB->SC_PRECONDITIONER_SCALAR=AMG_MGC;
   ParamDB->SC_LIN_MAXIT_SCALAR = 10000;
   ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0.0;
   ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-10;
@@ -608,8 +604,6 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
 
   // parameters for linear iteration
-  ParamDB->SC_SOLVER_SADDLE=AMG_GMRES_FLEX;
-  ParamDB->SC_PRECONDITIONER_SADDLE=AMG_MGC;
   ParamDB->SC_LIN_MAXIT_SADDLE = 10000;
   ParamDB->SC_LIN_RED_FACTOR_SADDLE = 0.0;
   ParamDB->SC_LIN_RES_NORM_MIN_SADDLE = 1e-10;
@@ -651,7 +645,6 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->CC_COARSENTARGET=200;
   ParamDB->CC_COARSENRATE=1.2;
   ParamDB->CC_MAJOR=-1;
-  ParamDB->CC_DEPENDENCY=AMG_UNSYM;
   ParamDB->CC_RESCALE=1.8;
   ParamDB->CC_VERBOSE=1;
   
@@ -671,8 +664,6 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->SC_ILUT_TOL=0.01;
   ParamDB->SC_ILUT_ABSOLUTE_FILLIN=1;
   ParamDB->SC_ILUT_RELATIVE_FILLIN=1.0;
-  ParamDB->SC_ILUT_SORT=ILUT_QUICK_SPLIT_0;
-  ParamDB->SC_SCHUR_INV_OF_A= AMG_SSOR;
   ParamDB->SC_SCHUR_INV_OF_A_MAXIT= 1;
   ParamDB->SC_SCHUR_ITERATION_DAMP = 0.5;
   ParamDB->SC_SCHUR_ITERATION_MAXIT = 100;
