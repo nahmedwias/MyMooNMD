@@ -132,13 +132,6 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
   Output::print<1>("dof pressure       : ", setw(10), n_p);
   Output::print<1>("dof all            : ", setw(10), n_dof);
   
-
-  // done with the constructor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5
-    || TDatabase::ParamDB->SOLVER_TYPE != 1)
-    return;
-  // else multigrid
-
 }
 
 /** ************************************************************************ */

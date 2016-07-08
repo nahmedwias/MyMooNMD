@@ -3502,7 +3502,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
  
    OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);
   // get coarse grid
-  coll_coarse=Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR-1);
+  // FIXME that parameter is gone! coll_coarse=Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR-1);
   if (coll_coarse == NULL)
   {
     OutPut("No coarse grid !!!" << endl);
@@ -3513,7 +3513,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
   memset(params, 0, 10 * SizeOfDouble);
 
   // get fine grid
-  coll = Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR);
+  // FIXME that parameter is gone! coll = Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR);
   N_Cells = coll->GetN_Cells();
   // initialise ClipBoard for fine grid
   for(i=0;i<N_Cells;i++)

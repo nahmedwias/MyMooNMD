@@ -200,7 +200,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
     
     // possibly parameters in the database
@@ -294,7 +293,6 @@ int main(int argc, char* argv[])
     db.add("reynolds_number",1,"");
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
         
     // possibly parameters in the database

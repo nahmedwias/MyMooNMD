@@ -230,7 +230,6 @@ int main(int argc, char* argv[])
     // high order quadrature for computing errors
   TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
   TDatabase::ParamDB->SIGMA_PERM = 1.; // permeability
-  TDatabase::ParamDB->SOLVER_TYPE = 2; // use direct solver
 
   unsigned int nRefinements = 2;
   

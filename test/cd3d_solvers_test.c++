@@ -164,7 +164,6 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   else if(solver_name.compare("umfpack") == 0)
   {
     db["solver_type"] = "direct";
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
 #ifdef _MPI

@@ -53,7 +53,6 @@ struct TParaDB
   /** parameters for controling the program */
   //======================================================================
   int PRECOND_LS;
-  int SOLVER_TYPE;
    int WRITE_GRAPE;
   int WRITE_GNU;
   int WRITE_GMV;
@@ -370,41 +369,6 @@ struct TParaDB
   int    DIV_DIV_STAB_TYPE;
   double DIV_DIV_STAB_C1;
   double DIV_DIV_STAB_C2;
-
-  //======================================================================
-  // ******** parameters for scalar system *********//
-  //======================================================================
-  // parameters for linear iteration
-  int    SC_SOLVER_SCALAR;
-  int    SC_PRECONDITIONER_SCALAR;
-  int    SC_LIN_MAXIT_SCALAR;
-  double SC_LIN_RED_FACTOR_SCALAR;
-  double SC_LIN_RES_NORM_MIN_SCALAR;
-  int    SC_FLEXIBLE_KRYLOV_SPACE_SOLVER;
-
-  int    SC_LIN_MAXIT_SCALAR_SOLD;
-  double SC_LIN_RED_FACTOR_SCALAR_SOLD;
-  double SC_LIN_RES_NORM_MIN_SCALAR_SOLD;
-
-  // parameters which are used in multigrid for scalar problems
-  int    SC_MG_TYPE_SCALAR;
-  int    SC_MG_CYCLE_SCALAR;
-  int    SC_SMOOTHER_SCALAR;
-  int    SC_PRE_SMOOTH_SCALAR;
-  int    SC_POST_SMOOTH_SCALAR;
-  double SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  double SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-  double SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR;
-  int    SC_COARSE_SMOOTHER_SCALAR;
-  int    SC_COARSE_MAXIT_SCALAR;
-  double SC_COARSE_RED_FACTOR_SCALAR;
-  double SC_GMG_DAMP_FACTOR_SCALAR;
-  double SC_GMG_DAMP_FACTOR_FINE_SCALAR;
-  int    SC_FIRST_SOLUTION_LEVEL_SCALAR;
-  int    SC_COARSEST_LEVEL_SCALAR;
-
-  int    SC_STEP_LENGTH_CONTROL_FINE_SCALAR;
-  int    SC_STEP_LENGTH_CONTROL_ALL_SCALAR;
 
   //======================================================================
   // ******** parameters for saddle point system *********//
