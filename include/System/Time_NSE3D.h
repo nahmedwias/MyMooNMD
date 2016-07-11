@@ -211,8 +211,7 @@ class Time_NSE3D
                const Example_TimeNSE3D& example,
                int maxSubDomainPerDof);
 #else
-    Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-               const Example_TimeNSE3D& example);
+    Time_NSE3D(TDomain& domain, const ParameterDatabase& param_db, const Example_TimeNSE3D& ex);
 #endif
     
 // ======================================================================
