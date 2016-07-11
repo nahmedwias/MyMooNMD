@@ -7,6 +7,7 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <Multigrid.h>
+#include <ChannelFlowRoutines.h>
 
 #include <sys/stat.h>
 
@@ -97,7 +98,7 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
 }
 
 /**************************************************************************** */
-Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+Time_NSE3D::Time_NSE3D(TDomain& domain, const ParameterDatabase& param_db,
                        const Example_TimeNSE3D& ex
 #ifdef _MPI
                        , int maxSubDomainPerDof
@@ -130,7 +131,22 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   }
 
   // create the collection of cells from the domain (finest grid)
-  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);    
+  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
+  
+  // set some useful stuff restricted to particular examples
+  // e.g. setZcoordinates in channel flow with re=180
+  // finest level first
+  if(db_["example"].is(7))
+  {
+    ChannelFlowRoutines::setZCoordinates(coll, domain.get_ref_level());
+    domain.MakeBdParamsConsistent(coll);
+    ChannelFlowRoutines::checkZCoordinates(coll, domain.get_ref_level());
+    // set the refimenet descriptor
+    ChannelFlowRoutines::setRefineDesc(coll);
+    // set the periodic joints
+    ChannelFlowRoutines::setPeriodicFaceJoints(coll);
+  }
+  
 #ifdef _MPI
   // create finite element space and function, a matrix, rhs, and solution
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
@@ -192,6 +208,18 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     for (int grid_no = finest; grid_no >= coarsest; --grid_no)
     {
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+      // set the z coordinates on the coarse grids
+      // on the finest grid, z coordinates were already set
+      if(db_["example"].is(7))
+      {
+        ChannelFlowRoutines::setZCoordinates(coll, grid_no);
+        domain.MakeBdParamsConsistent(coll);
+        ChannelFlowRoutines::checkZCoordinates(coll, grid_no);
+        // set the refinement descriptor on coarse grids
+        ChannelFlowRoutines::setRefineDesc(coll);
+        // set the periodic joints
+        ChannelFlowRoutines::setPeriodicFaceJoints(coll);
+      }
 #ifdef _MPI
 #else
       this->systems_.emplace_back(example_, *coll, velocity_pressure_orders,
