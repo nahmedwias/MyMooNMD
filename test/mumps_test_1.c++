@@ -26,6 +26,8 @@ extern "C"
  #include "dmumps_c.h"
 }
 #include <mpi.h>
+#include <cmath>
+#include <stdexcept>
 
 //macros for mumps integer paramters - makes the code better readable
 #define JOB_INIT -1
@@ -88,7 +90,7 @@ int main(int argc, char* argv[])
   if (mpi_rank == 0) {
     printf("Solution is : (%8.2f  %8.2f)\n", rhs[0],rhs[1]);
     //check the result
-    if (abs(rhs[0] - 1.0) < 1e-10 && abs(rhs[1] - 2.0) < 1e-10)
+    if (std::abs(rhs[0] - 1.0) < 1e-10 && std::abs(rhs[1] - 2.0) < 1e-10)
     {
       printf("I mumpsed it!\n");
     }
