@@ -14,92 +14,6 @@
 // ======================================================================
 // compute turbulent viscosity for LES 
 // ======================================================================
-double frobeniusNormTensor(double *u, double *gradu)
-{
-  int viscosityTensor = TDatabase::ParamDB->TURBULENT_VISCOSITY_TENSOR;
-  double a11, a12, a13,a22, a23, a33;
-  double frobenius_norm_tensor;
-  
-  if(viscosityTensor==0)
-  { 
-    // no turbulent viscosity
-    return (0);
-  }
-  
-  // compute square of the Frobenius norm of the tensor using 
-  // deformation tensor
-  switch(viscosityTensor)
-  {
-    case 0: // 0.5*(grad(u) + grad(u)^T)
-      a11 = gradu[0]+gradu[0];
-      a12 = gradu[1]+gradu[3];
-      a13 = gradu[2]+gradu[6];
-      a22 = gradu[4]+gradu[4];
-      a23 = gradu[5]+gradu[7];
-      a33 = gradu[8]+gradu[8];
-      
-      frobenius_norm_tensor = 2*(a12*a12 + a13*a13 + a23*a23);
-      frobenius_norm_tensor += a11*a11 + a22*a22 + a33*a33;
-      frobenius_norm_tensor /= 4;
-      break;
-    case 1: // grad u form
-      frobenius_norm_tensor 
-         = gradu[0]*gradu[0] + gradu[1]*gradu[1] +
-           gradu[2]*gradu[2] + gradu[3]*gradu[3] + 
-           gradu[4]*gradu[4] + gradu[5]*gradu[5] + 
-           gradu[6]*gradu[6] + gradu[7]*gradu[7] +
-           gradu[8]*gradu[8];
-      break;
-    default:
-      ErrThrow("Turbulent viscosity tnsor: ", viscosityTensor, " is not implemented so far");
-  }
-  return frobenius_norm_tensor;
-}
-
-double turbulentViscosity3D(double hK, double *u, double *gradu)
-{
-  /// compute Characteristic Filter Width
-  double filter_constant = TDatabase::ParamDB->FILTER_WIDTH_CONSTANT;
-  double filter_power = TDatabase::ParamDB->FILTER_WIDTH_POWER;
-  double viscosity_constant = TDatabase::ParamDB->TURBULENT_VISCOSITY_CONSTANT;
-  
-  double delta;
-
-  if (filter_power==1)
-    delta = filter_constant * hK;
-  else
-    delta = filter_constant*pow(hK,filter_power);
-  
-  int viscosityType = TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE;
-  double viscosity;
-  
-  double viscosity_power = TDatabase::ParamDB->TURBULENT_VISCOSITY_POWER;
-  double viscosity_sigma = TDatabase::ParamDB->TURBULENT_VISCOSITY_SIGMA;
-  // compute the frobenius norm tensor
-  double frobenius_norm_tensor=frobeniusNormTensor(u, gradu);
-  switch(viscosityType)
-  {
-    case 0:
-      viscosity = viscosity_constant * delta * delta * sqrt(frobenius_norm_tensor);
-      break;
-    case 1:      
-      viscosity = viscosity_constant * delta * delta * 
-                      pow(frobenius_norm_tensor, viscosity_power/2.0);
-      break;
-    case 2: // Layton SIAM J. Sci. Comput. 1996 
-            // nu = nu_0 |ln(h)|^(-2/3*(p-1)) h^sigma \|\nabla u\|^(p-2)
-      viscosity = viscosity_constant * pow(delta,viscosity_sigma) * 
-                 pow(frobenius_norm_tensor,(viscosity_power-2)/2.0)
-                 /pow(fabs(log(delta)),2*(viscosity_power-1)/3);
-      break;
-    default:
-      ErrThrow("Viscosity type: ", viscosityType, " is not implemented so far ", 
-                "implement them from TurbulentViscosity3D() .." );
-  }
- //TODO: Implement and test all the models tested in the MooNMD (TurbulentViscosity3D)
- // and remove the function itself
-  return (viscosity);
-}
 double TurbulentViscosity3D(double delta, double* gradU, double* u, 
 			    double* uConv, double* x, double* y, double* z, double proj_space)
 {
@@ -560,42 +474,6 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
   return(nu);
 }
 
-// ======================================================================
-// compute stabilization for div--div term
-// ======================================================================
-double DivDivStab3D(double u1, double u2, double u3, double hK, double eps) 
-{
-  int divdiv_type = TDatabase::ParamDB->DIV_DIV_STAB_TYPE;
-  double c_1 = TDatabase::ParamDB->DIV_DIV_STAB_C1;
-  double c_2 = TDatabase::ParamDB->DIV_DIV_STAB_C2;
-  double tau;
-    
-  switch(divdiv_type)
-    {
-      // constant
-    case 0:
-      tau = c_2;
-      break;
-      // for non inf-sup stable fe, Codina, Gravemeier
-    case 1:
-      tau = c_2*sqrt(u1*u1+u2*u2+u3*u3)*hK/c_1;
-      tau = tau*tau + eps*eps ;
-      tau = sqrt(tau);
-      break;
-    case 2:
-      tau = sqrt(u1*u1+u2*u2+u3*u3)*hK/c_1;
-      tau = tau*tau + eps*eps ;
-      tau = c_2*sqrt(tau);
-      break;
-    default:
-      OutPut("div-div stabilization " << divdiv_type << " not implemented !!!");
-      exit(4711);
-    }
-
-  return(tau);
-}
-
-
 /******************************************************************************/
 //
 // computation of SUPG parameter following 
@@ -605,6 +483,7 @@ double DivDivStab3D(double u1, double u2, double u3, double hK, double eps)
 
 void SUPG_Param3D(double u1, double u2, double u3, double* coeff, double* params)
 {
+  ErrThrow("not tested and/or adjusted yet: ");
     double x1, x2, x3, x0, y1, y2, y3, y0, z1, z2, z3, z0, x4, y4, z4;
     double d11, d12, d13, d21, d22, d23, d31, d32, d33, nu;
     double g11, g12, g13, g22, g23, g33;
@@ -998,7 +877,13 @@ void TimeNSType1Smagorinsky3D(double Mult, double *coeff,
   // double delta =  CharacteristicFilterWidth(hK);
   // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
   //                         -4711);
-  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
+  double *x = &param[12];
+  double *y = &param[13];
+  double *z = &param[14];
+  double *u = &param[0];
+  double *gradu = &param[3];
+  double *uConv = &param[0];
+  mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z);
 
   for(i=0;i<N_U;i++)
   {
@@ -1113,6 +998,9 @@ void TimeNSType1GL00AuxProblem3D(double Mult, double *coeff,
 
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                            -4711);
+  Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
 
   for(i=0;i<N_U;i++)
   {
@@ -1472,7 +1360,13 @@ void TimeNSType2Smagorinsky3D(double Mult, double *coeff,
   // double delta =  CharacteristicFilterWidth(hK);
   // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
   //                         -4711);
-  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
+  double *x = &param[12];
+  double *y = &param[13];
+  double *z = &param[14];
+  double *u = &param[0];
+  double *gradu = &param[3];
+  double *uConv = &param[0];
+  mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z);
 
   for(i=0;i<N_U;i++)
   {
@@ -2297,7 +2191,13 @@ void TimeNSType3Smagorinsky3D(double Mult, double *coeff,
   // double delta =  CharacteristicFilterWidth(hK);
   // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
   //                         -4711);
-  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
+  double *x = &param[12];
+  double *y = &param[13];
+  double *z = &param[14];
+  double *u = &param[0];
+  double *gradu = &param[3];
+  double *uConv = &param[0];
+  mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z);
 
   for(i=0;i<N_U;i++)
   {
@@ -2430,7 +2330,14 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
   // double delta =  CharacteristicFilterWidth(hK);
   // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
   //                         -4711);
-  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
+  double *x = &param[12];
+  double *y = &param[13];
+  double *z = &param[14];
+  double *u = &param[0];
+  double *gradu = &param[3];
+  double *uConv = &param[0];
+  mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z);
+  
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -2593,7 +2500,9 @@ void TimeNSType3GL00AuxProblem3D(double Mult, double *coeff,
  
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                            -4711);
-
+  Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -2739,6 +2648,10 @@ void TimeNSType3GL00AuxProblemDD3D(double Mult, double *coeff,
 
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                            -4711);
+  Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -3534,7 +3447,13 @@ void TimeNSType4Smagorinsky3D(double Mult, double *coeff,
   // double delta =  CharacteristicFilterWidth(hK);
   // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
   //                         -4711);
-  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
+  double *x = &param[12];
+  double *y = &param[13];
+  double *z = &param[14];
+  double *u = &param[0];
+  double *gradu = &param[3];
+  double *uConv = &param[0];
+  mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z);
   
   for(i=0;i<N_U;i++)
   {
@@ -3681,7 +3600,14 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
   // double delta =  CharacteristicFilterWidth(hK);
   // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
   //                         -4711);
-  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
+  double *x = &param[12];
+  double *y = &param[13];
+  double *z = &param[14];
+  double *u = &param[0];
+  double *gradu = &param[3];
+  double *uConv = &param[0];
+  mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z);
+  
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -3863,7 +3789,9 @@ void TimeNSType4GL00AuxProblem3D(double Mult, double *coeff,
  
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                            -4711);
-
+  Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -4029,6 +3957,10 @@ void TimeNSType4GL00AuxProblemDD3D(double Mult, double *coeff,
                            -4711);
   mu = mu/2.0;
   viscosity = c0+mu;
+  
+  Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
 
   for(i=0;i<N_U;i++)
   {
@@ -4234,7 +4166,9 @@ void TimeNSType4VMS_ProjectionDD3D(double Mult, double *coeff,
                            param[21]);
   mu = mu/2.0;
   viscosity = c0+mu;
-
+Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -4482,7 +4416,9 @@ void TimeNSType4VMS_ProjectionStreamlineDD3D(double Mult, double *coeff,
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                            param[21]);
-
+Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -4724,7 +4660,8 @@ void TimeNSType4LerayAlphaDD3D(double Mult, double *coeff,
   u3 = param[2]; // u3 filtered
   
   alpha = LerayAlpha_Param3D(hK);
- 
+ Output::print("check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -4873,7 +4810,7 @@ void MatrixAuxiliaryProblem(double Mult, double *coeff,
   delta =  CharacteristicFilterWidth(hK);
   // delta^2/(4 gamma)
   mu2 = 0.25*delta*delta/gamma;
-  
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
     AuxMatrixRow = AuxMatrix[i];
@@ -5027,7 +4964,7 @@ void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff,
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j,N_U;
-  double c0, mu, delta;
+  double c0, mu;
   double u1, u2, u3;
 
   MatrixA = LocMatrices[0];
@@ -5045,9 +4982,18 @@ void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[12],&param[12],&param[13],&param[14],
-                           -4711);
+  //double delta =  CharacteristicFilterWidth(hK);
+  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[12],&param[12],&param[13],&param[14],
+  //                         -4711);
+  
+  double *x = &param[12];
+  double *y = &param[13];
+  double *z = &param[14];
+  double *u = &param[0];
+  double *gradu = &param[3];
+  double *uConv = &param[0];
+  mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z);
+  
 
   for(i=0;i<N_U;i++)
   {
@@ -5329,7 +5275,7 @@ void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff,
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U;
-  double c0, mu, delta;
+  double c0, mu;
   double u1, u2, u3;
 
   MatrixA11 = LocMatrices[0];
@@ -5349,9 +5295,17 @@ void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[12],&param[12],&param[13],&param[14],
-                           -4711);
+  // double delta =  CharacteristicFilterWidth(hK);
+  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[12],&param[12],&param[13],&param[14],
+  //                        -4711);
+  
+  double *x = &param[12];
+  double *y = &param[13];
+  double *z = &param[14];
+  double *u = &param[0];
+  double *gradu = &param[3];
+  double *uConv = &param[0];
+  mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z);
  
   for(i=0;i<N_U;i++)
   {
@@ -5402,7 +5356,7 @@ void TimeNSType3_4NLSmagorinskyDD3D(double Mult, double *coeff,
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j,N_U;
-  double c0, viscosity, delta, dummy_param[6] = {0, 0, 0, 0, 0, 0};
+  double c0, viscosity, dummy_param[6] = {0, 0, 0, 0, 0, 0};
   double u1, u2, u3, mu;
 
   MatrixA11 = LocMatrices[0];
@@ -5428,9 +5382,18 @@ void TimeNSType3_4NLSmagorinskyDD3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&dummy_param[0],&param[12],&param[13],&param[14],
-                           -4711);
+  // double delta =  CharacteristicFilterWidth(hK);
+  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&dummy_param[0],&param[12],&param[13],&param[14],
+  //                         -4711);
+  double *x = &param[12];
+  double *y = &param[13];
+  double *z = &param[14];
+  double *u = &param[0];
+  double *gradu = &param[3];
+  double *uConv = &dummy_param[0];
+
+  mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z);
+  
   viscosity = Mult*(mu/2.0+c0);
 
   for(i=0;i<N_U;i++)
@@ -5544,7 +5507,9 @@ void TimeNSType3_4NLVMS_ProjectionDD3D(double Mult, double *coeff,
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[15],&param[12],&param[13],&param[14],
                            param[21]);
   viscosity = Mult*(mu/2.0+c0);
-
+Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -5672,7 +5637,9 @@ void TimeNSType3_4NL_Adap_VMS_ProjectionDD3D(double Mult, double *coeff,
                            param[21]);
   mu = mu/2.0;
   viscosity = c0+mu;
-
+Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -5820,7 +5787,9 @@ void TimeNSType3_4VMS_ProjectionExpl3D(double Mult, double *coeff,
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[15],&param[12],&param[13],&param[14],
                            param[21]);
-  
+  Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
      Matrix11Row = Matrix_tilde_G11[i];
@@ -5897,7 +5866,9 @@ void TimeNSType3_4NLVMS_ProjectionStreamlineDD3D(double Mult, double *coeff,
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[12],&param[12],&param[13],&param[14],
                            param[21]);
-
+Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'" 
+   " and check the matrices as well espcially in NSTYPE 3 and 4");
+  ErrThrow("not tested and/or adjusted yet: ");
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -6099,6 +6070,8 @@ void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yet!! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33, **MatrixK11, **MatrixK12, **MatrixK13;
@@ -6521,6 +6494,9 @@ void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33, **MatrixK11, **MatrixK12, **MatrixK13;
@@ -6906,6 +6882,9 @@ void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33, **MatrixK;
@@ -7214,6 +7193,9 @@ void TimeNSType4VMS_SUPGDD3D_old(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33, **MatrixK, **MatrixC;
@@ -7530,6 +7512,9 @@ void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double *Rhs1, *Rhs2, *Rhs3; // double val, val1, val2;
   //double ansatz000, ansatz100, ansatz010, ansatz001;
   //double ansatz200, ansatz020, ansatz002;
@@ -7594,6 +7579,9 @@ void TimeNSType4VMS_Rhs_SUPGDD3D_old(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val;
   //double ansatz000, ansatz100, ansatz010, ansatz001;
   //double ansatz200, ansatz020, ansatz002;
@@ -7713,6 +7701,9 @@ void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33, **MatrixK;
@@ -7920,6 +7911,9 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33, **MatrixK, **MatrixC;
@@ -8187,6 +8181,9 @@ void TimeNSType1GalerkinJ3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double **MatrixA;
   double val;
   double *MatrixRow;  // double *MatrixRow1, *MatrixRow2, *MatrixMRow;
@@ -8240,6 +8237,9 @@ void TimeNSGalerkinC3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double *Rhs1, *Rhs2, *Rhs3;
   double test000;
   double *Orig3;
@@ -8274,6 +8274,9 @@ void TimeNSType3GalerkinJ3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double **MatrixA11, **MatrixA12, **MatrixA13;
   double **MatrixA21, **MatrixA22, **MatrixA23;
   double **MatrixA31, **MatrixA32, **MatrixA33;
@@ -8435,6 +8438,9 @@ void TimeNSRHSClassicalLES3D(double Mult, double *coeff,
                double **OrigValues, int *N_BaseFuncts,
                double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double *Rhs1, *Rhs2, *Rhs3;
   double test100, test010, test001;
   double *Orig0, *Orig1, *Orig2;
@@ -8509,6 +8515,9 @@ void TimeNSRHSLESModel3D(double Mult, double *coeff,
                          double **OrigValues, int *N_BaseFuncts,
                          double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double *Rhs1, *Rhs2, *Rhs3;
   double test100, test010, test001;
   double *Orig0, *Orig1, *Orig2;
@@ -8562,6 +8571,9 @@ void TimeNSGL00AuxProblemRHS3D(double Mult, double *coeff,
                double **OrigValues, int *N_BaseFuncts,
                double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double *Rhs1, *Rhs2, *Rhs3, *Rhs4, *Rhs5, *Rhs6, val;
   double mat11, mat12, mat13, mat22, mat23, mat33;
   double test000;
@@ -8621,6 +8633,9 @@ void TimeNSRHSAuxProblemU(double Mult, double *coeff,
                double **OrigValues, int *N_BaseFuncts,
                double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double *Rhs1, *Rhs2, *Rhs3;
   double test000;
   double *Orig0;
@@ -8659,6 +8674,9 @@ void TimeNS_VMS_SmallRhs3D(double Mult, double *coeff,
                            double **OrigValues, int *N_BaseFuncts,
                            double ***LocMatrices, double **LocRhs)
 {
+  Output::print("Nothing has been tested yer: !! :( ");
+  ErrThrow("not tested and/or adjusted yet: ");
+  
   double *Rhs1, *Rhs2, *Rhs3;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;

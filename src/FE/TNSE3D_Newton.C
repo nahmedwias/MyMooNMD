@@ -666,8 +666,6 @@ void TimeNSType3SmagorinskyNewton3D(double Mult, double *coeff,
   double c0, c1, c2, c3, mu, delta;
   double u1, u2, u3;
   OutPut("Discretization not yet implemented !!!"<<endl);
-  exit(4711);
-
 
   MatrixA11 = LocMatrices[0];
   MatrixA22 = LocMatrices[4];
@@ -702,6 +700,9 @@ void TimeNSType3SmagorinskyNewton3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
+  
+  Output::print("Also change the function call of TurbulentViscosity3D: see TNSE3D_Routines.C");
+  exit(4711);
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                             param[21]);
@@ -798,8 +799,6 @@ void TimeNSType3SmagorinskyNewtonDD3D(double Mult, double *coeff,
   double c0, c1, c2, c3;
   double u1, u2, u3, mu, viscosity, delta;
   OutPut("Discretization not yet implemented !!!"<<endl);
-  exit(4711);
-
 
   MatrixA11 = LocMatrices[0];
   MatrixA12 = LocMatrices[1];
@@ -838,7 +837,8 @@ void TimeNSType3SmagorinskyNewtonDD3D(double Mult, double *coeff,
   u1 = param[0]; // u1old
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
-
+Output::print("Also change the function call of TurbulentViscosity3D: see TNSE3D_Routines.C");
+  exit(4711);
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                             param[21]);
@@ -967,8 +967,6 @@ void TimeNSType3GL00AuxProblemNewton3D(double Mult, double *coeff,
   double delta, mu, mu2;
   double gamma = TDatabase::ParamDB->GAUSSIAN_GAMMA;  
   OutPut("Discretization not yet implemented !!!"<<endl);
-  exit(4711);
-
 
   MatrixA11 = LocMatrices[0];
   MatrixA22 = LocMatrices[4];
@@ -1011,7 +1009,8 @@ void TimeNSType3GL00AuxProblemNewton3D(double Mult, double *coeff,
  
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                             param[21]);
-
+Output::print("Also change the function call of TurbulentViscosity3D: see TNSE3D_Routines.C");
+  exit(4711);
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -1157,7 +1156,8 @@ void TimeNSType3GL00AuxProblemNewtonDD3D(double Mult, double *coeff,
 
   // delta^2/(4 gamma)
   mu2 = 0.25*delta*delta/gamma;
-
+Output::print("Also change the function call of TurbulentViscosity3D: see TNSE3D_Routines.C");
+  exit(4711);
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                             param[21]);
   mu = mu/2.0;
