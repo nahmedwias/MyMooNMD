@@ -1,3 +1,6 @@
+#ifndef _TNSE3D_Routines_
+#define _TNSE3D_Routines_
+
 // ======================================================================
 // @(#)TNSE3D_Routines.h        1.5 11/24/99
 //
@@ -19,8 +22,10 @@ double DivDivStab3D(double u1, double u2, double u3, double hK, double eps);
 // ======================================================================
 /// compute the Frobenious norm tensor
 // ======================================================================
-double frobeniusNormTensor(double* u, double* gradu);
+double frobeniusNormTensor(double* u, double* gradu,double *uConv,  int proj_space = 0);
 // ======================================================================
 /// compute turbulence viscosity using Smagorinsky model
 // ======================================================================
-double turbulentViscosity3D(double hK, double* u, double* gradu);
+double turbulentViscosity3D(double hK, double* u, double* gradu, double* uConv, 
+                            double* x, double* y, double* z);
+#endif

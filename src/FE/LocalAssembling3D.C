@@ -1322,6 +1322,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
                 this->AssembleParam=TimeNSType3Smagorinsky3D;
               else 
                 this->AssembleParam=TimeNSType3SmagorinskyDD3D;
+              ErrThrow("not tested and adjusted yet: ");
               break;
             case 4:
               this->N_Terms = 5;
@@ -1399,7 +1400,12 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               if(TDatabase::ParamDB->LAPLACETYPE==0)
                 this->AssembleParam = TimeNSType3_4NLSmagorinsky3D;
               else
+              {
+                this->N_Matrices = 9;
+                this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
                 this->AssembleParam = TimeNSType3_4NLSmagorinskyDD3D;
+              }
               
               this->Manipulate = NULL;    
               break;

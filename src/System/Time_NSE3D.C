@@ -763,13 +763,13 @@ void Time_NSE3D::assemble_nonlinear_term()
     // spaces for matrices
     const TFESpace3D *spaces[1]={ &s.velocitySpace_ };
 
-    std::vector<std::shared_ptr<FEMatrix>> blocks
-         = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
-
+    std::vector<std::shared_ptr<FEMatrix>> blocks;
+    
     switch(TDatabase::ParamDB->NSTYPE)
     {
       case 1:
       case 2:
+        blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
         nSquareMatrices = 1;
         sqMatrices.resize(nSquareMatrices);
         sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
@@ -777,10 +777,31 @@ void Time_NSE3D::assemble_nonlinear_term()
       case 3:
       case 4:
       case 14:
-        nSquareMatrices = 3;
-        sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-        sqMatrices.at(1) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-        sqMatrices.at(2) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+        if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY)
+        {
+          nSquareMatrices = 9;
+          blocks = s.matrix_.get_blocks_uniquely({{0,0}, {0,1}, {0,2}, 
+                                                  {1,0}, {1,1}, {1,2},
+                                                  {2,0}, {2,1}, {2,2}});
+          sqMatrices.resize(nSquareMatrices);
+          sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+          sqMatrices.at(1) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+          sqMatrices.at(2) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+          sqMatrices.at(3) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(3).get());
+          sqMatrices.at(4) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+          sqMatrices.at(5) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+          sqMatrices.at(6) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+          sqMatrices.at(7) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(7).get());
+          sqMatrices.at(8) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+        }
+        else
+        {
+          nSquareMatrices = 3;
+          blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
+          sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+          sqMatrices.at(1) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+          sqMatrices.at(2) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+        }
         break;
       default:
         ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
