@@ -349,7 +349,7 @@ int main(int argc, char* argv[])
       chrono_timeit.print_time(std::string("solving the time iteration ") + std::to_string(tau));
 
       tnse3d.output(tnse3d.current_step_,image);
-
+  
       if (cells.empty())
       {
      	Output::print<2>("No cells found at zPlane = ", zPlane);
@@ -357,15 +357,14 @@ int main(int argc, char* argv[])
       else
       {
         Output::print<2>(cells.size(), " cells found");
-
-        std::string filename = std::string("testVelocity")
+      }
+      
+      std::string filename = std::string("testVelocity")
         	  	  	  	  	 + std::string(".txt");
 
-        CoiledPipe::writeVelocityOfCells(cells, vertexList,
-     	  	 	 	 	 	 	 	     tnse3d.get_velocity(),
-  									     tnse3d.get_pressure(),
-  									     filename);
-      }
+      CoiledPipe::writeVelocityOfCells(cells, vertexList,
+     	  	 tnse3d.get_velocity(), tnse3d.get_pressure(), filename);
+
 
     } // end of subtime loop
   } // end of time loop
