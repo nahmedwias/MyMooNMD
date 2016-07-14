@@ -11,6 +11,7 @@ template <class LinearOperator, class Vector> class IterativeMethod;
 class DirectSolver;
 template <class Vector> class Preconditioner;
 class Multigrid;
+class PETScSolver;
 
 /** @brief Solve a linear system
  * 
@@ -111,7 +112,10 @@ class Solver
     /// @brief this object is only created if needed.
     std::shared_ptr<Preconditioner<Vector>> preconditioner;
     /// @brief this object is only created if needed.
+    /// @todo the multigrid object should be part of the preconditioner object
     std::shared_ptr<Multigrid> multigrid;
+    /// @brief this object is only created if needed.
+    std::shared_ptr<PETScSolver> petsc_solver;
 };
 
 #endif // __SOLVER_H__
