@@ -160,6 +160,10 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     Output::setVerbosity(2);
 
   }
+  else if(solver_name.compare("petsc") == 0)
+  {
+    db["solver_type"] = "petsc";
+  }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
@@ -174,7 +178,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 #endif
   else
   {
-    throw std::runtime_error("Unknown solver for CD3D problem!");
+    ErrThrow("Unknown solver for CD3D problem! ", solver_name);
   }
 
 }
@@ -186,7 +190,9 @@ double get_tolerance(std::string solver_name)
 
   else if (solver_name.compare("multigrid") == 0)
     return 1e-12;
-
+  else if(solver_name.compare("petsc") == 0)
+    return 1e-12;
+  
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
     return 1e-13 ;
@@ -196,7 +202,7 @@ double get_tolerance(std::string solver_name)
 #endif
 
   else
-    throw std::runtime_error("Unknown solver for CD3D problem!");
+    ErrThrow("Unknown solver for CD3D problem!");
 }
 
 

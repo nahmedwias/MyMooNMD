@@ -140,36 +140,20 @@ int main(int argc, char* argv[])
     for(int i=0; i< 5; ++i)
     domain.RegRefineAll();
     
+    db.add("solver_type", "direct", "", {"direct", "petsc"});
     Time_CD2D tcd(domain, db);
-    time_integration(2,tcd);
-  }
-  
-  { 
-    TDatabase Database;
-    TFEDatabase2D FEDatabase;
-    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-    db.merge(ParameterDatabase::default_output_database());
-    db["example"] = 0;
-    db.add("reynolds_number",1,"");
-
-    TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->ANSATZ_ORDER=1;
+    time_integration(2, tcd);
     
-    TDatabase::TimeDB->STARTTIME=0;
-    TDatabase::TimeDB->ENDTIME=1;
+    // I don't know what has changed but with setting the default parameters in
+    // the old database here, it does not work.
+    Database.SetDefaultParameters();
+    TDatabase::ParamDB->ANSATZ_ORDER=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     
-    db.add("boundary_file", "Default_UnitSquare", "");
-    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
-    TDomain domain(db);
-    SetTimeDiscParameters(0);
-    
-    for(int i=0; i< 5; ++i)
-      domain.RegRefineAll();
-    
-    Time_CD2D tcd(domain, db);
-    time_integration(2,tcd);
+    Output::print("\n\nTesting PETSc\n");
+    db["solver_type"] = "petsc";
+    Time_CD2D tcd_petsc(domain, db);
+    time_integration(2, tcd_petsc);
   }
-  Output::print<1>("TEST SUCCESFULL: ");
   return 0;
 }

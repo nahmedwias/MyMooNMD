@@ -142,8 +142,13 @@ int main(int argc, char* argv[])
     for(int i=0; i< 5; ++i)
       domain.RegRefineAll();
 
+    db.add("solver_type", "direct", "", {"direct", "petsc"});
     Time_CD2D tcd(domain, db);
     time_integration(2,tcd);
+    
+    db["solver_type"] = "petsc";
+    Time_CD2D tcd_petsc(domain, db);
+    time_integration(2, tcd_petsc);
   }
 }
 
