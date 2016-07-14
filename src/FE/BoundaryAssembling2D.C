@@ -24,27 +24,28 @@
 #include <Database.h>
 
 
+
 //__________________________________________________________________
-// (p,v_n) with given boundary data p
+// (p,v_n) with given boundary data p (p in 1D)
 //__________________________________________________________________
 
 ///@todo this function should be removed
 // (the edge list can be generated outside this class)
-void BoundaryAssembling2D::rhs_g_v_n(double **rhs,
+void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
                                      const TFESpace2D *U_Space,
-                                     TFEFunction2D *given_data,
+                                     BoundValueFunct2D *given_boundary_data,
                                      int boundary_component_id,
                                      double mult)
 {
     std::vector<TBoundEdge*> boundaryEdgeList;
     TCollection *coll= U_Space->GetCollection();
     coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
-    rhs_g_v_n(rhs,U_Space,given_data,boundaryEdgeList,mult);
+    rhs_g_v_n(rhs,U_Space,given_boundary_data,boundaryEdgeList,mult);
 }
 
-void BoundaryAssembling2D::rhs_g_v_n(double **rhs,
+void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
                                      const TFESpace2D *U_Space,
-                                     TFEFunction2D *given_data,
+                                     BoundValueFunct2D *given_boundary_data,
                                      std::vector<TBoundEdge*> &boundaryEdgeList,
                                      double mult)
 {
@@ -82,6 +83,10 @@ void BoundaryAssembling2D::rhs_g_v_n(double **rhs,
         double n_x,n_y;
         boundedge->get_normal(n_x, n_y);
         
+        
+       
+        Output::print("normals ", " ",x_0, " ", y_0, " ",x_1, " ", y_1, " ",n_x," ", n_y);
+        
         // -------------------------------------------
         // quadrature
         for(unsigned int k=0;k<quadPoints.size();k++)
@@ -95,18 +100,27 @@ void BoundaryAssembling2D::rhs_g_v_n(double **rhs,
             double reference_joint_length = 2;
             double x = x_0+(quadPoints[k]+1.)/2.*(x_1-x_0);
             double y = y_0+(quadPoints[k]+1.)/2.*(y_1-y_0);
+            
+            double T;
+            boundedge->GetBoundComp()->GetTofXY(x, y, T);
+            
             // given_data_value[0] = G(x,y),
             // given_data_value[1] = dG/dx, given_data_value[2] = dG/dy
-            double given_data_value[3];
+            // double given_data_value[3];
             // get the value of rhs
-            if(given_data)
-                given_data->FindGradientLocal(cell, cell->GetCellIndex(), x, y, given_data_value);
+            
+            int BDComponent=boundedge->GetBoundComp()->GetID();
+            
+            double value;
+            if(given_boundary_data != nullptr)
+                given_boundary_data(BDComponent, T, value);
             else
             {
-                given_data_value[0] = 1.0;
-                given_data_value[1] = 0.0;
-                given_data_value[2] = 0.0;
+                value = 1;//4*y*(1-y);//1.0;
             }
+
+            Output::print("p ",value);
+            
             // mapping from local(cell) DOF to global DOF
             int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
             
@@ -122,12 +136,13 @@ void BoundaryAssembling2D::rhs_g_v_n(double **rhs,
                 double v_x = uorig[k][l]; // value of test function (vtest = vx = vy)
                 double v_y = v_x;
                 // add for both components
-                rhs[0][global_dof_from_local] +=
-                mult * quadWeights[k] * given_data_value[0] * (v_x*n_x) *
+                // rhs[global_dof_from_local] +=
+                  rhs.block(0)[global_dof_from_local] +=
+                mult * quadWeights[k] * value * (v_x*n_x) *
                 (joint_length/reference_joint_length);
                 //rhs[0][global_dof_from_local+N_U] +=
-                rhs[1][global_dof_from_local] +=
-                mult * quadWeights[k] * given_data_value[0] * (v_y*n_y) *
+                rhs.block(1)[global_dof_from_local] +=
+                mult * quadWeights[k] * value * (v_y*n_y) *
                 (joint_length/reference_joint_length);
             } //for(l=0;l<N_BaseFunct;l++)
         }
@@ -139,23 +154,27 @@ void BoundaryAssembling2D::rhs_g_v_n(double **rhs,
 // (h,v)
 //__________________________________________________________________
 
-void BoundaryAssembling2D::rhs_g_v(double **rhs,
+void BoundaryAssembling2D::rhs_g_v(BlockVector &rhs,
                                    const TFESpace2D *U_Space,
-                                   TFEFunction2D *given_boundary_data,
+                                   BoundValueFunct2D *given_boundary_data1,
+                                   BoundValueFunct2D *given_boundary_data2,
                                    int boundary_component_id,
-                                   double mult)
+                                   double mult,
+                                   bool rescale_by_h)
 {
     std::vector<TBoundEdge*> boundaryEdgeList;
     TCollection *coll= U_Space->GetCollection();
     coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
-    rhs_g_v(rhs,U_Space,given_boundary_data,boundaryEdgeList,mult);
+    rhs_g_v(rhs,U_Space,given_boundary_data1,given_boundary_data2,boundaryEdgeList,mult,rescale_by_h);
 }
 
-void BoundaryAssembling2D::rhs_g_v(double **rhs,
+void BoundaryAssembling2D::rhs_g_v(BlockVector &rhs,
                                    const TFESpace2D *U_Space,
-                                   TFEFunction2D *given_boundary_data,
+                                   BoundValueFunct2D *given_boundary_data1,
+                                   BoundValueFunct2D *given_boundary_data2,
                                    std::vector<TBoundEdge*> &boundaryEdgeList,
-                                   double mult)
+                                   double mult,
+                                   bool rescale_by_h)
 {
     int *BeginIndex = U_Space->GetBeginIndex();
     int *GlobalNumbers = U_Space->GetGlobalNumbers();
@@ -165,13 +184,16 @@ void BoundaryAssembling2D::rhs_g_v(double **rhs,
     {
         TBoundEdge *boundedge = boundaryEdgeList[m];
         TBaseCell *cell = boundedge->GetNeighbour(0);
+        
         // get basis dimension and FE space data of cell i
         FE2D FEId = U_Space->GetFE2D(0,cell );
         
-        int BaseVectDim = 1; // we assume only scalar FE
+        int BDComponent=boundedge->GetBoundComp()->GetID();
+ 
+        int BaseVectDim = 1; // we assume only scalar FE // Only for BDM and RT elements \neq 1
         int joint_id = boundedge->get_index_in_neighbour(cell);
         
-        // get a quadrature formula good enough for the velocity FE space
+        // get a quadrature formula good enough for the velocity FE space (here exact to 2*fe_degree)
         int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
         this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
         std::vector<double> quadWeights,quadPoints;
@@ -197,18 +219,26 @@ void BoundaryAssembling2D::rhs_g_v(double **rhs,
             double reference_joint_length = 2;
             double x = x_0+(quadPoints[k]+1.)/2.*(x_1-x_0);
             double y = y_0+(quadPoints[k]+1.)/2.*(y_1-y_0);
-            // given_data_value[0] = G(x,y),
-            // given_data_value[1] = dG/dx, given_data_value[2] = dG/dy
-            double given_data_value[3];
-            // get the value of rhs
-            if(given_boundary_data)
-                given_boundary_data->FindGradientLocal(cell, cell->GetCellIndex(), x, y, given_data_value);
+            
+            double T;
+            boundedge->GetBoundComp()->GetTofXY(x, y, T);
+
+            // get the values of rhs
+            double value1, value2;
+            if(given_boundary_data1 != nullptr)
+                given_boundary_data1(BDComponent, T, value1);
             else
             {
-                given_data_value[0] = 1.0;
-                given_data_value[1] = 0.0;
-                given_data_value[2] = 0.0;
+                value1 = 1;//4*y*(1-y);//1.0;
             }
+            
+            if(given_boundary_data2 != nullptr)
+            given_boundary_data2(BDComponent, T, value2);
+            else
+            {
+                value2 = 0.0;
+            }
+
             // mapping from local(cell) DOF to global DOF
             int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
             
@@ -223,17 +253,27 @@ void BoundaryAssembling2D::rhs_g_v(double **rhs,
                 // updating rhs: int_gamma rhsval v \cdot n
                 double v_x = uorig[k][l]; // value of test function (vtest = vx = vy)
                 double v_y=v_x;
+                
                 // add for both components
-                rhs[0][global_dof_from_local] +=
-                mult * quadWeights[k] * given_data_value[0] * (v_x) *
-                (joint_length/reference_joint_length);
+                if (!rescale_by_h)
+                rhs.block(0)[global_dof_from_local] += mult * quadWeights[k] * value1 * (v_x) *
+                                                       (joint_length/reference_joint_length);
+                else
+                {rhs.block(0)[global_dof_from_local] += (mult * quadWeights[k] * value1 * (v_x) *
+                                                         (joint_length/reference_joint_length)) /joint_length;}
+                if (!rescale_by_h)
                 //rhs[0][global_dof_from_local+N_U] +=
-                rhs[1][global_dof_from_local] +=
-                mult * quadWeights[k] * given_data_value[1] * (v_y) *
-                (joint_length/reference_joint_length);
+                rhs.block(1)[global_dof_from_local] += mult * quadWeights[k] * value2 * (v_y) *
+                                                       (joint_length/reference_joint_length);
+                else
+                {rhs.block(1)[global_dof_from_local] += (mult * quadWeights[k] * value2 * (v_y) *
+                                                         (joint_length/reference_joint_length)) /joint_length;}
+                
             }
         }
     }
+    Output::print(" !! Warning(BoundaryAssembling2D::rhs_g_v) !!",
+                  " we need to check whether the rhs has the right structure");
 }
 
 
@@ -241,7 +281,7 @@ void BoundaryAssembling2D::rhs_g_v(double **rhs,
 // get_quadrature_formula
 //__________________________________________________________________
 
-void BoundaryAssembling2D::get_quadrature_formula_data(int fe_degree,
+void BoundaryAssembling2D::get_quadrature_formula_data(int quatsch,
                                                        std::vector<double> &P,
                                                        std::vector<double> &W)
 {
@@ -759,12 +799,12 @@ void BoundaryAssembling2D::matrix_gradv_n_v(BlockFEMatrix &M,
                     
                     
                     // (see the note about blocks at the beginning of the function)
-                    blocks[0]->add(test_DOF, ansatz_DOF, scale_factor*(vx)*uxx*nx ); // A11
-                    blocks[0]->add(test_DOF, ansatz_DOF, scale_factor*(vx)*uyy*ny ); // A11
+                    blocks[0]->add(test_DOF, ansatz_DOF, -scale_factor*(vx)*uxx*nx ); // A11
+                    blocks[0]->add(test_DOF, ansatz_DOF, -scale_factor*(vx)*uyy*ny ); // A11
                     //blocks[1]->add(test_DOF, ansatz_DOF, scale_factor*(vx)*uyy*nx ); // A12
                     //blocks[3]->add(test_DOF, ansatz_DOF, scale_factor*(vx)*uxx*ny ); // A21
-                    blocks[4]->add(test_DOF, ansatz_DOF, scale_factor*(vy)*uyy*ny ); // A22
-                    blocks[4]->add(test_DOF, ansatz_DOF, scale_factor*(vy)*uxx*nx ); // A22
+                    blocks[4]->add(test_DOF, ansatz_DOF, -scale_factor*(vy)*uyy*ny ); // A22
+                    blocks[4]->add(test_DOF, ansatz_DOF, -scale_factor*(vy)*uxx*nx ); // A22
                     
                     
                     /*            MatrixA11[k][l] += value11;			//->add(global_dof_from_local ,AnsatzDOF,value);
@@ -789,7 +829,8 @@ void BoundaryAssembling2D::matrix_gradv_n_v(BlockFEMatrix &M,
 void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
                                       const TFESpace2D *U_Space,
                                       int boundary_component_id,
-                                      double mult
+                                      double mult,
+                                      bool rescale_by_h
                                       )
 {
     std::vector<TBoundEdge*> boundaryEdgeList;
@@ -797,7 +838,7 @@ void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
     coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
     
     
-    matrix_u_v(M,U_Space,boundaryEdgeList,mult);
+    matrix_u_v(M,U_Space,boundaryEdgeList,mult,rescale_by_h);
 }
 
 /**
@@ -809,8 +850,10 @@ void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
 void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
                                       const TFESpace2D *U_Space,
                                       std::vector<TBoundEdge*> &boundaryEdgeList,
-                                      double mult)
-{   int *BeginIndex = U_Space->GetBeginIndex();
+                                      double mult,
+                                      bool rescale_by_h)
+{
+    int *BeginIndex = U_Space->GetBeginIndex();
     int *GlobalNumbers = U_Space->GetGlobalNumbers();
     int ActiveBound = U_Space->GetActiveBound();
     
@@ -832,6 +875,7 @@ void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
         // get basis dimension and FE space data of cell i
         FE2D FEId = U_Space->GetFE2D(0,cell );
         
+        
         int BaseVectDim = 1; // we assume only scalar FE
         // ---------------------------------------------------------------
         int joint_id = boundedge->get_index_in_neighbour(cell);
@@ -847,6 +891,8 @@ void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
         // compute values of all basis functions at all quadrature points
         std::vector< std::vector<double> > uorig,uxorig,uyorig;
         get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig);
+        
+       
         
         double x0, x1, y0, y1;
         boundedge->get_vertices(x0,  y0, x1, y1);
@@ -874,8 +920,16 @@ void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
             // mapping from local(cell) DOF to global DOF
             int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
             
-            // loop on test functions
-            double scale_factor = mult*quadWeights[k]*(joint_length/reference_joint_length);
+            // rescale local integral (Nitsche)
+            double scale_factor;
+            if (rescale_by_h)
+                scale_factor = (mult*quadWeights[k]*(joint_length/reference_joint_length)) /joint_length;
+            else
+            {
+                scale_factor = mult*quadWeights[k]*(joint_length/reference_joint_length);
+            }
+            
+                        // loop on test functions
             for(unsigned int l1=0;l1< uorig[k].size();l1++)
             {
                 int test_DOF = DOF[l1];
@@ -941,8 +995,7 @@ void BoundaryAssembling2D::matrix_p_v_n(BlockFEMatrix &M,
                                         const TFESpace2D *P_Space,
                                         std::vector<TBoundEdge*> &boundaryEdgeList,
                                         double mult)
-{   int *BeginIndex = U_Space->GetBeginIndex();
-    int *GlobalNumbers = U_Space->GetGlobalNumbers();
+{
     int ActiveBound = U_Space->GetActiveBound();
     
     
@@ -961,52 +1014,38 @@ void BoundaryAssembling2D::matrix_p_v_n(BlockFEMatrix &M,
         TBoundEdge *boundedge = boundaryEdgeList[m];
         TBaseCell *cell = boundedge->GetNeighbour(0);
         // get basis dimension and FE space data of cell i
-        FE2D FEId = U_Space->GetFE2D(0,cell );
+        FE2D FEId_U = U_Space->GetFE2D(0,cell );
+        // get basis dimension and FE space data of cell i
+        FE2D FEId_P = P_Space->GetFE2D(0,cell );
         
         int BaseVectDim = 1; // we assume only scalar FE
         // ---------------------------------------------------------------
         int joint_id = boundedge->get_index_in_neighbour(cell);
         
         // get a quadrature formula good enough for the velocity FE space
-        int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-        this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+        int fe_degree_U = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId_U);
+
+        int fe_degree_P = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId_P);
+        this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(fe_degree_P*fe_degree_U);
         std::vector<double> quadWeights,quadPoints;
-        get_quadrature_formula_data(fe_degree,quadPoints,quadWeights);
+        get_quadrature_formula_data(-4711,quadPoints,quadWeights);
         
         //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
         
         // compute values of all basis functions at all quadrature points
         std::vector< std::vector<double> > uorig,uxorig,uyorig;
-        get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig,uxorig,uyorig);
+        get_original_values(FEId_U, joint_id, cell, quadPoints, BaseVectDim, uorig,uxorig,uyorig);
         
-        
-        
-        
+        int BaseVectDim_P = 1; // we assume only scalar FE; nur bei Raviart-Thomas & BDM \neq 1
 
-        // get basis dimension and FE space data of cell i
-        FE2D FEId_P = P_Space->GetFE2D(0,cell );
-        
-        int BaseVectDim_P = 1; // we assume only scalar FE
-        // ---------------------------------------------------------------
-        int joint_id_P = boundedge->get_index_in_neighbour(cell);
-        
-        // get a quadrature formula good enough for the velocity FE space
-        int fe_degree_P = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId_P);
-        this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree_P);
-        std::vector<double> quadWeights_P,quadPoints_P;
-        get_quadrature_formula_data(fe_degree_P,quadPoints_P,quadWeights_P);
         
         //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
         
         // compute values of all basis functions at all quadrature points
-        std::vector< std::vector<double> > porig, pxorig, pyorig;
-        get_original_values(FEId_P, joint_id_P, cell, quadPoints_P, BaseVectDim_P, porig, pxorig, pyorig);
+        std::vector< std::vector<double>> porig, pxorig, pyorig;
+        get_original_values(FEId_P, joint_id, cell, quadPoints, BaseVectDim_P, porig, pxorig, pyorig);
+        
 
-        
-        
-        
-        
-        
         double x0, x1, y0, y1;
         boundedge->get_vertices(x0,  y0, x1, y1);
         // compute length of the edge
@@ -1014,6 +1053,11 @@ void BoundaryAssembling2D::matrix_p_v_n(BlockFEMatrix &M,
         // normal vector to this boundary (normalized)
         double nx,ny;
         boundedge->get_normal(nx, ny);
+        
+        // mapping from local(cell) DOF to global DOF
+        // int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
+        int *DOF_P=P_Space->GetGlobalDOF(cell->GetCellIndex());
+        int *DOF_U=U_Space->GetGlobalDOF(cell->GetCellIndex());
         
         // -------------------------------------------
         // quadrature
@@ -1030,28 +1074,26 @@ void BoundaryAssembling2D::matrix_p_v_n(BlockFEMatrix &M,
             double x = x0+(quadPoints[k]+1.)/2.*(x1-x0);
             double y = y0+(quadPoints[k]+1.)/2.*(y1-y0);
             
-            // mapping from local(cell) DOF to global DOF
-            int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
+
             
             // loop on test functions
             double scale_factor = mult*quadWeights[k]*(joint_length/reference_joint_length);
-            for(unsigned int l1=0;l1< uorig[k].size();l1++)
+            for(unsigned int l1=0; l1 < uorig[k].size(); l1++)
             {
-                int test_DOF = DOF[l1];
+                int test_DOF = DOF_U[l1];
                 
                 // if the DOF is Dirichlet, continue
                 if(test_DOF >= ActiveBound)
                     continue;
-                
+
                 double vx = uorig[k][l1];
                 double vy = vx; // x and y component have the same FE space
                 
                 // loop on ansatz functions
                 for(unsigned int l2=0; l2<porig[k].size(); l2++)
                 {
-                    int ansatz_DOF = DOF[l2];
+                    int ansatz_DOF = DOF_P[l2];
                     double p = porig[k][l2];
-                    
                     
             
                     // (see the note about blocks at the beginning of the function)

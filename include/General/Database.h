@@ -824,6 +824,12 @@ struct TParaDB
     int n_p_v_n_boundary;
     std::vector<int> p_v_n_boundary_id;
     std::vector<double> p_v_n_boundary_value;
+    
+    // Nitsche Combi - weak Dirichlet
+    int n_nitsche_boundary ;
+    std::vector<int> nitsche_boundary_id;
+    std::vector<double> nitsche_penalty;
+    
   //======================================================================
     
   #ifdef _MPI

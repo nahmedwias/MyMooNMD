@@ -282,26 +282,29 @@ void Brinkman2D::assemble()
 // weakly imposing boundary conditions
 // --------------------------------------------------------------
        BoundaryAssembling2D bi;
-       for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+
+      for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
        {
-          bi.rhs_g_v_n(RHSs,
+          bi.rhs_g_v_n(s.rhs,
 		       v_space,
 		       NULL, // p = 1
 		       TDatabase::ParamDB->neumann_boundary_id[k],// boundary component
 		       -TDatabase::ParamDB->neumann_boundary_value[k]); // mult
       }
       
+      
       for (int k=0;k<TDatabase::ParamDB->n_g_v_boundary;k++)
       {
-          bi.rhs_g_v(RHSs,
-                       v_space,
-                       NULL, // g = 1
-                       TDatabase::ParamDB->g_v_boundary_id[k],// boundary component
-                       -TDatabase::ParamDB->g_v_boundary_value[k]); // mult
+          bi.rhs_g_v(s.rhs,
+                     v_space,
+                     this->example.get_bd(0), //Zugriff auf U1BoundValue im Example, //NULL, // g = 0
+                     this->example.get_bd(1), //Zugriff auf U2BoundValue im Example,
+                     TDatabase::ParamDB->g_v_boundary_id[k],// boundary component
+                     TDatabase::ParamDB->g_v_boundary_value[k],
+                     false); // mult
       }
 
-
-       // test (in the true case, this function should be assembled on "DIRICHLET" boundaries
+      // test (in the true case, this function should be assembled on "DIRICHLET" boundaries
 	  ////bi.matrix_v_n_v_n(s.matrix,v_space,1,1.);
 
       for (int k=0;k<TDatabase::ParamDB->n_unvn_boundary;k++)
@@ -325,7 +328,8 @@ void Brinkman2D::assemble()
           bi.matrix_u_v(s.matrix,
                               v_space,
                               TDatabase::ParamDB->u_v_boundary_id[k],// boundary component
-                              TDatabase::ParamDB->u_v_boundary_value[k]); // mult
+                              TDatabase::ParamDB->u_v_boundary_value[k],
+                              false); // mult
       }
       
       for (int k=0;k<TDatabase::ParamDB->n_p_v_n_boundary;k++)
@@ -338,6 +342,38 @@ void Brinkman2D::assemble()
                         TDatabase::ParamDB->p_v_n_boundary_value[k]); // mult
       }
       
+      // Nitsche Combi - weak Dirichlet
+      for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
+      {
+          
+          bi.matrix_gradv_n_v(s.matrix,
+                              v_space,
+                              TDatabase::ParamDB->nitsche_boundary_id[k],// boundary component
+                              -TDatabase::ParamDB->EFFECTIVE_VISCOSITY); // mult
+          
+          bi.matrix_p_v_n(s.matrix,
+                          v_space,
+                          p_space,
+                          TDatabase::ParamDB->nitsche_boundary_id[k],// boundary component
+                          1); // mult
+          
+          
+          bi.matrix_u_v(s.matrix,
+                        v_space,
+                        TDatabase::ParamDB->nitsche_boundary_id[k], // boundary component
+                        TDatabase::ParamDB->nitsche_penalty[k], //mult
+                        true // rescale local integral by edge values
+                        );
+          
+          bi.rhs_g_v(s.rhs,
+                     v_space,
+                     this->example.get_bd(0), //Zugriff auf U1BoundValue im Example, //NULL, // g = 0
+                     this->example.get_bd(1), //Zugriff auf U2BoundValue im Example,
+                     TDatabase::ParamDB->nitsche_boundary_id[k],// boundary component
+                     TDatabase::ParamDB->nitsche_penalty[k], // mult
+                     true);// rescale local integral by edge values
+      }
+
       
     
     // copy Dirichlet values from right hand side into solution
@@ -446,8 +482,6 @@ void Brinkman2D::solve()
   }
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
-
-
 }
 
 /** ************************************************************************ */
@@ -504,6 +538,7 @@ void Brinkman2D::output(int i)
     errors.at(1) = sqrt(err[1]*err[1] + err[3]*err[3]);    
     Output::print<1>("L2(u)     : ", errors[0]);
     Output::print<1>("H1-semi(u): ", errors[1]);
+      
     // errors in pressure
     s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &pressure_space, err);

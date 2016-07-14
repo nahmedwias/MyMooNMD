@@ -17,35 +17,43 @@
 #include <Collection.h>
 #include <Database.h>
 #include <BlockFEMatrix.h>
+#include <BlockVector.h>
 
 class BoundaryAssembling2D
 {
 public:
-    void rhs_g_v_n(double **rhs,
+    
+    /** @brief integral (given function,v)
+     */
+    void rhs_g_v_n(BlockVector &rhs,
 		   const TFESpace2D *U_Space,
-		   TFEFunction2D *pFunct,
+		   BoundValueFunct2D *given_boundary_data,
 		   int compBC,
 		   double mult
 		   ) ;
-    void rhs_g_v_n(double **rhs,
+    void rhs_g_v_n(BlockVector &rhs,
 		   const TFESpace2D *U_Space,
-		   TFEFunction2D *given_data,
+		   BoundValueFunct2D *given_boundary_data,
 		   std::vector<TBoundEdge*> &edge,
 		   double mult
 		   );
     
-    void rhs_g_v(double **rhs,
-                   const TFESpace2D *U_Space,
-                   TFEFunction2D *pFunct,
-                   int compBC,
-                   double mult
-                   ) ;
-    void rhs_g_v(double **rhs,
-                   const TFESpace2D *U_Space,
-                   TFEFunction2D *given_boundary_data,
-                   std::vector<TBoundEdge*> &edge,
-                   double mult
-                   );
+    void rhs_g_v(BlockVector &rhs,
+                const TFESpace2D *U_Space,
+                BoundValueFunct2D *given_boundary_data1,
+                BoundValueFunct2D *given_boundary_data2,
+                int compBC,
+                double mult,
+                bool rescale_by_h
+                ) ;
+    void rhs_g_v(BlockVector &rhs,
+                const TFESpace2D *U_Space,
+                BoundValueFunct2D *given_boundary_data1,
+                BoundValueFunct2D *given_boundary_data2,
+                std::vector<TBoundEdge*> &edge,
+                double mult,
+                bool rescale_by_h
+                );
     
     void matrix_v_n_v_n(BlockFEMatrix &M,
 			const TFESpace2D *U_Space,
@@ -70,15 +78,17 @@ public:
                           double mult);
     
     void matrix_u_v(BlockFEMatrix &M,
-                          const TFESpace2D *U_Space,
-                          int boundary_component_id,
-                          double mult
-                          );
+                    const TFESpace2D *U_Space,
+                    int boundary_component_id,
+                    double mult,
+                    bool rescale_by_h
+                    );
     
     void matrix_u_v(BlockFEMatrix &M,
-                          const TFESpace2D *U_Space,
-                          std::vector<TBoundEdge*> &edge,
-                          double mult);
+                    const TFESpace2D *U_Space,
+                    std::vector<TBoundEdge*> &edge,
+                    double mult,
+                    bool rescale_by_h);
     
     
     void matrix_p_v_n(BlockFEMatrix &M,
