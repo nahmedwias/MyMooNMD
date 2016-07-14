@@ -283,23 +283,23 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;  
     }
       
-//      if (!strcmp(line, "VISCOSITY:"))
-//      {
-//          dat >> TDatabase::ParamDB->VISCOSITY;
-//          N_Param++;
-//      }
-//      
-//      if (!strcmp(line, "EFFECTIVE_VISCOSITY:"))
-//      {
-//          dat >> TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-//          N_Param++;
-//      }
-//      
-//      if (!strcmp(line, "PERMEABILITY:"))
-//      {
-//          dat >> TDatabase::ParamDB->PERMEABILITY;
-//          N_Param++;
-//      }
+      if (!strcmp(line, "VISCOSITY:"))
+      {
+          dat >> TDatabase::ParamDB->VISCOSITY;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "EFFECTIVE_VISCOSITY:"))
+      {
+          dat >> TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "PERMEABILITY:"))
+      {
+          dat >> TDatabase::ParamDB->PERMEABILITY;
+          N_Param++;
+      }
       
       
     if (!strcmp(line, "USE_ISOPARAMETRIC:"))
@@ -3228,8 +3228,8 @@ int TDomain::ReadParam(char *ParamFile)
       {
           dat >> TDatabase::ParamDB-> n_p_v_n_boundary;
           N_Param++;
-          TDatabase::ParamDB->g_v_boundary_id.resize(TDatabase::ParamDB->n_p_v_n_boundary);
-          TDatabase::ParamDB->g_v_boundary_value.resize(TDatabase::ParamDB->n_p_v_n_boundary);
+          TDatabase::ParamDB->p_v_n_boundary_id.resize(TDatabase::ParamDB->n_p_v_n_boundary);
+          TDatabase::ParamDB->p_v_n_boundary_value.resize(TDatabase::ParamDB->n_p_v_n_boundary);
           //parameters for weakly imposing boundary/interface conditions
           std::fill(TDatabase::ParamDB->p_v_n_boundary_id.begin(),
                     TDatabase::ParamDB->p_v_n_boundary_id.end(), -1);
@@ -3250,7 +3250,36 @@ int TDomain::ReadParam(char *ParamFile)
           }
       }
       
+      // Nitsche Combi- weak Dirichlet
+      if (!strcmp(line, "n_nitsche_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_nitsche_boundary;
+          N_Param++;
+          TDatabase::ParamDB->nitsche_boundary_id.resize(TDatabase::ParamDB->n_nitsche_boundary);
+          TDatabase::ParamDB->nitsche_penalty.resize(TDatabase::ParamDB->n_nitsche_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->nitsche_boundary_id.begin(),
+                    TDatabase::ParamDB->nitsche_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->nitsche_penalty.begin(),
+                    TDatabase::ParamDB->nitsche_penalty.end(), 0.);
+      }
+      
+      if (!strcmp(line, "nitsche_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_nitsche_boundary; ib++) {
+              dat >> TDatabase::ParamDB->nitsche_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "nitsche_penalty:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_nitsche_boundary; ib++) {
+              dat >> TDatabase::ParamDB->nitsche_penalty[ib];
+          }
+      }
+
       // ----------------------------------------------------------------
+      
+      
       
       
     if (!strcmp(line, "timeprofiling:"))

@@ -686,6 +686,13 @@ void TDatabase::SetDefaultParameters()
   ParamDB-> p_v_n_boundary_id.clear();
   ParamDB-> p_v_n_boundary_value.clear();
     
+  //Nitsche Combi - weak Dirichlet
+  ParamDB-> n_nitsche_boundary = 0.;
+  ParamDB-> nitsche_boundary_id.clear();
+  ParamDB-> nitsche_penalty.clear();
+    
+    
+    
   
   // THESE ARE THE DEFAULTS, DO NOT CHANGE 
   // solver context 

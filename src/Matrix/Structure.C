@@ -4655,6 +4655,16 @@ int TStructure::index_of_entry(const int i, const int j) const
   }
   if(j < 0 || j > this->GetN_Columns())
   {
+      
+//      
+//      
+//      cout << "Hier" << endl;
+//      cout << j << endl;
+//      cout << this->GetN_Columns() << endl ;
+//      cout << this->GetN_Rows() << endl ;
+      
+      
+      
     ErrThrow("column index is too large or too small");
   }
   
