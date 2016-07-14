@@ -52,6 +52,13 @@ class IterativeMethod
      * residual multiplied with this factor.
      */
     double divergence_factor;
+    
+    /** @brief stagnation factor of residual for stopping
+     * 
+     * Stop the iteration if the current residual is larger than the previous
+     * residual multiplied with this factor
+     */
+    double stagnation_factor;
 
     /** @brief maximal number of iterations */
     unsigned int max_n_iterations;
@@ -68,7 +75,7 @@ class IterativeMethod
     /** @brief for nicer output during the iteration */
     LoopInfo loop_info;
     
-    /** @brief a small helper function to reduce code duplication and to assure 
+    /** @brief a helper function to reduce code duplication and to assure 
      * the same stopping criterion for all iterative methods.
      */
     bool converged(double current_residual, unsigned int current_iterate)
@@ -89,9 +96,13 @@ class IterativeMethod
       bool enough_iterations = 
         current_iterate > this->min_n_iterations || this->min_n_iterations == 0;
       bool stagnation = 
-        (current_residual > this->loop_info.get_previous_residual());
+        (current_residual > 
+          this->stagnation_factor*this->loop_info.get_previous_residual());
+      bool diverged = 
+        (current_residual > 
+          this->divergence_factor*this->loop_info.get_initial_residual());
       bool converged = (residual_small_enough || sufficient_reduction 
-                        || stagnation) && enough_iterations;
+                        || stagnation || diverged) && enough_iterations;
       // reached maximum number of iterations
       if(current_iterate == this->max_n_iterations)
         converged = true;
@@ -103,6 +114,14 @@ class IterativeMethod
         Output::warn("IterativeMethod", "residual increased: ", 
                      std::setprecision(12), 
                      this->loop_info.get_previous_residual(), " -> ",
+                     current_residual, ", at iteration ", current_iterate);
+      }
+      if(diverged)
+      {
+        if(my_rank == 0)
+        Output::warn("IterativeMethod", "iteration diverged: ", 
+                     std::setprecision(12), 
+                     this->loop_info.get_initial_residual(), " -> ",
                      current_residual, ", at iteration ", current_iterate);
       }
       if(converged)
@@ -118,8 +137,9 @@ class IterativeMethod
     IterativeMethod(std::shared_ptr<Preconditioner<Vector>> prec,
                     std::string name = "")
       : prec(prec), name(name), residual_tolerance(1.e-8),
-        residual_reduction(0.), divergence_factor(1.5), max_n_iterations(100),
-        min_n_iterations(0), restart(10), damping(1.0), loop_info(name)
+        residual_reduction(0.), divergence_factor(1.5), stagnation_factor(1.01),
+        max_n_iterations(100), min_n_iterations(0), restart(10), damping(1.0),
+        loop_info(name)
     {
     }
     
@@ -146,7 +166,7 @@ class IterativeMethod
       this->loop_info.restart(this->name, 0.0);
     };
 
-    /** return absolute tolerance for stopping */
+    /** @brief return absolute tolerance for stopping */
     double get_residual_tolerance() const
     { return residual_tolerance; };
     
@@ -169,19 +189,23 @@ class IterativeMethod
       damping = new_damping;
     }
     
-    /** set absolute tolerance for stopping */
+    /** @brief set absolute tolerance for stopping */
     void set_residual_tolerance(double new_residual_tolerance)
     { residual_tolerance = new_residual_tolerance; }
 
-    /** set relative tolerance for stopping */
+    /** @brief set relative tolerance for stopping */
     void set_residual_reduction(double new_residual_reduction)
     { residual_reduction = new_residual_reduction; }
 
-    /** set tolerance for divergence */
+    /** @brief set tolerance for divergence */
     void set_divergence_factor(double new_divergence_factor)
     { divergence_factor = new_divergence_factor; }
 
-    /** set maximal number of iterations */
+    /** @brief set tolerance for stagnation */
+    void set_stagnation_factor(double new_stagnation_factor)
+    { stagnation_factor = new_stagnation_factor; }
+    
+    /** @brief set maximal number of iterations */
     void set_max_n_iterations(unsigned int max_it)
     {
       max_n_iterations = max_it;
@@ -191,7 +215,7 @@ class IterativeMethod
         restart = max_n_iterations;
     }
 
-    /** set minimal number of iterations */
+    /** @brief set minimal number of iterations */
     void set_min_n_iterations(unsigned int min_it)
     { 
       min_n_iterations = min_it;
@@ -199,7 +223,7 @@ class IterativeMethod
         max_n_iterations = min_n_iterations;// do exactly min_it many iterations
     }
 
-    /** set restart */
+    /** @brief set restart */
     void set_restart(unsigned int new_restart)
     {
       restart = new_restart;
