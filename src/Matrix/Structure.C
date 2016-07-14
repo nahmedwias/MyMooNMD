@@ -4628,6 +4628,20 @@ void TStructure::Sort()
   } // endfor i
 }
 
+size_t TStructure::get_n_entries_in_row(size_t row_index) const
+{
+  if(row_index > this->nRows)
+  {
+    ErrThrow("unable to return the number of entries in row ", row_index,
+             ". There are only ", this->nRows, " rows.");
+  }
+  auto n = this->rows[row_index+1]-this->rows[row_index];
+  if(n < 0)
+    ErrThrow("it seems this structure is in an invalid state");
+  return (size_t)n;
+}
+
+
 void TStructure::reset_n_entries()
 {
   //throw if number of rows changed

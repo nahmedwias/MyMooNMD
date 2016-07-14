@@ -247,6 +247,9 @@ class TStructure
     /** @brief return number of entries */
     int GetN_Entries() const
     { return nEntries; }
+    
+    /** @brief return number of entries in a specified row */
+    size_t get_n_entries_in_row(size_t row_index) const;
 
     /** @brief return number of entries (hanging nodes part) */
     int GetHangingN_Entries() const

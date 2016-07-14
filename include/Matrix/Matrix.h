@@ -104,6 +104,10 @@ class TMatrix
     int GetN_Entries() const
     { return structure->GetN_Entries(); }
     
+    /// @brief return number of entries in a specified row
+    size_t get_n_entries_in_row(size_t row_index) const
+    { return structure->get_n_entries_in_row(row_index); }
+    
     /// @brief return the column pointer in the TStructure of this matrix
     const int *GetKCol() const
     { return structure->GetKCol(); }
