@@ -39,7 +39,9 @@ FOPTFLAGS='-O3 -march=native -mtune=native' \
   message(FATAL_ERROR "ParMooN can not be compiled without PETSc.")
 endif(NOT PETSC_FOUND)
 set(PETSC_LIBS_PATH ${PETSC_DIR}/${PETSC_ARCH}/lib/)
-
+include_directories(${PETSC_DIR}/include)
+find_library(PETSC_LIBRARIES NAMES petsc PATHS ${PETSC_LIBS_PATH} 
+             NO_DEFAULT_PATH)
 
 # Search and include LAPACK library
 # In fact we would like to use 'find_package(LAPACK REQUIRED)' to find LAPACK 
@@ -250,6 +252,7 @@ include_directories(${UMFPACK_INCLUDE_DIR})
 # Set up list of external libraries. If library A depends on library B then A
 # should be listed before B. For example the Blas library is the last one 
 # because it depends on no other library but others depend on it.
+list(APPEND _EXTERN_LIBRARIES ${PETSC_LIBRARIES})
 list(APPEND _EXTERN_LIBRARIES ${TRIANGLE_LIBRARY})
 list(APPEND _EXTERN_LIBRARIES ${TECPLOT_LIBRARY})
 list(APPEND _EXTERN_LIBRARIES ${TETGEN_LIBRARY})
@@ -265,6 +268,3 @@ if(_USING_MPI)
 endif(_USING_MPI)
 list(APPEND _EXTERN_LIBRARIES ${LAPACK_LIBRARIES})
 list(APPEND _EXTERN_LIBRARIES ${BLAS_LIBRARIES})
-
-
-message("external libs " ${_EXTERN_LIBRARIES})
