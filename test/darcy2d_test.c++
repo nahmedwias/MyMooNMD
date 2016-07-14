@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
   
   
   db["solver_type"] = "iterative";
-  db["max_n_iterations"] = 1000;
+  db["max_n_iterations"] = 10000;
   
   Output::print("\n\n --------- fgmres+lsc solver ---------\n");
   db["preconditioner"] = "least_squares_commutator";
