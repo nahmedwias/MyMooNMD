@@ -181,6 +181,10 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 
     Output::setVerbosity(2);
   }
+  else if(solver_name.compare("petsc") ==0)
+  {
+    db["solver_type"] = "petsc";
+  }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
@@ -206,7 +210,8 @@ double get_tolerance(std::string solver_name)
 
   else if (solver_name.compare("multigrid") == 0)
     return 1e-10;
-
+  else if(solver_name.compare("petsc") == 0)
+    return 1e-10;
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
     return 1e-13 ;

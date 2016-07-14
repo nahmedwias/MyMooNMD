@@ -231,6 +231,16 @@ int main(int argc, char* argv[])
   time.print_time("all tests, direct solver");
   
   
+  Output::print("\n\n ----------- petsc solver -----------\n");
+  time.reset();
+  db["solver_type"] = "petsc";
+  db["geo_file"] = "UnitSquare";
+  tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
+  tests_on_triangles(nRefinements, db);
+  time.print_time("all tests, petsc solver");
+  
+  
   
   Output::print("\n\n --------- fgmres+ssor solver ---------\n");
   time.reset();
