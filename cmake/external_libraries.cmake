@@ -39,7 +39,11 @@ FOPTFLAGS='-O3 -march=native -mtune=native' \
   message(FATAL_ERROR "ParMooN can not be compiled without PETSc.")
 endif(NOT PETSC_FOUND)
 set(PETSC_LIBS_PATH ${PETSC_DIR}/${PETSC_ARCH}/lib/)
-include_directories(${PETSC_DIR}/include)
+# the following makes all calls to 'include_directories' unnecessary for
+# libraries provided by PETSc. Also PETSc needs to find the header file 'mpi.h'
+# even in sequential mode (because it is compiled for MPI). With this line it 
+# can find it.
+include_directories(${PETSC_INCLUDES})
 find_library(PETSC_LIBRARIES NAMES petsc PATHS ${PETSC_LIBS_PATH} 
              NO_DEFAULT_PATH)
 
@@ -96,8 +100,6 @@ if(_USING_MPI)
   
   # call to find_package, this now looks for appropriate compiler/linker flags
   find_package(MPI REQUIRED)
-  # set path to the mpi header files.
-  include_directories(${MPI_INCLUDE_PATH})
   # set compile and link flags
   if(MPI_COMPILE_FLAGS)
     message(STATUS "There are mpi compile flags!")
@@ -132,7 +134,6 @@ if(_USING_MPI)
     message(FATAL_ERROR "Could not find Metis. You have to configure PETSc to "
             "include metis")
   endif()
-  include_directories(${METIS_INCLUDE_DIR})
   
   
   
@@ -146,7 +147,6 @@ if(_USING_MPI)
     message(FATAL_ERROR "Could not find Parmetis. You have to configure PETSc "
             "to include Parmetis")
   endif()
-  include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
   
   
   
@@ -172,7 +172,6 @@ if(_USING_MPI)
     message(FATAL_ERROR "Mumps or one of its dependencies could not be found."
             " - check CMakeCache.txt.")
   endif()
-  include_directories(${MUMPS_INCLUDE_DIR})
 endif(_USING_MPI)
 
 
@@ -245,7 +244,6 @@ find_library(UMFPACK_COLAMD_LIBRARY NAMES colamd
              PATHS ${PETSC_DIR}/${PETSC_ARCH}/lib/ NO_DEFAULT_PATH)
 set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARY} ${UMFPACK_SUITESE_LIBRARY}
     ${UMFPACK_AMD_LIBRARY} ${UMFPACK_CHOLMOD_LIBRARY} ${UMFPACK_COLAMD_LIBRARY})
-include_directories(${UMFPACK_INCLUDE_DIR})
 
 
 
