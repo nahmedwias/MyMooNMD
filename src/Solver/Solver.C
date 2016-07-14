@@ -11,6 +11,7 @@
 #include <Preconditioner.h>
 #include <Saddle_point_preconditioner.h>
 #include <DirectSolver.h>
+#include <PETScSolver.h>
 
 template <class L, class V>
 ParameterDatabase Solver<L, V>::default_solver_database()
@@ -19,8 +20,12 @@ ParameterDatabase Solver<L, V>::default_solver_database()
   ParameterDatabase db("default solver database");
   
   db.add("solver_type", "direct",
-         "Determine which kind of solver should be used. This can be an "
-         "iterative or a direct solver", {"direct", "iterative"});
+         "Determine which kind of solver should be used. Set it to direct to "
+         "call a direct solver. Set to iterative to call a ParMooN internal "
+         "iterative solver. Furthermore it is possible to use the external "
+         "library PETSc, see the class PETScSolver. This also includes direct "
+         "and iterative solvers.", 
+         {"direct", "iterative", "petsc"});
   
   db.add("direct_solver_type", "umfpack",
          "Determine which type of direct solver should be used. All of them "
@@ -199,7 +204,8 @@ std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
 template <class L, class V>
 Solver<L, V>::Solver(const ParameterDatabase& param_db)
  : db(default_solver_database()), linear_operator(nullptr), direct_solver(), 
-   iterative_method(), preconditioner(), multigrid(nullptr)
+   iterative_method(), preconditioner(), multigrid(nullptr), 
+   petsc_solver(nullptr)
 {
   this->db.merge(param_db, false);
   if(this->is_using_multigrid())
@@ -223,7 +229,7 @@ void Solver<L, V>::update_matrix(const L& matrix)
                "pardiso");
     this->direct_solver.reset(new DirectSolver(matrix, t));
   }
-  else
+  else if(db["solver_type"].is("iterative")) // ParMooN internal iterative 
   {
     // iterative solver
     bool create_new = this->linear_operator == nullptr;
@@ -261,6 +267,15 @@ void Solver<L, V>::update_matrix(const L& matrix)
       this->iterative_method->update(matrix);
     }
   }
+  else if(db["solver_type"].is("petsc"))
+  {
+    this->petsc_solver = std::make_shared<PETScSolver>(matrix);
+  }
+  else
+  {
+    ErrThrow("unknown solver type ", db["solver_type"]);
+  }
+  
   // set the linear operator (needed for iterative solvers)
   this->linear_operator = &matrix;
 }
@@ -278,14 +293,22 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
   {
     this->direct_solver->solve(rhs, solution);
   }
-  else
+  else if(db["solver_type"].is("iterative")) // ParMooN internal iterative 
   {
     this->iterative_method->iterate(*this->linear_operator, rhs, solution);
   }
+  else if(db["solver_type"].is("petsc"))
+  {
+    this->petsc_solver->solve(rhs, solution);
+  }
+  else
+  {
+    ErrThrow("unknown solver type ", db["solver_type"]);
+  }
   //compute the residual by hand again.
-  //V r(rhs);
-  //linear_operator->apply_scaled_add(solution, r, -1.);
-  //Output::print<2>("computed residual in Solver class: ", r.norm());
+  V r(rhs);
+  linear_operator->apply_scaled_add(solution, r, -1.);
+  Output::print<1>("computed residual in Solver class: ", r.norm());
 }
 
 /* ************************************************************************** */
