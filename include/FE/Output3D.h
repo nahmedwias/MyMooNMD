@@ -9,16 +9,17 @@
 // History:     start of implementation 24.07.2000 (Gunar Matthies)
 //
 // =======================================================================
-#ifdef _MPI
-#  include "mpi.h"
-#endif
-
 
 #ifndef __OUTPUT3D__
 #define __OUTPUT3D__
 
-#include <FEVectFunct3D.h>
-#include <Domain.h>
+#ifdef _MPI
+#  include "mpi.h"
+#endif
+#include <string>
+
+class TFEVectFunct3D;
+class TDomain;
 
 /** store given data and realize output */
 class TOutput3D
@@ -115,15 +116,6 @@ class TOutput3D
     /** add parameter into this output object */
     int AddParameter(double value, const char *descr);
     
-    /** write stored data into a grape file */
-    int WriteGrape(const char *name);
-
-    /** write stored data into a GMV file */
-    int WriteGMV(const char *name);
-
-    /** write stored data into an amira file */
-    int WriteAmira(const char *name);
-
     /** write stored data into an vtk file */
     int WriteVtk(const char *name);
     
