@@ -17,14 +17,15 @@
 
 #ifndef __DIRECTSOLVER__
 #define __DIRECTSOLVER__
+#include <memory>
+#include <vector>
 
-#include <Matrix.h>
+class TMatrix;
 
 // forward declaration
 class BlockMatrix;
 class BlockFEMatrix;
 class BlockVector;
-class VankaSmoother;
 constexpr size_t pardiso_options_array_length = 64;
 
 class DirectSolver
@@ -46,7 +47,7 @@ class DirectSolver
      * 
      * This makes a copy of the matrix and calls the private constructor.
      */
-    DirectSolver(const TMatrix matrix, DirectSolverTypes type);
+    DirectSolver(const TMatrix& matrix, DirectSolverTypes type);
     
     /** @brief This class is not copy constructible */
     DirectSolver(const DirectSolver&) = delete;
@@ -145,13 +146,16 @@ class DirectSolver
     void numeric_factorize();
 };
 
-
-#include <SquareMatrix2D.h>
-#include <Matrix2D.h>
+/** ************************************************************************ */
+/// @note everything below this line is to be deleted
+class TMatrix2D;
+class TSquareMatrix;
+class TSquareMatrix2D;
 
 #ifdef __3D__
-#include <SquareMatrix3D.h>
-#include <Matrix3D.h>
+class TMatrix3D;
+class TSquareMatrix;
+class TSquareMatrix3D;
 #endif
 
 /** solve equation system */

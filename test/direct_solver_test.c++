@@ -2,13 +2,14 @@
 #include <BlockMatrix.h>
 #include <BlockVector.h>
 #include <MooNMD_Io.h>
+#include <cmath>
 
 bool equal(const double a, const double b)
 {
-  if(fabs(a) > 1e-12)
-    return fabs((a-b)/a) < 1e-14;
+  if(std::abs(a) > 1e-12)
+    return std::abs((a-b)/a) < 1e-14;
   else
-    return fabs(a-b) < 1e-14;
+    return std::abs(a-b) < 1e-14;
 }
 
 int main(int argc, char **argv) 
