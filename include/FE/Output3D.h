@@ -118,9 +118,6 @@ class TOutput3D
     /** write stored data into a grape file */
     int WriteGrape(const char *name);
 
-    /** write stored data into a tecplot file */
-    int WriteTecplot(const char *name);
-
     /** write stored data into a GMV file */
     int WriteGMV(const char *name);
 
@@ -137,15 +134,11 @@ class TOutput3D
     /** write stored PARALLEL data into a pvtu and vtu files (XML files for paraview) */
     int Write_ParVTK(
 #ifdef _MPI
-                                MPI_Comm comm,
+                     MPI_Comm comm,
 #endif
-                               int img, char *subID,
-							   std::string directory=std::string("."),
-							   std::string basename=std::string("parmoon_solution"));
-
-    /** write stored data into a tecplot file **/
-    int WriteBinaryPlt(const char *filename);
-
+                     int img, char *subID,
+                     std::string directory = std::string("."),
+                     std::string basename = std::string("parmoon_solution"));
 };
 
 #endif

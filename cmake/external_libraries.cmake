@@ -201,19 +201,6 @@ include_directories(${TETGEN_INCLUDE_DIR})
 
 
 
-# Include TECPLOT library.
-find_path(TECPLOT_INCLUDE_DIR TECIO.h PATHS
-          ${PARMOON_EXTLIB_PATH}/tecplot/include NO_DEFAULT_PATH)
-find_library(TECPLOT_LIBRARY NAMES tecio_${_ARCH} PATHS
-             ${PARMOON_EXTLIB_PATH}/tecplot/lib NO_DEFAULT_PATH)
-# Mimic "REQUIRED" behaviour
-if(NOT (TECPLOT_LIBRARY AND TECPLOT_INCLUDE_DIR)) 
-  message(FATAL_ERROR "Could not find Tecplot. It should be in the repository")
-endif()
-include_directories(${TECPLOT_INCLUDE_DIR})
-
-
-
 # Include pardiso library
 # TODO this should be made optional, so it should be possible to compile ParMooN
 # even without pardiso but with openmp.
@@ -252,7 +239,6 @@ set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARY} ${UMFPACK_SUITESE_LIBRARY}
 # because it depends on no other library but others depend on it.
 list(APPEND _EXTERN_LIBRARIES ${PETSC_LIBRARIES})
 list(APPEND _EXTERN_LIBRARIES ${TRIANGLE_LIBRARY})
-list(APPEND _EXTERN_LIBRARIES ${TECPLOT_LIBRARY})
 list(APPEND _EXTERN_LIBRARIES ${TETGEN_LIBRARY})
 if(_USING_OMP)
   list(APPEND _EXTERN_LIBRARIES ${PARDISO_LIBRARY})
