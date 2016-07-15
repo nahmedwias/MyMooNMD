@@ -15,6 +15,7 @@
 #include "umfpack.h"
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
+#include <Matrix.h>
 
 #ifdef _OMP
 #include <omp.h>
@@ -228,7 +229,7 @@ DirectSolver::DirectSolver(const BlockFEMatrix& matrix,
 }
 
 /** ************************************************************************ */
-DirectSolver::DirectSolver(const TMatrix matrix,
+DirectSolver::DirectSolver(const TMatrix& matrix,
                            DirectSolver::DirectSolverTypes type)
  : DirectSolver(std::make_shared<TMatrix>(matrix), type)
 {
@@ -478,6 +479,13 @@ void DirectSolver::solve(const BlockVector& rhs, BlockVector& solution)
 
 /** ************************************************************************ */
 /// @note everything below this line is to be deleted
+#include <SquareMatrix2D.h>
+#include <Matrix2D.h>
+
+#ifdef __3D__
+#include <SquareMatrix3D.h>
+#include <Matrix3D.h>
+#endif
 
 void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
 {
