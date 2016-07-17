@@ -44,9 +44,6 @@
   #include <MortarJoint.h>
 #endif
 
-#ifdef __COMPAQ__
-  #include <Utilities.h>
-#endif
 
 #include <string.h>
 #include <vector>
