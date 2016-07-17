@@ -53,14 +53,9 @@
 #include <It_EQLevel.h>
 #include <It_LELevel.h>
 #include <It_OCAF.h>
-
+#include <Utilities.h>
 #include <MooNMD_Io.h>
-
 #include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <time.h>
-#include <stdlib.h>
 
 #ifdef __MORTAR__
   #include <It_Mortar.h>
@@ -950,17 +945,10 @@ ParamDB->BrinkmanTYPE = 1;
 
 void TDatabase::WriteParamDB(char *ExecutedFile)
 {
-  char buf[80];
-  time_t rawtime;
-  struct tm * timeinfo;
-
-  time ( &rawtime );
-  timeinfo = localtime ( &rawtime );
- 
   using namespace Output; // printToFile
   
-  gethostname(buf,80);
-  printToFile("HOSTNAME: ", buf, " started on ", asctime (timeinfo));
+  printToFile("HOSTNAME: ", utilities::get_host_name(), " started on ", 
+              utilities::get_date_and_time());
   printToFile("EXECUTED FILE: ", ExecutedFile);
   printToFile("VERSION: ", ParamDB->VERSION);
   printToFile("MAPFILE: ", ParamDB->MAPFILE);
