@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <ctime>
 #include <memory>
+#include <ParMooN_repository_info.h>
+#include <Utilities.h>
 #include <MooNMD_Io.h>
 
 // helper functions
@@ -181,8 +183,13 @@ void ParameterDatabase::write(std::ostream& os, size_t verbose) const
   
   if(verbose == 2)
   {
-    time_t rawtime = time(NULL);
-    os << "# current date and time: " << ctime(&rawtime);
+    os << "# current date and time: " << utilities::get_date_and_time();
+    os << "# ParMooN hg revision: " << parmoon::hg_revision << "\n";
+    os << "# ParMooN hg branch  : " << parmoon::hg_branch << "\n";
+    os << "# ParMooN, local changes: " << parmoon::hg_local_changes << "\n";
+    os << "# ParMooN build information: " << parmoon::build_type << ", " 
+       << parmoon::parallel_type << "\n";
+    os << "# hostname: " << utilities::get_host_name() << "\n";
     os << "# Writing a ParMooN parameter database with "
        << this->get_n_parameters() << " parameters\n";
     os << "\n";
