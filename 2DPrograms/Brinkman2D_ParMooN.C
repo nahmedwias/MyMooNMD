@@ -12,7 +12,6 @@
 #include <FEDatabase2D.h>
 #include <LinAlg.h>
 #include <Brinkman2D.h>
-#include <Output2D.h>
 #include <MainUtilities.h>
 #include <LocalAssembling2D.h>
 #include <Example_Brinkman2D.h>
@@ -39,9 +38,11 @@ int main(int argc, char* argv[])
   parmoon_db.read(fs);
   fs.close();
   
+    
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain Domain(argv[1], parmoon_db);
-  
+
+    
   //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
   
@@ -51,17 +52,17 @@ int main(int argc, char* argv[])
   // refine grid
   size_t n_ref =  Domain.get_n_initial_refinement_steps();
   for(size_t i=0; i< n_ref; i++)
-    Domain.RegRefineAll();  
+  {
+      Domain.RegRefineAll();
+  }
   
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
     
-  Example_Brinkman2D example(parmoon_db["example"],parmoon_db);
-    
+  Example_Brinkman2D example(parmoon_db);
   //=========================================================================
   // create an object of the Brinkman class
-    
   Brinkman2D brinkman2d(Domain, parmoon_db, example);
   brinkman2d.assemble();
   brinkman2d.solve();
