@@ -280,7 +280,27 @@ void CD2D::output(int i)
   
   // write solution to a vtk file or in case-format
   outputWriter.write(i);
+
+  /*
+  // implementation with the old class TOutput2D
+  {
+    // last argument in the following is domain, but is never used in this class
+    TOutput2D Output(1, 1, 0, 0, NULL);
+    Output.AddFEFunction(&fe_function);
+
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
+    if(i >= 0)
+      filename += "_" + std::to_string(i);
+    filename += ".vtk";
+    Output.WriteVtk(filename.c_str());
+  }
+  */
   
+
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
