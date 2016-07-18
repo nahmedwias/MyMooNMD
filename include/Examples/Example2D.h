@@ -35,7 +35,7 @@ class Example2D
     * 
     * This is used only by the classes derived from this class.
     */
-    Example2D();
+    Example2D(const ParameterDatabase &);
 
     /** @brief a local parameter database which controls this class
      *
@@ -83,7 +83,7 @@ class Example2D
     ~Example2D() = default;
 
     // Initialize example database, called with the constructor
-    ParameterDatabase default_example_database();
+    static ParameterDatabase default_example_database();
 
     // Getter functions
 

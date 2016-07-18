@@ -28,8 +28,7 @@ public:
    * This intializes a Time dependent (Navier-)Stokes example in 2D. 
    * It is chosen according to example_code.
    */
-  Example_TimeNSE2D(int example_code,
-                    const ParameterDatabase& user_input_parameter_db);
+  Example_TimeNSE2D(const ParameterDatabase& user_input_parameter_db);
   /** @brief initialize your own example
    * 
    * Create an example with all vectors already defined.

@@ -28,11 +28,10 @@ namespace flow_around_cylinder
 }
 //=========================================
 
-Example_NSE2D::Example_NSE2D(int example_code,
-                             const ParameterDatabase& user_input_parameter_db) : Example2D()
+Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
+ : Example2D(user_input_parameter_db)
 {
-  this->example_database.merge(user_input_parameter_db,false);
-
+  int example_code = this->example_database["example"];
   switch( example_code )
   {
     case 0:

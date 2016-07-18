@@ -7,6 +7,11 @@ ParameterDatabase Example2D::default_example_database()
   // we use a parmoon default database because this way these parameters are
   // available in the default NSE3D database as well.
   ParameterDatabase db("Example2D parameter database");
+  
+  db.add("example", 0,
+         "Choose which example to run. \nNote that depending on the type of "
+         "problem you want to solve, different values are meaningful here. See "
+         "the derived classes of 'Example2D'.", -5, 200);
 
   /** TDatabase::ParamDB->RE_NR */
      db.add("reynolds_number", 1.,
@@ -131,10 +136,11 @@ ParameterDatabase Example2D::default_example_database()
   return db;
 }
 
-Example2D::Example2D() 
+Example2D::Example2D(const ParameterDatabase & db) 
  : example_database(Example2D::default_example_database()), exact_solution(),
    boundary_conditions(), boundary_data(), problem_coefficients(NULL)
 {
+  this->example_database.merge(db, false);
 }
 
 Example2D::Example2D(std::vector <DoubleFunct2D*> exact,

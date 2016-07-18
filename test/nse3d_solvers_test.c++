@@ -77,13 +77,13 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
   }
 }
 #ifndef _MPI
-void check(ParameterDatabase& db, int example, const TDomain& domain,
-           int velocity_order, int pressure_order,
-           int nstype, std::array<double, int(4)> errors, double tol)
+void check(ParameterDatabase& db, const TDomain& domain, int velocity_order,
+           int pressure_order, int nstype, std::array<double, int(4)> errors,
+           double tol)
 #else
-void check(ParameterDatabase& db, int example, const TDomain& domain,
-           int maxSubDomainPerDof, int velocity_order, int pressure_order,
-           int nstype, std::array<double, int(4)> errors, double tol)
+void check(ParameterDatabase& db, const TDomain& domain, int maxSubDomainPerDof,
+           int velocity_order, int pressure_order, int nstype,
+           std::array<double, int(4)> errors, double tol)
 #endif
 {
 #ifdef _MPI
@@ -96,15 +96,15 @@ void check(ParameterDatabase& db, int example, const TDomain& domain,
 
   if (my_rank ==0)
   {
-    Output::print("******* Check ",example, " ",velocity_order, " ",
-                  pressure_order, " ",nstype," *******");
+    Output::print("******* Check ", db["example"], " ", velocity_order, " ",
+                  pressure_order, " ", nstype, " *******");
   }
 
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
 
-  Example_NSE3D example_obj(example,db);
+  Example_NSE3D example_obj(db);
 
   //Perform usual checks on the parameter consistency
   TDatabase::CheckParameterConsistencyNSE(); //old check
@@ -308,37 +308,36 @@ int main(int argc, char* argv[])
 
 #endif
 
+    db.merge(Example_NSE3D::default_example_database());
     {
       if(my_rank==0)
         Output::print<1>("\n>>>>> Q2/Q1 element on hexahedral grid. <<<<<");
-      size_t exmpl = -3;
+      db["example"] = -3;
       size_t nstype = 1;
 #ifndef _MPI
-      check(db, exmpl, domain_hex, 2, -4711, nstype, errors, tol);
+      check(db, domain_hex, 2, -4711, nstype, errors, tol);
 #else
-      check(db, exmpl, domain_hex, maxSubDomainPerDof, 2, -4711, nstype,
-            errors, tol);
+      check(db, domain_hex, maxSubDomainPerDof, 2, -4711, nstype, errors, tol);
 #endif
     }
     {
       if(my_rank==0)
         Output::print<1>("\n>>>>> Q2/P1^disc element on hexahedral grid. <<<<<");
-      size_t exmpl = -3;
+      db["example"] = -3;
       size_t nstype = 2;
 #ifndef _MPI
-      check(db, exmpl, domain_hex, 12, -4711, nstype, errors, tol);
+      check(db, domain_hex, 12, -4711, nstype, errors, tol);
 #else
-      check(db, exmpl, domain_hex, maxSubDomainPerDof, 12, -4711, nstype,
-            errors, tol);
+      check(db, domain_hex, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
 #endif
     }
 #ifndef _MPI//only for seq, 3rd order elements are not yet adapted for parallel
     {
       if(my_rank==0)
         Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
-      size_t exmpl = -4;
+      db["example"] = -4;
       size_t nstype = 3;
-      check(db, exmpl, domain_hex, 3, -4711, nstype, errors, tol);
+      check(db, domain_hex, 3, -4711, nstype, errors, tol);
     }
 #endif
   }
@@ -375,15 +374,14 @@ int main(int argc, char* argv[])
 #endif
 
     {
-      size_t exmpl = -3;
+      db["example"] = -3;
       size_t nstype = 4;
       if(my_rank==0)
         Output::print<1>("\n>>>>> P2/P1 element on tetrahedral grid. <<<<<");
 #ifndef _MPI
-      check(db, exmpl, domain_tet, 2,-4711, nstype, errors, tol);
+      check(db, domain_tet, 2,-4711, nstype, errors, tol);
 #else
-      check(db, exmpl, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, 
-            tol);
+      check(db, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, tol);
 #endif
     }
 #ifndef _MPI
@@ -397,9 +395,9 @@ int main(int argc, char* argv[])
         return 0;
       if(my_rank==0)
         Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
-      size_t exmpl = -4;
+      db["example"] = -4;
       size_t nstype = 4; //TODO 14
-      check(db, exmpl, domain_tet, 3,-4711, nstype, errors, tol);
+      check(db, domain_tet, 3,-4711, nstype, errors, tol);
     }
 #endif
   }

@@ -50,11 +50,10 @@ namespace test_u_3_p_2 //-4
 
 //========================================
 
-Example_NSE3D::Example_NSE3D(int example_code,
-                             const ParameterDatabase& user_input_parameter_db) : Example3D()
+Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
+ : Example3D(user_input_parameter_db)
 {
-  this->example_database.merge(user_input_parameter_db,false);
-
+  int example_code = this->example_database["example"];
   switch( example_code )
   {
     case 0:

@@ -1,7 +1,7 @@
 #include <Example_NonStationary2D.h>
 
-Example_NonStationary2D::Example_NonStationary2D() 
- : Example2D(), timeDependentRhs(true), 
+Example_NonStationary2D::Example_NonStationary2D(const ParameterDatabase & db) 
+ : Example2D(db), timeDependentRhs(true), 
    timeDependentCoeffs(true), initialCOndtion()
 {
 }

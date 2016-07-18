@@ -8,6 +8,11 @@ ParameterDatabase Example3D::default_example_database()
   // available in the default NSE3D database as well.
   ParameterDatabase db("Example3D parameter database");
 
+  db.add("example", 0,
+         "Choose which example to run. \nNote that depending on the type of "
+         "problem you want to solve, different values are meaningful here. See "
+         "the derived classes of 'Example3D'.", -5, 200);
+  
   /** TDatabase::ParamDB->RE_NR */
    db.add("reynolds_number", 1.,
           "Reynolds number: dimensionless number which describes how viscous the  "
@@ -131,10 +136,11 @@ ParameterDatabase Example3D::default_example_database()
   return db;
 }
 
-Example3D::Example3D()
+Example3D::Example3D(const ParameterDatabase & db)
  : example_database(Example3D::default_example_database()), exact_solution(),
    boundary_conditions(), boundary_data(), problem_coefficients(NULL)
 {
+  this->example_database.merge(db, false);
 }
 
 Example3D::Example3D(std::vector <DoubleFunct3D*> exact,

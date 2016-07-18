@@ -35,11 +35,11 @@ namespace flow_around_cylinder_instationary
 }
 
 //=========================================================
-Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
-                                     const ParameterDatabase& user_input_parameter_db)
+Example_TimeNSE3D::Example_TimeNSE3D(
+  const ParameterDatabase& user_input_parameter_db)
+ : Example_NonStationary3D(user_input_parameter_db)
 {
-  this->example_database.merge(user_input_parameter_db,false);
-
+  int example_code = this->example_database["example"];
   switch(example_code)
   {
     case 0:

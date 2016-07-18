@@ -209,6 +209,7 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database());
   db.merge(Multigrid::default_multigrid_database());
+  db.merge(Example2D::default_example_database());
   db.merge(ParameterDatabase::default_output_database());
   db["problem_type"] = 0; // problem type is not needed
   db["example"] = 0; // known sin-cos solution
@@ -282,6 +283,7 @@ int main(int argc, char* argv[])
   {
     Output::print("\ntesting with algebraic flux correction");
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(Example2D::default_example_database());
     db["problem_type"] = 1;
     db["example"] = 3; //Sharp Boundary Layer Example
 

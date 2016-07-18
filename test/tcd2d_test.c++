@@ -121,8 +121,9 @@ int main(int argc, char* argv[])
     TDatabase Database;
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(Example2D::default_example_database());
     db["example"] = 0;
-    db.add("reynolds_number",1,"");
+    db["reynolds_number"] = 1;
 
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
