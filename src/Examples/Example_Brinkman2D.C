@@ -25,9 +25,9 @@ namespace flow_around_cylinder
 {
 #include "Brinkman_2D/flow_around_cylinder.h"
 }
-namespace hannukainen
+namespace SineCosine_Hannukainen
 {
-#include "Brinkman_2D/hannukainen.h"
+#include "Brinkman_2D/SineCosine_Hannukainen.h"
 }
 
 namespace Poiseuille_Hannukainen
@@ -126,24 +126,24 @@ Example_Brinkman2D::Example_Brinkman2D(int example_code) : Example2D()
             break;
         case 4:
             /** exact_solution */
-            exact_solution.push_back( hannukainen::ExactU1 );
-            exact_solution.push_back( hannukainen::ExactU2 );
-            exact_solution.push_back( hannukainen::ExactP );
+            exact_solution.push_back( SineCosine_Hannukainen::ExactU1 );
+            exact_solution.push_back( SineCosine_Hannukainen::ExactU2 );
+            exact_solution.push_back( SineCosine_Hannukainen::ExactP );
             
             /** boundary condition */
-            boundary_conditions.push_back( hannukainen::BoundCondition );
-            boundary_conditions.push_back( hannukainen::BoundCondition );
+            boundary_conditions.push_back( SineCosine_Hannukainen::BoundCondition );
+            boundary_conditions.push_back( SineCosine_Hannukainen::BoundCondition );
             boundary_conditions.push_back( BoundConditionNoBoundCondition );
             
             /** boundary values */
-            boundary_data.push_back( hannukainen::U1BoundValue );
-            boundary_data.push_back( hannukainen::U2BoundValue );
+            boundary_data.push_back( SineCosine_Hannukainen::U1BoundValue );
+            boundary_data.push_back( SineCosine_Hannukainen::U2BoundValue );
             boundary_data.push_back( BoundaryValueHomogenous );
             
             /** coefficients */
-            problem_coefficients = hannukainen::LinCoeffs;
+            problem_coefficients = SineCosine_Hannukainen::LinCoeffs;
             
-            hannukainen::ExampleFile();
+            SineCosine_Hannukainen::ExampleFile();
             break;
         case 5:
             /** exact_solution */

@@ -123,10 +123,11 @@ class TCollection
    std::vector<int> DomainVertexNumbers;
    int getIndexInCollection(TBaseCell *cell);
 
-   ///@brief Write the geometry in .mesh format
+   ///@brief write the geometry in .mesh format
    int writeMesh(const char *meshFileName);
     
-   ///@brief Write a list of boundary edges
+   /**@brief Write a list of boundary edges
+    */
    void get_edge_list_on_component(int i,std::vector<TBoundEdge*> &edges);
    ///@todo it is better to return the vector?
    // std::vector<TBoundEdge*> get_edge_list_on_component(int i);
