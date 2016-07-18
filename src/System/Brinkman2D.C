@@ -1,15 +1,10 @@
 #include <Brinkman2D.h>
-#include <MainUtilities.h> // GetVelocityAndPressureSpace
-#include <Database.h>
+#include <MainUtilities.h> // get velocity and pressure space
 #include <LinAlg.h> // DDot
-#include <MultiGridIte.h>
-#include <FixedPointIte.h>
-#include <FgmresIte.h>
 #include <DirectSolver.h>
-#include <Upwind.h>
-
-#include<Assemble2D.h>
+#include <Assemble2D.h>
 #include <BoundaryAssembling2D.h>
+
 ParameterDatabase get_default_Brinkman2D_parameters()
 {
     Output::print<3>("creating a default Brinkman2D parameter database");
@@ -20,16 +15,13 @@ ParameterDatabase get_default_Brinkman2D_parameters()
     ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
     db.merge(nl_db,true);
     
-    
     ParameterDatabase out_db = ParameterDatabase::default_output_database();
     db.merge(out_db, true);
-    
     
     return db;
 }
 
 /** ************************************************************************ */
-
 Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
                                               TCollection& coll, std::pair<int,int> velocity_pressure_orders,
                                               Brinkman2D::Matrix type)
@@ -48,9 +40,6 @@ u(&velocity_space, (char*)"u", (char*)"u", solution.block(0),
 p(&pressure_space, (char*)"p", (char*)"p", solution.block(2),
   solution.length(2))
 {
-    
-    
-    
     // rebuild the matrix due to NSE type. We must be sure, that the rhs and solution
     // vector which we built above do fit the new matrix, too!
     switch (type)
@@ -71,9 +60,8 @@ p(&pressure_space, (char*)"p", (char*)"p", solution.block(2),
             matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
             break;
         default:
-            ErrThrow("Unknown NSE type given to constructor of NSE2D::System_per_grid.");
+            ErrThrow("Unknown Brinkman type given to constructor of Brinkman2D::System_per_grid.");
     }
-    
 }
 
 /** ************************************************************************ */
@@ -88,7 +76,6 @@ Brinkman2D::Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
 }
 
 /** ************************************************************************ */
-
 Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db,
                        const Example_Brinkman2D & e,
                        unsigned int reference_id)
@@ -132,17 +119,14 @@ initial_residual(1e10), errors()
     Output::print<1>("dof velocity active: ", setw(10), 2* n_u_active);
     Output::print<1>("dof pressure       : ", setw(10), n_p);
     Output::print<1>("dof all            : ", setw(10), n_dof);
-    
 }
 
 /** ************************************************************************ */
-
 Brinkman2D::~Brinkman2D()
 {
 }
 
 /** ************************************************************************ */
-
 void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>
                                               &velocity_pressure_orders)
 {
@@ -152,17 +136,12 @@ void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>
     Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
 
+/** ************************************************************************ */
 void Brinkman2D::set_parameters()
 {
-    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
-    {
-        //Assemble2DSlipBC does not work, and is not implemented yet
-        ErrThrow("Set INTERNAL_SLIP_WITH_FRICTION to 0, this feature is not yet included.");
-    }
 }
 
 /** ************************************************************************ */
-
 void Brinkman2D::assemble()
 {
     for(System_per_grid& s : this->systems)
@@ -172,18 +151,18 @@ void Brinkman2D::assemble()
         const TFESpace2D * v_space = &s.velocity_space;
         const TFESpace2D * p_space = &s.pressure_space;
         
-        // declare the variables which Assemble2D needs and each brinkmantype has to fill
+        // declare the variables which Assemble2D needs and each brinkman type has to fill
         size_t N_FESpaces = 2;
         
         const TFESpace2D *fespmat[2] = {v_space, p_space};
         size_t n_sq_mat;
-        TSquareMatrix2D *sq_matrices[5]{nullptr};//it's five pointers maximum (Type14)
+        TSquareMatrix2D *sq_matrices[5]{nullptr}; // it's five pointers maximum (Type14)
         
         size_t n_rect_mat;
-        TMatrix2D *rect_matrices[4]{nullptr};//it's four pointers maximum (Types 2, 4, 14)
+        TMatrix2D *rect_matrices[4]{nullptr}; // it's four pointers maximum (Types 2, 4, 14)
         
-        size_t N_Rhs = 2; //is 3 if NSE type is 4 or 14
-        double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; //third place gets only filled
+        size_t N_Rhs = 2; // is 3 if NSE type is 4 or 14
+        double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; // third place gets only filled
         const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
         BoundCondFunct2D * boundary_conditions[3] = {
             v_space->GetBoundCondition(), v_space->GetBoundCondition(),
@@ -202,7 +181,7 @@ void Brinkman2D::assemble()
         std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
         
         // Note: We use only Type 14 for Brinkman (for now)
-        //CB DEBUG
+        // CB DEBUG
         if(blocks.size() != 9)
         {
             ErrThrow("Wrong blocks.size() ", blocks.size());
@@ -216,15 +195,14 @@ void Brinkman2D::assemble()
         sq_matrices[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
         
         n_rect_mat = 4;
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
+        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); // first the lying B blocks
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
+        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); // than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
         
         RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
         fesprhs[2]  = p_space;
         N_Rhs = 3;
-        
         
         // call the assemble method with the information that has been patched together
         Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
@@ -232,9 +210,10 @@ void Brinkman2D::assemble()
                    boundary_conditions, non_const_bound_values.data(), la);
         
         
-
-//-----------------------------------------------------------------------------------------------------------
-// weakly imposing boundary conditions - boundary integrals
+        
+        //-----------------------------------------------------------------------------------------------------------//
+        // Weakly Imposing Boundary Conditions - Boundary Integrals
+        //-----------------------------------------------------------------------------------------------------------//
         
         BoundaryAssembling2D bi;
         
@@ -242,20 +221,20 @@ void Brinkman2D::assemble()
         {
             bi.rhs_g_v_n(s.rhs,
                          v_space,
-                         NULL,                                              // g = 1
-                         TDatabase::ParamDB->neumann_boundary_id[k],        // boundary component
-                         -TDatabase::ParamDB->neumann_boundary_value[k]);   // mult
+                         NULL,                                                  // g = 1
+                         TDatabase::ParamDB->neumann_boundary_id[k],            // boundary component
+                         -TDatabase::ParamDB->neumann_boundary_value[k]);       // mult
         }
         
         for (int k=0;k<TDatabase::ParamDB->n_g_v_boundary;k++)
         {
             bi.rhs_g_v(s.rhs,
                        v_space,
-                       this->example.get_bd(0),                             // access to U1BoundValue in the current example
-                       this->example.get_bd(1),                             // access to U2BoundValue in the current example
-                       TDatabase::ParamDB->g_v_boundary_id[k],              // boundary component
-                       TDatabase::ParamDB->g_v_boundary_value[k],
-                       false); // mult
+                       this->example.get_bd(0),                                 // access to U1BoundValue in the current example
+                       this->example.get_bd(1),                                 // access to U2BoundValue in the current example
+                       TDatabase::ParamDB->g_v_boundary_id[k],                  // boundary component
+                       TDatabase::ParamDB->g_v_boundary_value[k],               // mult
+                       false);                                                  // rescale local integral by edge values
         }
         
         // test (in the true case, this function should be assembled on "DIRICHLET" boundaries
@@ -265,15 +244,15 @@ void Brinkman2D::assemble()
         {
             bi.matrix_v_n_v_n(s.matrix,
                               v_space,
-                              TDatabase::ParamDB->unvn_boundary_id[k],// boundary component
-                              TDatabase::ParamDB->unvn_boundary_value[k]); // mult
+                              TDatabase::ParamDB->unvn_boundary_id[k],          // boundary component
+                              TDatabase::ParamDB->unvn_boundary_value[k]);      // mult
         }
         
         for (int k=0;k<TDatabase::ParamDB->n_gradunv_boundary;k++)
         {
             bi.matrix_gradv_n_v(s.matrix,
                                 v_space,
-                                TDatabase::ParamDB->gradunv_boundary_id[k],// boundary component
+                                TDatabase::ParamDB->gradunv_boundary_id[k],     // boundary component
                                 TDatabase::ParamDB->gradunv_boundary_value[k]); // mult
         }
         
@@ -281,9 +260,9 @@ void Brinkman2D::assemble()
         {
             bi.matrix_u_v(s.matrix,
                           v_space,
-                          TDatabase::ParamDB->u_v_boundary_id[k],// boundary component
-                          TDatabase::ParamDB->u_v_boundary_value[k],
-                          false); // mult
+                          TDatabase::ParamDB->u_v_boundary_id[k],               // boundary component
+                          TDatabase::ParamDB->u_v_boundary_value[k],            // mult
+                          false);                                               // rescale local integral by edge values
         }
         
         for (int k=0;k<TDatabase::ParamDB->n_p_v_n_boundary;k++)
@@ -292,40 +271,38 @@ void Brinkman2D::assemble()
             bi.matrix_p_v_n(s.matrix,
                             v_space,
                             p_space,
-                            TDatabase::ParamDB->p_v_n_boundary_id[k],// boundary component
-                            TDatabase::ParamDB->p_v_n_boundary_value[k]); // mult
+                            TDatabase::ParamDB->p_v_n_boundary_id[k],           // boundary component
+                            TDatabase::ParamDB->p_v_n_boundary_value[k]);       // mult
         }
         
-        // Nitsche Combi - weak Dirichlet
+        // Nitsche combination - weak Dirichlet
         for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
         {
             bi.matrix_gradv_n_v(s.matrix,
                                 v_space,
-                                TDatabase::ParamDB->nitsche_boundary_id[k],// boundary component
-                                -TDatabase::ParamDB->EFFECTIVE_VISCOSITY); // mult
+                                TDatabase::ParamDB->nitsche_boundary_id[k],     // boundary component
+                                -TDatabase::ParamDB->EFFECTIVE_VISCOSITY);      // mult
             
             bi.matrix_p_v_n(s.matrix,
                             v_space,
                             p_space,
-                            TDatabase::ParamDB->nitsche_boundary_id[k],// boundary component
-                            1); // mult
+                            TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
+                            1);                                                 // mult
             
             bi.matrix_u_v(s.matrix,
                           v_space,
-                          TDatabase::ParamDB->nitsche_boundary_id[k], // boundary component
-                          TDatabase::ParamDB->nitsche_penalty[k], //mult
-                          true // rescale local integral by edge values
-                          );
+                          TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
+                          TDatabase::ParamDB->nitsche_penalty[k],               // mult
+                          true);                                                // rescale local integral by edge values
             
             bi.rhs_g_v(s.rhs,
                        v_space,
-                       this->example.get_bd(0),                         // Zugriff auf U1BoundValue im Example,
-                       this->example.get_bd(1),                         // Zugriff auf U2BoundValue im Example,
-                       TDatabase::ParamDB->nitsche_boundary_id[k],      // boundary component
-                       TDatabase::ParamDB->nitsche_penalty[k],          // mult
-                       true);                                           // rescale local integral by edge values
+                       this->example.get_bd(0),                                 // access to U1BoundValue in the example,
+                       this->example.get_bd(1),                                 // access to U2BoundValue in the example,
+                       TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
+                       TDatabase::ParamDB->nitsche_penalty[k],                  // mult
+                       true);                                                   // rescale local integral by edge values
         }
-        
         
         // copy Dirichlet values from right hand side into solution
         s.solution.copy_nonactive(s.rhs);
@@ -333,12 +310,11 @@ void Brinkman2D::assemble()
         // TODO Maybe we have to explicitely set non-actives in non-diagonal blocks
         // to zero here, that was done in former code, but maybe we can move it to the solver part
         
-        //tidy up
+        // tidy up
         delete fe_functions[0];
         delete fe_functions[1];
     }
 }
-
 
 /** ************************************************************************ */
 bool Brinkman2D::stopIt(unsigned int iteration_counter)
@@ -349,7 +325,9 @@ bool Brinkman2D::stopIt(unsigned int iteration_counter)
     const double normOfResidual = this->getFullResidual();
     // store initial residual, so later we can print the overall reduction
     if(iteration_counter == 0)
+    {
         initial_residual = normOfResidual;
+    }
     // the residual from 10 iterations ago
     const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
     
@@ -357,9 +335,10 @@ bool Brinkman2D::stopIt(unsigned int iteration_counter)
     const double convergence_speed = db["nonlinloop_slowfactor"];
     bool slow_conv = false;
     
-    
-    if(normOfResidual >= convergence_speed*oldNormOfResidual)
+    if( normOfResidual >= convergence_speed*oldNormOfResidual )
+    {
         slow_conv = true;
+    }
     
     double limit = db["nonlinloop_epsilon"];
     if ( db["nonlinloop_scale_epsilon_with_size"] )
@@ -370,9 +349,9 @@ bool Brinkman2D::stopIt(unsigned int iteration_counter)
     
     // check if the iteration has converged, or reached the maximum number of
     // iterations or if convergence is too slow. Then return true otherwise false
-    if( (normOfResidual<=limit) || (iteration_counter==Max_It) || (slow_conv) )
+    if( ( normOfResidual<=limit) || (iteration_counter==Max_It ) || ( slow_conv ) )
     {
-        if(slow_conv)
+        if( slow_conv )
             Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
         // stop iteration
         Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
@@ -396,7 +375,7 @@ void Brinkman2D::computeNormsOfResiduals()
     this->defect = s.rhs;
     s.matrix.apply_scaled_add(s.solution, defect,-1.);
     
-    if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    if( TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE )
     {
         IntoL20FEFunction(&defect[2*n_u_dof], n_p_dof, &this->get_pressure_space(),
                           TDatabase::ParamDB->VELOCITY_SPACE,
@@ -416,12 +395,13 @@ void Brinkman2D::computeNormsOfResiduals()
 void Brinkman2D::solve()
 {
     System_per_grid& s = this->systems.front();
-    if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
-       || (TDatabase::ParamDB->SOLVER_TYPE != 1))
+    if( (TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
+       || (TDatabase::ParamDB->SOLVER_TYPE != 1) )
     {
         if(TDatabase::ParamDB->SOLVER_TYPE != 2)
+        {
             ErrThrow("only the direct solver is supported currently");
-        
+        }
         /// @todo consider storing an object of DirectSolver in this class
         DirectSolver direct_solver(s.matrix,
                                    DirectSolver::DirectSolverTypes::umfpack);
@@ -429,7 +409,7 @@ void Brinkman2D::solve()
     }
     else
     { // multigrid preconditioned iterative solver
-        mg_solver();
+        //  mg_solver();
     }
     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
         s.p.project_into_L20();
@@ -438,9 +418,8 @@ void Brinkman2D::solve()
 /** ************************************************************************ */
 void Brinkman2D::output(int i)
 {
-    
     bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
-    if(no_output)
+    if( no_output )
         return;
     
     System_per_grid& s = this->systems.front();
@@ -449,13 +428,12 @@ void Brinkman2D::output(int i)
     
     // print the value of the largest and smallest entry in the finite element
     // vector
-    if((size_t)db["verbosity"]> 1)
+    if( (size_t)db["verbosity"]> 1 )
     {
         u1->PrintMinMax();
         u2->PrintMinMax();
         s.p.PrintMinMax();
     }
-    
     
     outputWriter.add_fe_function(&s.p);
     outputWriter.add_fe_vector_function(&s.u);
@@ -470,7 +448,7 @@ void Brinkman2D::output(int i)
     // measure errors to known solution
     // If an exact solution is not known, it is usually set to be zero, so that
     // in such a case here only integrals of the solution are computed.
-    if(db["output_compute_errors"])
+    if( db["output_compute_errors"] )
     {
         double err[4];
         TAuxParam2D NSEaux_error;
@@ -508,219 +486,6 @@ void Brinkman2D::output(int i)
 std::array< double, int(6) > Brinkman2D::get_errors()
 {
     return errors;
-}
-
-/** ************************************************************************ */
-TNSE_MGLevel* Brinkman2D::mg_levels(int i, System_per_grid& s)
-{
-    TNSE_MGLevel *mg_l = nullptr;
-    int n_aux;
-    double alpha[2];
-    
-    int v_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
-    int p_space_code = TDatabase::ParamDB->PRESSURE_SPACE;
-    
-    if ((TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE)
-        || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE))
-        n_aux=4;
-    else
-        n_aux=2;
-    
-    if (i==0)
-    {
-        alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-        alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-    }
-    else
-    {
-        alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-        alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-    }
-    
-    //get all blocks for the solver - here blocks may appear more than once
-    // we must make use of non-const get_blocks_TERRIBLY_UNSAFE, because the
-    // entire multigrid apparatus expects non-const TMatrix pointers
-    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
-    
-    TSquareMatrix2D* A11 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-    TSquareMatrix2D* A12 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-    TMatrix2D* B1T =        reinterpret_cast<TMatrix2D*>( blocks.at(2).get());
-    TSquareMatrix2D* A21 =  reinterpret_cast<TSquareMatrix2D*>( blocks.at(3).get());
-    TSquareMatrix2D* A22 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-    TMatrix2D* B2T =        reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-    TMatrix2D* B1 =         reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
-    TMatrix2D* B2 =         reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-    TSquareMatrix2D* C = (TSquareMatrix2D*) blocks.at(8).get();
-    
-    std::shared_ptr<TStructure> structure = B1T->GetStructure().GetTransposed();
-    switch(TDatabase::ParamDB->BrinkmanTYPE)
-    {
-        case 1:
-            mg_l = new TNSE_MGLevel1(i, A11, B1, B2, structure.get(),
-                                     s.rhs.get_entries(), s.solution.get_entries(),
-                                     n_aux, alpha, v_space_code, p_space_code,
-                                     nullptr, nullptr);
-            break;
-        case 2:
-            mg_l = new TNSE_MGLevel2(i, A11, B1, B2, B1T, B2T,
-                                     s.rhs.get_entries(),
-                                     s.solution.get_entries(),
-                                     n_aux, alpha, v_space_code, p_space_code,
-                                     nullptr, nullptr);
-            break;
-        case 3:
-            mg_l = new TNSE_MGLevel3(i, A11, A12, A21, A22, B1, B2, structure.get(),
-                                     s.rhs.get_entries(), s.solution.get_entries(),
-                                     n_aux, alpha, v_space_code, p_space_code,
-                                     nullptr, nullptr);
-            break;
-        case 4:
-            mg_l = new TNSE_MGLevel4(i, A11, A12, A21, A22, B1, B2, B1T, B2T,
-                                     s.rhs.get_entries(),
-                                     s.solution.get_entries(),
-                                     n_aux, alpha, v_space_code, p_space_code,
-                                     nullptr, nullptr);
-            break;
-        case 14:
-            mg_l = new TNSE_MGLevel14(i, A11, A12, A21, A22, C, B1, B2, B1T, B2T,
-                                      s.rhs.get_entries(),
-                                      s.solution.get_entries(),
-                                      n_aux, alpha, v_space_code, p_space_code,
-                                      nullptr, nullptr);
-            break;
-    }
-    return mg_l;
-}
-
-
-/** ************************************************************************ */
-void Brinkman2D :: mg_solver()
-{
-    System_per_grid& s = this->systems.front();
-    double *itmethod_rhs, *itmethod_sol;
-    TItMethod *itmethod, *prec;
-    int zero_start;
-    TSquareMatrix2D *sqMat[5];
-    TSquareMatrix **sqmatrices = (TSquareMatrix **)sqMat;
-    TMatrix2D *recMat[4];
-    TMatrix **matrices = (TMatrix **)recMat;
-    MatVecProc *MatVect;
-    DefectProc *Defect;
-    
-    int n_dof = this->get_size();
-    
-    //get all blocks for the solver - here blocks may appear more than once
-    // we must make use of non-const get_blocks_TERRIBLY_UNSAFE, because the
-    // entire multigrid apparatus expects non-const TMatrix pointers
-    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
-    
-    TSquareMatrix2D* A11 = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-    TSquareMatrix2D* A12 = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-    TMatrix2D* B1T =  reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-    TSquareMatrix2D* A21 = reinterpret_cast< TSquareMatrix2D*>(blocks.at(3).get());
-    TSquareMatrix2D* A22 = reinterpret_cast< TSquareMatrix2D*>(blocks.at(4).get());
-    TMatrix2D* B2T = reinterpret_cast< TMatrix2D*>(blocks.at(5).get());
-    TMatrix2D* B1 = reinterpret_cast< TMatrix2D*>(blocks.at(6).get());
-    TMatrix2D* B2 = reinterpret_cast< TMatrix2D*>(blocks.at(7).get());
-    TSquareMatrix2D* C = reinterpret_cast< TSquareMatrix2D*>(blocks.at(8).get());
-    
-    switch(TDatabase::ParamDB->BrinkmanTYPE)
-    {
-        case 1:
-            sqMat[0] = A11;
-            sqMat[1] = A12;
-            sqMat[2] = A21;
-            sqMat[3] = A22;
-            recMat[0] = B1;
-            recMat[1] = B2;
-            recMat[2] = B1T;
-            recMat[3] = B2T;
-            
-            MatVect = MatVect_NSE4;
-            Defect = Defect_NSE4;
-            break;
-        case 2:
-            sqMat[0] = A11;
-            sqMat[1] = A12;
-            sqMat[2] = A21;
-            sqMat[3] = A22;
-            recMat[0] = B1;
-            recMat[1] = B2;
-            recMat[2] = B1T;
-            recMat[3] = B2T;
-            
-            MatVect = MatVect_NSE4;
-            Defect = Defect_NSE4;
-            break;
-    }
-    
-    
-    if(TDatabase::ParamDB->SOLVER_TYPE ==1)
-    {
-        switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
-        {
-            case 11:
-                zero_start = 1;
-                break;
-            case 16:
-                zero_start = 0;
-                break;
-        }
-        switch(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE)
-        {
-            case 5:
-                prec = new TMultiGridIte(MatVect, Defect, nullptr, 0, n_dof,
-                                         this->multigrid.get(), zero_start);
-                break;
-            default:
-                ErrThrow("Unknown preconditioner !!!");
-        }
-        
-        if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-        {
-            itmethod_sol = new double[n_dof];
-            itmethod_rhs = new double[n_dof];
-            
-            memcpy(itmethod_sol, s.solution.get_entries(), n_dof*SizeOfDouble);
-            memcpy(itmethod_rhs, s.rhs.get_entries(), n_dof*SizeOfDouble);
-        }
-        else
-        {
-            itmethod_sol = s.solution.get_entries();
-            itmethod_rhs = s.rhs.get_entries();
-        }
-        
-        switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
-        {
-            case 11:
-                itmethod = new TFixedPointIte(MatVect, Defect, prec, 0, n_dof, 0);
-                break;
-            case 16:
-                itmethod = new TFgmresIte(MatVect, Defect, prec, 0, n_dof, 0);
-                break;
-            default:
-                ErrThrow("Unknown preconditioner !!!");
-        }
-    }
-    
-    switch(TDatabase::ParamDB->SOLVER_TYPE)
-    {
-        case 1:
-            itmethod->Iterate(sqmatrices,matrices,itmethod_sol,itmethod_rhs);
-            break;
-        case 2:
-            break;
-    }
-    
-    if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-    {
-        memcpy(s.solution.get_entries(), itmethod_sol, n_dof*SizeOfDouble);
-        memcpy(s.rhs.get_entries(), itmethod_rhs, n_dof*SizeOfDouble);
-        
-        delete itmethod; delete prec;
-        delete [] itmethod_rhs;
-        delete [] itmethod_sol;
-    }
 }
 
 /** ************************************************************************ */
