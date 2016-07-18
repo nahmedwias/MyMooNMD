@@ -110,7 +110,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   }
   
   // example object
-  Example_TimeCD3D example_obj(db["example"],db);
+  Example_TimeCD3D example_obj(db);
 #ifdef _MPI
   Time_CD3D tcd3d(gridCollections, db, example_obj, maxSubDomainPerDof);
 #else
@@ -243,6 +243,7 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database(), true);
   db.merge(Multigrid::default_multigrid_database());
+  db.merge(Example3D::default_example_database());
   db["problem_type"] = 1;
   db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 2);
   db["multigrid_n_levels"] = 1;

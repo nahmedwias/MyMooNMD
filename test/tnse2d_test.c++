@@ -48,9 +48,11 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
 
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database());
+  db.merge(Example2D::default_example_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
   db["problem_type"] = 5;
   db["example"] = 0;
+  db["reynolds_number"] = 1;
   db["solver_type"] = "direct";
   db["iterative_solver_type"] = "fgmres";
   db["residual_tolerance"] = 1.e-12;
@@ -135,7 +137,6 @@ int main(int argc, char* argv[])
     db.add("refinement_n_initial_steps", (size_t) 1,"");
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
-    db.add("reynolds_number",1,"");
 
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5;

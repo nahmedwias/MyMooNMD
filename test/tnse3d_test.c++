@@ -101,7 +101,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
   SetTimeDiscParameters(0);
 
   // Construct example object
-  Example_TimeNSE3D example(db["example"],db);
+  Example_TimeNSE3D example(db);
   // Construct Time_NSE3D object
 #ifdef _MPI
   Time_NSE3D tnse3d(domain, db, example, maxSubDomainPerDof);
@@ -149,7 +149,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
   } // end of time loop
 }
 
-void check(ParameterDatabase& db, int example, TDomain& domain,
+void check(ParameterDatabase& db, TDomain& domain,
            int velocity_order, int pressure_order,
            int nstype, int laplacetype, int nonlineartype, int time_discretizationtype,
            std::array<std::array<double, int(4)>,3> errors, double tol
@@ -161,7 +161,6 @@ void check(ParameterDatabase& db, int example, TDomain& domain,
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
-  db["example"].set<int>(example);
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlineartype;
   TDatabase::ParamDB->LAPLACETYPE = laplacetype;
   TDatabase::TimeDB->TIME_DISC = time_discretizationtype;
@@ -304,6 +303,7 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
+  db.merge(Example3D::default_example_database());
   db["problem_type"].set<size_t>(6);
   db["nonlinloop_slowfactor"]=1.;
   db.add("boundary_file", "Default_UnitCube", "");
@@ -348,7 +348,8 @@ int main(int argc, char* argv[])
 
     //=============================================================================
     // examples ... (0 to 5)
-    size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
+    db["example"] = 0;
+    int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
     int timediscretizationtype = 2;
@@ -357,32 +358,35 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q2/P1-disc elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-      check(db, exmpl, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
+      set_errors(db["example"], 12, 1, timediscretizationtype, 
+                 std::string(argv[1]),0, errors);
+      check(db, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
 //          timediscretizationtype, errors, tol);
 //
 #else
-      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-//      check(db, exmpl, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
+      set_errors(db["example"], 12, 1, timediscretizationtype, 
+                 std::string(argv[1]),0, errors);
+//      check(db, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      set_errors(exmpl, 12, 2, timediscretizationtype,std::string(argv[1]),0, errors);
-//      check(db, exmpl, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
+//      set_errors(db["example"], 12, 2, timediscretizationtype, 
+//                 std::string(argv[1]),0, errors);
+//      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-      check(db, exmpl, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
+      check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 #endif
     //=============================================================================
@@ -390,17 +394,18 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q3/P2-disc elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-//      check(db, exmpl, domain_hex, 13, -4711, 1, laplacetype, nonlineartype,
+//      set_errors(db["example"], 12, 1, timediscretizationtype, 
+//                 std::string(argv[1]),0, errors);
+//      check(db, domain_hex, 13, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 13, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 13, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 13, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 13, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 13, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 13, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
 #else
@@ -411,29 +416,30 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q2/Q1 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-//      check(db, exmpl, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
+//      set_errors(db["example"], 12, 1, timediscretizationtype, 
+//                 std::string(argv[1]),0, errors);
+//      check(db, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
-      check(db, exmpl, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
+      check(db, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 
-      check(db, exmpl, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
+      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 #endif
     //=============================================================================
@@ -441,17 +447,18 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q3/Q2 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-//      check(db, exmpl, domain_hex, 3, -4711, 1, laplacetype, nonlineartype,
+//      set_errors(db["example"], 12, 1, timediscretizationtype, 
+//                 std::string(argv[1]),0, errors);
+//      check(db, domain_hex, 3, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 3, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 3, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 3, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 3, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 3, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 3, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
       // Q3/Q2 elements are not implemented yet in MPI
@@ -461,17 +468,18 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q4/Q3 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-//      check(db, exmpl, domain_hex, 4, -4711, 1, laplacetype, nonlineartype,
+//      set_errors(db["example"], 12, 1, timediscretizationtype, 
+//                 std::string(argv[1]),0, errors);
+//      check(db, domain_hex, 4, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 4, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 4, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 4, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 4, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 4, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 4, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
       // Q4/Q3 elements are not implemented yet in MPI
@@ -484,30 +492,32 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q2/P1-disc elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-      check(db, exmpl, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
+      set_errors(db["example"], 12, 1, timediscretizationtype,
+                 std::string(argv[1]),0, errors);
+      check(db, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
-      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-      check(db, exmpl, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
+      set_errors(db["example"], 12, 1, timediscretizationtype,
+                 std::string(argv[1]),0, errors);
+      check(db, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 #endif
     //=============================================================================
@@ -515,17 +525,18 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q3/P2-disc elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-//      check(db, exmpl, domain_hex, 13, -4711, 1, laplacetype, nonlineartype,
+//      set_errors(db["example"], 12, 1, timediscretizationtype, 
+//                 std::string(argv[1]),0, errors);
+//      check(db, domain_hex, 13, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 13, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 13, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 13, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 13, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 13, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 13, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
       // Q3/P2-disc not implemented yet in MPI
@@ -535,30 +546,31 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q2/Q1 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-      set_errors(exmpl, 12, 1, timediscretizationtype, std::string(argv[1]),0, errors);
-//      check(db, exmpl, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
+      set_errors(db["example"], 12, 1, timediscretizationtype,
+                 std::string(argv[1]),0, errors);
+//      check(db, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 
-      check(db, exmpl, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
+      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
-//      check(db, exmpl, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
+//      check(db, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-      check(db, exmpl, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
+      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
-//                  timediscretizationtype, errors, tol,maxSubDomainPerDof);
+//      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
+//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
-//                  timediscretizationtype, errors, tol,maxSubDomainPerDof);
+//      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
+//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
 #endif
     //=============================================================================
@@ -566,13 +578,13 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q3/Q2 elements for several NSTypes");
     //=============================================================================
 //#ifndef _MPI // solve with umfpack in SEQ case
-//      check(db, exmpl, domain_hex, 3, -4711, 1, laplacetype, nonlineartype,
+//      check(db, domain_hex, 3, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
-//      check(db, exmpl, domain_hex, 3, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 3, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
-//      check(db, exmpl, domain_hex, 3, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 3, -4711, 3, laplacetype, nonlineartype,
 //           timediscretizationtype, errors, tol);
-//      check(db, exmpl, domain_hex, 3, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 3, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //#else
 //      // Q3/Q2 not implemented yet in MPI
@@ -582,13 +594,13 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q4/Q3 elements for several NSTypes");
     //=============================================================================
 //#ifndef _MPI // solve with umfpack in SEQ case
-//      check(db, exmpl, domain_hex, 4, -4711, 1, laplacetype, nonlineartype,
+//      check(db, domain_hex, 4, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
-//      check(db, exmpl, domain_hex, 4, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_hex, 4, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
-//      check(db, exmpl, domain_hex, 4, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_hex, 4, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
-//      check(db, exmpl, domain_hex, 4, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_hex, 4, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //#else
 //      // Q4/Q3 not implemented yet in MPI
@@ -603,6 +615,7 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Solver<>::default_solver_database());
     db.merge(ParameterDatabase::default_nonlinit_database());
+    db.merge(Example3D::default_example_database());
     db["problem_type"].set<size_t>(6);
     db["nonlinloop_slowfactor"]=1.;
     db.add("boundary_file", "Default_UnitCube", "");
@@ -633,7 +646,8 @@ int main(int argc, char* argv[])
 
     //=============================================================================
     // examples ... (0 to 5)
-    size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
+    db["example"] = 0;
+    int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
     int timediscretizationtype = 2;
@@ -642,30 +656,32 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing P2/P1 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-      set_errors(exmpl, 2, 1, timediscretizationtype, std::string(argv[1]),1,errors);
-//      check(db, exmpl, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
+      set_errors(db["example"], 2, 1, timediscretizationtype,
+                 std::string(argv[1]),1,errors);
+//      check(db, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-      check(db, exmpl, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
+      check(db, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
-      set_errors(exmpl, 2, 1, timediscretizationtype, std::string(argv[1]),1,errors);
-      check(db, exmpl, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
+      set_errors(db["example"], 2, 1, timediscretizationtype,
+                 std::string(argv[1]),1,errors);
+      check(db, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
 //                 timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
 #endif
@@ -674,17 +690,18 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing P3/P2 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(exmpl, 2, 1, timediscretizationtype, std::string(argv[1]),1,errors);
-//      check(db, exmpl, domain_tet, 3, -4711, 1, laplacetype, nonlineartype,
+//      set_errors(db["example"], 2, 1, timediscretizationtype, 
+//                 std::string(argv[1]),1,errors);
+//      check(db, domain_tet, 3, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 3, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_tet, 3, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 3, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_tet, 3, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 3, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_tet, 3, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
       // P3/P2 not implemented yet in MPI
@@ -697,30 +714,32 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing P2/P1 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(exmpl, 2, 1, timediscretizationtype, std::string(argv[1]),1,errors);
-//      check(db, exmpl, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
+//      set_errors(db["example"], 2, 1, timediscretizationtype, 
+//                 std::string(argv[1]),1,errors);
+//      check(db, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
-//      set_errors(exmpl, 2, 1, timediscretizationtype, std::string(argv[1]),1,errors);
-//      check(db, exmpl, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
+//      set_errors(db["example"], 2, 1, timediscretizationtype, 
+//                 std::string(argv[1]),1,errors);
+//      check(db, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-//      check(db, exmpl, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 #endif
     //=============================================================================
@@ -728,17 +747,18 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing P3/P2 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(exmpl, 2, 1, timediscretizationtype, std::string(argv[1]),1,errors);
-//      check(db, exmpl, domain_tet, 3, -4711, 1, laplacetype, nonlineartype,
+//      set_errors(db["example"], 2, 1, timediscretizationtype, 
+//                 std::string(argv[1]),1,errors);
+//      check(db, domain_tet, 3, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 3, -4711, 2, laplacetype, nonlineartype,
+//      check(db, domain_tet, 3, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 3, -4711, 3, laplacetype, nonlineartype,
+//      check(db, domain_tet, 3, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-//      check(db, exmpl, domain_tet, 3, -4711, 4, laplacetype, nonlineartype,
+//      check(db, domain_tet, 3, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
       // P3/P2 not implemented yet in MPI

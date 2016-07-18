@@ -180,6 +180,7 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(ParameterDatabase::default_output_database());
+    db.merge(Example2D::default_example_database());
 
     db["problem_type"].set<size_t>(5);
     db["example"] = 2;
@@ -196,7 +197,7 @@ int main(int argc, char* argv[])
     // default construct a domain object
     TDomain domain(db);
 
-    db.add("reynolds_number",1,"");
+    db["reynolds_number"] = 1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
@@ -275,6 +276,7 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(ParameterDatabase::default_output_database());
+    db.merge(Example2D::default_example_database());
     db["problem_type"].set<size_t>(5);
     db["example"] = 2;
 
@@ -290,7 +292,7 @@ int main(int argc, char* argv[])
     TDomain domain(db);
 
     // parameters used for this test
-    db.add("reynolds_number",1,"");
+    db["reynolds_number"] = 1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->LAPLACETYPE = 0;

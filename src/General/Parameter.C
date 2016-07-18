@@ -701,11 +701,24 @@ template<> void Parameter::set(size_t new_value)
   this->change_count++;
   this->unsigned_value = new_value;
 }
+template<> void Parameter::set(double new_value)
+{
+  if(!check_type<double>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != double");
+  // check if new_value is in the specified parameter range
+  if(new_value < this->double_min || new_value > this->double_max)
+    ErrThrow("new parameter value out of range, Parameter ", this->name);
+  
+  this->change_count++;
+  this->double_value = new_value;
+}
 template<> void Parameter::set(int new_value)
 {
-  if(!check_type<int>(this->type) && !check_type<size_t>(this->type))
+  if(!check_type<int>(this->type) && !check_type<size_t>(this->type)
+     && !check_type<double>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
-             type_as_string(this->type), " != int or size_t");
+             type_as_string(this->type), " != int or size_t or double");
   if(check_type<size_t>(this->type))
   {
     if(new_value < 0)
@@ -713,6 +726,11 @@ template<> void Parameter::set(int new_value)
                type_as_string(this->type), " != int");
     // setting a positive integer to a size_t parameter
     this->set<size_t>(new_value);
+    return;
+  }
+  if(check_type<double>(this->type))
+  {
+    this->set<double>(new_value);
     return;
   }
   // check if new_value is in the specified parameter range
@@ -730,18 +748,6 @@ template<> void Parameter::set(int new_value)
   
   this->change_count++;
   this->int_value = new_value;
-}
-template<> void Parameter::set(double new_value)
-{
-  if(!check_type<double>(this->type))
-    ErrThrow("Parameter ", this->name, " has the wrong type: ",
-             type_as_string(this->type), " != double");
-  // check if new_value is in the specified parameter range
-  if(new_value < this->double_min || new_value > this->double_max)
-    ErrThrow("new parameter value out of range, Parameter ", this->name);
-  
-  this->change_count++;
-  this->double_value = new_value;
 }
 template<> void Parameter::set(std::string new_value)
 {

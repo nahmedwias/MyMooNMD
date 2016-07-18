@@ -106,7 +106,7 @@ void check(ParameterDatabase& db, int ansatz_order,
   }
 
   // Choose and construct example.
-  Example_CD3D example_obj(db["example"],db);
+  Example_CD3D example_obj(db);
 
   // Construct the cd3d problem object.
 #ifdef _MPI
@@ -226,6 +226,7 @@ int main(int argc, char* argv[])
   TFEDatabase3D FEDatabase;
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database() ,true);
+  db.merge(Example3D::default_example_database());
   db["problem_type"] = 1;
   db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 3);
   db.add("multigrid_n_levels", (size_t) 0, "",(size_t) 0, (size_t) 3);

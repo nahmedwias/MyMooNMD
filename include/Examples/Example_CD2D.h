@@ -44,16 +44,15 @@ class Example_CD2D : public Example2D
      * This intializes a convection-diffusion example in 2D. It is chosen 
      * according to example_code.
      */
-    Example_CD2D(int example_code,
-                 const ParameterDatabase& user_input_parameter_db);
+    Example_CD2D(const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
      */
     Example_CD2D(std::vector <DoubleFunct2D*> exact,
-                  std::vector <BoundCondFunct2D*> bc,
-                  std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
+                 std::vector <BoundCondFunct2D*> bc,
+                 std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
     : Example2D(exact, bc, bd, coeffs) {};
 
     /// Apply the function stored as post processing routine.

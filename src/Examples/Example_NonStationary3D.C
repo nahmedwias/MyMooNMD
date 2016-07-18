@@ -1,7 +1,7 @@
 #include <Example_NonStationary3D.h>
 
-Example_NonStationary3D::Example_NonStationary3D()
- : Example3D()
+Example_NonStationary3D::Example_NonStationary3D(const ParameterDatabase & db)
+ : Example3D(db)
  , timeDependentRhs()
  , timeDependentCoeffs()
  , initialCondtion()
