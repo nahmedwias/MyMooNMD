@@ -289,6 +289,8 @@ else()
                     COMMENT "It seems cmake could not find a doxygen executable. Therefore no documentation is created!" VERBATIM)
 endif(DOXYGEN_FOUND)
 
+include(cmake/get_repository_information.cmake)
+
 
 ###############################################################################
 # the CMakeLists.txt for the user_projects may define more targets, tests, ...
