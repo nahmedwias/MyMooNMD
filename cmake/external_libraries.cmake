@@ -44,27 +44,40 @@ set(PETSC_LIBS_PATH ${PETSC_DIR}/${PETSC_ARCH}/lib/)
 # even in sequential mode (because it is compiled for MPI). With this line it 
 # can find it.
 include_directories(${PETSC_INCLUDES})
-find_library(PETSC_LIBRARIES NAMES petsc PATHS ${PETSC_LIBS_PATH} 
-             NO_DEFAULT_PATH)
 
-# Search and include LAPACK library
-# In fact we would like to use 'find_package(LAPACK REQUIRED)' to find LAPACK 
-# and BLAS at the same time. However this will not use the PETSc LAPACK and 
-# BLAS, so we have to include these by hand.
-find_library(LAPACK_LIBRARIES NAMES libflapack.a PATHS ${PETSC_LIBS_PATH}
-             NO_DEFAULT_PATH)
-# Mimic "REQUIRED" behaviour
-if(NOT LAPACK_LIBRARIES)
-  message(FATAL_ERROR "Could not find LAPACK. You have to configure PETSc to "
-          "include LAPACK")
-endif()
-find_library(BLAS_LIBRARIES NAMES libfblas.a PATHS ${PETSC_LIBS_PATH}
-             NO_DEFAULT_PATH)
-# Mimic "REQUIRED" behaviour
-if(NOT BLAS_LIBRARIES)
-  message(FATAL_ERROR "Could not find BLAS. You have to configure PETSc to "
-          "include BLAS")
-endif()
+
+function(check_if_lib_exists lib_name petsc_configure_flag)
+  string(FIND "${PETSC_LIBRARIES}" "${lib_name}" found)
+  if(found EQUAL -1)
+    message(FATAL_ERROR 
+            "${lib_name} not found in the PETSc libraries. You have to "
+            "configure PETSc with ${lib_name}, e.g.: "
+            "--download-${petsc_configure_flag}")
+  endif()
+endfunction(check_if_lib_exists)
+
+
+check_if_lib_exists("blas" "fblaslapack")
+check_if_lib_exists("lapack" "fblaslapack")
+if(_USING_MPI)
+  check_if_lib_exists("mpi" "openmpi")
+  check_if_lib_exists("metis" "metis")
+  check_if_lib_exists("parmetis" "parmetis")
+  check_if_lib_exists("dmumps" "mumps")
+  check_if_lib_exists("mumps_common" "mumps")
+  # Find a thread library. (Mumps needs this)
+  set(CMAKE_THREAD_PREFER_PTHREAD ON)
+  find_package(Threads REQUIRED)
+  # pord library (the sequential ordering tool which ships with mumps)
+  check_if_lib_exists("pord" "mumps")
+  check_if_lib_exists("scalapack" "scalapack")
+  check_if_lib_exists("umfpack" "suitesparse")
+  check_if_lib_exists("suitesparseconfig" "suitesparse")
+  check_if_lib_exists("amd" "suitesparse")
+  check_if_lib_exists("cholmod" "suitesparse")
+  check_if_lib_exists("colamd" "suitesparse")
+endif(_USING_MPI)
+
 
 
 # When using OpenMP, find it and use the module's output.
@@ -77,104 +90,6 @@ if(_USING_OMP)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
   endif(OPENMP_FOUND)
 endif(_USING_OMP)
-
-
-# When using MPI, find mpi and some other libraries which use mpi.
-if(_USING_MPI)
-  # ======================== find mpi library =================================
-  # we want to use "find_package(MPI)" to find the mpi libraries, compilers, 
-  # and includes. However one has to use the same ones which PETSc uses, so it
-  # is done by hand here. The find_package command is then used to get correct
-  # compiler and linker flags.
-  set(MPI_C_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpicc)
-  set(MPI_CXX_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpic++)
-  set(MPI_Fortran_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpifort)
-  set(MPI_C_INCLUDE_PATH ${PETSC_DIR}/${PETSC_ARCH}/include/)
-  set(MPI_CXX_INCLUDE_PATH ${PETSC_DIR}/${PETSC_ARCH}/include/)
-  set(MPI_Fortran_INCLUDE_PATH ${PETSC_DIR}/${PETSC_ARCH}/include/)
-  find_library(MPI_C_LIBRARIES NAMES mpi PATHS PETSC_LIBS_PATH NO_DEFAULT_PATH)
-  find_library(MPI_CXX_LIBRARIES NAMES mpi_cxx PATHS PETSC_LIBS_PATH 
-               NO_DEFAULT_PATH)
-  find_library(MPI_Fortran_LIBRARIES NAMES mpifort PATHS PETSC_LIBS_PATH 
-               NO_DEFAULT_PATH)
-  
-  # call to find_package, this now looks for appropriate compiler/linker flags
-  find_package(MPI REQUIRED)
-  # set compile and link flags
-  if(MPI_COMPILE_FLAGS)
-    message(STATUS "There are mpi compile flags!")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} 
-        ${MPI_Fortran_COMPILE_FLAGS}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPI_C_COMPILE_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  endif()
-  if(MPI_LINK_FLAGS)
-    message(STATUS "There are mpi linker flags!")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_LINK_FLAGS}")
-  endif() 
-  # Combine MPI libraries for all 3 languages to one list used for linking.
-  list(APPEND _MPI_LIBRARIES ${MPI_Fortran_LIBRARIES})
-  list(APPEND _MPI_LIBRARIES ${MPI_C_LIBRARIES})
-  list(APPEND _MPI_LIBRARIES ${MPI_CXX_LIBRARIES})
-  
-  
-  
-  # Find a thread library. (Mumps needs this)
-  set(CMAKE_THREAD_PREFER_PTHREAD ON)
-  find_package(Threads REQUIRED)
-  
-  
-  
-  # Include Metis
-  find_path(METIS_INCLUDE_DIR metis.h PATHS ${PETSC_INCLUDES} NO_DEFAULT_PATH)
-  find_library(METIS_LIBRARY NAMES metis PATHS ${PETSC_LIBS_PATH} 
-               NO_DEFAULT_PATH)
-  # Mimic "REQUIRED" behaviour
-  if(NOT (METIS_LIBRARY AND METIS_INCLUDE_DIR))
-    message(FATAL_ERROR "Could not find Metis. You have to configure PETSc to "
-            "include metis")
-  endif()
-  
-  
-  
-  #When using MPI we're also using Parmetis. Include it.
-  find_path(PARMETIS_INCLUDE_DIR parmetis.h PATHS ${PETSC_INCLUDES} 
-            NO_DEFAULT_PATH)
-  find_library(PARMETIS_LIBRARY NAMES parmetis PATHS ${PETSC_LIBS_PATH} 
-               NO_DEFAULT_PATH)
-  # Mimic "REQUIRED" behaviour
-  if(NOT (PARMETIS_LIBRARY AND PARMETIS_INCLUDE_DIR))
-    message(FATAL_ERROR "Could not find Parmetis. You have to configure PETSc "
-            "to include Parmetis")
-  endif()
-  
-  
-  
-  # When using MPI we're also using the MUMPS solver. Take the supplied dmumps,
-  # mumps_common and scalapack dependencies.
-  find_path(MUMPS_INCLUDE_DIR mumps_compat.h PATHS ${PETSC_INCLUDES}
-            NO_DEFAULT_PATH)
-  # Find mumps and its dependent libraries.
-  find_library(MUMPS_LIBRARY NAMES dmumps PATHS ${PETSC_LIBS_PATH}
-               NO_DEFAULT_PATH)
-  # mumps_common library
-  find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common PATHS ${PETSC_LIBS_PATH}
-               NO_DEFAULT_PATH)
-  # pord library (the sequential ordering tool which ships with mumps)
-  find_library(PORD_LIBRARY NAMES pord PATHS ${PETSC_LIBS_PATH} NO_DEFAULT_PATH)
-  # scalapack library
-  find_library(SCALAPACK_LIBRARY NAMES scalapack PATHS ${PETSC_LIBS_PATH}
-               NO_DEFAULT_PATH)
-  set(MUMPS_LIBRARIES ${MUMPS_LIBRARY} ${MUMPS_LIBRARY_COMMON} 
-      ${SCALAPACK_LIBRARY} ${PORD_LIBRARY} gfortran)
-  # Mimic "REQUIRED" behaviour
-  if(NOT (MUMPS_LIBRARIES AND MUMPS_INCLUDE_DIR)) 
-    message(FATAL_ERROR "Mumps or one of its dependencies could not be found."
-            " - check CMakeCache.txt.")
-  endif()
-endif(_USING_MPI)
-
-
 
 # Search and include TRIANGLE library.
 find_path(TRIANGLE_INCLUDE_DIR triangle.h PATHS ${PARMOON_EXTLIB_PATH}/Triangle
@@ -217,38 +132,13 @@ endif(_USING_OMP)
 
 
 
-# Include UMFPACK library.
-find_path(UMFPACK_INCLUDE_DIR umfpack.h PATHS ${PETSC_INCLUDES} NO_DEFAULT_PATH)
-find_library(UMFPACK_LIBRARY NAMES umfpack 
-             PATHS ${PETSC_DIR}/${PETSC_ARCH}/lib/ NO_DEFAULT_PATH)
-find_library(UMFPACK_SUITESE_LIBRARY NAMES suitesparseconfig
-             PATHS ${PETSC_DIR}/${PETSC_ARCH}/lib/ NO_DEFAULT_PATH)
-find_library(UMFPACK_AMD_LIBRARY NAMES amd
-             PATHS ${PETSC_DIR}/${PETSC_ARCH}/lib/ NO_DEFAULT_PATH)
-find_library(UMFPACK_CHOLMOD_LIBRARY NAMES cholmod
-             PATHS ${PETSC_DIR}/${PETSC_ARCH}/lib/ NO_DEFAULT_PATH)
-find_library(UMFPACK_COLAMD_LIBRARY NAMES colamd
-             PATHS ${PETSC_DIR}/${PETSC_ARCH}/lib/ NO_DEFAULT_PATH)
-set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARY} ${UMFPACK_SUITESE_LIBRARY}
-    ${UMFPACK_AMD_LIBRARY} ${UMFPACK_CHOLMOD_LIBRARY} ${UMFPACK_COLAMD_LIBRARY})
-
-
 
 # Set up list of external libraries. If library A depends on library B then A
 # should be listed before B. For example the Blas library is the last one 
 # because it depends on no other library but others depend on it.
-list(APPEND _EXTERN_LIBRARIES ${PETSC_LIBRARIES})
 list(APPEND _EXTERN_LIBRARIES ${TRIANGLE_LIBRARY})
 list(APPEND _EXTERN_LIBRARIES ${TETGEN_LIBRARY})
 if(_USING_OMP)
   list(APPEND _EXTERN_LIBRARIES ${PARDISO_LIBRARY})
 endif(_USING_OMP)
-list(APPEND _EXTERN_LIBRARIES ${UMFPACK_LIBRARIES})
-if(_USING_MPI)
-    list(APPEND _EXTERN_LIBRARIES ${MUMPS_LIBRARIES})
-    list(APPEND _EXTERN_LIBRARIES ${PARMETIS_LIBRARY})
-    list(APPEND _EXTERN_LIBRARIES ${METIS_LIBRARY})
-    list(APPEND _EXTERN_LIBRARIES ${_MPI_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-endif(_USING_MPI)
-list(APPEND _EXTERN_LIBRARIES ${LAPACK_LIBRARIES})
-list(APPEND _EXTERN_LIBRARIES ${BLAS_LIBRARIES})
+list(APPEND _EXTERN_LIBRARIES ${PETSC_LIBRARIES})
