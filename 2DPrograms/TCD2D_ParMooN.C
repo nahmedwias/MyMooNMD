@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
   
-  Example_TimeCD2D example( parmoon_db["example"],parmoon_db );
+  Example_TimeCD2D example( parmoon_db );
   Time_CD2D tcd(Domain, parmoon_db, example);
   // ======================================================================
   // assemble matrices and right hand side at start time  

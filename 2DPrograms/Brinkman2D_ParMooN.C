@@ -12,7 +12,6 @@
 #include <FEDatabase2D.h>
 #include <LinAlg.h>
 #include <Brinkman2D.h>
-#include <Output2D.h>
 #include <MainUtilities.h>
 #include <LocalAssembling2D.h>
 #include <Example_Brinkman2D.h>
@@ -57,7 +56,7 @@ int main(int argc, char* argv[])
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
     
-  Example_Brinkman2D example(parmoon_db["example"],parmoon_db);
+  Example_Brinkman2D example(parmoon_db);
     
   //=========================================================================
   // create an object of the Brinkman class
