@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
   domain.print_info("TCD3D domain");
 
   // Choose example according to the value of
-  Example_TimeCD3D example(parmoon_db["example"],parmoon_db);
+  Example_TimeCD3D example(parmoon_db);
   
   // create an object of the class Time_CD3D
 #ifdef _MPI

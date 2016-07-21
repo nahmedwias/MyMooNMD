@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
   SetTimeDiscParameters(0);
 
   // Choose and construct example.
-  Example_TimeNSE3D example(parmoon_db["example"],parmoon_db);
+  Example_TimeNSE3D example(parmoon_db);
 
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
