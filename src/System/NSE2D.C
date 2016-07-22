@@ -784,6 +784,9 @@ void NSE2D::output(int i)
   } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
+
+  //do postprocessing step depending on what the example implements
+  example.do_post_processing(*this);
 }
 
 /** ************************************************************************ */

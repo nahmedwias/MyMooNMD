@@ -496,7 +496,7 @@ void compute_drag_lift_pdiff(NSE3D& nse3d)
 
   // print them reference values - f.y.i. the reference intervals:
   // drag \in [6.05,6.25], lift \in [0.008,0.01], pdiff \in [0.165,0.175]
-  // note: these hold for KINEMATIC_VISCOSITY = 1e-3 and geometry
+  // note: these hold for DIMENSIONLESS_VISCOSITY = 1e-3 and geometry
   // as described in John 2002.
   if(my_rank == 0)
   {
