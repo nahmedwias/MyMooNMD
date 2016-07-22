@@ -34,16 +34,18 @@ void VankaSmoother::update(const BlockFEMatrix& matrix)
   //Check if matrix looks like saddle point problem (i.e.: all but last block
   // row space are the same)
   size_t n_blocks = matrix.get_n_cell_rows();
-  if(n_blocks <= 1)
-    ErrThrow("Matrix has too few cell rows for VankaSmoother!");
+
+  //First space will be interpreted as velocity space, last space as pressure space.
   const TFESpaceXD* first_space = &matrix.get_test_space(0,0);
   const TFESpaceXD* last_space = &matrix.get_test_space(n_blocks - 1 , 0);
+
   for(size_t i = 0; i < n_blocks - 1 ; ++i)
   {
     if(&matrix.get_test_space(i,0) != first_space)
     {
-      ErrThrow("So far VankaSmoother will only operate for saddle point matrices."
-          " This matrix does not look like one! ", i);
+      ErrThrow("So far VankaSmoother will only operate for matrices, whose"
+          " first n-1 blocks have the same fe space."
+          " This matrix does not fulfil that requirement! ", i);
     }
   }
   //Find out if spaces changed, and if so: reassort dof batches
@@ -52,7 +54,7 @@ void VankaSmoother::update(const BlockFEMatrix& matrix)
   // in comparison to the previous one. This needs to be corrected to make a safer
   // comparison. For the moment, I dont comment them out, because then the tests are
   // much longer, especially in tnse3d case: reassort when needed (with "if") ~ 20s,
-  // reassort systematically (without "if") ~ 315s !!!
+  // reassort systematically (without "if") ~ 315s (Najib)!!!
   if(last_space != pressure_space_)
   {
     //TODO Check that cell vanka and continuous space are not used together!
@@ -223,6 +225,7 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
  * Playing with it renders different Vanka smoothers!
  */
 void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
+
   switch (type_) {
     case (VankaType::NODAL):{ // pressure node oriented Vanka
       //There are as many batches as cells in this case.

@@ -17,9 +17,16 @@ enum class VankaType {NODAL, CELL, BATCH};
 class DenseMatrix;
 
 /**
- * A class for Vanka smoother as used in the multgrid method. Currently the
+ * A class for Vanka smoother as used in the multgrid method. The
  * implementation and nomenclature are adapted to (Navier--)Stokes saddle
  * point problems - but extending it should be relatively simple.
+ *
+ * The Smoothers are now also available for Convection_difusion equations.
+ * The only thing a matrix must fulfil in order to use a Vanka smoother is,
+ * that all its spaces but the last one must be identical. This should describe
+ * a saddle point problem, but might easily degenerate to a matrix where all
+ * spaces are the same (e.g. a 1x1 Convection-Difusion-Reaction matrix).
+ *
  */
 class VankaSmoother : public Smoother
 {
