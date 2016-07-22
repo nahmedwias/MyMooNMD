@@ -28,8 +28,6 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
 #ifdef _MPI
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-#else
-  int my_rank =0;
 #endif
   Output::info<4>("MultigridLevel", "Constructed a MultigridLevel object. matrix "
                "dimensions: (", matrix->get_n_total_rows(), ",",
@@ -90,15 +88,16 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
 
 void MultigridLevel::apply_smoother()
 {
-  smoother_->smooth(rhs_, solution_);
-
 #ifdef _MPI
+  // establish level 3 consistency of rhs and solution
   std::vector<const TParFECommunicator3D*> comms = matrix_->get_communicators();
   for(size_t bl =0; bl < comms.size(); ++bl)
   {
-    comms[bl]->consistency_update(solution_.block(bl), 3); //restore level 3 consistency of solution_
+    comms[bl]->consistency_update(rhs_.block(bl), 3);
+    comms[bl]->consistency_update(solution_.block(bl), 3);
   }
 #endif
+  smoother_->smooth(rhs_, solution_);
 }
 
 void MultigridLevel::calculate_defect()
