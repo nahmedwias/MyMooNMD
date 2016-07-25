@@ -75,8 +75,8 @@ class Multigrid
     bool is_using_mdml() const { return type_ == MultigridType::MDML; }
 
     /// @brief return the number of multigrid levels.
-    /// @details In case of mdml this is one more than there are grids involved.
-    size_t get_n_levels() const { return db["multigrid_n_levels"]; };
+    /// @details This returns the number of geometric levels.
+    size_t get_n_geometric_levels() const { return db["multigrid_n_levels"]; };
 
     /// Set the right hand side on the finest grid. It must of course fit the
     /// matrix stored on the finest grid.
@@ -106,6 +106,8 @@ class Multigrid
     /// @brief Parameter database to store all parameters related to multigrid
     ParameterDatabase db;
     
+    size_t n_algebraic_levels_;
+
     /// A list of the participating levels, ordered from coarsest (0)
     /// to finest level.
     std::vector<MultigridLevel> levels_;

@@ -9,7 +9,6 @@
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <NSE3D.h>
-#include <MeshPartition.h>
 #include <Chrono.h>
 #include <LoopInfo.h>
 
@@ -19,7 +18,6 @@
 double bound = 0;
 double timeC = 0;
 #endif
-
 
 int main(int argc, char* argv[])
 {
@@ -73,53 +71,17 @@ int main(int argc, char* argv[])
   // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
 
-  // Initial domain refinement
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-    domain.RegRefineAll();
-
-  // write grid into an Postscript file
-  if(parmoon_db["output_write_ps"] && my_rank==0)
-    domain.PS("Domain.ps", It_Finest, 0);
-
+  // Intial refinement and grabbing of grids for multigrid.
 #ifdef _MPI
-  // Partition the by now finest grid using Metis and distribute among processes.
-
-  // 1st step: Analyse interfaces and create edge objects,.
-  domain.GenerateEdgeInfo();
-
-  // 2nd step: Call the mesh partitioning.
-
-  int maxCellsPerVertex;
-  //do the actual partitioning, and examine the return value
-  if ( Partition_Mesh3D(comm, &domain, maxCellsPerVertex) == 1)
-  {
-    /** \todo It is a known issue that Metis does not operate entirely
-     * deterministic here. On a coarse grid (as if doing the partitioning on
-     * the coarsest grid of a multgrid hierarchy) it can happen, that
-     * one process goes entirely without own cells to work on.
-     * The workarounds which were used so far (setting another metis type,
-     * doing more uniform steps than the user requested ) are unsatisfactoy
-     * imo. So this is a FIXME
-     *
-     * One can reproduce the problem when using the cd3d multigrid test program
-     * in MPI and setting LEVELS to 3 and UNIFORM_STEPS to 1.
-     *
-     * Of course the same issue occurs if one calls this upon too small
-     * a grid with too many processes.
-     *
-     */
-    ErrThrow("Partitioning did not succeed.");
-  }
-
-  // 3rd step: Generate edge info anew
-  //(since distributing changed the domain).
-  domain.GenerateEdgeInfo();
-
-  // calculate largest possible number of processes which share one dof
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-
+  int maxSubDomainPerDof = 0;
 #endif
+  std::list<TCollection* > gridCollections
+  = domain.refine_and_get_hierarchy_of_collections(
+      parmoon_db
+  #ifdef _MPI
+      , maxSubDomainPerDof
+  #endif
+      );
 
   //print information on the mesh partition on the finest grid
   domain.print_info("NSE3D domain");
@@ -129,9 +91,9 @@ int main(int argc, char* argv[])
 
   // Construct an object of the NSE3D-problem type.
 #ifdef _MPI
-  NSE3D nse3d(domain, parmoon_db, example, maxSubDomainPerDof);
+  NSE3D nse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
-  NSE3D nse3d(domain, parmoon_db, example);
+  NSE3D nse3d(gridCollections, parmoon_db, example);
 #endif
 
   // assemble all matrices and right hand side
@@ -188,3 +150,4 @@ int main(int argc, char* argv[])
   
   return 0;
 }
+ 

@@ -126,7 +126,7 @@ void NSE3D::output_problem_size_info() const
     Output::dash("nActive      :  ", setw(10), nActive);
 }
 
-NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
              const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
@@ -164,7 +164,7 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   }
   
   bool usingMultigrid = solver.is_using_multigrid();
-  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
+  TCollection *coll = collections.front(); //the finest grid collection
   // create finite element space and function, a matrix, rhs, and solution
   #ifdef _MPI
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
@@ -175,51 +175,38 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   
   if(usingMultigrid)
   {
-    #ifdef _MPI
-    ErrThrow("There is no multigrid for NSE3D in MPI yet!");
-    #endif
     // Construct multigrid object
     auto mg = this->solver.get_multigrid();
-    bool mdml = mg->is_using_mdml();
-    if(mdml)
+
+    //Check whether number of given grids is alright
+    size_t n_multigrid_levels = mg->get_n_geometric_levels();
+    size_t n_grids = collections.size();
+    if(n_multigrid_levels != n_grids )
+      ErrThrow("Wrong number of grids for multigrid! I was expecting ",
+               n_multigrid_levels, " geometric grids but only got ", n_grids,".");
+
+    if(mg->is_using_mdml())
     {
       // change the discretization on the coarse grids to lowest order 
       // non-conforming(-1). The pressure space is chosen automatically(-4711).
       velocity_pressure_orders = {-1, -4711};
       this->get_velocity_pressure_orders(velocity_pressure_orders);
     }
-    
-    // number of multigrid levels
-    size_t n_multigrid_levels = mg->get_n_levels();
-    // index of finest grid
-    int finest = domain.get_ref_level(); // -> there are finest+1 grids
-    // index of the coarsest grid used in this multigrid environment
-    int coarsest = finest - n_multigrid_levels + 1;
-    if(mdml)
-    {
-      coarsest++;
-    }
     else
     {
-      // only for mdml there is another matrix on the finest grid, otherwise
-      // the next system to be created is on the next coarser grid
-      finest--;
-    }
-    if(coarsest < 0 )
-    {
-      ErrThrow("the domain has not been refined often enough to do multigrid "
-               "on ", n_multigrid_levels, " levels. There are only ",
-               domain.get_ref_level() + 1, " grid levels.");
+      // for standard multigrid, pop the finest collection - it was already
+      // used to construct a space before the "if(usingMultigrid)" clause
+      // and will not (as in mdml) be used a second time with a different discretization
+      collections.pop_front();
     }
     
      // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
     // matrix on finest grid is already constructed
     matrices.push_back(&systems_.back().matrix_);
-    // initialize the systems on the coarser grids (smaller spaces)
-    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
+
+    for(auto coll : collections) // initialize the coarse grid space hierarchy
     {
-      TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
       #ifndef _MPI
       systems_.emplace_back(example, *coll, velocity_pressure_orders, type);
       #else
@@ -233,6 +220,7 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     mg->initialize(matrices);
   }
   output_problem_size_info();
+
 }
 
 void NSE3D::check_parameters()

@@ -44,7 +44,6 @@
 
 #ifdef _MPI
 #include <mpi.h>
-#include <MeshPartition.h>
 double bound = 0;
 double timeC = 0;
 #endif
@@ -77,11 +76,11 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
   }
 }
 #ifndef _MPI
-void check(ParameterDatabase& db, const TDomain& domain, int velocity_order,
+void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int velocity_order,
            int pressure_order, int nstype, std::array<double, int(4)> errors,
            double tol)
 #else
-void check(ParameterDatabase& db, const TDomain& domain, int maxSubDomainPerDof,
+void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int maxSubDomainPerDof,
            int velocity_order, int pressure_order, int nstype,
            std::array<double, int(4)> errors, double tol)
 #endif
@@ -111,9 +110,9 @@ void check(ParameterDatabase& db, const TDomain& domain, int maxSubDomainPerDof,
 
   // Construct the nse3d problem object.
 #ifndef _MPI
-  NSE3D nse3d(domain, db, example_obj);
+  NSE3D nse3d(colls, db, example_obj);
 #else
-  NSE3D nse3d(domain, db, example_obj, maxSubDomainPerDof);
+  NSE3D nse3d(colls, db, example_obj, maxSubDomainPerDof);
 #endif
 
   nse3d.assemble_linear_terms();
@@ -284,29 +283,15 @@ int main(int argc, char* argv[])
 	   {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
     TDomain domain_hex(db);
 
-    size_t n_ref = domain_hex.get_n_initial_refinement_steps();
-    for(size_t i=0; i< n_ref ; i++)
-    {
-      domain_hex.RegRefineAll();
-    }
-
-#ifdef _MPI
-    // Partition the by now finest grid using Metis and distribute among processes.
-
-    // 1st step: Analyse interfaces and create edge objects,.
-    domain_hex.GenerateEdgeInfo();
-
-    // 2nd step: Call the mesh partitioning.
-    int maxCellsPerVertex;
-    Partition_Mesh3D(MPI_COMM_WORLD, &domain_hex, maxCellsPerVertex);
-
-    // 3rd step: Generate edge info anew
-    domain_hex.GenerateEdgeInfo();
-
-    // calculate largest possible number of processes which share one dof
-    int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-
-#endif
+    // Intial refinement and grabbing of grids for multigrid.
+    int maxSubDomainPerDof = 0;
+    std::list<TCollection* > grid_collections
+    = domain_hex.refine_and_get_hierarchy_of_collections(
+        db
+    #ifdef _MPI
+        , maxSubDomainPerDof
+    #endif
+        );
 
     db.merge(Example_NSE3D::default_example_database());
     {
@@ -315,9 +300,9 @@ int main(int argc, char* argv[])
       db["example"] = -3;
       size_t nstype = 1;
 #ifndef _MPI
-      check(db, domain_hex, 2, -4711, nstype, errors, tol);
+      check(db, grid_collections, 2, -4711, nstype, errors, tol);
 #else
-      check(db, domain_hex, maxSubDomainPerDof, 2, -4711, nstype, errors, tol);
+      check(db, grid_collections, maxSubDomainPerDof, 2, -4711, nstype, errors, tol);
 #endif
     }
     {
@@ -326,9 +311,9 @@ int main(int argc, char* argv[])
       db["example"] = -3;
       size_t nstype = 2;
 #ifndef _MPI
-      check(db, domain_hex, 12, -4711, nstype, errors, tol);
+      check(db, grid_collections, 12, -4711, nstype, errors, tol);
 #else
-      check(db, domain_hex, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
+      check(db, grid_collections, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
 #endif
     }
 #ifndef _MPI//only for seq, 3rd order elements are not yet adapted for parallel
@@ -337,7 +322,7 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
       db["example"] = -4;
       size_t nstype = 3;
-      check(db, domain_hex, 3, -4711, nstype, errors, tol);
+      check(db, grid_collections, 3, -4711, nstype, errors, tol);
     }
 #endif
   }
@@ -350,28 +335,15 @@ int main(int argc, char* argv[])
     //do the domain thingy
     db["geo_file"]= "Default_UnitCube_Tetra";
     TDomain domain_tet(db);
-    for(size_t i=0; i< domain_tet.get_n_initial_refinement_steps(); i++)
-    {
-      domain_tet.RegRefineAll();
-    }
-
-#ifdef _MPI
-    // Partition the by now finest grid using Metis and distribute among processes.
-
-    // 1st step: Analyse interfaces and create edge objects,.
-    domain_tet.GenerateEdgeInfo();
-
-    // 2nd step: Call the mesh partitioning.
-    int maxCellsPerVertex;
-    Partition_Mesh3D(MPI_COMM_WORLD, &domain_tet, maxCellsPerVertex);
-
-    // 3rd step: Generate edge info anew
-    domain_tet.GenerateEdgeInfo();
-
-    // calculate largest possible number of processes which share one dof
-    int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-
-#endif
+    // Intial refinement and grabbing of grids for multigrid.
+    int maxSubDomainPerDof = 0;
+    std::list<TCollection* > grid_collections
+    = domain_tet.refine_and_get_hierarchy_of_collections(
+        db
+    #ifdef _MPI
+        , maxSubDomainPerDof
+    #endif
+        );
 
     {
       db["example"] = -3;
@@ -379,9 +351,9 @@ int main(int argc, char* argv[])
       if(my_rank==0)
         Output::print<1>("\n>>>>> P2/P1 element on tetrahedral grid. <<<<<");
 #ifndef _MPI
-      check(db, domain_tet, 2,-4711, nstype, errors, tol);
+      check(db, grid_collections, 2,-4711, nstype, errors, tol);
 #else
-      check(db, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, tol);
+      check(db, grid_collections, maxSubDomainPerDof, 2,-4711, nstype, errors, tol);
 #endif
     }
 #ifndef _MPI
@@ -397,7 +369,7 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
       db["example"] = -4;
       size_t nstype = 4; //TODO 14
-      check(db, domain_tet, 3,-4711, nstype, errors, tol);
+      check(db, grid_collections, 3,-4711, nstype, errors, tol);
     }
 #endif
   }

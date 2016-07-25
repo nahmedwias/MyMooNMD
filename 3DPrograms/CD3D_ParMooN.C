@@ -74,85 +74,21 @@ int main(int argc, char* argv[])
   if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
 
-  // split the number of refinement steps - some have to be done before,
-  // some after the domain partitioning TODO This is awful - if no multigrid solver is used!
-  int n_ref_total = domain.get_n_initial_refinement_steps();
-  size_t n_ref_after = parmoon_db["multigrid_n_levels"];
-  if(n_ref_after != 0)
-    n_ref_after -= 1;
-  int n_ref_before =  n_ref_total - n_ref_after;
-  if(n_ref_before < 0)
-  {
-    ErrThrow("Number of multigrid levels is greater than number of refinement "
-        "levels. Garbage in, garbage out.")
-  }
-
-  for(int i = 0; i < n_ref_before; i++)
-    domain.RegRefineAll();
-
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"] && my_rank==0)
     domain.PS("Domain.ps", It_Finest, 0);
 
+  // Intial refinement and grabbing of grids for multigrid.
 #ifdef _MPI
-  // Partition the by now finest grid using Metis and distribute among processes.
-
-  // 1st step: Analyse interfaces and create edge objects,.
-  domain.GenerateEdgeInfo();
-
-  // 2nd step: Call the mesh partitioning.
-
-  int maxCellsPerVertex;
-  //do the actual partitioning, and examine the return value
-  if ( Partition_Mesh3D(comm, &domain, maxCellsPerVertex) == 1)
-  {
-    /** \todo It is a knwon issue, that Metis does not operate entirely
-     * deterministic here. On a coarse grid (as if doing the partitioning on
-     * the coarsest grid of a multgrid hierarchy) it can happen, that
-     * one process goes entirely without own cells to work on.
-     * The workarounds which were used so far (setting another metis type,
-     * doing more uniform steps than the user requested ) are unsatisfactoy
-     * imo. So this is a FIXME
-     *
-     * One can reproduce the problem when using the cd3d multigrid test program
-     * in MPI and setting LEVELS to 3 and UNIFORM_STEPS to 1.
-     *
-     * Of course the same issue occurs if one calls this upon too small
-     * a grid with too many processes.
-     *
-     */
-    ErrThrow("Partitioning did not succeed.");
-  }
-
-  // 3rd step: Generate edge info anew
-  //(since distributing changed the domain).
-  domain.GenerateEdgeInfo();
-
-  // calculate largest possible number of processes which share one dof
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-
+  int maxSubDomainPerDof = 0;
 #endif
-
-  // Collect those Collections which will be used in multigrid.
-  // ("Collection" in ParMooN means a set of grid cells which form a
-  // specific computational domain).
-  // This must be done here instead of deep inside CD3D, because the Domain_Crop
-  // method disables the use of sensible Collection Iterators. The only possibility
-  // to get a certain level of cells is to grab it the moment when it's the finest...
-  std::list<TCollection* > gridCollections;
-  gridCollections.push_front(domain.GetCollection(It_Finest, 0));
-
-  for(size_t level=0; level <  n_ref_after; level++)
-  {
-    domain.RegRefineAll();
-#ifdef _MPI
-    domain.GenerateEdgeInfo();  // has to be called anew after every refinement step
-    Domain_Crop(comm, &domain); // remove unwanted cells in the halo after refinement
-#endif
-    // Grab collection.
-    gridCollections.push_front(domain.GetCollection(It_Finest, 0));
-  }
-
+  std::list<TCollection* > gridCollections
+  = domain.refine_and_get_hierarchy_of_collections(
+      parmoon_db
+  #ifdef _MPI
+      , maxSubDomainPerDof
+  #endif
+      );
 
   //print information on the mesh partition on the finest grid
   domain.print_info("cd3d domain");

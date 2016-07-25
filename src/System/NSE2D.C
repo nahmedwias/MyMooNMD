@@ -144,7 +144,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
     }
 
     // number of multigrid levels
-    size_t n_multigrid_levels = mg_->get_n_levels();
+    size_t n_multigrid_levels = mg_->get_n_geometric_levels();
     // index of finest grid
     int finest = domain.get_ref_level(); // -> there are finest+1 grids
     // index of the coarsest grid used in this multigrid environment

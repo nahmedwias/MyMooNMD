@@ -163,7 +163,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
       this->get_velocity_pressure_orders(velocity_pressure_orders);
     }
     // number of multigrid levels
-    size_t n_multigrid_levels = mg_->get_n_levels();
+    size_t n_multigrid_levels = mg_->get_n_geometric_levels();
     // index of the finest grid 
     int finest = domain.get_ref_level();
     int coarsest = finest - n_multigrid_levels + 1;

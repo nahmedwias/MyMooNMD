@@ -132,7 +132,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
     if(multigrid->is_using_mdml())
       ErrThrow("mdml for TCD2D not yet implemented");
     
-    size_t nMGLevel = multigrid->get_n_levels();
+    size_t nMGLevel = multigrid->get_n_geometric_levels();
     int finest = domain.get_ref_level();
     int coarsest = finest-nMGLevel+1;
     
