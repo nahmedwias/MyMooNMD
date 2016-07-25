@@ -588,8 +588,74 @@ class TDomain
    * @param name A name for the domain.
    */
   void print_info(std::string name) const;
-     
+
+  /** This is a method which wraps together two things which are awful about
+   * MPI ParMooN, especially in connection with multigrid.
+   * It must be used in main programs whenever one watns to set up a problem which
+   * is already adapted to use MPI multigrid (CD3D, NSE3D,...) and therefore gets
+   * a list of TCollections and not a Domain as parameter.
+   * Read documentation of
+   *   determine_n_refinement_steps_multigrid
+   * for a description of the problem.
+   * @param[in] parmoon_db The input database.
+   * @param[out] maxSubDomainPerDof A very annoying value, which we must
+   * curetnly drag through the whole program. Is finally used in TParFECommunicator
+   * to determine, how much space to allocate for MPI Communications
+   * @return A hierarchy of geometric grids which can be used for multigrid,
+   * finest grid first.
+   *
+   */
+  std::list<TCollection* > refine_and_get_hierarchy_of_collections(
+      const ParameterDatabase& parmoon_db
+  #ifdef _MPI
+      , int& maxSubDomainPerDof
+  #endif
+      );
      
 };
+
+/**
+ * @todo Dear team geometry: please read this description and maybe find a way to
+ * reimplement the domain decompositioning in a way which does not destroy the
+ * cell tree hierarchy (and, btw. write tests for the domain decomp).
+ *
+ * This is a helper methods which must be called in all main programs which
+ * intend to make use of a parallelized multigrid solver, i.e. the (T)CD3D and
+ * (T)NSE3D mains programs and their test programs.
+ *
+ * The point is, that due to the modifications which apppear to the domain in
+ * Partition_Mesh3D and Domain_Crop, it is a bit tricky to gain a grid hierarchy
+ * for multigrid. Actually one can pick a grid (a "TCollection") only, when it
+ * currently is the finest one of the domain by using
+ *   domain.GetCollection(It_Finest, 0)
+ * Other "cell tree iterators" cannot be used succesfully, mainly because
+ * Partition_Mesh3D and/or Domain_Crop destroy the cell tree and create a new one,
+ * which only consists of one level.
+ * If now, as we usually do in ParMoooN, one has an initiali grid given and
+ * wants to perform some initial refinement steps to gain the fine computational
+ * grid, one has to split these initial steps, into some performed BEFORE partitioning
+ * the domain and some AFTER partitioning the Domain. The number of steps AFTER
+ * domain partitioning must be such, that one can pick as many grids as one needs
+ * for the requested multigrid hierarchy one by one using
+ *   domain.GetCollection(It_Finest, 0).
+ *
+ * @param[in] multigrid_type May have the values "standard" and "mdml". Otherwise
+ * the program quits.
+ * @param[in] n_multigrid_levels The number of GEOMETRIC multigrid levels.
+ * The algebraic hierarchy of mdml will have one extra level, but n_multigrid_levels
+ * will be the same as for mdml. Interpreting the parameter in such a way, means,
+ * that mdml and standard mg applied to the same problem with the same parameter
+ * n_multigrid_levels wil lead to both of them solving the same coarse grid problem,
+ * which we find preferable.
+ * @param[in] n_initial_refinement_steps The number of refinement steps to be
+ * performed in total
+ * @param[out] n_ref_before Number of refinement steps to be performed before
+ * partitioning the domain and performing
+ */
+void determine_n_refinement_steps_multigrid(
+  const std::string& multigrid_type,
+  int n_multigrid_levels,
+  int n_initial_refinement_steps,
+  int& n_ref_before, int& n_ref_after);
 
 #endif

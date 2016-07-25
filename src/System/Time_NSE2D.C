@@ -124,7 +124,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
     
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
-    size_t n_levels = multigrid->get_n_levels();
+    size_t n_levels = multigrid->get_n_geometric_levels();
     int finest = domain.get_ref_level();
     int coarsest = finest - n_levels + 1;
     for (int grid_no = finest; grid_no >= coarsest; --grid_no)

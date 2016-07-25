@@ -114,7 +114,7 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
   else
   {
     auto multigrid = this->solver.get_multigrid();
-    size_t nMgLevels = multigrid->get_n_levels();
+    size_t nMgLevels = multigrid->get_n_geometric_levels();
     if(collections.size() != nMgLevels)
     {
       ErrThrow("Multigrid: expected ", nMgLevels, " collections ", 

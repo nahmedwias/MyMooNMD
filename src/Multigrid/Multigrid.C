@@ -66,16 +66,23 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
   this->db.merge(param_db, false);
   this->type_ = string_to_multigrid_type(db["multigrid_type"]);
   
-  size_t n_levels = this->get_n_levels();
-  if(n_levels <= 1)
-    ErrThrow("for multigrid you need at least two multigrid levels, not ",
-             n_levels);
+  size_t n_geo_levels = this->get_n_geometric_levels();
 
-  damp_factors_.resize(n_levels, db["multigrid_correction_damp_factor"]);
+  //Determine the number of algebraci levels (depth of space hierarchy)
+  if(type_ == MultigridType::MDML)
+    n_algebraic_levels_ = n_geo_levels + 1;
+  else
+    n_algebraic_levels_ = n_geo_levels;
+
+  if(n_algebraic_levels_ <= 1)
+    ErrThrow("for multigrid you need at least two multigrid levels, ",
+             n_algebraic_levels_, " is plain not enough.");
+
+  damp_factors_.resize(n_algebraic_levels_, db["multigrid_correction_damp_factor"]);
   
   // Set up the cycle control.
   std::string cycle_str = db["multigrid_cycle_type"];
-  control_ = CycleControl(cycle_str, n_levels);
+  control_ = CycleControl(cycle_str, n_algebraic_levels_);
 
   n_pre_smooths_ = db["multigrid_n_pre_smooth"];
 
@@ -90,13 +97,14 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
 void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
 {
   // Create the levels and collect them in a list
-  if(matrices.size() != this->get_n_levels())
+  if(matrices.size() != n_algebraic_levels_)
   {
     Output::warn<2>("Multigrid::initialize", "the number of multigrid levels "
-                    "was set to ", this->get_n_levels(), ", but there are ",
+                    "was set to ", n_algebraic_levels_, ", but there are ",
                     matrices.size(), " matrices given. I will assume ", 
                     matrices.size(), " multigrid levels from now on.");
-    this->db["multigrid_n_levels"] = matrices.size();
+
+    n_algebraic_levels_ = matrices.size();
   }
   auto coarsest = matrices.front();
   for(auto mat : matrices)
@@ -352,7 +360,10 @@ ParameterDatabase Multigrid::default_multigrid_database()
   ParameterDatabase db("default multigrid database");
 
   db.add<size_t>("multigrid_n_levels", 2,
-         "Determine how many levels the multigrid cycle consists of.", 0, 5);
+         "Determine how many levels to use in the grid hierarchy. Note that "
+         "this determines the number of geometrical grids to use, so if you use mdml "
+         "the multigrid cycle will be multigrid_n_levels + 1 levels deep, since the "
+         "finest geometrical grid is used twice.", 0, 5);
 
   db.add("multigrid_type", "standard",
          "The type of multigrid algorithm to apply. Besides "

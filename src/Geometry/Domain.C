@@ -1,6 +1,7 @@
 
 #ifdef _MPI
 #  include "mpi.h"
+#include <MeshPartition.h>
 #endif
 
 #include <Database.h>
@@ -3636,4 +3637,120 @@ void TDomain::print_info(std::string name) const
   Output::stat("Domain ", name);
   Output::dash("No domain statistics printout in non-MPI case so far.");
 #endif
+}
+
+
+void determine_n_refinement_steps_multigrid(
+  const std::string& multigrid_type,
+  int n_multigrid_levels,
+  int n_initial_refinement_steps,
+  int& n_ref_before, int& n_ref_after)
+{
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank=0;
+#endif
+  //Check if input multigrid type makes sense.
+  if(multigrid_type!=std::string("standard") && multigrid_type!=std::string("mdml"))
+    ErrThrow("Unknown multigrid type ", multigrid_type,". Use 'standard' or 'mdml'.");
+  //Check if input numbers make sense
+  if(n_multigrid_levels > n_initial_refinement_steps + 1)
+    ErrThrow("You requested ", n_multigrid_levels, " geometric levels for "
+        "multigrid, but only ", n_initial_refinement_steps + 1, " grid levels "
+        "will be present after refining ", n_initial_refinement_steps, " times. "
+        " Choose a smaller multigrid_n_levels.");
+
+  //split the number of refinement steps
+  n_ref_after =  n_multigrid_levels - 1;
+  n_ref_before =  n_initial_refinement_steps - n_ref_after;
+
+  //print information
+  if(my_rank == 0)
+  {
+    Output::info("REFINEMENT FOR MULTIGRID","You are using ",multigrid_type,
+                 " multigrid with ",n_multigrid_levels," geometric levels. ");
+#ifdef _MPI
+    Output::dash("Number of refinement steps before domain partitioning: ", n_ref_before);
+    Output::dash("Number of refinement steps after domain partitioning: ", n_ref_after);
+    Output::dash("Total number of refinement steps: ", n_initial_refinement_steps);
+#else
+    Output::dash("Number of refinement steps before picking grids: ", n_ref_before);
+    Output::dash("Number of refinement steps after picking grids: ", n_ref_after);
+    Output::dash("Total number of refinement steps: ", n_initial_refinement_steps);
+#endif
+  }
+}
+
+std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
+    const ParameterDatabase& parmoon_db
+#ifdef _MPI
+    , int& maxSubDomainPerDof
+#endif
+    )
+{
+#ifdef _MPI
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
+  // Split the number of refinement steps - see doc of the method
+  // TODO Removing this strange construction is a TODO
+  int n_ref_before = this->get_n_initial_refinement_steps();
+  int n_ref_after = 0;
+  if(parmoon_db.contains("preconditioner") &&
+    parmoon_db["preconditioner"].is(std::string("multigrid")))
+  {
+    determine_n_refinement_steps_multigrid(
+      parmoon_db["multigrid_type"],
+      parmoon_db["multigrid_n_levels"],
+      this->get_n_initial_refinement_steps(),
+      n_ref_before, n_ref_after);
+  }
+
+  for(int i = 0; i < n_ref_before; i++)
+    this->RegRefineAll();
+
+#ifdef _MPI
+  // Partition the by now finest grid using Metis and distribute among processes.
+
+  // 1st step: Analyse interfaces and create edge objects,.
+  this->GenerateEdgeInfo();
+
+  // 2nd step: Call the mesh partitioning.
+
+  int maxCellsPerVertex;
+  //do the actual partitioning, and examine the return value
+  if ( Partition_Mesh3D(MPI_COMM_WORLD, this, maxCellsPerVertex) == 1)
+  {
+    ErrThrow("Partitioning did not succeed.");
+  }
+
+  // 3rd step: Generate edge info anew
+  //(since distributing changed the domain).
+  this->GenerateEdgeInfo();
+
+  // calculate largest possible number of processes which share one dof
+  maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+
+#endif
+
+  std::list<TCollection* > gridCollections;
+  gridCollections.push_front(this->GetCollection(It_Finest, 0));
+
+  //this is only relevant for multigrid
+  for(int level=0; level <  n_ref_after; ++level)
+  {
+    this->RegRefineAll();
+#ifdef _MPI
+    this->GenerateEdgeInfo();  // has to be called anew after every refinement step
+    Domain_Crop(MPI_COMM_WORLD, this); // remove unwanted cells in the halo after refinement
+#endif
+    // Grab collection.
+    gridCollections.push_front(this->GetCollection(It_Finest, 0));
+  }
+
+  return gridCollections;
 }

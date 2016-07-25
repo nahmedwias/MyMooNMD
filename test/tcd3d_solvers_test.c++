@@ -59,56 +59,21 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
 #else
 #endif
   TDomain domain(db);
+
+  // Intial refinement and grabbing of grids for multigrid.
+#ifdef _MPI
+  int maxSubDomainPerDof = 0;
+#endif
+  std::list<TCollection* > gridCollections
+  = domain.refine_and_get_hierarchy_of_collections( db
+  #ifdef _MPI
+      , maxSubDomainPerDof
+  #endif
+      );
   
   // set the time discretization 
   SetTimeDiscParameters(0);
-  
-  
-  int n_ref_total = domain.get_n_initial_refinement_steps();
-  size_t mg_levels = db["multigrid_n_levels"];
-  size_t n_ref_after = mg_levels > 1 ? mg_levels - 1: 0;
-  size_t n_ref_before =  n_ref_total - n_ref_after;
-  
-  if(n_ref_before < 0)
-  {
-    ErrThrow("Number of multigrid levels is greater than number of refinement "
-        "levels. Garbage in, garbage out.")
-  }
-  for(size_t i=0; i<n_ref_before; i++)
-    domain.RegRefineAll();
-#ifdef _MPI
-  // Partition the by now finest grid using Metis and distribute among processes.
 
-  // 1st step: Analyse interfaces and create edge objects,.
-  domain.GenerateEdgeInfo();
-
-  // 2nd step: Call the mesh partitioning.
-  int maxCellsPerVertex;
-  Partition_Mesh3D(MPI_COMM_WORLD, &domain, maxCellsPerVertex);
-
-  // 3rd step: Generate edge info anew
-  domain.GenerateEdgeInfo();
-
-  // calculate largest possible number of processes which share one dof
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-#endif
-  
-  // Collect those Collections which will be used in multigrid.
-  std::list<TCollection* > gridCollections;
-  gridCollections.push_front(domain.GetCollection(It_Finest, 0));
-
-  // Further mesh refinement and grabbing of collections.
-  for(size_t level= 0; level < n_ref_after; level++)
-  {
-    domain.RegRefineAll();
-#ifdef _MPI
-    domain.GenerateEdgeInfo();  // has to be called anew after every refinement step
-    Domain_Crop(MPI_COMM_WORLD, &domain); // remove unwanted cells in the halo after refinement
-#endif
-    // Grab collection.
-    gridCollections.push_front(domain.GetCollection(It_Finest, 0));
-  }
-  
   // example object
   Example_TimeCD3D example_obj(db);
 #ifdef _MPI
