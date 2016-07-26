@@ -28,6 +28,8 @@ SmootherCode string_to_smoother_code(std::string code)
     return SmootherCode::CELL_VANKA;
   else if(code == std::string("batch_vanka"))
     return SmootherCode::BATCH_VANKA;
+  else if(code == std::string("nodal_vanka_jacobi"))
+    return SmootherCode::NODAL_VANKA_JACOBI;
   else if(code == std::string("nodal_vanka_store"))
     return SmootherCode::NODAL_VANKA_STORE;
   else if(code == std::string("cell_vanka_store"))
@@ -381,14 +383,16 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "The smoother to use on all but the coarsest level. You should take "
          "care, that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
-         {"jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+         {"jacobi", "nodal_vanka", "nodal_vanka_jacobi", "cell_vanka", "batch_vanka",
           "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
   db.add("multigrid_smoother_coarse", "direct_solve",
          "The smoother to use on the coarsest level. You should take care, "
          "that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
-         {"direct_solve", "jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+         {"direct_solve", "jacobi",
+          "nodal_vanka_jacobi",
+          "nodal_vanka", "cell_vanka", "batch_vanka",
           "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
   db.add("multigrid_correction_damp_factor", 1.0,
