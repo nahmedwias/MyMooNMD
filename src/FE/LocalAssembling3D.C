@@ -1250,7 +1250,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
 {
   //NOTE: change according to the discretization schemes used
   // changing needed for turbulent models and for the newton method
-  this->N_Parameters = 3;
+  this->N_Parameters = 15;
   this->N_ParamFct = 1;
   this->ParameterFct =  { TimeNSParamsVelo_GradVelo3D };
   this->N_FEValues = 12;

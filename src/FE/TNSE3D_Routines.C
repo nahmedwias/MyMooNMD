@@ -413,7 +413,7 @@ double frobeniusNormTensor(double* u, double* gradu, double* uConv, int proj_spa
   double a11, a12, a13,a22, a23, a33;
   double frobenius_norm_tensor;
   
-  if(viscosityTensor==0)
+  if(TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 0)
   { 
     // no turbulent viscosity
     return (0);
