@@ -11,7 +11,7 @@
 #include <DofBatch.h>
 #include <Smoother.h>
 
-enum class VankaType {NODAL, CELL, BATCH};
+enum class VankaType {NODAL, CELL, BATCH, NODAL_JACOBI};
 
 //forward declaration
 class DenseMatrix;
@@ -81,6 +81,12 @@ class VankaSmoother : public Smoother
 
     /// The corresponding global matrix.
     std::shared_ptr<TMatrix> matrix_global_;
+
+#ifdef _MPI
+    /// Vector of communicators belonging to the same matrix as matrix_global_.
+    /// Necessary for MPI updates after a smoothing step.
+    std::vector<const TParFECommunicator3D*> comms_;
+#endif
 
     /// The collection of pressure dofs for the local systems.
     std::vector<DofBatch> press_dofs_local_;

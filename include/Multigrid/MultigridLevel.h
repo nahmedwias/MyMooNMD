@@ -18,8 +18,9 @@ class ParameterDatabase;
 class Smoother;
 
 enum class SmootherCode{DIRECT_SOLVE, JACOBI,
-    NODAL_VANKA, CELL_VANKA, BATCH_VANKA,
-    NODAL_VANKA_STORE, CELL_VANKA_STORE, BATCH_VANKA_STORE};
+    NODAL_VANKA, CELL_VANKA, BATCH_VANKA, NODAL_VANKA_JACOBI,
+    NODAL_VANKA_STORE, CELL_VANKA_STORE, BATCH_VANKA_STORE,
+};
 
 /**
  * The multigrid level class. Its members are private, except for copy and move,

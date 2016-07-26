@@ -121,8 +121,6 @@ void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int max
   nse3d.stop_it(0);
   for(unsigned int k=1;; k++)
   {
-    Output::print<1>("nonlinear step " , setw(3), k-1, "\t",
-                     nse3d.get_residuals());
     nse3d.solve();
 
     // checking the first nonlinear iteration
@@ -141,9 +139,11 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 {
   db["solver_type"] = std::string("iterative");
   db["direct_solver_type"] = std::string("umfpack");
-  db["iterative_solver_type"] = std::string("fgmres");
+  db["iterative_solver_type"] = std::string("richardson");
   db["preconditioner"] = std::string("no_preconditioner");
   db["residual_tolerance"] = 1.0e-13;
+  db["verbosity"] = 3;
+  Output::setVerbosity(db["verbosity"]);
   
   if (solver_name.compare("lsc") == 0)
   {
@@ -154,18 +154,18 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db.merge(Multigrid::default_multigrid_database());
     db["preconditioner"] = "multigrid";
-    db["refinement_n_initial_steps"] = 1;
+    db["refinement_n_initial_steps"] = 2;
     //control nonlinear loop
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_maxit"] = 5;
     // New multigrid parameters
     db["multigrid_n_levels"] = 2;
     db["multigrid_cycle_type"] = "V";
-    db["multigrid_smoother"] = "batch_vanka_store";
-    db["multigrid_smoother_coarse"] = "nodal_vanka_store";
+    db["multigrid_smoother"] = "nodal_vanka";
+    db["multigrid_smoother_coarse"] = "nodal_vanka";
     db["multigrid_correction_damp_factor"] = 1.0;
-    db["multigrid_n_pre_smooth"] = 1;
-    db["multigrid_n_post_smooth"] = 1;
+    db["multigrid_n_pre_smooth"] = 2;
+    db["multigrid_n_post_smooth"] = 2;
     db["multigrid_coarse_residual"] = 1.0e-1;
     db["multigrid_coarse_max_n_iterations"] = 5;
     db["multigrid_vanka_damp_factor"]=1.0;
@@ -203,19 +203,18 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 
 double get_tolerance(std::string solver_name)
 {//solver dependent tolerance?
-
+  if(solver_name.compare("multigrid") == 0)
+    return 1e-8;
 #ifndef _MPI
   if(solver_name.compare("umfpack") == 0)
     return 1e-9;
   if(solver_name.compare("lsc") == 0)
     return 1e-9;
-  if(solver_name.compare("multigrid") == 0)
-    return 1e-8;
 #else
   if(solver_name.compare("mumps") == 0)
     return 1e-9 ;
 #endif
-    throw std::runtime_error("Unknown solver for NSE3D problem!");
+  throw std::runtime_error("Unknown solver for NSE3D problem!");
 
   return 0;
 }

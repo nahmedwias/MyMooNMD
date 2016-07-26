@@ -114,13 +114,13 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     db["residual_reduction"] =  0.0;
     // Multigrid parameters
     db["multigrid_cycle_type"] = "W";
-    db["multigrid_smoother"] = "jacobi";
-    db["multigrid_smoother_coarse"] = "direct_solve";
+    db["multigrid_smoother"] = "nodal_vanka_jacobi";
+    db["multigrid_smoother_coarse"] = "nodal_vanka_jacobi";
     db["multigrid_correction_damp_factor"] = 0.8;
     db["multigrid_n_pre_smooth"] = 3;
     db["multigrid_n_post_smooth"] = 3;
 
-    Output::setVerbosity(2);
+    Output::setVerbosity(3);
 
   }
   else if(solver_name.compare("petsc") == 0)

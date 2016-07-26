@@ -20,6 +20,10 @@
 
 #include <cstring>
 
+#ifdef _MPI
+#include<ParFECommunicator3D.h>
+#endif
+
 #ifdef __2D__
 
 void GridTransfer::Prolongate(
@@ -1520,11 +1524,13 @@ void GridTransfer::RestrictFunctionRepeatedly(
     const TFESpace3D& coarse_space = *space_hierarchy.at(i+1);
     const TFESpace3D& fine_space = *space_hierarchy.at(i);
 #endif
+
+
     double* coarse_function = function_entries.at(i+1);
     size_t coarse_n_dofs = function_n_dofs.at(i+1);
 
 
-    const double* fine_function = function_entries.at(i);
+    double* fine_function = function_entries.at(i);
     size_t fine_n_dofs = function_n_dofs.at(i);
 
     //do the restriction
