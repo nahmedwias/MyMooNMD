@@ -116,118 +116,130 @@ void TParFECommunicator3D::consistency_update(double* vector, size_t level) cons
    }
 }
 
-void TParFECommunicator3D::CommUpdateMS(double *sol) const
+
+void TParFECommunicator3D::update_from_additive_to_consistent_storage(
+    double* vector, size_t consist_level) const
 {
-  if(!Mapper)
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  if(N_Dim != 1)
+    ErrThrow("ParFECommunicators of dimension greater than 1 are an outdated feature!");
+
+  /* ****************************************************** */
+  /* *** Report from interface slaves to their masters **** */
+  /* ****************************************************** */
   {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
+    //send - all values of interface slaves
+    double* sbuf = new double[N_InterfaceS];
+    for(int i=0;i<N_InterfaceS;i++)
+    {
+      sbuf[i]=vector[DofRecvMS[i]]; //fill all values of interface slaves into sendbuffer
+    }
+    int* scounts = N_DofRecvMS;
+    int* sdispls = rdisplMS;
+
+    //receive - all values of interface slaves belonging to one of my_ranks masters
+    double* rbuf = new double[N_SendDofMS];
+    int* rcounts = N_DofSendMS;
+    int* rdispls = sdisplMS;
+    //control
+
+    // this is a topsy-turvy call of MPI_Alltoallv
+    MPI_Alltoallv(
+        sbuf, scounts, sdispls, MPI_DOUBLE, //send
+        rbuf, rcounts, rdispls, MPI_DOUBLE, //receive
+        MPI_COMM_WORLD); //control
+
+    // take the received values, interpret them via DofSendMS, and add them to the
+    // correct interface master dof value
+    for( int i = 0 ; i < N_SendDofMS ; i++)
+    {
+      vector[DofSendMS[i]] += rbuf[i];
+    }
+    delete[] sbuf;
+    delete[] rbuf;
   }
 
-  int i,j,k;
-  double t1,t2;
-  t1=MPI_Wtime();
-  
-  for(i=0;i<N_SendDofMS;i++)
+  /* ****************************************************** */
+  /* **** Report from HALO 1  D.O.F to their masters ****** */
+  /* ****************************************************** */
   {
-    for(j=0;j<N_Dim;j++)
+    //send - all values of halo 1 d.o.f.
+    double* sbuf = new double[N_Halo1];
+    for( int i = 0 ; i < N_Halo1 ; i++ )
     {
-      k = i*N_Dim + j;
-      Send_InfoMS[k]=sol[DofSendMS[i]+j*N_Dof];
+      sbuf[i]=vector[DofRecvH1[i]]; //fill all values of halo1 d.o.f. into send buffer
     }
+    int* scounts = N_DofRecvH1;
+    int* sdispls = rdisplH1;
+
+    //receive
+    double* rbuf = new double[N_SendDofH1];
+    int* rcounts = N_DofSendH1;
+    int* rdispls = sdisplH1;
+    //control
+
+    // this is a topsy-turvy call of MPI_Alltoallv
+    MPI_Alltoallv(
+        sbuf, scounts, sdispls, MPI_DOUBLE, //send
+        rbuf, rcounts, rdispls, MPI_DOUBLE, //receive
+        MPI_COMM_WORLD); //control
+
+    // take the received values, interpret them via DofSendH1
+    for( int i = 0 ; i <  N_SendDofH1; i++)
+    {
+      vector[DofSendH1[i]] += rbuf[i];
+    }
+    delete[] sbuf;
+    delete[] rbuf;
   }
 
-  MPI_Alltoallv(Send_InfoMS,N_DofSendMS,sdisplMS,MPI_DOUBLE,Recv_InfoMS,N_DofRecvMS,rdisplMS,MPI_DOUBLE,Comm);
-  
-  for(i=0;i<N_InterfaceS;i++)  
+  /* ****************************************************** */
+  /* **** Report from HALO 2  D.O.F to their masters ****** */
+  /* ****************************************************** */
   {
-    for(j=0;j<N_Dim;j++)
+    //send - all values of halo2 d.o.f.
+    double* sbuf = new double[N_Halo2];
+    for( int i = 0 ; i < N_Halo2 ; i++ )
     {
-      k = i*N_Dim + j;
-      sol[DofRecvMS[i]+j*N_Dof] = Recv_InfoMS[k];
+      sbuf[i]=vector[DofRecvH2[i]]; //fill all values of halo2 d.o.f. into send buffer
     }
-  }
-  
-  t2=MPI_Wtime(); 
-  timeC+=(t2-t1);
-}
+    int* scounts = N_DofRecvH2;
+    int* sdispls = rdisplH2;
 
-void TParFECommunicator3D::CommUpdateH1(double *sol) const
-{
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-  
-  int i,j,k;
-  double t1,t2;
-  t1=MPI_Wtime();
-  
-  for(i=0;i<N_SendDofH1;i++)
-  {
-    for(j=0;j<N_Dim;j++)
+    //receive
+    double* rbuf = new double[N_SendDofH2];
+    int* rcounts = N_DofSendH2;
+    int* rdispls = sdisplH2;
+    //control
+
+    // this is a topsy-turvy call of MPI_Alltoallv
+    MPI_Alltoallv(
+        sbuf, scounts, sdispls, MPI_DOUBLE, //send
+        rbuf, rcounts, rdispls, MPI_DOUBLE, //receive
+        MPI_COMM_WORLD); //control
+
+    // take the received values, interpret them via DofSendH2
+    for( int i = 0 ; i <  N_SendDofH2; i++)
     {
-      k = i*N_Dim + j;
-      Send_InfoH1[k]=sol[DofSendH1[i]+j*N_Dof];
+      vector[DofSendH2[i]] += rbuf[i];
     }
+    delete[] sbuf;
+    delete[] rbuf;
+  }
+  /* ****************************************************** */
+  /* ****    Restore a certain consistency level     ****** */
+  /* ****************************************************** */
+
+  // Now the vector is stored level-0 consistent. If another
+  // consistency level is required, perform the update here.
+  if( consist_level > 0 )
+  {
+    consistency_update(vector, consist_level);
   }
 
-  MPI_Alltoallv(Send_InfoH1,N_DofSendH1,sdisplH1,MPI_DOUBLE,Recv_InfoH1,N_DofRecvH1,rdisplH1,MPI_DOUBLE,Comm);
-  
-//   for(i=0;i<N_Halo1;i++)  
-//     sol[DofRecvH1[i]] = Recv_InfoH1[i];
-  
-  for(i=0;i<N_Halo1;i++)  
-  {
-    for(j=0;j<N_Dim;j++)
-    {
-      k = i*N_Dim + j;
-      sol[DofRecvH1[i]+j*N_Dof] = Recv_InfoH1[k];
-    }
-  }
-  
-  t2=MPI_Wtime(); 
-  timeC+=(t2-t1);
-}
-
-void TParFECommunicator3D::CommUpdateH2(double *sol) const
-{
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-  
-  int i,j,k;
-  double t1,t2;
-  t1=MPI_Wtime();
-  
-  for(i=0;i<N_SendDofH2;i++)
-  {
-    for(j=0;j<N_Dim;j++)
-    {
-      k = i*N_Dim + j;
-      Send_InfoH2[k]=sol[DofSendH2[i]+j*N_Dof];
-    }
-  }
-  
-  MPI_Alltoallv(Send_InfoH2,N_DofSendH2,sdisplH2,MPI_DOUBLE,Recv_InfoH2,N_DofRecvH2,rdisplH2,MPI_DOUBLE,Comm);
-  
-  for(i=0;i<N_Halo2;i++)  
-  {
-    for(j=0;j<N_Dim;j++)
-    {
-      k = i*N_Dim + j;
-      sol[DofRecvH2[i]+j*N_Dof] = Recv_InfoH2[k];
-    }
-  }
-  
-  t2=MPI_Wtime(); 
-  timeC+=(t2-t1);
 }
 
 
@@ -245,7 +257,7 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
   
   int i,j,k,rank,size;
 //  MPI_Status status;
-  MPI_Comm_rank(Comm,&rank);		
+  MPI_Comm_rank(Comm,&rank);
   MPI_Comm_size(Comm, &size);
   
   int N_S, N_SendDof_temp;
@@ -324,6 +336,121 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
   t2=MPI_Wtime(); 
   timeC+=(t2-t1);
 }
+
+void TParFECommunicator3D::CommUpdateMS(double *sol) const
+{
+  if(!Mapper)
+  {
+    printf("Set The Mapper for Communicator routines\n");
+    MPI_Finalize();
+    exit(0);
+  }
+
+  int i,j,k;
+  double t1,t2;
+  t1=MPI_Wtime();
+
+  for(i=0;i<N_SendDofMS;i++)
+  {
+    for(j=0;j<N_Dim;j++)
+    {
+      k = i*N_Dim + j;
+      Send_InfoMS[k]=sol[DofSendMS[i]+j*N_Dof];
+    }
+  }
+
+  MPI_Alltoallv(Send_InfoMS,N_DofSendMS,sdisplMS,MPI_DOUBLE,Recv_InfoMS,N_DofRecvMS,rdisplMS,MPI_DOUBLE,Comm);
+
+  for(i=0;i<N_InterfaceS;i++)
+  {
+    for(j=0;j<N_Dim;j++)
+    {
+      k = i*N_Dim + j;
+      sol[DofRecvMS[i]+j*N_Dof] = Recv_InfoMS[k];
+    }
+  }
+
+  t2=MPI_Wtime();
+  timeC+=(t2-t1);
+}
+
+void TParFECommunicator3D::CommUpdateH1(double *sol) const
+{
+  if(!Mapper)
+  {
+    printf("Set The Mapper for Communicator routines\n");
+    MPI_Finalize();
+    exit(0);
+  }
+
+  int i,j,k;
+  double t1,t2;
+  t1=MPI_Wtime();
+
+  for(i=0;i<N_SendDofH1;i++)
+  {
+    for(j=0;j<N_Dim;j++)
+    {
+      k = i*N_Dim + j;
+      Send_InfoH1[k]=sol[DofSendH1[i]+j*N_Dof];
+    }
+  }
+
+  MPI_Alltoallv(Send_InfoH1,N_DofSendH1,sdisplH1,MPI_DOUBLE,Recv_InfoH1,N_DofRecvH1,rdisplH1,MPI_DOUBLE,Comm);
+
+//   for(i=0;i<N_Halo1;i++)
+//     sol[DofRecvH1[i]] = Recv_InfoH1[i];
+
+  for(i=0;i<N_Halo1;i++)
+  {
+    for(j=0;j<N_Dim;j++)
+    {
+      k = i*N_Dim + j;
+      sol[DofRecvH1[i]+j*N_Dof] = Recv_InfoH1[k];
+    }
+  }
+
+  t2=MPI_Wtime();
+  timeC+=(t2-t1);
+}
+
+void TParFECommunicator3D::CommUpdateH2(double *sol) const
+{
+  if(!Mapper)
+  {
+    printf("Set The Mapper for Communicator routines\n");
+    MPI_Finalize();
+    exit(0);
+  }
+
+  int i,j,k;
+  double t1,t2;
+  t1=MPI_Wtime();
+
+  for(i=0;i<N_SendDofH2;i++)
+  {
+    for(j=0;j<N_Dim;j++)
+    {
+      k = i*N_Dim + j;
+      Send_InfoH2[k]=sol[DofSendH2[i]+j*N_Dof];
+    }
+  }
+
+  MPI_Alltoallv(Send_InfoH2,N_DofSendH2,sdisplH2,MPI_DOUBLE,Recv_InfoH2,N_DofRecvH2,rdisplH2,MPI_DOUBLE,Comm);
+
+  for(i=0;i<N_Halo2;i++)
+  {
+    for(j=0;j<N_Dim;j++)
+    {
+      k = i*N_Dim + j;
+      sol[DofRecvH2[i]+j*N_Dof] = Recv_InfoH2[k];
+    }
+  }
+
+  t2=MPI_Wtime();
+  timeC+=(t2-t1);
+}
+
 
 #endif
 
