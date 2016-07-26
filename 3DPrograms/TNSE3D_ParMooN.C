@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   // set parameters for particular examples
   if(parmoon_db["example"].is(7))
   {
-    ChannelFlowRoutines::setParameters(parmoon_db);
+    ChannelTau180::setParameters(parmoon_db);
   }
   // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
@@ -108,9 +108,9 @@ int main(int argc, char* argv[])
   {
     coll = domain.GetCollection(It_Finest,0);
     collArray[0] = coll;
-    ChannelFlowRoutines::setZCoordinates(coll, 0);
+    ChannelTau180::setZCoordinates(coll, 0);
     domain.MakeBdParamsConsistent(coll);
-    ChannelFlowRoutines::checkZCoordinates(coll, 0);
+    ChannelTau180::checkZCoordinates(coll, 0);
   }
   for(size_t i = 0; i < n_ref; i++)
   {
@@ -122,9 +122,9 @@ int main(int argc, char* argv[])
       coll = domain.GetCollection(It_Finest,0);
       collArray[i+1] = coll;
       // set the z Coordinates
-      ChannelFlowRoutines::setZCoordinates(coll, i+1);
+      ChannelTau180::setZCoordinates(coll, i+1);
       domain.MakeBdParamsConsistent(coll);
-      ChannelFlowRoutines::checkZCoordinates(coll, i+1);
+      ChannelTau180::checkZCoordinates(coll, i+1);
     }
   }
   // set the refinement descriptor and the periodic joints
@@ -134,8 +134,8 @@ int main(int argc, char* argv[])
     n_ref +=1;
     for(size_t i=0; i<n_ref; i++)
     {
-      ChannelFlowRoutines::setRefineDesc(collArray[i]);
-      ChannelFlowRoutines::setPeriodicFaceJoints(collArray[i]);
+      ChannelTau180::setRefineDesc(collArray[i]);
+      ChannelTau180::setPeriodicFaceJoints(collArray[i]);
     }
   }
   // write grid into an Postscript file (before partitioning)
@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
   // added in the loops thanks to assemble_nonlinear_term()
   if(parmoon_db["example"].is(7))
   {
-    ChannelFlowRoutines::GetCoordinatesOfDof(tnse3d);
+    ChannelTau180::GetCoordinatesOfDof(tnse3d);
   }
   tnse3d.assemble_initial_time();
   
@@ -211,8 +211,7 @@ int main(int argc, char* argv[])
   chrono_parts.reset();
   if(parmoon_db["example"].is(7))
   {
-    // ChannelFlowRoutines::GetCoordinatesOfDof(tnse3d);
-    ChannelFlowRoutines::computeMeanVelocity(tnse3d);
+    ChannelTau180::computeMeanVelocity(tnse3d);
   }
   //======================================================================
   // time iteration
