@@ -34,6 +34,11 @@ namespace flow_around_cylinder_instationary
 #include "TNSE_3D/FlowAroundCylinder_instat.h"   // 6
 }
 
+namespace channel_rey180
+{
+#include "TNSE_3D/ChannelTau180.h"
+}
+
 //=========================================================
 Example_TimeNSE3D::Example_TimeNSE3D(
   const ParameterDatabase& user_input_parameter_db)
@@ -290,6 +295,41 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       ExampleFile();
       break;
     }
+    case 7:
+    {
+      using namespace channel_rey180;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** initial conditions */
+      initialCondtion.push_back( InitialU1 );
+      initialCondtion.push_back( InitialU2 );
+      initialCondtion.push_back( InitialU3 );
+      
+      //setCoordinates = channel_rey180::SetZCoordinates;
+      //checkCoordinates = channel_rey180::CheckZCoordinates;
+
+      ExampleFile();
+      break;
+    }
     default:
       ErrThrow("Unknown Example_TimeNSE3D example!");
   }
@@ -311,6 +351,24 @@ void Example_TimeNSE3D::do_post_processing(Time_NSE3D& tnse3d) const
       Output::info<2>("Example_TimeNSE3D","No post processing done for the current example.");
   }
 }
+
+// void Example_TimeNSE3D::set_z_coordinates(TCollection* coll, int level) const
+// {
+//   if(setCoordinates)
+//   {
+//     setCoordinates(coll, level);
+//   }
+// }
+// 
+// void Example_TimeNSE3D::check_Coordinates(TCollection* coll, int level) const
+// {
+//   if(setCoordinates)
+//   {
+//     checkCoordinates(coll, level);
+//   }
+// }
+
+
 
 double Example_TimeNSE3D::get_nu() const
 {

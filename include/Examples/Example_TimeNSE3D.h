@@ -49,6 +49,10 @@ public:
   /// Apply the function stored as post processing routine.
   void do_post_processing(Time_NSE3D& tnse3d) const;
   
+  /// function to set the z-coordinates
+  void set_z_coordinates(TCollection* coll, int level) const;
+  /// function to check the coordinates
+  void check_Coordinates(TCollection* coll, int level) const;
   /// Return kinematic viscosity, if set.
   double get_nu() const;
 
@@ -75,6 +79,11 @@ private:
   // put NSE3D argument const as soon as FEFunctions can be copied properly!
   std::function<void(Time_NSE3D &)> post_processing_stat;
   /// TODO @ULRICH Function doing the post processing for a time dependent example.
+  
+  /// function to set the z-coordinates 
+  std::function<void(TCollection* coll, int l)> setCoordinates;
+  /// function to set the z-coordinates 
+  std::function<void(TCollection* coll, int l)> checkCoordinates;
   
 };
 #endif // _EXAMPLE_TimeNSE3D_

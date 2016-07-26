@@ -130,7 +130,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   }
 
   // create the collection of cells from the domain (finest grid)
-  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);    
+  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);   
 #ifdef _MPI
   // create finite element space and function, a matrix, rhs, and solution
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
@@ -140,9 +140,6 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   // all this by calling constructor of System_Per_Grid
   this->systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
 #endif
-  // Initial velocity = interpolation of initial conditions
-  this->interpolate();
-  
   bool usingMultigrid = solver_.is_using_multigrid();
   if(usingMultigrid)
   {
@@ -200,7 +197,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
       //prepare input argument for multigrid object
       matrices.push_front(&this->systems_.back().matrix_);
       // interpolate the initial condition to get initial velocity
-      this->interpolate();
+      // this->interpolate();
     }
     // initialize the multigrid object on all levels
     mg_->initialize(matrices);
@@ -208,19 +205,26 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   this->output_problem_size_info();
   // initialize the defect of the system. It has the same structure as
   // the rhs (and as the solution)
-  this->defect_.copy_structure(this->systems_.front().rhs_);    
+  this->defect_.copy_structure(this->systems_.front().rhs_);
+  for(System_per_grid& s : this->systems_)
+  {
+    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
+    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
+    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
+    // s.solution_.print("s");
+  }
 }
 
 ///**************************************************************************** */
 void Time_NSE3D::interpolate()
 {
-  TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
-  TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
-  TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
-  
-  u1->Interpolate(example_.get_initial_cond(0));
-  u2->Interpolate(example_.get_initial_cond(1));
-  u3->Interpolate(example_.get_initial_cond(2));
+//   TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
+//   TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
+//   TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
+//   
+//   u1->Interpolate(example_.get_initial_cond(0));
+//   u2->Interpolate(example_.get_initial_cond(1));
+//   u3->Interpolate(example_.get_initial_cond(2));  
 }
 
 ///**************************************************************************** */
@@ -549,7 +553,15 @@ void Time_NSE3D::assemble_initial_time()
                nRectMatrices, rectMatrices.data(),
                nRhs, rhsArray.data(), rhsSpaces,
                boundary_conditions, boundary_values.data(), localAssembling);
-
+    /** manage dirichlet condition by copying non-actives DoFs
+     * from rhs to solution of front grid (=finest grid)
+     * Note: this operation can also be done inside the loop, so that
+     * the s.solution is corrected on every grid. This is the case in
+     * TNSE2D.
+     * TODO: CHECK WHAT IS THE DIFFERENCE BETWEEN doing this on every grid
+     * and doing it only on the finest grid!
+     **/
+    s.solution_.copy_nonactive(s.rhs_);
   }// end for system per grid - the last system is the finer one (front)
 
   /** manage dirichlet condition by copying non-actives DoFs
@@ -560,7 +572,7 @@ void Time_NSE3D::assemble_initial_time()
   * TODO: CHECK WHAT IS THE DIFFERENCE BETWEEN doing this on every grid
   * and doing it only on the finest grid!
   * **/
-  this->systems_.front().solution_.copy_nonactive(this->systems_.front().rhs_);
+  // this->systems_.front().solution_.copy_nonactive(this->systems_.front().rhs_);
 
   /** After copy_nonactive, the solution vectors needs to be Comm-updated
    * in MPI-case in order to be consistently saved. It is necessary that
@@ -585,7 +597,6 @@ void Time_NSE3D::assemble_initial_time()
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
     this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
   #endif
-
   // copy the last right hand side and solution vectors to the old ones
   this->old_rhs_      = this->systems_.front().rhs_;
   this->old_solution_ = this->systems_.front().solution_;

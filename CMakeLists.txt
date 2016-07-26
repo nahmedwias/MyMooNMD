@@ -273,6 +273,15 @@ target_compile_definitions(tnse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(tnse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### testtetgen ###
+# Standard executable target.
+add_executable(tetgen ${PROJECT_SOURCE_DIR}/3DPrograms/tetgen_test.c++)
+set_target_properties(tetgen PROPERTIES OUTPUT_NAME parMooN_tetgen_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(tetgen PUBLIC -D__3D__)
+# Link in the required libraries.
+target_link_libraries(tetgen parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ###############################################################################
 # building the documentation using doxygen
 find_package(Doxygen)

@@ -13,6 +13,7 @@
 #include <Chrono.h>
 #include <TetGenMeshLoader.h>
 #include <Output3D.h>
+#include <ChannelFlowRoutines.h>
 
 #include <sys/stat.h>
 
@@ -41,9 +42,22 @@ int main(int argc, char* argv[])
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.merge(ParameterDatabase::default_tetgen_database(), true);
+
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
+
+  // Choose and construct example.
+  Example_TimeNSE3D example(parmoon_db);
+
+
+  // set parameters for particular examples
+  if(parmoon_db["example"].is(7))
+  {
+    ChannelTau180::setParameters(parmoon_db);
+  }
+  // Do the old parameter check of the Database.
+  Database.CheckParameterConsistencyNSE();
 
 #ifdef _MPI
   //Construct and initialize the default MPI communicator and store it.
@@ -61,7 +75,6 @@ int main(int argc, char* argv[])
 #endif
 
   TFEDatabase3D feDatabase;
-
   // =====================================================================
   // set the database values and generate mesh
   // =====================================================================
@@ -81,19 +94,49 @@ int main(int argc, char* argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
-    {
+  {
     Database.WriteParamDB(argv[0]);
     Database.WriteTimeDB();
-    }
-
-  // Do the old parameter check of the Database.
-  Database.CheckParameterConsistencyNSE();
-  
+  }
   // Do initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
+  // set the coordinates and make the boundary parameters
+  // conistent on the coarse grid
+  std::vector<TCollection *> collArray(n_ref+1);
+  TCollection *coll;
+  if(parmoon_db["example"].is(7))
+  {
+    coll = domain.GetCollection(It_Finest,0);
+    collArray[0] = coll;
+    ChannelTau180::setZCoordinates(coll, 0);
+    domain.MakeBdParamsConsistent(coll);
+    ChannelTau180::checkZCoordinates(coll, 0);
+  }
   for(size_t i = 0; i < n_ref; i++)
   {
     domain.RegRefineAll();
+    // set the coordinates and make the boundary parameters
+    // conistent on the finer grids
+    if(parmoon_db["example"].is(7))
+    {
+      coll = domain.GetCollection(It_Finest,0);
+      collArray[i+1] = coll;
+      // set the z Coordinates
+      ChannelTau180::setZCoordinates(coll, i+1);
+      domain.MakeBdParamsConsistent(coll);
+      ChannelTau180::checkZCoordinates(coll, i+1);
+    }
+  }
+  // set the refinement descriptor and the periodic joints
+  // for particular examples
+  if(parmoon_db["example"].is(7))
+  {
+    n_ref +=1;
+    for(size_t i=0; i<n_ref; i++)
+    {
+      ChannelTau180::setRefineDesc(collArray[i]);
+      ChannelTau180::setPeriodicFaceJoints(collArray[i]);
+    }
   }
   
   TCollection* coll = domain.GetCollection(It_Finest,0);
@@ -146,25 +189,23 @@ int main(int argc, char* argv[])
 
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
-
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
-
-  // Choose and construct example.
-  Example_TimeNSE3D example(parmoon_db);
-
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
   Time_NSE3D tnse3d(domain, parmoon_db, example, maxSubDomainPerDof);
 #else
   Time_NSE3D tnse3d(domain, parmoon_db, example);
 #endif
-
   // assemble all matrices and right hand side at start time
   // it assembles A's, B's and M's blocks. Nonlinear blocks are
   // added in the loops thanks to assemble_nonlinear_term()
+  if(parmoon_db["example"].is(7))
+  {
+    ChannelTau180::GetCoordinatesOfDof(tnse3d);
+  }
   tnse3d.assemble_initial_time();
-
+  
   double end_time = TDatabase::TimeDB->ENDTIME;
   tnse3d.current_step_ = 0;
 
@@ -174,7 +215,10 @@ int main(int argc, char* argv[])
 
   chrono_parts.print_time(std::string("setting up spaces, matrices and initial assembling"));
   chrono_parts.reset();
-
+  if(parmoon_db["example"].is(7))
+  {
+    ChannelTau180::computeMeanVelocity(tnse3d);
+  }
   //======================================================================
   // time iteration
   //======================================================================
