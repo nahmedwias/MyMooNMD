@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
     }
   }
   
-  TCollection* coll = domain.GetCollection(It_Finest,0);
+  coll = domain.GetCollection(It_Finest,0);
   TOutput3D output(0,0,0,0,std::addressof(domain),coll);
   
   output.WriteVtk(parmoon_db["output_basename"]);
@@ -215,8 +215,10 @@ int main(int argc, char* argv[])
 
   chrono_parts.print_time(std::string("setting up spaces, matrices and initial assembling"));
   chrono_parts.reset();
+  TDatabase::TimeDB->CURRENTTIME = 0.0;
   if(parmoon_db["example"].is(7))
   {
+    TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
     ChannelTau180::computeMeanVelocity(tnse3d);
   }
   //======================================================================
@@ -287,6 +289,19 @@ int main(int argc, char* argv[])
       chrono_timeit.print_time(std::string("solving the time iteration ") + std::to_string(tau));
 
       tnse3d.output(tnse3d.current_step_,image);
+      
+      if(parmoon_db["example"].is(7))
+      {
+        if (TDatabase::TimeDB->CURRENTTIME>=TDatabase::TimeDB->T0)
+        {
+          if (TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION == 0)
+          {
+            TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
+            TDatabase::TimeDB->T0 = TDatabase::TimeDB->CURRENTTIME;
+          }
+        }
+        ChannelTau180::computeMeanVelocity(tnse3d);
+      }
 
     } // end of subtime loop
   } // end of time loop
