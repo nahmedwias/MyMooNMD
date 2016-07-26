@@ -18,109 +18,14 @@ void print(const std::string name, std::vector<double> vec)
   Output::print("------------------------\n");
 }
 
-void localDofs(int i, double* x, double* y, double* z,
-               double &locx, double &locy, double &locz)
+void ChannelTau180::computeAverageVelocity(
+        std::array<std::vector<double>, 9> velo, const Time_NSE3D &tnse3d)
 {
-  switch(i)
-  {
-    case 0:
-      locx=x[0]; locy=y[0]; locz=z[0];
-      break;
-    case 1:
-      locx=0.5*(x[0]+x[1]); locy =0.5*(y[0]+y[1]); locz=0.5*(z[0]+z[1]);
-      break;
-    case 2:
-      locx=x[1]; locy=y[1]; locz=z[1];
-      break;
-    case 3:
-      locx=0.5*(x[0]+x[3]); locy=0.5*(y[0]+y[3]); locz=0.5*(z[0]+z[3]);
-      break;
-    case 4:
-      locx=0.25*(x[0]+x[1]+x[2]+x[3]); locy=0.25*(y[0]+y[1]+y[2]+y[3]); locz=0.25*(z[0]+z[1]+z[2]+z[3]);
-      break;
-    case 5:
-      locx=0.5*(x[1]+x[2]); locy=0.5*(y[1]+y[2]); locz=0.5*(z[1]+z[2]);
-      break;
-    case 6:
-      locx=x[3]; locy=y[3]; locz=z[3];
-      break;
-    case 7:
-      locx=0.5*(x[2]+x[3]); locy=0.5*(y[2]+y[3]); locz=0.5*(z[2]+z[3]);
-      break;
-    case 8:
-      locx=x[2]; locy=y[2]; locz=z[2];
-      break;
-    case 9:
-      locx=0.5*(x[0]+x[4]); locy=0.5*(y[0]+y[4]); locz=0.5*(z[0]+z[4]);
-      break;
-    case 10:
-      locx=0.25*(x[0]+x[1]+x[4]+x[5]); locy=0.25*(y[0]+y[1]+y[4]+y[5]); locz=0.25*(z[0]+z[1]+z[4]+z[5]);
-      break;
-    case 11:
-      locx=0.5*(x[1]+x[5]); locy=0.5*(y[1]+y[5]); locz=0.5*(z[1]+z[5]);
-      break;
-    case 12:
-      locx=0.25*(x[0]+x[3]+x[4]+x[7]); locy=0.25*(y[0]+y[3]+y[4]+y[7]); locz=0.25*(z[0]+z[3]+z[4]+z[7]);
-      break;
-    case 13:
-      locx=0.125*(x[0]+x[1]+x[2]+x[3]+x[4]+x[5]+x[6]+x[7]);
-      locy=0.125*(y[0]+y[1]+y[2]+y[3]+y[4]+y[5]+y[6]+y[7]);
-      locz=0.125*(z[0]+z[1]+z[2]+z[3]+z[4]+z[5]+z[6]+z[7]);
-      break;
-    case 14:
-      locx=0.25*(x[1]+x[2]+x[5]+x[6]); locy=0.25*(y[1]+y[2]+y[5]+y[6]); locz=0.25*(z[1]+z[2]+z[5]+z[6]);
-      break;
-    case 15:
-      locx=0.5*(x[3]+x[7]); locy=0.5*(y[3]+y[7]); locz=0.5*(z[3]+z[7]);
-      break;
-    case 16:
-      locx=0.25*(x[2]+x[3]+x[6]+x[7]); locy=0.25*(y[2]+y[3]+y[6]+y[7]); locz=0.25*(z[2]+z[3]+z[6]+z[7]);
-      break;
-    case 17:
-      locx=0.5*(x[2]+x[6]); locy=0.5*(y[2]+y[6]); locz=0.5*(z[2]+z[6]);
-      break;
-    case 18:
-      locx=x[4]; locy=y[4]; locz=z[4];
-      break;
-    case 19:
-      locx=0.5*(x[4]+x[5]); locy=0.5*(y[4]+y[5]); locz=0.5*(z[4]+z[5]);
-      break;
-    case 20:
-      locx=x[5]; locy=y[5]; locz=z[5];
-      break;
-    case 21:
-      locx=0.5*(x[4]+x[7]); locy=0.5*(y[4]+y[7]); locz=0.5*(z[4]+z[7]);
-      break;
-    case 22:
-      locx=0.25*(x[4]+x[5]+x[6]+x[7]); locy=0.25*(y[4]+y[5]+y[6]+y[7]); locz=0.25*(z[4]+z[5]+z[6]+z[7]);
-      break;
-    case 23:
-      locx=0.5*(x[5]+x[6]); locy=0.5*(y[5]+y[6]); locz=0.5*(z[5]+z[6]);
-      break;
-    case 24:
-      locx=x[7]; locy=y[7]; locz=z[7];
-      break;
-    case 25:
-      locx=0.5*(x[6]+x[7]); locy=0.5*(y[6]+y[7]); locz=0.5*(z[6]+z[7]);
-      break;
-    case 26:
-      locx=x[6]; locy=y[6]; locz=z[6];
-      break;
-    default:
-      ErrThrow("C_Q2_3D_H_A has 26 degrees of freedoms only" );
-      break;
-  }
-}
-
-
-void ChannelFlowRoutines::computeAverageVelocity(
-        std::array<std::vector<double>, 9> velo,
-        int ndofs, Time_NSE3D &tnse3d)
-{
-  /// resize the array of vectors
-  std::fill(velo.begin(), velo.end(), std::vector<double>(ndofs));
   // finite element space
   const TFESpace3D& space = tnse3d.get_velocity_space();
+  size_t ndofs = space.GetN_DegreesOfFreedom();
+  /// resize the array of vectors
+  std::fill(velo.begin(), velo.end(), std::vector<double>(ndofs));  
   // collection
   TCollection* coll = space.GetCollection();  
   // number of mesh cells
@@ -183,7 +88,7 @@ void ChannelFlowRoutines::computeAverageVelocity(
       velo[8].at(ldof) += v3[3]*area; // u3z
     }
   }
-
+  // divide the vector for each component by the area
   for(size_t i=0; i<velo.size(); i++)
   {
     std::transform(velo[i].begin(), velo[i].begin()+ndofs, areas.begin(), 
@@ -191,7 +96,7 @@ void ChannelFlowRoutines::computeAverageVelocity(
   }
 }
 
-void ChannelFlowRoutines::setParameters(ParameterDatabase &db)
+void ChannelTau180::setParameters(ParameterDatabase &db)
 {
   // example Channel Flow with Reynolds Number 180 and 395
   if(db["example"].is(7))
@@ -205,7 +110,7 @@ void ChannelFlowRoutines::setParameters(ParameterDatabase &db)
   }  
 }
 
-void ChannelFlowRoutines::setZCoordinates(TCollection* Coll, int level)
+void ChannelTau180::setZCoordinates(TCollection* Coll, int level)
 {
   int i, j, k, nCells, nLayers, nVetrices, layer_int, grid_type;
   TBaseCell *cell;
@@ -257,7 +162,7 @@ void ChannelFlowRoutines::setZCoordinates(TCollection* Coll, int level)
     }
   }
 }
-void ChannelFlowRoutines::checkZCoordinates(TCollection* Coll, int level)
+void ChannelTau180::checkZCoordinates(TCollection* Coll, int level)
 {
   int i, j, k, nCells, nLayers, nVertices, found, grid_type;
   TBaseCell *cell;
@@ -307,7 +212,7 @@ void ChannelFlowRoutines::checkZCoordinates(TCollection* Coll, int level)
   }
 }
 
-void ChannelFlowRoutines::setRefineDesc(TCollection* coll)
+void ChannelTau180::setRefineDesc(TCollection* coll)
 {
   int nCells=coll->GetN_Cells();
   // reset clipboards to -1
@@ -347,7 +252,7 @@ void ChannelFlowRoutines::setRefineDesc(TCollection* coll)
   Output::print("Refinement Descriptor is set for Channel flow ");
 }
 
-void ChannelFlowRoutines::setPeriodicFaceJoints(TCollection* Coll)
+void ChannelTau180::setPeriodicFaceJoints(TCollection* Coll)
 {
   int i, j, N_Cells, N_Faces, l1, jj, ii, N_Faces1;
   double Y[MaxN_QuadPoints_3D];
@@ -574,7 +479,7 @@ void ChannelFlowRoutines::setPeriodicFaceJoints(TCollection* Coll)
   }
 }
 
-void ChannelFlowRoutines::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
+void ChannelTau180::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
 {
   const double reynoldsNumber=TDatabase::ParamDB->RE_NR;
   double per_x, per_y;
@@ -589,27 +494,20 @@ void ChannelFlowRoutines::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
   size_t Max=1000;  
   const TFESpace3D& feSpace=tnse3d.get_velocity_space();
   /// memory for the dofs of x,y and z coordinates
-  size_t nDofs=tnse3d.get_size();
+  size_t nDofs=feSpace.GetN_DegreesOfFreedom();
   xDofs.resize(nDofs); yDofs.resize(nDofs); zDofs.resize(nDofs);
-  ///TODO: try to fix the function "localDofs();" with the
-  /// already implemented function which returns dofs of position
-  /// OutCome: some values have different -ve signs for the
-  /// periodic joints: may be or may not be fixed????
-  /// option: I
-  // // feSpace.GetDOFPosition(xDofs.data(), yDofs.data(),zDofs.data());
-  // // cout<<xDofs[0]<< "  " << yDofs[0] << "  " << zDofs[0] << endl;
-  /// option: II
-  /*for(int i=0; i<tnse3d.get_velocity_space().GetN_DegreesOfFreedom();++i)
+  
+  double locX, locY, locZ;
+  for(size_t i=0; i<nDofs; ++i)
   {
-    feSpace.GetDOFPosition(i, localX, localY, localZ);
-    xDofs.at(i)=localX; yDofs.at(i)=localY; zDofs.at(i)=localZ;
-  }*/
+    feSpace.GetDOFPosition(i, locX, locY, locZ);
+    xDofs.at(i)=locX; yDofs.at(i)=locY; zDofs.at(i)=locZ;
+  }
   /// tried the above options (I && II) but nothing works
   /// restricted to the other version "localDofs()"
   size_t nCells=feSpace.GetCollection()->GetN_Cells();
   int *N_BaseFunct=TFEDatabase3D::GetN_BaseFunctFromFE3D();
   int globalDof;
-  double x[8], y[8], z[8], localX, localY, localZ;
 
   // initialize the layer with zero
   zLayers.resize(Max); nZLayers=0;
@@ -621,15 +519,9 @@ void ChannelFlowRoutines::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
     FE3D cE=feSpace.GetFE3D(i, cell);
     nBasisFunction=N_BaseFunct[cE];
 
-    int nVertices=cell->GetN_Vertices();
-    for(int j=0; j<nVertices; ++j)
-    {
-      TVertex* vertex=cell->GetVertex(j);
-      vertex->GetCoords(x[j],y[j],z[j]);
-    }
     if(cE != C_Q2_3D_H_A && cE != C_Q2_3D_H_M)
     {
-      ErrThrow("coordinates of dofs are not implemented for the"
+      ErrThrow("coordinates of dofs are not tested for the"
                "fini element ", cE, " yet");
     }
     /// mapping from local to global degrees of freedom
@@ -637,25 +529,19 @@ void ChannelFlowRoutines::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
     for(size_t j=0; j<nBasisFunction;++j)
     {
       /// compute the local dofs
-      localDofs(j, x, y, z, localX, localY, localZ);
       globalDof=dof[j];
-      /// peridoic b.c. are set onlocy from one side
-      if((fabs(localX-per_x)<1e-6) ||(fabs(localY-per_y)<1e-6))
+      /// peridoic b.c. are set only from one side
+      if((fabs(xDofs.at(globalDof)-per_x)<1e-6) || 
+         (fabs(yDofs.at(globalDof)-per_y)<1e-6))
           continue;
-      // Output::print(i ," loc " ,j ," glob " ,globalDof ," x " 
-      // ,localX ," y " ,localY ," z " ,localZ );
-      // save the (xyz)Dofs for later use
-      xDofs[globalDof]=localX;
-      yDofs[globalDof]=localY;
-      zDofs[globalDof]=localZ;
 
       for(size_t k=0;k<Max; ++k)
       {
-        if(fabs(zLayers[k]-localZ) < 1e-6)
+        if(fabs(zLayers[k]-zDofs.at(globalDof)) < 1e-6)
            break;
         if(zLayers[k] == -4711.)
         {
-          zLayers[k]=localZ;
+          zLayers[k]=zDofs.at(globalDof);
           nZLayers++;
           break;
         }
@@ -664,13 +550,12 @@ void ChannelFlowRoutines::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
   }// endfor i<N_Cells
   // sort the z layer
   std::sort(zLayers.begin(), zLayers.begin()+nZLayers);
-
+  
   for(size_t i=0;i<nZLayers;i++)
-    cout<<i << " " << zLayers[i] << endl;
-
+    Output::print(i, " ", zLayers[i]);
 }
 
-void ChannelFlowRoutines::computeMeanVelocity(Time_NSE3D& tnse3d)
+void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
 {
   const TFEVectFunct3D& u = tnse3d.get_velocity();
   TFEFunction3D* u1 =u.GetComponent(0);
@@ -758,16 +643,14 @@ void ChannelFlowRoutines::computeMeanVelocity(Time_NSE3D& tnse3d)
     }
   }
   /// compute root mean square (formula 11 Volker's paper)
-  std::deque<std::vector<double>> rmsInstnsities;
-  cout<<"here it is : " << endl;
-  cout<<TDatabase::TimeDB->CURRENTTIME<<endl;
+  std::deque<std::vector<double>> rmsInstnsities;  
   if(T >= t0)
     rmsInstnsities=getrms(ReynoldsStress,meanVelocityTimeAverage);
   /// save the output into the files
   saveData(meanVelocityTimeAverage, rmsInstnsities, ReynoldsStress);  
 }
 
-void ChannelFlowRoutines::summation(size_t length)
+void ChannelTau180::summation(size_t length)
 {
   sum_layer_dofs.resize(nZLayers);  
   for(size_t i=0; i<length; ++i)
@@ -783,7 +666,7 @@ void ChannelFlowRoutines::summation(size_t length)
 }
 
 std::vector< double >
-  ChannelFlowRoutines::spatialMean(std::vector< double > in)
+  ChannelTau180::spatialMean(std::vector< double > in)
 {
   // summation in the computation of mean velocities  
   std::vector<double>temp(nZLayers);
@@ -802,7 +685,7 @@ std::vector< double >
   return temp;
 }
 
-std::vector< double > ChannelFlowRoutines::meanVelocity(std::vector<double> vecin)
+std::vector< double > ChannelTau180::meanVelocity(std::vector<double> vecin)
 {
   double step_length=TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   double currentTime = TDatabase::TimeDB->CURRENTTIME;
@@ -822,7 +705,7 @@ std::vector< double > ChannelFlowRoutines::meanVelocity(std::vector<double> veci
   return temp;
 }
 
-std::vector< double > ChannelFlowRoutines::product(std::vector< double > vec1, 
+std::vector< double > ChannelTau180::product(std::vector< double > vec1, 
                                                    std::vector< double > vec2)
 {
   std::vector<double> res(vec1.size());
@@ -832,20 +715,25 @@ std::vector< double > ChannelFlowRoutines::product(std::vector< double > vec1,
 }
 
 
-void ChannelFlowRoutines::eddy_viscosity(
+void ChannelTau180::eddy_viscosity(
   std::array< std::vector< double>, int(6)> eddy,
-  Time_NSE3D& tnse3d)
+  const Time_NSE3D& tnse3d)
 {
-  size_t nuDofs = tnse3d.get_size();
+  const TFESpace3D& space = tnse3d.get_velocity_space();
+  size_t nuDofs = space.GetN_DegreesOfFreedom();
       /// fill with zeros
   std::fill(eddy.begin(), eddy.end(), std::vector<double>(nuDofs));
   if(!TDatabase::ParamDB->CHANNEL_STATISTICS2_WITH_MODEL)
     return;
+  else
+  {
+    ErrThrow("ChannelFlowRoutines::ChannelTau180:: ",
+             "Eddy viscosity model is not implemented yet");
+  }
   /// else compute the contribution from eddy viscosity model
   std::array<std::vector<double>, 9> gradu;
   double area;
-  double re_nr = TDatabase::ParamDB->RE_NR;
-  const TFESpace3D& space = tnse3d.get_velocity_space();
+  double re_nr = TDatabase::ParamDB->RE_NR;  
   size_t nCells=space.GetCollection()->GetN_Cells();
   size_t nCellsPerLayer;
   double hxhy;
@@ -855,7 +743,7 @@ void ChannelFlowRoutines::eddy_viscosity(
     case GALERKIN:
       break;
     case SMAGORINSKY:
-      ChannelFlowRoutines::computeAverageVelocity(gradu, nuDofs, tnse3d);
+      ChannelTau180::computeAverageVelocity(gradu, tnse3d);
       // Reynolds number only: 395 or 180 are used
       area = (re_nr == 395) ? 4.*Pi*Pi : 32.*Pi*Pi/3;
       nCellsPerLayer = 2*nCells/(nZLayers-1);
@@ -866,64 +754,9 @@ void ChannelFlowRoutines::eddy_viscosity(
       ErrThrow("mean velocity for DISCTYPE ", 
                TDatabase::ParamDB->DISCTYPE," is not implemented yet");
   }
-  const TFEVectFunct3D& uvec = tnse3d.get_velocity();
-  TFEFunction3D* u1 =uvec.GetComponent(0);
-  TFEFunction3D* u2 =uvec.GetComponent(1);
-  TFEFunction3D* u3 =uvec.GetComponent(2);
-  
-  std::vector<double> velocity_u1(u1->GetValues(),
-                                  u1->GetValues()+nuDofs);
-  std::vector<double> velocity_u2(u2->GetValues(),
-                                    u2->GetValues()+nuDofs);
-  std::vector<double> velocity_u3(u3->GetValues(),
-                                    u3->GetValues()+nuDofs);
-/*
-  double u[3];
-  double delta;
-  for(size_t i=0; i<nuDofs; ++i)
-  {
-    for(size_t j=0; j<nZLayers; ++j)
-    {
-      if(fabs(zDofs[i]-zLayers[j]) < 1e-6)
-      {
-        // filter width
-        switch(TDatabase::ParamDB->DISCTYPE)
-        {
-          case SMAGORINSKY:
-            // only Q2 elements are tested
-            if(TDatabase::ParamDB->VELOCITY_SPACE != 2 || 
-               TDatabase::ParamDB->VELOCITY_SPACE != 12)
-            {
-              Output::print("change velocity space to 2 or 12");
-              ErrThrow("space ", TDatabase::ParamDB->VELOCITY_SPACE, " is not tested yet");
-            }
-            /// compute delta (given by the smallest edge), 
-            /// take average values between the layers
-            if(j==0)
-              delta = 2.*zLayers.at(1);
-            else
-            {
-              if(j==nZLayers-1)
-                delta = 4-2*zLayers.at(nZLayers-2);
-              else
-                delta = zLayers.at(j+1) - zLayers.at(j-1);
-            }
-            break;
-          default:
-            ErrThrow("DISCTYPE ", TDatabase::ParamDB->DISCTYPE, " is not tested yet");
-        }
-        u[0] = velocity_u1.at(i);
-        u[1] = velocity_u2.at(i);
-        u[2] = velocity_u3.at(i);
-        //TODO fill the vectors with right entries
-        ErrThrow("not completed yet: ");
-      }
-    }
-  }
-*/
 }
 
-double ChannelFlowRoutines::getFrictionVelocity(std::vector< double > vec)
+double ChannelTau180::getFrictionVelocity(std::vector< double > vec)
 {
   double temp;
   /// computing the friction velocity
@@ -967,8 +800,9 @@ double ChannelFlowRoutines::getFrictionVelocity(std::vector< double > vec)
   return temp;
 }
 
-std::deque<std::vector< double>> ChannelFlowRoutines::getrms(std::deque<std::vector<double>> reynoldStress, 
-                                                  std::deque<std::vector<double>> meanvelo)
+std::deque<std::vector< double>> 
+ChannelTau180::getrms(std::deque<std::vector<double>> reynoldStress, 
+                            std::deque<std::vector<double>> meanvelo)
 {
   std::deque<std::vector<double>> temp(3);
   for(size_t i=0; i<nZLayers; ++i)
@@ -991,7 +825,7 @@ std::deque<std::vector< double>> ChannelFlowRoutines::getrms(std::deque<std::vec
   return temp;
 }
 
-void ChannelFlowRoutines::saveData(std::deque< std::vector< double > > m, 
+void ChannelTau180::saveData(std::deque< std::vector< double > > m, 
                                  std::deque< std::vector< double > > rms,
                                  std::deque< std::vector< double > > R)
 {

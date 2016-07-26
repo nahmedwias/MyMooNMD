@@ -16,7 +16,7 @@
 
 class TCollection;
 
-namespace ChannelFlowRoutines
+namespace ChannelTau180
 {
   /// set parameters used for the corresponding example
   void setParameters(ParameterDatabase& db);
@@ -45,24 +45,29 @@ namespace ChannelFlowRoutines
   // number of basis functions
   static size_t nBasisFunction;
 
-  /// routine for computing the coordinates of the d.o.f. for a finite
+  ///@brief computing the coordinates of the d.o.f. 
+  /// for a finite element: currently only Q2-element
+  /// @param[in]
   void GetCoordinatesOfDof(const Time_NSE3D& tnse3d);
 
   /// routine for computing mean velocity
   /// currently implemented for only Channel Flow with
   /// Reynolds number=180 and Turbulent Model used is
   /// the Smagorinsky
-  void computeMeanVelocity(Time_NSE3D& tnse3d);
-  /// compute the average velocity
-  /// @Output: list of velocity gradients for all three components
+  void computeMeanVelocity(const Time_NSE3D& tnse3d);
+  ///TODO: not used and therefore not completed yet 
+  /// need to modify also when started implementation
+  /// this function is used in the computations of "eddy_viscosity"
+  /// update accordingly:
+  /// @brief compute the average velocity
+  /// @param[out] list of velocity gradients for all three components
   /// of velocity with respect to x, y and z
-
-  void computeAverageVelocity(
-          std::array< std::vector< double >, int(9) > velo, 
-          int ndofs, Time_NSE3D& tnse3d);
+  /// @param[in] Time_NSE3D object
+  void computeAverageVelocity( std::array< std::vector< double >, int(9) > velo, 
+                               const Time_NSE3D& tnse3d);
   /// no of summations in the computations of mean velocity
   static std::vector<int> sum_layer_dofs;
-  /// 
+  /// compute the summation of layers
   void summation(size_t length);
   /// computations of spatial mean velocity at current time
  std::vector<double> spatialMean(std::vector< double > in);
@@ -75,15 +80,21 @@ namespace ChannelFlowRoutines
  /// maximum six vectors to be returned
  /// eddy_xx, eddy_yy, eddy_zz, eddy_xy, eddy_xz, eddy_yz
  ///TODO: not considered yet 
- /// @input: 
- void eddy_viscosity(std::array< std::vector< double>, int(6)> eddy, 
-                     Time_NSE3D& tnse3d);
- /// u_tau = frictionvelocity
+ /// @param[out] eddy eddy viscosity
+ /// @param[in]  Time_NSE3D class object 
+ void eddy_viscosity(std::array< std::vector< double >, int(6) > eddy, 
+                     const Time_NSE3D& tnse3d);
+ /// @brief computes the friction viscosity u_tau
+ /// @param[in] vec mean velocity vector for the first component only
  double getFrictionVelocity(std::vector<double> vec);
- /// root mean square velocities
+ ///@brief compute the root mean square velocities
+ ///@param[in] reynoldStress all components of Reynold Stress 
+ /// (spatial,Temporal  averaged)
+ ///@param[in] meanVelo all components: mean velcoity (spatial, Temporal averaged)
+ /// @return root mean square velcoity all components 
  std::deque<std::vector< double>> getrms(std::deque<std::vector<double>> reynoldStress, 
                             std::deque<std::vector<double>> meanvelo);
- /// out put for plotting
+ ///@brief out put for plotting
  void saveData(std::deque<std::vector<double>> m, std::deque<std::vector<double>> rms, 
              std::deque<std::vector<double>> R);
  
