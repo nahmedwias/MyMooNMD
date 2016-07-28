@@ -1246,7 +1246,6 @@ void GridTransfer::RestrictFunction(
   double Val2[MaxN_BaseFunctions3D];
 //  int *DOF, Index;
 //  double *entry;
-
   // begin code
   CoarseColl = CoarseSpace.GetCollection();
   N_CoarseCells = CoarseColl->GetN_Cells();
@@ -1267,9 +1266,6 @@ void GridTransfer::RestrictFunction(
   if ((int)n_fine_dofs != FineSpace.GetN_DegreesOfFreedom())
     ErrThrow("Incorrect length of FineFunction: ",
              n_fine_dofs, " != ", FineSpace.GetN_DegreesOfFreedom());
-
-  // cout << "N_FineCells: " << N_FineCells << endl;
-  // cout << "N_CoarseCells: " << N_CoarseCells << endl;
 
   double* aux = new double[N_CoarseDOFs];
   memset(aux, 0, SizeOfDouble*N_CoarseDOFs);
@@ -1311,10 +1307,15 @@ void GridTransfer::RestrictFunction(
 #ifdef _HYBRID
 }
 #endif
-
   for(i=0;i<N_FineCells;i++)
   {
     cell = FineColl->GetCell(i);
+#ifdef _MPI
+    // Just skip fine cells which lie in the halo
+    // - they will be treated on that process, where they are own cells
+    if(cell->IsHaloCell())
+      continue;
+#endif
     k = cell->GetClipBoard();
     // cout << "i= " << i << "    ";
     // cout << "k= " << k << endl;
@@ -1478,7 +1479,6 @@ void GridTransfer::RestrictFunction(
 #endif
     } // endelse
   } // endfor i
-
 #ifdef _HYBRID
 #pragma omp parallel default(shared) private(i)
 #pragma omp for schedule(static) nowait
@@ -1533,9 +1533,26 @@ void GridTransfer::RestrictFunctionRepeatedly(
     double* fine_function = function_entries.at(i);
     size_t fine_n_dofs = function_n_dofs.at(i);
 
+#ifdef _MPI
+#ifdef __3D__
+    // put the fine function into level 3 (=full) consistency
+    TParFECommunicator3D fine_comm = fine_space.get_communicator();
+    fine_comm.consistency_update(fine_function, 3);
+#endif
+#endif
+
     //do the restriction
     RestrictFunction(coarse_space, fine_space,
                      coarse_function, coarse_n_dofs,
                      fine_function, fine_n_dofs);
+
+#ifdef _MPI
+#ifdef __3D__
+    //// Restore Level 3 consistency of the coarse solution
+    // TODO Doing this here is somewhat against the concept - do it where the result of this is needed!!!
+    TParFECommunicator3D coarse_comm = coarse_space.get_communicator();
+    coarse_comm.consistency_update(coarse_function, 3);
+#endif
+#endif
   }
 }
