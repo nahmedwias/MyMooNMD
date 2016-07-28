@@ -89,6 +89,21 @@ class TParFECommunicator3D
     const int *GetMaster() const
     {return Master;}
     
+    /// Get the dof marker array from the fe mapper, which holds encoded
+    /// information about the type of a certain d.o.f.
+    /// The encoding is as follows:
+    ///   i - independent (inner) master dof
+    ///   D - dependent 1 master dof
+    ///   d - dependent 2 master dof
+    ///   m - interface master dof
+    ///   s - interface slave dof
+    ///   H - halo 1 slave dof
+    ///   h - halo 2 slave dof
+    const char* get_dof_markers() const
+    {
+      return Mapper->Get_DofMarker();
+    }
+
     //TODO Comment the usage of this!
     int GetNDof() const
     {return N_Dof;}

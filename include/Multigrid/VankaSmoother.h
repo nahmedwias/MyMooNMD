@@ -11,7 +11,7 @@
 #include <DofBatch.h>
 #include <Smoother.h>
 
-enum class VankaType {NODAL, CELL, BATCH, NODAL_JACOBI};
+enum class VankaType {NODAL, CELL, BATCH, NODAL_JACOBI, CELL_JACOBI};
 
 //forward declaration
 class DenseMatrix;
