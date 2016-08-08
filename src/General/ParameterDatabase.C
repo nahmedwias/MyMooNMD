@@ -390,7 +390,7 @@ std::pair<bool,std::set<std::string>> get_range_list(std::string range)
     auto end    = range.find("]", begin);
     if(middle == npos || end == npos)
     {
-      ErrThrow("wrong range format for interval.");
+      ErrThrow("wrong range format for an interval.");
     }
     if(range.find(",", middle+1) < end)
     {
@@ -416,6 +416,10 @@ std::pair<bool,std::set<std::string>> get_range_list(std::string range)
     begin += 1; // just after the "{"
     auto middle = range.find(",", begin); // find first comma
     auto end    = range.find("}", begin);
+    if(end == npos)
+    {
+      ErrThrow("wrong range format for a set.");
+    }
     ret.first = false;
     while(middle < end && middle != npos)
     {
@@ -634,8 +638,9 @@ bool read_parameter(const std::string& line, std::string& name,
   if(remainder.size() == 0)
     return false; // no value given, maybe write a warning
   
-  auto position_for_value = remainder.find(" "); // may be npos
+  auto position_for_value = remainder.find_first_of("{["); // may be npos
   value = remainder.substr(0, position_for_value);
+  remove_trailing_whitespace(value);
   
   range_string.clear();
   if(position_for_value != npos)
