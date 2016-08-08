@@ -10,10 +10,6 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <Darcy2D.h>
-
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include <Example_Darcy2D.h>
 
 // =======================================================================
