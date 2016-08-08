@@ -5,7 +5,122 @@
 
 #include <algorithm>
 
-PETScSolver::PETScSolver(const BlockFEMatrix& matrix)
+/**
+ * Adding PETSc parameters from the database to the PETSc arguments string.
+ *
+ * Supported parameters are
+ *  - maximum number of iterations
+ *  - absolute residual tolerance
+ *  - residual reduction
+ *  - gmres restart
+ *  - damping factor for Richardson iteration
+ *
+ * If a parameters is set in this function it will take precedence over
+ * the parameter in the db["petsc_arguments"] string, e.g. if
+ * your .dat file reads
+ *
+ * max_n_iterations: 1000
+ *
+ * [...]
+ *
+ * petsc_arguments: -pc_type lu -ksp_max_it 5
+ *
+ * The 1000 will be set in this function and your code will run with
+ * 1000 iterations maximum instead of 5.
+ *
+ * @param db[in] database from the solver
+ * @return PETSc arguments conforming string
+ */
+std::string addParameters2str(const ParameterDatabase& db)
+{
+  std::string petsc_args = "";
+
+  if(db.contains("petsc_arguments"))
+  {
+	petsc_args = db["petsc_arguments"].value_as_string();
+  }
+
+  // adding maximum number of iterations
+  petsc_args.append(" -ksp_max_it "+db["max_n_iterations"].value_as_string());
+
+  // adding absolute tolerance
+  petsc_args.append(" -ksp_atol "+db["residual_tolerance"].value_as_string());
+
+  // adding reduction tolerance
+  petsc_args.append(" -ksp_rtol "+db["residual_reduction"].value_as_string());
+
+  // adding gmres restart
+  petsc_args.append(" -ksp_gmres_restart "+db["gmres_restart"].value_as_string());
+
+  // adding damping for Richardson iteration
+  petsc_args.append(" -ksp_richardson_scale "+db["damping_factor"].value_as_string());
+
+  return petsc_args;
+}
+
+/**
+ * Converts a std::string to a char** by splitting words at white spaces.
+ *
+ * @param[in] s input string
+ * @param[out] argc number of words in the input string
+ * @param[out] argv char** containing all words + nullptr
+ */
+void str2charpp(const std::string &s, int &argc, char*** argv)
+{
+  // zero is always the first position
+  std::vector<size_t> wordPositions;
+  wordPositions.push_back((size_t)0);
+
+  auto current_position = s.find(" ");
+
+  // argc = 1 for the "progname"
+  argc = 1;
+
+  // count the white spaces and save the positions next to them
+  while(current_position != std::string::npos)
+  {
+	argc++;
+	wordPositions.push_back(current_position + 1);
+	current_position = s.find(" ", current_position + 1);
+  }
+
+  // push the length of the string as last "position"
+  // now position[i+1]-position[i] is valid for i = 0, ... argc
+  argc++;
+  wordPositions.push_back(s.size()+1);
+
+  // one extra entry for the file name. PETSc expects the program name at first
+  char* progname = new char[8];
+  progname[0] = '.'; progname[1] = '/'; progname[2] = 'd';
+  progname[3] = 'u'; progname[4] = 'm'; progname[5] = 'm';
+  progname[6] = 'y'; progname[7] = '\0';
+
+  // plus 1 here for the terminating NULL
+  *argv = (char**)malloc(sizeof(char*)*(argc+1));
+
+  // filename first
+  (*argv)[0] = &progname[0];
+
+  for (auto i = 1; i < argc; ++i)
+  {
+	size_t wordLength = wordPositions[i]-wordPositions[i-1] - 1;
+
+	(*argv)[i] = (char*)malloc(sizeof(char)*(wordLength+1));
+	strncpy( (*argv)[i], &s.c_str()[wordPositions[i-1]], wordLength );
+
+	// add terminating \0
+	(*argv)[i][wordLength] = '\0';
+  }
+
+  // set the nullptr at the end
+  // demanded by the C++ Standard for main function argument argv
+  (*argv)[argc] = nullptr;
+
+}
+
+
+PETScSolver::PETScSolver(const BlockFEMatrix& matrix, const ParameterDatabase& db)
+ : petsc_mat(nullptr)
 {
 #ifdef MPI
   ErrThrow("PETScSolver not yet implemented for MPI ");
@@ -16,10 +131,17 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix)
   // with a known sparsity structure. This would cause many memory allocations 
   // and copies. Instead all that PETSc needs to know at first is the number of 
   // non-zero entries in each row. This is computed first here.
-  
-  PetscErrorCode ierr;
-  int argc = 0;
-  PetscInitialize(&argc, nullptr, nullptr, nullptr);
+
+  std::string petsc_args = addParameters2str(db);
+
+  Output::print("Out new argument string\n", petsc_args, "\n");
+
+  char ** params_pointer;
+  int argc;
+
+  str2charpp(petsc_args, argc, &params_pointer);
+
+  PetscInitialize(&argc, &params_pointer, (char*)0, nullptr);
   
   size_t n_rows = matrix.get_n_total_rows();
   size_t n_cols = matrix.get_n_total_columns();
@@ -58,10 +180,10 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix)
   }
   
   // create a matrix with known non-zero distribution among the rows
-  ierr = MatCreateSeqAIJ(PETSC_COMM_WORLD, n_rows, n_cols, n_entries, &nnz[0],
-                         &petsc_mat);
+  MatCreateSeqAIJ(PETSC_COMM_WORLD, n_rows, n_cols, n_entries, &nnz[0],
+                  &petsc_mat);
   // MatSetUp must be called before MatSetValues (says PETSc documentation)
-  ierr = MatSetUp(petsc_mat);
+  MatSetUp(petsc_mat);
   
   // now we need to copy the entries from the blocks in 'matrix' to petsc_mat:
   // loop over all blocks rows
@@ -110,8 +232,8 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix)
   
   // the following two functions must be called after MatSetValues (says PETSc 
   // documentation)
-  ierr = MatAssemblyBegin(petsc_mat, MAT_FINAL_ASSEMBLY);
-  ierr = MatAssemblyEnd(petsc_mat, MAT_FINAL_ASSEMBLY);
+  MatAssemblyBegin(petsc_mat, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(petsc_mat, MAT_FINAL_ASSEMBLY);
   
   // print out the petsc matrix to console
   //PetscViewer viewer;
@@ -120,20 +242,10 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix)
   //PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_COMMON);
   //MatView(petsc_mat, viewer);
   //PetscViewerDestroy(&viewer);
-  
-  // check for saddle point problems
-  auto block = matrix.get_block(n_block_rows-1, n_block_cols-1, transposed);
-  if(block->GetNorm() == 0.0)
-  {
-    // this seems to be a saddle point problem.
-    ErrThrow("We can not yet solve saddle point problems using PETSc ",
-             "because we don't know yet how to set up a suitable preconditiner."
-             );
-  }
 }
 
 /* ************************************************************************** */
-PETScSolver::PETScSolver(const BlockMatrix& matrix)
+PETScSolver::PETScSolver(const BlockMatrix& matrix, const ParameterDatabase& db)
 {
   ErrThrow("can not construct a PETScSolver using a BlockMatrix. I need a "
            "BlockFEMatrix instead. It would be possible to implement this "
@@ -186,12 +298,12 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
 {
   PetscInt n, m;
   MatGetSize(petsc_mat, &m, &n);
-  if(rhs.length() != m)
+  if((int)rhs.length() != m)
   {
     ErrThrow("PETScSolver::solver: size of the right hand side is not "
              "suitable ", rhs.length(), " != ", m);
   }
-  if(solution.length() != n)
+  if((int)solution.length() != n)
   {
     ErrThrow("PETScSolver::solver: size of the solution is not suitable ",
              solution.length(), " != ", n);
@@ -206,7 +318,7 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   VecDuplicate(x, &b);
   
   // copy into PETSc vectors
-  for(size_t i = 0; i < n; ++i)
+  for(int i = 0; i < n; ++i)
   {
     VecSetValue(b, i, rhs[i], INSERT_VALUES);
     VecSetValue(x, i, solution[i], INSERT_VALUES);
@@ -220,26 +332,30 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   KSPGetPC(ksp, &pc);
   
   // http://scicomp.stackexchange.com/questions/513/why-is-my-iterative-linear-
-  // solver -not-converging
+  // solver-not-converging
   // http://scicomp.stackexchange.com/questions/7288/which-preconditioners-and-
-  // solver -in-petsc-for-indefinite-symmetric-systems-sho
-  PCSetType(pc, PCGAMG);
+  // solver-in-petsc-for-indefinite-symmetric-systems-sho
+
+  PCSetFromOptions(pc);
+
   // obviously this needs to be controlled from outside via some database 
   // entries
   double relative_tolerance = 1.e-14;
   double absolute_tolerance = 1.e-20;
-  int max_iterations = 100;
+  int max_iterations = 1000;
   KSPSetTolerances(ksp, relative_tolerance, absolute_tolerance, PETSC_DEFAULT,
                    max_iterations);
   KSPSetFromOptions(ksp);
   KSPSolve(ksp,b,x);
-  //KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD); // information on the solver
+
+  // some PETSc information about the solver
+  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
   PetscInt its;
   KSPGetIterationNumber(ksp,&its);
   Output::print("some PETSc solver: number of iterations: ", its);
   
   // copy back to solution:
-  for(size_t i = 0; i < n; ++i)
+  for(int i = 0; i < n; ++i)
   {
     VecGetValues(x, 1, (int*)&i, &solution[i]);
   }

@@ -24,9 +24,22 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "call a direct solver. Set to iterative to call a ParMooN internal "
          "iterative solver. Furthermore it is possible to use the external "
          "library PETSc, see the class PETScSolver. This also includes direct "
-         "and iterative solvers.", 
+         "and iterative solvers.",
          {"direct", "iterative", "petsc"});
   
+  db.add("petsc_arguments", "",
+		 "Setting PETSc arguments as if used from command line. "
+		 "use -pc_type <pc_arg> for linear solver method "
+		 "<pc_arg> = { lu, ilu, hypre, mg, ... }"
+		 "(see https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html) "
+		 "use -pc_factor_mat_solver_package <package> for the package that should be used "
+		 "for the linear solver method "
+		 "<package> = { umfpack, mumps, superlu, ... }"
+		 "(see https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatSolverPackage.html) "
+		 "for hypre use -pc_hypre_type <package>"
+		 "(see https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCHYPRE.html)",
+		 {""});
+
   db.add("direct_solver_type", "umfpack",
          "Determine which type of direct solver should be used. All of them "
          "are implemented in external libraries. ",
@@ -203,9 +216,9 @@ std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
 // L - LinearOperator, V - Vector
 template <class L, class V>
 Solver<L, V>::Solver(const ParameterDatabase& param_db)
- : db(default_solver_database()), linear_operator(nullptr), direct_solver(), 
-   iterative_method(), preconditioner(), multigrid(nullptr), 
-   petsc_solver(nullptr)
+ : db(default_solver_database()), linear_operator(nullptr),
+   direct_solver(nullptr), iterative_method(nullptr), preconditioner(nullptr),
+   multigrid(nullptr), petsc_solver(nullptr)
 {
   this->db.merge(param_db, false);
   if(this->is_using_multigrid())
@@ -269,7 +282,7 @@ void Solver<L, V>::update_matrix(const L& matrix)
   }
   else if(db["solver_type"].is("petsc"))
   {
-    this->petsc_solver = std::make_shared<PETScSolver>(matrix);
+    this->petsc_solver = std::make_shared<PETScSolver>(matrix, db);
   }
   else
   {

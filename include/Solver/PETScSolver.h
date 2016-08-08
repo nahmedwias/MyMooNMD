@@ -8,6 +8,7 @@
 #define __PETSCSOLVER__
 
 #include <petscksp.h> // defines type 'Mat' below and much more
+#include <ParameterDatabase.h>
 
 // forward declaration
 class BlockMatrix;
@@ -17,11 +18,12 @@ class BlockVector;
 class PETScSolver
 {
   public:
+	PETScSolver(const BlockFEMatrix& matrix, const ParameterDatabase& db);
+
     /** @brief constructor: an internal copy is created and stored. Ready to 
      * solve.
      */
-    PETScSolver(const BlockFEMatrix& matrix);
-    PETScSolver(const BlockMatrix& matrix);
+    PETScSolver(const BlockMatrix& matrix, const ParameterDatabase& db);
     
     /** @brief This class is not copy constructible */
     PETScSolver(const PETScSolver&) = delete;
