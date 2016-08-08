@@ -126,6 +126,9 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   else if(solver_name.compare("petsc") == 0)
   {
     db["solver_type"] = "petsc";
+    db["max_n_iterations"] = 1000;
+    db["residual_tolerance"] = 1.0e-12;
+    db["residual_reduction"] =  0.0;
   }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)

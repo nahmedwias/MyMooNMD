@@ -23,14 +23,10 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <Darcy2D.h>
+#include <Chrono.h>
+#include <cmath>
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <LocalAssembling2D.h>
-#include <Example_CD2D.h>
-
-#include <MainUtilities.h> //for error measuring
+#include <petscksp.h>
 
 // compare the computed errors in the Darcy2D object with the given ones in 
 // the array
@@ -39,29 +35,30 @@ void compareErrors(const Darcy2D& darcy2d, std::array<double, 5> errors)
   const double eps = 2e-9;
   
   // check the errors
-  if( fabs(darcy2d.getL2VelocityError() - errors[0]) > eps )
+  if( std::abs(darcy2d.getL2VelocityError() - errors[0]) > eps 
+     || std::isnan(darcy2d.getL2VelocityError()) )
   {
     ErrThrow("Program 1: L2 velocity error not correct. ",
              darcy2d.getL2VelocityError() - errors[0]);
   }
-  if( fabs(darcy2d.getL2DivergenceError() - errors[1]) > 2*eps )
+  if( std::abs(darcy2d.getL2DivergenceError() - errors[1]) > 2*eps )
   {
     ErrThrow("Program 1: L2 velocity divergence error not correct. ",
              darcy2d.getL2DivergenceError() - errors[1]);
   }
-  if( fabs(darcy2d.getH1SemiVelocityError() - errors[2]) > eps )
+  if( std::abs(darcy2d.getH1SemiVelocityError() - errors[2]) > eps )
   {
     ErrThrow("Program 1: H1-semi velocity error not correct. ",
              darcy2d.getH1SemiVelocityError() - errors[2]);
   }
-  if( fabs(darcy2d.getL2PressureError() - errors[3]) > eps )
+  if( std::abs(darcy2d.getL2PressureError() - errors[3]) > eps )
   {
-    ErrThrow("Program 1: L2 pressure error not correct.",
+    ErrThrow("Program 1: L2 pressure error not correct. ",
              darcy2d.getL2PressureError() - errors[3]);
   }
-  if( fabs(darcy2d.getH1SemiPressureError() - errors[4]) > 2*eps )
+  if( std::abs(darcy2d.getH1SemiPressureError() - errors[4]) > 2*eps )
   {
-    ErrThrow("Program 1: H1-semi pressure error not correct.",
+    ErrThrow("Program 1: H1-semi pressure error not correct. ",
              darcy2d.getH1SemiPressureError() - errors[4]);
   }
 }
@@ -209,7 +206,7 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int argc, char** args)
 {
   //  declaration of databases
   TDatabase Database;
@@ -245,7 +242,10 @@ int main(int argc, char* argv[])
   
   db["output_compute_errors"] = true;
   
+  Chrono time_measuring;
+  
   Output::print("\n\n ----------- direct solver -----------\n");
+  time_measuring.reset();
   db["solver_type"] = "direct";
  
   db.add("boundary_file", "Default_UnitSquare", "");
@@ -254,26 +254,41 @@ int main(int argc, char* argv[])
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
+  time_measuring.print_time("all tests, the direct solver");
   
   
-  db["solver_type"] = "iterative";
   db["max_n_iterations"] = 10000;
   
-  Output::print("\n\n --------- fgmres+lsc solver ---------\n");
-  db["preconditioner"] = "least_squares_commutator";
-  
+  Output::print("\n\n ----------- PETSc solver -----------\n");
+  time_measuring.reset();
+  db["solver_type"] = "petsc";
   db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
+  time_measuring.print_time("all tests, the petsc solver");
+  
+  db["solver_type"] = "iterative";
+  
+  Output::print("\n\n --------- fgmres+lsc solver ---------\n");
+  time_measuring.reset();
+  db["preconditioner"] = "least_squares_commutator";
+  db["geo_file"] = "UnitSquare";
+  tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
+  tests_on_triangles(nRefinements, db);
+  time_measuring.print_time("all tests, fgmres with lsc preconditioning");
+  
+  
   
   Output::print("\n\n -------- fgmres+simple solver -------\n");
+  time_measuring.reset();
   db["preconditioner"] = "semi_implicit_method_for_pressure_linked_equations";
-  
   db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
+  time_measuring.print_time("all tests, fgmres with simple preconditioning");
   
   return 0;
 }
