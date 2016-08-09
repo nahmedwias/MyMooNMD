@@ -98,6 +98,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
           
       case Brinkman2D_Galerkin2:
           return std::string("Brinkman2D_Galerkin2");
+          
       case Brinkman2D_Galerkin1ResidualStab:
           return std::string("Brinkman2D_Galerkin1ResidualStab");
           

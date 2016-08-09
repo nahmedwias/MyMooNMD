@@ -734,15 +734,15 @@ void ParameterDatabase::merge(const ParameterDatabase &other,
 /* ************************************************************************** */
 void ParameterDatabase::info(bool only_names) const
 {
-//    Output::print("Parameter database: ", this->name);
-//    Output::print("  number of parameters: ", this->parameters.size());
-//    for(const auto& p : this->parameters)
-//    {
-//        if(only_names)
-//            Output::print("    ", p.get_name(), ": ", p.value_as_string());
-//        else
-//            p.info();
-//    }
+    Output::print("Parameter database: ", this->name);
+    Output::print("  number of parameters: ", this->parameters.size());
+    for(const auto& p : this->parameters)
+    {
+        if(only_names)
+            Output::print("    ", p.get_name(), ": ", p.value_as_string());
+        else
+            p.info();
+    }
 }
 
 /* ************************************************************************** */
