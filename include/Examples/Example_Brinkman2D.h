@@ -44,8 +44,8 @@ public:
     /// Apply the function stored as post processing routine.
     void do_post_processing(Brinkman2D& brinkman2d) const;
 
-    /// Return kinematic viscosity, if set.
-    double get_nu() const;
+    /// Get residual-based equal-order stabilization weight, if set in the .dat-file.
+    double get_stab() const;
 
     //Declaration of special member functions - rule of zero
     
@@ -63,6 +63,8 @@ public:
     
     //! Default destructor.
     ~Example_Brinkman2D() = default;
+    
+    double stab_weight;
 
   private:
     /// Function doing the post processing for a stationary example.

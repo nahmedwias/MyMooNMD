@@ -27,8 +27,9 @@
 // =======================================================================
 int main(int argc, char* argv[])
 {
-    //for(UNIFORM_STEPS=1; UNIFORM_STEPS <= 6;++UNIFORM_STEPS)
+    //for(refinement_n_initial_steps=1; refinement_n_initial_steps <= 6;++refinement_n_initial_steps)
     //{
+    
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
@@ -37,18 +38,16 @@ int main(int argc, char* argv[])
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
-  
-    
+
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain Domain(argv[1], parmoon_db);
-
     
   //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
   
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
-  
+ 
   // refine grid
   size_t n_ref =  Domain.get_n_initial_refinement_steps();
   for(size_t i=0; i< n_ref; i++)
@@ -61,6 +60,7 @@ int main(int argc, char* argv[])
     Domain.PS("Domain.ps", It_Finest, 0);
     
   Example_Brinkman2D example(parmoon_db);
+
   //=========================================================================
   // create an object of the Brinkman class
   Brinkman2D brinkman2d(Domain, parmoon_db, example);
