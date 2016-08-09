@@ -812,6 +812,44 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->CYLINDER_22000_YPLUS_SIDES = 1500;
   ParamDB->CYLINDER_22000_YPLUS_FRONT = 2300;
   ParamDB->CYLINDER_22000_YPLUS_BACK  = 1000;
+  
+// parameters for BULK computations
+  ParamDB->BULK_REACTION_DISC = 0;
+  ParamDB->BULK_PB_DISC = 0;
+  ParamDB->BULK_PB_DISC_STAB = 0;
+  ParamDB->BULK_PB_DISC_FCT_GROUP = 0;
+  ParamDB->BULK_COUPLING = 0;
+  ParamDB->BULK_GROWTH_RATE = 0;
+  ParamDB->BULK_REACTION_MASS_LUMPING = 0;
+  ParamDB->BULK_METHODS_OF_MOMENTS = 0;
+  ParamDB->BULK_MOM_DISC = 0;
+  ParamDB->BULK_SOLD_PARAMETER_TYPE = 0;
+  ParamDB->N_CELL_LAYERS_PSD = 0;
+  ParamDB->N_CELL_LAYERS_PSD_2 = 0;
+  ParamDB->OUTPUT_NODE_LAYER_PSD = 0;
+  ParamDB->BULK_REACTION_C_CUT = 0.0;
+
+  ParamDB->BULK_l_infty = 0.0;
+  ParamDB->BULK_u_infty = 0.0;
+  ParamDB->BULK_c_infty = 0.0;
+  ParamDB->BULK_c_C_infty_sat = 0.0;
+  ParamDB->BULK_c_C_infty = 0.0;
+  ParamDB->BULK_f_infty = 0.0;
+
+  ParamDB->BULK_density = 0.0;
+  ParamDB->BULK_dynamic_viscosity = 0.0;
+
+  ParamDB->BULK_C_g = 0.0;
+  ParamDB->BULK_C_nuc = 0.0;
+  ParamDB->BULK_C_sat = 0.0;
+  ParamDB->BULK_C_2 = 0.0;
+  ParamDB->BULK_D_A = 0.0;
+  ParamDB->BULK_D_P_0 = 0.0;
+  ParamDB->BULK_D_P_MAX = 0.0;
+  ParamDB->BULK_k_g = 0.0;
+  ParamDB->BULK_k_r = 0.0;
+  ParamDB->BULK_k_nuc = 0.0;
+  ParamDB->BULK_D_P_MIN = 0.0;
 
 // parameters for shear slip mesh update method computations
   ParamDB->SSMUM_MP_X = 0.5;
