@@ -26,18 +26,6 @@
 
 #include <DiscreteForm2D.h> // to be removed
 
-/**
- * TODO There is still a lot of cases where the array "Needs2ndDerivatives" is
- * constructed with length 1 only although there are two spaces available
- * (Navier--Stokes, velo and pressure).
- * This will produce valgrind errors and might lead to even worse things.
- * Be prepared! And fix it eventually:
- *
- *            this->Needs2ndDerivatives = new bool[2];
- *            this->Needs2ndDerivatives[0] = false;
- *            this->Needs2ndDerivatives[1] = false;
- */
-
 /** @brief a helper function returning a string with for the name of the 
  *         LocalAssembling2D_type. This returns an empty string in case the type
  *         is not known. */
@@ -794,8 +782,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
             {
               this->N_Terms = 4;
               this->Derivatives = { D10, D01, D00, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 3;
               this->RowSpace = { 0, 1, 1 };
@@ -840,8 +829,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
             {
               this->N_Terms = 4;
               this->Derivatives = { D10, D01, D00, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 5;
               this->RowSpace = { 0, 1, 1, 0, 0 };
@@ -864,8 +854,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
             {
               this->N_Terms = 4;
               this->Derivatives = { D10, D01, D00, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 5;
               this->RowSpace = { 0, 1, 1, 0, 0 };
@@ -910,8 +901,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 6;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1 };
@@ -935,8 +927,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 6;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1 };
@@ -971,8 +964,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 6;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1 };
@@ -996,8 +990,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 6;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1 };
@@ -1032,8 +1027,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 6;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1 };
@@ -1057,8 +1053,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 6;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1 };
@@ -1180,8 +1177,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
@@ -1211,8 +1209,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
@@ -1253,8 +1252,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
@@ -1284,8 +1284,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
@@ -1372,8 +1373,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
             {
               this->N_Terms = 3;
               this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
               this->N_Matrices = 1;
               this->RowSpace = { 0 };
@@ -1442,8 +1444,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
             {
               this->N_Terms = 3;
               this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
               this->N_Matrices = 1;
               this->RowSpace = { 0 };
@@ -1514,8 +1517,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 2;
                   this->RowSpace = { 0, 0 };
@@ -1550,8 +1554,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 2;
                   this->RowSpace = { 0, 0 };
@@ -1575,8 +1580,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 2;
                   this->RowSpace = { 0, 0 };
@@ -1611,8 +1617,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 4;
                   this->RowSpace = { 0, 0, 0, 0 };
@@ -1636,8 +1643,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 4;
                   this->RowSpace = { 0, 0, 0, 0 };
@@ -1684,8 +1692,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 2;
                   this->RowSpace = { 0, 0 };
@@ -1709,8 +1718,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 2;
                   this->RowSpace = { 0, 0 };
@@ -1745,8 +1755,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 2;
                   this->RowSpace = { 0, 0 };
@@ -1770,8 +1781,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 2;
                   this->RowSpace = { 0, 0 };
@@ -1806,8 +1818,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 4;
                   this->RowSpace = { 0, 0, 0, 0 };
@@ -1831,8 +1844,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 4;
                   this->RowSpace = { 0, 0, 0, 0 };
