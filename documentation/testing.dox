@@ -1,13 +1,11 @@
 /**
 \page page_unit_testing Unit testing
 \author Ulrich Wilbrandt <Ulrich.Wilbrandt@wias-berlin.de>
+\author Laura Blank <Laura.Blank@wias-berlin.de>
 \date 2015/11/12
 \brief Some information on unit testing in ParMooN
 
 \tableofcontents
-
-
-
 
 \section why_testing Why are doing unit tests at all?
 
@@ -175,6 +173,57 @@ Creating a new test is done in two steps which are described in the following
   using the executable. The name of the test is simply matrix. You can choose 
   any meaningful name here. The last line is needed only so that `make check` 
   works as described above. It adds the test to the list of tests.
+
+
+
+
+\section testing_mac Testing on a Mac
+
+In the case that some tests fail similar to the following example
+
+\code
+29/30 Test #29: multigrid_2d .....................***Not Run   0.00 sec
+Start 30: multigrid_3d
+Test not available without configuration.  (Missing "-C <config>"?)
+\endcode
+
+the strategy below is possibly a remedy.
+The reason for the fail might be that in the
+\code
+Build/CMakeCache.txt
+\endcode
+the slot
+
+\code
+CMAKE_CONFIGURATION_TYPES:STRING=
+\endcode
+
+is set to
+
+\code
+Debug; Release; MinSizeRel; RelWithDebInfo
+\endcode
+
+or something else. \n
+<b>Make sure that nothing is assigned here.</b>
+
+<i>Remark</i>:\n
+The parameter
+\code
+CMAKE_BUILD_TYPE:STRING=
+\endcode
+can be chosen to be
+\code
+Debug; Release; MinSizeRel; RelWithDebInfo.
+\endcode
+
+This choice has direct consequences on the compile time (due to optimization restrictions) and debug information.\n
+Debug: standard mode with debug information\n
+Realease: increased compile time (high level of optimization at the compile time) &harr decreased run-time ; no debug information available\n
+MinSizeRel: ... \n
+RelWithDebInfo: increased compile time (high level of optimization at the compile time) &harr decreased run-time ; debug information available\n
+\n
+Note: In practice, a decreasing compile time typically correlates with an increasing run-time and vice versa.
 
 
 */

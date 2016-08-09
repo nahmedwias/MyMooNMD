@@ -302,12 +302,18 @@ struct TParaDB
   double OSEEN_ZERO_ORDER_COEFF;
 
   //======================================================================
-  /** PARAMETERS FOR Brinkman PROBLEMS                  */
+  /** Parameters for Brinkman problems                  */
   //======================================================================
-    int BrinkmanTYPE;
-    double VISCOSITY;
-    double EFFECTIVE_VISCOSITY;
-    double PERMEABILITY;
+  int BrinkmanTYPE;
+  double VISCOSITY;
+  double EFFECTIVE_VISCOSITY;
+  double PERMEABILITY;
+    
+  //======================================================================
+  /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
+  //======================================================================
+    double equal_order_stab_weight_P1P1;
+    double equal_order_stab_weight_P2P2;
     
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */
@@ -674,7 +680,7 @@ struct TParaDB
   int DEPENDENT_BASIS_Q2;
     
   //======================================================================
-  /** parameters for weakly imposing boundary/interface conditions */
+  /** parameters for weakly imposing boundary/interface conditions for Brinkman problems  */
   //======================================================================
     // number of boundary components with neumann conditions
     int n_neumann_boundary;

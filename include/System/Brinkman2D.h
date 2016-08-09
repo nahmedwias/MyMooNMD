@@ -251,6 +251,23 @@ public:
      * @param i suffix for output file name, -1 means no suffix
      */
     void output(int i = -1);
+    
+    /// @name return computed errors
+    ///
+    /// You have to call Darcy2D::output for any of these to return a
+    /// meaningful value.
+    //@{
+    /// @brief return the computed L2 error of the velocity
+    double getL2VelocityError() const;
+    /// @brief return the computed L2 error of the divergence of the velocity
+    double getL2DivergenceError() const;
+    /// @brief return the computed H1-semi error of the velocity
+    double getH1SemiVelocityError() const;
+    /// @brief return the computed L2 error of the pressure
+    double getL2PressureError() const;
+    /// @brief return the computed L2 error of the pressure
+    double getH1SemiPressureError() const;
+    //@}
 
     // getters and setters
     //    const BlockMatrixNSE2D & get_matrix() const TODO
