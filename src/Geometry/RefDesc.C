@@ -29,6 +29,7 @@ TRefDesc::TRefDesc(TShapeDesc *shape)
   #ifdef __3D__
     N_OrigFaces = Shape->GetN_Faces();
     N_Faces = 0;
+    N_InnerFaces = 0;
   #endif
 
   N_NewVertEqOldVert = 0;
@@ -49,6 +50,7 @@ TRefDesc::TRefDesc(TShapeDesc *shape)
   EdgeType = NULL;
 
   ChildVertex = NULL;
+  ChildVertexLen = NULL;
   VertexChild = NULL;
   VertexChildIndex = NULL;
   VertexChildLen = NULL;
@@ -66,6 +68,9 @@ TRefDesc::TRefDesc(TShapeDesc *shape)
   NewVertexEqOldVertex = NULL;
   NewVertexEqOldVertexIndex = NULL;
 
+  InteriorVertexOfCell = NULL;
+  PositionOfIntVert = NULL;
+
   NewEdgeEqOldEdge = NULL;
   NewEdgeEqOldEdgeIndex = NULL;
 
@@ -82,7 +87,20 @@ TRefDesc::TRefDesc(TShapeDesc *shape)
   NewEdgeOldEdge = NULL;
 
   #ifdef __3D__
-  
+  MaxN_VpF = 0;
+  MaxN_oVpoF = 0;
+  MaxN_FpV = 0;
+  MaxN_EpF = 0;
+  MaxN_FpE = 0;
+  MaxN_CpF = 0;
+  MaxN_FpC = 0;
+  MaxN_iVpF = 0;
+  MaxN_iEpF = 0;
+  MaxN_nEpoF = 0;
+  MaxN_nVpoF = 0;
+  MaxN_niVpoF = 0;
+  MaxN_nFpoF = 0;
+
   FaceType = NULL;
 
   ChildFace = NULL;
@@ -106,6 +124,17 @@ TRefDesc::TRefDesc(TShapeDesc *shape)
   InteriorEdgeOfFace = NULL;
   InteriorEdgeOfFaceLen = NULL;
 
+  OldFaceNewInnerVertices = NULL;
+  OldFaceNewInnerVerticesLen = NULL;
+  
+  N_NewFaceEqOldFace = 0;
+  NewFaceEqOldFace = NULL;
+  NewFaceEqOldFaceIndex = NULL;
+  
+  N_NewVertsOnOldFace = NULL;
+  NewVertsOnOldFace = NULL;
+  NewVertsOnOldFacePos = NULL;
+  
   NewFaceOldFace = NULL;
 
   OldFaceNewVertex = NULL;

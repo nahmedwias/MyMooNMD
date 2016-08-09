@@ -25,7 +25,8 @@
 VankaSmoother::VankaSmoother(VankaType type, double damp_factor, bool store)
 : type_(type), dimension_(0), damp_factor_(damp_factor),
   matrix_global_(nullptr), press_dofs_local_(0), velo_dofs_local_(0),
-  local_systems_(0), store_systems_(store)
+  local_systems_(0), store_systems_(store), pressure_space_(nullptr),
+  velocity_space_(nullptr)
 {
 }
 
