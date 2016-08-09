@@ -24,6 +24,7 @@
 #include <Example_NSE2D.h>
 #include <PostProcessing2D.h>
 #include <MainUtilities.h> // FixedSizeQueue
+#include <PostProcessing2D.h>
 #include <utility>
 #include <array>
 

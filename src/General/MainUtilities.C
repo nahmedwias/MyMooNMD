@@ -80,20 +80,25 @@ int GetMemory()
 //Print all memory information available through mallinfo.
 void display_mallinfo(const std::string& program_part)
 {
-    struct mallinfo mi;
-
-    mi = mallinfo();
-    Output::print("Memory usage info called in program part: ", program_part);
-    Output::print("Total non-mmapped bytes (arena):       ",mi.arena);
-    Output::print("# of free chunks (ordblks):            ",mi.ordblks);
-    Output::print("# of free fastbin blocks (smblks):     ",mi.smblks);
-    Output::print("# of mapped regions (hblks):           ",mi.hblks);
-    Output::print("Bytes in mapped regions (hblkhd):      ",mi.hblkhd);
-    Output::print("Max. total allocated space (usmblks):  ",mi.usmblks);
-    Output::print("Free bytes held in fastbins (fsmblks): ",mi.fsmblks);
-    Output::print("Total allocated space (uordblks):      ",mi.uordblks);
-    Output::print("Total free space (fordblks):           ",mi.fordblks);
-    Output::print("Topmost releasable block (keepcost):   ",mi.keepcost);
+  Output::print("Memory usage info called in program part: ", program_part);
+#ifdef _MALLOC_MALLOC_H_
+  Output::print("Total memory ",GetMemory());
+#else
+   
+   struct mallinfo mi;
+  
+  mi = mallinfo();
+  Output::print("Total non-mmapped bytes (arena):       ",mi.arena);
+  Output::print("# of free chunks (ordblks):            ",mi.ordblks);
+  Output::print("# of free fastbin blocks (smblks):     ",mi.smblks);
+  Output::print("# of mapped regions (hblks):           ",mi.hblks);
+  Output::print("Bytes in mapped regions (hblkhd):      ",mi.hblkhd);
+  Output::print("Max. total allocated space (usmblks):  ",mi.usmblks);
+  Output::print("Free bytes held in fastbins (fsmblks): ",mi.fsmblks);
+  Output::print("Total allocated space (uordblks):      ",mi.uordblks);
+  Output::print("Total free space (fordblks):           ",mi.fordblks);
+  Output::print("Topmost releasable block (keepcost):   ",mi.keepcost);
+#endif
 }
 
 #ifdef __2D__
