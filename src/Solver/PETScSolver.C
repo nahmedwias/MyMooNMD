@@ -34,92 +34,92 @@
 std::string addParameters2str(const ParameterDatabase& db)
 {
   std::string petsc_args = "";
-
   if(db.contains("petsc_arguments"))
   {
-	petsc_args = db["petsc_arguments"].value_as_string();
+    petsc_args = db["petsc_arguments"].value_as_string();
   }
-
   // adding maximum number of iterations
   petsc_args.append(" -ksp_max_it "+db["max_n_iterations"].value_as_string());
-
   // adding absolute tolerance
   petsc_args.append(" -ksp_atol "+db["residual_tolerance"].value_as_string());
-
   // adding reduction tolerance
   petsc_args.append(" -ksp_rtol "+db["residual_reduction"].value_as_string());
-
   // adding gmres restart
   petsc_args.append(" -ksp_gmres_restart "+db["gmres_restart"].value_as_string());
-
   // adding damping for Richardson iteration
   petsc_args.append(" -ksp_richardson_scale "+db["damping_factor"].value_as_string());
-
   return petsc_args;
 }
 
 /**
- * Converts a std::string to a char** by splitting words at white spaces.
- *
+ * @brief Converts a std::string to a vector of char* by splitting words at 
+ * white spaces.
+ * 
+ * The idea is that the returned vector mimics the standard arguments of a C/C++
+ * main function: int main(int argc, char** argv). These arguments are needed to
+ * properly call PetscInitialize.
+ * 
  * @param[in] s input string
- * @param[out] argc number of words in the input string
- * @param[out] argv char** containing all words + nullptr
+ * @return vector of char* containing all words + nullptr
  */
-void str2charpp(const std::string &s, int &argc, char*** argv)
+std::vector<char*> str_to_vector_char_p(const std::string &s)
 {
-  // zero is always the first position
-  std::vector<size_t> wordPositions;
-  wordPositions.push_back((size_t)0);
-
+  // number of arguments, the first is the program name by default
+  size_t n_arg = 1;
+  // a position in the string s
   auto current_position = s.find(" ");
-
-  // argc = 1 for the "progname"
-  argc = 1;
-
-  // count the white spaces and save the positions next to them
+  // count the white spaces and therefore the number of arguments
   while(current_position != std::string::npos)
   {
-	argc++;
-	wordPositions.push_back(current_position + 1);
-	current_position = s.find(" ", current_position + 1);
+    n_arg++;
+    current_position = s.find(" ", current_position + 1);
+  }
+  // the number of white spaces is smaller than the number arguments by 1
+  n_arg++;
+  
+  // store where words (separated by words) are
+  std::vector<size_t> word_positions;
+  word_positions.reserve(n_arg+1);
+  // zero is always the first position
+  word_positions.push_back((size_t)0);
+
+  // fill the vector word_positions
+  current_position = s.find(" ");
+  while(current_position != std::string::npos)
+  {
+    word_positions.push_back(current_position + 1);
+    current_position = s.find(" ", current_position + 1);
   }
 
   // push the length of the string as last "position"
-  // now position[i+1]-position[i] is valid for i = 0, ... argc
-  argc++;
-  wordPositions.push_back(s.size()+1);
+  // now word_positions[i+1]-word_positions[i] is valid for i = 0, ... n_arg-1
+  word_positions.push_back(s.size()+1);
 
-  // one extra entry for the file name. PETSc expects the program name at first
+  // plus 1 here for the terminating nullptr, this will be returned
+  std::vector<char*> argv(n_arg+1);
+
+  // PETSc expects the program name at first.
   char* progname = new char[8];
-  progname[0] = '.'; progname[1] = '/'; progname[2] = 'd';
-  progname[3] = 'u'; progname[4] = 'm'; progname[5] = 'm';
-  progname[6] = 'y'; progname[7] = '\0';
+  strcpy(progname, "./dummy");
+  argv[0] = &progname[0];
 
-  // plus 1 here for the terminating NULL
-  *argv = (char**)malloc(sizeof(char*)*(argc+1));
-
-  // filename first
-  (*argv)[0] = &progname[0];
-
-  for (auto i = 1; i < argc; ++i)
+  for(size_t i = 1; i < n_arg; ++i)
   {
-	size_t wordLength = wordPositions[i]-wordPositions[i-1] - 1;
-
-	(*argv)[i] = (char*)malloc(sizeof(char)*(wordLength+1));
-	strncpy( (*argv)[i], &s.c_str()[wordPositions[i-1]], wordLength );
-
-	// add terminating \0
-	(*argv)[i][wordLength] = '\0';
+    size_t wordLength = word_positions[i] - word_positions[i-1] - 1;
+    argv[i] = new char[wordLength+1];
+    strncpy( argv[i], &s.c_str()[word_positions[i-1]], wordLength );
+    // add terminating \0
+    argv[i][wordLength] = '\0';
   }
 
   // set the nullptr at the end
   // demanded by the C++ Standard for main function argument argv
-  (*argv)[argc] = nullptr;
-
+  argv[n_arg] = nullptr;
+  return argv;
 }
 
-
-PETScSolver::PETScSolver(const BlockFEMatrix& matrix, const ParameterDatabase& db)
+PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
+                         const ParameterDatabase& db)
  : petsc_mat(nullptr)
 {
 #ifdef MPI
@@ -132,17 +132,19 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix, const ParameterDatabase& d
   // and copies. Instead all that PETSc needs to know at first is the number of 
   // non-zero entries in each row. This is computed first here.
 
-  std::string petsc_args = addParameters2str(db);
-
-  Output::print("Out new argument string\n", petsc_args, "\n");
-
-  char ** params_pointer;
-  int argc;
-
-  str2charpp(petsc_args, argc, &params_pointer);
-
-  PetscInitialize(&argc, &params_pointer, (char*)0, nullptr);
   
+  // call PetscInitialize
+  {
+    // the following is necessary to properly call PetscInitialize
+    std::string petsc_args = addParameters2str(db);
+    auto char_vector = str_to_vector_char_p(petsc_args);
+    char ** params_pointer = char_vector.data();
+    int argc = char_vector.size();
+
+    PetscInitialize(&argc, &params_pointer, (char*)0, nullptr);
+    for(auto cp : char_vector)
+      delete [] cp;
+  }
   size_t n_rows = matrix.get_n_total_rows();
   size_t n_cols = matrix.get_n_total_columns();
   size_t n_entries = matrix.get_n_total_entries();
@@ -316,6 +318,7 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   VecSetSizes(x, PETSC_DECIDE, solution.length());
   VecSetFromOptions(x);
   VecDuplicate(x, &b);
+  PetscObjectSetName((PetscObject) b, "Rhs");
   
   // copy into PETSc vectors
   for(int i = 0; i < n; ++i)
@@ -336,22 +339,17 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   // http://scicomp.stackexchange.com/questions/7288/which-preconditioners-and-
   // solver-in-petsc-for-indefinite-symmetric-systems-sho
 
+  // set the options from the string passed to PetscInitialize which includes
+  // the values in the parameter "petsc_arguments".
   PCSetFromOptions(pc);
-
-  // obviously this needs to be controlled from outside via some database 
-  // entries
-  double relative_tolerance = 1.e-14;
-  double absolute_tolerance = 1.e-20;
-  int max_iterations = 1000;
-  KSPSetTolerances(ksp, relative_tolerance, absolute_tolerance, PETSC_DEFAULT,
-                   max_iterations);
   KSPSetFromOptions(ksp);
-  KSPSolve(ksp,b,x);
+  KSPSolve(ksp, b, x);
 
   // some PETSc information about the solver
-  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+  /// @todo nicer output for the PETSc solver
+  //KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
   PetscInt its;
-  KSPGetIterationNumber(ksp,&its);
+  KSPGetIterationNumber(ksp, &its);
   Output::print("some PETSc solver: number of iterations: ", its);
   
   // copy back to solution:
