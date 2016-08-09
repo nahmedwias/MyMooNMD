@@ -146,48 +146,4 @@ class DirectSolver
     void numeric_factorize();
 };
 
-/** ************************************************************************ */
-/// @note everything below this line is to be deleted
-class TMatrix2D;
-class TSquareMatrix;
-class TSquareMatrix2D;
-
-#ifdef __3D__
-class TMatrix3D;
-class TSquareMatrix;
-class TSquareMatrix3D;
-#endif
-
-/** solve equation system */
-
-[[deprecated("use the class DirectSolver instead")]]
-void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol);
-[[deprecated("use the class DirectSolver instead")]]
-void DirectSolver_old(TSquareMatrix2D *sqmatrixA11,
-                      TSquareMatrix2D *sqmatrixA12,
-                      TSquareMatrix2D *sqmatrixA21,
-                      TSquareMatrix2D *sqmatrixA22,
-                      TMatrix2D *matrixB1T, TMatrix2D *matrixB2T, 
-                      TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-                      double *rhs, double *sol, int rb_flag);
-[[deprecated("use the class DirectSolver instead")]]
-void DirectSolver_old (TSquareMatrix2D *sqmatrixA, 
-                       TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-                       double *rhs, double *sol, int rb_flag);
-#ifdef __3D__
-[[deprecated("use the class DirectSolver instead")]]
-void DirectSolver_old(TSquareMatrix3D *sqmatrixA11,
-                      TSquareMatrix3D *sqmatrixA12,
-                      TSquareMatrix3D *sqmatrixA13,
-                      TSquareMatrix3D *sqmatrixA21,
-                      TSquareMatrix3D *sqmatrixA22,
-                      TSquareMatrix3D *sqmatrixA23,
-                      TSquareMatrix3D *sqmatrixA31,
-                      TSquareMatrix3D *sqmatrixA32,
-                      TSquareMatrix3D *sqmatrixA33,
-                      TMatrix3D *matrixB1T, TMatrix3D *matrixB2T,
-                      TMatrix3D *matrixB3T, TMatrix3D *matrixB1,
-                      TMatrix3D *matrixB2, TMatrix3D *matrixB3,
-                      double *rhs, double *sol, int flag);
-#endif // __3D__
 #endif // __DIRECTSOLVER__
