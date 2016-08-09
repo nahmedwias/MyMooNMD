@@ -1,6 +1,7 @@
 /**
  \page page_build_system Building ParMooN programs
  \author Clemens Bartsch <bartsch@wias-berlin.de>
+ \author Laura Blank <Laura.Blank@wias-berlin.de>
  \date 2015/09/30
  \brief Here we collect some information on the build system
  
@@ -24,9 +25,9 @@
  \subsection eclipseinsource In-source build
  First of all we put our repo into the folder which is supposed to host our Eclipse workspace, too. I do it like this
  \code
- mkdir /home/bartsch/code/ParMooN_workspace
- cd /home/bartsch/code/ParMooN_workspace
- hg clone ssh://bartsch@gate.wias-berlin.de//Home/darcy/ParMooN
+  &lt; mkdir /home/bartsch/code/ParMooN_workspace &gt;
+  &lt;cd /home/bartsch/code/ParMooN_workspace &gt;
+  &lt;hg clone ssh://bartsch@gate.wias-berlin.de//Home/darcy/ParMooN &gt;
  \endcode
  
  Now I've got a folder /home/bartsch/code/ParMooN_workspace/ParMooN

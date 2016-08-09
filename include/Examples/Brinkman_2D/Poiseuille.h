@@ -1,5 +1,7 @@
 // Brinkman problem, Poiseuille-Problem
 
+//double stab_weight;
+
 
 void ExampleFile()
 {
@@ -65,7 +67,7 @@ void BoundCondition(int i, double Param, BoundCond &cond)
     }
     
     if (TDatabase::ParamDB->n_neumann_boundary==0)
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average 0 (for uniqueness)
     else
         TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
@@ -162,8 +164,21 @@ void LinCoeffs(int n_points, double *x, double *y,
         coeff[2] = 0;                                   // f2 (rhs of Brinkman problem for u2)
         coeff[3] = 0;                                   // g (divergence term=u1_x+u2_y)
         coeff[4]=TDatabase::ParamDB->VISCOSITY;
-        coeff[5]=TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+        
+        // effective viscosity unsteady
+        if(x[i]< 0.5)
+        {
+            coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+        }
+        else {
+            coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY *10;
+            //coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY ;
+        }
+        
+        //coeff[5]=TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
         coeff[6]=TDatabase::ParamDB->PERMEABILITY;
+        coeff[7]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
+        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
     }
 }
 

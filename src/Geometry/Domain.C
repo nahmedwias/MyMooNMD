@@ -98,23 +98,34 @@ ParameterDatabase get_default_domain_parameters()
 
 // Constructor
 TDomain::TDomain(const ParameterDatabase& param_db) :
-    db(get_default_domain_parameters())
+db(get_default_domain_parameters())
 {
-  RefLevel = 0;
-  Output::print<4>("domain is initialized");
-  db.merge(param_db, false);
-  
-  std::string geoname = db["geo_file"];
-  std::string boundname = db["boundary_file"];
-  std::string smesh = db["mesh_tetgen_file"];
-  
-  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
-      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
-    )
-  {
-    this->Init(boundname.c_str(), geoname.c_str());
-    Output::print<4>("GEO and PRM files are selected");
-  }
+    RefLevel = 0;
+    Output::print<4>("domain is initialized");
+    db.merge(param_db, false);
+    
+    std::string geoname = db["geo_file"];
+    std::string boundname = db["boundary_file"];
+    std::string smesh = db["mesh_tetgen_file"];
+    
+    if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" )
+       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
+       )
+    {
+        this->Init(boundname.c_str(), geoname.c_str());
+        Output::print<4>("GEO and PRM files are selected");
+    }
+    
+    
+    if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
+       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
+       )
+    {
+        this->InitFromMesh(boundname.c_str(), geoname.c_str());
+        Output::print<4>("mesh and PRM files are selected");
+    }
+    
+    
 #ifdef __3D__
   else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
   {
@@ -148,12 +159,23 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
   std::string boundname = db["boundary_file"];
   std::string smesh = db["mesh_tetgen_file"];
   
+    
   if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
     )
   {
     this->Init(boundname.c_str(), geoname.c_str());
   }
+    
+    if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
+       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
+       )
+    {Output::print<>("OK");
+        this->InitFromMesh(boundname.c_str(), geoname.c_str());
+        Output::print<4>("mesh and PRM files are selected");
+    Output::print<>("OK");
+    }
+    
 #ifdef __3D__
   else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
   {

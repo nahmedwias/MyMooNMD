@@ -399,6 +399,10 @@ void TDatabase::SetDefaultParameters()
   ParamDB->EFFECTIVE_VISCOSITY = 1;
   ParamDB->PERMEABILITY = 1;
     
+  ParamDB->equal_order_stab_weight_P1P1= 0;
+  ParamDB->equal_order_stab_weight_P2P2= 0;
+    
+    
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
   ParamDB->VMM_COARSE_LEVEL = 4711;

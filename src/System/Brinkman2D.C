@@ -12,14 +12,40 @@ ParameterDatabase get_default_Brinkman2D_parameters()
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.set_name("Brinkman2D parameter database");
     
-    ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
-    db.merge(nl_db,true);
-    
     ParameterDatabase out_db = ParameterDatabase::default_output_database();
     db.merge(out_db, true);
     
+    db.add("P1P1_stab", false,
+           "Use an assembling routine corresponding to a residual-based "
+           "equal-order stabilization for the Brinkman problem."
+           "This only works in two space "
+           "dimensions and is meaningfull for the finite elemnt space P1/P1 only."
+           "Usually this is used in the main program.",
+           {true,false});
+    
+    db.add("P2P2_stab", false,
+           "Use an assembling routine corresponding to a residual-based "
+           "equal-order stabilization for the Brinkman problem."
+           "This only works in two space "
+           "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
+           "Usually this is used in the main program.",
+           {true,false});
+    
+
+    
+//    db.add("equal_order_stab_weight", 0,
+//           "Use an assembling routine corresponding to a residual-based "
+//           "equal-order stabilization for the Brinkman problem."
+//           "This only works in two space "
+//           "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
+//           "Usually this is used in the main program.",-1000,1000);
+    
+
+
     return db;
 }
+
+
 
 /** ************************************************************************ */
 Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
@@ -85,7 +111,9 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
 initial_residual(1e10), errors()
 {
     db.merge(param_db,false);
-    db.info(false);
+    
+    // set the argument to false for more detailed output on the console
+    db.info(true);
     
     std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                                  TDatabase::ParamDB->PRESSURE_SPACE);
@@ -131,10 +159,8 @@ Brinkman2D::~Brinkman2D()
 void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>
                                               &velocity_pressure_orders)
 {
-    int velocity_order = velocity_pressure_orders.first;
-    int pressure_order = velocity_pressure_orders.second;
-    Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
-    Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
+    Output::print<1>("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
+    Output::print<1>("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
 
 /** ************************************************************************ */
@@ -176,8 +202,20 @@ void Brinkman2D::assemble()
         //same for all: the local asembling object
         TFEFunction2D *fe_functions[3] =
         { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-        LocalAssembling2D la(Brinkman2D_Galerkin1, fe_functions,
+        
+        LocalAssembling2D_type type;
+        
+        if (db["P2P2_stab"].is(true))
+        {type=Brinkman2D_Galerkin1ResidualStab2;}
+        else if (db["P1P1_stab"].is(true))
+        {type=Brinkman2D_Galerkin1ResidualStab;}
+        else
+        {type=Brinkman2D_Galerkin1;}
+        
+        LocalAssembling2D la(type, fe_functions,
                              this->example.get_coeffs());
+        
+        
         
         std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
         
@@ -279,6 +317,11 @@ void Brinkman2D::assemble()
         // Nitsche combination - weak Dirichlet
         for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
         {
+            double K = TDatabase::ParamDB->PERMEABILITY;
+            double nu = TDatabase::ParamDB->VISCOSITY;
+            double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+            double t = fabs(sqrt((nu_eff/nu)*K));
+            
             bi.matrix_gradv_n_v(s.matrix,
                                 v_space,
                                 TDatabase::ParamDB->nitsche_boundary_id[k],     // boundary component
@@ -288,12 +331,12 @@ void Brinkman2D::assemble()
                             v_space,
                             p_space,
                             TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
-                            1);                                                 // mult
+                            1.);                                                 // mult
             
             bi.matrix_u_v(s.matrix,
                           v_space,
                           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
-                          TDatabase::ParamDB->nitsche_penalty[k],               // mult
+                          t*TDatabase::ParamDB->nitsche_penalty[k],               // mult
                           true);                                                // rescale local integral by edge values
             
             bi.rhs_g_v(s.rhs,
@@ -301,7 +344,7 @@ void Brinkman2D::assemble()
                        this->example.get_bd(0),                                 // access to U1BoundValue in the example,
                        this->example.get_bd(1),                                 // access to U2BoundValue in the example,
                        TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
-                       TDatabase::ParamDB->nitsche_penalty[k],                  // mult
+                       t*TDatabase::ParamDB->nitsche_penalty[k],                  // mult
                        true);                                                   // rescale local integral by edge values
         }
         
@@ -409,6 +452,7 @@ void Brinkman2D::solve()
 /** ************************************************************************ */
 void Brinkman2D::output(int i)
 {
+    
     bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
     if( no_output )
         return;
@@ -441,37 +485,70 @@ void Brinkman2D::output(int i)
     // in such a case here only integrals of the solution are computed.
     if( db["output_compute_errors"] )
     {
-        double err[4];
-        TAuxParam2D NSEaux_error;
-        MultiIndex2D NSAllDerivatives[3] = {D00, D10, D01};
+        double err[5];
+        TAuxParam2D aux_error;
+        MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
         const TFESpace2D *velocity_space = &this->get_velocity_space();
         const TFESpace2D *pressure_space = &this->get_pressure_space();
         
         // errors in first velocity component
-        u1->GetErrors(example.get_exact(0), 3, NSAllDerivatives, 2, L2H1Errors,
-                      nullptr, &NSEaux_error, 1, &velocity_space, err);
+        u1->GetErrors(example.get_exact(0), 3, AllDerivatives, 2, L2H1Errors,
+                      nullptr, &aux_error, 1, &velocity_space, err);
         // errors in second velocity component
-        u2->GetErrors(example.get_exact(1), 3, NSAllDerivatives, 2, L2H1Errors,
-                      nullptr, &NSEaux_error, 1, &velocity_space, err + 2);
+        u2->GetErrors(example.get_exact(1), 3, AllDerivatives, 2, L2H1Errors,
+                      nullptr, &aux_error, 1, &velocity_space, err + 2);
         
         errors.at(0) = sqrt(err[0]*err[0] + err[2]*err[2]);
-        errors.at(1) = sqrt(err[1]*err[1] + err[3]*err[3]);
-        Output::print<1>("L2(u)     : ", errors[0]);
-        Output::print<1>("H1-semi(u): ", errors[1]);
+        errors.at(1) = sqrt(err[1]*err[1] + err[4]*err[4]);
+        Output::print<1>("L2(u)     : ", setprecision(14), errors[0]);
+        Output::print<1>("H1-semi(u): ", setprecision(14), errors[1]);
         
         // errors in pressure
-        s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors,
-                      nullptr, &NSEaux_error, 1, &pressure_space, err);
+        s.p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
+                      nullptr, &aux_error, 1, &pressure_space, err);
         
         errors.at(2) = err[0];
         errors.at(3) = err[1];
-        Output::print<1>("L2(p)     : ", errors[2]);
-        Output::print<1>("H1-semi(p): ", errors[3]);
+        Output::print<1>("L2(p)     : ", setprecision(14), errors[2]);
+        Output::print<1>("H1-semi(p): ", setprecision(14),  errors[3]);
+        
+        Output::print<1>("$", errors[0],"$&$", errors[1],"$&$", errors[2],"$&$", errors[3]);
         
     } // if(TDatabase::ParamDB->MEASURE_ERRORS)
     delete u1;
     delete u2;
 }
+
+/** ************************************************************************ */
+double Brinkman2D::getL2VelocityError() const
+{
+    return this->errors[0];
+}
+
+/** ************************************************************************ */
+double Brinkman2D::getL2DivergenceError() const
+{
+    return this->errors[1];
+}
+
+/** ************************************************************************ */
+double Brinkman2D::getH1SemiVelocityError() const
+{
+    return this->errors[2];
+}
+
+/** ************************************************************************ */
+double Brinkman2D::getL2PressureError() const
+{
+    return this->errors[3];
+}
+
+/** ************************************************************************ */
+double Brinkman2D::getH1SemiPressureError() const
+{
+    return this->errors[4];
+}
+
 
 /** ************************************************************************ */
 std::array< double, int(6) > Brinkman2D::get_errors()
