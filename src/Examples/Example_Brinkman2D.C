@@ -11,141 +11,177 @@
 
 namespace poiseuille
 {
-  #include "Brinkman_2D/Poiseuille.h"
+#include "Brinkman_2D/Poiseuille.h"
 }
-namespace driven_cavity
+
+namespace Poiseuille_Hannukainen
 {
-  #include "Brinkman_2D/DrivenCavity.h"
+#include "Brinkman_2D/Poiseuille_Hannukainen.h"
 }
+
 namespace sine_cosine
 {
-  #include "Brinkman_2D/SinCos.h"
+#include "Brinkman_2D/SinCos.h"
 }
-namespace flow_around_cylinder
+namespace sine2_sine2
 {
-  #include "Brinkman_2D/flow_around_cylinder.h"
+#include "Brinkman_2D/Sin2Sin2.h"
 }
-namespace hannukainen
-{
-#include "Brinkman_2D/hannukainen.h"
-}
+//namespace driven_cavity
+//{
+//#include "Brinkman_2D/DrivenCavity.h"
+//}
+//
+//namespace flow_around_cylinder
+//{
+//#include "Brinkman_2D/flow_around_cylinder.h"
+//}
+
 
 
 Example_Brinkman2D::Example_Brinkman2D(
   const ParameterDatabase& user_input_parameter_db) 
  : Example2D(user_input_parameter_db)
 {
-  int example_code = this->example_database["example"];
-  switch( example_code )
-  {
-   case 0:
-     /** exact_solution */
-     exact_solution.push_back( poiseuille::ExactU1 );
-     exact_solution.push_back( poiseuille::ExactU2 );
-     exact_solution.push_back( poiseuille::ExactP );
- 
-     /** boundary condition */
-     boundary_conditions.push_back( poiseuille::BoundCondition );
-     boundary_conditions.push_back( poiseuille::BoundCondition );
-     boundary_conditions.push_back( BoundConditionNoBoundCondition );
- 
-     /** boundary values */
-     boundary_data.push_back( poiseuille::U1BoundValue );
-     boundary_data.push_back( poiseuille::U2BoundValue );
-     boundary_data.push_back( BoundaryValueHomogenous );
-  
-      /** coefficients */
-      problem_coefficients = poiseuille::LinCoeffs;
-  
-      poiseuille::ExampleFile();
-      break;
-    case 1:
-      /** exact_solution */
-      exact_solution.push_back( driven_cavity::ExactU1 );
-      exact_solution.push_back( driven_cavity::ExactU2 );
-      exact_solution.push_back( driven_cavity::ExactP );
-      
-      /** boundary condition */
-      boundary_conditions.push_back( driven_cavity::BoundCondition );
-      boundary_conditions.push_back( driven_cavity::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( driven_cavity::U1BoundValue );
-      boundary_data.push_back( driven_cavity::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
-      
-      /** coefficients */
-      problem_coefficients = driven_cavity::LinCoeffs;
-      
-      driven_cavity::ExampleFile();
-      break;
-    case 2:
-      /** exact_solution */
-      exact_solution.push_back( sine_cosine::ExactU1 );
-      exact_solution.push_back( sine_cosine::ExactU2 );
-      exact_solution.push_back( sine_cosine::ExactP );
-      
-      /** boundary condition */
-      boundary_conditions.push_back( sine_cosine::BoundCondition );
-      boundary_conditions.push_back( sine_cosine::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( sine_cosine::U1BoundValue );
-      boundary_data.push_back( sine_cosine::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
-      
-      /** coefficients */
-      problem_coefficients = sine_cosine::LinCoeffs;
-      
-      sine_cosine::ExampleFile();
-      break;
-    case 3:
-      /** exact_solution */
-      exact_solution.push_back( flow_around_cylinder::ExactU1 );
-      exact_solution.push_back( flow_around_cylinder::ExactU2 );
-      exact_solution.push_back( flow_around_cylinder::ExactP );
-      
-      /** boundary condition */
-      boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
-      boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( flow_around_cylinder::U1BoundValue );
-      boundary_data.push_back( flow_around_cylinder::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
-      
-      /** coefficients */
-      problem_coefficients = flow_around_cylinder::LinCoeffs;
-      
-      flow_around_cylinder::ExampleFile();
-      break;
-      case 4:
-          /** exact_solution */
-          exact_solution.push_back( hannukainen::ExactU1 );
-          exact_solution.push_back( hannukainen::ExactU2 );
-          exact_solution.push_back( hannukainen::ExactP );
-          
-          /** boundary condition */
-          boundary_conditions.push_back( hannukainen::BoundCondition );
-          boundary_conditions.push_back( hannukainen::BoundCondition );
-          boundary_conditions.push_back( BoundConditionNoBoundCondition );
-          
-          /** boundary values */
-          boundary_data.push_back( hannukainen::U1BoundValue );
-          boundary_data.push_back( hannukainen::U2BoundValue );
-          boundary_data.push_back( BoundaryValueHomogenous );
-          
-          /** coefficients */
-          problem_coefficients = hannukainen::LinCoeffs;
-          
-          hannukainen::ExampleFile();
-          break;
-    default:
-      ErrThrow("Unknown Brinkman example!");
-  }
+    int example_code = this->example_database["example"];
+    switch( example_code )
+    {
+        case 0:
+            /** exact_solution */
+            exact_solution.push_back( poiseuille::ExactU1 );
+            exact_solution.push_back( poiseuille::ExactU2 );
+            exact_solution.push_back( poiseuille::ExactP );
+            
+            /** boundary condition */
+            boundary_conditions.push_back( poiseuille::BoundCondition );
+            boundary_conditions.push_back( poiseuille::BoundCondition );
+            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+            
+            /** boundary values */
+            boundary_data.push_back( poiseuille::U1BoundValue );
+            boundary_data.push_back( poiseuille::U2BoundValue );
+            boundary_data.push_back( BoundaryValueHomogenous );
+            
+            /** coefficients */
+            problem_coefficients = poiseuille::LinCoeffs;
+            
+            //this->example_database["equal_order_stab_weight"] = 500;
+            ////poiseuille::stab_weight = this->example_database["equal_order_stab_weight"];
+            //double equal_order_stab_weight = this->example_database["equal_order_stab_weight"];
+            
+            poiseuille::ExampleFile();
+
+            break;
+        case 1:
+            /** exact_solution */
+            exact_solution.push_back( Poiseuille_Hannukainen::ExactU1 );
+            exact_solution.push_back( Poiseuille_Hannukainen::ExactU2 );
+            exact_solution.push_back( Poiseuille_Hannukainen::ExactP );
+            
+            /** boundary condition */
+            boundary_conditions.push_back( Poiseuille_Hannukainen::BoundCondition );
+            boundary_conditions.push_back( Poiseuille_Hannukainen::BoundCondition );
+            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+            
+            /** boundary values */
+            boundary_data.push_back( Poiseuille_Hannukainen::U1BoundValue );
+            boundary_data.push_back( Poiseuille_Hannukainen::U2BoundValue );
+            boundary_data.push_back( BoundaryValueHomogenous );
+            
+            /** coefficients */
+            problem_coefficients = Poiseuille_Hannukainen::LinCoeffs;
+            
+            Poiseuille_Hannukainen::ExampleFile();
+            break;
+        case 2:
+            /** exact_solution */
+            exact_solution.push_back( sine_cosine::ExactU1 );
+            exact_solution.push_back( sine_cosine::ExactU2 );
+            exact_solution.push_back( sine_cosine::ExactP );
+            
+            /** boundary condition */
+            boundary_conditions.push_back( sine_cosine::BoundCondition );
+            boundary_conditions.push_back( sine_cosine::BoundCondition );
+            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+            
+            /** boundary values */
+            boundary_data.push_back( sine_cosine::U1BoundValue );
+            boundary_data.push_back( sine_cosine::U2BoundValue );
+            boundary_data.push_back( BoundaryValueHomogenous );
+            
+            /** coefficients */
+            problem_coefficients = sine_cosine::LinCoeffs;
+            
+            sine_cosine::ExampleFile();
+            break;
+        case 3:
+            /** exact_solution */
+            exact_solution.push_back( sine2_sine2::ExactU1 );
+            exact_solution.push_back( sine2_sine2::ExactU2 );
+            exact_solution.push_back( sine2_sine2::ExactP );
+            
+            /** boundary condition */
+            boundary_conditions.push_back( sine2_sine2::BoundCondition );
+            boundary_conditions.push_back( sine2_sine2::BoundCondition );
+            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+            
+            /** boundary values */
+            boundary_data.push_back( sine2_sine2::U1BoundValue );
+            boundary_data.push_back( sine2_sine2::U2BoundValue );
+            boundary_data.push_back( BoundaryValueHomogenous );
+            
+            /** coefficients */
+            problem_coefficients = sine2_sine2::LinCoeffs;
+            
+            sine_cosine::ExampleFile();
+            break;
+            
+            //        case 3:
+            //            /** exact_solution */
+            //            exact_solution.push_back( driven_cavity::ExactU1 );
+            //            exact_solution.push_back( driven_cavity::ExactU2 );
+            //            exact_solution.push_back( driven_cavity::ExactP );
+            //
+            //            /** boundary condition */
+            //            boundary_conditions.push_back( driven_cavity::BoundCondition );
+            //            boundary_conditions.push_back( driven_cavity::BoundCondition );
+            //            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+            //
+            //            /** boundary values */
+            //            boundary_data.push_back( driven_cavity::U1BoundValue );
+            //            boundary_data.push_back( driven_cavity::U2BoundValue );
+            //            boundary_data.push_back( BoundaryValueHomogenous );
+            //
+            //            /** coefficients */
+            //            problem_coefficients = driven_cavity::LinCoeffs;
+            //
+            //            driven_cavity::ExampleFile();
+            //            break;
+            //        case 4:
+            //            /** exact_solution */
+            //            exact_solution.push_back( flow_around_cylinder::ExactU1 );
+            //            exact_solution.push_back( flow_around_cylinder::ExactU2 );
+            //            exact_solution.push_back( flow_around_cylinder::ExactP );
+            //
+            //            /** boundary condition */
+            //            boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
+            //            boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
+            //            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+            //
+            //            /** boundary values */
+            //            boundary_data.push_back( flow_around_cylinder::U1BoundValue );
+            //            boundary_data.push_back( flow_around_cylinder::U2BoundValue );
+            //            boundary_data.push_back( BoundaryValueHomogenous );
+            //            
+            //            /** coefficients */
+            //            problem_coefficients = flow_around_cylinder::LinCoeffs;
+            //            
+            //            flow_around_cylinder::ExampleFile();
+            //            break;
+            
+        default:
+            ErrThrow("Unknown Brinkman example!");
+    }
 }
 
 void Example_Brinkman2D::do_post_processing(Brinkman2D& brinkman2d) const
@@ -165,9 +201,9 @@ void Example_Brinkman2D::do_post_processing(Brinkman2D& brinkman2d) const
   }
 }
 
-double Example_Brinkman2D::get_nu() const
-{
-  double inverse_reynolds = this->example_database["reynolds_number"];
-  inverse_reynolds = 1/inverse_reynolds;
-  return inverse_reynolds;
-}
+
+//double Example_Brinkman2D::get_stab() const
+//{
+//  double equal_order_stab_weight = this->example_database["equal_order_stab_weight"];
+//  return equal_order_stab_weight;
+//}

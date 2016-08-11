@@ -420,6 +420,7 @@ void Time_CD2D::output()
 
   // write output
   timeDependentOutput.write(TDatabase::TimeDB->CURRENTTIME);
+
 }
 
 /**************************************************************************** */
@@ -430,6 +431,9 @@ std::array< double, int(3) > Time_CD2D::get_errors() const
   error_at_time_points.at(1) = sqrt(errors.at(2));
   error_at_time_points.at(2) = sqrt(errors.at(4));
   return error_at_time_points;
+
+    
+    
 }
 
 /**************************************************************************** */

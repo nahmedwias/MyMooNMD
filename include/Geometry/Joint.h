@@ -62,6 +62,9 @@ class TJoint
     /** */
     int NeibSubDomainLocalJointNo;
     
+    /** The index of this joint in the two neighbors */
+    ///@todo set the size of the array as a function of the Joint type (e.g. 1 for boundaries)
+    int IndexInNeighbor[2];
     
 #ifdef __3D__
     int MapType;
