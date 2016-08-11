@@ -452,6 +452,7 @@ void DirectSolver::solve(const double* rhs, double* solution)
                &n_eq, entries, rows, cols, &this->perm, &this->nrhs,
                this->iparm, &this->msglvl, rhs_nonconst, solution, &error);
       handle_error_pardiso(error);
+      delete [] rhs_nonconst;
       break;
     }
     default:
