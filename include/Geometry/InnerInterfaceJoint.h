@@ -30,8 +30,7 @@ class TInnerInterfaceJoint : public TJointEqN
     /** y progress of line */
     double delY;
 
-    /** The index of this joint in the two neighbors */
-    int IndexInNeighbor[2];
+
  public:
   /** global cell number of the neibs' cell, which contains this joint */
   int NeibGlobalCellNo[2];
