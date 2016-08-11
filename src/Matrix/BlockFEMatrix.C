@@ -928,6 +928,9 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
     std::pair<size_t,size_t> upper_left,
     std::pair<size_t,size_t> lower_right) const
 {
+  for (unsigned int i=0; i<test_spaces_rowwise_.size(); i++){
+    Output::print(" space ", i, " ",test_spaces_rowwise_[i]->GetN_ActiveDegrees());
+  }
   //let base class do as much work as possible
   std::shared_ptr<TMatrix> sub_cmat =
       this->BlockMatrix::get_combined_submatrix(upper_left, lower_right);

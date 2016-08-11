@@ -99,29 +99,41 @@ ParameterDatabase get_default_domain_parameters()
 
 // Constructor
 TDomain::TDomain(const ParameterDatabase& param_db) :
-    db(get_default_domain_parameters())
+db(get_default_domain_parameters())
 {
-  RefLevel = 0;
-  Output::print<4>("domain is initialized");
-  db.merge(param_db, false);
-  
-  std::string geoname = db["geo_file"];
-  std::string boundname = db["boundary_file"];
-  std::string smesh = db["mesh_tetgen_file"];
-  
-  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
-      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
-    )
-  {
-    this->Init(boundname.c_str(), geoname.c_str());
-    Output::print<4>("GEO and PRM files are selected");
-  }
+    RefLevel = 0;
+    Output::print<4>("domain is initialized");
+    db.merge(param_db, false);
+    
+    std::string geoname = db["geo_file"];
+    std::string boundname = db["boundary_file"];
+    std::string smesh = db["mesh_tetgen_file"];
+    
+    if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" )
+       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
+       )
+    {
+        this->Init(boundname.c_str(), geoname.c_str());
+        Output::print<4>("GEO and PRM files are selected");
+    }
+    
+    
+    if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
+       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
+       )
+    {
+        this->InitFromMesh(boundname.c_str(), geoname.c_str());
+        Output::print<4>("mesh and PRM files are selected");
+    }
+    
+    
 #ifdef __3D__
   else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
   {
     // intialize mesh using tetegen mesh loader
     TTetGenMeshLoader tetgen(smesh, db);
-    tetgen.Generate(*this);
+    //tetgen.Generate(*this);
+    GenerateFromTetgen(tetgen);
   }
 #endif
   else 
@@ -149,18 +161,30 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
   std::string boundname = db["boundary_file"];
   std::string smesh = db["mesh_tetgen_file"];
   
+    
   if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
     )
   {
     this->Init(boundname.c_str(), geoname.c_str());
   }
+    
+    if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
+       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
+       )
+    {Output::print<>("OK");
+        this->InitFromMesh(boundname.c_str(), geoname.c_str());
+        Output::print<4>("mesh and PRM files are selected");
+    Output::print<>("OK");
+    }
+    
 #ifdef __3D__
   else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
   {
     // intialize mesh using tetegen mesh loader
     TTetGenMeshLoader tetgen(smesh, db);
-    tetgen.Generate(*this);
+    //tetgen.Generate(*this);
+    GenerateFromTetgen(tetgen);
   }
 #endif
   else 
@@ -969,9 +993,85 @@ void TDomain::Init(const char *PRM, const char *GEO)
   }
 }
 
+
+
+#else // 3D
+void TDomain::Init(const char *PRM, const char *GEO)
+{
+  int IsSandwich = 0;
+
+  if(PRM == nullptr || GEO == nullptr)
+  {
+    ErrThrow("No boundary description or initial mesh specified");
+  }
+
+  // start with read in of boundary description
+
+  if (!strcmp(PRM, "Default_UnitCube"))
+  {
+    // one implemented default case: unit cube
+    IsSandwich = initializeDefaultCubeBdry();
+  }
+  else
+  {
+    // "PRM" interpreted as file path to PRM-file.
+    // make an input file string from the file "PRM"
+    std::ifstream bdryStream(PRM);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open PRM file");
+    }
+    // otherwise: try to read in given .PRM file
+    ReadBdParam(bdryStream, IsSandwich);
+  }
+
+  if(!IsSandwich)
+  {
+    if (!strcmp(GEO, "TestGrid3D"))
+    {
+      TestGrid3D();
+    }
+    else if (!strcmp(GEO, "Default_UnitCube_Hexa"))
+    {
+      initialize_cube_hexa_mesh();
+    }
+    else if (!strcmp(GEO, "Default_UnitCube_Tetra"))
+    {
+      initialize_cube_tetra_mesh();
+    }
+    else
+    {
+      // "GEO" interpreted as file path to GEO-file.
+      // check if it actually is an .xGEO-file
+      bool isxGEO = isExtendedGEO(GEO);
+      // make an input file string from the file "GEO"
+      std::ifstream bdryStream(GEO);
+      if (!bdryStream)
+      {
+        ErrThrow("cannot open GEO file");
+      }
+      ReadGeo( bdryStream, isxGEO );
+    }
+  }
+  else
+  {
+    // make an input file string from the file "GEO"
+    std::ifstream bdryStream(GEO);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open GEO file");
+    }
+    // then read in sandwich geo.
+    ReadSandwichGeo(bdryStream);
+  }
+}
+#endif // __2D__
+
+
 // initialize a domain from a mesh and a boundary(PRM) file
 void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 {
+#ifdef __2D__
   Output::print("TDomain:: InitFromMesh using ", PRM, " and ", MESHFILE);
   //make an input file string from the file "PRM"
   std::ifstream bdryStream(PRM);
@@ -1056,81 +1156,11 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
   delete [] KVERT;
   delete [] KNPR;
   delete [] ELEMSREF;
-  
-}
-
-
-#else // 3D
-void TDomain::Init(const char *PRM, const char *GEO)
-{
-  int IsSandwich = 0;
-
-  if(PRM == nullptr || GEO == nullptr)
-  {
-    ErrThrow("No boundary description or initial mesh specified");
-  }
-
-  // start with read in of boundary description
-
-  if (!strcmp(PRM, "Default_UnitCube"))
-  {
-    // one implemented default case: unit cube
-    IsSandwich = initializeDefaultCubeBdry();
-  }
-  else
-  {
-    // "PRM" interpreted as file path to PRM-file.
-    // make an input file string from the file "PRM"
-    std::ifstream bdryStream(PRM);
-    if (!bdryStream)
-    {
-      ErrThrow("cannot open PRM file");
-    }
-    // otherwise: try to read in given .PRM file
-    ReadBdParam(bdryStream, IsSandwich);
-  }
-
-  if(!IsSandwich)
-  {
-    if (!strcmp(GEO, "TestGrid3D"))
-    {
-      TestGrid3D();
-    }
-    else if (!strcmp(GEO, "Default_UnitCube_Hexa"))
-    {
-      initialize_cube_hexa_mesh();
-    }
-    else if (!strcmp(GEO, "Default_UnitCube_Tetra"))
-    {
-      initialize_cube_tetra_mesh();
-    }
-    else
-    {
-      // "GEO" interpreted as file path to GEO-file.
-      // check if it actually is an .xGEO-file
-      bool isxGEO = isExtendedGEO(GEO);
-      // make an input file string from the file "GEO"
-      std::ifstream bdryStream(GEO);
-      if (!bdryStream)
-      {
-        ErrThrow("cannot open GEO file");
-      }
-      ReadGeo( bdryStream, isxGEO );
-    }
-  }
-  else
-  {
-    // make an input file string from the file "GEO"
-    std::ifstream bdryStream(GEO);
-    if (!bdryStream)
-    {
-      ErrThrow("cannot open GEO file");
-    }
-    // then read in sandwich geo.
-    ReadSandwichGeo(bdryStream);
-  }
-}
+#else
+  ErrMsg("TDomain::InitFromMesh(..,..) not yet implemented in 3D ** ");
+  exit(1);
 #endif // __2D__
+}
 
 int TDomain::PS(const char *name, Iterators iterator, int arg)
 {
@@ -3754,3 +3784,301 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
 
   return gridCollections;
 }
+
+
+#ifdef __3D__
+void TDomain::GenerateFromTetgen(TTetGenMeshLoader& tgml)
+{
+  // check file extensions, call tetgen and generate the volume mesh,
+  // the has list and the adjacency between faces
+  // note: the mesh is contained in the  (tetgenio) meshTetGenOut object
+  tgml.GenerateMesh();
+
+  // build the boundary parts
+  this->buildBoundary(tgml);
+
+  // build the mesh
+  this->buildParMooNMesh(tgml);
+  
+  // initialize iterators
+  TDatabase::IteratorDB[It_EQ]->SetParam(this);
+  TDatabase::IteratorDB[It_LE]->SetParam(this);
+  TDatabase::IteratorDB[It_Finest]->SetParam(this);
+  TDatabase::IteratorDB[It_Between]->SetParam(this);
+  TDatabase::IteratorDB[It_OCAF]->SetParam(this);  
+}
+
+// note this function needs:
+// list of triangles (faces)
+// number of boundary faces
+// adjacency (1,-1 for boundary faces)
+// list of points
+// Can we use push_back to fill the meshBoundComps vector?
+void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
+{
+  // we consider only 1 boundary part
+  ///@todo do we need to take into account the general case?
+  this->N_BoundParts = 1;
+  // vector of boundary parts
+  this->BdParts = new TBoundPart* [this->N_BoundParts];
+
+  // the number of boundary components is computed from the adjacency of
+  // tetgen mesh. See TTetGenMeshLoaden::CreateAdjacency()
+  this->N_BoundComps = tgml.nBoundaryComponents;
+  meshBoundComps.resize(this->N_BoundComps); 
+  Output::print("TDomain::buildBoundary() - N_BoundComps: ", this->N_BoundComps);
+  this->BdParts[0] = new TBoundPart(this->N_BoundComps);
+  
+  // StartBdCompID[i] gives the iindex of the element in BdParts
+  // where the BdComp i starts. The last element is equal to to N_BoundParts
+  this->StartBdCompID = new int [this->N_BoundParts+1];
+
+  // we now consider only a boundary components,
+  // i.e. StartBdCompID[0] = 0, StartBdCompID[1] = N_BoundComps
+  ///@todo check how we can extend this to multiple boundary markers
+  this->StartBdCompID[0] = 0; 
+  this->StartBdCompID[1] = this->N_BoundComps;
+
+
+  // in order to describe the boundary, each boundary triangle is considered
+  // to be a boundary component of the (single) boundary part.
+  // Hence,
+  // (*) first, we check if the triangle is on the boundary
+  // (*) second, given the vertices, we define a TBdPlane describing the triangle
+  int n_trifaces = tgml.meshTetGenOut.numberoftrifaces;
+  int *trifaces = tgml.meshTetGenOut.trifacelist;
+  int counter=0; // count the number of boundary faces found
+
+  ///@attention misuse of trifacemarkerlist
+  //  0 = boundary faces, i>0 = i-th boundary face
+  ///@todo this should be changed in order to allow physical boundary markers
+  if(tgml.meshTetGenOut.trifacemarkerlist == NULL)
+    tgml.meshTetGenOut.trifacemarkerlist = new int [n_trifaces];
+
+  for(int i=0;i<n_trifaces;++i)
+  {
+    if(tgml.meshTetGenOut.adjtetlist[2*i+1] == -1 ||
+      tgml.meshTetGenOut.adjtetlist[2*i  ] == -1)
+    {
+      // the new boundary face is a triangle
+      meshBoundComps.at(counter) = new TBdPlane(counter);
+      double p[3], a[3], b[3], n[3];
+      p[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i  ]  ];
+      a[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+1]  ] - p[0];
+      b[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+2]  ] - p[0];
+      p[1] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i  ]+1];
+      a[1] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+1]+1] - p[1];
+      b[1] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+2]+1] - p[1];
+      p[2] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i  ]+2];
+      a[2] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+1]+2] - p[2];
+      b[2] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+2]+2] - p[2];
+      // normalize vector a
+      double fac = sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
+      a[0] /= fac;
+      a[1] /= fac;
+      a[2] /= fac;
+      // normalize vector b
+      fac = sqrt(b[0]*b[0]+b[1]*b[1]+b[2]*b[2]);
+      b[0] /= fac;
+      b[1] /= fac;
+      b[2] /= fac;
+      // cross product of a and b
+      n[0] = a[1]*b[2] - a[2]*b[1];
+      n[1] = a[2]*b[0] - a[0]*b[2];
+      n[2] = a[0]*b[1] - a[1]*b[0];
+      // normalize n
+      fac = sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+      n[0] /= fac;
+      n[1] /= fac;
+      n[2] /= fac;
+
+      ((TBdPlane*) meshBoundComps[counter])->SetParams(p[0], p[1], p[2],
+                                                       a[0], a[1], a[2],
+                                                       n[0], n[1], n[2]);
+      ++counter;
+      
+      // the id of the boundary face is taken as the attribute of the triangle
+      // note: later, trifacemarkerlist=0 is used to identify inner faces (see below)
+      tgml.meshTetGenOut.trifacemarkerlist[i] = counter;
+    }
+    else // not a boundary face
+      tgml.meshTetGenOut.trifacemarkerlist[i] = 0;
+  }
+
+  // check if the number of boundary components is consistent
+  assert(counter==N_BoundComps);
+  // initialize ParMooN BdParts and the BdComp
+  for(int i=0; i<this->N_BoundComps; i++)
+    this->BdParts[0]->SetBdComp(i, meshBoundComps[i]);
+  
+
+}
+
+void TDomain::buildParMooNMesh(TTetGenMeshLoader& tgml)
+{
+  // create a vector<TVertex*> from the list of pointa
+  this->setVertices(tgml);
+  // allocate memory for CellTree and set the vertices
+  this->allocRootCells(tgml);  
+  // create joints and set joints type
+  this->distributeJoints(tgml);
+}
+
+/**
+ * @brief set the coordinates of the vertices
+ *
+ * This functions reads the vertices coordinates from meshTetGenOut
+ * and creates TVertex*, stored in the vector meshVertices
+ * Moreover, bounds for the domain are computed
+ * 
+ * @todo should this function be split in two parts:
+ * e.g. setVertices and computeDomainBounds?
+ */
+void TDomain::setVertices(TTetGenMeshLoader& tgml)
+{
+  double x, y, z;
+  double xmin=0, xmax=0, ymin=0, ymax=0, zmin=0, zmax=0;
+  meshVertices.resize(tgml.meshTetGenOut.numberofpoints); 
+  
+  for(int i=0;i<tgml.meshTetGenOut.numberofpoints;++i)
+  {
+    x = tgml.meshTetGenOut.pointlist[3*i  ];
+    y = tgml.meshTetGenOut.pointlist[3*i+1];
+    z = tgml.meshTetGenOut.pointlist[3*i+2];
+
+    if(i > 0)
+    {
+      if(xmin > x) xmin = x;
+      if(xmax < x) xmax = x;
+
+      if(ymin > y) ymin = y;
+      if(ymax < y) ymax = y;
+
+      if(zmin > z) zmin = z;
+      if(zmax < z) zmax = z;
+    }
+    else
+    {
+      xmin = xmax = x;
+      ymin = ymax = y;
+      zmin = zmax = z;
+    }
+
+    meshVertices.at(i)=new TVertex (x, y, z);
+  }
+
+  StartX = xmin;
+  BoundX = xmax - xmin;
+
+  StartY = ymin;
+  BoundY = ymax - ymin;
+
+  StartZ = zmin;
+  BoundZ = zmax - zmin;
+
+  Output::print("number of vertices: ", tgml.meshTetGenOut.numberofpoints);
+}
+
+void TDomain::allocRootCells(TTetGenMeshLoader& tgml)
+{
+  TVertex *Vertex;
+  TMacroCell *Cell;
+  // set the number of total cells and allocate the cell array
+  this->N_RootCells = tgml.meshTetGenOut.numberoftetrahedra;
+  Output::print<3>("TDomain::allocRootCells() number of tetrahedra: ",
+		   tgml.meshTetGenOut.numberoftetrahedra);
+
+  this->CellTree = new TBaseCell* [this->N_RootCells];
+  // set the vertices of each cell, reading from meshVertices
+  for(int i=0;i<this->N_RootCells;++i)
+  {
+    Cell = new TMacroCell (TDatabase::RefDescDB[Tetrahedron], 0);
+    this->CellTree[i] = Cell;
+    
+    for(int j=0;j<4;++j)
+    {
+      Vertex = meshVertices.at(tgml.meshTetGenOut.tetrahedronlist[4*i+j]);
+      Cell->SetVertex(j, Vertex);
+    }
+    Cell->SetPhase_ID((int) tgml.meshTetGenOut.tetrahedronattributelist[i]);
+    
+  }
+
+}
+
+///@attention the functions hashTriFaces(), CreateAdjacency() must have been called before
+void TDomain::distributeJoints(TTetGenMeshLoader& tgml)
+{
+  // size of meshjoint
+  meshJoints.resize(tgml.meshTetGenOut.numberoftrifaces);
+  // search face which belongs to current bdComp
+  for(int i=0;i<tgml.meshTetGenOut.numberoftrifaces;++i)
+  {
+    // find element that contain this face
+    if(tgml.meshTetGenOut.trifacemarkerlist[i] == 0)// inner joints
+    {
+      int left = tgml.meshTetGenOut.adjtetlist[2*i];
+      int right = tgml.meshTetGenOut.adjtetlist[2*i+1];
+      
+      meshJoints.at(i) = new TJointEqN (CellTree[left], CellTree[right]);
+    }
+    else // boundary joints
+    {
+      Output::print<5>("boundary joint");
+      int bdcomp = tgml.meshTetGenOut.trifacemarkerlist[i] - 1;
+      TBoundComp3D* BoundComp = meshBoundComps[bdcomp];
+      meshJoints.at(i)=new TBoundFace (BoundComp);
+    }
+  }
+
+  Output::print("number of joints: ", tgml.meshTetGenOut.numberoftrifaces);
+  
+  for(int i=0;i<tgml.meshTetGenOut.numberoftetrahedra;++i)
+  {
+    const int *TmpFV, *TmpLen;
+    int MaxLen;
+    
+    TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
+    ShapeDesc->GetFaceVertex(TmpFV, TmpLen, MaxLen);
+
+    for(int j=0;j<4;++j)
+    {
+      ///@attention make sure that the vector meshTrifaceHash has been created 
+      int triface =
+	tgml.findTriFace(tgml.meshTetGenOut.tetrahedronlist[4*i+TmpFV[j*MaxLen  ]],
+			 tgml.meshTetGenOut.tetrahedronlist[4*i+TmpFV[j*MaxLen+1]],
+			 tgml.meshTetGenOut.tetrahedronlist[4*i+TmpFV[j*MaxLen+2]]);
+
+      assert (triface != -1);
+
+      CellTree[i]->SetJoint(j, meshJoints.at(triface));
+
+      // correct params
+      if(meshJoints.at(triface)->GetType() == BoundaryFace)
+      {
+
+        TBoundFace *BoundFace = (TBoundFace*) meshJoints.at(triface);
+        TBoundComp3D *BoundComp = BoundFace->GetBoundComp();
+        double x, y, z, t, s;
+        double param1[4], param2[4];
+
+        for(int k=0;k<TmpLen[j];++k)
+        {
+          CellTree[i]->GetVertex(TmpFV[MaxLen*j+k])->GetCoords(x,y,z);
+          BoundComp->GetTSofXYZ(x,y,z, t, s);
+
+          param1[k] = t;
+          param2[k] = s;
+        }
+        BoundFace->SetParameters(param1, param2);
+      }
+    }
+  }
+  // set map type
+  for(int i=0;i<tgml.meshTetGenOut.numberoftrifaces;++i)
+  {
+    meshJoints[i]->SetMapType();
+  }
+}
+
+#endif

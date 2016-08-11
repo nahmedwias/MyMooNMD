@@ -353,7 +353,9 @@ void Mesh::writeToGEO(std::string geoFilename)
   if (quad.size()) {
     numberOfElements += quad.size();
     maxNVertexPerElem = 4;
-  } else {
+  }
+  
+  if ( (quad.size()==0)&&(triangle.size()==0) ) {
     Output::print(" Mesh:Write2GEO Error: I cannot write a mesh without elements");
     exit(-1);
   }
