@@ -89,7 +89,7 @@ public:
    * create adjacent tetrahedra to the faces of trifacelist
    * 
    * @return number of number of boudary components "N_BoundComp"
-   * @attention this functions does two things at the same time
+   * @attention this functions does two things
    */
   int nBoundaryComponents;
   int CreateAdjacency();

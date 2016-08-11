@@ -340,11 +340,21 @@ class TDomain
        * @todo this function is work in progress (08.2016)
        */
       void GenerateFromTetgen(TTetGenMeshLoader& tgml);
+
+      /**
+       * @brief build the boundary of a tetrahedral mesh
+       *
+       * All the (triangular) faces are considered to be
+       * different boundary components (planes) belonging
+       * to the same BdPart.
+       */
       void buildBoundary(TTetGenMeshLoader& tgml);
-      void buildParMooNMDMesh(TTetGenMeshLoader& tgml);
+      void buildParMooNMesh(TTetGenMeshLoader& tgml);
       void setVertices(TTetGenMeshLoader& tgml);
       void allocRootCells(TTetGenMeshLoader& tgml);
       void distributeJoints(TTetGenMeshLoader& tgml);
+      
+
       // auxiliary vector of boundary components 
       std::vector<TBoundComp3D*> meshBoundComps;
       // auxiliary vector of vertices to store the mesh vertices

@@ -3798,7 +3798,7 @@ void TDomain::GenerateFromTetgen(TTetGenMeshLoader& tgml)
   this->buildBoundary(tgml);
 
   // build the mesh
-  this->buildParMooNMDMesh(tgml);
+  this->buildParMooNMesh(tgml);
   
   // initialize iterators
   TDatabase::IteratorDB[It_EQ]->SetParam(this);
@@ -3808,27 +3808,50 @@ void TDomain::GenerateFromTetgen(TTetGenMeshLoader& tgml)
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);  
 }
 
-
+// note this function needs:
+// list of triangles (faces)
+// number of boundary faces
+// adjacency (1,-1 for boundary faces)
+// list of points
+// Can we use push_back to fill the meshBoundComps vector?
 void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
 {
-  
-  int n_trifaces = tgml.meshTetGenOut.numberoftrifaces;
-  int *trifaces = tgml.meshTetGenOut.trifacelist;
-  int counter=0;
-  double p[3], a[3], b[3], n[3];
-
-  this->N_BoundComps = tgml.nBoundaryComponents;
-  Output::print("N_BoundComps: ", this->N_BoundComps);
-
+  // we consider only 1 boundary part
+  ///@todo do we need to take into account the general case?
   this->N_BoundParts = 1;
+  // vector of boundary parts
   this->BdParts = new TBoundPart* [this->N_BoundParts];
+
+  // the number of boundary components is computed from the adjacency of
+  // tetgen mesh. See TTetGenMeshLoaden::CreateAdjacency()
+  this->N_BoundComps = tgml.nBoundaryComponents;
+  meshBoundComps.resize(this->N_BoundComps); 
+  Output::print("TDomain::buildBoundary() - N_BoundComps: ", this->N_BoundComps);
+  this->BdParts[0] = new TBoundPart(this->N_BoundComps);
+  
+  // StartBdCompID[i] gives the iindex of the element in BdParts
+  // where the BdComp i starts. The last element is equal to to N_BoundParts
   this->StartBdCompID = new int [this->N_BoundParts+1];
 
-  this->StartBdCompID[0] = 0;
+  // we now consider only a boundary components,
+  // i.e. StartBdCompID[0] = 0, StartBdCompID[1] = N_BoundComps
+  ///@todo check how we can extend this to multiple boundary markers
+  this->StartBdCompID[0] = 0; 
   this->StartBdCompID[1] = this->N_BoundComps;
 
-  meshBoundComps.resize(this->N_BoundComps); 
-  // missuse of trifacemarkerlist :(
+
+  // in order to describe the boundary, each boundary triangle is considered
+  // to be a boundary component of the (single) boundary part.
+  // Hence,
+  // (*) first, we check if the triangle is on the boundary
+  // (*) second, given the vertices, we define a TBdPlane describing the triangle
+  int n_trifaces = tgml.meshTetGenOut.numberoftrifaces;
+  int *trifaces = tgml.meshTetGenOut.trifacelist;
+  int counter=0; // count the number of boundary faces found
+
+  ///@attention misuse of trifacemarkerlist
+  //  0 = boundary faces, i>0 = i-th boundary face
+  ///@todo this should be changed in order to allow physical boundary markers
   if(tgml.meshTetGenOut.trifacemarkerlist == NULL)
     tgml.meshTetGenOut.trifacemarkerlist = new int [n_trifaces];
 
@@ -3837,9 +3860,9 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
     if(tgml.meshTetGenOut.adjtetlist[2*i+1] == -1 ||
       tgml.meshTetGenOut.adjtetlist[2*i  ] == -1)
     {
-      // boundary face
+      // the new boundary face is a triangle
       meshBoundComps.at(counter) = new TBdPlane(counter);
-
+      double p[3], a[3], b[3], n[3];
       p[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i  ]  ];
       a[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+1]  ] - p[0];
       b[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+2]  ] - p[0];
@@ -3873,26 +3896,31 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
                                                        a[0], a[1], a[2],
                                                        n[0], n[1], n[2]);
       ++counter;
-
+      
+      // the id of the boundary face is taken as the attribute of the triangle
+      // note: later, trifacemarkerlist=0 is used to identify inner faces (see below)
       tgml.meshTetGenOut.trifacemarkerlist[i] = counter;
     }
     else // not a boundary face
       tgml.meshTetGenOut.trifacemarkerlist[i] = 0;
   }
-  
+
+  // check if the number of boundary components is consistent
   assert(counter==N_BoundComps);
-  this->BdParts[0] = new TBoundPart(this->N_BoundComps);
+  // initialize ParMooN BdParts and the BdComp
   for(int i=0; i<this->N_BoundComps; i++)
-  {
     this->BdParts[0]->SetBdComp(i, meshBoundComps[i]);
-  }
+  
 
 }
 
-void TDomain::buildParMooNMDMesh(TTetGenMeshLoader& tgml)
+void TDomain::buildParMooNMesh(TTetGenMeshLoader& tgml)
 {
+  // create a vector<TVertex*> from the list of pointa
   this->setVertices(tgml);
+  // allocate memory for CellTree and set the vertices
   this->allocRootCells(tgml);  
+  // create joints and set joints type
   this->distributeJoints(tgml);
 }
 
@@ -3902,6 +3930,9 @@ void TDomain::buildParMooNMDMesh(TTetGenMeshLoader& tgml)
  * This functions reads the vertices coordinates from meshTetGenOut
  * and creates TVertex*, stored in the vector meshVertices
  * Moreover, bounds for the domain are computed
+ * 
+ * @todo should this function be split in two parts:
+ * e.g. setVertices and computeDomainBounds?
  */
 void TDomain::setVertices(TTetGenMeshLoader& tgml)
 {
@@ -3954,39 +3985,25 @@ void TDomain::allocRootCells(TTetGenMeshLoader& tgml)
   TMacroCell *Cell;
   // set the number of total cells and allocate the cell array
   this->N_RootCells = tgml.meshTetGenOut.numberoftetrahedra;
+  Output::print<3>("TDomain::allocRootCells() number of tetrahedra: ",
+		   tgml.meshTetGenOut.numberoftetrahedra);
+
   this->CellTree = new TBaseCell* [this->N_RootCells];
-
-  Output::print("number of tetrahedron attributes: ",
-		tgml.meshTetGenOut.numberoftetrahedronattributes);
-
   // set the vertices of each cell, reading from meshVertices
   for(int i=0;i<this->N_RootCells;++i)
   {
     Cell = new TMacroCell (TDatabase::RefDescDB[Tetrahedron], 0);
     this->CellTree[i] = Cell;
-
-    if(tgml.meshTetGenOut.numberofcorners != 4)
-    {
-      ErrThrow("Wrong number of corners !");
-    }
-
+    
     for(int j=0;j<4;++j)
     {
       Vertex = meshVertices.at(tgml.meshTetGenOut.tetrahedronlist[4*i+j]);
       Cell->SetVertex(j, Vertex);
     }
+    Cell->SetPhase_ID((int) tgml.meshTetGenOut.tetrahedronattributelist[i]);
     
-    if(tgml.meshTetGenOut.numberoftetrahedronattributes == 1)
-    {
-      Cell->SetPhase_ID((int) tgml.meshTetGenOut.tetrahedronattributelist[i]);
-    }
-    else
-    {
-      ErrThrow("multiple attributes is not yet implemented");
-    }
   }
 
-  Output::print("number of tetrahedra: ", tgml.meshTetGenOut.numberoftetrahedra);
 }
 
 ///@attention the functions hashTriFaces(), CreateAdjacency() must have been called before
