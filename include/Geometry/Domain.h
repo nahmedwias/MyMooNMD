@@ -21,6 +21,7 @@ class TDomain;
 #include <Iterator.h>
 #include <Mesh.h>
 #include <ParameterDatabase.h>
+#include <TetGenMeshLoader.h>
 
 #ifdef __MORTAR__
 struct TMortarFaceStruct
@@ -326,8 +327,31 @@ class TDomain
        * @attention this function uses only strings (new convention, 05.2016)
        */
       void InitFromMesh(std::string PRM, std::string m);
-
-
+      
+#ifdef __3D__
+      /**
+       * @brief Initialize the domain starting from a tetgen generated mesh
+       *
+       * This function will read the mesh file ".smesh, or .." 
+       * and modiefy the domain to ressemble the mesh, 
+       * the boundary, and build the mesh which will be 
+       * used within ParMooN.
+       * @param[in] tgml an object of the class TTetGenMeshLoader
+       * @todo this function is work in progress (08.2016)
+       */
+      void GenerateFromTetgen(TTetGenMeshLoader& tgml);
+      void buildBoundary(TTetGenMeshLoader& tgml);
+      void buildParMooNMDMesh(TTetGenMeshLoader& tgml);
+      void setVertices(TTetGenMeshLoader& tgml);
+      void allocRootCells(TTetGenMeshLoader& tgml);
+      void distributeJoints(TTetGenMeshLoader& tgml);
+      // auxiliary vector of boundary components 
+      std::vector<TBoundComp3D*> meshBoundComps;
+      // auxiliary vector of vertices to store the mesh vertices
+      std::vector<TVertex*> meshVertices;
+      // auxiliary vector of Joints
+      std::vector<TJoint*> meshJoints;
+#endif
     /** @brief write domain boundary  into a postscript file */
     int Draw(char *name, Iterators iterator, int arg);
     /** @brief write mesh into a postscript file */

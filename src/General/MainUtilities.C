@@ -84,6 +84,7 @@ void display_mallinfo(const std::string& program_part)
   Output::print("Memory usage info called in program part: ", program_part);
   Output::print(GetMemory());  
 #else
+   
   struct mallinfo mi;
   
   mi = mallinfo();

@@ -182,7 +182,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
       ErrMsg("for vector valued basis functions, you should use "
              << "TFEFunction2D::GetErrorsForVectorValuedFunction instead of "
              << "TFEFunction2D::GetErrors");
-      OutPut("No error were computed\n");
+      OutPut("No errors were computed\n");
       return;
     }
     RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(CurrentElement);
