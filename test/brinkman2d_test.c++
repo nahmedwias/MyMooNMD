@@ -97,19 +97,32 @@ void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
     Output::print("\nstarting with P2/P1 on quads");
     errors = {{ 2.0257088643869e-16, 2.1906901043565e-15, 5.9796305144209e-15, 4.8385464788293e-14 }};
     check_brinkman2d(domain, db, 2,1, errors);
- 
+}
+
+void tests_on_quads_stab(unsigned int nRefinements, ParameterDatabase& db)
+{
+    // default construct a domain object
+    TDomain domain(db);
+    
+    
+    // refine grid up to the coarsest level
+    for(unsigned int i = 0; i < nRefinements; i++)
+    {
+        domain.RegRefineAll();
+    }
+    
+    std::array<double, 4> errors;
+    Output::print("\nstarting with residual-based equal-order stabilization on P1/P1 on quads");
+    errors = {{ 0.20649934279357, 0.97672832044749,
+        1.3352827196758, 5.1734925650333 }};
+    check_brinkman2d(domain, db, 1,1, errors);
     
     // TODO
-//    Output::print("\nstarting with residual-based equal-order stabilization on P1/P1 on quads");
-//    errors = {{ 0.36989913525384, 8.7083491818683,
-//        0.1118419830706, 2.6029572935706 }};
-//    check_brinkman2d(domain, db, 1012, errors);
-//    
-//    Output::print("\nstarting with residual-based equal-order stabilization on P2/P2 on quads");
-//    errors = {{ 0.36989913525384, 8.7083491818683,
-//        0.1118419830706, 2.6029572935706 }};
-//    check_brinkman2d(domain, db, 1012, errors);
-
+    //    Output::print("\nstarting with residual-based equal-order stabilization on P2/P2 on quads");
+    //    errors = {{ 0.36989913525384, 8.7083491818683,
+    //        0.1118419830706, 2.6029572935706 }};
+    //    check_brinkman2d(domain, db, 1012, errors);
+    
 }
 
 void tests_on_quadsNitsche(unsigned int nRefinements, ParameterDatabase& db)
@@ -240,7 +253,7 @@ int main(int argc, char* argv[])
 
 
     
-    db["example"] = 0; // known Poiseuille Hannukainen solution
+    db["example"] = 0; // known Poiseuille solution
     db["residual_tolerance"] = 1.0e-13;
     
     db["output_compute_errors"] = true;
@@ -250,6 +263,9 @@ int main(int argc, char* argv[])
     
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    
+//    db["P1P1_stab"] = false;
+//    db["P2P2_stab"] = false;
     
     tests_on_quads(nRefinements, db);
 //    db["geo_file"] = "TwoTriangles";
@@ -273,8 +289,12 @@ int main(int argc, char* argv[])
 //    db.add("n_nitsche_boundary",4);
 //    db.add("nitsche_boundary_id", 0 1 2 3);
 //           db.add("nitsche_penalty", 1 1 1 1);
-//    tests_on_quadsNitsche(nRefinements, db);
+    //    tests_on_quadsNitsche(nRefinements, db);
     
+    //----------------------------------------
+//    db["P1P1_stab"] = true;
+//    db["equal_order_stab_weight_P1P1"] = 0.4;
+//    tests_on_quads_stab(nRefinements, db);
 
     
 
