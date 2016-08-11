@@ -38,24 +38,21 @@ void TTetGenMeshLoader::GenerateMesh()
   // checking first the file extension
   if(meshFileName.compare(rawname))
   {
-
     // set true for smesh files 
     plc = true;
     // load the .smesh file 
     // convert std::string to char* b/c load_poly(char*)
     meshTetGenIn.load_poly((char*)rawname.c_str());
-    Output::print("NO MARKERS");
     this->Tetgen();
-
+    // additional functions
+    ///@todo should these functions be rewritten/restructured?
     this->hashTriFaces();
     this->nBoundaryComponents = this->CreateAdjacency();
   }
   else
   {
-
     ErrThrow("currently only .smesh files are supported");
     exit(1);
-
   }  
 
 }
@@ -138,6 +135,22 @@ void TTetGenMeshLoader::Tetgen()
 #else
   tetrahedralize((char*) options.c_str(), &meshTetGenIn, &meshTetGenOut);
 #endif
+
+
+  // only 1 attribute (reference) per element allowed
+  if(meshTetGenOut.numberoftetrahedronattributes == 1)
+  {
+    Output::print<3>("number of tetrahedron attributes: ",
+		     meshTetGenOut.numberoftetrahedronattributes);
+  } else {
+    ErrThrow("multiple attributes is not yet implemented");
+  }
+
+  // check consistence of the tetrahedral mesh
+  if(meshTetGenOut.numberofcorners != 4)
+  {
+    ErrThrow("Wrong number of corners !");
+  }
 
   Output::print("TetGen - Mesh generated");
 }
