@@ -627,7 +627,8 @@ int TCollection::createElementLists()
     
 #ifdef __2D__
 
-    for (int j=0;j<Cells[i]->GetN_Edges();j++)
+    int nJoints = Cells[i]->GetN_Edges();
+    for (int j=0;j<nJoints;j++)
     {
       bool foundVertex1= false;
       bool foundVertex2 = false;
