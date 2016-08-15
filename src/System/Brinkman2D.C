@@ -244,7 +244,7 @@ void Brinkman2D::assemble()
         N_Rhs = 3;
         
         // call the assemble method with the information that has been patched together
-        Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
+	Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
                    n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
                    boundary_conditions, non_const_bound_values.data(), la);
         

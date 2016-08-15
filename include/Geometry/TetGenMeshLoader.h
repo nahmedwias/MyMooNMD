@@ -81,7 +81,8 @@ public:
   /// create mesh with options
   void Tetgen();
 
-  
+
+  ///@todo These members are not used now. To be removed.
   /// @brief count the faces with the same hash and store it in meshTrifaceHash vector
   void hashTriFaces();
   

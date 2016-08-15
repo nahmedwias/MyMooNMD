@@ -25,6 +25,7 @@ TTetGenMeshLoader::TTetGenMeshLoader(std::string filename,
    plc(false), reconstruct(false), insertpoints(false)  
 {
   this->db.merge(parmoon_db);
+  this->GenerateMesh();
 }
 
 
@@ -36,7 +37,8 @@ void TTetGenMeshLoader::GenerateMesh()
   std::string rawname = meshFileName.substr(0, lastindex); 
 
   // checking first the file extension
-  if(meshFileName.compare(rawname))
+  //if(meshFileName.compare(rawname))
+  if (meshFileName.substr(meshFileName.find_last_of(".")+1) == "smesh")
   {
     // set true for smesh files 
     plc = true;
@@ -44,14 +46,10 @@ void TTetGenMeshLoader::GenerateMesh()
     // convert std::string to char* b/c load_poly(char*)
     meshTetGenIn.load_poly((char*)rawname.c_str());
     this->Tetgen();
-    // additional functions
-    ///@todo should these functions be rewritten/restructured?
-    this->hashTriFaces();
-    this->nBoundaryComponents = this->CreateAdjacency();
   }
   else
   {
-    ErrThrow("currently only .smesh files are supported");
+    ErrThrow("TTetGenMeshLoader::GenerateMesh() - only .smesh files are supported");
     exit(1);
   }  
 
@@ -96,13 +94,14 @@ void TTetGenMeshLoader::Tetgen()
   }
   options += "z"; // Numbers all output items starting from zero.
   options += "f"; // Outputs faces (including non-boundary faces).
+  options += "g"; // write output in .mesh format, do not write .node etc.
   
   if(db["tetgen_steiner"].is(1) && plc)
   {
     options += "Y"; // Suppresses boundary facets/segments splitting.
   }
   options += "C"; // Checks the consistency of the final mesh.
-  if(db["tetgen_quite"].is(0))
+  if(db["tetgen_quiet"].is(0))
     options += "Q"; // Quiet
   
   if(db["tetgen_merge_colplaner"].is(0))
@@ -114,10 +113,12 @@ void TTetGenMeshLoader::Tetgen()
   }
   
   options += "A"; // assigns region attributes
+
   
   tetgenbehavior TetBeh;
   // call tetgen with switch options
 #ifdef __TETGEN_14X__
+  
   if(TetBeh.parse_commandline((char*) options.c_str()))
   {
     if(insertpoints)
@@ -126,24 +127,31 @@ void TTetGenMeshLoader::Tetgen()
       tetrahedralize(&TetBeh, &meshTetGenIn, &meshTetGenOut, &meshTetAddIn);
     }
     else
-      tetrahedralize(&TetBeh, &meshTetGenIn, &meshTetGenOut);      
+    {
+      Output::print(" calling: tetgen -",options);
+      tetrahedralize(&TetBeh, &meshTetGenIn, &meshTetGenOut);
+    }
   }
   else
   {
     ErrThrow("parse_commandline failed !");    
   }
 #else
-  tetrahedralize((char*) options.c_str(), &meshTetGenIn, &meshTetGenOut);
+  Output::print(" ** WARNING: apparently you are using an old version of Tetgen ** ");
+  tetrahedralize((char*) options.c_str(), &meshTetGenIn,&meshTetGenOut);
 #endif
 
-
-  // only 1 attribute (reference) per element allowed
-  if(meshTetGenOut.numberoftetrahedronattributes == 1)
+  Output::print(" -- TTetGenMeshLoader::TetGen() completed --");
+  
+  // max 1 attribute (reference) per element allowed
+  if(meshTetGenOut.numberoftetrahedronattributes <= 1)
   {
-    Output::print<3>("number of tetrahedron attributes: ",
+    Output::print<2>("number of tetrahedron attributes: ",
 		     meshTetGenOut.numberoftetrahedronattributes);
   } else {
-    ErrThrow("multiple attributes is not yet implemented");
+    Output::print("number of tetrahedron attributes: ",
+		  meshTetGenOut.numberoftetrahedronattributes);
+    ErrThrow("multiple attributes (>1) is not yet implemented");
   }
 
   // check consistence of the tetrahedral mesh
@@ -152,7 +160,6 @@ void TTetGenMeshLoader::Tetgen()
     ErrThrow("Wrong number of corners !");
   }
 
-  Output::print("TetGen - Mesh generated");
 }
 
 /**
@@ -165,18 +172,17 @@ void TTetGenMeshLoader::Tetgen()
    -- meshTrifaceHash[hash][0] containts the number of faces with a+b+c = hash
    -- meshTrifaceHast[hash][i] contains the id of the i-th triangles s.t. a+b+c = hash
 
+   @todo This function is not used now (rewritten in Mesh.C)
  */
 void TTetGenMeshLoader::hashTriFaces()
 {
   int a, b, c, hash;
   int n_points = meshTetGenOut.numberofpoints;
-
   meshTrifaceHash.resize(3*n_points);
   for(auto &e : meshTrifaceHash)
   {
     e=nullptr;
   }
-
   std::vector<int> BucketCount(3*n_points);
   
   for(int i=0;i<meshTetGenOut.numberoftrifaces;++i)
@@ -187,6 +193,7 @@ void TTetGenMeshLoader::hashTriFaces()
 
     hash = a+b+c;
     (BucketCount[hash])++;
+    //cout << " BucketCount [ " << hash << "]=" << BucketCount[hash] << endl;
   }
 
   for(int i=0;i<meshTetGenOut.numberoftrifaces;++i)
@@ -211,8 +218,10 @@ void TTetGenMeshLoader::hashTriFaces()
   }
 }
 
+/// @todo This function is not used now (rewritten in Mesh.C)
 int TTetGenMeshLoader::CreateAdjacency()
 {
+  Output::print("TTetGenMeshLoader::CreateAdjacency() start");
   int n_trifaces = meshTetGenOut.numberoftrifaces;
   int n_tetrahedra = meshTetGenOut.numberoftetrahedra;
   int triface;
@@ -225,24 +234,36 @@ int TTetGenMeshLoader::CreateAdjacency()
 
   if(meshTetGenOut.adjtetlist) delete [] meshTetGenOut.adjtetlist;
 
+  // adjtetlist[2*triface] and adjtetlist[2*triface+1] contains
+  // indices of two neighboring tetrahedra
+  // (or they are both equal to -1 if triface is on the boundary)
+  
+  // initialize the adjacency vector (size 2*number of faces) with -1
   meshTetGenOut.adjtetlist = new int [2*n_trifaces];
   for(int i=0;i<2*n_trifaces;++i)
     meshTetGenOut.adjtetlist[i] = -1;
 
   for(int i=0;i<n_tetrahedra;++i)
   {
+    Output::print<4>("TTetGenMeshLoader::CreateAdjacency() tetrahedra ",i);
+  
     for(int face=0;face<4;++face)
     {
+      // find a triface with the same vertices
       triface = findTriFace(meshTetGenOut.tetrahedronlist[4*i+FaceVertex[face][0]],
         meshTetGenOut.tetrahedronlist[4*i+FaceVertex[face][1]],
         meshTetGenOut.tetrahedronlist[4*i+FaceVertex[face][2]]);
 
       assert (triface != -1);
 
+      // if the element 2*triface is still = -1, replace with the index
+      // of the current tetrahedra
       if(meshTetGenOut.adjtetlist[2*triface] == -1)
         meshTetGenOut.adjtetlist[2*triface] = i;
       else
       {
+	// if the face has been already associated to a tetrahedra,
+	// set 2*triface + 1 equal to the current one
         assert(meshTetGenOut.adjtetlist[2*triface+1] == -1);
         meshTetGenOut.adjtetlist[2*triface+1] = i;
         --N_BoundComp;
@@ -252,6 +273,7 @@ int TTetGenMeshLoader::CreateAdjacency()
   return N_BoundComp;
 }
 
+/// @todo This function is not used now (rewritten in Mesh.C)
 int TTetGenMeshLoader::findTriFace(int a, int b, int c)
 {
   int hash = a+b+c;
