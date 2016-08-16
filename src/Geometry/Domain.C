@@ -99,7 +99,7 @@ ParameterDatabase get_default_domain_parameters()
 
 // Constructor
 TDomain::TDomain(const ParameterDatabase& param_db) :
-db(get_default_domain_parameters())
+  Interfaces(nullptr),db(get_default_domain_parameters())
 {
   RefLevel = 0;
   Output::print<4>("domain is initialized");
@@ -153,7 +153,7 @@ db(get_default_domain_parameters())
 //TODO This domain constructor, which is also responsible for read-in of the
 // old database, is to be reomved soon.
 TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
-    db(get_default_domain_parameters())
+  Interfaces(nullptr),db(get_default_domain_parameters())
 {
   RefLevel = 0;
   
@@ -219,7 +219,8 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
 TDomain::~TDomain()
 {
   delete [] StartBdCompID;
-  delete [] Interfaces;
+  if (Interfaces)
+    delete [] Interfaces;
   for(int i = 0; i < N_BoundParts; ++i)
     delete BdParts[i];
   delete [] BdParts;
