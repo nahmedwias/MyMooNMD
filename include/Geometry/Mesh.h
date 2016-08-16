@@ -111,9 +111,6 @@ class Mesh
 
   /**
      @brief number of boundary faces
-
-     Note: this is now computed within the function createFaceTetrahedraMap.
-     Maybe this should be changed in the future.
   */
   int n_boundary_faces;
   
@@ -206,7 +203,12 @@ class Mesh
      If this has not been filled yet, it will be created by the function
    */
   void computeNumberOfBoundaryFaces();
-  
+
+  /**
+     @brief create inner faces is these are not written in the mesh file
+   */
+  void createInnerFaces();
+
   /**
      @brief find the index of the triangular face with indices a,b,c
      

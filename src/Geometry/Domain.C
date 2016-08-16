@@ -125,6 +125,12 @@ db(get_default_domain_parameters())
     
   }
 #ifdef __3D__
+  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" ) )
+  {
+    // note: in 3D, we allow domain initialization withtou PRM
+    Output::print<>("Initialize (3D) Domain using mesh file ",geoname.c_str());
+    this->InitFromMesh(boundname.c_str(), geoname.c_str());
+  }
   else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
   {
     // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
@@ -134,7 +140,7 @@ db(get_default_domain_parameters())
     // generate vertices, cells and joint
     GenerateFromMesh(m);
     // test: write the mesh on a file
-    m.writeToMesh("test2.mesh"); 
+    m.writeToMesh("test_parmoon.mesh"); 
   }
 #endif
   else 
@@ -162,13 +168,12 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
   std::string boundname = db["boundary_file"];
   std::string smesh = db["mesh_tetgen_file"];
   
-  Output::print(smesh);
   if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
       )
   {
-    Output::print<4>("GEO and PRM files are selected");
     this->Init(boundname.c_str(), geoname.c_str());
+    Output::print<4>("GEO and PRM files are selected");
     
   }
   else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
@@ -3842,6 +3847,9 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
 
 void TDomain::GenerateFromMesh(Mesh& m)
 {
+  // create inner faces (if needed)
+  m.createInnerFaces();
+  
   /** 
       compute number boundary faces:
       This step at the moment is necessary to initialize some useful arrays

@@ -248,7 +248,7 @@ void Mesh::readFromFile(std::string filename)
   }
   ifile.clear();
   ifile.seekg(current_line_number);
-
+  ifile.close();
 }
 
 
@@ -285,6 +285,16 @@ void Mesh::readFromTetgen(tetgenio& meshTetGenOut)
   
 }
 
+/** 
+    This function creates a map between
+    face(a,b,c) -> hash = a+b+c
+    the map is contained in a vector<int*> meshTrifaceHash, where
+    * meshTrifaceHash[hash][0] is the number of faces with a+b+c = hast
+    * meshTrifaceHash[hash][1],...,meshTrifaceHash[hash][p] point to these faces
+    
+    
+
+    */
 void Mesh::hashTriFaces()
 {
   int n_points = vertex.size();
@@ -392,6 +402,7 @@ void Mesh::createFaceToTetrahedraMap()
 
 }
 
+
 // find the index of the face with vertices a,b,c
 // return -1 if face is not found
 ///@todo extend this to quadrilateral faces
@@ -421,13 +432,14 @@ int Mesh::findTriFace(int a, int b, int c)
     if(found == 3)
       return triface;
   }
-  Output::print("Mesh::findTriFace() ** WARNING ** no face with vertices",
+  Output::print("Mesh::findTriFace() ** WARNING ** no face with vertices ",
 		a,",",b,",",c," found.");
   return -1;
 }
 
 void Mesh::computeNumberOfBoundaryFaces()
 {
+  int n_inner_faces = 0;
   this->n_boundary_faces = 0;
 
   if (faceToTetra.size()==0)
@@ -440,13 +452,133 @@ void Mesh::computeNumberOfBoundaryFaces()
   {
     // increase the number of boundary faces if face[i] is on the boundary
     if ( (faceToTetra[i][0] < 0)  || (faceToTetra[i][1] < 0) ) 
-      this->n_boundary_faces++;   
+      this->n_boundary_faces++;
+    else
+      n_inner_faces++;
   }
 
-  Output::print("I found ",this->n_boundary_faces, " boundary faces");
+  Output::print("Mesh::computeNumberOfBoundaryFaces() - I found ",
+		this->n_boundary_faces, " boundary faces and ",
+		n_inner_faces, " inner faces");
 
+  // check if faces are missing
+  if ( triangle.size() != (2*tetra.size()+n_boundary_faces/2) )
+  {
+    Output::print("Mesh::computeNumberOfBoundaryFaces() ** WARNING: it looks like some face is missing, ",
+		  " n.triangles = ", triangle.size(), ", expected = ",2*tetra.size()+n_boundary_faces/2, " **");
+  }
+  
 }
 
+/**
+   This function checks if the mesh read from file contains all the faces
+   (inner+boundary). If not, the missing faces are created.
+
+   Note: this function create a local hash vector (to handle the faces
+   read from the original file). This vector is deleted at the end, and
+   the meshTrifaceHash has to be created later.
+   
+   This function should be called only once.
+ */
+void Mesh::createInnerFaces()
+{
+  Output::print("Mesh::createInnerFaces()");
+  
+  std::vector< std::vector<int> > localHash;
+  int n_points = vertex.size();
+  localHash.resize(3*n_points);
+  for(unsigned int i=0; i<localHash.size(); i++)
+    localHash[i].resize(0);
+  
+  for(int i=0;i<triangle.size();++i)
+  {
+    int hash = triangle[i].nodes[0]+triangle[i].nodes[1]+triangle[i].nodes[2];
+
+    if( localHash[hash].size()==0 )
+    {
+      localHash[hash].resize(2);
+      localHash[hash][0] = 1;
+      localHash[hash][1] = i;
+    }
+    else
+    {
+      localHash[hash][0]++;
+      localHash[hash].push_back(i);
+    }
+  }
+  // now check if there are missing faces
+  int n_created_faces = 0;
+  // map vertex id -> face
+  int FaceVertex[][3] = { {0, 1, 2} ,{0, 3, 1}, {2, 1, 3}, {0, 2, 3} };
+  // loop over tetra
+  for (unsigned int i=0; i<tetra.size(); i++)
+  {
+    
+    // loop over faces
+    for (unsigned int face=0; face<4; face++)
+    {
+      int a = tetra[i].nodes[FaceVertex[face][0]];
+      int b = tetra[i].nodes[FaceVertex[face][1]];
+      int c = tetra[i].nodes[FaceVertex[face][2]];
+      int hash = a + b + c;
+      // check if face j is in the list of triangles
+      if(localHash[hash].size() == 0)
+      {
+	// face is missing
+	n_created_faces++;
+	meshTriangle new_triangle;
+	new_triangle.nodes[0] = a;
+	new_triangle.nodes[1] = b;
+	new_triangle.nodes[2] = c;
+	new_triangle.reference = 0;
+	triangle.push_back(new_triangle);
+	Output::print<4>(" Create face ",a," ",b," ",c);
+	// update the hash vector (to avoid creating twice the same face)
+	localHash[hash].resize(2);
+	localHash[hash][0] = 1;
+	localHash[hash][1] = triangle.size()-1;
+      }
+      else
+      {
+	int count = localHash[hash][0];
+
+	int faces_found = 0;
+	for(int i=1;i<=count;++i)
+	{
+	  int triface = localHash[hash][i];
+	  int found = 0;
+	  for(int j=0;j<3;++j)
+	  {
+	    int vertex = triangle[triface].nodes[j];
+	    if(a == vertex || b == vertex || c == vertex)
+	      ++found;
+	  }
+	  if(found == 3)
+	    faces_found++;	    
+	}
+	if (faces_found==0)
+	{
+	  // face is missing
+	  n_created_faces++;
+	  Output::print<4>(" Create face ",a," ",b," ",c);
+	  meshTriangle new_triangle;
+	  new_triangle.nodes[0] = a;
+	  new_triangle.nodes[1] = b;
+	  new_triangle.nodes[2] = c;
+	  new_triangle.reference = 0;
+	  triangle.push_back(new_triangle);
+	  // update the hash vector (to avoid creating twice the same face)
+	  localHash[hash][0]++;
+	  localHash[hash].push_back(triangle.size()-1);//
+	}
+      }
+      
+    } // loop over faces
+  } // loop over tetra
+  Output::print("Mesh::createInnerFaces() finished. Created ",
+		n_created_faces, " triangles");
+  
+}
 // read a PRM file into a Boundary class
 void Mesh::setBoundary(std::string PRM)
 {
