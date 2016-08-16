@@ -89,7 +89,6 @@ void check(ParameterDatabase& db, int ansatz_order,
 
   compare(cd3d, errors, tol);
 
-  Output::print("end");
 
 }
 
@@ -208,7 +207,7 @@ int main(int argc, char* argv[])
   db.add("boundary_file", "Default_UnitCube", "");
   db.add("geo_file", "Default_UnitCube_Hexa", "",
 	 {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra",
-	     "/Users/caiazzo/work/src/ParMooN/build/test/tmp_unicube.mesh"});
+	     "tmp_unicube.mesh"});
   
   TDatabase::ParamDB->DRIFT_Z = 1;
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
@@ -239,9 +238,9 @@ int main(int argc, char* argv[])
 
   // part 1: solve with the .mesh input
   // change the database to read the mesh file 
-  db["geo_file"] = "/Users/caiazzo/work/src/ParMooN/build/test/tmp_unicube.mesh";
+  db["geo_file"] = "tmp_unicube.mesh";
   check(db, 1, errors, tol);
-  //system("rm -f tmp_unicube.mesh");
+  system("rm -f tmp_unicube.mesh");
   
 #ifdef _MPI
   MPI_Finalize();
