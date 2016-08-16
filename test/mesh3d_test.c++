@@ -60,7 +60,7 @@ void check(ParameterDatabase& db, int ansatz_order,
   
   // write domain on a mesh file
   TCollection *coll = domain.GetCollection(It_Finest, 0);
-  coll->writeMesh("/Users/caiazzo/work/src/ParMooN/build/test/tmp_unicube.mesh");
+  coll->writeMesh("tmp_unicube.mesh");
 
   // Intial refinement and grabbing of grids for multigrid.
 #ifdef _MPI
@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
   // change the database to read the mesh file 
   db["geo_file"] = "tmp_unicube.mesh";
   check(db, 1, errors, tol);
-  system("rm -f tmp_unicube.mesh");
+  system("rm tmp_unicube.mesh");
   
 #ifdef _MPI
   MPI_Finalize();
