@@ -273,6 +273,15 @@ target_compile_definitions(tnse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(tnse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### MESH(3D) ###
+# Standard executable target.
+add_executable(mesh3d ${PROJECT_SOURCE_DIR}/3DPrograms/mesh3d_ParMooN.C)
+set_target_properties(mesh3d PROPERTIES OUTPUT_NAME parMooN_mesh3d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(mesh3d PUBLIC -D__3D__)
+# Link in the required libraries.
+target_link_libraries(mesh3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ###############################################################################
 # building the documentation using doxygen
 find_package(Doxygen)

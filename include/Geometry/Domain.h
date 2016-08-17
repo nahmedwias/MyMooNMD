@@ -340,7 +340,12 @@ class TDomain
        * @todo this function is work in progress (08.2016)
        */
       void GenerateFromTetgen(TTetGenMeshLoader& tgml);
-
+      void GenerateFromMesh(Mesh& m);
+      void buildBoundary(Mesh& m);
+      void buildParMooNMesh(Mesh& m);
+      void setVertices(Mesh& m);
+      void allocRootCells(Mesh& m);
+      void distributeJoints(Mesh& m);
       /**
        * @brief build the boundary of a tetrahedral mesh
        *

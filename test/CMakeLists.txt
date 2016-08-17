@@ -194,7 +194,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(NAME multigrid_2d COMMAND ParMooN_test_multigrid_2d)
   add_test(NAME multigrid_3d COMMAND ParMooN_test_multigrid_3d)
 
-  
+ #mesh3d tests
+  set(_EXEC_NAME ParMooN_test_mesh3d_seq)
+  set(_FILE_NAME mesh3d_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #umfpack
+  add_test(NAME mesh3d COMMAND ParMooN_test_mesh3d_seq umfpack)
+
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
   
   #####################################################

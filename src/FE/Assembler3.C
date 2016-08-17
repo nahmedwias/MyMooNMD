@@ -49,6 +49,7 @@ void Assembler3::Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_s
                             int AssemblePhaseID)
 {
 #ifdef __3D__
+
     ErrThrow("Assembler not working in 3D");
 #endif
     
@@ -70,6 +71,7 @@ void Assembler3::Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_s
         // must be initialized to something.
         Param[i]=new double[10]{0.0};
     }
+    
     
   // ########################################################################
   // store information in local arrays
@@ -884,6 +886,10 @@ void Assembler3::loop_over_cells(const TFESpace2D** fespaces,
                     double FunctionalValues[MaxN_BaseFunctions2D];
                     double PointValues[MaxN_PointsForNodal2D];
                     int N_LinePoints;
+#ifdef __3D__
+                    double z0, z1;
+#endif
+                    
                     
                     if(Cond0 == Cond1)
                     {
@@ -929,9 +935,14 @@ void Assembler3::loop_over_cells(const TFESpace2D** fespaces,
                                 ->ChangeBF(Coll, cell, N_LinePoints, JointValues);
                                 // get vertices of boundary edge
                                 
+#ifdef __3D__
+                                
+                                cell->GetVertex(m)->GetCoords(x0, y0,z0);
+                                cell->GetVertex((m+1) % N_Joints)->GetCoords(x1, y1,z1);
+#else
                                 cell->GetVertex(m)->GetCoords(x0, y0);
                                 cell->GetVertex((m+1) % N_Joints)->GetCoords(x1, y1);
-                                
+#endif
                                 // compute (half of the) length of the boundary edge
                                 hE = sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0))/2;
                                 // compute boundary integral
@@ -967,8 +978,15 @@ void Assembler3::loop_over_cells(const TFESpace2D** fespaces,
                                 JointValues=TFEDatabase2D::GetJointValues2D(
                                                                             BaseFuncts[CurrentElement], LineQuadFormula, m);
                                 // get vertices of boundary edge
+#ifdef __3D__
+                                
+                                cell->GetVertex(m)->GetCoords(x0, y0,z0);
+                                cell->GetVertex((m+1) % N_Joints)->GetCoords(x1, y1,z1);
+#else
                                 cell->GetVertex(m)->GetCoords(x0, y0);
                                 cell->GetVertex((m+1) % N_Joints)->GetCoords(x1, y1);
+#endif
+
                                 // compute (half of the) length of the boundary edge
                                 hE = sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0))/2;
                                 // compute boundary integral
