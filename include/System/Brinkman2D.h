@@ -120,6 +120,8 @@ protected:
      */
     std::vector<double> norms_of_residuals;
     
+
+    
 public:
     /**
      * @brief a simple struct storing one set of residuals
@@ -148,6 +150,12 @@ public:
         /// @brief write out the three numbers to a stream.
         friend std::ostream& operator<<(std::ostream& s, const Residuals& n);
     };
+    
+//    BoundCondFunct2D *boundary_conditions[3];
+   //BoundValueFunct2D **BoundaryValues;
+
+    
+    
 protected:
     
     /**

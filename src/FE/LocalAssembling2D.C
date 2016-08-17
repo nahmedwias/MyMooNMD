@@ -19,7 +19,7 @@
 
 #include <TNSE2D_FixPo.h> // local assembling routines for 2D Time dependent Navier-Stokes
 #include <TNSE2D_FixPoRot.h>
-#include <TNSE2D_ParamRout.h> 
+#include <TNSE2D_ParamRout.h>
 
 #include <MooNMD_Io.h>
 #include <string.h>
@@ -559,7 +559,6 @@ LocalAssembling2D::~LocalAssembling2D()
   delete [] OrigValues;
   delete [] Needs2ndDerivatives;
 }
-
 
 void LocalAssembling2D::GetLocalForms(int N_Points, double *weights, 
                                       double *AbsDetjk, double *X, double *Y,

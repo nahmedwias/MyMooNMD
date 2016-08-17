@@ -2,6 +2,7 @@
 #include <MainUtilities.h> // get velocity and pressure space
 #include <LinAlg.h> // DDot
 #include <DirectSolver.h>
+#include <Assembler3.h>
 #include <Assemble2D.h>
 #include <BoundaryAssembling2D.h>
 
@@ -191,9 +192,12 @@ void Brinkman2D::assemble()
         size_t N_Rhs = 2; // is 3 if NSE type is 4 or 14
         double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; // third place gets only filled
         const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
+        
         BoundCondFunct2D * boundary_conditions[3] = {
             v_space->GetBoundCondition(), v_space->GetBoundCondition(),
             p_space->GetBoundCondition() };
+
+        
         std::array<BoundValueFunct2D*, 3> non_const_bound_values;
         non_const_bound_values[0] = example.get_bd()[0];
         non_const_bound_values[1] = example.get_bd()[1];
@@ -212,10 +216,8 @@ void Brinkman2D::assemble()
         else
         {type=Brinkman2D_Galerkin1;}
         
-        LocalAssembling2D la(type, fe_functions,
-                             this->example.get_coeffs());
-        
-        
+//        LocalAssembling2D la(type, fe_functions,
+//                             this->example.get_coeffs());
         
         std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
         
@@ -244,11 +246,20 @@ void Brinkman2D::assemble()
         N_Rhs = 3;
         
         // call the assemble method with the information that has been patched together
-        Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
-                   n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
-                   boundary_conditions, non_const_bound_values.data(), la);
+// //old Assemble2D.C function
+//        Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
+//                       n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
+//                       boundary_conditions, non_const_bound_values.data(), la);
         
         
+        
+        Assembler3 Ass(type, fe_functions, this->example.get_coeffs());
+        
+        Ass.Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
+                       n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
+                       //boundary_conditions,
+                       example);
+//                       non_const_bound_values.data());//,la);
         
         //-----------------------------------------------------------------------------------------------------------//
         // Weakly Imposing Boundary Conditions - Boundary Integrals
