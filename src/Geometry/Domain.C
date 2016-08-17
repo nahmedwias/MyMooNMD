@@ -90,7 +90,7 @@ ParameterDatabase get_default_domain_parameters()
    
    db.add("mesh_tetgen_file", std::string("Wuerfel"),
          "This files describes the computational mesh. Typically this files"
-         " has the extension 'smesh', 'node' or 'poly'. "
+         " has the extension 'mesh, 'smesh', 'node' or 'poly'. "
          " currently only the smesh files are supported");
 
   return db;
@@ -99,41 +99,48 @@ ParameterDatabase get_default_domain_parameters()
 
 // Constructor
 TDomain::TDomain(const ParameterDatabase& param_db) :
-db(get_default_domain_parameters())
+  Interfaces(nullptr),db(get_default_domain_parameters())
 {
-    RefLevel = 0;
-    Output::print<4>("domain is initialized");
-    db.merge(param_db, false);
+  RefLevel = 0;
+  Output::print<4>("domain is initialized");
+  db.merge(param_db, false);
+  
+  std::string geoname = db["geo_file"];
+  std::string boundname = db["boundary_file"];
+  std::string smesh = db["mesh_tetgen_file"];
+  
+  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" )
+      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
+      )
+  {
+    this->Init(boundname.c_str(), geoname.c_str());
+    Output::print<4>("GEO and PRM files are selected");
+  }
+  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
+	   && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
+	   )
+  {
+    Output::print<4>("mesh and PRM files are selected");
+    this->InitFromMesh(boundname.c_str(), geoname.c_str());
     
-    std::string geoname = db["geo_file"];
-    std::string boundname = db["boundary_file"];
-    std::string smesh = db["mesh_tetgen_file"];
-    
-    if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" )
-       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
-       )
-    {
-        this->Init(boundname.c_str(), geoname.c_str());
-        Output::print<4>("GEO and PRM files are selected");
-    }
-    
-    
-    if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
-       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
-       )
-    {
-        this->InitFromMesh(boundname.c_str(), geoname.c_str());
-        Output::print<4>("mesh and PRM files are selected");
-    }
-    
-    
+  }
 #ifdef __3D__
+  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" ) )
+  {
+    // note: in 3D, we allow domain initialization withtou PRM
+    Output::print<>("Initialize (3D) Domain using mesh file ",geoname.c_str());
+    this->InitFromMesh(boundname.c_str(), geoname.c_str());
+  }
   else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
   {
-    // intialize mesh using tetegen mesh loader
-    TTetGenMeshLoader tetgen(smesh, db);
-    //tetgen.Generate(*this);
-    GenerateFromTetgen(tetgen);
+    // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
+    TTetGenMeshLoader tetgen(smesh, db);   
+    // convert the mesh into ParMooN Mesh object
+    Mesh m(tetgen.meshTetGenOut);
+    // generate vertices, cells and joint
+    GenerateFromMesh(m);
+    // test: write the mesh on a file
+    m.writeToMesh("test_parmoon.mesh"); 
   }
 #endif
   else 
@@ -146,7 +153,7 @@ db(get_default_domain_parameters())
 //TODO This domain constructor, which is also responsible for read-in of the
 // old database, is to be reomved soon.
 TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
-    db(get_default_domain_parameters())
+  Interfaces(nullptr),db(get_default_domain_parameters())
 {
   RefLevel = 0;
   
@@ -161,31 +168,46 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
   std::string boundname = db["boundary_file"];
   std::string smesh = db["mesh_tetgen_file"];
   
-    
   if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
-    )
+      )
   {
     this->Init(boundname.c_str(), geoname.c_str());
-  }
+    Output::print<4>("GEO and PRM files are selected");
     
-    if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
-       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
-       )
-    {Output::print<>("OK");
-        this->InitFromMesh(boundname.c_str(), geoname.c_str());
-        Output::print<4>("mesh and PRM files are selected");
-    Output::print<>("OK");
-    }
+  }
+  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
+	   && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
+	   )
+  {
+    Output::print<>("Initialize Domain using mesh file ",geoname.c_str(),
+		    " and PRM file ",boundname.c_str());
+    this->InitFromMesh(boundname.c_str(), geoname.c_str());
+  }
     
 #ifdef __3D__
-  else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
+  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" ) )
+  {
+    // note: in 3D, we allow domain initialization withtou PRM
+    Output::print<>("Initialize (3D) Domain using mesh file ",geoname.c_str());
+    this->InitFromMesh(boundname.c_str(), geoname.c_str());
+  }
+  
+  else if( (smesh.substr(smesh.find_last_of(".")+1) == "smesh")||
+	   (smesh.substr(smesh.find_last_of(".")+1) == "mesh") )
   {
     // intialize mesh using tetegen mesh loader
-    TTetGenMeshLoader tetgen(smesh, db);
-    //tetgen.Generate(*this);
-    GenerateFromTetgen(tetgen);
-  }
+    Output::print<>("Initialize Domain using the surface mesh file ", smesh.c_str());
+
+    // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
+    TTetGenMeshLoader tetgen(smesh, db);   
+    // convert the mesh into ParMooN Mesh object
+    Mesh m(tetgen.meshTetGenOut);
+    // generate vertices, cells and joint
+    GenerateFromMesh(m);
+    // test: write the mesh on a file
+    m.writeToMesh("test2.mesh");
+}
 #endif
   else 
   {
@@ -197,7 +219,8 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
 TDomain::~TDomain()
 {
   delete [] StartBdCompID;
-  delete [] Interfaces;
+  if (Interfaces)
+    delete [] Interfaces;
   for(int i = 0; i < N_BoundParts; ++i)
     delete BdParts[i];
   delete [] BdParts;
@@ -975,8 +998,41 @@ void TDomain::Init(const char *PRM, const char *GEO)
   }
   else
   {
-    Output::print("** WARNING: the (x)GEO files will be no longer supported. Use .mesh instead **");
 
+    // error message: .GEO file are no longer supported. They can be used to initialize a domain
+    // only if the purpose is to covert the .GEO into a .mesh
+
+    if (!strcmp(db["mesh_file"],"__nofile__"))
+    {
+      Output::print("** **************************************************************** **");
+      Output::print("** ERROR: the (x)GEO files are no longer supported in ParMooN (2D): **");
+      Output::print("** The file format .mesh should be used instead                     **");
+      Output::print("**                                                                  **");
+      Output::print("** If you use a standard geometry input (e.g. UnitSquare.*)         **");
+      Output::print("** you can find the corresponding .mesh in the src/data/ directory. **");
+      Output::print("** Otherwise, you can convert your .GEO file to a .mesh, using the  **");
+      Output::print("** same PRM file for the boundary description, using the geo2mes2d. **");
+      Output::print("**                                                                  **");
+      Output::print("** To do this:                                                      **");
+      Output::print("** (1) compile the conversion progam with 'make geo2mesh2d'         **");
+      Output::print("** (2) create an input.dat with                                     **");
+      Output::print("**     boundary_file: [your PRM file]                               **");
+      Output::print("**     geo_file: [your GEO or xGEO file]                            **");
+      Output::print("**     mesh_file: [the new mesh file]                               **");
+      Output::print("**  (an example of suitable input file is available in src/data/    **");
+      Output::print("** (3) run '[path/]geo2mesh2d input.dat'                            **");
+      Output::print("** (4) replace 'geo_file: [the new mesh file]' in your input file   **");
+      Output::print("**                                                                  **");
+      Output::print("** Note: using .GEO and .PRM files is only allowed with the         **");
+      Output::print("** purpose of converting .GEO -> .mesh                              **");      
+      Output::print("** **************************************************************** **");
+      exit(1);
+    }      
+    else 
+    {
+      Output::print("** Converting .GEO to .mesh **");    
+    }
+	
     // "GEO" interpreted as file path to GEO-file.
     // check if it actually is an .xGEO-file
     bool isxGEO = isExtendedGEO(GEO);
@@ -1157,8 +1213,9 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
   delete [] KNPR;
   delete [] ELEMSREF;
 #else
-  ErrMsg("TDomain::InitFromMesh(..,..) not yet implemented in 3D ** ");
-  exit(1);
+  // read mesh
+  Mesh m(MESHFILE);
+  GenerateFromMesh(m);
 #endif // __2D__
 }
 
@@ -3787,6 +3844,314 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
 
 
 #ifdef __3D__
+
+
+void TDomain::GenerateFromMesh(Mesh& m)
+{
+  // create inner faces (if needed)
+  m.createInnerFaces();
+  
+  /** 
+      compute number boundary faces:
+      This step at the moment is necessary to initialize some useful arrays
+      (e.g. boundary faces)
+  */
+  m.computeNumberOfBoundaryFaces();
+  
+  // build the boundary parts
+  this->buildBoundary(m);
+
+  // build the mesh
+  this->buildParMooNMesh(m);
+  
+  // initialize iterators
+  TDatabase::IteratorDB[It_EQ]->SetParam(this);
+  TDatabase::IteratorDB[It_LE]->SetParam(this);
+  TDatabase::IteratorDB[It_Finest]->SetParam(this);
+  TDatabase::IteratorDB[It_Between]->SetParam(this);
+  TDatabase::IteratorDB[It_OCAF]->SetParam(this);  
+}
+
+// note this function needs:
+// list of triangles (faces)
+// number of boundary faces
+// adjacency (1,-1 for boundary faces)
+// list of points
+///@todo write part of the function inside the Mesh class, here set only the BdParts
+void TDomain::buildBoundary(Mesh& m)
+{
+  // we consider only 1 boundary part
+  ///@todo do we need to take into account the general case?
+  this->N_BoundParts = 1;
+  // vector of boundary parts
+  this->BdParts = new TBoundPart* [this->N_BoundParts];
+
+  // the number of boundary components is computed from the adjacency of
+  // tetgen mesh. See TTetGenMeshLoaden::CreateAdjacency()
+  this->N_BoundComps = m.n_boundary_faces;
+  meshBoundComps.resize(this->N_BoundComps); 
+  Output::print("TDomain::buildBoundary() - N_BoundComps: ", this->N_BoundComps);
+  this->BdParts[0] = new TBoundPart(this->N_BoundComps);
+  
+  // StartBdCompID[i] gives the iindex of the element in BdParts
+  // where the BdComp i starts. The last element is equal to to N_BoundParts
+  this->StartBdCompID = new int [this->N_BoundParts+1];
+
+  // we now consider only a boundary components,
+  // i.e. StartBdCompID[0] = 0, StartBdCompID[1] = N_BoundComps
+  ///@todo check how we can extend this to multiple boundary markers
+  this->StartBdCompID[0] = 0; 
+  this->StartBdCompID[1] = this->N_BoundComps;
+
+
+  // in order to describe the boundary, each boundary triangle is considered
+  // to be a boundary component of the (single) boundary part.
+  // Hence,
+  // (*) first, we check if the triangle is on the boundary
+  // (*) second, given the vertices, we define a TBdPlane describing the triangle
+  int n_trifaces = m.triangle.size();
+
+  int counter=0; // count the number of boundary faces found
+
+  if(m.boundaryFacesMarker.size() == 0)
+  {
+    m.boundaryFacesMarker.resize(n_trifaces);
+  }
+  
+  for(int i=0;i<n_trifaces;++i)
+  {
+    if(m.faceToTetra[i][0] == -1 || m.faceToTetra[i][1] == -1)
+    {
+      // the face is on the boundary
+      meshBoundComps.at(counter) = new TBdPlane(counter);
+
+      double p[3], a[3], b[3], n[3];
+      ///@attention the lists of nodes starts from 1 (not from 0)
+      p[0] = m.vertex[ m.triangle[i].nodes[0] - 1].x;
+      a[0] = m.vertex[ m.triangle[i].nodes[1] - 1].x - p[0];
+      b[0] = m.vertex[ m.triangle[i].nodes[2] - 1].x - p[0];
+
+      p[1] = m.vertex[ m.triangle[i].nodes[0] - 1].y;
+      a[1] = m.vertex[ m.triangle[i].nodes[1] - 1].y - p[1];
+      b[1] = m.vertex[ m.triangle[i].nodes[2] - 1].y - p[1];
+
+      p[2] = m.vertex[ m.triangle[i].nodes[0] - 1].z;
+      a[2] = m.vertex[ m.triangle[i].nodes[1] - 1].z - p[2];
+      b[2] = m.vertex[ m.triangle[i].nodes[2] - 1].z - p[2];
+      
+      // normalize vector a
+      double fac = sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
+      a[0] /= fac;
+      a[1] /= fac;
+      a[2] /= fac;
+      // normalize vector b
+      fac = sqrt(b[0]*b[0]+b[1]*b[1]+b[2]*b[2]);
+      b[0] /= fac;
+      b[1] /= fac;
+      b[2] /= fac;
+      // cross product of a and b
+      n[0] = a[1]*b[2] - a[2]*b[1];
+      n[1] = a[2]*b[0] - a[0]*b[2];
+      n[2] = a[0]*b[1] - a[1]*b[0];
+      // normalize n
+      fac = sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+      n[0] /= fac;
+      n[1] /= fac;
+      n[2] /= fac;
+
+      ((TBdPlane*) meshBoundComps[counter])->SetParams(p[0], p[1], p[2],
+                                                       a[0], a[1], a[2],
+                                                       n[0], n[1], n[2]);
+      ++counter;
+      
+      // the id of the boundary face is taken as the attribute of the triangle
+      // note: later, trifacemarkerlist=0 is used to identify inner faces (see below)
+      m.boundaryFacesMarker[i] = counter;
+      Output::print<4>("TDomain::buildBoundary() Triangle ",i,
+		       " boundayMarker = ",m.boundaryFacesMarker[i],
+		       " attribute = ",m.triangle[i].reference);
+    }
+    else // not a boundary face
+      m.boundaryFacesMarker[i] = 0;
+  }
+
+  // check if the number of boundary components is consistent
+  assert(counter==N_BoundComps);
+  // initialize ParMooN BdParts and the BdComp
+  for(int i=0; i<this->N_BoundComps; i++)
+    this->BdParts[0]->SetBdComp(i, meshBoundComps[i]);
+  
+
+}
+
+
+void TDomain::buildParMooNMesh(Mesh& m)
+{
+  // create a vector<TVertex*> from the list of pointa
+  this->setVertices(m);
+  // allocate memory for CellTree and set the vertices
+  this->allocRootCells(m);  
+  // create joints and set joints type
+  this->distributeJoints(m);
+}
+
+/**
+ * @brief set the coordinates of the vertices
+ *
+ * This functions reads the vertices coordinates from meshTetGenOut
+ * and creates TVertex*, stored in the vector meshVertices
+ * Moreover, bounds for the domain are computed
+ */
+void TDomain::setVertices(Mesh& m)
+{
+ 
+  double xmin=0, xmax=0, ymin=0, ymax=0, zmin=0, zmax=0;
+  meshVertices.resize(m.vertex.size()); 
+  Output::print("TDomain::setVertices() total number of vertices: ",  meshVertices.size());
+
+  for(unsigned int i=0;i<meshVertices.size();++i)
+  {
+    double x = m.vertex[i].x;
+    double y = m.vertex[i].y;
+    double z = m.vertex[i].z;
+
+    if(i > 0)
+    {
+      if(xmin > x) xmin = x;
+      if(xmax < x) xmax = x;
+
+      if(ymin > y) ymin = y;
+      if(ymax < y) ymax = y;
+
+      if(zmin > z) zmin = z;
+      if(zmax < z) zmax = z;
+    }
+    else
+    {
+      xmin = xmax = x;
+      ymin = ymax = y;
+      zmin = zmax = z;
+    }
+
+    meshVertices.at(i)=new TVertex (x, y, z);
+  }
+
+  StartX = xmin;
+  BoundX = xmax - xmin;
+
+  StartY = ymin;
+  BoundY = ymax - ymin;
+
+  StartZ = zmin;
+  BoundZ = zmax - zmin;
+
+}
+
+void TDomain::allocRootCells(Mesh& m)
+{
+  TVertex *Vertex;
+  TMacroCell *Cell;
+  // set the number of total cells and allocate the cell array
+  this->N_RootCells = m.tetra.size();
+  Output::print<3>("TDomain::allocRootCells() number of tetrahedra: ",
+		   this->N_RootCells);
+
+  this->CellTree = new TBaseCell* [this->N_RootCells];
+  // set the vertices of each cell, reading from meshVertices
+  for(int i=0;i<this->N_RootCells;++i)
+  {
+    Cell = new TMacroCell (TDatabase::RefDescDB[Tetrahedron], 0);
+    this->CellTree[i] = Cell;
+    
+    for(int j=0;j<4;++j)
+    {
+      Vertex = meshVertices.at(m.tetra[i].nodes[j]-1);
+      Cell->SetVertex(j, Vertex);
+    }
+    Cell->SetPhase_ID((int) m.tetra[i].reference);
+    
+  }
+
+}
+
+///@attention the functions hashTriFaces(), CreateAdjacency() must have been called before
+void TDomain::distributeJoints(Mesh& m)
+{
+  // allocate the joints array
+  meshJoints.resize(m.triangle.size());
+  Output::print("number of joints: ", meshJoints.size());
+
+  // set the faces for each joint
+  for(unsigned int i=0; i<meshJoints.size(); ++i)
+  {
+    // find element that contain this face
+    if(m.boundaryFacesMarker[i] == 0)// inner joints
+    {
+      int left = m.faceToTetra[i][0];
+      int right = m.faceToTetra[i][1];
+      Output::print<4>("TDomain::distributeJoints() Joint ", i ," Tetra: ", left, " and ", right);
+      meshJoints.at(i) = new TJointEqN (CellTree[left], CellTree[right]);
+    }
+    else // boundary joints
+    {
+      Output::print<5>("Joint ", i, " is a boundary joint");
+      int bdcomp = m.boundaryFacesMarker[i] - 1;
+      TBoundComp3D* BoundComp = meshBoundComps[bdcomp];
+      meshJoints.at(i)=new TBoundFace (BoundComp);
+    }
+  }
+
+  
+  for(unsigned int i=0;i<m.tetra.size();++i)
+  {
+    const int *TmpFV, *TmpLen;
+    int MaxLen;
+    
+    TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
+    ShapeDesc->GetFaceVertex(TmpFV, TmpLen, MaxLen);
+
+    for(int j=0;j<4;++j)
+    {
+      ///@attention make sure that the vector meshTrifaceHash has been created 
+      int triface = m.findTriFace(m.tetra[i].nodes[TmpFV[j*MaxLen  ]],
+				  m.tetra[i].nodes[TmpFV[j*MaxLen+1]],
+				  m.tetra[i].nodes[TmpFV[j*MaxLen+2]]);
+
+      // check that a face has been found
+      assert (triface != -1);
+
+      CellTree[i]->SetJoint(j, meshJoints.at(triface));
+
+      // correct parameters for boundary faces
+      if(meshJoints.at(triface)->GetType() == BoundaryFace)
+      {
+
+        TBoundFace *BoundFace = (TBoundFace*) meshJoints.at(triface);
+        TBoundComp3D *BoundComp = BoundFace->GetBoundComp();
+        double param1[4], param2[4];
+
+        for(int k=0;k<TmpLen[j];++k)
+        {
+	  double x, y, z, t, s;
+	  CellTree[i]->GetVertex(TmpFV[MaxLen*j+k])->GetCoords(x,y,z);
+          BoundComp->GetTSofXYZ(x,y,z, t, s);
+
+          param1[k] = t;
+          param2[k] = s;
+        }
+        BoundFace->SetParameters(param1, param2);
+      }
+    }
+  }
+  
+  // set map type
+  for(unsigned int i=0;i<meshJoints.size();++i)
+  {
+    meshJoints[i]->SetMapType();
+  }
+
+}
+
 void TDomain::GenerateFromTetgen(TTetGenMeshLoader& tgml)
 {
   // check file extensions, call tetgen and generate the volume mesh,
@@ -3794,6 +4159,7 @@ void TDomain::GenerateFromTetgen(TTetGenMeshLoader& tgml)
   // note: the mesh is contained in the  (tetgenio) meshTetGenOut object
   tgml.GenerateMesh();
 
+  /*
   // build the boundary parts
   this->buildBoundary(tgml);
 
@@ -3806,8 +4172,10 @@ void TDomain::GenerateFromTetgen(TTetGenMeshLoader& tgml)
   TDatabase::IteratorDB[It_Finest]->SetParam(this);
   TDatabase::IteratorDB[It_Between]->SetParam(this);
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);  
+  */
 }
 
+// =======================================
 // note this function needs:
 // list of triangles (faces)
 // number of boundary faces
@@ -3860,7 +4228,7 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
     if(tgml.meshTetGenOut.adjtetlist[2*i+1] == -1 ||
       tgml.meshTetGenOut.adjtetlist[2*i  ] == -1)
     {
-      // the new boundary face is a triangle
+      // the face is on the boundary
       meshBoundComps.at(counter) = new TBdPlane(counter);
       double p[3], a[3], b[3], n[3];
       p[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i  ]  ];
