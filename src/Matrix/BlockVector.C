@@ -265,9 +265,30 @@ void BlockVector::add(const double* x, const int i, double a)
 
 
 /** ************************************************************************ */
-double BlockVector::norm() const
+double BlockVector::norm(
+#ifdef _MPI
+    std::vector<const TParFECommunicator3D*> comms
+#endif
+) const
 {
+#ifndef _MPI
   return Dnorm(this->length(), this->get_entries());
+#elif _MPI
+  if (comms.size()==0)
+  {
+    //If comms is not provided, a default comm with size 0 is given, and
+    // the norm is calculated as it is in the seq case on each process,
+    // but it won't give the correct results. Once, all iterative solvers
+    // are correctly parallelised, the following warning can be converted
+    // to ErrThrow.
+    Output::warn<1>("BlockVector", "You are calculating the norm of a vector "
+        "in the parallel case, without providing the Communicators. This will "
+        "definitely give you a WRONG norm value in terms of consistency.");
+    return Dnorm(this->length(), this->get_entries());
+  }
+  else
+    return this->norm_global(comms);
+#endif
 }
 
 /** ************************************************************************ */

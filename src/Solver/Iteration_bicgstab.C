@@ -33,10 +33,10 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
   //Vector rtilde = r;
   Vector rtilde(r);
   
-  double normb = norm(rhs);
+  double normb = rhs.norm();
   if (normb == 0.0)
     normb = 1;
-  double resid = norm(r) / normb;
+  double resid = r.norm() / normb;
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0))
   {
@@ -48,7 +48,7 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
     rho_1 = dot(rtilde, r);
     if (rho_1 == 0) // this should not ever happen
     {
-      return std::pair<unsigned int, double>(i, norm(r) / normb);
+      return std::pair<unsigned int, double>(i, r.norm() / normb);
     }
     if (i == 1)
       p = r;
@@ -68,7 +68,7 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
     //s = r - alpha * v;
     s = r;
     s.add_scaled(v, -alpha);
-    resid = norm(s) / normb;
+    resid = s.norm() / normb;
     if(this->converged(resid, i))
     {
       //solution += alpha * phat;
@@ -88,7 +88,7 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
     r.add_scaled(t, -omega);
     
     rho_2 = rho_1;
-    resid = norm(r) / normb;
+    resid = r.norm() / normb;
     Output::print<4>("bi-cgstab iteration ", i, " ", resid);
     if(this->converged(resid, i))
     {

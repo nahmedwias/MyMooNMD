@@ -211,8 +211,11 @@ class BlockVector
      * compute the 2-norm (square root of sum of squares)
      * Note: possibly implement other norms as well
      */
-    double norm() const;
-    
+    double norm(
+#ifdef _MPI
+        std::vector<const TParFECommunicator3D*> comms={}
+#endif
+    ) const;
 
 #ifdef _MPI
     /// Compute global norm of a vector distributed among the processes. All
@@ -361,7 +364,7 @@ class BlockVector
      * @param a,b the two BlockVectors
      */
     friend double dot(const BlockVector& a, const BlockVector& b);
-    friend double norm(const BlockVector& a) { return a.norm(); };
+
 };
 
 
