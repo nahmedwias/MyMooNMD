@@ -254,12 +254,21 @@ void Brinkman2D::assemble()
         
         
         Assembler3 Ass(type, fe_functions, this->example.get_coeffs());
-        
-        Ass.Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
-                       n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
-                       //boundary_conditions,
+	// Brinkmann-specific choices
+	std::vector<const TFESpace2D*> spaces_for_matrix;
+	spaces_for_matrix.resize(2);
+	spaces_for_matrix[0] = v_space;
+	spaces_for_matrix[1] = p_space;
+	
+        std::vector<const TFESpace2D*> spaces_for_rhs;
+	spaces_for_rhs.resize(3);
+	spaces_for_rhs[0] = v_space;
+	spaces_for_rhs[1] = v_space;
+	spaces_for_rhs[2] = p_space;
+
+	Ass.Assemble2D(s.matrix,s.rhs,
+		       spaces_for_matrix,spaces_for_rhs,
                        example);
-//                       non_const_bound_values.data());//,la);
         
         //-----------------------------------------------------------------------------------------------------------//
         // Weakly Imposing Boundary Conditions - Boundary Integrals
