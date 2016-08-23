@@ -262,6 +262,14 @@ int main(int argc, char** args)
   Output::print("\n\n ----------- PETSc solver -----------\n");
   time_measuring.reset();
   db["solver_type"] = "petsc";
+
+  std::string petsc_args = "-ksp_monitor"
+      "-ksp_type fgmres -pc_type fieldsplit -pc_fieldsplit_type schur"
+      " -fieldsplit_0_ksp_atol 1.0e-13 -fieldsplit_0_ksp_rtol 0."
+      " -fieldsplit_1_ksp_atol 1.0e-13 -fieldsplit_1_ksp_rtol 0.";
+
+  db["petsc_arguments"].impose(Parameter("petsc_arguments", petsc_args, ""));
+
   db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
