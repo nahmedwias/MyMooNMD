@@ -35,6 +35,9 @@
 #include <BoundaryAssembling2D.h>
 #include <MainUtilities.h> //for error measuring
 
+#include <Chrono.h>
+#include <algorithm>
+
 // compare the computed errors in the Brinkman2D object with the given ones in
 // the array
 void compareErrors(const Brinkman2D& brinkman2d, std::array<double, 4> errors)
@@ -66,11 +69,12 @@ void compareErrors(const Brinkman2D& brinkman2d, std::array<double, 4> errors)
 
 // Here the actual computations take place
 void check_brinkman2d(TDomain & domain, ParameterDatabase& db, int velocityCode,int pressureCode,
-                   std::array<double, 4> errors)
+                      std::array<double, 4> errors)
 {
     TDatabase::ParamDB->VELOCITY_SPACE = velocityCode;
     // automatically choose pressure space to get inf-sup stable pair
     TDatabase::ParamDB->PRESSURE_SPACE = pressureCode;
+    
     
     Brinkman2D brinkman2d(domain, db);
     brinkman2d.assemble();
@@ -84,7 +88,6 @@ void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
 {
     // default construct a domain object
     TDomain domain(db);
-    
     
     // refine grid up to the coarsest level
     for(unsigned int i = 0; i < nRefinements; i++)
@@ -104,7 +107,6 @@ void tests_on_quads_stab(unsigned int nRefinements, ParameterDatabase& db)
     // default construct a domain object
     TDomain domain(db);
     
-    
     // refine grid up to the coarsest level
     for(unsigned int i = 0; i < nRefinements; i++)
     {
@@ -113,16 +115,29 @@ void tests_on_quads_stab(unsigned int nRefinements, ParameterDatabase& db)
     
     std::array<double, 4> errors;
     Output::print("\nstarting with residual-based equal-order stabilization on P1/P1 on quads");
-    errors = {{ 0.20649934279357, 0.97672832044749,
-        1.3352827196758, 5.1734925650333 }};
-    check_brinkman2d(domain, db, 1,1, errors);
+    errors = {{ 0.19705857642589, 0.9699848994666, 1.3885370118417, 5.3424754563862}};
+
     
+    db.add("P1P1_stab", (bool) false, "" );
+    db.add("P2P2_stab", (bool) false, "" );
+    db.add("equal_order_stab_weight_P1P1", (double) 0.0 , "", (double) -10000,(double) 10000);
+    db.add("equal_order_stab_weight_P2P2", (double) 0.0 , "", (double) -10000,(double) 10000);
+    db.add("EFFECTIVE_VISCOSITY", (double) 1.0 , "", (double) -10000,(double) 10000);
+    db.add("VISCOSITY", (double) 1.0 , "", (double) -10000,(double) 10000);
+    db.add("PERMEABILITY", (double) 1.0 , "", (double) -10000,(double) 10000);
+    db["P1P1_stab"] = true;
+    db["equal_order_stab_weight_P1P1"] = 0.4;
+    
+    Output::print<>("HIERHIERHIERHIERHIERHIER");
+    db.info();
+    
+    check_brinkman2d(domain, db, 1,1, errors);
+
     // TODO
     //    Output::print("\nstarting with residual-based equal-order stabilization on P2/P2 on quads");
     //    errors = {{ 0.36989913525384, 8.7083491818683,
     //        0.1118419830706, 2.6029572935706 }};
     //    check_brinkman2d(domain, db, 1012, errors);
-    
 }
 
 void tests_on_quadsNitsche(unsigned int nRefinements, ParameterDatabase& db)
@@ -130,10 +145,10 @@ void tests_on_quadsNitsche(unsigned int nRefinements, ParameterDatabase& db)
     // default construct a domain object
     TDomain domain(db);
     
-//    db["n_nitsche_boundary"]=4;
-//    db["nitsche_boundary_id"]= (0, 1, 2, 3);
-//    db["nitsche_penalty"]= (1, 1, 1, 1);
-//    
+    //    db["n_nitsche_boundary"]=4;
+    //    db["nitsche_boundary_id"]= (0, 1, 2, 3);
+    //    db["nitsche_penalty"]= (1, 1, 1, 1);
+    //
     // refine grid up to the coarsest level
     for(unsigned int i = 0; i < nRefinements; i++)
     {
@@ -178,31 +193,31 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
         domain.RegRefineAll();
     }
     
-            // TODO
-//    std::array<double, 4> errors;
+    // TODO
+    //    std::array<double, 4> errors;
     
-
-//    Output::print("\nstarting with P2/P1 on triangles");
-//    errors = {{ 2.1136884064519, 23.120239110875,
-//        0.30277518654981, 4.4428829381584 }};
-//    check_brinkman2d(domain, db, 2, errors);
-//    
-
-//    Output::print("\nstarting with P1Mini on triangles");
-//    errors = {{ 1.7301620785317, 23.120239110875,
-//        0.32075488021636, 4.4428829381584 }};
-//    check_brinkman2d(domain, db, 101, errors);
-//    cout << "P1MINI works only on triangles" << endl;
-//    
-//    Output::print("\nstarting with residual-based equal-rder stabilization on P1/P1 on quads");
-//    errors = {{ 0.36989913525384, 8.7083491818683,
-//        0.1118419830706, 2.6029572935706 }};
-//    check_brinkman2d(domain, db, 1012, errors);
-//    
-//    Output::print("\nstarting with residual-based equal-order stabilization on P2/P2 on quads");
-//    errors = {{ 0.36989913525384, 8.7083491818683,
-//        0.1118419830706, 2.6029572935706 }};
-//    check_brinkman2d(domain, db, 1012, errors);
+    
+    //    Output::print("\nstarting with P2/P1 on triangles");
+    //    errors = {{ 2.1136884064519, 23.120239110875,
+    //        0.30277518654981, 4.4428829381584 }};
+    //    check_brinkman2d(domain, db, 2, errors);
+    //
+    
+    //    Output::print("\nstarting with P1Mini on triangles");
+    //    errors = {{ 1.7301620785317, 23.120239110875,
+    //        0.32075488021636, 4.4428829381584 }};
+    //    check_brinkman2d(domain, db, 101, errors);
+    //    cout << "P1MINI works only on triangles" << endl;
+    //
+    //    Output::print("\nstarting with residual-based equal-rder stabilization on P1/P1 on quads");
+    //    errors = {{ 0.36989913525384, 8.7083491818683,
+    //        0.1118419830706, 2.6029572935706 }};
+    //    check_brinkman2d(domain, db, 1012, errors);
+    //
+    //    Output::print("\nstarting with residual-based equal-order stabilization on P2/P2 on quads");
+    //    errors = {{ 0.36989913525384, 8.7083491818683,
+    //        0.1118419830706, 2.6029572935706 }};
+    //    check_brinkman2d(domain, db, 1012, errors);
 }
 
 
@@ -227,78 +242,69 @@ int main(int argc, char* argv[])
     // 1013    BDM_3
     
     // 101 P1Mini
-    //cout << "P1MINI works only on triangles" << endl;
+    // cout << "P1MINI works only on triangles" << endl;
     
-    TDatabase::ParamDB->VELOCITY_SPACE = 2;
+    // TDatabase::ParamDB->VELOCITY_SPACE = 2;
     // automatically choose pressure space to get inf-sup stable pair
-    TDatabase::ParamDB->PRESSURE_SPACE = 1;
+    // TDatabase::ParamDB->PRESSURE_SPACE = 1;
     // high order quadrature for computing errors
-    TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
+    // TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
     
-    TDatabase::ParamDB->VISCOSITY=1;
-    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=1;
-    TDatabase::ParamDB->PERMEABILITY=1;
-    
-    
-
+    //    TDatabase::ParamDB->VISCOSITY=1;
+    //    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=1;
+    //    TDatabase::ParamDB->PERMEABILITY=1;
     
     unsigned int nRefinements = 2;
     
     Output::setVerbosity(2);
     
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+   // ParameterDatabase db=get_default_Brinkman2D_parameters();
     db.merge(Solver<>::default_solver_database());
     db.merge(ParameterDatabase::default_output_database());
     db.merge(Example2D::default_example_database());
-
-
+    
+    //db.merge(ParameterDatabase::get_default_Brinkman2D_parameters());
     
     db["example"] = 0; // known Poiseuille solution
     db["residual_tolerance"] = 1.0e-13;
     
     db["output_compute_errors"] = true;
     
-    Output::print("\n\n ----------- direct solver -----------\n");
-    db["solver_type"] = "direct";
+    //    Output::print("\n\n ----------- direct solver -----------\n");
+    //    db["solver_type"] = "direct";
     
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
     
-//    db["P1P1_stab"] = false;
-//    db["P2P2_stab"] = false;
+    //    db["P1P1_stab"] = false;
+    //    db["P2P2_stab"] = false;
     
     tests_on_quads(nRefinements, db);
-//    db["geo_file"] = "TwoTriangles";
-//  tests_on_triangles(nRefinements, db);
+    //  db["geo_file"] = "TwoTriangles";
+    //  tests_on_triangles(nRefinements, db);
     
+    //    db["solver_type"] = "iterative";
+    //    db["max_n_iterations"] = 10000;
+    //
+    //    Output::print("\n\n --------- fgmres+lsc solver ---------\n");
+    //    db["preconditioner"] = "least_squares_commutator";
+    //
+    //    db["geo_file"] = "UnitSquare";
+    //    tests_on_quads(nRefinements, db);
+    //    db["geo_file"] = "TwoTriangles";
+    //    tests_on_triangles(nRefinements, db);
     
-    db["solver_type"] = "iterative";
-    db["max_n_iterations"] = 10000;
+    //    Output::print("\n\n -------- fgmres+simple solver -------\n");
+    //    db["preconditioner"] = "semi_implicit_method_for_pressure_linked_equations";
     
-    Output::print("\n\n --------- fgmres+lsc solver ---------\n");
-    db["preconditioner"] = "least_squares_commutator";
-    
-//    db["geo_file"] = "UnitSquare";
-//    tests_on_quads(nRefinements, db);
-//    db["geo_file"] = "TwoTriangles";
-//    tests_on_triangles(nRefinements, db);
-    
-    Output::print("\n\n -------- fgmres+simple solver -------\n");
-    db["preconditioner"] = "semi_implicit_method_for_pressure_linked_equations";
-    
-//    db.add("n_nitsche_boundary",4);
-//    db.add("nitsche_boundary_id", 0 1 2 3);
-//           db.add("nitsche_penalty", 1 1 1 1);
-    //    tests_on_quadsNitsche(nRefinements, db);
+    //db["n_nitsche_boundary"]=4;
+    //db["nitsche_boundary_id"]= 0 1 2 3;
+    //db["nitsche_penalty"]= 1 1 1 1;
+    //tests_on_quadsNitsche(nRefinements, db);
     
     //----------------------------------------
-//    db["P1P1_stab"] = true;
-//    db["equal_order_stab_weight_P1P1"] = 0.4;
 //    tests_on_quads_stab(nRefinements, db);
-
     
-
-
-   
     return 0;
 }

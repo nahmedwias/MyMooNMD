@@ -73,7 +73,7 @@ class LocalAssembling2D
     /** @brief number of involved spaces (typically one or two) */
     int N_Spaces;
 
-    /** @brief for each space we store a bool indicatin if second derivatives 
+    /** @brief for each space we store a bool indicating if second derivatives
      *         are needed */
     bool *Needs2ndDerivatives;
 
@@ -113,7 +113,6 @@ class LocalAssembling2D
     
     int N_Matrices;
     int N_Rhs;
-    
     
     /** number of stored parameter functions (ParamFct) */
     int N_ParamFct;
@@ -297,6 +296,12 @@ class LocalAssembling2D
                        TBaseCell *cell, int cellnum,
                        double *s, int joint,
                        double **Parameters);
+    
+    
+    void compute_parameters(int n_points, TCollection *Coll,
+                            TBaseCell *cell, int cellnum,
+                            double *x, double *y);
+    
     
     /** return name */
     const std::string& get_name() const

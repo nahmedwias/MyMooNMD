@@ -9,408 +9,407 @@
 #include <NSE2D_FixPo.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoSkew.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoRot.h>// local assembling routines for 2D Navier-Stokes
-
-#include <Brinkman2D_Mixed.h>// local assembling routines for 2D Navier-Stokes
-
-
 #include <NSE2D_EquOrd_FixPo.h> // local assembling routines for equal order elements
 #include <NSE2D_Newton.h>
-
-
 #include <TNSE2D_FixPo.h> // local assembling routines for 2D Time dependent Navier-Stokes
 #include <TNSE2D_FixPoRot.h>
 #include <TNSE2D_ParamRout.h>
+#include <Brinkman2D_Mixed.h>// local assembling routines for 2D Navier-Stokes
 
 #include <MooNMD_Io.h>
 #include <string.h>
-
 #include <DiscreteForm2D.h> // to be removed
 
-/** @brief a helper function returning a string with for the name of the 
+
+//==============================================================================
+/** @brief a helper function returning a string with the name of the
  *         LocalAssembling2D_type. This returns an empty string in case the type
  *         is not known. */
+
 std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
 {
-  switch(type)
-  {
-    ///////////////////////////////////////////////////////////////////////////
-    // CD2D: stationary convection diffusion problems
-    case LocalAssembling2D_type::ConvDiff:
-      switch(TDatabase::ParamDB->DISCTYPE)
-      {
-	case GALERKIN:
-	  if(TDatabase::ParamDB->Axial3D)
-            return std::string("CD2D_Axiax3D_Galerkin");
-          else
-            return std::string("CD2D_Galerkin");
-	case SUPG:
-	  return std::string("CD2D_SUPG");
-	case GLS:
-	  return std::string("CD2D_GLS");
-      }
-      break;      
-    ///////////////////////////////////////////////////////////////////////////
-    // TCD2D: time dependent convection diffusion problems
-    case LocalAssembling2D_type::TCD2D:
-      switch(TDatabase::ParamDB->DISCTYPE)
-      {
-	case GALERKIN:
-	  return std::string("TCD2D_Stiff_Rhs");
-	case SUPG:
-	  return std::string("TCD2D_Stiff_Rhs_SUPG");
-      }
-    case LocalAssembling2D_type::TCD2D_Mass:
-      return std::string("TCD2D_Mass");
-    ///////////////////////////////////////////////////////////////////////////
-    // NSE2D: stationary Navier-Stokes problems
-    case NSE2D_Galerkin:
-      return std::string("NSE2D_Galerkin");
-    case NSE2D_Galerkin_Nonlinear:
-      return std::string("NSE2D_Galerkin_Nonlinear");
-    ///////////////////////////////////////////////////////////////////////////
-    case NSE2D_SUPG:
-      return std::string("NSE2D_SUPG");
-    case NSE2D_SUPG_NL:
-      return std::string("NSE2D_SUPG_NL");
-    ///////////////////////////////////////////////////////////////////////////
-    // Darcy2D: stationary Darcy problems
-    case Darcy2D_Galerkin:
-      return std::string("Darcy2D_Galerkin");
-    ///////////////////////////////////////////////////////////////////////////
-    // Brinkman2D: Brinkman problems
-      case Brinkman2D_Galerkin1:
-          return std::string("Brinkman2D_Galerkin1");
-          
-      case Brinkman2D_Galerkin1b:
-          return std::string("Brinkman2D_Galerkin1b");
-          
-      case Brinkman2D_Galerkin2:
-          return std::string("Brinkman2D_Galerkin2");
-          
-      case Brinkman2D_Galerkin1ResidualStab:
-          return std::string("Brinkman2D_Galerkin1ResidualStab");
-          
-      case Brinkman2D_Galerkin1ResidualStab2:
-          return std::string("Brinkman2D_Galerkin1ResidualStab2");
-
-    ///////////////////////////////////////////////////////////////////////////
-    // TNSE2D: nonstationary Navier-Stokes
-    case LocalAssembling2D_type::TNSE2D:
-      switch(TDatabase::ParamDB->DISCTYPE)
-      {
-        case GALERKIN:
-          return std::string("TNSE2D_Galerkin");
-        case SUPG:
-          return std::string("TNSE2D_SUPG");
-      }
-      break;
-    case LocalAssembling2D_type::TNSE2D_NL:
-      switch(TDatabase::ParamDB->DISCTYPE)
-      {
-        case GALERKIN:
-          return std::string("TNSE2D_NLGalerkin");
-        case SUPG:
-          return std::string("TNSE2D_NLSUPG");
-      }
-      break;
-    case LocalAssembling2D_type::TNSE2D_Rhs:
-      switch(TDatabase::ParamDB->DISCTYPE)
-      {
-        case GALERKIN:
-          return std::string("TNSE2D_Rhs");
-        case SUPG:
-          return std::string("TNSE2D_RhsSUPG");
-      }
-      break;
-   case LocalAssembling2D_type::Custom:
-     return std::string("customized");
-  }
-  return std::string();
+    switch(type)
+    {
+            ///////////////////////////////////////////////////////////////////////////
+            // CD2D: stationary convection diffusion problems
+        case LocalAssembling2D_type::ConvDiff:
+            switch(TDatabase::ParamDB->DISCTYPE)
+        {
+            case GALERKIN:
+                if(TDatabase::ParamDB->Axial3D)
+                    return std::string("CD2D_Axiax3D_Galerkin");
+                else
+                    return std::string("CD2D_Galerkin");
+            case SUPG:
+                return std::string("CD2D_SUPG");
+            case GLS:
+                return std::string("CD2D_GLS");
+        }
+            break;
+            ///////////////////////////////////////////////////////////////////////////
+            // TCD2D: time dependent convection diffusion problems
+        case LocalAssembling2D_type::TCD2D:
+            switch(TDatabase::ParamDB->DISCTYPE)
+        {
+            case GALERKIN:
+                return std::string("TCD2D_Stiff_Rhs");
+            case SUPG:
+                return std::string("TCD2D_Stiff_Rhs_SUPG");
+        }
+        case LocalAssembling2D_type::TCD2D_Mass:
+            return std::string("TCD2D_Mass");
+            ///////////////////////////////////////////////////////////////////////////
+            // NSE2D: stationary Navier-Stokes problems
+        case NSE2D_Galerkin:
+            return std::string("NSE2D_Galerkin");
+        case NSE2D_Galerkin_Nonlinear:
+            return std::string("NSE2D_Galerkin_Nonlinear");
+            ///////////////////////////////////////////////////////////////////////////
+        case NSE2D_SUPG:
+            return std::string("NSE2D_SUPG");
+        case NSE2D_SUPG_NL:
+            return std::string("NSE2D_SUPG_NL");
+            ///////////////////////////////////////////////////////////////////////////
+            // Darcy2D: stationary Darcy problems
+        case Darcy2D_Galerkin:
+            return std::string("Darcy2D_Galerkin");
+            ///////////////////////////////////////////////////////////////////////////
+            // Brinkman2D: Brinkman problems
+        case Brinkman2D_Galerkin1:
+            return std::string("Brinkman2D_Galerkin1");
+            
+        case Brinkman2D_Galerkin1b:
+            return std::string("Brinkman2D_Galerkin1b");
+            
+        case Brinkman2D_Galerkin2:
+            return std::string("Brinkman2D_Galerkin2");
+            
+        case Brinkman2D_Galerkin1ResidualStab:
+            return std::string("Brinkman2D_Galerkin1ResidualStab");
+            
+        case Brinkman2D_Galerkin1ResidualStab2:
+            return std::string("Brinkman2D_Galerkin1ResidualStab2");
+            ///////////////////////////////////////////////////////////////////////////
+            // TNSE2D: nonstationary Navier-Stokes
+        case LocalAssembling2D_type::TNSE2D:
+            switch(TDatabase::ParamDB->DISCTYPE)
+        {
+            case GALERKIN:
+                return std::string("TNSE2D_Galerkin");
+            case SUPG:
+                return std::string("TNSE2D_SUPG");
+        }
+            break;
+        case LocalAssembling2D_type::TNSE2D_NL:
+            switch(TDatabase::ParamDB->DISCTYPE)
+        {
+            case GALERKIN:
+                return std::string("TNSE2D_NLGalerkin");
+            case SUPG:
+                return std::string("TNSE2D_NLSUPG");
+        }
+            break;
+        case LocalAssembling2D_type::TNSE2D_Rhs:
+            switch(TDatabase::ParamDB->DISCTYPE)
+        {
+            case GALERKIN:
+                return std::string("TNSE2D_Rhs");
+            case SUPG:
+                return std::string("TNSE2D_RhsSUPG");
+        }
+            break;
+        case LocalAssembling2D_type::Custom:
+            return std::string("customized");
+    }
+    return std::string();
 }
 
+//==============================================================================
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
                                      TFEFunction2D **fefunctions2d,
                                      CoeffFct2D *coeffs)
  : type(type), name(LocalAssembling2D_type_to_string(type)), Coeffs(coeffs),
    FEFunctions2D(fefunctions2d)
 {
-  Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
-  
-  // the values below only matter if you need an existing finite element 
-  // function during your assembly. Change them in such a case
-this->N_Parameters = 0;
-this->N_ParamFct = 0;
-this->ParameterFct = {};
-this->N_FEValues = 0;
-this->FEValue_FctIndex = {};
-this->FEValue_MultiIndex = {};
-this->BeginParameter = {};
-
-// set all member variables according to the LocalAssembling2D_type
-switch(type)
-{
-  ///////////////////////////////////////////////////////////////////////////
-  // CD2D: stationary convection diffusion problems
-  case LocalAssembling2D_type::ConvDiff:
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    switch(TDatabase::ParamDB->DISCTYPE)
-    {
-      case GALERKIN:
-        this->N_Terms = 3;
-        this->Derivatives = { D10, D01, D00 };
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = false;
-        this->FESpaceNumber = { 0, 0, 0 };
-        
-        if(TDatabase::ParamDB->Axial3D)
-          this->AssembleParam = BilinearAssemble_Axial3D; 
-        else
-          this->AssembleParam = BilinearAssembleGalerkin; 
-        this->Manipulate = NULL;
-        break;
-      case SUPG:
-      case GLS:
-        this->N_Terms = 5;
-        this->Derivatives = { D10, D01, D00, D20, D02 };
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = true;
-        this->FESpaceNumber = { 0, 0, 0, 0, 0 };
-	if(TDatabase::ParamDB->DISCTYPE==SUPG)
-	  this->AssembleParam = BilinearAssemble_SD; 
-	else
-	  this->AssembleParam = BilinearAssemble_GLS;
-	
-        if(TDatabase::ParamDB->SDFEM_NORM_B==0)
-          this->Manipulate = linfb;
-        else
-          this->Manipulate = ave_l2b_quad_points;
-        
-	break;
-        default:
-          ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
-                 " is not supported by the class CD2D");
-          throw("unsupported DISCTYPE");
-    }
-    break;
-  ///////////////////////////////////////////////////////////////////////////
-  // TCD2D: time dependent convection diffusion problems
-  case LocalAssembling2D_type::TCD2D:
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->Manipulate = NULL;
+    Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
     
-    switch(TDatabase::ParamDB->DISCTYPE)
+    // the values below only matter if you need an existing finite element
+    // function during your assembly. Change them in such a case
+    this->N_Parameters = 0;
+    this->N_ParamFct = 0;
+    this->ParameterFct = {};
+    this->N_FEValues = 0;
+    this->FEValue_FctIndex = {};
+    this->FEValue_MultiIndex = {};
+    this->BeginParameter = {};
+    
+    // set all member variables according to the LocalAssembling2D_type
+    switch(type)
     {
-      case GALERKIN:
-	this->N_Terms = 3;
-	this->Derivatives = { D10, D01, D00 };
-	this->Needs2ndDerivatives = new bool[1];
-	this->Needs2ndDerivatives[0] = false;
-	this->FESpaceNumber = { 0, 0, 0 };
-	
-	this->AssembleParam = LocalMatrixARhs; 
-	break;
-      case SUPG:
-      case GLS:
-	this->N_Terms = 5;
-	this->Derivatives = { D10, D01, D00, D20, D02 };
-	this->Needs2ndDerivatives = new bool[1];
-              this->Needs2ndDerivatives[0] = true;
-	this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
-	
-	if(TDatabase::ParamDB->DISCTYPE==SUPG)
-	  this->AssembleParam = LocalMatrixARhs_SUPG; 
-	else
-	{
-	  ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
-                 " is not supported by the class CD2D");
-          throw("unsupported DISCTYPE");
-	}
-	break;
-    }
-    break;// case LocalAssembling2D_type::TCD2D:
-  case LocalAssembling2D_type::TCD2D_Mass:
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 0;
-    this->RhsSpace = { 0 };
-    this->Manipulate = NULL;
-    this->Manipulate = NULL;
-    switch(TDatabase::ParamDB->DISCTYPE)
-    {
-      case GALERKIN:
-       this->N_Terms = 1;
-       this->Derivatives = { D00 };
-       this->Needs2ndDerivatives = new bool[1];
-       this->Needs2ndDerivatives[0] = false;
-       this->FESpaceNumber = { 0 };
-       this->AssembleParam = LocalMatrixM;
-       break;
-      case SUPG:
-       this->N_Terms = 3;
-       this->Derivatives = { D10, D01, D00 };
-       this->Needs2ndDerivatives = new bool[1];
-       this->Needs2ndDerivatives[0] = false;
-       this->FESpaceNumber = { 0, 0, 0 };
-       this->AssembleParam = LocalMatrixM_SUPG;
-       break;
-    }    
-  break;  //LocalAssembling2D_type::TCD2D_Mass
-        ///////////////////////////////////////////////////////////////////////////
-        // Brinkman2D: problems and Brinkman problem
-
-    case LocalAssembling2D_type::Brinkman2D_Galerkin1:
-        //Matrix Type 14
-        this->N_Terms = 4;
-        this->Derivatives = { D10, D01, D00, D00 };
-        this->Needs2ndDerivatives = new bool[2];
-        this->Needs2ndDerivatives[0] = false;
-        this->Needs2ndDerivatives[1] = false;
-        this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-        this->N_Matrices = 9;
-        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        this->N_Rhs = 3;
-        this->RhsSpace = { 0, 0, 1 };
-        this->AssembleParam = BrinkmanType1Galerkin;
-        this->Manipulate = NULL;
-        break;
-        
-    case LocalAssembling2D_type::Brinkman2D_Galerkin1b:
-        //Matrix Type 14
-        this->N_Terms = 4;
-        this->Derivatives = { D10, D01, D00, D00 };
-        this->Needs2ndDerivatives = new bool[2];
-        this->Needs2ndDerivatives[0] = false;
-        this->Needs2ndDerivatives[1] = false;
-        this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-        this->N_Matrices = 9;
-        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        this->N_Rhs = 3;
-        this->RhsSpace = { 0, 0, 1 };
-        this->AssembleParam = BrinkmanType1bGalerkin;
-        this->Manipulate = NULL;
-        break;
-        
-    case LocalAssembling2D_type::Brinkman2D_Galerkin2:
-        //Matrix Type 14
-        this->N_Terms = 6;                                      // = #(Derivatives)
-        this->Derivatives = { D10, D01, D00, D00, D10, D01};    // u_x, u_y, u, p, p_x, p_y
-        this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
-        this->Needs2ndDerivatives[0] = false;
-        this->Needs2ndDerivatives[1] = false;
-        this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };             // 0: velocity space, 1: pressure space
-        this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
-        // in the lower right corner
-        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        this->N_Rhs = 3;                                        // f1, f2, g
-        this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
-        this->AssembleParam = BrinkmanType2Galerkin;
-        this->Manipulate = NULL;
-        break;
-
-    case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab:
-        //Matrix Type 14
-        this->N_Terms = 6;                                      // = #(Derivatives)
-        this->Derivatives = { D10, D01, D00, D00, D10, D01};    // u_x, u_y, u, p, p_x, p_y
-        this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
-        this->Needs2ndDerivatives[0] = false;
-        this->Needs2ndDerivatives[1] = false;
-        this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };             // 0: velocity space, 1: pressure space
-        this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
-        // in the lower right corner
-        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        this->N_Rhs = 3;                                        // f1, f2, g
-        this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
-        this->AssembleParam = BrinkmanType1GalerkinResidualStab;
-        this->Manipulate = NULL;
-        break;
-
-    case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab2:
-        //Matrix Type 14
-        this->N_Terms = 8;                                      // = #(Derivatives)
-        this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};    // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
-        this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
-        this->Needs2ndDerivatives[0] = true;
-        this->Needs2ndDerivatives[1] = true;
-        this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };             // 0: velocity space, 1: pressure space
-        this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
-        // in the lower right corner
-        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        this->N_Rhs = 3;                                        // f1, f2, g
-        this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
-        this->AssembleParam = BrinkmanType1GalerkinResidualStab2;
-        this->Manipulate = NULL;
-        break;
-        
-        ///////////////////////////////////////////////////////////////////////////
-        // NSE2D: stationary Navier-Stokes problems problem
-            case NSE2D_Galerkin:
-            case NSE2D_Galerkin_Nonlinear:
+            ///////////////////////////////////////////////////////////////////////////
+            // CD2D: stationary convection diffusion problems
+        case LocalAssembling2D_type::ConvDiff:
+            this->N_Matrices = 1;
+            this->RowSpace = { 0 };
+            this->ColumnSpace = { 0 };
+            this->N_Rhs = 1;
+            this->RhsSpace = { 0 };
+            switch(TDatabase::ParamDB->DISCTYPE)
+        {
+            case GALERKIN:
+                this->N_Terms = 3;
+                this->Derivatives = { D10, D01, D00 };
+                this->Needs2ndDerivatives = new bool[1];
+                this->Needs2ndDerivatives[0] = false;
+                this->FESpaceNumber = { 0, 0, 0 };
+                
+                if(TDatabase::ParamDB->Axial3D)
+                    this->AssembleParam = BilinearAssemble_Axial3D;
+                else
+                    this->AssembleParam = BilinearAssembleGalerkin;
+                this->Manipulate = NULL;
+                break;
+            case SUPG:
+            case GLS:
+                this->N_Terms = 5;
+                this->Derivatives = { D10, D01, D00, D20, D02 };
+                this->Needs2ndDerivatives = new bool[1];
+                this->Needs2ndDerivatives[0] = true;
+                this->FESpaceNumber = { 0, 0, 0, 0, 0 };
+                if(TDatabase::ParamDB->DISCTYPE==SUPG)
+                    this->AssembleParam = BilinearAssemble_SD;
+                else
+                    this->AssembleParam = BilinearAssemble_GLS;
+                
+                if(TDatabase::ParamDB->SDFEM_NORM_B==0)
+                    this->Manipulate = linfb;
+                else
+                    this->Manipulate = ave_l2b_quad_points;
+                
+                break;
+            default:
+                ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+                       " is not supported by the class CD2D");
+                throw("unsupported DISCTYPE");
+        }
+            break;
+            ///////////////////////////////////////////////////////////////////////////
+            // TCD2D: time dependent convection diffusion problems
+        case LocalAssembling2D_type::TCD2D:
+            this->N_Matrices = 1;
+            this->RowSpace = { 0 };
+            this->ColumnSpace = { 0 };
+            this->N_Rhs = 1;
+            this->RhsSpace = { 0 };
+            this->Manipulate = NULL;
+            
+            switch(TDatabase::ParamDB->DISCTYPE)
+        {
+            case GALERKIN:
+                this->N_Terms = 3;
+                this->Derivatives = { D10, D01, D00 };
+                this->Needs2ndDerivatives = new bool[1];
+                this->Needs2ndDerivatives[0] = false;
+                this->FESpaceNumber = { 0, 0, 0 };
+                
+                this->AssembleParam = LocalMatrixARhs;
+                break;
+            case SUPG:
+            case GLS:
+                this->N_Terms = 5;
+                this->Derivatives = { D10, D01, D00, D20, D02 };
+                this->Needs2ndDerivatives = new bool[1];
+                this->Needs2ndDerivatives[0] = true;
+                this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
+                
+                if(TDatabase::ParamDB->DISCTYPE==SUPG)
+                    this->AssembleParam = LocalMatrixARhs_SUPG;
+                else
+                {
+                    ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+                           " is not supported by the class CD2D");
+                    throw("unsupported DISCTYPE");
+                }
+                break;
+        }
+            break;// case LocalAssembling2D_type::TCD2D:
+        case LocalAssembling2D_type::TCD2D_Mass:
+            this->N_Matrices = 1;
+            this->RowSpace = { 0 };
+            this->ColumnSpace = { 0 };
+            this->N_Rhs = 0;
+            this->RhsSpace = { 0 };
+            this->Manipulate = NULL;
+            this->Manipulate = NULL;
+            switch(TDatabase::ParamDB->DISCTYPE)
+        {
+            case GALERKIN:
+                this->N_Terms = 1;
+                this->Derivatives = { D00 };
+                this->Needs2ndDerivatives = new bool[1];
+                this->Needs2ndDerivatives[0] = false;
+                this->FESpaceNumber = { 0 };
+                this->AssembleParam = LocalMatrixM;
+                break;
+            case SUPG:
+                this->N_Terms = 3;
+                this->Derivatives = { D10, D01, D00 };
+                this->Needs2ndDerivatives = new bool[1];
+                this->Needs2ndDerivatives[0] = false;
+                this->FESpaceNumber = { 0, 0, 0 };
+                this->AssembleParam = LocalMatrixM_SUPG;
+                break;
+        }
+            break;  //LocalAssembling2D_type::TCD2D_Mass
+            ///////////////////////////////////////////////////////////////////////////
+            // Brinkman2D: problems and Brinkman problem
+            
+        case LocalAssembling2D_type::Brinkman2D_Galerkin1:
+            //Matrix Type 14
+            this->N_Terms = 4;
+            this->Derivatives = { D10, D01, D00, D00 };
+            this->Needs2ndDerivatives = new bool[2];
+            this->Needs2ndDerivatives[0] = false;
+            this->Needs2ndDerivatives[1] = false;
+            this->FESpaceNumber = { 0, 0, 0, 1 };                               // 0: velocity, 1: pressure
+            this->N_Matrices = 9;
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;
+            this->RhsSpace = { 0, 0, 1 };
+            this->AssembleParam = BrinkmanType1Galerkin;
+            this->Manipulate = NULL;
+            break;
+            
+        case LocalAssembling2D_type::Brinkman2D_Galerkin1b:
+            //Matrix Type 14
+            this->N_Terms = 4;
+            this->Derivatives = { D10, D01, D00, D00 };
+            this->Needs2ndDerivatives = new bool[2];
+            this->Needs2ndDerivatives[0] = false;
+            this->Needs2ndDerivatives[1] = false;
+            this->FESpaceNumber = { 0, 0, 0, 1 };                               // 0: velocity, 1: pressure
+            this->N_Matrices = 9;
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;
+            this->RhsSpace = { 0, 0, 1 };
+            this->AssembleParam = BrinkmanType1bGalerkin;
+            this->Manipulate = NULL;
+            break;
+            
+        case LocalAssembling2D_type::Brinkman2D_Galerkin2:
+            //Matrix Type 14
+            this->N_Terms = 6;                                                  // = #(Derivatives)
+            this->Derivatives = { D10, D01, D00, D00, D10, D01};                // u_x, u_y, u, p, p_x, p_y
+            this->Needs2ndDerivatives = new bool[2];                            // usually 2nd derivatives are not needed
+            this->Needs2ndDerivatives[0] = false;
+            this->Needs2ndDerivatives[1] = false;
+            this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };                         // 0: velocity space, 1: pressure space
+            this->N_Matrices = 9;                                               // here some stabilization is allowed in the matrix C
+            // in the lower right corner
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;                                                    // f1, f2, g
+            this->RhsSpace = { 0, 0, 1 };                                       // corresp. to velocity testspace = 0 / pressure = 1
+            this->AssembleParam = BrinkmanType2Galerkin;
+            this->Manipulate = NULL;
+            break;
+            
+        case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab:
+            //Matrix Type 14
+            this->N_Terms = 6;                                                  // = #(Derivatives)
+            this->Derivatives = { D10, D01, D00, D00, D10, D01};                // u_x, u_y, u, p, p_x, p_y
+            this->Needs2ndDerivatives = new bool[2];                            // usually 2nd derivatives are not needed
+            this->Needs2ndDerivatives[0] = false;
+            this->Needs2ndDerivatives[1] = false;
+            this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };                         // 0: velocity space, 1: pressure space
+            this->N_Matrices = 9;                                               // here some stabilization is allowed in the matrix C
+            // in the lower right corner
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;                                                    // f1, f2, g
+            this->RhsSpace = { 0, 0, 1 };                                       // corresp. to velocity testspace = 0 / pressure = 1
+            this->AssembleParam = BrinkmanType1GalerkinResidualStab;
+            this->Manipulate = NULL;
+            break;
+            
+        case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab2:
+            //Matrix Type 14
+            this->N_Terms = 8;                                                  // = #(Derivatives)
+            this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};      // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+            this->Needs2ndDerivatives = new bool[2];                            // usually 2nd derivatives are not needed
+            this->Needs2ndDerivatives[0] = true;
+            this->Needs2ndDerivatives[1] = true;
+            this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };                   // 0: velocity space, 1: pressure space
+            this->N_Matrices = 9;                                               // here some stabilization is allowed in the matrix C
+            // in the lower right corner
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;                                                    // f1, f2, g
+            this->RhsSpace = { 0, 0, 1 };                                       // corresp. to velocity testspace = 0 / pressure = 1
+            this->AssembleParam = BrinkmanType1GalerkinResidualStab2;
+            this->Manipulate = NULL;
+            break;
+            
+            ///////////////////////////////////////////////////////////////////////////
+            // NSE2D: stationary Navier-Stokes problems problem
+        case NSE2D_Galerkin:
+        case NSE2D_Galerkin_Nonlinear:
             this->set_parameters_for_nseGalerkin(type);
             break;
-  ///////////////////////////////////////////////////////////////////////////
-  case NSE2D_SUPG:
-  case NSE2D_SUPG_NL:
-    this->set_parameters_for_nseSUPG(type);
-    break;
-  ///////////////////////////////////////////////////////////////////////////
-  case Darcy2D_Galerkin:
-    this->N_Terms = 6;
-    this->Derivatives = { D00, D00, D10, D01, D10, D01 };
-    this->Needs2ndDerivatives = new bool[2];
-    this->Needs2ndDerivatives[0] = false;
-    this->Needs2ndDerivatives[1] = false;
-    this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
-    this->N_Matrices = 4;
-    this->RowSpace = {0, 1, 0, 1};
-    this->ColumnSpace = { 0, 1, 1, 0};
-    this->N_Rhs = 2;
-    this->RhsSpace = { 0, 1 };
-    this->AssembleParam = BilinearAssembleDarcyGalerkin; 
-    this->Manipulate = NULL;
-    break;
-  ////////////////////////////////////////////////////////////////////////////
-    // TNSE2D: nonstationary Navier-Stokes problems
-  case LocalAssembling2D_type::TNSE2D:
-  case LocalAssembling2D_type::TNSE2D_NL:   
-  case LocalAssembling2D_type::TNSE2D_Rhs:
-    this->set_parameters_for_tnse(type);
-    break;
+            ///////////////////////////////////////////////////////////////////////////
+        case NSE2D_SUPG:
+        case NSE2D_SUPG_NL:
+            this->set_parameters_for_nseSUPG(type);
+            break;
+            ///////////////////////////////////////////////////////////////////////////
+        case Darcy2D_Galerkin:
+            this->N_Terms = 6;
+            this->Derivatives = { D00, D00, D10, D01, D10, D01 };
+            this->Needs2ndDerivatives = new bool[2];
+            this->Needs2ndDerivatives[0] = false;
+            this->Needs2ndDerivatives[1] = false;
+            this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
+            this->N_Matrices = 4;
+            this->RowSpace = {0, 1, 0, 1};
+            this->ColumnSpace = { 0, 1, 1, 0};
+            this->N_Rhs = 2;
+            this->RhsSpace = { 0, 1 };
+            this->AssembleParam = BilinearAssembleDarcyGalerkin; 
+            this->Manipulate = NULL;
+            break;
+            ////////////////////////////////////////////////////////////////////////////
+            // TNSE2D: nonstationary Navier-Stokes problems
+        case LocalAssembling2D_type::TNSE2D:
+        case LocalAssembling2D_type::TNSE2D_NL:   
+        case LocalAssembling2D_type::TNSE2D_Rhs:
+            this->set_parameters_for_tnse(type);
+            break;
+            
+        default:
+            ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);
+            throw("unknown LocalAssembling2D_type");
+    }
     
-  default:
-    ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);
-    throw("unknown LocalAssembling2D_type");
+    AllOrigValues = new double** [N_Terms];
+    OrigValues = new double* [N_Terms];
+    
+    // some consistency checks
+    if(Coeffs == NULL)
+    {
+        ErrMsg("You need to specify a valid function for the coefficients");
+        exit(1);
+    }
+    if(AssembleParam == NULL)
+    {
+        ErrMsg("a local assembling routine was not set!");
+        exit(1);
+    }
 }
 
-  AllOrigValues = new double** [N_Terms];
-  OrigValues = new double* [N_Terms];
 
-  // some consistency checks
-  if(Coeffs == NULL)
-  {
-    ErrMsg("You need to specify a valid function for the coefficients");
-    exit(1);
-  }
-  if(AssembleParam == NULL)
-  {
-    ErrMsg("a local assembling routine was not set!");
-    exit(1);
-  }
-}
-
+//==============================================================================
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                                      const TAuxParam2D& aux,
                                      const TDiscreteForm2D& df)
@@ -428,8 +427,8 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
    FEFunctions2D(aux.get_FEFunctions2D()), FEValue_FctIndex(this->N_FEValues,0),
    FEValue_MultiIndex(this->N_FEValues, D00)
 {
-  // copy the array indicating if second derivatives are needed (because the 
-  // destructor deletes this array)
+  // copy the array indicating if second derivatives are needed
+  //  (because the destructor deletes this array)
   this->Needs2ndDerivatives = new bool[this->N_Spaces];
   for(int i = 0; i < this->N_Spaces; ++i)
     this->Needs2ndDerivatives[i] = df.GetNeeds2ndDerivatives()[i];
@@ -476,6 +475,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
   }
 }
 
+//==============================================================================
 /*! @brief Customized constructor. */
 LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 		std::vector<MultiIndex2D> myDerivatives, std::vector<int> myFESpaceNumber,
@@ -553,6 +553,7 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 	//END code taken from TDiscretForm2D::TDiscreteForm2D(...)
 }
 
+//==============================================================================
 LocalAssembling2D::~LocalAssembling2D()
 {
   delete [] AllOrigValues;
@@ -560,135 +561,132 @@ LocalAssembling2D::~LocalAssembling2D()
   delete [] Needs2ndDerivatives;
 }
 
+//==============================================================================
 void LocalAssembling2D::GetLocalForms(int N_Points, double *weights, 
                                       double *AbsDetjk, double *X, double *Y,
                                       int *N_BaseFuncts,
-                                      BaseFunct2D *BaseFuncts, 
+                                      BaseFunct2D *BaseFuncts,
                                       double **Parameters, double **AuxArray,
                                       TBaseCell *Cell, int N_Matrices,
                                       int N_Rhs,
                                       double ***LocMatrix, double **LocRhs,
                                       double factor)
 {
-  int i,j, N_Rows, N_Columns;
-  double **CurrentMatrix, *MatrixRow;
-  double Mult, *Coeff, *Param;
-  const double hK = Cell->Get_hK(TDatabase::ParamDB->CELL_MEASURE);
-
-  //this->GetParameters(N_Points, NULL, Cell, ??Cell->GetCellIndex(), X, Y, 
-  //                    Parameters);
-
-  for(i=0; i<N_Matrices; ++i)
-  {
-    CurrentMatrix = LocMatrix[i];
-    N_Rows = N_BaseFuncts[RowSpace[i]];
-    N_Columns = N_BaseFuncts[ColumnSpace[i]];
-    for(j=0;j<N_Rows;j++)
-    {
-      MatrixRow = CurrentMatrix[j];
-      memset(MatrixRow, 0, SizeOfDouble*N_Columns);
-    } // endfor j
-  } // endfor i
-
-  for(i=0; i<N_Rhs; ++i)
-  {
-    N_Rows = N_BaseFuncts[RhsSpace[i]];
-    memset(LocRhs[i], 0, SizeOfDouble*N_Rows);
-  }
-
-  // *****************************************************
-  // for 2Phase flow problems (Sashikumaar Ganesan)
-  AuxArray[0][0] = Cell->GetPhase_ID();
-  // *****************************************************
-
-  if(Coeffs)
-    Coeffs(N_Points, X, Y, Parameters, AuxArray);
-
-  if(Manipulate)
-    Manipulate(N_Points, AuxArray, Parameters, Cell);
-
-  for(i=0; i<N_Terms; ++i)
-  {
-    AllOrigValues[i] = 
-      TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[i]], 
-                                          Derivatives[i]);
-  }
-
-  for(i=0; i<N_Points; ++i)
-  {
-    Mult = weights[i] * AbsDetjk[i] * factor;
-    Coeff = AuxArray[i];
-    Coeff[19] = AbsDetjk[i];
+    const double hK = Cell->Get_hK(TDatabase::ParamDB->CELL_MEASURE);
     
-    if(TDatabase::ParamDB->Axial3DAxis == 1)
+    //this->GetParameters(N_Points, NULL, Cell, ??Cell->GetCellIndex(), X, Y,
+    //                    Parameters);
+    
+    for(int i=0; i<N_Matrices; ++i)
     {
-      // r in axial3D (X: symmetric) problems (Sashikumaar Ganesan)
-      Coeff[20] = Y[i];
-    }
-    else
+        double **CurrentMatrix = LocMatrix[i];
+        int N_Rows = N_BaseFuncts[RowSpace[i]];
+        int N_Columns = N_BaseFuncts[ColumnSpace[i]];
+        for(int j=0;j<N_Rows;j++)
+        {
+            double *MatrixRow = CurrentMatrix[j];
+            memset(MatrixRow, 0, SizeOfDouble*N_Columns);
+        } // endfor j
+    } // endfor i
+    
+    for(int i=0; i<N_Rhs; ++i)
     {
-      // r in axial3D (Y: symmetric) problems (Sashikumaar Ganesan)
-      Coeff[20] = X[i];
+        int N_Rows = N_BaseFuncts[RhsSpace[i]];
+        memset(LocRhs[i], 0, SizeOfDouble*N_Rows);
     }
-
-    Param = Parameters[i];
-
-    for(j=0; j<N_Terms; j++)
-      OrigValues[j] = AllOrigValues[j][i];
-
-    AssembleParam(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, LocMatrix,
-                  LocRhs);
-  } // end loop over quadrature points 
+    
+    // *****************************************************
+    // for 2Phase flow problems (Sashikumaar Ganesan)
+    AuxArray[0][0] = Cell->GetPhase_ID();
+    // *****************************************************
+    
+    if(Coeffs)
+        Coeffs(N_Points, X, Y, Parameters, AuxArray);
+    
+    if(Manipulate)
+        Manipulate(N_Points, AuxArray, Parameters, Cell);
+    
+    for(int i=0; i<N_Terms; ++i)
+    {
+        AllOrigValues[i] =
+        TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[i]],
+                                            Derivatives[i]);
+    }
+    
+    for(int i=0; i<N_Points; ++i)
+    {
+        double Mult = weights[i] * AbsDetjk[i] * factor;
+        double *Coeff = AuxArray[i];
+        Coeff[19] = AbsDetjk[i];
+        
+        if(TDatabase::ParamDB->Axial3DAxis == 1)
+        {
+            // r in axial3D (X: symmetric) problems (Sashikumaar Ganesan)
+            Coeff[20] = Y[i];
+        }
+        else
+        {
+            // r in axial3D (Y: symmetric) problems (Sashikumaar Ganesan)
+            Coeff[20] = X[i];
+        }
+        
+        double *Param = Parameters[i];
+        
+        for(int j=0; j<N_Terms; j++)
+            OrigValues[j] = AllOrigValues[j][i];
+        
+        AssembleParam(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, LocMatrix,
+                      LocRhs);
+    } // end loop over quadrature points 
 }
 
-void LocalAssembling2D::GetLocalForms(int N_Points, double *weights, 
+//==============================================================================
+void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
                                       double *AbsDetjk, double *X, double *Y,
                                       int *N_BaseFuncts,
                                       BaseFunct2D *BaseFuncts, TBaseCell *Cell,
                                       double ***LocMatrix, double **LocRhs,
                                       double factor)
 {
-  const double hK = Cell->Get_hK(TDatabase::ParamDB->CELL_MEASURE);
-  double *Coefficients[N_Points];
-  double *aux = new double [N_Points*20]; // do not change below 20
-  for(int j=0;j<N_Points;j++)
-    Coefficients[j] = aux + j*20;
-  
-  if(Coeffs)
-    Coeffs(N_Points, X, Y, NULL, Coefficients);
-
-  if(Manipulate)
-    Manipulate(N_Points, Coefficients, NULL, Cell);
-  for(int j=0;j<N_Terms;j++)
-  {
-    AllOrigValues[j] = 
-      TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[j]], 
-                                        Derivatives[j]);
-  }
-  
-  for(int i=0;i<N_Points;i++)
-  {
- 
-    double Mult = weights[i]*AbsDetjk[i];
-    Coefficients[i][19] = AbsDetjk[i];
+    const double hK = Cell->Get_hK(TDatabase::ParamDB->CELL_MEASURE);
+    double *Coefficients[N_Points];
+    double *aux = new double [N_Points*20]; // do not change below 20
     
-    for(int j=0;j<N_Terms;j++) {
-       OrigValues[j] = AllOrigValues[j][i];
+    for(int j=0;j<N_Points;j++)
+        Coefficients[j] = aux + j*20;
+    
+    if(Coeffs)
+        Coeffs(N_Points, X, Y, NULL, Coefficients);
+    
+    if(Manipulate)
+        Manipulate(N_Points, Coefficients, NULL, Cell);
+    for(int j=0;j<N_Terms;j++)
+    {
+        AllOrigValues[j] =
+        TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[j]],
+                                            Derivatives[j]);
     }
-
- 
-    AssembleParam(Mult, Coefficients[i], NULL, hK, OrigValues, N_BaseFuncts, 
-                  LocMatrix, LocRhs);
-  } // endfor i
-  delete [] aux;
+    
+    for(int i=0;i<N_Points;i++)
+    {
+        double Mult = weights[i]*AbsDetjk[i];
+        Coefficients[i][19] = AbsDetjk[i];
+        
+        for(int j=0;j<N_Terms;j++) {
+            OrigValues[j] = AllOrigValues[j][i];
+        }
+        
+        AssembleParam(Mult, Coefficients[i], NULL, hK, OrigValues, N_BaseFuncts,
+                      LocMatrix, LocRhs);
+    } // endfor i
+    delete [] aux;
 }
 
-
+//==============================================================================
 void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
                                       TBaseCell *cell, int cellnum,
                                       double *x, double *y, double **Parameters)
 {
-  int j, k, l, n;
   double *param, *currparam, s;
   
   double *CurrValues, *CurrOrigValues;
@@ -700,7 +698,7 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
   int **Index = new int* [N_FEValues];
   double Temp[2 + N_FEValues];
   // collect information
-  for(j=0; j<this->N_FEValues; j++)
+  for(int j=0; j<this->N_FEValues; j++)
   {
     TFEFunction2D *fefunction = this->FEFunctions2D[this->FEValue_FctIndex[j]];
     
@@ -728,20 +726,20 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
       Temp[1] = y[i];
 
       // loop to calculate all FE values
-      for(k=2,j=0; j<N_FEValues; j++,k++)
+      for(int k=2,j=0; j<N_FEValues; j++,k++)
       {
         s = 0;
-        n = N_BaseFunct[j];
+        int n = N_BaseFunct[j];
         CurrValues = Values[j];
         CurrOrigValues = orig_values[j][i];
         CurrIndex = Index[j];
-        for(l=0;l<n;l++)
+        for(int l=0;l<n;l++)
           s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
         Temp[k] = s;
       }  // endfor j
 
       // loop to calculate all parameters
-      for(j=0; j<N_ParamFct; j++)
+      for(int j=0; j<N_ParamFct; j++)
       {
         currparam = param + this->BeginParameter[j];
         this->ParameterFct[j](Temp, currparam);
@@ -755,7 +753,104 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
   delete [] Index;
 }
 
+//==============================================================================
+void LocalAssembling2D::compute_parameters(int n_points, TCollection *Coll,
+                                           TBaseCell *cell, int cellnum,
+                                           double *x, double *y)
+{
+    double *param, *currparam, s;
+    std::vector<std::vector<double>> external_functions;
+    external_functions.resize(n_points);
+    for (int i=0; i< n_points; i++)
+    {
+    external_functions[i].resize(N_Parameters);
+    }
+    
+    
+    
+    std::vector<int> n_param_for_function;
+    n_param_for_function.resize(N_ParamFct);
+    
+    if (N_ParamFct==1)
+        n_param_for_function[0]=N_Parameters;
+    else
+    {
+        for (int j=0; j<N_ParamFct-1; j++)
+        {
+            n_param_for_function[j] = this->BeginParameter[j+1] - this->BeginParameter[j];
+        }
+        n_param_for_function[N_ParamFct-1] = N_Parameters - this->BeginParameter[N_ParamFct-1];
+    }
+    
+    double *CurrValues, *CurrOrigValues;
+    int *CurrIndex;
+    
+    int *N_BaseFunct = new int[N_FEValues];
+    double **Values = new double* [N_FEValues];
+    double ***orig_values = new double** [N_FEValues];
+    int **Index = new int* [N_FEValues];
+    double Temp[2 + N_FEValues];
+    // collect information
+    for(int j=0; j<this->N_FEValues; j++)
+    {
+        TFEFunction2D *fefunction = this->FEFunctions2D[this->FEValue_FctIndex[j]];
+        
+        Values[j] = fefunction->GetValues();
+        
+        const TFESpace2D *fespace = fefunction->GetFESpace2D();
+        FE2D FE_Id = fespace->GetFE2D(cellnum, cell);
+        BaseFunct2D BaseFunct_Id = TFEDatabase2D::GetFE2D(FE_Id)->GetBaseFunct2D_ID();
+        
+        N_BaseFunct[j]=TFEDatabase2D::GetBaseFunct2D(BaseFunct_Id)->GetDimension();
+        
+        orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id,
+                                                             FEValue_MultiIndex[j]);
+        Index[j] = fespace->GetGlobalDOF(cellnum);
+    } // endfor j
+    
+    // loop over all quadrature points
+    if(N_ParamFct != 0)
+    {
+        for(int i=0; i<n_points; ++i)
+        {
+            Temp[0] = x[i];
+            Temp[1] = y[i];
+            
+            // loop to calculate all FE values
+            for(int k=2,j=0; j<N_FEValues; j++,k++)
+            {
+                s = 0;
+                CurrValues = Values[j];
+                CurrOrigValues = orig_values[j][i];
+                CurrIndex = Index[j];
+                for(int l=0;l< N_BaseFunct[j] ;l++)
+                    s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
+                Temp[k] = s;
+            }  // endfor j
+            
+            // loop to calculate all parameters
+            for(int j=0; j<N_ParamFct; j++)
+            {
+                double* currparam = new double[n_param_for_function[j]];
+                //Parameters[i] + this->BeginParameter[j];
+                this->ParameterFct[j](Temp, currparam);
+                
+                for (int ip=0; ip<n_param_for_function[j]; ip++)
+                {
+                    external_functions[i][this->BeginParameter[j] + ip] = currparam[ip];
+                }
+            } // endfor j
+        } // endfor i
+    }
+    
+    delete [] N_BaseFunct;
+    delete [] Values;
+    delete [] orig_values;
+    delete [] Index;
+}
 
+
+//==================================================================================
 void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type type)
 {
   switch(type)
@@ -1911,6 +2006,7 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
   } // end switch LocalAssembling2D_type
 }
 
+//==============================================================================
 void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
 {
   unsigned int nsType = TDatabase::ParamDB->NSTYPE;
@@ -2315,7 +2411,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
   }
 }
 
-
+//==============================================================================
 void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
 {
   int nstype = TDatabase::ParamDB->NSTYPE;
