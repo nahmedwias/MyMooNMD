@@ -2,7 +2,7 @@
 #include <MainUtilities.h> // get velocity and pressure space
 #include <LinAlg.h> // DDot
 #include <DirectSolver.h>
-#include <Assembler3.h>
+#include <Assembler4.h>
 #include <Assemble2D.h>
 #include <BoundaryAssembling2D.h>
 
@@ -32,17 +32,12 @@ ParameterDatabase get_default_Brinkman2D_parameters()
            "Usually this is used in the main program.",
            {true,false});
     
-
-    
 //    db.add("equal_order_stab_weight", 0,
 //           "Use an assembling routine corresponding to a residual-based "
 //           "equal-order stabilization for the Brinkman problem."
 //           "This only works in two space "
 //           "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
 //           "Usually this is used in the main program.",-1000,1000);
-    
-
-
     return db;
 }
 
@@ -111,9 +106,10 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
   systems(), example(e), defect(), oldResiduals(), 
 initial_residual(1e10), errors()
 {
-    db.merge(param_db,false);
+    db.merge(param_db,true);
     
     // set the argument to false for more detailed output on the console
+    Output::print<>("HIIIIIIEEEEERRRRRRRRRR");
     db.info(true);
     
     std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
@@ -183,21 +179,14 @@ void Brinkman2D::assemble()
         size_t N_FESpaces = 2;
         
         const TFESpace2D *fespmat[2] = {v_space, p_space};
-        size_t n_sq_mat;
         TSquareMatrix2D *sq_matrices[5]{nullptr}; // it's five pointers maximum (Type14)
         
-        size_t n_rect_mat;
         TMatrix2D *rect_matrices[4]{nullptr}; // it's four pointers maximum (Types 2, 4, 14)
-        
-        size_t N_Rhs = 2; // is 3 if NSE type is 4 or 14
-        double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; // third place gets only filled
-        const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
-        
+
         BoundCondFunct2D * boundary_conditions[3] = {
             v_space->GetBoundCondition(), v_space->GetBoundCondition(),
             p_space->GetBoundCondition() };
 
-        
         std::array<BoundValueFunct2D*, 3> non_const_bound_values;
         non_const_bound_values[0] = example.get_bd()[0];
         non_const_bound_values[1] = example.get_bd()[1];
@@ -216,63 +205,62 @@ void Brinkman2D::assemble()
         else
         {type=Brinkman2D_Galerkin1;}
         
-//        LocalAssembling2D la(type, fe_functions,
-//                             this->example.get_coeffs());
+        LocalAssembling2D la(type, fe_functions,
+                             this->example.get_coeffs());
         
         std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
         
         // Note: We use only Type 14 for Brinkman (for now)
-        // CB DEBUG
         if(blocks.size() != 9)
         {
             ErrThrow("Wrong blocks.size() ", blocks.size());
         }
-        //END DEBUG
-        n_sq_mat = 5;
+
+        //--------------------------------------------------------------------------------------------------
+        // call the assemble method with the information that has been patched together
+        // //old Assemble2D.C function
+        size_t n_sq_mat = 5;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
         sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
         sq_matrices[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
         
-        n_rect_mat = 4;
+        size_t n_rect_mat = 4;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); // first the lying B blocks
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
         rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); // than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
         
+        double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; // third place gets only filled
         RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
+        const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
         fesprhs[2]  = p_space;
-        N_Rhs = 3;
+        size_t N_Rhs = 3; // is 3 if NSE type is 4 or 14 (else it is 2)
+        //        Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
+        //                       n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
+        //                       boundary_conditions, non_const_bound_values.data(), la);
+        //--------------------------------------------------------------------------------------------------
         
-        // call the assemble method with the information that has been patched together
-// //old Assemble2D.C function
-//        Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
-//                       n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
-//                       boundary_conditions, non_const_bound_values.data(), la);
+        Assembler4 Ass(type, fe_functions, this->example.get_coeffs());
+        // Brinkmann-specific choices
+        std::vector<const TFESpace2D*> spaces_for_matrix;
+        spaces_for_matrix.resize(2);
+        spaces_for_matrix[0] = v_space;
+        spaces_for_matrix[1] = p_space;
         
-        
-        
-        Assembler3 Ass(type, fe_functions, this->example.get_coeffs());
-	// Brinkmann-specific choices
-	std::vector<const TFESpace2D*> spaces_for_matrix;
-	spaces_for_matrix.resize(2);
-	spaces_for_matrix[0] = v_space;
-	spaces_for_matrix[1] = p_space;
-	
         std::vector<const TFESpace2D*> spaces_for_rhs;
-	spaces_for_rhs.resize(3);
-	spaces_for_rhs[0] = v_space;
-	spaces_for_rhs[1] = v_space;
-	spaces_for_rhs[2] = p_space;
-
-	Ass.Assemble2D(s.matrix,s.rhs,
-		       spaces_for_matrix,spaces_for_rhs,
+        spaces_for_rhs.resize(3);
+        spaces_for_rhs[0] = v_space;
+        spaces_for_rhs[1] = v_space;
+        spaces_for_rhs[2] = p_space;
+        
+        Ass.Assemble2D(s.matrix,s.rhs,
+                       spaces_for_matrix,spaces_for_rhs,
                        example);
         
-        //-----------------------------------------------------------------------------------------------------------//
+        //--------------------------------------------------------------------------------------------------
         // Weakly Imposing Boundary Conditions - Boundary Integrals
-        //-----------------------------------------------------------------------------------------------------------//
         
         BoundaryAssembling2D bi;
         
@@ -367,6 +355,8 @@ void Brinkman2D::assemble()
                        t*TDatabase::ParamDB->nitsche_penalty[k],                  // mult
                        true);                                                   // rescale local integral by edge values
         }
+        
+        //--------------------------------------------------------------------------------------------------
         
         // copy Dirichlet values from right hand side into solution
         s.solution.copy_nonactive(s.rhs);
@@ -472,7 +462,6 @@ void Brinkman2D::solve()
 /** ************************************************************************ */
 void Brinkman2D::output(int i)
 {
-    
     bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
     if( no_output )
         return;
