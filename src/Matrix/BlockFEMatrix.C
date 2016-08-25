@@ -996,6 +996,13 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
   }
 
   //B: CORRECTIONS DUE TO PRESSURE PROJECTION
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  if(my_rank==0) // in MPI case, only rank 0 does pressure projection
+                 // but keep in mind, that there is absolutely no guarantee,
+                 // that the same d.o.f. as in seq is affected
+#endif
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {// TODO: remove database dependency
    // TODO: this entire business is still a mess!!!
