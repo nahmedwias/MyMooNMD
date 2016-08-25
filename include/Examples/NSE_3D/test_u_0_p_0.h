@@ -57,30 +57,100 @@ void ExactP(double x, double y,  double z, double *values)
 /* ****
  From here it's the same for all NSE3D test Examples.
  * **** */
+//Helpful for adjusting NSE Neumann bdry conditions - ONLY LAPCLAETYPE 0!
+double S_times_n(
+    double x, double y, double z,
+    double n0, double n1, double n2, size_t i)
+{
+  //load the desired exact values of u and p
+  double u1[5] = {0,0,0,0,0};
+  double u2[5] = {0,0,0,0,0};
+  double u3[5] = {0,0,0,0,0};
+  double p[5] = {0,0,0,0,0};
+  ExactU1(x,y,z, u1);
+  ExactU2(x,y,z, u2);
+  ExactU3(x,y,z, u3);
+  ExactP(x,y,z,p);
+
+  //set up the gradient matrix
+  double du[3][3];
+  du[0][0] = u1[1];
+  du[0][1] = u1[2];
+  du[0][2] = u1[3];
+  du[1][0] = u2[1];
+  du[1][1] = u2[2];
+  du[1][2] = u2[3];
+  du[2][0] = u3[1];
+  du[2][1] = u3[2];
+  du[2][2] = u3[3];
+
+  // the outer normal entries as a vector
+  double n[3] = {n0, n1, n2};
+
+  double nu = DIMENSIONLESS_VISCOSITY;
+
+  double sum = 0;
+  for (int k=0; k<3; ++k)
+  {
+    sum += nu * du[i][k] * n[k];
+  }
+  sum -= p[0]*n[i]; //subtract pressure part
+  return sum;
+}
+
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+  double tol = 1e-10;
+  if(fabs(1-x) < tol)
+    cond = NEUMANN; //Only if x==1, then Neumann bdry condition
+  else
+  {
+    cond = DIRICHLET;
+  }
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=0;
 }
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
 {
+  double tol = 1e-10;
+  if(fabs(1-x) < tol)
+  {
+    value = 0;
+    //value = S_times_n(x,y,z, 1,0,0, 0);
+  }
+  else
+  {
   double diri[5];
   ExactU1(x,y,z,diri);
   value = diri[0]; //Dirichlet value
+  }
 }
 void U2BoundValue(double x, double y, double z, double &value)
 {
+  double tol = 1e-10;
+  if(fabs(1-x) < tol)
+    value = 5;
+    //value = S_times_n(x,y,z, 1,0,0, 1);
+  else
+  {
   double diri[5];
   ExactU2(x,y,z,diri);
   value = diri[0]; //Dirichlet value
+  }
 }
 void U3BoundValue(double x, double y, double z, double &value)
 {
+  double tol = 1e-10;
+  if(fabs(1-x) < tol)
+    value = 0;
+    //value = S_times_n(x,y,z, 1,0,0, 2);
+  else
+  {
   double diri[5];
   ExactU3(x,y,z,diri);
   value = diri[0]; //Dirichlet value
+  }
 }
 
 void LinCoeffs(int n_points, double * X, double * Y, double * Z,
