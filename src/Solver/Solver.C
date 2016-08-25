@@ -9,6 +9,7 @@
 #include <Iteration_richardson.h>
 #include <Iteration_sor.h>
 #include <Preconditioner.h>
+#include <Preconditioner_vanka.h>
 #include <Saddle_point_preconditioner.h>
 #include <DirectSolver.h>
 #include <PETScSolver.h>
@@ -85,7 +86,8 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "specific for some problem types.",
          {"no_preconditioner", "jacobi", "sor", "ssor", "multigrid", 
           "semi_implicit_method_for_pressure_linked_equations",
-          "least_squares_commutator", "least_squares_commutator_boundary"});
+          "least_squares_commutator", "least_squares_commutator_boundary",
+          "vanka_cell", "vanka_nodal", "vanka_cell_jacobi"}); //TODO maybe these vanka preconditioner types should be controlled by another db parameter
   
   db.add("sor_omega", 1.5, "The overrelaxation parameter (typically called "
          "omega). This is only used for the (symmetric) successive "
@@ -151,6 +153,21 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
     return std::make_shared<Saddle_point_preconditioner>(
       matrix, Saddle_point_preconditioner::type::simple,
       db["saddle_point_preconditioner_direct_velocity_solve"]);
+  }
+  else if(preconditioner_name == "vanka_cell")
+  {
+    return std::make_shared<Preconditioner_vanka<V>>(
+        matrix, VankaType::CELL, 0.8);
+  }
+  else if(preconditioner_name == "vanka_nodal")
+  {
+    return std::make_shared<Preconditioner_vanka<V>>(
+        matrix, VankaType::NODAL, 0.8);
+  }
+  else if(preconditioner_name == "vanka_cell_jacobi")
+  {
+    return std::make_shared<Preconditioner_vanka<V>>(
+        matrix, VankaType::CELL_JACOBI, 0.8);
   }
   else
   {
@@ -298,6 +315,25 @@ void Solver<L, V>::update_matrix(const L& matrix)
 template <class L, class V>
 void Solver<L, V>::solve(const V& rhs, V& solution)
 {
+//    {
+//    //CB DEBUG (this is not my code, but it qualifies as debug code!)
+//    //compute the absolute residual by hand again.
+//    V r(rhs);
+//    linear_operator->apply_scaled_add(solution, r, -1.);
+//  #ifndef _MPI
+//    Output::info<1>("Iterative solver", "Absolute residual in Solver class, before solve: ",
+//                    setprecision(16), r.norm());
+//  #elif _MPI
+//    int my_rank;
+//    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+//    double norm = r.norm_global(linear_operator->get_communicators());
+//    if(my_rank == 0)
+//      Output::info<1>("Iterative solver", "Absolute residual in Solver class, before solve: ",
+//                      setprecision(16), norm);
+//  #endif
+//    //END DEBUG
+//    }
+
   if(this->linear_operator == nullptr)
     ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
              "Solver::update_matrix first. Otherwise it's not clear which "
@@ -318,10 +354,21 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
   {
     ErrThrow("unknown solver type ", db["solver_type"]);
   }
-  //compute the residual by hand again.
-  V r(rhs);
-  linear_operator->apply_scaled_add(solution, r, -1.);
-  Output::print<1>("computed residual in Solver class: ", r.norm());
+//  //CB DEBUG (this is not my code, but it qualifies as debug code!)
+//  //compute the absolute residual by hand again.
+//  V r(rhs);
+//  linear_operator->apply_scaled_add(solution, r, -1.);
+//#ifndef _MPI
+//  Output::info<1>("Iterative solver", "Absolute residual in Solver class: ",setprecision(16), r.norm());
+//#elif _MPI
+//  int my_rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+//  double norm = r.norm_global(linear_operator->get_communicators());
+//  if(my_rank == 0)
+//    Output::info<1>("Iterative solver", "Absolute residual in Solver class: ",
+//                    setprecision(16), norm);
+//#endif
+//  //END DEBUG
 }
 
 /* ************************************************************************** */
@@ -331,6 +378,24 @@ void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution)
 {
   this->update_matrix(matrix);
   this->solve(rhs, solution);
+//  //CB DEBUG
+//#ifdef _MPI
+//      int size, my_rank;
+//      MPI_Comm_size(MPI_COMM_WORLD, & size);
+//      MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+//      double norm = solution.norm_global(matrix.get_communicators());
+//      double normb = rhs.norm_global(matrix.get_communicators());
+//#else
+//      int my_rank = 0;
+//      double norm = solution.norm();
+//      double normb = rhs.norm();
+//#endif
+//      if(my_rank == 0)
+//      {
+//        Output::print("Global norm of solution: ", norm);
+//        Output::print("Global norm of rhs: ", normb);
+//      }
+//  //END DEBUG
 }
 
 /* ************************************************************************** */

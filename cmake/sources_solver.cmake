@@ -15,6 +15,7 @@ list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Iteration_multigrid
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Iteration_richardson.C")
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Iteration_sor.C")
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/PETScSolver.C")
+list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Preconditioner_vanka.C")
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Saddle_point_preconditioner.C")
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Solver.C")
 
