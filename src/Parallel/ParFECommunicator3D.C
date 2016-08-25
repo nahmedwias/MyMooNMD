@@ -245,13 +245,7 @@ void TParFECommunicator3D::update_from_additive_to_consistent_storage(
 
 void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
 {
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-  
+
   double t1,t2;
   t1=MPI_Wtime();
   
@@ -339,13 +333,6 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
 
 void TParFECommunicator3D::CommUpdateMS(double *sol) const
 {
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-
   int i,j,k;
   double t1,t2;
   t1=MPI_Wtime();
@@ -376,13 +363,6 @@ void TParFECommunicator3D::CommUpdateMS(double *sol) const
 
 void TParFECommunicator3D::CommUpdateH1(double *sol) const
 {
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-
   int i,j,k;
   double t1,t2;
   t1=MPI_Wtime();
@@ -416,13 +396,6 @@ void TParFECommunicator3D::CommUpdateH1(double *sol) const
 
 void TParFECommunicator3D::CommUpdateH2(double *sol) const
 {
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-
   int i,j,k;
   double t1,t2;
   t1=MPI_Wtime();
