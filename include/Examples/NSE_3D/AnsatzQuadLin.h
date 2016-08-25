@@ -11,6 +11,7 @@ double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
   Output::print<1>("Example: AnsatzQuadLin.h");
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // ========================================================================
