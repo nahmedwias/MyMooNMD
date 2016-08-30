@@ -1,10 +1,15 @@
 /**
  * Simple example for Navier-Stokes 3D, used for development, debugging and testing.
- * Should work for each geometry.
- * 
+ * Should work for each geometry (when Dirichlet conditions only!).
+ * Note: Got equipped with Neumann boundary conditions (assuming the unit cube
+ * [0,1]^3) on the front face (x==1).
+ *
+ * @note: There is a note in the ParMooN to do directory on what to regard when
+ * coupling Neumann and Dirichlet boundary conditions in a ParMooN 3D examples.
+ *
  * Constant velocity solution u = (1,0,0).
  * Constant pressure solution p = 0.
- * Dirichlet boundary conditions only.
+ * Dirichlet boundary conditions, and one cube facet with Neumann boundaries .
  * 
  * @author ???, Clemens Bartsch imported this from MooNMD
  * @date 2016/03/11 Import to ParMooN.
@@ -18,6 +23,7 @@ void ExampleFile()
 {
   OutPut("Example: test_u_0_p_0. Constant velocity solution u=(1,0,0), "
 	 "constant pressure solution p=0. \n");
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=0;
 }
 
 // exact solution
@@ -54,10 +60,32 @@ void ExactP(double x, double y,  double z, double *values)
   values[3] = 0;
   values[4] = 0;
 }
+
+// Helper function - finds out if (x,y,z) is on the interior of the face
+// with x==1 (the "front face", if one imagines it in Cartesian system).
+bool on_front_face_interior(double x, double y, double z)
+{
+  double tol = 1e-10;
+  return fabs(1-x) < tol
+      && !(fabs(y -1) < tol)  && !(fabs(y) < tol)
+      && !(fabs(z -1) < tol)  && !(fabs(z) < tol);
+}
+
 /* ****
  From here it's the same for all NSE3D test Examples.
  * **** */
-//Helpful for adjusting NSE Neumann bdry conditions - ONLY LAPCLAETYPE 0!
+/**
+ * Helpful for adjusting NSE Neumann bdry conditions to a given analytical
+ * solution - ONLY LAPLACETYPE 0 implemented!
+ * Calculates S*n, where S is the Cauchy stress tensor. Neumann bdry conditions
+ * in NSE mean to prescribe the value of S*n.
+ * For Laplacetype 0 we have S = nu * grad(u) - p*I, and n is the outer normal
+ * of the boundary part.
+ * @param[in] x, y, z The boundary point.
+ * @param[in] n0, n1, n2 The outer normal on the bdry part in (x,y,z).
+ * @param[in] i The column of the result we are interested in.
+ */
+
 double S_times_n(
     double x, double y, double z,
     double n0, double n1, double n2, size_t i)
@@ -92,7 +120,11 @@ double S_times_n(
   double sum = 0;
   for (int k=0; k<3; ++k)
   {
-    sum += nu * du[i][k] * n[k];
+    //TODO Remove this global Database dependency!
+    if(TDatabase::ParamDB->LAPLACETYPE == 0)
+      sum += nu * du[i][k] * n[k];
+    else if(TDatabase::ParamDB->LAPLACETYPE == 1)
+      sum += nu * (du[i][k] + du[k][i])* n[k];
   }
   sum -= p[0]*n[i]; //subtract pressure part
   return sum;
@@ -101,24 +133,19 @@ double S_times_n(
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  double tol = 1e-10;
-  if(fabs(1-x) < tol)
-    cond = NEUMANN; //Only if x==1, then Neumann bdry condition
+
+  if(on_front_face_interior(x,y,z)) //Neumann only on interior of the plane with x == 1
+    cond = NEUMANN;
   else
   {
     cond = DIRICHLET;
   }
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=0;
 }
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
 {
-  double tol = 1e-10;
-  if(fabs(1-x) < tol)
-  {
-    value = 0;
-    //value = S_times_n(x,y,z, 1,0,0, 0);
-  }
+  if(on_front_face_interior(x,y,z))
+    value = S_times_n(x,y,z, 1,0,0, 0);
   else
   {
   double diri[5];
@@ -128,10 +155,8 @@ void U1BoundValue(double x, double y, double z, double &value)
 }
 void U2BoundValue(double x, double y, double z, double &value)
 {
-  double tol = 1e-10;
-  if(fabs(1-x) < tol)
-    value = 5;
-    //value = S_times_n(x,y,z, 1,0,0, 1);
+  if(on_front_face_interior(x,y,z))
+    value = S_times_n(x,y,z, 1,0,0, 1);
   else
   {
   double diri[5];
@@ -141,15 +166,13 @@ void U2BoundValue(double x, double y, double z, double &value)
 }
 void U3BoundValue(double x, double y, double z, double &value)
 {
-  double tol = 1e-10;
-  if(fabs(1-x) < tol)
-    value = 0;
-    //value = S_times_n(x,y,z, 1,0,0, 2);
+  if(on_front_face_interior(x,y,z))
+    value = S_times_n(x,y,z, 1,0,0, 2);
   else
   {
-  double diri[5];
-  ExactU3(x,y,z,diri);
-  value = diri[0]; //Dirichlet value
+    double diri[5];
+    ExactU3(x,y,z,diri);
+    value = diri[0]; //Dirichlet value
   }
 }
 
