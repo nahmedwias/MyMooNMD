@@ -1483,6 +1483,14 @@ void GridTransfer::RestrictFunction(
 #pragma omp parallel default(shared) private(i)
 #pragma omp for schedule(static) nowait
 #endif
+
+#ifdef _MPI
+    // Updates and numbers are stored additive. Make the vectors consistent.
+    const TParFECommunicator3D& comm = CoarseSpace.get_communicator();
+    comm.update_from_additive_to_consistent_storage(CoarseFunction,0);
+    comm.update_from_additive_to_consistent_storage(aux,0);
+#endif
+
   for(i=0;i<N_CoarseDOFs;i++)
     CoarseFunction[i] /= aux[i];
 
