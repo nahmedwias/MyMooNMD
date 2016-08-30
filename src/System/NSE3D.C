@@ -219,7 +219,9 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
     // initialize the multigrid object with all the matrices on all levels
     mg->initialize(matrices);
   }
+#ifndef _MPI
   output_problem_size_info();
+#endif
 
 }
 
@@ -562,6 +564,14 @@ void NSE3D::assemble_non_linear_term()
 
   for(auto &s : this->systems_)
   {
+#ifdef _MPI
+    //MPI: solution in consistency level 3 (TODO: this might be superfluous here)
+    for (size_t bl = 0; bl < s.solution_.n_blocks() ;++bl)
+    {
+      s.matrix_.get_communicators()[bl]->consistency_update(s.solution_.block(bl), 3);
+    }
+#endif
+
     // spaces for matrices
     const TFESpace3D* spaces[1] = {&s.velocitySpace_};
     
@@ -697,6 +707,15 @@ void NSE3D::compute_residuals()
   unsigned int n_p_dof = s.solution_.length(3);
 
   // copy rhs to defect and compute defect
+#ifdef _MPI
+    //MPI: solution in consistency level 3 (TODO: maybe this is superfluous here!)
+    auto comms = s.matrix_.get_communicators();
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(s.solution_.block(bl), 3);
+    }
+#endif
+
   defect_ = s.rhs_;
   s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
 
