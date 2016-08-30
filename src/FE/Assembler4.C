@@ -240,6 +240,8 @@ void Assembler4::impose_boundary_conditions(const TFESpace2D *fespace,
                         Output::print<4>(" ** Assembler: WARNING: NEUMANN and ROBIN boundary conditions are not supported. ** ");
                         Output::print<4>(" ** You can try to use the old Assemble2D(...) instead ** ");
                         break;
+                    case DIRICHLET_WEAK:
+                        break;
                     default :
                         OutPut("Unknown boundary condition !"<< endl);
                         exit(4711);

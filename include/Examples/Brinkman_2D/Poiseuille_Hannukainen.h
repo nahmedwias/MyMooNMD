@@ -88,7 +88,8 @@ void BoundCondition(int i, double Param, BoundCond &cond)
     {
         if (i==TDatabase::ParamDB->nitsche_boundary_id[j])
         {
-            cond = DIRICHLET_WEAK;
+            // Todo
+            //cond = DIRICHLET_WEAK;
             return;
         }
     }

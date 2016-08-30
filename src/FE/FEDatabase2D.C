@@ -1722,19 +1722,8 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
                           double* &weights, double* X, double* Y,
                           double* absdetjk)
 {
-  int i, MaxPolynomialDegree, PolynomialDegree, N_Edges, N_terms;
-  BF2DRefElements RefElement;
-  QuadFormula2D QuadFormula;
-  TQuadFormula2D *qf2;
-  RefTrans2D RefTrans, *RefTransArray, CurrentRefTrans;
-  TRefTrans2D *rt;
   BaseFunct2D BaseFuncts[N_FEs2D];
-  JointType jointtype;
   TJoint *joint;
-  bool IsIsoparametric;
-  BoundTypes bdtype;
-  int MaxApproxOrder, ApproxOrder;
-
   BaseFunct2D BaseFunct;
   double **origvaluesD00, **origvaluesD10, **origvaluesD01;
   double **origvaluesD20, **origvaluesD11, **origvaluesD02;
@@ -1747,25 +1736,25 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
 
   // find adequate quadrature formula for all elements
   // and find needed reference transformation
-  RefTransArray = TFEDatabase2D::GetRefTrans2D_IDFromFE2D();
-  RefTrans = RefTransArray[LocalUsedElements[0]];
-  MaxPolynomialDegree = 0;
-  MaxApproxOrder = 0;
-  RefElement = TFEDatabase2D::GetRefElementFromFE2D(LocalUsedElements[0]);
+  RefTrans2D *RefTransArray = TFEDatabase2D::GetRefTrans2D_IDFromFE2D();
+  RefTrans2D RefTrans = RefTransArray[LocalUsedElements[0]];
+  int MaxPolynomialDegree = 0;
+  int MaxApproxOrder = 0;
+  BF2DRefElements RefElement = TFEDatabase2D::GetRefElementFromFE2D(LocalUsedElements[0]);
   
-  for(i=0;i<N_LocalUsedElements;i++)
+  for(int i=0;i<N_LocalUsedElements;i++)
   {
     BaseFuncts[i] = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D(LocalUsedElements[i]);
-    PolynomialDegree = PolynomialDegreeFromFE2D[LocalUsedElements[i]];
+    int PolynomialDegree = PolynomialDegreeFromFE2D[LocalUsedElements[i]];
     if(PolynomialDegree > MaxPolynomialDegree) 
       MaxPolynomialDegree = PolynomialDegree;
-    ApproxOrder = AccuracyFromFE2D[LocalUsedElements[i]];
+    int ApproxOrder = AccuracyFromFE2D[LocalUsedElements[i]];
     if(ApproxOrder > MaxApproxOrder)
       MaxApproxOrder = ApproxOrder;
 
-    CurrentRefTrans = RefTransArray[LocalUsedElements[i]];
+    RefTrans2D CurrentRefTrans = RefTransArray[LocalUsedElements[i]];
     if(CurrentRefTrans > RefTrans)
-      RefTrans = CurrentRefTrans;
+       RefTrans = CurrentRefTrans;
   }
   // cout << "MaxPolynomialDegree: " << MaxPolynomialDegree << endl;
   // cout << "MaxApproxOrder: " << MaxApproxOrder << endl;
@@ -1779,85 +1768,87 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
       MaxApproxOrder = (ABS(TDatabase::ParamDB->VELOCITY_SPACE))%10;
     // cout << "MaxApproxOrder: " << MaxApproxOrder << endl;
   }
-  
-  // number of terms in products that need to be assembled
-  if (TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR)
-    N_terms = 2;
-  else
-    N_terms = 3;
-
-  switch(RefElement)
-  {
-    case BFUnitSquare:
-      QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(N_terms*MaxPolynomialDegree);
-      
-      if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 95)
-      {
-        QuadFormula = GetQFQuadFromDegree(3);
-      }
-      if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 97)
-      {
-	  QuadFormula = GetQFQuadFromDegree(18);
-      }
-      if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 96)
-      {
-	  QuadFormula = GetQFQuadFromDegree(9);
-      }
-      if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 99)
-      {
-	  QuadFormula = GetQFQuadFromDegree(18);
-      }
-      if (TDatabase::ParamDB->INTERNAL_QUAD_QUAD<N_terms*MaxPolynomialDegree)
-      {
-       #ifdef _MPI
-       if(rank==out_rank)
-       #endif
-       {
-        switch(3*MaxPolynomialDegree)
-        {
-          case 0:
-            Output::print<2>("Quadrature formula for quadrilateral is Gauss2"); 
-            break;
-          case 3:
-            Output::print<2>("Quadrature formula for quadrilateral is Gauss3"); 
-            break;
-          case 6:
-            Output::print<2>("Quadrature formula for quadrilateral is Gauss4"); 
-            break;
-          case 9:
-            Output::print<2>("Quadrature formula for quadrilateral is Gauss5"); 
-            break;
-          case 12:
-            Output::print<2>("Quadrature formula for quadrilateral is Gauss7"); 
-            break;
-          case 15:
-            Output::print<2>("Quadrature formula for quadrilateral is Gauss8"); 
-            break;
-          case 18:
-            Output::print<2>("Quadrature formula for quadrilateral is Gauss9"); 
-            break;
-        }
-        if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 95)
-      {
-        Output::print<2>("Quadrature formula for quadrilateral is Gauss3"); 
-      }
-	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 97)
-	{
-	  Output::print<2>("Quadrature formula for quadrilateral is set to Gauss9"); 
-	}
-	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 96)
-	{
-	  Output::print<2>("Quadrature formula for quadrilateral is set to Gauss5"); 
-	}
-	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 99)
-	{
-	  Output::print<2>("Quadrature formula for quadrilateral is set to Gauss9"); 
-	}
-        }
-
-
-        TDatabase::ParamDB->INTERNAL_QUAD_QUAD = N_terms*MaxPolynomialDegree;
-	TDatabase::ParamDB->INTERNAL_MESH_CELL_TYPE = 4;
+    int N_terms, N_Edges;
+    QuadFormula2D QuadFormula;
+    // number of terms in products that need to be assembled
+    if (TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR)
+        N_terms = 2;
+    else
+        N_terms = 3;
+    
+    switch(RefElement)
+    {
+        case BFUnitSquare:
+            
+            QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(N_terms*MaxPolynomialDegree);
+            
+            if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 95)
+            {
+                QuadFormula = GetQFQuadFromDegree(3);
+            }
+            if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 97)
+            {
+                QuadFormula = GetQFQuadFromDegree(18);
+            }
+            if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 96)
+            {
+                QuadFormula = GetQFQuadFromDegree(9);
+            }
+            if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 99)
+            {
+                QuadFormula = GetQFQuadFromDegree(18);
+            }
+            if (TDatabase::ParamDB->INTERNAL_QUAD_QUAD<N_terms*MaxPolynomialDegree)
+            {
+#ifdef _MPI
+                if(rank==out_rank)
+#endif
+                {
+                    switch(3*MaxPolynomialDegree)
+                    {
+                        case 0:
+                            Output::print<2>("Quadrature formula for quadrilateral is Gauss2");
+                            break;
+                        case 3:
+                            Output::print<2>("Quadrature formula for quadrilateral is Gauss3");
+                            break;
+                        case 6:
+                            Output::print<2>("Quadrature formula for quadrilateral is Gauss4");
+                            break;
+                        case 9:
+                            Output::print<2>("Quadrature formula for quadrilateral is Gauss5");
+                            break;
+                        case 12:
+                            Output::print<2>("Quadrature formula for quadrilateral is Gauss7");
+                            break;
+                        case 15:
+                            Output::print<2>("Quadrature formula for quadrilateral is Gauss8");
+                            break;
+                        case 18:
+                            Output::print<2>("Quadrature formula for quadrilateral is Gauss9");
+                            break;
+                    }
+                    if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 95)
+                    {
+                        Output::print<2>("Quadrature formula for quadrilateral is Gauss3");
+                    }
+                    if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 97)
+                    {
+                        Output::print<2>("Quadrature formula for quadrilateral is set to Gauss9"); 
+                    }
+                    if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 96)
+                    {
+                        Output::print<2>("Quadrature formula for quadrilateral is set to Gauss5"); 
+                    }
+                    if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 99)
+                    {
+                        Output::print<2>("Quadrature formula for quadrilateral is set to Gauss9"); 
+                    }
+                }
+                
+                
+                TDatabase::ParamDB->INTERNAL_QUAD_QUAD = N_terms*MaxPolynomialDegree;
+                TDatabase::ParamDB->INTERNAL_MESH_CELL_TYPE = 4;
       }
       N_Edges = 4;
     break;
@@ -1950,22 +1941,22 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
       N_Edges = 0;
   } // endswitch
 
-  IsIsoparametric = FALSE;
+  bool IsIsoparametric = FALSE;
   if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
   {
-    for(i=0;i<N_Edges;i++)
+    for(int i=0;i<N_Edges;i++)
     {
       joint = cell->GetJoint(i);
-      jointtype = joint->GetType();
+        JointType jointtype = joint->GetType();
       if(jointtype == BoundaryEdge)
       {
-        bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
+        BoundTypes bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Line)
           IsIsoparametric = TRUE;
       }
       if(jointtype == InterfaceJoint)
       {
-        bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
+        BoundTypes bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Line)
           IsIsoparametric = TRUE;
       }
@@ -1990,12 +1981,12 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
   } // endif IsIsoparametric
 
   //cout << "QuadFormula: " << QuadFormula << endl;
-  qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+  TQuadFormula2D *qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
   qf2->GetFormulaData(N_Points, weights, xi, eta);
 
   // calculate the values of base functions and their derivatives
   // on the original element
-  rt = TFEDatabase2D::ReferenceTrans2D[RefTrans];
+  TRefTrans2D *rt = TFEDatabase2D::ReferenceTrans2D[RefTrans];
   switch(RefTrans)
   {
     case TriaAffin:
@@ -2060,7 +2051,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
     break;
   } // endswitch
 
-  for(i=0;i<N_LocalUsedElements;i++)
+  for(int i=0;i<N_LocalUsedElements;i++)
   {
     BaseFunct=BaseFuncts[i];
     origvaluesD00=TFEDatabase2D::GetOrigElementValues(BaseFunct, D00);

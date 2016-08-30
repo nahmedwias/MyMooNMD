@@ -106,11 +106,11 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
   systems(), example(e), defect(), oldResiduals(), 
 initial_residual(1e10), errors()
 {
-    db.merge(param_db,true);
+    this->db.merge(param_db,false);
     
     // set the argument to false for more detailed output on the console
-    Output::print<>("HIIIIIIEEEEERRRRRRRRRR");
-    db.info(true);
+//    Output::print<>("HIIIIIIEEEEERRRRRRRRRR");
+//    db.info(true);
     
     std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                                  TDatabase::ParamDB->PRESSURE_SPACE);
@@ -199,9 +199,11 @@ void Brinkman2D::assemble()
         LocalAssembling2D_type type;
         
         if (db["P2P2_stab"].is(true))
-        {type=Brinkman2D_Galerkin1ResidualStab2;}
+        {type=Brinkman2D_Galerkin1ResidualStab2;
+        Output::print<>("P2P2 Stabilization");}
         else if (db["P1P1_stab"].is(true))
-        {type=Brinkman2D_Galerkin1ResidualStab;}
+        {type=Brinkman2D_Galerkin1ResidualStab;
+            Output::print<>("P1P1 Stabilization");}
         else
         {type=Brinkman2D_Galerkin1;}
         
@@ -470,6 +472,8 @@ void Brinkman2D::output(int i)
     TFEFunction2D* u1 = s.u.GetComponent(0);
     TFEFunction2D* u2 = s.u.GetComponent(1);
     
+   // u1.Interpolate(example.get_exact());
+    
     // print the value of the largest and smallest entry in the finite element
     // vector
     if( (size_t)db["verbosity"]> 1 )
@@ -494,11 +498,12 @@ void Brinkman2D::output(int i)
     // in such a case here only integrals of the solution are computed.
     if( db["output_compute_errors"] )
     {
-        double err[5];
+        double err[4];
         TAuxParam2D aux_error;
         MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
         const TFESpace2D *velocity_space = &this->get_velocity_space();
         const TFESpace2D *pressure_space = &this->get_pressure_space();
+        
         
         // errors in first velocity component
         u1->GetErrors(example.get_exact(0), 3, AllDerivatives, 2, L2H1Errors,
@@ -507,8 +512,8 @@ void Brinkman2D::output(int i)
         u2->GetErrors(example.get_exact(1), 3, AllDerivatives, 2, L2H1Errors,
                       nullptr, &aux_error, 1, &velocity_space, err + 2);
         
-        errors.at(0) = sqrt(err[0]*err[0] + err[2]*err[2]);
-        errors.at(1) = sqrt(err[1]*err[1] + err[4]*err[4]);
+        errors.at(0) = sqrt(err[0]*err[0] + err[2]*err[2]);     // err[0]=L2-Error in u1, err[2]=L2-Error in u2
+        errors.at(1) = sqrt(err[1]*err[1] + err[3]*err[3]);     // err[1]=H1-Error in u1, err[3]=H1-Error in u2
         Output::print<1>("L2(u)     : ", setprecision(14), errors[0]);
         Output::print<1>("H1-semi(u): ", setprecision(14), errors[1]);
         
@@ -516,12 +521,12 @@ void Brinkman2D::output(int i)
         s.p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
                       nullptr, &aux_error, 1, &pressure_space, err);
         
+        
         errors.at(2) = err[0];
         errors.at(3) = err[1];
         Output::print<1>("L2(p)     : ", setprecision(14), errors[2]);
         Output::print<1>("H1-semi(p): ", setprecision(14),  errors[3]);
         
-        Output::print<1>("$", errors[0],"$&$", errors[1],"$&$", errors[2],"$&$", errors[3]);
         
     } // if(TDatabase::ParamDB->MEASURE_ERRORS)
     delete u1;
@@ -535,32 +540,32 @@ double Brinkman2D::getL2VelocityError() const
 }
 
 /** ************************************************************************ */
-double Brinkman2D::getL2DivergenceError() const
+//double Brinkman2D::getL2DivergenceError() const
+//{
+//    return this->errors[1];
+//}
+
+/** ************************************************************************ */
+double Brinkman2D::getH1SemiVelocityError() const
 {
     return this->errors[1];
 }
 
 /** ************************************************************************ */
-double Brinkman2D::getH1SemiVelocityError() const
+double Brinkman2D::getL2PressureError() const
 {
     return this->errors[2];
 }
 
 /** ************************************************************************ */
-double Brinkman2D::getL2PressureError() const
+double Brinkman2D::getH1SemiPressureError() const
 {
     return this->errors[3];
 }
 
-/** ************************************************************************ */
-double Brinkman2D::getH1SemiPressureError() const
-{
-    return this->errors[4];
-}
-
 
 /** ************************************************************************ */
-std::array< double, int(6) > Brinkman2D::get_errors()
+std::array< double, int(4) > Brinkman2D::get_errors()
 {
     return errors;
 }
