@@ -49,12 +49,6 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
       smoother_ = std::make_shared<VankaSmoother>(VankaType::NODAL, damp);
       break;
     }
-    case SmootherCode::NODAL_VANKA_JACOBI:
-    {
-      double damp = db["multigrid_vanka_damp_factor"];
-      smoother_ = std::make_shared<VankaSmoother>(VankaType::NODAL_JACOBI, damp);
-      break;
-    }
     case SmootherCode::CELL_VANKA:
     {
       double damp = db["multigrid_vanka_damp_factor"];
@@ -120,7 +114,7 @@ void MultigridLevel::calculate_defect()
   std::vector<const TParFECommunicator3D*> comms = matrix_->get_communicators();
   for(size_t bl =0; bl < comms.size(); ++bl)
   {
-    comms[bl]->consistency_update(solution_.block(bl), 2); //restore level 2 consistency of solution_
+    comms[bl]->consistency_update(solution_.block(bl), 3); //restore level 3 consistency of solution_
   }
 #endif
 

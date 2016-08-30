@@ -11,10 +11,15 @@
 #include <DofBatch.h>
 #include <Smoother.h>
 
-enum class VankaType {NODAL, CELL, BATCH, NODAL_JACOBI, CELL_JACOBI};
+#include <memory>
+
+enum class VankaType {NODAL, CELL, BATCH, CELL_JACOBI};
 
 //forward declaration
 class DenseMatrix;
+class TMatrix;
+class TFESpace;
+class TFESpace3D;
 
 /**
  * A class for Vanka smoother as used in the multgrid method. The

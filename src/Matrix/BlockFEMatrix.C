@@ -999,9 +999,10 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
 #ifdef _MPI
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  if(my_rank==0) // in MPI case, only rank 0 does pressure projection
-                 // but keep in mind, that there is absolutely no guarantee,
-                 // that the same d.o.f. as in seq is affected
+  if(my_rank==0)
+    //FIXME it is not enough, that rank 0 sets its  first pressure row to zero
+    // - each other process which knows that dof has to set the coresponding row
+    // to zero
 #endif
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {// TODO: remove database dependency
