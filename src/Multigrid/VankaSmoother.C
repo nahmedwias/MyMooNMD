@@ -33,6 +33,10 @@ VankaSmoother::VankaSmoother(VankaType type, double damp_factor, bool store)
   local_systems_(0), store_systems_(store), pressure_space_(nullptr),
   velocity_space_(nullptr)
 {
+#ifdef _MPI
+  if(type != VankaType::CELL_JACOBI)
+    ErrThrow("Only the cell_vanka_jacobi Vanka Smoother is enabled for MPI so far.");
+#endif
 }
 
 void VankaSmoother::update(const BlockFEMatrix& matrix)
@@ -98,22 +102,34 @@ void VankaSmoother::update(const BlockFEMatrix& matrix)
 #endif
 }
 
-//The implementation of the smoothing step is very procedural in nature.
+/// @todo TODO By now it's too many different strategies in here, it is not anymore
+/// intelligible - divide the method into parts!
+//The implementation of the smoothing step is very procedural in nature...
 void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
 {
-  //this is just a test for the NODAL_JACOBI strategy
-  BlockVector updates_jacobi(solution);
-  updates_jacobi.reset();
-  BlockVector update_numbers(updates_jacobi);
-  update_numbers.reset();
 
+  // Check input
   if(rhs.n_blocks() != dimension_ + 1)
     ErrThrow("VankaSmoother: rhs dimension does not fit!");
 
   if(solution.n_blocks() != dimension_ + 1)
     ErrThrow("VankaSmoother: solution dimension does not fit!");
 
-  //loop over all local systems
+#ifdef _MPI
+  // Update solution to level 3 consistency.
+  for (size_t bl = 0; bl < comms_.size();++bl)
+  {
+    comms_.at(bl)->consistency_update(solution.block(bl),3);
+  }
+#endif
+
+  // These vectors will be used in the CELL_JACOBI strategy to collect updates.
+  BlockVector updates_jacobi(solution);
+  updates_jacobi.reset(); //set to 0
+  BlockVector update_counts(updates_jacobi); //actually stores only ints
+  update_counts.reset(); //set to 0
+
+  // Loop over all local systems and do all the work
   for(size_t i = 0; i < press_dofs_local_.size() ; ++i)
   {
     const DofBatch& velo_dofs = velo_dofs_local_.at(i);
@@ -155,12 +171,12 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
     {
       /* ******** Set up local matrix *********** */
       DenseMatrix* matrix_local = new DenseMatrix(size_local,size_local);
-      for(size_t dof_loc = 0; dof_loc < size_local; ++dof_loc) //loop over all local rows
+      for(size_t r_loc = 0; r_loc < size_local; ++r_loc) //loop over all local rows
       {
-        size_t dof_glo = dof_map.at(dof_loc); //the corresponding global dof
+        size_t r_glo = dof_map.at(r_loc); //the corresponding global dof
 
-        int begin_r_glo = matrix_global_->GetRowPtr()[dof_glo];
-        int end_r_glo = matrix_global_->GetRowPtr()[dof_glo + 1];
+        int begin_r_glo = matrix_global_->GetRowPtr()[r_glo];
+        int end_r_glo = matrix_global_->GetRowPtr()[r_glo + 1];
 
         size_t c_loc = 0;// start with the 0th local column - exploit that
         // the global KCol Array and the dof_map array are sorted
@@ -182,7 +198,7 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
               break; //break loop, we're behind the end!
             if(dof_map.at(c_loc) == c_glo) //the dof c_glo is of interest for the local system
             {
-              matrix_local->setEntry(dof_loc, c_loc, entry);
+              matrix_local->setEntry(r_loc, c_loc, entry);
             }
             //else just go on
           }
@@ -196,14 +212,15 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
 
     /* ******** Set up local right hand side. *********** */
     /* (Local right hand side is global defect in local rows) */
-    for(size_t dof_loc = 0; dof_loc < size_local; ++dof_loc) //loop over all local rows
+    for(size_t r_loc = 0; r_loc < size_local; ++r_loc) //loop over all local rows
     {
 
-      size_t dof_glo = dof_map.at(dof_loc); //the corresponding global dof
-      int begin_r_glo = matrix_global_->GetRowPtr()[dof_glo];
-      int end_r_glo = matrix_global_->GetRowPtr()[dof_glo + 1];
+      size_t r_glo = dof_map.at(r_loc); //the corresponding global dof
+      int begin_r_glo = matrix_global_->GetRowPtr()[r_glo];
+      int end_r_glo = matrix_global_->GetRowPtr()[r_glo + 1];
 
-      double temp = rhs.get_entries()[dof_glo];
+      double temp = rhs.get_entries()[r_glo];
+
       for( int i = begin_r_glo ; i < end_r_glo ; ++i )
       {
         int c_glo = matrix_global_->GetKCol()[i];
@@ -211,54 +228,56 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
         temp -= matrix_glo_entry * solution.get_entries()[c_glo];
       }
 
-      rhs_local.at(dof_loc) = temp;
+      rhs_local.at(r_loc) = temp;
     }
 
     /* ******** Solve the local system with LAPACK. *********** */
     //copy rhs_local into solution_local
     solution_local = rhs_local;
     local_systems_.at(i)->solve(&solution_local.at(0));
+
     if (!store_systems_)
     {
       delete local_systems_[i]; local_systems_[i] = nullptr;
     }
 
     /* ******** Add damped local solution to global solution. *********** */
-    for(size_t dof_loc = 0; dof_loc < size_local; ++dof_loc) //loop over all local rows
+    for(size_t r_loc = 0; r_loc < size_local; ++r_loc) //loop over all local rows
     {
       double damp = damp_factor_;
-      size_t dof_glo = dof_map.at(dof_loc); //the corresponding global dof
-      if(type_ == VankaType::NODAL_JACOBI || type_ == VankaType::CELL_JACOBI)
+      size_t r_glo = dof_map.at(r_loc); //the corresponding global dof
+      if(type_ == VankaType::CELL_JACOBI)
       {
-        updates_jacobi.get_entries()[dof_glo] += damp*solution_local.at(dof_loc); //update only the temp vector
-        update_numbers.get_entries()[dof_glo] += 1;
+        // Store the updates in update_jacobi and count in update_counts.
+        updates_jacobi.get_entries()[r_glo] += damp*solution_local.at(r_loc);
+        update_counts.get_entries()[r_glo] += 1;
       }
       else
       {
-        solution.get_entries()[dof_glo] += damp*solution_local.at(dof_loc);
+        solution.get_entries()[r_glo] += damp*solution_local.at(r_loc);
       }
     }
   }
 
-  if(type_ == VankaType::NODAL_JACOBI || type_ == VankaType::CELL_JACOBI)
+  if(type_ == VankaType::CELL_JACOBI)
   {
 #ifdef _MPI
-    // in MPI case, the algorithm requires to add those update parts which
-    // reached interface slave d.o.f. to corresponding master d.o.f.
+    // Updates and numbers are stored additive. Make the vectors consistent.
     for (size_t bl = 0; bl < comms_.size();++bl)
     {
-      comms_.at(bl)->update_from_additive_to_consistent_storage(update_numbers.block(bl),0);
+      comms_.at(bl)->update_from_additive_to_consistent_storage(update_counts.block(bl),0);
       comms_.at(bl)->update_from_additive_to_consistent_storage(updates_jacobi.block(bl),0);
     }
 #endif
-    for(int i = 0; i < updates_jacobi.length(); ++i)
+    for(size_t i = 0; i < updates_jacobi.length(); ++i)
     {
-      if(update_numbers.get_entries()[i] != 0) //don't divide by zero...
+      if(update_counts[i] != 0) //don't divide by zero...
       {
-        solution[i] += ((double)1/(double)update_numbers[i])*updates_jacobi.get_entries()[i];
+        solution[i] += updates_jacobi[i]/(double)update_counts[i];
       }
     }
   }
+
 
 }
 
@@ -275,23 +294,15 @@ void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
 #ifdef _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    //in MPI case, only use master dof and/or own cells for the setting up of local systems
-    const int* masters = dynamic_cast<const TFESpace3D&>(pressureSpace).get_communicator().GetMaster();
 #endif
 
   switch (type_) {
     case VankaType::NODAL:
-    case VankaType::NODAL_JACOBI:
     { // pressure node oriented Vanka
       //There are as many batches as nodes in this case.
       int nBatches = pressureSpace.GetN_DegreesOfFreedom();
       //Loop over cells.
       for (int i=0;i<nBatches;i++){
-#ifdef _MPI
-        //choose only master pressure dof to form local systems
-        if(masters[i] != my_rank)
-          continue;
-#endif
         //To every node belongs a pressure batch. Create that batch here.
         DofBatch currentPressureBatch{};
         currentPressureBatch.addDof(i);
@@ -303,9 +314,9 @@ void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
     } break;
 
     case VankaType::CELL:
-    case VankaType::BATCH:
     case VankaType::CELL_JACOBI:
-    { //cell and cellbatch oriented Vanka treat the pressure dofs the same.
+    case VankaType::BATCH:
+    { //cell, cell_jacobi and batch oriented Vanka treat the pressure dofs the same.
 
       //There are as many batches as cells in this case.
       int nBatches = pressureSpace.GetN_Cells();
@@ -317,6 +328,7 @@ void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
       //Loop over cells.
       for (int i=0;i<nBatches;i++){
 #ifdef _MPI
+        // Assume that this is CELL_JACOBI
         //choose only own cells to form local systems
         if(pressureSpace.GetCollection()->GetCell(i)->IsHaloCell())
           continue;
@@ -338,11 +350,8 @@ void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
     }
     break;
 
-    default: {
-      Error("Unknown or unimplemented Vanka smoother type! " << endl);
-      exit(-1);
-    } break;
-
+    default:
+      ErrThrow("Unknown or unimplemented Vanka smoother type! ");
 
   }
 
@@ -359,14 +368,12 @@ void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
  * To each row (crsp. pressure dof) put the columns (crsp. velo dofs)
  * into the corresponding velocity dof batch.
  *
- * This method is the same for all nodal vankas, but think carefully about which matrix block to pass in
- * the different NSTYPE cases.
+ * This method is the same for all nodal vankas.
  */
 void VankaSmoother::set_up_velocity_batches(const TMatrix& pressureVelocityMatrix,
                                             const TFESpace& velocitySpace){
   switch (type_) {
     case VankaType::NODAL:
-    case VankaType::NODAL_JACOBI:
     case VankaType::BATCH: //nodal and cellbatch Vanka treat assorting of velocity batches the same.
     {
       // Hold pointers for lookup in the coupling matrix.
@@ -409,8 +416,9 @@ void VankaSmoother::set_up_velocity_batches(const TMatrix& pressureVelocityMatri
       //Loop over cells.
       for (int i=0;i<nBatches;i++){
 #ifdef _MPI
-        if(velocitySpace.GetCollection()->GetCell(i)->IsHaloCell()) //choose only own cells to form local systems
-          continue;
+        //choose only own cells to form local systems
+        if(velocitySpace.GetCollection()->GetCell(i)->IsHaloCell())
+            continue;
 #endif
         //To every cell belongs a pressure batch. Create that batch here.
         DofBatch currentVeloBatch{};
@@ -449,4 +457,3 @@ VankaSmoother::~VankaSmoother()
 }
 
 #undef TFESpaceXD
-

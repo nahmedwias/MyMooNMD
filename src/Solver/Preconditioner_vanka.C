@@ -16,8 +16,9 @@ Preconditioner_vanka<Vector>::Preconditioner_vanka(const BlockFEMatrix& matrix,
                          : vanka_object_(type, damp_factor, false),
                            matrix_(matrix)
 {
-   // It seems like Solver.C requests a constructed preconditioner object to
-   // be fully functional, i.e. it has to call its own update method.
+   // It seems like Solver.C requests a preconditioner object to
+   // be fully functional directly after construction, i.e. it has to call
+    // its own update method here.
    this->update();
 }
 
