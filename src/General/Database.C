@@ -1095,6 +1095,13 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("FACE_SIGMA: ", ParamDB->FACE_SIGMA);
   printToFile("WEAK_BC_SIGMA: ", ParamDB->WEAK_BC_SIGMA);
   printToFile("WEAK_BC: ", ParamDB->WEAK_BC);
+    
+  printToFile("EFFECTIVE-VISCOSITY:" ,ParamDB->EFFECTIVE_VISCOSITY);
+  printToFile("Viscosity:", ParamDB->VISCOSITY);
+  printToFile("PERMEABILITY:", ParamDB->PERMEABILITY);
+    
+  printToFile("equal_order_stab_weight_P1P1:", ParamDB->equal_order_stab_weight_P1P1);
+  printToFile("equal_order_stab_weight_P2P2:", ParamDB->equal_order_stab_weight_P2P2);
 
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);

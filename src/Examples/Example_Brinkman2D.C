@@ -18,6 +18,10 @@ namespace Poiseuille_Hannukainen
 {
 #include "Brinkman_2D/Poiseuille_Hannukainen.h"
 }
+namespace Poiseuille_Hannukainen_with_inscribed_physical_sphere
+{
+#include "Brinkman_2D/Poiseuille_Hannukainen_with_inscribed_physical_sphere.h"
+}
 
 namespace sine_cosine
 {
@@ -95,6 +99,27 @@ Example_Brinkman2D::Example_Brinkman2D(
             break;
         case 2:
             /** exact_solution */
+            exact_solution.push_back( Poiseuille_Hannukainen_with_inscribed_physical_sphere::ExactU1 );
+            exact_solution.push_back( Poiseuille_Hannukainen_with_inscribed_physical_sphere::ExactU2 );
+            exact_solution.push_back( Poiseuille_Hannukainen_with_inscribed_physical_sphere::ExactP );
+            
+            /** boundary condition */
+            boundary_conditions.push_back( Poiseuille_Hannukainen_with_inscribed_physical_sphere::BoundCondition );
+            boundary_conditions.push_back( Poiseuille_Hannukainen_with_inscribed_physical_sphere::BoundCondition );
+            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+            
+            /** boundary values */
+            boundary_data.push_back( Poiseuille_Hannukainen_with_inscribed_physical_sphere::U1BoundValue );
+            boundary_data.push_back( Poiseuille_Hannukainen_with_inscribed_physical_sphere::U2BoundValue );
+            boundary_data.push_back( BoundaryValueHomogenous );
+            
+            /** coefficients */
+            problem_coefficients = Poiseuille_Hannukainen_with_inscribed_physical_sphere::LinCoeffs;
+            
+            Poiseuille_Hannukainen_with_inscribed_physical_sphere::ExampleFile();
+            break;
+        case 3:
+            /** exact_solution */
             exact_solution.push_back( sine_cosine::ExactU1 );
             exact_solution.push_back( sine_cosine::ExactU2 );
             exact_solution.push_back( sine_cosine::ExactP );
@@ -114,7 +139,7 @@ Example_Brinkman2D::Example_Brinkman2D(
             
             sine_cosine::ExampleFile();
             break;
-        case 3:
+        case 4:
             /** exact_solution */
             exact_solution.push_back( sine2_sine2::ExactU1 );
             exact_solution.push_back( sine2_sine2::ExactU2 );
