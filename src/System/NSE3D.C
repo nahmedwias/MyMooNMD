@@ -708,7 +708,8 @@ void NSE3D::compute_residuals()
 
   // copy rhs to defect and compute defect
 #ifdef _MPI
-    //MPI: solution in consistency level 3 (TODO: maybe this is superfluous here!)
+    //MPI: solution in consistency level 3 (TODO: maybe this is superfluous here
+    // (because solution might be in level 3 consistency already)!)
     auto comms = s.matrix_.get_communicators();
     for (size_t bl = 0; bl < comms.size() ;++bl)
     {
@@ -725,45 +726,28 @@ void NSE3D::compute_residuals()
                     TDatabase::ParamDB->PRESSURE_SPACE);
   }
 
-  // square of the norms of the residual components
+  // This is the calculation of the residual, given the defect.
+  BlockVector defect_impuls({n_u_dof,n_u_dof,n_u_dof});
+  BlockVector defect_mass({n_p_dof});
+  //copy the entries (BlockVector offers no functionality to do this more nicely)
+  for(int i = 0; i<3*n_u_dof ;++i)
+    defect_impuls.get_entries()[i] = defect_.get_entries()[i];
+  for(int i =0 ; i<n_p_dof ; ++i)
+    defect_mass.get_entries()[i] = defect_.get_entries()[3*n_u_dof + i];
+
 #ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  std::vector<double> defect_m(defect_.get_entries_vector()); //copy of defect (entries)
-  //Eliminate all non-master rows in defect_m!
-  for(int ui = 0; ui < 3; ++ui)
-  {//velocity rows
-    const int* masters = s.velocitySpace_.get_communicator().GetMaster();
-    for(size_t i = 0; i<n_u_dof; ++i)
-    {
-      if (masters[i]!=my_rank)
-      {
-        defect_m[n_u_dof*ui + i]=0;
-      }
-    }
-  }
-  {//pressure row
-    const int* masters = s.pressureSpace_.get_communicator().GetMaster();
-    for(size_t i = 0; i<n_p_dof; ++i)
-    {
-      if (masters[i]!=my_rank)
-      {
-        defect_m[n_u_dof*3 + i]=0;
-      }
-    }
-  }
-  //TODO write this nicer (std!)
-  double impuls_Residual = Ddot(3*n_u_dof, &defect_m.at(0),&defect_m.at(0));
-  double mass_residual = Ddot(n_p_dof, &defect_m.at(3*n_u_dof),
-                              &defect_m.at(3*n_u_dof));
+  double impuls_residual_square = defect_impuls.norm_global({comms[0],comms[1],comms[2]});
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm_global({comms[3]});
+  mass_residual_square *= mass_residual_square;
 #else
-  //should not BlockVector be able to do vector*vector?
-  double impuls_Residual = Ddot(3*n_u_dof, &this->defect_[0],&this->defect_[0]);
-  double mass_residual = Ddot(n_p_dof, &this->defect_[3*n_u_dof],
-                              &this->defect_[3*n_u_dof]);
+  double impuls_residual_square = defect_impuls.norm();
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm();
+  mass_residual_square *= mass_residual_square;
 #endif
 
-  Residuals current_residuals(impuls_Residual, mass_residual);
+  Residuals current_residuals(impuls_residual_square, mass_residual_square);
   old_residuals_.add(current_residuals);
 }
 

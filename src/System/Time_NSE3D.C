@@ -997,6 +997,16 @@ void Time_NSE3D::compute_residuals()
   unsigned int number_u_Dof = s.solution_.length(0);
   unsigned int number_p_Dof = s.solution_.length(3);
 
+#ifdef _MPI
+    //MPI: solution in consistency level 3 (TODO: maybe this is superfluous here
+    // (because solution might be in level 3 consistency already)!)
+    auto comms = s.matrix_.get_communicators();
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(s.solution_.block(bl), 3);
+    }
+#endif
+
   // copy rhs to defect and compute defect
   this->defect_ = s.rhs_;
   s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
@@ -1007,48 +1017,28 @@ void Time_NSE3D::compute_residuals()
                       TDatabase::ParamDB->PRESSURE_SPACE);
   }
 
-  // square norms of the residual components
-#ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  std::vector<double> defect_m(defect_.get_entries_vector()); //copy of defect (entries)
-  //Eliminate all non-master rows in defect_m!
-  for(int ui = 0; ui < 3; ++ui)
-  {//velocity rows
-    const int* masters = s.velocitySpace_.get_communicator().GetMaster();
-    for(size_t i = 0; i<number_u_Dof; ++i)
-    {
-      if (masters[i]!=my_rank)
-      {
-        defect_m[number_u_Dof*ui + i]=0;
-      }
-    }
-  }
-  {//pressure row
-    const int* masters = s.pressureSpace_.get_communicator().GetMaster();
-    for(size_t i = 0; i<number_p_Dof; ++i)
-    {
-      if (masters[i]!=my_rank)
-      {
-        defect_m[number_u_Dof*3 + i]=0;
-      }
-    }
-  }
-  //TODO write this nicer (std!)
-  double impulse_residual = Ddot(3*number_u_Dof, &defect_m.at(0),&defect_m.at(0));
-  double mass_residual = Ddot(number_p_Dof, &defect_m.at(3*number_u_Dof),
-                              &defect_m.at(3*number_u_Dof));
-#else
-//  //should not BlockVector be able to do vector*vector?
-  double impulse_residual = Ddot(3*number_u_Dof,
-                                 &this->defect_[0], &this->defect_[0]);
+  // This is the calculation of the residual, given the defect.
+  BlockVector defect_impuls({number_u_Dof,number_u_Dof,number_u_Dof});
+  BlockVector defect_mass({number_p_Dof});
+  //copy the entries (BlockVector offers no functionality to do this more nicely)
+  for(int i = 0; i<3*number_u_Dof ;++i)
+    defect_impuls.get_entries()[i] = defect_.get_entries()[i];
+  for(int i =0 ; i<number_p_Dof ; ++i)
+    defect_mass.get_entries()[i] = defect_.get_entries()[3*number_u_Dof + i];
 
-  double mass_residual    = Ddot(number_p_Dof,
-                                 &this->defect_[3*number_u_Dof],
-                                 &this->defect_[3*number_u_Dof]);
+#ifdef _MPI
+  double impuls_residual_square = defect_impuls.norm_global({comms[0],comms[1],comms[2]});
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm_global({comms[3]});
+  mass_residual_square *= mass_residual_square;
+#else
+  double impuls_residual_square = defect_impuls.norm();
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm();
+  mass_residual_square *= mass_residual_square;
 #endif
 
-  Residuals current_residual(impulse_residual, mass_residual);
+  Residuals current_residual(impuls_residual_square, mass_residual_square);
   old_residual_.add(current_residual);
 }
 
