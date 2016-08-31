@@ -472,7 +472,9 @@ void Brinkman2D::output(int i)
     TFEFunction2D* u1 = s.u.GetComponent(0);
     TFEFunction2D* u2 = s.u.GetComponent(1);
     
-   // u1.Interpolate(example.get_exact());
+    
+    
+    //u1->Interpolate(example.exact_solution.GetComponent(0));
     
     // print the value of the largest and smallest entry in the finite element
     // vector
