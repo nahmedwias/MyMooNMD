@@ -3,6 +3,10 @@
 #include <BlockVector.h>
 #include <Database.h>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif
+
 #include <limits>
 #include <algorithm>
 
@@ -996,18 +1000,10 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
   }
 
   //B: CORRECTIONS DUE TO PRESSURE PROJECTION
-#ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  if(my_rank==0)
-    //FIXME it is not enough, that rank 0 sets its  first pressure row to zero
-    // - each other process which knows that dof has to set the coresponding row
-    // to zero
-#endif
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {// TODO: remove database dependency
-   // TODO: this entire business is still a mess!!!
-   // check that its really a Navier-Stokes matrices
+    // TODO: this entire business is still a mess!!!
+    // check that its really a Navier-Stokes matrices
 #ifdef __2D__
     size_t dim = 2;
 #endif
@@ -1017,31 +1013,61 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
     if( pressure_correction && n_cell_rows_ == dim + 1 
         && n_cell_columns_ == dim + 1 && r_first <= dim && r_last >= dim)
     {
-      // the relevant block row is contained
-      // number of velocity dofs
-      int n_rows = this->get_blocks().at(0)->GetN_Rows();
+#ifdef _MPI
+      int my_rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-      // find the first row of the third block column
-      size_t skipped_block_rows = r_first;
-      int begin = rowptr[(dim - skipped_block_rows )*n_rows];
-      int end   = rowptr[(dim - skipped_block_rows)*n_rows+1]; //now we have the row
+      // let 0 send a ping to all other processes, to determine which pressure
+      // row to eliminate
+      int verb = Output::getVerbosity();
+      Output::setVerbosity(1);
+      int p_dof = get_communicators().back()->dof_ping(0,0);
+      Output::setVerbosity(verb);
 
-      size_t skipped_block_cols = c_first;
-      int future_diagonal = end -1;
-      int diagonal_relative = (dim-skipped_block_cols)*n_rows;
-      for(int j = begin; j<end;++j)
+      if(my_rank==0)
       {
-        entries[j]=0;
-        if(kcolptr[j] >= (int)dim*diagonal_relative && future_diagonal == end-1)
-          future_diagonal = j;
+#endif
+        // the relevant block row is contained
+        // number of velocity dofs
+        int n_rows = this->get_blocks().at(0)->GetN_Rows();
+
+        // find the first row of the third block column
+        size_t skipped_block_rows = r_first;
+        int begin = rowptr[(dim - skipped_block_rows )*n_rows];
+        int end   = rowptr[(dim - skipped_block_rows)*n_rows+1]; //now we have the row
+
+        size_t skipped_block_cols = c_first;
+        int future_diagonal = end -1;
+        int diagonal_relative = (dim-skipped_block_cols)*n_rows;
+        for(int j = begin; j<end;++j)
+        {
+          entries[j]=0;
+          if(kcolptr[j] >= (int)dim*diagonal_relative && future_diagonal == end-1)
+            future_diagonal = j;
+        }
+        if(diagonal_relative < sub_cmat->GetN_Columns())
+        {
+          entries[future_diagonal] = 1;
+          kcolptr[future_diagonal] = diagonal_relative;
+        }
+#ifdef _MPI
       }
-      if(diagonal_relative < sub_cmat->GetN_Columns())
-      {
-        entries[future_diagonal] = 1;
-        kcolptr[future_diagonal] = diagonal_relative;
+      else if (p_dof != -1) //this rank knows the affected dof and has to set its row to 0
+      {//determine the row to be swept
+        int n_velo_dofs = this->get_blocks().at(0)->GetN_Rows();
+        int row_glob = dim * n_velo_dofs + p_dof;
+        auto b_row = sub_cmat->GetRowPtr()[row_glob];
+        auto e_row = sub_cmat->GetRowPtr()[row_glob+1];
+        auto entries = sub_cmat->GetEntries();
+        for(int i = b_row; i < e_row ; ++i)
+        {
+          entries[i] = 0; //nuke the entries.
+        }
       }
+#endif
     }
   }
+
 
   // Remove all zero entries from the structure and the entries array
   // TODO doing this here is very slow and it should be changed,
