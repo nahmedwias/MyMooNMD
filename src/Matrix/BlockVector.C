@@ -10,10 +10,22 @@
 #include <mpi.h>
 #endif
 
+#include <algorithm>
+
 /** ************************************************************************ */
 BlockVector::BlockVector() : entries(), lengths(), actives()
 {
   Output::print<5>("Constructor of BlockVector with no arguments");
+}
+
+/** ************************************************************************ */
+BlockVector::BlockVector(std::vector<unsigned int> lengths)
+{
+  unsigned int n_entries = std::accumulate(lengths.begin(), lengths.end(), 0);
+  entries = std::vector<double>(n_entries , 0.0);
+
+  this->lengths = lengths;
+  actives = lengths; //assume only active entries
 }
 
 /** ************************************************************************ */

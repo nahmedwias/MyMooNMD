@@ -56,6 +56,10 @@ class BlockVector
     /** standard constructor */
     BlockVector();
     
+    /** Construct a BlockVector of length length.size(), where block i has
+     * length[i] entries, filled with zeroes.*/
+    BlockVector(std::vector<unsigned int> lengths);
+
     /** constructor for a BlockVector consisting of a single block of length
      * 'l' filled with zeros.
      */
