@@ -201,10 +201,6 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
 
       /** some variables to change values in the example */
       flow_around_cylinder_stat::DIMENSIONLESS_VISCOSITY = this->get_nu();
-      // this is just an example to illustrate how a value given by
-      // the user in the input file can be used in the example
-      this->example_database["variable_parameter1"] = 500;
-      flow_around_cylinder_stat::VARIABLE_PARAMETER1 = (size_t) this->example_database["variable_parameter1"];
 
       ExampleFile();
       break;
