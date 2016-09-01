@@ -2,6 +2,7 @@
 
 #include "Mesh.h"
 #include "MooNMD_Io.h"
+#include <tetgen.h>
 
 // default initialization of the mesh (dimension = 0, no elements)
 Mesh::Mesh() {
