@@ -171,6 +171,34 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     db["multigrid_vanka_damp_factor"]=1.0;
 
   }
+  else if (solver_name.compare("cell_vanka_jacobi") == 0)
+  {
+    db.merge(Multigrid::default_multigrid_database());
+    db["iterative_solver_type"] = std::string("richardson");
+    db["preconditioner"] = "multigrid";
+    db["residual_tolerance"] = 1.0e-8;
+    db["max_n_iterations"] = 10;
+    db["min_n_iterations"] = 3;
+
+    db["refinement_n_initial_steps"] = 2;
+
+    //control nonlinear loop
+    db["nonlinloop_epsilon"] = 1e-12;
+    db["nonlinloop_maxit"] = 15;
+    // New multigrid parameters
+    db["multigrid_n_levels"] = 2;
+    db["multigrid_cycle_type"] = "V";
+    db["multigrid_smoother"] = "cell_vanka_jacobi";
+    db["multigrid_smoother_coarse"] = "cell_vanka_jacobi";
+    db["multigrid_correction_damp_factor"] = 0.8;
+    db["multigrid_n_pre_smooth"] = 1;
+    db["multigrid_n_post_smooth"] = 1;
+    db["multigrid_coarse_residual"] = 1.0e-1;
+    db["multigrid_coarse_max_n_iterations"] = 10;
+    db["multigrid_vanka_damp_factor"]=0.8;
+
+
+  }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
@@ -204,6 +232,8 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 double get_tolerance(std::string solver_name)
 {//solver dependent tolerance?
 
+  if(solver_name.compare("cell_vanka_jacobi") == 0)
+    return 1e-8;
 #ifndef _MPI
   if(solver_name.compare("umfpack") == 0)
     return 1e-9;
@@ -240,13 +270,15 @@ int main(int argc, char* argv[])
 
   TFEDatabase3D FEDatabase;
   
+  Output::setVerbosity(3);
+
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
 
   db["problem_type"].set<size_t>(5);
   
-  db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
+  db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 3);
 
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
 
@@ -294,6 +326,23 @@ int main(int argc, char* argv[])
         );
 
     db.merge(Example_NSE3D::default_example_database());
+
+    if(std::string(argv[1]) == std::string("cell_vanka_jacobi"))
+    {//the cell vanka case - test only on Q2/P1-disc element (MPI parallelized & disc press)
+      // we are only testing this simple example, because Richardson iteration
+      // (which, up to now, is the only MPI parallel iterative solver, is plain
+      // bad)
+      db["example"] = -1;
+      size_t nstype = 4; //nstype should not matter much here
+#ifndef _MPI
+      check(db, grid_collections, 12, -4711, nstype, errors, tol);
+#else
+      check(db, grid_collections, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
+      MPI_Finalize();
+#endif
+      return 0;
+    }
+
     {
       if(my_rank==0)
         Output::print<1>("\n>>>>> Q2/Q1 element on hexahedral grid. <<<<<");
