@@ -41,7 +41,7 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
 #endif
 
 #ifndef _MPI
-  double normb = norm(rhs);
+  double normb = rhs.norm();
 #elif _MPI
   double normb = rhs.norm_global(comms);
 #endif
@@ -62,7 +62,7 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
 
   //MPI: Now r in consistency level 0
 #ifndef _MPI
-  double resid = norm(r) / normb;
+  double resid = r.norm() / normb;
 #elif _MPI
   double resid = r.norm_global(comms) / normb;
 #endif
@@ -91,7 +91,7 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
     A.apply_scaled_add(solution, r, -1.0);
 
 #ifndef _MPI
-    resid = norm(r) / normb;
+    resid = r.norm()/ normb;
 #elif _MPI
     resid = r.norm_global(comms) / normb;
 #endif

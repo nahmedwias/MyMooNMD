@@ -4,6 +4,11 @@
 #include <cmath> // std::abs
 #include <MooNMD_Io.h>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#include <mpi.h>
+#endif
+
 std::string type_name(gmres_type t)
 {
   switch(t)
@@ -182,7 +187,7 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
   A.apply_scaled_add(solution, a, -1.0); // now a = rhs - A*solution
   this->prec->apply(a, r);
   
-  double resid = norm(r); // compute initial residual
+  double resid = r.norm(); // compute initial residual
   double beta = resid; // initialize beta as initial residual
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0))
@@ -219,7 +224,7 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
           v[k] *= 1.0 / H(k, i);
         }
       }
-      H(i+1, i) = norm(w);
+      H(i+1, i) = w.norm();
       //v[i+1] = w * (1.0 / H(i+1, i)); // ??? w / H(i+1, i)
       v[i+1] = w;
       v[i+1] *= 1.0 / H(i+1, i);
@@ -244,7 +249,7 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
     A.apply_scaled_add(solution, a, -1.0);
     this->prec->apply(a, r);
     
-    beta = norm(r);
+    beta = r.norm();
     if(fabs(beta-resid)>0.01*beta)
     {
       Output::print("restart residual changed ", beta, "  ", resid);
@@ -255,7 +260,7 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
     }
     // else restart
   }
-  
+
   // did not converge
   return std::pair<unsigned int, double>(this->max_n_iterations, resid);
 }
@@ -279,8 +284,8 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
   r = rhs; // reuse Vector 'a' to compute residual
   A.apply_scaled_add(solution, r, -1.0); // now r = rhs - Ax
   
-  double resid = norm(r); // compute initial residual
-  double beta = norm(r); // initialize beta as initial residual
+  double resid =r.norm(); // compute initial residual
+  double beta = r.norm(); // initialize beta as initial residual
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0))
   {
@@ -318,7 +323,7 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
           v[k] *= 1.0 / H(k,i);
         }
       }
-      H(i+1, i) = norm(r);
+      H(i+1, i) = r.norm();
       //v[i+1] = r * (1.0 / H(i+1, i));
       v[i+1] = r;
       v[i+1] *= 1.0 / H(i+1, i);
@@ -349,7 +354,7 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
     r = rhs;
     A.apply_scaled_add(solution, r, -1.0); // r = rhs - A * solution;
     
-    beta = norm(r);
+    beta = r.norm();
     if(fabs(beta-resid)>0.01*beta)
     {
       Output::print<1>("restart residual changed ", beta, "  ", resid);
@@ -372,18 +377,41 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
                                                         const Vector & rhs,
                                                         Vector & solution)
 {
+  //MPI: rhs and solution in consistency level 0 for computation of global norm
+#ifdef _MPI
+  int size, my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  std::vector<const TParFECommunicator3D*> comms = A.get_communicators();
+#endif
+
   this->s.resize(this->restart+1);
   this->cs.resize(this->restart+1);
   this->sn.resize(this->restart+1);
   
   TriangularMatrix H(this->restart+1);
-  
+
   //Vector r = rhs - A * solution;
   Vector r(rhs); // copy values
+#ifdef _MPI
+    //MPI: solution in consistency level 2 for vector.matrix multiplication
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(solution.block(bl), 2);
+    }
+#endif
   A.apply_scaled_add(solution, r, -1.0); // now r = rhs - A*solution
-  
-  double resid = norm(r); // compute initial residual
+
+  //compute initial residual
+#ifndef _MPI
+  double resid = r.norm();
+#elif _MPI
+//  double resid = r.norm_global(comms);
+  double resid = r.norm();
+#endif
+
   double beta = resid; // initialize beta as initial residual
+
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0))
   {
@@ -402,7 +430,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
     v[0] *= 1.0 / beta;
     std::fill(s.begin(), s.end(), 0.0); // set all entries in s to zero
     s[0] = beta;
-    
+
     for(unsigned int i = 0; i < this->restart && j <= this->max_n_iterations;
         i++, j++)
     {
@@ -411,6 +439,13 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
       z[i] = 0.0;
       // apply a preconditioning strategy with rhs v[i] to obtain z[i]
       this->prec->apply(i, j, v[i], z[i]);
+#ifdef _MPI
+    //MPI: solution in consistency level 2 for computation of global norm
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(z[i].block(bl), 2);
+    }
+#endif
       A.apply(z[i], r); // r = A * z[i]
       
       for (unsigned int k = 0; k <= i; k++)
@@ -419,7 +454,8 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
         //r -= H(k, i) * v[k];
         r.add_scaled(v[k], -H(k,i));
       }
-      H(i+1, i) = norm(r);
+
+      H(i+1, i) = r.norm();
       
       //can lead to "unhappy" crash in FGMRES if H(i+1, i) == 0
       //v[i+1] = r * (1.0 / H(i+1, i)); 
@@ -457,11 +493,23 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
     Update(r, this->restart - 1, H, s, z); 
     solution += r; //and update the solution
     
+#ifdef _MPI
+    //MPI: solution in consistency level 2 for computation of global norm
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(solution.block(bl), 2);
+    }
+#endif
     // compute new residual r
     r = rhs;
     A.apply_scaled_add(solution, r, -1.0); // r = rhs - A * solution;
     // and new defect beta
-    beta = norm(r);
+#ifndef _MPI
+    beta = r.norm();
+#elif _MPI
+//    beta = r.norm_global(comms);
+    beta = r.norm();
+#endif
     
     if(std::abs(beta - resid) > 0.01*beta)
     {
@@ -473,12 +521,15 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
     }
     // else restart
   }
-  
   // not converged
   return std::pair<unsigned int, double>(this->max_n_iterations, resid);
 }
 
 /* ************************************************************************** */
 // explicit instantiations
+template class Iteration_gmres<BlockFEMatrix,   BlockVector>;
+// In MPI case we are so dependent on the connection of Matrix and FESpace, that
+// it does not make sense to instantiate the function for BlockMatrix.
+#ifndef _MPI
 template class Iteration_gmres<BlockMatrix,   BlockVector>;
-template class Iteration_gmres<BlockFEMatrix, BlockVector>;
+#endif
