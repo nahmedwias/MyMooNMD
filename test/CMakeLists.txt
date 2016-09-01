@@ -158,7 +158,8 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(NAME nse3d_seq_mg COMMAND ParMooN_test_nse3d_solver_seq multigrid)
   #lsc
   add_test(NAME nse3d_seq_lsc COMMAND ParMooN_test_nse3d_solver_seq lsc)
-
+  #multigrid with cell_vanka_jacobi smoother (works in SEQ and MPI)
+  add_test(NAME nse3d_seq_cell_vanka_seq COMMAND ParMooN_test_nse3d_solver_seq cell_vanka_jacobi)
   
   # direct solver test
   add_executable(ParMooN_test_direct_solver direct_solver_test.c++)
@@ -266,6 +267,8 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
   add_test(NAME nse3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_nse3d_solver_mpi mumps)
+    #multigrid with cell_vanka_jacobi smoother (works in SEQ and MPI)
+  add_test(NAME nse3d_mpi_cell_vanka_jac COMMAND mpirun -n 3 ParMooN_test_nse3d_solver_mpi cell_vanka_jacobi)
   
   #tnse3d tests
   set(_EXEC_NAME ParMooN_test_tnse3d_mpi)
