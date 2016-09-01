@@ -34,11 +34,11 @@ std::pair<unsigned int, double> Iteration_cgs<L, Vector>::iterate(
   //Vector rtilde = r;
   Vector rtilde(r); // copy values
   
-  double normb = norm(rhs);
+  double normb = rhs.norm();
   if (normb == 0.0)
     normb = 1;
   
-  double resid = norm(r) / normb;
+  double resid = r.norm() / normb;
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0)) 
   {
@@ -50,7 +50,7 @@ std::pair<unsigned int, double> Iteration_cgs<L, Vector>::iterate(
     rho_1 = dot(rtilde, r);
     if (rho_1 == 0) // this should not ever happen 
     {
-      return std::pair<unsigned int, double>(i, norm(r) / normb);
+      return std::pair<unsigned int, double>(i, r.norm() / normb);
     }
     if (i == 1)
     {
@@ -90,7 +90,7 @@ std::pair<unsigned int, double> Iteration_cgs<L, Vector>::iterate(
     r += qhat;
     rho_2 = rho_1;
     
-    resid = norm(r) / normb;
+    resid = r.norm() / normb;
     if(this->converged(resid, i))
     {
       return std::pair<unsigned int, double>(i, resid);
