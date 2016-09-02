@@ -315,25 +315,6 @@ void Solver<L, V>::update_matrix(const L& matrix)
 template <class L, class V>
 void Solver<L, V>::solve(const V& rhs, V& solution)
 {
-//    {
-//    //CB DEBUG (this is not my code, but it qualifies as debug code!)
-//    //compute the absolute residual by hand again.
-//    V r(rhs);
-//    linear_operator->apply_scaled_add(solution, r, -1.);
-//  #ifndef _MPI
-//    Output::info<1>("Iterative solver", "Absolute residual in Solver class, before solve: ",
-//                    setprecision(16), r.norm());
-//  #elif _MPI
-//    int my_rank;
-//    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-//    double norm = r.norm_global(linear_operator->get_communicators());
-//    if(my_rank == 0)
-//      Output::info<1>("Iterative solver", "Absolute residual in Solver class, before solve: ",
-//                      setprecision(16), norm);
-//  #endif
-//    //END DEBUG
-//    }
-
   if(this->linear_operator == nullptr)
     ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
              "Solver::update_matrix first. Otherwise it's not clear which "
@@ -354,21 +335,6 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
   {
     ErrThrow("unknown solver type ", db["solver_type"]);
   }
-//  //CB DEBUG (this is not my code, but it qualifies as debug code!)
-//  //compute the absolute residual by hand again.
-//  V r(rhs);
-//  linear_operator->apply_scaled_add(solution, r, -1.);
-//#ifndef _MPI
-//  Output::info<1>("Iterative solver", "Absolute residual in Solver class: ",setprecision(16), r.norm());
-//#elif _MPI
-//  int my_rank;
-//  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-//  double norm = r.norm_global(linear_operator->get_communicators());
-//  if(my_rank == 0)
-//    Output::info<1>("Iterative solver", "Absolute residual in Solver class: ",
-//                    setprecision(16), norm);
-//#endif
-//  //END DEBUG
 }
 
 /* ************************************************************************** */
@@ -378,24 +344,6 @@ void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution)
 {
   this->update_matrix(matrix);
   this->solve(rhs, solution);
-//  //CB DEBUG
-//#ifdef _MPI
-//      int size, my_rank;
-//      MPI_Comm_size(MPI_COMM_WORLD, & size);
-//      MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-//      double norm = solution.norm_global(matrix.get_communicators());
-//      double normb = rhs.norm_global(matrix.get_communicators());
-//#else
-//      int my_rank = 0;
-//      double norm = solution.norm();
-//      double normb = rhs.norm();
-//#endif
-//      if(my_rank == 0)
-//      {
-//        Output::print("Global norm of solution: ", norm);
-//        Output::print("Global norm of rhs: ", normb);
-//      }
-//  //END DEBUG
 }
 
 /* ************************************************************************** */
