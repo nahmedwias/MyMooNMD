@@ -247,6 +247,9 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   add_test(NAME cd3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi mumps)
   #jacobi
   add_test(NAME cd3d_mpi_jacobi COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi jacobi)
+  # using defualt petsc solver
+  add_test(NAME cd3d_mpi_petsc COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi 
+           petsc)
   #multigrid - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
   add_test(NAME cd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi multigrid)
   
