@@ -51,6 +51,9 @@ class FEMatrix;
 class BlockMatrix;
 class BlockFEMatrix;
 class BlockVector;
+#ifdef _MPI
+class TParFECommunicator3D;
+#endif // _MPI
 
 class PETScSolver
 {
@@ -99,6 +102,10 @@ class PETScSolver
     void FEBlock2PETScBlock(std::shared_ptr<const FEMatrix> feblock,
     						            bool isOnDiag,
     						            Mat &sub_mat);
+    
+#ifdef _MPI
+    std::vector<const TParFECommunicator3D*> comms_;
+#endif // _MPI
 };
 #endif // __PETSCSOLVER__
 
