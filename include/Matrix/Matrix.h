@@ -133,6 +133,9 @@ class TMatrix
     int *GetRowPtr()
     { return structure->GetRowPtr(); }
     
+    const std::vector<int>& get_row_array() const
+    { return structure->get_row_array(); }
+    
     /// @brief return number of matrix entries for hanging node data
     int GetHangingN_Entries() const
     { return structure->GetHangingN_Entries(); }
