@@ -129,6 +129,9 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
   updates_jacobi.reset(); //set to 0
   BlockVector update_counts(updates_jacobi); //actually stores only ints
   update_counts.reset(); //set to 0
+  // For Jacobi, global residual has to be calculated only once per sweep.
+  std::vector<double> residual_glo(rhs.get_entries_vector());
+  matrix_global_->multiply(solution.get_entries(), &residual_glo.at(0), - 1.0);
 
   // Loop over all local systems and do all the work
   for(size_t i = 0; i < press_dofs_local_.size() ; ++i)
@@ -215,21 +218,27 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
     /* (Local right hand side is global defect in local rows) */
     for(size_t r_loc = 0; r_loc < size_local; ++r_loc) //loop over all local rows
     {
-
-      size_t r_glo = dof_map.at(r_loc); //the corresponding global dof
-      int begin_r_glo = matrix_global_->GetRowPtr()[r_glo];
-      int end_r_glo = matrix_global_->GetRowPtr()[r_glo + 1];
-
-      double temp = rhs.get_entries()[r_glo];
-
-      for( int i = begin_r_glo ; i < end_r_glo ; ++i )
-      {
-        int c_glo = matrix_global_->GetKCol()[i];
-        double matrix_glo_entry = matrix_global_->GetEntries()[i];
-        temp -= matrix_glo_entry * solution.get_entries()[c_glo];
+      if(type_ == VankaType::CELL_JACOBI)
+      {//in jacobi case, the residual has been calculated globally already
+        rhs_local.at(r_loc) = residual_glo.at(dof_map.at(r_loc));
       }
+      else
+      {
+        size_t r_glo = dof_map.at(r_loc); //the corresponding global dof
+        int begin_r_glo = matrix_global_->GetRowPtr()[r_glo];
+        int end_r_glo = matrix_global_->GetRowPtr()[r_glo + 1];
 
-      rhs_local.at(r_loc) = temp;
+        double temp = rhs.get_entries()[r_glo];
+
+        for( int i = begin_r_glo ; i < end_r_glo ; ++i )
+        {
+          int c_glo = matrix_global_->GetKCol()[i];
+          double matrix_glo_entry = matrix_global_->GetEntries()[i];
+          temp -= matrix_glo_entry * solution.get_entries()[c_glo];
+        }
+
+        rhs_local.at(r_loc) = temp;
+      }
     }
 
     /* ******** Solve the local system with LAPACK. *********** */

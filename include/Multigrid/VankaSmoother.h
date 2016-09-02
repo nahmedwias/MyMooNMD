@@ -32,6 +32,40 @@ class TFESpace3D;
  * a saddle point problem, but might easily degenerate to a matrix where all
  * spaces are the same (e.g. a 1x1 Convection-Difusion-Reaction matrix).
  *
+ * There is a variety of different Vanka smoothers available by now. The basic
+ * three are nodal, cell and batch vanka. Note that cell vanka works only
+ * properly for discontinuous pressure approximations in NSE. Nodal Vanka is
+ * useless for CDR problems, because there the local systems degenerate to 1x1 size.
+ * In SEQ, these three can be used in a "_store" version, too, where the local
+ * matrices are stored. You must be aware, that this tends to eating a LOT of
+ * memory, therefore it should be used for small and medium sized problems only.
+ * But there it is often the fastest option.
+ * Of the cell vanka a blockwise Jacobi version is available (cell_vanka_jacobi),
+ * which performs the update of the global solution in a Jacobi- instead of a
+ * Gauss-Seidel manner. Its main advantage ist, that it is "embarassingly parallel",
+ * and therefore its MPI counterpart (which is available!) gives the exact same
+ * results. In MPI, we also have the standard (Gauss Seidel) cell vanka available.
+ * It did not work bad for test examples, although usually its convergence is a
+ * bit worse than when using the SEQ version - in one MPI Gauss Seidel sweep
+ * information transport is restricted to the process parts, while in SEQ information
+ * gets transported across the entire domain.
+ *
+ * Note that the main issue which held us from parallelizing the nodal Vanka is
+ * the issue of 'toxic systems'. In MPI, local systems stemming from a pressure
+ * dof at the interface will necessarily contain halo dof. In the process local
+ * matrix, halo rows are incorrect, since up to now FEMatrices in ParMooN are not
+ * stored fully consistent, but only in what we call "rowwise level 1 consistency".
+ * I.e. all halo rows are incorrect, which will lead to erroneous local systems
+ * at the interface in the Vanka smoothers. Until this matrix storage issue is
+ * solved, parallel nodal vanka is out of reach.
+ *
+ * Note that all Vankas can be used as preconditioners (see class Preconditioner_vanka),
+ * although not all of them are already enabled there. This is but only a
+ * technical issue, which you can fix in seconds. Don't expect them to work
+ * well as preconditioners, but they were really useful for debugging the
+ * smoothers, and they might be useful when you have to solve a big saddle point
+ * problem in 3D and no grid hierarchy available for multigrid.
+ *
  */
 class VankaSmoother : public Smoother
 {
