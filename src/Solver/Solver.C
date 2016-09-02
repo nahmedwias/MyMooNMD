@@ -13,6 +13,9 @@
 #include <Saddle_point_preconditioner.h>
 #include <DirectSolver.h>
 #include <PETScSolver.h>
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif
 
 template <class L, class V>
 ParameterDatabase Solver<L, V>::default_solver_database()
@@ -315,6 +318,36 @@ void Solver<L, V>::update_matrix(const L& matrix)
 template <class L, class V>
 void Solver<L, V>::solve(const V& rhs, V& solution)
 {
+  // lambda function to compute the residual, you can use it e.g. during debug
+  // note that this changes the consistency level of the solution to 2
+  auto compute_residual = [&]()
+  {
+    //compute the absolute residual by hand again.
+#ifdef _MPI
+    // update to consistency level 2, needed to properly call apply_scaled_add
+    auto comms = linear_operator->get_communicators();
+    for (size_t bl = 0; bl < comms.size() ; ++bl)
+    {
+      comms[bl]->consistency_update(solution.block(bl), 2);
+    }
+#endif
+    V r(rhs);
+    linear_operator->apply_scaled_add(solution, r, -1.);
+#ifndef _MPI
+    Output::info<1>("Iterative solver", "Absolute residual in Solver class, ",
+                    "before solve: ", setprecision(16), r.norm());
+#elif _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    double norm = r.norm_global(comms);
+    if(my_rank == 0)
+      Output::info<1>("Iterative solver", "Absolute residual in Solver class, ",
+                      "before solve: ", setprecision(16), norm);
+#endif
+  };
+  (void)compute_residual; // silence the unused variable warning when not used
+  //compute_residual();
+
   if(this->linear_operator == nullptr)
     ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
              "Solver::update_matrix first. Otherwise it's not clear which "
@@ -335,6 +368,7 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
   {
     ErrThrow("unknown solver type ", db["solver_type"]);
   }
+  //compute_residual();
 }
 
 /* ************************************************************************** */
