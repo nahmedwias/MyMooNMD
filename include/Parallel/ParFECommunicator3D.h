@@ -43,6 +43,9 @@ class TParFECommunicator3D
     /// Default constructor. Creates an almost empty object, which should not be used.
     TParFECommunicator3D();
     
+    /// return the number of global degrees of freedom (across all processes)
+    size_t get_n_global_dof() const;
+    
     /// Gather information about this communicator in root and print it
     /// to console and output file.
     void print_info() const;
