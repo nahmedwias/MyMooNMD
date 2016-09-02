@@ -34,8 +34,9 @@ VankaSmoother::VankaSmoother(VankaType type, double damp_factor, bool store)
   velocity_space_(nullptr)
 {
 #ifdef _MPI
-  if(type != VankaType::CELL_JACOBI)
-    ErrThrow("Only the cell_vanka_jacobi Vanka Smoother is enabled for MPI so far.");
+  if(type != VankaType::CELL_JACOBI && type != VankaType::CELL)
+    ErrThrow("Among the Vanka smoothers only cell_vanka and cell_vanka_jacobi"
+        " are enabled for MPI so far.");
 #endif
 }
 
@@ -278,7 +279,6 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
     }
   }
 
-
 }
 
 /*!
@@ -290,11 +290,6 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
  * Playing with it renders different Vanka smoothers!
  */
 void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
-
-#ifdef _MPI
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-#endif
 
   switch (type_) {
     case VankaType::NODAL:
@@ -328,8 +323,7 @@ void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
       //Loop over cells.
       for (int i=0;i<nBatches;i++){
 #ifdef _MPI
-        // Assume that this is CELL_JACOBI
-        //choose only own cells to form local systems
+        // In MPI case choose only own cells to form local systems.
         if(pressureSpace.GetCollection()->GetCell(i)->IsHaloCell())
           continue;
 #endif
@@ -416,7 +410,7 @@ void VankaSmoother::set_up_velocity_batches(const TMatrix& pressureVelocityMatri
       //Loop over cells.
       for (int i=0;i<nBatches;i++){
 #ifdef _MPI
-        //choose only own cells to form local systems
+        // In MPI case choose only own cells to form local systems.
         if(velocitySpace.GetCollection()->GetCell(i)->IsHaloCell())
             continue;
 #endif
