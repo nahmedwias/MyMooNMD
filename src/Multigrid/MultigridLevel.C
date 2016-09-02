@@ -25,11 +25,7 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
    rhs_(*matrix,true), solution_(*matrix, false),
    smoother_(nullptr)
 {
-#ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-#endif
-  Output::info<4>("MultigridLevel", "Constructed a MultigridLevel object. matrix "
+  Output::info<5>("MultigridLevel", "Constructed a MultigridLevel object. matrix "
                "dimensions: (", matrix->get_n_total_rows(), ",",
                matrix->get_n_total_columns(), "), n_cells ",
                matrix->get_ansatz_space(0,0).GetCollection()->GetN_Cells());
