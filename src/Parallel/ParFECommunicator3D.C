@@ -62,6 +62,17 @@ TParFECommunicator3D::TParFECommunicator3D()
 
 }
 
+size_t TParFECommunicator3D::get_n_global_dof() const
+{
+  int n_m_total = 0;
+  int sendbuf = Mapper->GetN_Master();
+  MPI_Allreduce(&sendbuf, &n_m_total, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  if(n_m_total >= 0)
+    return size_t(n_m_total);
+  ErrThrow("negative number of global dofs computed ??? ", n_m_total);
+}
+
+
 void TParFECommunicator3D::print_info() const
 {
   int my_rank, size;
