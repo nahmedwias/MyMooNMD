@@ -86,7 +86,6 @@ public:
                                   double *RHS,
                                   int *DOF);
     
-    
     void handle_hanging_nodes(std::vector<const TFESpace2D*>& ferhs);
 
     // new
@@ -102,11 +101,5 @@ public:
     void assemble_local_system(std::vector <const TFESpace2D*>& fespaces,
                                int i, double ***LocMatrices,double **LocRhs);
     
-    
     ~Assembler4();
-    
-    
-    
-    
-    
 };

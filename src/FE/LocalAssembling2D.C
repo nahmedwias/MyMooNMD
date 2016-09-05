@@ -376,13 +376,13 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 1, 1, 0};
             this->N_Rhs = 2;
             this->RhsSpace = { 0, 1 };
-            this->AssembleParam = BilinearAssembleDarcyGalerkin; 
+            this->AssembleParam = BilinearAssembleDarcyGalerkin;
             this->Manipulate = NULL;
             break;
             ////////////////////////////////////////////////////////////////////////////
             // TNSE2D: nonstationary Navier-Stokes problems
         case LocalAssembling2D_type::TNSE2D:
-        case LocalAssembling2D_type::TNSE2D_NL:   
+        case LocalAssembling2D_type::TNSE2D_NL:
         case LocalAssembling2D_type::TNSE2D_Rhs:
             this->set_parameters_for_tnse(type);
             break;
@@ -640,12 +640,106 @@ void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
     } // end loop over quadrature points 
 }
 
+
+
+//HIER/////////////////////////////////////////////////////////////////////////
 //==============================================================================
-void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
-                                      double *AbsDetjk, double *X, double *Y,
+//==============================================================================
+void LocalAssembling2D::get_local_forms(int N_Points,
+                                        double *weights,
+                                        double *AbsDetjk,
+                                        double *X,
+                                        double *Y,
+                                        int *N_BaseFuncts,
+                                        BaseFunct2D *BaseFuncts,
+                                        std::vector<std::vector<double>> Parameters_new,
+                                        std::vector<std::vector<double>> AuxArray,
+                                        TBaseCell *Cell,
+                                        int N_Matrices,
+                                        int N_Rhs,
+                                        double ***LocMatrix,
+                                        double **LocRhs,
+                                        double factor)
+{
+    const double hK = Cell->Get_hK(TDatabase::ParamDB->CELL_MEASURE);
+    
+    //this->GetParameters(N_Points, NULL, Cell, ??Cell->GetCellIndex(), X, Y,
+    //                    Parameters);
+    
+    for(int i=0; i<N_Matrices; ++i)
+    {
+        double **CurrentMatrix = LocMatrix[i];
+        int N_Rows = N_BaseFuncts[RowSpace[i]];
+        int N_Columns = N_BaseFuncts[ColumnSpace[i]];
+        for(int j=0;j<N_Rows;j++)
+        {
+            double *MatrixRow = CurrentMatrix[j];
+            memset(MatrixRow, 0, SizeOfDouble*N_Columns);
+        } // endfor j
+    } // endfor i
+    
+    for(int i=0; i<N_Rhs; ++i)
+    {
+        int N_Rows = N_BaseFuncts[RhsSpace[i]];
+        memset(LocRhs[i], 0, SizeOfDouble*N_Rows);
+    }
+    
+    // *****************************************************
+    // for 2Phase flow problems (Sashikumaar Ganesan)
+    AuxArray[0][0] = Cell->GetPhase_ID();
+    // *****************************************************
+    
+    if(Coeffs)
+        Coeffs(N_Points, X, Y, Parameters_new, AuxArray);
+    
+    if(Manipulate)
+        Manipulate(N_Points, AuxArray, Parameters_new, Cell);
+    
+    for(int i=0; i<N_Terms; ++i)
+    {
+        AllOrigValues[i] =
+        TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[i]],
+                                            Derivatives[i]);
+    }
+    
+    for(int i=0; i<N_Points; ++i)
+    {
+        double Mult = weights[i] * AbsDetjk[i] * factor;
+        std::vector<double> Coeff = AuxArray[i];
+        Coeff[19] = AbsDetjk[i];
+        
+        if(TDatabase::ParamDB->Axial3DAxis == 1)
+        {
+            // r in axial3D (X: symmetric) problems (Sashikumaar Ganesan)
+            Coeff[20] = Y[i];
+        }
+        else
+        {
+            // r in axial3D (Y: symmetric) problems (Sashikumaar Ganesan)
+            Coeff[20] = X[i];
+        }
+        
+        std::vector<double> Param = Parameters_new[i];
+        
+        for(int j=0; j<N_Terms; j++)
+            OrigValues[j] = AllOrigValues[j][i];
+        
+        AssembleParam(Mult, Coeff, Parameters_new, hK, OrigValues, N_BaseFuncts, LocMatrix,
+                      LocRhs);
+    } // end loop over quadrature points
+}
+
+//==============================================================================
+void LocalAssembling2D::GetLocalForms(int N_Points,
+                                      double *weights,
+                                      double *AbsDetjk,
+                                      double *X,
+                                      double *Y,
                                       int *N_BaseFuncts,
-                                      BaseFunct2D *BaseFuncts, TBaseCell *Cell,
-                                      double ***LocMatrix, double **LocRhs,
+                                      BaseFunct2D *BaseFuncts,
+                                      TBaseCell *Cell,
+                                      double ***LocMatrix,
+                                      double **LocRhs,
                                       double factor)
 {
     const double hK = Cell->Get_hK(TDatabase::ParamDB->CELL_MEASURE);
@@ -683,15 +777,14 @@ void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
 }
 
 //==============================================================================
-void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
-                                      TBaseCell *cell, int cellnum,
-                                      double *x, double *y, double **Parameters)
+void LocalAssembling2D::GetParameters(int n_points,
+                                      TCollection *Coll,
+                                      TBaseCell *cell,
+                                      int cellnum,
+                                      double *x,
+                                      double *y,
+                                      double **Parameters)
 {
-  double *param, *currparam, s;
-  
-  double *CurrValues, *CurrOrigValues;
-  int *CurrIndex;
-
   int *N_BaseFunct = new int[N_FEValues];
   double **Values = new double* [N_FEValues];
   double ***orig_values = new double** [N_FEValues];
@@ -720,7 +813,7 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
   {
     for(int i=0; i<n_points; ++i)
     {
-      param = Parameters[i];
+      double *param = Parameters[i];
 
       Temp[0] = x[i];
       Temp[1] = y[i];
@@ -728,11 +821,11 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
       // loop to calculate all FE values
       for(int k=2,j=0; j<N_FEValues; j++,k++)
       {
-        s = 0;
+        double s = 0;
         int n = N_BaseFunct[j];
-        CurrValues = Values[j];
-        CurrOrigValues = orig_values[j][i];
-        CurrIndex = Index[j];
+        double  *CurrValues = Values[j];
+        double  *CurrOrigValues = orig_values[j][i];
+        int *CurrIndex = Index[j];
         for(int l=0;l<n;l++)
           s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
         Temp[k] = s;
@@ -741,7 +834,7 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
       // loop to calculate all parameters
       for(int j=0; j<N_ParamFct; j++)
       {
-        currparam = param + this->BeginParameter[j];
+        double *currparam = param + this->BeginParameter[j];
         this->ParameterFct[j](Temp, currparam);
       } // endfor j
     } // endfor i
@@ -753,38 +846,15 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
   delete [] Index;
 }
 
-//==============================================================================
-void LocalAssembling2D::compute_parameters(int n_points, TCollection *Coll,
-                                           TBaseCell *cell, int cellnum,
-                                           double *x, double *y)
+//-------------------------------------------------------------------------------
+void LocalAssembling2D::compute_parameters(int n_points,
+                                           TCollection *Coll,
+                                           TBaseCell *cell,
+                                           int cellnum,
+                                           double *x,
+                                           double *y,
+                                           std::vector<std::vector<double>> Parameters_new)
 {
-    double *param, *currparam, s;
-    std::vector<std::vector<double>> external_functions;
-    external_functions.resize(n_points);
-    for (int i=0; i< n_points; i++)
-    {
-    external_functions[i].resize(N_Parameters);
-    }
-    
-    
-    
-    std::vector<int> n_param_for_function;
-    n_param_for_function.resize(N_ParamFct);
-    
-    if (N_ParamFct==1)
-        n_param_for_function[0]=N_Parameters;
-    else
-    {
-        for (int j=0; j<N_ParamFct-1; j++)
-        {
-            n_param_for_function[j] = this->BeginParameter[j+1] - this->BeginParameter[j];
-        }
-        n_param_for_function[N_ParamFct-1] = N_Parameters - this->BeginParameter[N_ParamFct-1];
-    }
-    
-    double *CurrValues, *CurrOrigValues;
-    int *CurrIndex;
-    
     int *N_BaseFunct = new int[N_FEValues];
     double **Values = new double* [N_FEValues];
     double ***orig_values = new double** [N_FEValues];
@@ -813,17 +883,20 @@ void LocalAssembling2D::compute_parameters(int n_points, TCollection *Coll,
     {
         for(int i=0; i<n_points; ++i)
         {
+            std::vector<double> param = Parameters_new[i];
+            
             Temp[0] = x[i];
             Temp[1] = y[i];
             
             // loop to calculate all FE values
             for(int k=2,j=0; j<N_FEValues; j++,k++)
             {
-                s = 0;
-                CurrValues = Values[j];
-                CurrOrigValues = orig_values[j][i];
-                CurrIndex = Index[j];
-                for(int l=0;l< N_BaseFunct[j] ;l++)
+                double s = 0;
+                int n = N_BaseFunct[j];
+                double  *CurrValues = Values[j];
+                double  *CurrOrigValues = orig_values[j][i];
+                int *CurrIndex = Index[j];
+                for(int l=0;l<n;l++)
                     s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
                 Temp[k] = s;
             }  // endfor j
@@ -831,14 +904,8 @@ void LocalAssembling2D::compute_parameters(int n_points, TCollection *Coll,
             // loop to calculate all parameters
             for(int j=0; j<N_ParamFct; j++)
             {
-                double* currparam = new double[n_param_for_function[j]];
-                //Parameters[i] + this->BeginParameter[j];
-                this->ParameterFct[j](Temp, currparam);
-                
-                for (int ip=0; ip<n_param_for_function[j]; ip++)
-                {
-                    external_functions[i][this->BeginParameter[j] + ip] = currparam[ip];
-                }
+//                std::vector<double> currparam = param + this->BeginParameter[j];
+                this->ParameterFct[j](Temp, Parameters_new[i][j]);
             } // endfor j
         } // endfor i
     }
