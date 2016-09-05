@@ -713,40 +713,71 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
     int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
     TBaseCell *cell = this->Coll->GetCell(i);
     
+//        // --------------------------------------------------------------------
+//        // set the pointers of Parameters
+//        double *Param[MaxN_QuadPoints_2D];
+//        for(size_t i=0;i<MaxN_QuadPoints_2D;++i) //initialize Param
+//        {
+//            // NOTE: The number 10 is magic here.
+//            // In the current setup it may well happen, that a Coefficient function
+//            // expects to evaluate parameters, but the local assembling object
+//            // will not make use of them (N_Parameters = 0) - nevertheless the array
+//            // must be initialized to something.
+//            Param[i]=new double[10]{0.0};
+//        }
+//        // note: if N_Parameters > 0, the default array is deleted
+//        int N_Parameters = la.GetN_Parameters();
+//        double *aux;
+//        if(N_Parameters)
+//        {
+//            aux = new double [MaxN_QuadPoints_2D*N_Parameters];
+//            for(int j=0;j<MaxN_QuadPoints_2D;j++)
+//            {
+//                delete[] Param[j]; //clear away the default initialized array
+//                Param[j] = aux + j*N_Parameters;
+//            }
+//        }
+    
+    //HIER/////////////////////////////////////////////////////////////////////
     // --------------------------------------------------------------------
     // set the pointers of Parameters
-    double *Param[MaxN_QuadPoints_2D];
-    for(size_t i=0;i<MaxN_QuadPoints_2D;++i) //initialize Param
-    {
-        // NOTE: The number 10 is magic here.
-        // In the current setup it may well happen, that a Coefficient function
-        // expects to evaluate parameters, but the local assembling object
-        // will not make use of them (N_Parameters = 0) - nevertheless the array
-        // must be initialized to something.
-        Param[i]=new double[10]{0.0};
-    }
-    // note: if N_Parameters > 0, the default array is deleted
     int N_Parameters = la.GetN_Parameters();
-    double *aux;
-    if(N_Parameters)
+    std::vector<std::vector<double>> Parameters_new;
+    Parameters_new.resize(MaxN_QuadPoints_2D);
+    for (int t=0; t<MaxN_QuadPoints_2D; t++)
     {
-        aux = new double [MaxN_QuadPoints_2D*N_Parameters];
-        for(int j=0;j<MaxN_QuadPoints_2D;j++)
+        if(N_Parameters)
         {
-            delete[] Param[j]; //clear away the default initialized array
-            Param[j] = aux + j*N_Parameters;
+            Parameters_new[t].resize(N_Parameters);
+        }
+        else
+        {
+        Parameters_new[t].resize(10 ,0.0);
         }
     }
+
+    
+//    // --------------------------------------------------------------------
+//    // 40 <= number of terms in bilinear form
+//    // Do not change below 20 since the entry 19 is used in GetLocalForms
+//    double *aux;
+//    aux = new double [MaxN_QuadPoints_2D*40];
+//    double *AuxArray[MaxN_QuadPoints_2D];
+//    for(int j=0;j<MaxN_QuadPoints_2D;j++)
+//        AuxArray[j] = aux + j*40;
     
     
-    
+    //HIER/////////////////////////////////////////////////////////////////////
     // --------------------------------------------------------------------
-    // 40 <= number of terms in bilinear form
-    // Do not change below 20 since the entry 19 is used in GetLocalForms
-    aux = new double [MaxN_QuadPoints_2D*40];
-    double *AuxArray[MaxN_QuadPoints_2D];
-    for(int j=0;j<MaxN_QuadPoints_2D;j++)
-        AuxArray[j] = aux + j*40;
+    std::vector<std::vector<double>> AuxArray;
+    AuxArray.resize(MaxN_QuadPoints_2D);
+    for (int t=0; t<MaxN_QuadPoints_2D; t++)
+    {
+            AuxArray[t].resize(40);
+    }
+    
+    
+    
     
     // --------------------------------------------------------------------
     // find local used elements on this cell
@@ -777,7 +808,10 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
                            this->Coll, cell, SecondDer,
                            N_Points, xi, eta, weights, X, Y, AbsDetjk);
     
-    la.GetParameters(N_Points, this->Coll, cell, i, X, Y, Param);
+//la.GetParameters(N_Points, this->Coll, cell, i, X, Y, Param);
+    
+//HIER///////////////////////////////////////////////////////////////
+ la.compute_parameters(N_Points, this->Coll, i, X, Y, Parameters_new);
     
     if((TDatabase::ParamDB->DISCTYPE == SDFEM)
        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
@@ -795,9 +829,14 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
         TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
     }
     
-    la.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, LocN_BF, LocBF,
-                     Param, AuxArray, cell, N_AllMatrices, n_rhs_blocks, LocMatrices,
-                     LocRhs);
+//    la.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, LocN_BF, LocBF,
+//                     Param, AuxArray, cell, N_AllMatrices, n_rhs_blocks, LocMatrices,
+//                     LocRhs);
+    
+//Hier//////////////////////////////////////////////////////////////////////////////////
+    la.get_local_forms(N_Points, weights, AbsDetjk, X, Y, LocN_BF, LocBF,
+                       Parameters_new, AuxArray, cell, N_AllMatrices, n_rhs_blocks, LocMatrices,
+                       LocRhs);
 }
 
 

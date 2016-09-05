@@ -147,13 +147,18 @@ void U2BoundValue(int BdComp, double Param, double &value)
 //}
 
 void LinCoeffs(int n_points, double *x, double *y,
-               double **parameters, double **coeffs)
+               std::vector<std::vector<double>> parameters,
+               //double **Parameters,
+               std::vector<std::vector<double>> coeffs,
+               //double **coeffs)
 {
+    
 //    static double eps = 1./TDatabase::ParamDB->RE_NR;
 //    static double nu     = TDatabase::ParamDB->VISCOSITY;
 //    static double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
 //    static double K      = TDatabase::ParamDB->PERMEABILITY;
-    double *coeff;
+    
+    std::vector<double> coeff;
     
     for(int i=0;i<n_points;i++)
     {
