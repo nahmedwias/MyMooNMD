@@ -1042,10 +1042,42 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
           if(kcolptr[j] >= (int)dim*diagonal_relative && future_diagonal == end-1)
             future_diagonal = j;
         }
-        if(diagonal_relative < sub_cmat->GetN_Columns())
+        if(diagonal_relative < sub_cmat->GetN_Columns() && begin != end)
         {
           entries[future_diagonal] = 1;
           kcolptr[future_diagonal] = diagonal_relative;
+        }
+        else if(begin == end)
+        {
+          // the matrix row is empty, therefore we have to change the matrix
+          // structure to include a value here.
+          // This typically happens if you try to get only the C-block in a 
+          // Navier-Stokes problem, which is (usually) an all-zero block with 
+          // no entries at all.
+          if(sub_cmat->GetN_Entries() == 0)
+          {
+            // there are no entries at all: create a matrix of the same size
+            // with a single entry
+            // new_rows array is one everywhere except at the beginning, this 
+            // means there is exactly one entry in the first row.
+            std::vector<int> new_rows(sub_cmat->GetN_Rows()+1, 1);
+            new_rows[0] = 0;
+            // that entry has index 0, so the entry is on the diagonal.
+            std::vector<int> new_cols(1, 0); 
+            // new structure
+            auto s = std::make_shared<TStructure>(sub_cmat->GetN_Rows(),
+                                                  sub_cmat->GetN_Columns(),
+                                                  1, &new_cols[0], 
+                                                  &new_rows[0]);
+            sub_cmat.reset(new TMatrix(s));
+            sub_cmat->GetEntries()[0] = 1; // set diagonal entry
+          }
+          else
+          {
+            // this should not happen.
+            ErrThrow("Unable to return a pressure-pressure matrix C, which has "
+                     "has no entries in the first row, but in other rows.");
+          }
         }
 #ifdef _MPI
       }
