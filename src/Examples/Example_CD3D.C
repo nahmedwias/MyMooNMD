@@ -13,6 +13,11 @@ namespace sine_laplace_3D
   #include "CD_3D/Laplace.h"
 }
 
+namespace hemker_3d
+{
+#include "CD_3D/Hemker_3D.h"
+}
+
 namespace test_p0_zero
 {
   #include <test_p0.h>
@@ -51,6 +56,22 @@ Example_CD3D::Example_CD3D(const ParameterDatabase& user_input_parameter_db)
       problem_coefficients = sine_laplace_3D::BilinearCoeffs;
       
       sine_laplace_3D::ExampleFile();
+      break;
+      
+    case 1:
+      /** exact_solution */
+      exact_solution.push_back( hemker_3d::Exact );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( hemker_3d::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( hemker_3d::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = hemker_3d::BilinearCoeffs;
+      
+      hemker_3d::ExampleFile();
       break;
 
     //negative integers are reserved for pure test examples
