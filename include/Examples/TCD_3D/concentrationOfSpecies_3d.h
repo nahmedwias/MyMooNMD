@@ -6,6 +6,9 @@
 // example file
 // =========================================================================
 #include <MooNMD_Io.h>
+
+double PECLET_NUMBER;
+
 void ExampleFile()
 {
   Output::print("concentrationOfSpecies_3d.h");
@@ -83,7 +86,7 @@ void BoundValue(double x, double y, double z, double &value)
 void BilinearCoeffs(int n_points, double *X, double *Y, double *Z,
         double **parameters, double **coeffs)
 {
-  double eps = 1.0/TDatabase::ParamDB->RE_NR;
+  double eps = PECLET_NUMBER;
   int i;
   double *coeff;                                  // *param;
   double x, y, z, c, a[3], b[3], s[3], h;

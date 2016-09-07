@@ -43,22 +43,28 @@ Example_CD3D::Example_CD3D(const ParameterDatabase& user_input_parameter_db)
   {
     //steady-state problems
     case 0:
+    {
+      using namespace sine_laplace_3D;
       /** exact_solution */
-      exact_solution.push_back( sine_laplace_3D::Exact );
+      exact_solution.push_back( Exact );
       
       /** boundary condition */
-      boundary_conditions.push_back( sine_laplace_3D::BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
       
       /** boundary values */
-      boundary_data.push_back( sine_laplace_3D::BoundValue );
+      boundary_data.push_back( BoundValue );
       
       /** coefficients */
-      problem_coefficients = sine_laplace_3D::BilinearCoeffs;
+      problem_coefficients = BilinearCoeffs;
       
-      sine_laplace_3D::ExampleFile();
+      sine_laplace_3D::PECLET_NUMBER = this->get_nu();
+      ExampleFile();
+    }
       break;
       
     case 1:
+    {
+      using namespace hemker_3d;
       /** exact_solution */
       exact_solution.push_back( hemker_3d::Exact );
       
@@ -71,8 +77,11 @@ Example_CD3D::Example_CD3D(const ParameterDatabase& user_input_parameter_db)
       /** coefficients */
       problem_coefficients = hemker_3d::BilinearCoeffs;
       
-      hemker_3d::ExampleFile();
+      hemker_3d::PECLET_NUMBER = this->get_nu();
+      
+      ExampleFile();
       break;
+    }
 
     //negative integers are reserved for pure test examples
     case -1:
@@ -129,8 +138,8 @@ void Example_CD3D::do_post_processing(CD3D& cd3d) const
 
 double Example_CD3D::get_nu() const
 {
-  double inverse_reynolds = this->example_database["reynolds_number"];
-  inverse_reynolds = 1/inverse_reynolds;
-  return inverse_reynolds;
+  double peclet_number = this->example_database["peclet_number"];
+  peclet_number = 1/peclet_number;
+  return peclet_number;
 }
 

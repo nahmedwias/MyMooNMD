@@ -2,6 +2,7 @@
  * This is the originally 2D Hemker example adopted to the 3D problem
  *
  */
+double PECLET_NUMBER;
 
 void ExampleFile()
 {
@@ -52,7 +53,7 @@ void BoundValue(double x, double y, double z, double &value)
 void BilinearCoeffs(int n_points, double *x, double *y, double *z,
         double **parameters, double **coeffs)
 {
-  double eps=1.;
+  double eps= PECLET_NUMBER;
   int i;
   double *coeff;
 
