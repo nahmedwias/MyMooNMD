@@ -53,12 +53,12 @@ double ***LocMatrices, double **LocRhs);
  * @param param This is not used in the function body, only added to fit type AssembleFctParam3D.
  */
 void BilinearAssembleGalerkin(double Mult, double *coeff, double* param,
-							  double hK, double **OrigValues, int *N_BaseFuncts,
-							  double ***LocMatrices, double **LocRhs);
+                              double hK, double **OrigValues, int *N_BaseFuncts,
+                              double ***LocMatrices, double **LocRhs);
 
-void BilinearAssemble_SD(double Mult, double *coeff, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
+void BilinearAssemble_SD(double Mult, double *coeff, double* param,
+                         double hK, double **OrigValues, int *N_BaseFuncts,
+                         double ***LocMatrices, double **LocRhs);
 
 /*
 void BilinearAssemble_UPW1(double Mult, double *coeff, double hK,
