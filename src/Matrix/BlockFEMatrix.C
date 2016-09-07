@@ -1083,9 +1083,11 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
       }
       else if (p_dof != -1) //this rank knows the affected dof and has to set its row to 0
       {//determine the row to be swept
-        int n_velo_dofs = this->get_blocks().at(0)->GetN_Rows();
-        int row_glob = dim * n_velo_dofs + p_dof;
-        auto b_row = sub_cmat->GetRowPtr()[row_glob];
+        int n_rows_before = 0;
+        for(size_t br = r_first; br < n_cell_rows_-1; ++br)
+          n_rows_before += this->get_row_space(br).GetN_DegreesOfFreedom();
+        int row_glob = n_rows_before + p_dof;
+        auto b_row = sub_cmat->get_row_array().at(row_glob);
         auto e_row = sub_cmat->GetRowPtr()[row_glob+1];
         auto entries = sub_cmat->GetEntries();
         for(int i = b_row; i < e_row ; ++i)
