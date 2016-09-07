@@ -248,7 +248,9 @@ namespace Output
     // This feature is in testing stage.
     int finalized = 0;
     MPI_Finalized(&finalized);
-    if(!finalized)
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+    if(!finalized && initialized)
     {
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
