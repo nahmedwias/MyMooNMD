@@ -3787,8 +3787,10 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   // TODO Removing this strange construction is a TODO
   int n_ref_before = this->get_n_initial_refinement_steps();
   int n_ref_after = 0;
-  if(parmoon_db.contains("preconditioner") &&
-    parmoon_db["preconditioner"].is(std::string("multigrid")))
+  if(parmoon_db.contains("preconditioner")
+     && parmoon_db["preconditioner"].is(std::string("multigrid"))
+     && parmoon_db.contains("solver_type")
+     && parmoon_db["solver_type"].is(std::string("iterative")))
   {
     determine_n_refinement_steps_multigrid(
       parmoon_db["multigrid_type"],
