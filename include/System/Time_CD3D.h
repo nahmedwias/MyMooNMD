@@ -20,6 +20,7 @@
 #include <Solver.h>
 
 #include <vector>
+#include <array>
 #include <deque>
 
 class LocalAssembling3D; //forward declaration
@@ -135,7 +136,7 @@ class Time_CD3D
     Solver<BlockFEMatrix, BlockVector> solver;
     
     /** @brief store the errors to compute accumulated error norms */
-    std::vector<double> errors_;
+    std::array<double, 5> errors_;
     
     /** @brief set parameters in database
      * 
