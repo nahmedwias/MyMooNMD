@@ -28,6 +28,18 @@ class BlockFEMatrix;
 class TParFECommunicator3D;
 #endif
 
+class BlockVector;
+
+// This is a forward declaration with default argument for the friend
+// method dot. We need to split this function this way to make it work
+// with both compilers Clang and Gnu. If we just define friend dot in the
+// class with a default argument, Clang doesn't compile.
+double dot(const BlockVector& a, const BlockVector& b
+#ifdef _MPI
+    , std::vector<const TParFECommunicator3D*> comms={}
+#endif
+);
+
 class BlockVector
 {
   protected:
@@ -367,7 +379,18 @@ class BlockVector
      *       in e.g. a template iterative solver
      * @param a,b the two BlockVectors
      */
-    friend double dot(const BlockVector& a, const BlockVector& b);
+    friend double dot(const BlockVector& a, const BlockVector& b
+#ifdef _MPI
+        , std::vector<const TParFECommunicator3D*> comms
+#endif
+    );
+
+#ifdef _MPI
+    /// Compute global dot-product of 2 vectors distributed among the processes. All
+    /// processes will return the same results.
+    friend double dot_global(const BlockVector& a, const BlockVector& b,
+                             std::vector<const TParFECommunicator3D*> comms);
+#endif
 
 };
 
