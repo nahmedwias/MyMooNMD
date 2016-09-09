@@ -394,10 +394,10 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
   //Vector r = rhs - A * solution;
   Vector r(rhs); // copy values
 #ifdef _MPI
-    //MPI: solution in consistency level 2 for vector.matrix multiplication
+    //MPI: solution in consistency level 3 for vector.matrix multiplication
     for (size_t bl = 0; bl < comms.size() ;++bl)
     {
-      comms[bl]->consistency_update(solution.block(bl), 2);
+      comms[bl]->consistency_update(solution.block(bl), 3);
     }
 #endif
   A.apply_scaled_add(solution, r, -1.0); // now r = rhs - A*solution
@@ -406,8 +406,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
 #ifndef _MPI
   double resid = r.norm();
 #elif _MPI
-//  double resid = r.norm_global(comms);
-  double resid = r.norm();
+  double resid = r.norm(comms);
 #endif
 
   double beta = resid; // initialize beta as initial residual
@@ -437,26 +436,34 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
       //z[i] = A * M.solve(v[i]); //where M.solve(v[i]) is replaced by application of a preconditioning strategy
       z[i]=r; //copy structure of r
       z[i] = 0.0;
+
+
       // apply a preconditioning strategy with rhs v[i] to obtain z[i]
       this->prec->apply(i, j, v[i], z[i]);
 #ifdef _MPI
-    //MPI: solution in consistency level 2 for computation of global norm
+    //MPI: solution in consistency level 3 for computation of global norm
     for (size_t bl = 0; bl < comms.size() ;++bl)
     {
-      comms[bl]->consistency_update(z[i].block(bl), 2);
+      comms[bl]->consistency_update(z[i].block(bl), 3);
     }
 #endif
       A.apply(z[i], r); // r = A * z[i]
       
       for (unsigned int k = 0; k <= i; k++)
       {
+#ifndef _MPI
         H(k, i) = dot(r, v[k]);
+#elif _MPI
+        H(k, i) = dot(r, v[k], comms);
+#endif
         //r -= H(k, i) * v[k];
         r.add_scaled(v[k], -H(k,i));
       }
-
+#ifndef _MPI
       H(i+1, i) = r.norm();
-      
+#elif _MPI
+      H(i+1, i) = r.norm(comms);
+#endif
       //can lead to "unhappy" crash in FGMRES if H(i+1, i) == 0
       //v[i+1] = r * (1.0 / H(i+1, i)); 
       v[i+1] = r;
@@ -494,10 +501,10 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
     solution += r; //and update the solution
     
 #ifdef _MPI
-    //MPI: solution in consistency level 2 for computation of global norm
+    //MPI: solution in consistency level 3 for computation of global norm
     for (size_t bl = 0; bl < comms.size() ;++bl)
     {
-      comms[bl]->consistency_update(solution.block(bl), 2);
+      comms[bl]->consistency_update(solution.block(bl), 3);
     }
 #endif
     // compute new residual r
@@ -507,8 +514,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
 #ifndef _MPI
     beta = r.norm();
 #elif _MPI
-//    beta = r.norm_global(comms);
-    beta = r.norm();
+    beta = r.norm_global(comms);
 #endif
     
     if(std::abs(beta - resid) > 0.01*beta)

@@ -20,7 +20,7 @@ boundary_file: Default_UnitCube
 geo_file: Default_UnitCube_Hexa   { Default_UnitCube_Hexa, Default_UnitCube_Tetra }
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 3
+refinement_n_initial_steps: 4
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -98,7 +98,7 @@ solver_type: iterative   { direct, iterative }
 direct_solver_type: umfpack   { mumps, pardiso, umfpack }
 
 ## Determine which type of iterative solver should be used.
-iterative_solver_type: bi_cgstab   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
+iterative_solver_type: fgmres   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
 
 ## Maximum number of iterations of the iterative solver. This is used 
 ## as a stopping criterion of the iteration. 
