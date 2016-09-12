@@ -182,9 +182,9 @@ void BilinearAssembleGalerkin(double Mult, double *coeff, double* param,
 
 
 // SDFEM without 2nd derivatives
-void BilinearAssemble_SD(double Mult, double *coeff, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+void BilinearAssemble_SD(double Mult, double *coeff, double* param, 
+                         double hK, double **OrigValues, int *N_BaseFuncts,
+                         double ***LocMatrices, double **LocRhs)
 {
   double **Matrix, *Rhs, val, *MatrixRow;
   double ansatz000, ansatz100, ansatz010, ansatz001;

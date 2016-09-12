@@ -16,7 +16,6 @@
 // This is also called nu, or eps, it is equal
 // to 1/Reynolds_number and is dimensionless
 double DIMENSIONLESS_VISCOSITY;
-double VARIABLE_PARAMETER1;
 
 //side effect: sets the global parameter
 void ExampleFile()
@@ -392,7 +391,7 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   cl = recvbuf[1];
 #endif
 
-  double test_coefficient = VARIABLE_PARAMETER1;
+  double test_coefficient = 500;
 
   cd *= -test_coefficient/0.41;
   cl *= -test_coefficient/0.41;

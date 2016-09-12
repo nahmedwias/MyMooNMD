@@ -18,12 +18,12 @@
 #include <vector>
 #include <array>
 #include <string>
-
-#include <tetgen.h>
 #include "Boundary.h"
 
 #ifndef __MESH__
 #define __MESH__
+
+class tetgenio;
 
 struct meshNode
 {

@@ -52,6 +52,7 @@ ParameterDatabase get_default_CD3D_parameters()
   {
     //inform the fe space about the maximum number of subdomains per dof
     feSpace_.initialize_parallel(maxSubDomainPerDof);
+    feSpace_.get_communicator().print_info();
 
     // reset the matrix with named constructor
     matrix_ = BlockFEMatrix::CD3D(feSpace_);
@@ -197,20 +198,13 @@ void CD3D::output(int i)
   // print the value of the largest and smallest entry in the FE vector
   syst.feFunction_.PrintMinMax();
 
-  /*
-  // write output
-  TOutput3D Output;
-  //Output.init();
-  Output.addFEFunction(&syst.feFunction_);
-  ///@todo parallel output implementation
-  #ifdef _MPI
-  #else
-  Output.write(i,0.0);
-  #endif
-  */
+#ifdef _MPI
+  // computing errors as well as writing vtk files requires a minimum 
+  // consistency level of 1
+  syst.feSpace_.get_communicator().consistency_update(
+    syst.solution_.get_entries(), 1);
+#endif // _MPI
   
-  
-  // implementation with the old class TOutput2D
   // write solution to a vtk file
   if(db["output_write_vtk"])
   {
@@ -220,7 +214,7 @@ void CD3D::output(int i)
 #ifdef _MPI
     char SubID[] = "";
     if(my_rank == 0)
-  	  mkdir(db["output_vtk_directory"], 0777);
+      mkdir(db["output_vtk_directory"], 0777);
     std::string dir = db["output_vtk_directory"];
     std::string base = db["output_basename"];
     Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);

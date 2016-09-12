@@ -213,11 +213,6 @@ void Brinkman2D::assemble()
         std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
         
         // Note: We use only Type 14 for Brinkman (for now)
-        if(blocks.size() != 9)
-        {
-            ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-
         //--------------------------------------------------------------------------------------------------
         // call the assemble method with the information that has been patched together
         // //old Assemble2D.C function

@@ -8,6 +8,7 @@ void ExampleFile()
   Output::print<1>("Example: Laplace.h");
 }
 
+double PECLET_NUMBER;
 // exact solution
 void Exact(double x, double y, double z, double *values)
 {
@@ -33,7 +34,7 @@ void BoundValue(double x, double y, double z, double &value)
 void BilinearCoeffs(int n_points, double *x, double *y, double *z,
                     double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  static double eps = PECLET_NUMBER;
   for(int i = 0; i < n_points; i++)
   {
     coeffs[i][0] = eps;

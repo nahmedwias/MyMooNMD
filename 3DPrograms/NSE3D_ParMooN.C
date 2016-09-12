@@ -24,125 +24,128 @@ int main(int argc, char* argv[])
 #ifdef _MPI
   //Construct and initialise the default MPI communicator.
   MPI_Init(&argc, &argv);
-  MPI_Comm comm = MPI_COMM_WORLD;
-  int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  if(my_rank==0)
+#endif
   {
-    Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
-    Output::info("NSE3D", "MPI, using ", size, " processes");
-  }
-#else
-  int my_rank = 0;
-  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
-  Output::info("NSE3D", "SEQUENTIAL (or OMP...)");
-#endif
-
-  //start a stopwatch which measures time spent in program parts
-  Chrono chrono_parts;
-
-  // Construct the ParMooN Databases.
-  TDatabase Database;
-  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  std::ifstream fs(argv[1]);
-  parmoon_db.read(fs);
-  fs.close();
-
 #ifdef _MPI
-  TDatabase::ParamDB->Comm = comm;
-#endif
-
-  TFEDatabase3D feDatabase;
-
-  // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1], parmoon_db);
-
-  //open OUTFILE, this is where all output is written to (addionally to console)
-  if(my_rank==0)
-  {
-    Output::set_outfile(parmoon_db["outfile"]);
-  }
-  Output::setVerbosity(parmoon_db["verbosity"]);
-
-  if(my_rank==0) //Only one process should do that.
-    Database.WriteParamDB(argv[0]);
-
-  // Do the old parameter check of the Database.
-  Database.CheckParameterConsistencyNSE();
-
-  // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-  std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections(
-      parmoon_db
-  #ifdef _MPI
-      , maxSubDomainPerDof
-  #endif
-      );
-
-  //print information on the mesh partition on the finest grid
-  domain.print_info("NSE3D domain");
-
-  // Choose and construct example.
-  Example_NSE3D example(parmoon_db);
-
-  // Construct an object of the NSE3D-problem type.
-#ifdef _MPI
-  NSE3D nse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
-#else
-  NSE3D nse3d(gridCollections, parmoon_db, example);
-#endif
-
-  // assemble all matrices and right hand side
-  nse3d.assemble_linear_terms();
-  nse3d.stop_it(0);  // check initial residuals
-
-  LoopInfo loop_info("nonlinear");
-  loop_info.print_time_every_step = true;
-  loop_info.verbosity_threshold = 1; // full verbosity
-  if(my_rank==0)
-    loop_info.print(0, nse3d.get_full_residual());
-  
-  chrono_parts.print_time(std::string("setting up spaces, matrices, linear assemble"));
-  chrono_parts.reset();
-
-  //======================================================================
-  for(unsigned int k=1;; k++)
-  {
-    if(my_rank == 0)
-      Output::print(); // new line for a new nonlinear iteration
-    // solve the system
-    nse3d.solve();
-
-    //no nonlinear iteration for Stokes problem
-    if(parmoon_db["problem_type"].is(3))
-      break;
-    
-    nse3d.assemble_non_linear_term();
-
-    // checking residuals
-    if(nse3d.stop_it(k))
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int my_rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    if(my_rank==0)
     {
-      loop_info.finish(k, nse3d.get_full_residual());
-      break;
+      Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+      Output::info("NSE3D", "MPI, using ", size, " processes");
     }
-    else
-      loop_info.print(k, nse3d.get_full_residual());
-  } // end for k
+#else
+    int my_rank = 0;
+    Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+    Output::info("NSE3D", "SEQUENTIAL (or OMP...)");
+#endif
 
-  chrono_parts.print_time(std::string("solving procedure "));
+    //start a stopwatch which measures time spent in program parts
+    Chrono chrono_parts;
 
-  nse3d.output();
+    // Construct the ParMooN Databases.
+    TDatabase Database;
+    ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+    std::ifstream fs(argv[1]);
+    parmoon_db.read(fs);
+    fs.close();
 
-  if(my_rank==0)
-    Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
+#ifdef _MPI
+    TDatabase::ParamDB->Comm = comm;
+#endif
 
-  if(my_rank == 0)
-    Output::close_file();
+    TFEDatabase3D feDatabase;
 
+    // Construct domain, thereby read in controls from the input file.
+    TDomain domain(argv[1], parmoon_db);
+
+    //open OUTFILE, this is where all output is written to (addionally to console)
+    if(my_rank==0)
+    {
+      Output::set_outfile(parmoon_db["outfile"]);
+    }
+    Output::setVerbosity(parmoon_db["verbosity"]);
+
+    if(my_rank==0) //Only one process should do that.
+      Database.WriteParamDB(argv[0]);
+
+    // Do the old parameter check of the Database.
+    Database.CheckParameterConsistencyNSE();
+
+    // Intial refinement and grabbing of grids for multigrid.
+#ifdef _MPI
+    int maxSubDomainPerDof = 0;
+#endif
+    std::list<TCollection* > gridCollections
+    = domain.refine_and_get_hierarchy_of_collections(
+        parmoon_db
+#ifdef _MPI
+        , maxSubDomainPerDof
+#endif
+    );
+
+    //print information on the mesh partition on the finest grid
+    domain.print_info("NSE3D domain");
+
+    // Choose and construct example.
+    Example_NSE3D example(parmoon_db);
+
+    // Construct an object of the NSE3D-problem type.
+#ifdef _MPI
+    NSE3D nse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
+#else
+    NSE3D nse3d(gridCollections, parmoon_db, example);
+#endif
+    
+    // assemble all matrices and right hand side
+    nse3d.assemble_linear_terms();
+    nse3d.stop_it(0);  // check initial residuals
+
+    LoopInfo loop_info("nonlinear");
+    loop_info.print_time_every_step = true;
+    loop_info.verbosity_threshold = 1; // full verbosity
+    if(my_rank==0)
+      loop_info.print(0, nse3d.get_full_residual());
+
+    chrono_parts.print_time(std::string("setting up spaces, matrices, linear assemble"));
+    chrono_parts.reset();
+
+    //======================================================================
+    for(unsigned int k=1;; k++)
+    {
+      if(my_rank == 0)
+        Output::print(); // new line for a new nonlinear iteration
+      // solve the system
+      nse3d.solve();
+
+      //no nonlinear iteration for Stokes problem
+      if(parmoon_db["problem_type"].is(3))
+        break;
+
+      nse3d.assemble_non_linear_term();
+
+      // checking residuals
+      if(nse3d.stop_it(k))
+      {
+        loop_info.finish(k, nse3d.get_full_residual());
+        break;
+      }
+      else
+        loop_info.print(k, nse3d.get_full_residual());
+    } // end for k
+
+    chrono_parts.print_time(std::string("solving procedure "));
+
+    nse3d.output();
+
+    if(my_rank==0)
+      Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
+
+    if(my_rank == 0)
+      Output::close_file();
+  }
 
 #ifdef _MPI
   MPI_Finalize();
@@ -150,4 +153,4 @@ int main(int argc, char* argv[])
   
   return 0;
 }
- 
+

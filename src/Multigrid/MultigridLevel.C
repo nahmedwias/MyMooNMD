@@ -25,11 +25,7 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
    rhs_(*matrix,true), solution_(*matrix, false),
    smoother_(nullptr)
 {
-#ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-#endif
-  Output::info<4>("MultigridLevel", "Constructed a MultigridLevel object. matrix "
+  Output::info<5>("MultigridLevel", "Constructed a MultigridLevel object. matrix "
                "dimensions: (", matrix->get_n_total_rows(), ",",
                matrix->get_n_total_columns(), "), n_cells ",
                matrix->get_ansatz_space(0,0).GetCollection()->GetN_Cells());
@@ -59,6 +55,12 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
     {
       double damp = db["multigrid_vanka_damp_factor"];
       smoother_ = std::make_shared<VankaSmoother>(VankaType::BATCH, damp);
+      break;
+    }
+    case SmootherCode::CELL_VANKA_JACOBI:
+    {
+      double damp = db["multigrid_vanka_damp_factor"];
+      smoother_ = std::make_shared<VankaSmoother>(VankaType::CELL_JACOBI, damp);
       break;
     }
     //Vanka smoothers with storage of local systems
@@ -108,7 +110,7 @@ void MultigridLevel::calculate_defect()
   std::vector<const TParFECommunicator3D*> comms = matrix_->get_communicators();
   for(size_t bl =0; bl < comms.size(); ++bl)
   {
-    comms[bl]->consistency_update(solution_.block(bl), 2); //restore level 2 consistency of solution_
+    comms[bl]->consistency_update(solution_.block(bl), 3); //restore level 3 consistency of solution_
   }
 #endif
 

@@ -64,6 +64,11 @@ public:
 
 	void printLU(std::string name) const;
 
+	/// Calculates the matrix' Frobenius norm. We implement only Frobenius,
+	/// because this one is independent on d.o.f. numbering and therefore
+	/// handy for debugging in MPI.
+	double norm() const;
+
 	//! Getters
 	size_t getNRows() const{
 		return nRows_;

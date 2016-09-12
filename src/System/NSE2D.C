@@ -343,13 +343,6 @@ void NSE2D::assemble()
       // we have to use reinterpret_casts because dynamic downcasting won't work here
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
-        //CB DEBUG
-        if(blocks.size() != 3)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-
         n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
 
@@ -359,12 +352,6 @@ void NSE2D::assemble()
 
         break;
       case 2:
-        //CB DEBUG
-        if(blocks.size() != 5)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
         n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
 
@@ -376,12 +363,6 @@ void NSE2D::assemble()
 
         break;
       case 3:
-        //CB DEBUG
-        if(blocks.size() != 6)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
         n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
@@ -394,13 +375,6 @@ void NSE2D::assemble()
         break;
 
       case 4:
-        //CB DEBUG
-        if(blocks.size() != 8)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-
         n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
@@ -420,12 +394,6 @@ void NSE2D::assemble()
         break;
 
       case 14:
-        //CB DEBUG
-        if(blocks.size() != 9)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
         n_sq_mat = 5;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());

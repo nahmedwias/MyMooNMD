@@ -26,6 +26,10 @@
 #include <BdPlane.h>
 #include <LinAlg.h>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif
+
 void OnlyDirichlet(double x, double y, double z, BoundCond &cond)
 {
 	cond = DIRICHLET;
@@ -1887,11 +1891,23 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
 
 void TFEFunction3D::MinMax(double & min, double & max) const
 {
+#ifdef _MPI
+  //in MPI case, compare only master values
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  const int* masters = this->FESpace3D->get_communicator().GetMaster();
+#endif
+
   double val;
   max = -1e100, min = 1e100;
   
   for(int i = 0; i<Length; i++)
   {
+#ifdef _MPI
+    //skip slave values
+    if(masters[i] != my_rank)
+      continue;
+#endif
     val = Values[i];
     if(val>max) max = val;
     if(val<min) min = val;
@@ -1925,7 +1941,7 @@ void TFEFunction3D::PrintMinMax(std::string name) const
       if(name.empty())
         Output::stat("MinMax", this->Name, " min ", min, ", max ", max);
       else
-        Output::stat("MinMax", " min ", min, ", max ", max);
+        Output::stat("MinMax", name, " min ", min, ", max ", max);
     }
     else
     {

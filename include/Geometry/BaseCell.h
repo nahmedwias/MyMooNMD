@@ -437,6 +437,9 @@ class TBaseCell
     bool IsDependentCell() const
      {  return DependentCell; }
 
+    /// \todo TODO This method is never called - that is a problem, since
+    /// information on N_NeibProcesses might be of interest in other parts of the program
+    /// (I need it for Vanka Smoothers in multgrid! CB)
     void SetN_NeibProcesses(int n)
      { N_NeibProcesses = n; }
 

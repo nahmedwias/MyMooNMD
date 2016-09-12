@@ -178,6 +178,10 @@ class TFEFunction3D
     * If nodal finite elements are used, this is indeed the minimum and maximum
     * of the FE-function. However in other cases this might be wrong (e.g.
     * nonconforming or discontiuous elements).
+    *
+    * @todo This kind of min/max computation is nothing but a source of
+    * confusion - it would be much better, if this would compute the actual min/max
+    * function values!!!
     */
    void MinMax(double & min, double & max) const;
 

@@ -28,6 +28,8 @@ SmootherCode string_to_smoother_code(std::string code)
     return SmootherCode::CELL_VANKA;
   else if(code == std::string("batch_vanka"))
     return SmootherCode::BATCH_VANKA;
+  else if(code == std::string("cell_vanka_jacobi"))
+    return SmootherCode::CELL_VANKA_JACOBI;
   else if(code == std::string("nodal_vanka_store"))
     return SmootherCode::NODAL_VANKA_STORE;
   else if(code == std::string("cell_vanka_store"))
@@ -149,7 +151,7 @@ void Multigrid::cycle()
   size_t n_steps = control_.get_n_steps();
   size_t finest = levels_.size() - 1;
 
-  //Start with 0 solution TODO enable other start solution!
+//  //Start with 0 solution TODO enable other start solution!
   levels_.at(finest).solution_ = 0.0;
   //...but copy non-actives
   levels_.at(finest).solution_.copy_nonactive(levels_.at(finest).rhs_);
@@ -277,7 +279,7 @@ void Multigrid::update_rhs_in_coarser_grid(size_t lvl)
                                     defect_current_entries, size_current_defect);
 #ifdef _MPI
     const TParFECommunicator3D& comm_coarse = space_coarse.get_communicator();
-    comm_coarse.CommUpdateReduce(rhs_coarse_entries); //call CommUpdateReduce TODO What and why exactly???
+    comm_coarse.CommUpdateReduce(rhs_coarse_entries); //call CommUpdateReduce TODO Why exactly???
 #endif
   }
 
@@ -328,7 +330,7 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
 
 #ifdef _MPI
     const TParFECommunicator3D& comm_fine = space_fine.get_communicator();
-    comm_fine.CommUpdateReduce(solution_prolongation); //call CommUpdateReduce TODO What and why exactly???
+    comm_fine.CommUpdateReduce(solution_prolongation); //call CommUpdateReduce TODO Why exactly???
 #endif
 
     //Update the actual solution_fine_entries by damped addition
@@ -382,6 +384,7 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "care, that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
          {"jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+          "cell_vanka_jacobi",
           "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
   db.add("multigrid_smoother_coarse", "direct_solve",
@@ -389,6 +392,7 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
          {"direct_solve", "jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+          "cell_vanka_jacobi",
           "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
   db.add("multigrid_correction_damp_factor", 1.0,

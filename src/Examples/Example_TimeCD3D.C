@@ -54,6 +54,8 @@ Example_TimeCD3D::Example_TimeCD3D(
       boundary_data.push_back(BoundValue);
       problem_coefficients = BilinearCoeffs;
       initialCondtion.push_back(InitialCondition);
+      
+      concentration::PECLET_NUMBER = this->get_nu();
       ExampleFile();
       break;
     default:
