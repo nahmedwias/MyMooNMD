@@ -20,8 +20,10 @@ SmootherCode string_to_smoother_code(std::string code)
 {
   if(code == std::string("direct_solve"))
     return SmootherCode::DIRECT_SOLVE;
-  if(code == std::string("jacobi"))
+  else if(code == std::string("jacobi"))
     return SmootherCode::JACOBI;
+  else if(code == std::string("sor"))
+    return SmootherCode::SOR;
   else if(code == std::string("nodal_vanka"))
     return SmootherCode::NODAL_VANKA;
   else if(code == std::string("cell_vanka"))
@@ -272,7 +274,7 @@ void Multigrid::update_rhs_in_coarser_grid(size_t lvl)
     // that restriction into coarser level's right hand side.
 #ifdef _MPI
   const TParFECommunicator3D& comm_fine = space_current.get_communicator();
-  comm_fine.consistency_update(defect_current_entries, 3); //restore level 3 consistency
+  comm_fine.consistency_update(defect_current_entries, 1); //restore level 1 consistency
 #endif
     GridTransfer::DefectRestriction(space_coarse, space_current,
                                     rhs_coarse_entries, size_coarse_rhs,
@@ -319,10 +321,10 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
 
 #ifdef _MPI
     const TParFECommunicator3D& comm_current = space_current.get_communicator();
-    comm_current.consistency_update(sol_cur_entries, 3); //restore level 3 consistency
+    comm_current.consistency_update(sol_cur_entries, 1); //restore level 1 consistency
 #endif
 
-    //Do the prolongation and write its result into sol_fine_copy_entries
+    //Do the prolongation and write its result into solution_prolongation
     GridTransfer::Prolongate(
         space_current, space_fine,
         sol_cur_entries, size_sol_cur,
@@ -342,10 +344,6 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
     {
       sol_fine_entries[j] += damp * solution_prolongation[j];
     }
-
-#ifdef _MPI
-    comm_fine.consistency_update(sol_fine_entries,3);
-#endif
 
   }
 
@@ -383,7 +381,8 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "The smoother to use on all but the coarsest level. You should take "
          "care, that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
-         {"jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+         {"jacobi", "sor",
+          "nodal_vanka", "cell_vanka", "batch_vanka",
           "cell_vanka_jacobi",
           "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
@@ -391,7 +390,8 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "The smoother to use on the coarsest level. You should take care, "
          "that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
-         {"direct_solve", "jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+         {"direct_solve", "jacobi", "sor",
+          "nodal_vanka", "cell_vanka", "batch_vanka",
           "cell_vanka_jacobi",
           "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
