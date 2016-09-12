@@ -101,15 +101,6 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
 #else
     systems_.emplace_back(example_, cellCollection);
 #endif    
-    // print some useful information
-    const TFESpace3D& space = this->systems_.front().feSpace_;
-    double hMin, hMax;
-    cellCollection.GetHminHmax(&hMin, &hMax);
-    Output::print<1>("N_Cells    : ", setw(13), cellCollection.GetN_Cells());
-    Output::print<1>("h(min, max): ", setw(13), hMin, " ", setw(13), hMax);
-    Output::print<1>("dofs all   : ", setw(13), space.GetN_DegreesOfFreedom());
-    Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
-    
     // initial concentration
     this->systems_.front().feFunction_.Interpolate(example_.get_initial_cond(0));
   }
@@ -136,6 +127,22 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
     }
     multigrid->initialize(matrices);
   }// multigrid case
+  // print useful information
+  this->output_problem_size_info();
+}
+
+//==============================================================================
+void Time_CD3D::output_problem_size_info() const
+{
+  // print some useful information
+  const TFESpace3D& space = this->systems_.front().feSpace_;
+  double hMin, hMax;
+  TCollection *coll = space.GetCollection();
+  coll->GetHminHmax(&hMin, &hMax);
+  Output::print<1>("N_Cells    : ", setw(13), coll->GetN_Cells());
+  Output::print<1>("h(min, max): ", setw(13), hMin, " ", setw(13), hMax);
+  Output::print<1>("dofs all   : ", setw(13), space.GetN_DegreesOfFreedom());
+  Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
 }
 
 //==============================================================================
