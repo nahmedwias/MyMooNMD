@@ -12,6 +12,7 @@
 #include <MultigridLevel.h>
 #include <ParameterDatabase.h>
 #include <VankaSmoother.h>
+#include <SORSmoother.h>
 
 #ifdef _MPI
 #include <ParFECommunicator3D.h>
@@ -39,6 +40,11 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
     case SmootherCode::JACOBI:
       smoother_ = std::make_shared<JacobiSmoother>();
       break;
+    case SmootherCode::SOR:
+    {//sor smoother with backward sweep ("0") and overrelaxation parameter 1.5
+      smoother_ = std::make_shared<SORSmoother>(1.5, 0);
+      break;
+    }
     case SmootherCode::NODAL_VANKA:
     {
       double damp = db["multigrid_vanka_damp_factor"];
