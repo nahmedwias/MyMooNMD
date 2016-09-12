@@ -272,7 +272,7 @@ void Multigrid::update_rhs_in_coarser_grid(size_t lvl)
     // that restriction into coarser level's right hand side.
 #ifdef _MPI
   const TParFECommunicator3D& comm_fine = space_current.get_communicator();
-  comm_fine.consistency_update(defect_current_entries, 3); //restore level 3 consistency
+  comm_fine.consistency_update(defect_current_entries, 1); //restore level 1 consistency
 #endif
     GridTransfer::DefectRestriction(space_coarse, space_current,
                                     rhs_coarse_entries, size_coarse_rhs,
@@ -319,10 +319,10 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
 
 #ifdef _MPI
     const TParFECommunicator3D& comm_current = space_current.get_communicator();
-    comm_current.consistency_update(sol_cur_entries, 3); //restore level 3 consistency
+    comm_current.consistency_update(sol_cur_entries, 1); //restore level 1 consistency
 #endif
 
-    //Do the prolongation and write its result into sol_fine_copy_entries
+    //Do the prolongation and write its result into solution_prolongation
     GridTransfer::Prolongate(
         space_current, space_fine,
         sol_cur_entries, size_sol_cur,
@@ -342,10 +342,6 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
     {
       sol_fine_entries[j] += damp * solution_prolongation[j];
     }
-
-#ifdef _MPI
-    comm_fine.consistency_update(sol_fine_entries,3);
-#endif
 
   }
 
