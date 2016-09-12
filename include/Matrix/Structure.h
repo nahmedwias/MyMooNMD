@@ -287,6 +287,11 @@ class TStructure
      */
     int *GetRowPtr()
     { return &rows[0]; }
+    
+    /** @brief return array row pointer */
+    const std::vector<int>& get_row_array() const
+    { return rows; }
+    
 
     /** return array HangingRowPtr */
     const int *GetHangingRowPtr() const

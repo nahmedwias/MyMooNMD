@@ -11,16 +11,18 @@ outfile: default_parmoon_outfile.out
 ## domain. You probably want to adjust this to be the path to some file 
 ## which typically has the extension 'PRM'. See the documentation 
 ## for GEO and PRM files. 
-boundary_file: Default_UnitCube
+#boundary_file: Default_UnitCube
+boundary_file: ../../mesh/flow_around_cylinder3D.PRM
 
 ## This files describes the computational mesh. You probably want to 
 ## adjust this to be the path to some file which typically has the 
 ## extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM 
 ## files. 
-geo_file: Default_UnitCube_Hexa   { Default_UnitCube_Hexa, Default_UnitCube_Tetra }
+#geo_file: Default_UnitCube_Hexa   { Default_UnitCube_Hexa, Default_UnitCube_Tetra }
+geo_file: ../../mesh/flow_around_cylinder_quads3D.GEO
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 4
+refinement_n_initial_steps: 0
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -42,8 +44,9 @@ verbosity: 3   [ 1, 5 ]
 ## 1 - quadratic velocity, linear pressure example
 ## 2 - simple cosine sine
 ## 3 - driven cavity 3d
+## 4 - flow around cylinder
 ## -1 to -4 : test examples - 
-example: -1
+example: 4
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -73,7 +76,7 @@ output_basename: parmoon
 nonlinloop_maxit: 5   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
-nonlinloop_epsilon: 1e-13   [ 0, 1 ]
+nonlinloop_epsilon: 1e-8   [ 0, 1 ]
 
 ## Damping factor 'w' for the nonlinear iteration. The solution of 
 ## the k-th iterate will be scaled by 'w'. Then The previous solution, 
@@ -91,14 +94,14 @@ nonlinloop_scale_epsilon_with_size: false   { true, false }
 
 ## Determine which kind of solver should be used. This can be an 
 ## iterative or a direct solver 
-solver_type: iterative   { direct, iterative }
+solver_type: iterative  { direct, iterative }
 
 ## Determine which type of direct solver should be used. All of them 
 ## are implemented in external libraries. 
 direct_solver_type: umfpack   { mumps, pardiso, umfpack }
 
 ## Determine which type of iterative solver should be used.
-iterative_solver_type: fgmres   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
+iterative_solver_type: bi_cgstab   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
 
 ## Maximum number of iterations of the iterative solver. This is used 
 ## as a stopping criterion of the iteration. 
@@ -127,7 +130,7 @@ gmres_restart: 20   [ 1, 1000 ]
 
 ## Determine the used preconditioner. Note that some of these are 
 ## specific for some problem types. 
-preconditioner: multigrid   { least_squares_commutator, least_squares_commutator_boundary, multigrid, no_preconditioner, semi_implicit_method_for_pressure_linked_equations }
+preconditioner: no_preconditioner   { least_squares_commutator, least_squares_commutator_boundary, multigrid, no_preconditioner, semi_implicit_method_for_pressure_linked_equations }
 
 ## Determine the multigrid type: standard multigrid or
 ## mdml (multiple discretization multi-level, which is a variant of 
@@ -201,6 +204,9 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## Peclet_number
 peclet_number: 1e3
 
+## Reynolds number
+reynolds_number: 1000
+
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 
@@ -212,3 +218,10 @@ NSTYPE: 1
 LAPLACETYPE: 0
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
+
+
+## Parameters to obtain flow_around_cylinder geometry
+## using sandwich method of ParMooN
+DRIFT_Z: 0.41
+N_CELL_LAYERS: 6
+

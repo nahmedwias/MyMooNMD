@@ -1,5 +1,6 @@
 #include <ParameterDatabase.h>
 #include <iostream>
+#include <cmath>
 #include <algorithm>
 #include <ctime>
 #include <memory>
@@ -316,6 +317,14 @@ Parameter::types get_parameter_and_type(std::string value_string,
     try
     {
       int value = stoi(value_string);
+      // in the following, we check if input = scientific notation, e.g 1e5
+      int exponent = 0 ;
+      auto position = value_string.find(std::string("e"));
+      if (position != std::string::npos)
+      {
+        exponent = stoi(value_string.substr(position + 1));
+      }
+      value = value * std::pow(10,exponent);
       if(value < 0) // this is an int not a size_t
       {
         int_ret = value;

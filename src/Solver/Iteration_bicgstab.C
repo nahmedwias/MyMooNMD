@@ -4,6 +4,11 @@
 #include <MooNMD_Io.h>
 #include <typeinfo>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#include <mpi.h>
+#endif
+
 // L - LinearOperator, V - Vector
 template <class L, class V>
 Iteration_bicgstab<L, V>::Iteration_bicgstab(
@@ -23,20 +28,49 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
+  // MPI: rhs and solution in consistency level 0 for computation of global norm
+  // MPI Environment initialization for parallel iterative solver
+#ifdef _MPI
+  int size, my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  std::vector<const TParFECommunicator3D*> comms = A.get_communicators();
+#endif
+
   double rho_1, rho_2 = 1., alpha = 1., beta, omega = 1.;
   Vector p, phat(rhs), s, shat(rhs);
   Vector t(rhs), v(rhs); // this does a copy. We don't need the entries though.
   
+#ifdef _MPI
+  //MPI: solution in consistency level 3 for matrix.vector multiplication "A.solution"
+  for (size_t bl = 0; bl < comms.size() ;++bl)
+  {
+    comms[bl]->consistency_update(solution.block(bl), 3);
+  }
+#endif
+
   //Vector r = rhs - A * solution;
   Vector r(rhs); // copy values
   A.apply_scaled_add(solution, r, -1.0); // now r = rhs - A*solution
   //Vector rtilde = r;
   Vector rtilde(r);
   
-  double normb = norm(rhs);
+  // Computation of norms (rhs and r in consistency level 0)
+#ifndef _MPI
+  double normb = rhs.norm();
+#elif _MPI
+  double normb = rhs.norm(comms);
+#endif
+
   if (normb == 0.0)
     normb = 1;
-  double resid = norm(r) / normb;
+
+#ifndef _MPI
+  double resid = r.norm() / normb;
+#elif _MPI
+  double resid = r.norm(comms) / normb;
+#endif
+
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0))
   {
@@ -45,10 +79,21 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
   
   for (unsigned int i = 1; i <= this->max_n_iterations; i++)
   {
+    // compute dot-product of 2 vectors (no consistency update needed)
+#ifndef _MPI
     rho_1 = dot(rtilde, r);
+#elif _MPI
+    rho_1 = dot(rtilde, r, comms);
+#endif
+
     if (rho_1 == 0) // this should not ever happen
     {
-      return std::pair<unsigned int, double>(i, norm(r) / normb);
+#ifndef _MPI
+  double abnormal_residual = r.norm() / normb;
+#elif _MPI
+  double abnormal_residual = r.norm(comms) / normb;
+#endif
+      return std::pair<unsigned int, double>(i, abnormal_residual);
     }
     if (i == 1)
       p = r;
@@ -60,26 +105,76 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
       p *= beta;
       p += r;
     }
+
+#ifdef _MPI
+    //MPI: p in consistency level 1 (which the preconditioner can't do on its own)
+    // TODO For a Vanka which contains toxic systems, we will need level 3 consistency here!
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(p.block(bl), 1);
+    }
+#endif
     //phat = M.solve(p);
     this->prec->apply(p, phat);
+#ifdef _MPI
+    //MPI: solution in consistency level 3 for matrix.vector multiplication "A.phat"
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(phat.block(bl), 3);
+    }
+#endif
     //v = A * phat;
     A.apply(phat, v);
+
+    // compute dot-product of 2 vectors
+#ifndef _MPI
     alpha = rho_1 / dot(rtilde, v);
+#elif _MPI
+    alpha = rho_1 / dot(rtilde, v, comms);
+#endif
+
     //s = r - alpha * v;
     s = r;
     s.add_scaled(v, -alpha);
-    resid = norm(s) / normb;
+#ifndef _MPI
+  resid = s.norm() / normb;
+#elif _MPI
+  resid = s.norm(comms) / normb;
+#endif
+
     if(this->converged(resid, i))
     {
       //solution += alpha * phat;
       solution.add_scaled(phat, alpha);
       return std::pair<unsigned int, double>(i, resid);
     }
+
+#ifdef _MPI
+    //MPI: s in consistency level 1 (which the preconditioner can't do on its own)
+    // TODO For a Vanka which contains toxic systems, we will need level 3 consistency here!
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(s.block(bl), 1);
+    }
+#endif
     //shat = M.solve(s);
     this->prec->apply(s, shat);
+#ifdef _MPI
+    //MPI: solution in consistency level 3 for matrix.vector multiplication "A.shat"
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(shat.block(bl), 3);
+    }
+#endif
     //t = A * shat;
     A.apply(shat, t);
+
+#ifndef _MPI
     omega = dot(t,s) / dot(t,t);
+#elif _MPI
+    omega = dot(t,s,comms) / dot(t,t,comms);
+#endif
+
     //solution += alpha * phat + omega * shat;
     solution.add_scaled(phat, alpha);
     solution.add_scaled(shat, omega);
@@ -88,7 +183,13 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
     r.add_scaled(t, -omega);
     
     rho_2 = rho_1;
-    resid = norm(r) / normb;
+
+#ifndef _MPI
+    resid = r.norm() / normb;
+#elif _MPI
+    resid = r.norm(comms) / normb;
+#endif
+
     Output::print<4>("bi-cgstab iteration ", i, " ", resid);
     if(this->converged(resid, i))
     {
@@ -107,5 +208,9 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
 
 /* ************************************************************************** */
 // explicit instantiations
-template class Iteration_bicgstab<BlockMatrix, BlockVector>;
 template class Iteration_bicgstab<BlockFEMatrix, BlockVector>;
+// In MPI case we are so dependent on the connection of Matrix and FESpace, that
+// it does not make sense to instantiate the function for BlockMatrix.
+#ifndef _MPI
+template class Iteration_bicgstab<BlockMatrix,   BlockVector>;
+#endif

@@ -43,6 +43,9 @@ class TParFECommunicator3D
     /// Default constructor. Creates an almost empty object, which should not be used.
     TParFECommunicator3D();
     
+    /// return the number of global degrees of freedom (across all processes)
+    size_t get_n_global_dof() const;
+    
     /// Gather information about this communicator in root and print it
     /// to console and output file.
     void print_info() const;
@@ -78,18 +81,49 @@ class TParFECommunicator3D
     void update_from_additive_to_consistent_storage(
         double* vector, size_t consistency_level) const;
 
-    //TODO comment
-    // Verdacht: die Methode addiert die Werte von Interface-Slaves und Interface-
+    // Die Methode addiert die Werte von Interface-Slaves und Interface-
     // Mastern auf und stellt mit diesen addierten Werten Level-1-Konsistenz her.
     // Dies scheint nach Multigrid-Gridtransfers noetig zu sein ( zumindest wird
     // die Methode dort aufgerufen).
     void CommUpdateReduce(double *rhs) const;
 
-    //TODO Comment the usage of this!
+    /**
+     * This was just a quick idea to identify a dof across processors and print
+     * some information about it. Might be worked up some time.
+     *
+     * It is costly, for a vector of size N_Dof has to be communicated.
+     *
+     * @param process The process which sends the ping.
+     * (Must be same on all processes).
+     * @param dof The dof on that process which is pinged.
+     * (And should be master on 'process' otherwise this method will just give
+     *  a warning and -1 on all processes.)
+     *
+     * @return The local number of the pinged dof, -1 if the dof is not present
+     * locally.
+     */
+    int dof_ping(size_t process, size_t dof) const;
+
+    /// Returns an array which knows the master process of each locally known dof.
     const int *GetMaster() const
     {return Master;}
     
-    //TODO Comment the usage of this!
+    /// Get the dof marker array from the fe mapper, which holds encoded
+    /// information about the type of a certain d.o.f.
+    /// The encoding is as follows:
+    ///   i - independent (inner) master dof
+    ///   D - dependent 1 master dof
+    ///   d - dependent 2 master dof
+    ///   m - interface master dof
+    ///   s - interface slave dof
+    ///   H - halo 1 slave dof
+    ///   h - halo 2 slave dof
+    const char* get_dof_markers() const
+    {
+      return Mapper->Get_DofMarker();
+    }
+
+    /// Give the total number of dof present on this communicator.
     int GetNDof() const
     {return N_Dof;}
     
@@ -99,7 +133,10 @@ class TParFECommunicator3D
       return Mapper->get_n_dim();
     }
 
-    //TODO Comment the usage of this!
+    /// Return an array which contains an ad-hoc (=decomposition dependent)
+    /// global numbering of the dof. Its i'th entry is the (ad hoc!) global
+    /// dof number of local dof i. This is used for the interface to external
+    /// solvers (MUMPS, soon the PETSc family).
     const int* Get_Local2Global() const
     { return Mapper->Get_Local2Global();}
     
@@ -138,7 +175,8 @@ class TParFECommunicator3D
     TParFEMapper3D *Mapper;
 
     /// The number of FESpaces this mapper is used for at once. Should always be 1.
-    /// \todo I found this concept confusing, and therefore dropped it
+    /// \todo I found this concept confusing, and therefore dropped it (CB)
+    /// The concept might be revived when some day progressing to "BlockFESpaces".
     int N_Dim;
 
     /// The total number of d.o.f. known to this communicator - must equal the

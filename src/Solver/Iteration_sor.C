@@ -30,11 +30,11 @@ std::pair<unsigned int, double> Iteration_sor<L, Vector>::iterate(
   A.apply_scaled_add(solution, r, -1.);
   // now: r = rhs - A*solution
   
-  double normb = norm(rhs);
+  double normb = rhs.norm();
   if (normb == 0.0)
     normb = 1;
   // check for convergence
-  double resid = norm(r) / normb;
+  double resid = r.norm() / normb;
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0)) 
   {
@@ -51,7 +51,7 @@ std::pair<unsigned int, double> Iteration_sor<L, Vector>::iterate(
     A.apply_scaled_add(solution, r, -1.);
     
     // check for convergence
-    resid = norm(r) / normb;
+    resid = r.norm() / normb;
     if(this->converged(resid, i))
     {
       return std::pair<unsigned int, double>(i, resid);

@@ -7,8 +7,8 @@
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <Time_CD3D.h>
-#include <MeshPartition.h>
 #include <TimeDiscRout.h>
+#include <Chrono.h>
 
 #include <sys/stat.h>
 
@@ -23,6 +23,11 @@ double timeC = 0;
 
 int main(int argc, char *argv[])
 {
+#ifdef _MPI
+  MPI_Init(&argc, &argv);
+#endif
+  {
+  Chrono chrono_entire_program;
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -30,31 +35,30 @@ int main(int argc, char *argv[])
   parmoon_db.read(fs);
   fs.close();
   
+  bool i_am_root = true;
 #ifdef _MPI
-  MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
   int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  
-  Output::print("<<<<< Running ParMooN: Time_CD3D Main Program >>>>>");
+  MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm_size(comm, &size);
+  i_am_root = (my_rank == 0);
+#endif
+  if(i_am_root)
+    Output::print("<<<<< Running ParMooN: Time_CD3D Main Program >>>>>");
+#ifdef _MPI
   Output::info("Time_CD3D", "MPI, using ", size, " processes");
-#else
-  int my_rank = 0;
-  Output::print("<<<<< Running ParMooN: Time_CD3D Main Program >>>>>");
-  Output::info("Time_CD3D", "SEQUENTIAL");
 #endif
   
   TFEDatabase3D feDatabase;
   TDomain domain(argv[1], parmoon_db);
   
   // open outfile, this is where all output is written (additionally to console)
-  if(my_rank==0)
+  if(i_am_root)
     Output::set_outfile(parmoon_db["outfile"]);
   
   Output::setVerbosity(parmoon_db["verbosity"]);
   
-  if(my_rank==0)
+  if(i_am_root)
     Database.WriteParamDB(argv[1]);
   
   // split the number of refinement steps - some have to be done before,
@@ -110,7 +114,8 @@ int main(int argc, char *argv[])
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
     TDatabase::TimeDB->CURRENTTIME += tau;
     
-    Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    if(i_am_root)
+      Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
     tcd3d.assemble();
     tcd3d.solve();
     tcd3d.descale_stiffness();
@@ -118,14 +123,13 @@ int main(int argc, char *argv[])
     tcd3d.output(step,image);
   }
   
-  if(my_rank==0)
+  if(i_am_root)
     Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
 
+  chrono_entire_program.print_time("TCD3D_ParMooN program");
   Output::close_file();
-  
-  #ifdef _MPI
+  }
+#ifdef _MPI
   MPI_Finalize();
 #endif
- 
-  return 0;
 }

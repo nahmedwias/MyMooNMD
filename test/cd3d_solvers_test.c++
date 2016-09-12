@@ -120,7 +120,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     db["multigrid_n_pre_smooth"] = 3;
     db["multigrid_n_post_smooth"] = 3;
 
-    Output::setVerbosity(2);
+    Output::setVerbosity(3);
 
   }
   else if(solver_name.compare("petsc") == 0)

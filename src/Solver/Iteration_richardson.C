@@ -41,7 +41,7 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
 #endif
 
 #ifndef _MPI
-  double normb = norm(rhs);
+  double normb = rhs.norm();
 #elif _MPI
   double normb = rhs.norm_global(comms);
 #endif
@@ -49,10 +49,10 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
     normb = 1;
   
 #ifdef _MPI
-  //MPI: solution in consistency level 2 for computation of global norm
+  //MPI: solution in consistency level 3 for computation of global norm
   for (size_t bl = 0; bl < comms.size() ;++bl)
   {
-    comms[bl]->consistency_update(solution.block(bl), 2);
+    comms[bl]->consistency_update(solution.block(bl), 3);
   }
 #endif
 
@@ -60,10 +60,10 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
   Vector r(rhs); // copy values
   A.apply_scaled_add(solution, r, -1.0);
 
-  //MPI: Now r in consistency level 0
 #ifndef _MPI
-  double resid = norm(r) / normb;
+  double resid = r.norm() / normb;
 #elif _MPI
+  //MPI: Now r in consistency level 0
   double resid = r.norm_global(comms) / normb;
 #endif
   // safe initial residual, used to check stopping criteria later
@@ -75,26 +75,38 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
   for (unsigned int i = 1; i <= this->max_n_iterations; i++)
   {
     //z = M.solve(r);
-    this->prec->apply(r, z);
-    // update solution by w*z (w = damping factor)
-    solution.add_scaled(z, this->damping);
-    
-    //r = b - A * x;
-    r = rhs;
 #ifdef _MPI
-    //MPI: solution in consistency level 2 for computation of global norm
+    //MPI: r in consistency level 1 (which the preconditioner can't do on its own)
+    // TODO For a Vanka which contains toxic systems, we will need level 3 consistency here!
     for (size_t bl = 0; bl < comms.size() ;++bl)
     {
-      comms[bl]->consistency_update(solution.block(bl), 2);
+      comms[bl]->consistency_update(r.block(bl), 1);
+    }
+#endif
+
+    this->prec->apply(r, z);
+
+    // update solution by w*z (w = damping factor)
+    solution.add_scaled(z, this->damping);
+
+    //r = b - A * x;
+    r = rhs;
+
+#ifdef _MPI
+    //MPI: solution in consistency level 3 for computation of global norm
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(solution.block(bl), 3);
     }
 #endif
     A.apply_scaled_add(solution, r, -1.0);
 
 #ifndef _MPI
-    resid = norm(r) / normb;
+    resid = r.norm()/ normb;
 #elif _MPI
     resid = r.norm_global(comms) / normb;
 #endif
+
     Output::print<4>("richardson iteration ", i, " ", resid);
     if(this->converged(resid, i))
     {

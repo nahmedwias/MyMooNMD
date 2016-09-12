@@ -62,6 +62,17 @@ TParFECommunicator3D::TParFECommunicator3D()
 
 }
 
+size_t TParFECommunicator3D::get_n_global_dof() const
+{
+  int n_m_total = 0;
+  int sendbuf = Mapper->GetN_Master();
+  MPI_Allreduce(&sendbuf, &n_m_total, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  if(n_m_total >= 0)
+    return size_t(n_m_total);
+  ErrThrow("negative number of global dofs computed ??? ", n_m_total);
+}
+
+
 void TParFECommunicator3D::print_info() const
 {
   int my_rank, size;
@@ -245,13 +256,7 @@ void TParFECommunicator3D::update_from_additive_to_consistent_storage(
 
 void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
 {
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-  
+
   double t1,t2;
   t1=MPI_Wtime();
   
@@ -337,15 +342,141 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdateMS(double *sol) const
+int TParFECommunicator3D::dof_ping(size_t process, size_t dof) const
 {
-  if(!Mapper)
+  int size_gl, rank_gl;
+  MPI_Comm_size(MPI_COMM_WORLD, &size_gl);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank_gl);
+
+  //Check input (on 'process' only)
+  bool invalid_input= false;
+  if(rank_gl == (int) process)
   {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
+    if((int) dof >= N_Dof)
+      ErrThrow("There is no dof ", dof, " on process ", process, ", which knows ",N_Dof , " dof.");
+    if(Master[dof] != (int) process)
+    {
+      Output::warn("DOF_PING", "Dof ", dof, " is not master on process ",
+                   process, ", therefore no ping is sent");
+      invalid_input = true;
+    }
+  }
+  // Let everyone know if the input was valid (i.e. dof a master on 'process')
+  // or not - if not so, everyone returns -1.
+  MPI_Bcast(&invalid_input, 1, MPI_C_BOOL, process, MPI_COMM_WORLD);
+  if(invalid_input)
+    return(-1);
+
+  // Input is valid - let's start working!
+  std::vector<double> ping(N_Dof, 0);
+  if(rank_gl == (int) process)
+    ping.at(dof) = 1; //the actual ping is just a 1.0
+
+  // ... update ping vector to full consistency...
+  consistency_update(&ping[0], 3);
+
+  // ...and start talking!
+  const char* markers = get_dof_markers();
+
+  int local_dof = -1;
+  bool pinged = false;
+  //look through the vector, find out if and where the ping was received
+  for( size_t i = 0 ; i < ping.size() ; ++i )
+  {
+    if(ping[i] == 1.0)
+    {
+      if(pinged) //ping found, but already found another one!
+        ErrThrow("Dof found multiple times through ping!");
+      local_dof = i;
+      pinged = true;
+    }
   }
 
+  /* ****** */
+  // Set up a new communicator consisting of all those ranks, which contain
+  // the pinged dof. With this communicator, gather information in that rank
+  // which sent the ping and print the information.
+  MPI_Comm mpi_comm_ping;
+  int color = pinged ? 1 : MPI_UNDEFINED;
+  int key = (rank_gl == (int) process) ? -1 : rank_gl ; //rank 0 of new comm will be 'process', the others maintain their order
+  MPI_Comm_split( MPI_COMM_WORLD, color, key, &mpi_comm_ping);
+
+  // This code is to be executed only by ranks which received the ping.
+  // - gather information in root and print it (TODO and check its validity)
+  if(color != MPI_UNDEFINED)
+  {
+    int rank_ping, size_ping;
+    MPI_Comm_rank(mpi_comm_ping, &rank_ping);
+    MPI_Comm_size(mpi_comm_ping, &size_ping);
+
+    int* recv_proc = new int[size_ping];
+    int* recv_dof = new int[size_ping];
+    double* recv_pos = new double[3*size_ping]; //3D positions
+    char* recv_mark = new char[size_ping];
+
+    // Gather global process numbers.
+    {
+      int sbuf[1] = {rank_gl};
+      MPI_Gather(sbuf, 1, MPI_INT,      //send
+                 recv_proc, 1, MPI_INT, //receive
+                 0, mpi_comm_ping);     //control
+    }
+    // Gather the local dof numbers where the ping was received
+    {
+      int sbuf[1] = {local_dof};
+      MPI_Gather(sbuf, 1, MPI_INT,      //send
+                 recv_dof, 1, MPI_INT, //receive
+                 0, mpi_comm_ping);     //control
+    }
+    //Gather dof positions.
+    {
+      double x,y,z;
+      get_fe_space()->GetDOFPosition(local_dof, x,y,z);
+      double sbuf[3] = {x,y,z};
+      MPI_Gather(sbuf, 3, MPI_DOUBLE,      //send
+                 recv_pos, 3, MPI_DOUBLE, //receive
+                 0, mpi_comm_ping);     //control
+    }
+    // Gather markers.
+    {
+      char sbuf[1] = {markers[local_dof]};
+      MPI_Gather(sbuf, 1, MPI_CHAR,    //send
+               recv_mark, 1, MPI_CHAR, //receive
+               0, mpi_comm_ping);      //control
+
+    }
+
+
+    if(rank_ping == 0) //only one process does the printing
+    {
+      Output::info("PING","Ping sent by process ", recv_proc[0] ," \t ",
+                   recv_dof[0], " \t ", recv_mark[0], " \t ",
+                   recv_pos[0]," ", recv_pos[0+1], " ", recv_pos[0 + 2] );
+      for(int i = 1; i < size_ping; ++i)
+      {
+        Output::dash("Ping received by process ", recv_proc[i]," \t ",
+                     recv_dof[i], " \t " ,recv_mark[i], " \t ",
+                     recv_pos[3*i]," ", recv_pos[3*i+1], " ", recv_pos[3*i + 2] );
+      }
+    }
+
+    //free memory
+    delete[] recv_proc;
+    delete[] recv_dof;
+    delete[] recv_pos;
+    delete[] recv_mark;
+    MPI_Comm_free(&mpi_comm_ping);
+  }
+
+  /* ****** */
+
+  return local_dof;
+  //TODO Gather ping's Output::print in one process which then prints the whole chunk of info.
+
+}
+
+void TParFECommunicator3D::CommUpdateMS(double *sol) const
+{
   int i,j,k;
   double t1,t2;
   t1=MPI_Wtime();
@@ -376,13 +507,6 @@ void TParFECommunicator3D::CommUpdateMS(double *sol) const
 
 void TParFECommunicator3D::CommUpdateH1(double *sol) const
 {
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-
   int i,j,k;
   double t1,t2;
   t1=MPI_Wtime();
@@ -416,13 +540,6 @@ void TParFECommunicator3D::CommUpdateH1(double *sol) const
 
 void TParFECommunicator3D::CommUpdateH2(double *sol) const
 {
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-
   int i,j,k;
   double t1,t2;
   t1=MPI_Wtime();

@@ -65,7 +65,10 @@ output_basename: parmoon
 
 ## Determine which kind of solver should be used. This can be an 
 ## iterative or a direct solver 
-solver_type: direct   { direct, iterative }
+solver_type: direct   { direct, iterative, petsc }
+
+##petsc_arguments: -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor
+##petsc_arguments: -ksp_type fgmres -pc_type mg
 
 ## Determine which type of direct solver should be used. All of them 
 ## are implemented in external libraries. 

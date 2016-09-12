@@ -199,7 +199,7 @@ class TParFEMapper3D
     int *GetMaster()
     {return Master;}
     
-    char *Get_DofMarker()
+    char *Get_DofMarker() const
     {  return DofMarker; }
     
     int* GetReorder_M()
