@@ -286,15 +286,11 @@ class LocalAssembling2D
                        double ***LocMatrix,
                        double **LocRhs,
                        double factor = 1.);
-    
+
+    /*
     //HIER///////////////////////////////
-    void get_local_forms(int N_Points,
-                         double *weights,
-                         double *AbsDetjk,
-                         double *X,
-                         double *Y,
-                         int *N_BaseFuncts,
-                         BaseFunct2D *BaseFuncts,
+    void get_local_forms(int N_Points,double *weights,double *AbsDetjk,double *X,double *Y,
+                         int *N_BaseFuncts,BaseFunct2D *BaseFuncts,
                          std::vector<std::vector<double>> Parameters_new,
                          std::vector<std::vector<double>> AuxArray,
                          TBaseCell *Cell,
@@ -302,7 +298,8 @@ class LocalAssembling2D
                          int N_Rhs,
                          double ***LocMatrix,
                          double **LocRhs,
-                         double factor=1.)
+                         double factor=1.);
+    */
     
     void GetLocalForms(int N_Points,
                        double *weights,
@@ -344,10 +341,11 @@ class LocalAssembling2D
                        double **Parameters);
     
     //HIER///////////////////////////////////////////////////
-    void compute_parameters(int n_points, TCollection *Coll,
+    /*
+      void compute_parameters(int n_points, TCollection *Coll,
                             int cellnum,
                             double *x, double *y, std::vector<std::vector<double>> Parameters_new);
-    
+    */
     
     /** return name */
     const std::string& get_name() const

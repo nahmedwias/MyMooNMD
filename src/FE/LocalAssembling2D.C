@@ -641,7 +641,7 @@ void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
 }
 
 
-
+/*
 //HIER/////////////////////////////////////////////////////////////////////////
 //==============================================================================
 //==============================================================================
@@ -728,6 +728,7 @@ void LocalAssembling2D::get_local_forms(int N_Points,
                       LocRhs);
     } // end loop over quadrature points
 }
+*/
 
 //==============================================================================
 void LocalAssembling2D::GetLocalForms(int N_Points,
@@ -847,7 +848,7 @@ void LocalAssembling2D::GetParameters(int n_points,
 }
 
 //-------------------------------------------------------------------------------
-void LocalAssembling2D::compute_parameters(int n_points,
+/*void LocalAssembling2D::compute_parameters(int n_points,
                                            TCollection *Coll,
                                            TBaseCell *cell,
                                            int cellnum,
@@ -916,6 +917,7 @@ void LocalAssembling2D::compute_parameters(int n_points,
     delete [] Index;
 }
 
+*/
 
 //==================================================================================
 void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type type)
