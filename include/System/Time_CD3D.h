@@ -156,7 +156,8 @@ class Time_CD3D
      */
     BlockVector old_rhs;
     
-    
+    /** @brief write some information (number of cells, dofs, ...) */
+    void output_problem_size_info() const;
   public:
     /** @brief The standard constructor, can be used for multigrid and non-multigrid.
      *
