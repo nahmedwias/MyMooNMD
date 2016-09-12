@@ -4,6 +4,8 @@
 /**
  * @file SORSmoother.h
  * Wrap up a SOR sweep as a smoother for multigrid methods.
+ * SOR smoother can be used in MPI. It is, without any modifications, just
+ * a processorwise SOR sweep.
  *
  * @date 2016/09/09
  * @author Clemens Bartsch
