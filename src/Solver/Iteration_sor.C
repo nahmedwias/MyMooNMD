@@ -74,6 +74,15 @@ void Iteration_sor<L, V>::apply(const V & z, V & r) const
 }
 
 /* ************************************************************************** */
+// L - LinearOperator, V - Vector
+template <class L, class V>
+void Iteration_sor<L, V>::apply_smoother(const V & z, V & r) const
+{ // (not setting the start iterate zero!)
+  // initialize r, in case it has not been done already
+  this->linear_operator.sor_sweep(z, r, this->omega, this->sor_type);
+}
+
+/* ************************************************************************** */
 // L - LinearOperator
 template <class L, class V>
 const L& Iteration_sor<L, V>::get_operator() const
