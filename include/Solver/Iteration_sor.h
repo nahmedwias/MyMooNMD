@@ -23,6 +23,9 @@ class Iteration_sor : public IterativeMethod<LinearOperator, Vector>,
     /// @brief apply this object as a preconditioner
     void apply(const Vector & z, Vector & r) const override final;
     
+    /// @brief Apply this object within a smoother for multigrid
+    void apply_smoother(const Vector & z, Vector & r) const;
+
     /** @brief destructor */
     virtual ~Iteration_sor() = default;
     
