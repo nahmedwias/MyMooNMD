@@ -61,17 +61,6 @@ int main(int argc, char *argv[])
   if(i_am_root)
     Database.WriteParamDB(argv[1]);
   
-  // split the number of refinement steps - some have to be done before,
-  // some after the domain partitioning
-  int n_ref_total = domain.get_n_initial_refinement_steps();
-  size_t n_ref_after =  parmoon_db["multigrid_n_levels"];
-  n_ref_after -= 1;
-  int n_ref_before =  n_ref_total - n_ref_after;
-  if(n_ref_before < 0)
-  {
-    ErrThrow("Number of multigrid levels is greater than number of refinement "
-        "levels. Garbage in, garbage out.")
-  }
 
   // Intial refinement and grabbing of grids for multigrid.
 #ifdef _MPI
@@ -84,16 +73,14 @@ int main(int argc, char *argv[])
       , maxSubDomainPerDof
   #endif
       );
-  
   //print information on the mesh partition on the finest grid
   domain.print_info("TCD3D domain");
   
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
 
-  // Choose example according to the value of
+  // Choose example according to the value of "example" in the given database
   Example_TimeCD3D example(parmoon_db);
-  
   // create an object of the class Time_CD3D
 #ifdef _MPI
   Time_CD3D tcd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
@@ -105,9 +92,10 @@ int main(int argc, char *argv[])
   tcd3d.assemble_initial_time();
   int step = 0, image=0;
   
-  while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME - 1E-10)
+  while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME - 1e-10)
   {
-    step ++;
+    Chrono time_step;
+    step++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     SetTimeDiscParameters(1);
 
@@ -121,6 +109,9 @@ int main(int argc, char *argv[])
     tcd3d.descale_stiffness();
     
     tcd3d.output(step,image);
+    time_step.print_time("time step (t=" + 
+                         std::to_string(TDatabase::TimeDB->CURRENTTIME)
+                         + ")");
   }
   
   if(i_am_root)
