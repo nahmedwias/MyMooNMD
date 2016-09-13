@@ -17,7 +17,7 @@
 
 #define NULL 0
 
-#include <math.h>
+#include <cmath>
 
 #ifdef __2D__
 #define GEO_DIM 2
