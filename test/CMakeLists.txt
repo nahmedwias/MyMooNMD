@@ -250,7 +250,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   # using defualt petsc solver
   add_test(NAME cd3d_mpi_petsc COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi 
            petsc)
-  # mg with iterative solver fgmres and smoother jacobi
+  # mg with iterative solver fgmres and smoother SOR
   add_test(NAME cd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi 
            multigrid)
   
@@ -263,7 +263,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
            ParMooN_test_tcd3d_solver_mpi mumps)
   add_test(NAME tcd3d_mpi_jacobi COMMAND mpirun -n 3 
            ParMooN_test_tcd3d_solver_mpi jacobi)
-  # mg with iterative solver fgmres and smoother jacobi
+  # mg with iterative solver fgmres and smoother SOR
   add_test(NAME tcd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_tcd3d_solver_mpi 
            multigrid)
   
