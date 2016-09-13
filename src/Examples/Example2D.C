@@ -31,11 +31,9 @@ ParameterDatabase Example2D::default_example_database()
             0., 1000.);
 
      /** TDatabase::ParamDB->PE_NR */
-     db.add("peclet_number", 1.,
-            "Peclet number: dimensionless number which is used to compare the "
-            "convective and diffusive terms in transport processes, also called "
-            "diffusion coefficient.",
-            0., 1000.);
+     db.add("diffusion_coefficient", 1.,
+          "Diffusion coefficient: a factor in front of the diffusion term.",
+            0., 1.);
 
  
 
