@@ -22,6 +22,7 @@
 // =======================================================================
 int main(int argc, char* argv[])
 {
-  cout << "CECI EST MON PREMIER PROGRAMME." << endl;
+
+
   return 0;
 } // end main
