@@ -250,6 +250,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   # using defualt petsc solver
   add_test(NAME cd3d_mpi_petsc COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi 
            petsc)
+  # mg with iterative solver fgmres and smoother jacobi
   add_test(NAME cd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi 
            multigrid)
   
@@ -262,6 +263,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
            ParMooN_test_tcd3d_solver_mpi mumps)
   add_test(NAME tcd3d_mpi_jacobi COMMAND mpirun -n 3 
            ParMooN_test_tcd3d_solver_mpi jacobi)
+  # mg with iterative solver fgmres and smoother jacobi
   add_test(NAME tcd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_tcd3d_solver_mpi 
            multigrid)
   
@@ -271,7 +273,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
   add_test(NAME nse3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_nse3d_solver_mpi mumps)
-    #multigrid with cell_vanka_jacobi smoother (works in SEQ and MPI)
+  #multigrid with cell_vanka_jacobi smoother (works in SEQ and MPI), with iterative solver fgmres
   add_test(NAME nse3d_mpi_cell_vanka_jac COMMAND mpirun -n 3 ParMooN_test_nse3d_solver_mpi cell_vanka_jacobi)
   
   #tnse3d tests

@@ -174,7 +174,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   else if (solver_name.compare("cell_vanka_jacobi") == 0)
   {
     db.merge(Multigrid::default_multigrid_database());
-    db["iterative_solver_type"] = std::string("richardson");
+    db["iterative_solver_type"] = std::string("fgmres");
     db["preconditioner"] = "multigrid";
     db["residual_tolerance"] = 1.0e-8;
     db["max_n_iterations"] = 10;
