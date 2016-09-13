@@ -122,6 +122,7 @@ void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
     // A database, can be filled with parameters the level might need.
     ParameterDatabase level_db(std::string("multigrid level database"));
     level_db.add(Parameter(db["multigrid_vanka_damp_factor"]));
+    level_db.add(Parameter(db["jacobi_damp"]));
 
     levels_.push_back(MultigridLevel(mat, sm, level_db));
   }
@@ -356,7 +357,7 @@ void Multigrid::set_solution_in_coarser_grid_to_zero(size_t lvl)
 
 ParameterDatabase Multigrid::default_multigrid_database()
 {
-  Output::print<3>("creating a default multigrid parameter database");
+  Output::print<5>("creating a default multigrid parameter database");
   ParameterDatabase db("default multigrid database");
 
   db.add<size_t>("multigrid_n_levels", 2,
@@ -428,6 +429,11 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "defect equation onto the global solution. Vanka smoothers tend to be "
          "quite responsive to this value. Although it defaults to 1.0 (no "
          "damping), a value of 0.8 is often a good start.", 0.0, 1.0);
+
+  db.add("jacobi_damp", 1.0,
+         "Damping factor for the Jacobi smoother. If chosen below 1, turns "
+         "the Jacobi smoother into a damped Jacobi smoother, which is expected "
+         "to perform better.", 0.0, 1.0);
 
   return db;
 }
