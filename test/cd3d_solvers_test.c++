@@ -105,7 +105,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     db.merge(Multigrid::default_multigrid_database() ,true);
 
     db["solver_type"] = "iterative";
-    db["iterative_solver_type"] = "richardson";
+    db["iterative_solver_type"] = "fgmres";
     db["preconditioner"] = "multigrid";
     db["refinement_n_initial_steps"] = 2;
     db["multigrid_n_levels"] = 2;
