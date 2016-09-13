@@ -138,8 +138,7 @@ void Example_CD3D::do_post_processing(CD3D& cd3d) const
 
 double Example_CD3D::get_nu() const
 {
-  double peclet_number = this->example_database["peclet_number"];
-  peclet_number = 1/peclet_number;
-  return peclet_number;
+  double diffusion_coefficient = this->example_database["diffusion_coefficient"];
+  return diffusion_coefficient;
 }
 

@@ -202,8 +202,8 @@ VELOCITY_SPACE: 2
 PRESSURE_SPACE: 1
 
 ----------------------------------------------------------------------
-# Reynolds number eps=1/RE_NR
-RE_NR:  1.0e-3
+# diffusion_coefficient=1/reynolds_number
+reynolds_number:  1.0e3
 
 ----------------------------------------------------------------------
 # type of discretization: 
