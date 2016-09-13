@@ -252,6 +252,24 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
   //MatNorm(petsc_mat, NORM_FROBENIUS, &norm);
   //Output::print("norm mat ", norm, "  ", 
   //              matrix.get_block(0, 0, transposed)->GetNorm(-2));
+  
+  // create solver and preconditioner objects
+  KSPCreate(PETSC_COMM_WORLD, &ksp);
+  KSPSetOperators(ksp, petsc_mat, petsc_mat);
+  
+  // PETSc preconditioner object
+  PC  pc;
+  // set preconditioner context (PC)
+  KSPGetPC(ksp, &pc);
+  
+  // set the options from the string passed to PetscInitialize which includes
+  // the values in the parameter "petsc_arguments".
+  KSPSetFromOptions(ksp);
+  PCSetFromOptions(pc);
+  
+  // some PETSc information about the solver
+  /// @todo nicer output for the PETSc solver
+  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 
 /* ************************************************************************** */
@@ -425,7 +443,7 @@ PETScSolver& PETScSolver::operator=(PETScSolver && other)
 /* ************************************************************************** */
 PETScSolver::~PETScSolver()
 {
-
+  KSPDestroy(&ksp);
   // if we have just one sub matrix
   // it is the petsc_mat
   if (sub_petsc_mats.size() > 1)
@@ -435,7 +453,6 @@ PETScSolver::~PETScSolver()
       MatDestroy(&sub_petsc_mats[i]);
     }
   }
-
   MatDestroy(&petsc_mat);
   // remember you have to call 'PetscFinalize();' at the very end of the program
 }
@@ -443,7 +460,6 @@ PETScSolver::~PETScSolver()
 /* ************************************************************************** */
 void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
 {
-
   /// @todo check if matrix sizes are ok with solution and rhs sizes
   /// MatGetSize() does not work for MatNest mat type, which is used for
   /// saddle point problems.
@@ -494,25 +510,9 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   VecAssemblyEnd(x);
   VecAssemblyEnd(b);
   
-  // create solver and preconditioner objects
-  KSP ksp;         /* linear solver context */
-  PC  pc;          /* preconditioner context */
-  KSPCreate(PETSC_COMM_WORLD, &ksp);
-  KSPSetOperators(ksp, petsc_mat, petsc_mat);
-
-  // set preconditioner context (PC)
-  KSPGetPC(ksp, &pc);
-  
-  // set the options from the string passed to PetscInitialize which includes
-  // the values in the parameter "petsc_arguments".
-  KSPSetFromOptions(ksp);
-  PCSetFromOptions(pc);
-
+  // solve the linear system using PETSc
   KSPSolve(ksp, b, x);
-
-  // some PETSc information about the solver
-  /// @todo nicer output for the PETSc solver
-  // KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+  
   PetscInt its;
   KSPGetIterationNumber(ksp, &its);
 #ifdef _MPI
@@ -535,6 +535,5 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   
   VecDestroy(&b);
   VecDestroy(&x);
-  KSPDestroy(&ksp);
 }
 
