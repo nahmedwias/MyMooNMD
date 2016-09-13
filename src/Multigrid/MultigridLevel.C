@@ -38,8 +38,11 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
       smoother_ = std::make_shared<DirectSmoother>();
       break;
     case SmootherCode::JACOBI:
-      smoother_ = std::make_shared<JacobiSmoother>();
+    {
+      double damp = db["jacobi_damp"];
+      smoother_ = std::make_shared<JacobiSmoother>(damp);
       break;
+    }
     case SmootherCode::SOR:
     {//sor smoother with backward sweep ("0") and overrelaxation parameter 1.5
       smoother_ = std::make_shared<SORSmoother>(1.5, 0);
