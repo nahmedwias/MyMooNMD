@@ -198,15 +198,7 @@ void Time_CD3D::checkParameters()
   {
     throw std::runtime_error("Ansatz order 0 is no use in convection diffusion "
         "reaction problems! (Vanishing convection and diffusion term).");
-  }
-  // the only preconditioners implemented are Jacobi and multigrid
-  if(this->solver.get_db()["solver_type"].is("iterative")
-    && !this->solver.get_db()["preconditioner"].is("jacobi")
-    && !this->solver.get_db()["preconditioner"].is("multigrid"))
-  {
-    ErrThrow("Only SC_PRECONDITIONER_SCALAR: 1 (Jacobi) and 5 (multigrid)"
-        " are implemented so far.");
-  }
+  }  
 }
 
 //==============================================================================
