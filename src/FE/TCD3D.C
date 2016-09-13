@@ -136,7 +136,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixK, *Rhs, *MatrixRowA, *MatrixRowK;
+  double **MatrixA, **MatrixMK, *Rhs, *MatrixRowA, *MatrixRowMK;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
   double val, val1;
@@ -148,7 +148,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
 
   MatrixA = LocMatrices[0];
-  MatrixK = LocMatrices[1];
+  MatrixMK = LocMatrices[1];
   Rhs = LocRhs[0];
 
   N_ = N_BaseFuncts[0];
@@ -187,7 +187,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
   for(i=0;i<N_;i++)
   {
     MatrixRowA = MatrixA[i];
-    MatrixRowK = MatrixK[i];
+    MatrixRowMK = MatrixMK[i];
     
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -196,7 +196,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
 
     bgradv = c1*test100+c2*test010+c3*test001;
     bgradv *= delta;
-    // CHANGE TEST000 !
+    // CHANGE TEST000 = v + delta*bgradv
     test000 += bgradv;
     Rhs[i] += Mult*test000*c5;
 
@@ -215,7 +215,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
       val += val1* test000;
 
       MatrixRowA[j] += Mult * val;
-      MatrixRowK[j] += Mult * (ansatz000 * test000 + ansatz000 * bgradv);
+      MatrixRowMK[j] += Mult * (ansatz000 * test000);
     } // endfor j
   } // endfor i
 }
