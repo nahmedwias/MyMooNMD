@@ -167,7 +167,7 @@ multigrid_vanka_damp_factor: 1   [ 0, 1 ]
 # control the discretization
 
 # Peclet number eps=1/PE_NR (diffusion coefficient)
-PE_NR:  1.e1
+diffusion_coefficient:  1.e-1
 
 # order of ansatz space (=k)
 #   i.e. P_k on triangles

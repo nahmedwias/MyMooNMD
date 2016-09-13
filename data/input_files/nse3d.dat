@@ -198,8 +198,8 @@ multigrid_coarse_max_n_iterations: 10   [ 1, 100 ]
 ## damping), a value of 0.8 is often a good start. 
 multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 
-## Peclet_number
-peclet_number: 1e3
+## diffusion_coefficient = 1./reynolds_number
+reynolds_number: 1e3
 
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
