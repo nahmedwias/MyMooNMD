@@ -92,7 +92,7 @@ nonlinloop_scale_epsilon_with_size: false   { true, false }
 
 ## Determine which kind of solver should be used. This can be an 
 ## iterative or a direct solver 
-solver_type: iterative   { direct, iterative }
+solver_type: direct   { direct, iterative }
 
 ## Determine which type of direct solver should be used. All of them 
 ## are implemented in external libraries. 
@@ -202,7 +202,7 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## Peclet_number
 peclet_number: 1e3
 
-VELOCITY_SPACE: 12
+VELOCITY_SPACE: 2
 PRESSURE_SPACE: -4711
 
 Par_P0: 0
