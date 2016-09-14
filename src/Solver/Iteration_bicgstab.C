@@ -190,7 +190,6 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
     resid = r.norm(comms) / normb;
 #endif
 
-    Output::print<4>("bi-cgstab iteration ", i, " ", resid);
     if(this->converged(resid, i))
     {
       return std::pair<unsigned int, double>(i, resid);
