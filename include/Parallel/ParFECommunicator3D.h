@@ -61,6 +61,19 @@ class TParFECommunicator3D
     void consistency_update(double* vector, size_t level) const;
     
     /**
+     * This concerns only interface masters and slaves. For each interface dof,
+     * calculate the average of all its values on all processors where it is
+     * present and store that on its master value. The vector will leave this
+     * method in level 0 consistency.
+     *
+     * @param[in, out] vector The vector whose interface dofs should be averaged.
+     *
+     * This is a relatively common technique and therefore we offer a
+     * specialized method for it.
+     */
+    void average_at_interface(double* vector) const;
+
+    /**
      * Bring a vector stored in additive ("inconsistent") format to a certain
      * consistency level.
      *

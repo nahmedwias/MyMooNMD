@@ -449,7 +449,7 @@ ParameterDatabase Multigrid::default_multigrid_database()
 #ifdef _MPI
   db.add("sor_parallel_type", "all_cells", "This is in an experimental state. It is "
          "about the parallelization strategy of the SOR (when used as a smoother).",
-         {"all_cells", "halo_0", "own_cells"});
+         {"all_cells", "own_cells"});
 #endif
   return db;
 }

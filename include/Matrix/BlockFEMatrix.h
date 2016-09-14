@@ -736,29 +736,6 @@ class BlockFEMatrix : public BlockMatrix
     void scale_blocks_actives(
         double factor,
         const std::vector<std::vector<size_t>>& cell_positions );
-    
-    /// @brief perform one successive overrelaxation (sor) sweep.
-    /// The flag can be either 0(forward sweep), 1(backward sweep), or
-    /// 2(forward followed by backward sweep).
-    ///
-    /// Note that this is essentially a code dupe from BlockMatrix. In MPI case
-    /// we are but so dependent on havin FE spaces available, that for the sake
-    /// of parallelization we repeat the code here, but in parallelized fashion.
-    ///
-    /// @param[in] b right hand side
-    /// @param[in,out] x solution (this is updated)
-    /// @param[in] omega relaxation parameter
-    /// @param[in] flag either 0 (forward), 1(backward), or 2(both)
-    /// @param[in] par_strat The chosen parallelization strategy (MPI only).
-    ///            Choose between "all_cells", "halo_0" and "own_cells".
-
-#ifdef _MPI
-    void sor_sweep(const BlockVector& b, BlockVector& x, double omega,
-                   size_t flag, const std::string& par_strat) const;
-#else
-    void sor_sweep(const BlockVector& b, BlockVector& x, double omega,
-                   size_t flag) const;
-#endif
 
     /// @brief turn on pressure correction
     void enable_pressure_correction() const;
