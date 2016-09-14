@@ -20,7 +20,7 @@ boundary_file: Default_UnitSquare
 geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 4
+refinement_n_initial_steps: 3
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -38,12 +38,11 @@ verbosity: 3   [ 1, 5 ]
 ## Choose which example to run. Note that depending on the type of 
 ## problem you want to solve, different values are meaningful here. 
 ## See the class 'Example' and its derived classes.
-## 0 - linear velocity, constant pressure example
-## 1 - quadratic velocity, linear pressure example
+## 0 - poiseuille
+## 1 - driven cavity
 ## 2 - simple cosine sine
-## 3 - driven cavity 3d
-## -1 to -4 : test examples - 
-example: -1
+## 3 - flow around cylinder 
+example: 1
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
