@@ -11,6 +11,7 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <NSE2D.h>
+#include <CD2D.h>
 #include <Example_NSE2D.h>
 #include <Chrono.h>
 #include <LoopInfo.h>
@@ -22,29 +23,29 @@ int main(int argc, char* argv[])
   Chrono stopwatch; // Start a stopwatch for time measurement during execution
 
   TDatabase Database;  // Initialize User Input Databases.
-  ParameterDatabase navierstokes_db = ParameterDatabase::parmoon_default_database();
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   std::ifstream fs(argv[1]);
-  navierstokes_db.read(fs);
+  parmoon_db.read(fs);
   fs.close();
   TFEDatabase2D FEDatabase; // Initialize FE Database.
 
-  TDomain domain(argv[1], navierstokes_db); // Initialize geometry
+  TDomain domain(argv[1], parmoon_db); // Initialize geometry
 
   // ***** Write parameters to output file ***** //
-  Output::set_outfile(navierstokes_db["outfile"]);
-  Output::setVerbosity(navierstokes_db["verbosity"]);
+  Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
   Database.CheckParameterConsistencyNSE();
   Database.WriteParamDB(argv[0]);
 
   std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections(navierstokes_db);
-  if(navierstokes_db["output_write_ps"]) domain.PS("Domain.ps", It_Finest, 0);
+  = domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+  if(parmoon_db["output_write_ps"]) domain.PS("Domain.ps", It_Finest, 0);
 
-  domain.print_info("NSE2D domain");  // Output domain info
+  domain.print_info("Multiphase2D domain");  // Output domain info
 
   // ***** Declaring objects for NSE2D ***** //
-  Example_NSE2D example_nse2d(navierstokes_db); // Construct Example for NSE
-  NSE2D nse2d(domain, navierstokes_db, example_nse2d); // Construct NSE system
+  Example_NSE2D example_nse2d(parmoon_db); // Construct Example for NSE
+  NSE2D nse2d(domain, parmoon_db, example_nse2d); // Construct NSE system
   nse2d.assemble(); // assemble linear term
   nse2d.stopIt(0); // check initial residual
 
@@ -56,29 +57,37 @@ int main(int argc, char* argv[])
 
   stopwatch.print_time("setting up spaces, matrices, linear assemble");
   stopwatch.reset();
+//
+//  //================================================================
+//  // ****** NON-LINEAR LOOP ****** //
+//  for(unsigned int k = 1;; k++)
+//  {
+//    nse2d.solve();
+//    if(parmoon_db["problem_type"].is(3)) break; // Stokes
+//    nse2d.assemble_nonlinear_term();
+//
+//    if(nse2d.stopIt(k)) // Check residuals
+//    {
+//      loop_info.finish(k, nse2d.getFullResidual());
+//      break;
+//    }
+//    else loop_info.print(k, nse2d.getFullResidual());
+//  } // end for k, non linear loop
+//  stopwatch.print_time("total solving duration: ");
+//  //================================================================
+//  nse2d.output();
 
+  Output::print<1>("<<<<<<<<<<<<<<< NOW SOLVING CONVECTION >>>>>>>>>>>>");
   //================================================================
-  // ****** NON-LINEAR LOOP ****** //
-  for(unsigned int k = 1;; k++)
-  {
-    nse2d.solve();
-    if(navierstokes_db["problem_type"].is(3)) break; // Stokes
-    nse2d.assemble_nonlinear_term();
-
-    if(nse2d.stopIt(k)) // Check residuals
-    {
-      loop_info.finish(k, nse2d.getFullResidual());
-      break;
-    }
-    else loop_info.print(k, nse2d.getFullResidual());
-  } // end for k, non linear loop
-  stopwatch.print_time("total solving duration: ");
+  CD2D cd2d(domain, parmoon_db);
+  cd2d.assemble();
+  cd2d.solve();
+  cd2d.output();
   //================================================================
 
 
 
 
-  nse2d.output();
   Output::close_file();
   return 0;
 }
