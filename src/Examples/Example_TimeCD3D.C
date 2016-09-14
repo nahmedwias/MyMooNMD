@@ -82,7 +82,6 @@ void Example_TimeCD3D::do_post_processing(Time_CD3D& tcd3d) const
 
 double Example_TimeCD3D::get_nu() const
 {
-  double inverse_reynolds = this->example_database["reynolds_number"];
-  inverse_reynolds = 1/inverse_reynolds;
-  return inverse_reynolds;
+  double diffusion_coefficient= this->example_database["diffusion_coefficient"];
+  return diffusion_coefficient;
 }

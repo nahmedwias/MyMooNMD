@@ -11,6 +11,7 @@
 #include <CD3D.h>
 #include <Example_CD3D.h>
 #include <MeshPartition.h>
+#include <Chrono.h>
 
 #include <sys/stat.h>
 
@@ -45,8 +46,7 @@ int main(int argc, char* argv[])
   Output::info("CD3D", "SEQUENTIAL (or OMP...)");
 #endif
 
-//  //start a stopwatch which measures time spent in program parts
-//  Chrono chrono_parts;
+  Chrono chrono_entire_program;
 
   // Construct the ParMooN Databases.
   TDatabase Database;
@@ -108,9 +108,7 @@ int main(int argc, char* argv[])
   //=========================================================================
 
   cd3d.assemble(); // assemble matrix and rhs
-
   cd3d.solve();    // solve the system
-
   cd3d.output();   // produce nice output
 
   //=========================================================================
@@ -118,15 +116,12 @@ int main(int argc, char* argv[])
   if(my_rank==0)
     Output::print("<<<<< ParMooN Finished: CD3D Main Program >>>>>");
 
+  chrono_entire_program.print_time("CD3D_ParMooN program");
   Output::close_file();
-
 }
-
 #ifdef _MPI
   MPI_Finalize();
 #endif
-
-  return 0;
 } // end main
 
 

@@ -106,16 +106,7 @@ ParameterDatabase get_default_CD3D_parameters()
       systems_.emplace_back(example_, cellCollection, maxSubDomainPerDof);
 #else
       // create finite element space and function, a matrix, rhs, and solution
-      systems_.emplace_back(example_, cellCollection);
-
-      // print out some information
-      const TFESpace3D & space = this->systems_.front().feSpace_;
-      double hMin, hMax;
-      cellCollection.GetHminHmax(&hMin, &hMax);
-      Output::print<1>("N_Cells    : ", setw(12), cellCollection.GetN_Cells());
-      Output::print<1>("h (min,max): ", setw(12), hMin, " ", setw(12), hMax);
-      Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
-      Output::print<1>("dof active : ", setw(12), space.GetN_ActiveDegrees());
+      systems_.emplace_back(example_, cellCollection);      
 #endif
     }
     else
@@ -139,8 +130,24 @@ ParameterDatabase get_default_CD3D_parameters()
         }
         mg->initialize(matrices);
       }
+      // print useful information
+      this->output_problem_size_info();
   }
 
+/** ************************************************************************ */
+//==============================================================================
+void CD3D::output_problem_size_info() const
+{
+  // print some useful information
+  const TFESpace3D& space = this->systems_.front().feSpace_;
+  double hMin, hMax;
+  TCollection *coll = space.GetCollection();
+  coll->GetHminHmax(&hMin, &hMax);
+  Output::print<1>("N_Cells    : ", setw(13), coll->GetN_Cells());
+  Output::print<1>("h(min, max): ", setw(13), hMin, " ", setw(13), hMax);
+  Output::print<1>("dofs all   : ", setw(13), space.GetN_DegreesOfFreedom());
+  Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
+}
 /** ************************************************************************ */
 void CD3D::assemble()
 {

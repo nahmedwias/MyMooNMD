@@ -139,10 +139,58 @@ void Time_CD3D::output_problem_size_info() const
   double hMin, hMax;
   TCollection *coll = space.GetCollection();
   coll->GetHminHmax(&hMin, &hMax);
+#ifndef _MPI
+  // sequential
   Output::print<1>("N_Cells    : ", setw(13), coll->GetN_Cells());
   Output::print<1>("h(min, max): ", setw(13), hMin, " ", setw(13), hMax);
   Output::print<1>("dofs all   : ", setw(13), space.GetN_DegreesOfFreedom());
   Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
+#else
+  // MPI
+  int my_rank, size;
+  auto comm = TDatabase::ParamDB->Comm;
+  MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm_size(comm, &size);
+  
+  double global_h_min = 0, global_h_max = 0;
+  MPI_Reduce(&hMin, &global_h_min, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+  MPI_Reduce(&hMax, &global_h_max, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+  
+  std::vector<int> n_own_cells(size, 0); // for each process
+  std::vector<int> n_halo_cells(size, 0); // for each process
+  int local_own_cells = coll->GetN_OwnCells();
+  int local_halo_cells = coll->GetN_HaloCells();
+  MPI_Gather(&local_own_cells, 1, MPI_INT, // send
+             &n_own_cells[0], 1, MPI_INT,  // receive
+             0, comm);                     // control
+  MPI_Gather(&local_halo_cells, 1, MPI_INT, // send
+             &n_halo_cells[0], 1, MPI_INT,  // receive
+             0, comm);                      // control
+  
+  auto par_comm = space.get_communicator();
+  int n_local_master_dof = par_comm.GetN_Master();
+  std::vector<int> n_masters(size, 0); //for each process
+  MPI_Gather(&n_local_master_dof, 1, MPI_INT, // send
+             &n_masters[0], 1, MPI_INT,       // receive
+             0, comm);                        // control
+  if(my_rank == 0)
+  {
+    Output::stat("Time_CD3D", "information on the fe space");
+    size_t sum_cells_total = 0;
+    size_t sum_dof_total = 0;
+    for(int i =0; i < size ;++i)
+    {
+      Output::dash("Process ", i, "\t n_own_cells ", n_own_cells[i], 
+                   "\t n_halo_cells ", n_halo_cells[i], 
+                   "\t h_min/h_max ", hMin, "/", hMax,
+                   "\t n_master_dof ", n_local_master_dof);
+      sum_cells_total += n_own_cells[i];
+      sum_dof_total += n_local_master_dof;
+    }
+    Output::dash("Total number of cells:              ", sum_cells_total);
+    Output::dash("Total number of degrees of freedom: ", sum_dof_total);
+  }
+#endif
 }
 
 //==============================================================================
@@ -198,15 +246,7 @@ void Time_CD3D::checkParameters()
   {
     throw std::runtime_error("Ansatz order 0 is no use in convection diffusion "
         "reaction problems! (Vanishing convection and diffusion term).");
-  }
-  // the only preconditioners implemented are Jacobi and multigrid
-  if(this->solver.get_db()["solver_type"].is("iterative")
-    && !this->solver.get_db()["preconditioner"].is("jacobi")
-    && !this->solver.get_db()["preconditioner"].is("multigrid"))
-  {
-    ErrThrow("Only SC_PRECONDITIONER_SCALAR: 1 (Jacobi) and 5 (multigrid)"
-        " are implemented so far.");
-  }
+  }  
 }
 
 //==============================================================================
