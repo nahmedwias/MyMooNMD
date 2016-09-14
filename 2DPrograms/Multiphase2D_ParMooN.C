@@ -42,18 +42,44 @@ int main(int argc, char* argv[])
 
   domain.print_info("NSE2D domain");  // Output domain info
 
+  // ***** Declaring objects for NSE2D ***** //
   Example_NSE2D example_nse2d(navierstokes_db); // Construct Example for NSE
   NSE2D nse2d(domain, navierstokes_db, example_nse2d); // Construct NSE system
+  nse2d.assemble(); // assemble linear term
+  nse2d.stopIt(0); // check initial residual
+
+  // ***** Initialize object for iterations residual output ***** //
+  LoopInfo loop_info("nonlinear");
+  loop_info.print_time_every_step = true;
+  loop_info.verbosity_threshold = 1; // full verbosity
+  loop_info.print(0, nse2d.getFullResidual());
+
+  stopwatch.print_time("setting up spaces, matrices, linear assemble");
+  stopwatch.reset();
+
+  //================================================================
+  // ****** NON-LINEAR LOOP ****** //
+  for(unsigned int k = 1;; k++)
+  {
+    nse2d.solve();
+    if(navierstokes_db["problem_type"].is(3)) break; // Stokes
+    nse2d.assemble_nonlinear_term();
+
+    if(nse2d.stopIt(k)) // Check residuals
+    {
+      loop_info.finish(k, nse2d.getFullResidual());
+      break;
+    }
+    else loop_info.print(k, nse2d.getFullResidual());
+  } // end for k, non linear loop
+  stopwatch.print_time("total solving duration: ");
+  //================================================================
 
 
-  cout << navierstokes_db["solver_type"] << endl;
-  Output::print<2>("This is just a sample ", navierstokes_db["example"]);
 
 
-
-
-
-  stopwatch.print_time("total program duration: ");
+  nse2d.output();
+  Output::close_file();
   return 0;
 }
 // end main
