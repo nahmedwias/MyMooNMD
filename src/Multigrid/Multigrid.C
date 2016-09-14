@@ -121,7 +121,13 @@ void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
 
     // A database, can be filled with parameters the level might need.
     ParameterDatabase level_db(std::string("multigrid level database"));
+    //TODO only the parameters required by sm should go in that level database!
     level_db.add(Parameter(db["multigrid_vanka_damp_factor"]));
+    level_db.add(Parameter(db["jacobi_damp"]));
+    level_db.add(Parameter(db["sor_omega"]));
+#ifdef _MPI
+    level_db.add(Parameter(db["sor_parallel_type"]));
+#endif
 
     levels_.push_back(MultigridLevel(mat, sm, level_db));
   }
@@ -356,7 +362,7 @@ void Multigrid::set_solution_in_coarser_grid_to_zero(size_t lvl)
 
 ParameterDatabase Multigrid::default_multigrid_database()
 {
-  Output::print<3>("creating a default multigrid parameter database");
+  Output::print<5>("creating a default multigrid parameter database");
   ParameterDatabase db("default multigrid database");
 
   db.add<size_t>("multigrid_n_levels", 2,
@@ -429,5 +435,21 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "quite responsive to this value. Although it defaults to 1.0 (no "
          "damping), a value of 0.8 is often a good start.", 0.0, 1.0);
 
+  db.add("jacobi_damp", 1.0,
+         "Damping factor for the Jacobi smoother. If chosen below 1, turns "
+         "the Jacobi smoother into a damped Jacobi smoother, which is expected "
+         "to perform better.", 0.0, 1.0);
+
+
+  db.add("sor_omega", 1.5, "The overrelaxation parameter (typically called "
+         "omega). This is only used for the (symmetric) successive "
+         "overrelaxation method, adn only if that one is used "
+         "as a smoother here.", 0., 2.);
+
+#ifdef _MPI
+  db.add("sor_parallel_type", "all_cells", "This is in an experimental state. It is "
+         "about the parallelization strategy of the SOR (when used as a smoother).",
+         {"all_cells", "halo_0", "own_cells"});
+#endif
   return db;
 }

@@ -30,7 +30,11 @@ class SORSmoother : public Smoother
 
     /// Constructor, stores two interesting values which will then be handed
     /// over to each new sor_ object.
+#ifdef _MPI
+    SORSmoother(double omega, size_t sor_strat, const std::string& sor_par_strat);
+#else
     SORSmoother(double omega, size_t sor_strat);
+#endif
 
     /// Apply one sweep of SOR iteration with the stored operator
     /// to the iterate "solution".
@@ -69,6 +73,13 @@ class SORSmoother : public Smoother
     double omega_;
     /// (0,1,2 - check it out in Iteration_sor)
     size_t sor_strat_;
+
+#ifdef _MPI
+    /// One of the strings "all_cells", "halo_0", "own_cells", each of which
+    /// corresponds with a different parallelization strategy of the SOR.
+    /// This feature is still in an experimental state.
+    std::string parallel_strategy_;
+#endif
 };
 
 #endif /* INCLUDE_MULTIGRID_SORSMOOTHER_H_ */
