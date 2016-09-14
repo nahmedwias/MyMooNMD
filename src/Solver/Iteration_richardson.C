@@ -107,7 +107,6 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
     resid = r.norm_global(comms) / normb;
 #endif
 
-    Output::print<4>("richardson iteration ", i, " ", resid);
     if(this->converged(resid, i))
     {
       return std::pair<unsigned int, double>(i, resid);
