@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 1
+refinement_n_initial_steps: 7
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -201,8 +201,12 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 
 ## Peclet_number
 peclet_number: 1e3
+# constant convection in x- and y-direction
+user_parameter1: 0.5
+user_parameter2: 0.5
 
-VELOCITY_SPACE: 1
+
+VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 
 ANSATZ_ORDER: 2

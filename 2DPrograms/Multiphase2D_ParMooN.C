@@ -77,14 +77,20 @@ int main(int argc, char* argv[])
 //  //================================================================
 //  nse2d.output();
 
+
+
+
   Output::print<1>("<<<<<<<<<<<<<<< NOW SOLVING CONVECTION >>>>>>>>>>>>");
   //================================================================
   CD2D cd2d(domain, parmoon_db);
+//  TFESpace2D ghost_space;
+  BlockFEMatrix blabla = cd2d.systems.front().matrix;
+
   Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
   cd2d.assemble();
   Output::print<1>("================== JE COMMENCE A RESOUDRE =============");
-//  cd2d.solve();
-//  cd2d.output();
+  cd2d.solve();
+  cd2d.output();
   //================================================================
 
 

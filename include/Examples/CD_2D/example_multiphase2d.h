@@ -1,4 +1,7 @@
 // Example file for Multiphase 2D
+double USER1;
+double USER2;
+double USER3;
 
 void ExampleFile()
 {
@@ -44,14 +47,15 @@ void BilinearCoeffs(int n_points, double *x, double *y,
 {
 //  const double eps=1/TDatabase::ParamDB->PE_NR;
   double exact[4];
-  Output::print<1>("START BILINEAR COEFFICIENTS------------");
+//  Output::print<1>("START BILINEAR COEFFICIENTS------------");
   for(int i = 0; i < n_points; i++)
   {
-    Output::print<1>("THIS is point number ", i);
+//    Output::print<1>("THIS is point number ", i, " with x and y coordinates "
+//                     , x[i]," ", y[i]);
 
     coeffs[i][0] = 0; // diffusion coefficient D
-    coeffs[i][1] = 1; // convection coefficient v_x
-    coeffs[i][2] = 1; // convection coefficient v_y
+    coeffs[i][1] = USER1; // convection coefficient v_x
+    coeffs[i][2] = USER2; // convection coefficient v_y
     coeffs[i][3] = 0; // reaction coefficient R
     // coeffs[i][4] is the right hand side
     
@@ -60,6 +64,6 @@ void BilinearCoeffs(int n_points, double *x, double *y,
     coeffs[i][4] += coeffs[i][1]*exact[1] + coeffs[i][2]*exact[2]; // convection
     coeffs[i][4] += coeffs[i][3]*exact[0]; // reaction
   }
-  Output::print<1>("----------------END BILINEAR COEFFICIENTS");
+//  Output::print<1>("----------------END BILINEAR COEFFICIENTS");
 }
 

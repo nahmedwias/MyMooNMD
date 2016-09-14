@@ -117,6 +117,9 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
       /** coefficients */
       problem_coefficients = multiphase_example::BilinearCoeffs;
 
+      multiphase_example::USER1 = this->example_database["user_parameter1"];
+      multiphase_example::USER2 = this->example_database["user_parameter2"];
+
       multiphase_example::ExampleFile();
       break;
 
