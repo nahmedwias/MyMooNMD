@@ -182,8 +182,15 @@ class BlockMatrix
     /// @param[in,out] x solution (this is updated)
     /// @param[in] omega relaxation parameter
     /// @param[in] flag either 0 (forward), 1(backward), or 2(both)
+    ///
+    /// @note Does nothing but throw an error in MPI case!
+#ifdef _MPI
+    void sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                   size_t flag, const std::string& par_strat) const;
+#else
     void sor_sweep(const BlockVector& b, BlockVector& x, double omega,
                    size_t flag) const;
+#endif
     
     /**
      * @brief checks whether the coloring is correct - use in tests only

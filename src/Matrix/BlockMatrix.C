@@ -2,8 +2,8 @@
 #include <BlockVector.h>
 #include <LinAlg.h>
 
-#include <limits>
 #include <algorithm>
+#include <limits>
 #include <list>
 
 /* ************************************************************************* */
@@ -220,9 +220,19 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
 
 
 /* ************************************************************************* */
+#ifdef _MPI
+void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                            size_t flag, const std::string& par_strat) const
+#else
 void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
                             size_t flag) const
+#endif
 {
+#ifdef _MPI
+  ErrThrow("You should not have come here in MPI case - MPI always requires"
+      " a BlockFEMatrix.");
+#endif
+
   if(flag > 2)
     ErrThrow("BlockMatrix::sor_sweep with flag not 0,1, or 2.");
   
