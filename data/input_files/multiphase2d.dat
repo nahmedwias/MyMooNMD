@@ -12,15 +12,17 @@ outfile: multiphase_output.out
 ## which typically has the extension 'PRM'. See the documentation 
 ## for GEO and PRM files. 
 boundary_file: Default_UnitSquare
+#boundary_file: ../../mesh/flow_around_cylinder.PRM
 
 ## This files describes the computational mesh. You probably want to 
 ## adjust this to be the path to some file which typically has the 
 ## extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM 
 ## files. 
 geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+#geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 3
+refinement_n_initial_steps: 4
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -46,7 +48,7 @@ example: 1
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
-output_write_vtk: false   { true, false }
+output_write_vtk: true   { true, false }
 
 ## Draw a postscript file of the domain. This only works in two space 
 ## dimensions. Usually this is used in the main program. 
@@ -66,7 +68,7 @@ output_vtk_directory: .
 
 ## This string is prepended to most files written by ParMooN. 
 ## Especially this includes vtk-files 
-output_basename: parmoon
+output_basename: multiphase_output
 
 ## The maximum number of iterations to perform in a non-linear loop. 
 nonlinloop_maxit: 5   [ 0, 1000 ]
@@ -101,7 +103,7 @@ iterative_solver_type: fgmres   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres
 
 ## Maximum number of iterations of the iterative solver. This is used 
 ## as a stopping criterion of the iteration. 
-max_n_iterations: 10   { 0, 1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000 }
+max_n_iterations: 100   { 0, 1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000 }
 
 ## Minimum number of iterations of the iterative solver. This 
 ## enforces iterations even of other stopping criteria are already 
