@@ -8,7 +8,7 @@ void ExampleFile()
 // exact solution
 void Exact(double x, double y, double *values)
 {
-  const double p = Pi; // 2*Pi;
+//  const double p = Pi; // 2*Pi;
   values[0] = x+y; //sin(p*x)*sin(p*y); // exact solution
   values[1] = 1; //p*cos(p*x)*sin(p*y); // x-derivative
   values[2] = 1; //p*sin(p*x)*cos(p*y); // y-derivative
@@ -44,8 +44,11 @@ void BilinearCoeffs(int n_points, double *x, double *y,
 {
 //  const double eps=1/TDatabase::ParamDB->PE_NR;
   double exact[4];
+  Output::print<1>("START BILINEAR COEFFICIENTS------------");
   for(int i = 0; i < n_points; i++)
   {
+    Output::print<1>("THIS is point number ", i);
+
     coeffs[i][0] = 0; // diffusion coefficient D
     coeffs[i][1] = 1; // convection coefficient v_x
     coeffs[i][2] = 1; // convection coefficient v_y
@@ -57,5 +60,6 @@ void BilinearCoeffs(int n_points, double *x, double *y,
     coeffs[i][4] += coeffs[i][1]*exact[1] + coeffs[i][2]*exact[2]; // convection
     coeffs[i][4] += coeffs[i][3]*exact[0]; // reaction
   }
+  Output::print<1>("----------------END BILINEAR COEFFICIENTS");
 }
 
