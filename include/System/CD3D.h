@@ -135,6 +135,9 @@ class CD3D
      * Currently, the errors store the global L2 and H1 errors.
      */
     std::array<double, int(2)> errors_;
+    
+    /** @brief write some information (number of cells, dofs, ...) */
+    void output_problem_size_info() const;
 
   public:
 

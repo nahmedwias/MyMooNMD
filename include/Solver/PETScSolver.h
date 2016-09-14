@@ -91,7 +91,16 @@ class PETScSolver
   private:
     /** @brief the matrix of the linear equation A*x=b, PETSc format */
     Mat petsc_mat;
+    
+    /** @brief in case of a saddle point problem these are sub blocks 
+     * 
+     * This is similar to the BlockMatrix in ParMooN. Some specialized PETSc 
+     * solvers require this format rather than one big matrix.
+     */
     std::vector<Mat> sub_petsc_mats;
+    
+    /// @brief PETSc linear solver object (Krylov subspace method)
+    KSP ksp;
 
     /**
      * Convert a FEBlock of a BlockFEMatrix into a sub matrix from PETSc.
@@ -99,9 +108,8 @@ class PETScSolver
      * @param feblock[in] shared pointer of FEMatrix
      * @param sub_mat[in,out] PETSc matrix with the values of the feblock
      */
-    void FEBlock2PETScBlock(std::shared_ptr<const FEMatrix> feblock,
-    						            bool isOnDiag,
-    						            Mat &sub_mat);
+    void FEBlock2PETScBlock(std::shared_ptr<const FEMatrix> feblock, 
+                            bool isOnDiag, Mat &sub_mat);
     
 #ifdef _MPI
     std::vector<const TParFECommunicator3D*> comms_;
