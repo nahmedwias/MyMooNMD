@@ -44,16 +44,16 @@ int main(int argc, char* argv[])
   domain.print_info("Multiphase2D domain");  // Output domain info
 
   // ***** Declaring objects for NSE2D ***** //
-  Example_NSE2D example_nse2d(parmoon_db); // Construct Example for NSE
-  NSE2D nse2d(domain, parmoon_db, example_nse2d); // Construct NSE system
-  nse2d.assemble(); // assemble linear term
-  nse2d.stopIt(0); // check initial residual
+//  Example_NSE2D example_nse2d(parmoon_db); // Construct Example for NSE
+//  NSE2D nse2d(domain, parmoon_db, example_nse2d); // Construct NSE system
+//  nse2d.assemble(); // assemble linear term
+//  nse2d.stopIt(0); // check initial residual
 
   // ***** Initialize object for iterations residual output ***** //
   LoopInfo loop_info("nonlinear");
   loop_info.print_time_every_step = true;
   loop_info.verbosity_threshold = 1; // full verbosity
-  loop_info.print(0, nse2d.getFullResidual());
+//  loop_info.print(0, nse2d.getFullResidual());
 
   stopwatch.print_time("setting up spaces, matrices, linear assemble");
   stopwatch.reset();
@@ -80,9 +80,11 @@ int main(int argc, char* argv[])
   Output::print<1>("<<<<<<<<<<<<<<< NOW SOLVING CONVECTION >>>>>>>>>>>>");
   //================================================================
   CD2D cd2d(domain, parmoon_db);
+  Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
   cd2d.assemble();
-  cd2d.solve();
-  cd2d.output();
+  Output::print<1>("================== JE COMMENCE A RESOUDRE =============");
+//  cd2d.solve();
+//  cd2d.output();
   //================================================================
 
 

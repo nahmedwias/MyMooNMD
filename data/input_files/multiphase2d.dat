@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 4
+refinement_n_initial_steps: 1
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -30,7 +30,7 @@ refinement_n_initial_steps: 4
 ## convection-diffusion, 3: stationary Stokes, 4: time-dependent 
 ## Stokes, 5: stationary Navier-Stokes, 6: time-dependent 
 ## Navier-Stokes. 
-problem_type: 5   [ 0, 6 ]
+problem_type: 1   [ 0, 6 ]
 
 ## Set the verbosity of ParMooN. The higher the number, the more will 
 ## output you will get. Such output will be written to console and the 
@@ -128,7 +128,7 @@ gmres_restart: 20   [ 1, 1000 ]
 
 ## Determine the used preconditioner. Note that some of these are 
 ## specific for some problem types. 
-preconditioner: multigrid   { least_squares_commutator, least_squares_commutator_boundary, multigrid, no_preconditioner, semi_implicit_method_for_pressure_linked_equations }
+preconditioner: no_preconditioner   { least_squares_commutator, least_squares_commutator_boundary, multigrid, no_preconditioner, semi_implicit_method_for_pressure_linked_equations }
 
 ## Determine the multigrid type: standard multigrid or
 ## mdml (multiple discretization multi-level, which is a variant of 
@@ -149,7 +149,7 @@ saddle_point_preconditioner_direct_velocity_solve: true   { true, false }
 damping_factor: 1   [ 0, 1 ]
 
 ## Determine how many levels the multigrid cycle consists of. 
-multigrid_n_levels: 2   [ 0, 5 ]
+multigrid_n_levels: 0   [ 0, 5 ]
 
 ## The damping of an iteration in case of a multigrid preconditioner. 
 ## This only affects the update on the finest grid. 
@@ -202,8 +202,10 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## Peclet_number
 peclet_number: 1e3
 
-VELOCITY_SPACE: 2
+VELOCITY_SPACE: 1
 PRESSURE_SPACE: -4711
+
+ANSATZ_ORDER: 2
 
 Par_P0: 0
 Par_P3: 1
