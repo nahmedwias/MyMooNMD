@@ -83,8 +83,36 @@ int main(int argc, char* argv[])
   Output::print<1>("<<<<<<<<<<<<<<< NOW SOLVING CONVECTION >>>>>>>>>>>>");
   //================================================================
   CD2D cd2d(domain, parmoon_db);
-//  TFESpace2D ghost_space;
-//  BlockFEMatrix blabla = cd2d.systems.front().matrix;
+
+  TCollection *collection = domain.GetCollection(It_Finest, 0, -4711);
+  Example_CD2D ghost_example(parmoon_db);
+  TFESpace2D ghost_space(collection,(char*)"space", (char*)"cd2d fe_space",
+                         ghost_example.get_bc(0),
+                         2, nullptr);
+  BlockFEMatrix ghost_matrix({&ghost_space});
+  BlockVector convection_vector(ghost_matrix,false);
+
+  convection_vector.write("convection_vector0");
+
+  int longueur = convection_vector.length();
+  for (int indice=0; indice < longueur; indice++)
+  {
+    convection_vector.at(indice) = 0.5 ;
+  }
+  convection_vector.write("convection_vector");
+
+  TFEFunction2D convecting_function(&ghost_space, (char*) "c", (char*)"c",
+                                    convection_vector.get_entries(),
+                                    convection_vector.length());
+
+  double resultats[3];
+
+  convecting_function.FindGradient(0.2, 0.7, resultats);
+  cout << resultats[0] << endl;
+  cout << resultats[1] << endl;
+  cout << resultats[2] << endl;
+
+
 
   Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
   cd2d.assemble();
