@@ -1,10 +1,10 @@
 // =======================================================================
 //
-// Purpose:     main program for solving a stationary NSE equation in ParMooN
+// Purpose:
 //
-// Author:      Sashikumaar Ganesan
+// Author:      NA
 //
-// History:     Implementation started on 23.08.2014
+// History:     Start 13.09.2016
 
 // =======================================================================
 #include <Domain.h>
@@ -16,13 +16,28 @@
 #include <LoopInfo.h>
 #include <ParameterDatabase.h>
 
-
-// =======================================================================
-// main program
-// =======================================================================
+// ***** MAIN PROGRAM ***** //
 int main(int argc, char* argv[])
 {
+  Chrono stopwatch; // Start a stopwatch for time measurement during execution
+
+  TDatabase Database;  // Initialize User Input Databases.
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
+  TFEDatabase2D FEDatabase; // Initialize FE Database.
 
 
+//  cout << parmoon_db["solver_type"] << endl;
+//  Output::print<5>("This is just a sample ", parmoon_db["residual_tolerance"]);
+
+
+
+
+
+
+  stopwatch.print_time("total program duration: ");
   return 0;
-} // end main
+}
+// end main
