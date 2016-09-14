@@ -127,6 +127,61 @@ void TParFECommunicator3D::consistency_update(double* vector, size_t level) cons
    }
 }
 
+void TParFECommunicator3D::average_at_interface(double* vector) const
+{
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  if(N_Dim != 1)
+    ErrThrow("ParFECommunicators of dimension greater than 1 are a "
+             " not-yet-reintroduced feature!");
+
+  /* ****************************************************** */
+  /* *** Report from interface slaves to their masters **** */
+  /* ****************************************************** */
+  {
+    //send - all values of interface slaves
+    double* sbuf = new double[N_InterfaceS];
+    for(int i=0;i<N_InterfaceS;i++)
+    {
+      sbuf[i]=vector[DofRecvMS[i]]; //fill all values of interface slaves into sendbuffer
+    }
+    int* scounts = N_DofRecvMS;
+    int* sdispls = rdisplMS;
+
+    //receive - all values of interface slaves belonging to one of my_ranks masters
+    double* rbuf = new double[N_SendDofMS];
+    int* rcounts = N_DofSendMS;
+    int* rdispls = sdisplMS;
+    //control
+
+    // this is a topsy-turvy call of MPI_Alltoallv
+    MPI_Alltoallv(
+        sbuf, scounts, sdispls, MPI_DOUBLE, //send
+        rbuf, rcounts, rdispls, MPI_DOUBLE, //receive
+        MPI_COMM_WORLD); //control
+
+    // take the received values, interpret them via DofSendMS, and add them to the
+    // correct interface master dof value
+    std::vector<int> n_updates(N_Dof, 0); //TODO there must be a more clever way to do this!
+    for( int i = 0 ; i < N_SendDofMS ; i++)
+    {
+      vector[DofSendMS[i]] += rbuf[i];
+      n_updates[DofSendMS[i]] += 1;
+    }
+
+    // now this is the averaging
+    for( int j = 0 ; j < N_Dof ; ++j)
+    {
+      if( n_updates.at(j) > 0)
+        vector[j] /=  n_updates[j] + 1; // "+1": this is the master dof itself!
+    }
+
+    delete[] sbuf;
+    delete[] rbuf;
+  }
+}
 
 void TParFECommunicator3D::update_from_additive_to_consistent_storage(
     double* vector, size_t consist_level) const
@@ -252,6 +307,8 @@ void TParFECommunicator3D::update_from_additive_to_consistent_storage(
   }
 
 }
+
+
 
 
 void TParFECommunicator3D::CommUpdateReduce(double *rhs) const

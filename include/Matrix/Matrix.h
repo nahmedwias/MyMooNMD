@@ -27,6 +27,10 @@
 #include <map>
 #include <vector>
 
+#ifdef _MPI
+class TParFECommunicator3D;
+#endif
+
 class TMatrix
 {
   protected:
@@ -361,7 +365,16 @@ class TMatrix
     /// @param[in,out] x solution (this is updated)
     /// @param[in] omega relaxation parameter
     /// @param[in] flag either 0 (forward), 1(backward), or 2(both)
-    void sor_sweep(const double* b, double* x, double omega, size_t flag) const;
+    /// @param[in] par_strat The parallel strategy (MPI only). Use "all_cells" or
+    ///            "own_cells".
+    /// @param[in] comm MPI FE communicator which belongs to this matrix - MPI only!
+    /// (might even be stored therein, if it actually is an FEMatrix)
+    void sor_sweep(const double* b, double* x, double omega, size_t flag
+#ifdef _MPI
+                   , const std::string& par_strat
+                   , const TParFECommunicator3D& comm
+#endif
+    ) const;
     
     /** @brief adding a scaled matrix to this matrix
      * 
