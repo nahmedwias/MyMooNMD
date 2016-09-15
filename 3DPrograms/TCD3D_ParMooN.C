@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
   {
-  Chrono chrono_entire_program;
+  Chrono timer;
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -81,20 +81,23 @@ int main(int argc, char *argv[])
 
   // Choose example according to the value of "example" in the given database
   Example_TimeCD3D example(parmoon_db);
+  
+  timer.print_time_since_last_start("setup(domain, example, database)");
   // create an object of the class Time_CD3D
 #ifdef _MPI
   Time_CD3D tcd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
   Time_CD3D tcd3d(gridCollections, parmoon_db, example);
 #endif
-
+  timer.print_time_since_last_start("constructing Time_CD3D object");
+  
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();
   int step = 0, image=0;
+  timer.print_time_since_last_start("initial assembling");
   
   while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME - 1e-10)
   {
-    Chrono time_step;
     step++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     SetTimeDiscParameters(1);
@@ -109,15 +112,14 @@ int main(int argc, char *argv[])
     tcd3d.descale_stiffness();
     
     tcd3d.output(step,image);
-    time_step.print_time("time step (t=" + 
-                         std::to_string(TDatabase::TimeDB->CURRENTTIME)
-                         + ")");
+    timer.print_time_since_last_start(
+      "time step (t=" + std::to_string(TDatabase::TimeDB->CURRENTTIME)+ ")");
   }
   
   if(i_am_root)
     Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
 
-  chrono_entire_program.print_time("TCD3D_ParMooN program");
+  timer.print_time("TCD3D_ParMooN program");
   Output::close_file();
   }
 #ifdef _MPI

@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
   Output::info("CD3D", "SEQUENTIAL (or OMP...)");
 #endif
 
-  Chrono chrono_entire_program;
+  Chrono timer;
 
   // Construct the ParMooN Databases.
   TDatabase Database;
@@ -96,27 +96,34 @@ int main(int argc, char* argv[])
   // Choose and construct example.
   Example_CD3D example(parmoon_db);
 
+  timer.print_time_since_last_start("setup(domain, example, database)");
   // Construct the cd3d problem object.
 #ifdef _MPI
   CD3D cd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
   CD3D cd3d(gridCollections, parmoon_db, example);
 #endif
-
+  timer.print_time_since_last_start("constructing CD3D object");
+  
   //=========================================================================
   //Start the actual computations.
   //=========================================================================
 
   cd3d.assemble(); // assemble matrix and rhs
+  timer.print_time_since_last_start("Assembling");
+  
   cd3d.solve();    // solve the system
+  timer.print_time_since_last_start("Solving");
+  
   cd3d.output();   // produce nice output
-
+  timer.print_time_since_last_start("output");
+  
   //=========================================================================
 
   if(my_rank==0)
     Output::print("<<<<< ParMooN Finished: CD3D Main Program >>>>>");
 
-  chrono_entire_program.print_time("CD3D_ParMooN program");
+  timer.print_time("CD3D_ParMooN program");
   Output::close_file();
 }
 #ifdef _MPI
