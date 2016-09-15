@@ -113,14 +113,14 @@ int main(int argc, char* argv[])
   cout << resultats[1] << endl;
   cout << resultats[2] << endl;
 
-  ghost_example.convecting_function = &convect_function;
-
-  ghost_example.convecting_function->FindGradient(0.5, 0.5, resultats);
-
-  cout << resultats[0] << endl;
-  cout << resultats[1] << endl;
-  cout << resultats[2] << endl;
-
+//  ghost_example.convecting_function = &convect_function;
+//
+//  ghost_example.convecting_function->FindGradient(0.5, 0.5, resultats);
+//
+//  cout << resultats[0] << endl;
+//  cout << resultats[1] << endl;
+//  cout << resultats[2] << endl;
+//
 
   Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
   cd2d.assemble();
