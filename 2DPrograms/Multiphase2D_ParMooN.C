@@ -101,17 +101,25 @@ int main(int argc, char* argv[])
   }
   convection_vector.write("convection_vector");
 
-  TFEFunction2D convecting_function(&ghost_space, (char*) "c", (char*)"c",
+  TFEFunction2D convect_function(&ghost_space, (char*) "c", (char*)"c",
                                     convection_vector.get_entries(),
                                     convection_vector.length());
 
   double resultats[3];
 
-  convecting_function.FindGradient(0.2, 0.7, resultats);
+  convect_function.FindGradient(0.2, 0.7, resultats);
+
   cout << resultats[0] << endl;
   cout << resultats[1] << endl;
   cout << resultats[2] << endl;
 
+  ghost_example.convecting_function = &convect_function;
+
+  ghost_example.convecting_function->FindGradient(0.5, 0.5, resultats);
+
+  cout << resultats[0] << endl;
+  cout << resultats[1] << endl;
+  cout << resultats[2] << endl;
 
 
   Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
