@@ -109,10 +109,6 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "in cases where the iterations does not converge at all with larger "
          "values.", 0.0, 1.0);
   
-  db.add("damping_factor_finest_grid", 1.0,
-         "The damping of an iteration in case of a multigrid preconditioner. "
-         "This only affects the update on the finest grid.", 0.0, 1.0);
-  
   return db;
 }
 
