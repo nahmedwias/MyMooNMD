@@ -191,7 +191,7 @@ void CD2D::set_parameters()
 }
 
 /** ************************************************************************ */
-void CD2D::assemble()
+void CD2D::assemble(const TFEVectFunct2D* velocity_field)
 {
   LocalAssembling2D_type t = LocalAssembling2D_type::ConvDiff;
   bool mdml = this->solver.is_using_multigrid()
