@@ -7,6 +7,7 @@
 #include <Chrono.h>
 #include <MooNMD_Io.h>
 #include <time.h>
+#include <array>
 
 #ifdef _MPI
 #include <mpi.h>
@@ -16,93 +17,14 @@
 #include <omp.h>
 #endif
 
-
-Chrono::Chrono()
-{
-  reset();
-}
-
-void Chrono::print_time(const std::string& program_part)
-{
-#ifdef _MPI
-  print_time_mpi(program_part);
-  return;
-#endif
-#ifdef _OMP
-  print_time_omp(program_part);
-  return;
-#endif
-
-  print_time_seq(program_part);
-}
-
-void Chrono::print_time_seq(const std::string& program_part) const
-{
-  //rusage time
-  double time_rusage = this->elapsed_time();
-  Output::print("--- TIME: time for ", program_part,": ", time_rusage, " s (sequential rusage time)");
-
-  //wall clock time
-  double time_wall = this->elapsed_wall_time();
-  Output::print("--- TIME: time for ", program_part,": ", time_wall, " s (sequential wall time)");
-}
-#ifdef _MPI
-void Chrono::print_time_mpi(const std::string& program_part) const
-{
-  MPI_Comm comm = MPI_COMM_WORLD;
-  int my_rank;
-  MPI_Comm_rank(comm, &my_rank);
-
-  //rusage time in root
-  double time_rusage = this->elapsed_time();
-  if(my_rank==0)
-    Output::print("--- TIME: time for ", program_part,": ", time_rusage, " s (mpi root rusage time)");
-
-  //wall clock time in root
-  double time_wall = this->elapsed_wall_time();
-  if(my_rank==0)
-    Output::print("--- TIME: time for ", program_part,": ", time_wall, " s (mpi root wall time)");
-
-  //mpi_wtime
-  double time_spent = MPI_Wtime() - start_time_mpi_wtime;
-  double time_max;
-  double time_min;
-  MPI_Reduce(&time_spent, &time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-  MPI_Reduce(&time_spent, &time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD );
-  if(my_rank == 0)
-  {
-   Output::print("--- TIME: time for ", program_part,": ", time_max, " s (max wtime in a process)");
-   Output::print("--- TIME: time for ", program_part,": ", time_min, " s (min wtime in a process)");
-  }
-  return;
-}
-#endif
-
-#ifdef _OMP
-void Chrono::print_time_omp(const std::string& program_part) const
-{
-  //rusage time
-  double time_rusage = this->elapsed_time();
-  Output::print("--- TIME: time for ", program_part,": ", time_rusage, " s (openmp rusage time)");
-
-  //wall clock time
-  double time_wall = this->elapsed_wall_time();
-  Output::print("--- TIME: time for ", program_part,": ", time_wall, " s (openmp wall time)");
-}
-#endif
-
-double Chrono::elapsed_time() const
-{
-  return Chrono::get_rusage_time() - start_time_rusage;
-}
-
-
-double Chrono::elapsed_wall_time() const
-{
-  return Chrono::get_wall_time() - start_time_wall;
-}
-
-double Chrono::get_rusage_time()
+/**
+ * Evaluates system time spent in user mode and in kernel mode so far.
+ * Returns sum of both.
+ *
+ * @return added up time spent in user and kernel mode since start of the 
+ * program
+ */
+double get_rusage_time()
 {
   rusage usage;
 
@@ -121,35 +43,141 @@ double Chrono::get_rusage_time()
   return user_mode_time + kernel_mode_time;
 }
 
-double Chrono::get_wall_time()
+/// @return Current wall time.
+double get_wall_time()
 {
 #ifdef _OMP
   return omp_get_wtime();
+#endif
+#ifdef _MPI
+  return MPI_Wtime();
 #endif
   //wall time
   struct timeval wall_time;
   if (gettimeofday(&wall_time,NULL))
     ErrThrow("Error in gettimeofday!");
   return wall_time.tv_sec + wall_time.tv_usec/(double)1000000;
-
-
 }
+
+
+Chrono::Chrono()
+{
+  reset();
+}
+
 
 void Chrono::reset()
 {
-  //rusage time (system + cpu)
-  start_time_rusage = Chrono::get_rusage_time();
+  this->cumulative_time_rusage = 0;
+  this->cumulative_time_wall = 0;
+  this->running = false; // to avoid a warning in the start() method
+  this->start();
+}
 
-  //wall time
-  start_time_wall = Chrono::get_wall_time();
-#ifdef _OMP
-  start_time_wall = omp_get_wtime();
-#endif
-
-  //mpi wtime
-#ifdef _MPI
-  start_time_mpi_wtime = MPI_Wtime();
-#endif
+void Chrono::start()
+{
+  if(running)
+  {
+    Output::warn<1>("Chrono class", "starting a Chrono object which is "
+                    "already running. Did you want to do a reset()?");
+    this->stop();
+  }
+  this->start_time_rusage = get_rusage_time();
+  this->start_time_wall = get_wall_time();
+  this->running = true;
 }
 
 
+double Chrono::stop()
+{
+  if(running)
+  {
+    this->cumulative_time_rusage += this->time_since_last_start();
+    double t = this->wall_time_since_last_start(); // will be returned
+    this->cumulative_time_wall += t;
+    this->running = false;
+    return t;
+  }
+  else
+    return 0.0;
+}
+
+// a method for convenience, called from both print_time and 
+// print_time_since_last_start
+void print_times(std::array<double, 2> times, std::string program_part)
+{
+#ifndef _MPI
+  Output::print("--- TIME: time for ", program_part,": ", times[0], ", ", 
+                times[1], " s (CPU time, wall time)");
+#else
+  // MPI
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank;
+  int size;
+  MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm_size(comm, &size);
+
+  //rusage time in root
+  std::array<double, 2> t_min;
+  std::array<double, 2> t_max;
+  std::array<double, 2> t_avg;
+  MPI_Reduce(&times[0], &t_max[0], 2, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&times[0], &t_min[0], 2, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&times[0], &t_avg[0], 2, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  t_avg[0] /= size;
+  t_avg[1] /= size;
+  if(my_rank == 0)
+  {
+    Output::print("--- TIME: time for ", program_part,": ", t_max[0], ", ",
+                  t_min[0], ", ", t_avg[0],
+                  " s (max, min, average CPU time over all processes)");
+    Output::print("--- TIME: time for ", program_part,": ", t_max[1], ", ",
+                  t_min[1], ", ", t_avg[1],
+                  " s (max, min, average wall time over all processes)");
+  }
+#endif
+}
+
+void Chrono::print_time(const std::string& program_part) const
+{
+  std::array<double, 2> times = { this->elapsed_time(),       // CPU time
+                                  this->elapsed_wall_time()}; // wall time
+  print_times(times, program_part);
+}
+
+void Chrono::print_time_since_last_start(const std::string& program_part)
+{
+  std::array<double, 2> times = { this->time_since_last_start(),       // CPU
+                                  this->wall_time_since_last_start()}; // wall
+  this->stop();
+  print_times(times, program_part);
+  this->start();
+}
+
+
+double Chrono::time_since_last_start() const
+{
+  if(this->running)
+    return get_rusage_time() - this->start_time_rusage;
+  else
+    return 0.0;
+}
+
+double Chrono::wall_time_since_last_start() const
+{
+  if(this->running)
+    return get_wall_time() - start_time_wall;
+  else
+    return 0.0;
+}
+
+
+double Chrono::elapsed_time() const
+{
+  return this->cumulative_time_rusage + this->time_since_last_start();
+}
+
+double Chrono::elapsed_wall_time() const
+{
+  return this->cumulative_time_wall + this->wall_time_since_last_start();
+}
