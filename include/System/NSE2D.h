@@ -286,6 +286,13 @@ class NSE2D
     /// @brief return the computed errors
     /// @details updated in NSE2D::stopIt
     std::array<double, int(4)> get_errors() const;
+
+    /** @brief Set the solution vector of a NSE2D object
+    * @details can be used to prescribe a non-zero initial solution
+    * or to adapt solution between iterations (case of multiphase flow)
+    */
+    void set_solution(BlockVector new_solution)
+    { this->get_solution() = new_solution; }
 };
 
 
