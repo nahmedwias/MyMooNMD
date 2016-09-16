@@ -669,3 +669,24 @@ const double& BlockVector::at(const unsigned int i) const
     ErrThrow("index out of bounds");
   }
 }
+
+/** ************************************************************************ */
+BlockVector component_multiplication(BlockVector& a, const int i,
+                                     BlockVector& b, const int j)
+{
+  BlockVector result;
+  if (a.length() != b.length() )
+  {
+    Output::warn<1>("MULTIPHASE: ATTENTION, BlockVectors a and b "
+        "don't have same length! ", a.length(), " ", b.length(0));
+    ErrThrow("See Warning");
+  }
+  else
+  {
+    Output::print<1>("Multiphase2D: ", "Ok, blocks are same length and can be multiplied");
+
+  }
+  return result;
+}
+
+

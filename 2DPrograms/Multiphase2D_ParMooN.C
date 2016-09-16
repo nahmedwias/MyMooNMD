@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
     //  TFEVectFunct2D convect_vectfunction(nse2d.get_velocity()); */
 
     Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-    //  cd2d.assemble();
+//      cd2d.assemble();
     cd2d.assemble(&nse2d.get_velocity());
     Output::print<1>("================== JE COMMENCE A RESOUDRE =============");
     cd2d.solve();
@@ -143,23 +143,7 @@ int main(int argc, char* argv[])
 
 
     //======UPDATING VELOCITY VECTOR
-    BlockVector nse_solution = nse2d.get_solution();
-    BlockVector cd_solution = cd2d.get_solution();
-    if (cd_solution.length() != nse_solution.length(0) )
-    {
-      Output::warn<1>("MULTIPHASE: ATTENTION, Convection field in CD and velocity field in"
-          "NSE don't have same length! ", cd_solution.length(), " ", nse_solution.length(0));
-      ErrThrow("See Warning");
-    }
-    else
-    {
-      Output::print<1>("Multiphase2D: ", "Ok, blocks are same length and can be multiplied");
-
-    }
-
-    nse2d.set_solution(nse_solution);
-
-    //    BlockVector test2 = nse2d.get_solution();
+//    nse2d.update_solution(cd2d.get_solution());
     //==============================
 
     if(nse_db["problem_type"].is(3)) break; // Stokes
