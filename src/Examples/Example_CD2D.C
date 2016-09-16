@@ -57,7 +57,7 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
       
       sine_laplace::ExampleFile();
       break;
-    case 4:
+    case 1:
       /** exact_solution */
       exact_solution.push_back( two_interior_layers::Exact );
       
@@ -104,7 +104,7 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
       sharp_boundary_layer::ExampleFile();
       break;
 
-    case 1: // ATTENTION, this is 3 to match the example number in NSE
+    case 4: // ATTENTION, this is 3 to match the example number in NSE
       /** exact_solution */
       exact_solution.push_back( multiphase_example::Exact );
 
