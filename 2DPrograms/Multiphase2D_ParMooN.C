@@ -102,31 +102,21 @@ int main(int argc, char* argv[])
   convection_vector.write("convection_vector");
 
   cout << "longueur " << longueur <<  endl;
-  TFEVectFunct2D convect_function(&ghost_space, (char*) "c", (char*)"c",
+  TFEVectFunct2D convect_vectfunction(&ghost_space, (char*) "c", (char*)"c",
                                     convection_vector.block(0),
                                     convection_vector.length(0),2);
 
 
-//  double resultats[3];
-//
-//
-//  convect_function.FindGradient(0.2, 0.7, resultats);
-//
-//  cout << resultats[0] << endl;
-//  cout << resultats[1] << endl;
-//  cout << resultats[2] << endl;
-
-//  ghost_example.convecting_function = &convect_function;
-//
-//  ghost_example.convecting_function->FindGradient(0.5, 0.5, resultats);
-//
-//  cout << resultats[0] << endl;
-//  cout << resultats[1] << endl;
-//  cout << resultats[2] << endl;
-//
+  TFEFunction2D* convect_function = convect_vectfunction.GetComponent(0);
+  double resultats[3];
+  convect_function->FindGradient(0.187, 0.42987, resultats);
+  cout << resultats[0] << endl;
+  cout << resultats[1] << endl;
+  cout << resultats[2] << endl;
 
   Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-  cd2d.assemble(&convect_function);
+//  cd2d.assemble();
+  cd2d.assemble(&convect_vectfunction);
   Output::print<1>("================== JE COMMENCE A RESOUDRE =============");
   cd2d.solve();
   cd2d.output();
