@@ -96,6 +96,9 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
 
   n_post_smooths_ = db["multigrid_n_post_smooth"];
 
+  //Send the coarse grid stopwatch to sleep.
+  coarse_grid_timer.reset();
+
 }
 
 void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
@@ -198,6 +201,10 @@ int Multigrid::cycle_step(size_t step, size_t level)
     if (my_rank == 0)
       Output::info<4>("COARSE SOLVE", "Level ", level);
     double res = 1e10;
+
+    //start coarse grid time measurement
+    coarse_grid_timer.start();
+
     for(size_t i = 0; i < this->coarse_n_maxit && res > coarse_epsilon ; ++i)
     {
       levels_.at(coarsest).apply_smoother();
@@ -206,6 +213,11 @@ int Multigrid::cycle_step(size_t step, size_t level)
       if (my_rank == 0)
         Output::dash<4>("Coarse Grid Iteration ", i, " res: ", res);
     }
+
+    //stop and print coarse grid time measurement
+    coarse_grid_timer.stop_and_print("coarse grid solve");
+    //coarse_grid_timer.print_total_time("coarse grid (accumulated)");
+
     update_solution_in_finer_grid(level);
     return level + 1;
   }
