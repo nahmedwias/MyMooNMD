@@ -1,19 +1,17 @@
 /**
- * @file New declaration of a multigrid object, which holds the necessary
- * grid information for executing a multigrid iteration.
+ * @file A multigrid class, which holds the necessary
+ * grid information for executing a geometric multigrid iteration.
  *
  * @note When using multigrid you must take care of the matrices being
  * correctly assembled on all levels before calling "cycle()". This might,
  * should some nonlinearity or time-dependency be included
- * include a call like former RestrictToAllGrids which informs every grid about
- * a current approximate solution.
+ * include one or more calls of GridTransfer::RestrictFunctionRepeatedly,
+ * which informs every grid about a current approximate solution.
  *
  * Here are the (bigger) tasks and functionalities to regain. Most of the work
  * necessary will not amass in this class but elsewhere.
  *
  * @todo TODO Reenable step length control (work in VankaSmoother).
- * @todo TODO Reenable MDML (work in system classes )
- * @todo TODO Parallelize (work here and in different smoothers)
  *
  *
  * @date 2016/05/10
@@ -23,9 +21,10 @@
 #ifndef INCLUDE_MULTIGRID_MULTIGRID_H_
 #define INCLUDE_MULTIGRID_MULTIGRID_H_
 
-#include <ParameterDatabase.h>
+#include <Chrono.h>
 #include <CycleControl.h>
 #include <MultigridLevel.h>
+#include <ParameterDatabase.h>
 
 #include <list>
 #include <vector>
@@ -136,6 +135,12 @@ class Multigrid
 
     /// the object knows whether it is of standard or MDML type.
     MultigridType type_;
+
+    /// A timer object used to measure time spent in coarse grid solve
+    /// This object is of interest for our current project (ParMooN Paper, Sep 2016)
+    /// and might be removed after that.
+    Chrono coarse_grid_timer;
+
 
     /// Restrict defect on level lvl and store it as rhs in the next coarsest level.
     void update_rhs_in_coarser_grid(size_t lvl);
