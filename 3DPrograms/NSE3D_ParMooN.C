@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 #endif
 
     //start a stopwatch which measures time spent in program parts
-    Chrono chrono_parts;
+    Chrono timer;
 
     // Construct the ParMooN Databases.
     TDatabase Database;
@@ -109,8 +109,7 @@ int main(int argc, char* argv[])
     if(my_rank==0)
       loop_info.print(0, nse3d.get_full_residual());
 
-    chrono_parts.print_time(std::string("setting up spaces, matrices, linear assemble"));
-    chrono_parts.reset();
+    timer.restart_and_print(std::string("setting up spaces, matrices, linear assemble"));
 
     //======================================================================
     for(unsigned int k=1;; k++)
@@ -134,11 +133,14 @@ int main(int argc, char* argv[])
       }
       else
         loop_info.print(k, nse3d.get_full_residual());
+
     } // end for k
 
-    chrono_parts.print_time(std::string("solving procedure "));
+    timer.restart_and_print(std::string("solver"));
 
     nse3d.output();
+
+    timer.print_total_time("NSE3D_ParMooN program");
 
     if(my_rank==0)
       Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");

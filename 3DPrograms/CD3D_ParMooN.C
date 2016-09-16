@@ -96,27 +96,27 @@ int main(int argc, char* argv[])
   // Choose and construct example.
   Example_CD3D example(parmoon_db);
 
-  timer.print_and_restart("setup(domain, example, database)");
+  timer.restart_and_print("setup(domain, example, database)");
   // Construct the cd3d problem object.
 #ifdef _MPI
   CD3D cd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
   CD3D cd3d(gridCollections, parmoon_db, example);
 #endif
-  timer.print_and_restart("constructing CD3D object");
+  timer.restart_and_print("constructing CD3D object");
   
   //=========================================================================
   //Start the actual computations.
   //=========================================================================
 
   cd3d.assemble(); // assemble matrix and rhs
-  timer.print_and_restart("Assembling");
+  timer.restart_and_print("Assembling");
   
   cd3d.solve();    // solve the system
-  timer.print_and_restart("Solving");
+  timer.restart_and_print("Solving");
   
   cd3d.output();   // produce nice output
-  timer.print_and_restart("output");
+  timer.restart_and_print("output");
   
   //=========================================================================
 

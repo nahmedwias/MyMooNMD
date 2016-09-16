@@ -46,7 +46,7 @@ class Chrono
     /// creation.
     Chrono();
 
-    /// Reset the start times. 
+    /// Reset the object to blank state, all times are zero, measurement not running.
     void reset();
     
     /// Start the clock. Will print a warning and restart if already running.
@@ -63,6 +63,8 @@ class Chrono
      * @brief Print out the accumulated time of all measurements since
      * last restart - or since the object's creation, if it was not restarted yet.
      * 
+     * This will neither call stop nor start.
+     *
      * The CPU time and the wall time are printed. In MPI mode the maximum, 
      * minimum and average over all processes of these times are printed.
      *
@@ -73,8 +75,8 @@ class Chrono
     { print_total_time(std::string(program_part)); }
     
     /**
-     * @brief Print out the measured times since last call to start(), and
-     * restart the time measuring. This invokes stop() and start().
+     * @brief Call stop() and start() and print the time that was measured since
+     * last start.
      * 
      * The CPU time and the wall time are printed. In MPI mode the maximum, 
      * minimum and average over all processes of these times are printed.
@@ -83,9 +85,21 @@ class Chrono
      *
      * @param program_part will be put into the output string
      */
-    void print_and_restart(const std::string& program_part);
-    void print_and_restart(const char* program_part)
-    { print_and_restart(std::string(program_part)); }
+    void restart_and_print(const std::string& program_part);
+    void restart_and_print(const char* program_part)
+    { restart_and_print(std::string(program_part)); }
+
+    /**
+     * Stop measuring and print time since last start.
+     *
+     * The CPU time and the wall time are printed. In MPI mode the maximum,
+     * minimum and average over all processes of these times are printed.
+     *
+     * Note that this is NOT reset! The cumulative time will not be erased.
+     */
+    void stop_and_print(const std::string& program_part);
+    void stop_and_print(const char* program_part)
+    { stop_and_print(std::string(program_part)); }
     
     /// @brief return the CPU time accumulated over all start/stop cycles
     ///
