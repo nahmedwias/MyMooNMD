@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   nse_db.merge(parmoon_db,true);
   cd_db.merge(parmoon_db,true);
 
-  cd_db["example"] = 1; // 1 = TwoInteriorLayer, 4 = Multiphase2D
+  cd_db["example"] = 4; // 1 = TwoInteriorLayer, 4 = Multiphase2D
   cd_db["problem_type"] = 1;
   cd_db["output_basename"] = "multiphase_convection_output";
 
@@ -73,6 +73,12 @@ int main(int argc, char* argv[])
   nse2d.assemble(); // assemble linear term
   nse2d.stopIt(0); // check initial residual
 
+  Output::print<1>("The ansatz space is ", TDatabase::ParamDB->ANSATZ_ORDER);
+  Output::print<1>("Convection_example number ", cd_db["example"]);
+
+  CD2D cd2d(domain, cd_db);
+
+
   // ***** Initialize object for iterations residual output ***** //
   LoopInfo loop_info("nonlinear");
   loop_info.print_time_every_step = true;
@@ -87,6 +93,56 @@ int main(int argc, char* argv[])
   for(unsigned int k = 1;; k++)
   {
     nse2d.solve();
+
+
+    Output::print<1>("<<<<<<<<<<<<<<< NOW SOLVING CONVECTION >>>>>>>>>>>>");
+    //================================================================
+
+    /**  TCollection *collection = domain.GetCollection(It_Finest, 0, -4711);
+    //  Example_CD2D ghost_example(parmoon_db);
+    //  TFESpace2D ghost_space(collection,(char*)"space", (char*)"cd2d fe_space",
+    //                         ghost_example.get_bc(0),
+    //                         2, nullptr);
+    //  BlockFEMatrix ghost_matrix({&ghost_space,&ghost_space});
+    //  BlockVector convection_vector(ghost_matrix,false);
+    //
+    //  convection_vector.write("convection_vector0");
+    //
+    //  int longueur = convection_vector.length();
+    //  for (int indice=0; indice < longueur/2; indice++)
+    //  {
+    //    convection_vector.at(indice) = 2 ;
+    //  }
+    //  for (int indice=(longueur/2)+1; indice < longueur; indice++)
+    //  {
+    //    convection_vector.at(indice) = 2 ;
+    //  }
+    //  convection_vector.write("convection_vector");
+    //
+    //  cout << "longueur " << longueur <<  endl;
+    //  TFEVectFunct2D convect_vectfunction(&ghost_space, (char*) "c", (char*)"c",
+    //                                      convection_vector.block(0),
+    //                                      convection_vector.length(0),2);
+    //
+    //
+    //  TFEFunction2D* convect_function = convect_vectfunction.GetComponent(0);
+    //  double resultats[3];
+    //  convect_function->FindGradient(0.187, 0.42987, resultats);
+    //  cout << resultats[0] << endl;
+    //  cout << resultats[1] << endl;
+    //  cout << resultats[2] << endl;
+    //  TFEVectFunct2D convect_vectfunction(nse2d.get_velocity()); */
+
+    Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
+    //  cd2d.assemble();
+    cd2d.assemble(&nse2d.get_velocity());
+    Output::print<1>("================== JE COMMENCE A RESOUDRE =============");
+    cd2d.solve();
+    //================================================================
+    Output::print<1>("<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>");
+
+
+
     if(nse_db["problem_type"].is(3)) break; // Stokes
     nse2d.assemble_nonlinear_term();
 
@@ -96,68 +152,12 @@ int main(int argc, char* argv[])
       break;
     }
     else loop_info.print(k, nse2d.getFullResidual());
+
   } // end for k, non linear loop
   stopwatch.print_time("total solving duration: ");
-  //================================================================
+
   nse2d.output();
-
-
-
-
-  Output::print<1>("<<<<<<<<<<<<<<< NOW SOLVING CONVECTION >>>>>>>>>>>>");
-  //================================================================
-  Output::print<1>("The ansatz space is ", TDatabase::ParamDB->ANSATZ_ORDER);
-  Output::print<1>("Convection_example number ", cd_db["example"]);
-
-  CD2D cd2d(domain, cd_db);
-
-//  TCollection *collection = domain.GetCollection(It_Finest, 0, -4711);
-//  Example_CD2D ghost_example(parmoon_db);
-//  TFESpace2D ghost_space(collection,(char*)"space", (char*)"cd2d fe_space",
-//                         ghost_example.get_bc(0),
-//                         2, nullptr);
-//  BlockFEMatrix ghost_matrix({&ghost_space,&ghost_space});
-//  BlockVector convection_vector(ghost_matrix,false);
-//
-//  convection_vector.write("convection_vector0");
-//
-//  int longueur = convection_vector.length();
-//  for (int indice=0; indice < longueur/2; indice++)
-//  {
-//    convection_vector.at(indice) = 2 ;
-//  }
-//  for (int indice=(longueur/2)+1; indice < longueur; indice++)
-//  {
-//    convection_vector.at(indice) = 2 ;
-//  }
-//  convection_vector.write("convection_vector");
-//
-//  cout << "longueur " << longueur <<  endl;
-//  TFEVectFunct2D convect_vectfunction(&ghost_space, (char*) "c", (char*)"c",
-//                                      convection_vector.block(0),
-//                                      convection_vector.length(0),2);
-//
-//
-//  TFEFunction2D* convect_function = convect_vectfunction.GetComponent(0);
-//  double resultats[3];
-//  convect_function->FindGradient(0.187, 0.42987, resultats);
-//  cout << resultats[0] << endl;
-//  cout << resultats[1] << endl;
-//  cout << resultats[2] << endl;
-
-//  TFEVectFunct2D convect_vectfunction(nse2d.get_velocity());
-
-
-  Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-//  cd2d.assemble();
-  cd2d.assemble(&nse2d.get_velocity());
-  Output::print<1>("================== JE COMMENCE A RESOUDRE =============");
-  cd2d.solve();
   cd2d.output();
-  //================================================================
-
-
-
 
   Output::close_file();
   return 0;
