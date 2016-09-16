@@ -63,6 +63,7 @@ double get_wall_time()
 Chrono::Chrono()
 {
   reset();
+  start();
 }
 
 
@@ -71,7 +72,6 @@ void Chrono::reset()
   this->cumulative_time_rusage = 0;
   this->cumulative_time_wall = 0;
   this->running = false; // to avoid a warning in the start() method
-  this->start();
 }
 
 void Chrono::start()
