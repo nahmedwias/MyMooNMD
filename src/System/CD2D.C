@@ -10,6 +10,9 @@
 #include <LocalProjection.h>
 #include <FEFunctionInterpolator.h>
 
+#include <NSE2D_FixPo.h> //we need that include for a single "in-out function"
+                         // (NSParamsVelo), maybe hard code the same thing here
+
 ParameterDatabase get_default_CD2D_parameters()
 {
   Output::print<3>("creating a default CD2D parameter database");
@@ -206,60 +209,85 @@ void CD2D::assemble(const TFEVectFunct2D* convection_field)
   // this loop has more than one iteration only in case of multigrid
   for(auto & s : this->systems)
   {
-    TFEFunction2D *pointer_to_function[3] = {nullptr, nullptr,nullptr}; // just initialize
+    TFEFunction2D *pointer_to_function[3] = {&s.fe_function, nullptr,nullptr}; // just initialize
+    // create a local assembling object which is needed to assemble the matrix
+    LocalAssembling2D la(t, pointer_to_function, example.get_coeffs());
 
     if (convection_field)
     {
       // =========================== HERE CODE FOR CONVECTION FIELD
       cout << "J'AI DETECTE LA PRESENCE D'UN CONVECTION FIELD" << endl;
       // step 1 : interpolate the given convection_field to our fe space
-      const TFESpace2D& space = s.fe_space;
-      size_t n_dofs = space.GetN_DegreesOfFreedom();
-      std::string name("interpolated velo space");
-      std::string description("interpolated velo space");
-      std::vector<double> interp_funct_values(n_dofs,0.0);
+//      const TFESpace2D& space = s.fe_space;
+//      size_t n_dofs = space.GetN_DegreesOfFreedom();
+//      std::string name("interpolated velo space");
+//      std::string description("interpolated velo space");
+//      std::vector<double> interp_funct_values(n_dofs,0.0);
 
-      // set up an interpolator object  (ptr will be shared later)
-      const TFESpace2D* into_space = &s.fe_space;
-      FEFunctionInterpolator interpolator(into_space);
-
-      // length of the values array of the interpolated velo must equal length of the
-      // concentration fe function
-      size_t length_interpolated = s.fe_function.GetLength();
-
-      std::vector<double> entries_velo_x(length_interpolated, 0.0);
-      std::vector<double> entries_velo_y(length_interpolated, 0.0);
+//      // set up an interpolator object  (ptr will be shared later)
+//      const TFESpace2D* into_space = &s.fe_space;
+//      FEFunctionInterpolator interpolator(into_space);
+//
+//      // length of the values array of the interpolated velo must equal length of the
+//      // concentration fe function
+//      size_t length_interpolated = s.fe_function.GetLength();
+//
+//      std::vector<double> entries_velo_x(length_interpolated, 0.0);
+//      std::vector<double> entries_velo_y(length_interpolated, 0.0);
 
       // this awful call is due to the way a TFEVectFunct2D creates new dynamically
       // allocated TFEFunction2D objects
-      TFEFunction2D* rough_velo_x = convection_field->GetComponent(0);
-      TFEFunction2D* rough_velo_y = convection_field->GetComponent(1);
+      TFEFunction2D* convection_x = convection_field->GetComponent(0);
+      TFEFunction2D* convection_y = convection_field->GetComponent(1);
 
-      TFEFunction2D interpolated_velo_x =
-          interpolator.interpolate(*rough_velo_x, entries_velo_x);
+//      TFEFunction2D interpolated_convection_x =
+//          interpolator.interpolate(*convection_x, entries_velo_x);
+//
+//      TFEFunction2D interpolated_convection_y =
+//          interpolator.interpolate(*convection_y, entries_velo_y);
+//
+//      delete convection_x; // call to GetComponent dynamically created fe functs
+//      delete convection_y;
 
-      TFEFunction2D interpolated_velo_y =
-          interpolator.interpolate(*rough_velo_y, entries_velo_y);
+      // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
 
-      delete rough_velo_x; // call to GetComponent dynamically created fe functs
-      delete rough_velo_y;
+      // set up the input...
+      std::vector<int> beginParameter = {0};
 
+      //fill up the new fe function array
+      //pointer_to_function[0] = &s.fe_function;
+      pointer_to_function[1] = convection_x;
+      pointer_to_function[2] = convection_y;
 
+      std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
+      // for second fe value use function 2
+      std::vector<MultiIndex2D> feValueMultiIndex = {D00, D00}; // to produce first fe value use 0th derivative,
+      // for second fe value as well
+      int N_parameters = 2; // two parameters...
+      int N_feValues = 2;   //..both of which stem from the evaluation of fe fcts
+      int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
 
+      // chose the parameter function ("in-out function") which shears away
+      // the first to "in" values (x,y) and passes only u_x and u_y
+      std::vector<ParamFct*> parameterFct = {NSParamsVelo};
 
-
-
-      TFEFunction2D * pointer_to_function = &s.fe_function; // this is just temporary
+      // ...and call the corresponding setters
+      la.setBeginParameter(beginParameter);
+      la.setFeFunctions2D(pointer_to_function); //reset - now velo comp included
+      la.setFeValueFctIndex(feValueFctIndex);
+      la.setFeValueMultiIndex(feValueMultiIndex);
+      la.setN_Parameters(N_parameters);
+      la.setN_FeValues(N_feValues);
+      la.setN_ParamFct(N_paramFct);
+      la.setParameterFct(parameterFct);
+      //...this should do the trick
     //===============================================================END CODE
     }
     else
     {
       cout << " JE SUIS ICI" << endl;
-      TFEFunction2D * pointer_to_function = &s.fe_function;
+//      TFEFunction2D * pointer_to_function = &s.fe_function;
     }
-
-    // create a local assembling object which is needed to assemble the matrix
-    LocalAssembling2D la(t, pointer_to_function, example.get_coeffs());
 
     // assemble the system matrix with given local assembling, solution and rhs
     const TFESpace2D * fe_space = &s.fe_space;
