@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
   Output::set_outfile(parmoon_db["outfile"]);
   
   // write all Parameters to the OUTFILE (not to console) for later reference
+  parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
  
   // refine grid

@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 #endif
 
     //start a stopwatch which measures time spent in program parts
-    Chrono chrono_parts;
+    Chrono timer;
 
     // Construct the ParMooN Databases.
     TDatabase Database;
@@ -69,7 +69,10 @@ int main(int argc, char* argv[])
     Output::setVerbosity(parmoon_db["verbosity"]);
 
     if(my_rank==0) //Only one process should do that.
+    {
+      parmoon_db.write(Output::get_outfile());
       Database.WriteParamDB(argv[0]);
+    }
 
     // Do the old parameter check of the Database.
     Database.CheckParameterConsistencyNSE();
@@ -92,12 +95,14 @@ int main(int argc, char* argv[])
     // Choose and construct example.
     Example_NSE3D example(parmoon_db);
 
+    timer.print_time_since_last_start("setup(domain, example, database)");
     // Construct an object of the NSE3D-problem type.
 #ifdef _MPI
     NSE3D nse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
     NSE3D nse3d(gridCollections, parmoon_db, example);
 #endif
+    timer.print_time_since_last_start("constructing NSE3D object");
     
     // assemble all matrices and right hand side
     nse3d.assemble_linear_terms();
@@ -109,8 +114,7 @@ int main(int argc, char* argv[])
     if(my_rank==0)
       loop_info.print(0, nse3d.get_full_residual());
 
-    chrono_parts.print_time(std::string("setting up spaces, matrices, linear assemble"));
-    chrono_parts.reset();
+    timer.print_time_since_last_start("assembling linear terms");
 
     //======================================================================
     for(unsigned int k=1;; k++)
@@ -135,14 +139,15 @@ int main(int argc, char* argv[])
       else
         loop_info.print(k, nse3d.get_full_residual());
     } // end for k
-
-    chrono_parts.print_time(std::string("solving procedure "));
-
+    timer.print_time_since_last_start("nonlinear loop");
+    
     nse3d.output();
+    timer.print_time_since_last_start("output");
 
     if(my_rank==0)
       Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
 
+    timer.print_time("NSE3D_ParMooN program");
     if(my_rank == 0)
       Output::close_file();
   }
