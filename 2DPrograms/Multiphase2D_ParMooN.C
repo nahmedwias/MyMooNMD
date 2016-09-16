@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   nse_db.merge(parmoon_db,true);
   cd_db.merge(parmoon_db,true);
 
-  cd_db["example"] = 4;
+  cd_db["example"] = 1; // 1 = TwoInteriorLayer, 4 = Multiphase2D
   cd_db["problem_type"] = 1;
   cd_db["output_basename"] = "multiphase_convection_output";
 
