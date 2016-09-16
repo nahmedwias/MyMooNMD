@@ -135,6 +135,10 @@ class CD2D
     
   public:
     
+    /** @brief stores a vector containing the convection field*/
+   BlockVector convecting_field;
+
+
     /** @brief constructor 
      * 
      * This constructor calls the other constructor creating an Example_CD2D
@@ -188,7 +192,7 @@ class CD2D
      * on the same Collection of grid cells as this object (which might not
      * even be the right thing to check).
      */
-    void assemble(const TFEVectFunct2D* velocity_field = nullptr);
+    void assemble(const TFEVectFunct2D* convection_field = nullptr);
     
     /** @brief solve the system */
     void solve();
@@ -277,7 +281,7 @@ class CD2D
      *
      * @param velocity_field The velocity field to be checked.
      */
-    void check_velocity_field(const TFEFunction2D* velocity_field) const;
+    void check_convection_field(const TFEFunction2D* convection_field) const;
 };
 
 #endif // __CD2D_H__
