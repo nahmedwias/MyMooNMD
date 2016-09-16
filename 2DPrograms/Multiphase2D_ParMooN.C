@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
   TFESpace2D ghost_space(collection,(char*)"space", (char*)"cd2d fe_space",
                          ghost_example.get_bc(0),
                          2, nullptr);
-  BlockFEMatrix ghost_matrix({&ghost_space});
+  BlockFEMatrix ghost_matrix({&ghost_space,&ghost_space});
   BlockVector convection_vector(ghost_matrix,false);
 
   convection_vector.write("convection_vector0");
@@ -101,17 +101,20 @@ int main(int argc, char* argv[])
   }
   convection_vector.write("convection_vector");
 
-  TFEFunction2D convect_function(&ghost_space, (char*) "c", (char*)"c",
-                                    convection_vector.get_entries(),
-                                    convection_vector.length());
+  cout << "longueur " << longueur <<  endl;
+  TFEVectFunct2D convect_function(&ghost_space, (char*) "c", (char*)"c",
+                                    convection_vector.block(0),
+                                    convection_vector.length(0),2);
 
-  double resultats[3];
 
-  convect_function.FindGradient(0.2, 0.7, resultats);
-
-  cout << resultats[0] << endl;
-  cout << resultats[1] << endl;
-  cout << resultats[2] << endl;
+//  double resultats[3];
+//
+//
+//  convect_function.FindGradient(0.2, 0.7, resultats);
+//
+//  cout << resultats[0] << endl;
+//  cout << resultats[1] << endl;
+//  cout << resultats[2] << endl;
 
 //  ghost_example.convecting_function = &convect_function;
 //
@@ -123,7 +126,7 @@ int main(int argc, char* argv[])
 //
 
   Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-  cd2d.assemble();
+  cd2d.assemble(&convect_function);
   Output::print<1>("================== JE COMMENCE A RESOUDRE =============");
   cd2d.solve();
   cd2d.output();
