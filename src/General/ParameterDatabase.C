@@ -169,43 +169,44 @@ size_t ParameterDatabase::get_n_parameters() const
 }
 
 /* ************************************************************************** */
-void ParameterDatabase::write(std::ostream& os, size_t verbose) const
+void ParameterDatabase::write(std::ostream& os, bool verbose) const
 {
   if(!os.good())
   {
     Output::print("Error in ParameterDatabase::write. stream not good");
     return;
   }
-  if(verbose > 2) // make sure verbose is either 0,1, or 2
-  {
-    Output::print("Error in ParameterDatabase::write. unknown verbosity level");
-    return;
-  }
   
-  if(verbose == 2)
+  os << "# current date and time: " << utilities::get_date_and_time();
+  os << "# ParMooN hg revision: " << parmoon::hg_revision << "\n";
+  os << "# ParMooN hg branch  : " << parmoon::hg_branch << "\n";
+  os << "# ParMooN, local changes: " << parmoon::hg_local_changes << "\n";
+  os << "# ParMooN build information: " << parmoon::build_type << ", " 
+     << parmoon::parallel_type << "\n";
+  os << "# hostname: " << utilities::get_host_name() << "\n";
+  os << "# Writing a ParMooN parameter database with "
+     << this->get_n_parameters() << " parameters\n";
+  os << "\n";
+  if(verbose)
   {
-    os << "# current date and time: " << utilities::get_date_and_time();
-    os << "# ParMooN hg revision: " << parmoon::hg_revision << "\n";
-    os << "# ParMooN hg branch  : " << parmoon::hg_branch << "\n";
-    os << "# ParMooN, local changes: " << parmoon::hg_local_changes << "\n";
-    os << "# ParMooN build information: " << parmoon::build_type << ", " 
-       << parmoon::parallel_type << "\n";
-    os << "# hostname: " << utilities::get_host_name() << "\n";
-    os << "# Writing a ParMooN parameter database with "
-       << this->get_n_parameters() << " parameters\n";
-    os << "\n";
-  
     os << "# The name of the database. This is usually not of any importance\n";
-    os << "[ " << this->name << " ]\n\n";
   }
+  os << "[ " << this->name << " ]\n\n";
+  
   for(const auto& p : this->parameters)
   {
-    if(verbose == 1 || verbose == 2) // verbose != 0
+    if(verbose)
     {
+      // print the description as well as the parameter with its value and range
       p.print_description(os, "## ", 60, "");
+      os << p.get_name() << ": " << p << "   " 
+         << p.range_as_string() << "\n\n";
     }
-    os << p.get_name() << ": " << p << "   " 
-       << p.range_as_string() << "\n\n";
+    else
+    {
+      os << p.get_name() << ": " << p << "\n";
+    }
+    
   }
 }
 

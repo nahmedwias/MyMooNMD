@@ -81,10 +81,11 @@ int main(int argc, char* argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
-    {
+  {
+    parmoon_db.write(Output::get_outfile());
     Database.WriteParamDB(argv[0]);
     Database.WriteTimeDB();
-    }
+  }
 
   // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();

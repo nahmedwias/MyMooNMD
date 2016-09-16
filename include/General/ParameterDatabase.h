@@ -117,14 +117,14 @@ class ParameterDatabase
     /// The idea is to use this function to write the database into a file which
     /// then can be used to run the program again.
     ///
-    /// The parameter verbose should be either 0,1 or 2. Set it to 
-    /// - zero if you only want the parameters,
-    /// - one if you want the parameters and their description (documentation)
-    /// - two if you want additionally to the above the date and database name.
+    /// Set the parameter verbose to 
+    /// - false, if you only want the parameters,
+    /// - true, if you want the parameters, their description (documentation), 
+    ///   and range.
     ///
-    /// If you plan on using the resulting stream again to read in a 
-    /// ParameterDatabase, use `verbose=2`.
-    void write(std::ostream& stream, size_t verbose = 2) const;
+    /// Additionally to the above the date, the database name, some hg revision 
+    /// information and the host name is printed.
+    void write(std::ostream& stream, bool verbose = false) const;
     
     /// @brief read parameters from a stream
     ///
