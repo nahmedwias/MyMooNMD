@@ -82,19 +82,19 @@ int main(int argc, char *argv[])
   // Choose example according to the value of "example" in the given database
   Example_TimeCD3D example(parmoon_db);
   
-  timer.print_and_restart("setup(domain, example, database)");
+  timer.restart_and_print("setup(domain, example, database)");
   // create an object of the class Time_CD3D
 #ifdef _MPI
   Time_CD3D tcd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
   Time_CD3D tcd3d(gridCollections, parmoon_db, example);
 #endif
-  timer.print_and_restart("constructing Time_CD3D object");
+  timer.restart_and_print("constructing Time_CD3D object");
   
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();
   int step = 0, image=0;
-  timer.print_and_restart("initial assembling");
+  timer.restart_and_print("initial assembling");
   
   while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME - 1e-10)
   {
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
     tcd3d.descale_stiffness();
     
     tcd3d.output(step,image);
-    timer.print_and_restart(
+    timer.restart_and_print(
       "time step (t=" + std::to_string(TDatabase::TimeDB->CURRENTTIME)+ ")");
   }
   

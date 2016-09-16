@@ -145,15 +145,19 @@ void Chrono::print_total_time(const std::string& program_part) const
   print_times(times, program_part);
 }
 
-void Chrono::print_and_restart(const std::string& program_part)
+void Chrono::restart_and_print(const std::string& program_part)
 {
-  std::array<double, 2> times = { this->time_since_last_start(),       // CPU
-                                  this->wall_time_since_last_start()}; // wall
-  this->stop();
-  print_times(times, program_part);
-  this->start();
+  stop_and_print(program_part);
+  start();
 }
 
+void Chrono::stop_and_print(const std::string& program_part)
+{
+  std::array<double, 2> times = { time_since_last_start(),       // CPU
+                                  wall_time_since_last_start()}; // wall
+  stop();
+  print_times(times, program_part);
+}
 
 double Chrono::time_since_last_start() const
 {
