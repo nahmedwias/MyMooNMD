@@ -8,6 +8,7 @@
 #include <Assemble2D.h>
 #include <Upwind.h>
 #include <LocalProjection.h>
+#include <FEFunctionInterpolator.h>
 
 ParameterDatabase get_default_CD2D_parameters()
 {
