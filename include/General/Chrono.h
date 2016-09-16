@@ -10,6 +10,8 @@
  * durations spent between successive calls to start() and stop(). Between such
  * calls the bool `running` is set to true, otherwise false.
  *
+ * You can also get and print just the time since the last call to start()
+ *
  * Since we are still a bit undecisive which time to measure, this class
  * uses more than one method (per parallel type) and prints out all. Those are
  *
@@ -47,7 +49,7 @@ class Chrono
     /// Reset the start times. 
     void reset();
     
-    /// start the clock
+    /// Start the clock. Will print a warning and restart if already running.
     void start();
     
     /// @brief stop the clock
@@ -58,31 +60,32 @@ class Chrono
     double stop();
 
     /**
-     * @brief Print out the measured times since construction or last call to 
-     * reset().
+     * @brief Print out the accumulated time of all measurements since
+     * last restart - or since the object's creation, if it was not restarted yet.
      * 
      * The CPU time and the wall time are printed. In MPI mode the maximum, 
      * minimum and average over all processes of these times are printed.
      *
      * @param program_part will be put into the output string
      */
-    void print_time(const std::string& program_part) const;
-    void print_time(const char* program_part) const
-    { print_time(std::string(program_part)); }
+    void print_total_time(const std::string& program_part) const;
+    void print_total_time(const char* program_part) const
+    { print_total_time(std::string(program_part)); }
     
     /**
-     * @brief Print out the measured times since last call to start().
-     * 
-     * This invokes stop() and start().
+     * @brief Print out the measured times since last call to start(), and
+     * restart the time measuring. This invokes stop() and start().
      * 
      * The CPU time and the wall time are printed. In MPI mode the maximum, 
      * minimum and average over all processes of these times are printed.
      *
+     * Note that this is NOT reset! The cumulative time will not be erased.
+     *
      * @param program_part will be put into the output string
      */
-    void print_time_since_last_start(const std::string& program_part);
-    void print_time_since_last_start(const char* program_part)
-    { print_time_since_last_start(std::string(program_part)); }
+    void print_and_restart(const std::string& program_part);
+    void print_and_restart(const char* program_part)
+    { print_and_restart(std::string(program_part)); }
     
     /// @brief return the CPU time accumulated over all start/stop cycles
     ///
