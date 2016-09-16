@@ -54,8 +54,10 @@ void BilinearCoeffs(int n_points, double *x, double *y,
 //                     , x[i]," ", y[i]);
 
     coeffs[i][0] = 0; // diffusion coefficient D
-    coeffs[i][1] = USER1; // convection coefficient v_x
-    coeffs[i][2] = USER2; // convection coefficient v_y
+    coeffs[i][1] = parameters[i][0]; // convection coefficient v_x
+//    cout << coeffs[i][1] << " ";
+    coeffs[i][2] = parameters[i][1]; // convection coefficient v_y
+//    cout << coeffs[i][2] << " ";
     coeffs[i][3] = 0; // reaction coefficient R
     // coeffs[i][4] is the right hand side
     

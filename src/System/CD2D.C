@@ -401,7 +401,7 @@ void CD2D::output(int i)
     const TFESpace2D* space = fe_function.GetFESpace2D();
     
     fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
-                          SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
+                          SDFEMErrors, this->example.get_coeffs(), &aux, 1,
                           &space, errors.data());
     
     Output::print<1>("L2     : ", errors[0]);
