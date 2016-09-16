@@ -55,6 +55,15 @@ void BilinearCoeffs(int n_points, double *x, double *y,
 
     coeffs[i][0] = 0; // diffusion coefficient D
     coeffs[i][1] = parameters[i][0]; // convection coefficient v_x
+
+    if (fabs(x[i] - 1 ) <= 1e-2 && fabs(y[i] - 0.5) <= 1e-2)
+    {
+      Output::print<1>("x[i]=", x[i], " y[i]=", y[i], " x-velocity=", parameters[i][0], " y-velocity=", parameters[i][1]);
+    }
+    if (fabs(x[i] - 0 ) <= 1e-2 && fabs(y[i] - 0.7) <= 1e-2)
+    {
+      Output::print<1>("x[i]=", x[i], " y[i]=", y[i], " x-velocity=", parameters[i][0], " y-velocity=", parameters[i][1]);
+    }
 //    cout << coeffs[i][1] << " ";
     coeffs[i][2] = parameters[i][1]; // convection coefficient v_y
 //    cout << coeffs[i][2] << " ";
