@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 6	
+refinement_n_initial_steps: 4	
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -44,7 +44,7 @@ verbosity: 3   [ 1, 5 ]
 ## 1 - driven cavity
 ## 2 - simple cosine sine
 ## 3 - flow around cylinder 
-example: 1
+example: 0 [ 0, 100 ]]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -68,7 +68,7 @@ output_vtk_directory: .
 
 ## This string is prepended to most files written by ParMooN. 
 ## Especially this includes vtk-files 
-output_basename: multiphase_output
+output_basename: multiphase_output { multiphase_convection_output, multiphase_nse_output, multiphase_output }
 
 ## The maximum number of iterations to perform in a non-linear loop. 
 nonlinloop_maxit: 5   [ 0, 1000 ]

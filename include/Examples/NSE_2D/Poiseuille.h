@@ -50,11 +50,11 @@ void U1BoundValue(int BdComp, double Param, double &value)
   {
     case 0: value=0;
             break;
-    case 1: value=4*Param*(1-Param);
+    case 1: value=-4*Param*(1-Param);
             break;
     case 2: value=0;
             break;
-    case 3: value=4*Param*(1-Param);
+    case 3: value=-4*Param*(1-Param);
             break;
     default: cout << "wrong boundary part number" << endl;
             break;
