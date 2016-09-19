@@ -103,22 +103,21 @@ void check(TDomain &domain, ParameterDatabase db,
   TDatabase::ParamDB->LAPLACETYPE = laplace_type;
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
   
-  Chrono time_measureing;
+  Chrono timer;
   compute(domain, db, errors);
-  time_measureing.print_time("nse2d direct solver,                    velocity "
-                             + std::to_string(velocity_order) + ", nstype "
-                             + std::to_string(nstype));
+  timer.restart_and_print("nse2d direct solver,                    velocity "
+                          + std::to_string(velocity_order) + ", nstype "
+                          + std::to_string(nstype));
   
   // we have to reset the space codes because they are changed in nse2d
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   
   db["solver_type"] = "iterative";
-  time_measureing.reset();
   compute(domain, db, errors);
-  time_measureing.print_time("nse2d fgmres(lsc preconditioner),       velocity "
-                             + std::to_string(velocity_order) + ", nstype "
-                             + std::to_string(nstype));
+  timer.restart_and_print("nse2d fgmres(lsc preconditioner),       velocity "
+                          + std::to_string(velocity_order) + ", nstype "
+                          + std::to_string(nstype));
   
   // we have to reset the space codes because they are changed in nse2d
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
@@ -140,11 +139,10 @@ void check(TDomain &domain, ParameterDatabase db,
   db["multigrid_n_post_smooth"] = 1;
   db["multigrid_correction_damp_factor"] = 1.0;
   db["multigrid_vanka_damp_factor"] = 1.0;
-  time_measureing.reset();
   compute(domain, db, errors);
-  time_measureing.print_time("nse2d fgmres(multigrid preconditioner), velocity "
-                             + std::to_string(velocity_order) + ", nstype "
-                             + std::to_string(nstype));
+  timer.restart_and_print("nse2d fgmres(multigrid preconditioner), velocity "
+                          + std::to_string(velocity_order) + ", nstype "
+                          + std::to_string(nstype));
 }
 
 void check_one_element(TDomain& domain, ParameterDatabase db,

@@ -242,10 +242,9 @@ int main(int argc, char** args)
   
   db["output_compute_errors"] = true;
   
-  Chrono time_measuring;
+  Chrono timer;
   
   Output::print("\n\n ----------- direct solver -----------\n");
-  time_measuring.reset();
   db["solver_type"] = "direct";
  
   db.add("boundary_file", "Default_UnitSquare", "");
@@ -254,13 +253,12 @@ int main(int argc, char** args)
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
-  time_measuring.print_time("all tests, the direct solver");
+  timer.restart_and_print("all tests, the direct solver");
   
   
   db["max_n_iterations"] = 10000;
   
   Output::print("\n\n ----------- PETSc solver -----------\n");
-  time_measuring.reset();
   db["solver_type"] = "petsc";
 
   std::string petsc_args = "-ksp_monitor"
@@ -274,29 +272,27 @@ int main(int argc, char** args)
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
-  time_measuring.print_time("all tests, the petsc solver");
+  timer.restart_and_print("all tests, the petsc solver");
   
   db["solver_type"] = "iterative";
   
   Output::print("\n\n --------- fgmres+lsc solver ---------\n");
-  time_measuring.reset();
   db["preconditioner"] = "least_squares_commutator";
   db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
-  time_measuring.print_time("all tests, fgmres with lsc preconditioning");
+  timer.restart_and_print("all tests, fgmres with lsc preconditioning");
   
   
   
   Output::print("\n\n -------- fgmres+simple solver -------\n");
-  time_measuring.reset();
   db["preconditioner"] = "semi_implicit_method_for_pressure_linked_equations";
   db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
-  time_measuring.print_time("all tests, fgmres with simple preconditioning");
+  timer.restart_and_print("all tests, fgmres with simple preconditioning");
   
   return 0;
 }

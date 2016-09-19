@@ -59,7 +59,10 @@ int main(int argc, char *argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
   
   if(i_am_root)
+  {
+    parmoon_db.write(Output::get_outfile());
     Database.WriteParamDB(argv[1]);
+  }
   
 
   // Intial refinement and grabbing of grids for multigrid.

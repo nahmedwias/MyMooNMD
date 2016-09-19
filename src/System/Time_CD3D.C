@@ -436,8 +436,6 @@ void Time_CD3D::output(int m, int& image)
     s.feFunction_.GetErrors(example_.get_exact(0), 4, allDerivatives, 2, 
                             L2H1Errors, example_.get_coeffs(), &aux, 1, &space,
                             locError.data());
-    Output::print("l_inf ", locError[0], "\t", locError[1], "\t", locError[2],
-                  "\t", locError[3]);
 #ifdef _MPI
     /// @todo the GetErrors method in TFEFunction3D should already to the 
     /// communication, it's surprising that in the mpi case the errors are 
