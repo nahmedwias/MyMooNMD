@@ -730,9 +730,9 @@ void NSE3D::compute_residuals()
   BlockVector defect_impuls({n_u_dof,n_u_dof,n_u_dof});
   BlockVector defect_mass({n_p_dof});
   //copy the entries (BlockVector offers no functionality to do this more nicely)
-  for(int i = 0; i<3*n_u_dof ;++i)
+  for(size_t i = 0; i<3*n_u_dof ;++i)
     defect_impuls.get_entries()[i] = defect_.get_entries()[i];
-  for(int i =0 ; i<n_p_dof ; ++i)
+  for(size_t i =0 ; i<n_p_dof ; ++i)
     defect_mass.get_entries()[i] = defect_.get_entries()[3*n_u_dof + i];
 
 #ifdef _MPI
@@ -806,8 +806,8 @@ void NSE3D::output(int i)
   
   // In multigrid case, print time that was spent on coarse grid
   // (needed for curr project (ParMooN paper, Sep 2016), can be removed after)
-  if(solver.get_multigrid())
-    solver.get_multigrid()->print_coarse_grid_solver_time_total();
+  if(solver.is_using_multigrid())
+    solver.get_multigrid()->print_coarse_grid_time_total();
 
   System_per_grid& s=this->systems_.front();
   TFEFunction3D* u1 = s.u_.GetComponent(0);

@@ -83,10 +83,6 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-    double K = TDatabase::ParamDB->PERMEABILITY;
-    double nu = TDatabase::ParamDB->VISCOSITY;
-    double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    double t = fabs(sqrt((nu_eff/nu)*K));
     
     // loop to impose Neumann boundary conditions
     for (int j=0; j<TDatabase::ParamDB->n_neumann_boundary; j++)
@@ -128,10 +124,6 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-    double K = TDatabase::ParamDB->PERMEABILITY;
-    double nu = TDatabase::ParamDB->VISCOSITY;
-    double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    double t = fabs(sqrt((nu_eff/nu)*K));
     
     // loop to impose Neumann boundary conditions
     for (int j=0; j<TDatabase::ParamDB->n_neumann_boundary; j++)
@@ -282,7 +274,6 @@ void LinCoeffs(int n_points, double *X, double *Y,
   double K = TDatabase::ParamDB->PERMEABILITY;
   double nu = TDatabase::ParamDB->VISCOSITY;
   double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-  double t = fabs(sqrt((nu_eff/nu)*K));
   double val1[4];
   double val2[4];
   double val3[4];

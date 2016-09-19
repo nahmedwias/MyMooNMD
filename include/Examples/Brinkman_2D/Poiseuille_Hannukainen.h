@@ -162,9 +162,6 @@ void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
     static double eps = 1./TDatabase::ParamDB->RE_NR;
-    static double nu     = TDatabase::ParamDB->VISCOSITY;
-    static double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    static double K      = TDatabase::ParamDB->PERMEABILITY;
     
     double *coeff;
     

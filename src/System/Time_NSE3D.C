@@ -191,9 +191,9 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     // initialize the systems on the coarser grids
     for (int grid_no = finest; grid_no >= coarsest; --grid_no)
     {
+      //TODO What's going on here for MPI? This looks unfinished! CB 09/2016
+#ifndef _MPI
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
-#ifdef _MPI
-#else
       this->systems_.emplace_back(example_, *coll, velocity_pressure_orders,
                             type);
 #endif
@@ -1021,9 +1021,9 @@ void Time_NSE3D::compute_residuals()
   BlockVector defect_impuls({number_u_Dof,number_u_Dof,number_u_Dof});
   BlockVector defect_mass({number_p_Dof});
   //copy the entries (BlockVector offers no functionality to do this more nicely)
-  for(int i = 0; i<3*number_u_Dof ;++i)
+  for(size_t i = 0; i<3*number_u_Dof ;++i)
     defect_impuls.get_entries()[i] = defect_.get_entries()[i];
-  for(int i =0 ; i<number_p_Dof ; ++i)
+  for(size_t i =0 ; i<number_p_Dof ; ++i)
     defect_mass.get_entries()[i] = defect_.get_entries()[3*number_u_Dof + i];
 
 #ifdef _MPI
