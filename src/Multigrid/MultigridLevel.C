@@ -54,6 +54,17 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
 #endif
       break;
     }
+    case SmootherCode::SSOR:
+    { // sor smoother with backward sweep ("0"), overrelaxation parameter omega
+      // determined by input db
+      double omega = db["sor_omega"];
+#ifdef _MPI
+      smoother_ = std::make_shared<SORSmoother>(omega, 2, db["sor_parallel_type"]);
+#else
+      smoother_ = std::make_shared<SORSmoother>(omega, 2);
+#endif
+      break;
+    }
     case SmootherCode::NODAL_VANKA:
     {
       double damp = db["multigrid_vanka_damp_factor"];
