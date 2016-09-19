@@ -87,6 +87,8 @@ void LinCoeffs(int n_points, double *x, double *y,
   static double eps = 1./TDatabase::ParamDB->RE_NR;
   int i;
   double *coeff;
+  double rho = 7800;
+  double mu = 5e-3;
 
   for(i=0;i<n_points;i++)
   {
@@ -95,6 +97,8 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[0] = eps;
     coeff[1] = 1+8*eps; // f1
     coeff[2] = 0; // f2
+    coeff[3] = rho; // density
+    coeff[4] = mu; // dynamic viscosity
   }
 }
 
@@ -107,6 +111,7 @@ void NonLinCoeffs(int n_points, double *x, double *y,
   static double eps = 1./TDatabase::ParamDB->RE_NR;
   int i;
   double *coeff, *param;
+  double c3 = 5.;
 
   for(i=0;i<n_points;i++)
   {
@@ -116,6 +121,7 @@ void NonLinCoeffs(int n_points, double *x, double *y,
     coeff[0] = eps;
     coeff[1] = param[0];
     coeff[2] = param[1];
+    coeff[3] = c3;
   }
 }
 
