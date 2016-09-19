@@ -183,6 +183,11 @@ void Multigrid::update()
   }
 }
 
+void Multigrid::print_coarse_grid_time_total() const
+{
+  coarse_grid_timer.print_total_time("coarse grid (total)");
+}
+
 int Multigrid::cycle_step(size_t step, size_t level)
 {
 #ifdef _MPI
@@ -214,9 +219,8 @@ int Multigrid::cycle_step(size_t step, size_t level)
         Output::dash<4>("Coarse Grid Iteration ", i, " res: ", res);
     }
 
-    //stop and print coarse grid time measurement
-    coarse_grid_timer.stop_and_print("coarse grid solve");
-    //coarse_grid_timer.print_total_time("coarse grid (accumulated)");
+    //stop coarse grid time measurement
+    coarse_grid_timer.stop();
 
     update_solution_in_finer_grid(level);
     return level + 1;

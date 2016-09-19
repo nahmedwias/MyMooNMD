@@ -804,6 +804,11 @@ void NSE3D::output(int i)
   if(no_output)
     return;
   
+  // In multigrid case, print time that was spent on coarse grid
+  // (needed for curr project (ParMooN paper, Sep 2016), can be removed after)
+  if(solver.get_multigrid())
+    solver.get_multigrid()->print_coarse_grid_solver_time_total();
+
   System_per_grid& s=this->systems_.front();
   TFEFunction3D* u1 = s.u_.GetComponent(0);
   TFEFunction3D* u2 = s.u_.GetComponent(1);

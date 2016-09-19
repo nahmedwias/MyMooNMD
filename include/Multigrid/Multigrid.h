@@ -100,6 +100,11 @@ class Multigrid
     /// necessary to control a multigrid cycle.
     static ParameterDatabase default_multigrid_database();
 
+    /// Print the total time spent in solving on the coarsest grid.
+    /// This feature is of interest for our current project (September 2016,
+    /// ParMooN paper) and might be removed soon.
+    void print_coarse_grid_time_total() const;
+
   private:
 
     /// @brief Parameter database to store all parameters related to multigrid
