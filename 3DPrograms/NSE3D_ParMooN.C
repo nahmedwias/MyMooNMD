@@ -69,7 +69,10 @@ int main(int argc, char* argv[])
     Output::setVerbosity(parmoon_db["verbosity"]);
 
     if(my_rank==0) //Only one process should do that.
+    {
+      parmoon_db.write(Output::get_outfile());
       Database.WriteParamDB(argv[0]);
+    }
 
     // Do the old parameter check of the Database.
     Database.CheckParameterConsistencyNSE();
@@ -92,12 +95,14 @@ int main(int argc, char* argv[])
     // Choose and construct example.
     Example_NSE3D example(parmoon_db);
 
+    timer.restart_and_print("setup(domain, example, database)");
     // Construct an object of the NSE3D-problem type.
 #ifdef _MPI
     NSE3D nse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
     NSE3D nse3d(gridCollections, parmoon_db, example);
 #endif
+    timer.restart_and_print("constructing NSE3D object");
     
     // assemble all matrices and right hand side
     nse3d.assemble_linear_terms();
@@ -109,7 +114,7 @@ int main(int argc, char* argv[])
     if(my_rank==0)
       loop_info.print(0, nse3d.get_full_residual());
 
-    timer.restart_and_print(std::string("setting up spaces, matrices, linear assemble"));
+    timer.restart_and_print("assembling linear terms");
 
     //======================================================================
     for(unsigned int k=1;; k++)
@@ -135,11 +140,10 @@ int main(int argc, char* argv[])
         loop_info.print(k, nse3d.get_full_residual());
 
     } // end for k
-
-    timer.restart_and_print(std::string("solver"));
-
+    timer.restart_and_print("nonlinear loop");
+    
     nse3d.output();
-
+    timer.restart_and_print("output");
     timer.print_total_time("NSE3D_ParMooN program");
 
     if(my_rank==0)

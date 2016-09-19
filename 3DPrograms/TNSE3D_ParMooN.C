@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
   Output::print("<<<<< Running ParMooN: TNSE3D Main Program >>>>>");
 
   //start a stopwatch which measures time spent in program parts
-  Chrono chrono_parts;
+  Chrono timer;
 
   // Construct the ParMooN Databases.
   TDatabase Database;
@@ -81,10 +81,11 @@ int main(int argc, char* argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
-    {
+  {
+    parmoon_db.write(Output::get_outfile());
     Database.WriteParamDB(argv[0]);
     Database.WriteTimeDB();
-    }
+  }
 
   // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
@@ -172,15 +173,15 @@ int main(int argc, char* argv[])
 
   int image = 0;
 
-  chrono_parts.print_time(std::string("setting up spaces, matrices and initial assembling"));
-  chrono_parts.reset();
+  timer.restart_and_print("setting up spaces, matrices and initial assembling");
 
   //======================================================================
   // time iteration
   //======================================================================
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
-    Chrono chrono_timeit;
+    // time measuring during every time iteration
+    Chrono timer_timeit;
 
     tnse3d.current_step_++;
 
@@ -211,6 +212,8 @@ int main(int argc, char* argv[])
 
       // prepare the matrices for defect computations and solvers
       tnse3d.assemble_system();
+      
+      timer_timeit.restart_and_print("preparation of nonlinear iteration");
 
       for(unsigned int k=0; ; k++)
       {
@@ -226,8 +229,6 @@ int main(int argc, char* argv[])
         if(tnse3d.stop_it(k))
           break;
 
-        Chrono chrono_nonlinit;
-
         tnse3d.solve();
 
         if(tnse3d.imex_scheme(1))
@@ -237,17 +238,23 @@ int main(int argc, char* argv[])
 
         tnse3d.assemble_system();
 
-        chrono_nonlinit.print_time(std::string("solving and reassembling in the nonlinear iteration ") + std::to_string(k));
+        timer_timeit.restart_and_print("solving and reassembling in the "
+                                        "nonlinear iteration " + 
+                                        std::to_string(k));
       }  // end of nonlinear loop
 
-      chrono_timeit.print_time(std::string("solving the time iteration ") + std::to_string(tau));
+      timer_timeit.restart_and_print(
+        "solving the time iteration " +
+        std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
       tnse3d.output(tnse3d.current_step_,image);
-
+      
+      timer_timeit.print_total_time(
+        "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
     } // end of subtime loop
   } // end of time loop
 
-  chrono_parts.print_time(std::string("whole solving procedure "));
+  timer.print_total_time("whole solving procedure ");
 
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
