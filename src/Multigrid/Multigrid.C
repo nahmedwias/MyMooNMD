@@ -24,6 +24,8 @@ SmootherCode string_to_smoother_code(std::string code)
     return SmootherCode::JACOBI;
   else if(code == std::string("sor"))
     return SmootherCode::SOR;
+  else if(code == std::string("ssor"))
+    return SmootherCode::SSOR;
   else if(code == std::string("nodal_vanka"))
     return SmootherCode::NODAL_VANKA;
   else if(code == std::string("cell_vanka"))
