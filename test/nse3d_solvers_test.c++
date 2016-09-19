@@ -316,7 +316,9 @@ int main(int argc, char* argv[])
     TDomain domain_hex(db);
 
     // Intial refinement and grabbing of grids for multigrid.
+#ifdef _MPI
     int maxSubDomainPerDof = 0;
+#endif
     std::list<TCollection* > grid_collections
     = domain_hex.refine_and_get_hierarchy_of_collections(
         db
@@ -385,7 +387,9 @@ int main(int argc, char* argv[])
     db["geo_file"]= "Default_UnitCube_Tetra";
     TDomain domain_tet(db);
     // Intial refinement and grabbing of grids for multigrid.
+#ifdef _MPI
     int maxSubDomainPerDof = 0;
+#endif
     std::list<TCollection* > grid_collections
     = domain_tet.refine_and_get_hierarchy_of_collections(
         db

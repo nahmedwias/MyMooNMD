@@ -4630,7 +4630,7 @@ void TStructure::Sort()
 
 size_t TStructure::get_n_entries_in_row(size_t row_index) const
 {
-  if(row_index > this->nRows)
+  if((int) row_index > nRows)
   {
     ErrThrow("unable to return the number of entries in row ", row_index,
              ". There are only ", this->nRows, " rows.");

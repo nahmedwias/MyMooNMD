@@ -239,7 +239,7 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   int aa, i, j, m;
   int N, ID;
   int *DOF, *GlobalNumbers, *BeginIndex, *LocalIndex;
-  int N_Cells, N_OwnCells, N_Dof, N_Active, N_LocDof;
+  int N_Cells, N_OwnCells, N_Dof, N_LocDof;
   int temp,temp_globalno,temp_dofno;
  
   double start_time, end_time, temp_time;
@@ -257,7 +257,7 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   Coll       = FESpace->GetCollection();
   N_Cells    = Coll->GetN_Cells();
   N_Dof      = FESpace->GetN_DegreesOfFreedom();
-  N_Active   = FESpace->GetN_ActiveDegrees();
+  //int N_Active   = FESpace->GetN_ActiveDegrees();
   N_OwnCells = Coll->GetN_OwnCells();
 
   // Make a check, whether the Collection is in proper order: own cells first, then halo cells.

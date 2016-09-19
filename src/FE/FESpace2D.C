@@ -1256,9 +1256,9 @@ void TFESpace2D::FindUsedElements()
 
 void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 {
-  int i, j, k, l, m, m2, n, comp, NEdges, N_Edges;
+  int i, j, k, l, m, n, comp, N_Edges;
   int *v;
-  TBaseCell *cell, *neigh, *child1, *child2;
+  TBaseCell *cell, *neigh, *child1;
   TJoint *joint;
   TBoundComp2D *BoundComp;
   TBoundEdge *BoundEdge;
@@ -1266,11 +1266,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
   BoundCond Cond0, Cond1;
 
   TFE2DMapper *mapper;
-  TFE2DMapper1Reg *mapper1reg;
 
-  const int *TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpoEnlE;
-  int MaxLen1, MaxLen2;
-  TRefDesc *refdesc;
 
   int SumLocDOF;
   int count, *BoundaryUpperBound, DirichletUpperBound;
@@ -1280,16 +1276,29 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
   int *BoundOffset;
   int N_Slave;
 
-  FE2D FEType0, FEType1, FEType2;
-  TFE2D *FE0, *FE1, *FE2;
-  TFEDesc2D *FEDesc0_Obj, *FEDesc1_Obj, *FEDesc2_Obj;
-  FEDesc2D FEDesc0, FEDesc1, FEDesc2;
+  FE2D FEType0, FEType1;
+  TFE2D *FE0, *FE1;
+  TFEDesc2D *FEDesc0_Obj, *FEDesc1_Obj;
+  FEDesc2D FEDesc0, FEDesc1;
 
-  int I_K0, I_K1, I_K2;
+  int I_K0, I_K1;
   int *J_K0;
-  int *Indices0, *Indices1, *Indices2;
-  int c1, c2, e1, e2, chnum1, chnum2;
+  int *Indices0, *Indices1;
   double eps=1e-6;
+
+#ifndef _MPI //to avoid warnings in MPI case
+  int m2, NEdges;
+  TBaseCell *child2;
+  TFE2DMapper1Reg *mapper1reg;
+  const int* TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpoEnlE;
+  int MaxLen1, MaxLen2;
+  TRefDesc *refdesc;
+  FE2D FEType2;
+  TFE2D *FE2;
+  TFEDesc2D *FEDesc2_Obj;
+  FEDesc2D FEDesc2;
+  int I_K2, *Indices2, chnum1, chnum2, c1, c2, e1, e2;
+#endif
 
   THangingNode *hn;
   std::vector<THangingNode *> *VHN = new std::vector<THangingNode *>();

@@ -45,7 +45,7 @@ void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
     int *GlobalNumbers = U_Space->GetGlobalNumbers();
     int ActiveBound = U_Space->GetActiveBound();
     
-    for(int m=0;m< boundaryEdgeList.size(); m++)
+    for(size_t m=0;m< boundaryEdgeList.size(); m++)
     {
         TBoundEdge *boundedge = boundaryEdgeList[m];
         TBaseCell *cell = boundedge->GetNeighbour(0);
@@ -148,7 +148,7 @@ void BoundaryAssembling2D::rhs_g_v(BlockVector &rhs,
     int *GlobalNumbers = U_Space->GetGlobalNumbers();
     int ActiveBound = U_Space->GetActiveBound();
     
-    for(int m=0;m< boundaryEdgeList.size(); m++)
+    for(size_t m=0;m< boundaryEdgeList.size(); m++)
     {
         TBoundEdge *boundedge = boundaryEdgeList[m];
         TBaseCell *cell = boundedge->GetNeighbour(0);
@@ -288,7 +288,7 @@ void BoundaryAssembling2D::matrix_v_n_v_n(BlockFEMatrix &M,
      * we need 4 square matrices with the same FE spaces
      */
     
-    for(int m=0;m< boundaryEdgeList.size(); m++)
+    for(size_t m=0;m< boundaryEdgeList.size(); m++)
     {
         TBoundEdge *boundedge = boundaryEdgeList[m];
         TBaseCell *cell = boundedge->GetNeighbour(0);
@@ -323,8 +323,6 @@ void BoundaryAssembling2D::matrix_v_n_v_n(BlockFEMatrix &M,
         {
             ///@attention in 1D the reference joint is [-1,1] => length = 2
             double reference_joint_length = 2;
-            double x = x0+(quadPoints[k]+1.)/2.*(x1-x0);
-            double y = y0+(quadPoints[k]+1.)/2.*(y1-y0);
             
             // mapping from local(cell) DOF to global DOF
             int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
@@ -393,7 +391,7 @@ void BoundaryAssembling2D::matrix_gradv_n_v(BlockFEMatrix &M,
      * we need 4 square matrices with the same FE spaces
      */
     
-    for(int m=0;m< boundaryEdgeList.size(); m++)
+    for(size_t m=0;m< boundaryEdgeList.size(); m++)
     {
         TBoundEdge *boundedge = boundaryEdgeList[m];
         TBaseCell *cell = boundedge->GetNeighbour(0);
@@ -428,8 +426,6 @@ void BoundaryAssembling2D::matrix_gradv_n_v(BlockFEMatrix &M,
         {
             ///@attention in 1D the reference joint is [-1,1] => length = 2
             double reference_joint_length = 2;
-            double x = x0+(quadPoints[k]+1.)/2.*(x1-x0);
-            double y = y0+(quadPoints[k]+1.)/2.*(y1-y0);
             
             // mapping from local(cell) DOF to global DOF
             int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
@@ -504,7 +500,7 @@ void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
      * we need 4 square matrices with the same FE spaces
      */
     
-    for(int m=0;m< boundaryEdgeList.size(); m++)
+    for(size_t m=0;m< boundaryEdgeList.size(); m++)
     {
         TBoundEdge *boundedge = boundaryEdgeList[m];
         TBaseCell *cell = boundedge->GetNeighbour(0);
@@ -539,8 +535,6 @@ void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
         {
             ///@attention in 1D the reference joint is [-1,1] => length = 2
             double reference_joint_length = 2;
-            double x = x0+(quadPoints[k]+1.)/2.*(x1-x0);
-            double y = y0+(quadPoints[k]+1.)/2.*(y1-y0);
             
             // mapping from local(cell) DOF to global DOF
             int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
@@ -615,7 +609,7 @@ void BoundaryAssembling2D::matrix_p_v_n(BlockFEMatrix &M,
      * we need 4 square matrices with the same FE spaces
      */
     
-    for(int m=0;m< boundaryEdgeList.size(); m++)
+    for(size_t m=0;m< boundaryEdgeList.size(); m++)
     {
         TBoundEdge *boundedge = boundaryEdgeList[m];
         TBaseCell *cell = boundedge->GetNeighbour(0);
@@ -664,8 +658,6 @@ void BoundaryAssembling2D::matrix_p_v_n(BlockFEMatrix &M,
         {
             ///@attention in 1D the reference joint is [-1,1] => length = 2
             double reference_joint_length = 2;
-            double x = x0+(quadPoints[k]+1.)/2.*(x1-x0);
-            double y = y0+(quadPoints[k]+1.)/2.*(y1-y0);
             
             // loop on test functions
             double scale_factor = mult*quadWeights[k]*(joint_length/reference_joint_length);
@@ -715,7 +707,7 @@ void BoundaryAssembling2D::get_quadrature_formula_data(std::vector<double> &P,
     P.resize(nQuadPoints);
     W.resize(nQuadPoints);
     
-    for (unsigned int i=0; i<nQuadPoints; i++){
+    for (int i=0; i<nQuadPoints; i++){
         P[i]=quadPoints[i];
         W[i]=quadWeights[i];
     }

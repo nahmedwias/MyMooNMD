@@ -57,10 +57,10 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
     double *Orig3 = OrigValues[3];          // p
     
     // values defined in the example
-    double c0 = coeff[0];                   // nu bzw eps (viscosity)
+    //double c0 = coeff[0];                   // nu bzw eps (viscosity)
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    //double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
     double nu = coeff[4];                   // viscosity
     double nu_eff = coeff[5];               // effective viscosity
     double K = coeff[6];                    // permeability
@@ -158,10 +158,10 @@ void BrinkmanType1bGalerkin(double Mult, double *coeff,
     double *Orig3 = OrigValues[3];          // p
     
     // values defined in the example
-    double c0 = coeff[0];                   // nu bzw eps (viscosity)
+    //double c0 = coeff[0];                   // nu bzw eps (viscosity)
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    //double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
     double nu = coeff[4];                   // viscosity
     double nu_eff = coeff[5];               // effective viscosity
     double K = coeff[6];                    // permeability
@@ -232,8 +232,8 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
                            double ***LocMatrices, double **LocRhs)
 {
     double **MatrixA11 = LocMatrices[0];
-    double **MatrixA12 = LocMatrices[1];
-    double **MatrixA21 = LocMatrices[2];
+    //double **MatrixA12 = LocMatrices[1];
+    //double **MatrixA21 = LocMatrices[2];
     double **MatrixA22 = LocMatrices[3];
     ////int offset = TDatabase::ParamDB->NSTYPE == 14 ? 1 : 0;
     //double ** MatrixC = LocMatrices[4];
@@ -253,14 +253,14 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
     double *Orig0 = OrigValues[0];         // u_x
     double *Orig1 = OrigValues[1];         // u_y
     double *Orig2 = OrigValues[2];         // u
-    double *Orig3 = OrigValues[3];         // p
+    //double *Orig3 = OrigValues[3];         // p
     double *Orig4 = OrigValues[4];         // p_x   MUSS NOCH DEFINIERT WERDEN !!!...eventuell
     double *Orig5 = OrigValues[5];         // p_y   MUSS NOCH DEFINIERT WERDEN!!!...eventuell
     
-    double c0 = coeff[0];                   // nu
+    //double c0 = coeff[0];                   // nu
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    //double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
     double nu = coeff[4];                   // viscosity
     double nu_eff = coeff[5];               // effective viscosity
     double K = coeff[6];                    // permeability
@@ -385,7 +385,7 @@ void BrinkmanType1GalerkinResidualStab(double Mult, double *coeff,
     // double c0 = coeff[0];                // t^2
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    //double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
     double nu = coeff[4];                   // viscosity
     double nu_eff = coeff[5];               // effective viscosity
     double K = coeff[6];                    // permeability
@@ -527,10 +527,10 @@ void BrinkmanType1GalerkinResidualStab2(double Mult, double *coeff,
     double *Orig7 = OrigValues[7];          // u_yy
     
     // values defined in the example
-    double c0 = coeff[0];                               // t^2= eps(:=1/Re) ; Re can be set in brinkman2d.dat
+    //double c0 = coeff[0];                               // t^2= eps(:=1/Re) ; Re can be set in brinkman2d.dat
     double c1 = coeff[1];                               // f1
     double c2 = coeff[2];                               // f2
-    double c3 = coeff[3];                               // f3 (the rhs of incompressibility constraint)
+    //double c3 = coeff[3];                               // f3 (the rhs of incompressibility constraint)
     double nu = coeff[4];                               // viscosity
     double nu_eff = coeff[5];                           // effective viscosity
     double K = coeff[6];                                // permeability

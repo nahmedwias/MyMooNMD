@@ -306,13 +306,13 @@ void Mesh::hashTriFaces()
   }
   std::vector<int> BucketCount(3*n_points);
   
-  for(int i=0;i<triangle.size();++i)
+  for(size_t i=0;i<triangle.size();++i)
   {
     int hash = triangle[i].nodes[0]+triangle[i].nodes[1]+triangle[i].nodes[2];
     (BucketCount[hash])++;
   }
 
-  for(int i=0;i<triangle.size();++i)
+  for(size_t i=0;i<triangle.size();++i)
   {
     int hash = triangle[i].nodes[0]+triangle[i].nodes[1]+triangle[i].nodes[2];
 
@@ -491,7 +491,7 @@ void Mesh::createInnerFaces()
   for(unsigned int i=0; i<localHash.size(); i++)
     localHash[i].resize(0);
   
-  for(int i=0;i<triangle.size();++i)
+  for(size_t i=0;i<triangle.size();++i)
   {
     int hash = triangle[i].nodes[0]+triangle[i].nodes[1]+triangle[i].nodes[2];
 
