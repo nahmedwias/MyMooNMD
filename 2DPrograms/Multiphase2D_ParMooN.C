@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
   loop_info.verbosity_threshold = 1; // full verbosity
 //  loop_info.print(0, nse2d.getFullResidual());
 
-  stopwatch.print_time("setting up spaces, matrices, linear assemble");
+  stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
   stopwatch.reset();
 
   //================================================================
@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
     else loop_info.print(k, nse2d.getFullResidual());
 
   } // end for k, non linear loop
-  stopwatch.print_time("total solving duration: ");
+  stopwatch.print_total_time("total solving duration: ");
 
   nse2d.output();
   cd2d.output();
