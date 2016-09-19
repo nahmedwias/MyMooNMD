@@ -135,9 +135,9 @@ int main(int argc, char* argv[])
 
     Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
 //      cd2d.assemble();
-    cd2d.assemble(&nse2d.get_velocity());
+//    cd2d.assemble(&nse2d.get_velocity());
     Output::print<1>("================== JE COMMENCE A RESOUDRE =============");
-    cd2d.solve();
+//    cd2d.solve();
     //================================================================
     Output::print<1>("<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>");
 
