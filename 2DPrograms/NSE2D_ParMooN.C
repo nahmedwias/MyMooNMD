@@ -23,7 +23,7 @@
 int main(int argc, char* argv[])
 {
   // start a stopwatch which measures time spent in program parts
-  Chrono chrono_parts;
+  Chrono timer;
   
   //  declaration of database, you need this in every program
   TDatabase Database;
@@ -70,8 +70,7 @@ int main(int argc, char* argv[])
   loop_info.verbosity_threshold = 1; // full verbosity
   loop_info.print(0, ns.getFullResidual());
   
-  chrono_parts.print_time("setting up spaces, matrices, linear assemble");
-  chrono_parts.reset();
+  timer.restart_and_print("setting up spaces, matrices, linear assemble");
   
   //======================================================================
   // nonlinear loop
@@ -96,9 +95,11 @@ int main(int argc, char* argv[])
       loop_info.print(k, ns.getFullResidual());
   } // end for k
   
-  chrono_parts.print_time("solving procedure");
+  timer.restart_and_print("solving procedure");
   
   ns.output();
+  
+  timer.print_total_time("complete NSE2D_ParMooN program");
   
   Output::close_file();
   return 0;

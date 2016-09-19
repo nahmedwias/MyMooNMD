@@ -95,14 +95,14 @@ int main(int argc, char* argv[])
     // Choose and construct example.
     Example_NSE3D example(parmoon_db);
 
-    timer.print_time_since_last_start("setup(domain, example, database)");
+    timer.restart_and_print("setup(domain, example, database)");
     // Construct an object of the NSE3D-problem type.
 #ifdef _MPI
     NSE3D nse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
     NSE3D nse3d(gridCollections, parmoon_db, example);
 #endif
-    timer.print_time_since_last_start("constructing NSE3D object");
+    timer.restart_and_print("constructing NSE3D object");
     
     // assemble all matrices and right hand side
     nse3d.assemble_linear_terms();
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
     if(my_rank==0)
       loop_info.print(0, nse3d.get_full_residual());
 
-    timer.print_time_since_last_start("assembling linear terms");
+    timer.restart_and_print("assembling linear terms");
 
     //======================================================================
     for(unsigned int k=1;; k++)
@@ -138,16 +138,17 @@ int main(int argc, char* argv[])
       }
       else
         loop_info.print(k, nse3d.get_full_residual());
+
     } // end for k
-    timer.print_time_since_last_start("nonlinear loop");
+    timer.restart_and_print("nonlinear loop");
     
     nse3d.output();
-    timer.print_time_since_last_start("output");
+    timer.restart_and_print("output");
+    timer.print_total_time("NSE3D_ParMooN program");
 
     if(my_rank==0)
       Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
 
-    timer.print_time("NSE3D_ParMooN program");
     if(my_rank == 0)
       Output::close_file();
   }

@@ -63,6 +63,7 @@ double get_wall_time()
 Chrono::Chrono()
 {
   reset();
+  start();
 }
 
 
@@ -71,7 +72,6 @@ void Chrono::reset()
   this->cumulative_time_rusage = 0;
   this->cumulative_time_wall = 0;
   this->running = false; // to avoid a warning in the start() method
-  this->start();
 }
 
 void Chrono::start()
@@ -102,9 +102,9 @@ double Chrono::stop()
     return 0.0;
 }
 
-// a method for convenience, called from both print_time and 
+// a method for convenience, called from both print_total_time and
 // print_time_since_last_start
-void print_times(std::array<double, 2> times, std::string program_part)
+void print_times(std::array<double, 2> times, const std::string& program_part)
 {
 #ifndef _MPI
   Output::print("--- TIME: time for ", program_part,": ", times[0], ", ", 
@@ -138,22 +138,26 @@ void print_times(std::array<double, 2> times, std::string program_part)
 #endif
 }
 
-void Chrono::print_time(const std::string& program_part) const
+void Chrono::print_total_time(const std::string& program_part) const
 {
   std::array<double, 2> times = { this->elapsed_time(),       // CPU time
                                   this->elapsed_wall_time()}; // wall time
   print_times(times, program_part);
 }
 
-void Chrono::print_time_since_last_start(const std::string& program_part)
+void Chrono::restart_and_print(const std::string& program_part)
 {
-  std::array<double, 2> times = { this->time_since_last_start(),       // CPU
-                                  this->wall_time_since_last_start()}; // wall
-  this->stop();
-  print_times(times, program_part);
-  this->start();
+  stop_and_print(program_part);
+  start();
 }
 
+void Chrono::stop_and_print(const std::string& program_part)
+{
+  std::array<double, 2> times = { time_since_last_start(),       // CPU
+                                  wall_time_since_last_start()}; // wall
+  stop();
+  print_times(times, program_part);
+}
 
 double Chrono::time_since_last_start() const
 {
