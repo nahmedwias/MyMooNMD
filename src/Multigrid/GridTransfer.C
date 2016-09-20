@@ -1236,7 +1236,7 @@ void GridTransfer::RestrictFunction(
   int *CoarseBeginIndex, *FineBeginIndex;
   int *CoarseGlobalNumbers, *FineGlobalNumbers;
   int FineNumber, CoarseNumber;
-  int *FineDOF, *CoarseDOF;
+  int *FineDOF, *CoarseDOF=nullptr;
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;

@@ -726,7 +726,7 @@ void TTetraIsoparametric::SetCell(TBaseCell *cell)
   int MaxLen;
   int *JointDOF, LocIsoDOF[4];
   TFEDesc3D *fedesc;
-  TBaseFunct3D *bf;
+  TBaseFunct3D *bf=nullptr;
   double xm, ym, zm, xp, yp, zp;
   TVertex **Vertices, **AuxVertices;
   double x[3], y[3], z[3], factor;

@@ -35,7 +35,7 @@ int TBdNonUniformSpline::GetN_Splines ()
 int TBdNonUniformSpline::GetXYofT(double T, double &X, double &Y)
 {
   double phi1, phi2, phi3, phi4;
-  int i, ISpline;
+  int i, ISpline=0;
 
   Param9[0] = 0;
   for(i=1;i<=N_Splines;i++) 

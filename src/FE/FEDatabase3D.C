@@ -1090,7 +1090,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
 {
   int i,MaxPolynomialDegree, PolynomialDegree, N_Faces, N_terms;
   BF3DRefElements RefElement;
-  QuadFormula3D QuadFormula;
+  QuadFormula3D QuadFormula=BaryCenterTetra;//avoid uninit warning
   TQuadFormula3D *qf2;
   RefTrans3D RefTrans, *RefTransArray, CurrentRefTrans;
   TRefTrans3D *rt;
@@ -1613,7 +1613,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
   TGridCell *RefCell, *cell;
   TNodalFunctional3D *nf;
   BF3DRefElements RefElement;
-  RefTrans3D F_K;
+  RefTrans3D F_K = TetraAffin; //avoid uninit warning
   TRefTrans3D *rt;
 
   CoarseElement = TFEDatabase3D::GetFE3D(parent);

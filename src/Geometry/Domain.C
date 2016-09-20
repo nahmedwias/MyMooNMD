@@ -1789,7 +1789,7 @@ int TDomain::CloseGrid(int level)
   TBaseCell *CurrCell, *Cell, *Child, *Neigh;
   int i, j, k, clip;
   int N_Edges, N_Children;
-  int info, LocEdge, CurrLocEdge, LocFace, NeighLocFace;
+  int info, LocEdge, CurrLocEdge, LocFace=0, NeighLocFace;
   int MapType;
   int first_bis, second_bis, neigh_first_bis, neigh_second_bis, neigh_type;
   TJoint *Joint, *LastJoint;
@@ -2479,7 +2479,7 @@ void TDomain::GetSortedCollection(TCollection* &Coll, int* &Indices)
   int ActiveRootCell=0;
   // int N_RootCells=N_InitVCells;
   int Level=RefLevel;
-  TBaseCell *ActiveCell, **Cells;
+  TBaseCell *ActiveCell=nullptr, **Cells;
   int i,*N_Children, *CurrentChild, *CurrentIndex;
 
   N_Children=new int[RefLevel+1];

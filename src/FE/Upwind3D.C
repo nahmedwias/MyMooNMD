@@ -66,7 +66,7 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
   int *GlobalNumbers, *BeginIndex, *DOF;
   const TFESpace3D *fespace;
   double matrix[8][8];
-  double val1, val2, val3, flux, RE2=RE*0.5;
+  double val1=0, val2=0, val3=0, flux, RE2=RE*0.5;
   double xcoords[8], ycoords[8], zcoords[8];
 //  double v1, v2, v3, v4;
   double sx, sy, sz, t, phi; // s;

@@ -232,10 +232,10 @@ void MatricesAKSRhsAssemble_SUPG(double Mult, double *coeff, double *param,
   double **MatrixS, *MatrixRowS;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double val, val1, val2;
+  double val, val1, val2=0;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, c5, c6, c00, c11, c22, c33, c44, c12, c13, c23; 
+  double c0, c1, c2, c3, c4, c5, c6, c00, c11, c22, c33, c44, c12=0, c13=0, c23=0;
   double tau, bgradv, bb, res, sigma, norm_b;
   double theta1 = TDatabase::TimeDB->THETA1;
   double theta2 = TDatabase::TimeDB->THETA2;

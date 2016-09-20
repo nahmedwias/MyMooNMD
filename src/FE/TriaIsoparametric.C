@@ -833,7 +833,7 @@ void TTriaIsoparametric::GetTangent(int j, double zeta,
   double valx[MaxN_BaseFunctions2D];
   double valy[MaxN_BaseFunctions2D];
   double *values[1];
-  double xip, etap;
+  double xip=0, etap=0;
   double a11, a12, a21, a22;
   int i, k;
 
@@ -924,7 +924,7 @@ void TTriaIsoparametric::GetOrigBoundFromRef( int joint, int N_Points,
                                               double *zeta, double *X, double *Y)
 {
   int i, j, k;
-  double xi,  eta;
+  double xi=0,  eta=0;
   double AuxVector[3*MaxN_BaseFunctions2D];
   TBaseFunct2D *bf;
 

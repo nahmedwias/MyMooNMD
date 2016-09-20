@@ -704,7 +704,7 @@ void Mesh::writeToGEO(std::string geoFilename)
     Output::print("  Mesh::writeToGEO: writing mesh in xGEO format (with physical references) ");
     writeXgeo = true;
   }
-  unsigned int numberOfElements, maxNVertexPerElem;
+  unsigned int numberOfElements=0, maxNVertexPerElem=0;
   if (triangle.size()) {
     numberOfElements = triangle.size();
     maxNVertexPerElem = 3;

@@ -96,7 +96,7 @@ void TQuadBilinear::GetOrigValues(BaseFunct2D BaseFunct,
                                int N_Points, double *xi, double *eta,
                                int N_Functs, QuadFormula2D QuadFormula)
 {
-  int i,j,BaseVectDim, M;
+  int i=0,j,BaseVectDim, M;
   double **refvaluesD00, **origvaluesD00;
   double **refvaluesD10, **origvaluesD10;
   double **refvaluesD01, **origvaluesD01;
@@ -711,7 +711,7 @@ void TQuadBilinear::GetOrigValues(int joint, double zeta, int N_BaseFunct,
                                   double *uorig, double *uxorig, double *uyorig,
                                   int _BaseVectDim)
 {
-  double xi, eta;
+  double xi=0, eta=0;
   switch(joint)
   {
     case 0:

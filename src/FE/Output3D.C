@@ -259,7 +259,7 @@ int TOutput3D::WriteVtk(const char *name)
   TBaseCell *cell;
   int *FESpaceNumber;
   const TFESpace3D *fespace;
-  double xi, eta, zeta;
+  double xi=0, eta=0, zeta=0;
   double value;
   double *Coeffs;
   int N_LocDOF;
@@ -967,11 +967,11 @@ int TOutput3D::Write_ParVTK(
   int i, j, k,l,m,n, rank, size, N_, N_Elements, N_LocVertices;
   int N_Vertices, N_CellVertices, N_Comps;
   int *FESpaceNumber, N_LocDOF, Length, N_Comp, *GlobalNumbers, *BeginIndex, *DOF;
-  int *VertexNumbers, *NumberVertex, begin, ID;
+  int *VertexNumbers=nullptr, *NumberVertex=nullptr, begin, ID;
 
-  double xi, eta, zeta, value, *Coeffs, *WArray, *DoubleArray;
+  double xi=0, eta=0, zeta=0, value, *Coeffs, *WArray=nullptr, *DoubleArray=nullptr;
   double BFValues[MaxN_BaseFunctions3D];
-  double *Coords;
+  double *Coords=nullptr;
   static double HexaCoords[] = { -1, -1, -1, 1, -1, -1, 1,  1, -1, -1,  1, -1,
                                  -1, -1,  1, 1, -1,  1, 1,  1,  1, -1,  1,  1  };
   static double TetraCoords[] = { 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 };
@@ -999,7 +999,7 @@ int TOutput3D::Write_ParVTK(
   time_t rawtime;
   struct tm * timeinfo;
 
-  TVertex **Vertices, *Last, *Current;
+  TVertex **Vertices=nullptr, *Last, *Current;
   TBaseCell *cell;
   const TFESpace3D *fespace;
   TBaseFunct3D *bf;
@@ -1682,7 +1682,7 @@ void TOutput3D::ComputeOutputData()
 {
   TBaseCell *Cell;
   TVertex *Vert;
-  int N_Cells, N_, counter;
+  int N_Cells, N_=0, counter;
   
   if (Data) delete Data;
   Data = new TOutputData();

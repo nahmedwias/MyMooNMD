@@ -25,7 +25,7 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
   double nu_power, nu_sigma;
   double delta_x, delta_y, delta_z, hk;
   double mu_max, invariant_2, invariant_3;
-  double frobenius_norm_tensor,nu,a11,a12,a13,a22,a23,a33;
+  double frobenius_norm_tensor,nu,a11=0,a12=0,a13=0,a22=0,a23=0,a33=0;
   
   // van Driest damping, Do 09.02.06
   double A =26.0;

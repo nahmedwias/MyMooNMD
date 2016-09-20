@@ -140,7 +140,7 @@ void TFEVectFunct3D::DataToGrid()
   FE3D FEId;
   TFE3D *Element;
   TBaseFunct3D *bf;
-  int N_Cells, N_Vertices;
+  int N_Cells, N_Vertices =0;
   int N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   double t1, t2, t3;

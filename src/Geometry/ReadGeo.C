@@ -1129,7 +1129,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
                       int *FaceParam, int NBF, int NVpF,
                       int *InterfaceParam, int N_Interfaces)
 {
-  int i, j, k, l, m, maxElpV = 0, comp, auxi, auxj;
+  int i, j, k, l=0, m, maxElpV = 0, comp, auxi, auxj;
   double S, T, X, Y, Z;
   double Xmin = 1e10, Xmax = -1e10, Ymin = 1e10, Ymax = -1e10;
   double Zmin = 1e10, Zmax = -1e10;
@@ -1542,10 +1542,10 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
   double x, y, z;
   double Param1[4], Param2[4];
   TBdPlane *Top, *Bottom;
-  int SortOrder, *OrderArray;
+  int SortOrder=0, *OrderArray;
   TVertex *vert0, *vert1, *vert2;
-  int k0, k1, k2, k3;
-  int i0, i1, i2;
+  int k0=0, k1=0, k2=0, k3=0;
+  int i0=0, i1=0, i2=0;
   int *KMTupper, *KMTlower;
 
   double x0, x1, x2; // x3;
