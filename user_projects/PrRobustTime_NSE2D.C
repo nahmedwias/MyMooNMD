@@ -340,6 +340,17 @@ void PrRobustTime_NSE2D::assemble_initial_timeNS()
     Output::print<1>("PrRobustTime_NSE2D is considered");
   
   System_per_grid& s_base = this->Time_NSE2D::systems.front();
+  
+  LocalAssembling2D_type la_type;
+  if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
+    la_type = RECONSTR_TSTOKES;
+  else if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 5)
+    la_type = RECONSTR_TNSE;
+  else
+    ErrThrow("FLOW_PROBLEM_TYPE", 
+             TDatabase::ParamDB->FLOW_PROBLEM_TYPE, "is not supported");
+    
+  
   // assemble mass matrix using vector space  
   for(SystemPerGrid &s_derived : this->Systems)
   {
@@ -347,7 +358,8 @@ void PrRobustTime_NSE2D::assemble_initial_timeNS()
     // assemble all matrices and right hand side     
     // local assemble routine
     TFEFunction2D *fefct[3] = {s_base.u.GetComponent(0), s_base.u.GetComponent(1),&s_base.p};
-    LocalAssembling2D la(RECONSTR_TNSE, fefct, 
+    
+    LocalAssembling2D la(la_type, fefct, 
                            this->Time_NSE2D::get_example().get_coeffs());
     // assemble the right hand side separately  
     s_derived.rhsXh.reset();
@@ -436,7 +448,6 @@ void PrRobustTime_NSE2D::assemble_initial_timeNS()
   this->old_rhs_modified = this->Time_NSE2D::systems.front().rhs;
   this->old_solution = s_base.solution;
 }
-
 /**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_rhsNS()
 {
@@ -523,12 +534,18 @@ void PrRobustTime_NSE2D::assemble_rhsNS()
     s_base.rhs.scaleActive(tau*theta4);
     // add right hand side from the previous time step, which 
     // is scaled by theta3*tau
-    s_base.rhs.addScaledActive(this->old_rhs_modified, tau*theta3);
-        
-    // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
-    // next we want to set old_rhs to f^k (to be used in the next time step)
-    this->old_rhs_modified.addScaledActive(s_base.rhs, -1./(tau*theta3));
-    this->old_rhs_modified.scaleActive(-theta3/theta4);
+    if(theta3 != 0)
+    {
+      s_base.rhs.addScaledActive(this->old_rhs_modified, tau*theta3);
+      
+      // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
+      // next we want to set old_rhs to f^k (to be used in the next time step)
+      this->old_rhs_modified.addScaledActive(s_base.rhs, -1./(tau*theta3));
+      this->old_rhs_modified.scaleActive(-theta3/theta4);
+      this->old_rhs_modified.copy_nonactive(s_base.rhs);
+      Output::print<1>("check the implementation of CN and fractional step scheme");
+      exit(1);
+    }
     
     // FIXME FInd other solution than this submatrix method.
     // M u^{k-1}

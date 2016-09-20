@@ -121,6 +121,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     case LocalAssembling2D_type::RECONSTR_TNSE:
       return std::string("RECONSTR_TNSE");
       break;
+    case LocalAssembling2D_type::RECONSTR_TSTOKES:
+      return std::string("RECONSTR_TSTOKES");
     case LocalAssembling2D_type::NO_LOCAL_ASSEMBLE:
       return std::string("NO_LOCAL_ASSEMBLE");
       break;
@@ -299,6 +301,7 @@ switch(type)
   case LocalAssembling2D_type::RECONSTR_TNSENL:
   case LocalAssembling2D_type::RECONSTR_TNSE:
   case LocalAssembling2D_type::NO_LOCAL_ASSEMBLE:
+  case LocalAssembling2D_type::RECONSTR_TSTOKES:
     this->set_parameters_for_Rec_nse(type);
     break;
   case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
@@ -2186,6 +2189,38 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->FEValue_FctIndex = { 0, 1 };
       this->FEValue_MultiIndex = { D00, D00 };
       this->BeginParameter = { 0 }; */ 
+      break;
+    case RECONSTR_TSTOKES:
+      // Here note that the local assemble routine "NSType4GalerkinPrRob"
+      // only assembles the 4 matrices, two extra matrices are the projection
+      // which have to be setted to zero in the GetLocalForms()
+      // These matrices are assembled totally different to the 
+      // structure of the other local assembling routines that's why they 
+      // are assembled separately in the MainUtilities.C file
+      if(TDatabase::ParamDB->LAPLACETYPE && TDatabase::ParamDB->NSTYPE !=4)
+        ErrThrow("Pressure robust method is only implemented for LAPLACETYPE = ", 0
+                ," and NSTYPE = 4");
+      this->N_Terms = 4;
+      this->Derivatives = { D10, D01, D00, D00 };
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = false;
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: vector valued velocity
+      this->N_Matrices = 7;
+      this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0 };
+      this->ColumnSpace = { 0, 0, 1, 0, 0, 1, 1 };
+      this->N_Rhs = 1;
+      this->RhsSpace = { 1 };
+      this->AssembleParam = LocAssembleTSOKESTYPE4;
+      this->Manipulate = NULL;
+      
+      this->N_Parameters = 2;
+      this->N_ParamFct = 1;
+      this->ParameterFct =  { NSParamsVelo };
+      this->N_FEValues = 1;
+      this->FEValue_FctIndex = { 0 };
+      this->FEValue_MultiIndex = { D00, D00 };
+      this->BeginParameter = { 1 }; 
       break;
     case RECONSTR_TNSE:
       // Here note that the local assemble routine "NSType4GalerkinPrRob"

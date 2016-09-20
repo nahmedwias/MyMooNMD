@@ -1017,6 +1017,11 @@ void LocAssembleMass(double Mult, double *coeff,
                   double **OrigValues, int *N_BaseFuncts,
                   double ***LocMatrices, double **LocRhs);
 
+void LocAssembleTSOKESTYPE4(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs);
+
 void LocAssembleNSTYPE4(double Mult, double *coeff,
                   double *param, double hK,
                   double **OrigValues, int *N_BaseFuncts,
