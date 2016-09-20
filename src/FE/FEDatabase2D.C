@@ -2291,7 +2291,7 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
   TGridCell *RefCell, *cell;
   TNodalFunctional2D *nf;
   BF2DRefElements RefElement;
-  RefTrans2D F_K;
+  RefTrans2D F_K = TriaAffin; //avoid uninit warning
   TRefTrans2D *rt;
 
   CoarseElement = TFEDatabase2D::GetFE2D(parent);

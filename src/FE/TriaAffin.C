@@ -656,7 +656,7 @@ double TTriaAffin::GetVolume()
 void TTriaAffin::GetOrigBoundFromRef(int joint, int N_Points, double *zeta, double *X, double *Y)
 {
   int i;
-  double xi,  eta;
+  double xi=0,  eta=0;
 
   for(i=0;i<N_Points;i++)
   {

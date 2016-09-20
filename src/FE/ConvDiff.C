@@ -495,7 +495,8 @@ double react, double linfb)
 {
   double delta0 = TDatabase::ParamDB->DELTA0;
   double delta1 = TDatabase::ParamDB->DELTA1;
-  double alpha, alpha2, delta, norm_b, nu, reaction, h_K;
+  double alpha, alpha2, delta, nu, reaction, h_K;
+  double norm_b = 0;
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   double theta1 = TDatabase::TimeDB->THETA1;
   int i;

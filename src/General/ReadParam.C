@@ -2688,8 +2688,8 @@ int TDomain::ReadBdParam(std::istream& dat, int &Flag)
 #ifdef __2D__
   TBoundComp2D *BdComp;
 #else
-  TBoundComp3D *BdComp;
-  TBoundComp2D *BdComp2D;
+  TBoundComp3D *BdComp=nullptr;
+  TBoundComp2D *BdComp2D=nullptr;
 #endif
 
   Flag = 0;

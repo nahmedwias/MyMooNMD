@@ -403,7 +403,7 @@ void TQuadIsoparametric::GetOrigValues(int joint, double zeta,
 {
   int i, k;
   double a11, a12, a21, a22, rec_detjk;
-  double xi, eta;
+  double xi=0, eta=0;
   TBaseFunct2D *bf;
   bf = TFEDatabase2D::GetBaseFunct2D(BaseFunctFromOrder[ApproximationOrder]);
   double valxi[MaxN_BaseFunctions2D];
@@ -473,7 +473,7 @@ void TQuadIsoparametric::SetCell(TBaseCell *cell)
   double xa, ya, xe, ye, xm, ym, xp, yp, dx, dy;
 //  int compid;
 //  BoundTypes bdtype;
-  TBaseFunct2D *bf;
+  TBaseFunct2D *bf = nullptr;
   TFEDesc2D *fedesc;
   int *JointDOF;
   int N_Vertices;
@@ -1124,10 +1124,10 @@ void TQuadIsoparametric::GetTangent(int j, double zeta,
   double valx[MaxN_BaseFunctions2D];
   double valy[MaxN_BaseFunctions2D];
   double *values[1];
-  double xip, etap;
+  double xip =0, etap=0;
   int i, k;
   double a11, a12, a21, a22; // double rec_detjk;
-  double xi, eta;
+  double xi=0, eta=0;
   TBaseFunct2D *bf;
   bf = TFEDatabase2D::GetBaseFunct2D(BaseFunctFromOrder[ApproximationOrder]);
 
@@ -1225,7 +1225,7 @@ void TQuadIsoparametric::GetOrigBoundFromRef( int joint, int N_Points,
                                               double *zeta, double *X, double *Y)
 {
   int i, j, k;
-  double Xi, Eta;
+  double Xi=0, Eta=0;
   double AuxVector[3*MaxN_BaseFunctions2D];
   TBaseFunct2D *bf;
 
