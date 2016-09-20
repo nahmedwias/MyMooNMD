@@ -360,15 +360,13 @@ void Time_CD3D::solve()
 #ifndef _MPI
   solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // sequential
 #else // parallel
-  if(solver.get_db()["solver_type"].is("iterative")) // iterative solver
-  {
-    solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // same as sequential
-  }
   else if(solver.get_db()["solver_type"].is("direct")) // direct solvers
   {
     MumpsWrapper mumps_wrapper(s.stiffMatrix_);
     mumps_wrapper.solve(s.rhs_, s.solution_);
   }
+  else
+    solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // same as sequential
 #endif
 }
 
