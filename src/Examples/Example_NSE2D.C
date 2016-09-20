@@ -70,6 +70,20 @@ namespace ns_test_code1
 {
 #include "TNSE_2D/Navier_Stokes_Test_code1.h"
 }
+
+namespace potential_flow_ex1
+{
+#include "TNSE_2D/potential_flow_td.h"
+}
+
+namespace potential_flow_ex2
+{
+#include "TNSE_2D/potential_flow_td_ex2.h"
+}
+namespace cosine_sin
+{
+#include "TNSE_2D/cosine_sine.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D() : Example2D()
@@ -355,6 +369,81 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       problem_coefficients = ns_test_code1::LinCoeffs;
       
       ns_test_code1::ExampleFile();
+      break;
+      
+    case 106:
+      exact_solution.push_back( potential_flow_ex1::ExactU1 );
+      exact_solution.push_back( potential_flow_ex1::ExactU2 );
+      exact_solution.push_back( potential_flow_ex1::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( potential_flow_ex1::BoundCondition );
+      boundary_conditions.push_back( potential_flow_ex1::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( potential_flow_ex1::U1BoundValue );
+      boundary_data.push_back( potential_flow_ex1::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** initial conditions, in case of a non-stationary problem */
+      initial_conditions.push_back(potential_flow_ex1::InitialU1);
+      initial_conditions.push_back(potential_flow_ex1::InitialU2);
+      initial_conditions.push_back(potential_flow_ex1::InitialP);
+      /** coefficients */
+      problem_coefficients = potential_flow_ex1::LinCoeffs;
+      
+      potential_flow_ex1::ExampleFile();
+      break;
+      case 107:
+      /** exact_solution */
+      exact_solution.push_back( potential_flow_ex2::ExactU1 );
+      exact_solution.push_back( potential_flow_ex2::ExactU2 );
+      exact_solution.push_back( potential_flow_ex2::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( potential_flow_ex2::BoundCondition );
+      boundary_conditions.push_back( potential_flow_ex2::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( potential_flow_ex2::U1BoundValue );
+      boundary_data.push_back( potential_flow_ex2::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** initial conditions, in case of a non-stationary problem */
+      initial_conditions.push_back(potential_flow_ex2::InitialU1);
+      initial_conditions.push_back(potential_flow_ex2::InitialU2);
+      initial_conditions.push_back(potential_flow_ex2::InitialP);
+      /** coefficients */
+      problem_coefficients = potential_flow_ex2::LinCoeffs;
+      
+      potential_flow_ex2::ExampleFile();
+      break;
+      case 108:
+      /** exact_solution */
+      exact_solution.push_back( cosine_sin::ExactU1 );
+      exact_solution.push_back( cosine_sin::ExactU2 );
+      exact_solution.push_back( cosine_sin::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( cosine_sin::BoundCondition );
+      boundary_conditions.push_back( cosine_sin::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( cosine_sin::U1BoundValue );
+      boundary_data.push_back( cosine_sin::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** initial conditions, in case of a non-stationary problem */
+      initial_conditions.push_back(cosine_sin::InitialU1);
+      initial_conditions.push_back(cosine_sin::InitialU2);
+      initial_conditions.push_back(cosine_sin::InitialP);
+      /** coefficients */
+      problem_coefficients = cosine_sin::LinCoeffs;
+      
+      cosine_sin::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");
