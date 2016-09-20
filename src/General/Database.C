@@ -1030,6 +1030,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
 {
   using namespace Output; // printToFile
   
+  printToFile(">>> Start printing old database (ParamDB) <<<");
   printToFile("HOSTNAME: ", utilities::get_host_name(), " started on ", 
               utilities::get_date_and_time());
   printToFile("EXECUTED FILE: ", ExecutedFile);
@@ -1434,6 +1435,9 @@ void TDatabase::WriteTimeDB()
   printToFile("EXTRAPOLATE_PRESSURE: ", TimeDB->EXTRAPOLATE_PRESSURE);
   printToFile("EXTRAPOLATE_STEPS: ", TimeDB->EXTRAPOLATE_STEPS);
   printToFile("EXTRAPOLATE_WEIGHT: ", TimeDB->EXTRAPOLATE_WEIGHT);
+
+  printToFile(">>> End printing old database (ParamDB) <<<");
+  printToFile("");
     
 //  printToFile(" n_neumann_boundary: ",ParamDB->n_neumann_boundary );
 //  printToFile(" neumann_boundary_id: ", ParamDB->neumann_boundary_id);

@@ -7,7 +7,7 @@
 
 ParameterDatabase get_default_Brinkman2D_parameters()
 {
-    Output::print<3>("creating a default Brinkman2D parameter database");
+    Output::print<5>("creating a default Brinkman2D parameter database");
     
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.set_name("Brinkman2D parameter database");

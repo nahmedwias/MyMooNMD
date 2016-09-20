@@ -3665,7 +3665,7 @@ int TDomain::GenerateEdgeInfo()
 #ifdef _MPI
    if(rank==0)
 #endif
-    Output::info("Domain.C","3D Mesh Edges Generated ");
+    Output::info<5>("Domain.C","3D Mesh Edges Generated ");
 
   return 0;
 }

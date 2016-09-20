@@ -1162,23 +1162,23 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
           switch(N_terms*MaxPolynomialDegree)
           {
             case 0:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss2");
+              Output::info<2>("Quadrature formula", "for hexahedra is Gauss2");
               break;
             case 3:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss3");
+              Output::info<2>("Quadrature formula", "hexahedra is Gauss3");
               break;
             case 6:
-               Output::print<2>("Quadrature formula for hexahedra is Gauss4");
+               Output::info<2>("Quadrature formula", "hexahedra is Gauss4");
                //Output::print<2>("Quadrature formula for hexahedra is Degree7_Points38");
              break;
             case 9:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss5");
+              Output::info<2>("Quadrature formula", "hexahedra is Gauss5");
               break;
             case 12:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss7");
+              Output::info<2>("Quadrature formula", "hexahedra is Gauss7");
               break;
             case 15:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss8");
+              Output::info<2>("Quadrature formula", "hexahedra is Gauss8");
               break;
           }
          }
@@ -1218,16 +1218,16 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
         switch(N_terms*MaxPolynomialDegree)
         {
           case 0:
-            Output::print<2>("Quadrature formula for tetrahedra is P2Tetra");
+            Output::info<2>("Quadrature formula", "for tetrahedra is P2Tetra");
             break;
           case 3:
-            Output::print<2>("Quadrature formula for tetrahedra is P4Tetra");
+            Output::info<2>("Quadrature formula", " for tetrahedra is P4Tetra");
             break;
           case 6:
-            Output::print<2>("Quadrature formula for tetrahedra is P5Tetra"); 
+            Output::info<2>("Quadrature formula", " for tetrahedra is P5Tetra");
             break;
           case 9:
-            Output::print<2>("Quadrature formula for tetrahedra is P8Tetra"); 
+            Output::info<2>("Quadrature formula", " for tetrahedra is P8Tetra");
             break;
          }
        }

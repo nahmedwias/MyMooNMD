@@ -25,7 +25,7 @@
 
 ParameterDatabase get_default_CD3D_parameters()
 {
-  Output::print<3>("creating a default CD3D parameter database");
+  Output::print<5>("creating a default CD3D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default CD2D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();

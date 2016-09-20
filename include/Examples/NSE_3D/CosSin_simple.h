@@ -13,7 +13,7 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  Output::print<1>("Example: Simple example with sin and cos solution and p=0");
+  Output::info<1>("EXAMPLE","Simple example with sin and cos solution and p=0");
 
   // \TODO check if the expected geometry is used
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;

@@ -20,7 +20,7 @@
 template <class L, class V>
 ParameterDatabase Solver<L, V>::default_solver_database()
 {
-  Output::print<3>("creating a default solver parameter database");
+  Output::print<5>("creating a default solver parameter database");
   ParameterDatabase db("default solver database");
   
   db.add("solver_type", "direct",

@@ -20,7 +20,7 @@
 //==============================================================================
 ParameterDatabase get_default_TCD3D_parameters()
 {
-  Output::print<3>("creating a default Time_CD3D parameter database");
+  Output::print<5>("creating a default Time_CD3D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default Time_CD3D database as well.
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();

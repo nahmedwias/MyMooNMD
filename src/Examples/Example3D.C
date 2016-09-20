@@ -3,7 +3,7 @@
 
 ParameterDatabase Example3D::default_example_database()
 {
-  Output::print<3>("creating a default Example3D parameter database");
+  Output::print<5>("creating a default Example3D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default NSE3D database as well.
   ParameterDatabase db("Example3D parameter database");

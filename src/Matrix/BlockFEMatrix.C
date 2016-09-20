@@ -1211,6 +1211,34 @@ size_t BlockFEMatrix::get_n_row_actives(size_t cell_row) const
 }
 
 /* ************************************************************************* */
+void BlockFEMatrix::print_matrix_info(std::string name) const
+{
+  //Gather some information to be printed.
+  int n_spaces_row = this->get_n_cell_rows();
+  int n_spaces_col = this->get_n_cell_columns();
+
+  int my_rank = 0;
+  int n_dof = this->get_n_total_rows();
+
+#ifdef _MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  n_dof = 0;
+  for(auto c : this->get_communicators())
+  {
+    n_dof += c->get_n_global_dof();
+  }
+#endif
+
+  if(my_rank == 0)
+  {
+    Output::info("BlockFEMatrix", name, " (distributed)");
+    Output::dash(n_spaces_row, " x ", n_spaces_col, " block structure");
+    Output::dash(n_dof, " total d.o.f (across all processors)");
+  }
+
+}
+
+/* ************************************************************************* */
 
 void BlockFEMatrix::replace_blocks(
     const TMatrix& new_block,

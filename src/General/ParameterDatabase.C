@@ -7,6 +7,10 @@
 #include <Utilities.h>
 #include <MooNMD_Io.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 // helper functions
 std::list<Parameter>::const_iterator 
 find_parameter(std::string name, const std::list<Parameter>& parameters)
@@ -183,6 +187,11 @@ void ParameterDatabase::write(std::ostream& os, bool verbose) const
   os << "# ParMooN, local changes: " << parmoon::hg_local_changes << "\n";
   os << "# ParMooN build information: " << parmoon::build_type << ", " 
      << parmoon::parallel_type << "\n";
+#ifdef _MPI
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  os << "# number of ParMooN mpi processes: " << size << "\n";
+#endif
   os << "# hostname: " << utilities::get_host_name() << "\n";
   os << "# Writing a ParMooN parameter database with "
      << this->get_n_parameters() << " parameters\n";
