@@ -13,29 +13,34 @@
 
 namespace sine_laplace
 {
-  #include "CD_2D/SineLaplace.h"
+#include "CD_2D/SineLaplace.h"
 }
 
 namespace two_interior_layers
 {
-  #include "CD_2D/TwoInteriorLayers.h"
+#include "CD_2D/TwoInteriorLayers.h"
 }
 
 namespace hemker_1996
 {
-  #include "CD_2D/Hemker1996.h"
+#include "CD_2D/Hemker1996.h"
 }
 
 namespace sharp_boundary_layer
 {
-  #include "CD_2D/SharpBoundaryLayer.h"
+#include "CD_2D/SharpBoundaryLayer.h"
+}
+
+namespace multiphase_example
+{
+#include "CD_2D/example_multiphase2d.h"
 }
 
 Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db) 
  : Example2D(user_input_parameter_db)
 {
   int example_code = this->example_database["example"];
-  switch( example_code)
+  switch(example_code)
   {
     case 0:
       /** exact_solution */
@@ -97,6 +102,25 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
       problem_coefficients = sharp_boundary_layer::BilinearCoeffs;
 
       sharp_boundary_layer::ExampleFile();
+      break;
+
+    case 4: // ATTENTION, this is 3 to match the example number in NSE
+      /** exact_solution */
+      exact_solution.push_back( multiphase_example::Exact );
+
+      /** boundary condition */
+      boundary_conditions.push_back( multiphase_example::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( multiphase_example::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = multiphase_example::BilinearCoeffs;
+
+      multiphase_example::USER1 = this->example_database["user_parameter1"];
+      multiphase_example::USER2 = this->example_database["user_parameter2"];
+
+      multiphase_example::ExampleFile();
       break;
 
     default:
