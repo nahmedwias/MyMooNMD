@@ -20,7 +20,7 @@
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
 ParameterDatabase get_default_TNSE3D_parameters()
 {
-  Output::print<3>("creating a default TNSE3D parameter database");
+  Output::print<5>("creating a default TNSE3D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default NSE3D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();

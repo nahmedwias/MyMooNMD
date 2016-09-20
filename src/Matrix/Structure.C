@@ -289,7 +289,9 @@ TStructure::TStructure( const TFESpace1D * space )
 
   // free KColAux
   delete [] KColAux;
+#ifndef _MPI
   this->info();
+#endif
   this->Sort();
 }
 
@@ -1116,15 +1118,9 @@ TStructure::TStructure( const TFESpace2D* space )
   // free KColAux
   delete [] KColAux;
 
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  if(rank==0)
+#ifndef _MPI
+  this->info();
 #endif
-  {
-    this->info();
-  }
   this->Sort();
 }
 
@@ -1577,15 +1573,9 @@ TStructure::TStructure( const TFESpace3D *space )
   delete[] KColAux;
 
 
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0)
+#ifndef _MPI
+  this->info();
 #endif
-  {
-    this->info();
-  }
   this->Sort();
 } 
 
@@ -2290,15 +2280,9 @@ TStructure::TStructure(const TFESpace2D* testspace,
   // free KColAux
   delete [] KColAux;
 
-  #ifdef _MPI
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  if(rank==0)
-  #endif
-  {
-    this->info();
-  }
+#ifndef _MPI
+  this->info();
+#endif
   this->Sort();
 }
 
@@ -2792,15 +2776,9 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   // free KColAux
   delete[] KColAux;
 
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0)
+#ifndef _MPI
+  this->info();
 #endif
-  {
-    this->info();
-  }
   this->Sort();
 }
 #endif
@@ -3458,12 +3436,9 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   // free KColAux
   delete [] KColAux;
   
-#ifdef _MPI
-  if(rank==0)
+#ifndef _MPI
+  this->info();
 #endif
-  {
-    this->info();
-  }
   this->Sort();
 }
 
@@ -5067,10 +5042,10 @@ bool TStructure::is_fortran_shifted() const
 
 void TStructure::info() const
 {
-  Output::print<3>("Information on the stored matrix structure");
-  Output::print<3>("Number of rows: ", nRows);
-  Output::print<3>("Number of columns: ", nColumns);
-  Output::print<3>("Number of matrix entries: ", nEntries);
+  Output::info<3>("TStructure","Information on the stored matrix structure");
+  Output::dash<3>("Number of rows: ", nRows);
+  Output::dash<3>("Number of columns: ", nColumns);
+  Output::dash<3>("Number of matrix entries: ", nEntries);
 }
 
 void TStructure::draw(std::string filename) const

@@ -5,6 +5,10 @@
 #include <Database.h>
 #include <MainUtilities.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 
 /* examples */
 

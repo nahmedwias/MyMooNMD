@@ -20,7 +20,12 @@ double DIMENSIONLESS_VISCOSITY;
 //side effect: sets the global parameter
 void ExampleFile()
 {
-  OutPut("Example: FlowAroundCylinder_stat.h" << endl);
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  if(my_rank == 0)
+#endif
+  Output::info<1>("EXAMPLE","FlowAroundCylinder_stat.h");
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 

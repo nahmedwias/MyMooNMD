@@ -21,7 +21,7 @@
 
 ParameterDatabase get_default_NSE3D_parameters()
 {
-  Output::print<3>("creating a default NSE3D parameter database");
+  Output::print<5>("creating a default NSE3D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default NSE3D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
@@ -90,6 +90,7 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
     default:
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
+
 #ifdef _MPI
 
   velocitySpace_.initialize_parallel(maxSubDomainPerDof);
@@ -104,6 +105,8 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 
 void NSE3D::output_problem_size_info() const
 {
+  int my_rank = 0;
+#ifndef _MPI
     const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
     const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
 
@@ -117,13 +120,29 @@ void NSE3D::output_problem_size_info() const
     double hmin, hmax;
     coll->GetHminHmax(&hmin, &hmax);
 
-    Output::stat("NSE3D", "Mesh data and problem size");
+#else
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    auto velocity_comm = systems_.front().velocitySpace_.get_communicator();
+    auto pressure_comm = systems_.front().pressureSpace_.get_communicator();
+    int nDofu  = velocity_comm.get_n_global_dof();
+    int nDofp  = pressure_comm.get_n_global_dof();
+    int nTotal = 3*nDofu + nDofp;
+
+#endif
+    if(my_rank ==0)
+    {
+    Output::stat("NSE3D", "Mesh data and problem size on finest grid");
+#ifndef _MPI
     Output::dash("N_Cells      :  ", setw(10), coll->GetN_Cells());
     Output::dash("h(min, max)  :  ", setw(10), hmin, setw(10), " ", hmax);
-    Output::dash("ndof Velocity:  ", setw(10), 3*nDofu );
-    Output::dash("ndof Pressure:  ", setw(10), nDofp);
-    Output::dash("ndof Total   :  ", setw(10), nTotal );
+#endif
+    Output::dash("ndof velocity:  ", setw(10), 3*nDofu );
+    Output::dash("ndof pressure:  ", setw(10), nDofp);
+    Output::dash("ndof total   :  ", setw(10), nTotal );
+#ifndef _MPI
     Output::dash("nActive      :  ", setw(10), nActive);
+#endif
+    }
 }
 
 NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
@@ -219,9 +238,8 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
     // initialize the multigrid object with all the matrices on all levels
     mg->initialize(matrices);
   }
-#ifndef _MPI
+
   output_problem_size_info();
-#endif
 
 }
 

@@ -16,7 +16,7 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  OutPut("Example: test_u_3_p_2.");
+  Output::info<1>("EXAMPLE","test_u_3_p_2.");
   // \TODO check if the expected geometry is used
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
