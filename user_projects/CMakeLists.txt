@@ -35,6 +35,13 @@ set_target_properties(stokes_reconst PROPERTIES OUTPUT_NAME parMooN_stokes_${PAR
 target_compile_definitions(stokes_reconst PUBLIC -D__2D__)
 target_link_libraries(stokes_reconst PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+# time dependent Stokes equation
+add_executable(tstokes_presrobust ${PROJECT_SOURCE_DIR}/user_projects/Time_Stokes2D.C)
+set_target_properties(tstokes_presrobust PROPERTIES OUTPUT_NAME parMooN_tstokes_${PARMOON_PARALLEL_TYPE})
+target_compile_definitions(tstokes_presrobust PUBLIC -D__2D__)
+target_link_libraries(tstokes_presrobust PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
+
 # time dependent Navier-Stokes 
 add_executable(tnse2d_presrobust ${PROJECT_SOURCE_DIR}/user_projects/TNSE2D_PressreRobustMain.C)
 set_target_properties(tnse2d_presrobust PROPERTIES OUTPUT_NAME parMooN_tnsePr_${PARMOON_PARALLEL_TYPE})
