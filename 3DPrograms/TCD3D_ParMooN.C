@@ -98,6 +98,8 @@ int main(int argc, char *argv[])
   tcd3d.assemble_initial_time();
   int step = 0, image=0;
   timer.restart_and_print("initial assembling");
+  Chrono timer_solve;
+  timer_solve.stop();
   
   while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME - 1e-10)
   {
@@ -111,13 +113,19 @@ int main(int argc, char *argv[])
     if(i_am_root)
       Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
     tcd3d.assemble();
+    timer_solve.start();
     tcd3d.solve();
+    timer_solve.restart_and_print("solving in step t=" 
+                               +std::to_string(TDatabase::TimeDB->CURRENTTIME));
+    timer_solve.stop();
     tcd3d.descale_stiffness();
     
     tcd3d.output(step,image);
     timer.restart_and_print(
       "time step (t=" + std::to_string(TDatabase::TimeDB->CURRENTTIME)+ ")");
   }
+  
+  timer_solve.print_total_time("accumulated solver time");
   
   if(i_am_root)
     Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
