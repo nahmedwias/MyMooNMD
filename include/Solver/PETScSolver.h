@@ -35,6 +35,17 @@
 * \endcode
 *
 *
+* PETSc is able to handle systems of equations in block form, similar to what
+* a BlockMatrix in ParMooN does. It uses a special matrix representation for 
+* such a case. This is the only way to used specialized saddle point solvers in
+* PETSc. Furthermore for other systems of multiple equations, one has a very 
+* fine control of which solvers/preconditioners are used for each equation 
+* (subsystem). However there seem to be some limitations. Saddle point problems
+* require a two-by-two system which is not what we do in ParMooN for 
+* Navier-Stokes equations. And in case of a multiple equations you can use a 
+* direct solver for the entire system. If you want to use direct solvers for 
+* system of multiple equations, you should use the DirectSolver class in 
+* ParMooN.
 *
 ****************************************************************************/
 
@@ -101,15 +112,6 @@ class PETScSolver
     
     /// @brief PETSc linear solver object (Krylov subspace method)
     KSP ksp;
-
-    /**
-     * Convert a FEBlock of a BlockFEMatrix into a sub matrix from PETSc.
-     *
-     * @param feblock[in] shared pointer of FEMatrix
-     * @param sub_mat[in,out] PETSc matrix with the values of the feblock
-     */
-    void FEBlock2PETScBlock(std::shared_ptr<const FEMatrix> feblock, 
-                            bool isOnDiag, Mat &sub_mat);
     
 #ifdef _MPI
     std::vector<const TParFECommunicator3D*> comms_;
