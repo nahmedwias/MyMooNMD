@@ -40,8 +40,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = bsp1::LinCoeffs;
       
       /** initial condition */
-      initialCOndtion.push_back(bsp1::InitialU1);
-      initialCOndtion.push_back(bsp1::InitialU2);
+      initialCondition.push_back(bsp1::InitialU1);
+      initialCondition.push_back(bsp1::InitialU2);
       bsp1::ExampleFile();
       break;
     case 1:
@@ -63,8 +63,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       /** coefficients */
       problem_coefficients = lin_space_time::LinCoeffs;
       
-      initialCOndtion.push_back(lin_space_time::InitialU1);
-      initialCOndtion.push_back(lin_space_time::InitialU2);
+      initialCondition.push_back(lin_space_time::InitialU1);
+      initialCondition.push_back(lin_space_time::InitialU2);
       
       lin_space_time::ExampleFile();
       break;

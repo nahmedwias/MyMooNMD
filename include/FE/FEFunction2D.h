@@ -44,9 +44,8 @@ class TFEFunction2D
 
   public:
     /** constructor with vector initialization */
-    TFEFunction2D(const TFESpace2D *fespace2D, char *name, char *description,
+    TFEFunction2D(const TFESpace2D *fespace2D, const char *name, const char *description,
                   double *values, int length);
-
     /** return name */
     char *GetName() const
     { return Name; }
@@ -109,7 +108,7 @@ class TFEFunction2D
     * Note that this is rather slow, because no further information is 
     * required. The function 'OldFeFunction' could even live on a larger domain.
     */
-    void Interpolate(TFEFunction2D *F);
+    void Interpolate(const TFEFunction2D *F);
     
     /**
      * @brief project this functions into the space L20 (having zero mean value)

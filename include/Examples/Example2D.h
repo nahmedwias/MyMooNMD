@@ -80,7 +80,7 @@ class Example2D
     Example2D& operator=(Example2D&&) = default;
 
     //! Default destructor.
-    ~Example2D() = default;
+    virtual ~Example2D() = default;
 
     // Initialize example database, called with the constructor
     static ParameterDatabase default_example_database();
@@ -105,8 +105,7 @@ class Example2D
     BoundValueFunct2D* get_bd(unsigned int i) const
     { return boundary_data.at(i); }
 
-    CoeffFct2D* get_coeffs() const
-    { return problem_coefficients; }
+    virtual CoeffFct2D* get_coeffs() const;
 
     const ParameterDatabase & get_database() const
     { return example_database; }

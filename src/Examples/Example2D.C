@@ -54,3 +54,7 @@ Example2D::Example2D(std::vector <DoubleFunct2D*> exact,
    boundary_conditions(bc), boundary_data(bd), problem_coefficients(coeffs)
 { 
 }
+
+CoeffFct2D* Example2D::get_coeffs() const {
+  return problem_coefficients;
+}
