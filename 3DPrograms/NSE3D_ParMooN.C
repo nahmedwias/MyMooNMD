@@ -116,13 +116,19 @@ int main(int argc, char* argv[])
 
     timer.restart_and_print("assembling linear terms");
 
+    //Timer which measures time spent in solve() method solely.
+    Chrono timer_sol;
+    timer_sol.stop();
+
     //======================================================================
     for(unsigned int k=1;; k++)
     {
       if(my_rank == 0)
         Output::print(); // new line for a new nonlinear iteration
       // solve the system
+      timer_sol.start();
       nse3d.solve();
+      timer_sol.stop();
 
       //no nonlinear iteration for Stokes problem
       if(parmoon_db["problem_type"].is(3))
@@ -142,6 +148,8 @@ int main(int argc, char* argv[])
     } // end for k
     timer.restart_and_print("nonlinear loop");
     
+    timer_sol.print_total_time("solver only");
+
     nse3d.output();
     timer.restart_and_print("output");
     timer.print_total_time("NSE3D_ParMooN program");
