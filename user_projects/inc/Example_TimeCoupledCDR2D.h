@@ -20,8 +20,8 @@ class Example_TimeCoupledCDR2D : public Example_NonStationary2D
 
   public:
 
-    //! @brief Constructor.
-    Example_TimeCoupledCDR2D(int example_code);
+    //! @brief Constructor, taking a database as argument.
+    Example_TimeCoupledCDR2D(const ParameterDatabase & db);
 
     /**
      * @brief Get one of the underlying CD(R) examples without the coupling term.

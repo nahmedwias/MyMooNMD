@@ -15,8 +15,9 @@ namespace test_time
 }
 
 // Implementation of member methods
-Example_CoupledCDR2D::Example_CoupledCDR2D(size_t example_code) : Example2D()
+Example_CoupledCDR2D::Example_CoupledCDR2D(const ParameterDatabase & db) : Example2D(db)
 {
+  int example_code = example_database["example"];
   switch( example_code )
   {
     case 0: //Constant function example.

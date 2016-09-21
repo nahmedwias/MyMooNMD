@@ -5,13 +5,14 @@
  * @author Clemens Bartsch
  *
  * @date Feb 10, 2016
+ *
+ * @note THIS MAIN FILE IS NOT MAINTAINED ANYMORE - CONSIDER IT DEPRECATED.
  */
 
 
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Output2D.h>
 #include <Coupled_Time_CDR_2D.h>
 #include <Example_TimeCoupledCDR2D.h>
 
@@ -56,7 +57,7 @@ int main(int argc, char* argv[])
   // ======================================================================
 
   // Construct the CoupledCDR_2D object
-  Example_TimeCoupledCDR2D example(parmoon_db["example"]);
+  Example_TimeCoupledCDR2D example(parmoon_db);
   Coupled_Time_CDR_2D tcdr_system(Domain, parmoon_db, example);
 
   // ======================================================================

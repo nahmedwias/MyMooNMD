@@ -7,13 +7,15 @@
  *
  * @note This was first implemented in MooNMD and then imported to ParMooN. Start of "import":
  * May 26, 2015
+ *
+ * @note THIS MAIN FILE IS NOT MAINTAINED ANYMORE - CONSIDER IT DEPRECATED.
+ *
  */
 
 
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Output2D.h>
 #include <CoupledCDR_2D.h>
 #include <Example_CoupledCDR2D.h>
 
@@ -58,7 +60,7 @@ int main(int argc, char* argv[])
 	// Which example gets constructed is determined by the input file.
 	// 0 - constant_function example
 	// else - Error
-	Example_CoupledCDR2D example(parmoon_db["example"]);
+	Example_CoupledCDR2D example(parmoon_db);
 	CoupledCDR_2D cdrsysObject(Domain, parmoon_db,
 	                           example, CoupledCDR_2D::SolvingStrategy::linear_decoupled);
 	// Assemble whatever matrices and vectors are necessary.
