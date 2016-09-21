@@ -50,6 +50,12 @@ std::string addParameters2str(const ParameterDatabase& db)
   petsc_args.append(" -ksp_rtol "+db["residual_reduction"].value_as_string());
   // adding gmres restart
   petsc_args.append(" -ksp_gmres_restart "+db["gmres_restart"].value_as_string());
+  // adding sor omega
+  // For me (Ulrich) petsc did not do a single iteration if omega was not set
+  // to one. I have no clue why, but it could be fixed by adding the extra 
+  // option "-ksp_error_if_not_converged 1".
+  petsc_args.append(" -pc_sor_omega "+db["sor_omega"].value_as_string()
+                    + " -ksp_error_if_not_converged 1");
   // adding damping for Richardson iteration
   petsc_args.append(" -ksp_richardson_scale "+db["damping_factor"].value_as_string());
   return petsc_args;
