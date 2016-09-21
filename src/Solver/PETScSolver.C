@@ -128,6 +128,329 @@ std::vector<char*> str_to_vector_char_p(const std::string &s)
   return argv;
 }
 
+// *****************************************************************************
+// Return a vector n_masters whose size is the number of mpi processes. For 
+// each process p the vector n_master[p] has the size of the input vector. The
+// element n_master[p][b] is the number of master dofs in the b-th block in the
+// p-th process.
+// This requires communication!
+#ifdef _MPI
+std::vector<std::vector<size_t>> get_n_masters_per_block_and_process(
+  std::vector<const TParFECommunicator3D*> comms)
+{
+  int my_rank;
+  int size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  
+  // the number of communicators is the number of blocks
+  size_t n_comms = comms.size();
+  // the number of master dofs for each process and each block
+  int n_masters_send[size][n_comms];
+  // set all elements to 0
+  for(size_t r = 0; r < size; ++r)
+    for(size_t c = 0; c < n_comms; ++c)
+      n_masters_send[r][c] = 0;
+  
+  for(size_t c = 0; c < n_comms; ++c)
+  {
+    // each process only writes one row, others are left zero
+    n_masters_send[my_rank][c] = comms[c]->GetN_Master();
+  }
+  // n_masters needs to be communicated
+  int n_masters[size][n_comms];
+   // set all elements to 0
+  for(size_t r = 0; r < size; ++r)
+    for(size_t c = 0; c < n_comms; ++c)
+      n_masters[r][c] = 0;
+  // we only add all entries, each process only has non-zeros in exactly one row
+  MPI_Allreduce(n_masters_send, n_masters, size*n_comms, MPI_INT, MPI_SUM, 
+                MPI_COMM_WORLD);
+  
+  std::vector<std::vector<size_t>> ret(size, std::vector<size_t>(n_comms, 0));
+  for(size_t c = 0; c < n_comms; ++c)
+  {
+    for(size_t r = 0; r < size; ++r)
+    {
+      ret[r][c] = n_masters[r][c];
+    }
+  }
+  return ret;
+}
+#endif // _MPI
+
+// *****************************************************************************
+// return a vector whose size is the total number of (process) local dofs. For 
+// each entry it holds the index of the master process of this dof.
+#ifdef _MPI
+std::vector<int> get_block_masters(
+  std::vector<const TParFECommunicator3D*> comms)
+{
+  size_t n_comms = comms.size();
+  // number of (process) local dofs, sum over all blocks
+  size_t n_dofs_local = 0;
+  for(size_t c = 0; c < n_comms; ++c)
+    n_dofs_local += comms[c]->GetNDof();
+  std::vector<int> block_masters(n_dofs_local);
+  auto it = block_masters.begin();
+  for(size_t c = 0; c < n_comms; ++c)
+  {
+    auto masters = comms[c]->GetMaster();
+    auto n_dof = comms[c]->GetNDof(); // local within this process and block
+    it = std::copy(masters, masters + n_dof, it);
+  }
+  return block_masters;
+}
+#endif // _MPI
+
+// *****************************************************************************
+// return a vector whose size is the total number of (process) local dofs. For
+// each entry it holds the global index in a vector whose entries are ordered
+// according to the processes.
+// This is a vector of int (rather than size_t) because PETSc likes ints better.
+#ifdef _MPI
+std::vector<int> local_to_global_block(
+  std::vector<const TParFECommunicator3D*> comms)
+{
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  // the number of communicators is the number of blocks
+  size_t n_comms = comms.size();
+  auto n_masters = get_n_masters_per_block_and_process(comms);
+  auto offset = [&n_masters, &n_comms](const int rank, const int block)
+  {
+    int offset = 0;
+    for(int r = 0; r < rank; ++r)
+    {
+      offset -= n_masters.at(r).at(block);
+    }
+    for(int r = 0; r < rank; ++r)
+    {
+      for(size_t b = 0; b < n_comms; ++b)
+      {
+        offset += n_masters[r][b];
+      }
+    }
+    for(int b = 0; b < block; ++b)
+    {
+      offset += n_masters[rank][b];
+    }
+    return offset;
+  };
+  
+  // number of (process) local dofs, sum over all blocks
+  size_t n_dofs_local = 0;
+  for(size_t c = 0; c < n_comms; ++c)
+    n_dofs_local += comms[c]->GetNDof();
+  // the vector to be returned
+  std::vector<int> ret(n_dofs_local, 0);
+  auto it = ret.begin(); // iterator for the returned vector
+  for(size_t c = 0; c < n_comms; ++c)
+  {
+    // this is the local_to_global array local within this process and within
+    // this block
+    auto local_to_global = comms[c]->Get_Local2Global();
+    auto n_dof = comms[c]->GetNDof(); // local within this process and block
+    std::copy(local_to_global, local_to_global + n_dof, it);
+    // each of the copied entries must now be adjusted so that the PETSc 
+    // ordering is accomplished
+    auto masters = comms[c]->GetMaster();
+    std::vector<int> offset_per_process(size);
+    for(size_t p = 0; p < size; ++p)
+    {
+      offset_per_process[p] = offset(p, c);
+    }
+    for(size_t i = 0; i < n_dof; ++i, ++it)
+    {
+      *it += offset_per_process[masters[i]];
+    }
+  }
+  return ret;
+}
+#endif // _MPI
+
+// *****************************************************************************
+void create_sub_matrix(const BlockFEMatrix& matrix, 
+                       std::pair<size_t, size_t> start, 
+                       std::pair<size_t, size_t> end, Mat& petsc_mat)
+{
+  // sanity checks
+  if(start.first > end.first || start.second > end.second)
+  {
+    ErrThrow("extracting blocks from a BlockFEMatrix into a single PETSc "
+             "matrix. Starting block is after ending block: (", start.first, 
+             ",", start.second, ") and (", end.first, ",", end.second, ")");
+  }
+  if(end.first >= matrix.get_n_cell_rows() 
+     || end.second >= matrix.get_n_cell_columns())
+  {
+    ErrThrow("extracting blocks from a BlockFEMatrix into a single PETSc "
+             "matrix. Indicated subblocks are out of range (", start.first, 
+             ",", start.second, ") and (", end.first, ",", end.second, ")");
+  }
+  
+  auto sub_block = matrix.get_combined_submatrix(start, end);
+  
+#ifndef _MPI 
+  // sequential case
+  
+  // 1) create matrix
+  // create a matrix with known non-zero distribution among the rows
+  size_t n_rows = sub_block->GetN_Rows();
+  size_t n_cols = sub_block->GetN_Columns();
+  // number of entries for each row
+  std::vector<int> nnz(n_rows, 0);
+  // loop over all rows to get the number of entries in each row
+  for(size_t r = 0; r < n_rows; ++r)
+  {
+    nnz[r] = sub_block->get_n_entries_in_row(r);
+  }
+  MatCreateSeqAIJ(PETSC_COMM_WORLD, (int)n_rows, (int)n_cols, 0, &nnz[0], 
+                  &petsc_mat);
+  
+  // 2) fill matrix
+  // copy the entries
+  const int * row_ptr = sub_block->GetRowPtr();
+  const int * col_ptr = sub_block->GetKCol();
+  const double * entries = sub_block->GetEntries();
+  // loop over all rows, add entries for each row
+  for(size_t r = 0; r < n_rows; ++r)
+  {
+    size_t n_entries_in_row = nnz[r];
+    if(n_entries_in_row == 0)
+      continue;
+    int row_index = r; // conversion: size_t to int
+    MatSetValues(petsc_mat, 1, &row_index, n_entries_in_row, 
+                 &col_ptr[row_ptr[r]], entries+row_ptr[r], INSERT_VALUES);
+  }
+#else
+  // MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  // collecting some useful vectors/arrays from the involved sub blocks
+  size_t n_block_rows = end.first - start.first + 1;
+  size_t n_block_cols = end.second - start.second + 1;
+  // communicators for the row spaces (test spaces) of this matrix
+  std::vector<const TParFECommunicator3D*> row_communicators(n_block_rows);
+  // for PETSc only the master rows belong to a (process local) matrix
+  size_t n_master_rows = 0;
+  size_t n_global_rows = 0;
+  for(size_t r = 0; r < n_block_rows; ++r)
+  {
+    auto comm = &matrix.get_row_space(r + start.first).get_communicator();
+    row_communicators[r] = comm;
+    n_master_rows += comm->GetN_Master();
+    n_global_rows += comm->get_n_global_dof();
+  }
+  // communicators for the column spaces (ansatz spaces) of this matrix
+  std::vector<const TParFECommunicator3D*> col_communicators(n_block_cols);
+  size_t n_master_cols = 0;
+  size_t n_global_cols = 0;
+  size_t n_cols = 0; // local to process, global in combined matrix
+  for(size_t c = 0; c < n_block_cols; ++c)
+  {
+    auto comm = &matrix.get_column_space(c + start.second).get_communicator();
+    col_communicators[c] = comm;
+    n_master_cols += comm->GetN_Master();
+    n_global_cols += comm->get_n_global_dof();
+    n_cols += comm->GetNDof();
+  }
+  std::vector<int> col_masters_combined(n_cols, 0);
+  std::vector<int> col_local_to_globals_combined(n_cols, 0);
+  int offset = 0;
+  for(size_t c = 0; c < n_block_cols; ++c)
+  {
+    auto comm = &matrix.get_column_space(c + start.second).get_communicator();
+    std::copy(comm->GetMaster(), comm->GetMaster()+comm->GetNDof(), 
+              &col_masters_combined[offset]);
+    std::copy(comm->Get_Local2Global(), 
+              comm->Get_Local2Global() + comm->GetNDof(),
+              &col_local_to_globals_combined[offset]);
+    offset += comm->GetNDof();
+  }
+  
+  size_t n_rows = sub_block->GetN_Rows();
+  const auto row_ptr = sub_block->get_row_array();
+  const auto col_ptr = sub_block->GetKCol();
+  auto block_masters = get_block_masters(row_communicators);
+  auto block_local2global = local_to_global_block(row_communicators);
+  
+  
+  // 1) create matrix
+  // compute the number of entries in each row 
+  std::vector<int> nnz_diagonal(n_master_rows, 0);
+  std::vector<int> nnz_off_diagonal(n_master_rows, 0);
+  
+  // fill vectors nnz_diagonal and nnz_off_diagonal
+  
+  // loop over the matrix rows, for each row we find the number of master 
+  // entries (whose column index corresponds to a master dof)
+  for(size_t row = 0, master_index = 0; row < n_rows; ++row)
+  {
+    if(block_masters[row] != my_rank)
+      continue;
+    // number of nonzero entries in a master column in this row
+    size_t n_masters_in_row = 0;
+    int begin_row = row_ptr[row];
+    int end_row = row_ptr[row+1];
+    // loop over all entries in this row
+    for(size_t index = begin_row; index < end_row; ++index)
+    {
+      // column index within the combined matrix
+      size_t column = col_ptr[index];
+      if(block_masters[column] == my_rank)
+        n_masters_in_row++;
+    }
+    nnz_diagonal.at(master_index) = n_masters_in_row;
+    // end_row - begin_row = number of entries in this row
+    nnz_off_diagonal.at(master_index) = end_row - begin_row - n_masters_in_row;
+    master_index++;
+  }
+  
+  MatCreateAIJ(PETSC_COMM_WORLD, (int)n_master_rows, (int)n_master_cols, 
+               (int)n_global_rows, (int)n_global_cols, 0, &nnz_diagonal[0], 0, 
+               &nnz_off_diagonal[0], &petsc_mat);
+  
+  // 2) fill matrix
+  // get raw data of the matrix
+  //const double * entries = sub_block->GetEntries();
+  std::vector<double> entries = sub_block->get_entries();
+  
+  for(size_t row = 0; row < n_rows; ++row)
+  {
+    if(block_masters[row] != my_rank)
+      continue; // skip slave rows
+    int global_row = block_local2global[row];
+    int begin_row = row_ptr[row];
+    int end_row = row_ptr[row+1];
+    for(size_t col_index = begin_row; col_index < end_row; ++col_index)
+    {
+      int col = col_ptr[col_index];
+      double entry = entries[col_index];
+      int global_col = block_local2global[col];
+      MatSetValues(petsc_mat, 1, &global_row, 1, &global_col, &entry, 
+                   INSERT_VALUES);
+    }
+  }
+#endif
+  
+  // the following two functions must be called after MatSetValues (says PETSc 
+  // documentation)
+  MatAssemblyBegin(petsc_mat, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(petsc_mat, MAT_FINAL_ASSEMBLY);
+}
+
+// *****************************************************************************
+void create_one_big_petsc_matrix(const BlockFEMatrix& matrix, Mat& petsc_mat)
+{
+  if(matrix.get_n_total_rows() != matrix.get_n_total_columns())
+    ErrThrow("PETScSolver: non-square matrix");
+  size_t n = matrix.get_n_cell_rows();
+  size_t m = matrix.get_n_cell_columns();
+  create_sub_matrix(matrix, {0,0}, {n-1,m-1}, petsc_mat);
+}
+
+// *****************************************************************************
 PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
                          const ParameterDatabase& db)
  : petsc_mat(nullptr)
@@ -149,24 +472,19 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
              ",", matrix.get_n_total_columns());
   size_t n_block_rows = matrix.get_n_cell_rows();
   size_t n_block_cols = matrix.get_n_cell_columns();
-#ifdef _MPI
-  if(n_block_rows * n_block_cols != 1)
-    ErrThrow("in MPI the PETScSolver only works for scalar problems currently");
-#endif
 
   // indicate if matrix is stored as a transposed, this is set when calling
   // matrix.get_block(...)
   bool transposed;
-  // indicate if we have a saddle point problem
-  /// @todo save this information in the BlockMatrix
-  bool saddlepoint_problem = false;
-  // this is considered a saddle point problem if the last block is all zero
   auto block = matrix.get_block(n_block_rows-1, n_block_cols-1, transposed);
-  if(block->GetNorm() == 0.0)
-  {
-    saddlepoint_problem = true;
-  }
-
+  // indicate if we have a saddle point problem
+  // this is considered a saddle point problem if the last block is all zero
+  /// @todo save this information in the BlockMatrix
+  bool saddlepoint_problem = (block->GetNorm() == 0.0);
+  
+  // Is pc_type LU, ILU or CHOLESKY? I.e. do we want to use a direct solver
+  bool use_direct_petsc = false;
+  
   // call PetscInitialize
   {
     // the following is necessary to properly call PetscInitialize
@@ -187,9 +505,7 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
     // in str_to_vector_char_p(...)
     for(auto cp : char_vector)
       delete [] cp;
-
-    // Is pc_type LU, ILU or CHOLESKY? I.e. do we want to use a direct solver
-    bool use_direct_petsc = false;
+    
     auto npos = std::string::npos;
     if ( petsc_args.find("-pc_type lu", 0) != npos
       || petsc_args.find("-pc_type ilu", 0) != npos
@@ -197,67 +513,63 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
     {
       use_direct_petsc = true;
     }
+#ifdef _MPI
+    // set direct solver to true, otherwise separate blocks are created which
+    // is not yet supported in mpi mode
+    use_direct_petsc = true;
+#endif
+  }
 
-    // for block matrices the direct solver does not seem to work in PETSc
-    if((saddlepoint_problem || n_block_rows*n_block_cols != 1)
-        && use_direct_petsc)
+  bool single_block = (n_block_rows*n_block_cols == 1);
+  if(use_direct_petsc || single_block)
+  {
+    // the nested petsc matrix type will not work, so we write a single big 
+    // petsc matrix. This is similar to calling matrix.get_combined_matrix
+    create_one_big_petsc_matrix(matrix, this->petsc_mat);
+  }
+  else if(saddlepoint_problem && !single_block)
+  {
+    Output::print("PETScSolver class saddlepoint_problem");
+    // reserve space for enough sub matrices for PETSc. You have to have a 
+    // two-by-two block system in a saddle point problem.
+    // It is assumed here, that the pressure block is last, i.e., has the row 
+    // and colums index `n_block_rows-1` and `n_block_cols-1` respectively.
+    size_t last_row = n_block_rows-1;
+    size_t last_col = n_block_cols-1;
+    sub_petsc_mats.resize(2 * 2);
+    
+    // velocity-velocity coupling:
+    create_sub_matrix(matrix, {0,0}, {last_row-1, last_col-1},
+                      sub_petsc_mats[0]);
+    // velocity-pressure coupling:
+    create_sub_matrix(matrix, {0,last_col}, {last_row-1, last_col},
+                      sub_petsc_mats[1]);
+    // pressure-velocity coupling:
+    create_sub_matrix(matrix, {last_row, 0}, {last_row, last_col-1},
+                      sub_petsc_mats[2]);
+    // pressure-pressure coupling (should be a zero matrix)
+    create_sub_matrix(matrix, {last_row, last_col}, {last_row, last_col},
+                      sub_petsc_mats.at(3));
+    
+    // currently the last block should be all zero, we check this here
+    PetscReal norm = 0.0;
+    MatNorm(sub_petsc_mats.at(3), NORM_FROBENIUS, &norm);
+    if(norm != 0.0)
     {
-      ErrThrow("solver_type is petsc, with a direct solver for a saddle point problem. "
-               "Please set the solver_type to direct when attempting to solve "
-               "a saddle point problem with a direct solver.");
+      // We are here usually in case of an all-Dirichlet Navier-Stokes problem,
+      // where the pressure-pressure block is modified in one row. usually in 
+      // saddle point problems this is zero. This is what PETSc expects.
+      // The problem is that PETSc can not automatically identify the correct 
+      // blocks if they are not the ones given as submatrices. We would have to
+      // somehow define index sets for PETSc. I don't know how how to do that.
+      ErrThrow("Currently one can use PETSc for a saddle point problem only if "
+               "the lower right block is zero. Here it has norm ", norm);
     }
-  }
-
-  // reserve space for enough sub matrices for PETSc
-  sub_petsc_mats.resize(n_block_rows * n_block_cols);
-
-  // copy the entries from the blocks in 'matrix' to petsc_mat:
-  // loop over all block rows
-  for(size_t block_row = 0; block_row < n_block_rows;
-      ++block_row)
-  {
-    // loop over all block columns
-    for(size_t block_col = 0; block_col < n_block_cols; ++block_col)
-    {
-      // the current block (sparse matrix)
-      auto block = matrix.get_block(block_row, block_col, transposed);
-      if (transposed)
-      {
-        /// @todo enable transposed blocks to be used in the PETScSolver class
-        ErrThrow("It is not yet possible to use the PETScSolver with a "
-                 "BlockFEMatrix which stores a block as transposed.");
-      }
-      
-      size_t block_index = block_col + block_row * n_block_cols;
-      bool isOnDiag = (block_row == block_col);
-      FEBlock2PETScBlock(block, isOnDiag, sub_petsc_mats[block_index]);
-    }
-  }
-
-  // if scalar problem
-  if (n_block_cols == 1 && n_block_rows == 1)
-  {
-    // the vector sub_petsc_mats is not needed in this case at all
-    petsc_mat = sub_petsc_mats[0];
-  }
-  else
-  {
+    
     // This is the PETSc way of having a BlockMatrix, direct solvers wont work
-    MatCreateNest(PETSC_COMM_WORLD, n_block_rows, NULL, n_block_cols, NULL,
-                  &sub_petsc_mats[0], &petsc_mat);
+    MatCreateNest(PETSC_COMM_WORLD, 2, NULL, 2, NULL, &sub_petsc_mats[0],
+                  &petsc_mat);
   }
-  
-  // print out the petsc matrix to console
-  //PetscViewer viewer;
-  //PetscViewerCreate(PETSC_COMM_WORLD, &viewer);
-  //PetscViewerSetType(viewer, PETSCVIEWERASCII);
-  //PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_COMMON);
-  //MatView(petsc_mat, viewer);
-  //PetscViewerDestroy(&viewer);
-  //PetscReal norm;
-  //MatNorm(petsc_mat, NORM_FROBENIUS, &norm);
-  //Output::print("norm mat ", norm, "  ", 
-  //              matrix.get_block(0, 0, transposed)->GetNorm(-2));
   
   // create solver and preconditioner objects
   KSPCreate(PETSC_COMM_WORLD, &ksp);
@@ -273,9 +585,11 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
   KSPSetFromOptions(ksp);
   PCSetFromOptions(pc);
   
+  KSPSetUp(ksp);
   // some PETSc information about the solver
   /// @todo nicer output for the PETSc solver
-  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+  if(Output::getVerbosity() > 3)
+    KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 
 /* ************************************************************************** */
@@ -285,7 +599,6 @@ PETScSolver::PETScSolver(const BlockMatrix& matrix, const ParameterDatabase& db)
            "BlockFEMatrix instead. It would be possible to implement this "
            "here, in case it is really needed.");
 }
-
 
 /* ************************************************************************** */
 PETScSolver::PETScSolver(PETScSolver && other)
@@ -301,132 +614,6 @@ PETScSolver::PETScSolver(PETScSolver && other)
   int n_nonzero_per_row = 0;
   MatCreateSeqAIJ(PETSC_COMM_WORLD, n_rows, n_cols, n_nonzero_per_row, nullptr,
                   &other.petsc_mat);
-}
-
-/* ************************************************************************** */
-void PETScSolver::FEBlock2PETScBlock(std::shared_ptr<const FEMatrix> feblock,
-                                     bool isOnDiag, Mat &sub_mat)
-{
-  size_t n_rows = feblock->GetN_Rows();
-  size_t n_active_rows = feblock->GetActiveBound();
-
-  // unfortunately the sequential and parallel code differs a lot here.
-  
-#ifndef _MPI 
-  // sequential case
-  // 1) create matrix
-  // number of non-zeros for each row
-  std::vector<int> nnz(n_rows, 0);
-  // fill vector nnz
-  for(size_t row = 0; row < n_rows; ++row)
-  {
-    nnz[row] += feblock->get_n_entries_in_row(row);
-  }
-  size_t n_cols = feblock->GetN_Columns();
-  // create a matrix with known non-zero distribution among the rows
-  MatCreateSeqAIJ(PETSC_COMM_WORLD, n_rows, n_cols, 0, &nnz[0], &sub_mat);
-  
-  // 2) fill matrix
-  // get raw data of the matrix
-  const int * row_ptr = feblock->GetRowPtr();
-  const int * col_ptr = feblock->GetKCol();
-  const double * entries = feblock->GetEntries();
-  for(size_t row = 0; row < n_rows; ++row)
-  {
-    size_t n_entries_in_row = nnz[row];
-    int row_index = row;
-    // only add this row if it is active or in the diagonal block
-    if(row < n_active_rows || isOnDiag)
-      MatSetValues(sub_mat, 1, &row_index, n_entries_in_row,
-          &col_ptr[row_ptr[row]], entries+row_ptr[row],
-          INSERT_VALUES);
-  }
-#else
-  // MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  
-  // 1) create matrix
-  
-  // communicator for the row space (test space) of this matrix
-  const TParFECommunicator3D& comm_row = 
-    feblock->GetTestSpace3D()->get_communicator();
-  // for PETSc only the master rows belong to a (process local) matrix
-  int n_master_rows = comm_row.GetN_Master();
-  size_t n_global_dof = comm_row.get_n_global_dof();
-  std::vector<int> nnz_diagonal(n_master_rows, 0);
-  std::vector<int> nnz_off_diagonal(n_master_rows, 0);
-  const int * masters = comm_row.GetMaster();
-  // fill vectors nnz_diagonal and nnz_off_diagonal
-  // loop over all rows
-  for(size_t row = 0, master_index = 0; row < n_rows; ++row)
-  {
-    // skip slave rows
-    if(masters[row] != my_rank)
-      continue;
-    
-    // number of nonzero entries in a master column in this row
-    size_t n_masters_in_row = 0;
-    int begin_row = feblock->GetRowPtr()[row];
-    int end_row = feblock->GetRowPtr()[row+1];
-    // loop over all entries in this row
-    for(int index = begin_row; index < end_row; index++)
-    {
-      int column = feblock->GetKCol()[index]; // column index
-      if(masters[column] == my_rank)
-        n_masters_in_row++;
-    }
-    nnz_diagonal.at(master_index) = n_masters_in_row;
-    nnz_off_diagonal.at(master_index) = feblock->get_n_entries_in_row(row)
-                                        - n_masters_in_row;
-    master_index++;
-  }
-  //Output::print("n_master_rows: ", n_master_rows, "   n_rows ", n_rows, 
-  //              "  n_cols ", feblock->GetN_Columns(), "  n_global_dof ", 
-  //              n_global_dof);
-  MatCreateAIJ(PETSC_COMM_WORLD, n_master_rows, n_master_rows, 
-               (int)n_global_dof, (int)n_global_dof, 0, &nnz_diagonal[0], 0, 
-               &nnz_off_diagonal[0], &sub_mat);
-  
-  // 2) fill matrix
-  // get raw data of the matrix
-  const std::vector<int>& row_ptr = feblock->get_row_array();
-  const int * col_ptr = feblock->GetKCol();
-  const double * entries = feblock->GetEntries();
-  const int * local2global = comm_row.Get_Local2Global();
-  // loop over all rows, fill each row at once
-  for(size_t row_local = 0; row_local < n_rows; ++row_local)
-  {
-    // skip slave rows
-    if(masters[row_local] != my_rank)
-      continue;
-    
-    int n_entries_in_row = feblock->get_n_entries_in_row(row_local);
-    // number of nonzero entries in a master column in this row
-    int begin_row = row_ptr[row_local];
-    int end_row = row_ptr.at(row_local+1);
-    std::vector<int> columns_global(n_entries_in_row, 0);
-    // we need to pass the global column indices to PETSc, we can not use the 
-    // local column indices from the feblock.
-    // loop over all entries in this row
-    for(int index = begin_row; index < end_row; index++)
-    {
-      // local (to this process) column index
-      int column_local = col_ptr[index]; // column index
-      // write global column index
-      columns_global[index-begin_row] = local2global[column_local];
-      //Output::print("entry (", local2global[row_local], ",", 
-      //              columns_global[index-begin_row], ")_global = (", 
-      //              row_local, ",", column_local, ") = ", entries[index]);
-    }
-    int row_global = local2global[row_local];
-    if(row_local < n_active_rows || isOnDiag)
-      MatSetValues(sub_mat, 1, &row_global, n_entries_in_row,
-          &columns_global[0], entries+begin_row, INSERT_VALUES);
-  }
-#endif // _MPI
-  MatAssemblyBegin(sub_mat, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(sub_mat, MAT_FINAL_ASSEMBLY);
 }
 
 /* ************************************************************************** */
@@ -469,9 +656,9 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   /// @todo check if matrix sizes are ok with solution and rhs sizes
   /// MatGetSize() does not work for MatNest mat type, which is used for
   /// saddle point problems.
+  Output::info<5>("PETScSolver::solve");
 
   size_t n_local = solution.length();
-
   if(n_local != rhs.length())
   {
     ErrThrow("PETScSolver::solve: size of the rhs and the solution are not equal, ",
@@ -482,12 +669,29 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   int n_global = n_local;
   int n_local_masters = n_local;
 #ifdef _MPI
-  n_local_masters = comms_.at(0)->GetN_Master();
-  n_global = comms_[0]->get_n_global_dof();
+  n_local_masters = 0;
+  n_global = 0;
+  for(size_t bl = 0; bl < comms_.size(); ++bl) // loop over all blocks
+  {
+    n_local_masters += comms_[bl]->GetN_Master();
+    n_global += comms_[bl]->get_n_global_dof();
+  }
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  const int * masters = comms_[0]->GetMaster();
+  auto block_local2global = local_to_global_block(comms_);
+  auto block_masters = get_block_masters(comms_);
+  if(block_local2global.size() != n_local)
+  {
+    ErrThrow("block_local2global has wrong size ", block_local2global.size(),
+             " != ", n_local);
+  }
+  if(block_masters.size() != n_local)
+  {
+    ErrThrow("block_masters has wrong size ", block_masters.size(), " != ", 
+             n_local);
+  }
 #endif
+  
   
   // create PETSc vectors
   Vec x, b;
@@ -498,22 +702,23 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   VecDuplicate(x, &b);
   PetscObjectSetName((PetscObject) b, "Rhs");
   
-  // copy into PETSc vectors
+  // copy ParMooN BlockVectors to PETSc vectors
   for(size_t i = 0; i < n_local; ++i)
   {
-    int index = i; // index in vector (conversion to int)
+    int index = i; // conversion to int
 #ifdef _MPI
-    // skip slave dofs
-    if(masters[i] != my_rank)
-      continue;
-    index = comms_[0]->Get_Local2Global()[i];
+    index = block_local2global[i];
+    if(block_masters[i] == my_rank) // only consider master dofs
 #endif // _MPI
-    VecSetValue(b, index, rhs[i], INSERT_VALUES);
-    VecSetValue(x, index, solution[i], INSERT_VALUES);
+    {
+      VecSetValue(b, index, rhs[i], INSERT_VALUES);
+      VecSetValue(x, index, solution[i], INSERT_VALUES);
+    }
   }
+  
   VecAssemblyBegin(x);
-  VecAssemblyBegin(b);
   VecAssemblyEnd(x);
+  VecAssemblyBegin(b);
   VecAssemblyEnd(b);
   
   // solve the linear system using PETSc
@@ -526,19 +731,20 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
 #endif
   Output::print("some PETSc solver: number of iterations: ", its);
   
+  
   // copy back to solution:
   for(size_t i = 0; i < n_local; ++i)
   {
-    int index = i; // index in vector (conversion to int)
+    int index = i; // conversion to int
 #ifdef _MPI
-    // skip slave dofs
-    if(masters[i] != my_rank)
-      continue;
-    index = comms_[0]->Get_Local2Global()[i];
-#endif // _MPI
-    VecGetValues(x, 1, &index, &solution[i]);
+    index = block_local2global[i];
+    if(block_masters[i] == my_rank) // only consider master dofs
+#endif //_MPI
+    {
+      VecGetValues(x, 1, &index, &solution[i]);
+    }
   }
-  
+  // delete petsc vectors
   VecDestroy(&b);
   VecDestroy(&x);
 }
