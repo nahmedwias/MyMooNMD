@@ -13,8 +13,9 @@ class Example_CoupledCDR2D : public Example2D
 
   public:
 
-    //! @brief Constructor,chooses example according to example code.
-    Example_CoupledCDR2D(size_t example_code);
+    //! @brief Constructor,chooses example according to the example code
+    //! which is given in the input database.
+    Example_CoupledCDR2D(const ParameterDatabase &);
 
     /**
      * @brief Get one of the underlying CD(R) examples without the coupling term.

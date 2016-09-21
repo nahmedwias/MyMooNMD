@@ -23,7 +23,6 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Output2D.h>
 #include <TimeDiscRout.h>
 
 //for the time nse 2d flow object
@@ -85,7 +84,7 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->VELOCITY_SPACE = 2;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
 
-  Example_NSE2D example_flow(flow_database["example"]);
+  Example_NSE2D example_flow(flow_database);
   NSE2D flow_object(domain, flow_database, example_flow);
 
   // PART 3: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
@@ -113,7 +112,7 @@ int main(int argc, char* argv[])
   //set global parameters which are to be used for Time_CD2D construction here...
   TDatabase::ParamDB->ANSATZ_ORDER = 1;
 
-  Example_TimeCoupledCDR2D example_conc(conc_database["example"]);
+  Example_TimeCoupledCDR2D example_conc(conc_database);
   Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
 
   Output::info("PROGRAM PART", "Solving the coupled system.");

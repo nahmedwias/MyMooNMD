@@ -34,8 +34,10 @@ void zero_function_2D(double x, double y, double* f)
 }
 
 // Implementation of member methods
-Example_TimeCoupledCDR2D::Example_TimeCoupledCDR2D(int example_code) : Example_NonStationary2D()
+Example_TimeCoupledCDR2D::Example_TimeCoupledCDR2D(const ParameterDatabase & db)
+: Example_NonStationary2D(db)
 {
+  int example_code = example_database["example"];
   switch( example_code )
   {
     case 0: //cobbled together test example
