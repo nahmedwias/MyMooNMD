@@ -58,6 +58,10 @@ std::string addParameters2str(const ParameterDatabase& db)
                     + " -ksp_error_if_not_converged 1");
   // adding damping for Richardson iteration
   petsc_args.append(" -ksp_richardson_scale "+db["damping_factor"].value_as_string());
+  // tell PETSc to start with a nonzero solution. This is as the solution 
+  // BlockVector in the PETScSolver::solve method. Sometimes this solution is
+  // zero, but this does not hurt.
+  petsc_args.append(" -ksp_initial_guess_nonzero");
   return petsc_args;
 }
 
@@ -148,7 +152,7 @@ std::vector<std::vector<size_t>> get_n_masters_per_block_and_process(
   // the number of master dofs for each process and each block
   int n_masters_send[size][n_comms];
   // set all elements to 0
-  for(size_t r = 0; r < size; ++r)
+  for(size_t r = 0; (int)r < size; ++r)
     for(size_t c = 0; c < n_comms; ++c)
       n_masters_send[r][c] = 0;
   
@@ -160,7 +164,7 @@ std::vector<std::vector<size_t>> get_n_masters_per_block_and_process(
   // n_masters needs to be communicated
   int n_masters[size][n_comms];
    // set all elements to 0
-  for(size_t r = 0; r < size; ++r)
+  for(size_t r = 0; (int)r < size; ++r)
     for(size_t c = 0; c < n_comms; ++c)
       n_masters[r][c] = 0;
   // we only add all entries, each process only has non-zeros in exactly one row
@@ -170,7 +174,7 @@ std::vector<std::vector<size_t>> get_n_masters_per_block_and_process(
   std::vector<std::vector<size_t>> ret(size, std::vector<size_t>(n_comms, 0));
   for(size_t c = 0; c < n_comms; ++c)
   {
-    for(size_t r = 0; r < size; ++r)
+    for(size_t r = 0; (int)r < size; ++r)
     {
       ret[r][c] = n_masters[r][c];
     }
@@ -256,11 +260,11 @@ std::vector<int> local_to_global_block(
     // ordering is accomplished
     auto masters = comms[c]->GetMaster();
     std::vector<int> offset_per_process(size);
-    for(size_t p = 0; p < size; ++p)
+    for(size_t p = 0; (int)p < size; ++p)
     {
       offset_per_process[p] = offset(p, c);
     }
-    for(size_t i = 0; i < n_dof; ++i, ++it)
+    for(size_t i = 0; (int)i < n_dof; ++i, ++it)
     {
       *it += offset_per_process[masters[i]];
     }
@@ -394,7 +398,7 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
     int begin_row = row_ptr[row];
     int end_row = row_ptr[row+1];
     // loop over all entries in this row
-    for(size_t index = begin_row; index < end_row; ++index)
+    for(size_t index = begin_row; (int)index < end_row; ++index)
     {
       // column index within the combined matrix
       size_t column = col_ptr[index];
@@ -423,7 +427,7 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
     int global_row = block_local2global[row];
     int begin_row = row_ptr[row];
     int end_row = row_ptr[row+1];
-    for(size_t col_index = begin_row; col_index < end_row; ++col_index)
+    for(size_t col_index = begin_row; (int)col_index < end_row; ++col_index)
     {
       int col = col_ptr[col_index];
       double entry = entries[col_index];
