@@ -199,6 +199,10 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 
 
   }
+  else if(solver_name.compare("petsc") == 0)
+  {
+    db["solver_type"] = "petsc";
+  }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
@@ -234,6 +238,8 @@ double get_tolerance(std::string solver_name)
 
   if(solver_name.compare("cell_vanka_jacobi") == 0)
     return 1e-8;
+  if(solver_name.compare("petsc") == 0)
+    return 1e-9;
 #ifndef _MPI
   if(solver_name.compare("umfpack") == 0)
     return 1e-9;
@@ -349,7 +355,11 @@ int main(int argc, char* argv[])
       if(my_rank==0)
         Output::print<1>("\n>>>>> Q2/Q1 element on hexahedral grid. <<<<<");
       db["example"] = -3;
-      size_t nstype = 1;
+      size_t nstype = 4;
+      Parameter p("petsc_arguments",
+         std::string("-pc_type lu -pc_factor_mat_solver_package umfpack "
+                     "-ksp_monitor"), "");
+    db["petsc_arguments"].impose(p);
 #ifndef _MPI
       check(db, grid_collections, 2, -4711, nstype, errors, tol);
 #else
