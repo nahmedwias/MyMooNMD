@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  Output::print<1>("Example: DrivenCavity.h");
+  Output::info<1>("Example", "DrivenCavity.h");
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 

@@ -135,6 +135,10 @@ class CD2D
     
   public:
     
+    /** @brief stores a vector containing the convection field*/
+   BlockVector convecting_field;
+
+
     /** @brief constructor 
      * 
      * This constructor calls the other constructor creating an Example_CD2D
@@ -174,8 +178,21 @@ class CD2D
      * depending on 'TDatabase::ParamDB->DISCTYPE' different (local) assembling 
      * routines are used. Also in case of multigrid the matrices on all grids are
      * assembled.
+     * There is the possibility to give a pre-computed velocity field which is
+     * responsible for the advective transport to this routine, which will then
+     * be used as a parameter in the Assembling process. It is provided as a
+     * raw pointer, such that it can default to nullptr (no externally
+     * precomputed velo field).
+     *
+     * @param velocity_field A constant pointer to a pre-computed
+     * velocity field, which is to be used as coefficient function in the
+     * advective term.
+     * TODO This is still in an experimental state.
+     * The only thing which is checked is, that the given FEFunction has a space
+     * on the same Collection of grid cells as this object (which might not
+     * even be the right thing to check).
      */
-    void assemble();
+    void assemble(const TFEVectFunct2D* convection_field = nullptr);
     
     /** @brief solve the system */
     void solve();
@@ -257,6 +274,14 @@ class CD2D
      * ALGEBRAIC_FLUX_CORRECTION.
      */
     void do_algebraic_flux_correction();
+
+    /**
+     * Perform some checks on the velocity field. So far none there are none...
+     * TODO What wrong input must be caught here?
+     *
+     * @param velocity_field The velocity field to be checked.
+     */
+    void check_convection_field(const TFEFunction2D* convection_field) const;
 };
 
 #endif // __CD2D_H__
