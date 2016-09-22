@@ -1577,7 +1577,7 @@ void TDomain::Rectangular(int n, int m)
 
 void TDomain::initializeDefaultUnitSquareBdry()
 {
-  OutPut("Loading default domain description: Default_UnitSquare." << endl);
+  Output::info("Tests.C", "Loading domain: Default_UnitSquare.");
 
   //create an i/o string stream
   std::stringstream bdryStream;
