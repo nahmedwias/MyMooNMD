@@ -188,7 +188,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
-  double c0, c1, c2;
+  double c0, c1, c2, c3, c4;
   double u1, u2;
 
   MatrixA = LocMatrices[0];
@@ -209,6 +209,8 @@ double ***LocMatrices, double **LocRhs)
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
+  c3 = coeff[3];                 // rho
+  c4 = coeff[4];                 // mu
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
@@ -228,9 +230,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-
+      val  = c3*(test10*ansatz10+test01*ansatz01);
+      val += c4*(u1*ansatz10+u2*ansatz01)*test00;
+//      cout << "c0 a c5 vaut " << c0 << c3 << c4 << endl;
       MatrixRow[j] += Mult * val;
     }                            // endfor j
   }                              // endfor i
