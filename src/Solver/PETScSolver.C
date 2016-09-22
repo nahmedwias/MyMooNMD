@@ -350,34 +350,21 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
   std::vector<const TParFECommunicator3D*> col_communicators(n_block_cols);
   size_t n_master_cols = 0;
   size_t n_global_cols = 0;
-  size_t n_cols = 0; // local to process, global in combined matrix
   for(size_t c = 0; c < n_block_cols; ++c)
   {
     auto comm = &matrix.get_column_space(c + start.second).get_communicator();
     col_communicators[c] = comm;
     n_master_cols += comm->GetN_Master();
     n_global_cols += comm->get_n_global_dof();
-    n_cols += comm->GetNDof();
-  }
-  std::vector<int> col_masters_combined(n_cols, 0);
-  std::vector<int> col_local_to_globals_combined(n_cols, 0);
-  int offset = 0;
-  for(size_t c = 0; c < n_block_cols; ++c)
-  {
-    auto comm = &matrix.get_column_space(c + start.second).get_communicator();
-    std::copy(comm->GetMaster(), comm->GetMaster()+comm->GetNDof(), 
-              &col_masters_combined[offset]);
-    std::copy(comm->Get_Local2Global(), 
-              comm->Get_Local2Global() + comm->GetNDof(),
-              &col_local_to_globals_combined[offset]);
-    offset += comm->GetNDof();
   }
   
   size_t n_rows = sub_block->GetN_Rows();
   const auto row_ptr = sub_block->get_row_array();
   const auto col_ptr = sub_block->GetKCol();
-  auto block_masters = get_block_masters(row_communicators);
-  auto block_local2global = local_to_global_block(row_communicators);
+  auto row_block_masters = get_block_masters(row_communicators);
+  auto col_block_masters = get_block_masters(col_communicators);
+  auto row_block_local2global = local_to_global_block(row_communicators);
+  auto col_block_local2global = local_to_global_block(col_communicators);
   
   
   // 1) create matrix
@@ -391,7 +378,7 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
   // entries (whose column index corresponds to a master dof)
   for(size_t row = 0, master_index = 0; row < n_rows; ++row)
   {
-    if(block_masters[row] != my_rank)
+    if(row_block_masters[row] != my_rank)
       continue;
     // number of nonzero entries in a master column in this row
     size_t n_masters_in_row = 0;
@@ -402,7 +389,7 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
     {
       // column index within the combined matrix
       size_t column = col_ptr[index];
-      if(block_masters[column] == my_rank)
+      if(col_block_masters[column] == my_rank)
         n_masters_in_row++;
     }
     nnz_diagonal.at(master_index) = n_masters_in_row;
@@ -417,21 +404,19 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
   
   // 2) fill matrix
   // get raw data of the matrix
-  //const double * entries = sub_block->GetEntries();
-  std::vector<double> entries = sub_block->get_entries();
-  
+  const std::vector<double>& entries = sub_block->get_entries();
   for(size_t row = 0; row < n_rows; ++row)
   {
-    if(block_masters[row] != my_rank)
+    if(row_block_masters[row] != my_rank)
       continue; // skip slave rows
-    int global_row = block_local2global[row];
+    int global_row = row_block_local2global[row];
     int begin_row = row_ptr[row];
     int end_row = row_ptr[row+1];
     for(size_t col_index = begin_row; (int)col_index < end_row; ++col_index)
     {
       int col = col_ptr[col_index];
       double entry = entries[col_index];
-      int global_col = block_local2global[col];
+      int global_col = col_block_local2global[col];
       MatSetValues(petsc_mat, 1, &global_row, 1, &global_col, &entry, 
                    INSERT_VALUES);
     }
@@ -517,11 +502,6 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
     {
       use_direct_petsc = true;
     }
-#ifdef _MPI
-    // set direct solver to true, otherwise separate blocks are created which
-    // is not yet supported in mpi mode
-    use_direct_petsc = true;
-#endif
   }
 
   bool single_block = (n_block_rows*n_block_cols == 1);

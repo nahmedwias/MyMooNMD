@@ -331,14 +331,14 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
     linear_operator->apply_scaled_add(solution, r, -1.);
 #ifndef _MPI
     Output::info<1>("Iterative solver", "Absolute residual in Solver class, ",
-                    "before solve: ", setprecision(16), r.norm());
+                    setprecision(16), r.norm());
 #elif _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     double norm = r.norm_global(comms);
     if(my_rank == 0)
       Output::info<1>("Iterative solver", "Absolute residual in Solver class, ",
-                      "before solve: ", setprecision(16), norm);
+                      setprecision(16), norm);
 #endif
   };
   (void)compute_residual; // silence the unused variable warning when not used
