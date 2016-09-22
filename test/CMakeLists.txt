@@ -160,6 +160,8 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(NAME nse3d_seq_lsc COMMAND ParMooN_test_nse3d_solver_seq lsc)
   #multigrid with cell_vanka_jacobi smoother (works in SEQ and MPI)
   add_test(NAME nse3d_seq_cell_vanka_seq COMMAND ParMooN_test_nse3d_solver_seq cell_vanka_jacobi)
+  # petsc
+  add_test(NAME nse3d_seq_petsc COMMAND ParMooN_test_nse3d_solver_seq petsc)
   
   # direct solver test
   add_executable(ParMooN_test_direct_solver direct_solver_test.c++)
