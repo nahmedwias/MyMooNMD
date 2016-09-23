@@ -630,23 +630,21 @@ void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk,
                 double **Der, double **Exact,
                 double **coeffs, double *LocError)
 {
-  int i;
-  double *deriv, *exactval, w, t;
-
   LocError[0] = 0.0;
   LocError[1] = 0.0;
 
-  for(i=0;i<N_Points;i++)
+  for(int i=0;i<N_Points;i++)
   {
-    deriv = Der[i];
-    exactval = Exact[i];
-    w = Weights[i]*AbsDetjk[i];
+    double *deriv = Der[i];
+    double *exactval = Exact[i];
+    double w = Weights[i]*AbsDetjk[i];
 
-    t = deriv[0]-exactval[0];
+    double t = deriv[0]-exactval[0];
     LocError[0] += w*t*t;
 
     t = deriv[1]-exactval[1];
     LocError[1] += w*t*t;
+      
     t = deriv[2]-exactval[2];
     LocError[1] += w*t*t;
   } // endfor i
@@ -2328,7 +2326,7 @@ int GetVelocityAndPressureSpace(TCollection *coll,
           *pressure_space_code = 0;
           break;
         // standard conforming velo and continuous pressure
-	  case 2:
+	      case 2:
         case 3:
         case 4:
         case 5:

@@ -413,7 +413,7 @@ void BrinkmanType1GalerkinResidualStab(double Mult, double *coeff,
             ansatz00 = Orig2[j];
             
             val  = nu_eff * (test10 * ansatz10 + test01 * ansatz01);                // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
-            val += (nu/K) * (ansatz00 * test00);                                // nu/K *(u,v)
+            val += (nu/K) * (ansatz00 * test00);                                    // nu/K *(u,v)
             val += PSPGStab * (nu/K) * (nu/K) * (ansatz00 * test00);                // stabilization: (nu/K)^2*(u,v)
             MatrixA11[i][j] += Mult * val;
             
@@ -423,9 +423,9 @@ void BrinkmanType1GalerkinResidualStab(double Mult, double *coeff,
             // val  = 0;
             // Matrix21Row[j] += Mult * val;
             
-            val  = nu_eff * (test10 * ansatz10 + test01 * ansatz01);            // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
-            val += (nu/K) * (ansatz00 * test00);                            // nu/K *(u,v)
-            val += PSPGStab * (nu/K) * (nu/K) * (ansatz00*test00);            // stabilization: (nu/K)^2*(u,v)
+            val  = nu_eff * (test10 * ansatz10 + test01 * ansatz01);                // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
+            val += (nu/K) * (ansatz00 * test00);                                    // nu/K *(u,v)
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz00*test00);                  // stabilization: (nu/K)^2*(u,v)
             MatrixA22[i][j] += Mult * val;
         }
         
@@ -648,7 +648,7 @@ void BrinkmanType1GalerkinResidualStab2(double Mult, double *coeff,
             ansatz10 = Orig4[j];            // p_x
             ansatz01 = Orig5[j];            // p_y
             
-            val = PSPGStab * (ansatz10 * test10+ansatz01*test01);                           // stabilization P1/P1: (grad p,grad q)
+            val = PSPGStab * (ansatz10 * test10 + ansatz01 * test01);                           // stabilization P1/P1: (grad p,grad q)
             MatrixC[i][j] += Mult * val;
         }
     }

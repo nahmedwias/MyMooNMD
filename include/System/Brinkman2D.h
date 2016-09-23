@@ -120,6 +120,8 @@ protected:
      */
     std::vector<double> norms_of_residuals;
     
+
+    
 public:
     /**
      * @brief a simple struct storing one set of residuals
@@ -148,6 +150,12 @@ public:
         /// @brief write out the three numbers to a stream.
         friend std::ostream& operator<<(std::ostream& s, const Residuals& n);
     };
+    
+//    BoundCondFunct2D *boundary_conditions[3];
+   //BoundValueFunct2D **BoundaryValues;
+
+    
+    
 protected:
     
     /**
@@ -185,7 +193,7 @@ protected:
      * Currently, the errors store the L2 and H1 errors of the velocity
      * and pressure
      */
-    std::array<double, int(6)> errors;
+    std::array<double, int(4)> errors;
     
 public:
     
@@ -317,7 +325,7 @@ public:
     /// @brief get the current residual (updated in Brinkman2D::normOfResidual)
     double getFullResidual() const;
     /// @brief return the computed errors
-    std::array<double, int(6)> get_errors();
+    std::array<double, int(4)> get_errors();
 };
 
 
