@@ -3,13 +3,14 @@
 # 
 # Change history:
 # 2015/08/20 Clemens Bartsch: Rework to supply 2D and 3D library at once.
-#
+# 2016/09/23 Najib Alia: added my own files for user_projects
 
 # Include header files. 
 include_directories("${CMAKE_SOURCE_DIR}/include/FE"
                     "${CMAKE_SOURCE_DIR}/include/FE1D"
                     "${CMAKE_SOURCE_DIR}/include/FE2D"
-                    "${CMAKE_SOURCE_DIR}/include/FE3D")
+                    "${CMAKE_SOURCE_DIR}/include/FE3D"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/FE")
 
 # Source files used in 2D and 3D.
 #list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/ADICell.C") 
@@ -55,7 +56,11 @@ list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/RefTrans2D.C")
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/TimeDiscRout.C") 
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/TriaAffin.C") 
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/TriaIsoparametric.C") 
-#list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/VMS.C") 
+#list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/VMS.C")
+## here are added files for own user_projects 
+list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/user_projects/src/FE/FEFunction2D_user.C")
+
+
 
 # Source files only used in 2D
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Assemble2D_edge_Oseen.C") 
@@ -64,7 +69,6 @@ list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/ConvDiff2D.C")
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Drop.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Darcy2DMixed.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/FEVectFunct2D.C")
-list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/FEFunctionInterpolator.C")
 #list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/FreeSurface2D.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/LocalAssembling2D.C") 
 #list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/MovingNavierStokes.C") 
@@ -89,6 +93,9 @@ list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/TNSE2D_FixPoRot.C")
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/TNSE2D_FixPo_SSMUM.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Upwind.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Brinkman2D_Mixed.C")
+list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/LocalAssembling2D_user.C")
+list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/FEFunctionInterpolator_user.C")
+list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/NSE2D_FixPo_user.C") 
 
 # Source files only used in 3D
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/Assemble3D.C") 

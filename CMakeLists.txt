@@ -238,7 +238,7 @@ target_link_libraries(geo2mesh2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_L
 
 ### MULTIPHASE2D ###
 # Standard executable target.
-add_executable(multiphase2d ${PROJECT_SOURCE_DIR}/2DPrograms/Multiphase2D_ParMooN.C)
+add_executable(multiphase2d ${PROJECT_SOURCE_DIR}/user_projects/0_MultiphasePrograms/Multiphase2D_ParMooN.C)
 set_target_properties(multiphase2d PROPERTIES OUTPUT_NAME parMooN_multiphase2d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(multiphase2d PUBLIC -D__2D__)
