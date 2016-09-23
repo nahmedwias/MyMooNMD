@@ -17,7 +17,7 @@ double DIMENSIONLESS_VISCOSITY;
 //side effect: sets the global parameter
 void ExampleFile()
 {
-  Output::info<1>("Example", "Flow_around_cylinder.h (stationary, 2D)");
+  Output::print("Example: flow_around_cylinder.h (stationary, 2D)");
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
