@@ -357,25 +357,25 @@ switch(type)
         
         ///////////////////////////////////////////////////////////////////////////
         // NSE2D: stationary Navier-Stokes problems problem
-    case NSE2D_Galerkin:
-    case NSE2D_Galerkin_Nonlinear:
-      this->set_parameters_for_nseGalerkin(type);
-      break;
-      ///////////////////////////////////////////////////////////////////////////
-    case NSE2D_SUPG:
-    case NSE2D_SUPG_NL:
-      this->set_parameters_for_nseSUPG(type);
-      break;
-      ///////////////////////////////////////////////////////////////////////////
-    case Darcy2D_Galerkin:
-      this->N_Terms = 6;
-      this->Derivatives = { D00, D00, D10, D01, D10, D01 };
-      this->Needs2ndDerivatives = new bool[2];
-      this->Needs2ndDerivatives[0] = false;
-      this->Needs2ndDerivatives[1] = false;
-      this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
-      this->N_Matrices = 4;
-      this->RowSpace = {0, 1, 0, 1};
+            case NSE2D_Galerkin:
+            case NSE2D_Galerkin_Nonlinear:
+            this->set_parameters_for_nseGalerkin(type);
+            break;
+  ///////////////////////////////////////////////////////////////////////////
+  case NSE2D_SUPG:
+  case NSE2D_SUPG_NL:
+    this->set_parameters_for_nseSUPG(type);
+    break;
+  ///////////////////////////////////////////////////////////////////////////
+  case Darcy2D_Galerkin:
+    this->N_Terms = 6;
+    this->Derivatives = { D00, D00, D10, D01, D10, D01 };
+    this->Needs2ndDerivatives = new bool[2];
+    this->Needs2ndDerivatives[0] = false;
+    this->Needs2ndDerivatives[1] = false;
+    this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
+    this->N_Matrices = 4;
+    this->RowSpace = {0, 1, 0, 1};
     this->ColumnSpace = { 0, 1, 1, 0};
     this->N_Rhs = 2;
     this->RhsSpace = { 0, 1 };
