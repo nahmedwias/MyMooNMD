@@ -21,10 +21,10 @@ void Exact(double x, double y, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  if (i==3)
-    cond = NEUMANN;
-  else
-    cond = DIRICHLET;
+    if (i==3)
+	cond = NEUMANN;
+    else
+	cond = DIRICHLET;
 }
 
 // value of boundary condition
@@ -56,8 +56,8 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
     y = Y[i];
 
     coeff[0] = eps;
-    coeff[1] = parameters[i][0];//-y;
-    coeff[2] = parameters[i][1];//x;
+    coeff[1] = -y;
+    coeff[2] = x;
     coeff[3] = 0;
     coeff[4] = 0;
     coeff[5] = sqrt(x*x + y*y);
