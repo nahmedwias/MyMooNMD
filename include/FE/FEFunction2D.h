@@ -109,7 +109,7 @@ class TFEFunction2D
     * Note that this is rather slow, because no further information is 
     * required. The function 'OldFeFunction' could even live on a larger domain.
     */
-    void Interpolate(const TFEFunction2D *F);
+    void Interpolate(TFEFunction2D *F);
     
     /**
      * @brief project this functions into the space L20 (having zero mean value)

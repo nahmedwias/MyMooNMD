@@ -286,21 +286,6 @@ class NSE2D
     /// @brief return the computed errors
     /// @details updated in NSE2D::stopIt
     std::array<double, int(4)> get_errors() const;
-
-    /** @brief Set the solution vector of a NSE2D object
-    * @details can be used to prescribe a non-zero initial solution
-    * or to adapt solution between iterations (case of multiphase flow)
-    * ATTENTION: it is dangerous, no check if new_solution has a different block structure
-    * or length...!!!
-    */
-    void set_solution(BlockVector new_solution)
-    { this->get_solution() = new_solution; }
-
-    /** @brief Update solution vector of a NSE2D object
-    * @details used exclusively for multiphase flow (weight = phase fraction,
-    * or level set function or any marker function)
-    */
-    void update_solution(BlockVector weight_vector);
 };
 
 

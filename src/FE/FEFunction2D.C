@@ -1436,7 +1436,7 @@ void TFEFunction2D::ReadSol(char *BaseName)
 
 
 /** interpolate the old mesh fe function values to the new fe function */
-void TFEFunction2D::Interpolate(const TFEFunction2D *OldFeFunction)
+void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
 {
   int i,j, N_Cells, N_Edges = 0;
   int N_DOFs, N_LocalDOFs;

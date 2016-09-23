@@ -813,32 +813,4 @@ double NSE2D::getFullResidual() const
   return this->oldResiduals.back().fullResidual;
 }
 
-/** ************************************************************************ */
-void NSE2D::update_solution(BlockVector weight_vector)
-{
-  const unsigned int length0 = this->get_solution().length(0);
-  const unsigned int length1 = this->get_solution().length(1);
-  const unsigned int length2 = weight_vector.length();
-
-  if (length0 != length2 || length1 != length2)
-  {
-    Output::warn<1>("MULTIPHASE: ATTENTION, BlockVectors  "
-        "don't have same length! ", length0, " ", length1, " ", length2);
-    ErrThrow("See Warning");
-  }
-  else
-  {
-    Output::print<3>("NSE2D: ", "Ok, blocks are same length and can be multiplied");
-  }
-
-  for (unsigned int i = 0; i < length0; i++)
-  {
-    this->get_solution().at(i) *= weight_vector.at(i);
-  }
-
-  for (unsigned int i = 0; i < length0; i++)
-  {
-    this->get_solution().at(i + length0) *= weight_vector.at(i);
-  }
-}
 
