@@ -138,6 +138,9 @@ class LocalAssembling2D
     /** which multiindex is used for FE value i */
     std::vector<MultiIndex2D> FEValue_MultiIndex;
 
+    /** values of parameter functions stored for computing local forms */
+    std::vector< std::vector<double> > parameter_functions_values;
+    
     /** Depending on the NSTYPE and the NSE_NONLINEAR_FORM all parameters are 
      * set within this function. This function is called from the constructor 
      * in case of Navier-Stokes problems. It only exists in order to not make 
@@ -287,19 +290,19 @@ class LocalAssembling2D
                        double **LocRhs,
                        double factor = 1.);
 
-    /*
-    //HIER///////////////////////////////
-    void get_local_forms(int N_Points,double *weights,double *AbsDetjk,double *X,double *Y,
+    
+    void get_local_forms(int N_Points,
+			 double *weights,double *AbsDetjk,
+			 double *X,double *Y,
                          int *N_BaseFuncts,BaseFunct2D *BaseFuncts,
-                         std::vector<std::vector<double>> Parameters_new,
-                         std::vector<std::vector<double>> AuxArray,
+                         //double** AuxArray,
                          TBaseCell *Cell,
                          int N_Matrices,
                          int N_Rhs,
                          double ***LocMatrix,
                          double **LocRhs,
                          double factor=1.);
-    */
+    
     
     void GetLocalForms(int N_Points,
                        double *weights,
@@ -341,11 +344,11 @@ class LocalAssembling2D
                        double **Parameters);
     
     //HIER///////////////////////////////////////////////////
-    /*
-      void compute_parameters(int n_points, TCollection *Coll,
-                            int cellnum,
-                            double *x, double *y, std::vector<std::vector<double>> Parameters_new);
-    */
+    
+    void compute_parameters(int n_points, TCollection *Coll,
+                            TBaseCell *cell, int cellnum,
+                            double *x, double *y);
+    
     
     /** return name */
     const std::string& get_name() const
