@@ -6,7 +6,8 @@
 #
 
 # Include header files. 
-include_directories("${CMAKE_SOURCE_DIR}/include/Matrix")
+include_directories("${CMAKE_SOURCE_DIR}/include/Matrix"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Matrix")
 
 # Source files to be added to the 2D and 3D library.
 list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrix.C")
@@ -17,6 +18,7 @@ list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/src/Matrix/FEMatrix.C")
 list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/src/Matrix/Matrix.C")
 list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/src/Matrix/SquareMatrix.C")
 list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/src/Matrix/Structure.C")
+list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/user_projects/src/Matrix/BlockVector_user.C")
 
 #2D - only temporary, until there is no Matrix2D/Matrix3D anymore
 list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/Matrix2D.C")
