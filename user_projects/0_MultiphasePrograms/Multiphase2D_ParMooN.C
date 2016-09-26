@@ -10,7 +10,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <NSE2D_user.h>
+#include <NSE2D.h>
 #include <CD2D.h>
 #include <Example_NSE2D.h>
 #include <Chrono.h>
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 
   Output::print<1>("NSE_example number ", nse_db["example"]);
 
-  nse2d.assemble(&rho_field,&mu_field); // assemble linear term
+  nse2d.assemble_withfields(&rho_field,&mu_field); // assemble linear term
   nse2d.stopIt(0); // check initial residual
 
   Output::print<1>("The ansatz space is ", TDatabase::ParamDB->ANSATZ_ORDER);
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
     //==============================
 
     if(nse_db["problem_type"].is(3)) break; // Stokes
-    nse2d.assemble_nonlinear_term(&rho_fiel,&mu_fiel);
+    nse2d.assemble_nonlinear_term_withfields(&rho_fiel,&mu_fiel);
 
     if(nse2d.stopIt(k)) // Check residuals
     {
