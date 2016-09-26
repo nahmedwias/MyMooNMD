@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 {
   Chrono stopwatch; // Start a stopwatch for time measurement during execution
 
-  TDatabase Database;  // Initialize User Input Databases.
+  TDatabase  Database;  // Initialize User Input Databases.
   TFEDatabase2D FEDatabase; // Initialize FE Database.
 
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
