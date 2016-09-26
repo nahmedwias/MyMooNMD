@@ -6,7 +6,7 @@
 #
 
 # Include header files. 
-include_directories("${CMAKE_SOURCE_DIR}/include/Matrix)
+include_directories("${CMAKE_SOURCE_DIR}/include/Matrix")
 
 # Source files to be added to the 2D and 3D library.
 list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrix.C")
