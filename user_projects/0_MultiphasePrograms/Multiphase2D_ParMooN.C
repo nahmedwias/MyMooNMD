@@ -11,7 +11,7 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <NSE2D_user.h>
-#include <CD2D_user.h>
+#include <CD2D.h>
 #include <Example_NSE2D.h>
 #include <Chrono.h>
 #include <LoopInfo.h>
@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
 
     Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
 //      cd2d.assemble();
-    cd2d.assemble(&nse2d.get_velocity());
+    cd2d.assemble_with_convection(&nse2d.get_velocity());
     Output::print<1>("================== JE COMMENCE A RESOUDRE =============");
     cd2d.solve();
     //================================================================

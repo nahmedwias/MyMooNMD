@@ -93,9 +93,7 @@ list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/TNSE2D_FixPoRot.C")
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/TNSE2D_FixPo_SSMUM.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Upwind.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Brinkman2D_Mixed.C")
-list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/LocalAssembling2D_user.C")
-list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/FEFunctionInterpolator_user.C")
-list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/NSE2D_FixPo_user.C") 
+list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/FEFunctionInterpolator.C")
 
 # Source files only used in 3D
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/Assemble3D.C") 
