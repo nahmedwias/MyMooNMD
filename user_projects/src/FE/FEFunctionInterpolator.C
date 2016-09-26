@@ -5,7 +5,6 @@
  * @date 2016/02/05
  */
 
-#include <FEFunctionInterpolator_user.h>
 #include <MooNMD_Io.h>
 
 #include <FESpace1D.h>
@@ -15,6 +14,7 @@
 #include <FEFunction2D_user.h>
 
 #include <memory>
+#include "FEFunctionInterpolator.h"
 
 FEFunctionInterpolator::FEFunctionInterpolator(
     const TFESpace* fe_space)
