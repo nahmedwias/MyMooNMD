@@ -435,4 +435,16 @@ int NSAuxProblemColumnSpace[1] = { 0 };
 int NSAuxProblemN_Rhs = 2;
 int NSAuxProblemRhsSpace[2] = { 0, 0 };
 */
+
+
+
+/* *************BELOW THIS LINE USER SPECIFIC CODE **********/
+void NSType1Galerkin_dimensional(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
+
+void NSParamsVelo_dimensional(double *in, double *out);
+
+
 #endif
