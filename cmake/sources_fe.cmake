@@ -57,10 +57,6 @@ list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/TimeDiscRout.C")
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/TriaAffin.C") 
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/TriaIsoparametric.C") 
 #list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/VMS.C")
-## here are added files for own user_projects 
-list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/user_projects/src/FE/FEFunction2D_user.C")
-
-
 
 # Source files only used in 2D
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Assemble2D_edge_Oseen.C") 
