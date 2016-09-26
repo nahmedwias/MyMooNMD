@@ -11,7 +11,7 @@
 #include <FESpace2D.h>
 #include <FESpace3D.h>
 
-#include <FEFunction2D_user.h>
+#include <FEFunction2D.h>
 
 #include <memory>
 #include "FEFunctionInterpolator.h"
