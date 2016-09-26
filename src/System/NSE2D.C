@@ -6,8 +6,8 @@
 #include <GridTransfer.h>
 #include <Multigrid.h>
 #include<Assemble2D.h>
-
-
+#include <LocalAssembling2D.h>
+#include <NSE2D_FixPo.h>
 
 ParameterDatabase get_default_NSE2D_parameters()
 {
@@ -291,7 +291,7 @@ void NSE2D::set_parameters()
 
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
   {
-    //Assemble2DSlipBC does not work, and is not implemented yet
+    //Assemble2DSlipBC does not  work, and is not implemented yet
     ErrThrow("Set INTERNAL_SLIP_WITH_FRICTION to 0, this feature is not yet included.");
   }
 }
@@ -1057,7 +1057,7 @@ void NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
       la_nonlinear.setN_Parameters(4);
       la_nonlinear.setN_FeValues(4);
       la_nonlinear.setN_ParamFct(1);
-       la.setParameterFct({NSParamsVelo_dimensional});
+      la_nonlinear.setParameterFct({NSParamsVelo_dimensional});
       //...this should do the trick
     }
 
