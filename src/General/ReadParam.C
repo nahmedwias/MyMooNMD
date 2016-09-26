@@ -44,7 +44,9 @@ int TDomain::ReadParam(char *ParamFile)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  char line[200], *aux_char;
+  // if the max_line_length is too short, the program simply hangs
+  size_t max_line_length = 1000;
+  char line[max_line_length], *aux_char;
   int N_Param = 0, flag[7];
   std::ifstream dat(ParamFile);
 
@@ -2655,7 +2657,7 @@ int TDomain::ReadParam(char *ParamFile)
     
  
    // read until end of line
-    dat.getline (line, 199);
+    dat.getline (line, max_line_length-1);
   }
 
   if (TDatabase::ParamDB->START_RE_NR < 0)
