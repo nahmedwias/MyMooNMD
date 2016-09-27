@@ -26,7 +26,7 @@ void InitialP(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = cos(t) * ( sin(x) * cos(y) * (cos(1) * sin (1) - sin(1)) );
+  values[0] = cos(t) * ( sin(x) * cos(y) + (cos(1) * sin (1) - sin(1)) );
 }
 
 
@@ -54,7 +54,7 @@ void ExactU2(double x, double y, double *values)
 void ExactP(double x, double y, double *values)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
-  values[0] =  cos(t) * ( sin(x) * cos(y) * (cos(1) * sin (1) - sin(1)) );
+  values[0] =  cos(t) * ( sin(x) * cos(y) + (cos(1) * sin (1) - sin(1)) );
   values[1] =  cos(t) * ( cos(x) * cos(y) );
   values[2] = -cos(t) * ( sin(x) * sin(y) );
 }

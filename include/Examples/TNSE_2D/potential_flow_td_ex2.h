@@ -3,7 +3,7 @@
 //
 void ExampleFile()
 {
-  OutPut("Example: SinSinSin.h" << endl) ;
+  OutPut("Example: potential_flow_ex2.h" << endl) ;
 }
 
 // ========================================================================
