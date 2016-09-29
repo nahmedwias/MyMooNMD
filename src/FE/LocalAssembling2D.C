@@ -787,7 +787,7 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
               this->ColumnSpace = { 0, 0, 0 };
               this->N_Rhs = 2;
               this->RhsSpace = { 0, 0 };
-              this->AssembleParam = NSType1Galerkin; 
+              this->AssembleParam = NSType1Galerkin;
               this->Manipulate = NULL;
 
               this->N_Parameters = 2;

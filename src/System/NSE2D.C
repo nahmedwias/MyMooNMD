@@ -815,6 +815,9 @@ double NSE2D::getFullResidual() const
   return this->oldResiduals.back().fullResidual;
 }
 
+
+
+
 /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
 /** ************************************************************************ */
 void NSE2D::assemble_withfields(TFEFunction2D* rho_field,
@@ -873,6 +876,8 @@ void NSE2D::assemble_withfields(TFEFunction2D* rho_field,
       la.setN_FeValues(4);
       la.setN_ParamFct(1);
       la.setParameterFct({NSParamsVelo_dimensional});
+
+      la.setAssembleParam({NSType1Galerkin_dimensional}); //this is for dimensional NSE
       //...this should do the trick
     }
 
@@ -1058,6 +1063,8 @@ void NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
       la_nonlinear.setN_FeValues(4);
       la_nonlinear.setN_ParamFct(1);
       la_nonlinear.setParameterFct({NSParamsVelo_dimensional});
+
+      la_nonlinear.setAssembleParam({NSType1_2NLGalerkin_dimensional});
       //...this should do the trick
     }
 
@@ -1163,6 +1170,9 @@ void NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
 
 
 /** ************************************************************************ */
+/***** THIS METHOD IS NOT USED AT ALL IN THE MAIN PROGRAM AND IS MAYBE NOT RELEVANT
+ * IT SHOULD MAYBE BE REMOVED...
+ */
 void NSE2D::update_solution(BlockVector weight_vector)
 {
   const unsigned int length0 = this->get_solution().length(0);
