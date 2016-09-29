@@ -392,6 +392,11 @@ class BlockVector
                              std::vector<const TParFECommunicator3D*> comms);
 #endif
 
+    /* @brief compute the component-wise multiplication
+     *  of 2 block vectors and returns a third block vector
+     *  THIS DOESNT DO ANYTHING YET */
+    friend BlockVector component_multiplication(BlockVector& a, const int i,
+                                                BlockVector& b, const int j);
 };
 
 
