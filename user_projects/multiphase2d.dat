@@ -205,6 +205,9 @@ peclet_number: 1e3
 user_parameter1: 2
 user_parameter2: 2
 
+coupling_nse_cd: true 
+
+
 
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711

@@ -31,6 +31,14 @@ namespace sharp_boundary_layer
   #include "CD_2D/SharpBoundaryLayer.h"
 }
 
+// ***************THE FOLLOWING EXAMPLES ARE SPECIFIC TO USER PROJECT
+namespace multiphase2d
+{
+  #include "example_multiphase2d.h"
+}
+// ********* END OF USER PROJECT CODE
+
+
 Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db) 
  : Example2D(user_input_parameter_db)
 {
@@ -98,6 +106,30 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
 
       sharp_boundary_layer::ExampleFile();
       break;
+
+
+      // ******* BELOW IS CODE SPECIFIC TO USER PROJECTS ************
+    case 10:   //multiphase2d
+      /** exact_solution */
+      exact_solution.push_back( multiphase2d::Exact );
+
+      /** boundary condition */
+      boundary_conditions.push_back( multiphase2d::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( multiphase2d::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = multiphase2d::BilinearCoeffs;
+
+      multiphase2d::ExampleFile();
+
+      multiphase2d::USER1 = this->example_database["user_parameter1"];
+      multiphase2d::USER2 = this->example_database["user_parameter2"];
+
+      break;
+
+
 
     default:
       ErrThrow("Unknown name of the convection-diffusion (CD2D) example!", 
