@@ -374,6 +374,15 @@ class LocalAssembling2D
     {
       ParameterFct = parameterFct;
     }
+
+
+
+
+    /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
+    void setAssembleParam(AssembleFctParam2D * assembleFctParam2D)
+    {
+      AssembleParam = assembleFctParam2D;
+    }
 };
 
 
