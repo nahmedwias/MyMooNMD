@@ -1,7 +1,7 @@
 // Example file for Multiphase 2D
 double USER1;
 double USER2;
-double USER3;
+
 
 void ExampleFile()
 {

@@ -16,6 +16,28 @@
 #include <LoopInfo.h>
 #include <ParameterDatabase.h>
 
+// ***** LIST OF FUNCTIONS USED IN MAIN PROGRAMM ***** //
+TFEFunction2D update_fieldfunction(const TFESpace2D* feSpace_, BlockVector vector_)
+{
+  TFEFunction2D result_fieldfunction(feSpace_, (char*) "c", (char*)"c",
+                                     vector_.block(0),
+                                     vector_.length(0));
+
+  return result_fieldfunction;
+}
+
+BlockVector   update_fieldvector(double property_field1, double property_field2,
+                               BlockVector phasefraction_vector_, std::string text_)
+{
+  BlockVector result_fieldvector = phasefraction_vector_;
+  result_fieldvector.scale(property_field1 - property_field2);
+  result_fieldvector.add_scaled(phasefraction_vector_, property_field2);
+  result_fieldvector.write(text_);
+  return result_fieldvector;
+}
+
+
+
 
 
 
@@ -35,7 +57,7 @@ int main(int argc, char* argv[])
   nse_db.merge(parmoon_db,true);
   cd_db.merge(parmoon_db,true);
 
-  cd_db["example"]          = 4;    // 1 = TwoInteriorLayer, 4 = Multiphase2D
+  cd_db["example"]          = 10;    // 1 = TwoInteriorLayer, 4 = Multiphase2D
   cd_db["problem_type"]     = 1;
   cd_db["output_basename"]  = "multiphase_convection_output";
 
@@ -44,7 +66,6 @@ int main(int argc, char* argv[])
   nse_db["output_basename"] = "multiphase_nse_output";
 
   TDomain domain(argv[1], parmoon_db);            // Initialize geometry
-
 
 
   /********************************************************************
@@ -71,55 +92,28 @@ int main(int argc, char* argv[])
   NSE2D         nse2d(domain, nse_db, example_nse2d);   // Construct NSE system
   CD2D          cd2d(domain, cd_db);                    // Construct CD system
 
+  double rho1 = 1;      // density constant of fluid1
+  double rho2 = 1000;   // density constant of fluid2
+  double mu1  = 1e-7;   // mu      constant of fluid1
+  double mu2  = 1e-3;   // mu      constant of fluid2
+
+
 
 
   /********************************************************************
    * INITIALIZING OBJECTS FOR MULTIPHASE
    ********************************************************************/
-  TCollection   *collection = domain.GetCollection(It_Finest, 0, -4711);
-  Example_CD2D  ghost_example(parmoon_db);
-  TFESpace2D    ghost_space(collection,(char*)"space", (char*)"cd2d fe_space",
-                         ghost_example.get_bc(0),
-                         2, nullptr);
-  BlockFEMatrix ghost_matrix({&ghost_space});
-  BlockVector   convection_vector(ghost_matrix,false);
-
-  convection_vector.write("convection_vector0");
-
-  int longueur = convection_vector.length();
-
-  for (int indice=0; indice < longueur; indice++)
-  {    convection_vector.at(indice) = 1 ;  }
-
-  convection_vector.write("convection_vector");
-
-  TFEFunction2D phase_fraction(&ghost_space, (char*) "c", (char*)"c",
-                               convection_vector.block(0),
-                               convection_vector.length(0));
-
-  /* density constant of the fluids */
-  double rho1 = 1;
-  double rho2 = 1000;
-  double mu1 = 1e-7;
-  double mu2 = 1e-3 ;
-
-  BlockVector rho_vector = convection_vector;
-  BlockVector mu_vector  = convection_vector;
-  rho_vector.scale(rho1-rho2);
-  mu_vector .scale(mu1-mu2);
-  rho_vector.add_scaled(convection_vector,rho2);
-  mu_vector .add_scaled(convection_vector,mu2);
-  rho_vector.write("rho_vector");
-  mu_vector .write("mu_vector");
+  BlockVector phase_field = cd2d.get_solution(); // copy vector structure
+  phase_field = 1;     // set phase field = 1 everywhere
 
   /** @brief Finite Element function for density field */
-  TFEFunction2D rho_field(&ghost_space, (char*) "c", (char*)"c",
-                          rho_vector.block(0),
-                          rho_vector.length(0));
+  BlockVector   rho_vector = update_fieldvector(rho1,rho2,phase_field,"rho_vector");
+  TFEFunction2D rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector);
+
   /** @brief Finite Element function for dynamic viscosity field */
-  TFEFunction2D mu_field(&ghost_space, (char*) "c", (char*)"c",
-                         mu_vector.block(0),
-                         mu_vector.length(0));
+  BlockVector   mu_vector = update_fieldvector(mu1, mu2, phase_field,"mu_vector" );
+  TFEFunction2D mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector);
+
 
 
 
@@ -185,18 +179,18 @@ int main(int argc, char* argv[])
     BlockVector mu_vect  = phase_fraction;
     rho_vect.scale(rho1-rho2);
     mu_vect .scale(mu1-mu2);
-    rho_vect.add_scaled(convection_vector,rho2);
-    mu_vect .add_scaled(convection_vector,mu2);
+    rho_vect.add_scaled(phase_field,rho2);
+    mu_vect .add_scaled(phase_field,mu2);
     rho_vect.write("rho_vector");
     mu_vect .write("mu_vector");
 
     /** @brief Finite Element function for density field */
-    TFEFunction2D rho_fiel(&ghost_space, (char*) "c", (char*)"c",
+    TFEFunction2D rho_fiel(&cd2d.get_space(), (char*) "c", (char*)"c",
                             rho_vect.block(0),
                             rho_vect.length(0));
 
     /** @brief Finite Element function for dynamic viscosity field */
-    TFEFunction2D mu_fiel(&ghost_space, (char*) "c", (char*)"c",
+    TFEFunction2D mu_fiel(&cd2d.get_space(), (char*) "c", (char*)"c",
                            mu_vect.block(0),
                            mu_vect.length(0));
 

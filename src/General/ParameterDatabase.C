@@ -806,6 +806,15 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "output you will get. Such output will be written to console and the "
          "'outfile'.", (size_t)1, (size_t)5);
   
+  /** The parameters below are user specific **/
+  db.add("coupling_nse_cd", false,
+         "Parameter for multiphase simulation: if it is true, it enables "
+         "a one way coupling between NSE and CD, namely the velocity vector"
+         "resulting from NSE is injected as a convection vector into CD assembling"
+         "methods.",
+         {true,false});
+
+
   return db;
 }
 
