@@ -2306,6 +2306,29 @@ int TDomain::ConvertQuadToTri(int type)
   return 0;
 }
 
+int TDomain::refine_by_barycenter()
+{
+  TBaseCell *CurrCell;
+  Shapes CellType;
+  int info;
+  
+  RefLevel++;
+
+  TDatabase::IteratorDB[It_Finest]->Init(0);
+
+  while (CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info))
+  {
+    CellType = CurrCell->GetType();
+    if (CellType == Triangle )
+    {
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TriBary]);
+      CurrCell->Refine(RefLevel);
+    }
+  }cout<<"here:"<<endl;
+  return 0;
+}
+
+
 /*
  Extract a subcollection from a collection object:
 */
