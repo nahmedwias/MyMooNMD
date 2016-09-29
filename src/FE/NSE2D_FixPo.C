@@ -4740,7 +4740,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2, c3, c4;
-  double u1, u2;
+  double u1, u2, u3, u4;
 
   MatrixA = LocMatrices[0];
   MatrixB1 = LocMatrices[1];
@@ -4760,11 +4760,21 @@ double ***LocMatrices, double **LocRhs)
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // rho
-  c4 = coeff[4];                 // mu
+  c3 = coeff[3];                 // rho taken as a coefficient from examples
+  c4 = coeff[4];                 // mu  taken as a coefficient from examples
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
+  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
+
+  /** NOTES: there are 2 ways to consider the property fields in the equations : take it
+   * as input from example objects (as a coefficient, written in the example methods or given
+   * as user input), use c3 and c4 to use this case and replace them in val, below. The other way
+   * is to read them as values from fe_functions taken as a Param in a local Assembling. This is
+   * with u3 and u4.
+   */
 
   for(i=0;i<N_U;i++)
   {
@@ -4781,8 +4791,11 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val  = c4*(test10*ansatz10+test01*ansatz01);
-      val += c3*(u1*ansatz10+u2*ansatz01)*test00;
+      cout << "valeur de u4 " << u4 << endl;
+      cout << "valeur de u3 " << u3 << endl;
+
+      val  = u4*(test10*ansatz10+test01*ansatz01);
+      val += u3*(u1*ansatz10+u2*ansatz01)*test00;
 
       MatrixRow[j] += Mult * val;
     }                            // endfor j
@@ -4809,6 +4822,65 @@ double ***LocMatrices, double **LocRhs)
 
   }                              // endfor i
 }
+
+void NSType1_2NLGalerkin_dimensional(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA;
+  double val;
+  double *MatrixRow;
+  double ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j,N_U;
+  double c0;
+  double u1, u2, u3, u4;
+
+  MatrixA = LocMatrices[0];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];         // u_x
+  Orig1 = OrigValues[1];         // u_y
+  Orig2 = OrigValues[2];         // u
+
+  c0 = coeff[0];                 // nu
+
+  u1 = param[0];                 // u1old
+  u2 = param[1];                 // u2old
+  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
+
+  /** NOTES: there are 2 ways to consider the property fields in the equations : take it
+   * as input from example objects (as a coefficient, written in the example methods or given
+   * as user input), use c3 and c4 to use this case and replace them in val, below. The other way
+   * is to read them as values from fe_functions taken as a Param in a local Assembling. This is
+   * with u3 and u4.
+   */
+
+  for(i=0;i<N_U;i++)
+  {
+    MatrixRow = MatrixA[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+
+      MatrixRow[j] += Mult * val;
+    }                            // endfor j
+  }                              // endfor i
+}
+
 
 void NSParamsVelo_dimensional(double *in, double *out)
 {

@@ -806,12 +806,30 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "output you will get. Such output will be written to console and the "
          "'outfile'.", (size_t)1, (size_t)5);
   
-  /** The parameters below are user specific **/
+  /** THE PARAMETERS BELOW THIS LINE ARE SPECIFIC TO USER PROJECT MULTIPHASE **/
   db.add("coupling_nse_cd", false,
          "Parameter for multiphase simulation: if it is true, it enables "
          "a one way coupling between NSE and CD, namely the velocity vector"
          "resulting from NSE is injected as a convection vector into CD assembling"
          "methods.",
+         {true,false});
+
+  db.add("dimensional_nse", false,
+         "When this parameter is false, the classical non dimensional NSE is "
+         "assembled, with Reynolds number inverse on the diffusive term. "
+         "When it is true, the dimensional NSE is assembled, with density factor "
+         " and dynamic viscosity on the right places.",
+         {true,false});
+
+  db.add("coupling_cd_nse", false,
+         "Parameter for multiphase simulation: if it is true, it enables "
+         "a coupling between CD and NSE in the sense that the concentration "
+         "field resulting from CD is used to correct property fields in NSE."
+         " Note that if it is true and the parameter coupling_nse_cd is also true, then it"
+         " means that there is a 2-way coupling. If the other parameter, "
+         "coupling_nse_cd is false, then this parameter will not be read "
+         "at all, and having true or false value will no have no effect. "
+         "A pure one-way cd -> nse coupling makes no sense in our multiphase model.",
          {true,false});
 
 

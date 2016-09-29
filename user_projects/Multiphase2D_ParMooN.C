@@ -92,10 +92,10 @@ int main(int argc, char* argv[])
   NSE2D         nse2d(domain, nse_db, example_nse2d);   // Construct NSE system
   CD2D          cd2d(domain, cd_db);                    // Construct CD system
 
-  double rho1 = 1;      // density constant of fluid1
-  double rho2 = 1000;   // density constant of fluid2
-  double mu1  = 1e-7;   // mu      constant of fluid1
-  double mu2  = 1e-3;   // mu      constant of fluid2
+  double rho1 = 1000;      // density constant of fluid1
+  double rho2 = 0;         // density constant of fluid2
+  double mu1  = 1e-3;      // mu      constant of fluid1
+  double mu2  = 0;         // mu      constant of fluid2
 
 
 
@@ -120,8 +120,11 @@ int main(int argc, char* argv[])
   /********************************************************************
    * START ASSEMBLING NSE2D WITH GIVEN FIELDS
    ********************************************************************/
-  nse2d.assemble_withfields(&rho_field,&mu_field); // assemble linear term
-  nse2d.stopIt(0);                                 // check initial residual
+  if (nse_db["dimensional_nse"].is(true))
+    nse2d.assemble_withfields(&rho_field,&mu_field); // assemble linear term
+  else
+    nse2d.assemble();                                // assemble linear term
+  nse2d.stopIt(0);                                   // check initial residual
 
 
 
@@ -155,49 +158,50 @@ int main(int argc, char* argv[])
     /********************************************************************
      * SOLVING CD2D WITH NSE2D SOLUTION
      ********************************************************************/
-    Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
-    Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-    //cd2d.assemble();
-    cd2d.assemble_with_convection(&nse2d.get_velocity());
-    Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
-    cd2d.solve();
-    Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
-
-
-    /********************************************************************
-     * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
-     ********************************************************************/
-    //nse2d.update_solution(cd2d.get_solution());
-    BlockVector phase_fraction = cd2d.get_solution();
-    int longueur               = phase_fraction.length();
-    for (int indice=0; indice < longueur; indice++)
+    if (cd_db["coupling_nse_cd"].is(true))
     {
-      if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
-      if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
+      Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
+      Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
+      //cd2d.assemble(); // this line is outcommented when you want to make hand tests
+      cd2d.assemble_with_convection(&nse2d.get_velocity());
+      Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
+      cd2d.solve();
+      Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
+
+
+
+      /********************************************************************
+       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
+       ********************************************************************/
+      if (nse_db["coupling_cd_nse"].is(true))
+      {
+        BlockVector new_phase_field = cd2d.get_solution();
+        // THIS LOOP HAS TO BE RECONSIDERED
+//        for (int indice=0; indice < phase_fraction.length(); indice++)
+//        {
+//          if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
+//          if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
+//        }
+
+        /** @brief Finite Element function for density field */
+        BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
+        TFEFunction2D new_rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector);
+
+        /** @brief Finite Element function for dynamic viscosity field */
+        BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
+        TFEFunction2D new_mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector);
+
+
+
+        /********************************************************************
+         * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
+         ********************************************************************/
+        nse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
+      }
+      else  { nse2d.assemble_nonlinear_term(); }
     }
-    BlockVector rho_vect = phase_fraction;
-    BlockVector mu_vect  = phase_fraction;
-    rho_vect.scale(rho1-rho2);
-    mu_vect .scale(mu1-mu2);
-    rho_vect.add_scaled(phase_field,rho2);
-    mu_vect .add_scaled(phase_field,mu2);
-    rho_vect.write("rho_vector");
-    mu_vect .write("mu_vector");
+    else  { nse2d.assemble_nonlinear_term(); }
 
-    /** @brief Finite Element function for density field */
-    TFEFunction2D rho_fiel(&cd2d.get_space(), (char*) "c", (char*)"c",
-                            rho_vect.block(0),
-                            rho_vect.length(0));
-
-    /** @brief Finite Element function for dynamic viscosity field */
-    TFEFunction2D mu_fiel(&cd2d.get_space(), (char*) "c", (char*)"c",
-                           mu_vect.block(0),
-                           mu_vect.length(0));
-
-    /********************************************************************
-     * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
-     ********************************************************************/
-    nse2d.assemble_nonlinear_term_withfields(&rho_fiel,&mu_fiel);
 
     if(nse2d.stopIt(k)) // Check residuals
     {
@@ -212,7 +216,7 @@ int main(int argc, char* argv[])
 
   nse2d.output();
   cd2d.output();
-  nse2d.get_solution().write("solution_velocity");
+//  nse2d.get_solution().write("solution_velocity");
 
   Output::close_file();
   return 0;
