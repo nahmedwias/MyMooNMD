@@ -407,6 +407,9 @@ class TDomain
     /** @brief convert all finest quadrangles into two triangles */
     int ConvertQuadToTri(int type);
     
+    /** @brief barycentric refinement */
+    int refine_by_barycenter();
+    
     int get_ref_level() const
     { return RefLevel; }
 
