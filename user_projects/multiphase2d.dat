@@ -199,8 +199,16 @@ multigrid_coarse_max_n_iterations: 10   [ 1, 100 ]
 ## damping), a value of 0.8 is often a good start. 
 multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 
-## Peclet_number
-peclet_number: 1e3
+
+
+######## BELOW THIS LINE, THE PARAMTERS ARE SPECIFIC TO USER PROJECT #####
+
+## Peclet_number or diffusion coefficient
+reynolds_number: 1.   [ 0, 1e6 ]
+diffusion_coefficient: 1.   [ 0, 1e6 ]
+fluid_density: 1.   [ 0, 1e6 ]
+fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
+
 # constant convection in x- and y-direction
 user_parameter1: 2
 user_parameter2: 2
@@ -211,6 +219,9 @@ coupling_nse_cd: false   { true, false }
 coupling_cd_nse: false   { true, false }
 
 
+
+
+###### PARAMETERS FROM THE OLD DATABASE
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 

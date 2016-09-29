@@ -1,5 +1,4 @@
 // =======================================================================
-//
 // Purpose:
 //
 // Author:      NA
@@ -15,6 +14,8 @@
 #include <Chrono.h>
 #include <LoopInfo.h>
 #include <ParameterDatabase.h>
+
+
 
 // ***** LIST OF FUNCTIONS USED IN MAIN PROGRAMM ***** //
 TFEFunction2D update_fieldfunction(const TFESpace2D* feSpace_, BlockVector vector_)
@@ -92,10 +93,10 @@ int main(int argc, char* argv[])
   NSE2D         nse2d(domain, nse_db, example_nse2d);   // Construct NSE system
   CD2D          cd2d(domain, cd_db);                    // Construct CD system
 
-  double rho1 = 1000;      // density constant of fluid1
-  double rho2 = 0;         // density constant of fluid2
-  double mu1  = 1e-3;      // mu      constant of fluid1
-  double mu2  = 0;         // mu      constant of fluid2
+  double rho1 = nse_db["fluid_density"];  // density constant of fluid1, eg 1000
+  double rho2 = 0;                        // density constant of fluid2, eg 0
+  double mu1  = nse_db["fluid_dynamic_viscosity"];    // mu constant of fluid1, eg 1e-3
+  double mu2  = 0;                                    // mu constant of fluid2, eg 0
 
 
 
@@ -133,7 +134,7 @@ int main(int argc, char* argv[])
    ********************************************************************/
   Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
-  Output::print<1>("The ansatz space is ", TDatabase::ParamDB->ANSATZ_ORDER);
+  Output::print<1>("The ansatz space is   ", TDatabase::ParamDB->ANSATZ_ORDER);
   Output::print<1>("Convection_example number ", cd_db["example"]);
   Output::print<1>("NSE_example number ", nse_db["example"]);
 
