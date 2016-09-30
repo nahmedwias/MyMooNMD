@@ -1,5 +1,7 @@
-// THIS IS AN EXAMPLE LAY-OUT USED FOR DIMENSIONAL NSE
-// COPY-PASTE IT AND CHANGE IT TO MAKE YOUR OWN EXAMPLE
+// Navier-Stokes problem, Poiseuille-Problem
+//
+// u(x,y) = (4*y*(1-y), 0)
+// p(x,y) = x-1/2
 
 // some variables from user input
 double REYNOLDS_number;
@@ -9,7 +11,7 @@ double USER_parameter3;
 
 void ExampleFile()
 {
-  Output::info<1>("Example", "Example_Layout.h");
+  Output::info<1>("Example", "TestExample1.h");
 }
 
 // ========================================================================
@@ -17,10 +19,10 @@ void ExampleFile()
 // ========================================================================
 void ExactU1(double x, double y, double *values)
 {
-  values[0] = 0;
+  values[0] = 4*y*(1-y);
   values[1] = 0;
-  values[2] = 0;
-  values[3] = 0;
+  values[2] = 4-8*y;
+  values[3] = -8;
 }
 
 void ExactU2(double x, double y, double *values)
@@ -54,11 +56,11 @@ void U1BoundValue(int BdComp, double Param, double &value)
   {
     case 0: value=0;
     break;
-    case 1: value=0;
+    case 1: value=4*Param*(1-Param);
     break;
     case 2: value=0;
     break;
-    case 3: value=0;
+    case 3: value=4*Param*(1-Param);
     break;
     default: cout << "wrong boundary part number" << endl;
     break;

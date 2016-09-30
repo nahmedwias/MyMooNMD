@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
   cd_db["problem_type"]     = 1;
   cd_db["output_basename"]  = "multiphase_convection_output";
 
-  nse_db["example"]         = 0;
+//  nse_db["example"]         = 0;
   nse_db["problem_type"]    = 5;
   nse_db["output_basename"] = "multiphase_nse_output";
 
