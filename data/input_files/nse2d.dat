@@ -203,7 +203,8 @@ PRESSURE_SPACE: -4711
 
 ----------------------------------------------------------------------
 # diffusion_coefficient=1/reynolds_number
-reynolds_number:  1.
+reynolds_number:  50.
+RE_NR:	50
 
 ----------------------------------------------------------------------
 # type of discretization: 
