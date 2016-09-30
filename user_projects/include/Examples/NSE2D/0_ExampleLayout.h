@@ -101,21 +101,37 @@ void LinCoeffs(int n_points, double *x, double *y,
    * while param2 and 3 are rho and mu at this point.
    */
 
-  double eps = REYNOLDS_number; // this is actually Re-1
+  double nu = REYNOLDS_number; // this is actually Re-1
   int i;
+  double val1[4];   // U1-Exact function and its derivatives
+  double val2[4];   // U2-Exact function and its derivatives
+  double val3[4];   // P-Exact function and its derivatives
   double *coeff;
-  //  double rho = USER_parameter1;
-  //  double mu  = USER_parameter2;
 
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
+    double rho = parameters[i][2];
+    double mu  = parameters[i][3];
 
-    coeff[0] = eps;
-    coeff[1] = 0;                    // f1
-    coeff[2] = 0;                    // f2
-    coeff[3] = parameters[i][2];     // rho
-    coeff[4] = parameters[i][3];     // mu
-    // cout << coeff[3] << " " << coeff[4] << endl;
+    ExactU1(x[i], y[i], val1);
+    ExactU2(x[i], y[i], val2);
+    ExactP (x[i], y[i], val3);
+
+    // ATTENTION: IT IS NOT COHERENT! THE RIGHT HAND SIDE HAS TO BE
+    // COMPUTED WITH RHO AND MU IN CASE OF DIMENSIONAL NSE!
+    coeff[0] = nu;
+    coeff[1] = -nu*val1[3] + val3[1]; // f1
+    coeff[2] = -nu*val2[3] + val3[2]; // f2
+
+    if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 5) // Navier-Stokes (3 means Stokes)
+    {
+      coeff[1] += val1[0]*val1[1] + val2[0]*val1[2]; // f1
+      coeff[2] += val1[0]*val2[1] + val2[0]*val2[2]; // f2
+    }
+
+    coeff[3] = rho;     // rho
+    coeff[4] = mu;      // mu
+
   }
 }
