@@ -72,10 +72,10 @@ output_vtk_directory: .
 output_basename: multiphase_output { multiphase_convection_output, multiphase_nse_output, multiphase_output }
 
 ## The maximum number of iterations to perform in a non-linear loop. 
-nonlinloop_maxit: 10   [ 0, 1000 ]
+nonlinloop_maxit: 100   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
-nonlinloop_epsilon: 1e-11   [ 0, 1 ]
+nonlinloop_epsilon: 1e-10   [ 0, 1 ]
 
 ## Damping factor 'w' for the nonlinear iteration. The solution of 
 ## the k-th iterate will be scaled by 'w'. Then The previous solution, 
@@ -113,7 +113,7 @@ min_n_iterations: 0   { 0, 1, 2, 3, 4, 5, 10 }
 
 ## The desired accuracy for the residual using an iterative solver. 
 ## This is used as a stopping criterion of the iteration. 
-residual_tolerance: 1e-13   [ 0, 100 ]
+residual_tolerance: 1e-10   [ 0, 100 ]
 
 ## The factor by which the residual should be reduced. This is used as a 
 ## stopping criterion. Whenever the residual is smaller than the 
