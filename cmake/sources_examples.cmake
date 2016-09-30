@@ -17,7 +17,8 @@ include_directories("${CMAKE_SOURCE_DIR}/include/Examples"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TCD_3D"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TNSE_2D"
 		    "${CMAKE_SOURCE_DIR}/include/Examples/Brinkman_2D"
-		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/CD2D")
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/CD2D"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/NSE2D")
 
 # Source files to be added to the 2D library.
 list(APPEND EXAMPLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Examples/Example2D.C")
