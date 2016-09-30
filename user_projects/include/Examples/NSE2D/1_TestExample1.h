@@ -35,8 +35,8 @@ void ExactU2(double x, double y, double *values)
 
 void ExactP(double x, double y, double *values)
 {
-  values[0] = 0;
-  values[1] = 0;
+  values[0] = x-0.5;
+  values[1] = 1;
   values[2] = 0;
   values[3] = 0;
 }
