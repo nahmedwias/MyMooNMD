@@ -29,11 +29,21 @@ namespace flow_around_cylinder
 
 
 
+
 /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJCET *****/
 namespace example_layout
 {
 #include "0_ExampleLayout.h"
 }
+
+namespace test_example1_poiseuille
+{
+#include "1_TestExample1.h"
+}
+
+// ********* END OF USER PROJECT CODE
+
+
 
 
 
@@ -163,8 +173,36 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
 
       // Set dimensionless viscosity
       example_layout::REYNOLDS_number = get_nu();
+      example_layout::USER_parameter1 = this->example_database["user_parameter1"];
+      example_layout::USER_parameter2 = this->example_database["user_parameter2"];
 
       example_layout::ExampleFile();
+      break;
+    case 11:  // TestExample 1 = Poiseuille
+      /** exact_solution */
+      exact_solution.push_back( test_example1_poiseuille::ExactU1 );
+      exact_solution.push_back( test_example1_poiseuille::ExactU2 );
+      exact_solution.push_back( test_example1_poiseuille::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_example1_poiseuille::BoundCondition );
+      boundary_conditions.push_back( test_example1_poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example1_poiseuille::U1BoundValue );
+      boundary_data.push_back( test_example1_poiseuille::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_example1_poiseuille::LinCoeffs;
+
+      // Set dimensionless viscosity
+      test_example1_poiseuille::REYNOLDS_number = get_nu();
+      test_example1_poiseuille::USER_parameter1 = this->example_database["user_parameter1"];
+      test_example1_poiseuille::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_example1_poiseuille::ExampleFile();
       break;
 
 
