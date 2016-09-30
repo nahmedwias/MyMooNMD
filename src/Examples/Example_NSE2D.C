@@ -26,6 +26,17 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
+
+
+
+/***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJCET *****/
+namespace example_layout
+{
+#include "0_ExampleLayout.h"
+}
+
+
+
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -124,6 +135,46 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
 
       flow_around_cylinder::ExampleFile();
       break;
+
+
+
+
+
+      /**************************************************************/
+      /* BELOW THIS LINE, THE EXAMPLES ARE SPECIFIC TO USER PROJECT */
+    case 10:
+      /** exact_solution */
+      exact_solution.push_back( example_layout::ExactU1 );
+      exact_solution.push_back( example_layout::ExactU2 );
+      exact_solution.push_back( example_layout::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( example_layout::BoundCondition );
+      boundary_conditions.push_back( example_layout::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( example_layout::U1BoundValue );
+      boundary_data.push_back( example_layout::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = example_layout::LinCoeffs;
+
+      // Set dimensionless viscosity
+      example_layout::REYNOLDS_number = get_nu();
+
+      example_layout::ExampleFile();
+      break;
+
+
+
+
+
+
+
+
+
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
