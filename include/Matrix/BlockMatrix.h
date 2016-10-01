@@ -175,6 +175,10 @@ class BlockMatrix
     virtual void apply_scaled_add(const BlockVector & x, BlockVector & y,
                           double a = 1.0) const;
 
+    //TODO: documentation
+    void apply_scaled_submatrix_mixed(const BlockVector & x, BlockVector & y,
+                                      double a) const;
+
     /// @brief perform one successive overrelaxation (sor) sweep.
     /// The flag can be either 0(forward sweep), 1(backward sweep), or
     /// 2(forward followed by backward sweep).

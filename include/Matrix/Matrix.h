@@ -314,8 +314,23 @@ class TMatrix
      * @param B matrix to be multiplied (from right) to this matrix
      * @param a scaling factor, default is 1.0
      */ 
-    std::shared_ptr<TMatrix> multiply(const TMatrix& B) const;
+    TMatrix* multiply(const TMatrix * const B, double a = 1.0) const;
     
+
+    /**
+     * @brief compute matrix-matrix product C = a*A*B,
+     *
+     * 'A' is this matrix, 'a' is a scalar factor, 'B' is given. Then matrix
+     * 'C' is created during this function and the user is responsible to
+     * delete C.
+     *
+     * Note that this is rather slow.
+     *
+     * @param B matrix to be multiplied (from right) to this matrix
+     * @param a scaling factor, default is 1.0
+     */
+    std::shared_ptr<TMatrix> multiply(const TMatrix& B) const;
+
     /**
      * @brief multiply this matrix B with its transposed B^T from the right
      * 
