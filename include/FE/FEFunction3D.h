@@ -86,23 +86,6 @@ class TFEFunction3D
     void GetErrorsForVectorValuedFunction(DoubleFunct3D ** const Exact,
                                           ErrorMethod3D * const ErrMeth,
                                           double * const errors);
-    
-    void GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
-			MultiIndex3D *NeededDerivatives,
-			int N_Errors, ErrorMethod3D *ErrorMeth, 
-			CoeffFct3D *Coeff, 
-			TAuxParam3D *Aux,
-			int n_fespaces, const TFESpace3D **fespaces,
-			double *errors);
-    
-    /** calculate errors to given function taylored to OPTPDE */
-    void GetErrorsOPTPDE(DoubleFunct3D *Exact, int N_Derivatives,
-		   MultiIndex3D *NeededDerivatives,
-		   int N_Errors, ErrorMethod3D *ErrorMeth, 
-		   CoeffFct3D *Coeff, TAuxParam3D *Aux,
-		   int n_fespaces, const TFESpace3D **fespaces,
-		   double radius, double upper, double lower, double *errors);
-    
 
     /** calculate errors to given function */
     void GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
@@ -112,9 +95,25 @@ class TFEFunction3D
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors, double *cell_parameters);
 
-    /** determine the value of function and its first derivatives at
-        the given point */
-    void FindGradient(double x, double y, double z, double *values);
+    /**
+     * Calculates value of this FEFunction at a given point and the
+     * gradient recovery (arithmetic mean of the gradient value in
+     *  all containing mesh cells).
+     *
+     * @param[in] x x value of the point at which to evaluate
+     * @param[in] y y value of the point at which to evaluate
+     * @param[in] z z value of the point at which to evaluate
+     *
+     * @param[out] values A vector of length 4 (checked)! Will be filled with
+     *            function value
+     *            gradient recovery dx
+     *            gradient recovery dy
+     *            gradient recovery dz
+     *
+     * @return True if the point was found in the mesh cell collection
+     * of this function, false if not so.
+     */
+    bool FindGradient(double x, double y, double z, std::vector<double>& values) const;
 
     /** determine the value of function and its first derivatives at
         the given point */
@@ -160,7 +159,10 @@ class TFEFunction3D
     /**
      * @brief find the integral of this function and the measure of its domain
      *
-     * @param[out] integral double value for the integral of this TFEFunction2D
+     * In MPI case it returns the global integral and measure, summed up over
+     * the own domains of all processes.
+     *
+     * @param[out] integral double value for the integral of this TFEFunction3D
      * @param[out] measure double value for the measure of its domain
      */
     void compute_integral_and_measure(double& integral, double& measure) const;
@@ -176,6 +178,10 @@ class TFEFunction3D
     * If nodal finite elements are used, this is indeed the minimum and maximum
     * of the FE-function. However in other cases this might be wrong (e.g.
     * nonconforming or discontiuous elements).
+    *
+    * @todo This kind of min/max computation is nothing but a source of
+    * confusion - it would be much better, if this would compute the actual min/max
+    * function values!!!
     */
    void MinMax(double & min, double & max) const;
 

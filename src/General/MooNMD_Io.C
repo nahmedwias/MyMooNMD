@@ -31,6 +31,11 @@ namespace Output
     verbosityThreshold = std::max<unsigned int>(1, std::min<unsigned int>(5,i));
   }
   
+  unsigned int getVerbosity()
+  {
+    return verbosityThreshold;
+  }
+  
   void suppressAll()
   {
     verbosityThreshold = 0;

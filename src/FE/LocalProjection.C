@@ -2692,8 +2692,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   int OrderDiff;
   double lpcoeff, lpexponent, stab_coeff, norm_b, lpcoeff_crosswind, lpexponent_crosswind;
   
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
-    OutPut("LPS streamline" << endl);
+  Output::print<2>("LPS streamline");
 
   coeffs = new double[20];
   params = new double[10];
@@ -3309,8 +3308,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   } // endfor i
   delete params;
   delete coeffs;
- if (TDatabase::ParamDB->SC_VERBOSE>1)
-    OutPut("LPS streamline done" << endl);
+  Output::print<2>("LPS streamline done");
 } // UltraLocalProjectionStreamlinePLaplacian
 
 
@@ -3478,6 +3476,10 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
             double *rhs,
                         int convection_flag) 
 {
+
+  ErrThrow("This method was dependent on two old global Database parameters ",
+           "which were removed. If you want to use it, take care of the FIXMEs.");
+
   int i, j, k, iq, N_Cells, N_Edges, N_Unknowns, index, dof_index;
   int *global_numbers, *begin_index, *dof;
   double  sx, sy, b1, b2, area, detJK, weight_det, value, value1, value_proj, hK;
@@ -3504,19 +3506,22 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
  
    OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);
   // get coarse grid
-  coll_coarse=Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR-1);
-  if (coll_coarse == NULL)
-  {
-    OutPut("No coarse grid !!!" << endl);
-    return;
-  }
+  // FIXME that parameter is gone! coll_coarse=Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR-1);
+//  if (coll_coarse == NULL)
+//  {
+//    OutPut("No coarse grid !!!" << endl);
+//    return;
+//  }
+// END FIXME
    coeffs = new double[20];
   params = new double[10];
   memset(params, 0, 10 * SizeOfDouble);
 
   // get fine grid
-  coll = Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR);
-  N_Cells = coll->GetN_Cells();
+  // FIXME that parameter is gone! coll = Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR);
+  //N_Cells = coll->GetN_Cells();
+  N_Cells = 1000; //A dummy number.
+  //END FIXME
   // initialise ClipBoard for fine grid
   for(i=0;i<N_Cells;i++)
     coll->GetCell(i)->SetClipBoard(i);
@@ -4505,10 +4510,10 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
 void UltraLocalProjection(TSquareMatrix3D* A, 
                           double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   int N_UsedElements, N_Points;  
   int i1, i2;
@@ -4523,7 +4528,7 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
+//  Shapes shapetype;
   bool SecondDer[2] = { false, false };
 
   double *xi, *eta, *zeta, *weights;
@@ -4539,11 +4544,11 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   double **ChildValuesZ, *ChildValueZ;  
   double **PCValues;
   double *PCValue;
-  double w, val, valx, valy, valz;
+  double w, val;  // double valx, valy, valz;
   double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   double s, hK;
   double *Entries;
-  double BValue[MaxN_BaseFunctions3D];
+//  double BValue[MaxN_BaseFunctions3D];
 
   fespace = A->GetFESpace3D();
   ActiveBound = fespace->GetActiveBound();
@@ -5703,10 +5708,10 @@ double UltraLocalErrorSmooth(TFEFunction2D *uh, DoubleFunct2D *ExactU,
 // stabilisation of full gradient (velocity or pressure)
 void UltraLocalProjection3D(void* A, bool ForPressure)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -5716,7 +5721,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
+//  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *zeta, *weights;
@@ -5735,7 +5740,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
   double w, val;
   double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   double s;
-  int i1, i2, i3;
+  int i1, i2;
   double hK;
   int ActiveBound, dof;
   int p, end;
@@ -5984,10 +5989,10 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
 {
   // cout << "\n start of lps error \n" << endl;
   
-  int i,j,k,l,m,n;
+  int i,j,k,l;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -5997,7 +6002,7 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
+//  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *zeta, *weights;
@@ -6014,12 +6019,12 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
   double **PCValues;
   double *PCValue;
   double w, val, valx, valy, valz;
-  double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+//  double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   double s;
-  int i1, i2, i3;
+  int i1, i2;
   double hK;
-  int ActiveBound, dof;
-  int p, end;
+//  int ActiveBound, dof;
+//  int p, end;
   double *Values;
   double error, locerror;
   double exactval[5];

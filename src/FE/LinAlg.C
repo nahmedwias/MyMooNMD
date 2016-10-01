@@ -136,13 +136,13 @@ void SolveLinearSystem(double *a, double *b, int N_Eqn, int LDA)
 //    N_Eqn     number of equations
 //    LDA       leading dimension of matrix a
 {
-  int i,j,k,l,m, row;
+  int i,l,m, row;
   double pivot, tmp, eps=1e-12;
 
 
   OutPut("Use SolveLinearSystemNew !!!"<< endl);
   exit(4711);
-  int ii, jj;
+//  int ii, jj;
 /*
   for(ii=0;ii<N_Eqn;ii++)
   {
@@ -267,7 +267,7 @@ void SolveMultipleSystemsLapack_old(double *A, double *B, int N_Eqn,
 // The result will be stored column wise
 {
   int info, *ipiv;
-  int i, j;
+//  int i, j;
   double *transp;
   char t='t';
   transp = new double[N_Eqn*N_Rhs];
@@ -319,10 +319,10 @@ void SolveMultipleSystemsNew(double *a, double *b, int N_Eqn,
 //                LDB = N_Rhs
 // The result will be stored column wise
 {
-  int i,j,k,l,m, row,info, *ipiv;
+  int i,j,l,m, row;  // k, info, *ipiv;
   double pivot, tmp, *f, *frow,eps=0.0;
 
-  int ii, jj;
+//  int ii, jj;
 /*
   for(ii=0;ii<N_Eqn;ii++)
   {
@@ -450,10 +450,10 @@ void SolveMultipleSystems(double *a, double *b, int N_Eqn,
 //                LDA = LDB
 // The result will be stored row wise
 {
-  int i,j,k,l,m, row;
+  int i,j,l,m, row;
   double pivot, tmp, *f;
 
-  int ii, jj;
+//  int ii, jj;
 
 /*
   for(ii=0;ii<N_Eqn;ii++)
@@ -580,7 +580,7 @@ void FindEigenValues(double *ap, int N_Eqn, char &COMPZ, double *d, double *z)
 
  int info, i;
  char uplo='U';
- char compz='N';
+// char compz='N';
 //  double *d = new double[N_Eqn];
  double *e = new double[N_Eqn-1];
  double *tau = new double[N_Eqn-1];
@@ -602,6 +602,878 @@ void FindEigenValues(double *ap, int N_Eqn, char &COMPZ, double *d, double *z)
 //  
 }
 
+/* **************************************
+ * The following functions are still needed somewhere in the code and where
+ * moved here form deprecated "MComponents.C"
+ * **************************************/
+
+#ifdef __3D__
+// determine L2 and H1 error
+void L1Int3D(int N_Points, double *X, double *Y, double *Z,
+             double *AbsDetjk,
+             double *Weights, double hK,
+             double **Der, double **Exact,
+             double **coeffs, double *Loc)
+{
+  int i;
+  double *deriv, w, t;
+
+  Loc[0] = 0.0;
+  Loc[1] = 0.0;
+
+  for(i=0;i<N_Points;i++)
+  {
+    deriv = Der[i];
+    w = Weights[i]*AbsDetjk[i];
+
+    // int(f)
+    t = deriv[0];
+    Loc[0] += w*t;
+
+    // int(1)
+    Loc[1] += w;
+  } // endfor i
+}
+
+/** project vector v into L20 */
+void IntoL20Vector3D(double *v, int Length, int order)
+{
+  double s;
+  int i;
+
+#ifdef _MPI
+  int totallength;
+  double temp;
+#endif
+
+  switch(order)
+  {
+    case -11:
+      s=0;
+      for(i=0;i<Length;i+=4)
+        s += v[i];
+
+#ifdef _MPI
+      MPI_Allreduce(&Length, &totallength, 1, MPI_INT, MPI_SUM, TDatabase::ParamDB->Comm);
+      MPI_Allreduce(&s, &temp, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+
+      s = temp/(double)totallength;
+#else
+      s /= Length;
+#endif
+
+      s *= 4;
+
+      for(i=0;i<Length;i+=4)
+        v[i] -= s;
+      break;
+
+    case -12:
+      s=0;
+      for(i=0;i<Length;i+=10)
+        s += v[i];
+
+#ifdef _MPI
+      MPI_Allreduce(&Length, &totallength, 1, MPI_INT, MPI_SUM, TDatabase::ParamDB->Comm);
+      MPI_Allreduce(&s, &temp, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+      s = temp/(double)totallength;
+#else
+      s /= Length;
+#endif
+
+      s *= 10;
+
+      for(i=0;i<Length;i+=10)
+        v[i] -= s;
+
+      break;
+
+    default :
+      s=0;
+      for(i=0;i<Length;i++)
+        s += v[i];
+
+#ifdef _MPI
+      MPI_Allreduce(&Length, &totallength, 1, MPI_INT, MPI_SUM, TDatabase::ParamDB->Comm);
+      MPI_Allreduce(&s, &temp, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+      s = temp/(double)totallength;
+#else
+      s /= Length;
+#endif
+
+      for(i=0;i<Length;i++)
+        v[i] -= s;
+      break;
+
+  }
+} // IntoL20
+
+
+/** project vector v into L20 */
+void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
+{
+  double s;
+  int i,j,l,N_LocalUsedElements;
+  int N_Cells, N_Points, N_;
+  int *N_BaseFunct; //Used[N_FEs3D];
+//  TFESpace3D *fespace;
+  FE3D LocalUsedElements[N_FEs3D], CurrentElement;
+  BaseFunct3D BaseFunct, *BaseFuncts;
+  TCollection *Coll;
+  TBaseCell *cell;
+//  TFE3D *ele;
+  double *weights, *xi, *eta, *zeta;
+  double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
+  double Z[MaxN_QuadPoints_3D];
+  double AbsDetjk[MaxN_QuadPoints_3D];
+//  RefTrans3D RefTrans;
+//  double *Param[MaxN_QuadPoints_3D], *aux;
+  double *Derivatives[MaxN_QuadPoints_3D], der[MaxN_QuadPoints_3D];
+  double *ExactVal[MaxN_QuadPoints_3D];
+  double *AuxArray[MaxN_QuadPoints_3D];
+  int *DOF; //ActiveBound, DirichletBound, end, last, number;
+  double **OrigFEValues, *Orig, value;
+  double FEFunctValues[MaxN_BaseFunctions3D];
+  int *GlobalNumbers, *BeginIndex;
+  double LocError[4];
+  double hK;
+  bool SecondDer[1];
+  double error0, error1;
+  double *interpol;
+  TNodalFunctional3D *nf;
+  double PointValues[MaxN_PointsForNodal3D];
+  double FunctionalValues[MaxN_PointsForNodal3D];
+
+// #ifdef _MPI
+//   int rank, ID;
+//   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
+// #endif
+
+  BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
+  N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+
+  for(i=0;i<MaxN_QuadPoints_3D;i++)
+    Derivatives[i] = der+i;
+
+  SecondDer[0] = FALSE;
+
+  GlobalNumbers = FESpace->GetGlobalNumbers();
+  BeginIndex = FESpace->GetBeginIndex();
+
+  interpol = new double[Length];
+
+  error0 = 0.0;
+  error1 = 0.0;
+
+// ########################################################################
+// loop over all cells
+// ########################################################################
+  Coll = FESpace->GetCollection(); // all spaces use same Coll
+  N_Cells = Coll->GetN_Cells();
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    hK = cell->GetDiameter();
+
+    // ####################################################################
+    // find local used elements on this cell
+    // ####################################################################
+    N_LocalUsedElements = 1;
+    CurrentElement = FESpace->GetFE3D(i, cell);
+    LocalUsedElements[0] = CurrentElement;
+
+    // ####################################################################
+    // calculate values on original element
+    // ####################################################################
+    TFEDatabase3D::GetOrig(N_LocalUsedElements, LocalUsedElements,
+                         Coll, cell, SecondDer,
+                         N_Points, xi, eta, zeta, weights, X, Y, Z, AbsDetjk);
+
+    // calculate all needed derivatives of this FE function
+    BaseFunct = BaseFuncts[CurrentElement];
+    N_ = N_BaseFunct[CurrentElement];
+
+    DOF = GlobalNumbers + BeginIndex[i];
+    for(l=0;l<N_;l++)
+      FEFunctValues[l] = v[DOF[l]];
+
+    OrigFEValues = TFEDatabase3D::GetOrigElementValues(BaseFunct, D000);
+    for(j=0;j<N_Points;j++)
+    {
+      Orig = OrigFEValues[j];
+      value = 0;
+      for(l=0;l<N_;l++)
+      {
+        value += FEFunctValues[l] * Orig[l];
+      } // endfor l
+      Derivatives[j][0] = value;
+    } // endfor j
+
+    L1Int3D(N_Points, X, Y, Z, AbsDetjk, weights, hK, Derivatives,
+              ExactVal, AuxArray, LocError);
+
+    error0 += LocError[0];
+    error1 += LocError[1];
+
+  } // endfor i
+
+#ifdef _MPI
+  double temp;
+  temp = error0;
+  MPI_Allreduce(&temp, &error0, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+  temp = error1;
+  MPI_Allreduce(&temp, &error1, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+#endif
+
+  s = error0/error1;
+
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    CurrentElement = FESpace->GetFE3D(i, cell);
+    N_ = N_BaseFunct[CurrentElement];
+    nf = TFEDatabase3D::GetNodalFunctional3DFromFE3D(CurrentElement);
+    nf->GetPointsForAll(N_Points, xi, eta, zeta);
+    for(j=0;j<N_Points;j++)
+      PointValues[j] = s;
+    nf->GetAllFunctionals(Coll, cell, PointValues, FunctionalValues);
+    DOF = GlobalNumbers+BeginIndex[i];
+    for(j=0;j<N_;j++)
+      interpol[DOF[j]] = FunctionalValues[j];
+  } // endfor i
+
+  for(i=0;i<Length;i++)
+    v[i] -= interpol[i];
+
+  delete interpol;
+} // IntoL20Function
+
+/** project function v into L20 */
+void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace,
+                       int velocity_space, int pressure_space)
+{
+  double s;
+  int i,j,l,N_LocalUsedElements;
+  int N_Cells, N_Points, N_;
+  int *N_BaseFunct;
+//  TFESpace3D *fespace;
+  FE3D LocalUsedElements[N_FEs3D], CurrentElement;
+  BaseFunct3D BaseFunct, *BaseFuncts;
+  TCollection *Coll;
+  TBaseCell *cell;
+//  TFE3D *ele;
+  double *weights, *xi, *eta, *zeta;
+  double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
+  double AbsDetjk[MaxN_QuadPoints_3D];
+//  RefTrans3D RefTrans;
+//  double *Param[MaxN_QuadPoints_3D], *aux;
+  double *Derivatives[MaxN_QuadPoints_3D], der[MaxN_QuadPoints_3D];
+  double *ExactVal[MaxN_QuadPoints_3D];
+  double *AuxArray[MaxN_QuadPoints_3D];
+  int *DOF;// ActiveBound, DirichletBound, end, last, number;
+  double **OrigFEValues, *Orig, value;
+  double FEFunctValues[MaxN_BaseFunctions3D];
+  int *GlobalNumbers, *BeginIndex;
+  double LocError[4];
+  double hK;
+  bool SecondDer[1];
+  double error0, error1;
+  double *interpol;
+  TNodalFunctional3D *nf;
+  double PointValues[MaxN_PointsForNodal3D];
+  double FunctionalValues[MaxN_PointsForNodal3D];
+
+#ifdef _MPI
+//   MPI_Comm Comm;
+//   int rank, ID;
+  double temp;
+//
+//   Comm = TDatabase::ParamDB->Comm;
+//   MPI_Comm_rank(Comm, &rank);
+#endif
+
+  BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
+  N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+
+  for(i=0;i<MaxN_QuadPoints_3D;i++)
+    Derivatives[i] = der+i;
+
+  SecondDer[0] = FALSE;
+
+  GlobalNumbers = FESpace->GetGlobalNumbers();
+  BeginIndex = FESpace->GetBeginIndex();
+
+  interpol = new double[Length];
+
+  error0 = 0.0;
+  error1 = 0.0;
+
+// ########################################################################
+// loop over all cells
+// ########################################################################
+  Coll = FESpace->GetCollection(); // all spaces use same Coll
+  N_Cells = Coll->GetN_Cells();
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+
+// #ifdef _MPI
+//     ID = cell->GetSubDomainNo();
+//     if(ID!=rank)
+//       continue; // this cell not belongs to this processor
+// #endif
+
+    hK = cell->GetDiameter();
+
+    // ####################################################################
+    // find local used elements on this cell
+    // ####################################################################
+    N_LocalUsedElements = 1;
+    CurrentElement = FESpace->GetFE3D(i, cell);
+    LocalUsedElements[0] = CurrentElement;
+
+    // ####################################################################
+    // calculate values on original element
+    // ####################################################################
+    TFEDatabase3D::GetOrig(N_LocalUsedElements, LocalUsedElements,
+                         Coll, cell, SecondDer,
+                         N_Points, xi, eta, zeta, weights, X, Y, Z, AbsDetjk);
+
+    // calculate all needed derivatives of this FE function
+    BaseFunct = BaseFuncts[CurrentElement];
+    N_ = N_BaseFunct[CurrentElement];
+
+    DOF = GlobalNumbers + BeginIndex[i];
+    for(l=0;l<N_;l++)
+      FEFunctValues[l] = v[DOF[l]];
+
+    OrigFEValues = TFEDatabase3D::GetOrigElementValues(BaseFunct, D000);
+    for(j=0;j<N_Points;j++)
+    {
+      Orig = OrigFEValues[j];
+      value = 0;
+      for(l=0;l<N_;l++)
+      {
+        value += FEFunctValues[l] * Orig[l];
+      } // endfor l
+      Derivatives[j][0] = value;
+    } // endfor j
+
+    L1Int3D(N_Points, X, Y, Z, AbsDetjk, weights, hK, Derivatives,
+              ExactVal, AuxArray, LocError);
+
+    error0 += LocError[0];
+    error1 += LocError[1];
+
+  } // endfor i
+
+#ifdef _MPI
+  temp = error0;
+  MPI_Allreduce(&temp, &error0, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+  temp = error1;
+  MPI_Allreduce(&temp, &error1, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
+#endif
+
+
+  s = error0/error1;
+
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    CurrentElement = FESpace->GetFE3D(i, cell);
+    N_ = N_BaseFunct[CurrentElement];
+    nf = TFEDatabase3D::GetNodalFunctional3DFromFE3D(CurrentElement);
+    nf->GetPointsForAll(N_Points, xi, eta, zeta);
+    for(j=0;j<N_Points;j++)
+      PointValues[j] = s;
+    nf->GetAllFunctionals(Coll, cell, PointValues, FunctionalValues);
+    DOF = GlobalNumbers+BeginIndex[i];
+    for(j=0;j<N_;j++)
+      interpol[DOF[j]] = FunctionalValues[j];
+  } // endfor i
+
+  for(i=0;i<Length;i++)
+    v[i] -= interpol[i];
+
+  delete [] interpol;
+} // IntoL20Function
+
+#endif
+
+#ifdef __2D__
+// determine L2 and H1 error
+void L1Int(int N_Points, double *X, double *Y, double *AbsDetjk,
+                double *Weights, double hK,
+                double **Der, double **Exact,
+                double **coeffs, double *Loc)
+{
+  int i;
+  double *deriv, w, t;
+
+  Loc[0] = 0.0;
+  Loc[1] = 0.0;
+
+  for(i=0;i<N_Points;i++)
+  {
+    deriv = Der[i];
+    w = Weights[i]*AbsDetjk[i];
+
+    // int(f)
+    t = deriv[0];
+    Loc[0] += w*t;
+
+    // int(1)
+    Loc[1] += w;
+  } // endfor i
+}
+
+
+/** project vector v into L20 */
+void IntoL20Vector2D(double *v, int Length, int order)
+{
+  double s;
+  int i;
+
+  switch(order)
+  {
+    case -11:
+      s=0;
+      for(i=0;i<Length;i+=3)
+        s += v[i];
+
+      s /= Length;
+      s *= 3;
+
+      for(i=0;i<Length;i+=3)
+        v[i] -= s;
+      break;
+
+    case -12:
+      s=0;
+      for(i=0;i<Length;i+=6)
+        s += v[i];
+
+      s /= Length;
+      s *= 6;
+
+      for(i=0;i<Length;i+=6)
+        v[i] -= s;
+
+      break;
+
+    case -13:
+      s=0;
+      for(i=0;i<Length;i+=10)
+        s += v[i];
+
+      s /= Length;
+      s *= 10;
+
+      for(i=0;i<Length;i+=10)
+        v[i] -= s;
+
+        break;
+
+    case -14:
+      s=0;
+      for(i=0;i<Length;i+=15)
+        s += v[i];
+
+      s /= Length;
+      s *= 15;
+
+      for(i=0;i<Length;i+=15)
+        v[i] -= s;
+
+        break;
+
+    case 201:
+      break;
+
+    default :
+      s=0;
+      for(i=0;i<Length;i++)
+        s += v[i];
+
+      s /= Length;
+//      OutPut("VECTOR " << Length << " " << s << endl);
+      for(i=0;i<Length;i++)
+        v[i] -= s;
+      break;
+
+  }
+} // IntoL20
+
+/** project function v into L20 */
+void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
+                       int velocity_space, int pressure_space)
+{
+  double s;
+  int i,j,l, N_LocalUsedElements;
+  int N_Cells, N_Points, N_;
+  int *N_BaseFunct;
+  FE2D LocalUsedElements[N_FEs2D], CurrentElement;
+  BaseFunct2D BaseFunct, *BaseFuncts;
+  TCollection *Coll;
+  TBaseCell *cell;
+  double *weights, *xi, *eta;
+  double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+  double AbsDetjk[MaxN_QuadPoints_2D];
+  double *Derivatives[MaxN_QuadPoints_2D], der[MaxN_QuadPoints_2D];
+  double *ExactVal[MaxN_QuadPoints_2D];
+  double *AuxArray[MaxN_QuadPoints_2D];
+  int *DOF, number;
+  double **OrigFEValues, *Orig, value;
+  double FEFunctValues[MaxN_BaseFunctions2D];
+  int *GlobalNumbers, *BeginIndex;
+  double LocError[4];
+  double hK;
+  bool SecondDer[1];
+  double error0, error1;
+
+  if (pressure_space==-4711)
+  {
+    switch (velocity_space)
+    {
+        case 1:
+          number = 0;
+          break;
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+          number = velocity_space;
+          break;
+        case 12:
+        case 13:
+        case 14:
+          number = -velocity_space+1;
+          break;
+        case 22:
+        case 23:
+          number = -velocity_space+11;
+          break;
+
+        case -1:
+          number = -TDatabase::ParamDB->VELOCITY_SPACE -1;
+        break;
+
+        case -2:
+        case -3:
+        case -4:
+        case -5:
+          number = TDatabase::ParamDB->VELOCITY_SPACE - 9;
+        break;
+    }
+  }
+  else
+    number = pressure_space;
+
+//  OutPut("NUMBER " << number << " " << Length << " ");
+
+  switch(number)
+  {
+    // pw constant
+    case 0:
+      s=0;
+      for(i=0;i<Length;i++)
+        s += v[i];
+//      OutPut(s << endl);
+      s /= Length;
+      for(i=0;i<Length;i++)
+        v[i] -= s;
+      break;
+
+    // pw linear discontinuous
+    case -11:
+      s=0;
+      for(i=0;i<Length;i+=3)
+        s += v[i];
+
+      s /= Length;
+      s *= 3;
+
+      for(i=0;i<Length;i+=3)
+        v[i] -= s;
+      break;
+
+    // pw quadratics discontinuous
+    case -12:
+      s=0;
+      for(i=0;i<Length;i+=6)
+        s += v[i];
+
+      s /= Length;
+      s *= 6;
+
+      for(i=0;i<Length;i+=6)
+        v[i] -= s;
+      break;
+
+    // pw cubics discontinuous
+    case -13:
+      s=0;
+      for(i=0;i<Length;i+=10)
+        s += v[i];
+
+      s /= Length;
+      s *= 10;
+
+      for(i=0;i<Length;i+=10)
+        v[i] -= s;
+
+      break;
+
+    // discontinuous, pw P4
+    case -14:
+      s=0;
+      for(i=0;i<Length;i+=15)
+        s += v[i];
+
+      s /= Length;
+      s *= 15;
+
+      for(i=0;i<Length;i+=15)
+        v[i] -= s;
+
+      break;
+
+    // pw polynomials, continuous
+    // with and without bubbles
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 12:
+    case 13:
+    case 14:
+    case 22:
+    case 23:
+      BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+      N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+
+      for(i=0;i<MaxN_QuadPoints_2D;i++)
+        Derivatives[i] = der+i;
+
+      SecondDer[0] = FALSE;
+
+      GlobalNumbers = FESpace->GetGlobalNumbers();
+      BeginIndex = FESpace->GetBeginIndex();
+
+      error0 = 0.0;
+      error1 = 0.0;
+
+    // ########################################################################
+    // loop over all cells
+    // ########################################################################
+      Coll = FESpace->GetCollection(); // all spaces use same Coll
+      N_Cells = Coll->GetN_Cells();
+      for(i=0;i<N_Cells;i++)
+      {
+        cell = Coll->GetCell(i);
+
+        hK = cell->GetDiameter();
+
+        // ####################################################################
+        // find local used elements on this cell
+        // ####################################################################
+        N_LocalUsedElements = 1;
+        CurrentElement = FESpace->GetFE2D(i, cell);
+        LocalUsedElements[0] = CurrentElement;
+
+        // ####################################################################
+        // calculate values on original element
+        // ####################################################################
+        TFEDatabase2D::GetOrig(N_LocalUsedElements, LocalUsedElements,
+                             Coll, cell, SecondDer,
+                             N_Points, xi, eta, weights, X, Y, AbsDetjk);
+
+        // calculate all needed derivatives of this FE function
+        BaseFunct = BaseFuncts[CurrentElement];
+        N_ = N_BaseFunct[CurrentElement];
+
+        DOF = GlobalNumbers + BeginIndex[i];
+        for(l=0;l<N_;l++)
+          FEFunctValues[l] = v[DOF[l]];
+
+        OrigFEValues = TFEDatabase2D::GetOrigElementValues(BaseFunct, D00);
+        for(j=0;j<N_Points;j++)
+        {
+          Orig = OrigFEValues[j];
+          value = 0;
+          for(l=0;l<N_;l++)
+          {
+            value += FEFunctValues[l] * Orig[l];
+          } // endfor l
+          Derivatives[j][0] = value;
+        } // endfor j
+
+        L1Int(N_Points, X, Y, AbsDetjk, weights, hK, Derivatives,
+                  ExactVal, AuxArray, LocError);
+
+        error0 += LocError[0];
+        error1 += LocError[1];
+
+      } // endfor i
+
+      s = error0/error1;
+
+      for(i=0;i<Length;i++)
+        v[i] -= s;
+
+    break;
+
+    default:
+      cout << "The L^2_0 projection does not ";
+      cout << "work for this type of elements" << endl;
+      exit(-1);
+  }
+} // IntoL20Function
+
+/** project function v into L20 */
+void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
+                       int velocity_space, int pressure_space
+#ifdef _MPI
+                        , MPI_Comm comm
+#endif
+                      )
+{
+  double s;
+  int i,j,l, N_LocalUsedElements;
+  int N_Cells, N_Points, N_;
+  int *N_BaseFunct;
+  FE2D LocalUsedElements[N_FEs2D], CurrentElement;
+  BaseFunct2D BaseFunct, *BaseFuncts;
+  TCollection *Coll;
+  TBaseCell *cell;
+  double *weights, *xi, *eta;
+  double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+  double AbsDetjk[MaxN_QuadPoints_2D];
+  double *Derivatives[MaxN_QuadPoints_2D], der[MaxN_QuadPoints_2D];
+  double *ExactVal[MaxN_QuadPoints_2D];
+  double *AuxArray[MaxN_QuadPoints_2D];
+  int *DOF;
+  double **OrigFEValues, *Orig, value;
+  double FEFunctValues[MaxN_BaseFunctions2D];
+  int *GlobalNumbers, *BeginIndex;
+  double LocError[4];
+  double hK;
+  bool SecondDer[1];
+  double error0, error1;
+  double *interpol;
+  TNodalFunctional2D *nf;
+  double PointValues[MaxN_PointsForNodal2D];
+  double FunctionalValues[MaxN_PointsForNodal2D];
+
+  #ifdef _MPI
+  int ID, rank;
+  MPI_Comm_rank(comm, &rank);
+  #endif
+
+  BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+  N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+
+  for(i=0;i<MaxN_QuadPoints_2D;i++)
+    Derivatives[i] = der+i;
+
+  SecondDer[0] = FALSE;
+
+  GlobalNumbers = FESpace->GetGlobalNumbers();
+  BeginIndex = FESpace->GetBeginIndex();
+
+  interpol = new double[Length];
+
+  error0 = 0.0;
+  error1 = 0.0;
+
+// ########################################################################
+// loop over all cells
+// ########################################################################
+  Coll = FESpace->GetCollection(); // all spaces use same Coll
+  N_Cells = Coll->GetN_Cells();
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    #ifdef _MPI
+    ID = cell->GetSubDomainNo();
+    if(ID!=rank)
+      continue; // this cell is a halo cell
+    #endif
+    hK = cell->GetDiameter();
+
+    // ####################################################################
+    // find local used elements on this cell
+    // ####################################################################
+    N_LocalUsedElements = 1;
+    CurrentElement = FESpace->GetFE2D(i, cell);
+    LocalUsedElements[0] = CurrentElement;
+
+    // ####################################################################
+    // calculate values on original element
+    // ####################################################################
+    TFEDatabase2D::GetOrig(N_LocalUsedElements, LocalUsedElements,
+                         Coll, cell, SecondDer,
+                         N_Points, xi, eta, weights, X, Y, AbsDetjk);
+
+    // calculate all needed derivatives of this FE function
+    BaseFunct = BaseFuncts[CurrentElement];
+    N_ = N_BaseFunct[CurrentElement];
+
+    DOF = GlobalNumbers + BeginIndex[i];
+    for(l=0;l<N_;l++)
+      FEFunctValues[l] = v[DOF[l]];
+
+    OrigFEValues = TFEDatabase2D::GetOrigElementValues(BaseFunct, D00);
+    for(j=0;j<N_Points;j++)
+    {
+      Orig = OrigFEValues[j];
+      value = 0;
+      for(l=0;l<N_;l++)
+      {
+        value += FEFunctValues[l] * Orig[l];
+      } // endfor l
+      Derivatives[j][0] = value;
+    } // endfor j
+
+    L1Int(N_Points, X, Y, AbsDetjk, weights, hK, Derivatives,
+              ExactVal, AuxArray, LocError);
+
+    error0 += LocError[0];
+    error1 += LocError[1];
+
+  } // endfor i
+
+  #ifdef _MPI
+  temp = error0;
+  MPI_Allreduce(&temp, &error0, 1, MPI_DOUBLE, MPI_SUM, comm);
+  temp = error1;
+  MPI_Allreduce(&temp, &error1, 1, MPI_DOUBLE, MPI_SUM, comm);
+  #endif
+
+  s = error0/error1;
+
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    CurrentElement = FESpace->GetFE2D(i, cell);
+    N_ = N_BaseFunct[CurrentElement];
+    nf = TFEDatabase2D::GetNodalFunctional2DFromFE2D(CurrentElement);
+    nf->GetPointsForAll(N_Points, xi, eta);
+    for(j=0;j<N_Points;j++)
+      PointValues[j] = s;
+    nf->GetAllFunctionals(Coll, cell, PointValues, FunctionalValues);
+    DOF = GlobalNumbers+BeginIndex[i];
+    for(j=0;j<N_;j++)
+      interpol[DOF[j]] = FunctionalValues[j];
+  } // endfor i
+
+  for(i=0;i<Length;i++)
+    v[i] -= interpol[i];
+
+  delete [] interpol;
+} // IntoL20Function
+#endif
 
 
 

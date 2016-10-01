@@ -137,9 +137,9 @@ void TIsoBoundFace::GenHexaVert(int N_NewVert,const int N_V, double **LinComb,
 
 void TIsoBoundFace::GenerateVertices(int n_vertices)
 {
-  int i;
-  TVertex *vertex;
-  double t, x, y;
+//  int i;
+//  TVertex *vertex;
+//  double t, x, y;
 
   if(N_Vertices != n_vertices)
   {

@@ -31,7 +31,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig6, *Orig7;
   int i,j,N_U, N_P;
   double c0, c1, c2;
-  double u1, u2, px, py;
+  double u1, u2;
   double delta, tau, ugrad, r=2.0, maxu;
 
   double delta0 = TDatabase::ParamDB->DELTA0;

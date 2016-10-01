@@ -47,21 +47,18 @@ TFEVectFunct3D::TFEVectFunct3D(TFESpace3D *fespace3D, char *name,
 /** convert current grid to vector-values FE function */
 void TFEVectFunct3D::GridToData()
 {
-  int i,j,k,l;
+  int i,j,k;
   TBaseCell *cell;
   TCollection *Coll;
   FE3D FEId;
   TFE3D *Element;
-  BaseFunct3D BF;
   TNodalFunctional3D *nf;
   int N_Cells;
   int N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
-  int N_, N_Points;
-  double s, *xi, *eta, *zeta;
-  double Val[MaxN_BaseFunctions3D];
-  double OutVal[MaxN_BaseFunctions3D];
-  int *DOF, Index;
+  int N_Points;
+  double *xi, *eta, *zeta;
+  int *DOF;
   RefTrans3D F_K;
   TRefTrans3D *rt;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
@@ -70,7 +67,6 @@ void TFEVectFunct3D::GridToData()
   double FunctionalValuesX[MaxN_PointsForNodal3D];
   double FunctionalValuesY[MaxN_PointsForNodal3D];
   double FunctionalValuesZ[MaxN_PointsForNodal3D];
-  double FctVal[8];
 
   // begin code
   
@@ -138,28 +134,21 @@ void TFEVectFunct3D::GridToData()
 /** use current data for grid replacement */
 void TFEVectFunct3D::DataToGrid()
 {
-  int i,j,k,l;
+  int i,j,k;
   TBaseCell *cell;
   TCollection *Coll;
   FE3D FEId;
   TFE3D *Element;
-  BaseFunct3D BF;
   TBaseFunct3D *bf;
-  int N_Cells, N_Vertices;
+  int N_Cells, N_Vertices =0;
   int N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
-  int N_, N_Points;
   double t1, t2, t3;
-  double Val[MaxN_BaseFunctions3D];
-  double OutVal[MaxN_BaseFunctions3D];
-  int *DOF, Index;
+  int *DOF;
   RefTrans3D F_K;
   double xi[8], eta[8], zeta[8];
   double X[8], Y[8], Z[8];
   double FunctValues[8][MaxN_BaseFunctions3D];
-  double FEValuesX[MaxN_BaseFunctions3D];
-  double FEValuesY[MaxN_BaseFunctions3D];
-  double FEValuesZ[MaxN_BaseFunctions3D];
 
   // begin code
   
@@ -252,24 +241,22 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
   int n_fespaces, TFESpace3D **fespaces,
   double *errors)
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_, N_U;
+  int i,j,k,l, N_LocalUsedElements;
+  int N_Cells, N_Points, N_Parameters, N_;
   int Used[N_FEs3D], *N_BaseFunct;
   TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  TFE3D *ele;
   double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
-  RefTrans3D RefTrans;
   double *Param[MaxN_QuadPoints_3D], *aux, *aux1, *aux2, *aux3;
   double *Derivatives[3*MaxN_QuadPoints_3D];
   double *ExactVal[3*MaxN_QuadPoints_3D];
   double *AuxArray[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last;
+  int *DOF;
   double **OrigFEValues, *Orig, value, value1, value2;
   double FEFunctValues[MaxN_BaseFunctions3D];
   double FEFunctValues1[MaxN_BaseFunctions3D];
@@ -307,7 +294,6 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
   fespace = fespaces[0];
   GlobalNumbers = fespace->GetGlobalNumbers();
   BeginIndex = fespace->GetBeginIndex();
-  N_U = Length;
   Values0 = Values;
   Values1 = Values+Length;
   Values2 = Values1+Length;
@@ -432,10 +418,11 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
 
 
 /** write the solution into a data file - written by Sashi **/
-void TFEVectFunct3D::WriteSol(double t)
+void TFEVectFunct3D::WriteSol(double t,
+				   std::string directory, std::string basename)
 {
   int i, N_Joints, N_Cells;
-  char *BaseName, Dquot;
+  char Dquot;
 
   #ifdef _MPI
   int rank;
@@ -452,8 +439,8 @@ void TFEVectFunct3D::WriteSol(double t)
   i=0;
   cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
-  BaseName = TDatabase::ParamDB->BASENAME;
-  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
+  const char* BaseName = basename.c_str();
+  const char* output_directory = directory.c_str();
 
   std::ostringstream os;
   os << " ";
@@ -506,6 +493,8 @@ void TFEVectFunct3D::ReadSol(char *BaseName)
 
 #ifdef _MPI 
    MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
+#else
+   rank = 0;
 #endif
 
   Coll = FESpace3D->GetCollection();

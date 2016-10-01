@@ -1,22 +1,35 @@
 #include <Time_CD2D.h>
 #include <Database.h>
-#include <MultiGrid2D.h>
-#include <Output2D.h>
-#include <Solver.h>
 #include <DirectSolver.h>
-#include <LinAlg.h>
 #include <MainUtilities.h>
 #include <AlgebraicFluxCorrection.h>
-
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 #include <LocalProjection.h>
 
-#include <numeric>
-
 
 /**************************************************************************** */
-Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
+ParameterDatabase get_default_TCD2D_parameters()
+{
+  Output::print<5>("creating a default TCD2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default TCD2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("TCD2D parameter database");
+
+  //TCD2D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  return db;
+}
+
+/**************************************************************************** */
+Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
                                             TCollection& coll)
 : fe_space(&coll, (char*)"space", (char*)"time_cd2d space", example.get_bc(0),
            TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
@@ -49,7 +62,8 @@ void Time_CD2D::System_per_grid::descale_stiff_matrix(double tau, double theta_1
   //subtract the mass matrix...
   stiff_matrix.add_matrix_actives(mass_block, -1.0, {{0,0}}, {false});
   //...and descale the stiffness matrix...
-  stiff_matrix.scale_blocks_actives(1./(tau*theta_1), {{0,0}});
+  const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
+  stiff_matrix.scale_blocks_actives(1./(tau*theta_1), cell_positions);
 }
 
 /**************************************************************************** */
@@ -69,86 +83,76 @@ TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 }
 
 /**************************************************************************** */
-Time_CD2D::Time_CD2D(const TDomain& domain, int reference_id)
- : Time_CD2D(domain, Example_CD2D(), reference_id)
+Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+		int reference_id)
+ : Time_CD2D(domain, param_db, Example_TimeCD2D(param_db), reference_id)
 {
   
 }
 
 /**************************************************************************** */
-Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
-                     int reference_id)
- : systems(), example(ex), multigrid(nullptr), errors(5, 0.0)
+Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+		const Example_TimeCD2D& ex, int reference_id)
+ : db(get_default_TCD2D_parameters()), solver(param_db), systems(), example(ex),
+   errors(5, 0.0), timeDependentOutput(param_db)
 {
+  db.merge(param_db);
   this->set_parameters();
-  // create the collection of cells from the domain (finest grid)
-  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  // create finite element space and function, a matrix, rhs, and solution
-  this->systems.emplace_back(this->example, *coll);
+  // this is the L^inf(L^2(Omega)) error, initialize with some large number
+  errors[4] = 1.e10; 
   
-  TFESpace2D& space = this->systems.front().fe_space;
-  double hmin, hmax;
-  coll->GetHminHmax(&hmin, &hmax);
-  Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
-  Output::print<1>("h(min,max) : ", setw(12), hmin, " ", setw(12), hmax);
-  Output::print<1>("dof        : ", setw(12), space.GetN_DegreesOfFreedom());
-  Output::print<1>("active dof : ", setw(12), space.GetN_ActiveDegrees());
-  
-  // old right hand side
-  old_rhs.copy_structure(this->systems[0].rhs);
-  
-  // interpolate the initial data
-  this->systems.front().fe_function.Interpolate(example.get_initial_cond(0));
-  
-  // done with the constructor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5 
-    || TDatabase::ParamDB->SOLVER_TYPE != 1)
-    return;
-  // else multigrid
-  
-  double *param = new double[2];
-  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-  this->multigrid.reset(new TMultiGrid2D(1, 2, param));
-  // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
-  
-  
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
+  bool usingMultigrid = this->solver.is_using_multigrid();
+  if(!usingMultigrid)
   {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll);
+    // create the collection of cells from the domain (finest grid)
+    TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+    // create finite element space and function, a matrix, rhs, and solution
+    this->systems.emplace_back(this->example, *coll);
+    
+    TFESpace2D& space = this->systems.front().fe_space;
+    double hmin, hmax;
+    coll->GetHminHmax(&hmin, &hmax);
+    Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
+    Output::print<1>("h(min,max) : ", setw(12), hmin, " ", setw(12), hmax);
+    Output::print<1>("dof        : ", setw(12), space.GetN_DegreesOfFreedom());
+    Output::print<1>("active dof : ", setw(12), space.GetN_ActiveDegrees());
+    
+    // old right hand side
+    old_rhs.copy_structure(this->systems[0].rhs);
+    
+    // interpolate the initial data
+    TFEFunction2D & fe_function = this->systems.front().fe_function;
+    fe_function.Interpolate(example.get_initial_cond(0));
+    // add the fe function to the output object. 
+    timeDependentOutput.add_fe_function(&fe_function);
   }
-  
-  // create multigrid-level-objects, must be coarsest first
-  unsigned int i = 0;
-  for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
+  else
   {
-    TSquareMatrix2D* stiff_block = it->get_stiff_matrix_pointer();
-
-    TMGLevel2D *multigrid_level = new TMGLevel2D(
-      i, stiff_block, it->rhs.get_entries(),
-      it->solution.get_entries(), 2, NULL);
-    i++;
-    this->multigrid->AddLevel(multigrid_level);
+    auto multigrid = this->solver.get_multigrid();
+    if(multigrid->is_using_mdml())
+      ErrThrow("mdml for TCD2D not yet implemented");
+    
+    size_t nMGLevel = multigrid->get_n_geometric_levels();
+    int finest = domain.get_ref_level();
+    int coarsest = finest-nMGLevel+1;
+    
+    std::list<BlockFEMatrix*> matrices;
+    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
+    {
+      TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+      systems.emplace_back(example, *coll);
+      
+      systems.front().fe_function.Interpolate(example.get_initial_cond(0));
+      matrices.push_front(&systems.back().stiff_matrix);
+    }
+    multigrid->initialize(matrices);
   }
 }
 
 /**************************************************************************** */
 void Time_CD2D::set_parameters()
 {
-  if(TDatabase::ParamDB->EXAMPLE < 101)
-  {
-    ErrMsg("Example " << TDatabase::ParamDB->EXAMPLE 
-           << "is not supported for time dependent problem");
-    exit(1);
-  }
-  
+
   if(TDatabase::TimeDB->TIME_DISC == 0)
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 
@@ -156,6 +160,20 @@ void Time_CD2D::set_parameters()
     throw("TIME_DISC: 0 is not supported. Chose 1 (backward Euler) or 2 (Crank-Nicolson).");
   }
 
+  //set problem_type to Time_CD if not yet set
+  if(!db["problem_type"].is(2))
+  {
+    if (db["problem_type"].is(0))
+    {
+      db["problem_type"] = 2;
+    }
+    else
+    {
+      Output::warn<2>("The parameter problem_type doesn't correspond to Time_CD."
+          "It is now reset to the correct value for Time_CD (=2).");
+      db["problem_type"] = 2;
+    }
+  }
   //////////////// Algebraic flux correction ////////////
   if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 0)
   {//some kind of afc enabled
@@ -179,12 +197,6 @@ void Time_CD2D::set_parameters()
           "linear elements. Change ANSATZ_ORDER to 1!");
     }
 
-    // so far only direct solver
-    if (TDatabase::ParamDB->SOLVER_TYPE != 2)
-    {
-      ErrThrow("With AFC only direct solver is working so far!");
-    }
-
     //make sure that galerkin discretization is used
     if (TDatabase::ParamDB->DISCTYPE != 1)
     {//some other disctype than galerkin
@@ -194,7 +206,7 @@ void Time_CD2D::set_parameters()
     }
 
     // when using afc, create system matrices as if all dofs were active
-    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1; //FIXME THIS IS DANGEROUS, does not go well with BlockFEMatrix!
   }
 }
 
@@ -324,7 +336,8 @@ void Time_CD2D::assemble()
     // on time
 
     //scale  stiffness matrix...
-    s.stiff_matrix.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, {{0,0}});
+    const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
+    s.stiff_matrix.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, cell_positions);
     // ...and add the mass matrix
     const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
     s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
@@ -359,42 +372,26 @@ void Time_CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
-  if(TDatabase::ParamDB->SOLVER_TYPE == 2) // use direct solver
-  {
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.stiff_matrix, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs, s.solution);
-  }
-  else
-  {
-    // the one matrix stored in this BlockMatrix
-    FEMatrix* mat = s.stiff_matrix.get_blocks_uniquely().at(0).get();
-    // in order for the old method 'Solver' to work we need TSquareMatrix2D
-    TSquareMatrix2D *sqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
-    Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
-           s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-           this->multigrid.get(), s.solution.length(), 0);
-  }
+  
+  this->solver.solve(s.stiff_matrix, s.rhs, s.solution);
   
   t = GetTime() - t;
   Output::print<1>("time for solving: ",  t);
   Output::print<2>("solution ", sqrt(Ddot(s.solution.length(),
                                           s.solution.get_entries(),
                                           s.solution.get_entries())) );
-
 }
 
 /**************************************************************************** */
-void Time_CD2D::output(int m, int& image)
+void Time_CD2D::output()
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
+  bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+  if(no_output)
     return;
-  
   TFEFunction2D & fe_function = this->systems.front().fe_function;
   fe_function.PrintMinMax();
   
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double loc_e[5];
     TAuxParam2D aux;
@@ -408,7 +405,7 @@ void Time_CD2D::output(int m, int& image)
     Output::print<1>("time: ", TDatabase::TimeDB->CURRENTTIME);
     Output::print<1>("  L2: ", loc_e[0]);
     Output::print<1>("  H1-semi: ", loc_e[1]);
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+    double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
     errors[0] += (loc_e[0]*loc_e[0] + errors[1])*tau*0.5;
     errors[1] = loc_e[0]*loc_e[0];
     Output::print<1>("  L2(0,T;L2) ", sqrt(errors[0]));
@@ -416,32 +413,27 @@ void Time_CD2D::output(int m, int& image)
     errors[3] = loc_e[1]*loc_e[1];
     Output::print<1>("  L2(0,T;H1) ", sqrt(errors[2]));
     
-    if(m==0)
-      errors[4]= loc_e[0];
-    
     if(errors[4] < loc_e[0])
       errors[4] = loc_e[0];
     Output::print<1>("  Linfty(0,T;L2) ", errors[4]);
   }
 
-  if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
-  {
-    if(TDatabase::ParamDB->WRITE_VTK)
-    {
-      TOutput2D Output(1, 1, 0, 0, NULL);
-      Output.AddFEFunction(&fe_function);
-      std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-      filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
-      if(image<10) filename += ".0000";
-      else if(image<100) filename += ".000";
-      else if(image<1000) filename += ".00";
-      else if(image<10000) filename += ".0";
-      else filename += ".";
-      filename += std::to_string(image) + ".vtk";
-      Output.WriteVtk(filename.c_str());
-      image++;
-    }
-  }
+  // write output
+  timeDependentOutput.write(TDatabase::TimeDB->CURRENTTIME);
+
+}
+
+/**************************************************************************** */
+std::array< double, int(3) > Time_CD2D::get_errors() const
+{
+  std::array<double, int(3)> error_at_time_points;
+  error_at_time_points.at(0) = sqrt(errors.at(0));
+  error_at_time_points.at(1) = sqrt(errors.at(2));
+  error_at_time_points.at(2) = sqrt(errors.at(4));
+  return error_at_time_points;
+
+    
+    
 }
 
 /**************************************************************************** */

@@ -1,8 +1,17 @@
-/** rearrange bytes in int array */
-void SwapIntArray(int *intarray, int length);
+#ifndef PARMOON__UTILITIES
+#define PARMOON__UTILITIES
 
-/** rearrange bytes in float array */
-void SwapFloatArray(float *floatarray, int length);
+#include <string>
 
-/** rearrange bytes in double array */
-void SwapDoubleArray(double *doublearray, int length);
+namespace utilities
+{
+
+/// @brief return the host name of the computer ParMooN is running on
+std::string get_host_name();
+
+/// @brief return the date and time as a string
+std::string get_date_and_time();
+
+}
+
+#endif// PARMOON__UTILITIES

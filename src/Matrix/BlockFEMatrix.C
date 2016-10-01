@@ -4,7 +4,12 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif
+
 #include <limits>
+#include <algorithm>
 
 /* ************************************************************************* */
 // IMPLEMENTATION OF PUBLIC METHODS
@@ -31,7 +36,9 @@ BlockFEMatrix::BlockFEMatrix(std::vector< const TFESpace3D* > spaces_rows,
     BlockMatrix(), //base class object is default (empty) constructed
     test_spaces_rowwise_(spaces_rows),
     ansatz_spaces_columnwise_(spaces_cols)
+    pressure_correction(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE != 0)
 {
+  Output::print<5>("BlockFEMatrix constructor");
   // class invariant: testspaces are not allowed to hold hanging nodes,
   // as the only kind of non-active dofs this class can handle is Dirichlet dofs
   for(auto sp : spaces_rows)
@@ -363,18 +370,18 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type1( const TFESpace3D& velocity, const TFES
 
   // create new blocks with correct structures filled with 0
   FEMatrix velo_velo_0_0(&velocity, &velocity);
-  FEMatrix velo_velo_1_1(velo_velo_0_0);
-  FEMatrix velo_velo_2_2(velo_velo_0_0);
   
   // fill in the velo-velo blocks
-  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
-  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
-  my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}, {1,1}, {2,2}},
+                                          {false, false, false});
+
   // zero velocity blocks
   FEMatrix velo_velo_zero(&velocity, &velocity, true);
-  my_matrix.replace_blocks(velo_velo_zero, {{1,0}, {0,1}}, {false, false});
-  my_matrix.replace_blocks(velo_velo_zero, {{2,0}, {0,2}}, {false, false});
-  my_matrix.replace_blocks(velo_velo_zero, {{2,1}, {1,2}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{0,1}, {0,2}, {1,0},
+                                            {1,2}, {2,0}, {2,1}},
+                                            {false, false, false,
+                                             false, false, false});
+
 
   FEMatrix pressure_velo_1(&pressure, &velocity);
   FEMatrix pressure_velo_2(pressure_velo_1);
@@ -395,22 +402,19 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type1( const TFESpace3D& velocity, const TFES
 BlockFEMatrix BlockFEMatrix::NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure)
 {
   BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
-
-  //create new blocks with correct structures filled with 0
+  // create new blocks with correct structures filled with 0
   FEMatrix velo_velo_0_0(&velocity, &velocity);
-  FEMatrix velo_velo_1_1(velo_velo_0_0);
-  FEMatrix velo_velo_2_2(velo_velo_0_0);
   
   // fill in the velo-velo blocks
-  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
-  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
-  my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
-  
-  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
-  
-  my_matrix.replace_blocks(velo_velo_zero, {{1,0}, {0,1}}, {false, false});
-  my_matrix.replace_blocks(velo_velo_zero, {{2,0}, {0,2}}, {false, false});
-  my_matrix.replace_blocks(velo_velo_zero, {{2,1}, {1,2}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}, {1,1}, {2,2}},
+                                          {false, false, false});
+
+  // zero velocity blocks
+  FEMatrix velo_velo_zero(&velocity, &velocity, true);
+  my_matrix.replace_blocks(velo_velo_zero, {{0,1}, {0,2}, {1,0},
+                                            {1,2}, {2,0}, {2,1}},
+                                            {false, false, false,
+                                             false, false, false});
   
   FEMatrix pressure_velo_1(&pressure, &velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); 
@@ -578,6 +582,19 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type14( const TFESpace3D& velocity, const TFE
   return my_matrix;
 
 }
+
+BlockFEMatrix BlockFEMatrix::Mass_NSE3D(const TFESpace3D& velocity)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity});
+
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity),
+                           {{0,0}, {1,1}, {2,2}},
+                           {false, false, false});
+
+  return my_matrix;
+
+}
+
 #endif
 
 /* ************************************************************************* */
@@ -610,7 +627,24 @@ void BlockFEMatrix::apply_scaled_add(const BlockVector & x,
   apply_scaled_add_actives(x,y,a);
 
   //and then update the non-active rows.
-  y.addScaledNonActive(x,a);
+  if (!TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
+    y.addScaledNonActive(x,a);
+
+  /// FIXME It is an awful hack to refer to INTERNAL_FULL_MATRIX_STRUCTURE.
+  /// Sometimes TStructures are assembled as if there were no non-actives
+  /// (especially when using algebraic flux correction). In that case, the method
+  /// apply_scaled_add_actives will think, that all rows of a stored FEMatrix
+  /// are active, if then additionally addScaledNonActive is called this will
+  /// produce wrong results. Two big design problems get apparent here
+  ///
+  /// 1) Referring to global scope for such a localized issue is a no-no.
+  /// 2) The handling of non-actives is still a mess and must be fixed
+  ///    in the whole programm, in the process of restructuring the Assembling.
+  ///    Especially there may not be multiple classes which care for the
+  ///    non-active issue (as now FESpace, TStructure AND BlockFEMatrix).
+  ///    I'd like to entirely remove the information from TStructure and FEMatrix,
+  ///    and place it in FESpace, while leaving the handling to the BlockFEMatrix.
+  ///
 
 }
 
@@ -619,6 +653,22 @@ void BlockFEMatrix::apply_scaled_add(const BlockVector & x,
 void BlockFEMatrix::apply_scaled_add_actives(const BlockVector & x, BlockVector & y,
                               double a) const
 {
+  //Correction due to pressure projection! //TODO THIS! IS! SUCH! A! MESS!
+  double valuable_entry;
+  //if(pressure_correction) FIXME When to do this - when not?
+  if(false)
+  {
+    int first_pressure_row = -1;
+    if(get_n_cell_rows() == 3)
+    {//assume this to be a 2D (Navier-)Stokes matrix
+      first_pressure_row = 2*get_test_space(0,0).GetN_DegreesOfFreedom();
+    }
+    else if(get_n_cell_rows() == 4)
+    {//assume this to be a 3D (Navier-)Stokes matrix
+      first_pressure_row = 3*get_test_space(0,0).GetN_DegreesOfFreedom();
+    }
+    valuable_entry = y.get_entries()[first_pressure_row];
+  }
     //check if the vectors fit, if not so the program throws an error
     check_vector_fits_pre_image(x);
     check_vector_fits_image(y);
@@ -646,6 +696,24 @@ void BlockFEMatrix::apply_scaled_add_actives(const BlockVector & x, BlockVector 
         col_offset += cell_grid_[i][j].n_columns_;
       }
       row_offset += cell_grid_[i][0].n_rows_;
+    }
+
+    //Correction due to pressure projection! //TODO THIS! IS! SUCH! A! MESS!
+    //if(pressure_correction) FIXME When to do this - when not?
+    if(false)
+    {
+      size_t first_pressure_row;
+      if(get_n_cell_rows() == 3)
+      {//assume this to be a 2D (Navier-)Stokes matrix
+        first_pressure_row = 2*get_test_space(0,0).GetN_DegreesOfFreedom();
+      }
+      else if(get_n_cell_rows() == 4)
+      {//assume this to be a 3D (Navier-)Stokes matrix
+        first_pressure_row = 3*get_test_space(0,0).GetN_DegreesOfFreedom();
+      }
+      else
+        return;
+      y.get_entries()[first_pressure_row] = valuable_entry + a*x.get_entries()[first_pressure_row];
     }
 }
 
@@ -776,6 +844,19 @@ void BlockFEMatrix::check_vector_fits_pre_image(const BlockVector& x) const
 
 }
 
+std::shared_ptr<const FEMatrix> BlockFEMatrix::get_block(
+    size_t cell_row, size_t cell_col,  bool& is_transposed) const
+{
+  //find out the transposed state
+  is_transposed = cell_grid_.at(cell_row).at(cell_col).is_transposed_;
+
+  //cast const and FEMatrix (range check is done via "at")
+  std::shared_ptr<const FEMatrix> shared
+  = std::dynamic_pointer_cast<const FEMatrix>(cell_grid_.at(cell_row).at(cell_col).block_);
+  return shared;
+}
+
+
 /* ************************************************************************* */
 
 std::vector<std::shared_ptr<const FEMatrix>> BlockFEMatrix::get_blocks() const
@@ -790,7 +871,7 @@ std::vector<std::shared_ptr<const FEMatrix>> BlockFEMatrix::get_blocks() const
       std::shared_ptr<const FEMatrix> shared //cast const and FEMatrix
       = std::dynamic_pointer_cast<const FEMatrix>(cell_grid_[i][j].block_);
 
-      // make a weak pointer from it and push it back
+      // push it back
       block_ptrs.push_back(shared);
     }
   }
@@ -897,20 +978,56 @@ std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
 
 std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_matrix() const
 {
-  //let the base class put up the combined matrix as it can
-  std::shared_ptr<TMatrix> combined_matrix = BlockMatrix::get_combined_matrix();
+  //delegate the business far down
+  return get_combined_submatrix({0,0},{n_cell_rows_-1, n_cell_columns_-1});
+}
+/* ************************************************************************* */
 
-  // ...and revise all the dirichlet rows!
+std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
+    std::pair<size_t,size_t> upper_left,
+    std::pair<size_t,size_t> lower_right) const
+{
+  //let base class do as much work as possible
+  std::shared_ptr<TMatrix> sub_cmat =
+      this->BlockMatrix::get_combined_submatrix(upper_left, lower_right);
 
+  size_t r_first = upper_left.first;
+  size_t r_last  = lower_right.first;
+  size_t c_first = upper_left.second;
+  size_t c_last  = lower_right.second;
+
+
+  //check for empty diagonal blocks with non-actives TODO Is there a need to fix this?
+  for(size_t diag = 0; diag < n_cell_rows_; ++diag)
+  {
+    bool diag_in =     (r_first <= diag) && (r_last >= diag)
+                    && (c_first <= diag) && (c_last >= diag);
+
+    if(!diag_in)
+      continue; // this diag block is not requested anyway
+    if(this->cell_grid_[diag][diag].block_->GetN_Entries()==0)
+    {//zero-block on diagonal
+      if(get_n_row_actives(diag) != get_n_rows_in_cell(diag, diag))
+      {// This is trouble, because the baseclass will not place any entries at all
+        // into the combined matrix where this empty block stands.
+        // This means, that there will be no entries on the diagonal for the
+        // BlockFEMatrix to put ones to - will result in 0 rows!
+        Output::print("Warning! Trying to get combined matrix of a BlockFEMatrix "
+            "with a zero block on a diagonal with test-space non-actives.");
+      }
+    }
+  }
+
+  // A: CORRECTIONS DUE TO DIRICHLET ROWS
   //get pointers in the matrix
-  const int* rowptr = combined_matrix->GetRowPtr();
-  int* kcolptr = combined_matrix->GetKCol();
-  double* entries = combined_matrix->GetEntries();
+  const int* rowptr = sub_cmat->GetRowPtr();
+  int* kcolptr = sub_cmat->GetKCol();
+  double* entries = sub_cmat->GetEntries();
 
   size_t row_offset = 0;
 
-  //loop through all cell rows
-  for(size_t i =0; i < this->n_cell_rows_ ;++i)
+  //loop through all relevant cell rows
+  for(size_t i = r_first; i <= r_last ;++i)
   {
     size_t n_actives = this->test_spaces_rowwise_.at(i)->GetN_ActiveDegrees();
     size_t n_non_actives = this->test_spaces_rowwise_.at(i)->GetN_Dirichlet();
@@ -933,41 +1050,210 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_matrix() const
     // go one block row further
     row_offset += n_local_rows;
   }
-  
+
+  //B: CORRECTIONS DUE TO PRESSURE PROJECTION
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {// TODO: remove database dependency
+    // TODO: this entire business is still a mess!!!
     // check that its really a Navier-Stokes matrices
-    if(n_cell_rows_ == 3 && n_cell_columns_ ==3)
+#ifdef __2D__
+    size_t dim = 2;
+#endif
+#ifdef __3D__
+    size_t dim = 3;
+#endif
+    if( pressure_correction && n_cell_rows_ == dim + 1 
+        && n_cell_columns_ == dim + 1 && r_first <= dim && r_last >= dim)
     {
-      // number of velocity dofs
-      int n_rows = this->get_blocks().at(0)->GetN_Rows();
+#ifdef _MPI
+      int my_rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-      // find the first row of the third block column
-      int begin = rowptr[2*n_rows];
-      int end   = rowptr[2*n_rows+1];
-      
-      int diagonal = end-1;
-      // set entries to zero
-      for(int j=begin;j<end;j++)
+      // let 0 send a ping to all other processes, to determine which pressure
+      // row to eliminate
+      int verb = Output::getVerbosity();
+      Output::suppressAll();
+      int p_dof = get_communicators().back()->dof_ping(0,0);
+      Output::setVerbosity(verb);
+
+      if(my_rank==0)
       {
-        entries[j] = 0;
-        if(kcolptr[j] >= 2*n_rows && diagonal == end-1)
-          diagonal = j;
-      }      
-      entries[diagonal] = 1;          
-      kcolptr[diagonal] = 2*n_rows;
-      // if there was already an entry at the diagonal in this row, we use
-      // that one (usually for NSTYPE 14). Otherwise we reset the next
-      // entry (to the right) in this row: That means we change its column.
-      // That entry is set to be one. If there is no entry with a larger
-      // column, we use the last entry in this row (diagonal == end-1). 
+#endif
+        // the relevant block row is contained
+        // number of velocity dofs
+        int n_rows = this->get_blocks().at(0)->GetN_Rows();
+
+        // find the first row of the third block column
+        size_t skipped_block_rows = r_first;
+        int begin = rowptr[(dim - skipped_block_rows )*n_rows];
+        int end   = rowptr[(dim - skipped_block_rows)*n_rows+1]; //now we have the row
+
+        size_t skipped_block_cols = c_first;
+        int future_diagonal = end -1;
+        int diagonal_relative = (dim-skipped_block_cols)*n_rows;
+        for(int j = begin; j<end;++j)
+        {
+          entries[j]=0;
+          if(kcolptr[j] >= (int)dim*diagonal_relative && future_diagonal == end-1)
+            future_diagonal = j;
+        }
+        if(diagonal_relative < sub_cmat->GetN_Columns() && begin != end)
+        {
+          entries[future_diagonal] = 1;
+          kcolptr[future_diagonal] = diagonal_relative;
+        }
+        else if(begin == end)
+        {
+          // the matrix row is empty, therefore we have to change the matrix
+          // structure to include a value here.
+          // This typically happens if you try to get only the C-block in a 
+          // Navier-Stokes problem, which is (usually) an all-zero block with 
+          // no entries at all.
+          if(sub_cmat->GetN_Entries() == 0)
+          {
+            // there are no entries at all: create a matrix of the same size
+            // with a single entry
+            // new_rows array is one everywhere except at the beginning, this 
+            // means there is exactly one entry in the first row.
+            std::vector<int> new_rows(sub_cmat->GetN_Rows()+1, 1);
+            new_rows[0] = 0;
+            // that entry has index 0, so the entry is on the diagonal.
+            std::vector<int> new_cols(1, 0); 
+            // new structure
+            auto s = std::make_shared<TStructure>(sub_cmat->GetN_Rows(),
+                                                  sub_cmat->GetN_Columns(),
+                                                  1, &new_cols[0], 
+                                                  &new_rows[0]);
+            sub_cmat.reset(new TMatrix(s));
+            sub_cmat->GetEntries()[0] = 1; // set diagonal entry
+          }
+          else
+          {
+            // this should not happen.
+            ErrThrow("Unable to return a pressure-pressure matrix C, which has "
+                     "has no entries in the first row, but in other rows.");
+          }
+        }
+#ifdef _MPI
+      }
+      else if (p_dof != -1) //this rank knows the affected dof and has to set its row to 0
+      {//determine the row to be swept
+        int n_rows_before = 0;
+        for(size_t br = r_first; br < n_cell_rows_-1; ++br)
+          n_rows_before += this->get_row_space(br).GetN_DegreesOfFreedom();
+        int row_glob = n_rows_before + p_dof;
+        auto b_row = sub_cmat->get_row_array().at(row_glob);
+        auto e_row = sub_cmat->GetRowPtr()[row_glob+1];
+        auto entries = sub_cmat->GetEntries();
+        for(int i = b_row; i < e_row ; ++i)
+        {
+          entries[i] = 0; //nuke the entries.
+        }
+      }
+#endif
     }
   }
 
-  return combined_matrix;
+
+  // Remove all zero entries from the structure and the entries array
+  // TODO doing this here is very slow and it should be changed,
+  // but removing zeroes is important for the interface with direct solvers.
+  sub_cmat->remove_zeros(0);
+
+  return sub_cmat;
+
 }
+
 /* ************************************************************************* */
 
+#ifdef _MPI
+/// Return a list of the FE communicators belonging to the FESpaces of
+/// the rows/columns.
+std::vector<const TParFECommunicator3D*> BlockFEMatrix::get_communicators() const
+{
+  std::vector<const TParFECommunicator3D*> comms;
+  for(auto sp : test_spaces_rowwise_ )
+  {
+    comms.push_back(&sp->get_communicator());
+  }
+  return comms;
+}
+#endif
+
+/* ************************************************************************* */
+
+BlockFEMatrix BlockFEMatrix::get_sub_blockfematrix(size_t first, size_t last) const
+{
+  //check input
+  if(first >= n_cell_rows_ || last >= n_cell_rows_ )
+  {
+    ErrThrow("Out of bounds in get_sub_blockfematrix: ",
+             first, ", ", last, ", ", n_cell_rows_);
+  }
+  // step 1: construct a new block fematrix with correct fe spaces
+#ifdef __2D__
+    std::vector< const TFESpace2D*  > spaces;
+#elif __3D__
+    std::vector< const TFESpace3D*  > spaces;
+#endif
+  for( size_t sp = first; sp < last + 1; ++sp)
+  {
+    spaces.push_back(this->test_spaces_rowwise_.at(sp));
+  }
+  BlockFEMatrix sub_matrix(spaces); //construct empty blockfematrix!
+
+  // step 2: fill in the blocks - maintaining the correct coloring
+  // TODO this is copy-paste identical to corresp. part in
+  // BlockMatrix::get_subblockmatrix - put in private method!
+  std::vector< int > known_colors;
+  std::vector< std::shared_ptr<TMatrix> > known_mats; //actually FEMatrices...
+
+  for( size_t r = first; r < last + 1; ++r)
+  {
+    for( size_t c = first; c < last + 1; ++c)
+    {
+
+      int old_color = this->cell_grid_[r][c].color_;
+      auto known = std::find(known_colors.begin(), known_colors.end(), old_color);
+
+      if(known == known_colors.end())
+      {//case: this color appears for the first time
+        known_colors.push_back(old_color);
+
+        //this is actually a shared ptr to FEMatrix...
+        std::shared_ptr<TMatrix> new_mat =
+            create_block_shared_pointer(*cell_grid_[r][c].block_.get());
+
+        known_mats.push_back(new_mat);
+        //reset known
+        known = known_colors.end()-1;
+      }
+
+      size_t new_color = std::distance(known_colors.begin(), known); //position in vector
+      size_t transp = this->cell_grid_[r][c].is_transposed_;
+      size_t new_r = r-first;       // force element and color
+      size_t new_c = c-first;       // into the new sub matrix' cell grid
+      size_t old_color_sub =  sub_matrix.cell_grid_[new_r][new_c].color_;
+      sub_matrix.cell_grid_[new_r][new_c].color_ = new_color;
+      sub_matrix.cell_grid_[new_r][new_c].is_transposed_ = transp;
+      sub_matrix.cell_grid_[new_r][new_c].block_ = known_mats.at(new_color);
+      //color count
+      ++sub_matrix.color_count_.at(new_color);
+      --sub_matrix.color_count_.at(old_color_sub);
+    }
+  }
+
+  //tidy up the color count vector
+  sub_matrix.color_count_.erase(
+      std::remove( sub_matrix.color_count_.begin(),
+                   sub_matrix.color_count_.end(), 0),
+                   sub_matrix.color_count_.end()
+  );
+
+  return sub_matrix;
+}
+
+/* ************************************************************************* */
 size_t BlockFEMatrix::get_n_column_actives(size_t cell_column) const
 {
   return ansatz_spaces_columnwise_.at(cell_column)->GetN_ActiveDegrees();
@@ -980,37 +1266,33 @@ size_t BlockFEMatrix::get_n_row_actives(size_t cell_row) const
 }
 
 /* ************************************************************************* */
-void BlockFEMatrix::multiply(BlockFEMatrix& Mass_Darcy, BlockFEMatrix& Projection)
+void BlockFEMatrix::print_matrix_info(std::string name) const
 {
-  /* D=[
-   *     A1*B*A1T   A1*B*A2T; 
-   *     A2*B*A1T   A2*B*A2T]
-  */ 
-  // A1*B*A1T
-  std::vector<std::shared_ptr<FEMatrix>> projBlocks
-         = Projection.get_blocks_uniquely();
-  std::vector<std::shared_ptr<FEMatrix>> massBlocks
-         = Mass_Darcy.get_blocks_uniquely();
-  
-  std::shared_ptr<TMatrix> M00
-   (projBlocks.at(0)->multiply_with_transpose_from_right(*massBlocks.at(0)));
-  
-  std::shared_ptr<TMatrix> A2T(projBlocks.at(1)->GetTransposed());  
-  std::shared_ptr<TMatrix> BA2T(massBlocks.at(0)->multiply(*A2T));
-  std::shared_ptr<TMatrix> M01(projBlocks.at(0)->multiply(*BA2T));  
-  
-  std::shared_ptr<TMatrix> A1T(projBlocks.at(0)->GetTransposed());
-  std::shared_ptr<TMatrix> BA1T(massBlocks.at(0)->multiply(*A1T));
-  std::shared_ptr<TMatrix> M10(projBlocks.at(1)->multiply(*BA1T));
-   
-  std::shared_ptr<TMatrix> M11
-   (projBlocks.at(1)->multiply_with_transpose_from_right(*massBlocks.at(0)));
-  
-  this->replace_blocks(reinterpret_cast<const FEMatrix&>(*M00), {{0,0}}, {false});
-  this->replace_blocks(reinterpret_cast<const FEMatrix&>(*M01), {{0,1}}, {false});
-  this->replace_blocks(reinterpret_cast<const FEMatrix&>(*M10), {{1,0}}, {false});
-  this->replace_blocks(reinterpret_cast<const FEMatrix&>(*M11), {{1,1}}, {false});
+  //Gather some information to be printed.
+  int n_spaces_row = this->get_n_cell_rows();
+  int n_spaces_col = this->get_n_cell_columns();
+
+  int my_rank = 0;
+  int n_dof = this->get_n_total_rows();
+
+#ifdef _MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  n_dof = 0;
+  for(auto c : this->get_communicators())
+  {
+    n_dof += c->get_n_global_dof();
+  }
+#endif
+
+  if(my_rank == 0)
+  {
+    Output::info("BlockFEMatrix", name, " (distributed)");
+    Output::dash(n_spaces_row, " x ", n_spaces_col, " block structure");
+    Output::dash(n_dof, " total d.o.f (across all processors)");
+  }
+
 }
+
 /* ************************************************************************* */
 
 void BlockFEMatrix::replace_blocks(
@@ -1075,12 +1357,12 @@ void BlockFEMatrix::replace_blocks(
       if (grid_test_space != block_ansatz_space)
       {
         ErrThrow("Grid test space does not match transposed "
-            "block's ansatz space at (",cell_row,cell_column,")");
+            "block's ansatz space at (",cell_row,",",cell_column,")");
       }
       if (grid_ansatz_space != block_test_space)
       {
         ErrThrow("Grid ansatz space does not match transposed "
-            "block's test space at (",cell_row,cell_column,")");
+            "block's test space at (",cell_row,",",cell_column,")");
       }
       // make sure we do not try to store a block with non-active rows in
       //transposed state
@@ -1118,6 +1400,25 @@ void BlockFEMatrix::scale_blocks_actives(
 
   scale_blocks_actives(factor, input_tuples);
 }
+
+/* ************************************************************************* */
+void BlockFEMatrix::enable_pressure_correction() const
+{
+  this->pressure_correction = true;
+}
+
+/* ************************************************************************* */
+void BlockFEMatrix::disable_pressure_correction() const
+{
+  this->pressure_correction = false;
+}
+
+/* ************************************************************************* */
+bool BlockFEMatrix::pressure_correction_enabled() const
+{
+  return this->pressure_correction;
+}
+
 /* ************************************************************************* */
 
 /* ************************************************************************* */
@@ -1151,6 +1452,7 @@ BlockFEMatrix::BlockFEMatrix(const BlockFEMatrix& other)
     }
   }
 
+  this->pressure_correction = other.pressure_correction;
 }
 
 BlockFEMatrix::BlockFEMatrix(BlockFEMatrix&& other)
@@ -1179,6 +1481,7 @@ BlockFEMatrix::BlockFEMatrix(BlockFEMatrix&& other)
       }
     }
   }
+  this->pressure_correction = other.pressure_correction;
 }
 
 /* ************************************************************************* */
@@ -1192,6 +1495,7 @@ void swap(BlockFEMatrix& first, BlockFEMatrix& second)
   std::swap(first.color_count_, second.color_count_);
   std::swap(first.ansatz_spaces_columnwise_, second.ansatz_spaces_columnwise_);
   std::swap(first.test_spaces_rowwise_, second.test_spaces_rowwise_);
+  std::swap(first.pressure_correction, second.pressure_correction);
 }
 
 /* ************************************************************************* */
@@ -1288,7 +1592,7 @@ void BlockFEMatrix::add_scaled_actives(
 }
 /* ************************************************************************* */
 
-std::shared_ptr<TMatrix> BlockFEMatrix::create_block_shared_pointer(const TMatrix& block)
+std::shared_ptr<TMatrix> BlockFEMatrix::create_block_shared_pointer(const TMatrix& block) const
 {
   try
   { //try to cast the given TMatrix to an FEMatrix and make an FEMatrix copy of it

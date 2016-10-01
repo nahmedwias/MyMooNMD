@@ -35,6 +35,11 @@
 
 #include <Edge.h>
 
+#ifdef _MPI
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
+
 /** Constructor */
 TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description) :
      TFESpace(coll, name, description)
@@ -44,6 +49,11 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description) :
   UsedElements = NULL;
   AllElements = NULL;
   ElementForShape = NULL;
+
+# ifdef _MPI
+ MaxSubDomainPerDof = -1;
+# endif
+
 }
 
 // =====================================================================
@@ -140,6 +150,13 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
              ElementForShape[Tetrahedron] = D_P2_3D_T_A;
              break;
 
+             // TODO reorganize and comment this method!!!
+    case 22:
+             ElementForShape[Tetrahedron] = C_B2_3D_T_A; //P2 w face bubbles
+             ElementForShape[Brick] = C_Q2_3D_H_A;       //as in case 2 and 12
+             ElementForShape[Hexahedron] = C_Q2_3D_H_M;  //as in case 2 and 12
+             break;
+
     //========LOCALPROJECTION=============
     // Q1+bubble*P0
     case 100:
@@ -210,7 +227,6 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
 
   // construct space
   ConstructSpace(BoundaryCondition);
-
 }
 
 /** constructor for building a space with the given elements */
@@ -424,6 +440,21 @@ FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell) const
   return ret;
 }
 
+const TFE3D& TFESpace3D::get_fe(unsigned int cell_number) const
+{
+  // find corresponding cell
+  if((int)cell_number >= this->N_Cells)
+    ErrThrow("unable to find the finite element for cell ", cell_number, 
+             ". There are only ", this->N_Cells, " cells");
+  TBaseCell * cell = this->Collection->GetCell(cell_number);
+  // find finite element id
+  FE3D fe_id = this->GetFE3D(cell_number, cell);
+  // get the finite element from the database
+  TFE3D* fe = TFEDatabase3D::GetFE3D(fe_id);
+  return *fe;
+}
+
+
 void TFESpace3D::FindUsedElements()
 {
   TBaseCell *cell;
@@ -461,14 +492,14 @@ void TFESpace3D::FindUsedElements()
 
 void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 {
-  int i, j, k, l, m, m2, n, comp, N_Faces, NFaces;
-  int *v, N_FaceEdges;
+  int i, j, k, l, m, n, N_Faces, NFaces;
+  int *v;
   TBaseCell *cell, *neigh, *child1, *child2, *child3, *child4;
   TJoint *joint;
   TBoundComp3D *BoundComp;
   TBoundFace *BoundFace;
-  double t0,t1;
-  BoundCond Cond0, Cond1;
+  double t0;
+  BoundCond Cond0;
 
   TFE3DMapper *mapper;
   TFE3DMapper1Reg *mapper1reg;
@@ -486,13 +517,13 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   int *BoundOffset;
   int N_Slave, EMaxLen;
 
-  FE3D FEType0, FEType1, FEType2;
-  TFE3D *FE0, *FE1, *FE2;
-  TFEDesc3D *FEDesc0_Obj, *FEDesc1_Obj, *FEDesc2_Obj;
-  FEDesc3D FEDesc0, FEDesc1, FEDesc2;
+  FE3D FEType0, FEType1;
+  TFE3D *FE0, *FE1;
+  TFEDesc3D *FEDesc0_Obj, *FEDesc1_Obj;
+  FEDesc3D FEDesc0, FEDesc1;
 
   int I_K0, I_K1, I_K2, I_K3, I_K4;
-  int *J_K0, *J_K1, *J_K2, *J_K3, *J_K4;
+  int *J_K0;
   int *Indices0, *Indices1, *Indices2, *Indices3, *Indices4;
   int c1, c2, c3, c4, f1, f2, f3, f4;
   int chnum1, chnum2, chnum3, chnum4;
@@ -503,13 +534,20 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   double LinComb[4];
   const int *TmpFV, *TmpLen, *TmpFE, *ETmpLen;
   int MaxLen, N_Points;
+
+
+
+
+#ifdef _MPI
+  int N_FaceEdges;
   int N_Edges, N_EdgeNeibs, N_EdgeDOF, *EdgeDof, *NeibEdgeDof;
   int N_VertDof, N_VertInCell, N_VertNeibs;
-  int owndof, neibdof, maptype, w, w0, w1, v0, v1, e;
+  int neibdof, maptype, w, w0, w1, v0, v1, e;
   TEdge *edge;
   TBaseCell **EdgeNeibs, **VertNeibs;
   TVertex *Vert;
   const int *EdgeVertex, *NeibEdgeVertex;
+#endif
 
   TInterfaceJoint3D *InterFace;
 
@@ -583,8 +621,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
     if(!(FEDesc0_Obj->IsEdgeVertData_Filled()) )
      {
-       printf("Rank %d, FESpace3D Error! Edge and vertes data are not set in FEdesc3D for this FE \n", rank);
-       MPI_Abort(MPI_COMM_WORLD,  0);  
+       ErrThrow("Rank %d, FESpace3D Error! Edge and vertes data are not set in FEdesc3D for this FE \n", rank);
      }
 
      N_Edges=cell->GetN_Edges();      
@@ -634,8 +671,10 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   {
     cell=Collection->GetCell(i);
     N_Faces = cell->GetN_Joints();
+#ifdef _MPI
     N_Edges=cell->GetN_Edges();
     N_VertInCell = cell->GetN_Vertices();
+#endif
     
     FEType0 = GetFE3D(i, cell);
     FE0 = TFEDatabase3D::GetFE3D(FEType0);
@@ -954,7 +993,9 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
     //OutPut("cell: " << i << endl);   
     
     N_Faces=cell->GetN_Joints();
+#ifdef _MPI
     N_Edges=cell->GetN_Edges();
+#endif
       
     FEType0 = GetFE3D(i, cell);
     FE0 = TFEDatabase3D::GetFE3D(FEType0);
@@ -1165,7 +1206,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   FE1 = TFEDatabase3D::GetFE3D(FEType1);
                   FE1->GetFEDesc3D(FEDesc1, FEDesc1_Obj);
                   I_K1 = BeginIndex[c1];
-                  J_K1 = GlobalNumbers + BeginIndex[c1];
                   m=TmpoFnlF[chnum1*NFaces+l];
                   Indices1 = FEDesc1_Obj->GetJointDOF(m);
                   Twist1 = TmpCTI[f1];
@@ -1178,7 +1218,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   c2=child2->GetClipBoard();
                   // OutPut("child: " << 2 << " " << c2 << endl);
                   I_K2 = BeginIndex[c2];
-                  J_K2 = GlobalNumbers + BeginIndex[c2];
                   m=TmpoFnlF[chnum2*NFaces+l];
                   Indices2 = FEDesc1_Obj->GetJointDOF(m);
                   Twist2 = TmpCTI[f2];
@@ -1191,7 +1230,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   c3=child3->GetClipBoard();
                   // OutPut("child: " << 3 << " " << c3 << endl);
                   I_K3 = BeginIndex[c3];
-                  J_K3 = GlobalNumbers + BeginIndex[c3];
                   m=TmpoFnlF[chnum3*NFaces+l];
                   Indices3 = FEDesc1_Obj->GetJointDOF(m);
                   Twist3 = TmpCTI[f3];
@@ -1204,7 +1242,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   c4=child4->GetClipBoard();
                   // OutPut("child: " << 4 << " " << c4 << endl);
                   I_K4 = BeginIndex[c4];
-                  J_K4 = GlobalNumbers + BeginIndex[c4];
                   m=TmpoFnlF[chnum4*NFaces+l];
                   Indices4 = FEDesc1_Obj->GetJointDOF(m);
                   Twist4 = TmpCTI[f4];
@@ -1237,7 +1274,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   FE1->GetFEDesc3D(FEDesc1, FEDesc1_Obj);
                   
                   I_K1 = BeginIndex[c1];
-                  J_K1 = GlobalNumbers + BeginIndex[c1];
                   m = TmpoFnlF[chnum1 * NFaces + l];
                   if(m == -1)
                   {
@@ -1312,7 +1348,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
               // FEDesc1_Obj = FE1->GetFEDesc3D();
               // FEDesc1_Obj = TFEDatabase3D::GetFEDesc3D(FEDesc1);
               I_K1 = BeginIndex[n];
-              J_K1 = GlobalNumbers + BeginIndex[n];
               // Indices1 = FEDesc1_Obj->GetJointDOF(l);
 
               // find the local edge of neigh on which cell is
@@ -2030,10 +2065,10 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
   ActiveBound = N_ActiveDegrees;
 
-  delete BoundaryUpperBound;
-  delete BoundCounter;
-  delete BoundMark;
-  delete BoundOffset;
+  delete[] BoundaryUpperBound;
+  delete[] BoundCounter;
+  delete[] BoundMark;
+  delete[] BoundOffset;
   
 //   #ifdef _MPI
 //   int rank, size;
@@ -2051,16 +2086,18 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
 TFESpace3D::~TFESpace3D()
 {
-  delete BoundaryNodesBound;
+  delete[] BoundaryNodesBound;
 
   if (UsedElements)
-    delete UsedElements;
+    delete[] UsedElements;
 
   if(AllElements)
-    delete AllElements;
+    delete[] AllElements;
 
   if(ElementForShape)
-    delete ElementForShape;
+    delete[] ElementForShape;
+
+  delete[] HangingNodeArray;
 }
 
 /** return position of all dofs */
@@ -2331,4 +2368,57 @@ void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
     } // endif DOFFound > -1
   } // endfor i
 } // end GetDOFPosition
+
+bool TFESpace3D::CheckMesh() const
+{
+  int N_DOF, *DOF=NULL, found;
+  TBaseCell *Cell;
+  FE3D feid;
+  TFE3D *fe=NULL;
+
+  for (int i=0;i<N_Cells;++i)
+  {
+    Cell = Collection->GetCell(i);
+
+    DOF = GlobalNumbers + BeginIndex[i];
+
+    feid = GetFE3D(i, Cell);
+    fe   = TFEDatabase3D::GetFE3D(feid);
+    N_DOF = fe->GetN_DOF();
+
+    found = 0;
+    for (int j=0;j<N_DOF;++j)
+    {
+      if ( DOF[j] < ActiveBound )
+      {
+        found = 1;
+        break;
+      }
+    }
+
+    if ( found == 0 )
+    {
+      Output::print("index: " , i, 
+                    "\n", Cell->GetVertex(0),
+                    "\n", Cell->GetVertex(1),
+                    "\n", Cell->GetVertex(2),
+                    "\n", Cell->GetVertex(3));
+      // Collection->info();      
+      return false;
+    }
+  }
+
+  return true;
+} 
+
+#ifdef _MPI
+void TFESpace3D::initialize_parallel(int maxSubDomainPerDof)
+{
+  MaxSubDomainPerDof = maxSubDomainPerDof;
+
+  // initialize the mapper and communicator for MPI communications
+  mapper_.reset(new TParFEMapper3D(1, this));
+  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+}
+#endif
 

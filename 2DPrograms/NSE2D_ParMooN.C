@@ -10,86 +10,96 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <LinAlg.h>
 #include <NSE2D.h>
-#include <Output2D.h>
-#include <MainUtilities.h>
-#include <LocalAssembling2D.h>
 #include <Example_NSE2D.h>
+#include <Chrono.h>
+#include <LoopInfo.h>
+#include <ParameterDatabase.h>
 
-#include <MooNMD_Io.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 // =======================================================================
 // main program
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  // start a stopwatch which measures time spent in program parts
+  Chrono timer;
+  
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase; 
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
   
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain Domain(argv[1]);  
+  TDomain domain(argv[1], parmoon_db);
   
-  //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
-  if(TDatabase::ParamDB->PROBLEM_TYPE!=3 && TDatabase::ParamDB->PROBLEM_TYPE!=5)
-    TDatabase::ParamDB->PROBLEM_TYPE = 5;
-  //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  //open OUTFILE, this is where all output is written to (additionally to console)
+  Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
   
   // possibly change parameters in the database, if they are not meaningful now
   Database.CheckParameterConsistencyNSE();
   // write all Parameters to the OUTFILE (not to console) for later reference
+  parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
   
-  /* include the mesh from a mesh generator, for a standard mesh use the 
-   * build-in function. The GEOFILE describes the boundary of the domain. */
-  Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
-  
-  // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-    Domain.RegRefineAll();  
+  // refine grid
+  size_t n_ref = domain.get_n_initial_refinement_steps();
+  for(size_t i = 0; i < n_ref; i++)
+    domain.RegRefineAll();
   
   // write grid into an Postscript file
-  if(TDatabase::ParamDB->WRITE_PS)
-    Domain.PS("Domain.ps",It_Finest,0);
+  if(parmoon_db["output_write_ps"])
+    domain.PS("Domain.ps", It_Finest, 0);
   
-  // create output directory, if not already existing
-  if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
+  Example_NSE2D example(parmoon_db);
   
-  Example_NSE2D example;
-  
-  // create an object of the Naviert-Stokes class
-  NSE2D ns(Domain, example);
+  // create an object of the Navier-Stokes class
+  NSE2D ns(domain, parmoon_db, example);
   ns.assemble();
   // if solution was not zero up to here, you should call 
   //ns.assemble_nonlinear_term();
   
   ns.stopIt(0);
   
+  LoopInfo loop_info("nonlinear");
+  loop_info.print_time_every_step = true;
+  loop_info.verbosity_threshold = 1; // full verbosity
+  loop_info.print(0, ns.getFullResidual());
+  
+  timer.restart_and_print("setting up spaces, matrices, linear assemble");
+  
   //======================================================================
   // nonlinear loop
   // in function 'stopIt' termination condition is checked
   for(unsigned int k = 1;; k++)
   {
-    Output::print<1>("nonlinear iteration step ", setw(3), k-1, "\t", 
-                     ns.getResiduals());
+    Output::print(); // new line for a new nonlinear iteration
     ns.solve();
     
     //no nonlinear iteration for Stokes problem
-    if(TDatabase::ParamDB->PROBLEM_TYPE == 3)
+    if(parmoon_db["problem_type"].is(3))
       break;
     
     ns.assemble_nonlinear_term();
     
     if(ns.stopIt(k))
+    {
+      loop_info.finish(k, ns.getFullResidual());
       break;
+    }
+    else
+      loop_info.print(k, ns.getFullResidual());
   } // end for k
   
+  timer.restart_and_print("solving procedure");
+  
   ns.output();
+  
+  timer.print_total_time("complete NSE2D_ParMooN program");
   
   Output::close_file();
   return 0;

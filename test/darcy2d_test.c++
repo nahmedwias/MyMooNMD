@@ -23,56 +23,55 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <Darcy2D.h>
+#include <Chrono.h>
+#include <cmath>
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <LocalAssembling2D.h>
-#include <Example_CD2D.h>
-
-#include <MainUtilities.h> //for error measuring
+#include <petscksp.h>
 
 // compare the computed errors in the Darcy2D object with the given ones in 
 // the array
 void compareErrors(const Darcy2D& darcy2d, std::array<double, 5> errors)
 {
-  const double eps = 1e-9;
+  const double eps = 2e-9;
+  
   // check the errors
-  if( fabs(darcy2d.getL2VelocityError() - errors[0]) > eps )
+  if( std::abs(darcy2d.getL2VelocityError() - errors[0]) > eps 
+     || std::isnan(darcy2d.getL2VelocityError()) )
   {
     ErrThrow("Program 1: L2 velocity error not correct. ",
              darcy2d.getL2VelocityError() - errors[0]);
   }
-  if( fabs(darcy2d.getL2DivergenceError() - errors[1]) > eps )
+  if( std::abs(darcy2d.getL2DivergenceError() - errors[1]) > 2*eps )
   {
     ErrThrow("Program 1: L2 velocity divergence error not correct. ",
              darcy2d.getL2DivergenceError() - errors[1]);
   }
-  if( fabs(darcy2d.getH1SemiVelocityError() - errors[2]) > eps )
+  if( std::abs(darcy2d.getH1SemiVelocityError() - errors[2]) > eps )
   {
     ErrThrow("Program 1: H1-semi velocity error not correct. ",
              darcy2d.getH1SemiVelocityError() - errors[2]);
   }
-  if( fabs(darcy2d.getL2PressureError() - errors[3]) > eps )
+  if( std::abs(darcy2d.getL2PressureError() - errors[3]) > eps )
   {
-    ErrThrow("Program 1: L2 pressure error not correct.",
+    ErrThrow("Program 1: L2 pressure error not correct. ",
              darcy2d.getL2PressureError() - errors[3]);
   }
-  if( fabs(darcy2d.getH1SemiPressureError() - errors[4]) > eps )
+  if( std::abs(darcy2d.getH1SemiPressureError() - errors[4]) > 2*eps )
   {
-    ErrThrow("Program 1: H1-semi pressure error not correct.",
+    ErrThrow("Program 1: H1-semi pressure error not correct. ",
              darcy2d.getH1SemiPressureError() - errors[4]);
   }
 }
 
 // Here the actual computations take place
-void check(TDomain & domain, int velocityCode, std::array<double, 5> errors)
+void check_darcy2d(TDomain & domain, ParameterDatabase& db, int velocityCode, 
+           std::array<double, 5> errors)
 {
   TDatabase::ParamDB->VELOCITY_SPACE = velocityCode;
   // automatically choose pressure space to get inf-sup stable pair
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   
-  Darcy2D darcy2d(domain);
+  Darcy2D darcy2d(domain, db);
   darcy2d.assemble();
   darcy2d.solve();
   darcy2d.output();
@@ -80,18 +79,139 @@ void check(TDomain & domain, int velocityCode, std::array<double, 5> errors)
   compareErrors(darcy2d, errors); // throws upon a difference
 }
 
+void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
+{
+  // default construct a domain object
+  TDomain domain(db);
+  
+
+  // refine grid up to the coarsest level
+  for(unsigned int i = 0; i < nRefinements; i++)
+  {
+    domain.RegRefineAll();
+  }
+
+  std::array<double, 5> errors;
+    
+  Output::print("\nstarting with RT0 on quads");
+  errors = {{ 2.1136884064519, 23.120239110875, 32.350359820686, 
+              0.30277518654981, 4.4428829381584 }};
+  check_darcy2d(domain, db, 1000, errors);
+  
+  Output::print("\nstarting with RT1 on quads");
+  errors = {{ 0.40548747487874, 4.9461605478514, 12.695872686293, 
+              0.063044878850364, 1.9735667622761 }};
+  check_darcy2d(domain, db, 1001, errors);
+  
+  Output::print("\nstarting with RT2 on quads");
+  errors = {{ 0.053370236091622, 0.66178203636242, 2.7529898961154,
+              0.0084084949151706, 0.43469938937457 }};
+  check_darcy2d(domain, db, 1002, errors);
+  
+  // this is quite slow!
+  if(db["solver_type"].is("direct"))
+  {
+    Output::print("\nstarting with RT3 on quads");
+    errors = {{ 0.0052759466028633, 0.065778892133375, 0.39754725046775,
+                0.00083489202575657, 0.063038523036227 }};
+    check_darcy2d(domain, db, 1003, errors);
+  }
+  
+  Output::print("\nstarting with BDM1 on quads");
+  errors = {{ 1.7301620785317, 23.120239110875, 25.376165640701,
+              0.32075488021636, 4.4428829381584 }};
+  check_darcy2d(domain, db, 1011, errors);
+  
+  Output::print("\nstarting with BDM2 on quads");
+  errors = {{ 0.36989913525384, 8.7083491818683, 8.7386341355059,
+              0.1118419830706, 2.6029572935706 }};
+  check_darcy2d(domain, db, 1012, errors);
+  
+  // this is really slow (for the preconditioner
+  // semi_implicit_method_for_pressure_linked_equations)
+  if(db["solver_type"].is("direct")
+    || db["preconditioner"].is("least_squares_commutator"))
+  {
+    Output::print("\nstarting with BDM3 on quads");
+    errors = {{ 0.073739263678954, 2.2160565937362, 2.5477742459801,
+                0.028107167396319, 0.99433882928285 }};
+    check_darcy2d(domain, db, 1013, errors);
+  }
+}
+
+void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
+{
+  // default construct a domain object
+  TDomain domain(db);
+  
+  // refine grid up to the coarsest level
+  for(unsigned int i = 0; i < nRefinements; i++)
+  {
+    domain.RegRefineAll();
+  }
+
+  std::array<double, 5> errors;
+
+  Output::print("\nstarting with RT0 on triangles");
+  errors = {{ 2.0193948379924, 19.174978565868, 31.034055967159,
+              0.24829883521652, 4.4428829381584 }};
+  check_darcy2d(domain, db, 1000, errors);
+  
+  Output::print("\nstarting with RT1 on triangles");
+  errors = {{ 0.45226149917363, 5.7965843062654, 14.561985165855,
+              0.074478813057122, 2.3249493136119 }};
+  check_darcy2d(domain, db, 1001, errors);
+  
+  // this is really slow!
+  if(db["solver_type"].is("direct")
+     || db["preconditioner"].is("least_squares_commutator"))
+  {
+    Output::print("\nstarting with RT2 on triangles");
+    errors = {{ 0.077083425180006, 1.0445467331298, 4.1457189447051,
+                0.0038190922876324, 0.81680935765046 }};
+    check_darcy2d(domain, db, 1002, errors);
+  }
+  
+  // this is really slow!
+  if(db["solver_type"].is("direct"))
+  {
+    Output::print("\nstarting with RT3 on triangles");
+    errors = {{ 0.011582995440399, 0.24199767560786, 0.79591235625871,
+                0.0028837387982513, 0.2072548767011 }};
+    check_darcy2d(domain, db, 1003, errors);
+  }
+  
+  Output::print("\nstarting with BDM1 on triangles");
+  errors = {{ 1.3471909779398, 19.174978565868, 24.552917977967,
+              0.25991524351834, 4.4428829381584 }};
+  check_darcy2d(domain, db, 1011, errors);
+  
+  Output::print("\nstarting with BDM2 on triangles");
+  errors = {{ 0.21067940108674, 5.7965843062654, 8.2247391949719,
+              0.074736732125372, 2.3558018820457 }};
+  check_darcy2d(domain, db, 1012, errors);
+  
+  // this is really slow!
+  if(db["solver_type"].is("direct"))
+  {
+    Output::print("\nstarting with BDM3 on triangles");
+    errors = {{ 0.043596263688953, 1.0445467331299, 1.7271188357497,
+                0.0035276997665613, 0.82269214135298 }};
+    check_darcy2d(domain, db, 1013, errors);
+  }
+}
+
+
+
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int argc, char** args)
 {
   //  declaration of databases
   TDatabase Database;
   TFEDatabase2D FEDatabase;
-
-  // Set Database values (this is what is usually done by the input-file)
-  TDatabase::ParamDB->PROBLEM_TYPE = 0; // problem type is not needed
-  TDatabase::ParamDB->EXAMPLE = 0; // known sin-cos solution
+  
   // velocity space code for Raviart-Thomas (RT) and 
   // Brezzi-Douglas-Marini(BDM) elements:
   // 1000    RT_0
@@ -104,118 +224,75 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->VELOCITY_SPACE = 1000;
   // automatically choose pressure space to get inf-sup stable pair
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
-  TDatabase::ParamDB->MEASURE_ERRORS = 1; // compute errors
-  // high order quadrature for computing errors 
+    // high order quadrature for computing errors
   TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
-  TDatabase::ParamDB->WRITE_VTK = 0; // do not write vtk files
   TDatabase::ParamDB->SIGMA_PERM = 1.; // permeability
-  TDatabase::ParamDB->SC_VERBOSE = 0; // supress solver output
-  TDatabase::ParamDB->SOLVER_TYPE = 2; // use direct solver
 
-  unsigned int nRefinements = 4;
+  unsigned int nRefinements = 2;
   
-  // cells are squares
-  {
-    // default construct a domain object
-    TDomain domain;
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-
-    // refine grid up to the coarsest level
-    for(unsigned int i = 0; i < nRefinements; i++)
-    {
-      domain.RegRefineAll();
-    }
-
-    std::array<double, 5> errors;
-    
-    Output::print("\nstarting with RT0 on quads");
-    errors = {{ 0.50616706358332, 6.2926762302213, 28.267854806247, 
-                0.079978980936799, 4.4428829381584 }};
-    check(domain, 1000, errors);
-    
-    Output::print("\nstarting with RT1 on quads");
-    errors = {{ 0.025524493858475, 0.32016058303363, 3.1653722663713, 
-                0.0040560305244671, 0.50312981240831 }};
-    check(domain, 1001, errors);
-    
-    Output::print("\nstarting with RT2 on quads");
-    errors = {{ 0.00084661911007719, 0.010629840538212, 0.17550885275941, 
-                0.00013465340078883, 0.027920142668719 }};
-    check(domain, 1002, errors);
-    
-    Output::print("\nstarting with RT3 on quads");
-    errors = {{ 2.094182550122e-05, 0.00026303115293237, 0.0063544526017813, 
-                3.3317619753011e-06, 0.0010111221715242 }};
-    check(domain, 1003, errors);
-    
-    Output::print("\nstarting with BDM1 on quads");
-    errors = {{ 0.12631404854406, 6.2926762302213, 7.0233297819314, 
-                0.080703320512897, 4.4428829381584 }};
-    check(domain, 1011, errors);
-    
-    Output::print("\nstarting with BDM2 on quads");
-    errors = {{ 0.0046193106648853, 0.59661934959593, 0.54355308167768, 
-                0.0075575031515213, 0.70825254317319 }};
-    check(domain, 1012, errors);
-    
-    Output::print("\nstarting with BDM3 on quads");
-    errors = {{ 0.00025013087012341, 0.037688202895706, 0.036176275134976, 
-                0.00047733398111123, 0.068099895638466 }};
-    check(domain, 1013, errors);
-  }
+  Output::setVerbosity(2);
   
-  // cells are triangles
-  {
-    // default construct a domain object
-    TDomain domain;
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(Solver<>::default_solver_database());
+  db.merge(ParameterDatabase::default_output_database());
+  db.merge(Example2D::default_example_database());
+  db["problem_type"] = 0; // problem type is not needed
+  db["example"] = 0; // known sin-cos solution
+  db["residual_tolerance"] = 1.0e-13;
+  
+  db["output_compute_errors"] = true;
+  
+  Chrono timer;
+  
+  Output::print("\n\n ----------- direct solver -----------\n");
+  db["solver_type"] = "direct";
+ 
+  db.add("boundary_file", "Default_UnitSquare", "");
+  db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+  
+  tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
+  tests_on_triangles(nRefinements, db);
+  timer.restart_and_print("all tests, the direct solver");
+  
+  
+  db["max_n_iterations"] = 10000;
+  
+  Output::print("\n\n ----------- PETSc solver -----------\n");
+  db["solver_type"] = "petsc";
 
-    // refine grid up to the coarsest level
-    for(unsigned int i = 0; i < nRefinements; i++)
-    {
-      domain.RegRefineAll();
-    }
+  std::string petsc_args = "-ksp_monitor"
+      "-ksp_type fgmres -pc_type fieldsplit -pc_fieldsplit_type schur"
+      " -fieldsplit_0_ksp_atol 1.0e-13 -fieldsplit_0_ksp_rtol 0."
+      " -fieldsplit_1_ksp_atol 1.0e-13 -fieldsplit_1_ksp_rtol 0.";
 
-    std::array<double, 5> errors;
+  db["petsc_arguments"].impose(Parameter("petsc_arguments", petsc_args, ""));
 
-    Output::print("\nstarting with RT0 on triangles");
-    errors = {{ 0.50408358816775, 5.1429079193159, 28.151331748344, 
-                0.065260996556179, 4.4428829381584 }};
-    check(domain, 1000, errors);
-    
-    Output::print("\nstarting with RT1 on triangles");
-    errors = {{ 0.028196037109588, 0.390978706619, 3.7142101823095, 
-                0.0049554126577833, 0.63339791851833 }};
-    check(domain, 1001, errors);
-    
-    Output::print("\nstarting with RT2 on triangles");
-    errors = {{ 0.0011486412161111, 0.017485986235863, 0.2702544676034, 
-                2.7194995909334e-05, 0.055705709939193 }};
-    check(domain, 1002, errors);
-    
-    Output::print("\nstarting with RT3 on triangles");
-    errors = {{ 4.5103729086427e-05, 0.0010136026623928, 0.012803427384749, 
-                1.2004518891142e-05, 0.0035296757619195 }};
-    check(domain, 1003, errors);
-    
-    Output::print("\nstarting with BDM1 on triangles");
-    errors = {{ 0.099862267417049, 5.1429079193159, 7.4906379811947, 
-                0.065730785418563, 4.4428829381584 }};
-    check(domain, 1011, errors);
-    
-    Output::print("\nstarting with BDM2 on triangles");
-    errors = {{ 0.0035151373346507, 0.390978706619, 0.58694587503024, 
-                0.004954555083239, 0.63428676374772 }};
-    check(domain, 1012, errors);
-    
-    Output::print("\nstarting with BDM3 on triangles");
-    errors = {{ 0.00017651588561095, 0.017485986236131, 0.029975320141965, 
-                2.6130552218382e-05, 0.055748396623119 }};
-    check(domain, 1013, errors);
-  }
+  db["geo_file"] = "UnitSquare";
+  tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
+  tests_on_triangles(nRefinements, db);
+  timer.restart_and_print("all tests, the petsc solver");
+  
+  db["solver_type"] = "iterative";
+  
+  Output::print("\n\n --------- fgmres+lsc solver ---------\n");
+  db["preconditioner"] = "least_squares_commutator";
+  db["geo_file"] = "UnitSquare";
+  tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
+  tests_on_triangles(nRefinements, db);
+  timer.restart_and_print("all tests, fgmres with lsc preconditioning");
+  
+  
+  
+  Output::print("\n\n -------- fgmres+simple solver -------\n");
+  db["preconditioner"] = "semi_implicit_method_for_pressure_linked_equations";
+  db["geo_file"] = "UnitSquare";
+  tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
+  tests_on_triangles(nRefinements, db);
+  timer.restart_and_print("all tests, fgmres with simple preconditioning");
+  
   return 0;
 }

@@ -27,7 +27,7 @@
 #include <TriaAffin.h>
 #include <TriaIsoparametric.h>
 #include <Database.h>
-
+#include <AuxParam2D.h>
 
 #include <Joint.h>
 #include <BoundEdge.h>
@@ -56,7 +56,7 @@ TFEVectFunct2D::TFEVectFunct2D(const TFESpace2D *fespace2D, char *name,
 /** convert current grid to vector-values FE function */
 void TFEVectFunct2D::GridToData()
 {
-  int i,j,k,l;
+  int i,j,k;
   TBaseCell *cell;
   TCollection *Coll;
   FE2D FEId;
@@ -65,18 +65,15 @@ void TFEVectFunct2D::GridToData()
   int N_Cells;
   int N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
-  int N_, N_Points;
-  double s, *xi, *eta;
-  double Val[MaxN_BaseFunctions2D];
-  double OutVal[MaxN_BaseFunctions2D];
-  int *DOF, Index;
+  int N_Points;
+  double *xi, *eta;
+  int *DOF;
   RefTrans2D F_K;
   TRefTrans2D *rt;
   double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
   double AbsDetjk[MaxN_PointsForNodal2D];
   double FunctionalValuesX[MaxN_PointsForNodal2D];
   double FunctionalValuesY[MaxN_PointsForNodal2D];
-  double FctVal[4];
 
   // begin code
   
@@ -144,7 +141,7 @@ void TFEVectFunct2D::GridToData()
 /** use current data for grid replacement */
 void TFEVectFunct2D::DataToGrid()
 {
-  int i,j,k,l;
+  int i,j,k;
   TBaseCell *cell;
   TCollection *Coll;
   FE2D FEId;
@@ -153,17 +150,12 @@ void TFEVectFunct2D::DataToGrid()
   int N_Cells, N_Vertices;
   int N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
-  int N_, N_Points;
   double s, t;
-  double Val[MaxN_BaseFunctions2D];
-  double OutVal[MaxN_BaseFunctions2D];
-  int *DOF, Index;
+  int *DOF;
   RefTrans2D F_K;
   double xi[4], eta[4];
   double X[4], Y[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
-  double FEValuesX[MaxN_BaseFunctions2D];
-  double FEValuesY[MaxN_BaseFunctions2D];
 
   // begin code
   
@@ -243,24 +235,22 @@ void TFEVectFunct2D::GetDeformationTensorErrors(
   int n_fespaces, TFESpace2D **fespaces,
   double *errors)
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_, N_U;
+  int i,j,k,l,N_LocalUsedElements;
+  int N_Cells, N_Points, N_Parameters, N_;  //N_U;
   int Used[N_FEs2D], *N_BaseFunct;
   TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  TFE2D *ele;
   double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
-  RefTrans2D RefTrans;
   double *Param[MaxN_QuadPoints_2D], *aux, *aux1, *aux2, *aux3;
   double *Derivatives[2*MaxN_QuadPoints_2D];
   double *ExactVal[2*MaxN_QuadPoints_2D];
   double *AuxArray[MaxN_QuadPoints_2D];
-  int *DOF, ActiveBound, DirichletBound, end, last;
+  int *DOF;
   double **OrigFEValues, *Orig, value, value1;
   double FEFunctValues[MaxN_BaseFunctions2D];
   double FEFunctValues1[MaxN_BaseFunctions2D];
@@ -297,7 +287,7 @@ void TFEVectFunct2D::GetDeformationTensorErrors(
   fespace = fespaces[0];
   GlobalNumbers = fespace->GetGlobalNumbers();
   BeginIndex = fespace->GetBeginIndex();
-  N_U = Length;
+//  N_U = Length;
   Values0 = Values;
   Values1 = Values+Length;
 
@@ -421,7 +411,6 @@ double TFEVectFunct2D::GetL2NormDivergence()
   TBaseCell *cell;
   FE2D UsedElements[1], FEid;
   int N_UsedElements = 1;
-  TNodalFunctional2D *nf;
   BaseFunct2D BaseFunct, *BaseFuncts;
   int *N_BaseFunct, N_Bf;
   bool SecondDer[1] = { FALSE };
@@ -430,8 +419,6 @@ double TFEVectFunct2D::GetL2NormDivergence()
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetJK[MaxN_QuadPoints_2D];
-  RefTrans2D F_K;
-  TRefTrans2D *rt;
   double *Values0, *Values1;
   double FEFunctValues0[MaxN_BaseFunctions2D];
   double FEFunctValues1[MaxN_BaseFunctions2D];
@@ -503,11 +490,12 @@ double TFEVectFunct2D::GetL2NormDivergence()
 
 
 /** write the solution into a data file - written by Sashi **/
-void TFEVectFunct2D::WriteSol(double t)
+void TFEVectFunct2D::WriteSol(double t, std::string directory,
+		   	   	   	   	   	   std::string basename)
 {
   int i, N_Joints, N_Cells;
 
-  char *BaseName, Dquot;
+  char Dquot;
 
   #ifdef _MPI
   int rank;
@@ -524,8 +512,8 @@ void TFEVectFunct2D::WriteSol(double t)
   i=0;
   cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
-  BaseName = TDatabase::ParamDB->BASENAME;
-  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
+  const char* BaseName = basename.c_str();
+  const char* output_directory = directory.c_str();
 
   std::ostringstream os;
   os << " ";
@@ -618,13 +606,12 @@ void TFEVectFunct2D::Interpolate(TFEVectFunct2D *OldVectFunct)
  int *BeginIndex, *GlobalNumbers, *DOF;
  int PolynomialDegree, ApproxOrder;
 
- double s, *xi, *eta;
+ double *xi, *eta;
  double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
  double AbsDetjk[MaxN_PointsForNodal2D];
  double PointValues1[MaxN_PointsForNodal2D];
  double PointValues2[MaxN_PointsForNodal2D];
  double FunctionalValues[MaxN_PointsForNodal2D];
- double FctVal[4];
  double val1[3], val2[3];
   
  bool IsIsoparametric;
@@ -788,10 +775,10 @@ void TFEVectFunct2D::Interpolate(TFEVectFunct2D *OldVectFunct)
  the given point */
 void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *val2)
 {
-  int i, j, k, N_Cells, N_Found, N_BaseFunct, N_DOFs;
+  int i, j, N_Cells, N_Found, N_BaseFunct, N_DOFs;
   int *BeginIndex, *GlobalNumbers, *Numbers, N_Edges;
   
-  double xv, yv, xi, eta, U1, U2;  
+  double xi, eta, U1, U2;
   double *uorig, *uxorig, *uyorig, *uref, *uxiref, *uetaref;
   double u1, u1x, u1y, u2, u2x, u2y;
   
@@ -859,6 +846,9 @@ void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *
 
          case BFUnitTriangle:
           N_Edges = 3;
+         break;
+
+         default:
          break;
         }      
 

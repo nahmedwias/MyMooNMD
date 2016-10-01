@@ -1,11 +1,20 @@
-// Driven cavity
-// 
-// u(x,y,z) = unknown
-// p(x,y,z) = unknown
+/**
+ * @file The driven cavity benchmark example in 3D.
+ *
+ * The boundary data is adapted to the [0.1]^3 unit cube example, which is
+ * availabe as default geometry in ParMooN. It will throw an error if you
+ * try running it on any other domain - just to make you aware of that fact.
+ */
+
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  Output::print<1>("Example: DrivenCavity3D.h");
+  Output::info<1>("EXAMPLE"," DrivenCavity3D.h");
+  // \TODO check if the expected geometry is used
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 // ========================================================================
@@ -56,14 +65,11 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
 {
-  double tol = 1e-5;
+  double tol = 1e-10;
 
   if (fabs(1-z)<tol)
   {
-    if ((fabs(1+x) < tol) || (fabs(1-x) < tol) || (fabs(1+y) < tol) || (fabs(1-y) < tol))
-      value = 0.0;
-    else
-      value = 1.0;
+    value = 1.0;
   }
   else
     value = 0.0 ;
@@ -87,7 +93,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double *x, double *y, double *z,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  static double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double *coeff;
 

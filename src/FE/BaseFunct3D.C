@@ -78,7 +78,6 @@ void TBaseFunct3D::GetDerivatives(MultiIndex3D MultiIndex,
                         TQuadFormula3D *formula, double **values)
 {
   int i, N_;
-  int j;
   double *w, *xi, *eta, *zeta;
 
   formula->GetFormulaData(N_, w, xi, eta, zeta);
@@ -530,7 +529,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
 
 TGridCell *TBaseFunct3D::GenerateRefElement()
 {
-  TGridCell *Cell;
+  TGridCell *Cell =nullptr;
   TVertex *v[8];
   TJointEqN *b[6];
   int i;

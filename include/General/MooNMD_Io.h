@@ -17,6 +17,10 @@
 #include <sstream>
 #include <stdexcept>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -102,6 +106,8 @@ namespace Output
   void decreaseVerbosity(unsigned int i = 1);
   /// @brief set the verbosity to a given level (must be between 1 and 5)
   void setVerbosity(unsigned int i);
+  /// @brief get the verbosity, typically to reset it to this value later again
+  unsigned int getVerbosity();
   /// @brief suppress all output to std::cout and the outfile
   ///
   /// Only calls to Output::print are suppressed. Direct calls to std::cout are
@@ -157,6 +163,18 @@ namespace Output
   template<unsigned int verbosity = 1, typename ... Arguments>
   void print(Arguments const& ... rest);
   
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void warn(std::string context, Arguments const& ... rest);
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void stat(std::string context, Arguments const& ... rest);
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void info(std::string context, Arguments const& ... rest);
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void dash(Arguments const& ... rest);
+
   /// @brief print only to the outfile depending on verbosity
   ///
   /// This method behaves like the corresponding print, but does not print to
@@ -225,6 +243,24 @@ namespace Output
     // http://stackoverflow.com/a/21812549
     // http://stackoverflow.com/a/33621132
     std::ostringstream stream;
+#ifdef _MPI
+    // In MPI case, tell us which process is talking to us.
+    // This feature is in testing stage.
+    int finalized = 0;
+    MPI_Finalized(&finalized);
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+    if(!finalized && initialized)
+    {
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    stream << my_rank << ": ";
+    }
+    else
+    {
+      stream << "(?): ";
+    }
+#endif
     using List= int[];
     (void)List{0, ( (void)(stream << args), 0 ) ... };
     
@@ -242,6 +278,30 @@ namespace Output
     }
   }
   
+  template<unsigned int verbosity, typename ... Arguments>
+  void warn(std::string context, Arguments const& ... rest)
+  {
+	  print<verbosity>("WARNING (",context,"): ", rest ...);
+  }
+
+  template<unsigned int verbosity, typename ... Arguments>
+  void stat(std::string context, Arguments const& ... rest)
+  {
+	  print<verbosity>("STATS (",context,"): ", rest ...);
+  }
+
+  template<unsigned int verbosity, typename ... Arguments>
+  void info(std::string context, Arguments const& ... rest)
+  {
+	  print<verbosity>("INFO (",context,"): ", rest ...);
+  }
+
+  template<unsigned int verbosity, typename ... Arguments>
+  void dash(Arguments const& ... rest)
+  {
+	  print<verbosity>(" > ", rest ...);
+  }
+
   // implementation of the printToFile method
   template<unsigned int verbosity, typename ... Arguments>
   void printToFile(Arguments const& ... args)

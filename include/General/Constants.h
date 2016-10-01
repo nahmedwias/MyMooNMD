@@ -17,7 +17,7 @@
 
 #define NULL 0
 
-#include <math.h>
+#include <cmath>
 #include <iostream>
 
 #ifdef __2D__
@@ -287,6 +287,9 @@ typedef void GetDragLiftFunct2D(const TFEFunction2D *, const TFEFunction2D *, co
 
 double GetTime();
 int GetMemory();
+
+#include <string>
+void display_mallinfo(const std::string& program_part);
 
 #define AMG_SOLVE 0
 #define GMG 1

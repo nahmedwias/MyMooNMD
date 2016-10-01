@@ -1,16 +1,42 @@
 #include <NSE2D.h>
 #include <MainUtilities.h> // GetVelocityAndPressureSpace
 #include <Database.h>
-#include <Output2D.h>
-#include <LinAlg.h> // DDot
-#include <MultiGridIte.h>
-#include <FixedPointIte.h>
-#include <FgmresIte.h>
-#include <DirectSolver.h>
+#include <LinAlg.h> // Ddot, IntoL20FEFunction
 #include <Upwind.h>
-
+#include <GridTransfer.h>
+#include <Multigrid.h>
 #include<Assemble2D.h>
 
+ParameterDatabase get_default_NSE2D_parameters()
+{
+  Output::print<5>("creating a default NSE2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default NSE2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("NSE2D parameter database");
+  
+  //NSE2D requires a nonlinear iteration, set up a nonlinit_database and merge
+  db.merge(ParameterDatabase::default_nonlinit_database());
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  //stokes case - reduce no nonlin its TODO remove global database dependency
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
+  {
+     if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
+     {
+        db["nonlinloop_maxit"] = 1;
+     }
+     else
+     {
+       db["nonlinloop_maxit"] = 1;
+     }
+  }
+
+  return db;
+}
 
 /** ************************************************************************ */
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
@@ -57,8 +83,9 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
 }
 
 /** ************************************************************************ */
-NSE2D::NSE2D(const TDomain& domain, int reference_id)
- : NSE2D(domain, *(new Example_NSE2D()), reference_id)
+NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+             int reference_id)
+ : NSE2D(domain, param_db, Example_NSE2D(param_db), reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
@@ -67,11 +94,15 @@ NSE2D::NSE2D(const TDomain& domain, int reference_id)
 }
 
 /** ************************************************************************ */
-NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
-             unsigned int reference_id)
-    : systems(), example(e), multigrid(), defect(), oldResiduals(),
+NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
+             const Example_NSE2D e, unsigned int reference_id)
+    : systems(), example(e), db(get_default_NSE2D_parameters()), 
+      outputWriter(param_db), solver(param_db), defect(), oldResiduals(), 
       initial_residual(1e10), errors()
 {
+  this->db.merge(param_db, false);
+  this->set_parameters();
+  
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -79,9 +110,7 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   // this function returns a pair which consists of 
   // velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);
-  // create the collection of cells from the domain (finest grid)
-  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  
+
   // determine NSE TYPE from Database TODO change that handling!
   NSE2D::Matrix type;
   switch (TDatabase::ParamDB->NSTYPE)
@@ -95,59 +124,68 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
       ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class NSE2D.");
   }
-  this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
+
+  bool usingMultigrid = this->solver.is_using_multigrid();
+  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+  // create finite element space and function, a matrix, rhs, and solution
+  systems.emplace_back(example, *coll, velocity_pressure_orders, type);
+
+  if(usingMultigrid)
+  {
+    // Construct multigrid object
+    auto mg_ = this->solver.get_multigrid();
+    bool mdml = mg_->is_using_mdml();
+    if(mdml)
+    {
+      // change the discretization on the coarse grids to lowest order 
+      // non-conforming(-1). The pressure space is chosen automatically(-4711).
+      velocity_pressure_orders = {-1, -4711};
+      this->get_velocity_pressure_orders(velocity_pressure_orders);
+    }
+
+    // number of multigrid levels
+    size_t n_multigrid_levels = mg_->get_n_geometric_levels();
+    // index of finest grid
+    int finest = domain.get_ref_level(); // -> there are finest+1 grids
+    // index of the coarsest grid used in this multigrid environment
+    int coarsest = finest - n_multigrid_levels + 1;
+    if(mdml)
+    {
+      coarsest++;
+    }
+    else
+    {
+      // only for mdml there is another matrix on the finest grid, otherwise
+      // the next system to be created is on the next coarser grid
+      finest--;
+    }
+    if(coarsest < 0 )
+    {
+      ErrThrow("the domain has not been refined often enough to do multigrid "
+               "on ", n_multigrid_levels, " levels. There are only ",
+               domain.get_ref_level() + 1, " grid levels.");
+    }
+    
+    // Construct systems per grid and store them, finest level first
+    std::list<BlockFEMatrix*> matrices;
+    // matrix on finest grid is already constructed
+    matrices.push_back(&systems.back().matrix);
+    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
+    {
+      TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
+      systems.emplace_back(example, *coll, velocity_pressure_orders, type);
+      // prepare input argument for multigrid object
+      matrices.push_front(&systems.back().matrix);
+    }
+    // initialize the multigrid object with all the matrices on all levels
+    mg_->initialize(matrices);
+  }
   
-  // the defect has the same structure as the rhs (and as the solution)
-  this->defect.copy_structure(this->systems.front().rhs);
+  outputWriter.add_fe_vector_function(&this->get_velocity());
+  outputWriter.add_fe_function(&this->get_pressure());
   
   // print out some information  
-  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
-  int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
-  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
-  int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
-  
-  double h_min, h_max;
-  coll->GetHminHmax(&h_min, &h_max);
-  Output::print<1>("N_Cells            : ", setw(10), coll->GetN_Cells());
-  Output::print<1>("h (min,max)        : ", setw(10), h_min, " ", setw(12),
-                   h_max);
-  Output::print<1>("dof velocity       : ", setw(10), 2* n_u);
-  Output::print<1>("dof velocity active: ", setw(10), 2* n_u_active);
-  Output::print<1>("dof pressure       : ", setw(10), n_p);
-  Output::print<1>("dof all            : ", setw(10), n_dof);
-  
-  // done with the constructor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5 
-    || TDatabase::ParamDB->SOLVER_TYPE != 1)
-    return;
-  // else multigrid
-  
-  // create spaces, functions, matrices on coarser levels
-  double *param = new double[2];
-  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
-  this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
-  // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
-  
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
-  {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
-  }
-  
-  // create multigrid-level-objects, must be coarsest first
-  unsigned int i = 0;
-  for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
-  {
-    this->multigrid->AddLevel(this->mg_levels(i, *it));
-    i++;
-  }
+  this->output_problem_size_info();
 }
 
 /** ************************************************************************ */
@@ -156,8 +194,8 @@ NSE2D::~NSE2D()
 }
 
 /** ************************************************************************ */
-void NSE2D::get_velocity_pressure_orders(std::pair <int,int> 
-                 &velocity_pressure_orders)
+void NSE2D::get_velocity_pressure_orders(
+  std::pair<int,int>& velocity_pressure_orders)
 {
   int velocity_order = velocity_pressure_orders.first;
   int pressure_order = velocity_pressure_orders.second;
@@ -165,11 +203,18 @@ void NSE2D::get_velocity_pressure_orders(std::pair <int,int>
   switch(velocity_order)
   {
     case 1: case 2: case 3: case 4: case 5:
-    case 12: case 13: case 14: case 15:
+    case 14: case 15:
       if(velocity_order > 10)
         order = velocity_order-10;
       else
         order = velocity_order;
+      break;
+    // P2/P1disc and P3/P2disc elements are not stable on triangles and not allowed
+    // They are transformed into P2bubbles/P1disc and P3bubbles/P2disc
+    // On quads, it will be Q2/P1disc, Q3/P2disc
+    case 12: case 13:
+      velocity_order += 10;
+      order = velocity_order;
       break;
     case -1: case -2: case -3: case -4: case -5:
     case -101:
@@ -252,6 +297,13 @@ void NSE2D::get_velocity_pressure_orders(std::pair <int,int>
 
 void NSE2D::set_parameters()
 {
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  {
+    Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
+        "nor to Stokes. It is now reset to the default value for NSE (=5).");
+    db["problem_type"] = 5;
+  }
+
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
   {
     //Assemble2DSlipBC does not work, and is not implemented yet
@@ -265,6 +317,7 @@ void NSE2D::assemble()
   for(System_per_grid& s : this->systems)
   {
     s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
+    s.matrix.reset(); // reset matrix (needed for mdml where this is called)
 
     const TFESpace2D * v_space = &s.velocity_space;
     const TFESpace2D * p_space = &s.pressure_space;
@@ -307,13 +360,6 @@ void NSE2D::assemble()
       // we have to use reinterpret_casts because dynamic downcasting won't work here
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
-        //CB DEBUG
-        if(blocks.size() != 3)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-
         n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
 
@@ -323,12 +369,6 @@ void NSE2D::assemble()
 
         break;
       case 2:
-        //CB DEBUG
-        if(blocks.size() != 5)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
         n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
 
@@ -340,12 +380,6 @@ void NSE2D::assemble()
 
         break;
       case 3:
-        //CB DEBUG
-        if(blocks.size() != 6)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
         n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
@@ -358,13 +392,6 @@ void NSE2D::assemble()
         break;
 
       case 4:
-        //CB DEBUG
-        if(blocks.size() != 8)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-
         n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
@@ -384,12 +411,6 @@ void NSE2D::assemble()
         break;
 
       case 14:
-        //CB DEBUG
-        if(blocks.size() != 9)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
         n_sq_mat = 5;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
@@ -418,32 +439,6 @@ void NSE2D::assemble()
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
                boundary_conditions, non_const_bound_values.data(), la);
 
-    // do upwinding TODO remove dependency of global values
-    if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-       && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
-    {
-      switch(TDatabase::ParamDB->NSTYPE)
-      {
-        case 1:
-        case 2:
-          // do upwinding with one matrix
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          Output::print<3>("UPWINDING DONE : level ");
-          break;
-        case 3:
-        case 4:
-        case 14:
-          // do upwinding with two matrices
-          Output::print<3>("UPWINDING DONE : level ");
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[3],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          break;
-      } // endswitch
-    } // endif
-
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
 
@@ -461,13 +456,45 @@ void NSE2D::assemble_nonlinear_term()
 {
   // the class LocalAssembling2D which we will need next, requires an array of
   // pointers to finite element functions, i.e. TFEFunction2D **.
+
+  //Nonlinear assembling requires an approximate velocity solution on every grid!
+  if(systems.size() > 1)
+  {
+    for( int block = 0; block < 2 ;++block)
+    {
+      std::vector<const TFESpace2D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems )
+      {
+        spaces.push_back(&s.velocity_space);
+        u_entries.push_back(s.solution.block(block));
+        u_ns_dofs.push_back(s.solution.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
+  
+  bool mdml =  this->solver.is_using_multigrid() 
+            && this->solver.get_multigrid()->is_using_mdml();
+  bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+  
+  if(mdml && !is_stokes)
+  {
+    // in case of upwinding we only assemble the linear terms. The nonlinear
+    // term is not assembled but replaced by a call to the upwind method.
+    // Note that we assemble the same terms over and over again here. Not 
+    // nice, but otherwise we would have to store the linear parts in a 
+    // separate BlockFEMatrix.
+    this->assemble();
+  }
+
   for(System_per_grid& s : this->systems)
   {
     //hold the velocity space, we'll need it...
     const TFESpace2D * v_space = &s.velocity_space;
 
     //the variables we will have to fill for the call to Assemble2D
-
     size_t n_fe_spaces = 1;
     const TFESpace2D* fe_spaces[1]{v_space};
 
@@ -528,20 +555,27 @@ void NSE2D::assemble_nonlinear_term()
         ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
             "I don't know how to pass its blocks to Assemble2D.");
     }
+    
+    // do upwinding TODO remove dependency of global values
+    bool on_finest_grid = &systems.front() == &s;
+    bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
+                         || (mdml && !on_finest_grid))
+                        && !is_stokes;
 
     // assemble the nonlinear part of NSE
-    for(size_t i =0; i < n_sq_mat; ++i)
-    {//reset the matrices, linear part is assembled anew
-      sq_mat[i]->reset();
+    if(!do_upwinding)
+    {
+      for(size_t i =0; i < n_sq_mat; ++i)
+      {
+        //reset the matrices, linear part is assembled anew
+        sq_mat[i]->reset();
+      }
+      //do the actual assembling
+      Assemble2D(n_fe_spaces, fe_spaces, n_sq_mat, sq_mat, n_rect_mat, rect_mat,
+                 n_rhs, rhs, fe_rhs, boundary_conditions,
+                 non_const_bound_values.data(), la_nonlinear);
     }
-    //do the actual assembling
-    Assemble2D(n_fe_spaces, fe_spaces, n_sq_mat, sq_mat, n_rect_mat, rect_mat,
-               n_rhs, rhs, fe_rhs, boundary_conditions,
-               non_const_bound_values.data(), la_nonlinear);
-
-    // do upwinding TODO remove dependency of global values
-    if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-        && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
+    else
     {
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -590,23 +624,23 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
   // compute the residuals with the current matrix and solution
   this->computeNormsOfResiduals();
   // the current norm of the residual
-  const double normOfResidual = this->getFullResidual();
+  double normOfResidual = this->getFullResidual();
   // store initial residual, so later we can print the overall reduction
   if(iteration_counter == 0)
     initial_residual = normOfResidual;
   // the residual from 10 iterations ago
-  const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
+  double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
-  const unsigned int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  const double convergence_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  size_t Max_It = db["nonlinloop_maxit"];
+  double convergence_speed = db["nonlinloop_slowfactor"];
   bool slow_conv = false;
   
   
   if(normOfResidual >= convergence_speed*oldNormOfResidual)
     slow_conv = true;
   
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
@@ -619,9 +653,6 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
     if(slow_conv)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
     // stop iteration
-    Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
-                     " RES : ", normOfResidual, " Reduction : ",
-                     normOfResidual/initial_residual);
     return true;
   }
   else
@@ -659,32 +690,31 @@ void NSE2D::computeNormsOfResiduals()
 void NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-  if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
-    || (TDatabase::ParamDB->SOLVER_TYPE != 1))
-  {
-    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
-      ErrThrow("only the direct solver is supported currently");
-    
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.matrix, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs, s.solution);
-  }
-  else
-  { // multigrid preconditioned iterative solver
-    mg_solver();
-  }
+  double damping = this->db["nonlinloop_damping_factor"];
+  // store previous solution for damping, it is a pointer so that we can avoid
+  // the copy in case of no damping
+  std::shared_ptr<BlockVector> old_solution(nullptr);
+  if(damping != 1.0)
+    old_solution = std::make_shared<BlockVector>(s.solution);
+  
+  solver.solve(s.matrix,s.rhs, s.solution);
+
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
-
-
+  
+  if(damping != 1.0)
+  {
+    s.solution.scale(damping);
+    s.solution.add_scaled(*old_solution, damping);
+  }
 }
 
 /** ************************************************************************ */
 void NSE2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
   
   System_per_grid& s = this->systems.front();
   TFEFunction2D* u1 = s.u.GetComponent(0);
@@ -692,32 +722,29 @@ void NSE2D::output(int i)
   
   // print the value of the largest and smallest entry in the finite element 
   // vector
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  if((size_t)db["verbosity"]> 1)
   {
     u1->PrintMinMax();
     u2->PrintMinMax();
     s.p.PrintMinMax();
   }
+
+  outputWriter.add_fe_function(&s.p);
+  outputWriter.add_fe_vector_function(&s.u);
+  outputWriter.write();
   
+  /*
   // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
-    // last argument in the following is domain, but is never used in this class
-    TOutput2D Output(2, 3, 1, 0, NULL);
-    Output.AddFEFunction(&s.p);
-    Output.AddFEVectFunct(&s.u);
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
-    if(i >= 0)
-      filename += "_" + std::to_string(i);
-    filename += ".vtk";
-    Output.WriteVtk(filename.c_str());
+    outputWriter.write(i);
   }
-  
+  */
+    
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double err[4];
     TAuxParam2D NSEaux_error;
@@ -734,273 +761,55 @@ void NSE2D::output(int i)
     
     errors.at(0) = sqrt(err[0]*err[0] + err[2]*err[2]);
     errors.at(1) = sqrt(err[1]*err[1] + err[3]*err[3]);    
-    Output::print<1>("L2(u)     : ", errors[0]);
-    Output::print<1>("H1-semi(u): ", errors[1]);
+    Output::print<1>("L2(u)     : ", setprecision(10), errors[0]);
+    Output::print<1>("H1-semi(u): ", setprecision(10),errors[1]);
     // errors in pressure
     s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &pressure_space, err);
     
     errors.at(2) = err[0];
     errors.at(3) = err[1];    
-    Output::print<1>("L2(p)     : ", errors[2]);
-    Output::print<1>("H1-semi(p): ", errors[3]);    
+    Output::print<1>("L2(p)     : ", setprecision(10), errors[2]);
+    Output::print<1>("H1-semi(p): ", setprecision(10), errors[3]);    
     
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+  } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
   
   this->example.do_post_processing(s.u.GetComponent(0), s.u.GetComponent(1),&s.p);
+
+  //do postprocessing step depending on what the example implements
+  example.do_post_processing(*this);
 }
 
 /** ************************************************************************ */
-std::array< double, int(6) > NSE2D::get_errors()
+void NSE2D::output_problem_size_info() const
+{
+  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
+  int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
+  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
+  int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
+  
+  double h_min, h_max;
+  TCollection * coll = this->get_velocity_space().GetCollection();
+  coll->GetHminHmax(&h_min, &h_max);
+  Output::stat("NSE2D", "Mesh data and problem size");
+  Output::dash("cells              :  ", setw(10), coll->GetN_Cells());
+  Output::dash("h (min, max)       :  ", setw(10), h_min, setw(10), " ", h_max);
+  Output::dash("dof velocity       :  ", setw(10), 2*n_u );
+  Output::dash("dof velocity active:  ", setw(10), 2*n_u_active);
+  Output::dash("dof pressure       :  ", setw(10), n_p);
+  Output::dash("dof all            :  ", setw(10), n_dof);
+}
+
+/** ************************************************************************ */
+std::array< double, int(4) > NSE2D::get_errors() const
 {
   return errors;
 }
 
 /** ************************************************************************ */
-TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
-{
-  TNSE_MGLevel *mg_l = nullptr;
-  int n_aux;
-  double alpha[2];
-
-  int v_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
-  int p_space_code = TDatabase::ParamDB->PRESSURE_SPACE;  
-  
-  if ((TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE)
-        || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE))
-     n_aux=4;
-  else
-     n_aux=2;
-  
-  if (i==0)
-  {
-    alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-    alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-  }
-  else
-  {
-    alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-    alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-  }
-  
-  //get all blocks for the solver - here blocks may appear more than once
-  // we must make use of non-const get_blocks_TERRIBLY_UNSAFE, because the
-  // entire multigrid apparatus expects non-const TMatrix pointers
-  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
-
-  TSquareMatrix2D* A11 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-  TSquareMatrix2D* A12 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-  TMatrix2D* B1T =        reinterpret_cast<TMatrix2D*>( blocks.at(2).get());
-  TSquareMatrix2D* A21 =  reinterpret_cast<TSquareMatrix2D*>( blocks.at(3).get());
-  TSquareMatrix2D* A22 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-  TMatrix2D* B2T =        reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-  TMatrix2D* B1 =         reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
-  TMatrix2D* B2 =         reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-  TSquareMatrix2D* C = (TSquareMatrix2D*) blocks.at(8).get();
-
-  TStructure structure = B1T->GetStructure();
-  switch(TDatabase::ParamDB->NSTYPE)
-  {
-    case 1:
-      mg_l = new TNSE_MGLevel1(i, A11, B1, B2, &structure, 
-                               s.rhs.get_entries(), s.solution.get_entries(),
-                               n_aux, alpha, v_space_code, p_space_code,
-                               nullptr, nullptr);
-      break;    
-    case 2:
-      mg_l = new TNSE_MGLevel2(i, A11, B1, B2, B1T, B2T,
-                               s.rhs.get_entries(), 
-                               s.solution.get_entries(), 
-                               n_aux, alpha, v_space_code, p_space_code, 
-                               nullptr, nullptr);
-      break;      
-    case 3:
-      mg_l = new TNSE_MGLevel3(i, A11, A12, A21, A22, B1, B2, &structure, 
-                               s.rhs.get_entries(), s.solution.get_entries(),
-                               n_aux, alpha, v_space_code, p_space_code,
-                               nullptr, nullptr);
-      break;      
-    case 4:
-       mg_l = new TNSE_MGLevel4(i, A11, A12, A21, A22, B1, B2, B1T, B2T,
-                                s.rhs.get_entries(), 
-                                s.solution.get_entries(), 
-                                n_aux, alpha, v_space_code, p_space_code, 
-                                nullptr, nullptr);
-       break;
-    case 14:
-       mg_l = new TNSE_MGLevel14(i, A11, A12, A21, A22, C, B1, B2, B1T, B2T,
-                                s.rhs.get_entries(), 
-                                s.solution.get_entries(), 
-                                n_aux, alpha, v_space_code, p_space_code, 
-                                nullptr, nullptr);
-    break;
-  }
-  return mg_l;
-}
-
-/** ************************************************************************ */
-void NSE2D :: mg_solver()
-{
-  System_per_grid& s = this->systems.front();
-  double *itmethod_rhs, *itmethod_sol;
-  TItMethod *itmethod, *prec;
-  int zero_start;  
-  TSquareMatrix2D *sqMat[5];
-  TSquareMatrix **sqmatrices = (TSquareMatrix **)sqMat;
-  TMatrix2D *recMat[4];
-  TMatrix **matrices = (TMatrix **)recMat;
-  MatVecProc *MatVect;
-  DefectProc *Defect;
-
-  int n_dof = this->get_size();
-  
-  //get all blocks for the solver - here blocks may appear more than once
-  // we must make use of non-const get_blocks_TERRIBLY_UNSAFE, because the
-  // entire multigrid apparatus expects non-const TMatrix pointers
-  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
-
-  TSquareMatrix2D* A11 = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-  TSquareMatrix2D* A12 = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-  TMatrix2D* B1T =  reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-  TSquareMatrix2D* A21 = reinterpret_cast< TSquareMatrix2D*>(blocks.at(3).get());
-  TSquareMatrix2D* A22 = reinterpret_cast< TSquareMatrix2D*>(blocks.at(4).get());
-  TMatrix2D* B2T = reinterpret_cast< TMatrix2D*>(blocks.at(5).get());
-  TMatrix2D* B1 = reinterpret_cast< TMatrix2D*>(blocks.at(6).get());
-  TMatrix2D* B2 = reinterpret_cast< TMatrix2D*>(blocks.at(7).get());
-  TSquareMatrix2D* C = reinterpret_cast< TSquareMatrix2D*>(blocks.at(8).get());
-
-  switch(TDatabase::ParamDB->NSTYPE)
-  {
-    case 1:
-      sqMat[0] = A11;
-      recMat[0] = B1;
-      recMat[1] = B2;
-      MatVect = MatVect_NSE1;
-      Defect = Defect_NSE1;
-      break;
-    case 2:
-      sqMat[0] = A11;
-      
-      recMat[0] = B1;
-      recMat[1] = B2;
-      recMat[2] = B1T;
-      recMat[3] = B2T;
-      
-      MatVect = MatVect_NSE2;
-      Defect = Defect_NSE2;
-      break;
-    case 3:
-      sqMat[0] = A11;
-      sqMat[1] = A12;
-      sqMat[2] = A21;
-      sqMat[3] = A22;
-      recMat[0] = B1;
-      recMat[1] = B2;
-      MatVect = MatVect_NSE3;
-      Defect = Defect_NSE3;
-      break;
-    case 4:
-      sqMat[0] = A11;
-      sqMat[1] = A12;
-      sqMat[2] = A21;
-      sqMat[3] = A22;
-      recMat[0] = B1;
-      recMat[1] = B2;
-      recMat[2] = B1T;
-      recMat[3] = B2T;
-
-      MatVect = MatVect_NSE4;
-      Defect = Defect_NSE4;
-      break;
-    case 14:
-      sqMat[0] = A11;
-      sqMat[1] = A12;
-      sqMat[2] = A21;
-      sqMat[3] = A22;
-      sqMat[4] = C;
-      recMat[0] = B1;
-      recMat[1] = B2;
-      recMat[2] = B1T;
-      recMat[3] = B2T;
-
-      MatVect = MatVect_EquOrd_NSE4;
-      Defect = Defect_EquOrd_NSE4;
-      break;
-  }
-
-
-  if(TDatabase::ParamDB->SOLVER_TYPE ==1)
-  {
-    switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
-    {
-      case 11:
-        zero_start = 1;
-        break; 
-      case 16:
-        zero_start = 0;
-        break;
-    }
-    switch(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE)
-    {
-      case 5:
-        prec = new TMultiGridIte(MatVect, Defect, nullptr, 0, n_dof, 
-                                 this->multigrid.get(), zero_start);
-        break;
-      default:
-        ErrThrow("Unknown preconditioner !!!");
-    }
-    
-    if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-    {
-      itmethod_sol = new double[n_dof];
-      itmethod_rhs = new double[n_dof];
-      
-      memcpy(itmethod_sol, s.solution.get_entries(), n_dof*SizeOfDouble);
-      memcpy(itmethod_rhs, s.rhs.get_entries(), n_dof*SizeOfDouble);
-    }
-    else
-    {
-      itmethod_sol = s.solution.get_entries();
-      itmethod_rhs = s.rhs.get_entries();
-    }
-
-    switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
-    {
-      case 11:
-        itmethod = new TFixedPointIte(MatVect, Defect, prec, 0, n_dof, 0);
-        break;
-      case 16:
-        itmethod = new TFgmresIte(MatVect, Defect, prec, 0, n_dof, 0);
-        break;
-      default:
-        ErrThrow("Unknown preconditioner !!!");
-    }
-  }
-    
-  switch(TDatabase::ParamDB->SOLVER_TYPE)
-  {
-    case 1:
-      itmethod->Iterate(sqmatrices,matrices,itmethod_sol,itmethod_rhs);
-      break;
-    case 2:
-      break;
-  }
-  
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-  {
-    memcpy(s.solution.get_entries(), itmethod_sol, n_dof*SizeOfDouble);
-    memcpy(s.rhs.get_entries(), itmethod_rhs, n_dof*SizeOfDouble);
-    
-    delete itmethod; delete prec;
-    delete [] itmethod_rhs;
-    delete [] itmethod_sol;
-  }
-}
-
-/** ************************************************************************ */
-const NSE2D::Residuals& NSE2D::getResiduals() const
+const Residuals& NSE2D::getResiduals() const
 {
   return this->oldResiduals.back();
 }
@@ -1023,22 +832,4 @@ double NSE2D::getFullResidual() const
   return this->oldResiduals.back().fullResidual;
 }
 
-/** ************************************************************************ */
-NSE2D::Residuals::Residuals()
- : impulsResidual(1e10), massResidual(1e10), fullResidual(1e10)
-{}
-
-/** ************************************************************************ */
-NSE2D::Residuals::Residuals(double imR, double maR)
- : impulsResidual(sqrt(imR)), massResidual(sqrt(maR)),
-   fullResidual(sqrt(imR + maR))
-{}
-
-/** ************************************************************************ */
-std::ostream& operator<<(std::ostream& s, const NSE2D::Residuals& n)
-{
-  s << setw(14) << n.impulsResidual << "\t" << setw(14)
-    << n.massResidual << "\t" << setw(14) << n.fullResidual;
-  return s;
-}
 

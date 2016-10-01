@@ -4,9 +4,14 @@
 // u(x,y) = (y+z,5x-3z,-x-2y)^T
 // p(x,y) = 0
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 void ExampleFile()
 {
-  Output::print<1>("Example: AnsatzLinConst.h");
+  Output::info<1>("EXAMPLE","AnsatzLinConst.h");
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // ========================================================================
@@ -86,7 +91,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  static double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double *coeff, x, y, z;
 

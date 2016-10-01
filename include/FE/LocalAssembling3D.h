@@ -36,8 +36,13 @@
  * So far there is three built-in types in 3D and one custom type.
  */
 enum class LocalAssembling3D_type { CD3D, /// Stationary convection diffusion reaction in 3D
-                                    NSE3D_Linear, /// Linear part of stationary Navier--Stokes in 3D
+				    TCD3D, // mass matrix (+ matrix comming from time discretization SUPG case)
+                                    TCD3DStiffRhs, // stiffness matrix and right hand side
+                                    NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
                                     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
+                                    TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
+                                    TNSE3D_NLGAL,    /// Non-linear part of time-dependant NS in 3D
+                                    TNSE3D_Rhs,      /// Rhs part of time-dependent NS in 3D
                                     Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
 
@@ -138,6 +143,16 @@ class LocalAssembling3D
      */
     void set_parameters_for_nse(LocalAssembling3D_type type);
     
+    /** Depending on the NSTYPE and SC_NONLIN_ITE_TYPE_SADDLE all parameters are 
+     * set within this function. 
+     * 
+     * For different discretization schemes: we tried to use different functions
+     * in order to keep the function definition smaller.
+     */
+    /// standard case
+    void set_parameters_for_tnse(LocalAssembling3D_type type);
+    /// SMAGORINSKY model
+    void set_parameters_for_tnse_smagorinsky(LocalAssembling3D_type type);
   public:
     /** Constructs a Local Assembling object of a certain type from an array
      *  of fe functions and coefficient functions.
@@ -145,7 +160,7 @@ class LocalAssembling3D
      * @param[in] type The type of problem this assembling object can be used
      *            for. Must not be "Custom" - program terminates.
      * @param fefunctions3d The fe  functions to be evaluated.
-     * @param coeffs A function poitner to the problem coefficients. These must
+     * @param coeffs A function pointer to the problem coefficients. These must
      * be hard-coded somewhere, usually in the used example file.
      *
      */
@@ -163,9 +178,30 @@ class LocalAssembling3D
      *            the deprecated TAuxParam3D and TDiscreteForm3D object.
      *
      */
-    [[ deprecated ]] LocalAssembling3D(LocalAssembling3D_type type,
+    [[ deprecated ]] LocalAssembling3D(LocalAssembling3D_type la_type,
                       TAuxParam3D& aux, TDiscreteForm3D& df);
 
+    /** @brief custom constuctor setting all variables 
+     * 
+     * Only use this if you know what you are doing. See the respective 
+     * constructor in LocalAssembling2D for more documentation.
+     */
+    LocalAssembling3D(int myN_Terms,
+                      std::vector<MultiIndex3D> myDerivatives,
+                      std::vector<int> myFESpaceNumber,
+                      std::vector<int> myRowSpace,
+                      std::vector<int> myColumnSpace,
+                      std::vector<int> myRhsSpace,
+                      CoeffFct3D* myCoeffs, 
+                      AssembleFctParam3D* myAssembleParam,
+                      ManipulateFct3D* myManipulate,
+                      int myN_Matrices, int myN_Rhs,
+                      int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
+                      std::vector<int> myBeginParameter, int myN_Parameters,
+                      TFEFunction3D** myFEFunctions3D,  int myN_FEValues,
+                      std::vector<int> myFEValue_FctIndex, 
+                      std::vector<MultiIndex3D> myFEValue_MultiIndex);
+    
     /** destructor */
     ~LocalAssembling3D();
     

@@ -30,6 +30,19 @@
 
 #include <stdlib.h>
 
+//helper method for printing "registered something" infos
+void print_registered_message_3D(std::string entities)
+{
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+  if(my_rank == 0)
+    Output::info<2>("FEDatabase3D", entities, " registered");
+}
+
 // =======================================================================
 // initialize static members
 // =======================================================================
@@ -366,13 +379,8 @@ void TFEDatabase3D::RegisterAllQuadFormulas()
   qftetra = new TQuadFormulaTetra();
   qftetra->P8Exact();
   RegisterQuadFormula3D(P8Tetra, qftetra);
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "quadrature formulas registered" << endl;
+  print_registered_message_3D(std::string("Quadrature formulas"));
 }
 
 void TFEDatabase3D::RegisterAllFEDescs()
@@ -435,13 +443,7 @@ void TFEDatabase3D::RegisterAllFEDescs()
   RegisterFEDesc3D(FE_N_H_BDDF2_3D, FE_N_H_BDDF2_3D_Obj);
   RegisterFEDesc3D(FE_N_H_BDDF3_3D, FE_N_H_BDDF3_3D_Obj);
   
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "FE descriptors registered" << endl;  
+  print_registered_message_3D(std::string("FE descriptors"));
 }
 
 void TFEDatabase3D::RegisterAllBaseFunctions()
@@ -504,13 +506,7 @@ void TFEDatabase3D::RegisterAllBaseFunctions()
   RegisterBaseFunct3D(BF_N_H_BDDF2_3D, BF_N_H_BDDF2_3D_Obj);
   RegisterBaseFunct3D(BF_N_H_BDDF3_3D, BF_N_H_BDDF3_3D_Obj);
 
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "base functions registered" << endl;  
+  print_registered_message_3D(std::string("Base functions"));
 }
 
 void TFEDatabase3D::RegisterAllNodalFunctionals()
@@ -575,13 +571,7 @@ void TFEDatabase3D::RegisterAllNodalFunctionals()
   RegisterNodalFunctional3D(NF_N_H_BDDF2_3D, NF_N_H_BDDF2_3D_Obj);
   RegisterNodalFunctional3D(NF_N_H_BDDF3_3D, NF_N_H_BDDF3_3D_Obj);
 
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "nodal functionals registered" << endl;
+  print_registered_message_3D(std::string("Nodal functionals"));
 }
 
 void TFEDatabase3D::RegisterAllFEs()
@@ -781,14 +771,7 @@ void TFEDatabase3D::RegisterAllFEs()
   RegisterFE3D(N_BDDF3_3D_H_A, ele3D);
   ele3D->CheckNFandBF();
 
-  
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "finite element registered" << endl;
+    print_registered_message_3D(std::string("Finite elements"));
 }
 
 void TFEDatabase3D::RegisterAllFEMappers()
@@ -914,13 +897,7 @@ void TFEDatabase3D::RegisterAllFEMappers()
   RegisterFE3DMapper1Reg(FE_C_H_UL1_3D, FE_C_H_Q1_3D, Q1_Q1_1Reg);
   RegisterFE3DMapper1Reg(FE_C_H_Q1_3D, FE_C_H_UL1_3D, Q1_Q1_1Reg);
       
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "FE mapper registered" << endl;
+  print_registered_message_3D(std::string("FE mappers"));
 }
 
 void TFEDatabase3D::RegisterAllHangingNodes()
@@ -952,13 +929,8 @@ void TFEDatabase3D::RegisterAllHangingNodes()
   RegisterHNDesc3D(HN_N_P2_3D_0, HN_N_P2_3D_0_Obj);
   RegisterHNDesc3D(HN_N_P2_3D_1, HN_N_P2_3D_1_Obj);
   RegisterHNDesc3D(HN_N_P2_3D_2, HN_N_P2_3D_2_Obj);
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "Hanging nodes registered" << endl;
+  print_registered_message_3D(std::string("Hanging nodes"));
 }
 
 void TFEDatabase3D::RegisterAllRefTrans()
@@ -968,13 +940,8 @@ void TFEDatabase3D::RegisterAllRefTrans()
   ReferenceTrans3D[HexaAffin] = new THexaAffin();
   ReferenceTrans3D[HexaTrilinear] = new THexaTrilinear();
   ReferenceTrans3D[HexaIsoparametric] = new THexaIsoparametric();
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "Reference Transformations registered" << endl;
+  print_registered_message_3D(std::string("Reference transformations"));
 }
 
 void TFEDatabase3D::GenerateArrays()
@@ -1121,9 +1088,9 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
                           double* &zeta, double* &weights,
                           double* X, double* Y, double* Z, double* absdetjk)
 {
-  int i,j, MaxPolynomialDegree, PolynomialDegree, N_Faces, N_terms;
+  int i,MaxPolynomialDegree, PolynomialDegree, N_Faces, N_terms;
   BF3DRefElements RefElement;
-  QuadFormula3D QuadFormula;
+  QuadFormula3D QuadFormula=BaryCenterTetra;//avoid uninit warning
   TQuadFormula3D *qf2;
   RefTrans3D RefTrans, *RefTransArray, CurrentRefTrans;
   TRefTrans3D *rt;
@@ -1139,7 +1106,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
   double **origvaluesD000, **origvaluesD100, **origvaluesD010, **origvaluesD001;
   double **origvaluesD200, **origvaluesD110, **origvaluesD101, **origvaluesD020;
   double **origvaluesD011, **origvaluesD002;
-  int N_Functs;
+//  int N_Functs;
 
 #ifdef _MPI
   int rank;
@@ -1189,29 +1156,29 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
         if (TDatabase::ParamDB->INTERNAL_QUAD_HEXA<N_terms*MaxPolynomialDegree)
         {
 #ifdef _MPI
-        if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+        if(rank==0)
 #endif
          {
           switch(N_terms*MaxPolynomialDegree)
           {
             case 0:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss2");
+              Output::info<2>("Quadrature formula", "for hexahedra is Gauss2");
               break;
             case 3:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss3");
+              Output::info<2>("Quadrature formula", "hexahedra is Gauss3");
               break;
             case 6:
-               Output::print<2>("Quadrature formula for hexahedra is Gauss4");
+               Output::info<2>("Quadrature formula", "hexahedra is Gauss4");
                //Output::print<2>("Quadrature formula for hexahedra is Degree7_Points38");
              break;
             case 9:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss5");
+              Output::info<2>("Quadrature formula", "hexahedra is Gauss5");
               break;
             case 12:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss7");
+              Output::info<2>("Quadrature formula", "hexahedra is Gauss7");
               break;
             case 15:
-              Output::print<2>("Quadrature formula for hexahedra is Gauss8");
+              Output::info<2>("Quadrature formula", "hexahedra is Gauss8");
               break;
           }
          }
@@ -1245,22 +1212,22 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
       if (TDatabase::ParamDB->INTERNAL_QUAD_TETRA<N_terms*MaxPolynomialDegree)
       {
 #ifdef _MPI
-      if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+      if(rank==0)
 #endif
        {
         switch(N_terms*MaxPolynomialDegree)
         {
           case 0:
-            Output::print<2>("Quadrature formula for tetrahedra is P2Tetra");
+            Output::info<2>("Quadrature formula", "for tetrahedra is P2Tetra");
             break;
           case 3:
-            Output::print<2>("Quadrature formula for tetrahedra is P4Tetra");
+            Output::info<2>("Quadrature formula", " for tetrahedra is P4Tetra");
             break;
           case 6:
-            Output::print<2>("Quadrature formula for tetrahedra is P5Tetra"); 
+            Output::info<2>("Quadrature formula", " for tetrahedra is P5Tetra");
             break;
           case 9:
-            Output::print<2>("Quadrature formula for tetrahedra is P8Tetra"); 
+            Output::info<2>("Quadrature formula", " for tetrahedra is P8Tetra");
             break;
          }
        }
@@ -1438,7 +1405,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
   for(i=0;i<N_LocalUsedElements;i++)
   {
     BaseFunct=BaseFuncts[i];
-    N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
+//    N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
     origvaluesD000=TFEDatabase3D::GetOrigElementValues(BaseFunct, D000);
     origvaluesD100=TFEDatabase3D::GetOrigElementValues(BaseFunct, D100);
     origvaluesD010=TFEDatabase3D::GetOrigElementValues(BaseFunct, D010);
@@ -1631,8 +1598,8 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
     Refinements refine, FE3D child, int childnumber)
 { 
   double *ret, *ret2;
-  int i,j,k,l;
-  int N_Coarse, N_Fine, N_Points, N_Children;
+  int j,k,l;
+  int N_Coarse, N_Points, N_Children; // int N_Fine;
   double *xi, *eta, *zeta;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
   double Z[MaxN_PointsForNodal3D];
@@ -1646,7 +1613,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
   TGridCell *RefCell, *cell;
   TNodalFunctional3D *nf;
   BF3DRefElements RefElement;
-  RefTrans3D F_K;
+  RefTrans3D F_K = TetraAffin; //avoid uninit warning
   TRefTrans3D *rt;
 
   CoarseElement = TFEDatabase3D::GetFE3D(parent);
@@ -1671,7 +1638,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
 
       RefCell = BaseFunctions->GenerateRefElement();
       FineElement = TFEDatabase3D::GetFE3D(child);
-      N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
+//      N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
 
       nf = FineElement->GetNodalFunctional3D();
       nf->GetPointsForAll(N_Points, xi, eta, zeta);
@@ -1733,7 +1700,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
         cell = (TGridCell *)RefCell->GetChild(j);
         FineElement = TFEDatabase3D::GetFE3D(child);
         Fine = FineElement->GetBaseFunct3D_ID();
-        N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
+//        N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
   
         nf = FineElement->GetNodalFunctional3D();
         nf->GetPointsForAll(N_Points, xi, eta, zeta);
@@ -1774,7 +1741,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
         for(k=0;k<MaxN_BaseFunctions3D;k++)
           for(l=0;l<MaxN_BaseFunctions3D;l++)
             ret[k*MaxN_BaseFunctions3D+l] = ret2[l*MaxN_BaseFunctions3D+k];
-        delete ret2;
+        delete[] ret2;
   
         RegisterProlongationMatrix3D(Coarse, refine, Fine, j, ret);
       } // endfor j
@@ -1792,17 +1759,17 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
 double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent, 
     Refinements refine, FE3D child, int childnumber)
 { 
-  double *ret, *ret2;
-  int i,j,k,l, l1, l2;
-  int N_Coarse, N_Fine, N_Points, N_Children;
+  double *ret; // double *ret2;
+  int i,j,k, l1, l2;
+  int N_Coarse, N_Fine, N_Children; // int N_Points;
   double AllPointValues[MaxN_QuadPoints_3D][MaxN_BaseFunctions3D];
-  double PointValues[MaxN_PointsForNodal3D];
+  //double PointValues[MaxN_PointsForNodal3D];
   TFE3D *CoarseElement, *FineElement;
   TRefDesc *RefDesc;
   TBaseFunct3D *BaseFunctions, *FineBF;
   BaseFunct3D Coarse, Fine;
-  TBaseCell *RefCell, *cell;
-  TNodalFunctional3D *nf;
+  TBaseCell *RefCell; // *cell;
+  //TNodalFunctional3D *nf;
   RefTrans3D F_K;
   TRefTrans3D *rt;
 
@@ -1815,7 +1782,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
   double **CoarseBFData, **FineBFData, *PointData;
   double *FinePointData;
   int N_QuadPoints;
-  double *xi, *eta, *zeta, *weights, sum, w;
+  double *xi, *eta, *zeta, *weights, w; // double sum;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
@@ -1925,7 +1892,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
         memset(R, 0, MaxN_BaseFunctions3D*MaxN_BaseFunctions3D*
                      SizeOfDouble);
   
-        cell = RefCell->GetChild(j);
+//        cell = RefCell->GetChild(j);
         FineElement = TFEDatabase3D::GetFE3D(child);
         Fine = FineElement->GetBaseFunct3D_ID();
         FineBF = FineElement->GetBaseFunct3D();

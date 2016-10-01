@@ -2,15 +2,56 @@
 #include <Database.h>
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>
+#include <MainUtilities.h>
+#include <LinAlg.h>
+#include <DirectSolver.h>
+#include <Output3D.h>
 
-#include <NSE_MGLevel.h>
-#include <NSE_MGLevel1.h>
-#include <NSE_MGLevel2.h>
-#include <NSE_MGLevel3.h>
-#include <NSE_MGLevel4.h>
-#include <NSE_MGLevel14.h>
+#include <GridTransfer.h>
+#include <Multigrid.h>
+#include <Upwind3D.h>
 
-NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
+#include <sys/stat.h>
+
+#ifdef _MPI
+#include "mpi.h"
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
+
+ParameterDatabase get_default_NSE3D_parameters()
+{
+  Output::print<5>("creating a default NSE3D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default NSE3D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("NSE3D parameter database");
+  
+  //NSE3D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  //stokes case - reduce no nonlin its TODO remove global database dependency
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
+  {
+     if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
+     {
+        db["nonlinloop_maxit"] = 1;
+     }
+     else
+     {
+       db["nonlinloop_maxit"] = 1;
+     }
+  }
+
+  return db;
+}
+
+NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
                                     TCollection& coll, std::pair<int, int> order, 
                                     NSE3D::Matrix type
 #ifdef _MPI
@@ -27,14 +68,6 @@ NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
         solution_.length(0), 3),
      p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
         solution_.length(3))
-
-#ifdef _MPI
-     //default construct parallel infrastructrue, will be reset in the body
-     , parMapperVelocity_(),
-     parMapperPressure_(),
-     parCommVelocity_(),
-     parCommPressure_()
-#endif
 
 {
   switch(TDatabase::ParamDB->NSTYPE)
@@ -57,49 +90,80 @@ NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
     default:
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
+
 #ifdef _MPI
 
-  if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 3)
-  {
-    ErrThrow("Parallel solve needs correctly stored BT-blocks, so NSTYPE 2 or 4.");
-  }
+  velocitySpace_.initialize_parallel(maxSubDomainPerDof);
+  pressureSpace_.initialize_parallel(maxSubDomainPerDof);
 
-  velocitySpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
-  pressureSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
+  //print some information
+  velocitySpace_.get_communicator().print_info();
+  pressureSpace_.get_communicator().print_info();
 
-  //Must be reset here, because feSpace needs special treatment
-  // This includes copy assignment - all because there is no good
-  // way to communicate Maximum number of subdomains per dof to FESpace...
-  parMapperVelocity_ = TParFEMapper3D(3, &velocitySpace_, //magic number
-                                      matrix_.block(0,0)->GetRowPtr(), // The parMapper for velocity expects row and column
-                                      matrix_.block(0,0)->GetKCol());  // pointer from the A matrices
-  parMapperVelocity_ = TParFEMapper3D(1, &pressureSpace_,
-                                      matrix_.block(0,3)->GetRowPtr(), // The parMapper for velocity expects row and column
-                                      matrix_.block(0,3)->GetKCol());  // pointer from the BTransposed matrices - I don't know why exactly!
-  // TODO The upper thing will lead to extreme trouble if there are no real BT blocks,
-  // i.e. NSTYPE 1 or 3. Catch that case in an input-check method AND in the constructor.
-
-  parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
-  parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
 #endif
-  Output::print<1>("Leaving the SystemPerGrid: ");
 }
 
+void NSE3D::output_problem_size_info() const
+{
+  int my_rank = 0;
+#ifndef _MPI
+    const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
+    const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
 
-NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
+    size_t nDofu  = velocity_space.GetN_DegreesOfFreedom();
+    size_t nDofp  = pressure_space.GetN_DegreesOfFreedom();
+    size_t nTotal = 3*nDofu + nDofp;
+    size_t nActive= 3*velocity_space.GetActiveBound();
+
+    TCollection* coll = velocity_space.GetCollection();
+
+    double hmin, hmax;
+    coll->GetHminHmax(&hmin, &hmax);
+
+#else
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    auto velocity_comm = systems_.front().velocitySpace_.get_communicator();
+    auto pressure_comm = systems_.front().pressureSpace_.get_communicator();
+    int nDofu  = velocity_comm.get_n_global_dof();
+    int nDofp  = pressure_comm.get_n_global_dof();
+    int nTotal = 3*nDofu + nDofp;
+
+#endif
+    if(my_rank ==0)
+    {
+    Output::stat("NSE3D", "Mesh data and problem size on finest grid");
+#ifndef _MPI
+    Output::dash("N_Cells      :  ", setw(10), coll->GetN_Cells());
+    Output::dash("h(min, max)  :  ", setw(10), hmin, setw(10), " ", hmax);
+#endif
+    Output::dash("ndof velocity:  ", setw(10), 3*nDofu );
+    Output::dash("ndof pressure:  ", setw(10), nDofp);
+    Output::dash("ndof total   :  ", setw(10), nTotal );
+#ifndef _MPI
+    Output::dash("nActive      :  ", setw(10), nActive);
+#endif
+    }
+}
+
+NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
+             const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
 #endif
-) : systems_(), example_(example), multigrid_(nullptr)
+) : systems_(), example_(example), db(get_default_NSE3D_parameters()),
+    solver(param_db), defect_(), old_residuals_(), initial_residual_(1e10), 
+    errors_()
 {
+  this->db.merge(param_db, false);
+  this->check_parameters();
+
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
-  // set the velocity and preesure spaces
+  // set the velocity and pressure spaces
   // this function returns a pair which consists of 
   // velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);
-  // start with only non-multigrid case
 
   NSE3D::Matrix type;
   switch(TDatabase::ParamDB->NSTYPE)
@@ -118,85 +182,94 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
   
-  bool usingMultigrid = (TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5 
-                        && TDatabase::ParamDB->SOLVER_TYPE ==1);
-  if(!usingMultigrid)
+  bool usingMultigrid = solver.is_using_multigrid();
+  TCollection *coll = collections.front(); //the finest grid collection
+  // create finite element space and function, a matrix, rhs, and solution
+  #ifdef _MPI
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+                        maxSubDomainPerDof);
+  #else
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+  #endif
+  
+  if(usingMultigrid)
   {
-    // Check at least if the collections list contains exactly one Collection.
-    if(collections.size() != 1 )
+    // Construct multigrid object
+    auto mg = this->solver.get_multigrid();
+
+    //Check whether number of given grids is alright
+    size_t n_multigrid_levels = mg->get_n_geometric_levels();
+    size_t n_grids = collections.size();
+    if(n_multigrid_levels != n_grids )
+      ErrThrow("Wrong number of grids for multigrid! I was expecting ",
+               n_multigrid_levels, " geometric grids but only got ", n_grids,".");
+
+    if(mg->is_using_mdml())
     {
-      ErrThrow("Non-multigrid: Expected exactly one collection!");
+      // change the discretization on the coarse grids to lowest order 
+      // non-conforming(-1). The pressure space is chosen automatically(-4711).
+      velocity_pressure_orders = {-1, -4711};
+      this->get_velocity_pressure_orders(velocity_pressure_orders);
     }
-    // Get the one given collection.
-    TCollection& cellCollection = *collections.front();
-        
-    #ifdef _MPI
-    // create finite element space and function, a matrix, rhs, and solution
-    systems_.emplace_back(example_, cellCollection, velocity_pressure_orders, type,
-                          maxSubDomainPerDof);
-    #else
-    // create finite element space and function, a matrix, rhs, and solution
-    systems_.emplace_back(example_, cellCollection, velocity_pressure_orders, type);
+    else
+    {
+      // for standard multigrid, pop the finest collection - it was already
+      // used to construct a space before the "if(usingMultigrid)" clause
+      // and will not (as in mdml) be used a second time with a different discretization
+      collections.pop_front();
+    }
     
-    const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
-    const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
-    
-    size_t nDofu  = velocity_space.GetN_DegreesOfFreedom();
-    size_t nDofp  = pressure_space.GetN_DegreesOfFreedom();
-    size_t nTotal = 3*nDofu + nDofp;
-    size_t nActive= 3*velocity_space.GetActiveBound();
-    
-    Output::print<1>("N_Cells      :  ", setw(10), cellCollection.GetN_Cells());
-    Output::print<1>("ndof Velocity:  ", setw(10), 3*nDofu );
-    Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
-    Output::print<1>("ndof Total   :  ", setw(10), nTotal );
-    Output::print<1>("nActive      :  ", setw(10), nActive);
-    double hmin, hmax;
-    cellCollection.GetHminHmax(&hmin, &hmax);
-    Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);    
-    #endif
+     // Construct systems per grid and store them, finest level first
+    std::list<BlockFEMatrix*> matrices;
+    // matrix on finest grid is already constructed
+    matrices.push_back(&systems_.back().matrix_);
+
+    for(auto coll : collections) // initialize the coarse grid space hierarchy
+    {
+      #ifndef _MPI
+      systems_.emplace_back(example, *coll, velocity_pressure_orders, type);
+      #else
+      systems_.emplace_back(example, *coll, velocity_pressure_orders, type,
+                            maxSubDomainPerDof);
+      #endif
+      // prepare input argument for multigrid object
+      matrices.push_front(&systems_.back().matrix_);
+    }
+    // initialize the multigrid object with all the matrices on all levels
+    mg->initialize(matrices);
   }
-  else // multigrid
+
+  output_problem_size_info();
+
+}
+
+void NSE3D::check_parameters()
+{
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
   {
-    size_t nLevels = TDatabase::ParamDB->LEVELS;
-    // check
-    if(collections.size() != nLevels)
-    {
-      ErrThrow("Multigrid: Expected ", nLevels, " collections, "
-                 , collections.size(), " provided.");
-    }
-    std::vector<double> param(2);
-    param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-    param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
-    
-    this->multigrid_.reset(new TNSE_MultiGrid(1, 2, param.data()));
-    
-    // constructing systems per grid
-    for(auto it : collections)
-    {
-      #ifdef _MPI
-        systems_.emplace_back(example, *it, velocity_pressure_orders, 
-                              type, maxSubDomainPerDof);
-      #else
-        systems_.emplace_back(example, *it, velocity_pressure_orders, 
-                              type);
-      #endif
-    }
-    
-    size_t level = 0;
-    //Create multigrid-level-objects and add them to the multgrid object.
-    // Must be coarsest level first, therefore reverse order iteration.
-    for(auto system=systems_.rbegin(); system != systems_.rend(); ++system)
-    {
-      #ifdef _MPI
-        ErrThrow("Clemens has to take care about the MPI implementation");
-      #else
-        multigrid_->AddLevel(this->mg_levels(level, *system));
-      #endif
-      level++;      
-    }
+    Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
+        "nor to Stokes. It is now reset to the default value for NSE (=5).");
+    db["problem_type"] = 5;
   }
-  Output::print<1>("Leaving the constructor NSE3D: ");
+
+  // Some implementation/testing constraints on the used discretization.
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE != 0)
+  {
+    ErrThrow("Every SC_NONLIN_ITE_TYPE_SADDLE except 0 is untested!");
+  }
+  if(TDatabase::ParamDB->LAPLACETYPE != 0)
+  {
+    ErrThrow("Every LAPLACETYPE except 0 is untested!");
+  }
+  if(TDatabase::ParamDB->DISCTYPE != 1)
+  {
+    ErrThrow("Every DISCTYPE except 1 is untested!");
+  }
+  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM != 0)
+  {
+    ErrThrow("Every NSE_NONLINEAR_FORM except 0 is untested!");
+  }
+
 }
 
 void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressure_orders)
@@ -243,6 +316,8 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
           break; 
         case 1: // discontinuous space 
           pressure_order = 0;
+          Output::warn("NSE3D", "The P1/P0 element pair (Q1/Q0 on hexa) is "
+              " not stable. Make sure to use stabilization!");
           break;
         case 2: case 3: case 4: case 5:
         // standard conforming velo and continuous pressure
@@ -261,7 +336,7 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
       break;
     // continuous pressure spaces
     case 1: case 2: case 3: case 4: case 5:
-      pressure_order = 1;
+      pressure_order = pressure_order*1;
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
@@ -272,27 +347,34 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
   velocity_pressure_orders.second = pressure_order;
 }
 
-void NSE3D::assembleLinearTerms()
+void NSE3D::assemble_linear_terms()
 {
-  size_t nFESpace = 2;
-  size_t nSqMatrices=10;
+  size_t nFESpace = 2; // spaces used for assembling matrices
+  size_t nSqMatrices=10; // maximum no of square matrices (type 14)
   std::vector<TSquareMatrix3D*> sqMatrices(nSqMatrices);
-  size_t nReMatrices = 6;
+  size_t nReMatrices = 6; // maximum no of rectangular matrices (e.g. type 14)
   std::vector<TMatrix3D*> reMatrices(nReMatrices);
-  size_t nRhs=3;
-  std::vector<double*> rhsEntries(nRhs);  
-  std::vector<TFEFunction3D*> feFunction(4);
+  size_t nRhs=4; // maximum number of right hand sides (e.g. type 4)
+  std::vector<double*> rhsArray(nRhs); // right hand side 
+  // finite element function used for nonlinear term
+  std::vector<TFEFunction3D*> feFunction(4, nullptr);
   
   for(auto &s : this->systems_)
   {
+
+    const TFESpace3D *v_space = &s.velocitySpace_;
+    const TFESpace3D *p_space = &s.pressureSpace_;
+
     // spaces for matrices
-    const TFESpace3D* spaces[2] = {&s.velocitySpace_, &s.pressureSpace_};
-    const TFESpace3D* rhsSpaces[3] = {&s.velocitySpace_, &s.pressureSpace_, 
-                                      &s.velocitySpace_};
+    const TFESpace3D *spaces[2] = {v_space, p_space};
+    const TFESpace3D *rhsSpaces[4] = {v_space, v_space, v_space, p_space};
+
     // spaces for right hand side    
-    rhsEntries[0]=s.rhs_.block(0);
-    rhsEntries[1]=s.rhs_.block(1);
-    rhsEntries[2]=s.rhs_.block(2);
+    s.rhs_.reset();
+    rhsArray[0]=s.rhs_.block(0);
+    rhsArray[1]=s.rhs_.block(1);
+    rhsArray[2]=s.rhs_.block(2);
+    rhsArray[3]=nullptr; //will be reset for type 4 and 14
     
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
     
@@ -306,6 +388,8 @@ void NSE3D::assembleLinearTerms()
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[1].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[2].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
+
+        nRhs = 3;
         break;
       case 2:
         nSqMatrices = 1;
@@ -318,6 +402,8 @@ void NSE3D::assembleLinearTerms()
         reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[1].get());
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[2].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
+
+        nRhs = 3;
         break;
       case 3:
         nSqMatrices = 9;
@@ -331,11 +417,12 @@ void NSE3D::assembleLinearTerms()
         sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
         sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());
         
-        
         nReMatrices = 3;
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
+
+        nRhs = 3;
         break;
       case 4:
         nSqMatrices = 9;
@@ -349,14 +436,17 @@ void NSE3D::assembleLinearTerms()
         sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
         sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());
         
-        
         nReMatrices = 6;
-        reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[12].get());
+        reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[12].get()); //first the lying B blocks
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[13].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[14].get());
-        reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
+        reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[3].get()); //than the standing B blocks
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
+
+        //right hand side must be adapted
+        nRhs = 4;
+        rhsArray[3]=s.rhs_.block(3);
         break;
       case 14:        
         nSqMatrices = 10;
@@ -370,8 +460,7 @@ void NSE3D::assembleLinearTerms()
         sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
         sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());
         sqMatrices[9]=reinterpret_cast<TSquareMatrix3D*>(blocks[15].get());
-        
-        
+
         nReMatrices = 6;
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[12].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[13].get());
@@ -379,8 +468,18 @@ void NSE3D::assembleLinearTerms()
         reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
+        
+        //right hand side must be adapted
+        nRhs = 4;
+        rhsArray[3]=s.rhs_.block(3);
         break;
     }// endswitch nstype
+
+    for(unsigned int i=0; i<nSqMatrices; i++)
+      sqMatrices[i]->reset();
+    for(unsigned int i=0; i<nReMatrices;i++)
+      reMatrices[i]->reset();
+
     // boundary conditions and boundary values
     BoundCondFunct3D * boundContion[4]={
       spaces[0]->getBoundCondition(), spaces[0]->getBoundCondition(),
@@ -392,10 +491,12 @@ void NSE3D::assembleLinearTerms()
     boundValues[2]=example_.get_bd()[2];
     boundValues[3]=example_.get_bd()[3];
 
+    // finite element functions
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
     feFunction[2]=s.u_.GetComponent(2);
     feFunction[3]=&s.p_;
+
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_Linear, 
                          feFunction.data(), example_.get_coeffs());
@@ -404,176 +505,483 @@ void NSE3D::assembleLinearTerms()
     Assemble3D(nFESpace, spaces, 
                nSqMatrices, sqMatrices.data(),
                nReMatrices, reMatrices.data(), 
-               nRhs, rhsEntries.data(), rhsSpaces,
+               nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
+
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
+
   }// endfor auto grid
-  Output::print<1>("Leaving the assembleLinearTerms: ");
+
+  //copy non-actives from rhs to solution on finest grid
+  this->systems_.front().solution_.copy_nonactive(systems_.front().rhs_);
+
+/** When we call copy_nonactive in MPI-case, we have to remember the following:
+   * it can happen that some slave ACTTIVE DoFs are placed in the block of
+   * NON-ACTIVE DoFs (because they are at the interface between processors).
+   * Doing copy_nonactive changes then the value of these DOFs,although they are
+   * actually active.
+   * That's why we have to update the values so that the vector becomes consistent again.
+   * This is done here.
+   */
+#ifdef _MPI
+  double *u1 = this->systems_.front().solution_.block(0);
+  double *u2 = this->systems_.front().solution_.block(1);
+  double *u3 = this->systems_.front().solution_.block(2);
+  double *p  = this->systems_.front().solution_.block(3);
+  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1, 3);
+  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
+  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
+  this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
+#endif
 }
 
-void NSE3D::assembleNonLinearTerm()
+void NSE3D::assemble_non_linear_term()
 {
-  size_t nFESpace = 1;
-  size_t nSqMatrices=3;
+  size_t nFESpace = 1; // space needed for assembling matrices
+  size_t nSqMatrices=3; // no of square matrices (Maximum 3)
   std::vector<TSquareMatrix3D*> sqMatrices(nSqMatrices);
-  size_t nReMatrices = 0;
+  size_t nReMatrices = 0; // no rectangular matrix in nonlinear iteration
   std::vector<TMatrix3D*> reMatrices{nullptr};
-  size_t nRhs=0;
-  std::vector<double*> rhsEntries{nullptr};  
-  std::vector<TFEFunction3D*> feFunction(4);
+  size_t nRhs=0; // no right hand side to be assembled
+  std::vector<double*> rhsArray{nullptr};  
+  std::vector<TFEFunction3D*> feFunction(3);
   const TFESpace3D** rhsSpaces{nullptr};
   
+  //Nonlinear assembling requires an approximate velocity solution on every grid!
+  if(systems_.size() > 1)
+  {
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.solution_.block(block));
+        u_ns_dofs.push_back(s.solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
   
+  bool mdml =  this->solver.is_using_multigrid() 
+            && this->solver.get_multigrid()->is_using_mdml();
+  bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+  if(mdml && !is_stokes)
+  {
+    // in case of upwinding we only assemble the linear terms. The nonlinear
+    // term is not assembled but replaced by a call to the upwind method.
+    // Note that we assemble the same terms over and over again here. Not 
+    // nice, but otherwise we would have to store the linear parts in a 
+    // separate BlockFEMatrix.
+    this->assemble_linear_terms();
+  }
+
   for(auto &s : this->systems_)
   {
+#ifdef _MPI
+    //MPI: solution in consistency level 3 (TODO: this might be superfluous here)
+    for (size_t bl = 0; bl < s.solution_.n_blocks() ;++bl)
+    {
+      s.matrix_.get_communicators()[bl]->consistency_update(s.solution_.block(bl), 3);
+    }
+#endif
+
     // spaces for matrices
     const TFESpace3D* spaces[1] = {&s.velocitySpace_};
     
-    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
-    
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
+
     switch(TDatabase::ParamDB->NSTYPE)
     {
       case 1:
       case 2:
         nSqMatrices = 1;
-        sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());        
+        sqMatrices.resize(nSqMatrices);
+        sqMatrices.at(0)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
         break;
       case 3:
       case 4:
       case 14:
         nSqMatrices = 3;
-        sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());        
-        sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks[5].get());
-        sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());        
+        sqMatrices.at(0)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+        sqMatrices.at(1)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+        sqMatrices.at(2)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
         break;
     }// endswitch nstype
+
     // boundary conditions and boundary values
-    BoundCondFunct3D * boundContion[4]={
-      spaces[0]->getBoundCondition(), spaces[0]->getBoundCondition(),
-      spaces[0]->getBoundCondition(), spaces[1]->getBoundCondition() };
-      
-    std::array<BoundValueFunct3D*, 4> boundValues;
+    BoundCondFunct3D * boundCondition[1]={
+      spaces[0]->getBoundCondition() };
+
+    std::array<BoundValueFunct3D*, 3> boundValues;
     boundValues[0]=example_.get_bd()[0];
     boundValues[1]=example_.get_bd()[1];
     boundValues[2]=example_.get_bd()[2];
-    boundValues[3]=example_.get_bd()[3];
 
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
     feFunction[2]=s.u_.GetComponent(2);
-    feFunction[3]=&s.p_;
-    // local assembling object    
-    const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
-                         feFunction.data(), example_.get_coeffs());
+
+    //decide wether to assemble by upwinding or not
+    bool finest_grid = (&s == &systems_.at(0));
+    bool upwinding = mdml && !finest_grid && !is_stokes;
     
-    // assemble now the matrices and right hand side 
-    Assemble3D(nFESpace, spaces, 
-               nSqMatrices, sqMatrices.data(),
-               nReMatrices, reMatrices.data(), 
-               nRhs, rhsEntries.data(), rhsSpaces,
-               boundContion, boundValues.data(), la);
+    if(!upwinding)
+    {
+      for(auto mat : sqMatrices)
+      {
+        mat->reset();
+      }
+      // local assembling object    
+      const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
+                                 feFunction.data(), example_.get_coeffs());
+      
+      // assemble now the matrices and right hand side 
+      Assemble3D(nFESpace, spaces, nSqMatrices, sqMatrices.data(),
+                 nReMatrices, reMatrices.data(), nRhs, rhsArray.data(), 
+                 rhsSpaces, boundCondition, boundValues.data(), la);
+    }
+    else
+    {
+      double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
+      for(auto mat : sqMatrices)
+      {
+        UpwindForNavierStokes3D(mat, feFunction[0], feFunction[1],
+                                feFunction[2], one_over_nu);
+      }
+    }
+
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
+
+    //TODO: Copying non-actives??
+
   }// endfor auto grid
-  Output::print<1>("Leaving the assembleNonLinearTerm: ");
+
+
+}
+
+bool NSE3D::stop_it(unsigned int iteration_counter)
+{
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+  //compute and update defect and residuals
+  compute_residuals();
+  
+  // the current norm of the residual
+  const double normOfResidual = this->get_full_residual();
+  // store initial residual, so later we can print the overall reduction
+  if(iteration_counter == 0)
+    initial_residual_ = normOfResidual;
+
+  // hold the residual from 10 iterations ago
+  const double oldNormOfResidual = this->old_residuals_.front().fullResidual;
+
+
+  size_t max_it = db["nonlinloop_maxit"];
+  double conv_speed = db["nonlinloop_slowfactor"];
+  bool slow_conv = false;
+
+
+  if(normOfResidual >= conv_speed*oldNormOfResidual)
+    slow_conv = true;
+
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
+  {
+    limit *= sqrt(this->get_size());
+    if(my_rank==0)
+     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
+  }
+
+  // check if the iteration has converged, or reached the maximum number of
+  // iterations or if convergence is too slow. Then return true otherwise false
+  if( (normOfResidual<=limit) || (iteration_counter==max_it) || (slow_conv) )
+  {
+    if(slow_conv && my_rank==0)
+      Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
+
+    // stop iteration
+    return true;
+  }
+  else
+    return false;
+}
+
+/** ************************************************************************ */
+void NSE3D::compute_residuals()
+{
+  System_per_grid& s = this->systems_.front();
+  unsigned int n_u_dof = s.solution_.length(0);
+  unsigned int n_p_dof = s.solution_.length(3);
+
+  // copy rhs to defect and compute defect
+#ifdef _MPI
+    //MPI: solution in consistency level 3 (TODO: maybe this is superfluous here
+    // (because solution might be in level 3 consistency already)!)
+    auto comms = s.matrix_.get_communicators();
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(s.solution_.block(bl), 3);
+    }
+#endif
+
+  defect_ = s.rhs_;
+  s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
+
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  {
+    IntoL20Vector3D(&defect_[3*n_u_dof], n_p_dof,
+                    TDatabase::ParamDB->PRESSURE_SPACE);
+  }
+
+  // This is the calculation of the residual, given the defect.
+  BlockVector defect_impuls({n_u_dof,n_u_dof,n_u_dof});
+  BlockVector defect_mass({n_p_dof});
+  //copy the entries (BlockVector offers no functionality to do this more nicely)
+  for(size_t i = 0; i<3*n_u_dof ;++i)
+    defect_impuls.get_entries()[i] = defect_.get_entries()[i];
+  for(size_t i =0 ; i<n_p_dof ; ++i)
+    defect_mass.get_entries()[i] = defect_.get_entries()[3*n_u_dof + i];
+
+#ifdef _MPI
+  double impuls_residual_square = defect_impuls.norm_global({comms[0],comms[1],comms[2]});
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm_global({comms[3]});
+  mass_residual_square *= mass_residual_square;
+#else
+  double impuls_residual_square = defect_impuls.norm();
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm();
+  mass_residual_square *= mass_residual_square;
+#endif
+
+  Residuals current_residuals(impuls_residual_square, mass_residual_square);
+  old_residuals_.add(current_residuals);
 }
 
 void NSE3D::solve()
 {
+  System_per_grid& s = this->systems_.front();
+  double damping = this->db["nonlinloop_damping_factor"];
+  // store previous solution for damping, it is a pointer so that we can avoid
+  // the copy in case of no damping
+  std::shared_ptr<BlockVector> old_solution(nullptr);
+  if(damping != 1.0)
+    old_solution = std::make_shared<BlockVector>(s.solution_);
   
+  // solving:
+#ifndef _MPI
+  this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+#endif
+#ifdef _MPI
+  if(this->solver.get_db()["solver_type"].is("direct"))
+  {
+    if(damping != 1.0)
+      Output::warn("NSE3D::solve", "damping in an MPI context is not tested");
+
+    //set up a MUMPS wrapper
+    MumpsWrapper mumps_wrapper(s.matrix_);
+
+    //kick off the solving process
+    mumps_wrapper.solve(s.rhs_, s.solution_);
+  }
+  else
+    this->solver.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential
+#endif
+  
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  {
+   s.p_.project_into_L20();
+  }
+  
+  if(damping != 1.0)
+  {
+    s.solution_.scale(damping);
+    s.solution_.add_scaled(*old_solution, damping);
+  }
 }
 
-TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::SystemPerGrid& s)
+void NSE3D::output(int i)
 {
-  TNSE_MGLevel * multigridLevel;
-  size_t nAuxArray = 2;
-  std::vector<double> alpha(2);
+#ifdef _MPI
+   int my_rank;
+   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+
+  bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+  if(no_output)
+    return;
   
-  if ((TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE)
-        || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE))
-     nAuxArray=4;
-  else
-     nAuxArray=2;
+  // In multigrid case, print time that was spent on coarse grid
+  // (needed for curr project (ParMooN paper, Sep 2016), can be removed after)
+  if(solver.is_using_multigrid())
+    solver.get_multigrid()->print_coarse_grid_time_total();
+
+  System_per_grid& s=this->systems_.front();
+  TFEFunction3D* u1 = s.u_.GetComponent(0);
+  TFEFunction3D* u2 = s.u_.GetComponent(1);
+  TFEFunction3D* u3 = s.u_.GetComponent(2);
   
-  if (level==0)
+  if((size_t)db["verbosity"]> 1)
   {
-    alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-    alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-  }
-  else
-  {
-    alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-    alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-  }
-  
-  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_TERRIBLY_UNSAFE();
-  
-  TSquareMatrix3D* A11 = reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
-  TSquareMatrix3D* A12 = reinterpret_cast<TSquareMatrix3D*>(blocks[1].get());
-  TSquareMatrix3D* A13 = reinterpret_cast<TSquareMatrix3D*>(blocks[2].get());
-  TSquareMatrix3D* A21 = reinterpret_cast<TSquareMatrix3D*>(blocks[4].get());
-  TSquareMatrix3D* A22 = reinterpret_cast<TSquareMatrix3D*>(blocks[5].get());
-  TSquareMatrix3D* A23 = reinterpret_cast<TSquareMatrix3D*>(blocks[6].get());
-  TSquareMatrix3D* A31 = reinterpret_cast<TSquareMatrix3D*>(blocks[8].get());
-  TSquareMatrix3D* A32 = reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
-  TSquareMatrix3D* A33 = reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());  
-  
-  TMatrix3D* B1T = reinterpret_cast<TMatrix3D*>(blocks[3].get());
-  TMatrix3D* B2T = reinterpret_cast<TMatrix3D*>(blocks[7].get());
-  TMatrix3D* B3T = reinterpret_cast<TMatrix3D*>(blocks[11].get());
-  TMatrix3D* B1 = reinterpret_cast<TMatrix3D*>(blocks[12].get());
-  TMatrix3D* B2 = reinterpret_cast<TMatrix3D*>(blocks[13].get());
-  TMatrix3D* B3 = reinterpret_cast<TMatrix3D*>(blocks[14].get());
-  
-  TStructure structure = B1T->GetStructure();
-  std::pair<int, int> velo_pres_code(TDatabase::ParamDB->VELOCITY_SPACE,
-                                             TDatabase::ParamDB->PRESSURE_SPACE);
-  switch(TDatabase::ParamDB->NSTYPE)
-  {
-    case 1:
-      multigridLevel = new TNSE_MGLevel1(level, A11, B1, B2, B3, &structure, 
-                                         s.rhs_.get_entries(),s.solution_.get_entries(), 
-                                         nAuxArray, alpha.data(), 
-                                         velo_pres_code.first,velo_pres_code.second, 
-                                         nullptr, nullptr);
-      break;
-    case 2:
-      multigridLevel = new TNSE_MGLevel2(level, A11, B1, B2, B3, 
-                                         B1T, B2T, B3T,
-                                         s.rhs_.get_entries(),s.solution_.get_entries(), 
-                                         nAuxArray, alpha.data(), 
-                                         velo_pres_code.first,velo_pres_code.second, 
-                                         nullptr, nullptr);
-      break;
-    case 3:
-      multigridLevel = new TNSE_MGLevel3(level, A11, A12, A13, A21, A22, A23,
-                                         A31, A32, A33,
-                                         B1, B2, B3, &structure, 
-                                         s.rhs_.get_entries(),s.solution_.get_entries(), 
-                                         nAuxArray, alpha.data(), 
-                                         velo_pres_code.first,velo_pres_code.second, 
-                                         nullptr, nullptr);
-      break;
-    case 4:
-       multigridLevel = new TNSE_MGLevel4(level, 
-                                          A11, A12, A13, A21, A22, A23,
-                                          A31, A32, A33, B1, B2, B3, 
-                                          B1T, B2T, B3T,
-                                          s.rhs_.get_entries(),s.solution_.get_entries(), 
-                                          nAuxArray, alpha.data(), 
-                                          velo_pres_code.first,velo_pres_code.second, 
-                                          nullptr, nullptr);
-      break;
-    case 14:
-      TSquareMatrix3D* C   = reinterpret_cast<TSquareMatrix3D*>(blocks[15].get());      
-      multigridLevel = new TNSE_MGLevel14(level, 
-                                          A11, A12, A13, A21, A22, A23,
-                                          A31, A32, A33, C, B1, B2, B3, 
-                                          B1T, B2T, B3T,
-                                          s.rhs_.get_entries(),s.solution_.get_entries(), 
-                                          nAuxArray, alpha.data(), 
-                                          velo_pres_code.first,velo_pres_code.second, 
-                                          nullptr, nullptr);
-      break;
+    u1->PrintMinMax(std::string("u1"));
+    u2->PrintMinMax(std::string("u2"));
+    u3->PrintMinMax(std::string("u3"));
+    s.p_.PrintMinMax(std::string("p"));
   }
   
-  return multigridLevel;
+  // write solution to a vtk file
+  if(db["output_write_vtk"])
+  {
+    // last argument in the following is domain, but is never used in this class
+    TOutput3D Output(5, 5, 2, 1, NULL);
+    Output.AddFEFunction(&s.p_);
+    Output.AddFEVectFunct(&s.u_);
+#ifdef _MPI
+    char SubID[] = "";
+    if(my_rank == 0)
+  	  mkdir(db["output_vtk_directory"], 0777);
+    std::string dir = db["output_vtk_directory"];
+    std::string base = db["output_basename"];
+    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
+#else
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
+    if(i >= 0)
+      filename += "_" + std::to_string(i);
+    filename += ".vtk";
+    Output.WriteVtk(filename.c_str());
+#endif
+  }
+  
+  // measure errors to known solution
+  // If an exact solution is not known, it is usually set to be zero, so that
+  // in such a case here only integrals of the solution are computed.
+  if(db["output_compute_errors"])
+  {
+    double err_u1[4]; // of these arrays only the two first entries are used,
+    double err_u2[4]; // but the evil GetErrors() will corrupt memory if these
+    double err_u3[4]; // have not at least size 4
+    double err_p[4];
+
+
+    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+    MultiIndex3D nsAllDerivs[4] = {D000, D100, D010, D001};
+    const TFESpace3D *velocity_space = &this->get_velocity_space();
+    const TFESpace3D *pressure_space = &this->get_pressure_space();
+    
+    // errors in first velocity component
+    u1->GetErrors(example_.get_exact(0), 4, nsAllDerivs, 2,
+                  L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u1);
+    // errors in second velocity component
+    u2->GetErrors(example_.get_exact(1), 4, nsAllDerivs, 2,
+                  L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u2);
+    // errors in third velocity component
+    u3->GetErrors(example_.get_exact(2), 4, nsAllDerivs, 2,
+                  L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u3);
+    // errors in pressure
+    s.p_.GetErrors(example_.get_exact(3), 4, nsAllDerivs, 2, L2H1Errors,
+                   nullptr, &aux, 1, &pressure_space, err_p);
+    
+#ifdef _MPI
+    double err_red[8]; //memory for global (across all processes) error
+    double err_send[8]; //fill send buffer
+    err_send[0]=err_u1[0];
+    err_send[1]=err_u1[1];
+    err_send[2]=err_u2[0];
+    err_send[3]=err_u2[1];
+    err_send[4]=err_u3[0];
+    err_send[5]=err_u3[1];
+    err_send[6]=err_p[0];
+    err_send[7]=err_p[1];
+
+    MPI_Allreduce(err_send, err_red, 8, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    for(i=0;i<8;i++)
+    {//MPI: sqrt was skipped in GetErrors function - do it here globally!
+      err_red[i] = sqrt(err_red[i]);
+    }
+    //fill the reduced errors back where they belong
+    err_u1[0] = err_red[0];
+    err_u1[1] = err_red[1];
+    err_u2[0] = err_red[2];
+    err_u2[1] = err_red[3];
+    err_u3[0] = err_red[4];
+    err_u3[1] = err_red[5];
+    err_p[0] = err_red[6];
+    err_p[1] = err_red[7];
+#else
+    int my_rank =0;
+#endif
+
+    errors_.at(0) = sqrt(err_u1[0]*err_u1[0] + err_u2[0]*err_u2[0] + err_u3[0]*err_u3[0]);//L2
+    errors_.at(1) = sqrt(err_u1[1]*err_u1[1] + err_u2[1]*err_u2[1] + err_u3[1]*err_u3[1]);//H1-semi
+    errors_.at(2) = err_p[0];
+    errors_.at(3) = err_p[1];
+
+    //print errors
+    if(my_rank == 0)
+    {
+      Output::stat("NSE3D", "Measured errors");
+      Output::dash("L2(u)     : ", setprecision(10), errors_.at(0));
+      Output::dash("H1-semi(u): ", setprecision(10), errors_.at(1));
+      Output::dash("L2(p)     : ", setprecision(10), errors_.at(2));
+      Output::dash("H1-semi(p): ", setprecision(10), errors_.at(3));
+    }
+  } // if(this->db["compute_errors"])
+  delete u1;
+  delete u2;
+  delete u3;
+
+  //do postprocessing step depending on what the example implements
+  example_.do_post_processing(*this);
 }
 
+TFEFunction3D* NSE3D::get_velocity_component(int i)
+{
+  if(i==0)
+    return this->systems_.front().u_.GetComponent(0);
+  else if(i==1)
+    return this->systems_.front().u_.GetComponent(1);
+  else  if(i==2)
+    return this->systems_.front().u_.GetComponent(2);
+  else
+    throw std::runtime_error("There are only three velocity components!");
+}
+
+const Residuals& NSE3D::get_residuals() const
+{
+  return old_residuals_.back();
+}
+
+double NSE3D::get_impuls_residual() const
+{
+  return old_residuals_.back().impulsResidual;
+}
+
+double NSE3D::get_mass_residual() const
+{
+  return old_residuals_.back().massResidual;
+}
+
+double NSE3D::get_full_residual() const
+{
+  return old_residuals_.back().fullResidual;
+}
+
+std::array<double, int(4)> NSE3D::get_errors() const
+{
+  return errors_;
+}

@@ -16,9 +16,11 @@
 #include <FEFunction2D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-#include <Example_CD2D.h>
-#include <MultiGrid2D.h>
+#include <Example_TimeCD2D.h>
+#include <Multigrid.h>
 #include <Domain.h>
+#include <PostProcessing2D.h>
+#include <Solver.h>
 
 #include <vector>
 #include <deque>
@@ -52,7 +54,7 @@ class Time_CD2D
       TFEFunction2D fe_function;
 
       /** @brief constructor*/
-      System_per_grid(const Example_CD2D& example, TCollection& coll);
+      System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
 
       /**
        * Gives a non-const pointer to the one block which is stored
@@ -96,6 +98,22 @@ class Time_CD2D
 
     };
     
+    /** @brief a local parameter database which controls this class
+     *
+     * The database given to the constructor will be merged into this one. Only
+     * parameters which are of interest to this class are stored (and the
+     * default ParMooN parameters). Note that this usually does not include
+     * other parameters such as solver parameters. Those are only in the
+     * Solver object.
+     */
+    ParameterDatabase db;
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
+
     /** @brief a complete system on each grid 
      * 
      * Note that the size of this deque is at least one and larger than that
@@ -105,12 +123,7 @@ class Time_CD2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_CD2D example;
-    
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
-     */
-    std::shared_ptr<TMultiGrid2D> multigrid;
+    const Example_TimeCD2D example;
     
     /** @brief set parameters in database
      * 
@@ -132,13 +145,17 @@ class Time_CD2D
     
     /** @brief store the errors to compute accumulated error norms */
     std::vector<double> errors;
+
+    /// @brief class for handling (time dependent) output 
+    PostProcessing2D timeDependentOutput;
     
   public:
     /** @brief constructor
      * This constructor calls the other constructor creating an Example_CD2D
      * object. 
      */
-    Time_CD2D(const TDomain& domain, int reference_id = -4711);
+    Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+    		int reference_id = -4711);
     
     /** @brief constructor 
      * 
@@ -149,8 +166,8 @@ class Time_CD2D
      * The reference_id can be used if only the cells with the give reference_id
      * should be used. The default implies all cells.
      */
-    Time_CD2D(const TDomain& domain, const Example_CD2D& ex, 
-              int reference_id = -4711);
+    Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+    		const Example_TimeCD2D& ex, int reference_id = -4711);
     
     /** @brief Assemble all the matrices before the time iterations
      * 
@@ -189,12 +206,10 @@ class Time_CD2D
      */
     void solve();
     
-    /** @brief measure errors and write solution
-     * 
-     */
-    void output(int m, int& imgage);
+    /// @brief measure errors and write solution
+    void output();
      // getters and setters
-    const Example_CD2D& get_example() const
+    const Example_TimeCD2D& get_example() const
     { return example; }
     const TFEFunction2D & get_function() const
     { return this->systems.front().fe_function; }
@@ -210,6 +225,14 @@ class Time_CD2D
     { return this->systems.front().solution; }
     const TFESpace2D & get_space() const
     { return this->systems.front().fe_space; }
+    const ParameterDatabase & get_db() const
+    { return db; }
+    
+    /**
+    * @brief return the computed errors at each discre time point
+    * 
+    */
+    std::array<double, int(3)> get_errors() const;
 
 
   private:

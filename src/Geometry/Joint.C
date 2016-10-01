@@ -30,28 +30,35 @@ TJoint::TJoint()
 // Methods
 int TJoint::SetNeighbour(TBaseCell *Neighb)
 {
-  switch (this->GetType())
-  {
-    case JointEqN:
-    case MortarBaseJoint:
-    case InterfaceJoint:
-    case IsoInterfaceJoint:
+    switch (this->GetType())
+    {
+        case JointEqN:
+        case MortarBaseJoint:
+        case InterfaceJoint:
+        case IsoInterfaceJoint:
 #ifdef __3D__
-    case InterfaceJoint3D:
-    case IsoInterfaceJoint3D:
+        case InterfaceJoint3D:
+        case IsoInterfaceJoint3D:
 #endif
-    case PeriodicJoint:
-    case InnerInterfaceJoint:
-      if (Neighb0)
-        Neighb1 = Neighb;
-      else
-        Neighb0 = Neighb;
-
-      return 0;
-
-    default:
-      return -1;
-  }
+        case PeriodicJoint:
+        case InnerInterfaceJoint:
+            if (Neighb0)
+                Neighb1 = Neighb;
+            else
+                Neighb0 = Neighb;
+            
+            return 0;
+            
+        case BoundaryEdge:
+            Neighb0 = Neighb;
+            
+            return 0;
+            
+ 
+            
+        default:
+            return -1;
+    }
 }
 
 TBaseCell *TJoint::GetNeighbour(TBaseCell *Me) const
@@ -81,8 +88,12 @@ int TJoint::SetNeighbour(int i, TBaseCell *Neighb)
         Neighb0 = Neighb;
 
       return 0;
-
-    default:
+          case BoundaryEdge:
+          if (i==0)
+              Neighb0 = Neighb;
+          else
+              Output::print("** Error in TJoint::SetNeighbour: cannot set Neighbour ", i, " for Boundary Edge");
+          return 0;    default:
       return -1;
   }
 }
@@ -202,7 +213,7 @@ void TJoint::GetMapperOrig(const int *&MapVerts, const int *&MapEdges)
 }
 int TJoint::GetNeighbourEdgeIndex(TBaseCell* me, int LocEdge)
 {
-  int N_Edges, MaxLen;
+  int N_Edges; //MaxLen;
   const int *TmpEV;
   TVertex *Vert0, *Vert1;
   TBaseCell* neigh;

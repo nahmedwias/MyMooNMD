@@ -4,9 +4,14 @@
 // u(x,y) = (x^2+y^2+z^2, x^2+2xy+13, -2xz+5y^2)^T
 // p(x,y) = 3x-2y+7z-4
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 void ExampleFile()
 {
-  Output::print<1>("Example: AnsatzQuadLin.h");
+  Output::info<1>("EXAMPLE","AnsatzQuadLin.h");
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // ========================================================================
@@ -116,11 +121,11 @@ void InitialP(double x, double y,  double z, double *values)
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  static double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double *coeff, x, y, z;
 
-  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)// STOKES 
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)// STOKES
   {
     for(i=0;i<n_points;i++)
     {

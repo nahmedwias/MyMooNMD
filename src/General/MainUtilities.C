@@ -15,8 +15,6 @@
 #include <LinAlg.h>
 #include <ConvDiff.h>
 
-#include <Utilities.h>
-
 #include <AllRefTrans.h>
 
 #ifdef __2D__
@@ -76,6 +74,31 @@ int GetMemory()
   struct mallinfo MALLINFO;
   MALLINFO = mallinfo();
   return MALLINFO.usmblks+MALLINFO.uordblks;
+#endif
+}
+
+//Print all memory information available through mallinfo.
+void display_mallinfo(const std::string& program_part)
+{
+#ifdef _MALLOC_MALLOC_H_
+  Output::print("Memory usage info called in program part: ", program_part);
+  Output::print(GetMemory());  
+#else
+   
+  struct mallinfo mi;
+  
+  mi = mallinfo();
+  Output::print("Memory usage info called in program part: ", program_part);
+  Output::print("Total non-mmapped bytes (arena):       ",mi.arena);
+  Output::print("# of free chunks (ordblks):            ",mi.ordblks);
+  Output::print("# of free fastbin blocks (smblks):     ",mi.smblks);
+  Output::print("# of mapped regions (hblks):           ",mi.hblks);
+  Output::print("Bytes in mapped regions (hblkhd):      ",mi.hblkhd);
+  Output::print("Max. total allocated space (usmblks):  ",mi.usmblks);
+  Output::print("Free bytes held in fastbins (fsmblks): ",mi.fsmblks);
+  Output::print("Total allocated space (uordblks):      ",mi.uordblks);
+  Output::print("Total free space (fordblks):           ",mi.fordblks);
+  Output::print("Topmost releasable block (keepcost):   ",mi.keepcost);
 #endif
 }
 
@@ -1521,11 +1544,11 @@ void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1,
   TFE3D *Element;
   TNodalFunctional3D *nf;
   RefTrans3D RefTrans;
-  double values[4], *xi_ref, *eta_ref, *zeta_ref;
+  double *xi_ref, *eta_ref, *zeta_ref;  //values[4];
   double AbsDetjkVort[MaxN_QuadPoints_3D];
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
   double Z_orig[MaxN_PointsForNodal3D];
-  double val[4], *div1, *v1, *v2, *v3;
+  double val[4], *v1, *v2, *v3;  // *div1;
 
   // get information of the numbering of the degrees of freedom
   // of the vorticity
@@ -1803,7 +1826,7 @@ void SubGridDissipation(int N_Points, double *X, double *Y, double *Z,
                 double **coeffs, double *LocError)
 {
   int i;
-  double *deriv_x, *exactval, *deriv_y, *deriv_z, *exactval1, w, t, s;
+  double *deriv_x, *deriv_y, *deriv_z, w, t, s;
   double delta, mu, gradu[9], u[3];
 
   LocError[0] = 0.0;
@@ -1900,7 +1923,7 @@ void Parameters_DC_CD(int N_Points, double *X, double *Y, double *Z,
 {
   int i;
   double *deriv, *exactval, w, t, *coeff;
-  double eps, b1, b2, b3, c, f;
+  double b1, b2, b3, c, f;  //eps;
 
   LocError[0] = 0.0;
   LocError[1] = 0.0;
@@ -1908,7 +1931,7 @@ void Parameters_DC_CD(int N_Points, double *X, double *Y, double *Z,
   for(i=0;i<N_Points;i++)
   {
     coeff = coeffs[i];
-    eps = coeff[0];
+//    eps = coeff[0];
     b1 = coeff[1];
     b2 = coeff[2];
     b3 = coeff[3];
@@ -2431,171 +2454,6 @@ int GetVelocityAndPressureSpace(TCollection *coll,
 }
 #endif // 2D
 
-// ====================================================================
-// read in solution from a Grape file 
-// ====================================================================
-int ReadGrapeFile(char *name, int N_FEFct, int N_FEVectFct,
-                   TFEFunction2D **FEFct, TFEVectFunct2D **FEVectFct)
-{
-  int first[2];
-  int headerlength, *header;
-  int dimension, N_Elements, N_Vertices, N_LocVertices, N_FESpaces;
-  int N_ScalarVar, N_VectorVar, N_Parameters, N_, scalar;
-  int i;
-  int *N_LocDOF;
-  int N_Comp, N_DOF;
-  double *val;
-  int SwitchBytes;
-
-  std::ifstream dat(name);
-  if(!dat)
-  {
-    Error("cannot open file '" << name << "' for input!" << endl);
-    exit(4711);
-  }
-
-  SwitchBytes = 0;
-
-  dat.read((char *)first, SizeOfInt*2);
-
-  // check whether the byte order has to be reversed
-  if(first[0] != 1)
-    SwitchBytes = 1;
-
-  if(SwitchBytes)
-    SwapIntArray(first, 2);
-
-  if(first[1] != 5)
-  {
-    Error("This subroutine can only read MD-Format Version 5!" << endl);
-    return -3;
-  }
-
-  dat.read((char *)(&headerlength), SizeOfInt*1);
-  if(SwitchBytes)
-    SwapIntArray(&headerlength, 1);
-
-  header = new int[headerlength];
-  dat.read((char *)header, headerlength*SizeOfInt);
-  if(SwitchBytes)
-    SwapIntArray(header, 8);
-
-  dimension=header[0];
-  N_Elements=header[1];
-  N_Vertices=header[2];
-  N_LocVertices=header[3];
-  N_FESpaces=header[4];
-  N_ScalarVar=header[5];
-  N_VectorVar=header[6];
-  N_Parameters=header[7];
-
-  scalar = N_FEFct;
-  if(N_ScalarVar != N_FEFct)
-  {
-    OutPut("Different numbers of scalar FE functions!" << endl);
-    if (N_FEFct < N_ScalarVar)
-    {
-      OutPut("Copy only first " << N_FEFct << " scalar FE functions from data base!" << endl);
-    }
-    else
-    {
-      OutPut("Only first " << N_ScalarVar << " scalar FE functions get values from data base!" << endl);
-      scalar = N_ScalarVar;
-    }
-  }
-
-  if(N_VectorVar != N_FEVectFct)
-  {
-    Error("Different numbers of vector FE functions!" << endl);
-    exit(4711);
-  }
-
-  N_ = 48; // new position in header (after comment)
-
-  if(N_Parameters > 0)
-  {
-    if(SwitchBytes)
-      SwapDoubleArray((double *)(header+N_), 1);
-    TDatabase::TimeDB->CURRENTTIME= *(double *)(header+48);
-  }
-
-  if(N_Parameters > 0)
-  {
-    // handle parameters
-    N_ += (2 + 18)*N_Parameters;
-  }
-
-  if(N_FESpaces > 0)
-  {
-    // handle fespaces
-    N_LocDOF = new int[N_FESpaces];
-    for(i=0;i<N_FESpaces;i++)
-    {
-      if(SwitchBytes)
-        SwapIntArray((int *)(header+N_), 2);
-      N_++;
-      N_LocDOF[i] = header[N_];
-      N_ += (1 + 18);
-    }
-  }
-
-  if(N_ScalarVar > 0)
-  {
-    // handle scalar FE functions
-    N_ += (2 + 18)*N_ScalarVar;
-  }
-
-  if(N_VectorVar > 0)
-  {
-    // handle vector FE functions
-    N_ += (2 + 18)*N_VectorVar;
-  }
-  
-  if(N_ != headerlength)
-  {
-    Error("wrong length: " << endl);
-    Error("N_ = " << N_ << endl);
-    Error("headerlength: " << headerlength << endl);
-    exit(-1);
-  }
-
-  delete header;
-    
-  // don't read coordinates
-  dat.seekg(SizeOfDouble*N_Vertices*dimension, std::ios::cur);
-  dat.seekg(SizeOfInt*N_LocVertices, std::ios::cur);
-
-
-  for(i=0;i<N_FESpaces;i++)
-  {
-    dat.seekg(SizeOfInt*N_Elements, std::ios::cur);
-    dat.seekg(SizeOfInt*N_LocDOF[i], std::ios::cur);
-  }
-
-  for(i=0;i<scalar;i++)
-  {
-    N_DOF = FEFct[i]->GetLength();
-    val = FEFct[i]->GetValues();
-    dat.read((char *)val, N_DOF*SizeOfDouble);
-    if(SwitchBytes)
-      SwapDoubleArray(val, N_DOF); 
-    //OutPut("Scalar function "<< i << " with " << N_DOF << " d.o.f" << endl); 
-  }
-
-  for(i=0;i<N_VectorVar;i++)
-  {
-    N_DOF = FEVectFct[i]->GetLength();
-    val = FEVectFct[i]->GetValues();
-    N_Comp = FEVectFct[i]->GetN_Components();
-    dat.read((char *)val, N_DOF*N_Comp*SizeOfDouble);
-    if(SwitchBytes)
-      SwapDoubleArray(val, N_DOF*N_Comp); 
-    //OutPut("Vector function "<< i << " with " << 2*N_DOF << " d.o.f" << endl); 
-  }
-
-  OutPut("Read Grape file " << name << endl);
-  return 0;
-}
 
 #ifdef __3D__
 
@@ -2809,173 +2667,6 @@ int GetVelocityAndPressureSpaceLow3D(TCollection *coll,
         exit(4711);
   }
    return 0;
-}
-
-int ReadGrapeFile3D(char *name, int N_FEFct, int N_FEVectFct,
-                    TFEFunction3D **FEFct, TFEVectFunct3D **FEVectFct)
-{
-  int first[2];
-  int headerlength, *header;
-  int dimension, N_Elements, N_Vertices, N_LocVertices, N_FESpaces;
-  int N_ScalarVar, N_VectorVar, N_Parameters, N_, N_LocFaces;
-  int i, scalar;
-  int *N_LocDOF;
-  TFEFunction3D *fct;
-  TFEVectFunct3D *vectfct;
-  int N_Comp, N_DOF;
-  double *val, val1;
-  int SwitchBytes;
-
-  std::ifstream dat(name);
-  if(!dat)
-  {
-    OutPut("cannot open file '" << name << "' for input!" << endl);
-    exit(4711);
-  }
-
-  SwitchBytes = 0;
-
-  dat.read((char *)first, SizeOfInt*2);
-
-  // check whether the byte order has to be reversed
-  if(first[0] != 1)
-    SwitchBytes = 1;
-
-  if(SwitchBytes)
-    SwapIntArray(first, 2);
-
-  if(first[1] != 1)
-  {
-    OutPut("This subroutine can only read MD-Format Version 1!" << endl);
-    exit(4711);
-  }
-
-  dat.read((char *)(&headerlength), SizeOfInt*1);
-  if(SwitchBytes)
-    SwapIntArray(&headerlength, 1);
-
-  header = new int[headerlength];
-  dat.read((char *)header, headerlength*SizeOfInt);
-  if(SwitchBytes)
-    SwapIntArray(header, 9);
-
-  dimension=header[0];
-  N_Elements=header[1];
-  N_Vertices=header[2];
-  N_LocVertices=header[3];
-  N_LocFaces= header[4];
-  N_FESpaces=header[5];
-  N_ScalarVar=header[6];
-  N_VectorVar=header[7];
-  N_Parameters=header[8];
-
-  scalar = N_FEFct;
-  if(N_ScalarVar != N_FEFct)
-  {
-    OutPut("Different numbers of scalar FE functions!" << endl);
-    if (N_FEFct < N_ScalarVar)
-    {
-      OutPut("Copy only first " << N_FEFct << " scalar FE functions from data base!" << endl);
-    }
-    else
-    {
-      OutPut("Only first " << N_ScalarVar << " scalar FE functions get values from data base!" << endl);
-      scalar = N_ScalarVar;
-    }
-  }
-
-  if(N_VectorVar != N_FEVectFct)
-  {
-    OutPut("Different numbers of vector FE functions!" << endl);
-    OutPut("N_VectorVar: " << N_VectorVar << " ");
-    OutPut("N_FEVectFct: " << N_FEVectFct << endl);
-    exit(4711);
-  }
-
-  N_ = 50; // new position in header (after comment)
-
-  if(N_Parameters > 0)
-  {
-  if(SwitchBytes)
-      SwapDoubleArray((double *)(header+N_), 1);
-    //cout << "read time " << *(double *)(header+50) << endl;
-    TDatabase::TimeDB->CURRENTTIME= *(double *)(header+50);
-  }
-
-  if(N_Parameters > 0)
-  {
-    // handle parameters
-    N_ += (2 + 18)*N_Parameters;
-  }
-
-  if(N_FESpaces > 0)
-  {
-    // handle fespaces
-    N_LocDOF = new int[N_FESpaces];
-    for(i=0;i<N_FESpaces;i++)
-    {
-  if(SwitchBytes)
-        SwapIntArray((int *)(header+N_), 2);
-      N_++;
-      N_LocDOF[i] = header[N_];
-      N_ += (1 + 18);
-    }
-  }
-
-  if(N_ScalarVar > 0)
-  {
-    // handle scalar FE functions
-    N_ += (2 + 18)*N_ScalarVar;
-  }
-
-  if(N_VectorVar > 0)
-  {
-    // handle vector FE functions
-    N_ += (2 + 18)*N_VectorVar;
-  }
-  
-  if(N_ != headerlength)
-  {
-    OutPut("wrong length: " << endl);
-    OutPut("N_ = " << N_ << endl);
-    OutPut("headerlength: " << headerlength << endl);
-    exit(-1);
-  }
-
-  delete header;
-    
-  // don't read coordinates
-  dat.seekg(SizeOfDouble*N_Vertices*dimension, std::ios::cur);
-  dat.seekg(SizeOfInt*N_LocVertices, std::ios::cur);
-  dat.seekg(SizeOfInt*N_LocFaces, std::ios::cur);
-
-  for(i=0;i<N_FESpaces;i++)
-  {
-    dat.seekg(SizeOfInt*N_Elements, std::ios::cur);
-    dat.seekg(SizeOfInt*N_LocDOF[i], std::ios::cur);
-  }
-
-  for(i=0;i<scalar;i++)
-  {
-    N_DOF = FEFct[i]->GetLength();
-    val = FEFct[i]->GetValues();
-    dat.read((char *)val, N_DOF*SizeOfDouble);
-  if(SwitchBytes)
-      SwapDoubleArray(val, N_DOF); 
-  }
-
-  for(i=0;i<N_VectorVar;i++)
-  {
-    N_DOF = FEVectFct[i]->GetLength();
-    val = FEVectFct[i]->GetValues();
-    N_Comp = FEVectFct[i]->GetN_Components();
-    dat.read((char *)val, N_DOF*N_Comp*SizeOfDouble);
-  if(SwitchBytes)
-      SwapDoubleArray(val, N_DOF*N_Comp); 
-  }
-
-  OutPut("Read Grape file " << name << " time " <<  TDatabase::TimeDB->CURRENTTIME << endl);
-  return 0;
 }
 
 #endif // 3D

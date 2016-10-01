@@ -51,20 +51,53 @@ class TBoundEdge : public TJoint
     virtual TJoint *NewInst();
 
     /** return start parameter T0 */
-    double GetStartParameter()
+    double GetStartParameter() const
     { return T_0; }
 
     /** return end paramter T1 */
-    double GetEndParameter()
+    double GetEndParameter() const
     { return T_1; }
 
     /** return parameters */
-    void GetParameters(double& t0, double& t1)
+    void GetParameters(double& t0, double& t1) const
     {
       t0 = T_0;
       t1 = T_1;
     }
-
+    
+    //START
+    void get_vertices(double &x0, double &y0, double &x1, double &y1)
+    {
+        GetXYofT( T_0, x0, y0);
+        GetXYofT( T_1, x1, y1);
+    }
+    
+    double get_length()
+    {
+      double x0, x1, y0, y1;
+      GetXYofT( this->T_0, x0, y0);
+      GetXYofT( this->T_1, x1, y1);
+      return sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
+    }
+    
+    void get_normal(double &nx, double &ny)
+    {
+      double x0, x1, y0, y1;
+      GetXYofT( this->T_0, x0, y0);
+      GetXYofT( this->T_1, x1, y1);
+      double length =  sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
+      nx =  (y1-y0)/length;
+      ny = (x0-x1)/length;
+    }
+    
+    
+    void set_index_in_neighbour(TBaseCell *neigh, int index);
+    int get_index_in_neighbour(const TBaseCell*const neigh) const;
+    //END
+    
+    
+    
+    
 #ifdef __2D__
     /** update parameters according to the new vertex positions */
     void UpdateParameters(TVertex *Begin, TVertex *End);

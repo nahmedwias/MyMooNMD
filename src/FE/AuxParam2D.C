@@ -67,8 +67,8 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll,
                               double **Parameters)
 {
   int i, j, k, l, n;
-  double xi, *param, *currparam, s;
-  double *locvalues;
+  double *param, *currparam, s;
+//  double *locvalues;
   const TFESpace2D *fespace;
   TFEFunction2D *fefunction;
   FE2D FE_Id;
@@ -133,15 +133,15 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll,
 void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll, TBaseCell *cell, int cellnum,
 				double *t, int joint, double **Parameters)
 {
-  int i,j,k,l,n, N_Cells;
-  double xv, yv, xi, eta, eps = 1e-20;
+  int i,j,k,l,n; //N_Cells;
+  double xi, eta; // eps = 1e-20;
   double s;
   double *param, *currparam, *CurrValues, *CurrOrigValues;
   int *CurrIndex;
   const TFESpace2D *fespace;
   TFEFunction2D *fefunction;
   BaseFunct2D BaseFunct_Id;
-  FE2D FE_ID;
+  FE2D FE_ID = C_P00_2D_T_A; //avoid uninit warning
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf, **AllBaseFuncts;
@@ -149,9 +149,9 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll, TBaseCell *cell
   double uyorig[MaxN_BaseFunctions2D], uref[MaxN_BaseFunctions2D];
   double uxiref[MaxN_BaseFunctions2D], uetaref[MaxN_BaseFunctions2D];
   
-  int *Numbers;
-  double u, ux, uy;
-  double val;
+//  int *Numbers;
+//  double u, ux, uy;
+//  double val;
   int *GlobalNumbers, *BeginIndex;
 
   double X, Y, absdetjk;

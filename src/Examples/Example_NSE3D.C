@@ -1,35 +1,67 @@
 #include <Example_NSE3D.h>
+#include <NSE3D.h>
 
 #include <FEDatabase3D.h>
 #include <Database.h>
 #include <MainUtilities.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 
 /* examples */
 
 
-namespace driven_cavity3d
-{
-#include "NSE_3D/DrivenCavity3D.h"
-}
-namespace cos_sin_simple
-{
-#include "NSE_3D/CosSin_simple.h"
-}
-namespace ansatz_quad_lin
-{
-#include "NSE_3D/AnsatzQuadLin.h"
-}
-namespace ansatz_lin_const
+namespace ansatz_lin_const //0
 {
 #include "NSE_3D/AnsatzLinConst.h"
 }
-
-Example_NSE3D::Example_NSE3D() : Example3D()
+namespace ansatz_quad_lin //1
 {
-  switch( TDatabase::ParamDB->EXAMPLE ) 
+#include "NSE_3D/AnsatzQuadLin.h"
+}
+namespace cos_sin_simple //2
+{
+#include "NSE_3D/CosSin_simple.h"
+}
+namespace driven_cavity3d //3
+{
+#include "NSE_3D/DrivenCavity3D.h"
+}
+namespace flow_around_cylinder_stat
+{
+#include "NSE_3D/FlowAroundCylinder_stat.h"
+}
+
+//test examples
+namespace test_u_0_p_0 //-1
+{
+#include "NSE_3D/test_u_0_p_0.h"
+}
+namespace test_u_1_p_0 //-2
+{
+#include "NSE_3D/test_u_1_p_0.h"
+}
+namespace test_u_2_p_1 //-3
+{
+#include "NSE_3D/test_u_2_p_1.h"
+}
+namespace test_u_3_p_2 //-4
+{
+#include "NSE_3D/test_u_3_p_2.h"
+}
+
+//========================================
+
+Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
+ : Example3D(user_input_parameter_db)
+{
+  int example_code = this->example_database["example"];
+  switch( example_code )
   {
     case 0:
+    {
       /** exact_solution */
       exact_solution.push_back( ansatz_lin_const::ExactU1 );
       exact_solution.push_back( ansatz_lin_const::ExactU2 );
@@ -51,9 +83,14 @@ Example_NSE3D::Example_NSE3D() : Example3D()
       /* coefficients */
       problem_coefficients = ansatz_lin_const::LinCoeffs;
 
+      /** some variables to change values in the example */
+      ansatz_lin_const::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
       ansatz_lin_const::ExampleFile();
       break;
+    }
     case 1:
+    {
       /** exact_solution */
       exact_solution.push_back( ansatz_quad_lin::ExactU1 );
       exact_solution.push_back( ansatz_quad_lin::ExactU2 );
@@ -75,9 +112,14 @@ Example_NSE3D::Example_NSE3D() : Example3D()
       /* coefficients */
       problem_coefficients = ansatz_quad_lin::LinCoeffs;
 
+      /** some variables to change values in the example */
+      ansatz_quad_lin::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
       ansatz_quad_lin::ExampleFile();
       break;
+    }
     case 2:
+    {
       /** exact_solution */
       exact_solution.push_back( cos_sin_simple::ExactU1 );
       exact_solution.push_back( cos_sin_simple::ExactU2 );
@@ -98,38 +140,218 @@ Example_NSE3D::Example_NSE3D() : Example3D()
 
       /* coefficients */
       problem_coefficients = cos_sin_simple::LinCoeffs;
+      
+      /** some variables to change values in the example */
+      cos_sin_simple::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       cos_sin_simple::ExampleFile();
       break;
-    
-      
-      case 3:
+    }
+    case 3:
+    {
       /** exact_solution */
       exact_solution.push_back( driven_cavity3d::ExactU1 );
       exact_solution.push_back( driven_cavity3d::ExactU2 );
       exact_solution.push_back( driven_cavity3d::ExactU3 );
       exact_solution.push_back( driven_cavity3d::ExactP );
-  
+
       /** boundary condition */
       boundary_conditions.push_back( driven_cavity3d::BoundCondition );
       boundary_conditions.push_back( driven_cavity3d::BoundCondition );
       boundary_conditions.push_back( driven_cavity3d::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
-  
+
       /** boundary values */
       boundary_data.push_back( driven_cavity3d::U1BoundValue );
       boundary_data.push_back( driven_cavity3d::U2BoundValue );
       boundary_data.push_back( driven_cavity3d::U3BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
-  
+
       /** coefficients */
       problem_coefficients = driven_cavity3d::LinCoeffs;
       
+      /** some variables to change values in the example */
+      driven_cavity3d::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
       driven_cavity3d::ExampleFile();
       break;
-    default:
-      ErrThrow("Unknown Navier-Stokes example!");
+    }
+    case 4:
+    {
+      using namespace flow_around_cylinder_stat;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /**post processing - drag and lift calculation and output */
+      post_processing_stat = compute_drag_lift_pdiff;
+
+      /** some variables to change values in the example */
+      flow_around_cylinder_stat::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      ExampleFile();
+      break;
+    }
+    case -1:
+    {
+      using namespace test_u_0_p_0;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** some variables to change values in the example */
+      test_u_0_p_0::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      ExampleFile();
+      break;
+    }
+    case -2:
+    {
+      using namespace test_u_1_p_0;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** some variables to change values in the example */
+      test_u_1_p_0::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      ExampleFile();
+      break;
+    }
+    case -3:
+    {
+      using namespace test_u_2_p_1;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** some variables to change values in the example */
+      test_u_2_p_1::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      ExampleFile();
+      break;
+    }
+    case -4:
+    {
+      using namespace test_u_3_p_2;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** some variables to change values in the example */
+      test_u_3_p_2::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      ExampleFile();
+      break;
+    }
   }
 }
 
-      
+void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
+{
+  if(post_processing_stat)
+  {
+    post_processing_stat(nse3d);
+  }
+  else
+  {
+#ifdef _MPI
+	  int my_rank;
+	  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	  if (my_rank == 0)
+#endif
+	    Output::info<2>("Example_NSE3D","No post processing done for the current example.");
+  }
+}
+
+double Example_NSE3D::get_nu() const
+{
+  double inverse_reynolds = this->example_database["reynolds_number"];
+  inverse_reynolds = 1/inverse_reynolds;
+  return inverse_reynolds;
+}

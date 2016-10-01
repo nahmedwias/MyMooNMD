@@ -97,6 +97,24 @@ class BlockMatrix
      */
     BlockMatrix(std::vector<size_t> cell_row_numbers, std::vector<size_t> cell_column_numbers);
 
+    
+    /**
+     * @brief Creates a nRows times nCols BlockMatrix filled with blocks
+     * 
+     * The blocks are given row wise. That means block (i,j) in the resulting 
+     * BlockMatrix will be the (i*nCols+j)-th block in \c blocks. In other 
+     * words this creates a BlockMatrix where each block has its own color and 
+     * is not stored as transposed.
+     * 
+     * The caller has to make sure all blocks are appropriate, otherwise this 
+     * constructor will throw an exception.
+     *
+     * @param nRows - number of blocks per column
+     * @param nCols - number of blocks per row
+     * @param blocks - the given blocks, must be of length nRows*nCols
+     */
+    BlockMatrix(int nRows, int nCols, 
+                std::vector<std::shared_ptr<TMatrix>> blocks);
 
     /**
      * Add a given TMatrix to the blocks in a bunch of given cells at once.
@@ -157,8 +175,28 @@ class BlockMatrix
     virtual void apply_scaled_add(const BlockVector & x, BlockVector & y,
                           double a = 1.0) const;
 
-    void apply_scaled_submatrix_mixed(const BlockVector & x, BlockVector & y,
-                                  double a = 1.0) const;
+    /// @brief perform one successive overrelaxation (sor) sweep.
+    /// The flag can be either 0(forward sweep), 1(backward sweep), or
+    /// 2(forward followed by backward sweep).
+    ///
+    /// @param[in] b right hand side
+    /// @param[in,out] x solution (this is updated)
+    /// @param[in] omega relaxation parameter
+    /// @param[in] flag either 0 (forward), 1(backward), or 2(both)
+    /// @param[in] par_strat The chosen parallelization strategy (MPI only).
+    ///            Choose between "all_cells", "halo_0" and "own_cells".
+    ///            Note that this does only affect the algorithm in TMatrix::sor_sweep.
+    ///            There won't be any difference in here - although one could
+    ///            change TMatrix' multiply and transpose_multiply to skip all
+    ///            Halo rows in order to save some flops.
+#ifdef _MPI
+    void sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                   size_t flag, const std::string& par_strat) const;
+#else
+    void sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                   size_t flag) const;
+#endif
+    
     /**
      * @brief checks whether the coloring is correct - use in tests only
      *
@@ -198,8 +236,23 @@ class BlockMatrix
      *
      * @return A shared pointer to the block matrix, merged together to
      * a TMatrix.
+     *
+     * @todo This method is performance critical when using a direct solver, but
+     * it is rather slow - profile and speed up!
+     * Make sure that zero entries are not put into the combined matrix - this
+     * might already speed things up.
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const;
+
+
+    /// Combines a rectangular submatrix specified by its upper-leftmost
+    /// and lower-rightmost block into a TMatrix.
+    /// @param upper_left
+    /// @param lower_right
+    /// @return into a TMatrix.
+    virtual std::shared_ptr<TMatrix> get_combined_submatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const;
 
     // Getter.
 
@@ -246,6 +299,17 @@ class BlockMatrix
 
     /// @brief total number of rows (added over all cells in a cell column)
     size_t  get_n_total_rows() const;
+
+    /**
+     * Spawn a new BlockMatrix which is a rectangular submatrix of this matrix.
+     *
+     * @param upper_left The upper leftmost block to include.
+     * @param lower_right The lower rightmost block to include.
+     * @return
+     */
+    BlockMatrix get_sub_blockmatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const;
 
     /**
      * Prints matrix coloring pattern and color_count_,
@@ -309,7 +373,30 @@ class BlockMatrix
         double scaling_factor,
         const std::vector<std::vector<size_t>>& cell_positions );
 
+    /// @brief read an individual entry
+    ///
+    /// @note this will not fail if the desired entry is not in the sparsity
+    /// structure. In that case it will simply return 0.
+    double get(unsigned int i, unsigned int j) const;
+    
+    /// @brief return the diagonal entries of this BlockMatrix
+    std::vector<double> get_diagonal() const;
 
+    /**
+     * @brief Get a shared pointer to a constant version of one of the blocks.
+     * Note that the non-active rows of that block might not be what you expect
+     * and will have to be read with care.
+     *
+     * @param[in] cell_row The cell row of the desired block.
+     * @param[in] cell_col The cell column of the desired block.
+     * @param[out] is_transposed A flag which shows true if the block is stored
+     * in transposed state, false if not so.
+     *
+     * @return A shared pointer to a block.
+     */
+    std::shared_ptr<const TMatrix> get_block(
+        size_t cell_row, size_t cell_col, bool& is_transposed) const;
+    
     // Special member functions.
 
     /** @brief copy constructor
@@ -336,7 +423,9 @@ class BlockMatrix
 
     /// @brief Default destructor. Tidies up nice and clean.
     virtual ~BlockMatrix() = default;
-
+    
+    /// @brief Set all submatrices to zero
+    void reset();
 
   protected:
 
@@ -552,7 +641,7 @@ class BlockMatrix
      *  Is overridden in derrived class BlockFEMatrix, where a pointer cast has to
      *  be performed due to the storing of FEMatrices.
      */
-    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block);
+    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block) const;
 
     /*!
      * Check if a given block fits into a given cell in the given transposed state.
@@ -651,8 +740,8 @@ class BlockMatrix
      *  @param nActive number of actives
      *  @param spaceNumber number of the test space to compare the actives
      */
-    virtual void handle_discovery_of_vector_actives(const int nActive, 
-                                                    const int spaceNumber) const;
+    virtual void handle_discovery_of_vector_non_actives(
+      const int nActive, const int spaceNumber) const;
     /**
      * Check if a given index pair is the last one in the cell_grid_.
      *
@@ -723,12 +812,6 @@ class BlockMatrix
 
   public:
 
-    /** @brief Set all submatrices to zero
-     *
-     * Possibly existing special matrices are not changed.
-     */
-    void reset();
-
     /**
      * @brief adding a scaled matrix to this matrix
      *
@@ -741,14 +824,6 @@ class BlockMatrix
      * Possibly existing special matrices are not changed.
      */
     void add_scaled(const BlockMatrix &A, double factor = 1.0);
-
-
-    /** @brief return the TMatrix located in the r-th block row and c-th block
-     *         column
-     */
-    const TMatrix& block(const unsigned int r, const unsigned int c) const;
-
-
 
 };
 

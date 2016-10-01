@@ -72,196 +72,16 @@ if("${PARMOON_PARALLEL_TYPE}" STREQUAL "OMPONLY" OR "${PARMOON_PARALLEL_TYPE}" S
   set(_USING_OMP TRUE)
 endif()
 
-# Set path to the external libraries which ship with ParMooN
-set(PARMOON_EXTLIB_PATH ${CMAKE_SOURCE_DIR}/EXT_LIB)
-# Set path to ParMooN package search modules.
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules/)
-
-# Search and include LAPACK library, which also includes searching for BLAS. 
-message("==================Searching LAPACK - begin=================================================")
-    find_package(LAPACK REQUIRED) #Complains and exits when LAPACK or BLAS are not found.
-    # Process what has been found - add linker flags.
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LAPACK_LINKER_FLAGS}")  
-message("==================Searching LAPACK - end===================================================")  
-
-# When using OpenMP, find it and use the module's output.
-if(_USING_OMP)
-  message("==================Searching OPENMP - begin=================================================")
-      # CB Kick off the default FindOpenMP module.
-      find_package(OpenMP REQUIRED)
-      if(OPENMP_FOUND)
-        # If OpenMP is used, add the found compiler flags for c and c++ globally.
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-      endif(OPENMP_FOUND)
-  message("==================Searching OPENMP - end===================================================")
-endif(_USING_OMP)
-
-# When using MPI, find mpi and some other libraries which use mpi.
-if(_USING_MPI) 
-  #Kickoff the default MPI search module and use its output.
-  message("==================Searching MPI - begin====================================================")
-  find_package(MPI REQUIRED)
-  #set path to the mpi header files.
-  include_directories(${MPI_INCLUDE_PATH})
-  #set compile and link flags
-  if(MPI_COMPILE_FLAGS)
-      message(STATUS "There are mpi compile flags!")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${MPI_Fortran_COMPILE_FLAGS}")
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPI_C_COMPILE_FLAGS}")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  endif()
-  if(MPI_LINK_FLAGS)
-      message(STATUS "There are mpi linker flags!")
-      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_LINK_FLAGS}")
-  endif() 
-  #Combine MPI libraries for all 3 languages to one list used for linking.
-  list(APPEND _MPI_LIBRARIES ${MPI_Fortran_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
-  message("==================Searching MPI - end======================================================")
-  
-  #Find a thread library.
-  message("==================Searching Thread Library - begin=========================================")
-    set(CMAKE_THREAD_PREFER_PTHREAD ON)
-    find_package(Threads REQUIRED)
-  message("==================Searching Thread Library - end===========================================")
-  
-  #When using MPI we're also using Parmetis. Include it.
-  message("==================Including Parmetis - begin===============================================")
-      find_path(PARMETIS_INCLUDE_DIR  parmetis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/Lib NO_DEFAULT_PATH)
-      find_library(PARMETIS_LIBRARY NAMES parmetis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
-      include_directories(BEFORE ${PARMETIS_INCLUDE_DIRS})
-      
-      set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR})
-      set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
-      
-      if(NOT (PARMETIS_LIBRARIES AND  PARMETIS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Parmetis is missing from ParMooN.")
-    else()
-        message(STATUS "Done.")
-    endif()
-  message("==================Including Parmetis - end=================================================")
-   
-  #When using MPI we're also using MUMPS solver. Include it.
-  message("==================Including MUMPS - begin==================================================")
-    
-    find_path(MUMPS_INCLUDE_DIR  mumps_compat.h PATHS ${PARMOON_EXTLIB_PATH}/MUMPS/include NO_DEFAULT_PATH)
-    set(_MUMPS_LIBS_PATH ${PARMOON_EXTLIB_PATH}/MUMPS/lib)
-    # Find mumps and its dependent libraries.
-    find_library(MUMPS_LIBRARY NAMES dmumps_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    # mumps_common library
-    find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    # esmumps/dmumps/tesmumps
-    find_library(MUMPS_ESMUMPS_LIBRARY NAMES esmumps_TYRONE64 PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    find_library(MUMPS_DMUMPS_LIBRARY NAMES dmumps_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    find_library(MUMPS_TESMUMPS_LIBRARY NAMES ptesmumps_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    # scotch and pord libraries
-    find_library(MUMPS_PORD_LIBRARY NAMES pord_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    find_library(MUMPS_SCOTCH_LIBRARY NAMES scotch_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    find_library(MUMPS_SCOTCHERR_LIBRARY NAMES scotcherr_TYRONE64 PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    #scalapack library 
-    find_library(MUMPS_SCALAPACK_LIBRARY NAMES scalapack_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/MPIBLACS NO_DEFAULT_PATH) 
-     
-    set(MUMPS_LIBRARIES ${MUMPS_LIBRARY} ${MUMPS_DMUMPS_LIBRARY} ${MUMPS_ESMUMPS_LIBRARY} ${MUMPS_TESMUMPS_LIBRARY}
-                        ${MUMPS_LIBRARY_COMMON} ${MUMPS_SCOTCH_LIBRARY} ${MUMPS_SCOTCHERR_LIBRARY} ${MUMPS_PORD_LIBRARY}
-                        ${MUMPS_SCALAPACK_LIBRARY})
-    set(MUMPS_INCLUDE_DIRS ${MUMPS_INCLUDE_DIR})
-    
-    if(NOT (MUMPS_LIBRARIES AND  MUMPS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Mumps is missing from ParMooN.")
-    else()
-        message(STATUS "Done.")
-    endif()
-    
-    include_directories(${MUMPS_INCLUDE_DIRS})  
-    
-  message("==================Including MUMPS - end====================================================")
-endif(_USING_MPI)
-
-#Include Metis
-message("==================Including METIS - begin==================================================")
-    find_path(METIS_INCLUDE_DIR  metis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/Lib NO_DEFAULT_PATH)
-    find_library(METIS_LIBRARY NAMES metis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
-    
-    set(METIS_LIBRARIES ${METIS_LIBRARY} )
-    set(METIS_INCLUDE_DIRS ${METIS_INCLUDE_DIR} )
-    if(NOT (METIS_LIBRARIES AND  METIS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Metis is missing from ParMooN.")
-    else()
-        message(STATUS "Done.")
-    endif()
-    include_directories(${METIS_INCLUDE_DIRS})
-message("==================Indcluding METIS - end====================================================")
-
-# Search and include TRIANGLE library.
-message("==================Including TRIANGLE - begin================================================")
-    find_path(TRIANGLE_INCLUDE_DIR  triangle.h PATHS ${PARMOON_EXTLIB_PATH}/Triangle NO_DEFAULT_PATH)
-    find_library(TRIANGLE_LIBRARY NAMES triangle_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Triangle NO_DEFAULT_PATH)
-    
-    set(TRIANGLE_LIBRARIES ${TRIANGLE_LIBRARY})
-    set(TRIANGLE_INCLUDE_DIRS ${TRIANGLE_INCLUDE_DIR})
-    if(NOT (TRIANGLE_LIBRARIES AND  TRIANGLE_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Triangle is mising from ParMooN.")
-    else()
-        message(STATUS "Done.")
-    endif()
-	include_directories(${TRIANGLE_INCLUDE_DIRS})
-message("==================Including TRIANGLE - end==================================================")
-
-# Search and include TETGEN library.
-message("==================Including TETGEN - begin================================================")
-    find_path(TETGEN_INCLUDE_DIR  tetgen.h PATHS ${PARMOON_EXTLIB_PATH}/tetgen)
-    find_library(TETGEN_LIBRARY NAMES tet_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tetgen)
-    
-    set(TETGEN_LIBRARIES ${TETGEN_LIBRARY})
-    set(TETGEN_INCLUDE_DIRS ${TETGEN_INCLUDE_DIR})
-    if(NOT (TETGEN_LIBRARIES AND  TETGEN_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Tetgen is missing from ParMooN.")
-    else()
-        message(STATUS "Done.")
-    endif()
-    include_directories(${TETGEN_INCLUDE_DIRS}) 
-message("==================Including TETGEN - end==================================================")
-
-# Include TECPLOT library.
-message("==================Including TECPLOT - begin================================================")
-    find_path(TECPLOT_INCLUDE_DIR  TECIO.h PATHS ${PARMOON_EXTLIB_PATH}/tecplot/include NO_DEFAULT_PATH)
-    find_library(TECPLOT_LIBRARY NAMES tecio_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tecplot/lib NO_DEFAULT_PATH)
-    
-    set(TECPLOT_LIBRARIES ${TECPLOT_LIBRARY})
-    set(TECPLOT_INCLUDE_DIRS ${TECPLOT_INCLUDE_DIR})
-    if(NOT (TECPLOT_LIBRARIES AND  TECPLOT_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Tecplot is missing from ParMooN.")
-    else()
-        message(STATUS "Done.")
-    endif()
-	include_directories(${TECPLOT_INCLUDE_DIRS})
-message("==================Including TECPLOT - end==================================================")
-
-# Include UMFPACK library.
-message("==================Including UMFPACK - begin================================================")
-    find_path(UMFPACK_INCLUDE_DIR  umfpack.h PATHS ${PARMOON_EXTLIB_PATH}/UMFPACK/Include NO_DEFAULT_PATH)
-    find_library(UMFPACK_LIBRARY NAMES umfpack_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/UMFPACK/Lib NO_DEFAULT_PATH) 
-    get_filename_component(_UMFPACK_LIBDIR ${UMFPACK_LIBRARY} PATH)
-    find_library(UMFPACK_SUITESE_LIBRARY NAMES suitesparseconfig_${_ARCH} PATHS ${_UMFPACK_LIBDIR} NO_DEFAULT_PATH)
-    find_library(UMFPACK_AMD_LIBRARY NAMES amd_${_ARCH} PATHS ${_UMFPACK_LIBDIR} NO_DEFAULT_PATH)
-    
-    set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARY} ${UMFPACK_SUITESE_LIBRARY} ${UMFPACK_AMD_LIBRARY})
-    set(UMFPACK_INCLUDE_DIRS ${UMFPACK_INCLUDE_DIR})
-    if(NOT (UMFPACK_LIBRARIES AND  UMFPACK_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Umfpack is missing from ParMooN.")
-    else()
-        message(STATUS "Done.")
-    endif()
-    include_directories(${UMFPACK_INCLUDE_DIRS})
-message("==================Including UMFPACK - end==================================================")
+# include all external libraries
+include(cmake/external_libraries.cmake)
 
 # turn on all warnings
 IF(CMAKE_BUILD_TOOL MATCHES "make")
   IF(NOT CMAKE_CXX_FLAGS MATCHES "-Wall")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-attributes")
   ENDIF(NOT CMAKE_CXX_FLAGS MATCHES "-Wall")
   IF(NOT CMAKE_C_FLAGS MATCHES "-Wall")
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-attributes")
   ENDIF(NOT CMAKE_C_FLAGS MATCHES "-Wall")
 ENDIF(CMAKE_BUILD_TOOL MATCHES "make")
 
@@ -314,14 +134,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__${_ARCH}__   -D__PRIVATE__")
 
 # If we want global compile flags to reach the subdirectories, we have to 
 # run the following includes AFTER setting global flags.
-include(cmake/sources_amg.cmake)
 include(cmake/sources_examples.cmake)
 include(cmake/sources_fe.cmake)
 include(cmake/sources_general.cmake)
 include(cmake/sources_geometry.cmake)
+include(cmake/sources_multigrid.cmake)
 include(cmake/sources_parallel.cmake)
 include(cmake/sources_quadformulas.cmake)
 include(cmake/sources_refinement.cmake)
+include(cmake/sources_solver.cmake)
 include(cmake/sources_system.cmake)
 include(cmake/sources_matrix.cmake)
 # include(cmake/sources_pbe.cmake)
@@ -333,21 +154,6 @@ target_compile_definitions(parmoon_2d_${PARMOON_PARALLEL_TYPE} PUBLIC -D__2D__)
 
 add_library(parmoon_3d_${PARMOON_PARALLEL_TYPE} STATIC ${PARMOON_SOURCES_3D} dummy.f)
 target_compile_definitions(parmoon_3d_${PARMOON_PARALLEL_TYPE} PUBLIC -D__3D__)
-
-# Set up list of extern libraries, alphabetically. Mutual dependencies are listed locally.
-
-LIST(APPEND _EXTERN_LIBRARIES ${BLAS_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${TRIANGLE_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${LAPACK_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${METIS_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${MUMPS_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${PARMETIS_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${TECPLOT_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${TETGEN_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${UMFPACK_LIBRARIES})
-if(_USING_MPI)
-    LIST(APPEND _EXTERN_LIBRARIES ${_MPI_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-endif(_USING_MPI)
 
 
 ##############################################################
@@ -383,6 +189,17 @@ target_compile_definitions(nse2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+
+### Brinkman2D ###
+# Standard executable target.
+add_executable(brinkman2d ${PROJECT_SOURCE_DIR}/2DPrograms/Brinkman2D_ParMooN.C)
+set_target_properties(brinkman2d PROPERTIES OUTPUT_NAME parMooN_brinkman2d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(brinkman2d PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
+
 ### TCD2D ###
 # Standard executable target.
 add_executable(tcd2d ${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ParMooN.C)
@@ -401,6 +218,24 @@ target_compile_definitions(tnse2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### MESH ###
+# Standard executable target.
+add_executable(mesh ${PROJECT_SOURCE_DIR}/2DPrograms/mesh_ParMooN.C)
+set_target_properties(mesh PROPERTIES OUTPUT_NAME parMooN_mesh_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(mesh PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(mesh parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
+### MESH2GEO(2D) ###
+# Standard executable target.
+add_executable(geo2mesh2d ${PROJECT_SOURCE_DIR}/2DPrograms/geo2mesh2d_ParMooN.C)
+set_target_properties(geo2mesh2d PROPERTIES OUTPUT_NAME parMooN_geo2mesh2d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(geo2mesh2d PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(geo2mesh2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ### Standard 3D Programs ###
 
 ### CD3D ###
@@ -412,6 +247,14 @@ target_compile_definitions(cd3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(cd3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### TCD3D ###
+add_executable(tcd3d ${PROJECT_SOURCE_DIR}/3DPrograms/TCD3D_ParMooN.C)
+set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(tcd3d PUBLIC -D__3D__)
+# Link in the required libraries.
+target_link_libraries(tcd3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ### NSE3D ###
 # Standard executable target.
 add_executable(nse3d ${PROJECT_SOURCE_DIR}/3DPrograms/NSE3D_ParMooN.C)
@@ -421,14 +264,23 @@ target_compile_definitions(nse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(nse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
-### TCD3D ###
+### TNSE3D ###
 # Standard executable target.
-add_executable(tcd3d ${PROJECT_SOURCE_DIR}/3DPrograms/TCD3D_ParMooN.C)
-set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${PARMOON_PARALLEL_TYPE})
+add_executable(tnse3d ${PROJECT_SOURCE_DIR}/3DPrograms/TNSE3D_ParMooN.C)
+set_target_properties(tnse3d PROPERTIES OUTPUT_NAME parMooN_tnse3d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
-target_compile_definitions(tcd3d PUBLIC -D__3D__)
+target_compile_definitions(tnse3d PUBLIC -D__3D__)
 # Link in the required libraries.
-target_link_libraries(tcd3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+target_link_libraries(tnse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
+### MESH(3D) ###
+# Standard executable target.
+add_executable(mesh3d ${PROJECT_SOURCE_DIR}/3DPrograms/mesh3d_ParMooN.C)
+set_target_properties(mesh3d PROPERTIES OUTPUT_NAME parMooN_mesh3d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(mesh3d PUBLIC -D__3D__)
+# Link in the required libraries.
+target_link_libraries(mesh3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
 ###############################################################################
 # building the documentation using doxygen
@@ -441,7 +293,12 @@ if(DOXYGEN_FOUND)
                     ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                     COMMENT "Generating documentation with Doxygen" VERBATIM)
+else()
+  add_custom_target(doc 
+                    COMMENT "It seems cmake could not find a doxygen executable. Therefore no documentation is created!" VERBATIM)
 endif(DOXYGEN_FOUND)
+
+include(cmake/get_repository_information.cmake)
 
 
 ###############################################################################

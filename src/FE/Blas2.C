@@ -11,7 +11,7 @@
 void ScalarDefect(TSquareMatrix *A, double *sol, double *f, double *d,
                   double &res)
 {
-  int i,j,k,l,index,numThreads;
+  int i,j,k,index;
   double s;
   const int *RowPtr, *KCol;
   double *Entries;
@@ -60,8 +60,8 @@ void ScalarDefect(TSquareMatrix *A, double *sol, double *f, double *d,
 void MatVect(TSquareMatrix *A, double *x, double *y)
 {
   int N_UDOF;
-  int i,j,k,l,index;
-  double s, value;
+  int i,j,k,index;
+  double s;
   const int *ARowPtr, *AKCol;
   double *AEntries;
 
@@ -102,7 +102,7 @@ void Defect_Scalar(TSquareMatrix **A, TMatrix **B, double *x, double *b,
 void MatVectActive(TSquareMatrix *A, double *x, double *y)
 {
   int N_Active;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, value;
   const int *ARowPtr, *AKCol;
   double *AEntries;
@@ -132,8 +132,7 @@ void MatVectActive(TSquareMatrix *A, double *x, double *y)
 void MatAdd(TSquareMatrix *C, TSquareMatrix *D, double alpha)
 {
   int N_UDOF;
-  int i,j,k,l,index;
-  double s, value;
+  int l;
   const int * CRowPtr;
   double *CEntries;
   double *DEntries;
@@ -171,8 +170,8 @@ void MatAdd2(TSquareMatrix *C, TSquareMatrix *D, double alpha)
 void MatAdd(TMatrix *C, TMatrix *D, double alpha)
 {
   int N_UDOF;
-  int i,j,k,l,index;
-  double s, value;
+  int l;
+
   const int * CRowPtr;
   double *CEntries;
   double *DEntries;
@@ -192,8 +191,8 @@ void MatAdd(TMatrix *C, TMatrix *D, double alpha)
 void MatVect1(TMatrix *B, double *x, double *y)
 {
   int N_UDOF;
-  int i,j,k,l,index;
-  double s, value;
+  int i,j,k,index;
+  double s,value;
   const int *BRowPtr, *BKCol;
   double *BEntries;
 
@@ -221,8 +220,8 @@ void MatVect1(TMatrix *B, double *x, double *y)
 void TransMatVect(TMatrix *B, double *x, double *y)
 {
   int N_UDOF;
-  int i,j,k,l,index;
-  double s, value;
+  int i,j,k,index;
+  double value;
   const int *BRowPtr, *BKCol;
   double *BEntries;
 

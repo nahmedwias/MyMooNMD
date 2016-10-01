@@ -275,12 +275,6 @@ int GetVelocityAndPressureSpace(TCollection *coll,
 
 #endif
 
-// ====================================================================
-// read in solution from a Grape file 
-// ====================================================================
-int ReadGrapeFile(char *name, int N_FEFct, int N_FEVectFct,
-                   TFEFunction2D **FEFct, TFEVectFunct2D **FEVectFct);
-
 #ifdef __3D__
 
 // ====================================================================
@@ -303,12 +297,6 @@ int GetVelocityAndPressureSpaceLow3D(TCollection *coll,
                                      TFESpace3D* &pressure_space,
                                      int *pressure_space_code,
                                      int velo_order, int pressure_order);
-// ====================================================================
-// read in solution from a Grape file 
-// ====================================================================
-int ReadGrapeFile3D(char *name, int N_FEFct, int N_FEVectFct,
-                    TFEFunction3D **FEFct, TFEVectFunct3D **FEVectFct);
-
 #endif
 void ExactNull(double x, double y, double z, double *values);
 void ExactNull(double x, double y, double *values);

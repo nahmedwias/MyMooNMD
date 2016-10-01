@@ -55,7 +55,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
   const int *TmpoEnE, *TmpEC, *TmpECI, *TmpoEnV, *TmpVC, *TmpVCI;
 #else
   Refinements NeibFaceRef, MyFaceRef;
-  const int *TmpLen1, *TmpLen2, *TmpLen3, *TmpLen4;
+  const int *TmpLen1, *TmpLen2, *TmpLen3; // *TmpLen4;
   const int *TmpoFnF, *TmpFC, *TmpFCI, *TmpoFnV, *TmpVC, *TmpVCI;
   const int *MapVerts, *MapFaces, *MapEdges;
   int* MapFacesTmp;

@@ -44,7 +44,9 @@ int TDomain::ReadParam(char *ParamFile)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  char line[100], *aux_char;
+  // if the max_line_length is too short, the program simply hangs
+  size_t max_line_length = 1000;
+  char line[max_line_length], *aux_char;
   int N_Param = 0, flag[7];
   std::ifstream dat(ParamFile);
 
@@ -68,56 +70,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->VERSION;
       N_Param++;
     }
-    if (!strcmp(line, "PROBLEM_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->PROBLEM_TYPE;
-      N_Param++;
-    }
-    if (!strcmp(line, "EXAMPLE:"))
-    {
-      dat >> TDatabase::ParamDB->EXAMPLE;
-      N_Param++;
-    }
 
-    if (!strcmp(line, "GEOFILE:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->GEOFILE;
-      TDatabase::ParamDB->GEOFILE = aux_char;
-      N_Param++;
-    }
-        if (!strcmp(line, "GEOFILE_INTL:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->GEOFILE_INTL;
-      TDatabase::ParamDB->GEOFILE_INTL = aux_char;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "BNDFILE:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->BNDFILE;
-      TDatabase::ParamDB->BNDFILE = aux_char;
-      N_Param++;
-    }
-
-        if (!strcmp(line, "BNDFILE_INTL:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->BNDFILE_INTL;
-      TDatabase::ParamDB->BNDFILE_INTL = aux_char;
-      N_Param++;
-    }
-    
     if (!strcmp(line, "MAPFILE:"))
     {
       dat >> line;
@@ -200,18 +153,6 @@ int TDomain::ReadParam(char *ParamFile)
     if (!strcmp(line, "PRESSURE_SEPARATION:"))
     {
       dat >> TDatabase::ParamDB->PRESSURE_SEPARATION;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "LEVELS:"))
-    {
-      dat >> TDatabase::ParamDB->LEVELS;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "UNIFORM_STEPS:"))
-    {
-      dat >> TDatabase::ParamDB->UNIFORM_STEPS;
       N_Param++;
     }
     if (!strcmp(line, "DRIFT_X:"))
@@ -343,6 +284,38 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->SIGMA_PERM;
       N_Param++;  
     }
+      
+      if (!strcmp(line, "VISCOSITY:"))
+      {
+          dat >> TDatabase::ParamDB->VISCOSITY;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "EFFECTIVE_VISCOSITY:"))
+      {
+          dat >> TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "PERMEABILITY:"))
+      {
+          dat >> TDatabase::ParamDB->PERMEABILITY;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "equal_order_stab_weight_P1P1:"))
+      {
+          dat >> TDatabase::ParamDB->equal_order_stab_weight_P1P1;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "equal_order_stab_weight_P2P2:"))
+      {
+          dat >> TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+          N_Param++;
+      }
+      
+      
     if (!strcmp(line, "USE_ISOPARAMETRIC:"))
     {
       dat >> TDatabase::ParamDB->USE_ISOPARAMETRIC;
@@ -724,34 +697,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "BASENAME:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->BASENAME;
-      TDatabase::ParamDB->BASENAME = aux_char;
-      N_Param++;
-    }
-    if (!strcmp(line, "VTKBASENAME:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->VTKBASENAME;
-      TDatabase::ParamDB->VTKBASENAME = aux_char;
-      N_Param++;
-    }    
-    if (!strcmp(line, "OUTPUTDIR:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->OUTPUTDIR;
-      TDatabase::ParamDB->OUTPUTDIR = aux_char;
-      N_Param++;
-    }
-
     if (!strcmp(line, "LP_FULL_GRADIENT_ORDER_DIFFERENCE:"))
     {
       dat >> TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE;
@@ -896,19 +841,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->PRECOND_LS;
       N_Param++;
     }
-
-    if (!strcmp(line, "SOLVER_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->SOLVER_TYPE;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WRITE_PS:"))
-    {
-      dat >> TDatabase::ParamDB->WRITE_PS;
-      N_Param++;
-    }
-
     if (!strcmp(line, "WRITE_GRAPE:"))
     {
       dat >> TDatabase::ParamDB->WRITE_GRAPE;
@@ -921,9 +853,9 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "WRITE_VTK:"))
+    if (!strcmp(line, "WRITE_CASE:"))
     {
-      dat >> TDatabase::ParamDB->WRITE_VTK;
+      dat >> TDatabase::ParamDB->WRITE_CASE;
       N_Param++;
     }
 
@@ -1043,12 +975,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "MEASURE_ERRORS:"))
-    {
-      dat >> TDatabase::ParamDB->MEASURE_ERRORS;
-      N_Param++;
-    }
-
     if (!strcmp(line, "ESTIMATE_ERRORS:"))
     {
       dat >> TDatabase::ParamDB->ESTIMATE_ERRORS;
@@ -1160,259 +1086,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "CC_ALPHA:"))
-    {
-      dat >> TDatabase::ParamDB->CC_ALPHA;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "CC_BETA:"))
-    {
-      dat >> TDatabase::ParamDB->CC_BETA;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "CC_MINCLUSTER:"))
-    {
-      dat >> TDatabase::ParamDB->CC_MINCLUSTER;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "CC_MAXCLUSTER:"))
-    {
-      dat >> TDatabase::ParamDB->CC_MAXCLUSTER;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "CC_MAXDISTANCE:"))
-    {
-      dat >> TDatabase::ParamDB->CC_MAXDISTANCE;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "CC_MAXCONNECTIVITY:"))
-    {
-      dat >> TDatabase::ParamDB->CC_MAXCONNECTIVITY;
-      N_Param++;
-    }
-    if (!strcmp(line, "CC_DEPTHTARGET:"))
-    {
-      dat >> TDatabase::ParamDB->CC_DEPTHTARGET;
-      N_Param++;
-    }
-    if (!strcmp(line, "CC_COARSENTARGET:"))
-    {
-      dat >> TDatabase::ParamDB->CC_COARSENTARGET;
-      N_Param++;
-    }
-    if (!strcmp(line, "CC_COARSENRATE:"))
-    {
-      dat >> TDatabase::ParamDB->CC_COARSENRATE;
-      N_Param++;
-    }
-    if (!strcmp(line, "CC_MAJOR:"))
-    {
-      dat >> TDatabase::ParamDB->CC_MAJOR;
-      N_Param++;
-    }
-    if (!strcmp(line, "CC_DEPENDENCY:"))
-    {
-      dat >> TDatabase::ParamDB->CC_DEPENDENCY;
-      N_Param++;
-    }
-    if (!strcmp(line, "CC_RESCALE:"))
-    {
-      dat >> TDatabase::ParamDB->CC_RESCALE;
-      N_Param++;
-    }
-    if (!strcmp(line, "CC_VERBOSE:"))
-    {
-      dat >> TDatabase::ParamDB->CC_VERBOSE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SYSTEM_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SYSTEM_TYPE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SOLVER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SOLVER_SCALAR;
-      TDatabase::ParamDB->SC_SOLVER_SADDLE =
-        TDatabase::ParamDB->SC_SOLVER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRECONDITIONER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR;
-      TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE =
-         TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_AMG_PREC_IT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_AMG_PREC_IT;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_AMG_PREC_RED_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_AMG_PREC_RED_FACTOR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_EX_MAXIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_EX_MAXIT;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_LCD_START_VECTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LCD_START_VECTOR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMRES_RESTART:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMRES_RESTART;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_ILU_BETA:"))
-    {
-      dat >> TDatabase::ParamDB->SC_ILU_BETA;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SOR_OMEGA:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SOR_OMEGA;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTHER_RED_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTHER_RED_FACTOR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_OMEGA_COARSE_0:"))
-    {
-      dat >> TDatabase::ParamDB->SC_OMEGA_COARSE_0;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_OMEGA_P_0:"))
-    {
-      dat >> TDatabase::ParamDB->SC_OMEGA_P_0;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_ILUT_TOL:"))
-    {
-      dat >> TDatabase::ParamDB->SC_ILUT_TOL;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_ILUT_ABSOLUTE_FILLIN:"))
-    {
-      dat >> TDatabase::ParamDB->SC_ILUT_ABSOLUTE_FILLIN;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_ILUT_RELATIVE_FILLIN:"))
-    {
-      dat >> TDatabase::ParamDB->SC_ILUT_RELATIVE_FILLIN;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_ILUT_SORT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_ILUT_SORT;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SCHUR_INV_OF_A:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SCHUR_INV_OF_A;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SCHUR_INV_OF_A_MAXIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SCHUR_INV_OF_A_MAXIT;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SCHUR_ITERATION_DAMP:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SCHUR_ITERATION_DAMP;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SCHUR_ITERATION_MAXIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SCHUR_ITERATION_MAXIT;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SCHUR_STEP_LENGTH_CONTROL:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_MIXED_BCGS_CGS_SWITCH_TOL:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_DIV_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_DIV_FACTOR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_DIV_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTHING_STEPS:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTHING_STEPS;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_N1_PARAM:"))
-    {
-      dat >> TDatabase::ParamDB->SC_N1_PARAM;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_N2_PARAM:"))
-    {
-      dat >> TDatabase::ParamDB->SC_N2_PARAM;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_MINIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MINIT;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_VAS_LAZ_DELTA:"))
-    {
-      dat >> TDatabase::ParamDB->SC_VAS_LAZ_DELTA;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_ROW_EQUILIBRATION:"))
-    {
-      dat >> TDatabase::ParamDB->SC_ROW_EQUILIBRATION;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_VERBOSE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_VERBOSE;
-      Output::setVerbosity(TDatabase::ParamDB->SC_VERBOSE);
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_VERBOSE_AMG:"))
-    {
-      dat >> TDatabase::ParamDB->SC_VERBOSE_AMG;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "SC_BRAESS_SARAZIN_MATRIX:"))
-    {
-      dat >> TDatabase::ParamDB->SC_BRAESS_SARAZIN_MATRIX;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "SC_BRAESS_SARAZIN_ALPHA:"))
-    {
-      dat >> TDatabase::ParamDB->SC_BRAESS_SARAZIN_ALPHA;
-      N_Param++;
-    }
-
     if (!strcmp(line, "CHAR_L0:"))
     {
       dat >> TDatabase::ParamDB->CHAR_L0;
@@ -1438,84 +1111,6 @@ int TDomain::ReadParam(char *ParamFile)
     if (!strcmp(line, "Area:"))
     {
       dat >> TDatabase::ParamDB->Area;
-      N_Param++;
-    }
-
-
-    // *********** PARAMETERS FOR SCALAR SOLVER ***********
-
-    if (!strcmp(line, "SC_NONLIN_ITE_TYPE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_MAXIT_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_MAXIT_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_RES_NORM_MIN_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_DAMP_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SOLVER_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SOLVER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRECONDITIONER_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_LIN_MAXIT_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-      N_Param++;
-      if (!flag[6])
-         TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR_SOLD = TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-    }
-    if (!strcmp(line, "SC_LIN_RED_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
-      N_Param++;
-      if (!flag[4])
-         TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR_SOLD = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
-    }
-     if (!strcmp(line, "SC_LIN_RES_NORM_MIN_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-      N_Param++;
-      if (!flag[5])
-         TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD = TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-    }
-
-    if (!strcmp(line, "SC_LIN_RED_FACTOR_SCALAR_SOLD:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR_SOLD;
-      N_Param++;
-      flag[4] = 1;
-    }
-     if (!strcmp(line, "SC_LIN_RES_NORM_MIN_SCALAR_SOLD:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD;
-      N_Param++;
-      flag[5] = 1;
-    }
-    if (!strcmp(line, "SC_LIN_MAXIT_SCALAR_SOLD:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR_SOLD;
-      flag[6] = 1;
-    }
-    if (!strcmp(line, "SC_FLEXIBLE_KRYLOV_SPACE_SOLVER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER;
       N_Param++;
     }
 
@@ -1679,103 +1274,11 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    
-
-    if (!strcmp(line, "SC_MG_TYPE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_TYPE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_MG_CYCLE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_CYCLE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTHER_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTHER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRE_SMOOTH_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_POST_SMOOTH_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-      flag[0] =1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR;
-      flag[0] =2;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_SMOOTHER_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_MAXIT_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_RED_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SCALAR;
-      flag[1]=1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR_FINE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSEST_LEVEL_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_FIRST_SOLUTION_LEVEL_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR;
-      N_Param++;
-    }
-
     if (!strcmp(line, "OMPNUMTHREADS:"))
     {
       dat >> TDatabase::ParamDB->OMPNUMTHREADS;
       N_Param++;
     } 
-
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_FINE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_ALL_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR;
-      N_Param++;
-    }
 
     // *********** PARAMETERS FOR SADDLE POINT SOLVER ***********
 
@@ -1784,318 +1287,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE;
       N_Param++;
     }
-    if (!strcmp(line, "SC_NONLIN_MAXIT_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_RES_NORM_MIN_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_DAMP_FACTOR_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SOLVER_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SOLVER_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRECONDITIONER_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_LIN_MAXIT_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_MAXIT_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_LIN_RED_FACTOR_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RED_FACTOR_SADDLE;
-      N_Param++;
-    }
-     if (!strcmp(line, "SC_LIN_RES_NORM_MIN_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "SC_MG_TYPE_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_TYPE_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_MG_CYCLE_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_CYCLE_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTHER_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTHER_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRE_SMOOTH_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_POST_SMOOTH_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
-      flag[2] =1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-      flag[2] =2;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_SMOOTHER_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_MAXIT_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_RED_FACTOR_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR_FINE_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE;
-      flag[3]=1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSEST_LEVEL_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSEST_LEVEL_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_FIRST_SOLUTION_LEVEL_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_FIRST_SOLUTION_LEVEL_SADDLE;
-      N_Param++;
-    } 
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_FINE_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_ALL_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "SC_LARGEST_DIRECT_SOLVE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_DOWNWIND_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_DOWNWIND_TYPE;
-      N_Param++;
-    }
-    // *********** PARAMETERS FOR BOTH SOLVERS SOLVER ***********
-
-    if (!strcmp(line, "SC_NONLIN_ITE_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SCALAR;
-      TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE =
-        TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_MAXIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_MAXIT_SCALAR;
-      TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE =
-        TDatabase::ParamDB->SC_NONLIN_MAXIT_SCALAR; 
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_RES_NORM_MIN:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR;
-      TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE
-        = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_DAMP_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE
-        = TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR;
-     N_Param++;
-    }
-    if (!strcmp(line, "SC_LIN_MAXIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-      TDatabase::ParamDB->SC_LIN_MAXIT_SADDLE
-        = TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_LIN_RED_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_LIN_RED_FACTOR_SADDLE
-        = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
-      N_Param++;
-    }
-     if (!strcmp(line, "SC_LIN_RES_NORM_MIN:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-      TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE 
-        = TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "SC_MG_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_TYPE_SCALAR;
-      TDatabase::ParamDB->SC_MG_TYPE_SADDLE 
-        = TDatabase::ParamDB->SC_MG_TYPE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_MG_CYCLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_CYCLE_SCALAR;
-      TDatabase::ParamDB->SC_MG_CYCLE_SADDLE
-        =  TDatabase::ParamDB->SC_MG_CYCLE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTHER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTHER_SCALAR;
-      TDatabase::ParamDB->SC_SMOOTHER_SADDLE
-        =  TDatabase::ParamDB->SC_SMOOTHER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRE_SMOOTH:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;
-      TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE
-        =  TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_POST_SMOOTH:"))
-    {
-      dat >> TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;
-      TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE
-        = TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE =
-        TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_FINE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE
-        = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-      flag[0] = flag[2] = 1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_SMOOTHER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR;
-      TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE
-        = TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_MAXIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
-      TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE
-        = TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_RED_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SADDLE
-        = TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE
-        = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SCALAR;
-      flag[1]= flag[3] = 1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR_FINE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR;
-      TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE
-        =  TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSEST_LEVEL:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR;
-      TDatabase::ParamDB->SC_COARSEST_LEVEL_SADDLE =
-        TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_FIRST_SOLUTION_LEVEL:"))
-    {
-      dat >> TDatabase::ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR;
-      TDatabase::ParamDB->SC_FIRST_SOLUTION_LEVEL_SADDLE
-        = TDatabase::ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR;
-      N_Param++;
-    } 
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_FINE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR;
-      TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE
-        = TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_ALL:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR;
-      TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE
-        = TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR;
-      N_Param++;
-    }
-
 
     // read in parameter for time discretization
     if (!strcmp(line, "STEPLENGTH:"))
@@ -2907,76 +2098,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->BULK_C_2;
       N_Param++;
     }
-    if (!strcmp(line, "WINDTUNNEL_dynamic_viscosity:"))
-    {
-      dat >>  TDatabase::ParamDB->WINDTUNNEL_dynamic_viscosity;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WINDTUNNEL_CONFIGURATION:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_CONFIGURATION;
-      N_Param++;
-    }
-    
-    if (!strcmp(line, "WINDTUNNEL_STEADY:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_STEADY;
-      N_Param++;
-    }
-    
-    if (!strcmp(line, "WINDTUNNEL_INTERPOLATION:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_INTERPOLATION;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WINDTUNNEL_BROWNIAN:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_BROWNIAN;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WINDTUNNEL_POL_ORDER:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_POL_ORDER;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "WINDTUNNEL_SHEAR_FACTOR_TYPE:"))
-   {
-     dat >> TDatabase::ParamDB->WINDTUNNEL_SHEAR_FACTOR_TYPE;
-     N_Param++;
-   }
-
-    if (!strcmp(line, "WINDTUNNEL_SHEAR_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_SHEAR_FACTOR;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WINDTUNNEL_QUAD_METHOD:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_QUAD_METHOD;
-      N_Param++;
-    }
-    if (!strcmp(line, "WINDTUNNEL_MEASURE_MASS:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_MEASURE_MASS;
-      N_Param++;
-    }
- 
-    if (!strcmp(line, "WINDTUNNEL_SHIFT:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_SHIFT;
-      N_Param++;
-    }
-    if (!strcmp(line, "WINDTUNNEL_SUPERSAT:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_SUPERSAT;
-      N_Param++;
-    }
-
 
     if (!strcmp(line, "SSMUM_MP_X:"))
     {
@@ -3013,102 +2134,6 @@ int TDomain::ReadParam(char *ParamFile)
 	dat >> TDatabase::ParamDB->SSMUM_INTERPOLATION;
       N_Param++;
     }
-
-    if (!strcmp(line, "UREA_INFLOW_SCALE:"))
-    {
-	dat >> TDatabase::ParamDB->UREA_INFLOW_SCALE;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "UREA_PB_DISC:"))
-    {
-	dat >> TDatabase::ParamDB->UREA_PB_DISC;
-      N_Param++;
-    }
-    
-   if (!strcmp(line, "UREA_MODEL:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_MODEL;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_CONC_MAXIT:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_CONC_MAXIT;
-      N_Param++;
-    }
-    
-   if (!strcmp(line, "UREA_inflow_time:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_inflow_time;
-      N_Param++;
-    }
-
-       
-    if (!strcmp(line, "UREA_u_infty:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_u_infty;
-      N_Param++;
-    }    
-  
-    if (!strcmp(line, "UREA_D_P_MAX:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_D_P_MAX;
-      N_Param++;
-    }    
-  
-  
-  
-
-   if (!strcmp(line, "UREA_AGGR_SPATIAL:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_SPATIAL;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_AGGR_BROWNIAN:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_BROWNIAN;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_AGGR_POL_ORDER:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_POL_ORDER;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_AGGR_SHEAR_FACTOR_TYPE:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_SHEAR_FACTOR_TYPE;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_AGGR_SHEAR_FACTOR:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_SHEAR_FACTOR;
-      N_Param++;
-    }
-    if (!strcmp(line, "UREA_AGGR_BROWNIAN_TEMP:"))
-    {
-      dat >> TDatabase::ParamDB->UREA_AGGR_BROWNIAN_TEMP;
-      N_Param++;
-    }
-    if (!strcmp(line, "UREA_AGGR_BROWNIAN_SCAL:"))
-    {
-      dat >> TDatabase::ParamDB->UREA_AGGR_BROWNIAN_SCAL;
-      N_Param++;
-    }
-    if (!strcmp(line, "UREA_SOLD_PARAMETER_TYPE:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_SOLD_PARAMETER_TYPE;
-      N_Param++;
-    }
-    if (!strcmp(line, "UREA_REACTION_DISC:"))
-    {
-      dat >> TDatabase::ParamDB->UREA_REACTION_DISC;
-      N_Param++;
-    }
     if (!strcmp(line, "PB_DISC_TYPE:"))
     {
       dat >> TDatabase::ParamDB->PB_DISC_TYPE;
@@ -3120,23 +2145,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-
-
-
-
-//     if (!strcmp(line, "UREA_D_P_MAX:"))
-//     {
-//         dat >> TDatabase::ParamDB->UREA_D_P_MAX;
-//       N_Param++;
-//     }    
-//   
-//     if (!strcmp(line, "UREA_f_infty:"))
-//     {
-//         dat >> TDatabase::ParamDB->UREA_f_infty;
-//       N_Param++;
-//     }    
-//   
-  
     if (!strcmp(line, "MATLAB_MATRIX:"))
     {
       dat >> line;
@@ -3168,115 +2176,6 @@ int TDomain::ReadParam(char *ParamFile)
     if (!strcmp(line, "INPUT_QUAD_RULE:"))
     {
       dat >> TDatabase::ParamDB->INPUT_QUAD_RULE;
-      N_Param++;
-    }
-    
-    //======================================================================
-    /** parameters for Stokes--Darcy (StoDa) coupling */
-    //======================================================================
-    if (!strcmp(line, "StoDa_interfaceType:"))
-    { //Beavers-Joseph-Saffman or u.t=0
-      dat >> TDatabase::ParamDB->StoDa_interfaceType;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_alpha:"))
-    { // from Beavers-Joseph-Saffman condition on interface
-      dat >> TDatabase::ParamDB->StoDa_alpha;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_problemType:"))
-    { // Neumann--Neumann, Robin--Robin, ...
-      dat >> TDatabase::ParamDB->StoDa_problemType;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_updatingStrategy:"))
-    { // update of the etas
-      dat >> TDatabase::ParamDB->StoDa_updatingStrategy;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_theta_f:"))
-    { //damping in Stokes (flow) part
-      dat >> TDatabase::ParamDB->StoDa_theta_f;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_theta_p:"))
-    { //damping in Darcy (porous) part
-      dat >> TDatabase::ParamDB->StoDa_theta_p;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_gamma_f:"))
-    { // parameter for Robin condition on interface
-      dat >> TDatabase::ParamDB->StoDa_gamma_f;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_gamma_p:"))
-    { // parameter for Robin condition on interface
-      dat >> TDatabase::ParamDB->StoDa_gamma_p;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_weakGamma:"))
-    { // parameter for Robin condition on interface
-      dat >> TDatabase::ParamDB->StoDa_weakGamma;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_solutionStrategy:"))
-    { // only iterative (0) or iterative and one big matrix (1)
-      dat >> TDatabase::ParamDB->StoDa_solutionStrategy;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_algorithm:"))
-    { // Gauss--Seidel, Jacobi, ...
-      dat >> TDatabase::ParamDB->StoDa_algorithm;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_StokesFirst:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_StokesFirst;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_nIterations:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_nIterations;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_interfaceError:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_interfaceError;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_factor1:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_factor1;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_factor2:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_factor2;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_factor3:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_factor3;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_solution:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_solution;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_bigResidual:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_bigResidual;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_periodicBoundary:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_periodicBoundary;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_periodicBoundaryPressureDrop:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_periodicBoundaryPressureDrop;
       N_Param++;
     }
 
@@ -3545,12 +2444,206 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
     
-    if (!strcmp(line, ":"))
+    if (!strcmp(line, ""))
     {
       dat >> TDatabase::ParamDB->DEPENDENT_BASIS_Q2;
       N_Param++;
     }
     
+      // parameters for weakly imposing boundary/interface conditions
+      if (!strcmp(line, "n_neumann_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_neumann_boundary;
+          N_Param++;
+          TDatabase::ParamDB->neumann_boundary_id.resize(TDatabase::ParamDB->n_neumann_boundary);
+          TDatabase::ParamDB->neumann_boundary_value.resize(TDatabase::ParamDB->n_neumann_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->neumann_boundary_id.begin(),
+                    TDatabase::ParamDB->neumann_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->neumann_boundary_value.begin(),
+                    TDatabase::ParamDB->neumann_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "neumann_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_neumann_boundary; ib++) {
+              dat >> TDatabase::ParamDB->neumann_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "neumann_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_neumann_boundary; ib++) {
+              dat >> TDatabase::ParamDB->neumann_boundary_value[ib];
+          }
+      }
+      
+      
+      if (!strcmp(line, "n_unvn_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_unvn_boundary;
+          N_Param++;
+          TDatabase::ParamDB->unvn_boundary_id.resize(TDatabase::ParamDB->n_unvn_boundary);
+          TDatabase::ParamDB->unvn_boundary_value.resize(TDatabase::ParamDB->n_unvn_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->unvn_boundary_id.begin(),
+                    TDatabase::ParamDB->unvn_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->unvn_boundary_value.begin(),
+                    TDatabase::ParamDB->unvn_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "unvn_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_unvn_boundary; ib++) {
+              dat >> TDatabase::ParamDB->unvn_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "unvn_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_unvn_boundary; ib++) {
+              dat >> TDatabase::ParamDB->unvn_boundary_value[ib];
+          }
+      }
+      
+      
+      if (!strcmp(line, "n_gradunv_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_gradunv_boundary;
+          N_Param++;
+          TDatabase::ParamDB->gradunv_boundary_id.resize(TDatabase::ParamDB->n_gradunv_boundary);
+          TDatabase::ParamDB->gradunv_boundary_value.resize(TDatabase::ParamDB->n_gradunv_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->gradunv_boundary_id.begin(),
+                    TDatabase::ParamDB->gradunv_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->gradunv_boundary_value.begin(),
+                    TDatabase::ParamDB->gradunv_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "gradunv_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_gradunv_boundary; ib++) {
+              dat >> TDatabase::ParamDB->gradunv_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "gradunv_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_gradunv_boundary; ib++) {
+              dat >> TDatabase::ParamDB->gradunv_boundary_value[ib];
+          }
+      }
+      
+      
+      if (!strcmp(line, "n_u_v_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_u_v_boundary;
+          N_Param++;
+          TDatabase::ParamDB->u_v_boundary_id.resize(TDatabase::ParamDB->n_u_v_boundary);
+          TDatabase::ParamDB->u_v_boundary_value.resize(TDatabase::ParamDB->n_u_v_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->u_v_boundary_id.begin(),
+                    TDatabase::ParamDB->u_v_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->u_v_boundary_value.begin(),
+                    TDatabase::ParamDB->u_v_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "u_v_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_u_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->u_v_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "u_v_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_u_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->u_v_boundary_value[ib];
+          }
+      }
+
+      
+      if (!strcmp(line, "n_g_v_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_g_v_boundary;
+          N_Param++;
+          TDatabase::ParamDB->g_v_boundary_id.resize(TDatabase::ParamDB->n_g_v_boundary);
+          TDatabase::ParamDB->g_v_boundary_value.resize(TDatabase::ParamDB->n_g_v_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->g_v_boundary_id.begin(),
+                    TDatabase::ParamDB->g_v_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->g_v_boundary_value.begin(),
+                    TDatabase::ParamDB->g_v_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "g_v_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_g_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->g_v_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "g_v_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_g_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->g_v_boundary_value[ib];
+          }
+      }
+      
+      
+      if (!strcmp(line, "n_p_v_n_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_p_v_n_boundary;
+          N_Param++;
+          TDatabase::ParamDB->p_v_n_boundary_id.resize(TDatabase::ParamDB->n_p_v_n_boundary);
+          TDatabase::ParamDB->p_v_n_boundary_value.resize(TDatabase::ParamDB->n_p_v_n_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->p_v_n_boundary_id.begin(),
+                    TDatabase::ParamDB->p_v_n_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->p_v_n_boundary_value.begin(),
+                    TDatabase::ParamDB->p_v_n_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "p_v_n_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_p_v_n_boundary; ib++) {
+              dat >> TDatabase::ParamDB->p_v_n_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "p_v_n_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_p_v_n_boundary; ib++) {
+              dat >> TDatabase::ParamDB->p_v_n_boundary_value[ib];
+          }
+      }
+      
+      // Nitsche Combi- weak Dirichlet
+      if (!strcmp(line, "n_nitsche_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_nitsche_boundary;
+          N_Param++;
+          TDatabase::ParamDB->nitsche_boundary_id.resize(TDatabase::ParamDB->n_nitsche_boundary);
+          TDatabase::ParamDB->nitsche_penalty.resize(TDatabase::ParamDB->n_nitsche_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->nitsche_boundary_id.begin(),
+                    TDatabase::ParamDB->nitsche_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->nitsche_penalty.begin(),
+                    TDatabase::ParamDB->nitsche_penalty.end(), 0.);
+      }
+      
+      if (!strcmp(line, "nitsche_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_nitsche_boundary; ib++) {
+              dat >> TDatabase::ParamDB->nitsche_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "nitsche_penalty:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_nitsche_boundary; ib++) {
+              dat >> TDatabase::ParamDB->nitsche_penalty[ib];
+          }
+      }
+
+      // ----------------------------------------------------------------
+      
+      
+      
+      
     if (!strcmp(line, "timeprofiling:"))
     {
       dat >> TDatabase::ParamDB->timeprofiling;
@@ -3570,32 +2663,8 @@ int TDomain::ReadParam(char *ParamFile)
     
  
    // read until end of line
-    dat.getline (line, 99);
+    dat.getline (line, max_line_length-1);
   }
-
-  if (!flag[0])
-  {
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR =
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR =
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  }
-  if (!flag[1])
-    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR =
-      TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SCALAR;
-  if (flag[2]!=1)
-  {
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE =
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-  }
-  if (flag[2]!=2)
-  {
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE =
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-  }
-  if (!flag[3])
-    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE =
-      TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
 
   if (TDatabase::ParamDB->START_RE_NR < 0)
     TDatabase::ParamDB->START_RE_NR = TDatabase::ParamDB->RE_NR;
@@ -3608,8 +2677,8 @@ int TDomain::ReadParam(char *ParamFile)
 #ifdef _MPI
   if(rank==0)
 #endif
-  cout << "Parameter file version " << TDatabase::ParamDB->VERSION <<
-          " read with " << N_Param << " parameters." << endl;
+  Output::info("ReadParam","Parameter file version ", TDatabase::ParamDB->VERSION,
+	" read with ", N_Param, " parameters.");
 
   dat.close();
 
@@ -3619,7 +2688,7 @@ int TDomain::ReadParam(char *ParamFile)
 int TDomain::ReadBdParam(std::istream& dat, int &Flag)
 {
 #ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
+  int rank; // out_rank=int(TDatabase::ParamDB->Par_P0);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
   char line[100];
@@ -3627,8 +2696,8 @@ int TDomain::ReadBdParam(std::istream& dat, int &Flag)
 #ifdef __2D__
   TBoundComp2D *BdComp;
 #else
-  TBoundComp3D *BdComp;
-  TBoundComp2D *BdComp2D;
+  TBoundComp3D *BdComp=nullptr;
+  TBoundComp2D *BdComp2D=nullptr;
 #endif
 
   Flag = 0;
@@ -3818,7 +2887,7 @@ int TDomain::ReadBdParam(std::istream& dat, int &Flag)
 int TDomain::ReadMapFile(char *MapFile, TDatabase *Database)
 {
 #ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
+  int rank; // out_rank=int(TDatabase::ParamDB->Par_P0);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
   char line[100];

@@ -21,6 +21,8 @@
 #ifndef __EXAMPLE2D__
 #define __EXAMPLE2D__
 
+#include <ParameterDatabase.h>
+#include <MooNMD_Io.h>
 #include <Constants.h>
 #include <vector>
 
@@ -33,7 +35,15 @@ class Example2D
     * 
     * This is used only by the classes derived from this class.
     */
-    Example2D();
+    Example2D(const ParameterDatabase &);
+
+    /** @brief a local parameter database which controls this class
+     *
+     * The database given to the constructor will be merged into this one. Only
+     * parameters which are of interest to this class are stored (and the
+     * default ParMooN parameters).
+     */
+    ParameterDatabase example_database;
   
   public:
     /** @brief initialize your own example
@@ -43,8 +53,7 @@ class Example2D
     Example2D(std::vector <DoubleFunct2D*> exact,
               std::vector <BoundCondFunct2D*> bc,
               std::vector <BoundValueFunct2D*> bd, 
-              CoeffFct2D *coeffs,
-              std::vector <DoubleFunct2D*> init_cond=std::vector<DoubleFunct2D*>());
+              CoeffFct2D *coeffs);
 
     /* functions representing the exact solution */
     std::vector <DoubleFunct2D*> exact_solution;
@@ -54,10 +63,6 @@ class Example2D
     std::vector <BoundValueFunct2D*> boundary_data;
     /* functions representing the coefficients of the pde */
     CoeffFct2D *problem_coefficients;
-    /* functions representing the initial conditions (only needed for time 
-     * dependent problems */
-    std::vector <DoubleFunct2D*> initial_conditions;
-    
     //void *example_info();
 
     //Declaration of special member functions - rule of zero
@@ -77,6 +82,8 @@ class Example2D
     //! Default destructor.
     ~Example2D() = default;
 
+    // Initialize example database, called with the constructor
+    static ParameterDatabase default_example_database();
 
     // Getter functions
 
@@ -100,9 +107,9 @@ class Example2D
 
     CoeffFct2D* get_coeffs() const
     { return problem_coefficients; }
-    
-    DoubleFunct2D* get_initial_cond(unsigned int i)const
-    { return initial_conditions.at(i); }  
+
+    const ParameterDatabase & get_database() const
+    { return example_database; }
 };
 
 #endif // __EXAMPLE2D__

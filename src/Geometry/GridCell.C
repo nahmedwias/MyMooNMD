@@ -104,7 +104,7 @@ int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
                   double StartY)
 {
   int i;
-  double text_x1,text_x2,text_y1,text_y2;
+  double text_x1=0,text_x2=0,text_y1=0,text_y2=0;
 #ifdef __GRIDCELL_WITH_NUMBERS__
   double x, y;
 #endif
@@ -297,11 +297,11 @@ int TGridCell::Gen1RegGrid()
   if(!Parent)
     return 0;
 
-  int i, N_, CurrLocEdge;
-  const int *TmpCE, *TmpnEoE;
-  int MaxLen;
-  TRefDesc *ParentRefDesc = Parent->GetRefDesc(), *GrandParentRefDesc;
-  TBaseCell *RefCell;
+  int CurrLocEdge;
+//  const int *TmpCE, *TmpnEoE;
+//  int MaxLen;
+//  TRefDesc *ParentRefDesc = Parent->GetRefDesc(), *GrandParentRefDesc;
+//  TBaseCell *RefCell;
   TBaseCell* Grandfather, *CurrCell;
   TJoint* LastJoint, *Joint;
   const int *TmpEF, *TmpEF2;
@@ -309,7 +309,7 @@ int TGridCell::Gen1RegGrid()
 
   if(RefLevel > 1 && (Grandfather = Parent->GetParent()))
   {
-    GrandParentRefDesc = Grandfather->GetRefDesc();
+//    GrandParentRefDesc = Grandfather->GetRefDesc();
     Grandfather->GetShapeDesc()->GetEdgeFace(TmpEF, TmpEFMaxLen);
 
     for(int i=0; i<Grandfather->GetN_Edges(); ++i)
@@ -492,8 +492,8 @@ int TGridCell::MakeConfClosure()
 #else // 3D
 int TGridCell::MakeConfClosure()
 {
-  int i, j, clip, N_Edges, LocEdge, LocFace, LocFace2, CurrLocEdge, N_ToRefine=0, CurrClip;
-  TBaseCell *Neigh, *CurrCell;
+  int i, j, clip, N_Edges, LocEdge, CurrLocEdge, N_ToRefine=0, CurrClip;
+  TBaseCell *CurrCell;
   const int *TmpEF, *TmpEF2;
   int TmpEFMaxLen, TmpEF2MaxLen;
   TJoint *Joint, *LastJoint;
