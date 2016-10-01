@@ -94,6 +94,26 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
           return std::string("Brinkman2D_Galerkin1ResidualStab2");
 
     ///////////////////////////////////////////////////////////////////////////
+    // TSTOKES: nonstationary Transient Stokes
+    case LocalAssembling2D_type::TSTOKES:
+      switch (TDatabase::ParamDB->DISCTYPE) {
+      case GALERKIN:
+         return std::string("TSTOKES2D_Galerkin");
+          break;
+      default:
+          Output::print("Disctype ", TDatabase::ParamDB->DISCTYPE, " is not supported yet");
+          break;
+      }
+    case LocalAssembling2D_type::TSTOKES_Rhs:
+      switch (TDatabase::ParamDB->DISCTYPE) {
+      case GALERKIN:
+         return std::string("TSTOKES2D_RhsGalerkin");
+          break;
+      default:
+          Output::print("Disctype ", TDatabase::ParamDB->DISCTYPE, " is not supported yet");
+          break;
+      }
+    ///////////////////////////////////////////////////////////////////////////
     // TNSE2D: nonstationary Navier-Stokes
     case LocalAssembling2D_type::TNSE2D:
       switch(TDatabase::ParamDB->DISCTYPE)
@@ -383,10 +403,16 @@ switch(type)
     this->Manipulate = NULL;
     break;
   ////////////////////////////////////////////////////////////////////////////
+  case LocalAssembling2D_type::TSTOKES:
+  case LocalAssembling2D_type::TSTOKES_Rhs:
+    this->set_parameters_for_tstokes(type);
+    break;
+  ////////////////////////////////////////////////////////////////////////////
     // TNSE2D: nonstationary Navier-Stokes problems
+    // TSTOKES: nonstationary Stokes problems
   case LocalAssembling2D_type::TNSE2D:
   case LocalAssembling2D_type::TNSE2D_NL:   
-  case LocalAssembling2D_type::TNSE2D_Rhs:
+  case LocalAssembling2D_type::TNSE2D_Rhs:  
     this->set_parameters_for_tnse(type);
     break;
     
@@ -2667,4 +2693,67 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   }
   //=========================================================================
   
+}
+
+void LocalAssembling2D::set_parameters_for_tstokes(LocalAssembling2D_type type)
+{
+  if(type==TSTOKES)
+  {
+    this->N_Terms = 4;
+    this->Derivatives = { D10, D01, D00, D00 };
+    this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+    this->N_Rhs = 3; // NOTE: check why is this always three??
+     this->RhsSpace = { 0, 0, 0 };
+  }
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Manipulate = NULL;
+
+  this->N_Parameters = 2;
+  this->N_ParamFct = 1;
+  this->ParameterFct = {TimeNSParams2};
+  this->N_FEValues = 2;
+  this->BeginParameter = { 0 };
+  this->FEValue_MultiIndex = { D00, D00 };
+  this->FEValue_FctIndex = { 0, 1 };
+
+  int disc_type=TDatabase::ParamDB->DISCTYPE;
+  switch(type)
+  {
+    case TSTOKES:
+      switch(disc_type) // discrete forms
+      {
+        case GALERKIN:
+          this->N_Matrices    = 4;
+          this->RowSpace      = { 0, 0, 1, 1 };
+          this->ColumnSpace   = { 0, 0, 0, 0 };
+              this->AssembleParam = TimeStokesOnlyGalerkin;
+          break;
+        default:
+          ErrThrow("Disctype ", disc_type, " is not supported yet");
+          break;
+      }
+      break;
+    case TSTOKES_Rhs:
+      switch (disc_type) {
+      case GALERKIN:
+          this->N_Terms = 1;
+          this->Derivatives = { D00 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = {};
+          this->ColumnSpace = { };
+          this->N_Rhs = 3 ;
+          this->RhsSpace = {0, 0, 0};
+          this->AssembleParam =TimeNSRHS;
+          this->Manipulate = NULL;
+          break;
+      default:
+          ErrThrow("Disctype ", disc_type, " is not supported yet");
+      }
+      break;
+  }
 }
