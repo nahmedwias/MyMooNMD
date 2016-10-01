@@ -47,6 +47,8 @@ enum LocalAssembling2D_type { ConvDiff,
                               TNSE2D,
                               TNSE2D_NL,
                               TNSE2D_Rhs,
+                              TSTOKES,
+                              TSTOKES_Rhs,
                               Darcy2D_Galerkin,
                               Brinkman2D_Galerkin1,
                               Brinkman2D_Galerkin1b,
@@ -174,6 +176,12 @@ class LocalAssembling2D
      * parameters and local assembling functions for the 
      * Stokes and Navier-Stokes equations 
      */
+      set parameters for the Transient Stokes problems
+      */
+    void set_parameters_for_tstokes(LocalAssembling2D_type type);
+    /**
+      parameters for pressure robust finite element method
+    */
     void set_parameters_for_Rec_nse(LocalAssembling2D_type type);
   public:
     /** constructor */

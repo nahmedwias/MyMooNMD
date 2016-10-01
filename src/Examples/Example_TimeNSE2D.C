@@ -12,6 +12,9 @@ namespace lin_space_time
 {
 #include "TNSE_2D/linear_space_time.h"
 }
+namespace  cosine_sin {
+#include "TNSE_2D/cosine_sine.h"
+}
 
 Example_TimeNSE2D::Example_TimeNSE2D(
   const ParameterDatabase& user_input_parameter_db)
@@ -69,6 +72,29 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       lin_space_time::ExampleFile();
       break;
     case 2:
+      /** exact_solution */
+      exact_solution.push_back( cosine_sin::ExactU1 );
+      exact_solution.push_back( cosine_sin::ExactU2 );
+      exact_solution.push_back( cosine_sin::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( cosine_sin::BoundCondition );
+      boundary_conditions.push_back( cosine_sin::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( cosine_sin::U1BoundValue );
+      boundary_data.push_back( cosine_sin::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** initial conditions, in case of a non-stationary problem */
+      initialCOndtion.push_back(cosine_sin::InitialU1);
+      initialCOndtion.push_back(cosine_sin::InitialU2);
+      initialCOndtion.push_back(cosine_sin::InitialP);
+      /** coefficients */
+      problem_coefficients = cosine_sin::LinCoeffs;
+
+      cosine_sin::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Time dependent Example_TimeNSE2D example!");
