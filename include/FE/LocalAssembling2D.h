@@ -176,6 +176,7 @@ class LocalAssembling2D
      * parameters and local assembling functions for the 
      * Stokes and Navier-Stokes equations 
      */
+    /**
       set parameters for the Transient Stokes problems
       */
     void set_parameters_for_tstokes(LocalAssembling2D_type type);
