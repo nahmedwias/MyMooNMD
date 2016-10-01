@@ -51,11 +51,10 @@ int main(int argc, char* argv[])
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary 
   tnse2d.assemble_initial_time();
-  
-  double end_time = TDatabase::TimeDB->ENDTIME; 
+
+  double end_time = TDatabase::TimeDB->ENDTIME;
   int step = 0;
   int n_substeps = GetN_SubSteps();
-    
   // ======================================================================
   // time iteration
   // ======================================================================
@@ -82,6 +81,17 @@ int main(int argc, char* argv[])
        // prepare the right hand side vector
        // only needed once per time step
        tnse2d.assemble_rhs();
+       if(parmoon_db["problem_type"].is(4))
+       {
+         tnse2d.assemble_system();
+         tnse2d.solve();
+         tnse2d.output(step);
+         continue;
+       }
+       if(parmoon_db["problem_type"].is(4))
+       {
+         ErrThrow(" considered Stokes running Navier-Stokes");
+       }
        // assemble the nonlinear matrices
        tnse2d.assemble_nonlinear_term();
        // prepare the matrices for defect computations
