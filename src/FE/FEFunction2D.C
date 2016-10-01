@@ -22,6 +22,7 @@
 #include <NodalFunctional2D.h>
 #include <MainUtilities.h>
 #include <MooNMD_Io.h>
+#include <AuxParam2D.h>
 
 #include <InterfaceJoint.h>
 #include <IsoBoundEdge.h>
@@ -30,7 +31,6 @@
 
 #include <string.h>
 #include <fstream>
-#include <stdlib.h>
 #include <sstream>
 #include <MooNMD_Io.h>
 // #include <malloc.h>
@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <algorithm>
 
 void OnlyDirichlet(int i, double t, BoundCond &cond)
 {
@@ -48,7 +49,8 @@ void OnlyDirichlet(int i, double t, BoundCond &cond)
 TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, char *name,
 char *description, double *values, int length)
 {
-
+  Output::print<3>("Constructor of TFEFunction2D");
+  
   FESpace2D=fespace2D;
  
   Name=strdup(name); // this calls malloc, so call 'free' instead of 'delete'
@@ -180,7 +182,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
       ErrMsg("for vector valued basis functions, you should use "
              << "TFEFunction2D::GetErrorsForVectorValuedFunction instead of "
              << "TFEFunction2D::GetErrors");
-      OutPut("No error were computed\n");
+      OutPut("No errors were computed\n");
       return;
     }
     RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(CurrentElement);
@@ -373,661 +375,6 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 }                                                 // TFEFunction2D::GetErrors
 
 
-#ifdef __2D__
-/** calculate errors to given function */
-// G. Matthies: 18.6.09
-void TFEFunction2D::GetErrorsAdapt(DoubleFunct2D *Exact, int N_Derivatives,
-			      MultiIndex2D *NeededDerivatives,
-			      int N_Errors, ErrorMethod2D *ErrorMeth, 
-			      CoeffFct2D *Coeff, 
-			      TAuxParam2D *Aux,
-			      int n_fespaces, const TFESpace2D **fespaces,
-			      double *errors)
-{
-	int i,j,k,l;
-	int N_Cells, N_Parameters, N_;
-	int *N_BaseFunct;
-	FE2D LocalUsedElements[N_FEs2D], CurrentElement;
-	TCollection *Coll;
-	TBaseCell *cell;
-	double *Param[MaxN_QuadPoints_2D], *aux;
-	double *Derivatives[MaxN_QuadPoints_2D];
-	double *ExactVal[MaxN_QuadPoints_2D];
-	double *AuxArray[MaxN_QuadPoints_2D];
-	int *DOF;
-	int *GlobalNumbers, *BeginIndex;
-	double LocError[4];
-	bool *SecondDer;
-	
-	TGridCell *RootCell;
-	TBaseCell **LocalCell;
-	TCollection *LocalColl;
-	FE2D *LocalFEs;
-	const TFESpace2D *RootSpace;
-	TFEFunction2D *RootFct;
-	double *RootVal;
-	int RootLen;
-	
-	const int MaxLev = 5;
-	int Lev;
-	TCollection *FineColls[MaxLev];
-	TFEFunction2D *FineFcts[MaxLev];
-	const TFESpace2D *FineSpaces[MaxLev];
-	TCollection *CurrColl;
-	TGridCell *CurrCell;
-	int N_FineCells, N_CoarseCells, CellId;
-	TBaseCell **FineCells;
-	FE2D *FineFEs[MaxLev];
-	TBdLine *Edges[4];
-	double xv[4], yv[4];
-	double *FineVals[MaxLev];
-	double *AuxVals[MaxLev];
-	int FineDOF;
-	TAuxParam2D *FineAux;
-	int *NewDOF;
-	
-	char Name[] = "name";
-	char Description[] = "description";
-	
-	Edges[0] = new TBdLine(12345);
-	Edges[1] = new TBdLine(12345);
-	Edges[2] = new TBdLine(12345);
-	Edges[3] = new TBdLine(12345);
-  
-	N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
-
-	SecondDer = new bool[n_fespaces];
-	for(i=0;i<n_fespaces;i++)
-		SecondDer[i] = false;
-
-	N_Parameters = Aux->GetN_Parameters();
-	aux = new double [MaxN_QuadPoints_2D*N_Parameters];
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		Param[j] = aux + j*N_Parameters;
-
-	aux = new double [MaxN_QuadPoints_2D*N_Derivatives];
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		Derivatives[j] = aux + j*N_Derivatives;
-  
-	aux = new double [MaxN_QuadPoints_2D * 4];
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		ExactVal[j] = aux + j*4;
-
-  // 20 <= number of term
-	aux = new double [MaxN_QuadPoints_2D*20]; 
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		AuxArray[j] = aux + j*20;
-
-	GlobalNumbers = FESpace2D->GetGlobalNumbers();
-	BeginIndex = FESpace2D->GetBeginIndex();
-
-	for(i=0;i<N_Errors;i++)
-		errors[i] = 0.0;
-
-// ########################################################################
-// loop over all cells
-// ########################################################################
-	Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
-	N_Cells = Coll->GetN_Cells();
- 
-	for(i=0;i<N_Cells;i++)
-	{
-		cell = Coll->GetCell(i);
-    // ####################################################################
-    // find local used elements on this cell
-    // ####################################################################
-		LocalUsedElements[0] = fespaces[0]->GetFE2D(i, cell);
-		
-		CurrentElement = FESpace2D->GetFE2D(i, cell);
-		N_ = N_BaseFunct[CurrentElement];
-		
-		DOF = GlobalNumbers + BeginIndex[i];
-		
-		RootCell = new TGridCell(cell->GetRefDesc(),0);
-		j = cell->GetN_Vertices();
-		for(k=0;k<j;k++)
-			cell->GetVertex(k)->GetCoords(xv[k], yv[k]);
-		
-		for(k=0;k<j;k++)
-		{
-			RootCell->SetVertex(k, cell->GetVertex(k));
-			RootCell->SetJoint(k, new TBoundEdge(Edges[k], 0, 1));
-			Edges[k]->SetParams(xv[k], yv[k], xv[(k+1)%j]-xv[k],
-					    yv[(k+1)%j]-yv[k]);
-		}
-		LocalCell = new TBaseCell*[1];
-		LocalCell[0] = (TBaseCell *)RootCell;
-		LocalColl = new TCollection(1, LocalCell);
-		LocalFEs = new FE2D[1];
-		LocalFEs[0] = LocalUsedElements[0];
-		
-		RootSpace = new TFESpace2D(LocalColl, Name, Description,
-			               OnlyDirichlet,
-			               LocalFEs, NULL);
-		RootLen = N_;
-		RootVal = new double[RootLen];
-		NewDOF = RootSpace->GetGlobalNumbers() + RootSpace->GetBeginIndex()[0];
-		for(l=0;l<N_;l++)
-			RootVal[NewDOF[l]] = Values[DOF[l]];
-		RootFct = new TFEFunction2D(RootSpace, Name, Description, 
-					    RootVal, RootLen);
-		FineAux = new TAuxParam2D(1, 0, 0, 0, &RootSpace, NULL, NULL, 
-					  NULL, NULL, 0, NULL);
-		RootFct->GetErrors(Exact, N_Derivatives, NeededDerivatives,
-				   N_Errors, ErrorMeth, 
-				   Coeff, FineAux, 1, &RootSpace, LocError);
-		delete FineAux;
-
-		FineColls[0] = LocalColl;
-		FineFcts[0] = RootFct;
-		FineSpaces[0] = RootSpace;
-		FineFEs[0] = LocalFEs;
-		FineVals[0] = RootVal;
-   		
-		for(Lev=1;Lev<MaxLev;Lev++)
-		{
-			CurrColl = FineColls[Lev-1];
-			N_CoarseCells = CurrColl->GetN_Cells();
-			N_FineCells = 4*N_CoarseCells;
-			FineCells = new TBaseCell*[N_FineCells];
-			CellId = 0;
-			for(j=0;j<N_CoarseCells;j++)
-			{
-				CurrCell = (TGridCell*)(CurrColl->GetCell(j));
-				CurrCell->SetRegRefine();
-				CurrCell->Refine(Lev);
-				for(k=0;k<4;k++)
-				{
-					FineCells[CellId] =
-							(TBaseCell*)(CurrCell->GetChild(k));
-					CellId++;
-				}
-			}
-			FineColls[Lev] = new TCollection(N_FineCells, FineCells);
-			FineFEs[Lev] = new FE2D[N_FineCells];
-			for(j=0;j<N_FineCells;j++)
-				FineFEs[Lev][j] = LocalUsedElements[0];
-			FineSpaces[Lev] = new TFESpace2D(FineColls[Lev], Name, Description,
-					OnlyDirichlet,
-					FineFEs[Lev], NULL);
-			FineDOF = FineSpaces[Lev]->GetN_DegreesOfFreedom();
-			FineVals[Lev] = new double[FineDOF];
-			AuxVals[Lev] = new double[FineDOF];
-			FineFcts[Lev] = new TFEFunction2D(FineSpaces[Lev], 
-					Name, Description, 
-					FineVals[Lev], FineDOF);
-			Prolongate(FineSpaces[Lev-1], FineSpaces[Lev],
-				   FineVals[Lev-1], FineVals[Lev], AuxVals[Lev]);
-			FineAux = new TAuxParam2D(1, 0, 0, 0, &(FineSpaces[Lev]), 
-					NULL, NULL, NULL, NULL, 0, NULL);
-			FineFcts[Lev]->GetErrors(Exact, N_Derivatives, NeededDerivatives,
-					   N_Errors, ErrorMeth, 
-					   Coeff, FineAux, 1, &(FineSpaces[Lev]), LocError);
-			delete FineAux;
-		} // end for Lev < MaxLev
-		
-		// delete all allocated memory
-		for(Lev=MaxLev-1;Lev>0;Lev--)
-		{
-			N_CoarseCells = FineColls[Lev-1]->GetN_Cells();
-			for(j=0;j<N_CoarseCells;j++)
-			{
-				FineColls[Lev-1]->GetCell(j)->Derefine();
-			}
-			delete AuxVals[Lev];
-			delete FineVals[Lev];
-			delete FineColls[Lev];
-			delete FineFcts[Lev];
-			delete FineSpaces[Lev];
-		}
-		delete RootFct;
-		delete RootSpace;
-		delete RootVal;
-		delete LocalColl;
-		delete RootCell;
-		
-		for(j=0;j<N_Errors;j++)
-			errors[j] += LocError[j]*LocError[j];
-
-	} // endfor i
-
-	for(j=0;j<N_Errors;j++)
-		errors[j] = sqrt(errors[j]);
-
-	delete Param[0];
-	delete AuxArray[0];
-	delete SecondDer;
-	delete ExactVal[0];
-	delete Derivatives[0];
-} // TFEFunction2D::GetErrorsAdapt
-#endif
-/** calculate errors to given function taylored for use in OPTPDE (is called from
-    GetErrorsAdaptOPTPDE) */
-void TFEFunction2D::GetErrorsOPTPDE(DoubleFunct2D *Exact, int N_Derivatives,
-			      MultiIndex2D *NeededDerivatives,
-			      int N_Errors, ErrorMethod2D *ErrorMeth, 
-			      CoeffFct2D *Coeff, 
-			      TAuxParam2D *Aux,
-			      int n_fespaces, const TFESpace2D **fespaces, int& kink,
-			      double upper, double lower, double *errors)
-{
-	int i,j,k,l, N_LocalUsedElements;
-	int N_Cells, N_Points, N_Parameters, N_;
-	int Used[N_FEs2D], *N_BaseFunct;
-	FE2D LocalUsedElements[N_FEs2D], CurrentElement;
-	BaseFunct2D BaseFunct, *BaseFuncts;
-	TCollection *Coll;
-	TBaseCell *cell;
-	double *weights, *xi, *eta;
-	double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
-	double AbsDetjk[MaxN_QuadPoints_2D];
-	double *Param[MaxN_QuadPoints_2D], *aux;
-	double *Derivatives[MaxN_QuadPoints_2D];
-	double *ExactVal[MaxN_QuadPoints_2D];
-	double *AuxArray[MaxN_QuadPoints_2D];
-	int *DOF;
-	double **OrigFEValues, *Orig, value;
-	double FEFunctValues[MaxN_BaseFunctions2D];
-	int *GlobalNumbers, *BeginIndex;
-	double LocError[4];
-	double hK;
-	bool *SecondDer;
-	
-	BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
-	N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
-
-	SecondDer = new bool[n_fespaces];
-	for(i=0;i<n_fespaces;i++)
-		SecondDer[i] = false;
-
-	N_Parameters = Aux->GetN_Parameters();
-	aux = new double [MaxN_QuadPoints_2D*N_Parameters];
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		Param[j] = aux + j*N_Parameters;
-
-	aux = new double [MaxN_QuadPoints_2D*N_Derivatives];
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		Derivatives[j] = aux + j*N_Derivatives;
-  
-	aux = new double [MaxN_QuadPoints_2D * 4];
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		ExactVal[j] = aux + j*4;
-
-  // 20 <= number of term
-	aux = new double [MaxN_QuadPoints_2D*20]; 
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		AuxArray[j] = aux + j*20;
-
-	GlobalNumbers = FESpace2D->GetGlobalNumbers();
-	BeginIndex = FESpace2D->GetBeginIndex();
-
-	for(i=0;i<N_Errors;i++)
-		errors[i] = 0.0;
-	errors[N_Errors] = 0.0;  // for L_infty-error
-
-// ########################################################################
-// loop over all cells
-// ########################################################################
-	Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
-	N_Cells = Coll->GetN_Cells();
- 
-	for(i=0;i<N_Cells;i++)
-	{
-		cell = Coll->GetCell(i);
-
-		hK = cell->GetDiameter();
-
-    // ####################################################################
-    // find local used elements on this cell
-    // ####################################################################
-		memset(Used, 0, N_FEs2D*SizeOfInt);
-		for(j=0;j<n_fespaces;j++)
-		{
-			CurrentElement = fespaces[j]->GetFE2D(i, cell);
-			Used[CurrentElement] = 1;
-		}
-
-		N_LocalUsedElements = 0;
-		memset(LocalUsedElements, 0, SizeOfInt*N_FEs2D);
-		j = 0;
-		for(k=0;k<N_FEs2D;k++)
-			if(Used[k])
-		{
-			LocalUsedElements[j] = (FE2D)k;
-			j++;
-		}
-		N_LocalUsedElements = j;
-    
-
-    // ####################################################################
-    // calculate values on original element
-    // ####################################################################
-    
-		TFEDatabase2D::GetOrig(N_LocalUsedElements, LocalUsedElements, 
-				       Coll, cell, SecondDer,
-				       N_Points, xi, eta, weights, X, Y, AbsDetjk);
-
-		if(N_Parameters>0)
-			Aux->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param); 
-    
-    // calculate all needed derivatives of this FE function
-		CurrentElement = FESpace2D->GetFE2D(i, cell);
-		BaseFunct = BaseFuncts[CurrentElement];
-		N_ = N_BaseFunct[CurrentElement];
-
-		DOF = GlobalNumbers + BeginIndex[i];
-		for(l=0;l<N_;l++)
-			FEFunctValues[l] = Values[DOF[l]];
-
-		for(k=0;k<N_Derivatives;k++)
-		{
-			OrigFEValues = TFEDatabase2D::GetOrigElementValues(BaseFunct,
-					NeededDerivatives[k]);
-			for(j=0;j<N_Points;j++)
-			{
-				Orig = OrigFEValues[j];
-				value = 0;
-				for(l=0;l<N_;l++)
-				{
-					value += FEFunctValues[l] * Orig[l];
-				} // endfor l
-				// here we have to perform the projection for control
-				if(k==0)
-				{
-					if (value > upper) 
-					{
-						value = upper;
-						kink = 1;
-					}
-					else if (value < lower)
-					{
-						value = lower;
-						kink = 1;
-					}
-				}
-				Derivatives[j][k] = value;
-			} // endfor j
-		} // endfor k
-
-		//errors[N_Errors] = 0.0;  //added D.Sirch
-		for(j=0;j<N_Points;j++)
-		{
-			Exact(X[j], Y[j], ExactVal[j]);
-       // D.Sirch: computation of L^\inf-error
-			if(fabs(*ExactVal[j] - Derivatives[j][0]) > errors[N_Errors])
-			{
-				errors[N_Errors] = fabs(*ExactVal[j] - Derivatives[j][0]);
-			}
-		}
-
-		if(Coeff)
-			Coeff(N_Points, X, Y, Param, AuxArray);
-
-		ErrorMeth(N_Points, X, Y, AbsDetjk, weights, hK, Derivatives, 
-			  ExactVal, AuxArray, LocError);
-
-		for(j=0;j<N_Errors;j++)
-			errors[j] += LocError[j];
-
-	} // endfor i
-
-	for(j=0;j<N_Errors;j++)
-		errors[j] = sqrt(errors[j]);
-
-	delete Param[0];
-	delete AuxArray[0];
-	delete SecondDer;
-	delete ExactVal[0];
-	delete Derivatives[0];
-} // TFEFunction2D::GetErrorsOPTPDE
-
-#ifdef __2D__
-/** calculate errors to given function taylored for use in OPTPDE */
-void TFEFunction2D::GetErrorsAdaptOPTPDE(DoubleFunct2D *Exact, int N_Derivatives,
-				   MultiIndex2D *NeededDerivatives,
-				   int N_Errors, ErrorMethod2D *ErrorMeth, 
-				   CoeffFct2D *Coeff, 
-				   TAuxParam2D *Aux,
-				   int n_fespaces, const TFESpace2D **fespaces,
-				   double radius, double upper, double lower,double *errors)
-{
-	int i,j,k,l;
-	int N_Cells, N_Parameters, N_;
-	int *N_BaseFunct;
-	FE2D LocalUsedElements[N_FEs2D], CurrentElement;
-	TCollection *Coll;
-	TBaseCell *cell;
-	double *Param[MaxN_QuadPoints_2D], *aux;
-	double *Derivatives[MaxN_QuadPoints_2D];
-	double *ExactVal[MaxN_QuadPoints_2D];
-	double *AuxArray[MaxN_QuadPoints_2D];
-	int *DOF;
-	int *GlobalNumbers, *BeginIndex;
-	double LocError[4];
-	bool *SecondDer;
-	
-	TGridCell *RootCell;
-	TBaseCell **LocalCell;
-	TCollection *LocalColl;
-	FE2D *LocalFEs;
-	const TFESpace2D *RootSpace;
-	TFEFunction2D *RootFct;
-	double *RootVal, RootError;
-	int RootLen;
-	
-	const int MaxLev = 5;
-	int Lev, LastLev;
-	TCollection *FineColls[MaxLev];
-	TFEFunction2D *FineFcts[MaxLev];
-	const TFESpace2D *FineSpaces[MaxLev];
-	TCollection *CurrColl;
-	TGridCell *CurrCell;
-	int N_FineCells, N_CoarseCells, CellId;
-	TBaseCell **FineCells;
-	FE2D *FineFEs[MaxLev];
-	TBdLine *Edges[4];
-	double xv[4], yv[4];
-	double *FineVals[MaxLev];
-	double *AuxVals[MaxLev];
-	int FineDOF;
-	TAuxParam2D *FineAux;
-	int *NewDOF;
-	int kink;
-	
-	char Name[] = "name";
-	char Description[] = "description";
-	
-	Edges[0] = new TBdLine(12345);
-	Edges[1] = new TBdLine(12345);
-	Edges[2] = new TBdLine(12345);
-	Edges[3] = new TBdLine(12345);
-  
-	N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
-
-	SecondDer = new bool[n_fespaces];
-	for(i=0;i<n_fespaces;i++)
-		SecondDer[i] = false;
-
-	N_Parameters = Aux->GetN_Parameters();
-	aux = new double [MaxN_QuadPoints_2D*N_Parameters];
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		Param[j] = aux + j*N_Parameters;
-
-	aux = new double [MaxN_QuadPoints_2D*N_Derivatives];
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		Derivatives[j] = aux + j*N_Derivatives;
-  
-	aux = new double [MaxN_QuadPoints_2D * 4];
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		ExactVal[j] = aux + j*4;
-
-  // 20 <= number of term
-	aux = new double [MaxN_QuadPoints_2D*20]; 
-	for(j=0;j<MaxN_QuadPoints_2D;j++)
-		AuxArray[j] = aux + j*20;
-
-	GlobalNumbers = FESpace2D->GetGlobalNumbers();
-	BeginIndex = FESpace2D->GetBeginIndex();
-
-	for(i=0;i<N_Errors;i++)
-		errors[i] = 0.0;
-
-// ########################################################################
-// loop over all cells
-// ########################################################################
-	Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
-	N_Cells = Coll->GetN_Cells();
- 
-	for(i=0;i<N_Cells;i++)
-	{
-		cell = Coll->GetCell(i);
-		kink=0;
-
-    // ####################################################################
-    // find local used elements on this cell
-    // ####################################################################
-		LocalUsedElements[0] = fespaces[0]->GetFE2D(i, cell);
-		
-		CurrentElement = FESpace2D->GetFE2D(i, cell);
-		N_ = N_BaseFunct[CurrentElement];
-		
-		DOF = GlobalNumbers + BeginIndex[i];
-		
-		RootCell = new TGridCell(cell->GetRefDesc(),0);
-		j = cell->GetN_Vertices();
-		for(k=0;k<j;k++)
-			cell->GetVertex(k)->GetCoords(xv[k], yv[k]);
-		
-		for(k=0;k<j;k++)
-		{
-			RootCell->SetVertex(k, cell->GetVertex(k));
-			RootCell->SetJoint(k, new TBoundEdge(Edges[k], 0, 1));
-			Edges[k]->SetParams(xv[k], yv[k], xv[(k+1)%j]-xv[k],
-					    yv[(k+1)%j]-yv[k]);
-		}
-		LocalCell = new TBaseCell*[1];
-		LocalCell[0] = (TBaseCell *)RootCell;
-		LocalColl = new TCollection(1, LocalCell);
-		LocalFEs = new FE2D[1];
-		LocalFEs[0] = LocalUsedElements[0];
-		
-		RootSpace = new TFESpace2D(LocalColl, Name, Description,
-					   OnlyDirichlet,
-					   LocalFEs, NULL);
-		RootLen = N_;
-		RootVal = new double[RootLen];
-		NewDOF = RootSpace->GetGlobalNumbers() + RootSpace->GetBeginIndex()[0];
-		for(l=0;l<N_;l++)
-			RootVal[NewDOF[l]] = Values[DOF[l]];
-		RootFct = new TFEFunction2D(RootSpace, Name, Description, 
-					    RootVal, RootLen);
-		FineAux = new TAuxParam2D(1, 0, 0, 0, &RootSpace, NULL, NULL, 
-					  NULL, NULL, 0, NULL);
-		RootFct->GetErrorsOPTPDE(Exact, N_Derivatives, NeededDerivatives,
-				   N_Errors, ErrorMeth, 
-				   Coeff, FineAux, 1, &RootSpace, 
-				   kink, upper, lower, LocError);
-		delete FineAux;
-		
-		  // if the element has nonempty intersection with active set, do some adaptive integration
-		if(kink==1)
-//		if(1)
-		{	
-			//cout<<"kink="<<kink<<endl;
-			RootError = LocError[0];
-	
-			FineColls[0] = LocalColl;
-			FineFcts[0] = RootFct;
-			FineSpaces[0] = RootSpace;
-			FineFEs[0] = LocalFEs;
-			FineVals[0] = RootVal;
-			
-			for(Lev=1;Lev<MaxLev;Lev++)
-			{
-				CurrColl = FineColls[Lev-1];
-				N_CoarseCells = CurrColl->GetN_Cells();
-				N_FineCells = 4*N_CoarseCells;
-				FineCells = new TBaseCell*[N_FineCells];
-				CellId = 0;
-				for(j=0;j<N_CoarseCells;j++)
-				{
-					CurrCell = (TGridCell*)(CurrColl->GetCell(j));
-					CurrCell->SetRegRefine();
-					CurrCell->Refine(Lev);
-					for(k=0;k<4;k++)
-					{
-						FineCells[CellId] =
-							(TBaseCell*)(CurrCell->GetChild(k));
-						CellId++;
-					}
-				}
-				FineColls[Lev] = new TCollection(N_FineCells, FineCells);
-				FineFEs[Lev] = new FE2D[N_FineCells];
-				for(j=0;j<N_FineCells;j++)
-					FineFEs[Lev][j] = LocalUsedElements[0];
-				FineSpaces[Lev] = new TFESpace2D(FineColls[Lev], Name,
-						Description, OnlyDirichlet,
-						FineFEs[Lev], NULL);
-				FineDOF = FineSpaces[Lev]->GetN_DegreesOfFreedom();
-				FineVals[Lev] = new double[FineDOF];
-				AuxVals[Lev] = new double[FineDOF];
-				FineFcts[Lev] = new TFEFunction2D(FineSpaces[Lev], 
-						Name, Description, 
-						FineVals[Lev], FineDOF);
-				Prolongate(FineSpaces[Lev-1], FineSpaces[Lev],
-					FineVals[Lev-1], FineVals[Lev], AuxVals[Lev]);
-				FineAux = new TAuxParam2D(1, 0, 0, 0, &(FineSpaces[Lev]), 
-						NULL, NULL, NULL, NULL, 0, NULL);
-				FineFcts[Lev]->GetErrorsOPTPDE(Exact, N_Derivatives,
-						NeededDerivatives, N_Errors, ErrorMeth, 
-						Coeff, FineAux, 1, &(FineSpaces[Lev]), 
-						kink, upper, lower, LocError);
-				delete FineAux;
- 				if(fabs(LocError[0] - RootError) < 1e-3*RootError) break;
- 				else RootError = LocError[0];
-			} // end for Lev < MaxLev
-			
-			// delete all allocated memory
-			 if(Lev==MaxLev) LastLev = MaxLev-1;
-			 else LastLev = Lev;
-			//for(Lev=MaxLev-1;Lev>0;Lev--)
-			for(Lev=LastLev;Lev>0;Lev--)
-			{
-				N_CoarseCells = FineColls[Lev-1]->GetN_Cells();
-				for(j=0;j<N_CoarseCells;j++)
-				{
-					FineColls[Lev-1]->GetCell(j)->Derefine();
-				}
-				delete AuxVals[Lev];
-				delete FineVals[Lev];
-				delete FineColls[Lev];
-				delete FineFcts[Lev];
-				delete FineSpaces[Lev];
-			}
-		}
-		
-		delete RootFct;
-		delete RootSpace;
-		delete RootVal;
-		delete LocalColl;
-		delete RootCell;
-		
-		for(j=0;j<N_Errors;j++)
-			errors[j] += LocError[j]*LocError[j];
-
-	} // endfor i
-
-	for(j=0;j<N_Errors;j++)
-		errors[j] = sqrt(errors[j]);
-	errors[N_Errors] = LocError[N_Errors];
-
-	delete Param[0];
-	delete AuxArray[0];
-	delete SecondDer;
-	delete ExactVal[0];
-	delete Derivatives[0];
-} // TFEFunction2D::GetErrorsAdaptOPTPDE
-#endif
 
 /** determine the value of function and its first derivatives at
     the given point */
@@ -1384,12 +731,12 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
   double FunctionalValues[MaxN_PointsForNodal2D];
   double FctVal[4];
   int PolynomialDegree, ApproxOrder;
-  QuadFormula2D QuadFormula;
+  QuadFormula2D QuadFormula = BaryCenterTria; //to avoid uninit warning
   bool IsIsoparametric;
   TJoint *joint;
   JointType jointtype;
   BoundTypes bdtype;
-  int N_Edges;
+  int N_Edges = 0;
   BF2DRefElements RefElement;
   RefTrans2D RefTrans, *RefTransArray;
 
@@ -1695,7 +1042,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
   int N_Points;
   double *xi, *eta;
   int *DOF;
-  RefTrans2D F_K;
+  RefTrans2D F_K = TriaAffin; //avoid uninit warning
   TRefTrans2D *rt;
   double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
   double AbsDetjk[MaxN_PointsForNodal2D];
@@ -1703,12 +1050,12 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
   double FunctionalValues[MaxN_PointsForNodal2D];
   double FctVal[4];
   int PolynomialDegree, ApproxOrder;
-  QuadFormula2D QuadFormula;
+  QuadFormula2D QuadFormula = BaryCenterTria; //to avoid uninit warning
   bool IsIsoparametric;
   TJoint *joint;
   JointType jointtype;
   BoundTypes bdtype;
-  int N_Edges;
+  int N_Edges = 0;
   BF2DRefElements RefElement;
   RefTrans2D RefTrans, *RefTransArray;
 
@@ -1735,7 +1082,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
         nf = TFEDatabase2D::GetNodalFunctional2D(NF_S_Q_Q2_2D);
         break;
       default:
-        cout << "unknown reftrans id: " << RefTrans << endl;
+        cout << "unknown reftrans id: " << endl;
         exit(0);
       break;
     }
@@ -1992,11 +1339,11 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
 
 
 /** write the solution into a data file - written by Sashi **/
-void TFEFunction2D::WriteSol()
+void TFEFunction2D::WriteSol(std::string directory, std::string basename)
 {
   int i, N_Joints, N_Cells;
   static int img=0;
-  char *BaseName, Dquot;
+  char Dquot;
 
   TCollection *Coll;
   TBaseCell *cell;
@@ -2008,8 +1355,8 @@ void TFEFunction2D::WriteSol()
   i=0;
   cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
-  BaseName = TDatabase::ParamDB->BASENAME;
-  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
+  const char* BaseName = basename.c_str();
+  const char* output_directory = directory.c_str();
 
   std::ostringstream os;
   os << " ";
@@ -2091,7 +1438,7 @@ void TFEFunction2D::ReadSol(char *BaseName)
 /** interpolate the old mesh fe function values to the new fe function */
 void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
 {
-  int i,j, N_Cells, N_Edges;
+  int i,j, N_Cells, N_Edges = 0;
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points, *DOF;
@@ -2836,6 +2183,111 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
 
 
 
+void TFEFunction2D::computeNodeValues(std::vector<double>& solutionAtNode) const
+{
+  TCollection* coll = FESpace2D->GetCollection();
+  int nPoints = coll->NodesReferences.size();
+  if (nPoints==0)
+  {
+    coll->createElementLists();
+    nPoints = coll->NodesReferences.size();
+  }
+  //cout << "  TFEFunction2D::computeNodeValues number of points: " << nPoints << endl;
+  solutionAtNode.resize(nPoints,0);
+  std::vector<int> WArray(nPoints);
+  WArray.clear();
+  
+  // coordinates of reference element (2D)
+  double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
+  double TriaCoords[] = { 0, 0, 1, 0,  0, 1};
+
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  GlobalNumbers = FESpace2D->GetGlobalNumbers();
+  BeginIndex = FESpace2D->GetBeginIndex();
+
+  // compute FE type on first cell
+  ///@todo remove this?
+  TBaseCell *cell = coll->GetCell(0);
+  FE2D FE_ID;
+  FE_ID = FESpace2D->GetFE2D(0, cell);
+  TBaseFunct2D *bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+  int N_LocDOF;
+  double BFValues[MaxN_BaseFunctions2D];
+
+
+  // create a list with all local vertices
+  /**
+   *  @todo this is needed to assign to each local vertex a global DOF
+   * it should be done in a better way 
+   * (e.g. adding a vector of global DOF to each cell, 
+   * or adding the localVertices list to the Collection class)
+  */
+  std::vector<TVertex*> localVertices;
+  localVertices.resize(0);
+  for(int i=0;i<coll->GetN_Cells();i++) {
+    int k = coll->GetCell(i)->GetN_Vertices();
+    for(int j=0; j<k; j++) {
+      localVertices.push_back(coll->GetCell(i)->GetVertex(j));
+    }
+  }
+  std::sort(localVertices.begin(),localVertices.end());
+  // remove duplicate
+  auto it = std::unique(localVertices.begin(), localVertices.end());
+  localVertices.resize(std::distance(localVertices.begin(), it));
+
+  
+  for(int i=0;i<coll->GetN_Cells();i++) {
+    
+    cell = coll->GetCell(i);
+    int nLocalVertices = cell->GetN_Vertices();
+      
+    FE_ID = FESpace2D->GetFE2D(i, cell);
+    bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+    N_LocDOF = bf->GetDimension();
+    DOF = GlobalNumbers+BeginIndex[i];
+    
+    for(int j=0; j<nLocalVertices; j++) {
+
+      double xi=0, eta=0;
+      // compute coordinates of reference element
+      /// @attention it works only for tria and quads in 2D
+      switch(nLocalVertices) {
+      case 3: 
+	xi = TriaCoords[2*j];
+	eta = TriaCoords[2*j+1];
+	break;
+      case 4:
+	xi = QuadCoords[2*j];
+	eta = QuadCoords[2*j+1];
+	break;
+      }
+      
+      bf->GetDerivatives(D00, xi, eta, BFValues);
+
+      // compute nodal value of FE function
+      double value = 0;
+      for(int l=0;l<N_LocDOF;l++) {
+	value += BFValues[l] * Values[DOF[l]];
+      }
+      TVertex *current = cell->GetVertex(j);
+      for (unsigned int s=0; s<localVertices.size(); s++) {
+	if(current == localVertices[s]) {
+	  solutionAtNode[s] += value;
+	  WArray[s]++;
+	  break;
+	}
+      }
+
+    } // for j
+  }  // for(i=0;i<nelements;i++) {
+  
+  for(int i=0;i<nPoints;i++) {
+    if(WArray[i]!=0.) {
+      solutionAtNode[i] /= WArray[i];
+    }
+  }
+
+}
 
 
 

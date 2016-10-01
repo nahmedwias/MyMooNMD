@@ -4,10 +4,9 @@
  * @brief      store everything needed to solve a convection-diffusion-reaction
  *             (cdr) problem
  *
- *             Store matrix, right hand side, FE spaces, FE functions and 
- *             the solution vector of a convection-diffusion problem. This 
- *             wraps up everything which is necessary to solve a convection 
- *             diffusion problem in 2D.
+ * Store matrix, right hand side, FE spaces, FE functions and the solution 
+ * vector of a convection-diffusion problem. This wraps up everything which is 
+ * necessary to solve a convection diffusion problem in 2D.
  *
  * @author     Ulrich Wilbrandt
  * @date       06.09.13
@@ -18,13 +17,17 @@
 #define __CD2D_H__
 
 #include <Example_CD2D.h>
-#include <MultiGrid2D.h>
 #include <FEFunction2D.h>
 #include <Domain.h>
 #include <deque>
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
+#include <ParameterDatabase.h>
+#include <Solver.h>
+#include <PostProcessing2D.h>
+
+class Multigrid;
 
 class CD2D
 {
@@ -48,14 +51,9 @@ class CD2D
       /** @brief Finite Element function */
       TFEFunction2D fe_function;
       
-      /**
-       * Gives a non-const pointer to the one block which is stored
-       * by matrix. FIXME Is terribly unsafe and must be replaced soon.
-       */
-      TSquareMatrix2D* get_matrix_pointer();
-
       /** @brief constructor */
-      System_per_grid( const Example_CD2D& example, TCollection& coll );
+      System_per_grid( const Example_CD2D& example, TCollection& coll, 
+                       int ansatz_order );
 
       // Special member functions. Disable copy/move, set destructor to default.
       // Will be changed only when the underlying
@@ -87,10 +85,42 @@ class CD2D
     /** @brief Definition of the used example */
     const Example_CD2D example;
     
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
+    /** @brief a local parameter database which constrols this class
+     * 
+     * The database given to the constructor will be merged into this one. Only 
+     * parameters which are of interest to this class are stored (and the 
+     * defualt ParMooN parameters). Note that this usually does not include 
+     * other parameters such as solver parameters. Those are only in the 
+     * CD2D::solver object.
      */
-    std::shared_ptr<TMultiGrid2D> multigrid;
+    ParameterDatabase db;
+
+    /** @brief class for output handling */
+    PostProcessing2D outputWriter;
+
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
+    
+    /** @brief store the errors to access them from outside this class
+     * 
+     * This array is filled during a call to CD2D::output if the parameter
+     * "output_compute_errors" is set to true. The exact solution is taken from
+     * CD2D::example. If that example does not provide an exact solution,
+     * typically it is set to be zero, so that this array contains the norms of
+     * the solution instead of the error.
+     * 
+     * The errors are stored in the following order: 
+     * 
+     *  - L2 error
+     *  - H1-semi
+     *  - SD error (streamline diffusion, useful for SDFEM)
+     *  - L_inf error
+     */
+    std::array<double, 4> errors;
     
     /** @brief set parameters in database
      * 
@@ -112,34 +142,32 @@ class CD2D
      *
      * @param[in] domain The readily treated (refined/partitioned...) domain 
      *                   object. Must not go out of scope before CD2D does!
-     *
+     * @param[in] param_db A parameter database with parameters concerning this
+     *                     class or any of its members (fe space, solver,
+     *                     assemble,...)
      * @param[in] reference_id The cell reference id, of which cells to create
      *                         the TCollection.
-     *
      */
-    CD2D(const TDomain& domain, int reference_id = -4711);
+    CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+         int reference_id = -4711);
     
     /** @brief constructor 
      * 
      * All members are initialized, including systems, which has only one entry
-     * usually. In case you want to use multigrid
-     * (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5 and 
-     * TDatabase::ParamDB->SOLVER_TYPE == 1), it has more entries and the 
-     * multigrid object is appropriatly build. The example is copied. If the
-     * reference_id is not set to its default value, then only cells with this
-     * reference id will be included to build the finite element space. 
+     * usually.
      *
      * @param[in] domain The readily treated (refined/partitioned...) domain
      *                   object. Must not go out of scope before CD2D does!
-     *
+     * @param[in] param_db A parameter database with parameters concerning this
+     *                     class or any of its members (fe space, solver,
+     *                     assemble,...)
      * @param[in] example a description of the example to be used, this is 
      *                    copied into a local member.
-     *
      * @param[in] reference_id The cell reference id, of which cells to create
      *                         the TCollection.
      */
-    CD2D(const TDomain& domain, const Example_CD2D& example,
-         int reference_id = -4711);
+    CD2D(const TDomain& domain, const ParameterDatabase& param_db, 
+         const Example_CD2D& example, int reference_id = -4711);
     
     /** @brief assemble matrix, 
      * 
@@ -156,11 +184,26 @@ class CD2D
      * @brief measure errors and write pictures 
      * 
      * The current errors will be printed out. If desired, further output, e.g.,
-     * vtk files are created.
+     * vtk or case files are created.
      * 
-     * @param i suffix for output file name, -1 means no suffix
+     * @param i suffix for vtk output file name, -1 means no suffix
      */
     void output(int i = -1);
+    
+    /// @name return computed errors
+    ///
+    /// You have to call CD2D::output for any of these to return a meaningful 
+    /// value.
+    //@{
+    /// @brief return the computed L2 error.
+    double get_L2_error() const;
+    /// @brief return the computed H1-semi.
+    double get_H1_semi_error() const;
+    /// @brief return the streamline diffusion (SD) error.
+    double get_SD_error() const;
+    /// @brief return the maximum error over all quadrature points in all cells.
+    double get_L_inf_error() const;
+    //@}
     
     // getters and setters
     const BlockFEMatrix & get_matrix() const
@@ -183,6 +226,8 @@ class CD2D
     { return this->systems.front().solution.length(); }
     const Example_CD2D& get_example() const
     { return example; }
+    const ParameterDatabase & get_db() const
+    { return db; }
 
     // Special member functions. Disable copy/move, set destructor to default.
     // Will be changed only when the underlying classes follow rule of 0/5.

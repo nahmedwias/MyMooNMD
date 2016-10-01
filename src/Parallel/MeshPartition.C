@@ -1,4 +1,6 @@
+#ifdef _MPI
 // =======================================================================
+
 // @(#)MeshPartition.C
 // 
 // Purpose:     partition the domain into "npart" parts for parallel computing
@@ -14,9 +16,9 @@
 #  include <omp.h>
 #endif
 
+#include <MeshPartition.h>
 #include <Database.h>
 #include <Domain.h>
-#include <Output2D.h>
 #include <string.h>
 #include <sstream>
 #include <MooNMD_Io.h>
@@ -43,66 +45,11 @@ extern "C"
 }
 #endif
 
-/**@brief A quicksort implementation.
- * @param[in, out] Array The integer array to be sorted.
- * @param[in] length The length of the array to be sorted.
- * */
-static void Sort(int *Array, int length)
+
+void MeshPartitionAuxFunctions::Sort(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
-  int Mid, Temp;
-  double lend = length;
-
-  len=(int)(2*log(lend)/log((double) 2.0)+2);
-  rr= new int[len];
-
-  do
-  {
-    do
-    {
-      i=l;
-      j=r;
-
-      m=(l+r)/2;
-      Mid=Array[m];
-
-      do
-      {
-        while(Array[i] > Mid) i++;
-
-        while(Array[j] < Mid) j--;
-
-        if (i<=j)
-        {
-          Temp=Array[i];
-          Array[i]=Array[j];
-          Array[j]=Temp;
-          i++; j--;
-        }
-      } while (i<=j);
-
-      if (l<j)
-      {
-        rr[++n]=r;
-        r=j;
-      }
-    } while (l<j);
-
-    if (n>0) r=rr[n--];
-
-    if (i<r) l=i;
-    
-  } while (i<r);
-
-  delete [] rr;
-
-}
- 
-static void Sort(TVertex **Array, int length)
-{
-  int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
+  int i, j, *rr, len;
   TVertex *Mid, *Temp;
   double lend = length;
 
@@ -151,125 +98,7 @@ static void Sort(TVertex **Array, int length)
 
 }
 
-
-
-static void Sort(TEdge **Array, int length)
-{
-  int n=0, l=0, r=length-1, m, max=0;
-  int i, j, k, *rr, len, s;
-  TEdge *Mid, *Temp;
-  double lend = length;
-
-  len=(int)(4*log(lend)/log(2.0) +2);
-  
-
-  
-  rr= new int[len];
-
-  do
-  {
-    do
-    {
-      i=l;
-      j=r;
-
-      m=(l+r)/2;
-      Mid=Array[m];
-
-      do
-      {
-        while(Array[i] > Mid) i++;
-
-        while(Array[j] < Mid) j--;
-
-        if (i<=j)
-        {
-          Temp=Array[i];
-          Array[i]=Array[j];
-          Array[j]=Temp;
-          i++; j--;
-        }
-      } while (i<=j);
-
-      if (l<j)
-      {
-        rr[++n]=r;
-	if(max<n) max=n;
-        r=j;
-      }
-    } while (l<j);
-
-    if (n>0) r=rr[n--];
-
-    if (i<r) l=i;
-
-  } while (i<r);
-
-    
-//   printf("%d :Time taken for Domain Decomposition is %d\n", max, len);
-  
-  delete [] rr;
-
-}
-
-
-
-static void Sort(TBaseCell **Array, int length)
-{
-  int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
-  TBaseCell *Mid, *Temp;
-  double lend = length;
-
-  len=(int)(2*log(lend)/log((double) 2.0)+2);
-  rr= new int[len];
-
-  do
-  {
-    do
-    {
-      i=l;
-      j=r;
-
-      m=(l+r)/2;
-      Mid=Array[m];
-
-      do
-      {
-        while(Array[i] > Mid) i++;
-
-        while(Array[j] < Mid) j--;
-
-        if (i<=j)
-        {
-          Temp=Array[i];
-          Array[i]=Array[j];
-          Array[j]=Temp;
-          i++; j--;
-        }
-      } while (i<=j);
-
-      if (l<j)
-      {
-        rr[++n]=r;
-        r=j;
-      }
-    } while (l<j);
-
-    if (n>0) r=rr[n--];
-
-    if (i<r) l=i;
-
-  } while (i<r);
-
-  delete [] rr;
-
-}
-
-
-
-
-static int GetIndex(TVertex **Array, int Length, TVertex *Element)
+int MeshPartitionAuxFunctions::GetIndex(TVertex **Array, int Length, TVertex *Element)
 {
   int l=0, r=Length, m=(r+l)/2;
   TVertex *Mid;
@@ -301,36 +130,35 @@ static int GetIndex(TVertex **Array, int Length, TVertex *Element)
 
 int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 {
- idx_t *Cell_Rank, *Vert_Rank, ne, nn, *eptr, nparts, objval, edgecut=0, ncommon=3; 
+ idx_t *Cell_Rank, *Vert_Rank, ne, nn, *eptr, nparts, edgecut=0, ncommon=3;
 
  
- int i, j, k, ll, m, M, MM, n, rank, size, N_Cells, N, NN, ID, Neib_ID, out_rank= TDatabase::ParamDB->Par_P0;
+ int i, j, ll, m, M, MM, n, rank, size, N_Cells, N, NN, ID, Neib_ID;
  int *GlobalCellIndex, N_RootVertices, N_VertInCell, N_JointsInCell, N_AllLocVert;
- int *VertexNumbers, *PointNeighb, maptype, MaxCpV;
+ int *VertexNumbers, *PointNeighb, MaxCpV;
  int MaxLen, N_Edges, N_FaceEdges, ii, jj, GblCellNr;
  int N_EdgeDel=0, N_VertexDel=0, N_CellDel=0, N_CellsInHaloVert;
- const int *TmpFV, *TmpLen, *TmpVE, *EdgeVertex, *NeibEdgeVertex;
+ const int *TmpFV, *TmpLen, *EdgeVertex;
  
  int VertexCellNo, VertexcellID, N_CellsInThisVert, *VertNeibRanks;
- int N_LocalCells, N_OwnCells, N_HalloCells, N_OwnIncidentCells, N_NeibIncidentCells;
- int a, b, N_SubDomInThisVert, *HaloCellIndex;
- int M1, M2, N1, N2, N_CellsIn_a, N_CellsIn_b;
+ int N_LocalCells, N_OwnCells, N_HalloCells;
+ int a, b, *HaloCellIndex;
+ int M1, M2, N1, N2, N_CellsIn_b;
  int N_CrossNeibs, *CrossNeibsRank, *HaloCellGlobalNo, *HaloCellLocVertNo;
- int N_SubDomIn_a, N_SubDomIn_b, *Temp, kk, GlobCellNo, test_b, EdgeCellID;
+ int N_SubDomIn_a, *Temp, kk, GlobCellNo;
 
- bool UPDATE, UPDATE_1;
+ bool UPDATE;
 
  TVertex *Vert_a, **VertexDel, *Last;
  TCollection *coll;
- TBaseCell *cell, *neib_cell, *Vertexcell, **SubDomainCells, *cell_a, *cell_b, **IncCells, **IncHalloCells, *HalloCell; 
- TBaseCell **CellDel, *LastCell;
+ TBaseCell *cell, *neib_cell, *Vertexcell, **SubDomainCells, **IncCells, **IncHalloCells, *HalloCell;
+ TBaseCell **CellDel;
  TJoint *Joint, *NewJoint;
- TEdge *edge, **EdgeDel, *LastEdge;
- TShapeDesc *ShapeDesc, *NeibShapeDesc;
- TVertex *CurrVert, *NeibCurrVert, *NeibVert_a; 
+ TEdge *edge, **EdgeDel;
+ TShapeDesc *ShapeDesc;
+ TVertex *CurrVert, *NeibCurrVert;
  
- MPI_Status status, status1, status2, status3;
- MPI_Request request, request1;
+ MPI_Status status;
 
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -402,7 +230,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   {
   // cout <<  "Total Cells " << N_Cells<<endl;
 
-   int  m1,  *NumberVertex;
+   int   *NumberVertex;
 //    int numflag=0; // c-style numbering (array starting with 0)
    int type=TDatabase::ParamDB->Par_P2;
    double t1, t2;
@@ -455,7 +283,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   /** *********************************************/
   /** STEP 2 : SORT THE VERTICES ARRAY */ 
   /** *********************************************/
-    Sort(Vertices, N);
+    MeshPartitionAuxFunctions::Sort(Vertices, N);
     
   /** ***************************************************/
   /**STEP 3: STORE THE SORTED POINTER ARRAY AS INDICES */
@@ -485,7 +313,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
       for(j=0;j<N_VertInCell;j++)
        {
         CurrVert=cell->GetVertex(j);
-        N=GetIndex(Vertices, N_AllLocVert, CurrVert);
+        N=MeshPartitionAuxFunctions::GetIndex(Vertices, N_AllLocVert, CurrVert);
         VertexNumbers[m]=NumberVertex[N];
         m++;
        } // endfor j
@@ -663,8 +491,6 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
           N = VertexNumbers[i*N_VertInCell + j]*MaxCpV ;
 
           N_CellsInThisVert =  PointNeighb[N];
-          N_OwnIncidentCells = 0;
-          N_NeibIncidentCells = 0;
 
           // check! any subdomain cell containg this vert has to be added
           // Setting all halo cells
@@ -1275,33 +1101,31 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 #if 1
   //Variable list
   
- idx_t *Cell_Rank, *Vert_Rank;
- int i, j, k, m, ll, M, MM, n, rank, size, N_Cells, N, NN, ID, Neib_ID, out_rank= TDatabase::ParamDB->Par_P0;
+ idx_t *Cell_Rank;
+ int i, j, m, ll, M, MM, n, rank, size, N_Cells, N, NN, ID, Neib_ID;
  int *GlobalCellIndex, N_RootVertices, N_VertInCell, N_JointsInCell, N_AllLocVert;
- int *VertexNumbers, *PointNeighb, maptype, MaxCpV;
+ int *VertexNumbers, *PointNeighb, MaxCpV;
  int MaxLen, N_Edges, N_FaceEdges, ii, jj, GblCellNr;
  int N_EdgeDel=0, N_VertexDel=0, N_CellDel=0, N_CellsInHaloVert;
- const int *TmpFV, *TmpLen, *TmpVE, *EdgeVertex, *NeibEdgeVertex;
+ const int *TmpFV, *TmpLen, *EdgeVertex;
 
  int MaxRankPerV,VertexCellNo, VertexcellID, N_CellsInThisVert, *VertNeibRanks, *NumberVertex;
- int N_LocalCells, N_OwnCells, N_HalloCells, N_OwnIncidentCells, N_NeibIncidentCells;
- int a, b, N_SubDomInThisVert, *HaloCellIndex;
- int M1, M2, N1, N2, N_CellsIn_a, N_CellsIn_b;
+ int N_LocalCells, N_OwnCells, N_HalloCells;
+ int a, b, *HaloCellIndex;
+ int M1, M2, N1, N2;
  int N_CrossNeibs, *CrossNeibsRank, *HaloCellGlobalNo, *HaloCellLocVertNo;
- int N_SubDomIn_a, N_SubDomIn_b, *Temp, kk, GlobCellNo, test_b, EdgeCellID;
+ int N_SubDomIn_a, *Temp, kk, GlobCellNo;
 
- bool UPDATE, UPDATE_1;
+ bool UPDATE;
 
  TVertex *Vert_a, **VertexDel, *Last;
  TCollection *coll;
- TBaseCell *cell, *neib_cell, *Vertexcell, **SubDomainCells,**OwnCells, *cell_a, *cell_b, **IncCells, **IncHalloCells, *HalloCell;
- TBaseCell **CellDel, *LastCell;
+ TBaseCell *cell, *neib_cell, *Vertexcell, **SubDomainCells, **IncCells, **IncHalloCells, *HalloCell;
+ TBaseCell **CellDel;
  TJoint *Joint, *NewJoint;
- TEdge *edge, **EdgeDel, *LastEdge;
- TShapeDesc *ShapeDesc, *NeibShapeDesc;
- TVertex *CurrVert, *NeibVert_a, *NeibCurrVert;
-  
- MPI_Status status, status1, status2, status3;
+ TEdge *edge, **EdgeDel;
+ TShapeDesc *ShapeDesc;
+ TVertex *CurrVert, *NeibCurrVert;
 
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -1317,7 +1141,6 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
   N_JointsInCell = cell->GetN_Joints();
   N_AllLocVert = N_VertInCell*N_Cells;
   VertexNumbers= new int[N_AllLocVert];
-  Vert_Rank = new idx_t[N_AllLocVert];
   Cell_Rank = new idx_t[N_Cells];
 
   VertexDel = new TVertex*[N_AllLocVert];
@@ -1327,14 +1150,6 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
    TVertex **Vertices;
    
 #endif
-   
-  
-   
-   int  m1;
-   int etype, numflag=0; // c-style numbering (array starting with 0)
-   int type=TDatabase::ParamDB->Par_P2;
-
-   double t1, t2;
 
     NumberVertex=new int[N_AllLocVert];
     Vertices=new TVertex*[N_AllLocVert];
@@ -1356,7 +1171,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
   /** *********************************************/
    /** STEP 2 : SORT THE VERTICES ARRAY */ 
   /** *********************************************/
-    Sort(Vertices, N);
+    MeshPartitionAuxFunctions::Sort(Vertices, N);
 
   /** ***************************************************/
     /**STEP 3: STORE THE SORTED POINTER ARRAY AS INDICES */
@@ -1385,7 +1200,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
       for(j=0;j<N_VertInCell;j++)
        {
         CurrVert=cell->GetVertex(j);
-        N=GetIndex(Vertices, N_AllLocVert, CurrVert);
+        N=MeshPartitionAuxFunctions::GetIndex(Vertices, N_AllLocVert, CurrVert);
         VertexNumbers[m]=NumberVertex[N];
         m++;
        } 
@@ -1504,8 +1319,6 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
           N = VertexNumbers[i*N_VertInCell + j]*MaxCpV ;
 
           N_CellsInThisVert =  PointNeighb[N];
-          N_OwnIncidentCells = 0;
-          N_NeibIncidentCells = 0;
 
           // check! any subdomain cell containg this vert has to be added
           // Setting all halo cells
@@ -1549,7 +1362,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
                if(VertexcellID==rank)
                 continue;
 
-               N_CellsIn_b = VertNeibRanks[N];
+               int N_CellsIn_b = VertNeibRanks[N];
                UPDATE = TRUE;
 
                for(jj=1;jj<=N_CellsIn_b;jj++)
@@ -2121,3 +1934,4 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 } // Partition_Mesh2D()
 
 #endif //mpi
+#endif

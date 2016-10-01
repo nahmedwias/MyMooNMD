@@ -9,16 +9,17 @@
 // History:     start of implementation 24.07.2000 (Gunar Matthies)
 //
 // =======================================================================
-#ifdef _MPI
-#  include "mpi.h"
-#endif
-
 
 #ifndef __OUTPUT3D__
 #define __OUTPUT3D__
 
-#include <FEVectFunct3D.h>
-#include <Domain.h>
+#ifdef _MPI
+#  include "mpi.h"
+#endif
+#include <string>
+
+class TFEVectFunct3D;
+class TDomain;
 
 /** store given data and realize output */
 class TOutput3D
@@ -84,8 +85,8 @@ class TOutput3D
 
       enum CELLTYPE {TETRAHEDRON=4, BRICK} Type;
 
-      TOutputData() : Nodes(0), ConList(0), N_Nodes(0),
-		      N_Data(0), FEFuncValues(0) {};
+      TOutputData() : N_Nodes(0), N_Data(0), Nodes(0), ConList(0),
+		       FEFuncValues(0) {};
       ~TOutputData();
     };
 
@@ -114,22 +115,7 @@ class TOutput3D
 
     /** add parameter into this output object */
     int AddParameter(double value, const char *descr);
-
-    /** write stored data. This calls the other Write* functions. */
-    int Write(std::string basename, int i=1, double t=0.);
     
-    /** write stored data into a grape file */
-    int WriteGrape(const char *name);
-
-    /** write stored data into a tecplot file */
-    int WriteTecplot(const char *name);
-
-    /** write stored data into a GMV file */
-    int WriteGMV(const char *name);
-
-    /** write stored data into an amira file */
-    int WriteAmira(const char *name);
-
     /** write stored data into an vtk file */
     int WriteVtk(const char *name);
     
@@ -140,13 +126,11 @@ class TOutput3D
     /** write stored PARALLEL data into a pvtu and vtu files (XML files for paraview) */
     int Write_ParVTK(
 #ifdef _MPI
-                                MPI_Comm comm,
+                     MPI_Comm comm,
 #endif
-                               int img, char *subID);
-
-    /** write stored data into a tecplot file **/
-    int WriteBinaryPlt(const char *filename);
-
+                     int img, char *subID,
+                     std::string directory = std::string("."),
+                     std::string basename = std::string("parmoon_solution"));
 };
 
 #endif

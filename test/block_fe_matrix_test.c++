@@ -32,28 +32,28 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
-  // default construct a domain object
-  TDomain domain;
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(ParameterDatabase::default_nonlinit_database());
 
-  // Set Database values (this is what is usually done by the input-file)
-  TDatabase::ParamDB->UNIFORM_STEPS = 1;
-  TDatabase::ParamDB->LEVELS = 1;
+  db.add("refinement_n_initial_steps", (size_t) 2, "");
+  db.add("multigrid_n_levels", (size_t) 0, "");
+
+  // default construct a domain object
+  db.add("boundary_file", "Default_UnitSquare", "");
+  db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+  TDomain domain(db);
 
   Output::setVerbosity(1);
 
-  // the domain is initialised with default description and default
-  // initial mesh
-  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-
   // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS + TDatabase::ParamDB->LEVELS; i++)
+  size_t n_ref = domain.get_n_initial_refinement_steps();
+  for(unsigned int i=0; i < n_ref; i++)
   {
     domain.RegRefineAll();
   }
 
   //collection from finest cell level
   TCollection *coll = domain.GetCollection(It_EQ, 0);
-
   // Create FeSpaces2D to fiddle around with
 
   size_t first_ansatz_order = 2;
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
   TFESpace2D first_fe_space(coll, (char*)"first_fe_space",
                             (char*)"first_fe_space", //may act as velo space dummy
                             BoundConditionNSE, first_ansatz_order, nullptr);
-
+  
   TFESpace2D second_fe_space(coll, (char*)"second_fe_space",
                              (char*)"second_fe_space", //may act as pressure space dummy
                              BoundCondition_FEM_FCT, second_ansatz_order, nullptr);
@@ -71,15 +71,12 @@ int main(int argc, char* argv[])
   TFESpace2D third_fe_space(coll, (char*)"third_fe_space",
                             (char*)"third_fe_space", //yet another space
                             BoundConditionNSE, third_ansatz_order, nullptr);
-
   {
     //test default constructor
     BlockFEMatrix zero_matrix;
     zero_matrix.check_coloring();
     zero_matrix.check_pointer_types();
   }
-
-
   { // test standard methods with custom-made 2x2 FEMatrix, including
     // one transposed storage and one transposed-storage memory hack
 
@@ -182,7 +179,8 @@ int main(int argc, char* argv[])
 
 
    //check scaling of entries
-   myMatrix.scale_blocks(0.5, {{0,0},{1,1}});
+   const std::vector<std::vector<size_t>>& cell_positions = {{0,0},{1,1}};
+     myMatrix.scale_blocks(0.5, cell_positions);
    myMatrix.check_pointer_types(); //casts to FEMatrix work?
    myMatrix.check_coloring(); //coloring is unbroken?
 
@@ -197,7 +195,8 @@ int main(int argc, char* argv[])
 
    //check scaling of active entries
    myMatrix.replace_blocks(fe_matrix_1, {{0,0}}, { false });//give us a new block in {0,0}
-   myMatrix.scale_blocks_actives(-2, {{0,0}});
+   const std::vector<std::vector<size_t>>& cell_positions_2 = {{0,0}};
+   myMatrix.scale_blocks_actives(-2, cell_positions_2);
    myMatrix.check_pointer_types(); //casts to FEMatrix work?
    myMatrix.check_coloring(); //coloring is unbroken?
 
@@ -491,10 +490,6 @@ int main(int argc, char* argv[])
      no_transp.replace_blocks(B,{{2,0}}, {false});
      no_transp.replace_blocks(B,{{2,1}}, {false});
 
-//     //print the combined matrices
-//     with_transp.BlockMatrix::get_combined_matrix()->PrintFull("with_transp");
-//     no_transp.BlockMatrix::get_combined_matrix()->PrintFull("no_transp");
-
      //put up BlockVectors which fit the spaces
      BlockVector preimage(with_transp, false);
      for(size_t i = 0 ; i< preimage.length() ; ++i)
@@ -512,6 +507,22 @@ int main(int argc, char* argv[])
      image_with.add_scaled(image_no,-1.0);
      if( image_with.norm() != 0)
        ErrThrow("Error in test of apply_scaled_add!");
+
+   }
+
+   {
+     //test the method which returns a sub-blockfematrix
+     BlockFEMatrix blockmat=
+         BlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
+
+     BlockFEMatrix sub_velocity = blockmat.get_sub_blockfematrix(0,1);
+     sub_velocity.check_pointer_types();
+     sub_velocity.check_coloring();
+
+     BlockFEMatrix sub_1D = blockmat.get_sub_blockfematrix(1,2);
+     sub_1D.check_pointer_types();
+     sub_1D.check_coloring();
+
 
    }
 

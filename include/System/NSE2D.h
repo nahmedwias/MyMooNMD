@@ -16,21 +16,18 @@
 #define NSE2D_H_
 
 #include <FEVectFunct2D.h>
-#include <Example_NSE2D.h>
-#include <MultiGrid2D.h>
-#include <MainUtilities.h> // FixedSizeQueue
-
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-
-
-#include <NSE_MultiGrid.h>
-#include <NSE_MGLevel1.h>
-#include <NSE_MGLevel2.h>
-#include <NSE_MGLevel3.h>
-#include <NSE_MGLevel4.h>
-#include <NSE_MGLevel14.h>
+#include <Residuals.h>
+#include <ParameterDatabase.h>
+#include <Solver.h>
+#include <Example_NSE2D.h>
+#include <PostProcessing2D.h>
+#include <MainUtilities.h> // FixedSizeQueue
+#include <PostProcessing2D.h>
 #include <utility>
+#include <array>
+
 
 class NSE2D
 {
@@ -41,7 +38,7 @@ class NSE2D
     /** @brief store a complete system on a particular grid
      * 
      * This combines a matrix, rhs, solution, spaces and functions needed to 
-     * describe one Darcy problem in 2D.
+     * describe one stationary Navier-Stokes problem in 2D.
      */
     struct System_per_grid
     {
@@ -96,56 +93,36 @@ class NSE2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_NSE2D & example;
+    const Example_NSE2D example;
     
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
+    /** @brief a local parameter database which constrols this class
+     * 
+     * The database given to the constructor will be merged into this one. Only 
+     * parameters which are of interest to this class are stored (and the 
+     * defualt ParMooN parameters). Note that this usually does not include 
+     * other parameters such as solver parameters. Those are only in the 
+     * NSE2D::solver object.
      */
-    std::shared_ptr<TNSE_MultiGrid> multigrid;
+    ParameterDatabase db;
     
-    /** @brief an array to store defect, so that we don't have to reallocate
-     *         so often
+    /** @brief class for output handling (vtk and case files) */
+    PostProcessing2D outputWriter;
+    
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
      */
+    Solver<BlockFEMatrix, BlockVector> solver;
+    
+    /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
+    /// transposed blocks are not stored explicitely...sad but true.
+    std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
+    
+    //! @brief An array to store the current defect.
     BlockVector defect;
 
-    /** @brief stores the norms of the residuals of previous iterations.
-     * The default length is 10
-     */
-    std::vector<double> norms_of_residuals;
-    
-  public:
-    /**
-     * @brief a simple struct storing one set of residuals
-     * 
-     * The full residual is the \f$\ell^2\f$-norm of the vector \f$Ax-b\f$ 
-     * where \f$A\f$ is the current matrix and \f$b\f$ the right hand side. It
-     * is composed of two parts, the impuls and the residual.
-     * 
-     * If not default constructed it holds 
-     *     fullResidual*fullResidual = impulsResidual*impulsResidual
-     *                                 +massResidual*massResidual
-     */
-    struct Residuals
-    {
-      /// @brief the impuls residual
-      double impulsResidual;
-      /// @brief the mass residual
-      double massResidual;
-      /// @brief the fulf residual
-      double fullResidual;
-      ///@brief standard constructor, initialize with large numbers
-      Residuals();
-      /// @brief constructor given the \e square of the impuls and mass 
-      /// residuals
-      Residuals(double imR, double maR);
-      /// @brief write out the three numbers to a stream.
-      friend std::ostream& operator<<(std::ostream& s, const Residuals& n);
-    };
-  protected:
-    
-    /**
-     * @brief store the norms of residuals from previous iterations 
-     */
+    ///@brief The norms of residuals from up to 10 previous iterations
     FixedSizeQueue<10, Residuals> oldResiduals;
 
     /** @brief store the initial residual so that the nonlinear iteration can 
@@ -153,14 +130,12 @@ class NSE2D
      */
     double initial_residual;
     
-    /** @brief set the velocity and pressure orders
-     * 
-     * This function sets the corresponding velocity and 
-     * pressure orders. The pressure order is set if it is
-     * not specified by the readin file. Default is -4711
+    /** @brief Errors to be accesed from outside the class
+     * The array is filled during the function call NSE2D::output()
+     * Currently, the errors store the L2 and H1 errors of the velocity
+     * and pressure
      */
-    void get_velocity_pressure_orders(std::pair <int,int> 
-                   &velocity_pressure_orders);
+    std::array<double, int(4)> errors;
     
     /** @brief check and set parameters
      * 
@@ -173,12 +148,17 @@ class NSE2D
      */
     void set_parameters();
     
-    /** @brief Errors to be accesed from outside the class
-     * The array is filled during the function call NSE2D::output()
-     * Currently, the errors store the L2 and H1 errors of the velocity
-     * and pressure
+    /** @brief set the velocity and pressure orders
+     *
+     * This function sets the corresponding velocity and
+     * pressure orders. The pressure order is set if it is
+     * not specified by the readin file. Default is -4711
      */
-    std::array<double, int(6)> errors;
+    void get_velocity_pressure_orders(std::pair <int,int>
+                   &velocity_pressure_orders);
+    
+    /** @brief write some information (number of cells, dofs, ...) */
+    void output_problem_size_info() const;
     
   public:
     
@@ -187,20 +167,22 @@ class NSE2D
      * This constructor calls the other constructor creating an Example_NSE2D
      * object for you. See there for more documentation.
      */
-    NSE2D(const TDomain& domain, int reference_id = -4711);
+    NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+          int reference_id = -4711);
     
     /** @brief constructor 
      * 
      * The domain must have been refined a couple of times already if you want
      * to use multigrid. On the finest level the finite element spaces and 
      * functions as well as matrices, solution and right hand side vectors are 
-     * initialized. 
+     * initialized. The parameter database constrols the behavior of this class
+     * and all its members.
      * 
      * The reference_id can be used if only the cells with the give reference_id
      * should be used. The default implies all cells.
      */
-    NSE2D(const TDomain & domain, const Example_NSE2D & _example,
-          unsigned int reference_id = -4711);
+    NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
+          const Example_NSE2D _example, unsigned int reference_id = -4711);
     
     /** @brief standard destructor */
     ~NSE2D();
@@ -252,20 +234,7 @@ class NSE2D
      */
     void output(int i = -1);
     
-    /**
-   * @brief initialize multigrid levels for different NSTYPE's
-   */
-    TNSE_MGLevel* mg_levels(int i, System_per_grid& s);
-    /**
-   * @brief multigrid solver
-   */
-    void mg_solver();
-    
     // getters and setters
-//    const BlockMatrixNSE2D & get_matrix() const TODO
-//    { return this->systems.front().matrix; }
-//    BlockMatrixNSE2D & get_matrix()
-//    { return this->systems.front().matrix; }
     const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
     BlockFEMatrix & get_matrix()
@@ -298,16 +267,25 @@ class NSE2D
     { return this->systems.front().solution.length(); }
     const Example_NSE2D & get_example() const
     { return example; }
-    /// @brief get the current residuals  (updated in NSE2D::normOfResidual)
+    /// @brief get the current residuals 
+    /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
+    /// called from NSE2D::stopIt
     const Residuals& getResiduals() const;
-    /// @brief get the current impuls residual (updated in NSE2D::normOfResidual)
+    /// @brief get the current impuls residual
+    /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
+    /// called from NSE2D::stopIt
     double getImpulsResidual() const;
-    /// @brief get the current mass residual (updated in NSE2D::normOfResidual)
+    /// @brief get the current mass residual
+    /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
+    /// called from NSE2D::stopIt
     double getMassResidual() const;
-    /// @brief get the current residual (updated in NSE2D::normOfResidual)
+    /// @brief get the current residual
+    /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
+    /// called from NSE2D::stopIt
     double getFullResidual() const;
     /// @brief return the computed errors
-    std::array<double, int(6)> get_errors();
+    /// @details updated in NSE2D::stopIt
+    std::array<double, int(4)> get_errors() const;
 };
 
 

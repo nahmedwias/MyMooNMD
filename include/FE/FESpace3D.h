@@ -13,10 +13,16 @@
 #ifndef __FESPACE3D__
 #define __FESPACE3D__
 
+#include <memory>
 #include <FESpace.h>
 #include <FE3D.h>
 
 class THangingNode;
+
+#ifdef _MPI
+class TParFECommunicator3D;
+class TParFEMapper3D;
+#endif
 
 /** class for all 3D finite element spaces */
 class TFESpace3D : public TFESpace
@@ -51,6 +57,18 @@ class TFESpace3D : public TFESpace
      *  in the creation of the space, store a function pointer to it.
      */
    BoundCondFunct3D* boundCondition_;
+
+#ifdef  _MPI
+     /** Maximum number of subdomains associated with any dof */
+    int MaxSubDomainPerDof;
+
+   /// There belongs a ParFECommunicator to this space. Store it!
+   std::shared_ptr<TParFECommunicator3D> comm_;
+
+   ///The communicator needs a mapper TODO Move mapper into comm as member!
+   std::shared_ptr<TParFEMapper3D> mapper_;
+
+#endif
 
   public:
     /** constructor */
@@ -108,6 +126,10 @@ class TFESpace3D : public TFESpace
 
     /** return the FE Id for element i, corresponding to cell */
     FE3D GetFE3D(int i, TBaseCell *cell) const;
+    
+    /** @brief return the Finite Element on a given cell */
+    const TFE3D& get_fe(unsigned int cell_number) const;
+
 
     /** return position of one given DOF */
     void GetDOFPosition(int dof, double &x, double &y, double &z) const;
@@ -115,6 +137,34 @@ class TFESpace3D : public TFESpace
     /** return position of all dofs */
     void GetDOFPosition(double *x, double *y, double *z) const;
 
+    /**
+     * velocity space, if there is a element that only has dirichlet dof's??
+     */
+    bool CheckMesh() const;
+
+#ifdef  _MPI
+    /**
+     * As soon as the maxSubDomainPerDof is known, the parallel infrastructure
+     * can be initialized.
+     */
+    void initialize_parallel(int maxSubDomainPerDof);
+
+    /** return  MaxSubDomainPerDof */
+    int GetMaxSubDomainPerDof()
+    { return MaxSubDomainPerDof; }
+
+    const TParFECommunicator3D& get_communicator() const
+    { return *comm_; }
+
+    TParFECommunicator3D& get_communicator()
+    { return *comm_; }
+
+    const TParFEMapper3D& get_mapper() const
+    { return *mapper_; }
+
+    TParFEMapper3D& get_mapper()
+    { return *mapper_; }
+#endif
 
 };
 

@@ -30,23 +30,10 @@ class TDatabase;
 struct TParaDB
 {
   int VERSION;
-  // indicate what kind of problem is solved (T means time dependent)
-  //  0: not set
-  //  1: CD
-  //  2: TCD
-  //  3: Stokes
-  //  4: TStokes
-  //  5: NSE
-  //  6: TNSE
-  int PROBLEM_TYPE;
 
   //======================================================================
   /** parameters data output and input files                            */
   //======================================================================
-  char *GEOFILE;
-  char *BNDFILE;
-  char *GEOFILE_INTL;
-  char *BNDFILE_INTL;
   char *MAPFILE;
   char *OUTFILE;
   char *PODFILE;
@@ -54,9 +41,6 @@ struct TParaDB
 
   int SAVESOL;
   
-  char *BASENAME;
-  char *VTKBASENAME;  
-  char *OUTPUTDIR;
   char *SAVE_DATA_FILENAME;
   char *READ_DATA_FILENAME;
   char *MATLAB_MATRIX;
@@ -69,24 +53,20 @@ struct TParaDB
   /** parameters for controling the program */
   //======================================================================
   int PRECOND_LS;
-  int SOLVER_TYPE;
-  int WRITE_PS;
   int WRITE_GRAPE;
   int WRITE_GNU;
   int WRITE_GMV;
   int WRITE_AMIRA;
-  int WRITE_VTK;
   int WRITE_MATLAB;
   int WRITE_MATLAB_MATRIX;
+  int WRITE_CASE; // write output in .case format (preferred for time dependent pbs)
   int SAVE_DATA;
   int READ_DATA;
   int READ_GRAPE_FILE;
-  int MEASURE_ERRORS;
   int ESTIMATE_ERRORS;
   int COMPUTE_VORTICITY_DIVERGENCE;
   
   int timeprofiling;  //(time profiling)
-  
 
   //======================================================================
   /** parameters for setting finite element spaces                      */
@@ -98,15 +78,12 @@ struct TParaDB
   int PRESSURE_SPACE;
   int PRESSURE_SEPARATION;
 
-  int EXAMPLE; // used (and explained) in derived classes of Example2D
   //======================================================================
   /** parameters for grid generation                                    */
   //======================================================================
 
   int OMPNUMTHREADS;
 
-  int LEVELS;
-  int UNIFORM_STEPS;
   double DRIFT_X;
   double DRIFT_Y;
   double DRIFT_Z;
@@ -312,7 +289,7 @@ struct TParaDB
   //======================================================================
 
   /** general parameters */
-  double RE_NR;
+  double RE_NR; //FIXME This parameter must really be removed from global scope!
   double RA_NR;
   double ROSSBY_NR;
   double START_RE_NR;
@@ -325,12 +302,26 @@ struct TParaDB
   double OSEEN_ZERO_ORDER_COEFF;
 
   //======================================================================
+  /** Parameters for Brinkman problems                  */
+  //======================================================================
+  int BrinkmanTYPE;
+  double VISCOSITY;
+  double EFFECTIVE_VISCOSITY;
+  double PERMEABILITY;
+    
+  //======================================================================
+  /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
+  //======================================================================
+    double equal_order_stab_weight_P1P1;
+    double equal_order_stab_weight_P2P2;
+    
+  //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */
   //======================================================================
   int DARCYTYPE; 
   double SIGMA_PERM;
   //======================================================================
-  
+    
   double FR_NR;
   double WB_NR;
   double PR_NR;
@@ -388,140 +379,12 @@ struct TParaDB
   double DIV_DIV_STAB_C2;
 
   //======================================================================
-  // ******** parameters for scalar system *********//
-  //======================================================================
-  // parameters for nonlinear iteration
-  int    SC_NONLIN_ITE_TYPE_SCALAR;
-  int    SC_NONLIN_MAXIT_SCALAR;
-  double SC_NONLIN_RES_NORM_MIN_SCALAR;
-  double SC_NONLIN_DAMP_FACTOR_SCALAR;
-
-  // parameters for linear iteration
-  int    SC_SOLVER_SCALAR;
-  int    SC_PRECONDITIONER_SCALAR;
-  int    SC_LIN_MAXIT_SCALAR;
-  double SC_LIN_RED_FACTOR_SCALAR;
-  double SC_LIN_RES_NORM_MIN_SCALAR;
-  int    SC_FLEXIBLE_KRYLOV_SPACE_SOLVER;
-
-  int    SC_LIN_MAXIT_SCALAR_SOLD;
-  double SC_LIN_RED_FACTOR_SCALAR_SOLD;
-  double SC_LIN_RES_NORM_MIN_SCALAR_SOLD;
-
-  // parameters which are used in multigrid for scalar problems
-  int    SC_MG_TYPE_SCALAR;
-  int    SC_MG_CYCLE_SCALAR;
-  int    SC_SMOOTHER_SCALAR;
-  int    SC_PRE_SMOOTH_SCALAR;
-  int    SC_POST_SMOOTH_SCALAR;
-  double SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  double SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-  double SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR;
-  int    SC_COARSE_SMOOTHER_SCALAR;
-  int    SC_COARSE_MAXIT_SCALAR;
-  double SC_COARSE_RED_FACTOR_SCALAR;
-  double SC_GMG_DAMP_FACTOR_SCALAR;
-  double SC_GMG_DAMP_FACTOR_FINE_SCALAR;
-  int    SC_FIRST_SOLUTION_LEVEL_SCALAR;
-  int    SC_COARSEST_LEVEL_SCALAR;
-
-  int    SC_STEP_LENGTH_CONTROL_FINE_SCALAR;
-  int    SC_STEP_LENGTH_CONTROL_ALL_SCALAR;
-
-  //======================================================================
   // ******** parameters for saddle point system *********//
   //======================================================================
-  // parameters for nonlinear iteration
+  // parameter for nonlinear iteration
+  //TODO Move that parameter to the local "nonlinear" Database!
   int    SC_NONLIN_ITE_TYPE_SADDLE;
-  int    SC_NONLIN_MAXIT_SADDLE;
-  double SC_NONLIN_RES_NORM_MIN_SADDLE;
-  double SC_NONLIN_DAMP_FACTOR_SADDLE;
-  int    SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE;
-
-  // parameters for linear iteration
-  int    SC_SOLVER_SADDLE;
-  int    SC_PRECONDITIONER_SADDLE;
-  int    SC_LIN_MAXIT_SADDLE;
-  double SC_LIN_RED_FACTOR_SADDLE;
-  double SC_LIN_RES_NORM_MIN_SADDLE;
-
-  // parameters which are used in multigrid for saddle point problems
-  int    SC_MG_TYPE_SADDLE;
-  int    SC_MG_CYCLE_SADDLE;
-  int    SC_SMOOTHER_SADDLE;
-  int    SC_PRE_SMOOTH_SADDLE;
-  int    SC_POST_SMOOTH_SADDLE;
-  double SC_SMOOTH_DAMP_FACTOR_SADDLE;
-  double SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
-  double SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-  int    SC_COARSE_SMOOTHER_SADDLE;
-  int    SC_COARSE_MAXIT_SADDLE;
-  double SC_COARSE_RED_FACTOR_SADDLE;
-  double SC_GMG_DAMP_FACTOR_SADDLE;
-  double SC_GMG_DAMP_FACTOR_FINE_SADDLE;
-
-  int    SC_FIRST_SOLUTION_LEVEL_SADDLE;
-  int    SC_COARSEST_LEVEL_SADDLE;
-
-  int    SC_STEP_LENGTH_CONTROL_FINE_SADDLE;
-  int    SC_STEP_LENGTH_CONTROL_ALL_SADDLE;
-  int    SC_LARGEST_DIRECT_SOLVE;
-  int    SC_DOWNWIND_TYPE;
   
-  //======================================================================
-  /** AMG solver parameters */
-  //======================================================================
-
-  // coarsen context
-  double CC_ALPHA;
-  double CC_BETA;
-  int    CC_MINCLUSTER;
-  int    CC_MAXCLUSTER;
-  int    CC_MAXDISTANCE;
-  int    CC_MAXCONNECTIVITY;
-  int    CC_DEPTHTARGET;
-  int    CC_COARSENTARGET;
-  double CC_COARSENRATE;
-  int    CC_MAJOR;
-  int    CC_DEPENDENCY;
-  double CC_RESCALE;
-  int    CC_VERBOSE;
-
-  // solver context
-  int    SC_SYSTEM_TYPE;
-  int    SC_AMG_PREC_IT;
-  double SC_AMG_PREC_RED_FACTOR;
-  int    SC_EX_MAXIT;
-  int    SC_GMRES_RESTART;
-  int    SC_LCD_START_VECTOR;
-  double SC_ILU_BETA;
-  double SC_SOR_OMEGA;
-  double SC_SMOOTHER_RED_FACTOR;
-  double SC_OMEGA_COARSE_0;
-  double SC_OMEGA_P_0;
-  double SC_ILUT_TOL;
-  int    SC_ILUT_ABSOLUTE_FILLIN;
-  double SC_ILUT_RELATIVE_FILLIN;
-  int    SC_ILUT_SORT;
-  int    SC_SCHUR_INV_OF_A;
-  int    SC_SCHUR_INV_OF_A_MAXIT;
-  double SC_SCHUR_ITERATION_DAMP;
-  int    SC_SCHUR_ITERATION_MAXIT;
-  int    SC_SCHUR_STEP_LENGTH_CONTROL;
-  int    SC_MIXED_BCGS_CGS_SWITCH_TOL;
-  double SC_DIV_FACTOR;
-  double SC_NONLIN_DIV_FACTOR;
-  int    SC_SMOOTHING_STEPS;
-  int    SC_N1_PARAM;
-  int    SC_N2_PARAM;
-  int    SC_MINIT;
-  double SC_VAS_LAZ_DELTA;
-  int    SC_ROW_EQUILIBRATION;
-  int    SC_VERBOSE;
-  int    SC_VERBOSE_AMG;
-
-  int    SC_BRAESS_SARAZIN_MATRIX;
-  double SC_BRAESS_SARAZIN_ALPHA;
 
   double CHAR_L0;
   double D_VISCOSITY;
@@ -663,166 +526,8 @@ struct TParaDB
   int SSMUM_MAX_CELLS_LAYERS;  
   int SSMUM_INTERPOLATION;
 
-  //======================================================================
-  /** parameters for WINDTUNNEL computations */
-  //======================================================================
-  double WINDTUNNEL_SHIFT; 
-  int WINDTUNNEL_CONFIGURATION; 
-  int WINDTUNNEL_INTERPOLATION;
-  int WINDTUNNEL_STEADY;
-  int WINDTUNNEL_SPATIAL;
-  double WINDTUNNEL_BROWNIAN ;
-  int WINDTUNNEL_POL_ORDER;
-  int WINDTUNNEL_SHEAR_FACTOR_TYPE;
-  double  WINDTUNNEL_SHEAR_FACTOR;
-  int WINDTUNNEL_QUAD_METHOD;
-  int WINDTUNNEL_MEASURE_MASS;
-  int WINDTUNNEL_LAYER_NUMBER_X;
-  int WINDTUNNEL_DIM_Y;
-  int WINDTUNNEL_DIM_Z;
-  int WINDTUNNEL_DIM_R;
-  //double WINDTUNNEL_Y[WINDTUNNEL_DIM_Y_CONST];
-  //double WINDTUNNEL_Z[WINDTUNNEL_DIM_Z_CONST];
-  double WINDTUNNEL_BOUND_VAL[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST][2];
-  double WINDTUNNEL_BOUND_KOEFF[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST];
-  double WINDTUNNEL_DROP_VELO[WINDTUNNEL_LAYER_NUMBER_X_CONST][WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST];
-  double WINDTUNNEL_BOUND_VAL_DROPS[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST][WINDTUNNEL_DIM_R_CONST][2];
-  double WINDTUNNEL_ENVIR_COND;
-  double WINDTUNNEL_SUPERSAT;
-  double WINDTUNNEL_U_INFTY;
-  double WINDTUNNEL_L_INFTY;
-  double WINDTUNNEL_R_MIN;
-  double WINDTUNNEL_R_INFTY;
-  double WINDTUNNEL_R_INFTY_EXPERIMENT;
-  double WINDTUNNEL_F_INFTY;
-  double WINDTUNNEL_kinematic_viscosity;
-  double WINDTUNNEL_dynamic_viscosity;
-  double WINDTUNNEL_density; 
-  //double WINDTUNNEL_BOUND_KOEFF[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST];
-
-  //======================================================================
-  /** parameters for urea synthesis computations */
-  //======================================================================
-  int UREA_REACTION_DISC;
-  int UREA_PB_DISC;
-  int UREA_MODEL;
-  int UREA_PB_DISC_STAB;
-  int UREA_SOLD_PARAMETER_TYPE;
-  int UREA_PIPE;
-  int UREA_CONC_MAXIT;
-  double UREA_inflow_time;
-
-  double UREA_l_infty;
-  double UREA_u_infty;
-  double UREA_c_infty;
-  double UREA_temp_infty;
-  double UREA_nu;
-  double UREA_rho;
-  double UREA_c_p;
-  double UREA_lambda;
-  double UREA_D_P_0;
-  double UREA_D_P_MAX;
-  double UREA_k_v;
-  double UREA_f_infty;
-  double UREA_m_mol;
-  double UREA_D_J;
-  double UREA_rho_d;
-  double UREA_k_g;
-  double UREA_delta_h_cryst;
-  double UREA_g;
-  double UREA_rho_sat_1;
-  double UREA_rho_sat_2;
-  double UREA_alfa_nuc;
-  double UREA_beta_nuc;
-  double UREA_INFLOW_SCALE;
-  double UREA_CONC_TOL;
-
-  double UREA_AGGR_SPATIAL;
-  double UREA_AGGR_BROWNIAN;
-  double UREA_AGGR_POL_ORDER;
-  double UREA_AGGR_SHEAR_FACTOR_TYPE;
-  double UREA_AGGR_SHEAR_FACTOR;
-  double UREA_AGGR_BROWNIAN_TEMP;
-  double UREA_AGGR_BROWNIAN_SCAL;
-  double UREA_PIPE_RADIUS;
   int PB_DISC_TYPE;
   int PB_TIME_DISC;
-  
-  //======================================================================
-  /** parameters for kdp synthesis computations */
-  //======================================================================
-  
-  int KDP_MODEL;
-  double KDP_D_P_0_2;
-  double KDP_D_P_MAX_2;
-  double KDP_l_infty;
-  double KDP_u_infty;
-  double KDP_c_infty;
-  double KDP_temp_infty;
-  double KDP_nu;
-  double KDP_rho;
-  double KDP_rho_water;
-  double KDP_c_p;
-  double KDP_lambda;
-  double KDP_D_P_0;
-  double KDP_D_P_MAX;
-  double KDP_f_infty;
-  double KDP_m_mol;
-  double KDP_D_J;
-  double KDP_rho_d;
-  double KDP_k_g_1;
-  double KDP_k_g_2;
-  double KDP_k_b;
-  double KDP_delta_h_cryst;
-  double KDP_g_1;
-  double KDP_g_2;
-  double KDP_b;
-  double KDP_w_sat_1;
-  double KDP_w_sat_2;
-  double KDP_w_sat_3;
-  double KDP_w_sat_1_Ma;
-  double KDP_w_sat_2_Ma;
-  double KDP_w_sat_3_Ma;
-  double KDP_INFLOW_SCALE;
-  double KDP_CONC_TOL;
-  double KDP_INTERNAL_NUC_A;
-  double KDP_INTERNAL_NUC_B;
-
-  int KDP_CONC_MAXIT;
-  double KDP_inflow_time;
-  
-  //======================================================================
-  /** parameters for Stokes--Darcy (StoDa) coupling */
-  //======================================================================
-  int StoDa_interfaceType; //Beavers-Joseph-Saffman or u.t=0
-  double StoDa_alpha; // from Beavers-Joseph-Saffman condition on interface
-  int StoDa_problemType; // Neumann--Neumann, Robin--Robin, ...
-  int StoDa_updatingStrategy; // update of the etas
-  double StoDa_theta_f; //damping in Stokes (flow) part
-  double StoDa_theta_p; //damping in Darcy (porous) part
-  double StoDa_gamma_f; // parameter for Robin condition on interface
-  double StoDa_gamma_p; // parameter for Robin condition on interface
-  double StoDa_weakGamma; // parameter for enforcing weak boundary conditions
-  double StoDa_solutionStrategy; // iterative (0), one big matrix (2), both (1)
-  int StoDa_algorithm; // Gauss--Seidel, Jacobi, ...
-  int StoDa_StokesFirst; // for Gauss--Seidel type method.
-  int StoDa_nIterations; // maximum number of iterations
-  // convergence criteria: 
-  // interface error e = ( ||uS.n-uD.n||^2_L2  +  ||nTn+pD||^2_L2 )^{1/2}
-  double StoDa_relDiff_interfaceError; // (e_k - e_{k+1})/e_k < this number
-  // E_k^2 = ( a1 * (||uS_{h,k}-uS_{h,k+1})/uS_{h,k} )^2
-  //        +( a2 * (||pS_{h,k}-pS_{h,k+1})/pS_{h,k} )^2
-  //        +( a3 * (||pD_{h,k}-pD_{h,k+1})/pD_{h,k} )^2
-  // a1,a2,a3 are the following
-  double StoDa_relDiff_factor1;
-  double StoDa_relDiff_factor2;
-  double StoDa_relDiff_factor3;
-  double StoDa_relDiff_solution; // E_k < this number
-  double StoDa_bigResidual; // residual of big System < this number
-  int StoDa_periodicBoundary; // true if there is a periodic boundary
-  // a prescribed pressure drop at the periodic boundary (to have a flow at all)
-  double StoDa_periodicBoundaryPressureDrop; 
-  
 
   //======================================================================
   /** internal parameters
@@ -973,8 +678,49 @@ struct TParaDB
   
   int DEPENDENT_BASIS;
   int DEPENDENT_BASIS_Q1;
-  int DEPENDENT_BASIS_Q2;  
-  
+  int DEPENDENT_BASIS_Q2;
+    
+  //======================================================================
+  /** parameters for weakly imposing boundary/interface conditions for Brinkman problems  */
+  //======================================================================
+    // number of boundary components with neumann conditions
+    int n_neumann_boundary;
+    // ID's of boundary components with neumann conditions
+    std::vector<int> neumann_boundary_id;
+    // factor for boundary integrals
+    std::vector<double> neumann_boundary_value;
+    
+    int n_g_v_boundary;
+    std::vector<int> g_v_boundary_id;
+    std::vector<double> g_v_boundary_value;
+    
+    int n_unvn_boundary;
+    std::vector<int> unvn_boundary_id;
+    std::vector<double> unvn_boundary_value;
+    
+    int n_graduvn_boundary;
+    std::vector<int> graduvn_boundary_id;
+    std::vector<double> graduvn_boundary_value;
+    
+    int n_gradunv_boundary;
+    std::vector<int> gradunv_boundary_id;
+    std::vector<double> gradunv_boundary_value;
+    
+    int n_u_v_boundary;
+    std::vector<int> u_v_boundary_id;
+    std::vector<double> u_v_boundary_value;
+    
+    int n_p_v_n_boundary;
+    std::vector<int> p_v_n_boundary_id;
+    std::vector<double> p_v_n_boundary_value;
+    
+    // Nitsche Combi - weak Dirichlet
+    int n_nitsche_boundary ;
+    std::vector<int> nitsche_boundary_id;
+    std::vector<double> nitsche_penalty;
+    
+  //======================================================================
+    
   #ifdef _MPI
   /** MPI_Comm for which the computation is started (should not be changed during coomputation)*/
   MPI_Comm Comm;

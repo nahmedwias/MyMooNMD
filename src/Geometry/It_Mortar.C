@@ -60,8 +60,8 @@ int TIt_Mortar::GetMaxLevel()
 
 TBaseCell *TIt_Mortar::Next(int &info)
 {
-  const int *TmpoEnE, *TmpEC, *TmpECI, *TmpLen1, *TmpLen2;
-  int MaxLen1, MaxLen2, LocEdge;
+  const int *TmpoEnE, *TmpEC, *TmpECI=nullptr, *TmpLen1, *TmpLen2;
+  int MaxLen1, MaxLen2=0, LocEdge=0;
 
   if (ActiveLevel)
     do

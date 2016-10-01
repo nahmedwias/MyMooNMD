@@ -1,25 +1,33 @@
 #include <CD2D.h>
 #include <Database.h>
-#include <Output2D.h>
-#include <LinAlg.h>
-#include <Solver.h>
-#include <DirectSolver.h>
-#include <MultiGrid2D.h>
+#include <Multigrid.h>
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
-
+#include <PostProcessing2D.h>
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
+#include <Upwind.h>
 #include <LocalProjection.h>
 
-#include <numeric>
+ParameterDatabase get_default_CD2D_parameters()
+{
+  Output::print<5>("creating a default CD2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default CD2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("CD2D parameter database");
+  
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
 
-
+  return db;
+}
 /** ************************************************************************ */
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
-                                       TCollection& coll)
+                                       TCollection& coll, int ansatz_order)
 : fe_space(&coll, (char*)"space", (char*)"cd2d fe_space", example.get_bc(0),
-           TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
+           ansatz_order, nullptr),
            // TODO CB: Building the matrix here and rebuilding later is due to the
            // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
            // which do neither provide default constructors nor working copy assignments.)
@@ -29,34 +37,34 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
            fe_function(&this->fe_space, (char*)"c", (char*)"c",
                        this->solution.get_entries(), this->solution.length())
 {
+  
   matrix = BlockFEMatrix::CD2D(fe_space);
 }
-/** ************************************************************************ */
-TSquareMatrix2D* CD2D::System_per_grid::get_matrix_pointer()
-{
-  std::vector<std::shared_ptr<FEMatrix>> blocks =
-      matrix.get_blocks_TERRIBLY_UNSAFE();
-  return reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-}
 
 /** ************************************************************************ */
-CD2D::CD2D(const TDomain& domain, int reference_id)
- : CD2D(domain, Example_CD2D(), reference_id)
+CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+           int reference_id)
+ : CD2D(domain, param_db, Example_CD2D(param_db), reference_id)
 {
 }
 
 /** ************************************************************************ */
-CD2D::CD2D(const TDomain& domain, const Example_CD2D& example, int reference_id)
- : systems(), example(example), multigrid(nullptr)
+CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+           const Example_CD2D& example, int reference_id)
+ : systems(), example(example), db(get_default_CD2D_parameters()),
+   outputWriter(param_db), solver(param_db), errors()
 {
+  this->db.merge(param_db, false); // update this database with given values
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  
   // create finite element space and function, a matrix, rhs, and solution
-  this->systems.emplace_back(this->example, *coll);
+  int ansatz_order = TDatabase::ParamDB->ANSATZ_ORDER;
+  this->systems.emplace_back(this->example, *coll, ansatz_order);
+
+  outputWriter.add_fe_function(&this->get_function());
   
-  
+
   // print out some information
   TFESpace2D & space = this->systems.front().fe_space;
   double h_min, h_max;
@@ -65,47 +73,75 @@ CD2D::CD2D(const TDomain& domain, const Example_CD2D& example, int reference_id)
   Output::print<2>("h (min,max): ", setw(12), h_min, " ", setw(12), h_max);
   Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
   Output::print<2>("dof active : ", setw(12), space.GetN_ActiveDegrees());
+
   
-  
-  // done with the conrtuctor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5 
-    || TDatabase::ParamDB->SOLVER_TYPE != 1)
+  // done with the constructor in case we're not using multigrid
+  if(!this->solver.is_using_multigrid())
     return;
   // else multigrid
   
-  // create spaces, functions, matrices on coarser levels
-  double *param = new double[2]; // memory leak
-  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-  this->multigrid.reset(new TMultiGrid2D(1, 2, param));
-  // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
-  
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
+  auto mg = this->solver.get_multigrid();
+  bool mdml = mg->is_using_mdml();
+  if(mdml)
   {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll);
+    // change the discretization to lowest order
+    /// @todo for mdml: is P1/Q1 the correct space on the other grids? Maybe 
+    /// what we really need is say Q3/P3, Q2/P2, Q1/P1 on the finest grid and 
+    /// Q1/P1 on all coarser grids.
+    if(ansatz_order == -1 || ansatz_order == 1)
+    {
+      // - using non conforming P1 already, it makes no sense to use another 
+      //   discretization on the finest grid. 
+      // - using conforming P1, we don't do another multigrid level with non 
+      //   conforming P1 elements on the finest grid, because this space is 
+      //   typically larger that conforming P1.
+      // Either way we just do regular multigrid
+      mdml = false;
+    }
+    else
+      ansatz_order = -1;
+  }
+  if(mdml)
+    /// @todo mdml for CD2D: We need a special assembling function which 
+    /// does not assemble the convection term. Instead one then calls an upwind 
+    /// method.
+    ErrThrow("mdml is currently not working.");
+  
+  // number of multigrid levels
+  size_t n_levels = mg->get_n_geometric_levels();
+  // index of finest grid
+  int finest = domain.get_ref_level(); // -> there are finest+1 grids
+  // index of the coarsest grid used in this multigrid environment
+  int coarsest = finest - n_levels + 1;
+  if(mdml)
+  {
+    coarsest++;
+  }
+  else
+  {
+    // only for mdml there is another matrix on the finest grid, otherwise
+    // the next system to be created is on the next coarser grid
+    finest--;
+  }
+  if(coarsest < 0 )
+  {
+    ErrThrow("the domain has not been refined often enough to do multigrid "
+             "on ", n_levels, " levels. There are only ",
+             domain.get_ref_level() + 1, " grid levels.");
   }
   
-  // create multigrid-level-objects, must be coarsest first
-  unsigned int i = 0;
-  for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
+  // Construct systems per grid and store them, finest level first
+  std::list<BlockFEMatrix*> matrices;
+  // matrix on finest grid is already constructed
+  matrices.push_back(&systems.back().matrix);
+  for (int grid_no = finest; grid_no >= coarsest; --grid_no)
   {
-    //get a non-const pointer to the one block that "matrix" stores
-    // TODO must be changed to const as soon as multigrid allows that
-    TSquareMatrix2D* one_block = it->get_matrix_pointer();
-
-    TMGLevel2D *multigrid_level = new TMGLevel2D(
-      i, one_block, it->rhs.get_entries(),
-      it->solution.get_entries(), 2, NULL);
-    i++;
-    this->multigrid->AddLevel(multigrid_level);
+    TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
+    systems.emplace_back(example, *coll, ansatz_order);
+    //prepare input argument for multigrid object
+    matrices.push_front(&systems.back().matrix);
   }
+  mg->initialize(matrices);
 }
 
 /** ************************************************************************ */
@@ -119,6 +155,20 @@ CD2D::~CD2D()
 /** ************************************************************************ */
 void CD2D::set_parameters()
 {
+  //set problem_type to CD if not yet set
+  if(!db["problem_type"].is(1))
+  {
+    if (db["problem_type"].is(0))
+    {
+      db["problem_type"] = 1;
+    }
+    else
+    {
+      Output::warn<2>("The parameter problem_type doesn't correspond to CD."
+          "It is now reset to the correct value for CD (=1).");
+      db["problem_type"] = 1;
+    }
+  }
   //////////////// Algebraic flux correction ////////////
   if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 1)
   {//some kind of afc enabled
@@ -144,6 +194,10 @@ void CD2D::set_parameters()
 void CD2D::assemble()
 {
   LocalAssembling2D_type t = LocalAssembling2D_type::ConvDiff;
+  bool mdml = this->solver.is_using_multigrid()
+             && this->solver.get_multigrid()->is_using_mdml();
+  // in case of mdml, we need to change the local assembling, (not yet 
+  // implemented)
 
   // this loop has more than one iteration only in case of multigrid
   for(auto & s : this->systems)
@@ -184,6 +238,13 @@ void CD2D::assemble()
           ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
         }
       }
+      
+      bool finest_grid = &systems.front() == &s;
+      if(mdml && !finest_grid)
+      {
+        UpwindForConvDiff(la.GetCoeffFct(), matrix, rhs_entries, fe_space, 
+                          nullptr, nullptr, false);
+      }
 
       // copy Dirichlet values from rhs to solution vector (this is not really
       // necessary in case of a direct solver)
@@ -203,23 +264,7 @@ void CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
-  if(TDatabase::ParamDB->SOLVER_TYPE == 2) // use direct solver
-  {
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.matrix, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs, s.solution);
-  }
-  else
-  {
-    // the one matrix stored in this BlockMatrix
-    FEMatrix* mat = s.matrix.get_blocks_uniquely().at(0).get();
-    // in order for the old method 'Solver' to work we need TSquareMatrix2D
-    TSquareMatrix2D *SqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
-    Solver((TSquareMatrix **)SqMat, NULL, s.rhs.get_entries(), 
-           s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-           this->multigrid.get(), this->get_size(), 0);
-  }
+  this->solver.solve(s.matrix, s.rhs, s.solution);
   
   t = GetTime() - t;
   Output::print<2>(" solving of a CD2D problem done in ", t, " seconds");
@@ -228,53 +273,67 @@ void CD2D::solve()
 /** ************************************************************************ */
 void CD2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
-  
   // print the value of the largest and smallest entry in the finite element 
   // vector
   TFEFunction2D & fe_function = this->systems.front().fe_function;
   fe_function.PrintMinMax();
   
-  // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  // write solution to a vtk file or in case-format
+  outputWriter.write(i);
+
+  /*
+  // implementation with the old class TOutput2D
   {
     // last argument in the following is domain, but is never used in this class
     TOutput2D Output(1, 1, 0, 0, NULL);
     Output.AddFEFunction(&fe_function);
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
     Output.WriteVtk(filename.c_str());
   }
+  */
   
+
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(this->db["output_compute_errors"])
   {
-    double errors[5];
+    // this should be a little longer than this->errors, because of a bug in
+    // FEFunction::GetErrors. Otherwise we could use this->errors directly.
+    // Note that we can not write 
+    // 'constexpr size_t n_errors = errors.max_size();'. The reason is that the
+    // method 'max_size' is not marked const in c++11, but it is in c++14. We
+    // should switch to that.
+    std::array<double, 5> errors;
     TAuxParam2D aux;
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
     const TFESpace2D* space = fe_function.GetFESpace2D();
     
     fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
                           SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
-                          &space, errors);
+                          &space, errors.data());
     
     Output::print<1>("L2     : ", errors[0]);
     Output::print<1>("H1-semi: ", errors[1]);
     Output::print<1>("SD     : ", errors[2]);
     Output::print<1>("L_inf  : ", errors[3]);
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+    // copy local variable to member variable
+    std::copy(errors.begin(), errors.end()-1, this->errors.begin());
+  } 
 }
 
 /** ************************************************************************ */
 void CD2D::do_algebraic_flux_correction()
 {
-  for(auto & s : this->systems) // do it on all levels - TODO untested for multigrid!
+  for(auto & s : this->systems) // do it on all levels.
   {
     //determine which kind of afc to use
     switch (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
@@ -314,3 +373,28 @@ void CD2D::do_algebraic_flux_correction()
     }
   }
 }
+
+/** ************************************************************************ */
+double CD2D::get_L2_error() const
+{
+  return this->errors[0];
+}
+
+/** ************************************************************************ */
+double CD2D::get_H1_semi_error() const
+{
+  return this->errors[1];
+}
+
+/** ************************************************************************ */
+double CD2D::get_SD_error() const
+{
+  return this->errors[2];
+}
+
+/** ************************************************************************ */
+double CD2D::get_L_inf_error() const
+{
+  return this->errors[3];
+}
+

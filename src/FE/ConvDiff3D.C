@@ -182,14 +182,14 @@ void BilinearAssembleGalerkin(double Mult, double *coeff, double* param,
 
 
 // SDFEM without 2nd derivatives
-void BilinearAssemble_SD(double Mult, double *coeff, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+void BilinearAssemble_SD(double Mult, double *coeff, double* param, 
+                         double hK, double **OrigValues, int *N_BaseFuncts,
+                         double ***LocMatrices, double **LocRhs)
 {
   double **Matrix, *Rhs, val, *MatrixRow;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_;
   double c0, c1, c2, c3, c4, c5, c6;
   double delta, bgradv;
@@ -364,10 +364,10 @@ double ***LocMatrices, double **LocRhs)
   double **Matrix, val, *MatrixRow;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
+  double *Orig0, *Orig1, *Orig2, *Orig3; //*Orig4;
   int i,j, N_;
   double c0, c1, c2, c3, c4, c5, c6;
-  double delta, bgradv, sigma, norm_b;
+  double delta, bgradv, sigma;
 
   Matrix = LocMatrices[0];
 
@@ -377,7 +377,7 @@ double ***LocMatrices, double **LocRhs)
   Orig1 = OrigValues[1];
   Orig2 = OrigValues[2];
   Orig3 = OrigValues[3];
-  Orig4 = OrigValues[4];
+//  Orig4 = OrigValues[4];
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // b_1
@@ -439,7 +439,7 @@ double ***LocMatrices, double **LocRhs)
   double **Matrix, val, *MatrixRow;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_;
   double c0, c1, c2, c3, c4, c5, c6;
   double delta, bgradv, sigma, norm_b;
@@ -452,7 +452,7 @@ double ***LocMatrices, double **LocRhs)
   Orig1 = OrigValues[1];
   Orig2 = OrigValues[2];
   Orig3 = OrigValues[3];
-  Orig4 = OrigValues[4];
+//  Orig4 = OrigValues[4];
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // b_1

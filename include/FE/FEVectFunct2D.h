@@ -66,7 +66,9 @@ class TFEVectFunct2D : public TFEFunction2D
     double GetL2NormDivergence();
 
   /** write the solution into a data file **/
-   void WriteSol(double t);
+   void WriteSol(double t,
+		   std::string directory=std::string("."),
+		   std::string basename=std::string("parmoon_solution"));
 
   /** Read the solution from a given data file - written by Sashi **/
    void ReadSol(char *BaseName);

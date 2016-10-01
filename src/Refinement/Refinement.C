@@ -317,7 +317,7 @@ int TGridCell::Refine(int reflevel)
   int index, auxi, auxj;
   const int *TmpValues1, *TmpValues2, *TmpValues3, *TmpValues4;
   const int *TmpIndex, *TmpLen1, *TmpLen2, *TmpLen3, *TmpLen4;
-  const int *TmpMV, *TmpME, *TmpMF;
+//  const int *TmpMV, *TmpME, *TmpMF;
   double TmpX, TmpY, TmpZ, T_0, T_1, auxd;
   double TmpT, TmpS;
   TBoundFace *bdface;
@@ -333,7 +333,7 @@ int TGridCell::Refine(int reflevel)
 
   double Param1[100], Param2[100];
   double ParentParam1[4], ParentParam2[4];
-  const int *TmpFaceVal1, *TmpFaceVal2;
+  const int *TmpFaceVal1; // *TmpFaceVal2;
   int FaceMaxLen;
 
   const int *MapOrigVert, *MapOrigEdge;

@@ -2,9 +2,13 @@
 #include <BlockVector.h>
 #include <LinAlg.h>
 
-#include <limits>
 #include <algorithm>
+#include <limits>
 #include <list>
+
+#ifdef _MPI
+#include <BlockFEMatrix.h> //needed in sor_sweep for a dynamic type downcast
+#endif
 
 /* ************************************************************************* */
 BlockMatrix::CellInfo::CellInfo()
@@ -75,6 +79,71 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       }
     }
 
+/* ************************************************************************* */
+BlockMatrix::BlockMatrix(int nRows, int nCols, 
+                         std::vector<std::shared_ptr<TMatrix>> blocks)
+ : n_cell_rows_(nRows), n_cell_columns_(nCols),
+   cell_grid_(nRows, std::vector<CellInfo>(nCols)), color_count_(nRows*nCols, 1)
+{
+  // make sure enough blocks are provided
+  if(blocks.size() < n_cell_rows_ * n_cell_columns_)
+  {
+    ErrThrow("unable to create a ", n_cell_rows_, "x", n_cell_columns_, 
+             " BlockMatrix out of only ", blocks.size(), " blocks");
+  }
+  // check if all given blocks exist (none of the pointers are to nullptr)
+  for(auto& m : blocks)
+  {
+    if(!m)
+    {
+      // we might be able to create a zero matrix of the right size, but most 
+      // likely this is an error
+      ErrThrow("unable to create BlockMatrix with one block given as nullptr");
+    }
+  }
+  
+  for(size_t i = 0; i < n_cell_rows_ ; ++i )
+  {
+    //hold the number of rows each cell in this row will have
+    size_t nRowsOfCell = blocks.at(i * this->n_cell_columns_)->GetN_Rows();
+    for(size_t j = 0; j < n_cell_columns_ ; ++j )
+    {
+      //hold the number of columns each cell in this column will have
+      size_t nColumnsOfCell = blocks.at(j)->GetN_Columns();
+      
+      // construct the new cell info
+      CellInfo newInfo(nRowsOfCell, nColumnsOfCell);
+      
+      // add the matrix
+      newInfo.block_ = blocks.at(i * this->n_cell_columns_ + j);
+      
+      // check if the block has the correct dimensions, basically this checks if
+      // all blocks in one row/column have the same number of rows/columns.
+      if(  newInfo.block_->GetN_Rows() != (int) nRowsOfCell
+        || newInfo.block_->GetN_Columns() != (int) nColumnsOfCell)
+      {
+        ErrThrow("unable to create a block matrix at entry ", i, " ", j,
+                 ". The matrix block should have dimensions ", nRowsOfCell, 
+                 "x", nColumnsOfCell, ", but has ", newInfo.block_->GetN_Rows(),
+                 "x", newInfo.block_->GetN_Columns());
+      }
+      
+      // each block has its own color, ordered row wise
+      newInfo.color_ = i*n_cell_columns_ + j;
+      
+      //start as non-transposed
+      newInfo.is_transposed_ = false;
+      
+      // put the new cell info to the correct place by copy assignment
+      cell_grid_[i][j] = newInfo;
+    }
+  }
+  
+  // perform a few checks to make sure this matrix is properly defined
+  this->check_coloring();
+}
+
+
     /* ************************************************************************* */
     void BlockMatrix::add_matrix_to_blocks(const TMatrix& summand,
                                                   std::vector<grid_place_and_mode> row_column_transpose_tuples)
@@ -115,6 +184,7 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       check_vector_fits_image(y);
 
       //tests passed: reset all values in 'y' to 0 and delegate to apply_scaled_add
+      y.reset();
       apply_scaled_add(x, y, 1.0);
     }
 
@@ -173,6 +243,77 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       }
     }
 
+/* ************************************************************************* */
+#ifdef _MPI
+void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                            size_t flag, const std::string& par_strat) const
+#else
+void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                            size_t flag) const
+#endif
+{
+  if(flag > 2)
+    ErrThrow("BlockMatrix::sor_sweep with flag not 0,1, or 2.");
+  
+  size_t n_diag_blocks = this->get_n_cell_rows();
+  if(this->get_n_cell_columns() != n_diag_blocks)
+    ErrThrow("BlockMatrix::sor_sweep not tested for non square block "
+             "structure");
+  
+  // only for ssor we do two sweeps, first forward then backward.
+  size_t n_sweeps = (flag == 2) ? 2 : 1;
+  for(size_t sweep = 0; sweep < n_sweeps; ++sweep)
+  {
+    // do either a forward or a backward sweep
+    //bool forward_sweep = flag == 0 || (flag == 2 && sweep == 0);
+    bool backward_sweep = flag == 1 || (flag == 2 && sweep == 1);
+    // loop over all diagonal blocks
+    for(size_t i = 0; i < n_diag_blocks; ++i)
+    {
+      size_t d = i; // block on the diagonal
+      if(backward_sweep)
+        d = n_diag_blocks - 1 - i; // this is positive
+      bool transposed;
+      auto diag_block = this->get_block(d, d, transposed);
+      if(transposed)
+        ErrThrow("can't to handle transposed blocks in BlockMatrix::sor_sweep");
+      if(!diag_block->is_square())
+        ErrThrow("unable to handle non-square diagonal block in "
+                 "BlockMatrix::sor_sweep");
+      size_t block_size = diag_block->GetN_Rows();
+      std::vector<double> modified_rhs(block_size, 0.0);
+      std::copy(b.block(d), b.block(d)+block_size, modified_rhs.begin());
+      // multiply solution with non-diagonal blocks in this block row.
+      for(size_t row_block = 0; row_block < n_diag_blocks; ++row_block)
+      {
+        if(row_block == d)
+          continue; // skip diagonal block
+        auto non_diagonal_block = this->get_block(d, row_block, transposed);
+        if(!transposed)
+          non_diagonal_block->multiply(x.block(row_block), &modified_rhs[0],
+                                       -1. );
+        else
+          non_diagonal_block->transpose_multiply(x.block(row_block),
+                                                 &modified_rhs[0], -1.);
+      }
+      // do the sor sweep
+
+#ifdef _MPI
+      auto comms = dynamic_cast<const BlockFEMatrix*>(this)->get_communicators();
+      if(backward_sweep)
+        diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 1, par_strat, *comms.at(d));
+      else
+        diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 0, par_strat, *comms.at(d));
+#else
+      if(backward_sweep)
+        diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 1);
+      else
+        diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 0);
+#endif
+    }
+  }
+}
+
     /* ************************************************************************* */
     void BlockMatrix::check_coloring() const
     {
@@ -212,7 +353,9 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
           ErrThrow("Length of Vector Block ", i, " is ", b.length(i),
                    "which does not fit n_rows_in_cell ", get_n_rows_in_cell(i, 0));
         }
-        handle_discovery_of_vector_actives(b.active(i), i);
+        // this method is (indirectly) called from BlockFEMatrix as well, so we
+        // should not print a warning here.
+        //handle_discovery_of_vector_non_actives(b.length(i)-b.active(i), i);
       }
     }
 
@@ -236,7 +379,9 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
           ErrThrow("Length of Vector Block ", j, " is ", x.length(j),
                    "which does not fit n_columns_in_cell ", get_n_columns_in_cell(0,j));
         }
-        handle_discovery_of_vector_actives(x.active(j), j);
+        // this method is (indirectly) called from BlockFEMatrix as well, so we
+        // should not print a warning here.
+        //handle_discovery_of_vector_non_actives(x.length(j)-x.active(j), j);
       }
     }
 
@@ -247,7 +392,8 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       // such thate those stored as transposed really get transposed
 
       std::vector<std::vector<std::shared_ptr<TMatrix>>> temp_block_grid
-      (n_cell_rows_, std::vector<std::shared_ptr<TMatrix>>(n_cell_rows_,nullptr));
+      (n_cell_rows_, 
+       std::vector<std::shared_ptr<TMatrix>>(n_cell_columns_,nullptr));
 
       // store smart pointers to the already treated transposed colors
       std::vector<std::shared_ptr<TMatrix>> treated_transp_colors{color_count_.size(), nullptr};
@@ -340,6 +486,15 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       return combined;
     }
 
+    std::shared_ptr<TMatrix> BlockMatrix::get_combined_submatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const
+    {
+      //delegate the work
+      BlockMatrix temp = get_sub_blockmatrix(upper_left, lower_right);
+      return temp.get_combined_matrix();
+    }
+
     /// @brief total number of columns(> n_block_columns)
     size_t BlockMatrix::get_n_total_columns() const
     { // sum the number of columns in the first block row
@@ -376,6 +531,89 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       }
       return n_total_rows;
     }
+
+    BlockMatrix BlockMatrix::get_sub_blockmatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const
+    {
+      size_t r_first = upper_left.first;
+      size_t r_last  = lower_right.first;
+      size_t c_first = upper_left.second;
+      size_t c_last  = lower_right.second;
+
+      //input check
+      if(r_first > r_last)
+        ErrThrow("upper_left.first > lower_right.first");
+      if(c_first > c_last)
+        ErrThrow("upper_left.second > lower_right.second");
+      if(r_last >= n_cell_rows_)
+        ErrThrow("lower_right.first >= this->n_cell_rows_");
+      if(c_last >= n_cell_columns_)
+        ErrThrow("lower_right.second >= n_cell_columns_");
+
+      //step 1: construct a blanco sumatrix of correct dimensions
+      std::vector<size_t> r_sizes;
+      std::vector<size_t> c_sizes;
+      for(size_t r = upper_left.first; r<=lower_right.first ; ++r)
+      {//fill r_sizes
+        r_sizes.push_back(this->cell_grid_[r][0].n_rows_);
+      }
+      for(size_t c = upper_left.second; c <= lower_right.second; ++c)
+      {
+        c_sizes.push_back(this->cell_grid_[0][c].n_columns_);
+      }
+      BlockMatrix sub_matrix(r_sizes, c_sizes);
+
+      //step 2: fill in the correctly colored blocks
+      // step 2: fill in the blocks - maintaining the correct coloring
+      std::vector< int > known_colors;
+      std::vector< std::shared_ptr<TMatrix> > known_mats; //actually FEMatrices...
+
+      for( size_t r = r_first; r < r_last + 1; ++r)
+      {
+        for( size_t c = c_first; c < c_last + 1; ++c)
+        {
+
+          int old_color = this->cell_grid_[r][c].color_;
+          auto known = std::find(known_colors.begin(), known_colors.end(), old_color);
+
+          if(known == known_colors.end())
+          {//case: this color appears for the first time
+            known_colors.push_back(old_color);
+
+            //this is actually a shared ptr to FEMatrix...
+            std::shared_ptr<TMatrix> new_mat =
+                create_block_shared_pointer(*cell_grid_[r][c].block_.get());
+
+            known_mats.push_back(new_mat);
+            //reset known
+            known = known_colors.end()-1;
+          }
+
+          size_t new_color = std::distance(known_colors.begin(), known); //position in vector
+          size_t transp = this->cell_grid_[r][c].is_transposed_;
+          size_t new_r = r - r_first;       // force element and color
+          size_t new_c = c - c_first;       // into the new sub matrix' cell grid
+          size_t old_color_sub =  sub_matrix.cell_grid_[new_r][new_c].color_;
+          sub_matrix.cell_grid_[new_r][new_c].color_ = new_color;
+          sub_matrix.cell_grid_[new_r][new_c].is_transposed_ = transp;
+          sub_matrix.cell_grid_[new_r][new_c].block_ = known_mats.at(new_color);
+          //color count
+          ++sub_matrix.color_count_.at(new_color);
+          --sub_matrix.color_count_.at(old_color_sub);
+        }
+      }
+
+      //tidy up the color count vector
+      sub_matrix.color_count_.erase(
+          std::remove( sub_matrix.color_count_.begin(),
+                       sub_matrix.color_count_.end(), 0),
+                       sub_matrix.color_count_.end()
+      );
+
+      return sub_matrix;
+    }
+
 
     /* ************************************************************************* */
     void BlockMatrix::print_and_check(std::string matrix_name) const
@@ -480,6 +718,93 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
 
       scale_blocks(scaling_factor, input_tuples);
     }
+
+/* ************************************************************************** */
+double BlockMatrix::get(unsigned int i, unsigned int j) const
+{
+  // first find the block in which the indices are in
+  size_t block_row = 0;
+  size_t block_col = 0;
+  
+  unsigned int row = i; // local copy for a better error message
+  unsigned int col = j; // local copy for a better error message
+  
+  for(; block_row < this->n_cell_columns_ ; ++block_row)
+  {
+    if(row >= this->cell_grid_[block_row][0].n_columns_)
+      row -= this->cell_grid_[block_row][0].n_columns_;
+    else
+      // found the block
+      break;
+  }
+  if(block_row == this->n_cell_columns_)
+    ErrThrow("could not find an entry in row ", i, ". There are ",
+             this->get_n_total_rows(), " rows in this BlockMatrix");
+  for(; block_col < this->n_cell_columns_ ; ++block_col)
+  {
+    if(col >= this->cell_grid_[block_row][block_col].n_columns_)
+      col -= this->cell_grid_[block_row][block_col].n_columns_;
+    else
+      // found the block
+      break;
+  }
+  if(block_col == this->n_cell_columns_)
+    ErrThrow("could not find an entry in column ", j, ". There are ",
+             this->get_n_total_columns(), " columns in this BlockMatrix");
+  
+  auto block = this->cell_grid_[block_row][block_col].block_;
+  try
+  {
+    double ret = block->get(row, col);
+    return ret;
+  }
+  catch(...) // entry is not in the sparsity structure
+  {
+    return 0.;
+  }
+}
+
+std::vector<double> BlockMatrix::get_diagonal() const
+{
+  size_t n_diag_entries = std::min(this->get_n_total_rows(),
+                                   this->get_n_total_columns());
+  std::vector<double> ret(n_diag_entries); // to be returned
+  size_t n_diag_blocks = std::min(this->get_n_cell_rows(),
+                                  this->get_n_cell_columns());
+  size_t offset = 0;
+  // loop over all diagonal blocks
+  for(size_t d_block = 0; d_block < n_diag_blocks; ++d_block)
+  {
+    bool transposed; // flag saying if the block is stored as the transposed
+    auto diag_block = this->get_block(d_block, d_block, transposed);
+    if(!diag_block->is_square())
+      ErrThrow("getting the diagonal of a BlockMatrix with non-square block "
+               "on the diagonal. I am not sure if this works as expected");
+    // note that this is not a great way to do this, because it creates these
+    // additional vectors, instead of writing the diagonal entries directly into
+    // the vector 'ret'.
+    std::vector<double> block_diagonal = diag_block->get_diagonal();
+    std::copy(block_diagonal.begin(), block_diagonal.end(), ret.begin()+offset);
+    offset += block_diagonal.size();
+  }
+  return ret;
+}
+
+
+/* ************************************************************************** */
+std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
+                                                      size_t cell_col,
+                                                      bool& is_transposed) const
+{
+  //find out the transposed state
+  const BlockMatrix::CellInfo& cell = cell_grid_.at(cell_row).at(cell_col);
+  is_transposed = cell.is_transposed_;
+
+  //cast const and FEMatrix (range check is done via "at")
+  //std::shared_ptr<const TMatrix> shared
+  //= std::dynamic_pointer_cast<const TMatrix>(cell.block_);
+  return cell.block_;
+}
 
     /* ************************************************************************* */
     // IMPLEMENTATION OF SPECIAL MEMBER FUNCTIONS
@@ -915,10 +1240,10 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     }
 
     /* ************************************************************************* */
-    std::shared_ptr<TMatrix> BlockMatrix::create_block_shared_pointer(const TMatrix& block)
+    std::shared_ptr<TMatrix> BlockMatrix::create_block_shared_pointer(const TMatrix& block) const
     {
 
-      Output::print("Called base class copy and store");
+      //Output::print("Called base class copy and store");
       return std::make_shared<TMatrix>(block);
     }
 
@@ -1108,12 +1433,12 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     }
 
     /* ************************************************************************* */
-    void BlockMatrix::handle_discovery_of_vector_actives(const int nActive, 
-                                                    const int spaceNumber) const
+    void BlockMatrix::handle_discovery_of_vector_non_actives(
+      const int n_nonActive, const int spaceNumber) const
     {
-      if(nActive != 0)
+      if(n_nonActive != 0)
       {
-        //maybe put to virtual method: handle_discovery_of_vector_actives
+        //maybe put to virtual method: handle_discovery_of_vector_non_actives
         // give a warning if the vector has actives - the matrix has definitely not!
         Output::print<2>("Warning! The BlockVector has actives, but BlockMatrix does not."
                          " Did you want to use a BlockFEMatrix instead?");
@@ -1292,7 +1617,7 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     /* ************************************************************************* */
     void BlockMatrix::split_color(size_t color_to_split)
     {
-      Output::print<2>("A color of this BlockMatrix had to be split."
+      Output::warn("A color of this BlockMatrix had to be split."
           " Is that what you intended?");
 
       // a new color is going to appear - start with 0 count
@@ -1380,3 +1705,9 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       } //endwhile
 
     }
+
+/* ************************************************************************* */
+void BlockMatrix::reset()
+{
+  this->scale(0.0);
+}

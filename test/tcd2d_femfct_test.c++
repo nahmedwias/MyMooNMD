@@ -121,34 +121,35 @@ int main(int argc, char* argv[])
   {
     TDatabase Database;
     TFEDatabase2D FEDatabase;
-
-    TDatabase::ParamDB->EXAMPLE =104;
-    TDatabase::ParamDB->RE_NR = 1e-20;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(Example2D::default_example_database());
+    db["example"] = 3;
+    db["reynolds_number"] = 1e-20;
 
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
     TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 2;
     TDatabase::ParamDB->FEM_FCT_PRELIMITING = 0;
 
-    TDatabase::ParamDB->SOLVER_TYPE=2;
-
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=0.02;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.001;
 
-    TDatabase::ParamDB->MEASURE_ERRORS=1;
-
-    TDomain domain;
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     for(int i=0; i< 5; ++i)
       domain.RegRefineAll();
 
-    Time_CD2D tcd(domain);
+    db.add("solver_type", "direct", "", {"direct", "petsc"});
+    Time_CD2D tcd(domain, db);
     time_integration(2,tcd);
+    
+    db["solver_type"] = "petsc";
+    Time_CD2D tcd_petsc(domain, db);
+    time_integration(2, tcd_petsc);
   }
 }
 

@@ -61,25 +61,24 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   int  UPW_APPL = TDatabase::ParamDB->UPWIND_APPLICATION;
   TBaseCell *cell;
   TCollection *coll;
-  int i,j,k,l,m,n, N_Cells, N_Vertices, N_Rows;
-  int n_mat, m_mat;
+  int i,j,k,l,m,n, N_Cells, N_Vertices;
   double *u1vect, *u2vect;
   int *GlobalNumbers, *BeginIndex, *DOF;
   const TFESpace2D *fespace;
-  double FctValNQuad[4][4] =
-  {
-    {
-      0.5, 0, 0, 0.5
-    }
-    ,
-    {
-      0.5, 0.5, 0, 0
-    },
-    { 0, 0.5, 0.5, 0 },
-    {
-      0, 0, 0.5, 0.5
-    }
-  };
+//  double FctValNQuad[4][4] =
+//  {
+//    {
+//      0.5, 0, 0, 0.5
+//    }
+//    ,
+//    {
+//      0.5, 0.5, 0, 0
+//    },
+//    { 0, 0.5, 0.5, 0 },
+//    {
+//      0, 0, 0.5, 0.5
+//    }
+//  };
   double FctValNTria[3][3] =
   {
     {
@@ -98,42 +97,39 @@ TFEFunction2D *u1, TFEFunction2D *u2)
       0.666666666666666666667
     }
   };
-  double FctValCQuad[4][4] =
-  {
-    {
-      0.375, 0.375, 0.125, 0.125
-    },
-    { 0.125, 0.375, 0.125, 0.375 },
-    { 0.125, 0.125, 0.375, 0.375 },
-    { 0.375, 0.125, 0.375, 0.125 }
-  };
-  double FctValCTria[3][3] =
-  {
-    {
-      0.416666666666666666667,
-      0.416666666666666666667,
-      0.166666666666666666667
-    },
-    {
-      0.166666666666666666667,
-      0.416666666666666666667,
-      0.416666666666666666667
-    },
-    {
-      0.416666666666666666667,
-      0.166666666666666666667,
-      0.416666666666666666667
-    }
-  };
+//  double FctValCQuad[4][4] =
+//  {
+//    {
+//      0.375, 0.375, 0.125, 0.125
+//    },
+//    { 0.125, 0.375, 0.125, 0.375 },
+//    { 0.125, 0.125, 0.375, 0.375 },
+//    { 0.375, 0.125, 0.375, 0.125 }
+//  };
+//  double FctValCTria[3][3] =
+//  {
+//    {
+//      0.416666666666666666667,
+//      0.416666666666666666667,
+//      0.166666666666666666667
+//    },
+//    {
+//      0.166666666666666666667,
+//      0.416666666666666666667,
+//      0.416666666666666666667
+//    },
+//    {
+//      0.416666666666666666667,
+//      0.166666666666666666667,
+//      0.416666666666666666667
+//    }
+//  };
   double matrix[4][4];
   double val1, val2, val, flux;
   double xcoords[4], ycoords[4];
-  double v1, v2, v3, v4;
-  double sx, sy, t, phi, s;
+  double sx, sy, t, phi;
   double nx, ny;
-  double nxs[4], nys[4];
-  double x,y;
-  double u1old, u2old;
+
   double *coeffs, *params;
   const int *ColInd, *RowPtr;
   double *Entries;
@@ -325,11 +321,10 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 }                                                 // end of UpwindForNavierStokes
 
 
-void UpwindForConvDiff(CoeffFct2D *Coeff,
-TSquareMatrix2D *sqmatrix, double *RHS,
-TFESpace2D *fespace, TDiscreteForm2D *DiscreteForm,
-TFEFunction2D *u1, TFEFunction2D *u2,
-int ConvIsVelo)
+void UpwindForConvDiff(CoeffFct2D *Coeff, TSquareMatrix2D *sqmatrix, 
+                       double *RHS, const TFESpace2D *fespace, 
+                       const TFEFunction2D *u1, const TFEFunction2D *u2, 
+                       bool ConvIsVelo)
 {
   double RE;
   double UPWIND_ORDER=TDatabase::ParamDB->UPWIND_ORDER;
@@ -337,14 +332,13 @@ int ConvIsVelo)
   int  UPW_APPL = TDatabase::ParamDB->UPWIND_APPLICATION;
   TBaseCell *cell;
   TCollection *coll;
-  int i,j,k,l,m,n, N_Cells, N_Vertices, N_Rows;
+  int i,j,k,l,m,n, N_Cells, N_Vertices;
   int n_mat, m_mat;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double matrix[4][4];
-  double Area, val1, val2, val, flux;
+  double flux;
   double xcoords[4], ycoords[4];
-  double v1, v2, v3, v4;
-  double sx, sy, t, phi, s;
+  double sx, sy, t, phi;
   double nx, ny, x, y;
   double nxs[4], nys[4];
   const int *ColInd, *RowPtr;
@@ -421,7 +415,7 @@ int ConvIsVelo)
           // compute convection in center of edge of dual
           // boundary
           if (!ConvIsVelo)
-            DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+            Coeff(1, &x, &y, &param, &coeff);
           else
           {
             u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -490,7 +484,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[(m+2)%3])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 // the underlying pde
                 else
                 {
@@ -514,7 +508,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[(m+1)%3])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -539,7 +533,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[n])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -587,7 +581,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[(m+3)%4])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -609,7 +603,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[(m+1)%4])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -632,7 +626,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[n])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -655,7 +649,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[n])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -744,16 +738,16 @@ BoundCondFunct2D *BoundaryCondition,
 int *dof, int ActiveBound,
 double *c_mh)
 {
-  int i, N_Edges, found, comp;
+  int i, N_Edges, found;
   double *coeff, sx, sy, x[3], y[3], b1, b2, val[3], ux, uy, norm_b;
   double phi_x[3], phi_y[3], phi_z, v1, v2, w1, w2, s1, s2;
-  double t0, t1, wx, wy, hx, hy, h21x, h21y, h31x, h31y, deter, alpha;
+  double t0, t1, wx, wy, h21x, h21y, h31x, h31y, deter, alpha;
   double beta, h21, h31, v, vx, vy, vx_orth, vy_orth, r2, phi;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
-  BoundCond Cond;
-  TBoundComp *BoundComp;
+//  TJoint *joint;
+//  TBoundEdge *boundedge;
+//  TIsoBoundEdge *isoboundedge;
+//  BoundCond Cond;
+//  TBoundComp *BoundComp;
 
   coeff = new double[6];
 
@@ -896,8 +890,8 @@ double *c_mh)
   switch(found)
   {
     case 1:
-      hx = x[2] - x[1];
-      hy = y[2] - y[1];
+//      hx = x[2] - x[1];
+//      hy = y[2] - y[1];
       // edge which determines VZ_2
       h21x = x[1] - x[0];
       h21y = y[1] - y[0];
@@ -906,8 +900,8 @@ double *c_mh)
       h31y = y[2] - y[0];
       break;
     case 3:
-      hx = x[0] - x[2];
-      hy = y[0] - y[2];
+//      hx = x[0] - x[2];
+//      hy = y[0] - y[2];
       // edge which determines VZ_2
       h21x = x[2] - x[1];
       h21y = y[2] - y[1];
@@ -916,8 +910,8 @@ double *c_mh)
       h31y = y[0] - y[1];
       break;
     case 5:
-      hx = x[1] - x[0];
-      hy = y[1] - y[0];
+//      hx = x[1] - x[0];
+//      hy = y[1] - y[0];
       // edge which determines VZ_2
       h21x = x[0] - x[2];
       h21y = y[0] - y[2];
@@ -1188,24 +1182,21 @@ BoundCondFunct2D *BoundaryCondition)
 {
   TBaseCell *cell;
   TCollection *coll;
-  int i,j,k,l,m,n, N_Cells, N_Vertices, N_Rows;
-  int n_mat, m_mat;
+  int i,k,l,m,n, N_Cells, N_Vertices;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double matrix[3][3];
   double c_mh[3], b1, b2, val, area;
   double xcoords[3], ycoords[3];
-  double v1, v2, v3, v4;
-  double sx, sy, t, phi, s;
-  double nx, ny, x, y;
-  double nxs[4], nys[4];
+  double sx, sy;
+  double x, y;
   const int *ColInd, *RowPtr;
   int jj, ii;
   double *Entries;
   int ActiveBound, DirichletBound, end;
-  double *coeff = new double[6], *param = new double[1];
+  double *coeff = new double[6];// *param = new double[1];
   FE2D CurrentElement;
-  BaseFunct2D *BaseFuncts, LocBF;
-  int *N_BaseFunct, LocN_BF;
+//  BaseFunct2D *BaseFuncts;// LocBF;
+//  int *N_BaseFunct;// LocN_BF;
 
   // get pointers to columns, rows and entries of matrix A
   ColInd = sqmatrix->GetKCol();
@@ -1222,8 +1213,8 @@ BoundCondFunct2D *BoundaryCondition)
   DirichletBound = fespace->GetHangingBound();
 
   // information on the base functions
-  BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
-  N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+//  BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+//  N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
   // get collection and number of cells
   coll = fespace->GetCollection();
@@ -1246,8 +1237,8 @@ BoundCondFunct2D *BoundaryCondition)
     }
 
     // compute local basis functions
-    LocN_BF = N_BaseFunct[CurrentElement];
-    LocBF = BaseFuncts[CurrentElement];
+//    LocN_BF = N_BaseFunct[CurrentElement];
+//    LocBF = BaseFuncts[CurrentElement];
 
     // # of vertices
     N_Vertices = cell->GetN_Vertices();

@@ -42,9 +42,9 @@ TFE3D::TFE3D(BaseFunct3D basefunct_id, NodalFunctional3D nodalfunctional_id,
 }
 
 /** check N[i](b[j]) = delta[ij] */
-void TFE3D::CheckNFandBF()
+void TFE3D::CheckNFandBF() const
 {
-  int i,j,k,l, N_Points;
+  int i, k,l, N_Points;
   double *xi, *eta, *zeta;
   
   NodalFunctional->GetPointsForAll(N_Points, xi, eta, zeta);
@@ -64,11 +64,8 @@ void TFE3D::CheckNFandBF()
 
   if(rank==TDatabase::ParamDB->Par_P0)
 #endif
-  if(TDatabase::ParamDB->SC_VERBOSE > 0)
-  {
-   cout << "CheckNFandBF: " << "BaseFunct_ID: " << BaseFunct_ID << " ";
-   cout << "NodalFunctional_ID: " << NodalFunctional_ID << endl;
-  }
+    Output::print<3>("CheckNFandBF: BaseFunct_ID: ", this->BaseFunct_ID,
+                  " NodalFunctional_ID: ", this->NodalFunctional_ID);
   for(k=0;k<N_DOF;k++)
   {
     for(l=0;l<N_Points;l++)
@@ -88,20 +85,12 @@ void TFE3D::CheckNFandBF()
 
 	  if(rank==TDatabase::ParamDB->Par_P0)
 	  #endif
-	  if(TDatabase::ParamDB->SC_VERBOSE > 0){
       if( i == k )
         if( fabs(FunctionalValues[i]-1) > 1e-8 )
-          cout << "BF: " << k << " NF: " << i << " " << FunctionalValues[i] << endl;
+          Output::print<3>("BF: ", k, " NF: ", i, " ", FunctionalValues[i]);
       if( i != k )
         if( fabs(FunctionalValues[i]-0) > 1e-8 )
-          cout << "BF: " << k << " NF: " << i << " " << FunctionalValues[i] << endl;
-	  }
+          Output::print<3>("BF: ", k, " NF: ", i, " ", FunctionalValues[i]);
     }
   }
-
-#ifdef _MPI
-  if(rank==TDatabase::ParamDB->Par_P0)
-#endif 
-  if(TDatabase::ParamDB->SC_VERBOSE > 0)
-  cout << endl;
 }

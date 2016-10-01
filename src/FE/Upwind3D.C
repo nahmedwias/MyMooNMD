@@ -47,26 +47,31 @@ void GetUpwindValue(double UPWIND_ORDER,double t,double *phi)
 // do upwind assembling for first order nonconforming elements
 // =======================================================================
 void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
-                             TFEFunction3D *u2, TFEFunction3D *u3)
+                             TFEFunction3D *u2, TFEFunction3D *u3,
+                             double one_over_nu,
+                             int upwind_order,
+                             double upwind_flux_damp,
+                             int upwind_application
+                             )
 {
-  double RE=TDatabase::ParamDB->RE_NR;
-  double UPWIND_ORDER=TDatabase::ParamDB->UPWIND_ORDER;
-  double UPWIND_FLUX_DAMP=TDatabase::ParamDB->UPWIND_FLUX_DAMP;
-  int  UPW_APPL = TDatabase::ParamDB->UPWIND_APPLICATION;
+  double RE=one_over_nu;
+  double UPWIND_ORDER=upwind_order;
+  double UPWIND_FLUX_DAMP=upwind_flux_damp;
+  int  UPW_APPL = upwind_application;
   TBaseCell *cell;
   TCollection *coll;
-  int i,j,k,l,m,n,m1, N_Cells, N_Edges, N_Faces, N_Rows, N_Vertices;
-  int n_mat, m_mat;
+  int i,j,k,l,m,n,m1, N_Cells, N_Edges, N_Faces, N_Vertices;
+//  int n_mat, m_mat;
   double *u1vect, *u2vect, *u3vect;
   int *GlobalNumbers, *BeginIndex, *DOF;
   const TFESpace3D *fespace;
   double matrix[8][8];
-  double val1, val2, val, val3, flux, RE2=RE*0.5;
+  double val1=0, val2=0, val3=0, flux, RE2=RE*0.5;
   double xcoords[8], ycoords[8], zcoords[8];
-  double v1, v2, v3, v4;
-  double sx, sy, sz, t, phi, s;
+//  double v1, v2, v3, v4;
+  double sx, sy, sz, t, phi; // s;
   double nx, ny, nz, Area;
-  double x,y,z;
+//  double x,y,z;
   int *ColInd, *RowPtr;
   double *Entries;
   int ActiveBound, DirichletBound, end;
@@ -324,14 +329,14 @@ void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *RHS,
   TBaseCell *cell;
   TCollection *coll;
   TShapeDesc *desc;
-  int i,j,k,l,m,n, N_Edges, N_Cells, N_Vertices, N_Rows, N_Faces;
-  int n_mat, m_mat;
+  int i,j,k,l,m,n, N_Edges, N_Cells, N_Vertices, N_Faces;
+//  int n_mat, m_mat;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double matrix[8][8];
-  double Area, val1, val2, val, flux;
+  double Area, flux;
   double xcoords[8], ycoords[8], zcoords[8];
-  double v1, v2, v3, v4;
-  double sx, sy, sz, t, phi, s;
+//  double v1, v2, v3, v4;
+  double sx, sy, sz, t, phi; // s;
   double nx, ny, nz, x, y, z;
   int *ColInd, *RowPtr;
   double *Entries;

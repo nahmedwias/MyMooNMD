@@ -3,7 +3,7 @@
 * @class Example_NSE2D
 * @brief store all functions needed to describe a (Navier-)Stokes example 
 * 
-* Depending on the value of TDatabase::ParamDB->EXAMPLE, the standard 
+* The standard
 * constructor of this class will fill the vectors (in Example2D) with pointers
 * to the functions needed to fully describe a particular example.
 * 
@@ -19,35 +19,19 @@
 
 #include<Example2D.h>
 #include <functional>
-#include <FEFunction2D.h>
+
+class NSE2D; //forward declaration
 
 class Example_NSE2D : public Example2D
 {
-  /** @brief a function which can be called as a post processing step 
-   *
-   * The arguments are the two velocity components and the pressure function. 
-   * This is for stationary problems
-   */
-  std::function<void(TFEFunction2D *, TFEFunction2D *,TFEFunction2D *)>
-    post_processing;
-
-  /** @brief A function which can be called as a post processing step
-   *    in the time dependent case
-   *
-   * The arguments are the two velocity components and the pressure function
-   * at the last time step, plus the two velocity components at the
-   * last-but-one time step.
-   */
-  std::function<void(TFEFunction2D *, TFEFunction2D *,TFEFunction2D *,TFEFunction2D *,TFEFunction2D *)>
-    post_processing_time;
-    
   public:
     /** @brief default constructor
      * 
      * This intializes a (Navier-)Stokes example in 2D. It is chosen according
-     * to TDatabase::ParamDB->EXAMPLE.
+     * to example_code.
      */
-    Example_NSE2D();
+    Example_NSE2D(const ParameterDatabase& user_input_parameter_db);
+
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
@@ -57,6 +41,12 @@ class Example_NSE2D : public Example2D
                   std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
       : Example2D(exact, bc, bd, coeffs) {};
   
+    /// Apply the function stored as post processing routine.
+    void do_post_processing(NSE2D& nse2d) const;
+
+    /// Return kinematic viscosity, if set.
+    double get_nu() const;
+
     //Declaration of special member functions - rule of zero
 
     //! Default copy constructor. Performs deep copy.
@@ -74,23 +64,11 @@ class Example_NSE2D : public Example2D
     //! Default destructor.
     ~Example_NSE2D() = default;
 
-    void do_post_processing(TFEFunction2D *u1, TFEFunction2D *u2,TFEFunction2D *p) const
-    { 
-      if(this->post_processing)
-        this->post_processing(u1, u2, p);
-    }
-  /*! @brief Example dependent post processing and output generating method.
-   *
-   * Checks if the std::function member post_processing_time was initialized
-   * for the current example and if so calls the method to do whatever it was
-   * intended to do.
-   */
-  void do_post_processing(TFEFunction2D *u1, TFEFunction2D *u2, TFEFunction2D *p,
-                          TFEFunction2D *u1old, TFEFunction2D *u2old) const
-  {
-    if(this->post_processing_time)
-      this->post_processing_time(u1, u2, p, u1old, u2old);
-  }
+  private:
+  /// Function doing the post processing for a stationary example.
+  /// TODO put NSE2D argument const as soon as FEFunctions can be copied properly!
+  std::function<void(NSE2D &)> post_processing_stat;
+  /// TODO Function doing the post processing for a time dependent example.
 };
 
 

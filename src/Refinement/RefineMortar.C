@@ -24,11 +24,10 @@
 
 #include <stdlib.h>
 
-static StoreGeomMortar TmpM[MAXN_ORIGEDGES];
-
 #ifdef __2D__
 int TGridCell::RefineMortar(int reflevel)
 {
+  static StoreGeomMortar TmpM[MAXN_ORIGEDGES];
   int i, j, N_1, N_2, MaxLen1, MaxLen2, MaxLen3, index;
   const int *TmpValues1, *TmpValues2, *TmpValues3, *TmpValues4;
   double TmpX, TmpY, T_0, T_1;

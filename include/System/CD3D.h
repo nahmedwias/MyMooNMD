@@ -24,22 +24,20 @@
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
+#include <ParameterDatabase.h>
+#include <Solver.h>
 
 #include <FEFunction3D.h>
 #include <Example_CD3D.h>
 
 #include <vector>
 #include <deque>
+#include <array>
 #include <list>
-
-#ifdef _MPI
-#include "mpi.h"
-#include <ParFEMapper3D.h>
-#include <ParFECommunicator3D.h>
-#endif
 
 class LocalAssembling3D; //forward declaration
 class Example_CD3D;
+
 
 class CD3D
 {
@@ -62,13 +60,6 @@ class CD3D
       BlockVector solution_;
       /** @brief Finite Element function */
       TFEFunction3D feFunction_;
-
-#ifdef _MPI
-      /** @brief A parallel FE mapper storing parallel information for the one matrix of this grid.*/
-      TParFEMapper3D parMapper_;
-      /** @brief A parallel FE communicator taking care for the MPI communication on this grid. */
-      TParFECommunicator3D parComm_;
-#endif
 
 
       /** @brief constructor in mpi case
@@ -121,6 +112,32 @@ class CD3D
      *         needed.
      */
     std::shared_ptr<TMultiGrid3D> multigrid_;
+    
+    /** @brief a local parameter database which controls this class
+     * 
+     * The database given to the constructor will be merged into this one. Only 
+     * parameters which are of interest to this class are stored (and the 
+     * defualt ParMooN parameters). Note that this usually does not include 
+     * other parameters such as solver parameters. Those are only in the 
+     * CD3D::solver object.
+     */
+    ParameterDatabase db;
+    
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
+
+    /** @brief Errors to be accesed from outside the class
+     * The array is filled during the function call CD3D::output()
+     * Currently, the errors store the global L2 and H1 errors.
+     */
+    std::array<double, int(2)> errors_;
+    
+    /** @brief write some information (number of cells, dofs, ...) */
+    void output_problem_size_info() const;
 
   public:
 
@@ -142,19 +159,22 @@ class CD3D
      * @param[in] collections A hierarchy of cell collections used for multigrid solve,
      * or just one collection in non-multigrid case. Ordered by fineness of the grid -
      * finest collection first!
-     *
+     * @param[in] param_db A parameter database with parameters concerning this
+     *                     class or any of its members (fe space, solver,
+     *                     assemble,...)
      * @param[in] example The example which is to be calculated.
-     *
      * @param[in] maxSubDomainPerDof Only in MPI case! the maximal number of
      * processes which share a single dof. The value is calculated in the
      * main program and handed down to the FESpaces. Getting rid of this
      * construction is a TODO .
      */
 #ifdef _MPI
-    CD3D(std::list<TCollection* > collections, const Example_CD3D& example, int maxSubDomainPerDof);
+    CD3D(std::list<TCollection* > collections,
+         const ParameterDatabase & param_db, const Example_CD3D& example,
+         int maxSubDomainPerDof);
 #else
-
-    CD3D(std::list<TCollection* > collections, const Example_CD3D& _example);
+    CD3D(std::list<TCollection* > collections, 
+         const ParameterDatabase & param_db, const Example_CD3D& _example);
 #endif
     
     /** @brief Assemble the system matrix resp. matrices in multigrid case.
@@ -177,10 +197,6 @@ class CD3D
      * 
      * The current errors will be printed out. If desired, further output, e.g.,
      * vtk files are created.
-     * Whether this method calculates and prints errors is determined by
-     *  TDatabase::ParamDB->MEASURE_ERRORS ,
-     * whether it produces VTK files by
-     *  TDatabase::ParamDB->WRITE_VTK .
      *
      * @param i Integer suffix for output file name. -1 means no suffix.
      */
@@ -202,7 +218,7 @@ class CD3D
      * intended to be, someday. Eventually this method and the like
      * will be moved to TDatabase.
      */
-    static void checkParameters();
+    void checkParameters();
 
     // getters and setters
 
@@ -259,6 +275,16 @@ class CD3D
     const Example_CD3D& getExample() const
     {
       return example_;
+    }
+    const ParameterDatabase & get_db() const
+    {
+      return db;
+    }
+
+    /** ************************************************************************ */
+    std::array< double, int(2) > get_errors() const
+    {
+      return errors_;
     }
 
     // Declaration of special member functions - delete all but destructor.

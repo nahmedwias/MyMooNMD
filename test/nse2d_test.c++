@@ -26,18 +26,14 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <NSE2D.h>
-
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <LocalAssembling2D.h>
 #include <Example_NSE2D.h>
+#include <Multigrid.h>
+#include <Chrono.h>
+#include <algorithm>
 
-#include <MainUtilities.h> //for error measuring
-
-void compare(NSE2D& nse2d, std::array<double, int(6)> errors)
+void compare(const NSE2D& nse2d, std::array<double, int(4)> errors)
 {
-  std::array<double, int(6)> computed_errors;
+  std::array<double, int(4)> computed_errors;
   computed_errors = nse2d.get_errors();
   
   // check the L2-error of the velcoity
@@ -59,21 +55,14 @@ void compare(NSE2D& nse2d, std::array<double, int(6)> errors)
   if(fabs(computed_errors[3] - errors[3]) > 1e-6 )
   {
     ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
-  }  
+  }
 }
-void check(TDomain &domain, int velocity_order, int nstype, int laplace_type,
-           int nonlinear_form,
-           std::array<double, int(6)> errors)
+
+void compute(TDomain &domain, ParameterDatabase& db,
+             std::array<double, int(4)> errors)
 {
-  TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
-  TDatabase::ParamDB->PRESSURE_SPACE = -4711;
-  TDatabase::ParamDB->NSTYPE = nstype;
-  TDatabase::ParamDB->LAPLACETYPE = laplace_type;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
-  
-  NSE2D nse2d(domain);
+  NSE2D nse2d(domain, db);
   nse2d.assemble();
-  
   // check stopping criterion
   nse2d.stopIt(0);
   for(unsigned int k=1;; k++)
@@ -81,15 +70,95 @@ void check(TDomain &domain, int velocity_order, int nstype, int laplace_type,
     Output::print<1>("nonlinear step " , setw(3), k-1, "\t",
                      nse2d.getResiduals());
     nse2d.solve();
-    
     // checking the first nonlinear iteration    
     nse2d.assemble_nonlinear_term();;
     if(nse2d.stopIt(k))
       break;
   }
-  nse2d.output();  
+  nse2d.output();
   // compare now the errors
   compare(nse2d, errors);
+}
+
+void check(TDomain &domain, ParameterDatabase db,
+           int velocity_order, int nstype, int laplace_type,
+           int nonlinear_form,
+           std::array<double, int(4)> errors)
+{
+  db.merge(Solver<>::default_solver_database());
+  db.merge(ParameterDatabase::default_nonlinit_database());
+  db.merge(Multigrid::default_multigrid_database());
+  db["problem_type"] = 5;
+  db["solver_type"] = "direct";
+  db["iterative_solver_type"] = "fgmres";
+  db["residual_tolerance"] = 1.e-12;
+  db["preconditioner"] = "least_squares_commutator";
+  
+  db["nonlinloop_maxit"] = 50;
+  db["nonlinloop_epsilon"] = 1e-10;
+
+  TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
+  TDatabase::ParamDB->PRESSURE_SPACE = -4711;
+  TDatabase::ParamDB->NSTYPE = nstype;
+  TDatabase::ParamDB->LAPLACETYPE = laplace_type;
+  TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
+  
+  Chrono timer;
+  compute(domain, db, errors);
+  timer.restart_and_print("nse2d direct solver,                    velocity "
+                          + std::to_string(velocity_order) + ", nstype "
+                          + std::to_string(nstype));
+  
+  // we have to reset the space codes because they are changed in nse2d
+  TDatabase::ParamDB->PRESSURE_SPACE = -4711;
+  TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
+  
+  db["solver_type"] = "iterative";
+  compute(domain, db, errors);
+  timer.restart_and_print("nse2d fgmres(lsc preconditioner),       velocity "
+                          + std::to_string(velocity_order) + ", nstype "
+                          + std::to_string(nstype));
+  
+  // we have to reset the space codes because they are changed in nse2d
+  TDatabase::ParamDB->PRESSURE_SPACE = -4711;
+  TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
+  
+
+  db["preconditioner"] = "multigrid";
+  db["multigrid_n_levels"] = db["refinement_n_initial_steps"].get<size_t>();
+  //choose smoother on fine grid according to element
+  std::vector<int> disc_p = {12,13,14,15,22,23,24};
+  if(std::find(disc_p.begin(), disc_p.end(), velocity_order) != disc_p.end())
+    db["multigrid_smoother"] = "cell_vanka_store";
+  else
+    db["multigrid_smoother"] = "batch_vanka_store";
+
+  db["multigrid_type"] = "standard";
+  db["multigrid_smoother_coarse"] = "direct_solve";
+  db["multigrid_n_pre_smooth"] = 0;
+  db["multigrid_n_post_smooth"] = 1;
+  db["multigrid_correction_damp_factor"] = 1.0;
+  db["multigrid_vanka_damp_factor"] = 1.0;
+  compute(domain, db, errors);
+  timer.restart_and_print("nse2d fgmres(multigrid preconditioner), velocity "
+                          + std::to_string(velocity_order) + ", nstype "
+                          + std::to_string(nstype));
+}
+
+void check_one_element(TDomain& domain, ParameterDatabase db,
+                       int velocity_order,
+                       std::array<double, int(4)> errors)
+{
+  int laplace_type = 0;
+  int nonlinear_form = 0;
+  // NSTYPE = 1
+  check(domain, db, velocity_order, 1, laplace_type, nonlinear_form, errors);
+  // NSTYPE = 2
+  check(domain, db, velocity_order, 2, laplace_type, nonlinear_form, errors);
+  // NSTYPE = 3
+  check(domain, db, velocity_order, 3, laplace_type, nonlinear_form, errors);
+  // NSTYPE is 4
+  check(domain, db, velocity_order, 4, laplace_type, nonlinear_form, errors);
 }
 
 // =======================================================================
@@ -105,61 +174,93 @@ int main(int argc, char* argv[])
   { //  declaration of databases
     TDatabase Database;
     TFEDatabase2D FEDatabase;
-    // default construct a domain object
-    TDomain domain;
 
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
-    TDatabase::ParamDB->EXAMPLE = 2; 
-    TDatabase::ParamDB->UNIFORM_STEPS = 3;
-    TDatabase::ParamDB->RE_NR=1;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_nonlinit_database());
+    db.merge(ParameterDatabase::default_output_database());
+    db.merge(Example2D::default_example_database());
+
+    db["problem_type"].set<size_t>(5);
+    db["example"] = 2;
+
+    db.add("refinement_n_initial_steps", (size_t) 2,"");
+    
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
+
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "TwoTriangles", "", {"UnitSquare", "TwoTriangles"});
+    
+    // default construct a domain object
+    TDomain domain(db);
+
+    db["reynolds_number"] = 1;
+    TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
-    TDatabase::ParamDB->LEVELS =1;
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE=50;
-    TDatabase::ParamDB->MEASURE_ERRORS = 1;
     
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
-    // refine grid up to the coarsest level
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    // refine grid
+    size_t n_ref = domain.get_n_initial_refinement_steps();
+    for(unsigned int i=0; i < n_ref; i++)
     {
       domain.RegRefineAll();
     }
-    //===========================================================
-    Output::print<1>("Testing the P2/P1 elements");
-    //===========================================================
-    std::array<double, int(6)> errors;
-    errors = {{0.000610487, 0.0389713, 0.0107332,  0.512621}};
-    // VELOCITY_SPACE = 2 and the pressure space is chosen in the class NSE2D
-    // NSTYPE = 1
-    check(domain, 2, 1, 0, 0, errors);
-    // NSTYPE = 2
-    check(domain, 2, 2, 0, 0, errors);
-    // NSTYPE = 3
-    check(domain, 2, 3, 0, 0, errors);
-    // NSTYPE is 4
-    check(domain, 2, 4, 0, 0, errors);
-    //===========================================================
-    Output::print<1>("Testing the P3/P2 elements");
-    //===========================================================
-    errors = {{1.84056e-05, 0.00142784, 0.000556315, 0.0430551}};
-    // NSTYPE = 1
-    check(domain, 3, 1, 0, 0, errors);
-    // NSTYPE = 2
-    check(domain, 3, 2, 0, 0, errors);
-    // NSTYPE = 3
-    check(domain, 3, 3, 0, 0, errors);
-    // NSTYPE = 4
-    check(domain, 3, 4, 0, 0, errors);
+    std::array<double, int(4)> errors;
     
+    //=========================================================================
+    Output::print<1>("\nTesting the P2/P1 elements");
+    errors = {{ 0.005005607397208, 0.15666212408257, 0.071089608676709,
+                1.3407900222228 }};
+    // VELOCITY_SPACE = 2 and the pressure space is chosen in the class NSE2D
+    check_one_element(domain, db, 2, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the P3/P2 elements");
+    errors = {{ 0.00028020829779642, 0.011391210186952, 0.0053396813413967,
+                0.20779333160236 }};
+    // VELOCITY_SPACE = 3 and the pressure space is chosen in the class NSE2D
+    check_one_element(domain, db, 3, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the P4/P3 elements");
+    errors = {{ 1.1817023010728e-05, 0.0006435418450572, 0.00050496270735108,
+                0.026998702772064 }};
+    // VELOCITY_SPACE = 4 and the pressure space is chosen in the class NSE2D
+    check_one_element(domain, db, 4, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the P5/P4 elements");
+    errors = {{ 4.3466391168252e-07, 2.793323812439e-05, 2.1824211773585e-05,
+                0.0016936362911126 }};
+    // VELOCITY_SPACE = 5 and the pressure space is chosen in the class NSE2D
+    check_one_element(domain, db, 5, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the P2-bubble/P1-disc elements");
+    errors = {{ 0.0071886299046824, 0.21185558654462, 0.36754876295023,
+                5.3058522557418 }};
+    // VELOCITY_SPACE = 22 and the pressure space is chosen in the class NSE2D
+    check_one_element(domain, db, 22, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the P3-bubble/P2-disc elements");
+    errors = {{ 0.00026037876329326, 0.010856952083039, 0.013201231959059,
+                0.39888576555041 }};
+    // VELOCITY_SPACE = 23 and the pressure space is chosen in the class NSE2D
+    check_one_element(domain, db, 23, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the P4-bubble/P3-disc elements");
+    errors = {{ 1.2032722339771e-05, 0.00055164963287203, 0.00063706731983293,
+                0.027783948983068 }};
+    // VELOCITY_SPACE = 24 and the pressure space is chosen in the class NSE2D
+    check_one_element(domain, db, 24, errors);
   } // end program 1
-//================================================================================  
+  //=========================================================================
   /** Program 2
    *  This program tests direct solve with galerkin discretization
    * direct solver; Test for Quad's
@@ -169,85 +270,97 @@ int main(int argc, char* argv[])
     //  declaration of databases
     TDatabase Database;
     TFEDatabase2D FEDatabase;
+
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_nonlinit_database());
+    db.merge(ParameterDatabase::default_output_database());
+    db.merge(Example2D::default_example_database());
+    db["problem_type"].set<size_t>(5);
+    db["example"] = 2;
+
+    db.add("refinement_n_initial_steps", (size_t) 2,"");
+    
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
+
     // default construct a domain object
-    TDomain domain;
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    TDomain domain(db);
+
     // parameters used for this test
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
-    TDatabase::ParamDB->EXAMPLE = 2; 
-    TDatabase::ParamDB->UNIFORM_STEPS = 4;
-    TDatabase::ParamDB->RE_NR=1;
+    db["reynolds_number"] = 1;
+    TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->LEVELS =1;
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE=50;
-    TDatabase::ParamDB->MEASURE_ERRORS = 1;
         
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
 
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-    // refine grid up to the coarsest level
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    // refine grid
+    size_t n_ref = domain.get_n_initial_refinement_steps();
+    for(unsigned int i=0; i < n_ref; i++)
     {
       domain.RegRefineAll();
     }
-    //===========================================================
-    Output::print<1>("Testing the Q2/P1-disc elements");
-    //===========================================================
-    std::array<double, int(6)> errors;
-    errors = {{6.37755e-05, 0.00661116, 0.00190367,  0.17806}};
+    std::array<double, int(4)> errors;
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the Q2/Q1 elements");
+    errors = {{ 0.004083204524442, 0.10522635824261, 0.017686667902813,
+                0.51182308944019 }};
+    // VELOCITY_SPACE  = 2
+    check_one_element(domain, db, 2, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the Q3/Q2 elements");
+    errors = {{ 0.00019319433716041, 0.0071078507849009, 0.0018446328461379,
+                0.057123632497266 }};
+    // VELOCITY_SPACE  = 3
+    check_one_element(domain, db, 3, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the Q4/Q3 elements");
+    errors = {{ 6.9434747253041e-06, 0.00035212311261646, 9.4703269177756e-05,
+                0.0048368160352994 }};
+    // VELOCITY_SPACE  = 4
+    check_one_element(domain, db, 4, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the Q5/Q4 elements");
+    errors = {{ 2.3951237974726e-07, 1.4163394749406e-05, 4.9000676557526e-06,
+                0.00030469183949993 }};
+    // VELOCITY_SPACE  = 5
+    check_one_element(domain, db, 5, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the Q2/P1-disc elements");
+    errors = {{ 0.0040557267369371, 0.10564123627325, 0.030975452768144,
+                0.70842776239597 }};
     // VELOCITY_SPACE  = 12
-    // NSTYPE = 1
-    check(domain, 12, 1, 0, 0, errors);
-    // NSTYPE = 2
-    check(domain, 12, 2, 0, 0, errors);
-    // NSTYPE = 3
-    check(domain, 12, 3, 0, 0, errors);
-    // NSTYPE 4 
-    check(domain, 12, 4, 0, 0, errors);
-    //===========================================================
-    Output::print<1>("Testing the Q3/P2-disc elements");
-    //===========================================================    
-    errors = {{8.44484e-07, 0.000121079, 6.07644e-05,  0.00859989}};
-    // VELOCITY_SPACE  = 12
-    // NSTYPE = 1
-    check(domain, 13, 1, 0, 0, errors);
-    // NSTYPE = 2
-    check(domain, 13, 2, 0, 0, errors);
-    // NSTYPE = 3
-    check(domain, 13, 3, 0, 0, errors);
-    // NSTYPE 4 
-    check(domain, 13, 4, 0, 0, errors);
-    //===========================================================
-    Output::print<1>("Testing the Q4/P3-disc elements");
-    //===========================================================
-    errors = {{1.02856e-08, 1.81526e-06, 1.45146e-06, 0.000287603}};
-    // VELOCITY_SPACE  = 12
-    // NSTYPE = 1
-    check(domain, 14, 1, 0, 0, errors);
-    // NSTYPE = 2
-    check(domain, 14, 2, 0, 0, errors);
-    // NSTYPE = 3
-    check(domain, 14, 3, 0, 0, errors);
-    // NSTYPE 4 
-    check(domain, 14, 4, 0, 0, errors);
-    //===========================================================
-    Output::print<1>("Testing the Q5/P4-disc elements");
-    //===========================================================    
-    errors = {{1.41762e-10, 2.90308e-08, 2.7216e-08,  7.02901e-06}};
-    // VELOCITY_SPACE  = 12
-    // NSTYPE = 1
-    check(domain, 15, 1, 0, 0, errors);
-    // NSTYPE = 2
-    check(domain, 15, 2, 0, 0, errors);
-    // NSTYPE = 3
-    check(domain, 15, 3, 0, 0, errors);
-    // NSTYPE 4 
-    check(domain, 15, 4, 0, 0, errors);
+    check_one_element(domain, db, 12, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the Q3/P2-disc elements");
+    errors = {{ 0.00020642736694367, 0.0075794259144329, 0.0039793392063018,
+                0.13655739379564 }};
+    // VELOCITY_SPACE  = 13
+    check_one_element(domain, db, 13, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the Q4/P3-disc elements");
+    errors = {{ 9.9544541389566e-06, 0.00045888380841742, 0.00037625559674667,
+                0.01835259073302 }};
+    // VELOCITY_SPACE  = 14
+    check_one_element(domain, db, 14, errors);
+    
+    //=========================================================================
+    Output::print<1>("\nTesting the Q5/P4-disc elements");
+    errors = {{ 5.3747286967048e-07, 2.7997005479668e-05, 2.81141239001e-05,
+                0.0018176331985532 }};
+    // VELOCITY_SPACE  = 15
+    check_one_element(domain, db, 15, errors);
   }
   
   return 0;

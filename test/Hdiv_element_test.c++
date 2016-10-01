@@ -164,17 +164,17 @@ int main(int argc, char* argv[])
   //  declaration of databases
   TDatabase Database;
   TFEDatabase2D FEDatabase;
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.add("refinement_n_initial_steps", (size_t) 1,"");
 
   Output::print("************************************************************");
   Output::print("\ntest with quads");
   {
-    // default construct a domain object
-    TDomain domain;
-    
     // the domain is initialised with default description and default
     // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-    //domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare_US22");
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    TDomain domain(db);
     
     std::list<FE2D> elements = { N_RT0_2D_Q_M, N_RT1_2D_Q_M, N_RT2_2D_Q_M, 
                                  N_RT3_2D_Q_M, N_BDM1_2D_Q_M, N_BDM2_2D_Q_M,
@@ -187,12 +187,10 @@ int main(int argc, char* argv[])
   Output::print("************************************************************");
   Output::print("test with triangles");
   {
-    // default construct a domain object
-    TDomain domain;
-    
     // the domain is initialised with default description and default
     // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
+    db["geo_file"]= "TwoTriangles";
+    TDomain domain(db);
     
     std::list<FE2D> elements = { N_RT0_2D_T_A, N_RT1_2D_T_A, N_RT2_2D_T_A,
                                  N_RT3_2D_T_A, N_BDM1_2D_T_A, N_BDM2_2D_T_A,

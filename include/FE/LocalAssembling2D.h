@@ -42,15 +42,17 @@ enum LocalAssembling2D_type { ConvDiff,
                               TCD2D_Mass,// mass matrix, (+ K matrix in case of SUPG)
                               NSE2D_Galerkin,
                               NSE2D_Galerkin_Nonlinear,
+                              NSE2D_SUPG,
+                              NSE2D_SUPG_NL,
                               TNSE2D,
                               TNSE2D_NL,
                               TNSE2D_Rhs,
                               Darcy2D_Galerkin,
-                              RECONSTR_TSTOKES,
-                              RECONSTR_NLGALERKIN,
-                              RECONSTR_GALERKIN_Rhs,
-                              RECONSTR_MASS,
-                              RECONSTR_TNSE,
+                              Brinkman2D_Galerkin1,
+                              Brinkman2D_Galerkin1b,
+                              Brinkman2D_Galerkin2,
+                              Brinkman2D_Galerkin1ResidualStab,
+                              Brinkman2D_Galerkin1ResidualStab2,
                               RECONSTR_TNSENL,
                               NO_LOCAL_ASSEMBLE,
                               Custom /// Customized local assembling object. To be used with non-standard problems.
@@ -144,10 +146,20 @@ class LocalAssembling2D
      * in case of Navier-Stokes problems. It only exists in order to not make 
      * the constructor huge. 
      * 
-     * Basically this function implements four nested switches (discretization 
-     * type, NSTYOE, Laplace type, nonlinear form type)
+     * Basically this function implements four nested switches (
+     * NSTYPE's, Laplace type, nonlinear form type)
+     * 
+     * For different discretization the function will become much longer. 
+     * Therefore, different schemes are separated by different functions.
+     * 
+     * This function serves to create local variables for
+     * the standard Galerkin discretization.
      */
-    void set_parameters_for_nse(LocalAssembling2D_type type);
+    void set_parameters_for_nseGalerkin(LocalAssembling2D_type type);
+    
+    /** This function creates local variables for the SUPG method.
+     */
+    void set_parameters_for_nseSUPG(LocalAssembling2D_type type);
     /** 
      * setting every thing for the time dependent Navier-Stokes
      * problems

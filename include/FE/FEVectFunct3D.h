@@ -33,7 +33,7 @@ class TFEVectFunct3D : public TFEFunction3D
     { return N_Components; }
 
     /** return i-th component as FEFunction3D */
-    TFEFunction3D *GetComponent(int i)
+    TFEFunction3D *GetComponent(int i) const
     {
       return new TFEFunction3D(FESpace3D, Name, Description,
                                Values+i*Length, Length);
@@ -57,7 +57,9 @@ class TFEVectFunct3D : public TFEFunction3D
         double *errors);
         
     /** write the solution into a data file **/
-    void WriteSol(double t);
+    void WriteSol(double t,
+    		std::string directory=std::string("."),
+    		std::string basename=std::string("parmoon_solution"));
 
     /** Read the solution from a given data file **/
     void ReadSol(char *BaseName);

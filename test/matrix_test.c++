@@ -157,8 +157,8 @@ int main(int argc, char **argv)
        || !equal(y[3], 0.))
       ErrThrow("C and CT seem to be not transposed to each other");
     
-    delete x; x = nullptr;
-    delete y; y = nullptr;
+    delete [] x; x = nullptr;
+    delete [] y; y = nullptr;
   }
   // ##########################################################################
   // ##########################################################################
@@ -169,6 +169,7 @@ int main(int argc, char **argv)
     matD.scale(scaling); // scale all matrix entries
     if(!equal(matD.GetNorm(-2), norm * scaling))
       ErrMsg("wrong result after scaling a matrix, matrix D");
+    matD.scale(1./scaling); // undo the scaling
     
     TMatrix matB_copy(matB);
     
@@ -184,6 +185,8 @@ int main(int argc, char **argv)
        || !equal(matB_copy(1, 2), -30)  || !equal(matB_copy(2, 1), -36)
        || !equal(matB_copy(2, 3), -12))
       ErrThrow("wrong results after scaling with vector, matrix B");
+    
+    delete [] x;
   }
   // ##########################################################################
   // ##########################################################################
@@ -217,9 +220,9 @@ int main(int argc, char **argv)
       ErrThrow("wrong results after multiplication with transpose from right, ",
                "matrix A");
     delete matAAT;
-    
+
     std::vector<double> scale{1.0, 2.0, -3.0};
-    TMatrix * matCCT = matC.multiply_with_transpose_from_right(scale);
+    matAAT = matC.multiply_with_transpose_from_right(scale);
     if(!equal(matAAT->get(0, 0), -143) || !equal(matAAT->get(0, 1), 63)
        || !equal(matAAT->get(0, 2), -288) || !equal(matAAT->get(0, 3), -245) )
       ErrThrow("wrong results after multiplication with transpose from right, ",
@@ -236,8 +239,8 @@ int main(int argc, char **argv)
        || !equal(matAAT->get(3, 2), -504) || !equal(matAAT->get(3, 3), -419) )
       ErrThrow("wrong results after multiplication with transpose from right, ",
                "matrix C, fourth row");
-    matCCT->PrintFull("CCT");
-    delete matCCT;
+    matAAT->PrintFull("AAT");
+    delete matAAT;
   }
   // ##########################################################################
   // ##########################################################################    
@@ -296,6 +299,75 @@ int main(int argc, char **argv)
     TMatrix copyB = matB;
     // move assignement
     TMatrix moveB = TMatrix(structureB);
+  }
+  
+  {
+    // test getting the diagonal
+    auto test_diagonal = [](const std::vector<double>& diag, const TMatrix& mat)
+    {
+      double entry;
+      for(size_t i = 0; i < diag.size(); ++i)
+      {
+        try {entry = mat.get(i,i);} // possibly not in the sparsity pattern
+        catch (...) { entry = 0.0; }
+        if(diag[i] != entry)
+          ErrThrow("wrong diagonal ", i, ": ", diag[i], " != ", entry);
+      }
+    };
+    
+    auto diag_A = matA.get_diagonal();
+    test_diagonal(diag_A, matA);
+    auto diag_B = matB.get_diagonal(); // B is not square
+    test_diagonal(diag_B, matB);
+    auto diag_C = matC.get_diagonal(); // C is not square
+    test_diagonal(diag_C, matC);
+    auto diag_D = matD.get_diagonal();
+    test_diagonal(diag_D, matD);
+  }
+  
+  {
+    // testing TMatrix::sor_sweep
+    std::vector<double> rhs = {-1., 0., 1., 2.};
+    std::vector<double> sol(4, 0.0);
+    matA.sor_sweep(&rhs[0], &sol[0], 0.5, 0);
+    //matA.PrintFull("A");
+    //Output::print("rhs ", rhs[0], ", ", rhs[1], ", ", rhs[2], ", ", rhs[3]);
+    //Output::print("sol ", sol[0], ", ", sol[1], ", ", sol[2], ", ", sol[3]);
+    
+    auto vector_equal = [](const std::vector<double>& a,
+                           const std::vector<double>& b)
+    {
+      double diff = 0.;
+      for(size_t i = 0; i < a.size(); ++i)
+        diff += std::abs(a[i] - b[i]);
+      return diff;
+    };
+    
+    rhs = {-1., 1., 3.};
+    sol = {-2., 120./149., 290./149.}; // this is the true solution
+    std::vector<double> sol_copy(sol);
+    matD.sor_sweep(&rhs[0], &sol[0], 0.5, 0);
+    //matD.PrintFull("D");
+    //Output::print("rhs ", rhs[0], ", ", rhs[1], ", ", rhs[2]);
+    //Output::print("sol ", sol[0], ", ", sol[1], ", ", sol[2]);
+    if(vector_equal(sol, sol_copy) > 1e-14)
+      ErrThrow("TMatrix::sor_sweep changed the solution when it shouldn't");
+    matD.sor_sweep(&rhs[0], &sol[0], 0.5, 1);
+    if(vector_equal(sol, sol_copy) > 1e-14)
+      ErrThrow("TMatrix::sor_sweep changed the solution when it shouldn't");
+    matD.sor_sweep(&rhs[0], &sol[0], 0.5, 2);
+    if(vector_equal(sol, sol_copy) > 1e-14)
+      ErrThrow("TMatrix::sor_sweep changed the solution when it shouldn't");
+    
+    Output::print("SSOR solve imitation:");
+    sol = {0., 0., 0.};
+    for(size_t i = 0; i < 10; ++i)
+    {
+      matD.sor_sweep(&rhs[0], &sol[0], 1.1, 2);
+      Output::print("L1-error: ", i, ": ", vector_equal(sol, sol_copy));
+    }
+    if(vector_equal(sol, sol_copy) > 1e-14)
+      ErrThrow("TMatrix::sor_sweep could not compute the correct solution");
   }
   
   delete matCT;

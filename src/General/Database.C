@@ -53,17 +53,10 @@
 #include <It_EQLevel.h>
 #include <It_LELevel.h>
 #include <It_OCAF.h>
-
+#include <Utilities.h>
 #include <MooNMD_Io.h>
-
 #include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <time.h>
-#include <stdlib.h>
-extern "C" {
-#include <amg_solve_main.h>
-}
+
 #ifdef __MORTAR__
   #include <It_Mortar.h>
   #include <RefMortar0Desc.h>
@@ -330,29 +323,11 @@ void TDatabase::SetDefaultParameters()
   ParamDB->VERSION = 1;
 
   tmp = new char[12];
-  strcpy(tmp,"NO_GEO_FILE");
-  ParamDB->GEOFILE=tmp;
-  tmp = new char[17];
-  strcpy(tmp,"NO_GEO_FILE_INTL");
-  ParamDB->GEOFILE_INTL=tmp;
-  
-  tmp = new char[12];
-  strcpy(tmp,"NO_BND_FILE");
-  ParamDB->BNDFILE=tmp;
-    
-  tmp = new char[17];
-  strcpy(tmp,"NO_BND_FILE_INTL");
-  ParamDB->BNDFILE_INTL=tmp;
-  
-  tmp = new char[12];
   strcpy(tmp,"NO_MAP_FILE");
   ParamDB->MAPFILE=tmp;
   tmp = new char[25];
   strcpy(tmp,"MooN_MD_default_outfile");
   ParamDB->OUTFILE=tmp;
-  
-  ParamDB->PROBLEM_TYPE = 0;
-  ParamDB->EXAMPLE = -1; // has to be set to some number >=0
   
   ParamDB->timeprofiling = 0; //time profiling
   ParamDB->MapperType = 1;
@@ -385,8 +360,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->PRESSURE_SEPARATION = 0;
   ParamDB->OMPNUMTHREADS=1;
 
-  ParamDB->LEVELS = 1000;
-  ParamDB->UNIFORM_STEPS = 1000;
   ParamDB->DRIFT_X = 0;
   ParamDB->DRIFT_Y = 0;
   ParamDB->DRIFT_Z = 0.41;
@@ -418,8 +391,18 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SHISHKIN_MESH = 0;
   ParamDB->SHISHKIN_DIAM = 1.0;
   ParamDB->NSTYPE = 1;
+  ParamDB->BrinkmanTYPE = 1;
   ParamDB->DARCYTYPE = 1;
+    
   ParamDB->SIGMA_PERM = 1;
+  ParamDB->VISCOSITY = 1;
+  ParamDB->EFFECTIVE_VISCOSITY = 1;
+  ParamDB->PERMEABILITY = 1;
+    
+  ParamDB->equal_order_stab_weight_P1P1= 0;
+  ParamDB->equal_order_stab_weight_P2P2= 0;
+    
+    
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
   ParamDB->VMM_COARSE_LEVEL = 4711;
@@ -533,15 +516,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->MIN_MAX_ADJOINT = 0;
   ParamDB->INITIAL_STEEPEST_DESCENT_ADJOINT = 0;
 
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_basefile");
-  ParamDB->BASENAME = tmp;
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_basefile");
-  ParamDB->VTKBASENAME = tmp;
-  tmp = new char[2];
-  strcpy(tmp,"."); // current directory
-  ParamDB->OUTPUTDIR = tmp;
   tmp = new char[40];
   strcpy(tmp,"MooN_MD_default_save_data_filename");
   ParamDB->SAVE_DATA_FILENAME=tmp;
@@ -578,16 +552,14 @@ void TDatabase::SetDefaultParameters()
   ParamDB->GROUP_FEM = 0;
 
   /** parameters for controling the program */
-  ParamDB->WRITE_PS = FALSE; 
   ParamDB->WRITE_GRAPE = FALSE; 
   ParamDB->WRITE_GMV = FALSE; 
   ParamDB->WRITE_AMIRA = FALSE; 
-  ParamDB->WRITE_VTK = FALSE; 
   ParamDB->WRITE_GNU = FALSE; 
+  ParamDB->WRITE_CASE = FALSE; 
   ParamDB->SAVE_DATA = FALSE; 
   ParamDB->READ_DATA = FALSE; 
   ParamDB->READ_GRAPE_FILE = FALSE; 
-  ParamDB->MEASURE_ERRORS = FALSE; 
   ParamDB->ESTIMATE_ERRORS = FALSE; 
   ParamDB->SOLVE_ADJOINT_PROBLEM = FALSE; 
   ParamDB->COMPUTE_VORTICITY_DIVERGENCE = FALSE;
@@ -595,143 +567,49 @@ void TDatabase::SetDefaultParameters()
   /** the following parameters are for individual use */
   ParamDB->P2 = 1.0;
 
-  // ******** parameters for scalar system *********//
-  ParamDB->SOLVER_TYPE = 1; 
-
-  // parameters for nonlinear iteration
-  ParamDB->SC_NONLIN_ITE_TYPE_SCALAR = 0;
-  ParamDB->SC_NONLIN_MAXIT_SCALAR = 10000;
-  ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR = 1e-10;
-  ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR = 1.0;
-
-  // parameters for linear iteration
-  ParamDB->SC_SOLVER_SCALAR=AMG_GMRES_FLEX;
-  ParamDB->SC_PRECONDITIONER_SCALAR=AMG_MGC;
-  ParamDB->SC_LIN_MAXIT_SCALAR = 10000;
-  ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0.0;
-  ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-10;
-  ParamDB->SC_LIN_RED_FACTOR_SCALAR_SOLD = ParamDB->SC_LIN_RED_FACTOR_SCALAR;
-  ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD = ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-  ParamDB->SC_LIN_MAXIT_SCALAR_SOLD = ParamDB->SC_LIN_MAXIT_SCALAR;
   ParamDB->SC_NONLIN_ITE_ADJOINT = 1000;
-  ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER = 1;
 
-
-  // parameters which are used in scalar multigrid
-  ParamDB->SC_MG_TYPE_SCALAR = 0; 
-  ParamDB->SC_MG_CYCLE_SCALAR = 1; 
-  ParamDB->SC_SMOOTHER_SCALAR = 3;
-  ParamDB->SC_PRE_SMOOTH_SCALAR= 2;
-  ParamDB->SC_POST_SMOOTH_SCALAR = 2;
-  ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR = 1.0;
-  ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR = 1.0;
-  ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR = 1.0;
-  ParamDB->SC_COARSE_SMOOTHER_SCALAR = 3;
-  ParamDB->SC_COARSE_MAXIT_SCALAR = 10;
-  ParamDB->SC_COARSE_RED_FACTOR_SCALAR =0.1;
-  ParamDB->SC_GMG_DAMP_FACTOR_SCALAR = 1.0;
-  ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR = 1.0;
-
-  ParamDB->SC_COARSEST_LEVEL_SCALAR = 0;
-  ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR = 0;
-
-  ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR = 0;
-  ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR = 1;
 
   // ******** parameters for saddle point system *********//
 
   // parameters for nonlinear iteration
   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
-  ParamDB->SC_NONLIN_MAXIT_SADDLE = 1000;
-  ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
-  ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;
-  ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE = 0;
 
-  // parameters for linear iteration
-  ParamDB->SC_SOLVER_SADDLE=AMG_GMRES_FLEX;
-  ParamDB->SC_PRECONDITIONER_SADDLE=AMG_MGC;
-  ParamDB->SC_LIN_MAXIT_SADDLE = 10000;
-  ParamDB->SC_LIN_RED_FACTOR_SADDLE = 0.0;
-  ParamDB->SC_LIN_RES_NORM_MIN_SADDLE = 1e-10;
 
-  // parameters which are used in scalar multigrid
-  ParamDB->SC_MG_TYPE_SADDLE = 0; 
-  ParamDB->SC_MG_CYCLE_SADDLE = 1; 
-  ParamDB->SC_SMOOTHER_SADDLE = 2;
-  ParamDB->SC_PRE_SMOOTH_SADDLE= 2;
-  ParamDB->SC_POST_SMOOTH_SADDLE = 2;
-  ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE = 1.0;
-  ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE = 1.0;
-  ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE = 1.0;
-  ParamDB->SC_COARSE_SMOOTHER_SADDLE = 2;
-  ParamDB->SC_COARSE_MAXIT_SADDLE = 10;
-  ParamDB->SC_COARSE_RED_FACTOR_SADDLE = 0.1;
-  ParamDB->SC_GMG_DAMP_FACTOR_SADDLE = 1.0;
-  ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE = 1.0;
+    
+  /** parameters for weakly imposing boundary/interface conditions */
+  ParamDB->n_neumann_boundary = 0.;
+  ParamDB->neumann_boundary_id.clear();
+  ParamDB->neumann_boundary_value.clear();
+    
+  ParamDB-> n_g_v_boundary = 0.;
+  ParamDB-> g_v_boundary_id.clear();
+  ParamDB->g_v_boundary_value.clear();
+    
+  ParamDB-> n_unvn_boundary = 0.;
+  ParamDB-> unvn_boundary_id.clear();
+  ParamDB->unvn_boundary_value.clear();
 
-  ParamDB->SC_COARSEST_LEVEL_SADDLE = 0;
-  ParamDB->SC_FIRST_SOLUTION_LEVEL_SADDLE = 0;
-
-  ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE = 0;
-  ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE = 0;
-
-  ParamDB->SC_LARGEST_DIRECT_SOLVE = 203;
-  ParamDB->SC_LARGEST_DIRECT_SOLVE = 100;
-  ParamDB->SC_DOWNWIND_TYPE = 0;
-
-  /** AMG solver parameters */
-  // coarsen context 
-  ParamDB->CC_ALPHA =  0.33333333;
-  ParamDB->CC_BETA = 1.0E-5;
-  ParamDB->CC_MINCLUSTER=4;
-  ParamDB->CC_MAXCLUSTER=6;
-  ParamDB->CC_MAXDISTANCE=2;
-  ParamDB->CC_MAXCONNECTIVITY=15;
-  ParamDB->CC_DEPTHTARGET=20;
-  ParamDB->CC_COARSENTARGET=200;
-  ParamDB->CC_COARSENRATE=1.2;
-  ParamDB->CC_MAJOR=-1;
-  ParamDB->CC_DEPENDENCY=AMG_UNSYM;
-  ParamDB->CC_RESCALE=1.8;
-  ParamDB->CC_VERBOSE=1;
+  ParamDB-> n_gradunv_boundary = 0.;
+  ParamDB-> gradunv_boundary_id.clear();
+  ParamDB->gradunv_boundary_value.clear();
+    
+  ParamDB-> n_u_v_boundary = 0.;
+  ParamDB-> u_v_boundary_id.clear();
+  ParamDB->u_v_boundary_value.clear();
+    
+  ParamDB-> n_p_v_n_boundary = 0.;
+  ParamDB-> p_v_n_boundary_id.clear();
+  ParamDB-> p_v_n_boundary_value.clear();
+    
+  //Nitsche Combi - weak Dirichlet
+  ParamDB-> n_nitsche_boundary = 0.;
+  ParamDB-> nitsche_boundary_id.clear();
+  ParamDB-> nitsche_penalty.clear();
+    
+    
+    
   
-  // THESE ARE THE DEFAULTS, DO NOT CHANGE 
-  // solver context 
-  ParamDB->SC_SYSTEM_TYPE=SCALAR;
-  ParamDB->SC_AMG_PREC_IT= 1;
-  ParamDB->SC_AMG_PREC_RED_FACTOR= 0.5;
-  ParamDB->SC_EX_MAXIT = 0;
-  ParamDB->SC_GMRES_RESTART = 10;
-  ParamDB->SC_LCD_START_VECTOR = 0;
-  ParamDB->SC_ILU_BETA=0.0;
-  ParamDB->SC_SOR_OMEGA=1.5;
-  ParamDB->SC_SMOOTHER_RED_FACTOR= 0.1;
-  ParamDB->SC_OMEGA_COARSE_0=1.0;
-  ParamDB->SC_OMEGA_P_0=1.0;
-  ParamDB->SC_ILUT_TOL=0.01;
-  ParamDB->SC_ILUT_ABSOLUTE_FILLIN=1;
-  ParamDB->SC_ILUT_RELATIVE_FILLIN=1.0;
-  ParamDB->SC_ILUT_SORT=ILUT_QUICK_SPLIT_0;
-  ParamDB->SC_SCHUR_INV_OF_A= AMG_SSOR;
-  ParamDB->SC_SCHUR_INV_OF_A_MAXIT= 1;
-  ParamDB->SC_SCHUR_ITERATION_DAMP = 0.5;
-  ParamDB->SC_SCHUR_ITERATION_MAXIT = 100;
-  ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL =0;
-  ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL=100;
-  ParamDB->SC_DIV_FACTOR=1e10;
-  ParamDB->SC_NONLIN_DIV_FACTOR=1e10;
-  ParamDB->SC_SMOOTHING_STEPS=0;
-  ParamDB->SC_N1_PARAM=1;
-  ParamDB->SC_N2_PARAM=1;
-  ParamDB->SC_MINIT=0;
-  ParamDB->SC_VAS_LAZ_DELTA=1.0;
-  ParamDB->SC_VERBOSE=1;
-  ParamDB->SC_VERBOSE_AMG=1;
-  ParamDB->SC_ROW_EQUILIBRATION = 0;
-
-  ParamDB->SC_BRAESS_SARAZIN_MATRIX = 2;
-  ParamDB->SC_BRAESS_SARAZIN_ALPHA = 1.5;
-
   ParamDB->TETGEN_QUALITY = 0.0;
   ParamDB->TETGEN_VOLUMEN = 0.0;
   ParamDB->TETGEN_STEINER = 0;
@@ -842,7 +720,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->INPUT_QUAD_RULE = 0;
   ParamDB->INTERNAL_PROBLEM_LINEAR = 0;
   ParamDB->INTERNAL_PRESSURE_SPACE = 0;
-  ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+  ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
   ParamDB->INTERNAL_SLIP_WITH_FRICTION = 0;
   ParamDB->INTERNAL_SLIP_WITH_FRICTION_IDENTITY = 0;
   ParamDB->INTERNAL_QUAD_HEXA = 0;
@@ -980,40 +858,42 @@ void TDatabase::SetDefaultParameters()
   ParamDB->CYLINDER_22000_YPLUS_BACK  = 1000;
   
 // parameters for BULK computations
-  ParamDB->BULK_REACTION_DISC = 1;
-  ParamDB->BULK_PB_DISC = 3;
-  ParamDB->BULK_PB_DISC_STAB = 1;
-  ParamDB->BULK_PB_DISC_FCT_GROUP = 1;
-  ParamDB->BULK_COUPLING = 1;
-  ParamDB->BULK_GROWTH_RATE = 1;
+  ParamDB->BULK_REACTION_DISC = 0;
+  ParamDB->BULK_PB_DISC = 0;
+  ParamDB->BULK_PB_DISC_STAB = 0;
+  ParamDB->BULK_PB_DISC_FCT_GROUP = 0;
+  ParamDB->BULK_COUPLING = 0;
+  ParamDB->BULK_GROWTH_RATE = 0;
   ParamDB->BULK_REACTION_MASS_LUMPING = 0;
-  ParamDB->BULK_REACTION_C_CUT = 6;
   ParamDB->BULK_METHODS_OF_MOMENTS = 0;
-  ParamDB->BULK_MOM_DISC = 2;
-  ParamDB->BULK_SOLD_PARAMETER_TYPE = 51;
-  ParamDB->N_CELL_LAYERS_PSD = 16;
-  ParamDB->N_CELL_LAYERS_PSD_2 = 16;
-  ParamDB->OUTPUT_NODE_LAYER_PSD = 1;
+  ParamDB->BULK_MOM_DISC = 0;
+  ParamDB->BULK_SOLD_PARAMETER_TYPE = 0;
+  ParamDB->N_CELL_LAYERS_PSD = 0;
+  ParamDB->N_CELL_LAYERS_PSD_2 = 0;
+  ParamDB->OUTPUT_NODE_LAYER_PSD = 0;
+  ParamDB->BULK_REACTION_C_CUT = 0.0;
 
-// coefficients for the fluid
-  ParamDB->BULK_density = 1000;
-  ParamDB->BULK_dynamic_viscosity = 1e-3;  
+  ParamDB->BULK_l_infty = 0.0;
+  ParamDB->BULK_u_infty = 0.0;
+  ParamDB->BULK_c_infty = 0.0;
+  ParamDB->BULK_c_C_infty_sat = 0.0;
+  ParamDB->BULK_c_C_infty = 0.0;
+  ParamDB->BULK_f_infty = 0.0;
 
-  ParamDB->BULK_l_infty = 1;
-  ParamDB->BULK_u_infty = 1e-3;
-  ParamDB->BULK_c_infty = 1;
-  ParamDB->BULK_c_C_infty_sat = 1.37e-4;
+  ParamDB->BULK_density = 0.0;
+  ParamDB->BULK_dynamic_viscosity = 0.0;
 
-  ParamDB->BULK_C_g = 45.98;
-  ParamDB->BULK_C_nuc = 15.33;
-  ParamDB->BULK_C_sat = 1.37e-4;
-  ParamDB->BULK_C_2 = 7.2e-9;
-  ParamDB->BULK_D_A = 1.5e-9;
-  ParamDB->BULK_D_P_0 = 1e-9;
-  ParamDB->BULK_D_P_MAX = 1e-3;
-  ParamDB->BULK_k_g = 1e-7;
-  ParamDB->BULK_k_nuc = 1e24;
-  ParamDB->BULK_k_r = 1e-2;
+  ParamDB->BULK_C_g = 0.0;
+  ParamDB->BULK_C_nuc = 0.0;
+  ParamDB->BULK_C_sat = 0.0;
+  ParamDB->BULK_C_2 = 0.0;
+  ParamDB->BULK_D_A = 0.0;
+  ParamDB->BULK_D_P_0 = 0.0;
+  ParamDB->BULK_D_P_MAX = 0.0;
+  ParamDB->BULK_k_g = 0.0;
+  ParamDB->BULK_k_r = 0.0;
+  ParamDB->BULK_k_nuc = 0.0;
+  ParamDB->BULK_D_P_MIN = 0.0;
 
 // parameters for shear slip mesh update method computations
   ParamDB->SSMUM_MP_X = 0.5;
@@ -1025,152 +905,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SSMUM_MAX_CELLS_LAYERS = 1024;
   ParamDB->SSMUM_INTERPOLATION = 0;
 
-  // parameters for WINDTUNNEL computations 
-  ParamDB->WINDTUNNEL_CONFIGURATION = 1;
-  ParamDB->WINDTUNNEL_INTERPOLATION = 0;
-  ParamDB->WINDTUNNEL_STEADY = 0;
-  ParamDB->WINDTUNNEL_SPATIAL = 3;
-  ParamDB->WINDTUNNEL_BROWNIAN = 0;
-  ParamDB->WINDTUNNEL_POL_ORDER = 0;
-  ParamDB->WINDTUNNEL_SHEAR_FACTOR_TYPE = 0;
-  ParamDB->WINDTUNNEL_SHEAR_FACTOR = 0.05;
-  ParamDB->WINDTUNNEL_QUAD_METHOD=0;
-  ParamDB->WINDTUNNEL_MEASURE_MASS=0;
-  ParamDB->WINDTUNNEL_SHIFT=0.;
-  
-  ParamDB->WINDTUNNEL_LAYER_NUMBER_X = WINDTUNNEL_LAYER_NUMBER_X_CONST-1;
-  ParamDB->WINDTUNNEL_DIM_Y = WINDTUNNEL_DIM_Y_CONST-1;
-  ParamDB->WINDTUNNEL_DIM_Z = WINDTUNNEL_DIM_Z_CONST-1;
-  ParamDB->WINDTUNNEL_DIM_R = WINDTUNNEL_DIM_R_CONST-1;
-  ParamDB->WINDTUNNEL_ENVIR_COND = 5.0613e-10;
-  ParamDB->WINDTUNNEL_SUPERSAT = 0.01 ; //test normally supersaturation =0.01
-  ParamDB->WINDTUNNEL_U_INFTY = 1; // m/s
-  ParamDB->WINDTUNNEL_L_INFTY = 1; // m
-  ParamDB->WINDTUNNEL_R_MIN = 0e-6; // = r_min in m
-  ParamDB->WINDTUNNEL_R_INFTY = 175e-6;  // log -normal250e-6; // = r_max in m
-  ParamDB->WINDTUNNEL_F_INFTY = 1e12; // #/m^4
-  //ParamDB->WINDTUNNEL_kinematic_viscosity = 15.68e-6;
-  ParamDB->WINDTUNNEL_dynamic_viscosity = 18.15e-6;  // air (Rogers, Yau p. 103)
-  ParamDB->WINDTUNNEL_density = 1.2041;   // air
-  // ParamDB->WINDTUNNEL_BOUND_KOEFF=0;
 
-
-  ParamDB->UREA_REACTION_DISC = 1;
-  ParamDB->UREA_PB_DISC = 3;
-  ParamDB->UREA_MODEL = 0;
-  ParamDB->UREA_PB_DISC_STAB = 1;
-  ParamDB->UREA_SOLD_PARAMETER_TYPE = 51;
-  ParamDB->UREA_PIPE = 0;
-
-  ParamDB->UREA_l_infty = 0.01;
-  ParamDB->UREA_u_infty = 0.01;
-  ParamDB->UREA_c_infty = 1000;
-  ParamDB->UREA_temp_infty = 1;
-  ParamDB->UREA_f_infty = 1e13;
-  ParamDB->UREA_nu = 1.3612e-6;
-  ParamDB->UREA_rho = 789;
-  ParamDB->UREA_c_p =  2441.3;
-  ParamDB->UREA_lambda = 0.167;
-  ParamDB->UREA_D_P_0 = 2.5e-6;
-  ParamDB->UREA_D_P_MAX = 5000e-6;
-  ParamDB->UREA_k_v = Pi/6.0;
-  ParamDB->UREA_m_mol = 60.06e-3;
-  ParamDB->UREA_D_J = 1.35e-9;
-  ParamDB->UREA_rho_d = 1323;
-  ParamDB->UREA_delta_h_cryst = 0.21645e3;
-  ParamDB->UREA_k_g = 1e-7;
-  //ParamDB->UREA_k_g = 0.;
-  ParamDB->UREA_g = 0.5;
-  ParamDB->UREA_rho_sat_1 = 35.364;
-  ParamDB->UREA_rho_sat_2 = 1.305;
-  ParamDB->UREA_beta_nuc = 0.166667e-5;
-  //with nucleation
-  ParamDB->UREA_alfa_nuc = 1.e8;
-  //without nucleation
-  //ParamDB->UREA_alfa_nuc = 0.;
-  ParamDB->UREA_INFLOW_SCALE = 4.5e-2; // centimeter
-  ParamDB->UREA_CONC_TOL = 1e-6;
-  ParamDB->UREA_CONC_MAXIT = 1;
-  ParamDB->UREA_inflow_time = 5;
-
-  ParamDB->UREA_AGGR_SPATIAL = 3;              //spatial dimension
-  ParamDB->UREA_AGGR_BROWNIAN = 0.;            //include brownian kernel
-  ParamDB->UREA_AGGR_BROWNIAN_TEMP = 0;        //include temp in brownian kernel
-  ParamDB->UREA_AGGR_BROWNIAN_SCAL = 0.;       //scal for brownian kernel
-  ParamDB->UREA_AGGR_POL_ORDER = 0.;           //degree of the polynomial basis (at the moment 0 (constant) or 1 (linear))
-  ParamDB->UREA_AGGR_SHEAR_FACTOR_TYPE = 0.;   //shear induced kernel factor type (0 - constant factor, 1 - depends on the velocity)
-  ParamDB->UREA_AGGR_SHEAR_FACTOR = 0.05;      //the factor itself
-
-  //Param KDP model
-
-  ParamDB->KDP_MODEL = 0;
-  ParamDB->KDP_l_infty = 0.01;
-  ParamDB->KDP_u_infty = 0.01;
-  ParamDB->KDP_c_infty = 1;
-  ParamDB->KDP_temp_infty = 1;
-  ParamDB->KDP_f_infty = 1e13;
-  ParamDB->KDP_nu = 1.2931e-6;
-  ParamDB->KDP_rho = 1160;
-  ParamDB->KDP_c_p =  4181.3;
-  ParamDB->KDP_lambda = 0.602;
-  ParamDB->KDP_D_P_0 = 0.0;//1.25e-6;//2.5e-6;
-  ParamDB->KDP_D_P_0_2 =0.0;//1.25e-6;//2.5e-6;
-  // ParamDB->KDP_D_P_MAX = 2500e-6;
-  ParamDB->KDP_D_P_MAX = 1e-3;
-  //ParamDB->KDP_D_P_MAX_2 = 5000e-6;
-  ParamDB->KDP_D_P_MAX_2 = 1e-3;
-  ParamDB->KDP_m_mol = 136.08e-3;
-  ParamDB->KDP_D_J = 5.5e-10;
-  ParamDB->KDP_rho_d = 2338;
-  ParamDB->KDP_delta_h_cryst = 0.119e3;
-  // ParamDB->KDP_delta_h_cryst = 119e3;
-  ParamDB->KDP_k_g_1 = 1.221e-5;
-  ParamDB->KDP_k_g_2 = 10.075e-5;
-  //nach christian
-  ParamDB->KDP_k_b = 7.875e9;//7.49e10;
-  //ParamDB->KDP_k_b = 3.75e13;
-  ParamDB->KDP_g_1 = 1.48;
-  ParamDB->KDP_g_2 = 1.74;
-  ParamDB->KDP_b = 2.04;
-  ParamDB->KDP_w_sat_1 = 5.5843e-5;
-  ParamDB->KDP_w_sat_1_Ma = 9.3027e-5;
-  ParamDB->KDP_w_sat_2 = 2.8159e-2;
-  ParamDB->KDP_w_sat_2_Ma = 9.7629e-5;
-  ParamDB->KDP_w_sat_3 = 3.6832;
-  ParamDB->KDP_w_sat_3_Ma = 0.2087;
-  ParamDB->KDP_INTERNAL_NUC_A =0.0;
-  ParamDB->KDP_INTERNAL_NUC_B =0.0;
-  ParamDB->KDP_INFLOW_SCALE = 4.5e-2; // centimeter
-  ParamDB->KDP_CONC_TOL = 1e-6;
-  ParamDB->KDP_CONC_MAXIT = 1;
-  ParamDB->KDP_inflow_time = 10;
-    
-    
-  //======================================================================
-  /** parameters for Stokes--Darcy (StoDa) coupling */
-  //======================================================================
-  ParamDB->StoDa_interfaceType = 0; //Beavers-Joseph-Saffman or u.t=0
-  ParamDB->StoDa_alpha = 1; // from Beavers-Joseph-Saffman condition on interface
-  ParamDB->StoDa_problemType = 1;// Neumann--Neumann, Robin--Robin, ...
-  ParamDB->StoDa_updatingStrategy = 0; // update of the etas
-  ParamDB->StoDa_theta_f = 1; //damping in Stokes (flow) part
-  ParamDB->StoDa_theta_p = 1; //damping in Darcy (porous) part
-  ParamDB->StoDa_gamma_f = 1; // parameter for Robin condition on interface
-  ParamDB->StoDa_gamma_p = 1; // parameter for Robin condition on interface
-  ParamDB->StoDa_weakGamma = 1; // parameter for enforcing weak boundary conditions
-  ParamDB->StoDa_solutionStrategy = 1; // only iterative (0) or iterative and one big matrix (1)
-  ParamDB->StoDa_algorithm = 1; // Gauss--Seidel, Jacobi, ...
-  ParamDB->StoDa_StokesFirst = 0; // for Gauss--Seidel type method.
-  ParamDB->StoDa_nIterations = 100; // maximum number of iterations
-  ParamDB->StoDa_relDiff_interfaceError = 1e-10; // (e_k - e_{k+1})/e_k < this number
-  ParamDB->StoDa_relDiff_factor1 = 1; // factor of StokesU in computing E_k
-  ParamDB->StoDa_relDiff_factor2 = 1; // factor of StokesP in computing E_k
-  ParamDB->StoDa_relDiff_factor3 = 1; // factor of DarcyP  in computing E_k
-  ParamDB->StoDa_relDiff_solution = 1e-10; // E_k < this number
-  ParamDB->StoDa_bigResidual = 1e-10; // residual of big System < this number
-  ParamDB->StoDa_periodicBoundary = 0; // true if there is a periodic boundary
-  ParamDB->StoDa_periodicBoundaryPressureDrop = 1.0; // pressure drop at periodic boundary
-  
   /** general parameters for population balances */
   ParamDB->PB_DISC_TYPE = 3;
   ParamDB->PB_TIME_DISC = 100;
@@ -1284,7 +1019,8 @@ void TDatabase::SetDefaultParameters()
   ParamDB->DEPENDENT_BASIS = 0;
   ParamDB->DEPENDENT_BASIS_Q1 = 0;
   ParamDB->DEPENDENT_BASIS_Q2 = 0;
-  
+ 
+    
   #ifdef _MPI
   ParamDB->Comm = MPI_COMM_WORLD;    
   #endif
@@ -1293,25 +1029,15 @@ void TDatabase::SetDefaultParameters()
 
 void TDatabase::WriteParamDB(char *ExecutedFile)
 {
-  char buf[80];
-  time_t rawtime;
-  struct tm * timeinfo;
-
-  time ( &rawtime );
-  timeinfo = localtime ( &rawtime );
- 
   using namespace Output; // printToFile
   
-  gethostname(buf,80);
-  printToFile("HOSTNAME: ", buf, " started on ", asctime (timeinfo));
+  printToFile(">>> Start printing old database (ParamDB) <<<");
+  printToFile("HOSTNAME: ", utilities::get_host_name(), " started on ", 
+              utilities::get_date_and_time());
   printToFile("EXECUTED FILE: ", ExecutedFile);
   printToFile("VERSION: ", ParamDB->VERSION);
-  printToFile("GEOFILE: ", ParamDB->GEOFILE);
-  printToFile("BNDFILE: ", ParamDB->BNDFILE);
   printToFile("MAPFILE: ", ParamDB->MAPFILE);
   printToFile("OUTFILE: ", ParamDB->OUTFILE);
-  printToFile("PROBLEM_TYPE: ", ParamDB->PROBLEM_TYPE);
-  printToFile("EXAMPLE: ", ParamDB->EXAMPLE);
   printToFile("profiling: ", ParamDB->timeprofiling);
   printToFile("MapperType: ", ParamDB->MapperType);
   printToFile("DSType: ", ParamDB->DSType);
@@ -1328,9 +1054,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
 
   printToFile("OMPNUMTHREADS: ", ParamDB->OMPNUMTHREADS);
 
-  printToFile("LEVELS: ", ParamDB->LEVELS);
   printToFile("N_CELL_LAYERS: ", ParamDB->N_CELL_LAYERS);
-  printToFile("UNIFORM_STEPS: ", ParamDB->UNIFORM_STEPS);
   printToFile("DRIFT_X: ", ParamDB->DRIFT_X);
   printToFile("DRIFT_Y: ", ParamDB->DRIFT_Y);
   printToFile("DRIFT_Z: ", ParamDB->DRIFT_Z);
@@ -1360,6 +1084,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("SHISHKIN_MESH: ", ParamDB->SHISHKIN_MESH);
   printToFile("SHISHKIN_DIAM: ", ParamDB->SHISHKIN_DIAM);
   printToFile("NSTYPE: ", ParamDB->NSTYPE);
+  printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("DARCYTYPE: ", ParamDB->DARCYTYPE);
   printToFile("SIGMA_PERM: ", ParamDB->SIGMA_PERM);
   printToFile("LAPLACETYPE: ", ParamDB->LAPLACETYPE);
@@ -1480,27 +1205,22 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("MIN_MAX_FACTOR_TWO_ADJOINT: ", ParamDB->MIN_MAX_FACTOR_TWO_ADJOINT);
   printToFile("MIN_MAX_ADJOINT: ", ParamDB->MIN_MAX_ADJOINT);
   
-  printToFile("BASENAME: ", ParamDB->BASENAME);
-  printToFile("VTKBASENAME: ", ParamDB->VTKBASENAME);
   printToFile("SAVE_DATA_FILENAME: ", ParamDB->SAVE_DATA_FILENAME);
   printToFile("READ_DATA_FILENAME: ", ParamDB->READ_DATA_FILENAME);
   printToFile("POD_FILENAME: ", ParamDB->POD_FILENAME);
   printToFile("SNAP_FILENAME: ", ParamDB->SNAP_FILENAME);
 
-  printToFile("SOLVER_TYPE: ", ParamDB->SOLVER_TYPE);
-  printToFile("WRITE_PS: ", ParamDB->WRITE_PS);
   printToFile("WRITE_GRAPE: ", ParamDB->WRITE_GRAPE);
   printToFile("WRITE_GMV: ", ParamDB->WRITE_GMV);
   printToFile("WRITE_AMIRA: ", ParamDB->WRITE_AMIRA);
   printToFile("WRITE_GNU: ", ParamDB->WRITE_GNU);
   printToFile("WRITE_AMIRA: ", ParamDB->WRITE_AMIRA);
-  printToFile("WRITE_VTK: ", ParamDB->WRITE_VTK);
+  printToFile("WRITE_CASE: ", ParamDB->WRITE_CASE);
   printToFile("WRITE_SNAPSHOTS: ", ParamDB->WRITE_SNAPSHOTS);
   printToFile("WRITE_MATLAB_MATRIX: ", ParamDB->WRITE_MATLAB_MATRIX); 
   printToFile("WRITE_MATLAB: ", ParamDB->WRITE_MATLAB);
   printToFile("SAVE_DATA: ", ParamDB->SAVE_DATA);
   printToFile("READ_DATA: ", ParamDB->READ_DATA);
-  printToFile("MEASURE_ERRORS: ", ParamDB->MEASURE_ERRORS);
   printToFile("ESTIMATE_ERRORS: ", ParamDB->ESTIMATE_ERRORS);
   printToFile("SOLVE_ADJOINT_PROBLEM: ", ParamDB->SOLVE_ADJOINT_PROBLEM);
   printToFile("COMPUTE_VORTICITY_DIVERGENCE: ", ParamDB->COMPUTE_VORTICITY_DIVERGENCE);
@@ -1552,126 +1272,11 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   
   printToFile("VORTICITY THICKNESS FOR MIXING LAYER (P8): ", ParamDB->P8);
 
-  printToFile("*********** PARAMETERS FOR SCALAR SOLVER ***********");
-  printToFile("SC_NONLIN_ITE_TYPE_SCALAR: ", ParamDB->SC_NONLIN_ITE_TYPE_SCALAR);
-  printToFile("SC_NONLIN_MAXIT_SCALAR: ", ParamDB->SC_NONLIN_MAXIT_SCALAR);
-  printToFile("SC_NONLIN_RES_NORM_MIN_SCALAR: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR);
-  printToFile("SC_NONLIN_DAMP_FACTOR_SCALAR: ", ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR);
 
-  printToFile("SC_SOLVER_SCALAR: ", ParamDB->SC_SOLVER_SCALAR);
-  printToFile("SC_PRECONDITIONER_SCALAR: ", ParamDB->SC_PRECONDITIONER_SCALAR);
-  printToFile("SC_LIN_RED_FACTOR_SCALAR: ", ParamDB->SC_LIN_RED_FACTOR_SCALAR);
-  printToFile("SC_LIN_RES_NORM_MIN_SCALAR: ", ParamDB->SC_LIN_RES_NORM_MIN_SCALAR);
-  printToFile("SC_LIN_MAXIT_SCALAR: ", ParamDB->SC_LIN_MAXIT_SCALAR);
-  printToFile("SC_LIN_RED_FACTOR_SCALAR_SOLD: ", ParamDB->SC_LIN_RED_FACTOR_SCALAR_SOLD);
-  printToFile("SC_LIN_RES_NORM_MIN_SCALAR_SOLD: ", ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD);
-  printToFile("SC_LIN_MAXIT_SCALAR_SOLD: ", ParamDB->SC_LIN_MAXIT_SCALAR_SOLD);
-  printToFile("SC_FLEXIBLE_KRYLOV_SPACE_SOLVER: ", ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER);
   printToFile("SC_NONLIN_ITE_ADJOINT: ", ParamDB->SC_NONLIN_ITE_ADJOINT);
-
-  printToFile("SC_MG_TYPE_SCALAR: ", ParamDB->SC_MG_TYPE_SCALAR); 
-  printToFile("SC_MG_CYCLE_SCALAR: ", ParamDB->SC_MG_CYCLE_SCALAR); 
-  printToFile("SC_SMOOTHER_SCALAR: ", ParamDB->SC_SMOOTHER_SCALAR);
-  printToFile("SC_PRE_SMOOTH_SCALAR: ", ParamDB->SC_PRE_SMOOTH_SCALAR);
-  printToFile("SC_POST_SMOOTH_SCALAR: ", ParamDB->SC_POST_SMOOTH_SCALAR);
-  printToFile("SC_SMOOTH_DAMP_FACTOR_SCALAR: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR);
-  printToFile("SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR);
-  printToFile("SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR);
-  printToFile("SC_COARSE_SMOOTHER_SCALAR: ", ParamDB->SC_COARSE_SMOOTHER_SCALAR);
-  printToFile("SC_COARSE_MAXIT_SCALAR: ", ParamDB->SC_COARSE_MAXIT_SCALAR);
-  printToFile("SC_COARSE_RED_FACTOR_SCALAR: ", ParamDB->SC_COARSE_RED_FACTOR_SCALAR);
-
-  printToFile("SC_GMG_DAMP_FACTOR_SCALAR: ", ParamDB->SC_GMG_DAMP_FACTOR_SCALAR);
-  printToFile("SC_GMG_DAMP_FACTOR_FINE_SCALAR: ", ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR);
-
-  printToFile("SC_COARSEST_LEVEL_SCALAR: ", ParamDB->SC_COARSEST_LEVEL_SCALAR);
-  printToFile("SC_FIRST_SOLUTION_LEVEL_SCALAR: ", ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR);
-  
-  printToFile("SC_STEP_LENGTH_CONTROL_FINE_SCALAR: ", ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR);
-  printToFile("SC_STEP_LENGTH_CONTROL_ALL_SCALAR: ", ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR);
 
   printToFile("*********** PARAMETERS FOR SADDLE POINT SOLVER ***********");
   printToFile("SC_NONLIN_ITE_TYPE_SADDLE: ", ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
-  printToFile("SC_NONLIN_MAXIT_SADDLE: ", ParamDB->SC_NONLIN_MAXIT_SADDLE);
-  printToFile("SC_NONLIN_RES_NORM_MIN_SADDLE: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE);
-  printToFile("SC_NONLIN_DAMP_FACTOR_SADDLE: ", ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE);
-  printToFile("SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE);
-
-  printToFile("SC_SOLVER_SADDLE: ", ParamDB->SC_SOLVER_SADDLE);
-  printToFile("SC_PRECONDITIONER_SADDLE: ", ParamDB->SC_PRECONDITIONER_SADDLE);
-  printToFile("SC_LIN_RED_FACTOR_SADDLE: ", ParamDB->SC_LIN_RED_FACTOR_SADDLE);
-  printToFile("SC_LIN_RES_NORM_MIN_SADDLE: ", ParamDB->SC_LIN_RES_NORM_MIN_SADDLE);
-  printToFile("SC_LIN_MAXIT_SADDLE: ", ParamDB->SC_LIN_MAXIT_SADDLE);
-
-  printToFile("SC_MG_TYPE_SADDLE: ", ParamDB->SC_MG_TYPE_SADDLE); 
-  printToFile("SC_MG_CYCLE_SADDLE: ", ParamDB->SC_MG_CYCLE_SADDLE); 
-  printToFile("SC_SMOOTHER_SADDLE: ", ParamDB->SC_SMOOTHER_SADDLE);
-  printToFile("SC_PRE_SMOOTH_SADDLE: ", ParamDB->SC_PRE_SMOOTH_SADDLE);
-  printToFile("SC_POST_SMOOTH_SADDLE: ", ParamDB->SC_POST_SMOOTH_SADDLE);
-  printToFile("SC_SMOOTH_DAMP_FACTOR_SADDLE: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE);
-  printToFile("SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE);
-  printToFile("SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE);
-  printToFile("SC_COARSE_SMOOTHER_SADDLE: ", ParamDB->SC_COARSE_SMOOTHER_SADDLE);
-  printToFile("SC_COARSE_MAXIT_SADDLE: ", ParamDB->SC_COARSE_MAXIT_SADDLE);
-  printToFile("SC_COARSE_RED_FACTOR_SADDLE: ", ParamDB->SC_COARSE_RED_FACTOR_SADDLE);
-  printToFile("SC_GMG_DAMP_FACTOR_SADDLE: ", ParamDB->SC_GMG_DAMP_FACTOR_SADDLE);
-  printToFile("SC_GMG_DAMP_FACTOR_FINE_SADDLE: ", ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE);
-  
-  printToFile("SC_COARSEST_LEVEL_SADDLE: ", ParamDB->SC_COARSEST_LEVEL_SADDLE);
-  printToFile("SC_FIRST_SOLUTION_LEVEL_SADDLE: ", ParamDB->SC_FIRST_SOLUTION_LEVEL_SADDLE);
-
-  printToFile("SC_STEP_LENGTH_CONTROL_FINE_SADDLE: ", ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE);
-  printToFile("SC_STEP_LENGTH_CONTROL_ALL_SADDLE: ", ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE);
-  printToFile("SC_LARGEST_DIRECT_SOLVE: ", ParamDB->SC_LARGEST_DIRECT_SOLVE);
-  printToFile("SC_DOWNWIND_TYPE: ", ParamDB->SC_DOWNWIND_TYPE);
-
-  printToFile("CC_ALPHA: ", ParamDB->CC_ALPHA);
-  printToFile("CC_BETA: ", ParamDB->CC_BETA);
-  printToFile("CC_MINCLUSTER: ", ParamDB->CC_MINCLUSTER);
-  printToFile("CC_MAXCLUSTER: ", ParamDB->CC_MAXCLUSTER);
-  printToFile("CC_MAXDISTANCE: ", ParamDB->CC_MAXDISTANCE);
-  printToFile("CC_MAXCONNECTIVITY: ", ParamDB->CC_MAXCONNECTIVITY);
-  printToFile("CC_DEPTHTARGET: ", ParamDB->CC_DEPTHTARGET);
-  printToFile("CC_COARSENTARGET: ", ParamDB->CC_COARSENTARGET);
-  printToFile("CC_COARSENRATE: ", ParamDB->CC_COARSENRATE);
-  printToFile("CC_MAJOR: ", ParamDB->CC_MAJOR);
-  printToFile("CC_DEPENDENCY: ", ParamDB->CC_DEPENDENCY);
-  printToFile("CC_RESCALE: ", ParamDB->CC_RESCALE);
-  printToFile("CC_VERBOSE: ", ParamDB->CC_VERBOSE);
-  
-  printToFile("SC_SYSTEM_TYPE: ", ParamDB->SC_SYSTEM_TYPE);
-  printToFile("SC_AMG_PREC_IT: ", ParamDB->SC_AMG_PREC_IT);
-  printToFile("SC_AMG_PREC_RED_FACTOR: ", ParamDB->SC_AMG_PREC_RED_FACTOR);
-  printToFile("SC_SMOOTHER_RED_FACTOR: ", ParamDB->SC_SMOOTHER_RED_FACTOR);
-  printToFile("SC_EX_MAXIT: ", ParamDB->SC_EX_MAXIT);
-  printToFile("SC_GMRES_RESTART: ", ParamDB->SC_GMRES_RESTART);
-  printToFile("SC_LCD_START_VECTOR: ", ParamDB->SC_LCD_START_VECTOR);
-  printToFile("SC_ILU_BETA: ", ParamDB->SC_ILU_BETA);
-  printToFile("SC_SOR_OMEGA: ", ParamDB->SC_SOR_OMEGA);
-  printToFile("SC_OMEGA_COARSE_0: ", ParamDB->SC_OMEGA_COARSE_0);
-  printToFile("SC_OMEGA_P_0: ", ParamDB->SC_OMEGA_P_0);
-  printToFile("SC_ILUT_TOL: ", ParamDB->SC_ILUT_TOL);
-  printToFile("SC_ILUT_ABSOLUTE_FILLIN: ", ParamDB->SC_ILUT_ABSOLUTE_FILLIN);
-  printToFile("SC_ILUT_RELATIVE_FILLIN: ", ParamDB->SC_ILUT_RELATIVE_FILLIN);
-  printToFile("SC_ILUT_SORT: ", ParamDB->SC_ILUT_SORT);
-  printToFile("SC_SCHUR_INV_OF_A: ", ParamDB->SC_SCHUR_INV_OF_A);
-  printToFile("SC_SCHUR_INV_OF_A_MAXIT: ", ParamDB->SC_SCHUR_INV_OF_A_MAXIT);
-  printToFile("SC_SCHUR_ITERATION_DAMP: ", ParamDB->SC_SCHUR_ITERATION_DAMP);
-  printToFile("SC_SCHUR_ITERATION_MAXIT: ", ParamDB->SC_SCHUR_ITERATION_MAXIT);
-  printToFile("SC_SCHUR_STEP_LENGTH_CONTROL: ", ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL);
-  printToFile("SC_MIXED_BCGS_CGS_SWITCH_TOL: ", ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL);
-  printToFile("SC_DIV_FACTOR: ", ParamDB->SC_DIV_FACTOR);
-  printToFile("SC_NONLIN_DIV_FACTOR: ", ParamDB->SC_NONLIN_DIV_FACTOR);
-  printToFile("SC_SMOOTHING_STEPS: ", ParamDB->SC_SMOOTHING_STEPS);
-  printToFile("SC_N1_PARAM: ", ParamDB->SC_N1_PARAM);
-  printToFile("SC_N2_PARAM: ", ParamDB->SC_N2_PARAM);
-  printToFile("SC_MINIT: ", ParamDB->SC_MINIT);
-  printToFile("SC_VAS_LAZ_DELTA: ", ParamDB->SC_VAS_LAZ_DELTA);
-  printToFile("SC_ROW_EQUILIBRATION: ", ParamDB->SC_ROW_EQUILIBRATION);
-  printToFile("SC_BRAESS_SARAZIN_MATRIX: ", ParamDB->SC_BRAESS_SARAZIN_MATRIX);
-  printToFile("SC_BRAESS_SARAZIN_ALPHA: ", ParamDB->SC_BRAESS_SARAZIN_ALPHA);
-  printToFile("SC_VERBOSE: ", ParamDB->SC_VERBOSE);
-  printToFile("SC_VERBOSE_AMG: ", ParamDB->SC_VERBOSE_AMG);
 
   printToFile("CHAR_L0: ", ParamDB->CHAR_L0);
   printToFile("D_VISCOSITY: ", ParamDB->D_VISCOSITY);
@@ -1753,30 +1358,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   
   printToFile("INPUT_QUAD_RULE: ", ParamDB->INPUT_QUAD_RULE);
   
-  /** Parameters for Stokes--Darcy */
-  printToFile("StoDa_interfaceType: ", ParamDB->StoDa_interfaceType);
-  printToFile("StoDa_alpha: ", ParamDB->StoDa_alpha);
-  printToFile("StoDa_problemType: ", ParamDB->StoDa_problemType);
-  printToFile("StoDa_updatingStrategy: ", ParamDB->StoDa_updatingStrategy);
-  printToFile("StoDa_theta_f: ", ParamDB->StoDa_theta_f);
-  printToFile("StoDa_theta_p: ", ParamDB->StoDa_theta_p);
-  printToFile("StoDa_gamma_f: ", ParamDB->StoDa_gamma_f);
-  printToFile("StoDa_gamma_p: ", ParamDB->StoDa_gamma_p);
-  printToFile("StoDa_weakGamma: ", ParamDB->StoDa_weakGamma);
-  printToFile("StoDa_solutionStrategy: ", ParamDB->StoDa_solutionStrategy);
-  printToFile("StoDa_StokesFirst: ", ParamDB->StoDa_StokesFirst);
-  printToFile("StoDa_algorithm: ", ParamDB->StoDa_algorithm);
-  printToFile("StoDa_relDiff_interfaceError: ", ParamDB->StoDa_relDiff_interfaceError);
-  printToFile("StoDa_relDiff_factor1: ", ParamDB->StoDa_relDiff_factor1);
-  printToFile("StoDa_relDiff_factor2: ", ParamDB->StoDa_relDiff_factor2);
-  printToFile("StoDa_relDiff_factor3: ", ParamDB->StoDa_relDiff_factor3);
-  printToFile("StoDa_relDiff_solution: ", ParamDB->StoDa_relDiff_solution);
-  printToFile("StoDa_bigResidual: ", ParamDB->StoDa_bigResidual);
-  printToFile("StoDa_periodicBoundary: ", ParamDB->StoDa_periodicBoundary);
-  printToFile("StoDa_periodicBoundaryPressureDrop: ", ParamDB->StoDa_periodicBoundaryPressureDrop);
-  printToFile("StoDa_nIterations: ", ParamDB->StoDa_nIterations);
-
- 
   printToFile("HEAT_TANGENTIAL_STRESS_FACTOR: ", ParamDB->HEAT_TANGENTIAL_STRESS_FACTOR);
   printToFile("HEAT_SOLID_SURFACE_FACTOR: ", ParamDB->HEAT_SOLID_SURFACE_FACTOR);
   printToFile("EQ_CONTACT_ANGLE: ", ParamDB->EQ_CONTACT_ANGLE);
@@ -1850,65 +1431,54 @@ void TDatabase::WriteTimeDB()
 
   printToFile("RB_TYPE: ", TimeDB->RB_TYPE);
   printToFile("RB_TYPE2: ", TimeDB->RB_TYPE2);
-
+    
   printToFile("EXTRAPOLATE_VELOCITY: ", TimeDB->EXTRAPOLATE_VELOCITY);
   printToFile("EXTRAPOLATE_PRESSURE: ", TimeDB->EXTRAPOLATE_PRESSURE);
   printToFile("EXTRAPOLATE_STEPS: ", TimeDB->EXTRAPOLATE_STEPS);
   printToFile("EXTRAPOLATE_WEIGHT: ", TimeDB->EXTRAPOLATE_WEIGHT);
-} 
+
+  printToFile(">>> End printing old database (ParamDB) <<<");
+  printToFile("");
+    
+//  printToFile(" n_neumann_boundary: ",ParamDB->n_neumann_boundary );
+//  printToFile(" neumann_boundary_id: ", ParamDB->neumann_boundary_id);
+//  printToFile("neumann_boundary_value: ", ParamDB->neumann_boundary_value);
+}
 
 void TDatabase::CheckParameterConsistencyNSE()
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+
   // Newton method
   if ((ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)&&(ParamDB->NSTYPE<=2))
   {
     ParamDB->NSTYPE+=2;
-    Output::print("NSTYPE changed to ", ParamDB->NSTYPE,
+    if(my_rank==0)
+      Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE,
                   " because of SC_NONLIN_ITE_TYPE_SADDLE  = ",
                   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
   }
 
-  if(ParamDB->PRESSURE_SPACE == -4711 || ParamDB->PRESSURE_SPACE>0)
-  {
-    // continuous pressure and cell Vanka do not work
-    if (((ParamDB->VELOCITY_SPACE==2) || (ParamDB->VELOCITY_SPACE==3)
-        ||(ParamDB->VELOCITY_SPACE==101)) 
-        &&(ParamDB->SC_SMOOTHER_SADDLE<3))
-    {
-      ParamDB->SC_SMOOTHER_SADDLE+=2;
-      Output::print("SC_SMOOTHER_SADDLE changed to ",
-                    ParamDB->SC_SMOOTHER_SADDLE, 
-                    " because of continuous pressure");
-    }
 
-    if (((ParamDB->VELOCITY_SPACE==2) || (ParamDB->VELOCITY_SPACE==3)||
-         (ParamDB->VELOCITY_SPACE==101))
-        &&(ParamDB->SC_COARSE_SMOOTHER_SADDLE<3))
-    {
-      ParamDB->SC_COARSE_SMOOTHER_SADDLE+=2;
-      Output::print("SC_COARSE_SMOOTHER_SADDLE changed to ",
-                    ParamDB->SC_COARSE_SMOOTHER_SADDLE,
-                    " because of continuous pressure");
-    }
-  }
   if (ParamDB->GROUP_FEM)
   {
     if (ParamDB->DISCTYPE != GALERKIN)
     {
       ParamDB->DISCTYPE = GALERKIN;
-      Output::print("GROUP_FEM: changed DISCTYPE to ", ParamDB->DISCTYPE);
+      if(my_rank==0)
+      Output::info("NSE Parameter Consistency","GROUP_FEM: changed DISCTYPE to ", ParamDB->DISCTYPE);
     }
     if (ParamDB->NSTYPE != 1)
     {
       //ParamDB->NSTYPE = 1;
-      //Output::print("GROUP_FEM: changed NSTYPE to ", ParamDB->NSTYPE);
-      Output::print("WARNING: GROUP_FEM works properly only with NSTYPE = 1");
-    }
-    if (ParamDB->SC_MG_TYPE_SADDLE != 0)
-    {
-      ParamDB->SC_MG_TYPE_SADDLE = 0;
-      Output::print("GROUP_FEM: changed SC_MG_TYPE_SADDLE to ",
-                    ParamDB->SC_MG_TYPE_SADDLE);
+      //Output::info("NSE Parameter Consistency","GROUP_FEM: changed NSTYPE to ", ParamDB->NSTYPE);
+      if(my_rank==0)
+        Output::warn("NSE Parameter Consistency","GROUP_FEM works properly only with NSTYPE = 1");
     }
   }
 
@@ -1916,26 +1486,30 @@ void TDatabase::CheckParameterConsistencyNSE()
   if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==1))
   {
       //ParamDB->NSTYPE = 2;
-      //Output::print("NSTYPE changed from 1 to 2 because of SDFEM discretization ");
-      Output::print("NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!");
+      //Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 2 because of SDFEM discretization ");
+	  if(my_rank==0)
+        Output::info("NSE Parameter Consistency","NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!");
   }
 
   if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==3))
   {
     ParamDB->NSTYPE = 4;
-    Output::print("NSTYPE changed from 3 to 4 because of SDFEM discretization ");
+    if(my_rank==0)
+      Output::info("NSE Parameter Consistency","NSTYPE changed from 3 to 4 because of SDFEM discretization ");
   }
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==1))
   {
     ParamDB->NSTYPE = 3 ;
-    Output::print("NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
+    if(my_rank==0)
+      Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
   }
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==2))
   {
     ParamDB->NSTYPE = 4 ;
-    Output::print("NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
+    if(my_rank==0)
+      Output::info("NSE Parameter Consistency","NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
   }
 
   // equal order
@@ -1944,7 +1518,8 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (!(ParamDB->DISCTYPE == SDFEM))
     {
       ParamDB->DISCTYPE = SDFEM;
-      Output::print("DISCTYPE changed to SDFEM !!!");
+      if(my_rank==0)
+        Output::info("NSE Parameter Consistency","DISCTYPE changed to SDFEM !!!");
     }
 /*
       if (ParamDB->SC_SMOOTHER_SADDLE<3)
@@ -1961,40 +1536,26 @@ void TDatabase::CheckParameterConsistencyNSE()
       }
 */
   }
-
-  if (ParamDB->SOLVER_TYPE == 0) // AMG
-  {
-    ParamDB->SC_MG_TYPE_SADDLE=0;
-  }
   
-  if (ParamDB->PROBLEM_TYPE == 3)
-  {
-     if (ParamDB->PRESSURE_SEPARATION==1)
-     {
-        TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 1;
-     }
-     else
-     {
-        TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 0;
-     }
-     TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;    
-  }
-
   // rotational form
   if (ParamDB->NSE_NONLINEAR_FORM==2||(ParamDB->NSE_NONLINEAR_FORM==4))
   {
     if (ParamDB->NSTYPE<=2)
     {
       ParamDB->NSTYPE+=2;
-      Output::print("NSTYPE changed to ", ParamDB->NSTYPE);
-      Output::print(" because of NSE_NONLINEAR_FORM = ", ParamDB->NSE_NONLINEAR_FORM);
+      if(my_rank==0)
+      {
+        Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE);
+        Output::info("NSE Parameter Consistency"," because of NSE_NONLINEAR_FORM = ", ParamDB->NSE_NONLINEAR_FORM);
+      }
     }
       // change DISCTYPE for internal reasons
     if (ParamDB->DISCTYPE == 1)
     {
       ParamDB->DISCTYPE = 4;
       TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE = 0;
-      Output::print("DISCTYPE changed to 4 for internal reasons, turbulent viscosity is switched off.");
+      if(my_rank==0)
+        Output::info("NSE Parameter Consistency","DISCTYPE changed to 4 for internal reasons, turbulent viscosity is switched off.");
     }
   }
 
@@ -2003,9 +1564,12 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (!((TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)||
           (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION_EXPL)))
     {
-      Output::print("TURBULENT_VISCOSITY_TYPE = 5 only defined for projection-based VMS methods");
-      Output::print("Set different TURBULENT_VISCOSITY_TYPE !!!");
-      exit(4711);
+      if(my_rank==0)
+      {
+        Output::info("NSE Parameter Consistency","TURBULENT_VISCOSITY_TYPE = 5 only defined for projection-based VMS methods");
+        Output::info("NSE Parameter Consistency","Set different TURBULENT_VISCOSITY_TYPE !!!");
+        ErrThrow("BOOM!");
+      }
     }
   }
 
@@ -2017,14 +1581,16 @@ void TDatabase::CheckParameterConsistencyNSE()
       if (ParamDB->LP_STREAMLINE)
       {
         ParamDB->LP_STREAMLINE = 0;
-        Output::print("LP_STREAMLINE changed to ", ParamDB->LP_STREAMLINE,
+        if(my_rank==0)
+        Output::info("NSE Parameter Consistency","LP_STREAMLINE changed to ", ParamDB->LP_STREAMLINE,
                       " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
       }
 
       if (ParamDB->LP_DIVERGENCE)
       {
         ParamDB->LP_DIVERGENCE = 0;
-        Output::print("LP_DIVERGENCE changed to ", ParamDB->LP_DIVERGENCE,
+        if(my_rank==0)
+        Output::info("NSE Parameter Consistency","LP_DIVERGENCE changed to ", ParamDB->LP_DIVERGENCE,
                       " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
       }
     } // end LP_FULL_GRADIENT
@@ -2034,7 +1600,8 @@ void TDatabase::CheckParameterConsistencyNSE()
       if (ParamDB->NSTYPE<=2)
       {
         ParamDB->NSTYPE+=2;
-        Output::print("NSTYPE changed to ", ParamDB->NSTYPE,
+        if(my_rank==0)
+        Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE,
                       " LP_DIVERGENCE = ", ParamDB->LP_DIVERGENCE);
       }
     }
@@ -2086,28 +1653,22 @@ void TDatabase::CheckParameterConsistencyNSE()
     switch (TDatabase::ParamDB->NSTYPE)
     {
       case 1: 
-        Output::print("Galerkin discretization for Oseen because of NSTYPE ",
+    	  if(my_rank==0)
+            Output::info("NSE Parameter Consistency","Galerkin discretization for Oseen because of NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         TDatabase::ParamDB->DISCTYPE =  1;
         break;
       case 14:
-        Output::print("SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE ",
+    	if(my_rank==0)
+          Output::info("NSE Parameter Consistency","SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         TDatabase::ParamDB->DISCTYPE =  2;
         break;
       default:
-        Output::print("No method for Oseen implemented for NSTYPE ",
+    	if(my_rank==0)
+          Output::info("NSE Parameter Consistency","No method for Oseen implemented for NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         exit(4711);
-    }
-    if (ParamDB->SC_NONLIN_MAXIT_SADDLE > 1)
-    {
-      ParamDB->SC_NONLIN_MAXIT_SADDLE = 1;
-      Output::print("Set SC_NONLIN_MAXIT_SADDLE ",
-                    ParamDB->SC_NONLIN_MAXIT_SADDLE,
-                    " for Oseen, further assembling not implemented");
-      TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;
-      Output::print("Set TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE to 1.0");
     }
   }
 
@@ -2277,15 +1838,8 @@ TParaDB::~TParaDB()
 {
   // call delete on all char* which were created in 
   // TDatabase::SetDefaultParameters()
-  delete [] GEOFILE;
-  delete [] GEOFILE_INTL;
-  delete [] BNDFILE;
-  delete [] BNDFILE_INTL;
   delete [] MAPFILE;
   delete [] OUTFILE;
-  delete [] BASENAME;
-  delete [] VTKBASENAME;
-  delete [] OUTPUTDIR;
   delete [] SAVE_DATA_FILENAME;
   delete [] READ_DATA_FILENAME;
   delete [] SMESHFILE;
@@ -2295,5 +1849,5 @@ TParaDB::~TParaDB()
   delete [] FS_OUTNAME;
   delete [] MATLAB_MATRIX;
   delete [] PODFILE;
-  Output::print<2>("deleted parameter database");
+  Output::print<4>("deleted parameter database");
 }

@@ -15,7 +15,6 @@
 #include <FE2D.h>
 #include <LinAlg.h>
 #include <SquareMatrix2D.h>
-#include <FEM_TVD_FCT.h>
 #include <BoundComp.h>
 #include <BoundEdge.h>
 #include <IsoBoundEdge.h>
@@ -37,13 +36,10 @@
 
 int WriteGridGnu(const char *name, TCollection *coll)
 {
-  int i, ii, j, jj, N_Cells, N_Edges, found, ver_on_strip, common_ver;
-  int common_vert0[2], common_vert1[2], not_common_0, not_common_1;
-  double x[3], y[3], r;
-  const int *TmpEdVer;
-  TBaseCell *cell, *cell_n;
-  TVertex *ver[3], *ver_n[3];
-  TRefDesc *refdesc;
+  int i, j, N_Cells, N_Edges;
+  double x[3], y[3];
+  TBaseCell *cell;
+  TVertex *ver[3];
 
   std::ofstream dat(name);
   if (!dat)
@@ -116,7 +112,7 @@ double CheckOrientation(double *x, double *y)
 
 int PointInCell(TBaseCell *cell, double x_coord, double y_coord)
 {
-  int N_Cells,found,j,N_Vertices;
+  int found,j,N_Vertices;
   double x[3], y[3], v_1x, v_1y, v_0x, v_0y, v_2x, v_2y, det, s, t;
   TVertex *ver[3];
 
@@ -165,6 +161,9 @@ int PointInCell(TBaseCell *cell, double x_coord, double y_coord)
 void SwapEdges(const char *name, TCollection *coll,
 TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
 {
+
+	int verbosity = 3; //hardcoded verbosity
+
   int i, ii, j, jj, k, ijk, N_Cells, N_Edges, found, common_ver;
   int common_vert0[2], common_vert1[2], not_common_0, not_common_1;
   int index0, index1, N_Edges_n, N_Edges_nn, me_found;
@@ -173,7 +172,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   int joint_changes[max_joint_changes][4], N_joint_changes=0, N_joint_changes_1=0;
   double x[3], y[3], r, x_n[3], y_n[3], r_n, x_nn[2], y_nn[2], eps=1e-8, av_rad;
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
-  double x_m, y_m, v_1x, v_1y, v_2x,v_2y,s,t,det,v_0x,v_0y;
+  double x_m, y_m, v_0x,v_0y;
   double L, tx, ty, val[3], I, I_1, I_2, I_3, I_4[2], r1;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
   double inner_radius = TDatabase::ParamDB->SSMUM_INNER_RADIUS;
@@ -182,7 +181,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   TBaseCell *cell, *cell_n, *cell_nn;
   TVertex *ver[3], *ver_n[3];
   TRefDesc *refdesc, *refdesc_n, *refdesc_nn;
-  TJoint *joint, *joint_n, *joint_nn, *joints[max_joint_changes];
+  TJoint *joint, *joint_n, *joints[max_joint_changes];
 
   N_Cells = coll->GetN_Cells();
   // average radius of strip
@@ -255,7 +254,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     }
     if ((ver_below_strip)&&(ver_above_strip))
     {
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
       {
         OutPut(found << " " << i << " cell: (" << x[0] <<","<<y[0]<<"), ("
           << x[1] <<","<<y[1]<< "), ("
@@ -279,21 +278,21 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     refdesc=cell->GetRefDesc();                   // get refinement descriptor
     refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVer);
     N_Edges = cell->GetN_Edges();
-    if (TDatabase::ParamDB->SC_VERBOSE>1)
+    if (verbosity>1)
       OutPut("cell " << i);
     for (j=0;j<N_Edges; j++)
     {
       ver[j] = cell->GetVertex(j);
       x[j] = ver[j]->GetX();
       y[j] = ver[j]->GetY();
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
         OutPut(" ; " << x[j] << " " << y[j]);
                                                   // neighbour cell
       cell_n=cell->GetJoint(j)->GetNeighbour(cell);
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
         OutPut(" neigh " << cell_n->GetClipBoard());
     }
-    if (TDatabase::ParamDB->SC_VERBOSE>1)
+    if (verbosity>1)
     {
       OutPut(endl);
       for (j=0;j<N_Edges; j++)
@@ -331,14 +330,14 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
       // found mesh cell with two common vertices
       if (common_ver == 2)
       {
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
           OutPut(" common ");
         // compute coordinates of vertices
         for (j=0;j<N_Edges; j++)
         {
           x_n[j] = ver_n[j]->GetX();
           y_n[j] = ver_n[j]->GetY();
-          if (TDatabase::ParamDB->SC_VERBOSE>1)
+          if (verbosity>1)
             OutPut(" ; " << x_n[j] << " " << y_n[j]);
         }
         // find the vertices which are not common
@@ -358,7 +357,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
             break;
           }
         }
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
           OutPut(" " << not_common_0 << " " << not_common_1);
         // check if this is the correct pair
         r = (x[not_common_0] - mp_x)*(x[not_common_0] - mp_x)+
@@ -368,19 +367,19 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
         r_n = (x[(not_common_0+1)%3] - mp_x)*(x[(not_common_0+1)%3] - mp_x)+
           (y[(not_common_0+1)%3] - mp_y)*(y[(not_common_0+1)%3] - mp_y);
         r_n = sqrt(r_n);
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
           OutPut(" r " << r << " " << r_n << endl);
         // wrong pair
         //if (fabs(r-r_n)>1e-6)
         if (((r<av_rad) && (r_n>=av_rad)) || ((r>=av_rad) && (r_n<av_rad)))
         {
-          if (TDatabase::ParamDB->SC_VERBOSE>1)
+          if (verbosity>1)
             OutPut("wrong "  << r << " " << r_n << endl);
           continue;
         }
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
-          if (TDatabase::ParamDB->SC_VERBOSE>1)
+          if (verbosity>1)
             OutPut("Pair " <<  cell->GetClipBoard()
               << " " << cell_n->GetClipBoard() <<
               " not common " << not_common_0 <<
@@ -522,7 +521,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
           if (((r>=av_rad)&&(r_n>=av_rad)) || ((r<av_rad)&&(r_n<av_rad)))
           {
             index0 = j;
-            if (TDatabase::ParamDB->SC_VERBOSE>1)
+            if (verbosity>1)
               OutPut(r << " "  << not_common_0 << " "  << r_n << " "<< j << endl);
             break;
           }
@@ -548,14 +547,14 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
             break;
           }
         }
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
           OutPut("index " << index0 << " " << index1 << endl);
         }
         // set new coordinates to vertices
         cell->SetVertex(index0, ver_n[not_common_1]);
         cell_n->SetVertex(index1, ver[not_common_0]);
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
           for (j=0;j<N_Edges; j++)
           {
@@ -634,7 +633,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
         cell_n= joint->GetNeighbour(cell);
         if (cell_n == NULL)
           continue;
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
           OutPut(i <<  " my neigh " << j << " is " <<  -cell_n->GetClipBoard()-1 <<
             " " << -joint->GetNeighbour(0)->GetClipBoard()-1 <<
@@ -653,7 +652,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
           cell_nn = joint_n->GetNeighbour(cell_n);
           if (cell_nn == NULL)
             continue;
-          if (TDatabase::ParamDB->SC_VERBOSE>1)
+          if (verbosity>1)
             OutPut(" " << k << " : " <<  -cell_nn->GetClipBoard()-1 << " ");
           // this is the original joint
           if (cell_nn == cell)
@@ -665,7 +664,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
             x_n[1] = cell_n->GetVertex(TmpEdVer_n[2*k+1])->GetX();
             y_n[1] = cell_n->GetVertex(TmpEdVer_n[2*k+1])->GetY();
 
-            if (TDatabase::ParamDB->SC_VERBOSE>1)
+            if (verbosity>1)
             {
               OutPut(i << " " << j << " " << k << " neigh found " << x[0] << " " << x_n[0]  << " "
                 << x[1] << " " << x_n[1] << " "  << y[0] << " " << y_n[0]  << " "
@@ -685,7 +684,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
           // original mesh cell is not found
           if (((cell_nn == cell)&&(!found))||((k==N_Edges_n-1)&&(! me_found)))
           {
-            if (TDatabase::ParamDB->SC_VERBOSE>1)
+            if (verbosity>1)
               OutPut("cell " << i << " does not posses correct neighbour at joint " << j <<
                 " neigh " << -cell_n->GetClipBoard()-1 << " not at joint " << k <<
                 " " << me_found << endl);
@@ -706,7 +705,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
               for (jj=0;jj<N_Edges_nn; jj++)
               {
                 found = 0;
-                joint_nn = cell_nn->GetJoint(jj);
+//                joint_nn = cell_nn->GetJoint(jj);
                 // coordinates of face jj
                 x_nn[0] = cell_nn->GetVertex(TmpEdVer_nn[2*jj])->GetX();
                 y_nn[0] = cell_nn->GetVertex(TmpEdVer_nn[2*jj])->GetY();
@@ -739,7 +738,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
                   OutPut("max_joint_changes too small !!!" <<endl);
                   exit(4711);
                 }
-                if (TDatabase::ParamDB->SC_VERBOSE>1)
+                if (verbosity>1)
                   OutPut(i << " " << j << "  correct neighbour is cell " <<
                     -cell_nn->GetClipBoard()-1 << " joint " << jj << " " <<
                     -cell->GetJoint(j)->GetNeighbour(cell)->GetClipBoard()-1 << endl);
@@ -759,7 +758,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
             exit(4711);
             }*/
 
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
           OutPut(i <<  " my neigh after " << j << " is " <<
             " " << -joint->GetNeighbour(0)->GetClipBoard()-1 <<
@@ -769,7 +768,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     }
   }
   //WriteGridGnu(name,coll);
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
+  if (verbosity>1)
     OutPut(endl);
 
   // condense the information to the changes of the joints
@@ -793,7 +792,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     }
   }
 
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
+  if (verbosity>1)
   {
     for (i=0;i<N_joint_changes;i++)
     {
@@ -827,7 +826,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     }
   }
 
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
+  if (verbosity>1)
   {
     for (i=0;i<N_joint_changes_1;i++)
     {
@@ -859,7 +858,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     {
       joints[ii] = joint;
       ii++;
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
         OutPut(ii);
     }
     joint = coll->GetCell(joint_changes[i][2])->GetJoint(joint_changes[i][3]);
@@ -876,7 +875,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
       continue;
     joints[ii] = joint;
     ii++;
-    if (TDatabase::ParamDB->SC_VERBOSE>1)
+    if (verbosity>1)
       OutPut(ii);
   }
 
@@ -913,7 +912,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
       cell_n= joint->GetNeighbour(cell);
       if (cell_n == NULL)
         continue;
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
       {
         OutPut(i <<  " my neigh " << j << " is " <<  -cell_n->GetClipBoard()-1 <<
           " " << -joint->GetNeighbour(0)->GetClipBoard()-1 <<
@@ -1000,18 +999,16 @@ int RotateGrid(const char *name, TCollection *coll, double swap_rotation, double
 double *uoldx, double *uoldy, double *uold1, double *uold2,
 TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
 {
-  int i, j, jj, k, kk, N_Cells, N_V, swapped=0, count, found;
+  int j, k, N_Cells, N_V, swapped=0, count;
   int *GlobalNumbers_velo, *BeginIndex_velo, *DOF, index, N_U;
   double x, y, phi, r, phi_plus, t0, t1;
-  double val[1], *sol, xp[3], yp[3];
+  double val[1], *sol;
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
-  TBaseCell *cell, *cell1, *cell_n, *cell_nk;
-  TVertex *vertex, *Vertices[4];
+  TBaseCell *cell;
+  TVertex *vertex;  // *Vertices[4];
   TJoint *joint;
-  TBoundComp *BoundComp;
   TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   const TFESpace2D *velo_space;
   OutPut("rotate" << endl);
 
@@ -1094,7 +1091,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   // test for swapping
   if ((int)(angle/swap_rotation) < (int) ((angle+phi_plus)/swap_rotation))
   {
-    OutPut("swapping edges at step " << i << " time " << TDatabase::TimeDB->CURRENTTIME
+    OutPut("swapping edges at time " << TDatabase::TimeDB->CURRENTTIME
       << " " << (int)(angle/swap_rotation)
       << " " << (int) ((angle+phi_plus)/swap_rotation) << endl);
     // save the solution on the old mesh in the nodal values of the P2_bubble
@@ -1232,7 +1229,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     N_V = cell->GetN_Vertices();
     for (k=0;k<N_V;k++)
     {
-      Vertices[k] = cell->GetVertex(k);
+//      Vertices[k] = cell->GetVertex(k);
     }
     for (k=0;k<N_V;k++)
     {
@@ -1276,18 +1273,14 @@ int VelocityAtNewPositions(TCollection *coll,
 TFEFunction2D *u1, TFEFunction2D *u2,
 double *values)
 {
-  int i, j, jj, k, kk, N_Cells, N_V, swapped=0, count, found;
+  int j, jj, k, kk, N_Cells, N_V;
   int *GlobalNumbers_velo, *BeginIndex_velo, *DOF, index, N_U;
-  double x, y, phi, r, phi_plus, t0, t1;
-  double val[1], *sol, xp[3], yp[3];
+  double x, y, phi, r, phi_plus;
+  double val[1], xp[3], yp[3];
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
   TBaseCell *cell, *cell1, *cell_n, *cell_nk;
-  TVertex *vertex, *Vertices[4];
-  TJoint *joint;
-  TBoundComp *BoundComp;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
+  TVertex *vertex;
   const TFESpace2D *velo_space;
 
   phi_plus = 2*Pi * TDatabase::TimeDB->TIMESTEPLENGTH * TDatabase::ParamDB->SSMUM_ROT_PER_SECOND;
@@ -1297,7 +1290,7 @@ double *values)
   // number of velocity unknowns
   N_U = u1->GetLength();
   // vector for velocity
-  sol = u1->GetValues();
+//  sol = u1->GetValues();
   // information to the degrees of freedom for the velocity
   GlobalNumbers_velo = velo_space->GetGlobalNumbers();
   BeginIndex_velo = velo_space->GetBeginIndex();
@@ -1445,6 +1438,7 @@ double *values)
       }
     }
   }                                               // end j
+  return 0;
 }
 
 
@@ -1457,9 +1451,8 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   int cell_number;
   int *GlobalNumbers_velo, *BeginIndex_velo, *DOF, *DOF_n;
   double x, y, xx[3], yy[3], eps=1e-8, *sol, val1, val2, x_m,y_m;
-  double L,n_x,n_y,T_1,T_2,T_3,I_0,I_1,I_2, t_x, t_y,l,det,P,Q;
+  double L,n_x,n_y,T_1,T_2,T_3,I_0,t_x, t_y,l,det,P,Q;
   double tangential_value, tangential_value0, r, r_n;
-  double u1_unb, u2_unb;
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
   TBaseCell *cell, *cell_n;
@@ -2103,12 +2096,12 @@ void MakeBubblesDivFree(TCollection *coll,
     TFEFunction2D *p,
     TMatrix2D *B1, TMatrix2D *B2)
   {
-    int i, ii, j, N_Cells, N_U, N_P, index, index1, row;
+    int i, ii, j, N_Cells, N_U, index, index1, row;
     int *GlobalNumbers_velo, *BeginIndex_velo, *DOF_velo;
     int *GlobalNumbers_press, *BeginIndex_press, *DOF_press;
     const int *RowPtr, *KCol;
     double *sol, loc_rhs[2], loc_a[2][2], *Entries, det, bub1, bub2;
-    TBaseCell *cell;
+//    TBaseCell *cell;
     const TFESpace2D *velo_space, *press_space;
 
     // number of cells
@@ -2125,7 +2118,7 @@ void MakeBubblesDivFree(TCollection *coll,
     // pressure space
     press_space = p->GetFESpace2D();
     // number of pressure unknowns
-    N_P = p->GetLength();
+//    N_P = p->GetLength();
     // information to the degrees of freedom for the pressure
     GlobalNumbers_press = press_space->GetGlobalNumbers();
     BeginIndex_press = press_space->GetBeginIndex();
@@ -2134,7 +2127,7 @@ void MakeBubblesDivFree(TCollection *coll,
     for (j=0;j<N_Cells;j++)
     {
       // get cell
-      cell = coll->GetCell(j);
+//      cell = coll->GetCell(j);
       // dof belonging to this mesh cell
       DOF_velo =  GlobalNumbers_velo + BeginIndex_velo[j];
       DOF_press =  GlobalNumbers_press + BeginIndex_press[j];

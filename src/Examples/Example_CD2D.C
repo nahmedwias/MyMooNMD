@@ -31,36 +31,11 @@ namespace sharp_boundary_layer
   #include "CD_2D/SharpBoundaryLayer.h"
 }
 
-
-//===========================================================
-// examples for time dependent convection-diffusion-reaction
-// problems
-//===========================================================
-namespace exp_sin_cos
+Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db) 
+ : Example2D(user_input_parameter_db)
 {
-#include "TCD_2D/exp.h"
-}
-
-namespace sin_sin_sin
-{
-#include "TCD_2D/Sin3.h"
-}
-
-namespace sin_cos
-{
-#include "TCD_2D/SinCos1.h"
-}
-
-// test two example files from MooNMD, which claim to contain the well
-// knwon rotating bodies example
-namespace rotating_bodies_1
-{
-#include "TCD_2D/Rotating_Bodies.h"
-}
-
-Example_CD2D::Example_CD2D() : Example2D()
-{
-  switch( TDatabase::ParamDB->EXAMPLE ) 
+  int example_code = this->example_database["example"];
+  switch( example_code)
   {
     case 0:
       /** exact_solution */
@@ -124,80 +99,33 @@ Example_CD2D::Example_CD2D() : Example2D()
       sharp_boundary_layer::ExampleFile();
       break;
 
-    // starting from 101 the examples for time dependent problems
-    case 101:
-      /**Exact solution"**/
-       exact_solution.push_back(exp_sin_cos::Exact);
-      /** boundary condition */
-      boundary_conditions.push_back( exp_sin_cos::BoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( exp_sin_cos::BoundValue );
-      
-      /** coefficients */
-      problem_coefficients = exp_sin_cos::BilinearCoeffs;
-      
-      /** Initial condition*/
-      initial_conditions.push_back(exp_sin_cos::InitialCondition);
-      exp_sin_cos::ExampleFile();
-      break;
-    case 102:
-      /**Exact solution"**/
-       exact_solution.push_back(sin_sin_sin::Exact);
-      /** boundary condition */
-      boundary_conditions.push_back( sin_sin_sin::BoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( sin_sin_sin::BoundValue );
-      
-      /** coefficients */
-      problem_coefficients = sin_sin_sin::BilinearCoeffs;
-      
-      /** Initial condition*/
-      initial_conditions.push_back(sin_sin_sin::InitialCondition);
-      sin_sin_sin::ExampleFile();
-      break;
-    case 103:
-      /**Exact solution"**/
-      exact_solution.push_back(sin_cos::Exact);
-
-      /** boundary condition */
-      boundary_conditions.push_back( sin_cos::BoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( sin_cos::BoundValue );
-      
-      /** coefficients */
-      problem_coefficients = sin_cos::BilinearCoeffs;
-      
-      /** Initial condition*/
-      initial_conditions.push_back(sin_cos::InitialCondition);
-      sin_cos::ExampleFile();
-      break;
-    case 104:
-      /**Exact solution"**/
-      exact_solution.push_back(rotating_bodies_1::Exact);
-
-      /** boundary condition */
-      boundary_conditions.push_back( rotating_bodies_1::BoundCondition );
-
-      /** boundary values */
-      boundary_data.push_back( rotating_bodies_1::BoundValue );
-
-      /** coefficients */
-      problem_coefficients = rotating_bodies_1::BilinearCoeffs;
-
-      /** Initial condition*/
-      initial_conditions.push_back(rotating_bodies_1::InitialCondition);
-
-      // Print some example specific information.
-      rotating_bodies_1::ExampleFile();
-
-      break;
     default:
       ErrThrow("Unknown name of the convection-diffusion (CD2D) example!", 
-               TDatabase::ParamDB->EXAMPLE);
+               example_code);
   }
 }
 
-      
+
+void Example_CD2D::do_post_processing(CD2D& cd2d) const
+{
+  if(post_processing_stat)
+  {
+    post_processing_stat(cd2d);
+  }
+  else
+  {
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
+#endif
+      Output::info<2>("Example_CD2D","No post processing done for the current example.");
+  }
+}
+
+double Example_CD2D::get_nu() const
+{
+  double diffusion_coefficient = this->example_database["diffusion_coefficient"];
+  return diffusion_coefficient;
+}
+

@@ -20,6 +20,8 @@
 #ifndef __EXAMPLE3D__
 #define __EXAMPLE3D__
 
+#include <ParameterDatabase.h>
+#include <MooNMD_Io.h>
 #include <Constants.h>
 #include <vector>
 
@@ -32,8 +34,16 @@ class Example3D
     * 
     * This is used only by the classes derived from this class.
     */
-    Example3D();
-  
+    Example3D(const ParameterDatabase &);
+
+    /** @brief a local parameter database which controls this class
+     *
+     * The database given to the constructor will be merged into this one. Only
+     * parameters which are of interest to this class are stored (and the
+     * default ParMooN parameters).
+     */
+    ParameterDatabase example_database;
+
   public:
     /** @brief initialize your own example
      * 
@@ -69,6 +79,8 @@ class Example3D
     //! Default destructor.
     ~Example3D() = default;
 
+    // Initialize example database, called with the constructor
+    static ParameterDatabase default_example_database();
 
     // Getter functions
 
@@ -92,6 +104,9 @@ class Example3D
 
     CoeffFct3D* get_coeffs() const
     { return problem_coefficients; }
+
+    const ParameterDatabase & get_database() const
+    { return example_database; }
 };
 
 #endif // __EXAMPLE3D__

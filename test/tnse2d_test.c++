@@ -12,7 +12,6 @@
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
 #include <FEFunction2D.h>
-#include <list>
 
 
 void compare(Time_NSE2D& tnse2d, std::array<double, int(4)> errors)
@@ -46,6 +45,22 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
            int nstype, int laplace_type, int nonlinear_form, int time_disc, 
            std::array<std::array<double, int(4)>,4> errors)
 {
+
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(Solver<>::default_solver_database());
+  db.merge(Example2D::default_example_database());
+  db.merge(ParameterDatabase::default_nonlinit_database());
+  db["problem_type"] = 5;
+  db["example"] = 0;
+  db["reynolds_number"] = 1;
+  db["solver_type"] = "direct";
+  db["iterative_solver_type"] = "fgmres";
+  db["residual_tolerance"] = 1.e-12;
+  db["preconditioner"] = "least_squares_commutator";
+
+  db["nonlinloop_maxit"] = 2;
+  db["nonlinloop_epsilon"] = 1e-10;
+
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->NSTYPE = nstype;
@@ -56,12 +71,11 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   
   TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   
-  Time_NSE2D tnse(domain);
+  Time_NSE2D tnse(domain, db);
   
   tnse.assemble_initial_time();
   
   int step=0;
-  int image=0;
   
   while(TDatabase::TimeDB->CURRENTTIME < 
     TDatabase::TimeDB->ENDTIME-1e-10)
@@ -96,7 +110,7 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
       tnse.assemble_system();         
     }
     // post processing: error computations
-    tnse.output(step,image);
+    tnse.output(step);
     // check the errors
     if(step==1)
       compare(tnse, errors[0]);
@@ -115,30 +129,30 @@ int main(int argc, char* argv[])
   {
     TDatabase Database;
     TFEDatabase2D FEDatabase;
-    
-    TDatabase::ParamDB->MEASURE_ERRORS=1;
-    TDatabase::ParamDB->EXAMPLE =101;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_output_database());
+
+    db["output_compute_errors"] = true;
+
+    db.add("refinement_n_initial_steps", (size_t) 1,"");
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5;
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
     
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
-    TDatabase::ParamDB->UNIFORM_STEPS = 1;
-    TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 2;
+
     //  declaration of databases
-    TDomain domain;
+    TDomain domain(db);
     SetTimeDiscParameters(0);
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-    for(int i=0; i< TDatabase::ParamDB->UNIFORM_STEPS; ++i)
-    domain.RegRefineAll();
     
+    size_t n_ref = domain.get_n_initial_refinement_steps();
+    for(unsigned int i=0; i< n_ref; ++i)
+      domain.RegRefineAll();
+
     // test here
     std::array<std::array<double, int(4)>, 4> errors;
     // errors[0], errors[1] are at first two time steps

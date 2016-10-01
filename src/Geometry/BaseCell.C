@@ -93,7 +93,7 @@ TBaseCell::~TBaseCell()
     }
   }
 
-  delete Joints;
+  delete[] Joints;
 }
 
 double TBaseCell::Get_hK(int cell_measure)
@@ -136,7 +136,7 @@ void TBaseCell::CorrectBoundaryVertices(TVertex **NewVertices, TJoint **NewJoint
   int MaxN_VpF;
   
   TBoundComp3D *BoundComp;
-  TVertex *BoundVertices[3], *Vertex;
+  TVertex *Vertex;
   double x, y, z, t, s;
 
   for (int i=0;i<N_NewFaces;++i)

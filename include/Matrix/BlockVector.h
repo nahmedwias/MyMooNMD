@@ -24,6 +24,22 @@ class BlockFEMatrix;
 #include <vector>
 #include <string>
 
+#ifdef _MPI
+class TParFECommunicator3D;
+#endif
+
+class BlockVector;
+
+// This is a forward declaration with default argument for the friend
+// method dot. We need to split this function this way to make it work
+// with both compilers Clang and Gnu. If we just define friend dot in the
+// class with a default argument, Clang doesn't compile.
+double dot(const BlockVector& a, const BlockVector& b
+#ifdef _MPI
+    , std::vector<const TParFECommunicator3D*> comms={}
+#endif
+);
+
 class BlockVector
 {
   protected:
@@ -52,6 +68,10 @@ class BlockVector
     /** standard constructor */
     BlockVector();
     
+    /** Construct a BlockVector of length length.size(), where block i has
+     * length[i] entries, filled with zeroes.*/
+    BlockVector(std::vector<unsigned int> lengths);
+
     /** constructor for a BlockVector consisting of a single block of length
      * 'l' filled with zeros.
      */
@@ -207,8 +227,18 @@ class BlockVector
      * compute the 2-norm (square root of sum of squares)
      * Note: possibly implement other norms as well
      */
-    double norm() const;
-    
+    double norm(
+#ifdef _MPI
+        std::vector<const TParFECommunicator3D*> comms={}
+#endif
+    ) const;
+
+#ifdef _MPI
+    /// Compute global norm of a vector distributed among the processes. All
+    /// processes will return the same results.
+    double norm_global(std::vector<const TParFECommunicator3D*> comms) const;
+#endif
+
     /**
      * @brief Print subvector iB to console in Matlab format
      *
@@ -222,6 +252,12 @@ class BlockVector
      */
     void print(const std::string name = "rhs", const int iB = -1) const;
     
+    /**
+     * Write entire Vector into an Outfile in MatrixMarket array format.
+     * @param filename Desired filename (and path).
+     */
+    void write(std::string filename) const;
+
     /**
      * @brief Print some information without explicitly printing values
      */
@@ -343,8 +379,19 @@ class BlockVector
      *       in e.g. a template iterative solver
      * @param a,b the two BlockVectors
      */
-    friend double dot(const BlockVector& a, const BlockVector& b);
-    friend double norm(const BlockVector& a) { return a.norm(); };
+    friend double dot(const BlockVector& a, const BlockVector& b
+#ifdef _MPI
+        , std::vector<const TParFECommunicator3D*> comms
+#endif
+    );
+
+#ifdef _MPI
+    /// Compute global dot-product of 2 vectors distributed among the processes. All
+    /// processes will return the same results.
+    friend double dot_global(const BlockVector& a, const BlockVector& b,
+                             std::vector<const TParFECommunicator3D*> comms);
+#endif
+
 };
 
 

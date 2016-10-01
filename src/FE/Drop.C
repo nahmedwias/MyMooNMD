@@ -14,7 +14,7 @@ int SchemeA(double *r, double *z, double *h_r, double *h_z,
   double *f, *f1, *f2, *c, *d, *e, *b, *temp, sum;
   double C, L=*LL, H, Hn;
   double err, err_r, err_z;
-  int ID=1, i, it, i_err_r, i_err_z;
+  int ID=1, i, it; // i_err_r, i_err_z;
   int K=0; // K=1 for axisymmetrical case, K=0 for plane case
   // for reometer problem
   double alpha = Pi/4.;
@@ -184,7 +184,7 @@ int SchemeA(double *r, double *z, double *h_r, double *h_z,
       if(err>err_r)
       { 
         err_r = err;
-        i_err_r = i;
+//        i_err_r = i;
       }
     }
     
@@ -202,7 +202,7 @@ int SchemeA(double *r, double *z, double *h_r, double *h_z,
       if(err>err_z)
       { 
         err_z = err;
-        i_err_z = i;
+//        i_err_z = i;
       }
     }
 // the common part for r and z    
@@ -330,7 +330,7 @@ int SchemeA_ax(double *r, double *z, double *h_r, double *h_z,
   double *f, *f1, *f2, *c, *d, *e, *b, *temp;
   double C, L=*LL, H, Hn;
   double err, err_r, err_z;
-  int ID=1, i, it, i_err_r, i_err_z;
+  int ID=1, i, it; // i_err_r, i_err_z;
   int K=1; // K=1 for axisymmetrical case, K=0 for plane case
 
   // for adaptation
@@ -480,7 +480,7 @@ int SchemeA_ax(double *r, double *z, double *h_r, double *h_z,
       if(err>err_r)
       { 
         err_r = err;
-        i_err_r = i;
+//        i_err_r = i;
       }
     }
     
@@ -498,7 +498,7 @@ int SchemeA_ax(double *r, double *z, double *h_r, double *h_z,
       if(err>err_z)
       { 
         err_z = err;
-        i_err_z = i;
+//        i_err_z = i;
       }
     }
 // the common part for r and z    
@@ -601,7 +601,7 @@ int SchemeA_ax1(double *r, double *z, double *h_s, double *h_n,
   double *f, *f1, *f2, *c, *d, *e, *b, *temp;
   double C, L=*LL, H, Hn;
   double err, err_r, err_z;
-  int ID=1, i, it, i_err_r, i_err_z;
+  int ID=1, i, it; // i_err_r, i_err_z;
   int K=1; // K=1 for axisymmetrical case, K=0 for plane case
 
   // for adaptation
@@ -641,9 +641,9 @@ int SchemeA_ax1(double *r, double *z, double *h_s, double *h_n,
   //while(it<1)
     //while(((W<5.724)&&(it<1)) || ((W>=5.724)&&(it<1))) //BEM+BEM
   //while(it<50)
-  while(  (hi==5)  && (it<1) || 
-	(hi==15) && ( (W<=4)&&(it<5 || err_r>eps || err_z>eps) || (W>4)&&(it<1) ) ||
-	(hi==21) && (it<1)) 
+  while( ( (hi==5)  && (it<1) )||
+	((hi==15) && (( (W<=4)&&(it<5 || err_r>eps || err_z>eps)) || ((W>4)&&(it<1))) ) ||
+	((hi==21) && (it<1)))
   {
     it++;
        
@@ -709,7 +709,7 @@ int SchemeA_ax1(double *r, double *z, double *h_s, double *h_n,
       if(err>err_r)
       { 
         err_r = err;
-        i_err_r = i;
+//        i_err_r = i;
       }
     }
     
@@ -727,7 +727,7 @@ int SchemeA_ax1(double *r, double *z, double *h_s, double *h_n,
       if(err>err_z)
       { 
         err_z = err;
-        i_err_z = i;
+//        i_err_z = i;
       }
     }
 // the common part for r and z    
@@ -1158,7 +1158,7 @@ int SchemeA_ax2(double *r, double *z, double *h_r, double *h_z,
   double *f, *f1, *f2, *c, *d, *e, *b, *temp;
   double C, L=*LL, H, Hn;
   double err, err_r, err_z;
-  int ID=1, i, it, i_err_r, i_err_z;
+  int ID=1, i, it; // i_err_r, i_err_z;
   int K=1; // K=1 for axisymmetrical case, K=0 for plane case
 
   // for adaptation
@@ -1277,7 +1277,7 @@ int SchemeA_ax2(double *r, double *z, double *h_r, double *h_z,
       if(err>err_r)
       { 
         err_r = err;
-        i_err_r = i;
+//        i_err_r = i;
       }
     }
     
@@ -1295,7 +1295,7 @@ int SchemeA_ax2(double *r, double *z, double *h_r, double *h_z,
       if(err>err_z)
       { 
         err_z = err;
-        i_err_z = i;
+//        i_err_z = i;
       }
     }
 // the common part for r and z    
@@ -1399,7 +1399,7 @@ int SchemeB(double *r, double *z, double *h_r, double *h_z,
   double *f, *f1, *f2, *c, *d, *e, *b, *temp;
   double C, L=*LL, H, Hn;
   double err, err_r, err_z;
-  int ID=1, i, it, i_err_r, i_err_z;
+  int ID=1, i, it; //i_err_r, i_err_z;
   int K=0; // K=1 for axisymmetrical case, K=0 for plane case
   
   f = new double[2*N-1]; f1 = new double[2*N-1]; f2 = new double[2*N-1];
@@ -1499,7 +1499,7 @@ int SchemeB(double *r, double *z, double *h_r, double *h_z,
       if(err>err_r)
       { 
         err_r = err;
-        i_err_r = i;
+//        i_err_r = i;
       }
     }
     
@@ -1511,7 +1511,7 @@ int SchemeB(double *r, double *z, double *h_r, double *h_z,
       if(err>err_z)
       { 
         err_z = err;
-        i_err_z = i;
+//        i_err_z = i;
       }
     }
 // the common part for r and z    
@@ -1585,7 +1585,7 @@ int SchemeT4(double *r, double *z, double *beta, double *h_r, double *h_z,
   double *f, *f1, *f2, *df, *df1, *df2;
   double *beta_old, *r_old, *z_old;
   double err, err_beta;
-  int ID=1, i, it, i_err_beta;
+  int ID=1, i, it; // i_err_beta;
   int K=0; // K=1 for axisymmetrical case, K=0 for plane case 
   
   f = new double[N]; f1 = new double[N]; f2 = new double[N];
@@ -1738,7 +1738,7 @@ int SchemeT4(double *r, double *z, double *beta, double *h_r, double *h_z,
       if(err>err_beta)
       {
         err_beta = err;
-        i_err_beta = i;
+//        i_err_beta = i;
       }
     }
     
@@ -1788,7 +1788,7 @@ int SchemeT4_ax(double *r, double *z, double *beta, double *h_r, double *h_z,
   double *f, *f1, *f2, *df, *df1, *df2;
   double *beta_old, *r_old, *z_old;
   double err, err_beta;
-  int ID=1, i, it, i_err_beta;
+  int ID=1, i, it; // i_err_beta;
   int K=1; // K=1 for axisymmetrical case, K=0 for plane case 
 
   f = new double[N]; f1 = new double[N]; f2 = new double[N];
@@ -1896,7 +1896,8 @@ int SchemeT4_ax(double *r, double *z, double *beta, double *h_r, double *h_z,
 			    )/pow(r[N-1],K));    
     
 
-    if(it%500==0) OutPut("C/L="<<C/L<<endl);
+    if(it%500==0)
+      OutPut("C/L="<<C/L<<endl);
 
     F[0] = f[0] - K*(f[0]+C)/2. + C; 
     for(i=1;i<N;i++)
@@ -1904,27 +1905,34 @@ int SchemeT4_ax(double *r, double *z, double *beta, double *h_r, double *h_z,
 	F[i] = f[i] - K*sin(beta_old[i])/r[i] + C;
       }
     
-    if(it%500==0) OutPut("F"<<endl);
+    if(it%500==0)
+      OutPut("F"<<endl);
     for(i=0;i<N;i++)      
       if(it%500==0)
+      {
       if(i==0) 
 	{OutPut(r[i]<<' '<<z[i]<<' '<<f[i]<<' '<<(f[0]+C)/2.<<' '<<F[i]<<endl);}
       else
 	{OutPut(r[i]<<' '<<z[i]<<' '<<f[i]<<' '<<sin(beta_old[i])/r[i]<<' '<<F[i]<<endl);}
-      
+      }
 
-    if(it%500==0) OutPut("F and beta'"<<endl);
+    if(it%500==0)
+      OutPut("F and beta'"<<endl);
     for(i=0;i<N;i++)      
       if(it%500==0)
+      {
       if(i==0) 
 	{OutPut(r[i]<<' '<<z[i]<<' '<<F[i]<<' '<<(beta_old[1]-beta_old[0])/h[1]<<endl);}
       else
+      {
 	if(i==N-1)
 	  {OutPut(r[i]<<' '<<z[i]<<' '<<F[i]<<' '<<
 		(beta_old[N-1]-beta_old[N-2])/(h[N-1])<<endl);}
 	else
 	  {OutPut(r[i]<<' '<<z[i]<<' '<<F[i]<<' '<<
 		  (beta_old[i+1]-beta_old[i-1])/(h[i+1]+h[i])<<endl);}
+      }
+      }
     /*
     F[0] = F[4]+(F[3]-F[4])/(S(*a,3)-S(*a,4))*(S(*a,0)-S(*a,4));
     F[1] = F[4]+(F[3]-F[4])/(S(*a,3)-S(*a,4))*(S(*a,1)-S(*a,4));
@@ -1941,10 +1949,12 @@ int SchemeT4_ax(double *r, double *z, double *beta, double *h_r, double *h_z,
     if(it%500==0) OutPut("beta(s)"<<endl);
     for(i=0;i<N;i++)      
       if(it%500==0)
+      {
       if(i==0) 
 	{OutPut(beta_old[i]<<' '<<S(*a,t[i])<<endl);}
       else
 	{OutPut(beta_old[i]<<' '<<S(*a,t[i])<<endl);}
+      }
   // df = -2WL/3/hi*df1-WL*df2
   // ----------------------------------------------
     memset(df1,0,N*SizeOfDouble); // f1 not depend on s
@@ -2024,7 +2034,7 @@ int SchemeT4_ax(double *r, double *z, double *beta, double *h_r, double *h_z,
       if(err>err_beta)
       {
         err_beta = err;
-        i_err_beta = i;
+//        i_err_beta = i;
       }
     }
    
@@ -2127,7 +2137,7 @@ int SchemeT4_axNL(double *r, double *z, double *beta, double *h_r, double *h_z,
   double *f, *f1, *f2, *df, *df1, *df2;
   double *beta_old, *r_old, *z_old;
   double err, err_beta;
-  int ID=1, i, it, i_err_beta;
+  int ID=1, i, it; // i_err_beta;
   int K=1; // K=1 for axisymmetrical case, K=0 for plane case 
 
   f = new double[N]; f1 = new double[N]; f2 = new double[N];
@@ -2235,10 +2245,12 @@ int SchemeT4_axNL(double *r, double *z, double *beta, double *h_r, double *h_z,
       OutPut("F"<<endl);
     for(i=0;i<10;i++)
       if(it%500==0)
+      {
 	if(i==0) 
 	  {OutPut(z[i]<<' '<<(f[0]+C)/2.<<' '<<F[i]<<endl);}
 	else
 	  {OutPut(z[i]<<' '<<sin(beta_old[i])/r[i]<<' '<<F[i]<<endl);}
+      }
 
   // df = -2WL/3/hi*df1-WL*df2
   // ----------------------------------------------
@@ -2296,7 +2308,7 @@ int SchemeT4_axNL(double *r, double *z, double *beta, double *h_r, double *h_z,
       if(err>err_beta)
       {
         err_beta = err;
-        i_err_beta = i;
+//        i_err_beta = i;
       }
     }
     

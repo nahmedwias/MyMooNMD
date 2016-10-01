@@ -1,15 +1,15 @@
 #include <DirectSolver.h>
 #include <BlockMatrix.h>
-#include <Database.h>
+#include <BlockVector.h>
 #include <MooNMD_Io.h>
 #include <cmath>
 
 bool equal(const double a, const double b)
 {
-  if(fabs(a) > 1e-12)
-    return fabs((a-b)/a) < 1e-14;
+  if(std::abs(a) > 1e-12)
+    return std::abs((a-b)/a) < 1e-14;
   else
-    return fabs(a-b) < 1e-14;
+    return std::abs(a-b) < 1e-14;
 }
 
 int main(int argc, char **argv) 
@@ -93,9 +93,6 @@ int main(int argc, char **argv)
   // ##########################################################################
   // test the solving for this very small example
   
-  // unfortunately this is needed here, hopefully we can get rid of this soon
-  TDatabase database;
-  
   //BlockMatrix mat(2, 2, {matA, matC, matB, matD});
   BlockMatrix mat({size_t(matA->GetN_Rows()), size_t(matB->GetN_Rows())},
                          {size_t(matA->GetN_Columns()), 
@@ -128,7 +125,7 @@ int main(int argc, char **argv)
   sol.add_scaled(exact_sol, -1.);
   
   const double error = sol.norm(); // this is non-negative and should be zero
-  if(error > 1e-14)
+  if(error > 1.1e-14)
   {
     Output::print("norm of error is too big ", error);
     return 1;

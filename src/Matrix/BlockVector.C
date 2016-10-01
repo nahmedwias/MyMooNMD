@@ -3,22 +3,36 @@
 #include <BlockFEMatrix.h>
 #include <stdlib.h>
 #include <Constants.h>
-#include <Database.h>
 #include <LinAlg.h>
+
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#include <mpi.h>
+#endif
+
+#include <algorithm>
 
 /** ************************************************************************ */
 BlockVector::BlockVector() : entries(), lengths(), actives()
 {
-  if(TDatabase::ParamDB->SC_VERBOSE > 2)
-    OutPut("Constructor of BlockVector with no arguments\n");
+  Output::print<5>("Constructor of BlockVector with no arguments");
+}
+
+/** ************************************************************************ */
+BlockVector::BlockVector(std::vector<unsigned int> lengths)
+{
+  unsigned int n_entries = std::accumulate(lengths.begin(), lengths.end(), 0);
+  entries = std::vector<double>(n_entries , 0.0);
+
+  this->lengths = lengths;
+  actives = lengths; //assume only active entries
 }
 
 /** ************************************************************************ */
 BlockVector::BlockVector(unsigned int length)
  : entries(length, 0.0), lengths(1, length), actives(1, length)
 {
-  if(TDatabase::ParamDB->SC_VERBOSE > 2)
-    OutPut("Constructor of BlockVector with length " << length << endl);
+  Output::print<5>("Constructor of BlockVector with length ", length);
 }
 
 /** ************************************************************************ */
@@ -31,6 +45,7 @@ BlockVector::BlockVector(int length)
 
 BlockVector::BlockVector(const BlockMatrix& mat, bool result)
 {
+  Output::print<5>("Constructor of BlockVector using a BlockMatrix");
   // the total length of this vector
   size_t total_length = result ? mat.get_n_total_rows() : mat.get_n_total_columns();
   // number of blocks in this BlockVector
@@ -56,11 +71,14 @@ BlockVector::BlockVector(const BlockMatrix& mat, bool result)
    // all entries are active
     actives[b] = lengths[b];
   }
+  Output::print<5>("(end) Constructor of BlockVector using a BlockMatrix");
+  Output::print<5>("entries: ", this->entries.size(), " ",this->length());
 }
 
 BlockVector::BlockVector(const BlockFEMatrix& mat, bool result)
-: BlockVector(static_cast<BlockMatrix>(mat))
+: BlockVector(static_cast<const BlockMatrix&>(mat), result)
 {
+
   //now set actives correctly
   for(size_t b = 0; b < n_blocks(); ++b)
   {//go thorugh all blocks of the vector
@@ -159,8 +177,8 @@ void BlockVector::add_scaled(const BlockVector& r, double factor)
   }
   else if(this->n_blocks() != r.n_blocks())
   {
-    OutPut("WARNING: BlockVector::operator+=\n adding to BlockVectors with " << 
-           "the same length but different numbers of blocks\n");
+    Output::print("WARNING: BlockVector::operator+=\n adding to BlockVectors "
+                  "with the same length but different numbers of blocks");
   }
   Daxpy(l, factor, r.get_entries(), this->get_entries());
 }
@@ -220,8 +238,8 @@ void BlockVector::copy_nonactive(const BlockVector& r)
   }
   else if(this->n_blocks() != r.n_blocks())
   {
-    OutPut("WARNING: BlockVector::operator+=\n adding to BlockVectors with " << 
-           "the same length but different numbers of blocks\n");
+    Output::print("WARNING: BlockVector::operator+=\n adding to BlockVectors "
+                  "with the same length but different numbers of blocks\n");
   }
   
   for(unsigned int b = 0, n_b = this->n_blocks(); b < n_b; ++b)
@@ -259,10 +277,87 @@ void BlockVector::add(const double* x, const int i, double a)
 
 
 /** ************************************************************************ */
-double BlockVector::norm() const
+double BlockVector::norm(
+#ifdef _MPI
+    std::vector<const TParFECommunicator3D*> comms
+#endif
+) const
 {
+#ifndef _MPI
   return Dnorm(this->length(), this->get_entries());
+#elif _MPI
+  if (comms.size()==0)
+  {
+    //If comms is not provided, a default comm with size 0 is given, and
+    // the norm is calculated as it is in the seq case on each process,
+    // but it won't give the correct results. Once, all iterative solvers
+    // are correctly parallelised, the following warning can be converted
+    // to ErrThrow.
+    Output::warn<1>("BlockVector", "You are calculating the norm of a vector "
+        "in the parallel case, without providing the Communicators. This will "
+        "definitely give you a WRONG norm value in terms of consistency.");
+    return Dnorm(this->length(), this->get_entries());
+  }
+  else
+    return this->norm_global(comms);
+#endif
 }
+
+/** ************************************************************************ */
+#ifdef _MPI
+double BlockVector::norm_global(std::vector<const TParFECommunicator3D*> comms) const
+{
+  // This MPI method makes only use of values of master dofs, therefore
+  // "this" does not have to be updated, consistency level 0 is enough.
+
+  /// First check if vector and communicators fit
+  if(comms.size() != n_blocks())
+  {
+    ErrThrow("Number of blocks does not equal number of communicators.",
+             n_blocks(), " ",comms.size() );
+  }
+  for(size_t i =0; i < n_blocks(); ++i)
+  {
+    if(comms[i]->GetNDof() != (int) length(i))
+    {
+      ErrThrow("Length of Block ", i, " and comms", i, " do not match. ",
+               comms[i]->GetNDof(), " ", length(i));
+    }
+  }
+
+  int my_rank, size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+  double sum_local = 0;
+  for(size_t b =0; b < n_blocks(); ++b)
+  {
+    const TParFECommunicator3D* comm = comms[b]; //for convenience
+    const int* masters = comm->GetMaster();
+
+    size_t offset = this->offset(b);
+
+    for(size_t i = 0; i< length(b); ++i )
+    {
+      if(masters[i] == my_rank)
+      {
+        double val = entries[offset + i];
+        sum_local += val * val;
+      }
+    }
+  }
+
+  // Now add up all local sums via MPI_Allreduce.
+  double sendbf[1] = {sum_local};
+  double recvbf[1];
+  MPI_Allreduce(sendbf,recvbf,1,MPI_DOUBLE,MPI_SUM, MPI_COMM_WORLD);
+
+  double norm = sqrt(recvbf[0]); //square root of the global sum
+  return norm;
+
+}
+#endif
+/** ************************************************************************ */
 
 /** ************************************************************************ */
 void BlockVector::print(const std::string name, const int iB) const
@@ -280,6 +375,28 @@ void BlockVector::print(const std::string name, const int iB) const
   }
   else
     ErrThrow("trying to print subvector ", iB, " which does not exist");
+}
+
+/** ************************************************************************ */
+void BlockVector::write(std::string filename) const
+{
+  std::ofstream vectorfile;
+  vectorfile.open(filename.c_str());
+
+  //write the header line - array format, real values
+  vectorfile << "%%MatrixMarket matrix array real general \n";
+
+  //write general matrix information
+  vectorfile << length() << "\t" << 1 << "\t" << "\n";
+
+  //loop through matrix and print each entry
+  for(auto it : entries)
+  {
+    vectorfile << it << "\n";
+  }
+
+
+  vectorfile.close();
 }
 
 /** ************************************************************************ */
@@ -346,22 +463,109 @@ BlockVector& BlockVector::operator-=(const BlockVector& r)
 }
 
 /** ************************************************************************ */
-double dot(const BlockVector& a, const BlockVector& b)
+double dot(const BlockVector& a, const BlockVector& b
+#ifdef _MPI
+           , std::vector<const TParFECommunicator3D*> comms
+#endif
+)
 {
   unsigned int l = a.length();
+  // Check that the 2 vectors are compatible (same length and block number)
   if(b.length() != l)
   {
-    ErrThrow("unable to compute dot product of two BlockVectors of different ", 
-             "lengths\t", l, "\t", b.length());
+    ErrThrow("BlockVector class: Unable to compute dot product of two "
+        "BlockVectors of different lengths\t", l, "\t", b.length());
   }
   else if(a.n_blocks() != b.n_blocks())
   {
-    OutPut("WARNING: dot(BlockVector a, BlockVector b)\n computing the dot " <<
-           "product of two vectors with the same length but different numbers "
-           << "of blocks\n");
+    Output::warn<1>("BlockVector", "computing the dot product of two "
+                    "vectors with the same length but "
+                    "different numbers of blocks");
   }
+  // Compute the Dot-product in SEQ and MPI cases
+#ifndef _MPI
   return Ddot(l, a.get_entries(), b.get_entries());
+#elif _MPI
+  if (comms.size()==0)
+  {
+    // If comms is not provided, a default comm with size 0 is given, and
+    // the dotproduct is calculated as it is in the seq case on each
+    // process,but it won't give the correct results. Once, all
+    // iterative solvers are correctly parallelised, the following
+    // warning can be converted to ErrThrow.
+    Output::warn<1>("BlockVector", "You are calculating the dot-product of 2 vectors "
+        "in the parallel case, without providing the Communicators. This will "
+        "definitely give you a WRONG value in terms of consistency.");
+    return Ddot(l, a.get_entries(), b.get_entries());
+  }
+  else
+    return dot_global(a, b, comms);
+#endif
 }
+
+/** ************************************************************************ */
+#ifdef _MPI
+double dot_global(const BlockVector& a, const BlockVector& b,
+                  std::vector<const TParFECommunicator3D*> comms)
+{
+  // This MPI method makes only use of values of master dofs, therefore
+  // a and b do not have to be updated, consistency level 0 is enough.
+
+  /* First check if vector and communicators fit.
+   * before calling this method, it was already checked that the length
+   * and block numbers of the 2 vectors match. So it is enough to make
+   * the following check only for one of the 2 vectors, for example a.
+   */
+  if(comms.size() != a.n_blocks() || comms.size() != b.n_blocks() )
+  {
+    ErrThrow("Number of blocks does not equal number of communicators.",
+             a.n_blocks(), " ", b.n_blocks(), " ", comms.size() );
+  }
+  for(size_t n =0; n < a.n_blocks(); ++n)
+  {
+    if(comms[n]->GetNDof() != (int) a.length(n)
+        || comms[n]->GetNDof() != (int) b.length(n) )
+    {
+      ErrThrow("Length of Block number", n, " and comms", n, " do not match. ",
+               comms[n]->GetNDof(), " ", a.length(n), " ", b.length(n));
+    }
+  }
+
+  int my_rank, size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+  double sum_local = 0;
+  for(size_t n =0; n < a.n_blocks(); ++n) // n is the block number
+  {
+    const TParFECommunicator3D* comm = comms[n]; //for convenience
+    const int* masters = comm->GetMaster();
+
+    size_t offset_a = a.offset(n);
+    size_t offset_b = b.offset(n);
+    if (offset_a != offset_b)
+      ErrThrow("BlockVector : 2 Vectors have different block offsets!");
+
+    for(size_t i = 0; i < a.length(n); ++i )
+    {
+      if(masters[i] == my_rank)
+      {
+        double val_a = a.entries[offset_a + i];
+        double val_b = b.entries[offset_b + i];
+        sum_local += val_a * val_b;
+      }
+    }
+  }
+
+  // Now add up all local sums via MPI_Allreduce.
+  double sendbf[1] = {sum_local};
+  double recvbf[1];
+  MPI_Allreduce(sendbf,recvbf,1,MPI_DOUBLE,MPI_SUM, MPI_COMM_WORLD);
+
+  double product_result = recvbf[0]; // global sum (no square root)
+  return product_result;
+}
+#endif
 
 /** ************************************************************************ */
 void BlockVector::copy_structure(const BlockVector& r)

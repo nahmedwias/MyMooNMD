@@ -14,12 +14,12 @@
 #include <Database.h>
 
 // Methods
-int TIt_Between::Init(int level)
+int TIt_Between::Init(int level, int Levels, int Level_bottom)
 {
   TIt_Search::Init(level);
 
-  Level = TDatabase::ParamDB->LEVELS;
-  Level_bottom = TDatabase::ParamDB->UNIFORM_STEPS;
+  this->Level = Levels;
+  this->Level_bottom = Level_bottom;
 
   return 0;
 }

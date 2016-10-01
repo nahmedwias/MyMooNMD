@@ -54,6 +54,16 @@
  *             nodes and/or non-symmetric test- and ansatzspaces, these are the
  *             methods to changes (and of course implementing a new constructor
  *             and/or remove the "no-hanging-nodes" invariant.)
+ * 
+ * In the case of (Navier-) Stokes where the velocity space has only Dirichlet
+ * boundaries, the matrix is typically singular with the constant pressure 
+ * function being in the kernel of the matrix. Usually one restricts the 
+ * pressure space by one dimension, which is done here by setting the first
+ * pressure row to be zero, except on the diagonal (where one has an entry 1.0).
+ * This 'pressure correction' is mainly needed for direct solvers. So it is 
+ * implemented in the methods get_combined_matrix. The bool 
+ * `pressure_correction` determines if this should be done or not. We are aware
+ * of the fact that this solution is not very nice.
  *
  * @author     Clemens Bartsch
  * @date       2015/12/08
@@ -68,6 +78,12 @@
 #include <BlockMatrix.h>
 #include <FEMatrix.h>
 #include <FESpace.h>
+
+#include <MumpsWrapper.h> //for friend method
+
+#ifdef _MPI
+class TParFECommunicator3D;
+#endif
 
 class BlockFEMatrix : public BlockMatrix
 {
@@ -286,7 +302,7 @@ class BlockFEMatrix : public BlockMatrix
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 1.
      */
     static BlockFEMatrix NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure);
@@ -306,28 +322,28 @@ class BlockFEMatrix : public BlockMatrix
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 2.
      */
     static BlockFEMatrix NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure);
     
     /**
-     * Named constructor for a matrix of ParMooN-specific NSE Type 4.
+     * Named constructor for a matrix of ParMooN-specific NSE Type 3.
      * The matrix takes the block structure
      *
-     * ( A  0  0  B1T )
-     * ( 0  A  0  B2T )
-     * ( 0  0  A  B3T )
-     * ( B1 B2 B3 0  )
+     * ( A11  A12  A13  B1T )
+     * ( A21  A22  A23  B2T )
+     * ( A31  A32  A33  B3T )
+     * ( B1   B2   B3   0   )
      *
-     * where B1^T B2T and B3T are explicitly stored (and marked non-transposed)..
+     * where B1T, B2T and B3T are not explicitly stored (and marked non-transposed)..
      *
      * How to use a named constructor? Have a look at the test file!
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
-     * whose block structure is of NSE Type 4.
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
+     * whose block structure is of NSE Type 3.
      */
     static BlockFEMatrix NSE3D_Type3( const TFESpace3D& velocity, const TFESpace3D& pressure);
     
@@ -340,13 +356,13 @@ class BlockFEMatrix : public BlockMatrix
      * ( A31  A32  A33  B3T )
      * ( B1   B2   B3   0   )
      *
-     * where B1^T, B2^T and B3T are explicitly stored (and marked non-transposed)..
+     * where B1T, B2T and B3T are explicitly stored (and marked non-transposed)..
      *
      * How to use a named constructor? Have a look at the test file!
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 4.
      */
     static BlockFEMatrix NSE3D_Type4( const TFESpace3D& velocity, const TFESpace3D& pressure);
@@ -360,16 +376,26 @@ class BlockFEMatrix : public BlockMatrix
      * ( A31  A32  A33  B3T )
      * ( B1   B2   B3   C   )
      *
-     * where B1^T and B2^T are explicitly stored (and marked non-transposed).
+     * where B1T, B2T and B3T are explicitly stored (and marked non-transposed).
      *
      * How to use a named constructor? Have a look at the test file!
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 14.
      */
     static BlockFEMatrix NSE3D_Type14( const TFESpace3D& velocity, const TFESpace3D& pressure);
+
+    /**
+     * Named constructor for a Mass matrix of ParMooN-specific NSE type 1 & 2
+     *
+     * @param velocity The velocity finite element space
+     * @return A newly constructed BlockFEMatrix for
+     * 3D NSE time dependent problems
+     */
+    static BlockFEMatrix Mass_NSE3D(const TFESpace3D& velocity);
+
 #endif
 
 
@@ -445,13 +471,6 @@ class BlockFEMatrix : public BlockMatrix
                                 size_t sub_row, size_t sub_col,
                                 double a = 1.0) const;
 
-    /** @brief this method is used to compare the number of actives in a block vector
-     * to the number of actives in test space
-     *  @param nActive number of actives
-     *  @param spaceNumber number of the test space to compare the actives
-     */
-    virtual void handle_discovery_of_vector_actives(const int nActive, 
-                                                    const int spaceNumber) const;
     /**
      * Used as a developmental tool to discover slicing,
      * there should be no reason to use it anymore when the class is finished.
@@ -488,6 +507,22 @@ class BlockFEMatrix : public BlockMatrix
 #elif __3D__
     const TFESpace3D& get_ansatz_space(size_t cell_row, size_t cell_column) const;
 #endif
+
+    /**
+     * @brief Get a shared pointer to a constant version of one of the blocks.
+     * Note that the non-active rows of that block might not be what you expect
+     * and will have to be read with care.
+     *
+     * @param[in] cell_row The cell row of the desired block.
+     * @param[in] cell_col The cell column of the desired block.
+     * @param[out] is_transposed A flag which shows true if the block is stored
+     * in transposed state, false if not so.
+     *
+     * @return A shared pointer to a block.
+     */
+    std::shared_ptr<const FEMatrix> get_block(
+        size_t cell_row, size_t cell_col, bool& is_transposed) const;
+
     /**
      * This method is the main interface to ParMooN solving procedures which
      * depend on the block structure.
@@ -573,9 +608,9 @@ class BlockFEMatrix : public BlockMatrix
 
     /** @brief return this BlockMatrix as one TMatrix
      *
-     * This returns a merged version of this matix. Note that the merged
+     * This returns a merged version of this matrix. Note that the merged
      * matrix does not get stored internally, for it cannot easily be kept
-     * up to date, but recreated on every call.
+     * up to date, but is recreated on every call.
      *
      * Treats Dirichlet rows correctly and globally, regardless of
      * what the particular blocks hold in their Dirichlet rows.
@@ -583,6 +618,44 @@ class BlockFEMatrix : public BlockMatrix
      * Usually this is used to pass this matrix to a solver.
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const override;
+
+    /// Returns a TMatrix representing a rectangular submatrix.
+    /// Contains Dirichlet handling and pressure correction - the whole shebang.
+    virtual std::shared_ptr<TMatrix> get_combined_submatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const override;
+
+#ifdef _MPI
+    /// Return a list of the FE communicators belonging to the FESpaces of
+    /// the rows columns.
+    std::vector<const TParFECommunicator3D*> get_communicators() const;
+#endif
+
+    /**
+     * Spawns a new BlockFEMatrix taken from the Block diagonal of this,
+     * maintaining the coloring pattern.
+     *
+     * E.g. if we have a block fe matrix structure like
+     *  A A A B^T
+     *  A A A B^T
+     *  A A A B^T
+     *  B B B C,
+     *  calling get_sub_blockfematrix(0,1) will give
+     *
+     *  A A
+     *  A A
+     *
+     *  and calling get_sub_blockfematrix(1,3) will give
+     *
+     *  A A B^T
+     *  A A B^T
+     *  B B C.
+     *
+     * @param first The upper-leftmost diagonal block to include.
+     * @param last The lower-rightmost diagonal block to include.
+     */
+    BlockFEMatrix get_sub_blockfematrix(
+        size_t first, size_t last) const;
 
     /**
      * This method returns the number of actives of a certain cell column's
@@ -643,6 +716,23 @@ class BlockFEMatrix : public BlockMatrix
     const TFESpace3D& get_test_space(size_t cell_row, size_t cell_column) const;
 #endif
 
+    /** @brief this method is used to compare the number of actives in a block vector
+     * to the number of actives in test space
+     *  @param nActive number of actives
+     *  @param spaceNumber number of the test space to compare the actives
+     */
+    virtual void handle_discovery_of_vector_actives(const int nActive,
+                                                    const int spaceNumber) const;
+
+    /**
+     * Print information on the matrix. Works in MPI case, too.
+     * So far it prints only the block dimensions and the total number of d.o.f.
+     * (MPI case: global number of d.o.f.)
+     *
+     * TODO Might be extended by further info and depend on verbosity.
+     */
+    void print_matrix_info(std::string name) const;
+
     /**
      * Overrides the method from the base class
      * and does nothing but print an error, when called. This ensures, that
@@ -687,6 +777,12 @@ class BlockFEMatrix : public BlockMatrix
         double factor,
         const std::vector<std::vector<size_t>>& cell_positions );
 
+    /// @brief turn on pressure correction
+    void enable_pressure_correction() const;
+    /// @brief turn off pressure correction
+    void disable_pressure_correction() const;
+    /// @brief find out if pressure correction is currently enabled
+    bool pressure_correction_enabled() const;
 
     // Special member functions.
 
@@ -724,6 +820,18 @@ class BlockFEMatrix : public BlockMatrix
     /// Store pointers to the ansatzspaces columnwise. (TODO could be changed to weak_ptr)
     std::vector<const TFESpace3D* > ansatz_spaces_columnwise_;
 #endif
+    
+    /// @brief modify the first pressure row for (Navier-) Stokes matrices
+    ///
+    /// This is sometimes necessary if there are only Dirichlet boundaries to
+    /// avoid a singular matrix. In the methods `get_combined_matrix` this will
+    /// change the firsrt pressure row to be zero except on the diagonal.
+    ///
+    /// It's not nice that this is mutable, but usually the call to the method
+    /// 'get_combined_matrix' is made on a const BlockFEMatrix. So the setter
+    /// methods `enable_pressure_correction`/`disable_pressure_correction` must
+    /// be const as well.
+    mutable bool pressure_correction;
 
   private:
     /**
@@ -742,7 +850,7 @@ class BlockFEMatrix : public BlockMatrix
      * This quirky method is needed due to the base class storing TMatrices only,
      * but this class dealing with FEMatrices.
      */
-    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block) override;
+    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block) const override;
 
     /**
      * Actual implementation of the scale actives method, whose interface is given

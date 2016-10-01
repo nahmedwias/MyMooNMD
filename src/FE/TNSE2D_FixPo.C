@@ -393,7 +393,7 @@ double ***LocMatrices, double **LocRhs)
 
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity(delta,&param[2],&param[0],&param[0]);
-  
+
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
@@ -1463,7 +1463,7 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; //  **MatrixA21, **MatrixA12;
   double **MatrixM11, **MatrixM22;
   double **MatrixB1, **MatrixB2;
   double *Rhs1, *Rhs2, val;
@@ -1478,8 +1478,8 @@ double ***LocMatrices, double **LocRhs)
   double u1, u2, mu, delta;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixM11 = LocMatrices[4];
   MatrixM22 = LocMatrices[5];
@@ -2360,12 +2360,12 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixM11, **MatrixM22;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
@@ -2373,11 +2373,10 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2;
-  double u1, u2;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixM11 = LocMatrices[4];
   MatrixM22 = LocMatrices[5];
@@ -2401,14 +2400,14 @@ double ***LocMatrices, double **LocRhs)
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
 
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
+//  u1 = param[0];                 // u1old
+//  u2 = param[1];                 // u2old
 
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
@@ -2500,7 +2499,6 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2;
-  double u1, u2;
 
   MatrixA11 = LocMatrices[0];
   MatrixA12 = LocMatrices[1];
@@ -2528,8 +2526,8 @@ double ***LocMatrices, double **LocRhs)
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
 
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
+//  u1 = param[0];                 // u1old
+//  u2 = param[1];                 // u2old
 
   for(i=0;i<N_U;i++)
   {
@@ -2614,12 +2612,12 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixM11, **MatrixM22;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
@@ -2630,8 +2628,8 @@ double ***LocMatrices, double **LocRhs)
   double u1, u2, mu, delta;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixM11 = LocMatrices[4];
   MatrixM22 = LocMatrices[5];
@@ -2664,8 +2662,8 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
@@ -2873,12 +2871,12 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22, **AuxMatrix;
+  double **MatrixA11, **MatrixA22, **AuxMatrix;  //**MatrixA21, **MatrixA2;
   double **MatrixM11, **MatrixM22;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
   double *AuxMatrixRow;
@@ -2888,12 +2886,12 @@ double ***LocMatrices, double **LocRhs)
   int i,j, N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
-  double delta, ngu, val1, mu, mu2;
+  double delta, mu, mu2;
   double gamma = TDatabase::ParamDB->GAUSSIAN_GAMMA;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixM11 = LocMatrices[4];
   MatrixM22 = LocMatrices[5];
@@ -2932,8 +2930,8 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
@@ -3029,7 +3027,7 @@ double ***LocMatrices, double **LocRhs)
   int i,j, N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
-  double delta, val1, mu, mu2;
+  double delta, mu, mu2;
   double gamma = TDatabase::ParamDB->GAUSSIAN_GAMMA;
 
   MatrixA11 = LocMatrices[0];
@@ -4074,31 +4072,30 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, val;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j,N_U, N_P;
-  double c0, c1, c2;
-  double u1, u2;
+  double *Rhs1, *Rhs2;
+//  double ansatz00, ansatz10, ansatz01;
+  double test00; // test10, test01;
+  double *Orig2;
+  int i,N_U;
+  double c1, c2;
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
+//  Orig0 = OrigValues[0];         // u_x
+//  Orig1 = OrigValues[1];         // u_y
   Orig2 = OrigValues[2];         // u
 
-  c0 = coeff[0];                 // nu
+//  c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
 
   for(i=0;i<N_U;i++)
   {
-    test10 = Orig0[i];
-    test01 = Orig1[i];
+//    test10 = Orig0[i];
+//    test01 = Orig1[i];
     test00 = Orig2[i];
 
     Rhs1[i] += Mult*test00*c1;
@@ -4114,12 +4111,12 @@ double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA;
   double val;
-  double *MatrixRow, *MatrixRow1, *MatrixRow2, *MatrixMRow;
-  double ansatz00, ansatz10, ansatz01;
+  double *MatrixRow;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j,N_U, N_P;
-  double c0, c1, c2;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j,N_U;
+  double c0; // c1, c2;
   double u1, u2;
 
   MatrixA = LocMatrices[0];
@@ -4133,8 +4130,8 @@ double ***LocMatrices, double **LocRhs)
   //Orig3 = OrigValues[3]; // p
 
   c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
+//  c1 = coeff[1];                 // f1
+//  c2 = coeff[2];                 // f2
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
@@ -4150,7 +4147,7 @@ double ***LocMatrices, double **LocRhs)
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -4166,13 +4163,12 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, val;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j,N_U, N_P;
-  double c0, c1, c2, c3, c4;
-  double u1, u2;
+  double *Rhs1, *Rhs2;
+//  double ansatz00, ansatz10, ansatz01;
+  double test00;
+  double *Orig2;
+  int i,N_U;
+  double c3, c4;
 
   //cout << "TimeNSType1GalerkinC" << endl;
 
@@ -4204,12 +4200,12 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
-  double val, val1;
+  double val;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_U, N_P;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j, N_U;// N_P;
   double c0;
   double u1, u2, u1_x, u1_y, u2_x, u2_y;
 
@@ -4219,7 +4215,7 @@ double ***LocMatrices, double **LocRhs)
   MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
+//  N_P = N_BaseFuncts[1];
 
   Orig0 = OrigValues[0];         // u_x
   Orig1 = OrigValues[1];         // u_y
@@ -4353,13 +4349,13 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, val;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Rhs1, *Rhs2;
+  double test10, test01;
+  double *Orig0, *Orig1; // *Orig2;
   int i, N_U;
-  double c1, c2;
+//  double c1, c2;
 
-  double delta, ngu, val1, mu1;
+  double delta, val1, mu1;
   double D1u1, D2u1, D1u2, D2u2;
   double gamma = TDatabase::ParamDB->GAUSSIAN_GAMMA;
 
@@ -4370,10 +4366,10 @@ double ***LocMatrices, double **LocRhs)
 
   Orig0 = OrigValues[0];         // u_x
   Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+//  Orig2 = OrigValues[2];         // u
 
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
+//  c1 = coeff[1];                 // f1
+//  c2 = coeff[2];                 // f2
 
   D1u1 = param[2];               // D1u1
   D1u2 = param[3];               // D1u2;
@@ -4390,7 +4386,7 @@ double ***LocMatrices, double **LocRhs)
   {
     test10 = Orig0[i];
     test01 = Orig1[i];
-    test00 = Orig2[i];
+//    test00 = Orig2[i];
 
     // LES term
     val1 =  Mult* mu1;
@@ -4456,14 +4452,14 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, val;
+  double *Rhs1, *Rhs2;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i, N_U;
   double c1, c2;
 
-  double delta, ngu, val1, mu, mu1;
-  double D1u1, D2u1, D1u2, D2u2;
+  double delta, val1, mu1;
+//  double D1u1, D2u1, D1u2, D2u2;
   double AuxProblem11, AuxProblem12, AuxProblem22;
   double AuxProblem11Exact_x, AuxProblem12Exact_x, AuxProblem12Exact_y;
   double AuxProblem22Exact_y;
@@ -4481,10 +4477,10 @@ double ***LocMatrices, double **LocRhs)
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
 
-  D1u1 = param[0];               // D1u1
-  D1u2 = param[1];               // D1u2;
-  D2u1 = param[2];               // D2u1
-  D2u2 = param[3];               // D2u2;
+//  D1u1 = param[0];               // D1u1
+//  D1u2 = param[1];               // D1u2;
+//  D2u1 = param[2];               // D2u1
+//  D2u2 = param[3];               // D2u2;
   AuxProblem11 = param[4];       // 11 - component of auxiliary problem
   AuxProblem12 = param[5];       // 12 - and 21 - component
   AuxProblem22 = param[6];       // 22 - component of auxiliary problem
@@ -4498,7 +4494,7 @@ double ***LocMatrices, double **LocRhs)
   delta =  CharacteristicFilterWidth(hK);
 
   // turbulent viscosity
-  mu = TurbulentViscosity(delta,&param[0],&param[7],&param[9]);
+//  mu = TurbulentViscosity(delta,&param[0],&param[7],&param[9]);
 
   // (delta^2)/(2 gamma)
   mu1 = 0.5*delta*delta/gamma;
@@ -4585,7 +4581,7 @@ double ***LocMatrices, double **LocRhs)
   double test00;
   double *Orig0;
   int i, N_U;
-  double D1u1, D2u1, D1u2, D2u2;
+//  double D1u1, D2u1, D1u2, D2u2;
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -4814,7 +4810,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double u1, u2, ho_u1, ho_u2;
-  double D1u1, D2u1, D1u2, D2u2;
+//  double D1u1, D2u1, D1u2, D2u2;
   double ho_D1u1, ho_D2u1, ho_D1u2, ho_D2u2;
   double p, c0;
   int i, N_U;
@@ -4831,10 +4827,10 @@ double ***LocMatrices, double **LocRhs)
   // large scales
   u1 = param[0];
   u2 = param[1];
-  D1u1 = param[2];               // D1u1
-  D1u2 = param[3];               // D1u2;
-  D2u1 = param[4];               // D2u1
-  D2u2 = param[5];               // D2u2;
+//  D1u1 = param[2];               // D1u1
+//  D1u2 = param[3];               // D1u2;
+//  D2u1 = param[4];               // D2u1
+//  D2u2 = param[5];               // D2u2;
   // small scales
   ho_u1 = param[6];
   ho_u2 = param[7];
@@ -4876,13 +4872,12 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, val;
+  double *Rhs1, *Rhs2;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i, N_U;
-  double c1, c2, delta;
+  double c1, c2;
 
-  double mu;
   double D1u1, D2u1, D1u2, D2u2;
 
   Rhs1 = LocRhs[0];
@@ -4923,13 +4918,13 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, val;
+  double *Rhs1, *Rhs2;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i, N_U;
-  double c1, c2, delta;
+  double c1, c2;
   double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double mu, u1, u2, um11, um12, um21, um22;
+  double u1, u2, um11, um12, um21, um22;
   double D1u1, D2u1, D1u2, D2u2;
 
   Rhs1 = LocRhs[0];
@@ -4984,7 +4979,6 @@ void TimeNSType4GalerkinDD_Axial3D(double Mult, double *coeff,
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *AuxMatrixRow, **AuxMatrix;;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
@@ -5223,7 +5217,6 @@ void TimeNSType4GalerkinDD_2PhaseAxial3D(double Mult, double *coeff,
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *AuxMatrixRow, **AuxMatrix;;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
@@ -5231,7 +5224,7 @@ void TimeNSType4GalerkinDD_2PhaseAxial3D(double Mult, double *coeff,
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
-  double c0, c1, c2, c3, c4, c5;
+  double c0, c1, c2, c3;
   double u1, u2, x, r;
 
   MatrixA11 = LocMatrices[0];
@@ -5370,7 +5363,7 @@ void TimeNSType3_4NLGalerkinDD_2PhaseAxial3D(double Mult, double *coeff,
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j, N_U;
-  double c0, c3, c4, c5;
+  double c0, c3;
   double u1, u2, x, r;
 
   MatrixA11 = LocMatrices[0];
@@ -5438,11 +5431,11 @@ void GridAssemble4(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
   double val, lambda=0;
   double *MatrixRow11, *MatrixRow12, *MatrixRow21, *MatrixRow22;
-  double ansatz10, ansatz01, ansatz00;
-  double test10, test01, test00;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_U;
-  double c0=1., c1, c2, detjk;
+  double ansatz10, ansatz01;
+  double test10, test01;
+  double *Orig0, *Orig1;
+  int i,j,N_U;
+  double c0=1., detjk;
 
 //   double lame = TDatabase::ParamDB->LameC;
 
@@ -5893,7 +5886,7 @@ void TimeNSType2SUPG(double Mult, double *coeff,
   double *Rhs1, *Rhs2;
   double *MatRowA, *MatRowM, *MatRowK, *MatRow1, *MatRow2;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4, *Orig5, *Orig6, *Orig7;
-  double test00, test10, test01, test20, test02;
+  double test00, test10, test01;
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double c0, c1, c2, u1, u2, val;
   int N_U, N_P;
@@ -6016,8 +6009,8 @@ void TimeNSType2NLSUPG(double Mult, double *coeff,
 {
   double **MatA, **MatK, **MatB1T, **MatB2T;
   double *MatRowA, *MatRowK, *MatRow1, *MatRow2;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4, *Orig5, *Orig6, *Orig7;
-  double test00, test10, test01, ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double *Orig0, *Orig1, *Orig2, *Orig5, *Orig6, *Orig7;
+  double test00, test10, test01, ansatz00, ansatz10, ansatz01; // ansatz20, ansatz02;
   double *Rhs1, *Rhs2;
   double c0, c1, c2, u1, u2, val, delta, ugrad;
   int N_U, N_P;
@@ -6038,8 +6031,8 @@ void TimeNSType2NLSUPG(double Mult, double *coeff,
   Orig0=OrigValues[0]; // u_x
   Orig1=OrigValues[1]; // u_y 
   Orig2=OrigValues[2]; // u 
-  Orig3=OrigValues[3]; // u_xx
-  Orig4=OrigValues[4]; // u_yy
+//  Orig3=OrigValues[3]; // u_xx
+//  Orig4=OrigValues[4]; // u_yy
   Orig5=OrigValues[5]; // p_x 
   Orig6=OrigValues[6]; // p_y
   Orig7=OrigValues[7]; // p
@@ -6075,8 +6068,8 @@ void TimeNSType2NLSUPG(double Mult, double *coeff,
       ansatz10=Orig0[j];
       ansatz01=Orig1[j];
       ansatz00=Orig2[j];
-      ansatz20=Orig3[j];
-      ansatz02=Orig4[j];
+//      ansatz20=Orig3[j];
+//      ansatz02=Orig4[j];
       
       val =c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
       val +=(u1*ansatz10+u2*ansatz01)*test00; // nonlinear term
@@ -6111,9 +6104,9 @@ void TimeNSRHSSUPG(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double /**Rhs1, *Rhs2,*/ *Rhs3, *Rhs4;
-  double *Orig0, *Orig1;//, *Orig2;
-  double /*test00,*/ test10, test01;
+  double *Rhs3, *Rhs4;
+  double *Orig0, *Orig1;  // *Orig2;
+  double test10, test01;
   double u1, u2, c0, c1, c2, ugrad, delta;
   int N_U;
   
@@ -6126,7 +6119,7 @@ void TimeNSRHSSUPG(double Mult, double *coeff,
   
   Orig0=OrigValues[0]; // u_x
   Orig1=OrigValues[1]; // u_y 
-  //Orig2=OrigValues[2]; // u 
+//  Orig2=OrigValues[2]; // u
 
   c0=coeff[0];
   c1=coeff[1];
@@ -6144,7 +6137,7 @@ void TimeNSRHSSUPG(double Mult, double *coeff,
   {
     test10=Orig0[i]; 
     test01=Orig1[i];
-    // test00=Orig2[i];
+//    test00=Orig2[i];
     
     ugrad=delta*(u1*test10 + u2*test01);
     /*

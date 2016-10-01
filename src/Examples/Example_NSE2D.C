@@ -1,4 +1,5 @@
 #include <Example_NSE2D.h>
+#include <NSE2D.h>
 
 #include <Database.h>
 #include <BoundEdge.h>
@@ -7,7 +8,6 @@
 #include <SquareMatrix2D.h>
 #include <string.h>
 #include <MainUtilities.h>
-
 
 /* examples */
 
@@ -27,8 +27,6 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
-
-//=========================================
 // tests for the pressure robust methods
 //=========================================
 namespace zerosolution
@@ -47,15 +45,6 @@ namespace bsp1_pr1
 }
 
 //=========================================
-// time dependent case 
-namespace bsp1
-{
- #include "TNSE_2D/Bsp1.h"
-}
-namespace lin_space_time
-{
-#include "TNSE_2D/linear_space_time.h"
-}
 namespace td_quad_pres
 {
 #include "TNSE_2D/stokes_quadratic_pressure.h"
@@ -86,9 +75,11 @@ namespace cosine_sin
 }
 //=========================================
 
-Example_NSE2D::Example_NSE2D() : Example2D()
+Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
+ : Example2D(user_input_parameter_db)
 {
-  switch( TDatabase::ParamDB->EXAMPLE ) 
+  int example_code = this->example_database["example"];
+  switch( example_code )
   {
     case 0:
       /** exact_solution */
@@ -172,12 +163,9 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       /** coefficients */
       problem_coefficients = flow_around_cylinder::LinCoeffs;
       
-      /** function for computation of drag lift and pressure difference*/
-      /** post processing function to  compute drag and lift */
+      // Set dimensionless viscosity
+      flow_around_cylinder::DIMENSIONLESS_VISCOSITY = get_nu();
       post_processing = flow_around_cylinder::compute_drag_and_lift;
-      
-      flow_around_cylinder::ExampleFile();
-      break;
       
     case 40:
       /** exact_solution */
@@ -450,4 +438,27 @@ Example_NSE2D::Example_NSE2D() : Example2D()
   }
 }
 
-      
+void Example_NSE2D::do_post_processing(NSE2D& nse2d) const
+{
+  if(post_processing_stat)
+  {
+    post_processing_stat(nse2d);
+  }
+  else
+  {
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
+#endif
+      Output::info<2>("Example_NSE2D","No post processing done for the current example.");
+  }
+}
+
+double Example_NSE2D::get_nu() const
+{
+  double inverse_reynolds = this->example_database["reynolds_number"];
+  inverse_reynolds = 1/inverse_reynolds;
+  return inverse_reynolds;
+}
+

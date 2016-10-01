@@ -52,7 +52,7 @@ void TFE2D::CheckNFandBF() const
   if(rank == TDatabase::ParamDB->Par_P0)
   #endif 
   {
-   Output::print("CheckNFandBF: BaseFunct_ID: ", this->BaseFunct_ID,
+   Output::print<3>("CheckNFandBF: BaseFunct_ID: ", this->BaseFunct_ID,
                  " NodalFunctional_ID: ", this->NodalFunctional_ID);
   }
   
@@ -97,11 +97,11 @@ void TFE2D::CheckNFandBF() const
       //Output::print(k, " ", i, " ", FunctionalValues[i]);
       if( i == k && fabs(FunctionalValues[i]-1) > 1e-8 )
       {
-        Output::print("BF: ", k, " NF: ", i, " ", FunctionalValues[i]);
+        Output::print<3>("BF: ", k, " NF: ", i, " ", FunctionalValues[i]);
       }
       if( i != k && fabs(FunctionalValues[i]-0) > 1e-8 )
       {
-        Output::print("BF: ", k, " NF: ", i, " ", FunctionalValues[i]);
+        Output::print<3>("BF: ", k, " NF: ", i, " ", FunctionalValues[i]);
       }
     }
   }

@@ -120,74 +120,41 @@ int main(int argc, char* argv[])
   {
     TDatabase Database;
     TFEDatabase2D FEDatabase;
-    
-    TDatabase::ParamDB->MEASURE_ERRORS=1;
-    TDatabase::ParamDB->EXAMPLE =101;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(Example2D::default_example_database());
+    db["example"] = 0;
+    db["reynolds_number"] = 1;
+
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
     
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     //  declaration of databases
-    TDomain domain;
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
        
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     for(int i=0; i< 5; ++i)
     domain.RegRefineAll();
-    TDatabase::ParamDB->SOLVER_TYPE=2;
     
-    Time_CD2D tcd(domain);
-    // direct SOLVER_TYPE = 2
-    time_integration(2,tcd);
-  }
-  
-  { 
-    TDatabase Database;
-    TFEDatabase2D FEDatabase;
+    db.add("solver_type", "direct", "", {"direct", "petsc"});
+    Time_CD2D tcd(domain, db);
+    time_integration(2, tcd);
     
-    TDatabase::ParamDB->MEASURE_ERRORS=1;
-    TDatabase::ParamDB->EXAMPLE =101;
-    TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->RE_NR = 1;
+    // I don't know what has changed but with setting the default parameters in
+    // the old database here, it does not work.
+    Database.SetDefaultParameters();
     TDatabase::ParamDB->ANSATZ_ORDER=1;
-    
-    TDatabase::TimeDB->STARTTIME=0;
-    TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
-    TDomain domain;
-    SetTimeDiscParameters(0);
-    // some parameters
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-    for(int i=0; i< 5; ++i)
-      domain.RegRefineAll();
     
-    TDatabase::ParamDB->SOLVER_TYPE=1;
-    TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR= 5;
-    TDatabase::ParamDB->SC_SOLVER_SCALAR= 16;
-    TDatabase::ParamDB->SC_SMOOTHER_SCALAR= 3;
-    TDatabase::ParamDB->SC_MG_CYCLE_SCALAR   = 1;
-    TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR = 2;
-    TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR= 2;
-    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR= 17;
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR= 0;
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR= 0;
-    TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR= 10000;   
-    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR= 1e-12  ;
-    TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR= 0;
-    TDatabase::ParamDB->SC_GMRES_RESTART= 20;
-    TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR=0.1;
-    
-    Time_CD2D tcd(domain);
-    time_integration(2,tcd);
+    Output::print("\n\nTesting PETSc\n");
+    db["solver_type"] = "petsc";
+    Time_CD2D tcd_petsc(domain, db);
+    time_integration(2, tcd_petsc);
   }
-  Output::print<1>("TEST SUCCESFULL: ");
   return 0;
 }

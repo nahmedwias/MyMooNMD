@@ -19,26 +19,27 @@
 #include <BlockVector.h>
 
 #include <FESpace2D.h>
-#include <Example_NSE2D.h>
+#include <Example_TimeNSE2D.h>
 
-#include <NSE_MultiGrid.h>
-#include <NSE_MGLevel1.h>
-#include <NSE_MGLevel2.h>
-#include <NSE_MGLevel3.h>
-#include <NSE_MGLevel4.h>
-#include <NSE_MGLevel14.h>
+#include <Multigrid.h>
+#include <Solver.h>
 
 #include <MainUtilities.h>
+
+#include <ParameterDatabase.h>
+#include <PostProcessing2D.h>
 
 #include <vector>
 #include <deque>
 #include <utility>
-
+#include <array>
 
 class Time_NSE2D
 {
   enum class Matrix{Type14, Type1, Type2, Type3, Type4};
+
   protected:
+
     /** @brief store a complete system on a paticular grid.
      * 
      * This combines a matrix, rhs, solution, spaces and functions 
@@ -73,9 +74,22 @@ class Time_NSE2D
       TFEFunction2D p;
       
       /** @brief constructor*/
-      System_per_grid(const Example_NSE2D& example, TCollection& coll, 
+      System_per_grid(const Example_TimeNSE2D& example, TCollection& coll, 
                       std::pair<int,int> order, Time_NSE2D::Matrix type);
     };
+    
+    /** @brief a local parameter database which controls this class
+     *
+     * The database given to the constructor will be merged into this one. Only
+     * parameters which are of interest to this class are stored (and the
+     * default ParMooN parameters). Note that this usually does not include
+     * other parameters such as solver parameters. Those are only in the
+     * Solver object.
+     */
+    ParameterDatabase db;
+
+    /** @brief class for output handling */
+    PostProcessing2D outputWriter;
     
     /** @brief a complete system on each grid 
      * 
@@ -85,61 +99,70 @@ class Time_NSE2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_NSE2D & example;
+    Example_TimeNSE2D example;
     
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
      */
-    std::shared_ptr<TNSE_MultiGrid> multigrid;
+    Solver<BlockFEMatrix, BlockVector> solver;
     
     /** @brief an array to store defect, so that we don't have to reallocate
      *         so often
      */
     BlockVector defect;
 
-    protected:
-      /**
-       * @brief store the square root of the residual from previous iteration
-       */
-      double oldResidual;
-      /** @brief store the initial residual so that the nonlinear iteration can 
-       *         be stopped as soon as a desired reduction is achieved
-       */
-      double initial_residual;
-      
-      /** @brief right hand side vector from previous time step (on finest mesh)*/
-      BlockVector old_rhs;
+    /**
+    * @brief store the square root of the residual from previous iteration
+    */
+    double oldResidual;
+
+    /** @brief store the initial residual so that the nonlinear iteration can
+    *         be stopped as soon as a desired reduction is achieved
+    */
+    double initial_residual;
+
+    /** @brief store errors  */
+    std::vector<double> errors;
+
+    /** @brief right hand side vector from previous time step (on finest mesh)*/
+    BlockVector old_rhs;
       /** @brief */
-      BlockVector old_solution;
+    BlockVector old_solution;
       
       /** @brief solution vector for computing drag and lift coeffs*/
       BlockVector formerSolution;
-      
-      /** @brief store errors  */
-      std::vector<double> errors;
     
-      /** old time step length used to scale the pressure blocks*/
-      double oldtau;
+    /** old time step length used to scale the pressure blocks*/
+    double oldtau;
       
-      /** @brief set parameters in database
-       * 
-      * This functions checks if the parameters in the database are meaningful 
-      * and resets them otherwise. The hope is that after calling this function
-      * this class is fully functional.
-      * 
-      * If some parameters are set to unsupported values, an error occurs and 
-      * throws an exception.
-      */
-      void set_parameters();
-      
-      /** @brief get velocity and pressure space*/
-      void get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_orders);
+    /** @brief set parameters in database
+    *
+    * This functions checks if the parameters in the database are meaningful
+    * and resets them otherwise. The hope is that after calling this function
+    * this class is fully functional.
+    *
+    * If some parameters are set to unsupported values, an error occurs and
+    * throws an exception.
+    */
+    void set_parameters();
+
+    /** @brief get velocity and pressure space*/
+    void get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_orders);
+    
+    /** @brief write some information (number of cells, dofs, ...) */
+    void output_problem_size_info() const;
+
   public:
+
     /** @brief constructor
-     * This constructor calls the other constructor creating an Example_CD2D
+     * This constructor calls the other constructor creating an Example_TimeNSE2D
      * object. 
      */
-    Time_NSE2D(const TDomain& domain, int reference_id = -4711);
+    Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+               int reference_id = -4711);
+
     /** @brief constructor 
      * 
      * The domain must have been refined a couple of times already. On the 
@@ -149,8 +172,8 @@ class Time_NSE2D
      * The reference_id can be used if only the cells with the give reference_id
      * should be used. The default implies all cells.
      */
-    Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex, 
-	       int reference_id = -4711);
+    Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+               const Example_TimeNSE2D& ex, int reference_id = -4711);
     
     /** @brief Assemble all the matrices and rhs before the time iterations
      * 
@@ -179,6 +202,12 @@ class Time_NSE2D
      */
     void assemble_system();
     
+    /** descale matrices
+     * This function will descale all A-blocks which were scaled
+     * during the function call Time_NSE2D::assemble_system():
+     */
+    void deScaleMatrices();
+
     /** @brief assemble nonlinear term
      * 
      * The matrix blocks to which the nonlinear term contributes are reset to 
@@ -188,6 +217,9 @@ class Time_NSE2D
      */
     void assemble_nonlinear_term();
     
+    /** @brief solve the system */
+    void solve();
+
     /** @brief check if one of the stopping criteria is fulfilled
      * 
      * either converged, maximun number of iterations reached, or slow 
@@ -197,31 +229,17 @@ class Time_NSE2D
      */
     bool stopIte(unsigned int it_counter);
     
-    /** @brief solve the system */
-    void solve();
-    
-    /** descale matrices
-     * This function will descale all A-blocks which were scaled
-     * during the function call Time_NSE2D::assemble_system():
-     */
-    void deScaleMatrices();
-    /**
-     * @brief initialize multigrid levels for different NSTYPE's
-     */
-    TNSE_MGLevel* mg_levels(int i, System_per_grid& s);
-    /** @brief multigrid solver */
-    void mg_solver();
-    
-    /** @brief 
+    /** @brief
      * compute errors and write solution
      */
-    void output(int m, int &image);
+    void output(int m);
     
     // getters and setters
     /*const BlockMatrixNSE2D & get_matrix() const
     { return this->systems.front().matrix; }*/
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }
+
     const TFEVectFunct2D & get_velocity() const
     { return this->systems.front().u; }
     // try not to use this as it is not const
@@ -238,8 +256,10 @@ class Time_NSE2D
     { return this->systems.front().solution; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
-    const Example_NSE2D & get_example() const
+    const Example_TimeNSE2D & get_example() const
     { return example; }
+    const ParameterDatabase & get_db() const
+    { return db; }
     /// @brief return the computed errors at each discre time point
     std::array<double, int(6)> get_errors();
 };
