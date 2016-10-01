@@ -2985,3 +2985,4 @@ void LocalAssembling2D::set_parameters_for_tstokes(LocalAssembling2D_type type)
       }
       break;
   }
+}
