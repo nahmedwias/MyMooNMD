@@ -776,7 +776,7 @@ void NSE2D::output(int i)
   delete u1;
   delete u2;
   
-  this->example.do_post_processing(s.u.GetComponent(0), s.u.GetComponent(1),&s.p);
+  //this->example.do_post_processing(s.u.GetComponent(0), s.u.GetComponent(1),&s.p);
 
   //do postprocessing step depending on what the example implements
   example.do_post_processing(*this);

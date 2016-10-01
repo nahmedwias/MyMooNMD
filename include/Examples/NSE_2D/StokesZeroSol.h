@@ -3,8 +3,7 @@
 
 void ExampleFile()
 {
-  Output::print<1>("Example: StokesZeroSol.h with INTERNAL_PROBLEM_IDENTITY ", 
-                   TDatabase::ParamDB->PROBLEM_TYPE);
+  Output::print<1>("Example: StokesZeroSol.h");
   TDatabase::ParamDB->INTERNAL_QUAD_RULE = 99;
 }
 
@@ -73,11 +72,6 @@ void LinCoeffs(int n_points, double *X, double *Y,
     
     coeffs[i][1] = -u1[3] + p[1]; // f1
     coeffs[i][2] = -u2[3] + p[2]; // f2    
-    
-    if(TDatabase::ParamDB->PROBLEM_TYPE == 5) // Navier-Stokes (3 means Stokes)
-    {
-      ErrThrow("flow problem type: " , TDatabase::ParamDB->PROBLEM_TYPE ," not tested yet");
-    }
     coeffs[i][3] = u1[1] + u2[2]; // g (divergence)
   }  
 }

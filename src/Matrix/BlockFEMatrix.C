@@ -35,7 +35,7 @@ BlockFEMatrix::BlockFEMatrix(std::vector< const TFESpace3D* > spaces_rows,
 #endif
     BlockMatrix(), //base class object is default (empty) constructed
     test_spaces_rowwise_(spaces_rows),
-    ansatz_spaces_columnwise_(spaces_cols)
+    ansatz_spaces_columnwise_(spaces_cols),
     pressure_correction(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE != 0)
 {
   Output::print<5>("BlockFEMatrix constructor");

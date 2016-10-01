@@ -165,7 +165,7 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       
       // Set dimensionless viscosity
       flow_around_cylinder::DIMENSIONLESS_VISCOSITY = get_nu();
-      post_processing = flow_around_cylinder::compute_drag_and_lift;
+      // post_processing = flow_around_cylinder::compute_drag_and_lift;
       
     case 40:
       /** exact_solution */
@@ -232,207 +232,207 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       bsp1_pr1::ExampleFile();
       break;
       
-    case 101:
-      /** exact_solution */
-      exact_solution.push_back( bsp1::ExactU1 );
-      exact_solution.push_back( bsp1::ExactU2 );
-      exact_solution.push_back( bsp1::ExactP );
+//    case 101:
+//      /** exact_solution */
+//      exact_solution.push_back( bsp1::ExactU1 );
+//      exact_solution.push_back( bsp1::ExactU2 );
+//      exact_solution.push_back( bsp1::ExactP );
       
-      /** boundary condition */
-      boundary_conditions.push_back( bsp1::BoundCondition );
-      boundary_conditions.push_back( bsp1::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+//      /** boundary condition */
+//      boundary_conditions.push_back( bsp1::BoundCondition );
+//      boundary_conditions.push_back( bsp1::BoundCondition );
+//      boundary_conditions.push_back( BoundConditionNoBoundCondition );
       
-      /** boundary values */
-      boundary_data.push_back( bsp1::U1BoundValue );
-      boundary_data.push_back( bsp1::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+//      /** boundary values */
+//      boundary_data.push_back( bsp1::U1BoundValue );
+//      boundary_data.push_back( bsp1::U2BoundValue );
+//      boundary_data.push_back( BoundaryValueHomogenous );
       
-      /** coefficients */
-      problem_coefficients = bsp1::LinCoeffs;
+//      /** coefficients */
+//      problem_coefficients = bsp1::LinCoeffs;
       
-      /** initial condition */
-      initial_conditions.push_back(bsp1::InitialU1);
-      initial_conditions.push_back(bsp1::InitialU2);
-      bsp1::ExampleFile();
-      break;
-    case 102:
-      /** exact_solution */
-      exact_solution.push_back( lin_space_time::ExactU1 );
-      exact_solution.push_back( lin_space_time::ExactU2 );
-      exact_solution.push_back( lin_space_time::ExactP );
+//      /** initial condition */
+//      initial_conditions.push_back(bsp1::InitialU1);
+//      initial_conditions.push_back(bsp1::InitialU2);
+//      bsp1::ExampleFile();
+//      break;
+//    case 102:
+//      /** exact_solution */
+//      exact_solution.push_back( lin_space_time::ExactU1 );
+//      exact_solution.push_back( lin_space_time::ExactU2 );
+//      exact_solution.push_back( lin_space_time::ExactP );
       
-      /** boundary condition */
-      boundary_conditions.push_back( lin_space_time::BoundCondition );
-      boundary_conditions.push_back( lin_space_time::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+//      /** boundary condition */
+//      boundary_conditions.push_back( lin_space_time::BoundCondition );
+//      boundary_conditions.push_back( lin_space_time::BoundCondition );
+//      boundary_conditions.push_back( BoundConditionNoBoundCondition );
       
-      /** boundary values */
-      boundary_data.push_back( lin_space_time::U1BoundValue );
-      boundary_data.push_back( lin_space_time::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+//      /** boundary values */
+//      boundary_data.push_back( lin_space_time::U1BoundValue );
+//      boundary_data.push_back( lin_space_time::U2BoundValue );
+//      boundary_data.push_back( BoundaryValueHomogenous );
       
-      /** coefficients */
-      problem_coefficients = lin_space_time::LinCoeffs;
+//      /** coefficients */
+//      problem_coefficients = lin_space_time::LinCoeffs;
       
-      initial_conditions.push_back(lin_space_time::InitialU1);
-      initial_conditions.push_back(lin_space_time::InitialU2);
+//      initial_conditions.push_back(lin_space_time::InitialU1);
+//      initial_conditions.push_back(lin_space_time::InitialU2);
       
-      lin_space_time::ExampleFile();
-      break;
-    case 103:
-      /** exact_solution */
-      exact_solution.push_back( td_quad_pres::ExactU1 );
-      exact_solution.push_back( td_quad_pres::ExactU2 );
-      exact_solution.push_back( td_quad_pres::ExactP );
+//      lin_space_time::ExampleFile();
+//      break;
+//    case 103:
+//      /** exact_solution */
+//      exact_solution.push_back( td_quad_pres::ExactU1 );
+//      exact_solution.push_back( td_quad_pres::ExactU2 );
+//      exact_solution.push_back( td_quad_pres::ExactP );
       
-      /** boundary condition */
-      boundary_conditions.push_back( td_quad_pres::BoundCondition );
-      boundary_conditions.push_back( td_quad_pres::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+//      /** boundary condition */
+//      boundary_conditions.push_back( td_quad_pres::BoundCondition );
+//      boundary_conditions.push_back( td_quad_pres::BoundCondition );
+//      boundary_conditions.push_back( BoundConditionNoBoundCondition );
       
-      /** boundary values */
-      boundary_data.push_back( td_quad_pres::U1BoundValue );
-      boundary_data.push_back( td_quad_pres::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+//      /** boundary values */
+//      boundary_data.push_back( td_quad_pres::U1BoundValue );
+//      boundary_data.push_back( td_quad_pres::U2BoundValue );
+//      boundary_data.push_back( BoundaryValueHomogenous );
       
-      /** coefficients */
-      problem_coefficients = td_quad_pres::LinCoeffs;
+//      /** coefficients */
+//      problem_coefficients = td_quad_pres::LinCoeffs;
       
-      initial_conditions.push_back(td_quad_pres::InitialU1);
-      initial_conditions.push_back(td_quad_pres::InitialU2);
+//      initial_conditions.push_back(td_quad_pres::InitialU1);
+//      initial_conditions.push_back(td_quad_pres::InitialU2);
       
-      td_quad_pres::ExampleFile();
-      break;    
-    case 104:
-      /** exact_solution */
-      exact_solution.push_back( time_flow_around_cylinder::ExactU1 );
-      exact_solution.push_back( time_flow_around_cylinder::ExactU2 );
-      exact_solution.push_back( time_flow_around_cylinder::ExactP );
+//      td_quad_pres::ExampleFile();
+//      break;
+//    case 104:
+//      /** exact_solution */
+//      exact_solution.push_back( time_flow_around_cylinder::ExactU1 );
+//      exact_solution.push_back( time_flow_around_cylinder::ExactU2 );
+//      exact_solution.push_back( time_flow_around_cylinder::ExactP );
       
-      /** boundary condition */
-      boundary_conditions.push_back( time_flow_around_cylinder::BoundCondition );
-      boundary_conditions.push_back( time_flow_around_cylinder::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+//      /** boundary condition */
+//      boundary_conditions.push_back( time_flow_around_cylinder::BoundCondition );
+//      boundary_conditions.push_back( time_flow_around_cylinder::BoundCondition );
+//      boundary_conditions.push_back( BoundConditionNoBoundCondition );
       
-      /** boundary values */
-      boundary_data.push_back( time_flow_around_cylinder::U1BoundValue );
-      boundary_data.push_back( time_flow_around_cylinder::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+//      /** boundary values */
+//      boundary_data.push_back( time_flow_around_cylinder::U1BoundValue );
+//      boundary_data.push_back( time_flow_around_cylinder::U2BoundValue );
+//      boundary_data.push_back( BoundaryValueHomogenous );
       
-      /** initial conditions, in case of a non-stationary problem */
-      initial_conditions.push_back(time_flow_around_cylinder::InitialU1);
-      initial_conditions.push_back(time_flow_around_cylinder::InitialU2);
-      initial_conditions.push_back(time_flow_around_cylinder::InitialP);
+//      /** initial conditions, in case of a non-stationary problem */
+//      initial_conditions.push_back(time_flow_around_cylinder::InitialU1);
+//      initial_conditions.push_back(time_flow_around_cylinder::InitialU2);
+//      initial_conditions.push_back(time_flow_around_cylinder::InitialP);
       
-      /** post processing function to  compute drag and lift */
-      post_processing_time = time_flow_around_cylinder::compute_drag_and_lift;
+//      /** post processing function to  compute drag and lift */
+//      post_processing_time = time_flow_around_cylinder::compute_drag_and_lift;
 
-      /** coefficients */
-      problem_coefficients = time_flow_around_cylinder::LinCoeffs;
+//      /** coefficients */
+//      problem_coefficients = time_flow_around_cylinder::LinCoeffs;
       
-      time_flow_around_cylinder::ExampleFile();
-      break;
-    case 105:
-      /** exact_solution */
-      exact_solution.push_back( ns_test_code1::ExactU1 );
-      exact_solution.push_back( ns_test_code1::ExactU2 );
-      exact_solution.push_back( ns_test_code1::ExactP );
+//      time_flow_around_cylinder::ExampleFile();
+//      break;
+//    case 105:
+//      /** exact_solution */
+//      exact_solution.push_back( ns_test_code1::ExactU1 );
+//      exact_solution.push_back( ns_test_code1::ExactU2 );
+//      exact_solution.push_back( ns_test_code1::ExactP );
       
-      /** boundary condition */
-      boundary_conditions.push_back( ns_test_code1::BoundCondition );
-      boundary_conditions.push_back( ns_test_code1::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+//      /** boundary condition */
+//      boundary_conditions.push_back( ns_test_code1::BoundCondition );
+//      boundary_conditions.push_back( ns_test_code1::BoundCondition );
+//      boundary_conditions.push_back( BoundConditionNoBoundCondition );
       
-      /** boundary values */
-      boundary_data.push_back( ns_test_code1::U1BoundValue );
-      boundary_data.push_back( ns_test_code1::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+//      /** boundary values */
+//      boundary_data.push_back( ns_test_code1::U1BoundValue );
+//      boundary_data.push_back( ns_test_code1::U2BoundValue );
+//      boundary_data.push_back( BoundaryValueHomogenous );
       
-      /** initial conditions, in case of a non-stationary problem */
-      initial_conditions.push_back(ns_test_code1::InitialU1);
-      initial_conditions.push_back(ns_test_code1::InitialU2);
-      initial_conditions.push_back(ns_test_code1::InitialP);
-      /** coefficients */
-      problem_coefficients = ns_test_code1::LinCoeffs;
+//      /** initial conditions, in case of a non-stationary problem */
+//      initial_conditions.push_back(ns_test_code1::InitialU1);
+//      initial_conditions.push_back(ns_test_code1::InitialU2);
+//      initial_conditions.push_back(ns_test_code1::InitialP);
+//      /** coefficients */
+//      problem_coefficients = ns_test_code1::LinCoeffs;
       
-      ns_test_code1::ExampleFile();
-      break;
+//      ns_test_code1::ExampleFile();
+//      break;
       
-    case 106:
-      exact_solution.push_back( potential_flow_ex1::ExactU1 );
-      exact_solution.push_back( potential_flow_ex1::ExactU2 );
-      exact_solution.push_back( potential_flow_ex1::ExactP );
+//    case 106:
+//      exact_solution.push_back( potential_flow_ex1::ExactU1 );
+//      exact_solution.push_back( potential_flow_ex1::ExactU2 );
+//      exact_solution.push_back( potential_flow_ex1::ExactP );
       
-      /** boundary condition */
-      boundary_conditions.push_back( potential_flow_ex1::BoundCondition );
-      boundary_conditions.push_back( potential_flow_ex1::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+//      /** boundary condition */
+//      boundary_conditions.push_back( potential_flow_ex1::BoundCondition );
+//      boundary_conditions.push_back( potential_flow_ex1::BoundCondition );
+//      boundary_conditions.push_back( BoundConditionNoBoundCondition );
       
-      /** boundary values */
-      boundary_data.push_back( potential_flow_ex1::U1BoundValue );
-      boundary_data.push_back( potential_flow_ex1::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+//      /** boundary values */
+//      boundary_data.push_back( potential_flow_ex1::U1BoundValue );
+//      boundary_data.push_back( potential_flow_ex1::U2BoundValue );
+//      boundary_data.push_back( BoundaryValueHomogenous );
       
-      /** initial conditions, in case of a non-stationary problem */
-      initial_conditions.push_back(potential_flow_ex1::InitialU1);
-      initial_conditions.push_back(potential_flow_ex1::InitialU2);
-      initial_conditions.push_back(potential_flow_ex1::InitialP);
-      /** coefficients */
-      problem_coefficients = potential_flow_ex1::LinCoeffs;
+//      /** initial conditions, in case of a non-stationary problem */
+//      initial_conditions.push_back(potential_flow_ex1::InitialU1);
+//      initial_conditions.push_back(potential_flow_ex1::InitialU2);
+//      initial_conditions.push_back(potential_flow_ex1::InitialP);
+//      /** coefficients */
+//      problem_coefficients = potential_flow_ex1::LinCoeffs;
       
-      potential_flow_ex1::ExampleFile();
-      break;
-      case 107:
-      /** exact_solution */
-      exact_solution.push_back( potential_flow_ex2::ExactU1 );
-      exact_solution.push_back( potential_flow_ex2::ExactU2 );
-      exact_solution.push_back( potential_flow_ex2::ExactP );
+//      potential_flow_ex1::ExampleFile();
+//      break;
+//      case 107:
+//      /** exact_solution */
+//      exact_solution.push_back( potential_flow_ex2::ExactU1 );
+//      exact_solution.push_back( potential_flow_ex2::ExactU2 );
+//      exact_solution.push_back( potential_flow_ex2::ExactP );
       
-      /** boundary condition */
-      boundary_conditions.push_back( potential_flow_ex2::BoundCondition );
-      boundary_conditions.push_back( potential_flow_ex2::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+//      /** boundary condition */
+//      boundary_conditions.push_back( potential_flow_ex2::BoundCondition );
+//      boundary_conditions.push_back( potential_flow_ex2::BoundCondition );
+//      boundary_conditions.push_back( BoundConditionNoBoundCondition );
       
-      /** boundary values */
-      boundary_data.push_back( potential_flow_ex2::U1BoundValue );
-      boundary_data.push_back( potential_flow_ex2::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+//      /** boundary values */
+//      boundary_data.push_back( potential_flow_ex2::U1BoundValue );
+//      boundary_data.push_back( potential_flow_ex2::U2BoundValue );
+//      boundary_data.push_back( BoundaryValueHomogenous );
       
-      /** initial conditions, in case of a non-stationary problem */
-      initial_conditions.push_back(potential_flow_ex2::InitialU1);
-      initial_conditions.push_back(potential_flow_ex2::InitialU2);
-      initial_conditions.push_back(potential_flow_ex2::InitialP);
-      /** coefficients */
-      problem_coefficients = potential_flow_ex2::LinCoeffs;
+//      /** initial conditions, in case of a non-stationary problem */
+//      initial_conditions.push_back(potential_flow_ex2::InitialU1);
+//      initial_conditions.push_back(potential_flow_ex2::InitialU2);
+//      initial_conditions.push_back(potential_flow_ex2::InitialP);
+//      /** coefficients */
+//      problem_coefficients = potential_flow_ex2::LinCoeffs;
       
-      potential_flow_ex2::ExampleFile();
-      break;
-      case 108:
-      /** exact_solution */
-      exact_solution.push_back( cosine_sin::ExactU1 );
-      exact_solution.push_back( cosine_sin::ExactU2 );
-      exact_solution.push_back( cosine_sin::ExactP );
+//      potential_flow_ex2::ExampleFile();
+//      break;
+//      case 108:
+//      /** exact_solution */
+//      exact_solution.push_back( cosine_sin::ExactU1 );
+//      exact_solution.push_back( cosine_sin::ExactU2 );
+//      exact_solution.push_back( cosine_sin::ExactP );
       
-      /** boundary condition */
-      boundary_conditions.push_back( cosine_sin::BoundCondition );
-      boundary_conditions.push_back( cosine_sin::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+//      /** boundary condition */
+//      boundary_conditions.push_back( cosine_sin::BoundCondition );
+//      boundary_conditions.push_back( cosine_sin::BoundCondition );
+//      boundary_conditions.push_back( BoundConditionNoBoundCondition );
       
-      /** boundary values */
-      boundary_data.push_back( cosine_sin::U1BoundValue );
-      boundary_data.push_back( cosine_sin::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+//      /** boundary values */
+//      boundary_data.push_back( cosine_sin::U1BoundValue );
+//      boundary_data.push_back( cosine_sin::U2BoundValue );
+//      boundary_data.push_back( BoundaryValueHomogenous );
       
-      /** initial conditions, in case of a non-stationary problem */
-      initial_conditions.push_back(cosine_sin::InitialU1);
-      initial_conditions.push_back(cosine_sin::InitialU2);
-      initial_conditions.push_back(cosine_sin::InitialP);
-      /** coefficients */
-      problem_coefficients = cosine_sin::LinCoeffs;
+//      /** initial conditions, in case of a non-stationary problem */
+//      initial_conditions.push_back(cosine_sin::InitialU1);
+//      initial_conditions.push_back(cosine_sin::InitialU2);
+//      initial_conditions.push_back(cosine_sin::InitialP);
+//      /** coefficients */
+//      problem_coefficients = cosine_sin::LinCoeffs;
       
-      cosine_sin::ExampleFile();
-      break;
+//      cosine_sin::ExampleFile();
+//      break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
