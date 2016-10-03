@@ -1,9 +1,10 @@
 // u1 = sin(t) sin (PiX) sin(PiY)
 // u2 = sin(t) cos(PiX) cos(PiY)
 //
+double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
-  OutPut("Example: SinSinSin.h" << endl) ;
+  OutPut("Example: potential_flow_td.h" << endl) ;
 }
 
 // ========================================================================
@@ -115,7 +116,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  static double nu = 1/TDatabase::ParamDB->RE_NR;
+  static double nu = DIMENSIONLESS_VISCOSITY;
   for(int i=0;i<n_points;i++)
   {    
     coeffs[i][0] = nu;    

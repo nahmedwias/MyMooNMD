@@ -169,8 +169,13 @@ void Time_NSE2D::set_parameters()
   }
   if(db["problem_type"].is(4))
   {
-    TDatabase::ParamDB->NSTYPE = 1;
-    Output::print("NSTYPE is changed to ", TDatabase::ParamDB->NSTYPE);
+    if(TDatabase::ParamDB->DISCTYPE==RECONSTRUCTION)
+    {
+      TDatabase::ParamDB->NSTYPE=4;
+    }
+    Output::print("For DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
+                  " NSTYPE is changed to ", TDatabase::ParamDB->NSTYPE);
+
   }
 }
 

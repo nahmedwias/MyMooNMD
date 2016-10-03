@@ -99,19 +99,21 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     case LocalAssembling2D_type::TSTOKES:
       switch (TDatabase::ParamDB->DISCTYPE) {
       case GALERKIN:
+      case RECONSTRUCTION:
          return std::string("TSTOKES2D_Galerkin");
           break;
       default:
-          Output::print("Disctype ", TDatabase::ParamDB->DISCTYPE, " is not supported yet");
+          ErrThrow("Disctype ", TDatabase::ParamDB->DISCTYPE, " is not supported yet");
           break;
       }
     case LocalAssembling2D_type::TSTOKES_Rhs:
       switch (TDatabase::ParamDB->DISCTYPE) {
       case GALERKIN:
+      case RECONSTRUCTION:
          return std::string("TSTOKES2D_RhsGalerkin");
           break;
       default:
-          Output::print("Disctype ", TDatabase::ParamDB->DISCTYPE, " is not supported yet");
+          ErrThrow("Disctype ", TDatabase::ParamDB->DISCTYPE, " is not supported yet");
           break;
       }
     ///////////////////////////////////////////////////////////////////////////
@@ -2954,14 +2956,30 @@ void LocalAssembling2D::set_parameters_for_tstokes(LocalAssembling2D_type type)
       switch(disc_type) // discrete forms
       {
         case GALERKIN:
-          this->N_Matrices    = 4;
-          this->RowSpace      = { 0, 0, 1, 1 };
-          this->ColumnSpace   = { 0, 0, 0, 0 };
+        case RECONSTRUCTION:
+          switch (TDatabase::ParamDB->NSTYPE) {
+            case 1:
+              this->N_Matrices    = 4;
+              this->RowSpace      = { 0, 0, 1, 1 };
+              this->ColumnSpace   = { 0, 0, 0, 0 };
               this->AssembleParam = TimeStokesOnlyGalerkin;
-          break;
+            break;
+          case 4:
+              this->N_Matrices    = 9;
+              this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
+              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
+              this->AssembleParam = TimeStokesType4Galerkin;
+              break;
+          default:
+              ErrThrow("NSTYPE: ",
+                       TDatabase::ParamDB->NSTYPE, " is not supported yet");
+            break;
+          }
+        break;
         default:
           ErrThrow("Disctype ", disc_type, " is not supported yet");
-          break;
+                          break;
+        break;
       }
       break;
     case TSTOKES_Rhs:

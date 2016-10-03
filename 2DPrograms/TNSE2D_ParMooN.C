@@ -4,6 +4,7 @@
 #include <Example_TimeNSE2D.h>
 #include <Time_NSE2D.h>
 #include <TimeDiscRout.h>
+#include <PR_Time_NSE2D.h>
 
 using namespace std;
 
@@ -46,11 +47,11 @@ int main(int argc, char* argv[])
 
   Example_TimeNSE2D example( parmoon_db );
   // create an object of Time_NSE2D class
-  Time_NSE2D tnse2d(Domain, parmoon_db, example);
+  PR_Time_NSE2D tnse2d(Domain, parmoon_db, example);
   // assemble everything at the start time
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary 
-  tnse2d.assemble_initial_time();
+  tnse2d.assemble_initial();
 
   double end_time = TDatabase::TimeDB->ENDTIME;
   int step = 0;
@@ -80,11 +81,11 @@ int main(int argc, char* argv[])
        Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
        // prepare the right hand side vector
        // only needed once per time step
-       tnse2d.assemble_rhs();
        if(parmoon_db["problem_type"].is(4))
        {
-         tnse2d.assemble_system();
-         tnse2d.solve();
+         tnse2d.rhs_assemble();
+         tnse2d.system_assemble();
+         tnse2d.system_solve();
          tnse2d.output(step);
          continue;
        }

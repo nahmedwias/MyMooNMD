@@ -12,8 +12,19 @@ namespace lin_space_time
 {
 #include "TNSE_2D/linear_space_time.h"
 }
+
 namespace  cosine_sin {
 #include "TNSE_2D/cosine_sine.h"
+}
+
+namespace potential_flow_ex1
+{
+#include "TNSE_2D/potential_flow_td.h"
+}
+
+namespace potential_flow_ex2
+{
+#include "TNSE_2D/potential_flow_td_ex2.h"
 }
 
 Example_TimeNSE2D::Example_TimeNSE2D(
@@ -45,6 +56,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       /** initial condition */
       initialCOndtion.push_back(bsp1::InitialU1);
       initialCOndtion.push_back(bsp1::InitialU2);
+
+      bsp1::DIMENSIONLESS_VISCOSITY=this->get_nu();
       bsp1::ExampleFile();
       break;
     case 1:
@@ -69,6 +82,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       initialCOndtion.push_back(lin_space_time::InitialU1);
       initialCOndtion.push_back(lin_space_time::InitialU2);
       
+      lin_space_time::DIMENSIONLESS_VISCOSITY=this->get_nu();
       lin_space_time::ExampleFile();
       break;
     case 2:
@@ -94,7 +108,60 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       /** coefficients */
       problem_coefficients = cosine_sin::LinCoeffs;
 
+      cosine_sin::DIMENSIONLESS_VISCOSITY=this->get_nu();
+
       cosine_sin::ExampleFile();
+      break;
+  case 3:
+      exact_solution.push_back( potential_flow_ex1::ExactU1 );
+      exact_solution.push_back( potential_flow_ex1::ExactU2 );
+      exact_solution.push_back( potential_flow_ex1::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( potential_flow_ex1::BoundCondition );
+      boundary_conditions.push_back( potential_flow_ex1::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( potential_flow_ex1::U1BoundValue );
+      boundary_data.push_back( potential_flow_ex1::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** initial conditions, in case of a non-stationary problem */
+      initialCOndtion.push_back(potential_flow_ex1::InitialU1);
+      initialCOndtion.push_back(potential_flow_ex1::InitialU2);
+      initialCOndtion.push_back(potential_flow_ex1::InitialP);
+      /** coefficients */
+      problem_coefficients = potential_flow_ex1::LinCoeffs;
+
+      potential_flow_ex1::DIMENSIONLESS_VISCOSITY=this->get_nu();
+      potential_flow_ex1::ExampleFile();
+      break;
+  case 4:
+      /** exact_solution */
+      exact_solution.push_back( potential_flow_ex2::ExactU1 );
+      exact_solution.push_back( potential_flow_ex2::ExactU2 );
+      exact_solution.push_back( potential_flow_ex2::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( potential_flow_ex2::BoundCondition );
+      boundary_conditions.push_back( potential_flow_ex2::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( potential_flow_ex2::U1BoundValue );
+      boundary_data.push_back( potential_flow_ex2::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** initial conditions, in case of a non-stationary problem */
+      initialCOndtion.push_back(potential_flow_ex2::InitialU1);
+      initialCOndtion.push_back(potential_flow_ex2::InitialU2);
+      initialCOndtion.push_back(potential_flow_ex2::InitialP);
+      /** coefficients */
+      problem_coefficients = potential_flow_ex2::LinCoeffs;
+
+      potential_flow_ex2::DIMENSIONLESS_VISCOSITY=this->get_nu();
+      potential_flow_ex2::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Time dependent Example_TimeNSE2D example!");
