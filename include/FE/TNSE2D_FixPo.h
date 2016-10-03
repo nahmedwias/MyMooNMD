@@ -36,6 +36,12 @@ void TimeStokesOnlyGalerkin(double Mult, double *coeff,
                 double *param, double hK,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
+
+void TimeStokesType4Galerkin(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
+
 // ======================================================================
 // for Type 1 is no SDFEM available
 // ======================================================================

@@ -14,6 +14,7 @@ list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/NSE2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Darcy2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Time_CD2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Time_NSE2D.C")
+list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/PR_Time_NSE2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Brinkman2D.C")
 
 # Source files to be added to the 3D library.

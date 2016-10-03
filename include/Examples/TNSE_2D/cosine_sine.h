@@ -5,9 +5,10 @@
 // u2 = cos(t) * ( cos(\pi * x -0.7) *cos ( \pi * y +0.2 ) );
 // p =  cos(t) * ( sin(x) * cos(y) * (cos(1) * sin (1) - sin(1)) );
 //
+double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
-  Output::print("Example: SinSinSin.h") ;
+  Output::print("Example: cosine_sin.h") ;
 }
 
 // ========================================================================
@@ -126,7 +127,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  static double nu = 1/TDatabase::ParamDB->RE_NR;
+  static double nu = DIMENSIONLESS_VISCOSITY;
   double t = TDatabase::TimeDB->CURRENTTIME;
   double *coeff, x, y;
   double /*u1, u1x, u1y, */u1xx, u1yy;
@@ -156,7 +157,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
 
     u2t = -sin(t) * ( cos(Pi * x -0.7) *cos ( Pi * y +0.2 ) );
 
-
+   //p= cos(t) * ( sin(x) * cos(y) + (cos(1) * sin (1) - sin(1)) );
     px = cos(t) * ( cos(x) * cos(y) );
     py = -cos(t) * ( sin(x) * sin(y) );
     coeff[0] = nu;
