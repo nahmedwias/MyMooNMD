@@ -732,7 +732,8 @@ void Time_NSE2D::output(int m)
     
     u2->GetErrors(example.get_exact(1), 3, allderiv, 2, L2H1Errors,nullptr,
                   &aux,1, &v_sp,locerr+2);
-
+    
+    double t=TDatabase::TimeDB->CURRENTTIME;
     errors[0] += (locerr[0]*locerr[0]+locerr[2]*locerr[2] 
                   + this->errors[1])*tau*0.5;
     errors[1] = locerr[0]*locerr[0]+locerr[2]*locerr[2];
@@ -740,25 +741,25 @@ void Time_NSE2D::output(int m)
                   + this->errors[3])*tau*0.5;
     errors[3] = locerr[1]*locerr[1]+locerr[3]*locerr[3];  
 
-    Output::print<1>("L2(u) : ", setprecision(10), sqrt(this->errors[1]));
-    Output::print<1>("H1-semi(u) : ", setprecision(10), sqrt(this->errors[3]));
+    Output::print<1>("t ", t, " L2(u) : ", setprecision(10), sqrt(this->errors[1]));
+    Output::print<1>("t ", t, " H1-semi(u) : ", setprecision(10), sqrt(this->errors[3]));
 
-    Output::print<1>("L2(0,t,L2(u)) : ", sqrt(this->errors[0]));
-    Output::print<1>("L2(0,t,H1-semi(u)) : ", sqrt(this->errors[2]));
+    Output::print<1>("t ", t, " L2(0,t,L2(u)) : ", sqrt(this->errors[0]));
+    Output::print<1>("t ", t, " L2(0,t,H1-semi(u)) : ", sqrt(this->errors[2]));
 
     s.p.GetErrors(example.get_exact(2), 3, allderiv, 2, L2H1Errors, 
                   nullptr, &aux, 1, &p_sp, locerr);
 
-    Output::print<1>("L2(p) : ", setprecision(10), locerr[0]);
-    Output::print<1>("H1-semi(p)) : " , setprecision(10), locerr[1] );
+    Output::print<1>("t ", t, " L2(p) : ", setprecision(10), locerr[0]);
+    Output::print<1>("t ", t, " H1-semi(p)) : " , setprecision(10), locerr[1] );
 
     errors[4] += (locerr[0]*locerr[0] + this->errors[5])*tau*0.5;
     errors[5] = locerr[0]*locerr[0];
-    Output::print<1>("L2(0,t,L2(p)) : ", sqrt(errors[4]) );
+    Output::print<1>("t ", t, " L2(0,t,L2(p)) : ", sqrt(errors[4]) );
     
     errors[6] += (locerr[1]*locerr[1] + this->errors[7])*tau*0.5;
     errors[7] = locerr[1]*locerr[1];
-    Output::print<1>("L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
+    Output::print<1>("t ", t, " L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
   }
    delete u1;
    delete u2;
