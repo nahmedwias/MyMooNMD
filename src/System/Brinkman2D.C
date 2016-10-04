@@ -235,15 +235,18 @@ void Brinkman2D::assemble()
         fesprhs[2]  = p_space;
         size_t N_Rhs = 3; // is 3 if NSE type is 4 or 14 (else it is 2)
 	
-	/*
-	  Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
-                               n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
-                               boundary_conditions, non_const_bound_values.data(), la);
+	
+	/*Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
+		   n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
+		   boundary_conditions, non_const_bound_values.data(), la);
 	*/
         //--------------------------------------------------------------------------------------------------
-        
-        Assembler4 Ass(type, fe_functions, this->example.get_coeffs());
-        // Brinkmann-specific choices
+
+	// use a list of LocalAssembling2D
+	std::vector< LocalAssembling2D* > la_list;
+	la_list.push_back(&la);
+	
+	// Brinkmann-specific choices
         std::vector<const TFESpace2D*> spaces_for_matrix;
         spaces_for_matrix.resize(2);
         spaces_for_matrix[0] = v_space;
@@ -254,11 +257,12 @@ void Brinkman2D::assemble()
         spaces_for_rhs[0] = v_space;
         spaces_for_rhs[1] = v_space;
         spaces_for_rhs[2] = p_space;
-        
-        Ass.Assemble2D(s.matrix,s.rhs,
-	             spaces_for_matrix,spaces_for_rhs,
-	             example);
 	
+        Assembler4 Ass;
+       Ass.Assemble2D(s.matrix,s.rhs,
+		       spaces_for_matrix,spaces_for_rhs,
+		       example,la);
+
         //--------------------------------------------------------------------------------------------------
         // Weakly Imposing Boundary Conditions - Boundary Integrals
         
@@ -367,7 +371,9 @@ void Brinkman2D::assemble()
         // tidy up
         delete fe_functions[0];
         delete fe_functions[1];
+	Output::print("end-2");
     }
+    Output::print("end-2");
 }
 
 /** ************************************************************************ */

@@ -268,6 +268,8 @@ class LocalAssembling2D
 			 TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
 			 std::vector<int> myFEValue_FctIndex, std::vector<MultiIndex2D> myFEValue_MultiIndex);
 
+    LocalAssembling2D(LocalAssembling2D &la)=delete;
+    
     /** destructor */
     ~LocalAssembling2D();
     

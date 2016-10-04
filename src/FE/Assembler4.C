@@ -32,11 +32,9 @@
 
 //================================================================================
 //================================================================================
-Assembler4::Assembler4(LocalAssembling2D_type type,
-                       TFEFunction2D **fefunctions2d,
-                       CoeffFct2D *coeffs)
-:la(type,fefunctions2d,coeffs)
+Assembler4::Assembler4()
 {
+  
     Coll = NULL;
     hangingEntries.resize(0);
     hangingRhs.resize(0);
@@ -149,6 +147,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
                             std::vector<const TFESpace2D*>& fespaces,
                             std::vector<const TFESpace2D*>& ferhs,
                             const Example2D& example,
+			    LocalAssembling2D& la,
                             int AssemblePhaseID)
 {
 #ifdef __3D__
@@ -207,14 +206,20 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
             continue;
 	//assemble the selected local form on the i-th cell
         this->assemble_local_system(fespaces,
-                                    i,LocMatrices, LocRhs);
+                                    i,LocMatrices, LocRhs,la);
 	// add local/cellwise matrices to global matrices
 	//(ansatz == test: Aii, C; ansatz != test: A12,A12,B1,...)
-        this->add_local_to_global_matrix(i, LocMatrices, Matrices);
-        
+
+	this->add_local_to_global_matrix(i, LocMatrices, Matrices);
+	
+	
         // add local/cellwise right-hand sides to global right-hand sides
-        this->add_local_to_global_rhs(i,ferhs,LocRhs,example);
-        
+	this->add_local_to_global_rhs(i,ferhs,LocRhs,example);
+	
+
+	// boundary condition part
+	this->impose_boundary_conditions(i,ferhs,example);
+	
     }
     
     // --------------------------------------------------------------------
@@ -223,7 +228,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
     // it could be put in a separate function
     
     this->handle_hanging_nodes(ferhs);
-    
+    Output::print("end");
     // --------------------------------------------------------------------
     // delete pointers
     if(n_rhs_blocks)
@@ -241,7 +246,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
         delete [] Matrices[0];
         delete [] Matrices;
     }
-    
+    Output::print("end");
    
 }                                                 // end of Assemble
 
@@ -250,13 +255,14 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
 // 
 //================================================================================
 void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces,
-                                       int i,double ***LocMatrices,double **LocRhs)
+                                       int i,double ***LocMatrices,double **LocRhs,
+				        LocalAssembling2D& la)
 {
     BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
     int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
     TBaseCell *cell = this->Coll->GetCell(i);
 
-    
+    Output::print("enter assemble_local_system");
     
     // --------------------------------------------------------------------
     // find local used elements on this cell
@@ -310,13 +316,149 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
 		       cell, n_all_matrices, n_rhs_blocks, LocMatrices,
 		       LocRhs);
     
-
+    Output::print("end assemble_local_system");
 }
 
 //================================================================================
 // impose boundary conditions
 //================================================================================
-void Assembler4::impose_boundary_conditions(const TFESpace2D *fespace,
+void Assembler4::impose_boundary_conditions(int i_cell,
+					    std::vector<const TFESpace2D*>& ferhs,
+					    const Example2D& example)
+{
+  
+  TBaseCell *cell = this->Coll->GetCell(i_cell);
+  for(int j=0;j<rhs_blocks.size();j++)
+    {
+      const TFESpace2D *fespace = ferhs[j];
+      int *DOF = ferhs[j]->GetGlobalDOF(i_cell);
+      double *RHS = this->rhs_blocks[j];
+      
+      FE2D CurrentElement = fespace->GetFE2D(i_cell, cell);
+      BoundCondFunct2D *BoundaryCondition = fespace->GetBoundCondition();
+      BoundValueFunct2D *BoundaryValue = example.get_bd()[j];
+      TFE2D *ele = TFEDatabase2D::GetFE2D(CurrentElement);
+      double t0,t1;
+      TBoundComp *BoundComp;
+      int N_EdgePoints;
+      double *EdgePoints;
+      double eps=1e-4;
+    
+      TNodalFunctional2D *nf = ele->GetNodalFunctional2D();
+    
+      if(TDatabase::ParamDB->SUPERCONVERGENCE_ORDER)
+      {
+	/* Superconvergence boundary interpolation */
+	if(nf->GetID() == NF_C_Q_Q2_2D)
+	  nf = TFEDatabase2D::GetNodalFunctional2D(NF_S_Q_Q2_2D);
+      }
+      
+      nf->GetPointsForEdge(N_EdgePoints, EdgePoints);
+    
+      TFEDesc2D *FEDesc_Obj = ele->GetFEDesc2D();
+      int  N_EdgeDOF = FEDesc_Obj->GetN_JointDOF();
+      // setting Dirichlet boundary condition
+      int N_Joints = cell->GetN_Joints();
+      BoundCond Cond0, Cond1;
+    
+      for(int m=0;m<N_Joints;m++)
+      {
+        TJoint *joint = cell->GetJoint(m);
+        
+        if(joint->GetType() == BoundaryEdge ||
+           joint->GetType() == IsoBoundEdge ||
+           joint->GetType() == InterfaceJoint)
+	{
+	  if(joint->GetType() == BoundaryEdge||
+	     joint->GetType() == InterfaceJoint)
+	  {
+	    TBoundEdge *boundedge = (TBoundEdge *)joint;
+	    BoundComp = boundedge->GetBoundComp();
+	    boundedge->GetParameters(t0, t1);
+	  }
+	  else
+	  {
+	    TIsoBoundEdge *isoboundedge = (TIsoBoundEdge *)joint;
+	    BoundComp = isoboundedge->GetBoundComp();
+	    isoboundedge->GetParameters(t0, t1);
+	  }
+	  // get id of the boundary component
+	  int comp=BoundComp->GetID();
+	  // get type of the boundary condition at the beginning
+	  // and at the end of the current edge
+	  if (t0 < t1)
+          {
+	    BoundaryCondition(comp, t0+eps, Cond0);
+	    BoundaryCondition(comp, t1-eps, Cond1);
+	  }
+	  else
+	  {
+	    BoundaryCondition(comp, t0-eps, Cond0);
+	    BoundaryCondition(comp, t1+eps, Cond1);
+	  }
+            
+	  double FunctionalValues[MaxN_BaseFunctions2D];
+	  double PointValues[MaxN_PointsForNodal2D];
+            
+            // only one boundary condition per edge allowed
+            if(Cond0 == Cond1)
+            {
+                switch(Cond0)
+                {
+                    case DIRICHLET:
+                    {
+                        // if DG
+                        if (N_EdgeDOF==0)
+                            break;
+                        // read boundary values for each quadrature point
+                        for(int l=0;l<N_EdgePoints;l++)
+                        {
+                            double s = EdgePoints[l];
+                            double t = 0.5*(t0*(1-s) + t1*(1+s));
+                            BoundaryValue(comp, t, PointValues[l]);
+                        }                                 // endfor l
+                        // compute boundary values for each dof on the
+                        // boundary edge with the nodal functionals
+                        
+                        nf->GetEdgeFunctionals(this->Coll, cell, m, PointValues,
+                                               FunctionalValues);
+                        int *EdgeDOF = FEDesc_Obj->GetJointDOF(m);
+                        // save boundary values of each dof on the boundary
+                        // edge in the rhs
+                        for(int l=0;l<N_EdgeDOF;l++)
+                        {
+                            RHS[DOF[EdgeDOF[l]]] = FunctionalValues[l];
+                        }
+                        break;
+                    }
+                        
+                    case NEUMANN:
+                    case ROBIN:
+                        Output::print<4>(" ** Assembler: WARNING: NEUMANN and ROBIN boundary conditions are not supported. ** ");
+                        Output::print<4>(" ** You can try to use the old Assemble2D(...) instead ** ");
+                        break;
+                    case DIRICHLET_WEAK:
+                        break;
+                    default :
+                        OutPut("Unknown boundary condition !"<< endl);
+                        exit(4711);
+                }                                     // endswitch Cond0
+            }                                       // endif (Cond0==Cond1)
+            else
+            {
+                OutPut("different boundary condition on one edge ");
+                OutPut("are not allowed!" << endl);
+                exit(4711);
+            }
+        }                                         // endif (boundary joint)
+      }
+    }
+  
+}
+  
+
+/*
+void Assembler4::impose_boundary_conditions_old(const TFESpace2D *fespace,
 					    const Example2D& example,
 					    TBaseCell* cell,
 					    int i, int j,
@@ -337,7 +479,7 @@ void Assembler4::impose_boundary_conditions(const TFESpace2D *fespace,
     
     if(TDatabase::ParamDB->SUPERCONVERGENCE_ORDER)
     {
-        /* Superconvergence boundary interpolation */
+        // Superconvergence boundary interpolation 
         if(nf->GetID() == NF_C_Q_Q2_2D)
             nf = TFEDatabase2D::GetNodalFunctional2D(NF_S_Q_Q2_2D);
     }
@@ -443,7 +585,7 @@ void Assembler4::impose_boundary_conditions(const TFESpace2D *fespace,
     }
 }
 
-
+*/
 
 //===================================================================
 // add local/cellwise matrices to global matrices
@@ -700,10 +842,9 @@ void Assembler4::add_local_to_global_rhs(int i,
                 }
             }
         }                                           // endfor m
-        // loop over all cell joints and impose corresponding BC on RHS
-        // This version supports now only DIRICHLET BC type
-        impose_boundary_conditions(fespace,example,cell,i,j,RHS_block_j,DOF);
-    }                                             // endfor j (rhs_blocks.size())
+    } // endfor j (rhs_blocks.size())
+    
+    
 }
 
 
