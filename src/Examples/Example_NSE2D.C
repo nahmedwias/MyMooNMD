@@ -44,22 +44,9 @@ namespace bsp1_pr1
 #include "NSE_2D/Bsp_PR1.h"
 }
 
-//=========================================
-namespace td_quad_pres
-{
-#include "TNSE_2D/stokes_quadratic_pressure.h"
+namespace potential_flow_ex3 {
+#include "NSE_2D/potential_flow_ex3.h"
 }
-
-namespace time_flow_around_cylinder
-{
-#include "TNSE_2D/flow_over_cylinder.h"
-}
-
-namespace ns_test_code1
-{
-#include "TNSE_2D/Navier_Stokes_Test_code1.h"
-}
-
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -197,7 +184,7 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       quad_pres::ExampleFile();
       break;
       
-       case 42:
+   case 42:
       /** exact_solution */
       exact_solution.push_back( bsp1_pr1::ExactU1 );
       exact_solution.push_back( bsp1_pr1::ExactU2 );
@@ -217,6 +204,29 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       problem_coefficients = bsp1_pr1::LinCoeffs;
       
       bsp1_pr1::ExampleFile();
+      break;
+  case 43:
+      /** exact_solution */
+      exact_solution.push_back( potential_flow_ex3::ExactU1 );
+      exact_solution.push_back( potential_flow_ex3::ExactU2 );
+      exact_solution.push_back( potential_flow_ex3::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( potential_flow_ex3::BoundCondition );
+      boundary_conditions.push_back( potential_flow_ex3::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( potential_flow_ex3::U1BoundValue );
+      boundary_data.push_back( potential_flow_ex3::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      potential_flow_ex3::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      /** coefficients */
+      problem_coefficients = potential_flow_ex3::LinCoeffs;
+
+      potential_flow_ex3::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");

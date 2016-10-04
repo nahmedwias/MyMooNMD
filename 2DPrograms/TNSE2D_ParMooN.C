@@ -89,9 +89,9 @@ int main(int argc, char* argv[])
          tnse2d.output(step);
          continue;
        }
-       if(parmoon_db["problem_type"].is(4))
+       if(!(parmoon_db["problem_type"].is(4)) && (step ==1))
        {
-         ErrThrow(" considered Stokes running Navier-Stokes");
+         Output::print(" considered Stokes running Navier-Stokes");
        }
        // assemble the nonlinear matrices
        tnse2d.assemble_nonlinear_term();
