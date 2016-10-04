@@ -26,6 +26,7 @@ class TDatabase;
 #include <Iterator.h>
 #include <RefDesc.h>
 #include <Constants.h>
+#include <Mapper.h>
 
 struct TParaDB
 {
