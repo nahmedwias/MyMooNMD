@@ -199,9 +199,15 @@ int main(int argc, char* argv[])
          ********************************************************************/
         nse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
       }
-      else  { nse2d.assemble_nonlinear_term(); }
+      else if (nse_db["dimensional_nse"].is(true))  // if 2way coupling is deactivated but dimensional is active
+      { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
+      else
+      { nse2d.assemble_nonlinear_term(); }
     }
-    else  { nse2d.assemble_nonlinear_term(); }
+    else if (nse_db["dimensional_nse"].is(true))  // if 1way coupling is deactivated but dimensional is active
+    { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); cout << "I AM HERE, IN MAIN PROGRAM, IF CONDITION " << endl; }
+    else
+    { nse2d.assemble_nonlinear_term(); }
 
 
     if(nse2d.stopIt(k)) // Check residuals
@@ -210,7 +216,7 @@ int main(int argc, char* argv[])
       break;
     }
     else loop_info.print(k, nse2d.getFullResidual());
-
+    exit(0);
   } // end for k, non linear loop
 
   stopwatch.print_total_time("total solving duration: ");
