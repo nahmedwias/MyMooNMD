@@ -47,7 +47,7 @@ verbosity: 3   [ 1, 5 ]
 ## 11 - Test example 1 = Poiseuille
 ## 12 - Test example 2 = SinCos
 ## 13 - Test example 3 = DrivenCavity
-example: 13 [ 0, 100 ]
+example: 12 [ 0, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -207,9 +207,9 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ######## BELOW THIS LINE, THE PARAMTERS ARE SPECIFIC TO USER PROJECT #####
 
 ## note: Peclet number is like diffusion coefficient
-reynolds_number: 50.   [ 0, 1e6 ]
-fluid_density: 300.   [ 0, 1e6 ]
-fluid_dynamic_viscosity: 2.   [ 0, 1e6 ]
+reynolds_number: 200.   [ 0, 1e6 ]
+fluid_density: 1000.   [ 0, 1e6 ]
+fluid_dynamic_viscosity: 5.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 
 
