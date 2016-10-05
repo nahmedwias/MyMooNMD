@@ -42,7 +42,7 @@ verbosity: 3   [ 1, 5 ]
 ## 1 - driven cavity
 ## 2 - sine cosine
 ## 3 - flow around cylinder
-example: 1
+example: 2
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -203,8 +203,8 @@ PRESSURE_SPACE: -4711
 
 ----------------------------------------------------------------------
 # diffusion_coefficient=1/reynolds_number
-reynolds_number:  1.
-RE_NR:	150
+reynolds_number:  40.
+RE_NR:	200
 
 ----------------------------------------------------------------------
 # type of discretization: 
