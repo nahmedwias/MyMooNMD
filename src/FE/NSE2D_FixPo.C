@@ -4768,8 +4768,8 @@ double ***LocMatrices, double **LocRhs)
   u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
   u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
 
-  //      cout << "valeur de u4 = mu = " << u4 << " ";
-  //      cout << "valeur de u3 = rho= " << u3 << endl;
+//        cout << " mu = " << u4 << " ";
+//        cout << " rho= " << u3 << " ";
   //
   //      cout << "valeur de c4 = mu = " << c4 << " ";
   //      cout << "valeur de c3 = rho= " << c3 << endl;
@@ -4890,10 +4890,10 @@ void NSParamsVelo_dimensional(double *in, double *out)
   out[1] = in[3];   // u2old
   out[2] = in[4];   // rho_field
   out[3] = in[5];   // mu_field
-//  for (int i=0; i<7;i++)
-//  {
-//    cout << "in i = " << i << " " << in[i] << endl;
-//  }
+  for (int i=0; i<7;i++)
+  {
+    cout << "in i = " << i << " " << in[i] << endl;
+  }
 }
 
 
