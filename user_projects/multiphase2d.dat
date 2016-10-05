@@ -207,7 +207,7 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ######## BELOW THIS LINE, THE PARAMTERS ARE SPECIFIC TO USER PROJECT #####
 
 ## note: Peclet number is like diffusion coefficient
-reynolds_number: 1.   [ 0, 1e6 ]
+reynolds_number: 50.   [ 0, 1e6 ]
 fluid_density: 1.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
