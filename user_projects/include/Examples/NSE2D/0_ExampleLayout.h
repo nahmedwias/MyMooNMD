@@ -118,8 +118,17 @@ void LinCoeffs(int n_points, double *x, double *y,
     ExactU2(x[i], y[i], val2);
     ExactP (x[i], y[i], val3);
 
-    // ATTENTION: IT IS NOT CONSISTENT! THE RIGHT HAND SIDE HAS TO BE
-    // COMPUTED WITH RHO AND MU IN CASE OF DIMENSIONAL NSE!
+    /* Attention, when dimensional_nse is false,
+    // the reynolds number should be input by user. Then the next line
+    // should be commented. When dimensional_nse is true, it means
+    // that only rho and mu are of importance, and then
+    // the next line should be used. In practice, we do it the following way:
+    // the user ensures that rho, mu and reynolds number are
+    // correctly input in the input file, so that nu is always
+    // mu/rho. That's why the next line is always commented and
+    // the program relies on the value given in "reynolds_number". */
+    // nu = mu/rho;
+
     coeff[0] = nu;
     coeff[1] = -nu*val1[3] + val3[1]; // f1
     coeff[2] = -nu*val2[3] + val3[2]; // f2
