@@ -18,9 +18,9 @@
 
 
 // ***** LIST OF FUNCTIONS USED IN MAIN PROGRAMM ***** //
-TFEFunction2D update_fieldfunction(const TFESpace2D* feSpace_, BlockVector vector_)
+TFEFunction2D update_fieldfunction(const TFESpace2D* feSpace_, BlockVector vector_, char* name_)
 {
-  TFEFunction2D result_fieldfunction(feSpace_, (char*) "c", (char*)"c",
+  TFEFunction2D result_fieldfunction(feSpace_, name_, name_,
                                      vector_.block(0),
                                      vector_.length(0));
 
@@ -109,12 +109,11 @@ int main(int argc, char* argv[])
 
   /** @brief Finite Element function for density field */
   BlockVector   rho_vector = update_fieldvector(rho1,rho2,phase_field,"rho_vector");
-  TFEFunction2D rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector);
+  TFEFunction2D rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector,(char*)"r");
 
   /** @brief Finite Element function for dynamic viscosity field */
   BlockVector   mu_vector = update_fieldvector(mu1, mu2, phase_field,"mu_vector" );
-  TFEFunction2D mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector);
-
+  TFEFunction2D mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*)"m");
 
 
 
@@ -186,11 +185,11 @@ int main(int argc, char* argv[])
 
         /** @brief Finite Element function for density field */
         BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-        TFEFunction2D new_rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector);
+        TFEFunction2D new_rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector,(char*) "q");
 
         /** @brief Finite Element function for dynamic viscosity field */
         BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
-        TFEFunction2D new_mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector);
+        TFEFunction2D new_mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*) "s");
 
 
 
