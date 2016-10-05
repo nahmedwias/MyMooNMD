@@ -46,6 +46,11 @@ namespace test_example2_sincos
 #include "2_TestExample2.h"
 }
 
+namespace test_example3_drivencavity
+{
+#include "3_TestExample3.h"
+}
+
 // ********* END OF USER PROJECT CODE
 
 
@@ -235,7 +240,32 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
 
       test_example2_sincos::ExampleFile();
       break;
+    case 13:  // TestExample 3 = DrivenCavity
+      /** exact_solution */
+      exact_solution.push_back( test_example3_drivencavity::ExactU1 );
+      exact_solution.push_back( test_example3_drivencavity::ExactU2 );
+      exact_solution.push_back( test_example3_drivencavity::ExactP );
 
+      /** boundary condition */
+      boundary_conditions.push_back( test_example3_drivencavity::BoundCondition );
+      boundary_conditions.push_back( test_example3_drivencavity::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example3_drivencavity::U1BoundValue );
+      boundary_data.push_back( test_example3_drivencavity::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_example3_drivencavity::LinCoeffs;
+
+      // Set dimensionless viscosity
+      test_example3_drivencavity::REYNOLDS_number = get_nu();
+      test_example3_drivencavity::USER_parameter1 = this->example_database["user_parameter1"];
+      test_example3_drivencavity::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_example3_drivencavity::ExampleFile();
+      break;
 
 
 
