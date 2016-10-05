@@ -212,7 +212,7 @@ double ***LocMatrices, double **LocRhs)
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
-
+  cout << c0 << endl;
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
@@ -4768,6 +4768,11 @@ double ***LocMatrices, double **LocRhs)
   u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
   u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
 
+  //      cout << "valeur de u4 = mu = " << u4 << " ";
+  //      cout << "valeur de u3 = rho= " << u3 << endl;
+  //
+  //      cout << "valeur de c4 = mu = " << c4 << " ";
+  //      cout << "valeur de c3 = rho= " << c3 << endl;
 
   /** NOTES: there are 2 ways to consider the property fields in the equations : take it
    * as input from example objects (as a coefficient, written in the example methods or given
@@ -4783,19 +4788,16 @@ double ***LocMatrices, double **LocRhs)
     test01 = Orig1[i];
     test00 = Orig2[i];
 
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
+    Rhs1[i] += 1000*Mult*test00*c1;
+    Rhs2[i] += 1000*Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
-
-      cout << "valeur de u4 " << u4 << endl;
-      cout << "valeur de u3 " << u3 << endl;
-
-      val  = u4*(test10*ansatz10+test01*ansatz01);
-      val += u3*(u1*ansatz10+u2*ansatz01)*test00;
+      // hand test, reynolds number =2 ,rho = 4, mu=2
+      val  = 2*(test10*ansatz10+test01*ansatz01);
+      val += 1000*(u1*ansatz10+u2*ansatz01)*test00;
 
       MatrixRow[j] += Mult * val;
     }                            // endfor j
@@ -4813,10 +4815,10 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val = -Mult*test00*ansatz10;
+      val = -1000*Mult*test00*ansatz10;
       MatrixRow1[j] += val;
 
-      val = -Mult*test00*ansatz01;
+      val = -1000*Mult*test00*ansatz01;
       MatrixRow2[j] += val;
     }                            // endfor j
 
@@ -4873,8 +4875,8 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      val  = 2*(test10*ansatz10+test01*ansatz01);
+      val += 4*(u1*ansatz10+u2*ansatz01)*test00;
 
       MatrixRow[j] += Mult * val;
     }                            // endfor j
@@ -4884,10 +4886,10 @@ double ***LocMatrices, double **LocRhs)
 
 void NSParamsVelo_dimensional(double *in, double *out)
 {
-  out[0] = in[2];                // u1old
-  out[1] = in[3];                // u2old
-  out[2] = in[4]; // rho_field
-  out[3] = in[5]; // mu_field
+  out[0] = in[2];   // u1old
+  out[1] = in[3];   // u2old
+  out[2] = in[4];   // rho_field
+  out[3] = in[5];   // mu_field
 //  for (int i=0; i<7;i++)
 //  {
 //    cout << "in i = " << i << " " << in[i] << endl;
