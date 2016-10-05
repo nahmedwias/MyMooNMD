@@ -4788,16 +4788,16 @@ double ***LocMatrices, double **LocRhs)
     test01 = Orig1[i];
     test00 = Orig2[i];
 
-    Rhs1[i] += 100*Mult*test00*c1;
-    Rhs2[i] += 100*Mult*test00*c2;
+    Rhs1[i] += u3*Mult*test00*c1;
+    Rhs2[i] += u3*Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
       // hand test, reynolds number =2 ,rho = 4, mu=2
-      val  = 2*(test10*ansatz10+test01*ansatz01);
-      val += 100*(u1*ansatz10+u2*ansatz01)*test00;
+      val  = u4*(test10*ansatz10+test01*ansatz01);
+      val += u3*(u1*ansatz10+u2*ansatz01)*test00;
 
       MatrixRow[j] += Mult * val;
     }                            // endfor j
@@ -4815,10 +4815,10 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val = -100*Mult*test00*ansatz10;
+      val = -u3*Mult*test00*ansatz10;
       MatrixRow1[j] += val;
 
-      val = -100*Mult*test00*ansatz01;
+      val = -u3*Mult*test00*ansatz01;
       MatrixRow2[j] += val;
     }                            // endfor j
 
@@ -4875,8 +4875,8 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val  = 2*(test10*ansatz10+test01*ansatz01);
-      val += 100*(u1*ansatz10+u2*ansatz01)*test00;
+      val  = u4*(test10*ansatz10+test01*ansatz01);
+      val += u3*(u1*ansatz10+u2*ansatz01)*test00;
 
       MatrixRow[j] += Mult * val;
     }                            // endfor j
@@ -4890,10 +4890,10 @@ void NSParamsVelo_dimensional(double *in, double *out)
   out[1] = in[3];   // u2old
   out[2] = in[4];   // rho_field
   out[3] = in[5];   // mu_field
-  for (int i=0; i<7;i++)
-  {
-    cout << "in i = " << i << " " << in[i] << endl;
-  }
+//  for (int i=0; i<7;i++)
+//  {
+//    cout << "in i = " << i << " " << in[i] << endl;
+//  }
 }
 
 

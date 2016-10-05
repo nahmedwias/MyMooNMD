@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
     nse2d.assemble();                                // assemble linear term
   nse2d.stopIt(0);                                   // check initial residual
 
-exit(0);
+
 
   /********************************************************************
    * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
