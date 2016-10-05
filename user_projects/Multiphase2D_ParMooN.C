@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
       break;
     }
     else loop_info.print(k, nse2d.getFullResidual());
-    exit(0);
+
   } // end for k, non linear loop
 
   stopwatch.print_total_time("total solving duration: ");

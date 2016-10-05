@@ -41,6 +41,11 @@ namespace test_example1_poiseuille
 #include "1_TestExample1.h"
 }
 
+namespace test_example2_sincos
+{
+#include "2_TestExample2.h"
+}
+
 // ********* END OF USER PROJECT CODE
 
 
@@ -204,7 +209,32 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
 
       test_example1_poiseuille::ExampleFile();
       break;
+    case 12:  // TestExample 2 = SinCos
+      /** exact_solution */
+      exact_solution.push_back( test_example2_sincos::ExactU1 );
+      exact_solution.push_back( test_example2_sincos::ExactU2 );
+      exact_solution.push_back( test_example2_sincos::ExactP );
 
+      /** boundary condition */
+      boundary_conditions.push_back( test_example2_sincos::BoundCondition );
+      boundary_conditions.push_back( test_example2_sincos::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example2_sincos::U1BoundValue );
+      boundary_data.push_back( test_example2_sincos::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_example2_sincos::LinCoeffs;
+
+      // Set dimensionless viscosity
+      test_example2_sincos::REYNOLDS_number = get_nu();
+      test_example2_sincos::USER_parameter1 = this->example_database["user_parameter1"];
+      test_example2_sincos::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_example2_sincos::ExampleFile();
+      break;
 
 
 

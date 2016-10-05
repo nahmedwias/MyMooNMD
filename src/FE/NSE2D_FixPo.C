@@ -212,7 +212,7 @@ double ***LocMatrices, double **LocRhs)
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
-  cout << c0 << endl;
+
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
