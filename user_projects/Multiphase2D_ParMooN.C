@@ -18,7 +18,7 @@
 
 
 // ***** LIST OF FUNCTIONS USED IN MAIN PROGRAMM ***** //
-TFEFunction2D update_fieldfunction(const TFESpace2D* feSpace_, BlockVector vector_, char* name_)
+TFEFunction2D update_fieldfunction(const TFESpace2D* feSpace_, BlockVector& vector_, char* name_)
 {
   TFEFunction2D result_fieldfunction(feSpace_, name_, name_,
                                      vector_.block(0),
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
     nse2d.assemble();                                // assemble linear term
   nse2d.stopIt(0);                                   // check initial residual
 
-
+exit(0);
 
   /********************************************************************
    * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
