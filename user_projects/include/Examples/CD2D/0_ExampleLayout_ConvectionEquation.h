@@ -20,10 +20,10 @@ void Exact(double x, double y, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(int BdComp, double t, BoundCond &cond)
 {
-  if(BdComp==0 || BdComp ==1 || BdComp == 3)
-    cond = DIRICHLET;
-  else
+  if(BdComp == 3)
     cond = NEUMANN;
+  else
+    cond = DIRICHLET;
 }
 
 // value of boundary condition
