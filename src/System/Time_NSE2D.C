@@ -428,7 +428,7 @@ void Time_NSE2D::assemble_rhs()
   const double theta2 = TDatabase::TimeDB->THETA2;
   const double theta3 = TDatabase::TimeDB->THETA3;
   const double theta4 = TDatabase::TimeDB->THETA4;
-  
+
   System_per_grid& s = this->systems.front();
   // reset the right hand side
   s.rhs.reset();
@@ -501,11 +501,11 @@ void Time_NSE2D::assemble_rhs()
       }
       // scale the BT transposed blocks with the current time step
       const std::vector<std::vector<size_t>> cell_positions = {{0,2}, {1,2}};
-	s.matrix.scale_blocks(factor, cell_positions);      
+      s.matrix.scale_blocks(factor, cell_positions);
       if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
       {
         const std::vector<std::vector<size_t>> cell_positions_t = {{2,0}, {2,1}};
-	s.matrix.scale_blocks(factor, cell_positions_t);
+        s.matrix.scale_blocks(factor, cell_positions_t);
       }
     }
   }
