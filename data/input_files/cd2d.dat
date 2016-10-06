@@ -45,7 +45,7 @@ example: 1   [ -5, 200 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
-output_write_vtk: false   { true, false }
+output_write_vtk: true   { true, false }
 
 ## Draw a postscript file of the domain. This only works in two space 
 ## dimensions. Usually this is used in the main program. 
