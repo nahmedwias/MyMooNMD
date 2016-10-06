@@ -51,6 +51,10 @@ namespace test_example3_drivencavity
 #include "3_TestExample3.h"
 }
 
+namespace test_example4_velocityforconvection
+{
+#include "4_TestExample4.h"
+}
 // ********* END OF USER PROJECT CODE
 
 
@@ -266,7 +270,32 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
 
       test_example3_drivencavity::ExampleFile();
       break;
+    case 14:  // TestExample 4 = Generates the velocity field for the convection example "Two interior Layers"
+      /** exact_solution */
+      exact_solution.push_back( test_example4_velocityforconvection::ExactU1 );
+      exact_solution.push_back( test_example4_velocityforconvection::ExactU2 );
+      exact_solution.push_back( test_example4_velocityforconvection::ExactP );
 
+      /** boundary condition */
+      boundary_conditions.push_back( test_example4_velocityforconvection::BoundCondition );
+      boundary_conditions.push_back( test_example4_velocityforconvection::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example4_velocityforconvection::U1BoundValue );
+      boundary_data.push_back( test_example4_velocityforconvection::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_example4_velocityforconvection::LinCoeffs;
+
+      // Set dimensionless viscosity
+      test_example4_velocityforconvection::REYNOLDS_number = get_nu();
+      test_example4_velocityforconvection::USER_parameter1 = this->example_database["user_parameter1"];
+      test_example4_velocityforconvection::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_example4_velocityforconvection::ExampleFile();
+      break;
 
 
 

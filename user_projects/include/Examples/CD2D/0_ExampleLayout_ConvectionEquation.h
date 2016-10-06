@@ -31,7 +31,7 @@ void BoundValue(int BdComp, double Param, double &value)
 {
   if(BdComp==0)
   {
-    if ((Param>1.0/3.0)&& (Param<2.0/3.0))
+    if ((Param>1.0/3.0) && (Param<2.0/3.0))
       value = 1;
     else
       value = 0;
