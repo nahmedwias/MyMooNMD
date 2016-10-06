@@ -32,9 +32,9 @@ namespace sharp_boundary_layer
 }
 
 // ***************THE FOLLOWING EXAMPLES ARE SPECIFIC TO USER PROJECT
-namespace multiphase2d
+namespace convectionequation_layout
 {
-  #include "example_multiphase2d.h"
+  #include "../../user_projects/include/Examples/CD2D/0_ExampleLayout_ConvectionEquation.h"
 }
 // ********* END OF USER PROJECT CODE
 
@@ -108,24 +108,28 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
       break;
 
 
+
+
+
+
       // ******* BELOW IS CODE SPECIFIC TO USER PROJECTS ************
-    case 10:   //multiphase2d
+    case 10:   //convectionequation_layout
       /** exact_solution */
-      exact_solution.push_back( multiphase2d::Exact );
+      exact_solution.push_back( convectionequation_layout::Exact );
 
       /** boundary condition */
-      boundary_conditions.push_back( multiphase2d::BoundCondition );
+      boundary_conditions.push_back( convectionequation_layout::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( multiphase2d::BoundValue );
+      boundary_data.push_back( convectionequation_layout::BoundValue );
 
       /** coefficients */
-      problem_coefficients = multiphase2d::BilinearCoeffs;
+      problem_coefficients = convectionequation_layout::BilinearCoeffs;
 
-      multiphase2d::ExampleFile();
+      convectionequation_layout::ExampleFile();
 
-      multiphase2d::USER1 = this->example_database["user_parameter1"];
-      multiphase2d::USER2 = this->example_database["user_parameter2"];
+      convectionequation_layout::USER1 = this->example_database["user_parameter1"];
+      convectionequation_layout::USER2 = this->example_database["user_parameter2"];
 
       break;
 

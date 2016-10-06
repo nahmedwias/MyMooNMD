@@ -1,21 +1,20 @@
-// Example file for Multiphase 2D
+// Example Layout for the Convection Equation, Multiphase 2D
 double USER1;
 double USER2;
 
 
 void ExampleFile()
 {
-  Output::info<3>("Example:", "example_multiphase2d.h");
+  Output::info<3>("Example:", "ExampleLayout_ConvectionEquation.h");
 }
 
 // exact solution
 void Exact(double x, double y, double *values)
 {
-//  const double p = Pi; // 2*Pi;
-  values[0] = 0; //sin(p*x)*sin(p*y); // exact solution
-  values[1] = 1; //p*cos(p*x)*sin(p*y); // x-derivative
-  values[2] = 1; //p*sin(p*x)*cos(p*y); // y-derivative
-  values[3] = 0; //-2*p*p*sin(p*x)*sin(p*y); // laplacian
+  values[0] = 0; // exact solution
+  values[1] = 0; // x-derivative
+  values[2] = 0; // y-derivative
+  values[3] = 0; // laplacian
 }
 
 // kind of boundary condition (for FE space needed)
@@ -44,16 +43,14 @@ void BoundValue(int BdComp, double Param, double &value)
 void BilinearCoeffs(int n_points, double *x, double *y,
         double **parameters, double **coeffs)
 {
-//  const double eps=1/TDatabase::ParamDB->PE_NR;
+  const double eps=1/TDatabase::ParamDB->PE_NR;
   double exact[4];
-//  Output::print<1>("START BILINEAR COEFFICIENTS------------");
+
   for(int i = 0; i < n_points; i++)
   {
-//    Output::print<1>("THIS is point number ", i, " with x and y coordinates "
-//                     , x[i]," ", y[i]);
-
-    coeffs[i][0] = 0; // diffusion coefficient D
+    coeffs[i][0] = eps;              // diffusion coefficient D
     coeffs[i][1] = parameters[i][0]; // convection coefficient v_x
+    coeffs[i][2] = parameters[i][1]; // convection coefficient v_y
 
 //    if (fabs(x[i] - 1 ) <= 1e-2 && fabs(y[i] - 0.5) <= 1e-2)
 //    {
@@ -64,8 +61,7 @@ void BilinearCoeffs(int n_points, double *x, double *y,
 //      Output::print<1>("x[i]=", x[i], " y[i]=", y[i], " x-velocity=", parameters[i][0], " y-velocity=", parameters[i][1]);
 //    }
 //    cout << coeffs[i][1] << " ";
-    coeffs[i][2] = parameters[i][1]; // convection coefficient v_y
-//    cout << coeffs[i][2] << " ";
+
     coeffs[i][3] = 0; // reaction coefficient R
     // coeffs[i][4] is the right hand side
     
