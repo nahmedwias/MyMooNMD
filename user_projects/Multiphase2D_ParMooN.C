@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   nse_db.merge(parmoon_db,true);
   cd_db.merge(parmoon_db,true);
 
-  cd_db["example"]          = 1;    // 1 = TwoInteriorLayer, 4 = Multiphase2D
+  cd_db["example"]          = 10;    // 10 = Example Layout for CD2d which takes input velocity, this should not be changed
   cd_db["problem_type"]     = 1;
   cd_db["output_basename"]  = "multiphase_convection_output";
 
@@ -133,9 +133,9 @@ int main(int argc, char* argv[])
    ********************************************************************/
   Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
-  Output::print<1>("The ansatz space is   ", TDatabase::ParamDB->ANSATZ_ORDER);
+  Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
   Output::print<1>("Convection_example number ", cd_db["example"]);
-  Output::print<1>("NSE_example number ", nse_db["example"]);
+  Output::print<1>("NSE_example number        ", nse_db["example"]);
 
   LoopInfo  loop_info("nonlinear");
   loop_info.print_time_every_step = true;
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
       { nse2d.assemble_nonlinear_term(); }
     }
     else if (nse_db["dimensional_nse"].is(true))  // if 1way coupling is deactivated but dimensional is active
-    { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); cout << "I AM HERE, IN MAIN PROGRAM, IF CONDITION " << endl; }
+    { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
     else
     { nse2d.assemble_nonlinear_term(); }
 
