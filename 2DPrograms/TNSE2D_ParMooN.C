@@ -79,8 +79,6 @@ int main(int argc, char* argv[])
        TDatabase::TimeDB->CURRENTTIME += tau;
        
        Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-       // prepare the right hand side vector
-       // only needed once per time step
        if(parmoon_db["problem_type"].is(4))
        {
          tnse2d.rhs_assemble();
@@ -91,8 +89,12 @@ int main(int argc, char* argv[])
        }
        if(!(parmoon_db["problem_type"].is(4)) && (step ==1))
        {
-         Output::print(" considered Stokes running Navier-Stokes");
+         Output::print(" Time dependent Navier-Stokes case ");
        }
+       // prepare the right hand side vector
+       // only needed once per time step
+       tnse2d.assemble_rhs();
+
        // assemble the nonlinear matrices
        tnse2d.assemble_nonlinear_term();
        // prepare the matrices for defect computations
