@@ -20,7 +20,7 @@ boundary_file: Default_UnitSquare
 geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 5
+refinement_n_initial_steps: 6
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -33,7 +33,7 @@ problem_type: 1   [ 0, 6 ]
 ## Set the verbosity of ParMooN. The higher the number, the more will 
 ## output you will get. Such output will be written to console and the 
 ## 'outfile'. 
-verbosity: 1   [ 1, 5 ]
+verbosity: 3   [ 1, 5 ]
 
 ## Choose which example to run. Note that depending on the type of 
 ## problem you want to solve, different values are meaningful here. 
@@ -41,7 +41,7 @@ verbosity: 1   [ 1, 5 ]
 ## 0 - sine laplace (on unit square)
 ## 1 - two interior layers (on unit square)
 ## 2 - Hemker 1996 (on rectangle with a hole)
-example: 0   [ -5, 200 ]
+example: 1   [ -5, 200 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -167,12 +167,12 @@ multigrid_vanka_damp_factor: 1   [ 0, 1 ]
 # control the discretization
 
 # Peclet number eps=1/PE_NR (diffusion coefficient)
-diffusion_coefficient:  1.e-1
+diffusion_coefficient:  1.
 
 # order of ansatz space (=k)
 #   i.e. P_k on triangles
 #        Q_k on quadrangles
-ANSATZ_ORDER: 1
+ANSATZ_ORDER: 2
 
 # type of discretization: 
 #   1 - GALERKIN

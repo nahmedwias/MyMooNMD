@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   nse_db.merge(parmoon_db,true);
   cd_db.merge(parmoon_db,true);
 
-  cd_db["example"]          = 10;    // 1 = TwoInteriorLayer, 4 = Multiphase2D
+  cd_db["example"]          = 1;    // 1 = TwoInteriorLayer, 4 = Multiphase2D
   cd_db["problem_type"]     = 1;
   cd_db["output_basename"]  = "multiphase_convection_output";
 
@@ -162,8 +162,8 @@ int main(int argc, char* argv[])
     {
       Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
       Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-      //cd2d.assemble(); // this line is outcommented when you want to make hand tests
-      cd2d.assemble_with_convection(&nse2d.get_velocity());
+      cd2d.assemble(); // this line is outcommented when you want to make hand tests
+//      cd2d.assemble_with_convection(&nse2d.get_velocity());
       Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
       cd2d.solve();
       Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
