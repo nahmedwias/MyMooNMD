@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   nse_db.merge(parmoon_db,true);
   cd_db.merge(parmoon_db,true);
 
-  cd_db["example"]          = 11;    // 10 = Example Layout for CD2d which takes input velocity
+  cd_db["example"]          = 10;    // 10 = Example Layout for CD2d which takes input velocity
   cd_db["problem_type"]     = 1;
   cd_db["output_basename"]  = "multiphase_convection_output";
 
