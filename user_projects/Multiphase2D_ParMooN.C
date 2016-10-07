@@ -31,8 +31,9 @@ BlockVector   update_fieldvector(double property_field1, double property_field2,
                                BlockVector phasefraction_vector_, std::string text_)
 {
   BlockVector result_fieldvector = phasefraction_vector_;
+  BlockVector unity              = phasefraction_vector_; unity = 1;
   result_fieldvector.scale(property_field1 - property_field2);
-  result_fieldvector.add_scaled(phasefraction_vector_, property_field2);
+  result_fieldvector.add_scaled(unity, property_field2);
   result_fieldvector.write(text_);
   return result_fieldvector;
 }
