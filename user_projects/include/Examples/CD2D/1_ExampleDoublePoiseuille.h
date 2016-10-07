@@ -24,7 +24,7 @@ void Exact(double x, double y, double *values)
 void BoundCondition(int BdComp, double t, BoundCond &cond)
 {
   if(BdComp == 1)
-    cond = DIRICHLET;
+    cond = NEUMANN;
   else
     cond = DIRICHLET;
 }
@@ -34,10 +34,15 @@ void BoundValue(int BdComp, double Param, double &value)
 {
   switch (BdComp)
   {
-    case 0: value = 1; break;
-    case 1: value = 1; break;
+    case 0: value = 0; break;
+    case 1: value = 0; break;
     case 2: value = 1; break;
-    case 3: value = 1; break;
+    case 3:
+      if (Param <= 0.5)
+        value = 1;
+      else
+        value = 0;
+      break;
     default: cout << "wrong boundary part number" << endl;
     break;
   }
