@@ -94,9 +94,9 @@ int main(int argc, char* argv[])
   CD2D          cd2d(domain, cd_db);                    // Construct CD system
 
   double rho1 = nse_db["fluid_density"];  // density constant of fluid1, eg 1000
-  double rho2 = 0;                        // density constant of fluid2, eg 0
+  double rho2 = 1000;                        // density constant of fluid2, eg 0
   double mu1  = nse_db["fluid_dynamic_viscosity"];    // mu constant of fluid1, eg 1e-3
-  double mu2  = 0;                                    // mu constant of fluid2, eg 0
+  double mu2  = 100;                                    // mu constant of fluid2, eg 0
 
 
 

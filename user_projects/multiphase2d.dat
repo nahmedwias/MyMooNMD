@@ -217,8 +217,8 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## the assembling routines take density and viscosity, and that's
 ## what we want.
 reynolds_number: 1.   [ 0, 1e6 ]
-fluid_density: 1.   [ 0, 1e6 ]
-fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
+fluid_density: 7000.   [ 0, 1e6 ]
+fluid_dynamic_viscosity: 7.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
 
