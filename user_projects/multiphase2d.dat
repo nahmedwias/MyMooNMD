@@ -50,7 +50,7 @@ verbosity: 3   [ 1, 5 ]
 ## 13 - Test example 3 = DrivenCavity
 ## 14 - Test example 4 = Generates the velocity field for convection example 
 ## "Two interior layers"
-example: 14 [ 0, 100 ]
+example: 11 [ 0, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -230,7 +230,7 @@ user_parameter2: 2
 
 dimensional_nse: true   { true, false }
 coupling_nse_cd: true   { true, false }
-coupling_cd_nse: false   { true, false }
+coupling_cd_nse: true   { true, false }
 
 
 
