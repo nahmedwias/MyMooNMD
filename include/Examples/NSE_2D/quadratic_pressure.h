@@ -1,6 +1,7 @@
 // Navier-Stokes problem with sine and cosine functions
 // 
 
+double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
   TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = STOKES;
@@ -94,7 +95,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  const double nu=1./TDatabase::ParamDB->RE_NR;
+  double nu=DIMENSIONLESS_VISCOSITY;
   double val1[4];
   double val2[4];
   double val3[4];

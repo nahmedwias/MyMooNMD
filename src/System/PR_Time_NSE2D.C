@@ -34,18 +34,14 @@ PR_Time_NSE2D::system_per_grid::system_per_grid(const TFESpace2D &velsp, const T
                           const Example_TimeNSE2D &ex, int order)
     : projSpace_(velsp.GetCollection(), (char*)"u", (char*)"projection space",
                  ex.get_bc(2), order, nullptr),
-      projMatrix_({&velsp}, {&projSpace_, &projSpace_, &prsp}),
       modifedMassMatrix_({&velsp, &velsp})
 {
-  projMatrix_.print_coloring_pattern("projection matrix");
   modifedMassMatrix_.print_coloring_pattern("modified mass matrix");
 
   if(TDatabase::ParamDB->NSTYPE !=4 && TDatabase::ParamDB->DISCTYPE==300)
   {
     ErrThrow("pressure robust FEM only implemented for NSTYPE 4");
   }
-
-  projMatrix_=BlockFEMatrix::Projection_NSE2D(velsp,projSpace_,prsp);
 
   modifedMassMatrix_=BlockFEMatrix::BlockFEMatrix::NSE2D_Type4(velsp, prsp);
 }
@@ -111,10 +107,10 @@ void PR_Time_NSE2D::set_projection_space() const
   switch(TDatabase::ParamDB->VELOCITY_SPACE)
   {
      case 2: // BDM2
-       TDatabase::ParamDB->PROJECTION_SPACE = 1012;
+       TDatabase::ParamDB->PROJECTION_SPACE = 1012; //BDM_2
        break;
      case 22:
-       TDatabase::ParamDB->PROJECTION_SPACE = 1012;
+       TDatabase::ParamDB->PROJECTION_SPACE = 1001;//RT_1
        break;
      case 3:
        TDatabase::ParamDB->PROJECTION_SPACE = 1013;
@@ -330,7 +326,7 @@ void PR_Time_NSE2D::rhs_assemble()
     {
       if(tau != oldtau)
       {
-        double factor=TDatabase::TimeDB->THETA1*tau;
+        double factor=/*TDatabase::TimeDB->THETA1**/tau;
         if(oldtau !=0.)
         {
           factor /= oldtau;
