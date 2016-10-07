@@ -1,6 +1,7 @@
 // Navier-Stokes problem with sine and cosine functions
 // 
 
+double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
   Output::print<1>("Example: StokesZeroSol.h");
@@ -59,7 +60,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  const double nu=1./TDatabase::ParamDB->RE_NR;  
+  const double nu=DIMENSIONLESS_VISCOSITY;
   double u1[4], u2[4], p[4];
   
   for(int i = 0; i < n_points; i++)

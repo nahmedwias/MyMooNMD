@@ -160,6 +160,7 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       /** coefficients */
       problem_coefficients = zerosolution::LinCoeffs;
       
+      zerosolution::DIMENSIONLESS_VISCOSITY = this->get_nu();
       zerosolution::ExampleFile();
       break;
     case 41:
@@ -181,6 +182,7 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       /** coefficients */
       problem_coefficients = quad_pres::LinCoeffs;
       
+      quad_pres::DIMENSIONLESS_VISCOSITY = this->get_nu();
       quad_pres::ExampleFile();
       break;
       
@@ -202,7 +204,7 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       
       /** coefficients */
       problem_coefficients = bsp1_pr1::LinCoeffs;
-      
+      bsp1_pr1::DIMENSIONLESS_VISCOSITY = this->get_nu();
       bsp1_pr1::ExampleFile();
       break;
   case 43:

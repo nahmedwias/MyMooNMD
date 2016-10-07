@@ -493,7 +493,7 @@ void Time_NSE2D::assemble_rhs()
     if(tau != oldtau)
     {
       // TODO: change the factor to be THETA1*tau;
-      factor = /*TDatabase::TimeDB->THETA1**/tau;
+      factor = TDatabase::TimeDB->THETA1*tau;
       if(this->oldtau != 0.0)
       {
         factor /= this->oldtau;
@@ -679,7 +679,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
 void Time_NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-  
+
   if(this->solver.is_using_multigrid())
   {
     ErrThrow("multigrid solver is not tested yet")

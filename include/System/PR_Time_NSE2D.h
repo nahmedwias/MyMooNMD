@@ -12,8 +12,6 @@ protected:
  {
    /// @brief finite element projection space
    TFESpace2D projSpace_;
-   /// @brief projection matrices
-   BlockFEMatrix projMatrix_;
    /// @brief modified mass matrix which is the
    /// product of the projection matrix and the
    /// mass matrix constructed from the vector valued

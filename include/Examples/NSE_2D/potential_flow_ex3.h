@@ -51,33 +51,11 @@ void BoundCondition(int i, double t, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-//  double x=0, y=0;
-
-//  switch(BdComp)
-//  {
-//    case 0:  x = Param; y=0;      break;
-//    case 1:  x = 1; y = Param;    break;
-//    case 2:  x = 1-Param; y = 1;  break;
-//    case 3:  x = 0; y = 1-Param;  break;
-//    default: cout << "wrong boundary part number" << endl;
-//      break;
-//  }
   value=0;
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-//  double x=0, y=0;
-
-//  switch(BdComp)
-//  {
-//    case 0:  x = Param; y=0;     break;
-//    case 1:  x = 1; y = Param;   break;
-//    case 2:  x = 1-Param; y = 1; break;
-//    case 3:  x = 0; y = 1-Param; break;
-//    default: cout << "wrong boundary part number" << endl;
-//      break;
-//  }
  value=0;
 }
 
