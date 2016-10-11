@@ -139,8 +139,10 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       
       // Set dimensionless viscosity
       flow_around_cylinder::DIMENSIONLESS_VISCOSITY = get_nu();
-      // post_processing = flow_around_cylinder::compute_drag_and_lift;
-      
+      post_processing_stat = flow_around_cylinder::compute_drag_lift_pdiff;
+
+      flow_around_cylinder::ExampleFile();
+      break;
     case 40:
       /** exact_solution */
       exact_solution.push_back( zerosolution::ExactU1 );
