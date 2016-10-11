@@ -78,8 +78,8 @@ PR_Time_NSE2D::PR_Time_NSE2D(const TDomain &domain,
     TFEFunction2D * u1 = this->systems.front().u.GetComponent(0);
     TFEFunction2D * u2 = this->systems.front().u.GetComponent(1);
 
-    u1->Interpolate(example_.get_initial_cond(0));
-    u2->Interpolate(example_.get_initial_cond(1));
+    //u1->Interpolate(example_.get_initial_cond(0));
+    //u2->Interpolate(example_.get_initial_cond(1));
   }
   else
   {
@@ -320,7 +320,7 @@ void PR_Time_NSE2D::rhs_assemble()
     sd.modifedMassMatrix_.apply_scaled_submatrix(oldsol_, sb.rhs, 2, 2, 1.0);
     // A's time the old solution to the rhs
     if(t2 !=0)
-      sb.matrix.apply_scaled_submatrix(oldsol_, sb.rhs, 2, 2, t2*tau);
+      sb.matrix.apply_scaled_submatrix(oldsol_, sb.rhs, 2, 2, -t2*tau);
     // scale BT's with the time step length
     for(System_per_grid& s : this->Time_NSE2D::systems)
     {
