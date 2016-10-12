@@ -6,7 +6,7 @@
 double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
-  OutPut("Example: TNSE_2D/potential_flow_ex3.h" << endl) ;
+  Output::print("Example: TNSE_2D/potential_flow_ex3.h") ;
 }
 
 // ========================================================================
@@ -37,7 +37,7 @@ void ExactU1(double x, double y, double *values)
 
 void ExactU2(double x, double y, double *values)
 {
-  values[0] = 0;values[1] = 0; values[2] = 0;
+  values[0] = 0; values[1] = 0; values[2] = 0;
 }
 
 void ExactP(double x, double y, double *values)
@@ -67,33 +67,11 @@ void BoundCondition(int i, double t, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  double x=0, y=0;
-
-  switch(BdComp)
-  {
-    case 0:  x = Param; y=0;      break;
-    case 1:  x = 1; y = Param;    break;
-    case 2:  x = 1-Param; y = 1;  break;
-    case 3:  x = 0; y = 1-Param;  break;
-    default: cout << "wrong boundary part number" << endl;
-      break;
-  }
   value=0;
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-  double x=0, y=0;
-
-  switch(BdComp)
-  {
-    case 0:  x = Param; y=0;     break;
-    case 1:  x = 1; y = Param;   break;
-    case 2:  x = 1-Param; y = 1; break;
-    case 3:  x = 0; y = 1-Param; break;
-    default: cout << "wrong boundary part number" << endl;
-      break;
-  }
  value=0;
 }
 
