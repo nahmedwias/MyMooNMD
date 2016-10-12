@@ -75,15 +75,6 @@ TJoint *TBoundEdge::NewInst()
   return new TBoundEdge(BoundComp, T_0, T_1);
 }
 
-/** return the coordinates {X,Y} of parameter value T */
-int TBoundEdge::GetXYofT(double T, double &X, double &Y)
-{
-  BoundComp->GetXYofT(T, X, Y);
-
-  return 0;
-}
-
-
 /**
  @brief set the local index of this joint in given neighbor 
  @todo write a more general function that does not take index as input
