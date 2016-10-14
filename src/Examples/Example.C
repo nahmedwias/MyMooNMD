@@ -146,3 +146,18 @@ bool Example::check_suitable_domain(const TDomain& domain) const
   
   return true;
 }
+
+/* ************************************************************************* */
+int Example::get_example_from_database(const ParameterDatabase& param_db)
+{
+  try
+  {
+    return param_db["example"];
+  }
+  catch(...)
+  {
+    ErrThrow("could not find a parameter name 'example' in the "
+             "ParameterDatabase. I am unable to create a suitable Example "
+             "object without it.");
+  }
+}

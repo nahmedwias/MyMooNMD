@@ -150,12 +150,14 @@ double BoundaryData::get_data(const TJoint& joint, double s, double time) const
 }
 
 /* ************************************************************************* */
-double BoundaryData::get_data(const TJoint& joint, double t, double s,
+double BoundaryData::get_data(const TJoint& joint, std::pair<double, double> ts,
                               double time) const
 {
+  double t = ts.first;
+  double s = ts.second;
 #ifdef __2D__
-  ErrThrow("BoundaryData::get_data(const Joint&, double, double, double) is "
-           "only for 3D");
+  ErrThrow("BoundaryData::get_data(const Joint&, std::pair<double,double>, "
+           "double) is only for 3D");
   TBoundEdge* bd_joint; // to avoid compiler errors
 #endif // 2D
 #ifdef __3D__

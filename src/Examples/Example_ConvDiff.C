@@ -2,10 +2,26 @@
 #include <Example.h>
 #include <MooNMD_Io.h>
 
+ParameterDatabase get_default_ConvDiff_Example_parameters(int example)
+{
+  ParameterDatabase db("default example database");
+  db.add("example", example,
+         "Choose which example to run. Depending on the example other values "
+         "parameters are also taken into acount", -5, 200);
+  db.add("diffusion_coefficient", 1.0,
+         "The (scalar, constant) coefficient in front of the Laplace term in a "
+         "convection-diffusion-reaction problem.", 0., 100.);
+  // other parameters may be added depending on the chosen `example`.
+  return db;
+}
+
+
 Example Example::ConvDiff(const ParameterDatabase& param_db)
 {
-  int example = param_db["example"];
-  double diffusion = param_db["diffusion_coefficient"];
+  int example = Example::get_example_from_database(param_db);
+  auto db = get_default_ConvDiff_Example_parameters(example);
+  db.merge(param_db, false);
+  double diffusion = db["diffusion_coefficient"];
 
   // indicate if two or three space dimensions
   bool two_d = true;

@@ -2,6 +2,7 @@
 #define __BOUNDARYDATA__
 
 #include <functional> // std::function
+#include <utility> // std::pair
 #include <Joint.h>
 #include <Point.h>
 #include <BoundaryCondition.h>
@@ -112,7 +113,8 @@ class BoundaryData
    * get_data(const Point&, double)
    */
   double
-  get_data(const TJoint& joint, double t, double s, double time = 0.) const;
+  get_data(const TJoint& joint, std::pair<double, double> ts, double time = 0.)
+  const;
 
   /** @brief get the boundary data at given coordinates (2D)
    *

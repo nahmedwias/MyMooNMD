@@ -75,6 +75,7 @@ Example Example::Brinkman(const ParameterDatabase& param_db)
       bd.push_back(BoundaryData(g1));
       // Boundary data for first velocity component (all zero)
       bd.push_back(BoundaryData(0.0));
+      bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
       f = [reynolds, viscosity, effective_viscosity, permeability](
           const Point& point, double, std::vector<double>& coeffs)
