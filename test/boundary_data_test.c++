@@ -108,8 +108,9 @@ int main(int argc, char **argv)
     {
       //this was expected
     }
-    if(bd_constant.get_data(e, {0.5, 0.1}, 0.) != value)
-      ErrThrow("wrong boundary data ", bd_constant.get_data(e, {0.5, 0.1}, 0.),
+    auto ts = std::make_pair(0.5, 0.1);
+    if(bd_constant.get_data(e, ts, 0.) != value)
+      ErrThrow("wrong boundary data ", bd_constant.get_data(e, ts, 0.),
                "  ", value);
   }
   p = Point(1., 2., 3.);
@@ -194,9 +195,9 @@ int main(int argc, char **argv)
       if(bd.get_data(e, 0.5) != value)
         ErrThrow("wrong boundary data ", bd.get_data(e, p, 0.5), "  ", value);
 #elif defined __3D__
-      if(bd.get_data(e, {0.5, 0.1}, 0.) != value)
-        ErrThrow("wrong boundary data ", bd.get_data(e, {0.5, 0.1}, 0.), "  ",
-                 value);
+      auto ts = std::make_pair(0.5, 0.1);
+      if(bd.get_data(e, ts, 0.) != value)
+        ErrThrow("wrong boundary data ", bd.get_data(e, ts, 0.), "  ", value);
 #endif
     }
   }
