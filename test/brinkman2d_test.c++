@@ -47,20 +47,20 @@ void compareErrors(const Brinkman2D& brinkman2d, std::array<double, 4> errors)
         ErrThrow("Program 1: L2 velocity error not correct. ",
                  brinkman2d.getL2VelocityError() - errors[0]);
     }
-    if( fabs(brinkman2d.getH1SemiVelocityError() - errors[2]) > eps )
+    if( fabs(brinkman2d.getH1SemiVelocityError() - errors[1]) > eps )
     {
         ErrThrow("Program 1: H1-semi velocity error not correct. ",
-                 brinkman2d.getH1SemiVelocityError() - errors[2]);
+                 brinkman2d.getH1SemiVelocityError() - errors[1]);
     }
-    if( fabs(brinkman2d.getL2PressureError() - errors[3]) > eps )
+    if( fabs(brinkman2d.getL2PressureError() - errors[2]) > eps )
     {
         ErrThrow("Program 1: L2 pressure error not correct.",
-                 brinkman2d.getL2PressureError() - errors[3]);
+                 brinkman2d.getL2PressureError() - errors[2]);
     }
-    if( fabs(brinkman2d.getH1SemiPressureError() - errors[4]) > 2*eps )
+    if( fabs(brinkman2d.getH1SemiPressureError() - errors[3]) > 2*eps )
     {
         ErrThrow("Program 1: H1-semi pressure error not correct.",
-                 brinkman2d.getH1SemiPressureError() - errors[4]);
+                 brinkman2d.getH1SemiPressureError() - errors[3]);
     }
 }
 
