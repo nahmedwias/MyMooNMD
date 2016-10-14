@@ -75,6 +75,12 @@ class Example
   {
     return bd.at(i);
   }
+  
+  /** @brief return the vector of all boundary data objects */
+  const std::vector<BoundaryData>& get_boundary_data_vector() const
+  {
+    return bd;
+  }
 
   /** @brief return the coefficient object */
   const PDECoefficients& get_coefficients() const { return coeffs; };
@@ -95,6 +101,16 @@ class Example
    */
   bool check_suitable_domain(const TDomain&) const;
 
+  
+  /// @brief extract the value of the Parameter `example` from a 
+  ///        ParameterDatabase
+  ///
+  /// Basically this is equivalent to `param_db["example"]`.
+  /// This function only exists to give a meaningful error message in case the
+  /// Parameter `example` is missing. This is called in all the named
+  /// constructors.
+  static int get_example_from_database(const ParameterDatabase& param_db);
+  
  protected:
   /** @brief create an example with all members given
    * @details This is used in the factory methods above.

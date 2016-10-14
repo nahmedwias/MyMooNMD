@@ -4,7 +4,7 @@
 
 Example Example::NavierStokes(const ParameterDatabase& param_db)
 {
-  int example = param_db["example"];
+  int example = Example::get_example_from_database(param_db);
   double reynolds = param_db["reynolds_number"];
   bool only_stokes = false; // some examples also provide a linear version
   // flag, false means the laplace term is discretized with the gradient, true
@@ -126,6 +126,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
           }
         };
         bd.push_back(BoundaryData(g2));
+        bd.push_back(BoundaryData(0.0)); // all zero for pressure
         // the coefficient function
         f = [reynolds, only_stokes, p](const Point& point, double,
                                        std::vector<double>& coeffs)
@@ -362,6 +363,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
       bd.push_back(BoundaryData(g1));
       // Boundary data for first velocity component (all zero)
       bd.push_back(BoundaryData(0.0));
+      bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
       f = [reynolds](const Point& point, double, std::vector<double>& coeffs)
       {
@@ -418,6 +420,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
         // Boundary data for third velocity component
         bd.push_back(BoundaryData(0.));
       }
+      bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
       f = [reynolds, only_stokes](const Point& point, double,
                                   std::vector<double>& coeffs)
@@ -427,11 +430,11 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
         coeffs[2] = 0.;            // right hand side, second component
         coeffs[3] = 0.; // divergence (2D) / rhs, third component (3D)
         if(point.dimension() == 3)
-          coeffs[3] = 0.; // divergence (3D)
+          coeffs[4] = 0.; // divergence (3D)
       };
       break;
     }
-    case 3:
+    case 3: // flow around cylinder
     {
       // boundary condition:
       auto bc_function = [](unsigned int component)
@@ -485,6 +488,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
         // Boundary data for third velocity component
         bd.push_back(BoundaryData(0.));
       }
+      bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
       f = [reynolds, only_stokes, two_d](const Point& point, double,
                                          std::vector<double>& coeffs)

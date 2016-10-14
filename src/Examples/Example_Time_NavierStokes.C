@@ -5,7 +5,7 @@
 Example_NonStationary Example_NonStationary::Time_NavierStokes(
   const ParameterDatabase& param_db)
 {
-  int example = param_db["example"];
+  int example = Example::get_example_from_database(param_db);
   double reynolds = param_db["reynolds_number"];
   bool only_stokes = false; // some examples also provide a linear version
   // flag, false means the laplace term is discretized with the gradient, true
@@ -90,7 +90,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         // bd.push_back(BoundaryData(bc, exact));
         // Boundary data for first velocity component ((all zero))
         bd.push_back(BoundaryData(0.0));
-        // Boundary data for first velocity component
+        // Boundary data for second velocity component
         auto g2 = [reynolds, deformation_tensor, p](unsigned int component,
                                                     double t, double time)
         {
@@ -113,6 +113,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
           }
         };
         bd.push_back(BoundaryData(g2));
+        bd.push_back(BoundaryData(0.0)); // all zero for pressure
         // the coefficient function
         lhs_depends_on_time = false;
         rhs_depends_on_time = true;
@@ -264,6 +265,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
                  * cos(p * point.z());
         };
         bd.push_back(BoundaryData(g3));
+        bd.push_back(BoundaryData(0.0)); // all zero for pressure
         // the coefficient function
         lhs_depends_on_time = false;
         rhs_depends_on_time = true;
@@ -364,6 +366,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
       bd.push_back(BoundaryData(g1));
       // Boundary data for first velocity component (all zero)
       bd.push_back(BoundaryData(0.0));
+      bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
       lhs_depends_on_time = false;
       rhs_depends_on_time = false;
@@ -432,6 +435,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         // Boundary data for third velocity component
         bd.push_back(BoundaryData(0.));
       }
+      bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
       lhs_depends_on_time = false;
       rhs_depends_on_time = false;

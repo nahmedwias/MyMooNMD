@@ -5,7 +5,7 @@
 Example_NonStationary Example_NonStationary::Time_ConvDiff(
   const ParameterDatabase& param_db)
 {
-  int example = param_db["example"];
+  int example = Example::get_example_from_database(param_db);
   double diffusion = param_db["diffusion_coefficient"];
   double initial_time = 0.0; // should this be taken from the database?
 

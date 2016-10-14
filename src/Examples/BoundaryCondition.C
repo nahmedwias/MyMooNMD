@@ -90,9 +90,6 @@ BoundCond BoundaryCondition::get_condition(const TJoint& joint) const
 #endif
   unsigned int component = bd_joint->GetBoundComp()->GetID();
 
-  Output::print("calling BoundaryCondition::get_condition on component ",
-                component);
-
   if(this->from_component) // is callable
   {
     return this->from_component(component);
