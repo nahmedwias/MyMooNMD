@@ -261,7 +261,7 @@ void Brinkman2D::assemble()
         Assembler4 Ass;
        Ass.Assemble2D(s.matrix,s.rhs,
 		       spaces_for_matrix,spaces_for_rhs,
-		       example,la);
+		       example,la_list);
 
         //--------------------------------------------------------------------------------------------------
         // Weakly Imposing Boundary Conditions - Boundary Integrals
