@@ -79,7 +79,7 @@ public:
                     std::vector <const TFESpace2D*>& fespaces,
                     std::vector <const TFESpace2D*>& ferhs,
                     const Example2D& example,
-		    LocalAssembling2D& la,
+		    std::vector< LocalAssembling2D* > la_list,
                     int AssemblePhaseID=-1
                     );
 
@@ -92,7 +92,7 @@ public:
     **/
     void assemble_local_system(std::vector <const TFESpace2D*>& fespaces,
                                int i, double ***LocMatrices,double **LocRhs,
-			       LocalAssembling2D& la);
+			       LocalAssembling2D* la);
 
     /** 
 	@brief assemble the boundary conditions

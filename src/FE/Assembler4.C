@@ -147,7 +147,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
                             std::vector<const TFESpace2D*>& fespaces,
                             std::vector<const TFESpace2D*>& ferhs,
                             const Example2D& example,
-			    LocalAssembling2D& la,
+			    std::vector< LocalAssembling2D* > la_list,
                             int AssemblePhaseID)
 {
 #ifdef __3D__
@@ -206,7 +206,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
             continue;
 	//assemble the selected local form on the i-th cell
         this->assemble_local_system(fespaces,
-                                    i,LocMatrices, LocRhs,la);
+                                    i,LocMatrices, LocRhs,la_list[0]);
 	// add local/cellwise matrices to global matrices
 	//(ansatz == test: Aii, C; ansatz != test: A12,A12,B1,...)
 
@@ -228,7 +228,6 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
     // it could be put in a separate function
     
     this->handle_hanging_nodes(ferhs);
-    Output::print("end");
     // --------------------------------------------------------------------
     // delete pointers
     if(n_rhs_blocks)
@@ -246,7 +245,6 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
         delete [] Matrices[0];
         delete [] Matrices;
     }
-    Output::print("end");
    
 }                                                 // end of Assemble
 
@@ -256,13 +254,12 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
 //================================================================================
 void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces,
                                        int i,double ***LocMatrices,double **LocRhs,
-				        LocalAssembling2D& la)
+				        LocalAssembling2D* la)
 {
     BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
     int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
     TBaseCell *cell = this->Coll->GetCell(i);
 
-    Output::print("enter assemble_local_system");
     
     // --------------------------------------------------------------------
     // find local used elements on this cell
@@ -287,13 +284,13 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
     double X[MaxN_QuadPoints_2D],Y[MaxN_QuadPoints_2D];
     double AbsDetjk[MaxN_QuadPoints_2D];
     
-    bool *SecondDer = la.GetNeeds2ndDerivatives();
+    bool *SecondDer = la->GetNeeds2ndDerivatives();
     
     TFEDatabase2D::GetOrig(n_fespaces, LocalUsedElements,
                            this->Coll, cell, SecondDer,
                            N_Points, xi, eta, weights, X, Y, AbsDetjk);
     
-    la.compute_parameters(N_Points, this->Coll, cell, i, X, Y);
+    la->compute_parameters(N_Points, this->Coll, cell, i, X, Y);
     
     if((TDatabase::ParamDB->DISCTYPE == SDFEM)
        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
@@ -311,12 +308,12 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
         TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
     }
 
-    la.get_local_forms(N_Points, weights, AbsDetjk, X, Y, LocN_BF, LocBF,
+    la->get_local_forms(N_Points, weights, AbsDetjk, X, Y, LocN_BF, LocBF,
 		       //AuxArray,
 		       cell, n_all_matrices, n_rhs_blocks, LocMatrices,
 		       LocRhs);
     
-    Output::print("end assemble_local_system");
+
 }
 
 //================================================================================
