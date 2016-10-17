@@ -245,6 +245,15 @@ target_compile_definitions(multiphase2d PUBLIC -D__2D__)
 # Link in the required libraries
 target_link_libraries(multiphase2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### Time_MULTIPHASE2D ###
+# Standard executable target.
+add_executable(timemultiphase2d ${PROJECT_SOURCE_DIR}/user_projects/TimeMultiphase2D_ParMooN.C)
+set_target_properties(timemultiphase2d PROPERTIES OUTPUT_NAME parMooN_timemultiphase2d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(timemultiphase2d PUBLIC -D__2D__)
+# Link in the required libraries
+target_link_libraries(timemultiphase2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ### Standard 3D Programs ###
 
 ### CD3D ###
