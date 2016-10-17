@@ -804,3 +804,18 @@ std::array< double, int(6) > Time_NSE2D::get_errors()
 }
 
 /**************************************************************************** */
+
+
+
+
+
+
+/* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+/** ************************************************************************ */
+void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
+                     TFEFunction2D* mu_field)
+{
+
+}
+
+
