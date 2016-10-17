@@ -89,23 +89,25 @@ int main(int argc, char* argv[])
 
 
   /********************************************************************
-   * DECLARING OBJECTS FOR NSE2D AND CD2D
+   * DECLARING OBJECTS FOR TimeNSE2D AND TimeCD2D
    ********************************************************************/
-//  Example_NSE2D example_nse2d(tnse_db);                  // Construct Example for NSE
-//  NSE2D         nse2d(domain, tnse_db, example_nse2d);   // Construct NSE system
+  SetTimeDiscParameters(0);                                   // Initialize parameters for time discretization
+
+  Example_TimeNSE2D example_tnse2d(tnse_db);                  // Construct Example for NSE
+  Time_NSE2D        tnse2d(domain, tnse_db, example_tnse2d);  // Construct NSE system
 //  CD2D          cd2d(domain, cd_db);                    // Construct CD system
-//
-//  double rho1 = tnse_db["fluid_density"];  // density constant of fluid1, eg 1000
+
+//  double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
 //  double rho2 = 700;                        // density constant of fluid2, eg 0
-//  double mu1  = tnse_db["fluid_dynamic_viscosity"];    // mu constant of fluid1, eg 1e-3
+//  double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of fluid1, eg 1e-3
 //  double mu2  = 7;                                    // mu constant of fluid2, eg 0
-//
-//
-//
-//
-//  /********************************************************************
-//   * INITIALIZING OBJECTS FOR MULTIPHASE
-//   ********************************************************************/
+
+
+
+
+  /********************************************************************
+   * INITIALIZING OBJECTS FOR MULTIPHASE
+   ********************************************************************/
 //  BlockVector phase_field = cd2d.get_solution(); // copy vector structure
 //  phase_field = 1;     // set phase field = 1 everywhere
 //
@@ -116,117 +118,142 @@ int main(int argc, char* argv[])
 //  /** @brief Finite Element function for dynamic viscosity field */
 //  BlockVector   mu_vector = update_fieldvector(mu1, mu2, phase_field,"mu_vector" );
 //  TFEFunction2D mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*)"m");
-//
-//
-//
-//  /********************************************************************
-//   * START ASSEMBLING NSE2D WITH GIVEN FIELDS
-//   ********************************************************************/
+
+
+
+  /********************************************************************
+   * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
+   ********************************************************************/
 //  if (tnse_db["dimensional_nse"].is(true))
-//    nse2d.assemble_withfields(&rho_field,&mu_field); // assemble linear term
+//    tnse2d.assemble_withfields(&rho_field,&mu_field); // assemble linear term
 //  else
-//    nse2d.assemble();                                // assemble linear term
-//  nse2d.stopIt(0);                                   // check initial residual
-//
-//
-//
-//  /********************************************************************
-//   * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
-//   ********************************************************************/
-//  Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
-//  Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
-//  Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
+   tnse2d.assemble_initial_time();                                // assemble linear term
+
+
+   double end_time = TDatabase::TimeDB->ENDTIME;
+   int step = 0;
+   int n_substeps = GetN_SubSteps();
+
+
+  /********************************************************************
+   * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
+   ********************************************************************/
+  Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
+  Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
 //  Output::print<1>("Convection_example number ", cd_db["example"]);
-//  Output::print<1>("NSE_example number        ", tnse_db["example"]);
-//
-//  LoopInfo  loop_info("nonlinear");
-//  loop_info.print_time_every_step = true;
-//  loop_info.verbosity_threshold   = 1;            // full verbosity
-//  //loop_info.print(0, nse2d.getFullResidual());
-//
-//  stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
-//  stopwatch.reset();
-//
-//
-//
-//  /********************************************************************
-//   * NON LINEAR LOOP
-//   ********************************************************************/
-//  for(unsigned int k = 1;; k++)
-//  {
-//    nse2d.solve();
-//
-//
-//    /********************************************************************
-//     * SOLVING CD2D WITH NSE2D SOLUTION
-//     ********************************************************************/
-//    if (cd_db["coupling_nse_cd"].is(true))
-//    {
-//      Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
-//      Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-//      //cd2d.assemble(); // this line is outcommented when you want to make hand tests
-//      cd2d.assemble_with_convection(&nse2d.get_velocity());
-//      Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
-//      cd2d.solve();
-//      Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
-//
-//
-//
-//      /********************************************************************
-//       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
-//       ********************************************************************/
-//      if (tnse_db["coupling_cd_nse"].is(true))
-//      {
-//        BlockVector new_phase_field = cd2d.get_solution();
-//        // THIS LOOP HAS TO BE RECONSIDERED
-////        for (int indice=0; indice < phase_fraction.length(); indice++)
-////        {
-////          if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
-////          if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
-////        }
-//
-//        /** @brief Finite Element function for density field */
-//        BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-//        TFEFunction2D new_rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector,(char*) "q");
-//
-//        /** @brief Finite Element function for dynamic viscosity field */
-//        BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
-//        TFEFunction2D new_mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*) "s");
-//
-//
-//
-//        /********************************************************************
-//         * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
-//         ********************************************************************/
-//        nse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
-//      }
-//      else if (tnse_db["dimensional_nse"].is(true))  // if 2way coupling is deactivated but 1way is active
-//      { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
-//      else
-//      { nse2d.assemble_nonlinear_term(); }
-//    }
-//    else if (tnse_db["dimensional_nse"].is(true))  // if 1way coupling is deactivated but dimensional is active
-//    { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
-//    else
-//    { nse2d.assemble_nonlinear_term(); }
-//
-//
-//    if(nse2d.stopIt(k)) // Check residuals
-//    {
-//      loop_info.finish(k, nse2d.getFullResidual());
-//      break;
-//    }
-//    else loop_info.print(k, nse2d.getFullResidual());
-//
-//  } // end for k, non linear loop
-//
-//  stopwatch.print_total_time("total solving duration: ");
-//
-//  nse2d.output();
-//  cd2d.output();
-////  nse2d.get_solution().write("solution_velocity");
-//
-//  Output::close_file();
-//  return 0;
+  Output::print<1>("TimeNSE_example number        ", tnse_db["example"]);
+
+  LoopInfo  loop_info("nonlinear");
+  loop_info.print_time_every_step = true;
+  loop_info.verbosity_threshold   = 1;            // full verbosity
+//  loop_info.print(0, tnse2d.getFullResidual());
+
+  stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
+  stopwatch.reset();
+
+
+
+
+
+
+  /********************************************************************
+   * TIME ITERATION LOOP
+   ********************************************************************/
+  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  {
+    step++;
+
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    for(int j=0; j < n_substeps; ++j)
+    {
+      // setting the time disc parameters
+      SetTimeDiscParameters(1);
+      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      TDatabase::TimeDB->CURRENTTIME += tau;
+      Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    }
+
+    tnse2d.assemble_rhs();
+    tnse2d.assemble_nonlinear_term();
+    tnse2d.assemble_system();
+
+
+    /********************************************************************
+     * NON LINEAR LOOP
+     ********************************************************************/
+    for(unsigned int k = 1;; k++)
+    {
+      if(tnse2d.stopIte(k))
+        break;
+      tnse2d.solve();
+
+
+  //    /********************************************************************
+  //     * SOLVING CD2D WITH NSE2D SOLUTION
+  //     ********************************************************************/
+  //    if (cd_db["coupling_nse_cd"].is(true))
+  //    {
+  //      Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
+  //      Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
+  //      //cd2d.assemble(); // this line is outcommented when you want to make hand tests
+  //      cd2d.assemble_with_convection(&nse2d.get_velocity());
+  //      Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
+  //      cd2d.solve();
+  //      Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
+  //
+  //
+  //
+  //      /********************************************************************
+  //       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
+  //       ********************************************************************/
+  //      if (tnse_db["coupling_cd_nse"].is(true))
+  //      {
+  //        BlockVector new_phase_field = cd2d.get_solution();
+  //        // THIS LOOP HAS TO BE RECONSIDERED
+  ////        for (int indice=0; indice < phase_fraction.length(); indice++)
+  ////        {
+  ////          if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
+  ////          if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
+  ////        }
+  //
+  //        /** @brief Finite Element function for density field */
+  //        BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
+  //        TFEFunction2D new_rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector,(char*) "q");
+  //
+  //        /** @brief Finite Element function for dynamic viscosity field */
+  //        BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
+  //        TFEFunction2D new_mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*) "s");
+  //
+  //
+  //
+  //        /********************************************************************
+  //         * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
+  //         ********************************************************************/
+  //        nse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
+  //      }
+  //      else if (tnse_db["dimensional_nse"].is(true))  // if 2way coupling is deactivated but 1way is active
+  //      { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
+  //      else
+  //      { nse2d.assemble_nonlinear_term(); }
+  //    }
+  //    else if (tnse_db["dimensional_nse"].is(true))  // if 1way coupling is deactivated but dimensional is active
+  //    { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
+  //    else
+      { tnse2d.assemble_nonlinear_term();
+        tnse2d.assemble_system();         }
+
+
+    } // end for k, non linear loop
+
+    tnse2d.output(step);
+    //  cd2d.output();
+    //  tnse2d.get_solution().write("solution_velocity");
+
+  } // end for step, time loop
+
+  stopwatch.print_total_time("total solving duration: ");
+  Output::close_file();
+  return 0;
 }
 // end main
