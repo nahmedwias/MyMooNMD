@@ -259,6 +259,39 @@ class Time_NSE2D
     { return db; }
     /// @brief return the computed errors at each discre time point
     std::array<double, int(6)> get_errors();
+
+
+
+
+
+
+
+    /** ***************BELOW THIS LINE, USER SPECIFIC CODE ********/
+  public:
+
+    /** @brief assemble matrix,
+     *
+     * This assembles everything which is not related to the nonlinear term.
+     * I.e. it assembles a Stokes matrix.
+     */
+    void assemble_initial_time_withfields(TFEFunction2D* rho_field=nullptr,
+                                          TFEFunction2D* mu_field=nullptr);
+
+    /** @brief assemble nonlinear term
+     *
+     * The matrix blocks to which the nonlinear term contributes are reset to
+     * zero and then completely reassembled, including the linear and nonlinear
+     * terms. If this->assemble() has been called before, the matrix is now set
+     * up correctly.
+     */
+    void assemble_nonlinear_term_withfields(TFEFunction2D* rho_field=nullptr,
+                                            TFEFunction2D* mu_field=nullptr);
+
+    void assemble_rhs_withfields(TFEFunction2D* rho_field=nullptr,
+                                 TFEFunction2D* mu_field=nullptr);
+
+
+
 };
 
 #endif // __TIME_NSE2D__

@@ -308,34 +308,13 @@ class NSE2D
     void assemble_nonlinear_term_withfields(TFEFunction2D* rho_field=nullptr,
                                  TFEFunction2D* mu_field=nullptr);
 
-    /* @brief initialize phase fraction, rho_field and mu_field FEfunctions
-     * ( = same value in all the domain)
-     */
-    void update_multiphase(BlockVector new_phase_fraction);
 
-    /** @brief Set the solution vector of a NSE2D object
-     * @details can be used to prescribe a non-zero initial solution
-     * or to adapt solution between iterations (case of multiphase flow)
-     * ATTENTION: it is dangerous, no check if new_solution has a different block structure
-     * or length...!!!
-     */
-    void set_solution(BlockVector new_solution)
-    { this->get_solution() = new_solution; }
 
     /** @brief Update solution vector of a NSE2D object
      * @details used exclusively for multiphase flow (weight = phase fraction,
      * or level set function or any marker function)
      */
     void update_solution(BlockVector weight_vector);
-
-    //    TFEFunction2D & get_rho_field()
-    //    { return this->systems.front().rho_field; }
-    //
-    //    TFEFunction2D & get_mu_field()
-    //    { return this->systems.front().mu_field; }
-    //
-    //    TFEFunction2D & get_phase_fraction()
-    //    { return this->systems.front().phase_fraction; }
 
 };
 
