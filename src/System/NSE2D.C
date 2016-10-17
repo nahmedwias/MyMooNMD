@@ -5,7 +5,7 @@
 #include <Upwind.h>
 #include <GridTransfer.h>
 #include <Multigrid.h>
-#include<Assemble2D.h>
+#include <Assemble2D.h>
 #include <LocalAssembling2D.h>
 #include <NSE2D_FixPo.h>
 
@@ -859,7 +859,7 @@ void NSE2D::assemble_withfields(TFEFunction2D* rho_field,
 //    cout << resultats[1] << endl;
 //    cout << resultats[2] << endl;
 
-    //same for all: the local asembling object
+    //same for all: the local assembling object
     TFEFunction2D *fe_functions[5] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, nullptr, nullptr };
     LocalAssembling2D la(NSE2D_Galerkin, fe_functions,
