@@ -74,7 +74,7 @@ output_vtk_directory: .
 
 ## This string is prepended to most files written by ParMooN. 
 ## Especially this includes vtk-files 
-output_basename: multiphase_output { multiphase_convection_output, multiphase_nse_output, multiphase_output }
+output_basename: multiphase_output { multiphase_convection_output, multiphase_tnse_output, multiphase_output }
 
 ## The maximum number of iterations to perform in a non-linear loop. 
 nonlinloop_maxit: 100   [ 0, 1000 ]

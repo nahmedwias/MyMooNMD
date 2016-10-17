@@ -47,57 +47,57 @@ BlockVector   update_fieldvector(double property_field1, double property_field2,
 // ***** MAIN PROGRAM ***** //
 int main(int argc, char* argv[])
 {
-//  Chrono        stopwatch;        // Start a stopwatch for time measurement during execution
-//
-//  TDatabase     Database;         // Initialize User Input Databases.
-//  TFEDatabase2D FEDatabase;       // Initialize FE Database.
-//
-//  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-//  ParameterDatabase nse_db("Navier-Stokes Database");
+  Chrono        stopwatch;        // Start a stopwatch for time measurement during execution
+
+  TDatabase     Database;         // Initialize User Input Databases.
+  TFEDatabase2D FEDatabase;       // Initialize FE Database.
+
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  ParameterDatabase tnse_db("Navier-Stokes Database");
 //  ParameterDatabase cd_db("Convection Diffusion Database");
-//
-//  std::ifstream fs(argv[1]); parmoon_db.read(fs);  fs.close();
-//  nse_db.merge(parmoon_db,true);
+
+  std::ifstream fs(argv[1]); parmoon_db.read(fs);  fs.close();
+  tnse_db.merge(parmoon_db,true);
 //  cd_db.merge(parmoon_db,true);
-//
+
 //  cd_db["example"]          = 11;    // 10 = Example Layout for CD2d which takes input velocity
 //  cd_db["problem_type"]     = 1;
 //  cd_db["output_basename"]  = "multiphase_convection_output";
-//
-//  // nse_db["example"]      = 0;
-//  nse_db["problem_type"]    = 5;
-//  nse_db["output_basename"] = "multiphase_nse_output";
-//
-//  TDomain domain(argv[1], parmoon_db);            // Initialize geometry
-//
-//
-//  /********************************************************************
-//   * WRITE PARAMETERS TO OUTFILE
-//   ********************************************************************/
-//  Output::set_outfile(parmoon_db["outfile"]);
-//  Output::setVerbosity(parmoon_db["verbosity"]);
-//  Database.CheckParameterConsistencyNSE();
-//  Database.WriteParamDB(argv[0]);
-//
-//  std::list<TCollection* > gridCollections
-//  = domain.refine_and_get_hierarchy_of_collections(parmoon_db);
-//
-//  if(parmoon_db["output_write_ps"]) domain.PS("Domain.ps", It_Finest, 0);
-//
-//  domain.print_info("Multiphase2D domain");      // Output domain info
-//
-//
-//
-//  /********************************************************************
-//   * DECLARING OBJECTS FOR NSE2D AND CD2D
-//   ********************************************************************/
-//  Example_NSE2D example_nse2d(nse_db);                  // Construct Example for NSE
-//  NSE2D         nse2d(domain, nse_db, example_nse2d);   // Construct NSE system
+
+  tnse_db["example"]      = 0;
+  tnse_db["problem_type"]    = 6;
+  tnse_db["output_basename"] = "multiphase_tnse_output";
+
+  TDomain domain(argv[1], parmoon_db);            // Initialize geometry
+
+
+  /********************************************************************
+   * WRITE PARAMETERS TO OUTFILE
+   ********************************************************************/
+  Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
+  Database.CheckParameterConsistencyNSE();
+  Database.WriteParamDB(argv[0]);
+
+  std::list<TCollection* > gridCollections
+  = domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+
+  if(parmoon_db["output_write_ps"]) domain.PS("Domain.ps", It_Finest, 0);
+
+  domain.print_info("Multiphase2D domain");      // Output domain info
+
+
+
+  /********************************************************************
+   * DECLARING OBJECTS FOR NSE2D AND CD2D
+   ********************************************************************/
+//  Example_NSE2D example_nse2d(tnse_db);                  // Construct Example for NSE
+//  NSE2D         nse2d(domain, tnse_db, example_nse2d);   // Construct NSE system
 //  CD2D          cd2d(domain, cd_db);                    // Construct CD system
 //
-//  double rho1 = nse_db["fluid_density"];  // density constant of fluid1, eg 1000
+//  double rho1 = tnse_db["fluid_density"];  // density constant of fluid1, eg 1000
 //  double rho2 = 700;                        // density constant of fluid2, eg 0
-//  double mu1  = nse_db["fluid_dynamic_viscosity"];    // mu constant of fluid1, eg 1e-3
+//  double mu1  = tnse_db["fluid_dynamic_viscosity"];    // mu constant of fluid1, eg 1e-3
 //  double mu2  = 7;                                    // mu constant of fluid2, eg 0
 //
 //
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 //  /********************************************************************
 //   * START ASSEMBLING NSE2D WITH GIVEN FIELDS
 //   ********************************************************************/
-//  if (nse_db["dimensional_nse"].is(true))
+//  if (tnse_db["dimensional_nse"].is(true))
 //    nse2d.assemble_withfields(&rho_field,&mu_field); // assemble linear term
 //  else
 //    nse2d.assemble();                                // assemble linear term
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
 //  Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
 //  Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
 //  Output::print<1>("Convection_example number ", cd_db["example"]);
-//  Output::print<1>("NSE_example number        ", nse_db["example"]);
+//  Output::print<1>("NSE_example number        ", tnse_db["example"]);
 //
 //  LoopInfo  loop_info("nonlinear");
 //  loop_info.print_time_every_step = true;
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
 //      /********************************************************************
 //       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
 //       ********************************************************************/
-//      if (nse_db["coupling_cd_nse"].is(true))
+//      if (tnse_db["coupling_cd_nse"].is(true))
 //      {
 //        BlockVector new_phase_field = cd2d.get_solution();
 //        // THIS LOOP HAS TO BE RECONSIDERED
@@ -200,12 +200,12 @@ int main(int argc, char* argv[])
 //         ********************************************************************/
 //        nse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
 //      }
-//      else if (nse_db["dimensional_nse"].is(true))  // if 2way coupling is deactivated but 1way is active
+//      else if (tnse_db["dimensional_nse"].is(true))  // if 2way coupling is deactivated but 1way is active
 //      { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
 //      else
 //      { nse2d.assemble_nonlinear_term(); }
 //    }
-//    else if (nse_db["dimensional_nse"].is(true))  // if 1way coupling is deactivated but dimensional is active
+//    else if (tnse_db["dimensional_nse"].is(true))  // if 1way coupling is deactivated but dimensional is active
 //    { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
 //    else
 //    { nse2d.assemble_nonlinear_term(); }
