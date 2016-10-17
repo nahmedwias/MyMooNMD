@@ -2668,3 +2668,30 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   //=========================================================================
   
 }
+
+
+
+
+
+/***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
+void LocalAssembling2D::setAssembleParam_string(std::string assembleFctParam2Dname)
+{
+  if ( assembleFctParam2Dname == "TimeNSType1Galerkin_dimensional" )
+  {
+    this->AssembleParam = TimeNSType1Galerkin_dimensional;
+    Output::print<1>("Success");
+  }
+  else
+    ErrThrow("STOP", assembleFctParam2Dname);
+}
+
+void LocalAssembling2D::setParameterFct_string(std::string parameterFctname)
+{
+  if ( parameterFctname == "TimeNSParamsVelo_dimensional" )
+  {
+    this->ParameterFct = {TimeNSParamsVelo_dimensional};
+    Output::print<1>("Success");
+  }
+  else
+    ErrThrow("STOP", parameterFctname);
+}

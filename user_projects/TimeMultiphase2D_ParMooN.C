@@ -97,9 +97,9 @@ int main(int argc, char* argv[])
   Time_NSE2D        tnse2d(domain, tnse_db, example_tnse2d);  // Construct NSE system
 //  CD2D          cd2d(domain, cd_db);                    // Construct CD system
 
-//  double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
+  double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
 //  double rho2 = 700;                        // density constant of fluid2, eg 0
-//  double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of fluid1, eg 1e-3
+  double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of fluid1, eg 1e-3
 //  double mu2  = 7;                                    // mu constant of fluid2, eg 0
 
 
@@ -125,9 +125,9 @@ int main(int argc, char* argv[])
    * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
    ********************************************************************/
 //  if (tnse_db["dimensional_nse"].is(true))
-//    tnse2d.assemble_withfields(&rho_field,&mu_field); // assemble linear term
+    tnse2d.assemble_initial_time_withfields(nullptr,nullptr); // assemble linear term
 //  else
-   tnse2d.assemble_initial_time();                                // assemble linear term
+//   tnse2d.assemble_initial_time();                                // assemble linear term
 
 
    double end_time = TDatabase::TimeDB->ENDTIME;
