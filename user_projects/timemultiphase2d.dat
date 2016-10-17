@@ -40,17 +40,15 @@ verbosity: 3   [ 1, 5 ]
 ## Choose which example to run. Note that depending on the type of 
 ## problem you want to solve, different values are meaningful here. 
 ## See the class 'Example' and its derived classes.
-## 0 - poiseuille
-## 1 - driven cavity
-## 2 - simple cosine sine
-## 3 - flow around cylinder 
+## 0 - bsp1
+## 1 - lin_space_time
 ## ONLY THE EXAMPLES BELOW SHOULD BE USED IN THE MULTIPHASE PROGRAM
 ## 11 - Test example 1 = Poiseuille
 ## 12 - Test example 2 = SinCos
 ## 13 - Test example 3 = DrivenCavity
 ## 14 - Test example 4 = Generates the velocity field for convection example 
 ## "Two interior layers" (CD example number 10)
-example: 11 [ 0, 100 ]
+example: 1 [ 0, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -249,3 +247,15 @@ NSTYPE: 1
 LAPLACETYPE: 0
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
+
+
+# parameter for time discretization
+# 
+# 0: Forward Euler
+# 1: Backward Euler
+# 2: Crank-Nicolson
+# 3: Fractional step
+TIME_DISC: 2
+STARTTIME: 0
+ENDTIME: 0.05
+TIMESTEPLENGTH: 0.01

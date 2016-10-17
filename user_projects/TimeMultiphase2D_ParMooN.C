@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 //  cd_db["problem_type"]     = 1;
 //  cd_db["output_basename"]  = "multiphase_convection_output";
 
-  tnse_db["example"]      = 0;
+//  tnse_db["example"]      = 0;
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
 
@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
     /********************************************************************
      * NON LINEAR LOOP
      ********************************************************************/
-    for(unsigned int k = 1;; k++)
+    for(unsigned int k = 0;; k++)
     {
       if(tnse2d.stopIte(k))
         break;
