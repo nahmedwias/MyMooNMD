@@ -44,7 +44,7 @@ verbosity: 3   [ 1, 5 ]
 ## 1 - lin_space_time
 ## ONLY THE EXAMPLES BELOW SHOULD BE USED IN THE MULTIPHASE PROGRAM
 ## 11- bsp1 (sincos) - in the multiphase program
-example: 0 [ -1, 100 ]
+example: 2 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -210,12 +210,12 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## "dimension_nse=true or false".Anyway, when dimensional_nse=true
 ## the assembling routines take density and viscosity, and that's
 ## what we want.
-reynolds_number: 75.   [ 0, 1e6 ]
-fluid_density: 300.   [ 0, 1e6 ]
-fluid_dynamic_viscosity: 4.   [ 0, 1e6 ]
+reynolds_number: 1.   [ 0, 1e6 ]
+fluid_density: 1.   [ 0, 1e6 ]
+fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
-RE_NR:	75.
+RE_NR:	1.
 
 # constant convection in x- and y-direction
 user_parameter1: 2
@@ -223,7 +223,7 @@ user_parameter2: 2
 
 
 dimensional_nse: true   { true, false }
-coupling_nse_cd: false   { true, false }
+coupling_nse_cd: true   { true, false }
 coupling_cd_nse: false   { true, false }
 
 
@@ -253,5 +253,5 @@ UPWIND_ORDER: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.01
+ENDTIME: 0.05
 TIMESTEPLENGTH: 0.01

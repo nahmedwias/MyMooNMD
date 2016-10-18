@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   tnse_db.merge(parmoon_db,true);
   tcd_db.merge(parmoon_db,true);
 
-  tcd_db["example"]          = -1;    // 10 = Example Layout for CD2d which takes input velocity
+  tcd_db["example"]          = 2;
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
 
@@ -213,6 +213,7 @@ int main(int argc, char* argv[])
 //        tcd2d.assemble_with_convection(&nse2d.get_velocity());
         Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
         tcd2d.solve();
+        tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1);
         Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
 
 
@@ -259,7 +260,8 @@ int main(int argc, char* argv[])
     } // end for k, non linear loop
 
     tnse2d.output(step);
-//    tcd2d.output();
+    if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
+      tcd2d.output();
     //  tnse2d.get_solution().write("solution_velocity");
     }
   } // end for step, time loop
