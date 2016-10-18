@@ -211,7 +211,7 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 
 ## note: Peclet number is like diffusion coefficient
 ## Please ensure that reynolds_number and rho and mu are consistent.
-## We should have reynolds_number = viscosity/density.
+## We should have reynolds_number = density/viscosity.
 ## This is because the examples dont detect yet if we are using
 ## "dimension_nse=true or false".Anyway, when dimensional_nse=true
 ## the assembling routines take density and viscosity, and that's

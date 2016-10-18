@@ -30,7 +30,7 @@ refinement_n_initial_steps: 6
 ## convection-diffusion, 3: stationary Stokes, 4: time-dependent 
 ## Stokes, 5: stationary Navier-Stokes, 6: time-dependent 
 ## Navier-Stokes. 
-problem_type: 1   [ 0, 6 ]
+problem_type: 6   [ 0, 6 ]
 
 ## Set the verbosity of ParMooN. The higher the number, the more will 
 ## output you will get. Such output will be written to console and the 
@@ -209,17 +209,17 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 
 ## note: Peclet number is like diffusion coefficient
 ## Please ensure that reynolds_number and rho and mu are consistent.
-## We should have reynolds_number = viscosity/density.
+## We should have reynolds_number = density/viscosity.
 ## This is because the examples dont detect yet if we are using
 ## "dimension_nse=true or false".Anyway, when dimensional_nse=true
 ## the assembling routines take density and viscosity, and that's
 ## what we want.
-reynolds_number: 1.   [ 0, 1e6 ]
-fluid_density: 1.   [ 0, 1e6 ]
+reynolds_number: 50.   [ 0, 1e6 ]
+fluid_density: 50.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
-
+RE_NR:	50.
 
 # constant convection in x- and y-direction
 user_parameter1: 2
