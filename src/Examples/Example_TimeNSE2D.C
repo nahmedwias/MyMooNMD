@@ -17,7 +17,7 @@ namespace lin_space_time
 /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
 namespace test_example1_sincos
 {
-#include "1_TestExample1.h"
+#include "1_TestExampleTNSE.h"
 }
 
 
@@ -91,28 +91,28 @@ Example_TimeNSE2D::Example_TimeNSE2D(
 
       /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
     case 11:                // TestExample1 = Bsp1 = sincos
-      /** exact_solution */
-      exact_solution.push_back( test_example1_sincos::ExactU1 );
-      exact_solution.push_back( test_example1_sincos::ExactU2 );
-      exact_solution.push_back( test_example1_sincos::ExactP );
-
-      /** boundary condition */
-      boundary_conditions.push_back( test_example1_sincos::BoundCondition );
-      boundary_conditions.push_back( test_example1_sincos::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
-
-      /** boundary values */
-      boundary_data.push_back( test_example1_sincos::U1BoundValue );
-      boundary_data.push_back( test_example1_sincos::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
-
-      /** coefficients */
-      problem_coefficients = test_example1_sincos::LinCoeffs;
-
-      /** initial condition */
-      initialCOndtion.push_back(test_example1_sincos::InitialU1);
-      initialCOndtion.push_back(test_example1_sincos::InitialU2);
-      test_example1_sincos::ExampleFile();
+//      /** exact_solution */
+//      exact_solution.push_back( test_example1_sincos::ExactU1 );
+//      exact_solution.push_back( test_example1_sincos::ExactU2 );
+//      exact_solution.push_back( test_example1_sincos::ExactP );
+//
+//      /** boundary condition */
+//      boundary_conditions.push_back( test_example1_sincos::BoundCondition );
+//      boundary_conditions.push_back( test_example1_sincos::BoundCondition );
+//      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+//
+//      /** boundary values */
+//      boundary_data.push_back( test_example1_sincos::U1BoundValue );
+//      boundary_data.push_back( test_example1_sincos::U2BoundValue );
+//      boundary_data.push_back( BoundaryValueHomogenous );
+//
+//      /** coefficients */
+//      problem_coefficients = test_example1_sincos::LinCoeffs;
+//
+//      /** initial condition */
+//      initialCOndtion.push_back(test_example1_sincos::InitialU1);
+//      initialCOndtion.push_back(test_example1_sincos::InitialU2);
+//      test_example1_sincos::ExampleFile();
       break;
 
 
