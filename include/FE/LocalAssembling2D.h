@@ -385,7 +385,7 @@ class LocalAssembling2D
     }
 
     void setAssembleParam_string(std::string assembleFctParam2Dname);
-    void setParameterFct_string(std::string parameterFct);
+    void setParameterFct_string(std::string parameterFctname);
 };
 
 

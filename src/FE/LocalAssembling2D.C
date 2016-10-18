@@ -2679,10 +2679,15 @@ void LocalAssembling2D::setAssembleParam_string(std::string assembleFctParam2Dna
   if ( assembleFctParam2Dname == "TimeNSType1Galerkin_dimensional" )
   {
     this->AssembleParam = TimeNSType1Galerkin_dimensional;
-    Output::print<1>("Success");
+    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
+                    "TimeNSType1Galerkin_dimensional!");
   }
   else
-    ErrThrow("STOP", assembleFctParam2Dname);
+  {
+    Output::warn<1>("LocalAssembling2D", "Unknown ParameterFct ",
+                    assembleFctParam2Dname, "...interrupting the program...");
+    ErrThrow("Error in LocalAssembling2D");
+  }
 }
 
 void LocalAssembling2D::setParameterFct_string(std::string parameterFctname)
@@ -2690,8 +2695,13 @@ void LocalAssembling2D::setParameterFct_string(std::string parameterFctname)
   if ( parameterFctname == "TimeNSParamsVelo_dimensional" )
   {
     this->ParameterFct = {TimeNSParamsVelo_dimensional};
-    Output::print<1>("Success");
+    Output::info<3>("LocalAssembling2D", "Set ParameterFct to "
+                    "TimeNSParamVelo_dimensional!");
   }
   else
-    ErrThrow("STOP", parameterFctname);
+  {
+    Output::warn<1>("LocalAssembling2D", "Unknown ParameterFct ",
+                    parameterFctname, "...interrupting the program...");
+    ErrThrow("Error in LocalAssembling2D");
+  }
 }

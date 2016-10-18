@@ -856,7 +856,7 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
                          this->example.get_coeffs());
     // the following should add fluid property fluids
     // to obtain a dimensional formulation of NSE
-    if (true) //rho_field != nullptr && mu_field != nullptr)
+    if (rho_field != nullptr && mu_field != nullptr)
     {
       fe_functions[3] = rho_field;
       fe_functions[4] = mu_field;

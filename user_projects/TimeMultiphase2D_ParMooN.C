@@ -54,15 +54,15 @@ int main(int argc, char* argv[])
 
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   ParameterDatabase tnse_db("Navier-Stokes Database");
-//  ParameterDatabase cd_db("Convection Diffusion Database");
+  ParameterDatabase tcd_db("Convection Diffusion Database");
 
   std::ifstream fs(argv[1]); parmoon_db.read(fs);  fs.close();
   tnse_db.merge(parmoon_db,true);
-//  cd_db.merge(parmoon_db,true);
+  tcd_db.merge(parmoon_db,true);
 
-//  cd_db["example"]          = 11;    // 10 = Example Layout for CD2d which takes input velocity
-//  cd_db["problem_type"]     = 1;
-//  cd_db["output_basename"]  = "multiphase_convection_output";
+  tcd_db["example"]          = -1;    // 10 = Example Layout for CD2d which takes input velocity
+  tcd_db["problem_type"]     = 2;
+  tcd_db["output_basename"]  = "multiphase_tconvection_output";
 
 //  tnse_db["example"]      = 0;
   tnse_db["problem_type"]    = 6;
@@ -95,12 +95,12 @@ int main(int argc, char* argv[])
 
   Example_TimeNSE2D example_tnse2d(tnse_db);                  // Construct Example for NSE
   Time_NSE2D        tnse2d(domain, tnse_db, example_tnse2d);  // Construct NSE system
-//  CD2D          cd2d(domain, cd_db);                    // Construct CD system
+  Time_CD2D         tcd2d(domain, tcd_db);                    // Construct CD system
 
   double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
-//  double rho2 = 700;                        // density constant of fluid2, eg 0
+  double rho2 = 0;                        // density constant of fluid2, eg 0
   double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of fluid1, eg 1e-3
-//  double mu2  = 7;                                    // mu constant of fluid2, eg 0
+  double mu2  = 0;                                    // mu constant of fluid2, eg 0
 
 
 
@@ -108,26 +108,26 @@ int main(int argc, char* argv[])
   /********************************************************************
    * INITIALIZING OBJECTS FOR MULTIPHASE
    ********************************************************************/
-//  BlockVector phase_field = cd2d.get_solution(); // copy vector structure
-//  phase_field = 1;     // set phase field = 1 everywhere
-//
-//  /** @brief Finite Element function for density field */
-//  BlockVector   rho_vector = update_fieldvector(rho1,rho2,phase_field,"rho_vector");
-//  TFEFunction2D rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector,(char*)"r");
-//
-//  /** @brief Finite Element function for dynamic viscosity field */
-//  BlockVector   mu_vector = update_fieldvector(mu1, mu2, phase_field,"mu_vector" );
-//  TFEFunction2D mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*)"m");
+  BlockVector phase_field = tcd2d.get_solution(); // copy vector structure
+  phase_field = 1;     // set phase field = 1 everywhere
+
+  /** @brief Finite Element function for density field */
+  BlockVector   rho_vector = update_fieldvector(rho1,rho2,phase_field,"rho_vector");
+  TFEFunction2D rho_field  = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
+
+  /** @brief Finite Element function for dynamic viscosity field */
+  BlockVector   mu_vector = update_fieldvector(mu1, mu2, phase_field,"mu_vector" );
+  TFEFunction2D mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*)"m");
 
 
 
   /********************************************************************
    * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
    ********************************************************************/
-//  if (tnse_db["dimensional_nse"].is(true))
-    tnse2d.assemble_initial_time_withfields(nullptr,nullptr); // assemble linear term
-//  else
-//   tnse2d.assemble_initial_time();                                // assemble linear term
+  if (tnse_db["dimensional_nse"].is(true))
+    tnse2d.assemble_initial_time_withfields(&rho_field,&mu_field); // assemble linear term
+  else
+    tnse2d.assemble_initial_time();                                // assemble linear term
 
 
    double end_time = TDatabase::TimeDB->ENDTIME;
