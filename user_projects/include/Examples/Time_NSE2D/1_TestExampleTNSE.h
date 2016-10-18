@@ -133,7 +133,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  static double nu = 1/TDatabase::ParamDB->RE_NR;
+  static double nu = REYNOLDS_number;
   double t = TDatabase::TimeDB->CURRENTTIME;
   double t1, t2, t3, t5, t6, t8, t9, t10, t14, t16;
   double t17, t22, t23, t27, t36, t39, t41;
@@ -176,11 +176,11 @@ void LinCoeffs(int n_points, double *X, double *Y,
 */
 
     // Navier-Stokes
-    coeff[1] = 50*(t1*t3*t6+2.0*t9*t3*t10*t6
+    coeff[1] = 100*(t1*t3*t6+2.0*t9*t3*t10*t6
               +t14*t3*t16*t17*0.3141592653589793E1
               +t14*t17*t23*t3*0.3141592653589793E1
               +t27*t17*0.3141592653589793E1);
-    coeff[2] = 50*(t1*t17*t22+2.0*t9*t17*t10*t22
+    coeff[2] = 100*(t1*t17*t22+2.0*t9*t17*t10*t22
               -t14*t36*t39-t14*t41*t39
               -t27*t6*0.3141592653589793E1);
     coeff[3] = 0;
