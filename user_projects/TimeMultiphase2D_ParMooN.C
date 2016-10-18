@@ -240,16 +240,16 @@ int main(int argc, char* argv[])
   //        TFEFunction2D new_mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*) "s");
   //
   //
-  //
-  //        /********************************************************************
-  //         * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
-  //         ********************************************************************/
-  //        nse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
-  //      }
-  //      else if (tnse_db["dimensional_nse"].is(true))  // if 2way coupling is deactivated but 1way is active
-  //      { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
-  //      else
-  //      { nse2d.assemble_nonlinear_term(); }
+
+          /********************************************************************
+           * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
+           ********************************************************************/
+//          nse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
+//        }
+        if (tnse_db["dimensional_nse"].is(true))    // if 2way coupling is deactivated but 1way is active
+          tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
+        else
+          tnse2d.assemble_nonlinear_term();
       }
       else if (tnse_db["dimensional_nse"].is(true))    // if 1way coupling is deactivated but dimensional is active
         tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);

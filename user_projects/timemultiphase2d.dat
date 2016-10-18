@@ -223,7 +223,7 @@ user_parameter2: 2
 
 
 dimensional_nse: true   { true, false }
-coupling_nse_cd: true   { true, false }
+coupling_nse_cd: false   { true, false }
 coupling_cd_nse: false   { true, false }
 
 
@@ -253,5 +253,5 @@ UPWIND_ORDER: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.05
+ENDTIME: 0.01
 TIMESTEPLENGTH: 0.01
