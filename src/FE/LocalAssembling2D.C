@@ -2688,6 +2688,12 @@ void LocalAssembling2D::setAssembleParam_string(std::string assembleFctParam2Dna
     Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
                     "TimeNSType1_2NLGalerkin_dimensional!");
   }
+  else if (assembleFctParam2Dname == "TimeNSRHS_dimensional")
+  {
+    this->AssembleParam = TimeNSRHS_dimensional;
+    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
+                    "TimeNSRHS_dimensional!");
+  }
   else
   {
     Output::warn<1>("LocalAssembling2D", "Unknown ParameterFct ",
