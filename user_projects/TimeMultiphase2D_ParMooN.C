@@ -167,8 +167,7 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j=0; j < n_substeps; ++j)
     {
-      // setting the time disc parameters
-      SetTimeDiscParameters(1);
+      SetTimeDiscParameters(1);            // setting the time disc parameters
       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
