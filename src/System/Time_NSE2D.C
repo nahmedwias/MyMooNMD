@@ -1028,21 +1028,21 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
 
 
     if (rho_field != nullptr && mu_field != nullptr)
-        {
-          fe_functions[3] = rho_field;
-          fe_functions[4] = mu_field;
-          la_nonlinear.setBeginParameter({0});
-          la_nonlinear.setFeFunctions2D(fe_functions); //reset - now velo comp included
-          la_nonlinear.setFeValueFctIndex({0,1,3,4});
-          la_nonlinear.setFeValueMultiIndex({D00,D00,D00,D00});
-          la_nonlinear.setN_Parameters(4);
-          la_nonlinear.setN_FeValues(4);
-          la_nonlinear.setN_ParamFct(1);
-          la_nonlinear.setParameterFct_string("TimeNSParamsVelo_dimensional");
+    {
+      fe_functions[3] = rho_field;
+      fe_functions[4] = mu_field;
+      la_nonlinear.setBeginParameter({0});
+      la_nonlinear.setFeFunctions2D(fe_functions); //reset - now velo comp included
+      la_nonlinear.setFeValueFctIndex({0,1,3,4});
+      la_nonlinear.setFeValueMultiIndex({D00,D00,D00,D00});
+      la_nonlinear.setN_Parameters(4);
+      la_nonlinear.setN_FeValues(4);
+      la_nonlinear.setN_ParamFct(1);
+      la_nonlinear.setParameterFct_string("TimeNSParamsVelo_dimensional");
 
-          la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");
-          //...this should do the trick
-        }
+      la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");
+      //...this should do the trick
+    }
 
 
 
@@ -1080,3 +1080,7 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
   }
   Output::print<5>("Assembled the nonlinear matrix only ");
 }
+
+
+
+
