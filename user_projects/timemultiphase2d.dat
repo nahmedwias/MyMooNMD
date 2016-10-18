@@ -48,7 +48,7 @@ verbosity: 3   [ 1, 5 ]
 ## 13 - Test example 3 = DrivenCavity
 ## 14 - Test example 4 = Generates the velocity field for convection example 
 ## "Two interior layers" (CD example number 10)
-example: 1 [ 0, 100 ]
+example: 1 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -72,7 +72,7 @@ output_vtk_directory: .
 
 ## This string is prepended to most files written by ParMooN. 
 ## Especially this includes vtk-files 
-output_basename: multiphase_output { multiphase_convection_output, multiphase_tnse_output, multiphase_output }
+output_basename: multiphase_output { multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
 ## The maximum number of iterations to perform in a non-linear loop. 
 nonlinloop_maxit: 100   [ 0, 1000 ]
@@ -227,8 +227,8 @@ user_parameter2: 2
 
 
 dimensional_nse: true   { true, false }
-coupling_nse_cd: true   { true, false }
-coupling_cd_nse: true   { true, false }
+coupling_nse_cd: false   { true, false }
+coupling_cd_nse: false   { true, false }
 
 
 
