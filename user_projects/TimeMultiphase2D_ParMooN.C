@@ -197,21 +197,21 @@ int main(int argc, char* argv[])
       tnse2d.solve();
 
 
-  //    /********************************************************************
-  //     * SOLVING CD2D WITH NSE2D SOLUTION
-  //     ********************************************************************/
-  //    if (cd_db["coupling_nse_cd"].is(true))
-  //    {
-  //      Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
-  //      Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-  //      //cd2d.assemble(); // this line is outcommented when you want to make hand tests
-  //      cd2d.assemble_with_convection(&nse2d.get_velocity());
-  //      Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
-  //      cd2d.solve();
-  //      Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
-  //
-  //
-  //
+      /********************************************************************
+       * SOLVING CD2D WITH NSE2D SOLUTION
+       ********************************************************************/
+      if (tcd_db["coupling_nse_cd"].is(true))
+      {
+        Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
+        Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
+        tcd2d.assemble(); // this line is outcommented when you want to make hand tests
+//        tcd2d.assemble_with_convection(&nse2d.get_velocity());
+        Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
+        tcd2d.solve();
+        Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
+
+
+
   //      /********************************************************************
   //       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
   //       ********************************************************************/
@@ -244,12 +244,8 @@ int main(int argc, char* argv[])
   //      { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
   //      else
   //      { nse2d.assemble_nonlinear_term(); }
-  //    }
-  //    else if (tnse_db["dimensional_nse"].is(true))  // if 1way coupling is deactivated but dimensional is active
-  //    { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
-  //    else
-
-      if (tnse_db["dimensional_nse"].is(true))
+      }
+      else if (tnse_db["dimensional_nse"].is(true))    // if 1way coupling is deactivated but dimensional is active
         tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
       else
         tnse2d.assemble_nonlinear_term();
@@ -258,7 +254,7 @@ int main(int argc, char* argv[])
     } // end for k, non linear loop
 
     tnse2d.output(step);
-    //  cd2d.output();
+    tcd2d.output();
     //  tnse2d.get_solution().write("solution_velocity");
 
   } // end for step, time loop
