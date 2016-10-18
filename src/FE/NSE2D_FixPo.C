@@ -4770,9 +4770,9 @@ double ***LocMatrices, double **LocRhs)
 
 //        cout << " mu = " << u4 << " ";
 //        cout << " rho= " << u3 << " ";
-  //
-  //      cout << "valeur de c4 = mu = " << c4 << " ";
-  //      cout << "valeur de c3 = rho= " << c3 << endl;
+//
+//      cout << "valeur de c4 = mu = " << c4 << " ";
+//      cout << "valeur de c3 = rho= " << c3 << endl;
 
   /** NOTES: there are 2 ways to consider the property fields in the equations : take it
    * as input from example objects (as a coefficient, written in the example methods or given
