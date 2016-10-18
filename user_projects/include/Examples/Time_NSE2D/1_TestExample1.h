@@ -1,4 +1,4 @@
-// Navier-Stokes problem, Poiseuille-Problem
+// Navier-Stokes problem, SinCos (Bsp1)
 // 
 // u(x,y) = (sin(t)*sin(Pi*x)*sin(Pi*y), sin(t)*cos(Pi*x)*cos(Pi*y))
 // p(x,y) = sin(t)*(sin(Pi*x)+cos(Pi*y)-2/Pi)
