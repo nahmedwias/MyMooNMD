@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
   Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
   Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
-//  Output::print<1>("Convection_example number ", cd_db["example"]);
+  Output::print<1>("Convection_example number     ", tcd_db["example"]);
   Output::print<1>("TimeNSE_example number        ", tnse_db["example"]);
 
   LoopInfo  loop_info("nonlinear");
@@ -175,7 +175,10 @@ int main(int argc, char* argv[])
     }
 
     tnse2d.assemble_rhs();
-    tnse2d.assemble_nonlinear_term();
+    if (tnse_db["dimensional_nse"].is(true))
+      tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
+    else
+      tnse2d.assemble_nonlinear_term();
     tnse2d.assemble_system();
 
 
@@ -240,9 +243,12 @@ int main(int argc, char* argv[])
   //    else if (tnse_db["dimensional_nse"].is(true))  // if 1way coupling is deactivated but dimensional is active
   //    { nse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field); }
   //    else
-      { tnse2d.assemble_nonlinear_term();
-        tnse2d.assemble_system();         }
 
+      if (tnse_db["dimensional_nse"].is(true))
+        tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
+      else
+        tnse2d.assemble_nonlinear_term();
+      tnse2d.assemble_system();
 
     } // end for k, non linear loop
 

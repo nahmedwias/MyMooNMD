@@ -1023,6 +1023,12 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
 
 
+void TimeNSType1_2NLGalerkin_dimensional(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
+
+
 void TimeNSParamsVelo_dimensional(double *in, double *out);
 
 
