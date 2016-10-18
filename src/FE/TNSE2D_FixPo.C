@@ -6233,8 +6233,8 @@ double ***LocMatrices, double **LocRhs)
     test01 = Orig1[i];
     test00 = Orig2[i];
 
-    Rhs1[i] += Mult*test00*c1;  // rhs should be multiplied by rho in the EXAMPLE CLASS
-    Rhs2[i] += Mult*test00*c2;
+    Rhs1[i] += u3*Mult*test00*c1;  // rhs should be multiplied by rho in the EXAMPLE CLASS
+    Rhs2[i] += u3*Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
@@ -6355,7 +6355,7 @@ double ***LocMatrices, double **LocRhs)
   double test00;
   double *Orig0;
   int i, N_U;
-  double c1, c2;
+  double c1, c2, u3, u4;
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -6367,12 +6367,16 @@ double ***LocMatrices, double **LocRhs)
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
 
+
+  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
   for(i=0;i<N_U;i++)
   {
     test00 = Orig0[i];
 
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
+    Rhs1[i] += u3*Mult*test00*c1;
+    Rhs2[i] += u3*Mult*test00*c2;
     //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }
