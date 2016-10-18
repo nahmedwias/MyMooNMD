@@ -176,13 +176,13 @@ void LinCoeffs(int n_points, double *X, double *Y,
     coeff[2] = t1*t17*t22+2.0*t9*t17*t10*t22
               -t27*t6*0.3141592653589793E1;
 */
-    cout << rho << " ";
+
     // Navier-Stokes
-    coeff[1] = rho*(t1*t3*t6+2.0*t9*t3*t10*t6
+    coeff[1] = 1*(t1*t3*t6+2.0*t9*t3*t10*t6
               +t14*t3*t16*t17*0.3141592653589793E1
               +t14*t17*t23*t3*0.3141592653589793E1
               +t27*t17*0.3141592653589793E1);
-    coeff[2] = rho*(t1*t17*t22+2.0*t9*t17*t10*t22
+    coeff[2] = 1*(t1*t17*t22+2.0*t9*t17*t10*t22
               -t14*t36*t39-t14*t41*t39
               -t27*t6*0.3141592653589793E1);
     coeff[3] = 0;

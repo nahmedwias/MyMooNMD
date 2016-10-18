@@ -173,11 +173,17 @@ int main(int argc, char* argv[])
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
     }
 
-    tnse2d.assemble_rhs();
+
     if (tnse_db["dimensional_nse"].is(true))
+    {
+      tnse2d.assemble_rhs_withfields(&rho_field,&mu_field);
       tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
+    }
     else
+    {
+      tnse2d.assemble_rhs();
       tnse2d.assemble_nonlinear_term();
+    }
     tnse2d.assemble_system();
 
 
