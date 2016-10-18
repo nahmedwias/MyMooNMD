@@ -48,7 +48,7 @@ verbosity: 3   [ 1, 5 ]
 ## 13 - Test example 3 = DrivenCavity
 ## 14 - Test example 4 = Generates the velocity field for convection example 
 ## "Two interior layers" (CD example number 10)
-example: 1 [ -1, 100 ]
+example: 0 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
