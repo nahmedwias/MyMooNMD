@@ -71,7 +71,7 @@ output_vtk_directory: .
 output_basename: multiphase_output { multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
 ## The maximum number of iterations to perform in a non-linear loop. 
-nonlinloop_maxit: 10   [ 0, 1000 ]
+nonlinloop_maxit: 5   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
 nonlinloop_epsilon: 1e-10   [ 0, 1 ]
@@ -223,7 +223,7 @@ user_parameter2: 2
 
 
 dimensional_nse: true   { true, false }
-coupling_nse_cd: false   { true, false }
+coupling_nse_cd: true   { true, false }
 coupling_cd_nse: false   { true, false }
 
 
@@ -253,5 +253,5 @@ UPWIND_ORDER: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.01
+ENDTIME: 0.05
 TIMESTEPLENGTH: 0.01
