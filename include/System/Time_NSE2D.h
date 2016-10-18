@@ -288,7 +288,8 @@ class Time_NSE2D
                                             TFEFunction2D* mu_field=nullptr);
 
 
-
+    void assemble_rhs_withfields(TFEFunction2D* rho_field=nullptr,
+                                 TFEFunction2D* mu_field=nullptr);
 
 };
 

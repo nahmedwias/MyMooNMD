@@ -6343,3 +6343,36 @@ void TimeNSParamsVelo_dimensional(double *in, double *out)
 //    cout << "in i = " << i << " " << in[i] << endl;
 //  }
 }
+
+
+
+void TimeNSRHS_dimensional(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double *Rhs1, *Rhs2;
+  double test00;
+  double *Orig0;
+  int i, N_U;
+  double c1, c2;
+
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];         // u
+
+  c1 = coeff[1];                 // f1
+  c2 = coeff[2];                 // f2
+
+  for(i=0;i<N_U;i++)
+  {
+    test00 = Orig0[i];
+
+    Rhs1[i] += Mult*test00*c1;
+    Rhs2[i] += Mult*test00*c2;
+    //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
+  }                              // endfor i
+}

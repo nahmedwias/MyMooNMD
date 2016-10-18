@@ -1083,4 +1083,121 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
 
 
 
+void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
+                                         TFEFunction2D* mu_field)
+{
+  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+  const double theta2 = TDatabase::TimeDB->THETA2;
+  const double theta3 = TDatabase::TimeDB->THETA3;
+  const double theta4 = TDatabase::TimeDB->THETA4;
+
+  System_per_grid& s = this->systems.front();
+  // reset the right hand side
+  s.rhs.reset();
+  // assembling of the right hand side
+  TFEFunction2D *fe_functions[5] =
+  { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, nullptr, nullptr };
+
+  LocalAssembling2D la(TNSE2D_Rhs, fe_functions,
+                       this->example.get_coeffs());
+
+
+  // the following should add fluid property fluids
+  // to obtain a dimensional formulation of NSE
+  if (rho_field != nullptr && mu_field != nullptr)
+  {
+    fe_functions[3] = rho_field;
+    fe_functions[4] = mu_field;
+    la.setBeginParameter({0});
+    la.setFeFunctions2D(fe_functions); //reset - now velo comp included
+    la.setFeValueFctIndex({0,1,3,4});
+    la.setFeValueMultiIndex({D00,D00,D00,D00});
+    la.setN_Parameters(4);
+    la.setN_FeValues(4);
+    la.setN_ParamFct(1);
+    la.setParameterFct_string("TimeNSParamsVelo_dimensional");
+
+    la.setAssembleParam_string("TimeNSRHS_dimensional");  //this is for dimensional NSE
+    //...this should do the trick
+  }
+
+
+
+  int N_Rhs = 3;
+  const TFESpace2D * v_space = &this->get_velocity_space();
+  const TFESpace2D * p_space = &this->get_pressure_space();
+
+  double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
+
+  const TFESpace2D *fespmat[2] = {v_space, p_space};
+  const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
+
+  BoundCondFunct2D * boundary_conditions[3] = {
+                                               v_space->GetBoundCondition(), v_space->GetBoundCondition(),
+                                               p_space->GetBoundCondition() };
+
+  std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+  non_const_bound_values[0] = this->example.get_bd(0);
+  non_const_bound_values[1] = this->example.get_bd(1);
+  non_const_bound_values[2] = this->example.get_bd(2);
+
+  Assemble2D(1, fespmat, 0, nullptr,
+             0, nullptr, N_Rhs, RHSs, fesprhs,
+             boundary_conditions, non_const_bound_values.data(), la);
+  // copy the non active to the solution vector
+  // since the rhs vector will be passed to the solver
+  // and is modified with matrix vector multiplication
+  // which also uses the non-actives
+  s.solution.copy_nonactive(s.rhs);
+
+  // now it is this->systems[i].rhs = f^k
+  // scale by time step length and theta4 (only active dofs)
+  s.rhs.scaleActive(tau*theta4);
+  // add rhs from previous time step
+  if(theta3 != 0)
+  {
+    s.rhs.addScaledActive((this->old_rhs), tau*theta3);
+
+    // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
+    // next we want to set old_rhs to f^k (to be used in the next time step)
+    this->old_rhs.addScaledActive(s.rhs, -1./(tau*theta3));
+    this->old_rhs.scaleActive(-theta3/theta4);
+    this->old_rhs.copy_nonactive(s.rhs);
+  }
+  // FIXME FInd other solution than this submatrix method.
+  // M u^{k-1}
+  s.Mass_Matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, 1.0);
+  // -tau*theta2 * A u^{k-1}
+  double factor = -tau*theta2;
+  s.matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, factor);
+
+  // scale the BT blocks with time step length
+  for(System_per_grid& s : this->systems)
+  {
+    if(tau != oldtau)
+    {
+      // TODO: change the factor to be THETA1*tau;
+      factor = /*TDatabase::TimeDB->THETA1**/tau;
+      if(this->oldtau != 0.0)
+      {
+        factor /= this->oldtau;
+        Output::print<1>("change in tau", this->oldtau, "->", tau);
+      }
+      // scale the BT transposed blocks with the current time step
+      const std::vector<std::vector<size_t>> cell_positions = {{0,2}, {1,2}};
+      s.matrix.scale_blocks(factor, cell_positions);
+      if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
+      {
+        const std::vector<std::vector<size_t>> cell_positions_t = {{2,0}, {2,1}};
+        s.matrix.scale_blocks(factor, cell_positions_t);
+      }
+    }
+  }
+  this->oldtau = tau;
+  // copy non active from solution into rhs vector
+  s.rhs.copy_nonactive(s.solution);
+
+  Output::print<5>("assembled the system right hand side ");
+
+}
 
