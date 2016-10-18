@@ -978,3 +978,105 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
 }
 
 
+
+void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
+                                                    TFEFunction2D* mu_field)
+{
+  //Nonlinear assembling requires an approximate velocity solution on every grid!
+  if(systems.size() > 1)
+  {
+    for( int block = 0; block < 2 ;++block)
+    {
+      std::vector<const TFESpace2D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems )
+      {
+        spaces.push_back(&s.velocity_space);
+        u_entries.push_back(s.solution.block(block));
+        u_ns_dofs.push_back(s.solution.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
+
+  for(System_per_grid& s : this->systems)
+  {
+    const TFESpace2D *velocity_space = &s.velocity_space;
+    size_t n_fe_spaces = 1;
+    const TFESpace2D *fespmat[1]={velocity_space};
+
+    size_t n_square_matrices;
+    TSquareMatrix2D* sqMatrices[2]{nullptr};
+
+    size_t n_rect_matrices = 0;
+    TMatrix2D** rectMatrices=nullptr;
+
+    BoundCondFunct2D * boundary_conditions[1]
+                                           = {velocity_space->GetBoundCondition() };
+
+    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+    non_const_bound_values[0] = this->example.get_bd(0);
+    non_const_bound_values[1] = this->example.get_bd(1);
+    non_const_bound_values[2] = this->example.get_bd(2);
+
+
+    TFEFunction2D *fe_functions[5] =
+    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, nullptr, nullptr };
+    LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions,
+                                   this->example.get_coeffs());
+
+
+    if (rho_field != nullptr && mu_field != nullptr)
+        {
+          fe_functions[3] = rho_field;
+          fe_functions[4] = mu_field;
+          la_nonlinear.setBeginParameter({0});
+          la_nonlinear.setFeFunctions2D(fe_functions); //reset - now velo comp included
+          la_nonlinear.setFeValueFctIndex({0,1,3,4});
+          la_nonlinear.setFeValueMultiIndex({D00,D00,D00,D00});
+          la_nonlinear.setN_Parameters(4);
+          la_nonlinear.setN_FeValues(4);
+          la_nonlinear.setN_ParamFct(1);
+          la_nonlinear.setParameterFct_string("TimeNSParamsVelo_dimensional");
+
+          la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");
+          //...this should do the trick
+        }
+
+
+
+
+    std::vector<std::shared_ptr<FEMatrix>> blocks
+    = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
+
+    switch(TDatabase::ParamDB->NSTYPE)
+    {
+      case 1:
+      case 2:
+        n_square_matrices = 1;
+        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        break;
+      case 3:
+      case 4:
+      case 14:
+        n_square_matrices = 2;
+        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+
+        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        break;
+      default:
+        ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
+                 " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
+    }
+    // reset matrices to zero
+    for(size_t m=0; m<n_square_matrices; m++)
+      sqMatrices[m]->reset();
+
+    Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices,
+               n_rect_matrices, rectMatrices, 0, nullptr, nullptr,
+               boundary_conditions, non_const_bound_values.data(),
+               la_nonlinear);
+  }
+  Output::print<5>("Assembled the nonlinear matrix only ");
+}
