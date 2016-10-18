@@ -95,7 +95,8 @@ int main(int argc, char* argv[])
 
   Example_TimeNSE2D example_tnse2d(tnse_db);                  // Construct Example for NSE
   Time_NSE2D        tnse2d(domain, tnse_db, example_tnse2d);  // Construct NSE system
-  Time_CD2D         tcd2d(domain, tcd_db);                    // Construct CD system
+  Example_TimeCD2D  example_tcd2d(tcd_db);                    // Construct Example for CD
+  Time_CD2D         tcd2d(domain, tcd_db, example_tcd2d);     // Construct CD system
 
   double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
   double rho2 = 0;                        // density constant of fluid2, eg 0
@@ -129,6 +130,10 @@ int main(int argc, char* argv[])
   else
     tnse2d.assemble_initial_time();                                // assemble linear term
 
+  if (tcd_db["coupling_nse_cd"].is(true))
+    tcd2d.assemble_initial_time();  //THIS HAS TO BE CHANGED!
+  else
+    tcd2d.assemble_initial_time();
 
    double end_time = TDatabase::TimeDB->ENDTIME;
    int step = 0;
@@ -171,7 +176,7 @@ int main(int argc, char* argv[])
       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-    }
+
 
 
     if (tnse_db["dimensional_nse"].is(true))
@@ -254,9 +259,9 @@ int main(int argc, char* argv[])
     } // end for k, non linear loop
 
     tnse2d.output(step);
-    tcd2d.output();
+//    tcd2d.output();
     //  tnse2d.get_solution().write("solution_velocity");
-
+    }
   } // end for step, time loop
 
   stopwatch.print_total_time("total solving duration: ");
