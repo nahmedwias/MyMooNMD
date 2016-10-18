@@ -287,8 +287,6 @@ class Time_NSE2D
     void assemble_nonlinear_term_withfields(TFEFunction2D* rho_field=nullptr,
                                             TFEFunction2D* mu_field=nullptr);
 
-    void assemble_rhs_withfields(TFEFunction2D* rho_field=nullptr,
-                                 TFEFunction2D* mu_field=nullptr);
 
 
 
