@@ -6182,8 +6182,8 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j,N_U, N_P;
-  double c0, c1, c2;
-  double u1, u2;
+  double c0, c1, c2, c3, c4;
+  double u1, u2, u3, u4;
 
   MatrixA = LocMatrices[0];
   MatrixM = LocMatrices[1];
@@ -6204,9 +6204,26 @@ double ***LocMatrices, double **LocRhs)
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
+  c3 = coeff[3];                 // rho taken as a coefficient from examples
+  c4 = coeff[4];                 // mu  taken as a coefficient from examples
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
+  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
+//        cout << " mu = " << u4 << " ";
+//        cout << " rho= " << u3 << " ";
+//
+//      cout << "valeur de c4 = mu = " << c4 << " ";
+//      cout << "valeur de c3 = rho= " << c3 << endl;
+
+  /** NOTES: there are 2 ways to consider the property fields in the equations : take it
+   * as input from example objects (as a coefficient, written in the example methods or given
+   * as user input), use c3 and c4 to use this case and replace them in val, below. The other way
+   * is to read them as values from fe_functions taken as a Param in a local Assembling. This is
+   * with u3 and u4.
+   */
 
   for(i=0;i<N_U;i++)
   {
@@ -6216,7 +6233,7 @@ double ***LocMatrices, double **LocRhs)
     test01 = Orig1[i];
     test00 = Orig2[i];
 
-    Rhs1[i] += Mult*test00*c1;
+    Rhs1[i] += Mult*test00*c1;  // rhs should be multiplied by rho in the EXAMPLE CLASS
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
@@ -6224,12 +6241,12 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
       ansatz00 = Orig2[j];
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      // hand test, reynolds number =2 ,rho = 4, mu=2
+      val  = u4*(test10*ansatz10+test01*ansatz01);
+      val += u3*(u1*ansatz10+u2*ansatz01)*test00;
       MatrixRow[j] += Mult * val;
 
-      val = ansatz00*test00;
+      val = u3*ansatz00*test00;
       MatrixMRow[j] += Mult * val;
     }                            // endfor j
   }                              // endfor i
@@ -6246,10 +6263,10 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val = -Mult*test00*ansatz10;
+      val = -u3*Mult*test00*ansatz10;
       MatrixRow1[j] += val;
 
-      val = -Mult*test00*ansatz01;
+      val = -u3*Mult*test00*ansatz01;
       MatrixRow2[j] += val;
     }                            // endfor j
   }                              // endfor i
@@ -6270,7 +6287,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
   double c0;
-  double u1, u2;
+  double u1, u2, u3, u4;
 
   MatrixA = LocMatrices[0];
 
@@ -6284,6 +6301,15 @@ double ***LocMatrices, double **LocRhs)
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
+  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
+  /** NOTES: there are 2 ways to consider the property fields in the equations : take it
+   * as input from example objects (as a coefficient, written in the example methods or given
+   * as user input), use c3 and c4 to use this case and replace them in val, below. The other way
+   * is to read them as values from fe_functions taken as a Param in a local Assembling. This is
+   * with u3 and u4.
+   */
 
   for(i=0;i<N_U;i++)
   {
@@ -6297,14 +6323,13 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      val  = u4*(test10*ansatz10+test01*ansatz01);
+      val += u3*(u1*ansatz10+u2*ansatz01)*test00;
 
       MatrixRow[j] += Mult * val;
     }                            // endfor j
   }                              // endfor i
 }
-
 
 
 void TimeNSParamsVelo_dimensional(double *in, double *out)
