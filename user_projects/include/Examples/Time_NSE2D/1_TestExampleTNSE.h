@@ -3,9 +3,16 @@
 // u(x,y) = (sin(t)*sin(Pi*x)*sin(Pi*y), sin(t)*cos(Pi*x)*cos(Pi*y))
 // p(x,y) = sin(t)*(sin(Pi*x)+cos(Pi*y)-2/Pi)
 
+// some variables from user input
+double REYNOLDS_number;
+double USER_parameter1;
+double USER_parameter2;
+
+
+
 void ExampleFile()
 {
-  OutPut("Example: Bsp1.h" << endl) ;
+  OutPut("Example: 1_TestExampleTNSE.h , SinCos" << endl) ;
   TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
 }
 
