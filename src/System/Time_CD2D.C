@@ -347,7 +347,6 @@ void Time_CD2D::assemble()
 }
 
 /**************************************************************************** */
-
 void Time_CD2D::descale_stiffness(double tau, double theta_1)
 {
     // restore stiffness matrix and store old_Au on all grids
