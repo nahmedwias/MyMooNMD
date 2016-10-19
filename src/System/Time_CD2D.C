@@ -590,11 +590,9 @@ void Time_CD2D::assemble_stiffness_matrix_alone()
 
     // reset matrix to zero
     stiff_block[0]->reset();
-    cout << "I AM BEFORE ASSEMBL2D " << endl;
+
     Assemble2D(1, &fe_space, N_Matrices, stiff_block, 0, NULL, 0, NULL,
                &fe_space, &boundary_conditions, non_const_bound_value, la);
-
-    cout << "I AM After ASSEMBL2D " << endl;
   }
 }
 

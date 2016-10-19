@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   tnse_db.merge(parmoon_db,true);
   tcd_db.merge(parmoon_db,true);
 
-  tcd_db["example"]          = 2;
+  tcd_db["example"]          = -1;
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
 
@@ -219,28 +219,30 @@ int main(int argc, char* argv[])
 
 
 
-  //      /********************************************************************
-  //       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
-  //       ********************************************************************/
-  //      if (tnse_db["coupling_cd_nse"].is(true))
-  //      {
-  //        BlockVector new_phase_field = cd2d.get_solution();
-  //        // THIS LOOP HAS TO BE RECONSIDERED
-  ////        for (int indice=0; indice < phase_fraction.length(); indice++)
-  ////        {
-  ////          if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
-  ////          if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
-  ////        }
-  //
-  //        /** @brief Finite Element function for density field */
-  //        BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-  //        TFEFunction2D new_rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector,(char*) "q");
-  //
-  //        /** @brief Finite Element function for dynamic viscosity field */
-  //        BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
-  //        TFEFunction2D new_mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*) "s");
-  //
-  //
+  /*      /********************************************************************
+  *       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
+  *       ********************************************************************/
+  /*      if (tnse_db["coupling_cd_nse"].is(true))
+  *      {
+  *        BlockVector new_phase_field = cd2d.get_solution();
+  *        // THIS LOOP HAS TO BE RECONSIDERED
+  *        for (int indice=0; indice < phase_fraction.length(); indice++)
+  *        {
+  *          if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
+  *          if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
+  *        }
+  *
+  *        /** @brief Finite Element function for density field */
+  /*        BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
+  *        TFEFunction2D new_rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector,(char*) "q");
+  *
+  *        /** @brief Finite Element function for dynamic viscosity field */
+  /*        BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
+  *        TFEFunction2D new_mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*) "s");
+  *
+  */
+
+
 
           /********************************************************************
            * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
