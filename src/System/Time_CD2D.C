@@ -558,9 +558,42 @@ void Time_CD2D::call_assembling_routine(
 
 /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
 
-void Time_CD2D::assemble_stiffness_matrix()
+void Time_CD2D::assemble_stiffness_matrix_alone()
 {
+  LocalAssembling2D_type stiff_type = LocalAssembling2D_type::TCD2D;
 
+  for(auto &s : this->systems)
+  {
+    TFEFunction2D * pointer_to_function = &s.fe_function;
+
+
+    // create two local assembling object (second one will only be needed in SUPG case)
+    LocalAssembling2D la(stiff_type, &pointer_to_function,
+                               this->example.get_coeffs());
+
+
+    // Assemble mass matrix, stiffness matrix and rhs
+    //...variables which are the same for both
+    const TFESpace2D * fe_space = &s.fe_space;
+    BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
+    int N_Matrices = 1;
+
+    BoundValueFunct2D * non_const_bound_value[1] {example.get_bd()[0]};
+
+    //fetch stiffness matrix as block
+    std::vector<std::shared_ptr<FEMatrix>> stiff_blocks = s.stiff_matrix.get_blocks_uniquely();
+    TSquareMatrix2D * stiff_block[1]{reinterpret_cast<TSquareMatrix2D*>(stiff_blocks.at(0).get())};
+    double * rhs_entries = s.rhs.get_entries();
+    // Do the Assembling!
+
+    // reset matrix to zero
+    stiff_block[0]->reset();
+    cout << "I AM BEFORE ASSEMBL2D " << endl;
+    Assemble2D(1, &fe_space, N_Matrices, stiff_block, 0, NULL, 1, &rhs_entries,
+               &fe_space, &boundary_conditions, non_const_bound_value, la);
+
+    cout << "I AM After ASSEMBL2D " << endl;
+  }
 }
 
 
@@ -595,6 +628,10 @@ void Time_CD2D::assemble_rhs_vector()
     }
   }
 
+
+  // End of the pure assembling operation
+
+
   // here the modifications due to time discretization begin
   if ( TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 2 )
   {
@@ -602,6 +639,10 @@ void Time_CD2D::assemble_rhs_vector()
     return; // modifications due to time discretization are per-
     // formed inside the afc scheme, so step out here!
   }
+
+
+  // Start of the "scaling" of the right hand side
+
 
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   // preparing rhs
