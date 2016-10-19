@@ -209,11 +209,11 @@ int main(int argc, char* argv[])
       {
         Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
         Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-        tcd2d.assemble(); // this line is outcommented when you want to make hand tests
+        tcd2d.assemble_rhs_vector(); // this line is outcommented when you want to make hand tests
+        tcd2d.scale_stiffness_matrix();
 //        tcd2d.assemble_with_convection(&nse2d.get_velocity());
         Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
         tcd2d.solve();
-        tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1);
         Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
 
 
@@ -258,6 +258,9 @@ int main(int argc, char* argv[])
       tnse2d.assemble_system();
 
     } // end for k, non linear loop
+
+    tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
+
 
     tnse2d.output(step);
     if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
