@@ -548,3 +548,119 @@ void Time_CD2D::call_assembling_routine(
                NULL, &boundary_conditions, non_const_bound_value, la_mass);
   }
 }
+
+
+
+
+
+
+
+
+/* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+
+void Time_CD2D::assemble_stiffness_matrix()
+{
+
+}
+
+
+
+void Time_CD2D::assemble_rhs_vector()
+{
+  LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;
+
+  for(auto &s : this->systems)
+  {
+
+    TFEFunction2D * pointer_to_function = &s.fe_function;
+    // create two local assembling object (second one will only be needed in SUPG case)
+    LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
+                               this->example.get_coeffs());
+
+    if(TDatabase::ParamDB->DISCTYPE == SUPG)
+    {
+      // In the SUPG case:
+      // M = (u,v) + \tau (u,b.grad v)
+      LocalAssembling2D_type mass_supg = LocalAssembling2D_type::TCD2D_Mass;;
+
+      LocalAssembling2D la_m_supg(mass_supg, &pointer_to_function,
+                                  this->example.get_coeffs());
+
+      //call assembling, including mass matrix (SUPG!)
+      call_assembling_routine(s, la_a_rhs, la_m_supg , true);
+    }
+    else
+    {//call assembling, ignoring mass matrix part (third argument is not relevant)
+      call_assembling_routine(s, la_a_rhs, la_a_rhs , false);
+    }
+  }
+
+  // here the modifications due to time discretization begin
+  if ( TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 2 )
+  {
+    do_algebraic_flux_correction();
+    return; // modifications due to time discretization are per-
+    // formed inside the afc scheme, so step out here!
+  }
+
+  double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  // preparing rhs
+  System_per_grid& s = this->systems.front();
+
+  if(TDatabase::TimeDB->THETA4)
+  {
+    // scale by time step length and theta4 (only active dofs)
+    s.rhs.scaleActive(tau*TDatabase::TimeDB->THETA4);
+    // add old right hand side scaled by time step length and theta3 (only
+    // active dofs)
+    if(TDatabase::TimeDB->THETA3 != 0.)
+      s.rhs.addScaledActive((this->old_rhs), tau*TDatabase::TimeDB->THETA3);
+
+    // save old right hand side (only if THETA3 != 0)
+    if(TDatabase::TimeDB->THETA3)
+    {
+      this->old_rhs.addScaledActive(s.rhs, -1./(tau*TDatabase::TimeDB->THETA3));
+      this->old_rhs.scaleActive(-TDatabase::TimeDB->THETA3/TDatabase::TimeDB->THETA4);
+    }
+  }
+  else
+  {
+    if(TDatabase::TimeDB->TIME_DISC == 0)
+    {
+      ErrThrow("Forward Euler method is not supported. "
+          "Choose TDatabase::TimeDB->TIME_DISC as 1 (bw Euler)"
+          " or 2 (Crank-Nicoloson)");
+    }
+  }
+
+  for(auto &s : this->systems)
+  {
+    // rhs += M*uold
+    s.mass_matrix.apply_scaled_add_actives(s.solution, s.rhs, 1.0);
+    // rhs -= tau*theta2*A_old*uold
+    s.rhs.addScaledActive(s.old_Au, -tau*TDatabase::TimeDB->THETA2);
+  }
+  //this->systems[0].rhs.copy_nonactive(this->systems[0].solution);
+  systems[0].solution.copy_nonactive(systems[0].rhs);
+}
+
+
+
+void Time_CD2D::scale_stiffness_matrix()
+{
+  double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  for(auto &s : this->systems)
+  {
+    // preparing the left hand side, i.e., the system matrix
+    // stiffness matrix is scaled by tau*THETA1, after solving
+    // the matrix needs to be descaled if the coeffs does not depends
+    // on time
+
+    //scale  stiffness matrix...
+    const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
+    s.stiff_matrix.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, cell_positions);
+    // ...and add the mass matrix
+    const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
+    s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
+  }
+}

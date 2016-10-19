@@ -265,6 +265,17 @@ class Time_CD2D
     void call_assembling_routine(Time_CD2D::System_per_grid& system,
                                  LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
                                  bool assemble_both);
+
+
+
+
+
+
+/* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+  public:
+    void assemble_stiffness_matrix();
+    void assemble_rhs_vector();
+    void scale_stiffness_matrix();
 };
 
 #endif
