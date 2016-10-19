@@ -1835,3 +1835,67 @@ void Params_Sol4(double *in, double *out)
 // NEEDED PARAM FUNCTIONS END
 // ========================================================================
 // ========================================================================
+
+
+
+
+
+/* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+
+void LocalMatrixA_alone(double Mult, double *coeff, double *param,
+                            double hK,
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA, val, *MatrixRowA;
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j, N_;
+  double c0, c1, c2, c3, h;
+
+  MatrixA = LocMatrices[0];
+//  Rhs = LocRhs[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+  Orig1 = OrigValues[1];
+  Orig2 = OrigValues[2];
+
+  c0 = coeff[0]; // eps
+  c1 = coeff[1]; // b_1
+  c2 = coeff[2]; // b_2
+  c3 = coeff[3]; // c
+//  c4 = coeff[4]; // f
+
+  if ((TDatabase::ParamDB->DISCTYPE==5)||(TDatabase::ParamDB->DISCTYPE==6)
+      ||(TDatabase::ParamDB->DISCTYPE==7))
+  {
+    h = ComputeAlpha(hK);
+    c0+= h;
+  }
+  for(i=0;i<N_;i++)
+  {
+    MatrixRowA = MatrixA[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+//    Rhs[i] += Mult*test00*c4;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val = c0*(test10*ansatz10+test01*ansatz01);
+      val += (c1*ansatz10+c2*ansatz01)*test00;
+      val += c3*ansatz00*test00;
+
+      MatrixRowA[j] += Mult * val;
+
+    } // endfor j
+  } // endfor i
+}

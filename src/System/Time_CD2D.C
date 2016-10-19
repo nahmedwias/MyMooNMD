@@ -6,6 +6,7 @@
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 #include <LocalProjection.h>
+#include <ConvDiff2D.h>
 
 
 /**************************************************************************** */
@@ -571,6 +572,7 @@ void Time_CD2D::assemble_stiffness_matrix_alone()
     LocalAssembling2D la(stiff_type, &pointer_to_function,
                                this->example.get_coeffs());
 
+    la.setAssembleParam(LocalMatrixA_alone);
 
     // Assemble mass matrix, stiffness matrix and rhs
     //...variables which are the same for both
@@ -583,13 +585,13 @@ void Time_CD2D::assemble_stiffness_matrix_alone()
     //fetch stiffness matrix as block
     std::vector<std::shared_ptr<FEMatrix>> stiff_blocks = s.stiff_matrix.get_blocks_uniquely();
     TSquareMatrix2D * stiff_block[1]{reinterpret_cast<TSquareMatrix2D*>(stiff_blocks.at(0).get())};
-    double * rhs_entries = s.rhs.get_entries();
+
     // Do the Assembling!
 
     // reset matrix to zero
     stiff_block[0]->reset();
     cout << "I AM BEFORE ASSEMBL2D " << endl;
-    Assemble2D(1, &fe_space, N_Matrices, stiff_block, 0, NULL, 1, &rhs_entries,
+    Assemble2D(1, &fe_space, N_Matrices, stiff_block, 0, NULL, 0, NULL,
                &fe_space, &boundary_conditions, non_const_bound_value, la);
 
     cout << "I AM After ASSEMBL2D " << endl;
