@@ -33,6 +33,18 @@ namespace test_example1_expsincos
 {
 #include "1_TestExampleTCD2D.h"
 }
+namespace test_example2_sinsinsin
+{
+#include "2_TestExampleTCD2D.h"
+}
+namespace test_example3_sincos
+{
+#include "3_TestExampleTCD2D.h"
+}
+namespace test_example4_linear
+{
+#include "4_TestExampleTCD2D.h"
+}
 
 
 
@@ -149,7 +161,7 @@ Example_TimeCD2D::Example_TimeCD2D(
 
 
       /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
-    case 10:                // 1_TestExample Exp-Sin-Cos
+    case 11:                // 1_TestExample Exp-Sin-Cos
       /**Exact solution"**/
       exact_solution.push_back(test_example1_expsincos::Exact);
       /** boundary condition */
@@ -168,6 +180,67 @@ Example_TimeCD2D::Example_TimeCD2D(
       this->timeDependentRhs = test_example1_expsincos::rhs_depends_on_time;
       this->timeDependentCoeffs=test_example1_expsincos::coefficients_depend_on_time;
       break;
+
+    case 12:                // 2_TestExample Sin-Sin-Sin
+      /**Exact solution"**/
+      exact_solution.push_back(test_example2_sinsinsin::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( test_example2_sinsinsin::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example2_sinsinsin::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = test_example2_sinsinsin::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(test_example2_sinsinsin::InitialCondition);
+      test_example2_sinsinsin::ExampleFile();
+
+      this->timeDependentRhs = test_example2_sinsinsin::rhs_depends_on_time;
+      this->timeDependentCoeffs=test_example2_sinsinsin::coefficients_depend_on_time;
+      break;
+
+    case 13:                // 3_TestExample Sin-Cos
+      /**Exact solution"**/
+      exact_solution.push_back(test_example3_sincos::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( test_example3_sincos::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example3_sincos::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = test_example3_sincos::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(test_example3_sincos::InitialCondition);
+      test_example3_sincos::ExampleFile();
+
+      this->timeDependentRhs = test_example3_sincos::rhs_depends_on_time;
+      this->timeDependentCoeffs=test_example3_sincos::coefficients_depend_on_time;
+      break;
+
+    case 14:                // 4_TestExample Linear Space Time
+      /**Exact solution"**/
+      exact_solution.push_back(test_example4_linear::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( test_example4_linear::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example4_linear::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = test_example4_linear::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(test_example4_linear::InitialCondition);
+      test_example4_linear::ExampleFile();
+
+      this->timeDependentRhs = test_example4_linear::rhs_depends_on_time;
+      this->timeDependentCoeffs=test_example4_linear::coefficients_depend_on_time;
+      break;
+
 
 
 
