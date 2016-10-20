@@ -54,7 +54,7 @@ verbosity: 3   [ 1, 5 ]
 ## 12- SinSinSin 	  - in the multiphase program - FOR TCD2D
 ## 13- SinCos    	  - in the multiphase program - FOR TCD2D
 ## 14- LinearSpaceTime- in the multiphase program - FOR TCD2D
-example: 0 [ -1, 100 ]
+example: 12 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
