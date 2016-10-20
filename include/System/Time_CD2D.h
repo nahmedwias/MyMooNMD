@@ -273,8 +273,10 @@ class Time_CD2D
 
 /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
   public:
-    void assemble_stiffness_matrix_alone();
     void assemble_rhs_vector();
+    void assemble_stiffness_matrix_alone();
+    void assemble_stiffness_matrix_alone_with_convection
+    (const TFEVectFunct2D* convection_field = nullptr);
     void scale_stiffness_matrix();
 };
 
