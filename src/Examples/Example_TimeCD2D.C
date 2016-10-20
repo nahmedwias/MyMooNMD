@@ -45,7 +45,10 @@ namespace test_example4_linear
 {
 #include "4_TestExampleTCD2D.h"
 }
-
+namespace test_2phase
+{
+#include "5_TestTCD2D.h"
+}
 
 
 // ********* END OF USER PROJECT CODE
@@ -241,6 +244,25 @@ Example_TimeCD2D::Example_TimeCD2D(
       this->timeDependentCoeffs=test_example4_linear::coefficients_depend_on_time;
       break;
 
+    case 15:                // 5_Test 2 phase in a square box
+      /**Exact solution"**/
+      exact_solution.push_back(test_2phase::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( test_2phase::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_2phase::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = test_2phase::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(test_2phase::InitialCondition);
+      test_2phase::ExampleFile();
+
+      this->timeDependentRhs = test_2phase::rhs_depends_on_time;
+      this->timeDependentCoeffs=test_2phase::coefficients_depend_on_time;
+      break;
 
 
 
