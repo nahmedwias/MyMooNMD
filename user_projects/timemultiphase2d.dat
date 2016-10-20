@@ -49,11 +49,12 @@ verbosity: 3   [ 1, 5 ]
 ## 3 - rotatingbodies - in the standard TCD2D program
 ## ONLY THE EXAMPLES BELOW SHOULD BE USED IN THE MULTIPHASE PROGRAM
 ## 11- bsp1 (sincos)  - in the multiphase program - FOR TNSE2D
+## 12- For Convection1- in the multiphase program - FOR TNSE2D
 ## 11- ExpSinCos 	  - in the multiphase program - FOR TCD2D
 ## 12- SinSinSin 	  - in the multiphase program - FOR TCD2D
 ## 13- SinCos    	  - in the multiphase program - FOR TCD2D
 ## 14- LinearSpaceTime- in the multiphase program - FOR TCD2D
-example: 1 [ -1, 100 ]
+example: 0 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -232,7 +233,7 @@ user_parameter2: 2
 
 
 dimensional_nse: true   { true, false }
-coupling_nse_cd: true   { true, false }
+coupling_nse_cd: false   { true, false }
 coupling_cd_nse: false   { true, false }
 
 
