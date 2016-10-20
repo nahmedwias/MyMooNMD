@@ -210,8 +210,8 @@ int main(int argc, char* argv[])
       {
         Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
         Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-        tcd2d.assemble_stiffness_matrix_alone();   // this line is outcommented when you want to make hand tests
-//        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
+//        tcd2d.assemble_stiffness_matrix_alone();   // this line is outcommented when you want to make hand tests
+        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
         tcd2d.scale_stiffness_matrix();
         Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
         tcd2d.solve();
