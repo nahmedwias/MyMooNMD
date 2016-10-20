@@ -4,6 +4,7 @@
 #include <Example_TimeNSE2D.h>
 #include <Time_NSE2D.h>
 #include <TimeDiscRout.h>
+#include <PR_Time_NSE2D.h>
 
 using namespace std;
 
@@ -46,16 +47,15 @@ int main(int argc, char* argv[])
 
   Example_TimeNSE2D example( parmoon_db );
   // create an object of Time_NSE2D class
-  Time_NSE2D tnse2d(Domain, parmoon_db, example);
+  PR_Time_NSE2D tnse2d(Domain, parmoon_db, example);
   // assemble everything at the start time
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary 
-  tnse2d.assemble_initial_time();
-  
-  double end_time = TDatabase::TimeDB->ENDTIME; 
+  tnse2d.assemble_initial();
+
+  double end_time = TDatabase::TimeDB->ENDTIME;
   int step = 0;
   int n_substeps = GetN_SubSteps();
-    
   // ======================================================================
   // time iteration
   // ======================================================================
@@ -79,9 +79,22 @@ int main(int argc, char* argv[])
        TDatabase::TimeDB->CURRENTTIME += tau;
        
        Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+       if(parmoon_db["problem_type"].is(4))
+       {
+         tnse2d.rhs_assemble();
+         tnse2d.system_assemble();
+         tnse2d.system_solve();
+         tnse2d.output(step);
+         continue;
+       }
+       if(!(parmoon_db["problem_type"].is(4)) && (step ==1))
+       {
+         Output::print(" Time dependent Navier-Stokes case ");
+       }
        // prepare the right hand side vector
        // only needed once per time step
        tnse2d.assemble_rhs();
+
        // assemble the nonlinear matrices
        tnse2d.assemble_nonlinear_term();
        // prepare the matrices for defect computations
@@ -93,6 +106,8 @@ int main(int argc, char* argv[])
          if(tnse2d.stopIte(k))
            break;
          tnse2d.solve();
+         if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
+           break;
          // assemble the nonlinear matrices 
          tnse2d.assemble_nonlinear_term();
          // prepare the matrices for next nonlinear iteration

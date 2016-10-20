@@ -18,6 +18,7 @@
 #define NULL 0
 
 #include <cmath>
+#include <iostream>
 
 #ifdef __2D__
 #define GEO_DIM 2
@@ -97,6 +98,12 @@ typedef DoubleFunctVect ParamFct;
 typedef void CoeffFct2D(int n_points, double *X, double *Y,
                         double **param, double **coeffs);
 
+typedef void ManipulateMatrices(double ***, int *, int *, 
+                                double ***, int *, int *, 
+                                double **,  int *, double **, int *);
+
+typedef void MatrixVector(double ***, std::pair<int,int>, double *, double **);
+
 typedef void CoeffFct3D(int n_points, double *X, double *Y, double *Z,
                         double **param, double **coeffs);
                         
@@ -132,6 +139,9 @@ typedef void CheckWrongNeumannNodesFunct2D(TCollection *, TFESpace2D *,
 					   int* &, 
 					   double* &);
 
+typedef void ProjectionMatrix(int, const TFESpace2D *, const TFESpace2D *, 
+                              double ***);
+
 class TSquareMatrix;
 class TMatrix;
 typedef void MatVecProc(TSquareMatrix **, TMatrix **, double *, double *);
@@ -155,6 +165,11 @@ class TFEFunction2D;
 class TFEVectFunct2D;
 typedef void EvaluateSolutionFunct2D(TFEFunction2D **, TFEVectFunct2D **, 
                                      double *, int *);
+
+typedef void GetDragLiftFunct2D(const TFEFunction2D *, const TFEFunction2D *, const TFEFunction2D *,
+                                const TFEFunction2D *, const TFEFunction2D *,
+                                double &, double &);
+//typedef void ComputeDragLift(TFEFunction2D *, TFEFunction2D *, TFEFunction2D *, TFEFunction2D *, TFEFunction2D *);
 
 
 #define GALERKIN         1
@@ -216,7 +231,9 @@ typedef void EvaluateSolutionFunct2D(TFEFunction2D **, TFEVectFunct2D **,
 #define FEM_FCT          50
 #define FEM_FCT_LIN      51
 #define FEM_TVD          52
-#define GENERAL_SOLD    200 
+#define GENERAL_SOLD    200
+
+#define RECONSTRUCTION  300 
  
 #define SD_POWER_H  1.0
 #define SD_FACTOR_H 1.0

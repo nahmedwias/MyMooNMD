@@ -2,6 +2,7 @@
 #include <NSE2D.h>
 
 #include <Database.h>
+#include <BoundEdge.h>
 #include <Example_NSE2D.h>
 #include <FEDatabase2D.h>
 #include <SquareMatrix2D.h>
@@ -25,6 +26,26 @@ namespace sine_cosine
 namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
+}
+// tests for the pressure robust methods
+//=========================================
+namespace zerosolution
+{
+#include "NSE_2D/StokesZeroSol.h"
+}
+
+namespace quad_pres
+{
+  #include "NSE_2D/quadratic_pressure.h"
+}
+
+namespace bsp1_pr1
+{
+#include "NSE_2D/Bsp_PR1.h"
+}
+
+namespace potential_flow_ex3 {
+#include "NSE_2D/potential_flow_ex3.h"
 }
 //=========================================
 
@@ -118,11 +139,98 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       
       // Set dimensionless viscosity
       flow_around_cylinder::DIMENSIONLESS_VISCOSITY = get_nu();
-
-      /**post processing - drag and lift calculation and output */
       post_processing_stat = flow_around_cylinder::compute_drag_lift_pdiff;
 
       flow_around_cylinder::ExampleFile();
+      break;
+    case 40:
+      /** exact_solution */
+      exact_solution.push_back( zerosolution::ExactU1 );
+      exact_solution.push_back( zerosolution::ExactU2 );
+      exact_solution.push_back( zerosolution::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( zerosolution::BoundCondition );
+      boundary_conditions.push_back( zerosolution::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( zerosolution::U1BoundValue );
+      boundary_data.push_back( zerosolution::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = zerosolution::LinCoeffs;
+      
+      zerosolution::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      zerosolution::ExampleFile();
+      break;
+    case 41:
+      /** exact_solution */
+      exact_solution.push_back( quad_pres::ExactU1 );
+      exact_solution.push_back( quad_pres::ExactU2 );
+      exact_solution.push_back( quad_pres::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( quad_pres::BoundCondition );
+      boundary_conditions.push_back( quad_pres::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( quad_pres::U1BoundValue );
+      boundary_data.push_back( quad_pres::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = quad_pres::LinCoeffs;
+      
+      quad_pres::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      quad_pres::ExampleFile();
+      break;
+      
+   case 42:
+      /** exact_solution */
+      exact_solution.push_back( bsp1_pr1::ExactU1 );
+      exact_solution.push_back( bsp1_pr1::ExactU2 );
+      exact_solution.push_back( bsp1_pr1::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( bsp1_pr1::BoundCondition );
+      boundary_conditions.push_back( bsp1_pr1::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( bsp1_pr1::U1BoundValue );
+      boundary_data.push_back( bsp1_pr1::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = bsp1_pr1::LinCoeffs;
+      bsp1_pr1::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      bsp1_pr1::ExampleFile();
+      break;
+  case 43:
+      /** exact_solution */
+      exact_solution.push_back( potential_flow_ex3::ExactU1 );
+      exact_solution.push_back( potential_flow_ex3::ExactU2 );
+      exact_solution.push_back( potential_flow_ex3::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( potential_flow_ex3::BoundCondition );
+      boundary_conditions.push_back( potential_flow_ex3::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( potential_flow_ex3::U1BoundValue );
+      boundary_data.push_back( potential_flow_ex3::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      potential_flow_ex3::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      /** coefficients */
+      problem_coefficients = potential_flow_ex3::LinCoeffs;
+
+      potential_flow_ex3::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");

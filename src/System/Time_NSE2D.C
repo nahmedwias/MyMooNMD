@@ -152,23 +152,31 @@ void Time_NSE2D::set_parameters()
 {
   if(!db["problem_type"].is(6))
   {
-    if (db["problem_type"].is(0))
-    {
-      db["problem_type"] = 6;
-    }
-    else
-    {
-      Output::warn<2>("The parameter problem_type doesn't correspond to Time_NSE."
-          "It is now reset to the correct value for Time_NSE (=6).");
-      db["problem_type"] = 6;
-    }
+      if(!db["problem_type"].is(4))
+      {
+        Output::warn<2>("The parameter problem_type doesn't correspond to Time_NSE."
+                        "It is now reset to the correct value for Time_NSE (=6).");
+        ErrThrow("Check which problem you want to solve, the class only ",
+                 "supports Transient Stokes problem_type=4",
+                 " or Transient Navier-Stokes problem_type=6");
+      }
   }
   if(TDatabase::TimeDB->TIME_DISC == 0)
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 
           << " does not supported");
     throw("TIME_DISC: 0 is not supported");
-  }  
+  }
+  if(db["problem_type"].is(4))
+  {
+    if(TDatabase::ParamDB->DISCTYPE==RECONSTRUCTION)
+    {
+      TDatabase::ParamDB->NSTYPE=4;
+    }
+    Output::print("For DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
+                  " NSTYPE is changed to ", TDatabase::ParamDB->NSTYPE);
+
+  }
 }
 
 /**************************************************************************** */
@@ -282,7 +290,14 @@ void Time_NSE2D::assemble_initial_time()
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
 
-    LocalAssembling2D la(TNSE2D, fe_functions, 
+    LocalAssembling2D_type la_type;
+    // separate stokes and navier stokes local forms
+    if(db["problem_type"].is(4))
+        la_type = TSTOKES;
+    else
+        la_type = TNSE2D;
+
+    LocalAssembling2D la(la_type, fe_functions,
                          this->example.get_coeffs());
     std::vector<std::shared_ptr<FEMatrix>> blocks 
          = s.matrix.get_blocks_uniquely();
@@ -413,7 +428,7 @@ void Time_NSE2D::assemble_rhs()
   const double theta2 = TDatabase::TimeDB->THETA2;
   const double theta3 = TDatabase::TimeDB->THETA3;
   const double theta4 = TDatabase::TimeDB->THETA4;
-  
+
   System_per_grid& s = this->systems.front();
   // reset the right hand side
   s.rhs.reset();
@@ -478,7 +493,7 @@ void Time_NSE2D::assemble_rhs()
     if(tau != oldtau)
     {
       // TODO: change the factor to be THETA1*tau;
-      factor = /*TDatabase::TimeDB->THETA1**/tau;
+      factor = TDatabase::TimeDB->THETA1*tau;
       if(this->oldtau != 0.0)
       {
         factor /= this->oldtau;
@@ -486,11 +501,11 @@ void Time_NSE2D::assemble_rhs()
       }
       // scale the BT transposed blocks with the current time step
       const std::vector<std::vector<size_t>> cell_positions = {{0,2}, {1,2}};
-	s.matrix.scale_blocks(factor, cell_positions);      
+      s.matrix.scale_blocks(factor, cell_positions);
       if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
       {
         const std::vector<std::vector<size_t>> cell_positions_t = {{2,0}, {2,1}};
-	s.matrix.scale_blocks(factor, cell_positions_t);
+        s.matrix.scale_blocks(factor, cell_positions_t);
       }
     }
   }
@@ -664,7 +679,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
 void Time_NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-  
+
   if(this->solver.is_using_multigrid())
   {
     ErrThrow("multigrid solver is not tested yet")
@@ -718,6 +733,7 @@ void Time_NSE2D::output(int m)
     s.p.PrintMinMax();
   }
 
+  double t=TDatabase::TimeDB->CURRENTTIME;
   if(db["output_compute_errors"])
   {
     double locerr[8];
@@ -740,25 +756,25 @@ void Time_NSE2D::output(int m)
                   + this->errors[3])*tau*0.5;
     errors[3] = locerr[1]*locerr[1]+locerr[3]*locerr[3];  
 
-    Output::print<1>("L2(u) : ", setprecision(10), sqrt(this->errors[1]));
-    Output::print<1>("H1-semi(u) : ", setprecision(10), sqrt(this->errors[3]));
+    Output::print<1>("t ", t, " L2(u) : ", setprecision(10), sqrt(this->errors[1]));
+    Output::print<1>("t ", t, " H1-semi(u) : ", setprecision(10), sqrt(this->errors[3]));
 
-    Output::print<1>("L2(0,t,L2(u)) : ", sqrt(this->errors[0]));
-    Output::print<1>("L2(0,t,H1-semi(u)) : ", sqrt(this->errors[2]));
+    Output::print<1>("t ", t, " L2(0,t,L2(u)) : ", sqrt(this->errors[0]));
+    Output::print<1>("t ", t, " L2(0,t,H1-semi(u)) : ", sqrt(this->errors[2]));
 
     s.p.GetErrors(example.get_exact(2), 3, allderiv, 2, L2H1Errors, 
                   nullptr, &aux, 1, &p_sp, locerr);
 
-    Output::print<1>("L2(p) : ", setprecision(10), locerr[0]);
-    Output::print<1>("H1-semi(p)) : " , setprecision(10), locerr[1] );
+    Output::print<1>("t ", t, " L2(p) : ", setprecision(10), locerr[0]);
+    Output::print<1>("t ", t, " H1-semi(p)) : " , setprecision(10), locerr[1] );
 
     errors[4] += (locerr[0]*locerr[0] + this->errors[5])*tau*0.5;
     errors[5] = locerr[0]*locerr[0];
-    Output::print<1>("L2(0,t,L2(p)) : ", sqrt(errors[4]) );
+    Output::print<1>("t ", t, " L2(0,t,L2(p)) : ", sqrt(errors[4]) );
     
     errors[6] += (locerr[1]*locerr[1] + this->errors[7])*tau*0.5;
     errors[7] = locerr[1]*locerr[1];
-    Output::print<1>("L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
+    Output::print<1>("t ", t, " L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
   }
    delete u1;
    delete u2;

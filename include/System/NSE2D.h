@@ -137,7 +137,7 @@ class NSE2D
      */
     std::array<double, int(4)> errors;
     
-    /** @brief set parameters in database
+    /** @brief check and set parameters
      * 
      * This functions checks if the parameters in the database are meaningful 
      * and resets them otherwise. The hope is that after calling this function

@@ -49,6 +49,11 @@
 #include <malloc.h>
 #endif
 
+extern "C" void dgemm_(char *TRANSA, char *TRANSB, int *m, int *n, int *k,
+           double *alpha, double *A, int *lda, double *B,
+           int *ldb, double *beta, double *C, int *ldc);
+
+
 double GetTime()
 {
   struct rusage usage;
@@ -3227,3 +3232,518 @@ double graddiv_parameterOseen(double hK, double nu, double b1, double b2)
   }
   return(tau);
 }
+#ifdef __2D__
+void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace, 
+                         const TFESpace2D* testSpace, double ***locMatrix)
+{
+  // projection is the ansatzSpace
+  // velocity is the test space
+  int i,j, N_Rows, N_Columns;
+  double **CurrentMatrix, *MatrixRow;
+  
+  TCollection *coll = testSpace->GetCollection();
+  TBaseCell *cell = coll->GetCell(current_cell);
+  
+  TFE2D *eleAnsatz = 
+    TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(current_cell,cell));
+  TBaseFunct2D *baseFunctAnsatz = eleAnsatz->GetBaseFunct2D();
+  int baseVectDim = baseFunctAnsatz->GetBaseVectDim();
+  int nDofAnsatz = baseFunctAnsatz->GetDimension();
+  // compute points on the reference element
+  TNodalFunctional2D *nf = eleAnsatz->GetNodalFunctional2D();
+  int nPoints;
+  double *xi, *eta;
+  nf->GetPointsForAll(nPoints, xi, eta);
+  
+  // everything needed for the velocity space (test)
+  TFE2D *eleTest = 
+    TFEDatabase2D::GetFE2D(testSpace->GetFE2D(current_cell,cell));
+  // basis function for test space
+  TBaseFunct2D *baseFunctTest = eleTest->GetBaseFunct2D();
+  int nDofTest = baseFunctTest->GetDimension();
+  
+  // id for the reference transformation
+  RefTrans2D refTransfID = eleAnsatz->GetRefTransID();
+  TFEDatabase2D::SetCellForRefTrans(cell, refTransfID);
+  
+  // number of basis functions, this is the length of the array needed to 
+  // evaluate the basis functions
+  int nBaseFunct = nDofTest*baseVectDim;
+  double uorig[nPoints][nBaseFunct];
+  double AllPointValues[nDofTest];
+  
+  for(i=0; i<=1; ++i)
+  {
+    CurrentMatrix = locMatrix[i];
+    N_Rows = nDofTest;
+    N_Columns = nDofAnsatz;
+    
+    for(j=0;j<N_Rows;j++)
+    {
+      MatrixRow = CurrentMatrix[j];
+      memset(MatrixRow, 0, SizeOfDouble*N_Columns);
+    } 
+  } 
+  
+  double **MatrixP0 = locMatrix[0];
+  double **MatrixP1 = locMatrix[1];
+  
+  for(int i=0; i<nPoints; ++i)
+  {
+    baseFunctTest->GetDerivatives(D00, xi[i], eta[i], AllPointValues);
+    TFEDatabase2D::GetOrigValues(refTransfID, xi[i], eta[i], baseFunctTest, 
+                                 coll, (TGridCell *)cell, AllPointValues, 
+                                 nullptr,nullptr, uorig[i], nullptr, nullptr );
+  }
+  double PointValuesx[nPoints* baseVectDim];
+  double PointValuesy[nPoints* baseVectDim];
+  memset(PointValuesx,0,nPoints* baseVectDim*sizeof(double));
+  memset(PointValuesy,0,nPoints* baseVectDim*sizeof(double));
+  double FunctionalValuesx[nDofAnsatz];
+  double FunctionalValuesy[nDofAnsatz];
+  
+  for(int j=0; j<nDofTest; ++j)
+  {
+    for(int k=0; k<nPoints; ++k)
+    {
+      PointValuesx[k]         = uorig[k][j];
+      PointValuesy[k+nPoints] = uorig[k][j];
+    }
+    nf->GetAllFunctionals(coll, cell, PointValuesx, FunctionalValuesx);
+    nf->GetAllFunctionals(coll, cell, PointValuesy, FunctionalValuesy);
+    
+    for(int k=0; k<nDofAnsatz; k++)
+    {
+      MatrixP0[j][k] = FunctionalValuesx[k];
+      MatrixP1[j][k] = FunctionalValuesy[k];
+    }
+  }
+}
+
+void ProjectionMatricesNSE2D(int current_cell, const TFESpace2D* ansatzSpace, 
+                         const TFESpace2D* testSpace, double ***locMatrix)
+{
+  // projection is the ansatzSpace
+  // velocity is the test space
+  int i,j, N_Rows, N_Columns;
+  double **CurrentMatrix, *MatrixRow;
+  
+  TCollection *coll = testSpace->GetCollection();
+  TBaseCell *cell = coll->GetCell(current_cell);
+  
+  TFE2D *eleAnsatz = 
+    TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(current_cell,cell));
+  TBaseFunct2D *baseFunctAnsatz = eleAnsatz->GetBaseFunct2D();
+  int baseVectDim = baseFunctAnsatz->GetBaseVectDim();
+  int nDofAnsatz = baseFunctAnsatz->GetDimension();
+  // compute points on the reference element
+  TNodalFunctional2D *nf = eleAnsatz->GetNodalFunctional2D();
+  int nPoints;
+  double *xi, *eta;
+  nf->GetPointsForAll(nPoints, xi, eta);
+  
+  // everything needed for the velocity space (test)
+  TFE2D *eleTest = 
+    TFEDatabase2D::GetFE2D(testSpace->GetFE2D(current_cell,cell));
+  // basis function for test space
+  TBaseFunct2D *baseFunctTest = eleTest->GetBaseFunct2D();
+  int nDofTest = baseFunctTest->GetDimension();
+  
+  // id for the reference transformation
+  RefTrans2D refTransfID = eleAnsatz->GetRefTransID();
+  TFEDatabase2D::SetCellForRefTrans(cell, refTransfID);
+  
+  // number of basis functions, this is the length of the array needed to 
+  // evaluate the basis functions
+  int nBaseFunct = nDofTest*baseVectDim;
+  double uorig[nPoints][nBaseFunct];
+  double AllPointValues[nDofTest];
+
+  double **MatrixP0 = locMatrix[4];
+  double **MatrixP1 = locMatrix[5];
+  
+  for(int i=0; i<nPoints; ++i)
+  {
+    baseFunctTest->GetDerivatives(D00, xi[i], eta[i], AllPointValues);
+    TFEDatabase2D::GetOrigValues(refTransfID, xi[i], eta[i], baseFunctTest, 
+                                 coll, (TGridCell *)cell, AllPointValues, 
+                                 nullptr,nullptr, uorig[i], nullptr, nullptr );
+  }
+  double PointValuesx[nPoints* baseVectDim];
+  double PointValuesy[nPoints* baseVectDim];
+  memset(PointValuesx,0,nPoints* baseVectDim*sizeof(double));
+  memset(PointValuesy,0,nPoints* baseVectDim*sizeof(double));
+  double FunctionalValuesx[nDofAnsatz];
+  double FunctionalValuesy[nDofAnsatz];
+  
+  for(int j=0; j<nDofTest; ++j)
+  {
+    for(int k=0; k<nPoints; ++k)
+    {
+      PointValuesx[k]         = uorig[k][j];
+      PointValuesy[k+nPoints] = uorig[k][j];
+    }
+    nf->GetAllFunctionals(coll, cell, PointValuesx, FunctionalValuesx);
+    nf->GetAllFunctionals(coll, cell, PointValuesy, FunctionalValuesy);
+    
+    for(int k=0; k<nDofAnsatz; k++)
+    {
+      MatrixP0[j][k] = FunctionalValuesx[k];
+      MatrixP1[j][k] = FunctionalValuesy[k];
+    }
+  }
+}
+
+
+void ProjectionMatricesTNSE2D(int current_cell, const TFESpace2D* ansatzSpace, 
+                         const TFESpace2D* testSpace, double ***locMatrix)
+{
+  // projection is the ansatzSpace
+  // velocity is the test space
+  TCollection *coll = testSpace->GetCollection();
+  TBaseCell *cell = coll->GetCell(current_cell);
+  
+  TFE2D *eleAnsatz = 
+    TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(current_cell,cell));
+  TBaseFunct2D *baseFunctAnsatz = eleAnsatz->GetBaseFunct2D();
+  int baseVectDim = baseFunctAnsatz->GetBaseVectDim();
+  int nDofAnsatz = baseFunctAnsatz->GetDimension();
+  // compute points on the reference element
+  TNodalFunctional2D *nf = eleAnsatz->GetNodalFunctional2D();
+  int nPoints;
+  double *xi, *eta;
+  nf->GetPointsForAll(nPoints, xi, eta);
+  
+  // everything needed for the velocity space (test)
+  TFE2D *eleTest = 
+    TFEDatabase2D::GetFE2D(testSpace->GetFE2D(current_cell,cell));
+  // basis function for test space
+  TBaseFunct2D *baseFunctTest = eleTest->GetBaseFunct2D();
+  int nDofTest = baseFunctTest->GetDimension();
+  
+  // id for the reference transformation
+  RefTrans2D refTransfID = eleAnsatz->GetRefTransID();
+  TFEDatabase2D::SetCellForRefTrans(cell, refTransfID);
+  
+  // number of basis functions, this is the length of the array needed to 
+  // evaluate the basis functions
+  int nBaseFunct = nDofTest*baseVectDim;
+  double uorig[nPoints][nBaseFunct];
+  double AllPointValues[nDofTest];
+
+  double **MatrixP0 = locMatrix[5];
+  double **MatrixP1 = locMatrix[6];
+  
+  for(int i=0; i<nPoints; ++i)
+  {
+    baseFunctTest->GetDerivatives(D00, xi[i], eta[i], AllPointValues);
+    TFEDatabase2D::GetOrigValues(refTransfID, xi[i], eta[i], baseFunctTest, 
+                                 coll, (TGridCell *)cell, AllPointValues, 
+                                 nullptr,nullptr, uorig[i], nullptr, nullptr );
+  }
+  double PointValuesx[nPoints* baseVectDim];
+  double PointValuesy[nPoints* baseVectDim];
+  memset(PointValuesx,0,nPoints* baseVectDim*sizeof(double));
+  memset(PointValuesy,0,nPoints* baseVectDim*sizeof(double));
+  double FunctionalValuesx[nDofAnsatz];
+  double FunctionalValuesy[nDofAnsatz];
+  
+  for(int j=0; j<nDofTest; ++j)
+  {
+    for(int k=0; k<nPoints; ++k)
+    {
+      PointValuesx[k]         = uorig[k][j];
+      PointValuesy[k+nPoints] = uorig[k][j];
+    }
+    nf->GetAllFunctionals(coll, cell, PointValuesx, FunctionalValuesx);
+    nf->GetAllFunctionals(coll, cell, PointValuesy, FunctionalValuesy);
+    
+    for(int k=0; k<nDofAnsatz; k++)
+    {
+      MatrixP0[j][k] = FunctionalValuesx[k];
+      MatrixP1[j][k] = FunctionalValuesy[k];
+    }
+  }
+}
+
+void MatVectMult(double ***inputMat, std::pair<int,int>size, double *inputRhs, 
+                 double **outputRhs)
+{
+  unsigned int nrow = size.first;
+  unsigned int ncol = size.second;
+  
+  for(unsigned int i=0; i<nrow; i++)
+  {
+    double temp = 0;
+    double temp1 = 0;
+    for(unsigned int j=0; j<ncol; j++)
+    { //FIXME the difference here is the number of 
+      // matrices: currently even in the steady state case
+      // three matrices are allocated but only two of them
+      // are assembled namly the inputMat[1] and inputMat[2]
+      // but in the time dependent case also the matrix inputMat[0]
+      // is assembled. The thing which has to be fixed is the assembling
+      // of matrices. Try to assemble only two matrices and then change 
+      // the argument in the product case
+      temp  += inputMat[0][i][j] * inputRhs[j];
+      temp1 += inputMat[1][i][j] * inputRhs[j];//
+    }
+    outputRhs[0][i] = temp;
+    outputRhs[1][i] = temp1;
+  }
+}
+void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
+                                double ***outputMat, int *nrowOut, int *ncolOut,
+                                double **inputrhs,  int *ndimInput,
+                                double **outputrhs, int *ndimOutput)
+{
+ /** this lambda function compute the ABC^T
+  * @param: matA projection matrix first velocity part (special case)
+  * @param: matB mass matrix for BDM or RT which is multiplied in between
+  * @param: matC projection matrix which multiplies as transpose from right
+  *         only for the off diagonal blocks (flag==1 & flag ==2)
+  * @param: product the resulting matrix
+  * @param: flag 0 and 3 are the cases when matA^T is multiplied from right
+  *              1 and 2 when the matC^T is multiplied from right
+  */
+ //FIXME slow try differently when everything works
+ auto compute_matrix_matrix = [](std::pair<int, int> rows, std::pair<int,int>cols,
+                                   double **matA, double **matB, double **matC,
+                                   double **&product, int flag)
+ {
+   unsigned int nRowA = rows.first;
+   unsigned int nRowB = rows.second;
+   unsigned int nColA = cols.first;
+   unsigned int nColB = cols.second;
+
+   if(nColB != nColA) // nColA is the nRowA of matA
+   {
+     ErrThrow("dimension mismatch ", nColB, " " , nColA);
+   }
+   // transpose of matrix A
+   int nRowProduct = nColA; // column of A;
+   //int nColProduct = nRowA; // rows of A
+
+   for(unsigned int i=0; i<nRowA; i++)
+   {
+     for(unsigned int j=0; j<nRowA; j++)
+     {
+       double temp = 0;
+       for(unsigned int k=0; k<nRowB; k++)
+       {
+         for(unsigned int l=0; l<nRowProduct; l++)
+         {
+           if(flag == 0 || flag == 3)
+             temp += matA[i][k] * matB[k][l] * matA[j][l];
+           else
+             temp += matA[i][k] * matB[k][l] * matC[j][l];
+         }
+       }
+       product[i][j] = temp;
+     }
+   }
+   return;
+ };
+  /** matrix-vecotr manipulation*/
+  auto matrix_vector_multiply = [] (std::pair<int,int> size, double ***matrix,
+                                    double *rhs, double **product)
+  {
+    unsigned int nrow = size.first;
+    unsigned int ncol = size.second;
+
+    for(unsigned int i=0; i<nrow; i++)
+    {
+      double temp = 0;
+      double temp1 = 0;
+      for(unsigned int j=0; j<ncol; j++)
+      {
+        temp += matrix[0][i][j] * rhs[j];
+        temp1 += matrix[1][i][j] * rhs[j];
+        // cout<<i + j*ncol<<"   " <<matrix[0][i][j] << "  " << matrix[1][i][j] << endl;
+      }
+      product[0][i] = temp;
+      product[1][i] = temp1;
+    }
+    return;
+  };
+  // prepare the outputMat[0] = P0 * M * P0^T
+  std::pair<int, int> rowsArray(nrowInput[5], nrowInput[2]);
+  std::pair<int, int> colsArray(ncolInput[5], ncolInput[2]);
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[5], inputMat[2],
+                          nullptr, outputMat[0], 0);
+  // prepare the outputMat[1] = P0 * M * P1^T
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[5], inputMat[2],
+                          inputMat[6], outputMat[1], 1);
+  // prepare the outputMat[2] = P1 * M * P0^T
+  rowsArray.first=nrowInput[6]; rowsArray.second=nrowInput[2];
+  colsArray.first=ncolInput[6]; rowsArray.second=ncolInput[2];
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[6], inputMat[2],
+                          inputMat[5], outputMat[2], 2);
+  // prepare the outputMat[3] = P1 * M * P1^T
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[6], inputMat[2],
+                          nullptr, outputMat[3], 3);
+
+  // prepare the output right hand
+  std::pair<int,int> size (nrowInput[5], ncolInput[6]);
+  double **matrix[2];
+  matrix[0] = inputMat[5];
+  matrix[1] = inputMat[6];
+  matrix_vector_multiply(size, matrix, inputrhs[0], outputrhs);
+  //======================================================================
+  // matrix-matrix multiplication using dgemm for the stiffness
+  // matrix
+  //======================================================================
+  /**
+   * A_NL * P^T + AL
+   * 0 is loc matrix P0
+   * 1 is loc matrix P1
+   * 2 is loc matrix M
+   * 3 is loc matrix A(grad grad)
+   * 4 is loc matrix Anl0
+   * 5 is loc matrix Anl1
+   */
+  double *P0 =  new double[nrowInput[5]*ncolInput[5]];
+  double *P1 =  new double[nrowInput[6]*ncolInput[6]];
+  // copy the matrices
+  for(int i=0; i<nrowInput[5]; ++i)
+  {
+    memcpy(P0+i*ncolInput[5], inputMat[5][i], ncolInput[5]*SizeOfDouble);
+    memcpy(P1+i*ncolInput[6], inputMat[6][i], ncolInput[6]*SizeOfDouble);
+  }
+  // nrowInput[0]=nrowInput[1]; and ncolInput[0] = ncolInput[1]
+  double *A00= new double[nrowInput[0]*ncolInput[0]];
+  double *A01= new double[nrowInput[0]*ncolInput[0]];
+  double *A10= new double[nrowInput[0]*ncolInput[0]];
+  double *A11= new double[nrowInput[1]*ncolInput[1]];
+
+  memset(A10,0,nrowInput[0]*ncolInput[1]*SizeOfDouble);
+  memset(A01,0,nrowInput[0]*ncolInput[1]*SizeOfDouble);
+
+  for(int i=0; i<nrowInput[0]; ++i)
+  {
+    memcpy(A00+i*ncolInput[0], inputMat[0][i], ncolInput[0]*SizeOfDouble);
+    memcpy(A11+i*ncolInput[1], inputMat[1][i], ncolInput[1]*SizeOfDouble);
+  }
+  double *Anl00 = new double[nrowInput[3]*ncolInput[3]];
+  double *Anl11 = new double[nrowInput[4]*ncolInput[4]];
+  for(int i=0; i<nrowInput[3]; ++i)
+  {
+    memcpy(Anl00+i*ncolInput[3], inputMat[3][i], ncolInput[3]*SizeOfDouble);
+    memcpy(Anl11+i*ncolInput[4], inputMat[4][i], ncolInput[4]*SizeOfDouble);
+  }
+  int m, n, k;
+  // local matrix A00 = P0*Anl0 + A(grad,grad)
+  m = nrowInput[5];
+  n = ncolInput[3];
+  k = nrowInput[3];
+
+  double alpha = 1.;
+  double beta  = 1.;
+
+  //======================================================================
+  // normally dgemm uses fortran format where the entries are treated
+  // as column storage format, but we can calkulate the matrices
+  // multiplication and addition in the row-storage format as follows:
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P0, &k,
+         &beta, A00, &n);
+
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P1, &k,
+         &beta, A01, &n);
+
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P0, &k,
+         &beta, A10, &n);
+
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P1, &k,
+         &beta, A11, &n);
+
+  for(int i=0; i<n; i++)
+  {
+    memcpy(outputMat[4][i], A00+i*n, n*SizeOfDouble);
+    memcpy(outputMat[5][i], A01+i*n, n*SizeOfDouble);
+    memcpy(outputMat[6][i], A10+i*n, n*SizeOfDouble);
+    memcpy(outputMat[7][i], A11+i*n, n*SizeOfDouble);
+  }
+
+  delete [] P0;    delete [] P1;
+  delete [] A00;   delete [] A01;
+  delete [] A10;   delete [] A11;
+  delete [] Anl00; delete [] Anl11;
+}
+
+/**************************************************************************** */
+void nonlinear_term_reconstruct(double ***inputMat, int *nrowIn, int *ncolIn,
+                                double ***outputMat, int *nrowOut, int *ncolOut,
+                                double **inputrhs,  int *ndimIn,
+                                double **outputrhs, int *ndimOut)
+{
+  /** inputMat[0] = A00,    inputMat[1] = A11;
+   *  inputMat[2] = A00_nl  inputMat[3] = A11_nl
+   *  inputMat[4] = P0      inputMat[5] = P1
+   */
+  // preparation for dgemm_
+  double *A00 = new double[nrowIn[0]*ncolIn[0]];
+  double *A11 = new double[nrowIn[1]*ncolIn[1]];
+  // A00 and A11 have the same size
+  for(int i=0; i<nrowIn[0]; i++)
+  {
+    memcpy(A00+i*ncolIn[0], inputMat[0][i], ncolIn[0]*SizeOfDouble);
+    memcpy(A11+i*ncolIn[1], inputMat[1][i], ncolIn[1]*SizeOfDouble);
+  }
+  // empty matrices filled with zeros
+  double *A01 = new double[nrowIn[0]*ncolIn[0]];
+  double *A10 = new double[nrowIn[1]*ncolIn[1]];
+  memset(A01, 0, nrowIn[0]*ncolIn[0]*SizeOfDouble);
+  memset(A10, 0, nrowIn[1]*ncolIn[1]*SizeOfDouble);
+
+  // prepareing nonlinear matrices
+  double *Anl00 = new double[nrowIn[2]*ncolIn[2]];
+  double *Anl11 = new double[nrowIn[3]*ncolIn[3]];
+  for(int i=0; i<nrowIn[2]; i++)
+  {
+    memcpy(Anl00+i*ncolIn[2], inputMat[2][i], ncolIn[2]*SizeOfDouble);
+    memcpy(Anl11+i*ncolIn[3], inputMat[3][i], ncolIn[3]*SizeOfDouble);
+  }
+  // preparing P0 and p1
+  double *P0 = new double[nrowIn[4]*ncolIn[4]];
+  double *P1 = new double[nrowIn[5]*ncolIn[5]];
+  for(int i=0; i<nrowIn[4]; i++)
+  {
+    memcpy(P0+i*ncolIn[4], inputMat[4][i], ncolIn[4]*SizeOfDouble);
+    memcpy(P1+i*ncolIn[5], inputMat[5][i], ncolIn[5]*SizeOfDouble);
+  }
+
+  int m, n, k;//, lda, ldb, ldc;
+  m = nrowIn[4];
+  n = ncolIn[2];
+  k = nrowIn[2]; // = ncolIn[4]
+
+  double alpha = 1.;
+  double beta  = 1.;
+
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P0, &k,
+         &beta, A00, &n);
+
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P1, &k,
+         &beta, A01, &n);
+
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P0, &k,
+         &beta, A10, &n);
+
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P1, &k,
+         &beta, A11, &n);
+
+  for(int i=0; i<n; i++)
+  {
+    memcpy(outputMat[0][i], A00+i*n, n*SizeOfDouble);
+    memcpy(outputMat[1][i], A01+i*n, n*SizeOfDouble);
+    memcpy(outputMat[2][i], A10+i*n, n*SizeOfDouble);
+    memcpy(outputMat[3][i], A11+i*n, n*SizeOfDouble);
+  }
+  delete [] A00;   delete [] A01;
+  delete [] A10;   delete [] A11;
+  delete [] Anl00; delete [] Anl11;
+  delete [] P0;    delete [] P1;
+}
+
+
+#endif

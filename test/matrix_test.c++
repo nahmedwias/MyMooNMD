@@ -88,9 +88,9 @@ int main(int argc, char **argv)
   matC.PrintFull("matC", 4);
   matD.PrintFull("matD", 4);
   
-  TMatrix* matAC = matA.multiply(&matC);
-  TMatrix* matBA = matB.multiply(&matA);
-  TMatrix* matCB = matC.multiply(&matB);
+  std::shared_ptr<TMatrix> matAC( matA.multiply(matC));
+  std::shared_ptr<TMatrix> matBA( matB.multiply(matA));
+  std::shared_ptr<TMatrix> matCB( matC.multiply(matB));
   
   matAC->PrintFull("matAC");
   matBA->PrintFull("matBA");
@@ -371,9 +371,6 @@ int main(int argc, char **argv)
   }
   
   delete matCT;
-  delete matAC;
-  delete matBA;
-  delete matCB;
   
   std::cout << "test successful\n";
   return 0;
