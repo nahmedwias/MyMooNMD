@@ -49,9 +49,7 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
   mass_matrix = BlockFEMatrix::CD2D(fe_space);
 }
 
-
 /**************************************************************************** */
-
 void Time_CD2D::System_per_grid::descale_stiff_matrix(double tau, double theta_1)
 {
   if (tau==0 || theta_1 == 0)
@@ -68,7 +66,6 @@ void Time_CD2D::System_per_grid::descale_stiff_matrix(double tau, double theta_1
 }
 
 /**************************************************************************** */
-
 void Time_CD2D::System_per_grid::update_old_Au()
 {
   // the stiffness matrix must have been descaled (pure transport operator)
@@ -559,17 +556,95 @@ void Time_CD2D::call_assembling_routine(
 
 /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
 
-void Time_CD2D::assemble_rhs_vector()
+void Time_CD2D::assemble_rhs_vector
+(const TFEVectFunct2D* convection_field)
 {
   LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;
 
   for(auto &s : this->systems)
   {
 
-    TFEFunction2D * pointer_to_function = &s.fe_function;
+    TFEFunction2D * pointer_to_function[3] = {&s.fe_function, nullptr, nullptr};
     // create two local assembling object (second one will only be needed in SUPG case)
-    LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
+    LocalAssembling2D la_a_rhs(stiff_rhs, pointer_to_function,
                                this->example.get_coeffs());
+
+
+    if (convection_field)   // this is in case where rhs depends on convection field
+    {// =========================== HERE CODE FOR CONVECTION FIELD
+      cout << "J'AI DETECTE LA PRESENCE D'UN CONVECTION FIELD" << endl;
+      // step 1 : interpolate the given convection_field to our fe space
+//      const TFESpace2D& space = s.fe_space;
+//      size_t n_dofs = space.GetN_DegreesOfFreedom();
+//      std::string name("interpolated velo space");
+//      std::string description("interpolated velo space");
+//      std::vector<double> interp_funct_values(n_dofs,0.0);
+
+//      // set up an interpolator object  (ptr will be shared later)
+//      const TFESpace2D* into_space = &s.fe_space;
+//      FEFunctionInterpolator interpolator(into_space);
+//
+//      // length of the values array of the interpolated velo must equal length of the
+//      // concentration fe function
+//      size_t length_interpolated = s.fe_function.GetLength();
+//
+//      std::vector<double> entries_velo_x(length_interpolated, 0.0);
+//      std::vector<double> entries_velo_y(length_interpolated, 0.0);
+
+      // this awful call is due to the way a TFEVectFunct2D creates new dynamically
+      // allocated TFEFunction2D objects
+      TFEFunction2D* convection_x = convection_field->GetComponent(0);
+      TFEFunction2D* convection_y = convection_field->GetComponent(1);
+
+//      TFEFunction2D interpolated_convection_x =
+//          interpolator.interpolate(*convection_x, entries_velo_x);
+//
+//      TFEFunction2D interpolated_convection_y =
+//          interpolator.interpolate(*convection_y, entries_velo_y);
+//
+//      delete convection_x; // call to GetComponent dynamically created fe functs
+//      delete convection_y;
+
+      // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
+
+      // set up the input...
+      std::vector<int> beginParameter = {0};
+
+      //fill up the new fe function array
+      //pointer_to_function[0] = &s.fe_function;
+      pointer_to_function[1] = convection_x;
+      pointer_to_function[2] = convection_y;
+
+      std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
+      // for second fe value use function 2
+      std::vector<MultiIndex2D> feValueMultiIndex = {D00, D00}; // to produce first fe value use 0th derivative,
+      // for second fe value as well
+      int N_parameters = 2; // two parameters...
+      int N_feValues = 2;   //..both of which stem from the evaluation of fe fcts
+      int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+
+      // chose the parameter function ("in-out function") which shears away
+      // the first to "in" values (x,y) and passes only u_x and u_y
+      std::vector<ParamFct*> parameterFct = {NSParamsVelo};
+
+      // ...and call the corresponding setters
+      la_a_rhs.setBeginParameter(beginParameter);
+      la_a_rhs.setFeFunctions2D(pointer_to_function); //reset - now velo comp included
+      la_a_rhs.setFeValueFctIndex(feValueFctIndex);
+      la_a_rhs.setFeValueMultiIndex(feValueMultiIndex);
+      la_a_rhs.setN_Parameters(N_parameters);
+      la_a_rhs.setN_FeValues(N_feValues);
+      la_a_rhs.setN_ParamFct(N_paramFct);
+      la_a_rhs.setParameterFct(parameterFct);
+      //...this should do the trick
+      //===============================================================END CODE
+    }
+    else
+    {
+      cout << " JE SUIS ICI" << endl;
+      //      TFEFunction2D * pointer_to_function = &s.fe_function;
+    }
+
 
     if(TDatabase::ParamDB->DISCTYPE == SUPG)
     {
@@ -577,7 +652,7 @@ void Time_CD2D::assemble_rhs_vector()
       // M = (u,v) + \tau (u,b.grad v)
       LocalAssembling2D_type mass_supg = LocalAssembling2D_type::TCD2D_Mass;;
 
-      LocalAssembling2D la_m_supg(mass_supg, &pointer_to_function,
+      LocalAssembling2D la_m_supg(mass_supg, pointer_to_function,
                                   this->example.get_coeffs());
 
       //call assembling, including mass matrix (SUPG!)
@@ -821,3 +896,131 @@ void Time_CD2D::scale_stiffness_matrix()
     s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
   }
 }
+
+
+void Time_CD2D::assemble_initial_time_with_convection
+(const TFEVectFunct2D* convection_field)
+{
+  LocalAssembling2D_type mass = LocalAssembling2D_type::TCD2D_Mass;
+  LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;
+
+  for(auto &s : this->systems)
+  {
+    // assemble mass matrix, stiffness matrix and rhs
+    TFEFunction2D* fe_funct[3] = {&s.fe_function,
+                                  nullptr, nullptr}; //wrap up as '**'
+
+    LocalAssembling2D la_mass(mass, fe_funct,
+                              this->example.get_coeffs());
+    LocalAssembling2D la_a_rhs(stiff_rhs, fe_funct,
+                               this->example.get_coeffs());
+
+
+
+    if (convection_field)    // assembles initial RHS and Stiffness with convection field
+    {// =========================== HERE CODE FOR CONVECTION FIELD
+      cout << "J'AI DETECTE LA PRESENCE D'UN CONVECTION FIELD" << endl;
+      // step 1 : interpolate the given convection_field to our fe space
+//      const TFESpace2D& space = s.fe_space;
+//      size_t n_dofs = space.GetN_DegreesOfFreedom();
+//      std::string name("interpolated velo space");
+//      std::string description("interpolated velo space");
+//      std::vector<double> interp_funct_values(n_dofs,0.0);
+
+//      // set up an interpolator object  (ptr will be shared later)
+//      const TFESpace2D* into_space = &s.fe_space;
+//      FEFunctionInterpolator interpolator(into_space);
+//
+//      // length of the values array of the interpolated velo must equal length of the
+//      // concentration fe function
+//      size_t length_interpolated = s.fe_function.GetLength();
+//
+//      std::vector<double> entries_velo_x(length_interpolated, 0.0);
+//      std::vector<double> entries_velo_y(length_interpolated, 0.0);
+
+      // this awful call is due to the way a TFEVectFunct2D creates new dynamically
+      // allocated TFEFunction2D objects
+      TFEFunction2D* convection_x = convection_field->GetComponent(0);
+      TFEFunction2D* convection_y = convection_field->GetComponent(1);
+
+//      TFEFunction2D interpolated_convection_x =
+//          interpolator.interpolate(*convection_x, entries_velo_x);
+//
+//      TFEFunction2D interpolated_convection_y =
+//          interpolator.interpolate(*convection_y, entries_velo_y);
+//
+//      delete convection_x; // call to GetComponent dynamically created fe functs
+//      delete convection_y;
+
+      // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
+
+      // set up the input...
+      std::vector<int> beginParameter = {0};
+
+      //fill up the new fe function array
+      //pointer_to_function[0] = &s.fe_function;
+      fe_funct[1] = convection_x;
+      fe_funct[2] = convection_y;
+
+      std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
+      // for second fe value use function 2
+      std::vector<MultiIndex2D> feValueMultiIndex = {D00, D00}; // to produce first fe value use 0th derivative,
+      // for second fe value as well
+      int N_parameters = 2; // two parameters...
+      int N_feValues = 2;   //..both of which stem from the evaluation of fe fcts
+      int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+
+      // chose the parameter function ("in-out function") which shears away
+      // the first to "in" values (x,y) and passes only u_x and u_y
+      std::vector<ParamFct*> parameterFct = {NSParamsVelo};
+
+      // ...and call the corresponding setters
+      la_a_rhs.setBeginParameter(beginParameter);
+      la_a_rhs.setFeFunctions2D(fe_funct); //reset - now velo comp included
+      la_a_rhs.setFeValueFctIndex(feValueFctIndex);
+      la_a_rhs.setFeValueMultiIndex(feValueMultiIndex);
+      la_a_rhs.setN_Parameters(N_parameters);
+      la_a_rhs.setN_FeValues(N_feValues);
+      la_a_rhs.setN_ParamFct(N_paramFct);
+      la_a_rhs.setParameterFct(parameterFct);
+      //...this should do the trick
+      //===============================================================END CODE
+    }
+    else
+    {
+      cout << " JE SUIS ICI" << endl;
+      //      TFEFunction2D * pointer_to_function = &s.fe_function;
+    }
+
+
+    // do the actual assembling
+    call_assembling_routine(s, la_a_rhs, la_mass , true);
+
+    // apply local projection stabilization method on stiffness matrix only!
+    if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION
+        && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
+    {
+      if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
+      {
+        //fetch stiffness matrix as block
+        std::vector<std::shared_ptr<FEMatrix>> stiff_blocks =
+            s.stiff_matrix.get_blocks_uniquely();
+        auto stiff_block = stiff_blocks.at(0).get();
+        //call ultra local projection
+        UltraLocalProjection((void *)stiff_block, false);
+      }
+      else
+      {
+        ErrThrow("LP_FULL_GRADIENT needs to be 1 to use LOCAL_PROJECTION");
+      }
+
+    }
+
+    s.stiff_matrix.apply(s.solution,s.old_Au); //put up initial old_Au
+  }
+
+  System_per_grid& s = systems.front();
+  old_rhs = s.rhs; //put up initial old_rhs
+}
+
+
