@@ -27,7 +27,10 @@ namespace test_example3_forconvectiontest2
 {
 #include "3_TestExampleForTCDTestExample2.h"
 }
-
+namespace test_4
+{
+#include "4_TestTNSE2D.h"
+}
 // ********* END OF USER PROJECT CODE
 
 
@@ -184,11 +187,38 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       test_example3_forconvectiontest2::USER_parameter1 = this->example_database["user_parameter1"];
       test_example3_forconvectiontest2::USER_parameter2 = this->example_database["user_parameter2"];
 
-
-
       test_example3_forconvectiontest2::ExampleFile();
       break;
 
+
+    case 14:                // Test4 = Navier Stokes for the test 5 of TCD2D (sort of dam break)
+      /** exact_solution */
+      exact_solution.push_back( test_4::ExactU1 );
+      exact_solution.push_back( test_4::ExactU2 );
+      exact_solution.push_back( test_4::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_4::BoundCondition );
+      boundary_conditions.push_back( test_4::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_4::U1BoundValue );
+      boundary_data.push_back( test_4::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_4::LinCoeffs;
+
+      /** initial condition */
+      initialCOndtion.push_back(test_4::InitialU1);
+      initialCOndtion.push_back(test_4::InitialU2);
+      test_4::REYNOLDS_number = get_nu();
+      test_4::USER_parameter1 = this->example_database["user_parameter1"];
+      test_4::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_4::ExampleFile();
+      break;
 
 
 
