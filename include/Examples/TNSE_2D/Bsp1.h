@@ -2,6 +2,7 @@
 // 
 // u(x,y) = (sin(t)*sin(Pi*x)*sin(Pi*y), sin(t)*cos(Pi*x)*cos(Pi*y))
 // p(x,y) = sin(t)*(sin(Pi*x)+cos(Pi*y)-2/Pi)
+
 double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
@@ -162,20 +163,24 @@ void LinCoeffs(int n_points, double *X, double *Y,
 
 
     // Stokes
-    coeff[1] = t1*t3*t6+2.0*t9*t3*t10*t6
-              +t27*t17*0.3141592653589793E1;
-    coeff[2] = t1*t17*t22+2.0*t9*t17*t10*t22
-              -t27*t6*0.3141592653589793E1;
-
-
-//    // Navier-Stokes
-//    coeff[1] = t1*t3*t6+2.0*t9*t3*t10*t6
-//              +t14*t3*t16*t17*0.3141592653589793E1
-//              +t14*t17*t23*t3*0.3141592653589793E1
-//              +t27*t17*0.3141592653589793E1;
-//    coeff[2] = t1*t17*t22+2.0*t9*t17*t10*t22
-//              -t14*t36*t39-t14*t41*t39
-//              -t27*t6*0.3141592653589793E1;
-    coeff[3] = 0;
+    if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 4)
+    {
+      coeff[1] = t1*t3*t6+2.0*t9*t3*t10*t6
+                 +t27*t17*0.3141592653589793E1;
+      coeff[2] = t1*t17*t22+2.0*t9*t17*t10*t22
+                 -t27*t6*0.3141592653589793E1;
+                 
+    }
+    if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==6)
+    {//    // Navier-Stokes
+      coeff[1] = t1*t3*t6+2.0*t9*t3*t10*t6
+                 +t14*t3*t16*t17*0.3141592653589793E1
+                 +t14*t17*t23*t3*0.3141592653589793E1
+                 +t27*t17*0.3141592653589793E1;
+      coeff[2] = t1*t17*t22+2.0*t9*t17*t10*t22
+                 -t14*t36*t39-t14*t41*t39
+                 -t27*t6*0.3141592653589793E1;
+      coeff[3] = 0;
+    }
   }
 }
