@@ -582,7 +582,7 @@ void BlockVector::copy_structure(const BlockVector& r)
 }
 
 /** ************************************************************************ */
-void BlockVector::write_fo_file(std::string filename)
+void BlockVector::write_to_file(std::string filename)
 {
   std::ofstream dat(filename);
   if(!dat)

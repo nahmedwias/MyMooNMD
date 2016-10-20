@@ -167,6 +167,29 @@ void Parameters_Gradient_Residual(int N_Points, double *X, double *Y, double *Ab
 
 double graddiv_parameterOseen(double hK, double nu, double b1, double b2);
 
+void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace, 
+                         const TFESpace2D* testSpace, double ***locMatrix);
+
+void ProjectionMatricesNSE2D(int current_cell, const TFESpace2D* ansatzSpace, 
+                         const TFESpace2D* testSpace, double ***locMatrix);
+
+void ProjectionMatricesTNSE2D(int current_cell, const TFESpace2D* ansatzSpace, 
+                         const TFESpace2D* testSpace, double ***locMatrix);
+
+void MatVectMult(double*** inputMat, std::pair< int, int > size,
+                 double* inputRhs, double** outputRhs);
+
+void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
+                             double ***outputMat, int *nrowOut, int *ncolOut,
+                             double **inputrhs,  int *ndimInput,
+                             double **outputrhs, int *ndimOutput);
+
+void nonlinear_term_reconstruct(double ***inputMat, int *nrowIn, int *ncolIn,
+                                double ***outputMat, int *nrowOut, int *ncolOut,
+                                double **inputrhs,  int *ndimIn,
+                                double **outputrhs, int *ndimOut);
+
+
 #ifdef __3D__
 void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1, 
                                 TFEFunction3D *u2, TFEFunction3D *u3,

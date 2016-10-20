@@ -103,8 +103,12 @@ class BlockFEMatrix : public BlockMatrix
      */
 #ifdef __2D__
     BlockFEMatrix(std::vector< const TFESpace2D* > spaces);
+    BlockFEMatrix(std::vector< const TFESpace2D* > spaces_rows, 
+                  std::vector< const TFESpace2D* > spaces_cols);
 #elif __3D__
     BlockFEMatrix(std::vector< const TFESpace3D* > spaces);
+    BlockFEMatrix(std::vector< const TFESpace3D* > spaces_rows, 
+                  std::vector< const TFESpace3D* > spaces_cols);
 #endif // 3D
 
     /**
@@ -249,6 +253,23 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for 2D NSE problems
      */
     static BlockFEMatrix Mass_NSE2D(const TFESpace2D& velocity);
+    
+    /**
+     * Named constructor for the Projection matrix:
+     * 
+     * @param velocity the velocity finite element space
+     * @param projection the pvelocity projection space
+     * @param pressure the pressure finite element space
+     * @return A newly constructed block fe matrix
+     */
+    static BlockFEMatrix Projection_NSE2D(const TFESpace2D& velocity, 
+                                          const TFESpace2D& projection,
+                                          const TFESpace2D& pressure);
+    
+    /** @brief named constructor for modifed mass matrix
+     * 
+     */
+    static BlockFEMatrix Modified_MassMatrix(const TFESpace2D& velocity);
 
 #elif __3D__
     /**
@@ -657,6 +678,16 @@ class BlockFEMatrix : public BlockMatrix
      * @return The number of actives of the row's testspace.
      */
     size_t get_n_row_actives(size_t cell_row) const;
+    /** @brief multiply the blockmatrix matrix A(Mass_Darcy) with its transposed A^T from the right 
+     * and multiply with matrix B(Projection) in between.
+     * 
+     * This function will swap the corresponding blocks of this BlockMatrix results from 
+     * the matrix multiplication
+     *
+     * @param[in] A (Mass_Darcy) the matrix with its transposed A^T to be multiplied from the right
+     * @param[in] B (Projection) the matrix to be multiplied in between
+     */    
+    void multiply(BlockFEMatrix& Mass_Darcy, BlockFEMatrix& Projection);
 
 
     /// @return The row (means: test-)space of a certain cell row.
