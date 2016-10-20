@@ -27,6 +27,19 @@ namespace rotating_bodies_1
 #include "TCD_2D/Rotating_Bodies.h"
 }
 
+
+/***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
+namespace test_example1_expsincos
+{
+#include "1_TestExampleTCD2D.h"
+}
+
+
+
+// ********* END OF USER PROJECT CODE
+
+
+
 Example_TimeCD2D::Example_TimeCD2D(
   const ParameterDatabase& user_input_parameter_db)
  : Example_NonStationary2D(user_input_parameter_db)
@@ -129,6 +142,37 @@ Example_TimeCD2D::Example_TimeCD2D(
       // Print some example specific information.
       rotating_bodies_1::ExampleFile();
       break;
+
+
+
+
+
+
+      /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
+    case 10:                // 1_TestExample Exp-Sin-Cos
+      /**Exact solution"**/
+      exact_solution.push_back(test_example1_expsincos::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( test_example1_expsincos::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example1_expsincos::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = test_example1_expsincos::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(test_example1_expsincos::InitialCondition);
+      test_example1_expsincos::ExampleFile();
+
+      this->timeDependentRhs = test_example1_expsincos::rhs_depends_on_time;
+      this->timeDependentCoeffs=test_example1_expsincos::coefficients_depend_on_time;
+      break;
+
+
+
+
+
     default:
       ErrThrow("Unknown name of the transient-convection-diffusion (Time_CD2D) example!", 
                example_code);
