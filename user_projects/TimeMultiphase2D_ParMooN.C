@@ -99,8 +99,8 @@ int main(int argc, char* argv[])
   Time_CD2D         tcd2d(domain, tcd_db, example_tcd2d);     // Construct CD system
 
   double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
-  double rho2 = 1;                        // density constant of fluid2, eg 0
-  double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of fluid1, eg 1e-3
+  double rho2 = 1;                          // density constant of fluid2, eg 0
+  double mu1  = tnse_db["fluid_dynamic_viscosity"];      // mu constant of fluid1, eg 1e-3
   double mu2  = 1;                                    // mu constant of fluid2, eg 0
 
 
@@ -219,36 +219,36 @@ int main(int argc, char* argv[])
 
 
 
-  /*      /********************************************************************
-  *       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
-  *       ********************************************************************/
-  /*      if (tnse_db["coupling_cd_nse"].is(true))
-  *      {
-  *        BlockVector new_phase_field = cd2d.get_solution();
-  *        // THIS LOOP HAS TO BE RECONSIDERED
-  *        for (int indice=0; indice < phase_fraction.length(); indice++)
-  *        {
-  *          if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
-  *          if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
-  *        }
-  *
-  *        /** @brief Finite Element function for density field */
-  /*        BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-  *        TFEFunction2D new_rho_field  = update_fieldfunction(&cd2d.get_space(),rho_vector,(char*) "q");
-  *
-  *        /** @brief Finite Element function for dynamic viscosity field */
-  /*        BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
-  *        TFEFunction2D new_mu_field  = update_fieldfunction(&cd2d.get_space(),mu_vector,(char*) "s");
-  *
-  */
+        /********************************************************************
+        * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
+        ********************************************************************/
+        if (tnse_db["coupling_cd_nse"].is(true))
+        {
+          BlockVector new_phase_field = tcd2d.get_solution();
+          // THIS LOOP HAS TO BE RECONSIDERED
+//          for (int indice=0; indice < phase_fraction.length(); indice++)
+//          {
+//            if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
+//            if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
+//          }
+
+          /** @brief Finite Element function for density field */
+          BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
+          TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*) "q");
+
+          /** @brief Finite Element function for dynamic viscosity field */
+          BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
+          TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*) "s");
+
+
 
 
 
           /********************************************************************
            * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
            ********************************************************************/
-//          nse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
-//        }
+          tnse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
+        }
         if (tnse_db["dimensional_nse"].is(true))    // if 2way coupling is deactivated but 1way is active
           tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
         else
