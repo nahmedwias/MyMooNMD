@@ -40,11 +40,20 @@ verbosity: 3   [ 1, 5 ]
 ## Choose which example to run. Note that depending on the type of 
 ## problem you want to solve, different values are meaningful here. 
 ## See the class 'Example' and its derived classes.
-## 0 - bsp1 (sincos) - in the standard TNSE2D program
-## 1 - lin_space_time
+## 0 - bsp1 (sincos)  - in the standard TNSE2D program
+## 1 - lin_space_time - in the standard TNSE2D program
+## -1- linearspacetime- in the standard TCD2D program
+## 0 - expsincos 	  - in the standard TCD2D program
+## 1 - sinsinsin	  - in the standard TCD2D program
+## 2 - sincos		  - in the standard TCD2D program
+## 3 - rotatingbodies - in the standard TCD2D program
 ## ONLY THE EXAMPLES BELOW SHOULD BE USED IN THE MULTIPHASE PROGRAM
-## 11- bsp1 (sincos) - in the multiphase program
-example: 0 [ -1, 100 ]
+## 11- bsp1 (sincos)  - in the multiphase program - FOR TNSE2D
+## 11- ExpSinCos 	  - in the multiphase program - FOR TCD2D
+## 12- SinSinSin 	  - in the multiphase program - FOR TCD2D
+## 13- SinCos    	  - in the multiphase program - FOR TCD2D
+## 14- LinearSpaceTime- in the multiphase program - FOR TCD2D
+example: 2 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -253,5 +262,5 @@ UPWIND_ORDER: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.05
+ENDTIME: 0.15
 TIMESTEPLENGTH: 0.01
