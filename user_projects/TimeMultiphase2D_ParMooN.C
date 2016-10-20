@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
 
-  tnse_db["example"]         = 13;
+  tnse_db["example"]         = 11;
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
 
@@ -258,8 +258,9 @@ int main(int argc, char* argv[])
         tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
       else
         tnse2d.assemble_nonlinear_term();
-      tnse2d.assemble_system();
 
+
+      tnse2d.assemble_system();
     } // end for k, non linear loop
 
     tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
