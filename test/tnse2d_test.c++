@@ -50,7 +50,7 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   db.merge(Solver<>::default_solver_database());
   db.merge(Example2D::default_example_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
-  db["problem_type"] = 5;
+  db["problem_type"] = 6;
   db["example"] = 0;
   db["reynolds_number"] = 1;
   db["solver_type"] = "direct";
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
 
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5;
+    TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 6;
     
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
