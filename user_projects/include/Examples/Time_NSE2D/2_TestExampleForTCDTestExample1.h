@@ -21,12 +21,12 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
-  values[0] = 0;
+  values[0] = 1;
 }
 
 void InitialU2(double x, double y, double *values)
 {
-  values[0] = 0;
+  values[0] = -1;
 }
 
 void InitialP(double x, double y, double *values)
