@@ -12,7 +12,7 @@ double USER_parameter2;
 
 void ExampleFile()
 {
-  OutPut("Example: 2_TestExampleForTCDTestExample1.h , Velocity Field (1,-1)" << endl) ;
+  OutPut("Example: 3_TestExampleForTCDTestExample2.h , Velocity Field (1,2)" << endl) ;
   TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
 }
 
@@ -26,7 +26,7 @@ void InitialU1(double x, double y, double *values)
 
 void InitialU2(double x, double y, double *values)
 {
-  values[0] = -1;
+  values[0] = 2;
 }
 
 void InitialP(double x, double y, double *values)
@@ -48,7 +48,7 @@ void ExactU1(double x, double y, double *values)
 
 void ExactU2(double x, double y, double *values)
 {
-  values[0] = -1;
+  values[0] = 2;
   values[1] = 0;
   values[2] = 0;
   values[3] = 0;
@@ -77,7 +77,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-  value = -1;
+  value = 2;
 }
 
 // ========================================================================
@@ -88,13 +88,14 @@ void LinCoeffs(int n_points, double *X, double *Y,
 {
   static double nu = REYNOLDS_number;
   int i;
-  double *coeff, x, y; 
+  double *coeff;
+//  double  x, y;
 
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-    x = X[i];
-    y = Y[i];
+//    x = X[i];
+//    y = Y[i];
 //    double rho = parameters[i][2];
 //    double mu  = parameters[i][3];
 

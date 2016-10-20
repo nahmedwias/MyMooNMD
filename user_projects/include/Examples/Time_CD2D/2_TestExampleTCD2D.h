@@ -62,7 +62,7 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
         double **parameters, double **coeffs)
 {
   double eps=1/TDatabase::ParamDB->PE_NR;
-  double b1=1, b2=2, c=1;
+  double b1, b2, c=1;  // correct convection field is b1=1, b2=2
   int i;
   double *coeff;
   double x, y;
@@ -74,6 +74,9 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
 
     x = X[i];
     y = Y[i];
+
+    b1 = parameters[i][0];
+    b2 = parameters[i][1];
 
     coeff[0] = eps;
     coeff[1] = b1;

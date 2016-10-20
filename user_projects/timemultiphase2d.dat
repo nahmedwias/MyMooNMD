@@ -50,11 +50,12 @@ verbosity: 3   [ 1, 5 ]
 ## ONLY THE EXAMPLES BELOW SHOULD BE USED IN THE MULTIPHASE PROGRAM
 ## 11- bsp1 (sincos)  - in the multiphase program - FOR TNSE2D
 ## 12- For Convection1- in the multiphase program - FOR TNSE2D
+## 13- For Convection2- in the multiphase program - FOR TNSE2D
 ## 11- ExpSinCos 	  - in the multiphase program - FOR TCD2D
 ## 12- SinSinSin 	  - in the multiphase program - FOR TCD2D
 ## 13- SinCos    	  - in the multiphase program - FOR TCD2D
 ## 14- LinearSpaceTime- in the multiphase program - FOR TCD2D
-example: 0 [ -1, 100 ]
+example: 1 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -263,5 +264,5 @@ UPWIND_ORDER: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.03
+ENDTIME: 0.05
 TIMESTEPLENGTH: 0.01
