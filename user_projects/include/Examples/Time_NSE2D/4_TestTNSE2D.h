@@ -108,8 +108,8 @@ void LinCoeffs(int n_points, double *X, double *Y,
 */
 
     // Navier-Stokes
-    coeff[1] = 0;
-    coeff[2] = 0;
+    coeff[1] = 0;     // f1
+    coeff[2] = -10;     // f2
     coeff[3] = 0;
   }
 }
