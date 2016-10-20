@@ -44,7 +44,7 @@ verbosity: 3   [ 1, 5 ]
 ## 1 - lin_space_time
 ## ONLY THE EXAMPLES BELOW SHOULD BE USED IN THE MULTIPHASE PROGRAM
 ## 11- bsp1 (sincos) - in the multiphase program
-example: -0 [ -1, 100 ]
+example: 0 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -253,5 +253,5 @@ UPWIND_ORDER: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.01
+ENDTIME: 0.05
 TIMESTEPLENGTH: 0.01
