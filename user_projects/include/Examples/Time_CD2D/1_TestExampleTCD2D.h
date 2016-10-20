@@ -55,7 +55,7 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
         double **parameters, double **coeffs)
 {
   double eps=1/TDatabase::ParamDB->PE_NR;
-  double b1=1, b2=-1, c=1;
+  double b1, b2, c=1;  // normally b1=1 and b2=-1
   int i;
   double *coeff;
   double x, y;
@@ -67,6 +67,9 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
     
     x = X[i];
     y = Y[i];
+
+    b1 = 1;//parameters[i][0]; // convection coefficient v_x
+    b2 = -1;//parameters[i][1]; // convection coefficient v_y
 
     coeff[0] = eps;
     coeff[1] = b1;
