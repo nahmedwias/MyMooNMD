@@ -19,7 +19,10 @@ namespace test_example1_sincos
 {
 #include "1_TestExampleTNSE.h"
 }
-
+namespace test_example2_forconvectiontest1
+{
+#include "2_TestExampleForTCDTestExample1.h"
+}
 
 
 // ********* END OF USER PROJECT CODE
@@ -121,6 +124,36 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       test_example1_sincos::ExampleFile();
       break;
 
+    case 12:                // TestExample2 = Generate the velocity field for Convection Test Example 1 (1,-1)
+      /** exact_solution */
+      exact_solution.push_back( test_example2_forconvectiontest1::ExactU1 );
+      exact_solution.push_back( test_example2_forconvectiontest1::ExactU2 );
+      exact_solution.push_back( test_example2_forconvectiontest1::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_example2_forconvectiontest1::BoundCondition );
+      boundary_conditions.push_back( test_example2_forconvectiontest1::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example2_forconvectiontest1::U1BoundValue );
+      boundary_data.push_back( test_example2_forconvectiontest1::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_example2_forconvectiontest1::LinCoeffs;
+
+      /** initial condition */
+      initialCOndtion.push_back(test_example2_forconvectiontest1::InitialU1);
+      initialCOndtion.push_back(test_example2_forconvectiontest1::InitialU2);
+      test_example2_forconvectiontest1::REYNOLDS_number = get_nu();
+      test_example2_forconvectiontest1::USER_parameter1 = this->example_database["user_parameter1"];
+      test_example2_forconvectiontest1::USER_parameter2 = this->example_database["user_parameter2"];
+
+
+
+      test_example2_forconvectiontest1::ExampleFile();
+      break;
 
 
 
