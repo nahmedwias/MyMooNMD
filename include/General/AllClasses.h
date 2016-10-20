@@ -145,6 +145,7 @@ class TRefTriBis0Desc;
 class TRefTriBis1Desc;
 class TRefTriBis2Desc;
 class TRefTriRegDesc;
+class TRefTriBaryDesc;
 class TShapeDesc;
 class TSquareMatrix;
 class TSquareMatrix1D;
