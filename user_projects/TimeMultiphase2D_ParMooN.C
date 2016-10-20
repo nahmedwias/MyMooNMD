@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     tnse2d.assemble_initial_time();                                // assemble linear term
 
   if (tcd_db["coupling_nse_cd"].is(true))
-    tcd2d.assemble_initial_time();  //THIS HAS TO BE CHANGED!
+    tcd2d.assemble_initial_time_with_convection(&tnse2d.get_velocity());
   else
     tcd2d.assemble_initial_time();
 
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
     }
     tnse2d.assemble_system();
 
-    tcd2d.assemble_rhs_vector(); // once per time step
+    tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
 
     /********************************************************************
      * NON LINEAR LOOP
