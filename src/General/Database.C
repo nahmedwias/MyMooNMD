@@ -38,6 +38,7 @@
 #include <RefQuadToTri0Desc.h>
 #include <RefQuadToTri1Desc.h>
 #include <RefTriRegDesc.h>
+#include <RefTriBaryDesc.h>
 #include <RefTriBis0Desc.h>
 #include <RefTriBis1Desc.h>
 #include <RefTriBis2Desc.h>
@@ -153,6 +154,7 @@ TDatabase::TDatabase()
   // initialize refinement descriptors
   RefDescDB[N_SHAPES + LineReg] = new TRefLineDesc(ShapeDB[S_Line]);
   RefDescDB[N_SHAPES + TriReg]  = new TRefTriRegDesc(ShapeDB[Triangle]);
+  RefDescDB[N_SHAPES + TriBary] = new TRefTriBaryDesc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis0] = new TRefTriBis0Desc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis1] = new TRefTriBis1Desc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis2] = new TRefTriBis2Desc(ShapeDB[Triangle]);

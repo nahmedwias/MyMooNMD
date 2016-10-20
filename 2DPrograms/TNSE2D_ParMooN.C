@@ -7,6 +7,29 @@
 
 using namespace std;
 
+int test(TDomain &domain)
+{
+  TBaseCell *CurrCell;
+  Shapes CellType;
+  int info;
+  
+  int RefLevel = domain.get_ref_level();
+  RefLevel++;
+
+  TDatabase::IteratorDB[It_Finest]->Init(0);
+
+  while (CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info))
+  {
+    CellType = CurrCell->GetType();
+    if (CellType == Triangle )
+    {
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TriBary]);
+      CurrCell->Refine(RefLevel);
+    }
+  }
+  return 0;
+}
+
 int main(int argc, char* argv[])
 {
   double t_start=GetTime();
@@ -33,8 +56,12 @@ int main(int argc, char* argv[])
   
   // refine grid up to the coarsest level
   size_t n_ref = Domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-    Domain.RegRefineAll();
+  //for(size_t i = 0; i < n_ref; i++)
+   Domain.RegRefineAll();
+   Domain.RegRefineAll();
+   Domain.RegRefineAll();
+  
+  test(Domain);
 
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
