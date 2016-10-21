@@ -222,6 +222,26 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
       }
     }
 
+    void BlockMatrix::apply_scaled_submatrix_mixed(const BlockVector & x, BlockVector & y,
+                                  double a) const
+    {
+      const double * xv = x.get_entries(); // array of values in x
+      double * yv = y.get_entries();
+      size_t row_offset = 0;
+      for(size_t i = 0; i < n_cell_rows_; ++i)
+      {
+        int col_offset = 0;
+        for(size_t j = 0; j < n_cell_columns_; j++)
+        {
+          std::shared_ptr<TMatrix> current_block = cell_grid_[i][j].block_;
+          
+          current_block->transpose_multiply(xv + col_offset, yv + row_offset, a);
+          
+          col_offset += cell_grid_[i][j].n_rows_;
+        }
+        row_offset += cell_grid_[i][0].n_columns_;
+      }
+    }
 
 /* ************************************************************************* */
 #ifdef _MPI

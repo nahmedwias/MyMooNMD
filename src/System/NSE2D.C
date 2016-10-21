@@ -276,6 +276,23 @@ void NSE2D::get_velocity_pressure_orders(
   
   Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
+  
+  // projection spaces for reconstructions
+  switch(TDatabase::ParamDB->VELOCITY_SPACE)
+  {
+    case 2: // BDM2
+      TDatabase::ParamDB->PROJECTION_SPACE = 1012;
+      break;
+    case 22:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1012;
+      break;
+    case 3:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1013;
+      break;
+    case 4:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1014;
+      break;
+  }
 }
 
 void NSE2D::set_parameters()
@@ -758,6 +775,8 @@ void NSE2D::output(int i)
   } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
+  
+  //this->example.do_post_processing(s.u.GetComponent(0), s.u.GetComponent(1),&s.p);
 
   //do postprocessing step depending on what the example implements
   example.do_post_processing(*this);

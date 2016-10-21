@@ -2,7 +2,7 @@
 // 
 // u(x,y) = (t*y, 2*t*y)
 // p(x,y) = 0
-
+double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
   OutPut("Example: linear_space_time.h" << endl) ;
@@ -118,7 +118,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  static double nu = 1/TDatabase::ParamDB->RE_NR;
+  static double nu = DIMENSIONLESS_VISCOSITY;
   double t = TDatabase::TimeDB->CURRENTTIME;
   int i;
   double *coeff, x, y;

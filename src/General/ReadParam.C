@@ -946,6 +946,12 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->PROJECTION_METHOD;
       N_Param++;
     }
+    
+    if (!strcmp(line, "PROJECTION_SPACE:"))
+    {
+      dat >> TDatabase::ParamDB->PROJECTION_SPACE;
+      N_Param++;
+    }
 
     if (!strcmp(line, "SAVE_DATA:"))
     {

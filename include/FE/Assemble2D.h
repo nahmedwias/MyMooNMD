@@ -162,5 +162,30 @@ void ComputeInterfaceConditionStress(TSquareMatrix2D  **sqmatrices,
      
 #endif // __2D__
 
+void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
+           int n_matrices_assemble,
+           std::vector<int> row_space, std::vector<int>col_space, 
+           int n_rhs_assemble, std::vector<int> row_space_rhs,
+           int n_sqmatrices_stored, TSquareMatrix2D** sqmatrices_stored,
+           int n_matrices_stored, TMatrix2D** matrices_stored, int n_rhs_stored,
+           double** rhs_stored, const TFESpace2D** ferhs_stored,
+           LocalAssembling2D& la_assmble, 
+           ManipulateMatrices manipulateMatrices, MatrixVector matrixvector,
+           ProjectionMatrix projection_matrix, 
+           BoundCondFunct2D** BoundaryConditions, 
+           BoundValueFunct2D * const * const BoundaryValues);
+
+void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
+           int n_sqmatrices_assemble, int n_recmatrices_assemble,
+           std::vector<int> row_space, std::vector<int>col_space, 
+           int n_rhs_assemble, std::vector<int> row_space_rhs,
+           int n_sqmatrices_stored, TSquareMatrix2D** sqmatrices_stored,
+           int n_matrices_stored, TMatrix2D** matrices_stored, 
+           int n_rhs_stored, double** rhs_stored, const TFESpace2D** ferhs_stored,
+           LocalAssembling2D& la_assmble, ManipulateMatrices manipulateMatrices,
+           MatrixVector matrixvector, ProjectionMatrix projection_matrix,
+           BoundCondFunct2D** BoundaryConditions, 
+           BoundValueFunct2D * const * const BoundaryValues);
+
 #endif // __ASSEMBLE2D__
 

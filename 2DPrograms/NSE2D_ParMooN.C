@@ -15,6 +15,7 @@
 #include <Chrono.h>
 #include <LoopInfo.h>
 #include <ParameterDatabase.h>
+#include <PR_NSE2D.h>
 
 
 // =======================================================================
@@ -58,11 +59,15 @@ int main(int argc, char* argv[])
   Example_NSE2D example(parmoon_db);
   
   // create an object of the Navier-Stokes class
-  NSE2D ns(domain, parmoon_db, example);
-  ns.assemble();
+  // NSE2D ns(domain, parmoon_db, example);
+  PR_NSE2D ns(domain,parmoon_db,example);
+  // if pressure robust method is considered then the
+  // modified right hand side will be re-assembled
+  // from the derived class
+  ns.all_assemble();
   // if solution was not zero up to here, you should call 
   //ns.assemble_nonlinear_term();
-  
+
   ns.stopIt(0);
   
   LoopInfo loop_info("nonlinear");

@@ -945,6 +945,7 @@ void TDatabase::SetDefaultParameters()
   
   /** parameter for type of projection method (NSE)**/
   ParamDB->PROJECTION_METHOD = 1;
+  ParamDB->PROJECTION_SPACE = 1000;
 
   /** parameters for individual use */
   ParamDB->P0 = 0.;
