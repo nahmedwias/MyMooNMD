@@ -99,7 +99,7 @@ void TMatrix::Print(const char *name) const
     
     for (int j=begin; j<end; ++j)
     {
-      Output::print<1>(name, "(", i, ",", KCol[pos], ") = ",
+      Output::print<1>(name, "(", i+1, ",", KCol[pos]+1, ") = ",
 		       entries[pos],";");
       ++pos;
     }
@@ -372,6 +372,53 @@ void TMatrix::multiply(const double * const x, double * const y, double a) const
   }
 }
 
+
+TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
+{
+  const int n_A_rows = this->GetN_Rows();   // = n_C_rows
+  const int n_A_cols = this->GetN_Columns();
+  const int n_B_rows = B->GetN_Rows();
+  
+  if(n_A_cols != n_B_rows)
+  {
+    ErrThrow("dimention mismatch during matrix-matrix multiplication");
+  }
+  const int * const a_rows = this->GetRowPtr();
+  const int * const a_cols = this->GetKCol();
+  
+  const TStructure & strucB = B->GetStructure();
+  const double * const b_entries = B->GetEntries();
+  
+  std::shared_ptr<TStructure> struc_c = get_product_structure(this->GetStructure(), strucB);
+  const int * c_rows = struc_c->GetRowPtr();
+  const int * c_cols = struc_c->GetKCol();
+  TMatrix * c = new TMatrix(struc_c);
+  double * c_entries = c->GetEntries();
+  
+  // fill the entries
+  // loop over all rows in C
+//#pragma omp parallel for
+  for(int row = 0; row < n_A_rows; row++)
+  {
+    
+    // loop over all entries in this row in C
+    for(int col = c_rows[row]; col < c_rows[row + 1]; col++)
+    {
+      // multiply 'this row of A' x 'this column of B'
+      // loop over all entries in this row in A
+      for(int i = a_rows[row]; i < a_rows[row+1]; i++)
+      {
+        int ib = strucB.index_of_entry(a_cols[i], c_cols[col]);
+        if(ib != -1)
+        {
+          c_entries[col] += entries[i] * b_entries[ib];
+        }
+      }
+    }
+  }
+  return c;
+}
+
 void TMatrix::transpose_multiply(const double * const x, double * const y, double a)
       const
 {
@@ -397,26 +444,27 @@ void TMatrix::transpose_multiply(const double * const x, double * const y, doubl
   }
 }
 
-TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
+std::shared_ptr< TMatrix > TMatrix::multiply(const TMatrix& B) const
 {
   const int n_A_rows = this->GetN_Rows();   // = n_C_rows
   const int n_A_cols = this->GetN_Columns();
-  const int n_B_rows = B->GetN_Rows();
+  const int n_B_rows = B.GetN_Rows();
   
   if(n_A_cols != n_B_rows)
   {
-    ErrThrow("dimention mismatch during matrix-matrix multiplication");
+    ErrThrow("dimention mismatch during matrix-matrix multiplication ",
+             n_A_cols, "  " , n_B_rows);
   }
   const int * const a_rows = this->GetRowPtr();
   const int * const a_cols = this->GetKCol();
   
-  const TStructure & strucB = B->GetStructure();
-  const double * const b_entries = B->GetEntries();
+  const TStructure & strucB = B.GetStructure();
+  const double * const b_entries = B.GetEntries();
   
   std::shared_ptr<TStructure> struc_c = get_product_structure(this->GetStructure(), strucB);
   const int * c_rows = struc_c->GetRowPtr();
   const int * c_cols = struc_c->GetKCol();
-  TMatrix * c = new TMatrix(struc_c);
+  std::shared_ptr<TMatrix>c = std::make_shared<TMatrix>(struc_c);
   double * c_entries = c->GetEntries();
   
   // fill the entries
@@ -556,7 +604,7 @@ std::shared_ptr< TMatrix >
   if(B.GetN_Rows() != this->GetN_Columns() 
     || B.GetN_Columns() !=this->GetN_Columns())
   {
-    ErrThrow("Dimension mismatch  ", B.GetN_Rows(), "  ", this->GetN_Columns());
+    ErrThrow("Dimension mismatch  ", B.GetN_Rows(), "  ", B.GetN_Columns());
   }
   
   // construct a product structure

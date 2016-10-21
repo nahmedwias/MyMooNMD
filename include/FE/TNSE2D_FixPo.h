@@ -32,6 +32,17 @@ void TimeNSType1Galerkin(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
+void TimeStokesOnlyGalerkin(double Mult, double *coeff,
+                double *param, double hK,
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs);
+
+void TimeStokesType4Galerkin(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
 // for Type 1 is no SDFEM available
 // ======================================================================
 
@@ -1011,5 +1022,26 @@ void GridAssemble4(double Mult, double *coeff,
                   double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
+// mass matrix for reconstruction 
+void LocAssembleMass(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs);
+
+void LocAssembleTSOKESTYPE4(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs);
+
+void LocAssembleNSTYPE4(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs);
+
+// 
+void LocAssembleNLNSTYPE4(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs);
 
 #endif  // __TNSE2D_FIXPO__

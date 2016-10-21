@@ -9,7 +9,7 @@
 
 /** the local assembling routines. Each of them corresponds to one 
  * LocalAssembling2D_type */
-
+int GetSignOfThisDOF(int N_DOF, int DOF);
 // ======================================================================
 // Standard Galerkin with Raviart-Thomas (RT) or Brezzi-Douglas-Marini (BDM)
 // elements
