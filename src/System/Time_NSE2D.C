@@ -10,7 +10,7 @@
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
 ParameterDatabase get_default_TNSE2D_parameters()
 {
-  Output::print<3>("creating a default TNSE2D parameter database");
+  Output::print<5>("creating a default TNSE2D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default TNSE2D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
@@ -124,7 +124,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
     
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
-    size_t n_levels = multigrid->get_n_levels();
+    size_t n_levels = multigrid->get_n_geometric_levels();
     int finest = domain.get_ref_level();
     int coarsest = finest - n_levels + 1;
     for (int grid_no = finest; grid_no >= coarsest; --grid_no)

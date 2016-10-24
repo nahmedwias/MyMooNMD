@@ -175,16 +175,17 @@ class NSE3D
      * functions as well as matrices, solution and right hand side vectors are
      * initialized.
      *
-     * @param domain The domain this problem lives on.
+     * @param collections
      * @param example The example to perform
      */
 #ifdef _MPI
-    NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+    NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
           const Example_NSE3D& example, int maxSubDomainPerDof);
 #else
-    NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+    NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
           const Example_NSE3D& example);
 #endif
+
 
     /**
      * @brief Check whether the program will be working with the

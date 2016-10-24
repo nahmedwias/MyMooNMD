@@ -16,6 +16,7 @@
 #  include <omp.h>
 #endif
 
+#include <MeshPartition.h>
 #include <Database.h>
 #include <Domain.h>
 #include <string.h>
@@ -45,7 +46,7 @@ extern "C"
 #endif
 
 
-static void Sort(TVertex **Array, int length)
+void MeshPartitionAuxFunctions::Sort(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
   int i, j, *rr, len;
@@ -97,7 +98,7 @@ static void Sort(TVertex **Array, int length)
 
 }
 
-static int GetIndex(TVertex **Array, int Length, TVertex *Element)
+int MeshPartitionAuxFunctions::GetIndex(TVertex **Array, int Length, TVertex *Element)
 {
   int l=0, r=Length, m=(r+l)/2;
   TVertex *Mid;
@@ -282,7 +283,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   /** *********************************************/
   /** STEP 2 : SORT THE VERTICES ARRAY */ 
   /** *********************************************/
-    Sort(Vertices, N);
+    MeshPartitionAuxFunctions::Sort(Vertices, N);
     
   /** ***************************************************/
   /**STEP 3: STORE THE SORTED POINTER ARRAY AS INDICES */
@@ -312,7 +313,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
       for(j=0;j<N_VertInCell;j++)
        {
         CurrVert=cell->GetVertex(j);
-        N=GetIndex(Vertices, N_AllLocVert, CurrVert);
+        N=MeshPartitionAuxFunctions::GetIndex(Vertices, N_AllLocVert, CurrVert);
         VertexNumbers[m]=NumberVertex[N];
         m++;
        } // endfor j
@@ -1170,7 +1171,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
   /** *********************************************/
    /** STEP 2 : SORT THE VERTICES ARRAY */ 
   /** *********************************************/
-    Sort(Vertices, N);
+    MeshPartitionAuxFunctions::Sort(Vertices, N);
 
   /** ***************************************************/
     /**STEP 3: STORE THE SORTED POINTER ARRAY AS INDICES */
@@ -1199,7 +1200,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
       for(j=0;j<N_VertInCell;j++)
        {
         CurrVert=cell->GetVertex(j);
-        N=GetIndex(Vertices, N_AllLocVert, CurrVert);
+        N=MeshPartitionAuxFunctions::GetIndex(Vertices, N_AllLocVert, CurrVert);
         VertexNumbers[m]=NumberVertex[N];
         m++;
        } 

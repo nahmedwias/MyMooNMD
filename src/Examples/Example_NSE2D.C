@@ -1,4 +1,5 @@
 #include <Example_NSE2D.h>
+#include <NSE2D.h>
 
 #include <Database.h>
 #include <Example_NSE2D.h>
@@ -6,7 +7,6 @@
 #include <SquareMatrix2D.h>
 #include <string.h>
 #include <MainUtilities.h>
-
 
 /* examples */
 
@@ -116,6 +116,12 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       /** coefficients */
       problem_coefficients = flow_around_cylinder::LinCoeffs;
       
+      // Set dimensionless viscosity
+      flow_around_cylinder::DIMENSIONLESS_VISCOSITY = get_nu();
+
+      /**post processing - drag and lift calculation and output */
+      post_processing_stat = flow_around_cylinder::compute_drag_lift_pdiff;
+
       flow_around_cylinder::ExampleFile();
       break;
     default:

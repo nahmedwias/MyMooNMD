@@ -11,7 +11,7 @@
 /**************************************************************************** */
 ParameterDatabase get_default_TCD2D_parameters()
 {
-  Output::print<3>("creating a default TCD2D parameter database");
+  Output::print<5>("creating a default TCD2D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default TCD2D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
@@ -132,7 +132,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
     if(multigrid->is_using_mdml())
       ErrThrow("mdml for TCD2D not yet implemented");
     
-    size_t nMGLevel = multigrid->get_n_levels();
+    size_t nMGLevel = multigrid->get_n_geometric_levels();
     int finest = domain.get_ref_level();
     int coarsest = finest-nMGLevel+1;
     
@@ -420,6 +420,7 @@ void Time_CD2D::output()
 
   // write output
   timeDependentOutput.write(TDatabase::TimeDB->CURRENTTIME);
+
 }
 
 /**************************************************************************** */
@@ -430,6 +431,9 @@ std::array< double, int(3) > Time_CD2D::get_errors() const
   error_at_time_points.at(1) = sqrt(errors.at(2));
   error_at_time_points.at(2) = sqrt(errors.at(4));
   return error_at_time_points;
+
+    
+    
 }
 
 /**************************************************************************** */

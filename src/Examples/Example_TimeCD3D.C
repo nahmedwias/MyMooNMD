@@ -54,6 +54,8 @@ Example_TimeCD3D::Example_TimeCD3D(
       boundary_data.push_back(BoundValue);
       problem_coefficients = BilinearCoeffs;
       initialCondtion.push_back(InitialCondition);
+      
+      concentration::PECLET_NUMBER = this->get_nu();
       ExampleFile();
       break;
     default:
@@ -80,7 +82,6 @@ void Example_TimeCD3D::do_post_processing(Time_CD3D& tcd3d) const
 
 double Example_TimeCD3D::get_nu() const
 {
-  double inverse_reynolds = this->example_database["reynolds_number"];
-  inverse_reynolds = 1/inverse_reynolds;
-  return inverse_reynolds;
+  double diffusion_coefficient= this->example_database["diffusion_coefficient"];
+  return diffusion_coefficient;
 }

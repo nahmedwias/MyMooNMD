@@ -4221,7 +4221,8 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
 //  double LocError[4];
   int N_UConv, N_DOFConv, index;
-  double *Values, distance_sq, g, *u_conv;
+  double *Values, g, *u_conv;
+  double distance_sq = 0;
   double *x_conv, *y_conv, *z_conv, delta, hK;
   TJoint *joint;
   const TFESpace3D *fespace, *fespaceConv; 

@@ -20,6 +20,10 @@
 
 #include <cstring>
 
+#ifdef _MPI
+#include<ParFECommunicator3D.h>
+#endif
+
 #ifdef __2D__
 
 void GridTransfer::Prolongate(
@@ -1232,7 +1236,7 @@ void GridTransfer::RestrictFunction(
   int *CoarseBeginIndex, *FineBeginIndex;
   int *CoarseGlobalNumbers, *FineGlobalNumbers;
   int FineNumber, CoarseNumber;
-  int *FineDOF, *CoarseDOF;
+  int *FineDOF, *CoarseDOF=nullptr;
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
@@ -1242,7 +1246,6 @@ void GridTransfer::RestrictFunction(
   double Val2[MaxN_BaseFunctions3D];
 //  int *DOF, Index;
 //  double *entry;
-
   // begin code
   CoarseColl = CoarseSpace.GetCollection();
   N_CoarseCells = CoarseColl->GetN_Cells();
@@ -1263,9 +1266,6 @@ void GridTransfer::RestrictFunction(
   if ((int)n_fine_dofs != FineSpace.GetN_DegreesOfFreedom())
     ErrThrow("Incorrect length of FineFunction: ",
              n_fine_dofs, " != ", FineSpace.GetN_DegreesOfFreedom());
-
-  // cout << "N_FineCells: " << N_FineCells << endl;
-  // cout << "N_CoarseCells: " << N_CoarseCells << endl;
 
   double* aux = new double[N_CoarseDOFs];
   memset(aux, 0, SizeOfDouble*N_CoarseDOFs);
@@ -1307,10 +1307,15 @@ void GridTransfer::RestrictFunction(
 #ifdef _HYBRID
 }
 #endif
-
   for(i=0;i<N_FineCells;i++)
   {
     cell = FineColl->GetCell(i);
+#ifdef _MPI
+    // Just skip fine cells which lie in the halo
+    // - they will be treated on that process, where they are own cells
+    if(cell->IsHaloCell())
+      continue;
+#endif
     k = cell->GetClipBoard();
     // cout << "i= " << i << "    ";
     // cout << "k= " << k << endl;
@@ -1474,11 +1479,18 @@ void GridTransfer::RestrictFunction(
 #endif
     } // endelse
   } // endfor i
-
 #ifdef _HYBRID
 #pragma omp parallel default(shared) private(i)
 #pragma omp for schedule(static) nowait
 #endif
+
+#ifdef _MPI
+    // Updates and numbers are stored additive. Make the vectors consistent.
+    const TParFECommunicator3D& comm = CoarseSpace.get_communicator();
+    comm.update_from_additive_to_consistent_storage(CoarseFunction,0);
+    comm.update_from_additive_to_consistent_storage(aux,0);
+#endif
+
   for(i=0;i<N_CoarseDOFs;i++)
     CoarseFunction[i] /= aux[i];
 
@@ -1520,16 +1532,35 @@ void GridTransfer::RestrictFunctionRepeatedly(
     const TFESpace3D& coarse_space = *space_hierarchy.at(i+1);
     const TFESpace3D& fine_space = *space_hierarchy.at(i);
 #endif
+
+
     double* coarse_function = function_entries.at(i+1);
     size_t coarse_n_dofs = function_n_dofs.at(i+1);
 
 
-    const double* fine_function = function_entries.at(i);
+    double* fine_function = function_entries.at(i);
     size_t fine_n_dofs = function_n_dofs.at(i);
+
+#ifdef _MPI
+#ifdef __3D__
+    // put the fine function into level 3 (=full) consistency
+    TParFECommunicator3D fine_comm = fine_space.get_communicator();
+    fine_comm.consistency_update(fine_function, 3);
+#endif
+#endif
 
     //do the restriction
     RestrictFunction(coarse_space, fine_space,
                      coarse_function, coarse_n_dofs,
                      fine_function, fine_n_dofs);
+
+#ifdef _MPI
+#ifdef __3D__
+    //// Restore Level 3 consistency of the coarse solution
+    // TODO Doing this here is somewhat against the concept - do it where the result of this is needed!!!
+    TParFECommunicator3D coarse_comm = coarse_space.get_communicator();
+    coarse_comm.consistency_update(coarse_function, 3);
+#endif
+#endif
   }
 }

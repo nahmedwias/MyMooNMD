@@ -44,18 +44,18 @@ int main(int argc, char* argv[])
   //if(TDatabase::ParamDB->WRITE_VTK)
   //  mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
 
-  unsigned int testType = 3;
+  unsigned int testType = 4;
   if (testType==0) {
     Output::print(" Test: ");
     Output::print("   * read .PRM and .GEO file and write the corresponding .mesh");
 
     // write .mesh file
     TCollection *coll = domain.GetCollection(It_Finest, 0);
-    coll->writeMesh(parmoon_db["mesh_file"]);
+    coll->writeMesh("test.mesh");
 
     // create mesh object and display info
-    Mesh m(parmoon_db["mesh_file"]);
-    m.info();
+    //Mesh m(parmoon_db["mesh_file"]);
+    //m.info();
     
   } else if (testType==1) {
     //=========================================================================
@@ -106,7 +106,18 @@ int main(int argc, char* argv[])
 
     Output::print(" ... done. Compare now meshFromPRMandGEO.mesh and meshFromPRMandMesh.mesh");
 
-  }
+  } else if (testType==4) {
+    
+    Output::print(" Test: ");
+    Output::print("   * read .PRM and .mes file and write the corresponding .GEO");
+
+    // create mesh object and display info
+    Mesh m(parmoon_db["mesh_file"]);
+    m.info();
+    m.setBoundary(parmoon_db["boundary_file"]);
+    // write new .GEO
+    m.writeToGEO(parmoon_db["geo_file"]);
+  } 
   
   
   //=========================================================================

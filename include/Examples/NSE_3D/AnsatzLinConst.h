@@ -10,7 +10,8 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  Output::print<1>("Example: AnsatzLinConst.h");
+  Output::info<1>("EXAMPLE","AnsatzLinConst.h");
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // ========================================================================

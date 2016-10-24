@@ -16,7 +16,7 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  OutPut("Example: test_u_1_p_0. Linear velocity solution u=(x,-y,0), "
+  Output::info<1>("EXAMPLE","test_u_1_p_0. Linear velocity solution u=(x,-y,0), "
    "constant zero pressure solution p=0. \n");
 }
 

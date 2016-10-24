@@ -7,6 +7,10 @@
 #include <Utilities.h>
 #include <MooNMD_Io.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 // helper functions
 std::list<Parameter>::const_iterator 
 find_parameter(std::string name, const std::list<Parameter>& parameters)
@@ -130,6 +134,7 @@ void ParameterDatabase::add(Parameter&& p)
     this->parameters.emplace_back(std::move(p));
   else
     ErrThrow("parameter with this name already exists ", p.get_name());
+   
     // what happens to p now?
 }
 
@@ -168,43 +173,49 @@ size_t ParameterDatabase::get_n_parameters() const
 }
 
 /* ************************************************************************** */
-void ParameterDatabase::write(std::ostream& os, size_t verbose) const
+void ParameterDatabase::write(std::ostream& os, bool verbose) const
 {
   if(!os.good())
   {
     Output::print("Error in ParameterDatabase::write. stream not good");
     return;
   }
-  if(verbose > 2) // make sure verbose is either 0,1, or 2
-  {
-    Output::print("Error in ParameterDatabase::write. unknown verbosity level");
-    return;
-  }
   
-  if(verbose == 2)
+  os << "# current date and time: " << utilities::get_date_and_time();
+  os << "# ParMooN hg revision: " << parmoon::hg_revision << "\n";
+  os << "# ParMooN hg branch  : " << parmoon::hg_branch << "\n";
+  os << "# ParMooN, local changes: " << parmoon::hg_local_changes << "\n";
+  os << "# ParMooN build information: " << parmoon::build_type << ", " 
+     << parmoon::parallel_type << "\n";
+#ifdef _MPI
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  os << "# number of ParMooN mpi processes: " << size << "\n";
+#endif
+  os << "# hostname: " << utilities::get_host_name() << "\n";
+  os << "# Writing a ParMooN parameter database with "
+     << this->get_n_parameters() << " parameters\n";
+  os << "\n";
+  if(verbose)
   {
-    os << "# current date and time: " << utilities::get_date_and_time();
-    os << "# ParMooN hg revision: " << parmoon::hg_revision << "\n";
-    os << "# ParMooN hg branch  : " << parmoon::hg_branch << "\n";
-    os << "# ParMooN, local changes: " << parmoon::hg_local_changes << "\n";
-    os << "# ParMooN build information: " << parmoon::build_type << ", " 
-       << parmoon::parallel_type << "\n";
-    os << "# hostname: " << utilities::get_host_name() << "\n";
-    os << "# Writing a ParMooN parameter database with "
-       << this->get_n_parameters() << " parameters\n";
-    os << "\n";
-  
     os << "# The name of the database. This is usually not of any importance\n";
-    os << "[ " << this->name << " ]\n\n";
   }
+  os << "[ " << this->name << " ]\n\n";
+  
   for(const auto& p : this->parameters)
   {
-    if(verbose == 1 || verbose == 2) // verbose != 0
+    if(verbose)
     {
+      // print the description as well as the parameter with its value and range
       p.print_description(os, "## ", 60, "");
+      os << p.get_name() << ": " << p << "   " 
+         << p.range_as_string() << "\n\n";
     }
-    os << p.get_name() << ": " << p << "   " 
-       << p.range_as_string() << "\n\n";
+    else
+    {
+      os << p.get_name() << ": " << p << "\n";
+    }
+    
   }
 }
 
@@ -315,6 +326,14 @@ Parameter::types get_parameter_and_type(std::string value_string,
     try
     {
       int value = stoi(value_string);
+      // in the following, we check if input = scientific notation, e.g 1e5
+      int exponent = 0 ;
+      auto position = value_string.find(std::string("e"));
+      if (position != std::string::npos)
+      {
+        exponent = stoi(value_string.substr(position + 1));
+      }
+      value = value * std::pow(10,exponent);
       if(value < 0) // this is an int not a size_t
       {
         int_ret = value;
@@ -390,7 +409,7 @@ std::pair<bool,std::set<std::string>> get_range_list(std::string range)
     auto end    = range.find("]", begin);
     if(middle == npos || end == npos)
     {
-      ErrThrow("wrong range format for interval.");
+      ErrThrow("wrong range format for an interval.");
     }
     if(range.find(",", middle+1) < end)
     {
@@ -416,6 +435,10 @@ std::pair<bool,std::set<std::string>> get_range_list(std::string range)
     begin += 1; // just after the "{"
     auto middle = range.find(",", begin); // find first comma
     auto end    = range.find("}", begin);
+    if(end == npos)
+    {
+      ErrThrow("wrong range format for a set.");
+    }
     ret.first = false;
     while(middle < end && middle != npos)
     {
@@ -634,8 +657,9 @@ bool read_parameter(const std::string& line, std::string& name,
   if(remainder.size() == 0)
     return false; // no value given, maybe write a warning
   
-  auto position_for_value = remainder.find(" "); // may be npos
+  auto position_for_value = remainder.find_first_of("{["); // may be npos
   value = remainder.substr(0, position_for_value);
+  remove_trailing_whitespace(value);
   
   range_string.clear();
   if(position_for_value != npos)
@@ -733,15 +757,15 @@ void ParameterDatabase::merge(const ParameterDatabase &other,
 /* ************************************************************************** */
 void ParameterDatabase::info(bool only_names) const
 {
-  Output::print("Parameter database: ", this->name);
-  Output::print("  number of parameters: ", this->parameters.size());
-  for(const auto& p : this->parameters)
-  {
-    if(only_names)
-      Output::print("    ", p.get_name(), ": ", p.value_as_string());
-    else
-      p.info();
-  }
+    Output::print("Parameter database: ", this->name);
+    Output::print("  number of parameters: ", this->parameters.size());
+    for(const auto& p : this->parameters)
+    {
+        if(only_names)
+            Output::print("    ", p.get_name(), ": ", p.value_as_string());
+        else
+            p.info();
+    }
 }
 
 /* ************************************************************************** */
@@ -879,9 +903,9 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	         "often simply set to zero and computing errors then means computing "
 	         "norms, e.g. the L^2-norm of the solution.",
 			 {true,false});
-
+	  ///@todo change this to output_directory
 	  db.add("output_vtk_directory", ".",
-	         "This directory is where the VTK output is written. This "
+	         "This directory is where the output is written. This "
 	         "directory will be created, if it does not exist already. Files in "
 	         "this directory will be overwritten without any warning.");
 

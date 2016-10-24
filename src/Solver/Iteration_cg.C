@@ -31,10 +31,10 @@ std::pair<unsigned int, double> Iteration_cg<L, Vector>::iterate(
   Vector r(rhs); // copy values
   A.apply_scaled_add(solution, r, -1.0);
   
-  double normb = norm(rhs);
+  double normb = rhs.norm();
   if (normb == 0.0)
     normb = 1;
-  double resid = norm(r) / normb;
+  double resid = r.norm() / normb;
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0)) 
   {
@@ -67,7 +67,7 @@ std::pair<unsigned int, double> Iteration_cg<L, Vector>::iterate(
     //r -= alpha * q;
     r.add_scaled(q, -alpha);
     
-    resid = norm(r) / normb;
+    resid = r.norm() / normb;
     if(this->converged(resid, i))
     {
       return std::pair<unsigned int, double>(i, resid);

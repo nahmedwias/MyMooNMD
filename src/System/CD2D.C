@@ -11,7 +11,7 @@
 
 ParameterDatabase get_default_CD2D_parameters()
 {
-  Output::print<3>("creating a default CD2D parameter database");
+  Output::print<5>("creating a default CD2D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default CD2D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
@@ -108,7 +108,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
     ErrThrow("mdml is currently not working.");
   
   // number of multigrid levels
-  size_t n_levels = mg->get_n_levels();
+  size_t n_levels = mg->get_n_geometric_levels();
   // index of finest grid
   int finest = domain.get_ref_level(); // -> there are finest+1 grids
   // index of the coarsest grid used in this multigrid environment
@@ -280,7 +280,27 @@ void CD2D::output(int i)
   
   // write solution to a vtk file or in case-format
   outputWriter.write(i);
+
+  /*
+  // implementation with the old class TOutput2D
+  {
+    // last argument in the following is domain, but is never used in this class
+    TOutput2D Output(1, 1, 0, 0, NULL);
+    Output.AddFEFunction(&fe_function);
+
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
+    if(i >= 0)
+      filename += "_" + std::to_string(i);
+    filename += ".vtk";
+    Output.WriteVtk(filename.c_str());
+  }
+  */
   
+
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.

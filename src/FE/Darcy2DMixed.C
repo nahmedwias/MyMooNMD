@@ -121,6 +121,8 @@ int GetSignOfThisDOF(int N_DOF, int DOF)
        return 1;
        break;
   }
+  //dummy return, should not be reached
+  return -4711;
 }
 
 // ======================================================================

@@ -104,7 +104,7 @@ int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
                   double StartY)
 {
   int i;
-  double text_x1,text_x2,text_y1,text_y2;
+  double text_x1=0,text_x2=0,text_y1=0,text_y2=0;
 #ifdef __GRIDCELL_WITH_NUMBERS__
   double x, y;
 #endif

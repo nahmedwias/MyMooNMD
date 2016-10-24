@@ -21,7 +21,7 @@
 
 ParameterDatabase get_default_NSE3D_parameters()
 {
-  Output::print<3>("creating a default NSE3D parameter database");
+  Output::print<5>("creating a default NSE3D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default NSE3D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
@@ -90,6 +90,7 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
     default:
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
+
 #ifdef _MPI
 
   velocitySpace_.initialize_parallel(maxSubDomainPerDof);
@@ -104,6 +105,8 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 
 void NSE3D::output_problem_size_info() const
 {
+  int my_rank = 0;
+#ifndef _MPI
     const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
     const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
 
@@ -117,16 +120,32 @@ void NSE3D::output_problem_size_info() const
     double hmin, hmax;
     coll->GetHminHmax(&hmin, &hmax);
 
-    Output::stat("NSE3D", "Mesh data and problem size");
+#else
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    auto velocity_comm = systems_.front().velocitySpace_.get_communicator();
+    auto pressure_comm = systems_.front().pressureSpace_.get_communicator();
+    int nDofu  = velocity_comm.get_n_global_dof();
+    int nDofp  = pressure_comm.get_n_global_dof();
+    int nTotal = 3*nDofu + nDofp;
+
+#endif
+    if(my_rank ==0)
+    {
+    Output::stat("NSE3D", "Mesh data and problem size on finest grid");
+#ifndef _MPI
     Output::dash("N_Cells      :  ", setw(10), coll->GetN_Cells());
     Output::dash("h(min, max)  :  ", setw(10), hmin, setw(10), " ", hmax);
-    Output::dash("ndof Velocity:  ", setw(10), 3*nDofu );
-    Output::dash("ndof Pressure:  ", setw(10), nDofp);
-    Output::dash("ndof Total   :  ", setw(10), nTotal );
+#endif
+    Output::dash("ndof velocity:  ", setw(10), 3*nDofu );
+    Output::dash("ndof pressure:  ", setw(10), nDofp);
+    Output::dash("ndof total   :  ", setw(10), nTotal );
+#ifndef _MPI
     Output::dash("nActive      :  ", setw(10), nActive);
+#endif
+    }
 }
 
-NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
              const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
@@ -164,7 +183,7 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   }
   
   bool usingMultigrid = solver.is_using_multigrid();
-  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
+  TCollection *coll = collections.front(); //the finest grid collection
   // create finite element space and function, a matrix, rhs, and solution
   #ifdef _MPI
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
@@ -175,51 +194,38 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   
   if(usingMultigrid)
   {
-    #ifdef _MPI
-    ErrThrow("There is no multigrid for NSE3D in MPI yet!");
-    #endif
     // Construct multigrid object
     auto mg = this->solver.get_multigrid();
-    bool mdml = mg->is_using_mdml();
-    if(mdml)
+
+    //Check whether number of given grids is alright
+    size_t n_multigrid_levels = mg->get_n_geometric_levels();
+    size_t n_grids = collections.size();
+    if(n_multigrid_levels != n_grids )
+      ErrThrow("Wrong number of grids for multigrid! I was expecting ",
+               n_multigrid_levels, " geometric grids but only got ", n_grids,".");
+
+    if(mg->is_using_mdml())
     {
       // change the discretization on the coarse grids to lowest order 
       // non-conforming(-1). The pressure space is chosen automatically(-4711).
       velocity_pressure_orders = {-1, -4711};
       this->get_velocity_pressure_orders(velocity_pressure_orders);
     }
-    
-    // number of multigrid levels
-    size_t n_multigrid_levels = mg->get_n_levels();
-    // index of finest grid
-    int finest = domain.get_ref_level(); // -> there are finest+1 grids
-    // index of the coarsest grid used in this multigrid environment
-    int coarsest = finest - n_multigrid_levels + 1;
-    if(mdml)
-    {
-      coarsest++;
-    }
     else
     {
-      // only for mdml there is another matrix on the finest grid, otherwise
-      // the next system to be created is on the next coarser grid
-      finest--;
-    }
-    if(coarsest < 0 )
-    {
-      ErrThrow("the domain has not been refined often enough to do multigrid "
-               "on ", n_multigrid_levels, " levels. There are only ",
-               domain.get_ref_level() + 1, " grid levels.");
+      // for standard multigrid, pop the finest collection - it was already
+      // used to construct a space before the "if(usingMultigrid)" clause
+      // and will not (as in mdml) be used a second time with a different discretization
+      collections.pop_front();
     }
     
      // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
     // matrix on finest grid is already constructed
     matrices.push_back(&systems_.back().matrix_);
-    // initialize the systems on the coarser grids (smaller spaces)
-    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
+
+    for(auto coll : collections) // initialize the coarse grid space hierarchy
     {
-      TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
       #ifndef _MPI
       systems_.emplace_back(example, *coll, velocity_pressure_orders, type);
       #else
@@ -232,7 +238,9 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     // initialize the multigrid object with all the matrices on all levels
     mg->initialize(matrices);
   }
+
   output_problem_size_info();
+
 }
 
 void NSE3D::check_parameters()
@@ -574,6 +582,14 @@ void NSE3D::assemble_non_linear_term()
 
   for(auto &s : this->systems_)
   {
+#ifdef _MPI
+    //MPI: solution in consistency level 3 (TODO: this might be superfluous here)
+    for (size_t bl = 0; bl < s.solution_.n_blocks() ;++bl)
+    {
+      s.matrix_.get_communicators()[bl]->consistency_update(s.solution_.block(bl), 3);
+    }
+#endif
+
     // spaces for matrices
     const TFESpace3D* spaces[1] = {&s.velocitySpace_};
     
@@ -709,6 +725,16 @@ void NSE3D::compute_residuals()
   unsigned int n_p_dof = s.solution_.length(3);
 
   // copy rhs to defect and compute defect
+#ifdef _MPI
+    //MPI: solution in consistency level 3 (TODO: maybe this is superfluous here
+    // (because solution might be in level 3 consistency already)!)
+    auto comms = s.matrix_.get_communicators();
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(s.solution_.block(bl), 3);
+    }
+#endif
+
   defect_ = s.rhs_;
   s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
 
@@ -718,45 +744,28 @@ void NSE3D::compute_residuals()
                     TDatabase::ParamDB->PRESSURE_SPACE);
   }
 
-  // square of the norms of the residual components
+  // This is the calculation of the residual, given the defect.
+  BlockVector defect_impuls({n_u_dof,n_u_dof,n_u_dof});
+  BlockVector defect_mass({n_p_dof});
+  //copy the entries (BlockVector offers no functionality to do this more nicely)
+  for(size_t i = 0; i<3*n_u_dof ;++i)
+    defect_impuls.get_entries()[i] = defect_.get_entries()[i];
+  for(size_t i =0 ; i<n_p_dof ; ++i)
+    defect_mass.get_entries()[i] = defect_.get_entries()[3*n_u_dof + i];
+
 #ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  std::vector<double> defect_m(defect_.get_entries_vector()); //copy of defect (entries)
-  //Eliminate all non-master rows in defect_m!
-  for(int ui = 0; ui < 3; ++ui)
-  {//velocity rows
-    const int* masters = s.velocitySpace_.get_communicator().GetMaster();
-    for(size_t i = 0; i<n_u_dof; ++i)
-    {
-      if (masters[i]!=my_rank)
-      {
-        defect_m[n_u_dof*ui + i]=0;
-      }
-    }
-  }
-  {//pressure row
-    const int* masters = s.pressureSpace_.get_communicator().GetMaster();
-    for(size_t i = 0; i<n_p_dof; ++i)
-    {
-      if (masters[i]!=my_rank)
-      {
-        defect_m[n_u_dof*3 + i]=0;
-      }
-    }
-  }
-  //TODO write this nicer (std!)
-  double impuls_Residual = Ddot(3*n_u_dof, &defect_m.at(0),&defect_m.at(0));
-  double mass_residual = Ddot(n_p_dof, &defect_m.at(3*n_u_dof),
-                              &defect_m.at(3*n_u_dof));
+  double impuls_residual_square = defect_impuls.norm_global({comms[0],comms[1],comms[2]});
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm_global({comms[3]});
+  mass_residual_square *= mass_residual_square;
 #else
-  //should not BlockVector be able to do vector*vector?
-  double impuls_Residual = Ddot(3*n_u_dof, &this->defect_[0],&this->defect_[0]);
-  double mass_residual = Ddot(n_p_dof, &this->defect_[3*n_u_dof],
-                              &this->defect_[3*n_u_dof]);
+  double impuls_residual_square = defect_impuls.norm();
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm();
+  mass_residual_square *= mass_residual_square;
 #endif
 
-  Residuals current_residuals(impuls_Residual, mass_residual);
+  Residuals current_residuals(impuls_residual_square, mass_residual_square);
   old_residuals_.add(current_residuals);
 }
 
@@ -813,6 +822,11 @@ void NSE3D::output(int i)
   if(no_output)
     return;
   
+  // In multigrid case, print time that was spent on coarse grid
+  // (needed for curr project (ParMooN paper, Sep 2016), can be removed after)
+  if(solver.is_using_multigrid())
+    solver.get_multigrid()->print_coarse_grid_time_total();
+
   System_per_grid& s=this->systems_.front();
   TFEFunction3D* u1 = s.u_.GetComponent(0);
   TFEFunction3D* u2 = s.u_.GetComponent(1);

@@ -2,9 +2,13 @@
 #include <BlockVector.h>
 #include <LinAlg.h>
 
-#include <limits>
 #include <algorithm>
+#include <limits>
 #include <list>
+
+#ifdef _MPI
+#include <BlockFEMatrix.h> //needed in sor_sweep for a dynamic type downcast
+#endif
 
 /* ************************************************************************* */
 BlockMatrix::CellInfo::CellInfo()
@@ -220,8 +224,13 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
 
 
 /* ************************************************************************* */
+#ifdef _MPI
+void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                            size_t flag, const std::string& par_strat) const
+#else
 void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
                             size_t flag) const
+#endif
 {
   if(flag > 2)
     ErrThrow("BlockMatrix::sor_sweep with flag not 0,1, or 2.");
@@ -268,10 +277,19 @@ void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
                                                  &modified_rhs[0], -1.);
       }
       // do the sor sweep
+
+#ifdef _MPI
+      auto comms = dynamic_cast<const BlockFEMatrix*>(this)->get_communicators();
+      if(backward_sweep)
+        diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 1, par_strat, *comms.at(d));
+      else
+        diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 0, par_strat, *comms.at(d));
+#else
       if(backward_sweep)
         diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 1);
       else
         diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 0);
+#endif
     }
   }
 }

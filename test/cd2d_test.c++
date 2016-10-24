@@ -223,28 +223,25 @@ int main(int argc, char* argv[])
   Chrono time; // measure the time spent for each solver
   
   Output::print("\n\n ----------- direct solver -----------\n");
-  time.reset();
   db["solver_type"] = "direct";
   db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
-  time.print_time("all tests, direct solver");
+  time.restart_and_print("all tests, direct solver");
   
   
   Output::print("\n\n ----------- petsc solver -----------\n");
-  time.reset();
   db["solver_type"] = "petsc";
   db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
-  time.print_time("all tests, petsc solver");
+  time.restart_and_print("all tests, petsc solver");
   
   
   
   Output::print("\n\n --------- fgmres+ssor solver ---------\n");
-  time.reset();
   db["solver_type"] = "iterative";
   db["iterative_solver_type"] = "fgmres";
   db["max_n_iterations"] = 1000;
@@ -253,12 +250,11 @@ int main(int argc, char* argv[])
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
-  time.print_time("all tests, fgmres solver and ssor preconditioner");
+  time.restart_and_print("all tests, fgmres solver and ssor preconditioner");
   
   
   
   Output::print("\n\n --------- fgmres+multigrid solver ---------\n");
-  time.reset();
   db["iterative_solver_type"] = "fgmres";
   db["preconditioner"] = "multigrid";
   db["multigrid_n_levels"] = 2;
@@ -272,7 +268,8 @@ int main(int argc, char* argv[])
   tests_on_quads(nRefinements, db);
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
-  time.print_time("all tests, fgmres solver and multigrid preconditioner");
+  time.restart_and_print("all tests, fgmres solver and multigrid "
+                         "preconditioner");
   
   
   // Old test using algebraic flux correction

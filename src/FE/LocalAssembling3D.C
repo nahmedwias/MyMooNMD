@@ -118,8 +118,21 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->Manipulate = NULL;
           break;
         case SUPG:
-        	ErrThrow("currently DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
-        	               " (SUPG) is not supported by the class CD3D");
+          // second derivatives are not supported yet
+          // the method is used for the convection dominant
+          // => coefficient of laplace is smaller
+          this->N_Terms = 4;
+          this->Derivatives = { D100, D010, D001, D000 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0, 0, 0, 0};
+          this->N_Matrices = 1;
+          this->RowSpace = { 0 };
+          this->ColumnSpace = { 0 };
+          this->N_Rhs = 1;
+          this->RhsSpace = { 0 };
+          this->AssembleParam = BilinearAssemble_SD;
+          this->Manipulate = NULL;
           break;
         default:
           ErrThrow("currently DISCTYPE ", TDatabase::ParamDB->DISCTYPE,

@@ -20,14 +20,20 @@ SmootherCode string_to_smoother_code(std::string code)
 {
   if(code == std::string("direct_solve"))
     return SmootherCode::DIRECT_SOLVE;
-  if(code == std::string("jacobi"))
+  else if(code == std::string("jacobi"))
     return SmootherCode::JACOBI;
+  else if(code == std::string("sor"))
+    return SmootherCode::SOR;
+  else if(code == std::string("ssor"))
+    return SmootherCode::SSOR;
   else if(code == std::string("nodal_vanka"))
     return SmootherCode::NODAL_VANKA;
   else if(code == std::string("cell_vanka"))
     return SmootherCode::CELL_VANKA;
   else if(code == std::string("batch_vanka"))
     return SmootherCode::BATCH_VANKA;
+  else if(code == std::string("cell_vanka_jacobi"))
+    return SmootherCode::CELL_VANKA_JACOBI;
   else if(code == std::string("nodal_vanka_store"))
     return SmootherCode::NODAL_VANKA_STORE;
   else if(code == std::string("cell_vanka_store"))
@@ -66,16 +72,23 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
   this->db.merge(param_db, false);
   this->type_ = string_to_multigrid_type(db["multigrid_type"]);
   
-  size_t n_levels = this->get_n_levels();
-  if(n_levels <= 1)
-    ErrThrow("for multigrid you need at least two multigrid levels, not ",
-             n_levels);
+  size_t n_geo_levels = this->get_n_geometric_levels();
 
-  damp_factors_.resize(n_levels, db["multigrid_correction_damp_factor"]);
+  //Determine the number of algebraci levels (depth of space hierarchy)
+  if(type_ == MultigridType::MDML)
+    n_algebraic_levels_ = n_geo_levels + 1;
+  else
+    n_algebraic_levels_ = n_geo_levels;
+
+  if(n_algebraic_levels_ <= 1)
+    ErrThrow("for multigrid you need at least two multigrid levels, ",
+             n_algebraic_levels_, " is plain not enough.");
+
+  damp_factors_.resize(n_algebraic_levels_, db["multigrid_correction_damp_factor"]);
   
   // Set up the cycle control.
   std::string cycle_str = db["multigrid_cycle_type"];
-  control_ = CycleControl(cycle_str, n_levels);
+  control_ = CycleControl(cycle_str, n_algebraic_levels_);
 
   n_pre_smooths_ = db["multigrid_n_pre_smooth"];
 
@@ -85,18 +98,22 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
 
   n_post_smooths_ = db["multigrid_n_post_smooth"];
 
+  //Send the coarse grid stopwatch to sleep.
+  coarse_grid_timer.reset();
+
 }
 
 void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
 {
   // Create the levels and collect them in a list
-  if(matrices.size() != this->get_n_levels())
+  if(matrices.size() != n_algebraic_levels_)
   {
     Output::warn<2>("Multigrid::initialize", "the number of multigrid levels "
-                    "was set to ", this->get_n_levels(), ", but there are ",
+                    "was set to ", n_algebraic_levels_, ", but there are ",
                     matrices.size(), " matrices given. I will assume ", 
                     matrices.size(), " multigrid levels from now on.");
-    this->db["multigrid_n_levels"] = matrices.size();
+
+    n_algebraic_levels_ = matrices.size();
   }
   auto coarsest = matrices.front();
   for(auto mat : matrices)
@@ -109,7 +126,13 @@ void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
 
     // A database, can be filled with parameters the level might need.
     ParameterDatabase level_db(std::string("multigrid level database"));
+    //TODO only the parameters required by sm should go in that level database!
     level_db.add(Parameter(db["multigrid_vanka_damp_factor"]));
+    level_db.add(Parameter(db["jacobi_damp"]));
+    level_db.add(Parameter(db["sor_omega"]));
+#ifdef _MPI
+    level_db.add(Parameter(db["sor_parallel_type"]));
+#endif
 
     levels_.push_back(MultigridLevel(mat, sm, level_db));
   }
@@ -141,7 +164,7 @@ void Multigrid::cycle()
   size_t n_steps = control_.get_n_steps();
   size_t finest = levels_.size() - 1;
 
-  //Start with 0 solution TODO enable other start solution!
+//  //Start with 0 solution TODO enable other start solution!
   levels_.at(finest).solution_ = 0.0;
   //...but copy non-actives
   levels_.at(finest).solution_.copy_nonactive(levels_.at(finest).rhs_);
@@ -162,6 +185,11 @@ void Multigrid::update()
   }
 }
 
+void Multigrid::print_coarse_grid_time_total() const
+{
+  coarse_grid_timer.print_total_time("coarse grid (total)");
+}
+
 int Multigrid::cycle_step(size_t step, size_t level)
 {
 #ifdef _MPI
@@ -180,6 +208,10 @@ int Multigrid::cycle_step(size_t step, size_t level)
     if (my_rank == 0)
       Output::info<4>("COARSE SOLVE", "Level ", level);
     double res = 1e10;
+
+    //start coarse grid time measurement
+    coarse_grid_timer.start();
+
     for(size_t i = 0; i < this->coarse_n_maxit && res > coarse_epsilon ; ++i)
     {
       levels_.at(coarsest).apply_smoother();
@@ -188,6 +220,10 @@ int Multigrid::cycle_step(size_t step, size_t level)
       if (my_rank == 0)
         Output::dash<4>("Coarse Grid Iteration ", i, " res: ", res);
     }
+
+    //stop coarse grid time measurement
+    coarse_grid_timer.stop();
+
     update_solution_in_finer_grid(level);
     return level + 1;
   }
@@ -262,14 +298,14 @@ void Multigrid::update_rhs_in_coarser_grid(size_t lvl)
     // that restriction into coarser level's right hand side.
 #ifdef _MPI
   const TParFECommunicator3D& comm_fine = space_current.get_communicator();
-  comm_fine.consistency_update(defect_current_entries, 3); //restore level 3 consistency
+  comm_fine.consistency_update(defect_current_entries, 1); //restore level 1 consistency
 #endif
     GridTransfer::DefectRestriction(space_coarse, space_current,
                                     rhs_coarse_entries, size_coarse_rhs,
                                     defect_current_entries, size_current_defect);
 #ifdef _MPI
     const TParFECommunicator3D& comm_coarse = space_coarse.get_communicator();
-    comm_coarse.CommUpdateReduce(rhs_coarse_entries); //call CommUpdateReduce TODO What and why exactly???
+    comm_coarse.CommUpdateReduce(rhs_coarse_entries); //call CommUpdateReduce TODO Why exactly???
 #endif
   }
 
@@ -309,10 +345,10 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
 
 #ifdef _MPI
     const TParFECommunicator3D& comm_current = space_current.get_communicator();
-    comm_current.consistency_update(sol_cur_entries, 3); //restore level 3 consistency
+    comm_current.consistency_update(sol_cur_entries, 1); //restore level 1 consistency
 #endif
 
-    //Do the prolongation and write its result into sol_fine_copy_entries
+    //Do the prolongation and write its result into solution_prolongation
     GridTransfer::Prolongate(
         space_current, space_fine,
         sol_cur_entries, size_sol_cur,
@@ -320,7 +356,7 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
 
 #ifdef _MPI
     const TParFECommunicator3D& comm_fine = space_fine.get_communicator();
-    comm_fine.CommUpdateReduce(solution_prolongation); //call CommUpdateReduce TODO What and why exactly???
+    comm_fine.CommUpdateReduce(solution_prolongation); //call CommUpdateReduce TODO Why exactly???
 #endif
 
     //Update the actual solution_fine_entries by damped addition
@@ -333,10 +369,6 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
       sol_fine_entries[j] += damp * solution_prolongation[j];
     }
 
-#ifdef _MPI
-    comm_fine.consistency_update(sol_fine_entries,3);
-#endif
-
   }
 
 }
@@ -348,11 +380,14 @@ void Multigrid::set_solution_in_coarser_grid_to_zero(size_t lvl)
 
 ParameterDatabase Multigrid::default_multigrid_database()
 {
-  Output::print<3>("creating a default multigrid parameter database");
+  Output::print<5>("creating a default multigrid parameter database");
   ParameterDatabase db("default multigrid database");
 
   db.add<size_t>("multigrid_n_levels", 2,
-         "Determine how many levels the multigrid cycle consists of.", 0, 5);
+         "Determine how many levels to use in the grid hierarchy. Note that "
+         "this determines the number of geometrical grids to use, so if you use mdml "
+         "the multigrid cycle will be multigrid_n_levels + 1 levels deep, since the "
+         "finest geometrical grid is used twice.", 0, 5);
 
   db.add("multigrid_type", "standard",
          "The type of multigrid algorithm to apply. Besides "
@@ -370,14 +405,18 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "The smoother to use on all but the coarsest level. You should take "
          "care, that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
-         {"jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+         {"jacobi", "sor",
+          "nodal_vanka", "cell_vanka", "batch_vanka",
+          "cell_vanka_jacobi",
           "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
   db.add("multigrid_smoother_coarse", "direct_solve",
          "The smoother to use on the coarsest level. You should take care, "
          "that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
-         {"direct_solve", "jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+         {"direct_solve", "jacobi", "sor",
+          "nodal_vanka", "cell_vanka", "batch_vanka",
+          "cell_vanka_jacobi",
           "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
   db.add("multigrid_correction_damp_factor", 1.0,
@@ -414,5 +453,21 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "quite responsive to this value. Although it defaults to 1.0 (no "
          "damping), a value of 0.8 is often a good start.", 0.0, 1.0);
 
+  db.add("jacobi_damp", 1.0,
+         "Damping factor for the Jacobi smoother. If chosen below 1, turns "
+         "the Jacobi smoother into a damped Jacobi smoother, which is expected "
+         "to perform better.", 0.0, 1.0);
+
+
+  db.add("sor_omega", 1.5, "The overrelaxation parameter (typically called "
+         "omega). This is only used for the (symmetric) successive "
+         "overrelaxation method, adn only if that one is used "
+         "as a smoother here.", 0., 2.);
+
+#ifdef _MPI
+  db.add("sor_parallel_type", "all_cells", "This is in an experimental state. It is "
+         "about the parallelization strategy of the SOR (when used as a smoother).",
+         {"all_cells", "own_cells"});
+#endif
   return db;
 }

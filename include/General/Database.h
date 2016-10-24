@@ -26,6 +26,7 @@ class TDatabase;
 #include <Iterator.h>
 #include <RefDesc.h>
 #include <Constants.h>
+#include <Mapper.h>
 
 struct TParaDB
 {
@@ -53,7 +54,7 @@ struct TParaDB
   /** parameters for controling the program */
   //======================================================================
   int PRECOND_LS;
-   int WRITE_GRAPE;
+  int WRITE_GRAPE;
   int WRITE_GNU;
   int WRITE_GMV;
   int WRITE_AMIRA;
@@ -302,10 +303,18 @@ struct TParaDB
   double OSEEN_ZERO_ORDER_COEFF;
 
   //======================================================================
-  /** PARAMETERS FOR Brinkman PROBLEMS                  */
+  /** Parameters for Brinkman problems                  */
   //======================================================================
   int BrinkmanTYPE;
-
+  double VISCOSITY;
+  double EFFECTIVE_VISCOSITY;
+  double PERMEABILITY;
+    
+  //======================================================================
+  /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
+  //======================================================================
+    double equal_order_stab_weight_P1P1;
+    double equal_order_stab_weight_P2P2;
     
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */
@@ -313,7 +322,7 @@ struct TParaDB
   int DARCYTYPE; 
   double SIGMA_PERM;
   //======================================================================
-  
+    
   double FR_NR;
   double WB_NR;
   double PR_NR;
@@ -669,8 +678,49 @@ struct TParaDB
   
   int DEPENDENT_BASIS;
   int DEPENDENT_BASIS_Q1;
-  int DEPENDENT_BASIS_Q2;  
-  
+  int DEPENDENT_BASIS_Q2;
+    
+  //======================================================================
+  /** parameters for weakly imposing boundary/interface conditions for Brinkman problems  */
+  //======================================================================
+    // number of boundary components with neumann conditions
+    int n_neumann_boundary;
+    // ID's of boundary components with neumann conditions
+    std::vector<int> neumann_boundary_id;
+    // factor for boundary integrals
+    std::vector<double> neumann_boundary_value;
+    
+    int n_g_v_boundary;
+    std::vector<int> g_v_boundary_id;
+    std::vector<double> g_v_boundary_value;
+    
+    int n_unvn_boundary;
+    std::vector<int> unvn_boundary_id;
+    std::vector<double> unvn_boundary_value;
+    
+    int n_graduvn_boundary;
+    std::vector<int> graduvn_boundary_id;
+    std::vector<double> graduvn_boundary_value;
+    
+    int n_gradunv_boundary;
+    std::vector<int> gradunv_boundary_id;
+    std::vector<double> gradunv_boundary_value;
+    
+    int n_u_v_boundary;
+    std::vector<int> u_v_boundary_id;
+    std::vector<double> u_v_boundary_value;
+    
+    int n_p_v_n_boundary;
+    std::vector<int> p_v_n_boundary_id;
+    std::vector<double> p_v_n_boundary_value;
+    
+    // Nitsche Combi - weak Dirichlet
+    int n_nitsche_boundary ;
+    std::vector<int> nitsche_boundary_id;
+    std::vector<double> nitsche_penalty;
+    
+  //======================================================================
+    
   #ifdef _MPI
   /** MPI_Comm for which the computation is started (should not be changed during coomputation)*/
   MPI_Comm Comm;

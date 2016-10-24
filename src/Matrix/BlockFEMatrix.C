@@ -3,6 +3,10 @@
 #include <BlockVector.h>
 #include <Database.h>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif
+
 #include <limits>
 #include <algorithm>
 
@@ -995,8 +999,8 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
   //B: CORRECTIONS DUE TO PRESSURE PROJECTION
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {// TODO: remove database dependency
-   // TODO: this entire business is still a mess!!!
-   // check that its really a Navier-Stokes matrices
+    // TODO: this entire business is still a mess!!!
+    // check that its really a Navier-Stokes matrices
 #ifdef __2D__
     size_t dim = 2;
 #endif
@@ -1006,31 +1010,95 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
     if( pressure_correction && n_cell_rows_ == dim + 1 
         && n_cell_columns_ == dim + 1 && r_first <= dim && r_last >= dim)
     {
-      // the relevant block row is contained
-      // number of velocity dofs
-      int n_rows = this->get_blocks().at(0)->GetN_Rows();
+#ifdef _MPI
+      int my_rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-      // find the first row of the third block column
-      size_t skipped_block_rows = r_first;
-      int begin = rowptr[(dim - skipped_block_rows )*n_rows];
-      int end   = rowptr[(dim - skipped_block_rows)*n_rows+1]; //now we have the row
+      // let 0 send a ping to all other processes, to determine which pressure
+      // row to eliminate
+      int verb = Output::getVerbosity();
+      Output::suppressAll();
+      int p_dof = get_communicators().back()->dof_ping(0,0);
+      Output::setVerbosity(verb);
 
-      size_t skipped_block_cols = c_first;
-      int future_diagonal = end -1;
-      int diagonal_relative = (dim-skipped_block_cols)*n_rows;
-      for(int j = begin; j<end;++j)
+      if(my_rank==0)
       {
-        entries[j]=0;
-        if(kcolptr[j] >= (int)dim*diagonal_relative && future_diagonal == end-1)
-          future_diagonal = j;
+#endif
+        // the relevant block row is contained
+        // number of velocity dofs
+        int n_rows = this->get_blocks().at(0)->GetN_Rows();
+
+        // find the first row of the third block column
+        size_t skipped_block_rows = r_first;
+        int begin = rowptr[(dim - skipped_block_rows )*n_rows];
+        int end   = rowptr[(dim - skipped_block_rows)*n_rows+1]; //now we have the row
+
+        size_t skipped_block_cols = c_first;
+        int future_diagonal = end -1;
+        int diagonal_relative = (dim-skipped_block_cols)*n_rows;
+        for(int j = begin; j<end;++j)
+        {
+          entries[j]=0;
+          if(kcolptr[j] >= (int)dim*diagonal_relative && future_diagonal == end-1)
+            future_diagonal = j;
+        }
+        if(diagonal_relative < sub_cmat->GetN_Columns() && begin != end)
+        {
+          entries[future_diagonal] = 1;
+          kcolptr[future_diagonal] = diagonal_relative;
+        }
+        else if(begin == end)
+        {
+          // the matrix row is empty, therefore we have to change the matrix
+          // structure to include a value here.
+          // This typically happens if you try to get only the C-block in a 
+          // Navier-Stokes problem, which is (usually) an all-zero block with 
+          // no entries at all.
+          if(sub_cmat->GetN_Entries() == 0)
+          {
+            // there are no entries at all: create a matrix of the same size
+            // with a single entry
+            // new_rows array is one everywhere except at the beginning, this 
+            // means there is exactly one entry in the first row.
+            std::vector<int> new_rows(sub_cmat->GetN_Rows()+1, 1);
+            new_rows[0] = 0;
+            // that entry has index 0, so the entry is on the diagonal.
+            std::vector<int> new_cols(1, 0); 
+            // new structure
+            auto s = std::make_shared<TStructure>(sub_cmat->GetN_Rows(),
+                                                  sub_cmat->GetN_Columns(),
+                                                  1, &new_cols[0], 
+                                                  &new_rows[0]);
+            sub_cmat.reset(new TMatrix(s));
+            sub_cmat->GetEntries()[0] = 1; // set diagonal entry
+          }
+          else
+          {
+            // this should not happen.
+            ErrThrow("Unable to return a pressure-pressure matrix C, which has "
+                     "has no entries in the first row, but in other rows.");
+          }
+        }
+#ifdef _MPI
       }
-      if(diagonal_relative < sub_cmat->GetN_Columns())
-      {
-        entries[future_diagonal] = 1;
-        kcolptr[future_diagonal] = diagonal_relative;
+      else if (p_dof != -1) //this rank knows the affected dof and has to set its row to 0
+      {//determine the row to be swept
+        int n_rows_before = 0;
+        for(size_t br = r_first; br < n_cell_rows_-1; ++br)
+          n_rows_before += this->get_row_space(br).GetN_DegreesOfFreedom();
+        int row_glob = n_rows_before + p_dof;
+        auto b_row = sub_cmat->get_row_array().at(row_glob);
+        auto e_row = sub_cmat->GetRowPtr()[row_glob+1];
+        auto entries = sub_cmat->GetEntries();
+        for(int i = b_row; i < e_row ; ++i)
+        {
+          entries[i] = 0; //nuke the entries.
+        }
       }
+#endif
     }
   }
+
 
   // Remove all zero entries from the structure and the entries array
   // TODO doing this here is very slow and it should be changed,
@@ -1140,6 +1208,34 @@ size_t BlockFEMatrix::get_n_column_actives(size_t cell_column) const
 size_t BlockFEMatrix::get_n_row_actives(size_t cell_row) const
 {
   return test_spaces_rowwise_.at(cell_row)->GetN_ActiveDegrees();
+}
+
+/* ************************************************************************* */
+void BlockFEMatrix::print_matrix_info(std::string name) const
+{
+  //Gather some information to be printed.
+  int n_spaces_row = this->get_n_cell_rows();
+  int n_spaces_col = this->get_n_cell_columns();
+
+  int my_rank = 0;
+  int n_dof = this->get_n_total_rows();
+
+#ifdef _MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  n_dof = 0;
+  for(auto c : this->get_communicators())
+  {
+    n_dof += c->get_n_global_dof();
+  }
+#endif
+
+  if(my_rank == 0)
+  {
+    Output::info("BlockFEMatrix", name, " (distributed)");
+    Output::dash(n_spaces_row, " x ", n_spaces_col, " block structure");
+    Output::dash(n_dof, " total d.o.f (across all processors)");
+  }
+
 }
 
 /* ************************************************************************* */

@@ -21,6 +21,7 @@ class TDomain;
 #include <Iterator.h>
 #include <Mesh.h>
 #include <ParameterDatabase.h>
+#include <TetGenMeshLoader.h>
 
 #ifdef __MORTAR__
 struct TMortarFaceStruct
@@ -326,8 +327,46 @@ class TDomain
        * @attention this function uses only strings (new convention, 05.2016)
        */
       void InitFromMesh(std::string PRM, std::string m);
+      
+#ifdef __3D__
+      /**
+       * @brief Initialize the domain starting from a tetgen generated mesh
+       *
+       * This function will read the mesh file ".smesh, or .." 
+       * and modiefy the domain to ressemble the mesh, 
+       * the boundary, and build the mesh which will be 
+       * used within ParMooN.
+       * @param[in] tgml an object of the class TTetGenMeshLoader
+       * @todo this function is work in progress (08.2016)
+       */
+      void GenerateFromTetgen(TTetGenMeshLoader& tgml);
+      void GenerateFromMesh(Mesh& m);
+      void buildBoundary(Mesh& m);
+      void buildParMooNMesh(Mesh& m);
+      void setVertices(Mesh& m);
+      void allocRootCells(Mesh& m);
+      void distributeJoints(Mesh& m);
+      /**
+       * @brief build the boundary of a tetrahedral mesh
+       *
+       * All the (triangular) faces are considered to be
+       * different boundary components (planes) belonging
+       * to the same BdPart.
+       */
+      void buildBoundary(TTetGenMeshLoader& tgml);
+      void buildParMooNMesh(TTetGenMeshLoader& tgml);
+      void setVertices(TTetGenMeshLoader& tgml);
+      void allocRootCells(TTetGenMeshLoader& tgml);
+      void distributeJoints(TTetGenMeshLoader& tgml);
+      
 
-
+      // auxiliary vector of boundary components 
+      std::vector<TBoundComp3D*> meshBoundComps;
+      // auxiliary vector of vertices to store the mesh vertices
+      std::vector<TVertex*> meshVertices;
+      // auxiliary vector of Joints
+      std::vector<TJoint*> meshJoints;
+#endif
     /** @brief write domain boundary  into a postscript file */
     int Draw(char *name, Iterators iterator, int arg);
     /** @brief write mesh into a postscript file */
@@ -588,8 +627,74 @@ class TDomain
    * @param name A name for the domain.
    */
   void print_info(std::string name) const;
-     
+
+  /** This is a method which wraps together two things which are awful about
+   * MPI ParMooN, especially in connection with multigrid.
+   * It must be used in main programs whenever one watns to set up a problem which
+   * is already adapted to use MPI multigrid (CD3D, NSE3D,...) and therefore gets
+   * a list of TCollections and not a Domain as parameter.
+   * Read documentation of
+   *   determine_n_refinement_steps_multigrid
+   * for a description of the problem.
+   * @param[in] parmoon_db The input database.
+   * @param[out] maxSubDomainPerDof A very annoying value, which we must
+   * curetnly drag through the whole program. Is finally used in TParFECommunicator
+   * to determine, how much space to allocate for MPI Communications
+   * @return A hierarchy of geometric grids which can be used for multigrid,
+   * finest grid first.
+   *
+   */
+  std::list<TCollection* > refine_and_get_hierarchy_of_collections(
+      const ParameterDatabase& parmoon_db
+  #ifdef _MPI
+      , int& maxSubDomainPerDof
+  #endif
+      );
      
 };
+
+/**
+ * @todo Dear team geometry: please read this description and maybe find a way to
+ * reimplement the domain decompositioning in a way which does not destroy the
+ * cell tree hierarchy (and, btw. write tests for the domain decomp).
+ *
+ * This is a helper methods which must be called in all main programs which
+ * intend to make use of a parallelized multigrid solver, i.e. the (T)CD3D and
+ * (T)NSE3D mains programs and their test programs.
+ *
+ * The point is, that due to the modifications which apppear to the domain in
+ * Partition_Mesh3D and Domain_Crop, it is a bit tricky to gain a grid hierarchy
+ * for multigrid. Actually one can pick a grid (a "TCollection") only, when it
+ * currently is the finest one of the domain by using
+ *   domain.GetCollection(It_Finest, 0)
+ * Other "cell tree iterators" cannot be used succesfully, mainly because
+ * Partition_Mesh3D and/or Domain_Crop destroy the cell tree and create a new one,
+ * which only consists of one level.
+ * If now, as we usually do in ParMoooN, one has an initiali grid given and
+ * wants to perform some initial refinement steps to gain the fine computational
+ * grid, one has to split these initial steps, into some performed BEFORE partitioning
+ * the domain and some AFTER partitioning the Domain. The number of steps AFTER
+ * domain partitioning must be such, that one can pick as many grids as one needs
+ * for the requested multigrid hierarchy one by one using
+ *   domain.GetCollection(It_Finest, 0).
+ *
+ * @param[in] multigrid_type May have the values "standard" and "mdml". Otherwise
+ * the program quits.
+ * @param[in] n_multigrid_levels The number of GEOMETRIC multigrid levels.
+ * The algebraic hierarchy of mdml will have one extra level, but n_multigrid_levels
+ * will be the same as for mdml. Interpreting the parameter in such a way, means,
+ * that mdml and standard mg applied to the same problem with the same parameter
+ * n_multigrid_levels wil lead to both of them solving the same coarse grid problem,
+ * which we find preferable.
+ * @param[in] n_initial_refinement_steps The number of refinement steps to be
+ * performed in total
+ * @param[out] n_ref_before Number of refinement steps to be performed before
+ * partitioning the domain and performing
+ */
+void determine_n_refinement_steps_multigrid(
+  const std::string& multigrid_type,
+  int n_multigrid_levels,
+  int n_initial_refinement_steps,
+  int& n_ref_before, int& n_ref_after);
 
 #endif

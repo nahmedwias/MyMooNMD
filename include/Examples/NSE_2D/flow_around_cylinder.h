@@ -1,14 +1,25 @@
-// Navier-Stokes problem, Benchmark problem
-// 
-// u(x,y) = unknown
-// p(x,y) = unknown
+/**
+ * The stationary flow around cylinder problem in 2D. A benchmark problem for
+ * flow solvers, it is described in detail e.g. in:
+ *
+ * V. John, G. Matthies, "Higher Order Finite Element Discretizations in a
+ * Benchmark Problem for Incompressible Flows", Int. J. Num. Meth. Fluids 37,
+ * 885 - 903, 2001
+ *
+ */
 
+#include<BoundEdge.h>
+
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
+//side effect: sets the global parameter
 void ExampleFile()
 {
-  OutPut("Example: Benchmark_Neum.h" << endl) ;
+  Output::print("Example: flow_around_cylinder.h (stationary, 2D)");
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
-
-#define __BENCH__
 
 // ========================================================================
 // exact solution
@@ -45,7 +56,6 @@ void BoundCondition(int i, double t, BoundCond &cond)
   if (i==1)
   {
     cond = NEUMANN;
-    TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
   }
   else
     cond = DIRICHLET;
@@ -81,7 +91,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
-  double eps = 1/TDatabase::ParamDB->RE_NR;
+  double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double *coeff;
 
@@ -94,4 +104,245 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[2] = 0; // f2
     coeff[3] = 0; // g (divergence)
   }
+}
+
+/** calculate characteristic values */
+void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
+             TFEFunction2D *pfct, double &cd, double &cl)
+{
+  int i,j,k,l, N_;
+  int N_Points,N_Edges,comp;
+  double *weights, *xi, *eta;
+  double X[MaxN_QuadPoints_2D];
+  double Y[MaxN_QuadPoints_2D];
+  double AbsDetjk[MaxN_QuadPoints_2D];
+  int N_LocalUsedElements;
+  FE2D LocalUsedElements[2], CurrentElement;
+  int *DOF;
+  double **OrigFEValues, *Orig;
+  bool SecondDer[2] = { FALSE, FALSE };
+  double *u1, *u2, *p;
+  const TFESpace2D *USpace, *PSpace;
+  int *UGlobalNumbers, *UBeginIndex;
+  int *PGlobalNumbers, *PBeginIndex;
+  int *N_BaseFunct, N_Cells;
+  BaseFunct2D BaseFunct, *BaseFuncts;
+  TCollection *Coll;
+  TBaseCell *cell;
+  double value, value1, value2, value3;
+  double FEFunctValues[MaxN_BaseFunctions2D];
+  double FEFunctValues1[MaxN_BaseFunctions2D];
+  double FEFunctValues2[MaxN_BaseFunctions2D];
+  double FEFunctValues3[MaxN_BaseFunctions2D];
+  int N_DerivativesU = 3;
+  double *Derivatives[MaxN_BaseFunctions2D];
+  MultiIndex2D NeededDerivatives[3] = { D00, D10, D01 };
+  TFEFunction2D *vfct;
+  double *v, nu = DIMENSIONLESS_VISCOSITY;
+  double *Der, *aux;
+  TJoint *joint;
+  TBoundEdge *boundedge;
+  TBoundComp *BoundComp;
+  TFE2D *eleCell;
+  FE2D FEEle;
+  TFEDesc2D *FEDesc;
+  int N_DOF_Circ, *DOF_Circ;
+  char VString[] = "v";
+
+  u1 = u1fct->GetValues();
+  u2 = u2fct->GetValues();
+  p = pfct->GetValues();
+
+  USpace = u1fct->GetFESpace2D();
+  PSpace = pfct->GetFESpace2D();
+
+  UGlobalNumbers = USpace->GetGlobalNumbers();
+  UBeginIndex = USpace->GetBeginIndex();
+
+  PGlobalNumbers = PSpace->GetGlobalNumbers();
+  PBeginIndex = PSpace->GetBeginIndex();
+
+  BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+  N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+
+  aux = new double [MaxN_QuadPoints_2D*10];
+  for(j=0;j<MaxN_QuadPoints_2D;j++)
+    Derivatives[j] = aux + j*10;
+
+  N_ = u1fct->GetLength();
+  v = new double[N_];
+  memset(v,0,N_*SizeOfDouble);
+  vfct = new TFEFunction2D(USpace, VString, VString, v, N_);
+
+// ########################################################################
+// loop over all cells
+// ########################################################################
+  Coll = USpace->GetCollection(); // all spaces use same Coll
+  N_Cells = Coll->GetN_Cells();
+
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    N_Edges=cell->GetN_Edges();
+    for(j=0;j<N_Edges;j++)              // loop over all edges of cell
+    {
+      joint=cell->GetJoint(j);
+      if ((joint->GetType() == BoundaryEdge)||
+          (joint->GetType() == IsoBoundEdge)) // boundary edge
+      {
+
+        boundedge=(TBoundEdge *)joint;
+        BoundComp=boundedge->GetBoundComp();  // get boundary component
+        comp=BoundComp->GetID();              // boundary id
+        if (comp==4)
+          {
+            FEEle = USpace->GetFE2D(i,cell);   // finite element of cell
+            eleCell =  TFEDatabase2D::GetFE2D(FEEle);
+            FEDesc = eleCell->GetFEDesc2D();   // fe descriptor
+            N_DOF_Circ = FEDesc->GetN_JointDOF(); // # local dofs on joints
+            DOF_Circ = FEDesc->GetJointDOF(j); // local dofs on joint j
+            DOF = UGlobalNumbers + UBeginIndex[i]; // pointer to global dofs
+            for (k=0;k<N_DOF_Circ;k++)         // set fe on circle to 1
+              v[DOF[DOF_Circ[k]]] = 1;
+          }
+      }
+    }
+  }
+
+  cd = 0;
+  cl = 0;
+
+// ########################################################################
+// loop over all cells
+// ########################################################################
+  Coll = USpace->GetCollection(); // all spaces use same Coll
+  N_Cells = Coll->GetN_Cells();
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+
+    // ####################################################################
+    // find local used elements on this cell
+    // ####################################################################
+    N_LocalUsedElements = 2;
+    LocalUsedElements[0] = USpace->GetFE2D(i, cell);
+    LocalUsedElements[1] = PSpace->GetFE2D(i, cell);
+
+    // ####################################################################
+    // calculate values on original element
+    // ####################################################################
+    TFEDatabase2D::GetOrig(N_LocalUsedElements, LocalUsedElements, Coll,
+                         cell, SecondDer,
+                         N_Points, xi, eta, weights, X, Y, AbsDetjk);
+
+    // calculate all needed values of p
+    CurrentElement = LocalUsedElements[1];
+    BaseFunct = BaseFuncts[CurrentElement];
+    N_ = N_BaseFunct[CurrentElement];
+
+    DOF = PGlobalNumbers + PBeginIndex[i];
+    for(l=0;l<N_;l++)
+      FEFunctValues[l] = p[DOF[l]];
+
+    OrigFEValues = TFEDatabase2D::GetOrigElementValues(BaseFunct, D00);
+
+    for(j=0;j<N_Points;j++)
+    {
+      Orig = OrigFEValues[j];
+      value = 0;
+      for(l=0;l<N_;l++)
+        value += FEFunctValues[l] * Orig[l];
+
+      Derivatives[j][0] = value;
+    }
+
+    // calculate all needed values of u1, u2
+    CurrentElement = LocalUsedElements[0];
+    BaseFunct = BaseFuncts[CurrentElement];
+    N_ = N_BaseFunct[CurrentElement];
+
+    DOF = UGlobalNumbers + UBeginIndex[i];
+    for(l=0;l<N_;l++)
+    {
+      FEFunctValues1[l] = u1[DOF[l]];
+      FEFunctValues2[l] = u2[DOF[l]];
+      FEFunctValues3[l] = v[DOF[l]];
+    }
+
+    for(k=0;k<N_DerivativesU;k++)
+    {
+      OrigFEValues = TFEDatabase2D::GetOrigElementValues(BaseFunct,
+                                      NeededDerivatives[k]);
+      for(j=0;j<N_Points;j++)
+      {
+        Orig = OrigFEValues[j];
+        value1 = 0;
+        value2 = 0;
+        value3 = 0;
+        for(l=0;l<N_;l++)
+        {
+          value1 += FEFunctValues1[l] * Orig[l];
+          value2 += FEFunctValues2[l] * Orig[l];
+          value3 += FEFunctValues3[l] * Orig[l];
+        } // endfor l
+        Derivatives[j][k+1] = value1;
+        Derivatives[j][k+4] = value2;
+        Derivatives[j][k+7] = value3;
+      } // endfor j
+    } // endfor k
+
+    // calculation
+    for(j=0;j<N_Points;j++)
+    {
+      Der = Derivatives[j];
+
+      // nu * (u1_x*v_x, u1_y*v_y), v= (v,0)
+      value1  = nu*(Der[2]*Der[8]+Der[3]*Der[9]);
+      // (u1 * u1_x + u2* u1_y) * (1,0)
+      value1 += (Der[1]*Der[2]+Der[4]*Der[3])*Der[7];
+      // pressure times divergence of test function (1,0)
+      value1 -= Der[0]*Der[8];
+
+      value2  = nu*(Der[5]*Der[8]+Der[6]*Der[9]);
+      value2 += (Der[1]*Der[5]+Der[4]*Der[6])*Der[7];
+      value2 -= Der[0]*Der[9];
+
+      cd += AbsDetjk[j]*weights[j] * value1;
+      cl += AbsDetjk[j]*weights[j] * value2;
+    }
+
+  } // endfor i
+
+  cd *= -500;
+  cl *= -500;
+
+  delete Derivatives[0];
+  delete vfct;
+  delete v;
+}
+
+void compute_drag_lift_pdiff(NSE2D& nse2d)
+{
+  double drag, lift, dP1[4], dP2[4];
+
+  const TFEVectFunct2D& u(nse2d.get_velocity());
+  TFEFunction2D& p(nse2d.get_pressure());
+
+  TFEFunction2D* u1 = u.GetComponent(0);
+  TFEFunction2D* u2 = u.GetComponent(1);
+
+  GetCdCl(u1, u2, &p, drag, lift);
+  p.FindGradient(0.15, 0.2, dP1);
+  p.FindGradient(0.25, 0.2, dP2);
+
+  double pdiff = dP1[0]-dP2[0];
+
+  // print them reference values - f.y.i. some reference values are:
+  // drag is 5.579, lift is 0.010, pdiff is 0.117
+  // note: these hold for DIMENSIONLESS_VISCOSITY = 1e-3 and geometry
+  // as described in John & Matthies 2001.
+  Output::print(">>>>> Flow Around Cylinder (stat) 2D: Postprocessing Output <<<<<");
+  Output::print( " Drag = ",setprecision(16), drag);
+  Output::print( " Lift = ", setprecision(16), lift);
+  Output::print( " deltaP = ", setprecision(16), pdiff);
 }

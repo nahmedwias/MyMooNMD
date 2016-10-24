@@ -64,14 +64,51 @@ class TBoundEdge : public TJoint
       t0 = T_0;
       t1 = T_1;
     }
-
+    
+    //START
+    void get_vertices(double &x0, double &y0, double &x1, double &y1)
+    {
+        GetXYofT( T_0, x0, y0);
+        GetXYofT( T_1, x1, y1);
+    }
+    
+    double get_length()
+    {
+      double x0, x1, y0, y1;
+      GetXYofT( this->T_0, x0, y0);
+      GetXYofT( this->T_1, x1, y1);
+      return sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
+    }
+    
+    void get_normal(double &nx, double &ny)
+    {
+      double x0, x1, y0, y1;
+      GetXYofT( this->T_0, x0, y0);
+      GetXYofT( this->T_1, x1, y1);
+      double length =  sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
+      nx =  (y1-y0)/length;
+      ny = (x0-x1)/length;
+    }
+    
+    
+    void set_index_in_neighbour(TBaseCell *neigh, int index);
+    int get_index_in_neighbour(const TBaseCell*const neigh) const;
+    //END
+    
+    
+    
+    
 #ifdef __2D__
     /** update parameters according to the new vertex positions */
     void UpdateParameters(TVertex *Begin, TVertex *End);
 #endif
 
-    /** return the coordinates {X,Y} of parameter value T */
-    int GetXYofT(double T, double &X, double &Y);
+    /** @brief return the coordinates {X,Y} of parameter value T */
+    void GetXYofT(double T, double &X, double &Y)
+    { BoundComp->GetXYofT(T, X, Y); }
+    /** @brief return parameter value T of the coordinates {X,Y} */
+    void GetTofXY(double X, double Y, double& T)
+    { BoundComp->GetTofXY(X, Y, T); }
 
     /** return boundary component */
     TBoundComp2D *GetBoundComp() const

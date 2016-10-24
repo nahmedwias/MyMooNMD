@@ -27,6 +27,10 @@
 #include <map>
 #include <vector>
 
+#ifdef _MPI
+class TParFECommunicator3D;
+#endif
+
 class TMatrix
 {
   protected:
@@ -133,6 +137,9 @@ class TMatrix
     int *GetRowPtr()
     { return structure->GetRowPtr(); }
     
+    const std::vector<int>& get_row_array() const
+    { return structure->get_row_array(); }
+    
     /// @brief return number of matrix entries for hanging node data
     int GetHangingN_Entries() const
     { return structure->GetHangingN_Entries(); }
@@ -150,12 +157,17 @@ class TMatrix
     { return *structure; }
     
     /// @brief return matrix entries as a pointer to const double
+    /// @note try to avoid this method and use TMatrix::get_entries() instead
     const double *GetEntries() const
     { return &entries[0]; }
     
     /// @brief return matrix entries as a pointer to double
     double *GetEntries()
     { return &entries[0]; }
+    
+    /// @brief return the entries as a std::vector
+    const std::vector<double>& get_entries()
+    { return entries; }
     
     /// @brief get a vector of the diagonal entries of this matrix.
     /// This will work even if the structure does not have entries on the
@@ -358,7 +370,16 @@ class TMatrix
     /// @param[in,out] x solution (this is updated)
     /// @param[in] omega relaxation parameter
     /// @param[in] flag either 0 (forward), 1(backward), or 2(both)
-    void sor_sweep(const double* b, double* x, double omega, size_t flag) const;
+    /// @param[in] par_strat The parallel strategy (MPI only). Use "all_cells" or
+    ///            "own_cells".
+    /// @param[in] comm MPI FE communicator which belongs to this matrix - MPI only!
+    /// (might even be stored therein, if it actually is an FEMatrix)
+    void sor_sweep(const double* b, double* x, double omega, size_t flag
+#ifdef _MPI
+                   , const std::string& par_strat
+                   , const TParFECommunicator3D& comm
+#endif
+    ) const;
     
     /** @brief adding a scaled matrix to this matrix
      * 

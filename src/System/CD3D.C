@@ -25,7 +25,7 @@
 
 ParameterDatabase get_default_CD3D_parameters()
 {
-  Output::print<3>("creating a default CD3D parameter database");
+  Output::print<5>("creating a default CD3D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default CD2D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
@@ -52,6 +52,7 @@ ParameterDatabase get_default_CD3D_parameters()
   {
     //inform the fe space about the maximum number of subdomains per dof
     feSpace_.initialize_parallel(maxSubDomainPerDof);
+    feSpace_.get_communicator().print_info();
 
     // reset the matrix with named constructor
     matrix_ = BlockFEMatrix::CD3D(feSpace_);
@@ -105,16 +106,7 @@ ParameterDatabase get_default_CD3D_parameters()
       systems_.emplace_back(example_, cellCollection, maxSubDomainPerDof);
 #else
       // create finite element space and function, a matrix, rhs, and solution
-      systems_.emplace_back(example_, cellCollection);
-
-      // print out some information
-      const TFESpace3D & space = this->systems_.front().feSpace_;
-      double hMin, hMax;
-      cellCollection.GetHminHmax(&hMin, &hMax);
-      Output::print<1>("N_Cells    : ", setw(12), cellCollection.GetN_Cells());
-      Output::print<1>("h (min,max): ", setw(12), hMin, " ", setw(12), hMax);
-      Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
-      Output::print<1>("dof active : ", setw(12), space.GetN_ActiveDegrees());
+      systems_.emplace_back(example_, cellCollection);      
 #endif
     }
     else
@@ -138,8 +130,24 @@ ParameterDatabase get_default_CD3D_parameters()
         }
         mg->initialize(matrices);
       }
+      // print useful information
+      this->output_problem_size_info();
   }
 
+/** ************************************************************************ */
+//==============================================================================
+void CD3D::output_problem_size_info() const
+{
+  // print some useful information
+  const TFESpace3D& space = this->systems_.front().feSpace_;
+  double hMin, hMax;
+  TCollection *coll = space.GetCollection();
+  coll->GetHminHmax(&hMin, &hMax);
+  Output::print<1>("N_Cells    : ", setw(13), coll->GetN_Cells());
+  Output::print<1>("h(min, max): ", setw(13), hMin, " ", setw(13), hMax);
+  Output::print<1>("dofs all   : ", setw(13), space.GetN_DegreesOfFreedom());
+  Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
+}
 /** ************************************************************************ */
 void CD3D::assemble()
 {
@@ -197,20 +205,13 @@ void CD3D::output(int i)
   // print the value of the largest and smallest entry in the FE vector
   syst.feFunction_.PrintMinMax();
 
-  /*
-  // write output
-  TOutput3D Output;
-  //Output.init();
-  Output.addFEFunction(&syst.feFunction_);
-  ///@todo parallel output implementation
-  #ifdef _MPI
-  #else
-  Output.write(i,0.0);
-  #endif
-  */
+#ifdef _MPI
+  // computing errors as well as writing vtk files requires a minimum 
+  // consistency level of 1
+  syst.feSpace_.get_communicator().consistency_update(
+    syst.solution_.get_entries(), 1);
+#endif // _MPI
   
-  
-  // implementation with the old class TOutput2D
   // write solution to a vtk file
   if(db["output_write_vtk"])
   {
@@ -220,7 +221,7 @@ void CD3D::output(int i)
 #ifdef _MPI
     char SubID[] = "";
     if(my_rank == 0)
-  	  mkdir(db["output_vtk_directory"], 0777);
+      mkdir(db["output_vtk_directory"], 0777);
     std::string dir = db["output_vtk_directory"];
     std::string base = db["output_basename"];
     Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);

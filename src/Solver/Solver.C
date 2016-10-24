@@ -9,14 +9,18 @@
 #include <Iteration_richardson.h>
 #include <Iteration_sor.h>
 #include <Preconditioner.h>
+#include <Preconditioner_vanka.h>
 #include <Saddle_point_preconditioner.h>
 #include <DirectSolver.h>
 #include <PETScSolver.h>
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif
 
 template <class L, class V>
 ParameterDatabase Solver<L, V>::default_solver_database()
 {
-  Output::print<3>("creating a default solver parameter database");
+  Output::print<5>("creating a default solver parameter database");
   ParameterDatabase db("default solver database");
   
   db.add("solver_type", "direct",
@@ -24,9 +28,22 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "call a direct solver. Set to iterative to call a ParMooN internal "
          "iterative solver. Furthermore it is possible to use the external "
          "library PETSc, see the class PETScSolver. This also includes direct "
-         "and iterative solvers.", 
+         "and iterative solvers.",
          {"direct", "iterative", "petsc"});
   
+  db.add("petsc_arguments", "",
+		 "Setting PETSc arguments as if used from command line. "
+		 "use -pc_type <pc_arg> for linear solver method "
+		 "<pc_arg> = { lu, ilu, hypre, mg, ... }"
+		 "(see https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html) "
+		 "use -pc_factor_mat_solver_package <package> for the package that should be used "
+		 "for the linear solver method "
+		 "<package> = { umfpack, mumps, superlu, ... }"
+		 "(see https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatSolverPackage.html) "
+		 "for hypre use -pc_hypre_type <package>"
+		 "(see https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCHYPRE.html)",
+		 {""});
+
   db.add("direct_solver_type", "umfpack",
          "Determine which type of direct solver should be used. All of them "
          "are implemented in external libraries. ",
@@ -72,7 +89,8 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "specific for some problem types.",
          {"no_preconditioner", "jacobi", "sor", "ssor", "multigrid", 
           "semi_implicit_method_for_pressure_linked_equations",
-          "least_squares_commutator", "least_squares_commutator_boundary"});
+          "least_squares_commutator", "least_squares_commutator_boundary",
+          "vanka_cell", "vanka_nodal", "vanka_cell_jacobi"}); //TODO maybe these vanka preconditioner types should be controlled by another db parameter
   
   db.add("sor_omega", 1.5, "The overrelaxation parameter (typically called "
          "omega). This is only used for the (symmetric) successive "
@@ -90,10 +108,6 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "smaller values make iterations slower. This can still be necessary "
          "in cases where the iterations does not converge at all with larger "
          "values.", 0.0, 1.0);
-  
-  db.add("damping_factor_finest_grid", 1.0,
-         "The damping of an iteration in case of a multigrid preconditioner. "
-         "This only affects the update on the finest grid.", 0.0, 1.0);
   
   return db;
 }
@@ -138,6 +152,21 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
     return std::make_shared<Saddle_point_preconditioner>(
       matrix, Saddle_point_preconditioner::type::simple,
       db["saddle_point_preconditioner_direct_velocity_solve"]);
+  }
+  else if(preconditioner_name == "vanka_cell")
+  {
+    return std::make_shared<Preconditioner_vanka<V>>(
+        matrix, VankaType::CELL, 0.8);
+  }
+  else if(preconditioner_name == "vanka_nodal")
+  {
+    return std::make_shared<Preconditioner_vanka<V>>(
+        matrix, VankaType::NODAL, 0.8);
+  }
+  else if(preconditioner_name == "vanka_cell_jacobi")
+  {
+    return std::make_shared<Preconditioner_vanka<V>>(
+        matrix, VankaType::CELL_JACOBI, 0.8);
   }
   else
   {
@@ -203,9 +232,9 @@ std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
 // L - LinearOperator, V - Vector
 template <class L, class V>
 Solver<L, V>::Solver(const ParameterDatabase& param_db)
- : db(default_solver_database()), linear_operator(nullptr), direct_solver(), 
-   iterative_method(), preconditioner(), multigrid(nullptr), 
-   petsc_solver(nullptr)
+ : db(default_solver_database()), linear_operator(nullptr),
+   direct_solver(nullptr), iterative_method(nullptr), preconditioner(nullptr),
+   multigrid(nullptr), petsc_solver(nullptr)
 {
   this->db.merge(param_db, false);
   if(this->is_using_multigrid())
@@ -269,7 +298,7 @@ void Solver<L, V>::update_matrix(const L& matrix)
   }
   else if(db["solver_type"].is("petsc"))
   {
-    this->petsc_solver = std::make_shared<PETScSolver>(matrix);
+    this->petsc_solver = std::make_shared<PETScSolver>(matrix, db);
   }
   else
   {
@@ -285,6 +314,36 @@ void Solver<L, V>::update_matrix(const L& matrix)
 template <class L, class V>
 void Solver<L, V>::solve(const V& rhs, V& solution)
 {
+  // lambda function to compute the residual, you can use it e.g. during debug
+  // note that this changes the consistency level of the solution to 2
+  auto compute_residual = [&]()
+  {
+    //compute the absolute residual by hand again.
+#ifdef _MPI
+    // update to consistency level 2, needed to properly call apply_scaled_add
+    auto comms = linear_operator->get_communicators();
+    for (size_t bl = 0; bl < comms.size() ; ++bl)
+    {
+      comms[bl]->consistency_update(solution.block(bl), 2);
+    }
+#endif
+    V r(rhs);
+    linear_operator->apply_scaled_add(solution, r, -1.);
+#ifndef _MPI
+    Output::info<1>("Iterative solver", "Absolute residual in Solver class, ",
+                    setprecision(16), r.norm());
+#elif _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    double norm = r.norm_global(comms);
+    if(my_rank == 0)
+      Output::info<1>("Iterative solver", "Absolute residual in Solver class, ",
+                      setprecision(16), norm);
+#endif
+  };
+  (void)compute_residual; // silence the unused variable warning when not used
+  //compute_residual();
+
   if(this->linear_operator == nullptr)
     ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
              "Solver::update_matrix first. Otherwise it's not clear which "
@@ -305,10 +364,7 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
   {
     ErrThrow("unknown solver type ", db["solver_type"]);
   }
-  //compute the residual by hand again.
-  V r(rhs);
-  linear_operator->apply_scaled_add(solution, r, -1.);
-  Output::print<1>("computed residual in Solver class: ", r.norm());
+  //compute_residual();
 }
 
 /* ************************************************************************** */

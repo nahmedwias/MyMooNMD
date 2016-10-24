@@ -18,6 +18,11 @@
 #include <stdlib.h>
 
 #include <MooNMD_Io.h>
+
+#ifdef _MPI
+#include<ParFECommunicator3D.h>
+#endif
+
 #include <fstream>
 #include <algorithm>
 
@@ -730,7 +735,11 @@ void TMatrix::remove_zeros(double tol)
 }
 
 
-void TMatrix::sor_sweep(const double* b, double* x, double omega, size_t flag) 
+void TMatrix::sor_sweep(const double* b, double* x, double omega, size_t flag
+#ifdef _MPI
+    , const std::string& par_strat, const TParFECommunicator3D& comm
+#endif
+    )
 const
 {
   if(flag > 2)
@@ -745,6 +754,20 @@ const
     ErrThrow("There is a zero on the diagonal. You can not use `sor` in this "
              "case");
   }
+
+#ifdef _MPI //decide which parallelization strategy to use
+  bool average_at_interface = false;
+  bool skip_halos = false;
+  if(par_strat == std::string("own_cells"))
+  {
+    skip_halos = true;
+    average_at_interface = true;
+  }
+  else if (par_strat != std::string("all_cells"))
+    ErrThrow("For SOR, use either parallelization strategy all_cells or own_cells.");
+#endif
+
+
   size_t n_rows = this->GetN_Rows();
   int * row_ptr = this->structure->GetRowPtr();
   int * col_ptr = this->structure->GetKCol();
@@ -755,11 +778,26 @@ const
   // memory though.
   auto do_sweep = [&](bool backward)
   {
+#ifdef _MPI
+    const char* markers = comm.get_dof_markers();
+#endif
     for(size_t r = 0; r < n_rows; ++r)
     {
       size_t row = r;
       if(backward)
-        row = n_rows - 1 - r; 
+        row = n_rows - 1 - r;
+
+#ifdef _MPI
+      if(skip_halos)
+      {
+        bool is_halo = markers[row] == 'h' || markers[row] == 'H';
+        if(is_halo) //the halos won't be updated
+        {
+          //Output::print("Halo skipped!");
+          continue;
+        }
+      }
+#endif
       // multiply sol with the current row of this matrix
       double sol_x_row = b[row];
       size_t row_begin = row_ptr[row];
@@ -778,6 +816,13 @@ const
     do_sweep(false);
   if(flag == 1 || flag == 2) // backward_sweep
     do_sweep(true);
+
+#ifdef _MPI
+  if(average_at_interface)
+  {//compute an all-processors average at interface masters and slaves
+    comm.average_at_interface(x);
+  }
+#endif
 }
 
 

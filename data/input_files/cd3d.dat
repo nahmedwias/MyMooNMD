@@ -65,7 +65,10 @@ output_basename: parmoon
 
 ## Determine which kind of solver should be used. This can be an 
 ## iterative or a direct solver 
-solver_type: direct   { direct, iterative }
+solver_type: direct   { direct, iterative, petsc }
+
+##petsc_arguments: -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor
+##petsc_arguments: -ksp_type fgmres -pc_type mg
 
 ## Determine which type of direct solver should be used. All of them 
 ## are implemented in external libraries. 
@@ -168,8 +171,8 @@ DRIFT_Z: 1
 ANSATZ_ORDER: 2
 
 ----------------------------------------------------------------------
-# Reynolds number eps=1/RE_NR
-RE_NR: 1
+# Diffusion coefficient eps= 1.e-1
+diffusion_coefficient: 1.e-1
 
 ----------------------------------------------------------------------
 # type of discretization: 
