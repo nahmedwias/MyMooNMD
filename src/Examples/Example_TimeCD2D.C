@@ -49,7 +49,10 @@ namespace test_2phase
 {
 #include "5_TestTCD2D.h"
 }
-
+namespace test_semicircle
+{
+#include "6_TestTCD2D.h"
+}
 
 // ********* END OF USER PROJECT CODE
 
@@ -264,6 +267,25 @@ Example_TimeCD2D::Example_TimeCD2D(
       this->timeDependentCoeffs=test_2phase::coefficients_depend_on_time;
       break;
 
+    case 16:                // 6_Test rotating semi-circle
+      /**Exact solution"**/
+      exact_solution.push_back(test_semicircle::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( test_semicircle::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_semicircle::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = test_semicircle::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(test_semicircle::InitialCondition);
+      test_semicircle::ExampleFile();
+
+      this->timeDependentRhs = test_semicircle::rhs_depends_on_time;
+      this->timeDependentCoeffs=test_semicircle::coefficients_depend_on_time;
+      break;
 
 
 
