@@ -10,6 +10,7 @@
 #define __CHANNEL_TOBIAS__
 #define __CHANNEL_TAU180__
 
+double DIMENSIONLESS_VISCOSITY;
 // ========================================================================
 // example file
 // ========================================================================
@@ -134,7 +135,7 @@ void InitialU1(double x, double y, double z, double *values)
   // the initial setup is as in V. Gravemeier, J. Comput. Phys. (2006)
   // with 10% random noise (positive and negative)
   double  noise = 0.1;
-  double RE=TDatabase::ParamDB->RE_NR;
+  double RE=1./DIMENSIONLESS_VISCOSITY;
 
   if (RE==180)
   {
@@ -267,7 +268,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
 double **parameters, double **coeffs)
 {
-  double eps = 1/TDatabase::ParamDB->RE_NR;
+  double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double *coeff, u1, u2, dt;
 

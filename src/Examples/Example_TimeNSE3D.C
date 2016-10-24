@@ -326,6 +326,8 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       
       //setCoordinates = channel_rey180::SetZCoordinates;
       //checkCoordinates = channel_rey180::CheckZCoordinates;
+      
+      channel_rey180::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ExampleFile();
       break;
