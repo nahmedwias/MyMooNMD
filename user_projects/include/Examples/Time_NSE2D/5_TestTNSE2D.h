@@ -25,16 +25,16 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
-  values[0] = -2.0*y;
+  values[0] = 2.0*(y-0.5);
   values[1] = 0;
-  values[2] = -2.0;
+  values[2] = 2.0;
   values[3] = 0;
 }
 
 void InitialU2(double x, double y, double *values)
 {
-  values[0] = 2.0*x;
-  values[1] = 2.0;
+  values[0] = -2.0*(x-0.5);
+  values[1] = -2.0;
   values[2] = 0;
   values[3] = 0;
 }
@@ -50,16 +50,16 @@ void InitialP(double x, double y, double *values)
 // ========================================================================
 void ExactU1(double x, double y, double *values)
 {
-  values[0] = -2.0*y;
+  values[0] = 2.0*(y-0.5);
   values[1] = 0;
-  values[2] = -2.0;
+  values[2] = 2.0;
   values[3] = 0;
 }
 
 void ExactU2(double x, double y, double *values)
 {
-  values[0] = 2.0*x;
-  values[1] = 2.0;
+  values[0] = -2.0*(x-0.5);
+  values[1] = -2.0;
   values[2] = 0;
   values[3] = 0;
 }
@@ -82,18 +82,18 @@ void BoundCondition(int i, double t, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  if (BdComp == 0) value = 0;
-  if (BdComp == 1) value = -2.0*Param;
-  if (BdComp == 2) value = -2.0;
-  if (BdComp == 3) value = -2.0*(1-Param);
+  if (BdComp == 0) value = 2.0*(0-0.5);
+  if (BdComp == 1) value = 2.0*(Param-0.5);
+  if (BdComp == 2) value = 2.0*(1-0.5);
+  if (BdComp == 3) value = 2.0*(0.5-Param);
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-  if (BdComp == 0) value = 2.0*Param;
-  if (BdComp == 1) value = 2.0;
-  if (BdComp == 2) value = 2.0*(1-Param);
-  if (BdComp == 3) value = 0;
+  if (BdComp == 0) value = -2.0*(Param-0.5);
+  if (BdComp == 1) value = -2.0*(1-0.5);
+  if (BdComp == 2) value = -2.0*(0.5-Param);
+  if (BdComp == 3) value = -2.0*(0-0.5);
 }
 
 // ========================================================================
