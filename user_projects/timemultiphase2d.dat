@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 6	
+refinement_n_initial_steps: 7	
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -238,7 +238,7 @@ user_parameter2: 2
 
 
 dimensional_nse: true   { true, false }
-coupling_nse_cd: false   { true, false }
+coupling_nse_cd: true   { true, false }
 coupling_cd_nse: false   { true, false }
 
 
@@ -268,5 +268,5 @@ UPWIND_ORDER: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.01
-TIMESTEPLENGTH: 0.01
+ENDTIME: 1
+TIMESTEPLENGTH: 0.001
