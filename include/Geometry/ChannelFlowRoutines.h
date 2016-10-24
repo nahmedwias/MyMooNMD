@@ -33,6 +33,9 @@ namespace ChannelTau180
 
   /// set the periodic joints
   void setPeriodicFaceJoints(TCollection* Coll);
+  
+  // inverse of the Reynolds number
+  static double reynolds_number;
 
   /// degrees of freedoms for x, y and z coordinates
   static std::vector<double> xDofs;

@@ -38,7 +38,6 @@ void ChannelTau180::computeAverageVelocity(
   // values which are the return from the function "FindGradientLocal"
   double v1[4], v2[4], v3[4];
   int *dofs;
-  double reynoldsNumber = TDatabase::ParamDB->RE_NR;
   std::vector<double> areas(ndofs);
   for(size_t i=0; i<nCells; ++i)
   {
@@ -66,7 +65,7 @@ void ChannelTau180::computeAverageVelocity(
       x=xDofs[ldof]; y=yDofs[ldof]; z=zDofs[ldof];
       // save areas for computing average 
       areas.at(ldof) += area;
-      if(reynoldsNumber==180)
+      if(reynolds_number==180)
       {
         if ((sx >0)&& (x<-6))
           x = -x;
@@ -108,6 +107,8 @@ void ChannelTau180::setParameters(ParameterDatabase &db)
     Output::print("INTERNAL_QUAD_RULE: ",
                   TDatabase::ParamDB->INTERNAL_QUAD_RULE);
   }  
+  double inv_rev = db["reynolds_number"];
+  reynolds_number = 1./inv_rev;
 }
 
 void ChannelTau180::setZCoordinates(TCollection* Coll, int level)
@@ -266,10 +267,9 @@ void ChannelTau180::setPeriodicFaceJoints(TCollection* Coll)
   const int *TmpFV, *TmpLen;
   int MaxLen, MaxLen1, x_vert_m1, x_vert_1, y_vert_0, y_vert_2;
   int found, x1_vert_m1, x1_vert_1, y1_vert_0, y1_vert_2;
-  double RE=TDatabase::ParamDB->RE_NR;
   double y_bottom, y_top, x_bottom, x_top;
 
-  if (RE==180)
+  if (reynolds_number==180)
   {
     y_bottom=-2*Pi/3;
     y_top=2*Pi/3;
@@ -481,9 +481,8 @@ void ChannelTau180::setPeriodicFaceJoints(TCollection* Coll)
 
 void ChannelTau180::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
 {
-  const double reynoldsNumber=TDatabase::ParamDB->RE_NR;
   double per_x, per_y;
-  if(reynoldsNumber==180)
+  if(reynolds_number==180)
   {
     per_x=2.*Pi; per_y=2.*Pi/3.;
   }
@@ -733,7 +732,6 @@ void ChannelTau180::eddy_viscosity(
   /// else compute the contribution from eddy viscosity model
   std::array<std::vector<double>, 9> gradu;
   double area;
-  double re_nr = TDatabase::ParamDB->RE_NR;  
   size_t nCells=space.GetCollection()->GetN_Cells();
   size_t nCellsPerLayer;
   double hxhy;
@@ -745,7 +743,7 @@ void ChannelTau180::eddy_viscosity(
     case SMAGORINSKY:
       ChannelTau180::computeAverageVelocity(gradu, tnse3d);
       // Reynolds number only: 395 or 180 are used
-      area = (re_nr == 395) ? 4.*Pi*Pi : 32.*Pi*Pi/3;
+      area = (reynolds_number == 395) ? 4.*Pi*Pi : 32.*Pi*Pi/3;
       nCellsPerLayer = 2*nCells/(nZLayers-1);
       hxhy = area/(2*nCellsPerLayer);
       Output::print("nCells per layer:  ", nCellsPerLayer, " hxhy: ", hxhy);
@@ -795,8 +793,8 @@ double ChannelTau180::getFrictionVelocity(std::vector< double > vec)
   meanVeloDerivTime.resize(nZLayers);
   //
   meanVeloDerivTime=meanVelocity(meanDeriv);
-  double re_nr = TDatabase::ParamDB->RE_NR;
-  temp = 1/re_nr*(meanVeloDerivTime.at(0)-meanVeloDerivTime.at(nZLayers-1))*0.5;  
+  temp = 1./reynolds_number*(meanVeloDerivTime.at(0)-
+                            meanVeloDerivTime.at(nZLayers-1))*0.5;  
   return temp;
 }
 
@@ -848,11 +846,10 @@ void ChannelTau180::saveData(std::deque< std::vector< double > > m,
   // frictionvelocity
   double u_tau = getFrictionVelocity(m.front());
 
-  double re=TDatabase::ParamDB->RE_NR;
   for(size_t i=0; i<nZLayers; ++i)
   {
     Output::print("t ", t, " ", setw(8), zLayers.at(i), " ",setw(8), 
-                         re*(1-fabs(1-zLayers[i])), " mu ", setw(8), m.at(0)[i], 
+                       reynolds_number*(1-fabs(1-zLayers[i])), " mu ", setw(8), m.at(0)[i], 
                        " mv ", setw(8), m.at(2)[i], " mw ", setw(8), m.at(1)[i]);
   }
   //
@@ -874,7 +871,7 @@ void ChannelTau180::saveData(std::deque< std::vector< double > > m,
     R23_abs += fabs(R23);
 
     Output::print("t ", t, " ", setw(8), zLayers.at(i), " ", setw(8),
-                  re*(1-fabs(1-zLayers[i])), " rms_u* ", setw(8), rmsu, 
+                  reynolds_number*(1-fabs(1-zLayers[i])), " rms_u* ", setw(8), rmsu, 
                   " rms_v* ", setw(8), rmsw, " rms_w* ", setw(8), rmsv,
                   " R_uv ", setw(8), R13, " R_uw ", setw(8), R12, 
                   " R_vw ", setw(8), R23);
