@@ -176,14 +176,26 @@ class BlockMatrix
                           double a = 1.0) const;
 
     /// @brief perform one successive overrelaxation (sor) sweep.
-    /// The flag can be either 0(forward sweep), 1(backward sweep), or 
-    /// 2(forward followed by backward sweep). 
+    /// The flag can be either 0(forward sweep), 1(backward sweep), or
+    /// 2(forward followed by backward sweep).
+    ///
     /// @param[in] b right hand side
     /// @param[in,out] x solution (this is updated)
     /// @param[in] omega relaxation parameter
     /// @param[in] flag either 0 (forward), 1(backward), or 2(both)
+    /// @param[in] par_strat The chosen parallelization strategy (MPI only).
+    ///            Choose between "all_cells", "halo_0" and "own_cells".
+    ///            Note that this does only affect the algorithm in TMatrix::sor_sweep.
+    ///            There won't be any difference in here - although one could
+    ///            change TMatrix' multiply and transpose_multiply to skip all
+    ///            Halo rows in order to save some flops.
+#ifdef _MPI
+    void sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                   size_t flag, const std::string& par_strat) const;
+#else
     void sor_sweep(const BlockVector& b, BlockVector& x, double omega,
                    size_t flag) const;
+#endif
     
     /**
      * @brief checks whether the coloring is correct - use in tests only

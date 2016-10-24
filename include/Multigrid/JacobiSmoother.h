@@ -27,6 +27,10 @@ class JacobiSmoother : public Smoother
 {
   public:
 
+    /// Constructor takin only a damping parameter.
+    /// @param[in] damp Damping for update. Must lie in (0,1].
+    JacobiSmoother(double damp);
+
     /// Apply one step of Jacobi iteration with the stored operator
     /// to the iterate "solution"
     void smooth(const BlockVector& rhs, BlockVector& solution) override;
@@ -37,7 +41,7 @@ class JacobiSmoother : public Smoother
     void update(const BlockFEMatrix& matrix) override;
 
     /* ************* *
-     * Special member functions. Declared, but not defined yet.
+     * Special member functions. Declared, but not all are defined yet.
      * ************* */
     //! Default constructor.
     JacobiSmoother();
@@ -59,7 +63,10 @@ class JacobiSmoother : public Smoother
 
   private:
     /// The iterative method one step of which is applied in "smooth".
-    std::shared_ptr<Iteration_jacobi<BlockFEMatrix, BlockVector>> jacobi;
+    std::shared_ptr<Iteration_jacobi<BlockFEMatrix, BlockVector>> jacobi_;
+
+    /// A damping factor in (0,1], damping the update.
+    double damp_;
 };
 
 #endif /* INCLUDE_MULTIGRID_JACOBISMOOTHER_H_ */

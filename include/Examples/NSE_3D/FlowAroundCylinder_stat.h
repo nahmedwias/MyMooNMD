@@ -16,12 +16,16 @@
 // This is also called nu, or eps, it is equal
 // to 1/Reynolds_number and is dimensionless
 double DIMENSIONLESS_VISCOSITY;
-double VARIABLE_PARAMETER1;
 
 //side effect: sets the global parameter
 void ExampleFile()
 {
-  OutPut("Example: FlowAroundCylinder_stat.h" << endl);
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  if(my_rank == 0)
+#endif
+  Output::info<1>("EXAMPLE","FlowAroundCylinder_stat.h");
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
@@ -392,7 +396,7 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   cl = recvbuf[1];
 #endif
 
-  double test_coefficient = VARIABLE_PARAMETER1;
+  double test_coefficient = 500;
 
   cd *= -test_coefficient/0.41;
   cl *= -test_coefficient/0.41;
@@ -496,7 +500,7 @@ void compute_drag_lift_pdiff(NSE3D& nse3d)
 
   // print them reference values - f.y.i. the reference intervals:
   // drag \in [6.05,6.25], lift \in [0.008,0.01], pdiff \in [0.165,0.175]
-  // note: these hold for KINEMATIC_VISCOSITY = 1e-3 and geometry
+  // note: these hold for DIMENSIONLESS_VISCOSITY = 1e-3 and geometry
   // as described in John 2002.
   if(my_rank == 0)
   {

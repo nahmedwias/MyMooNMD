@@ -20,7 +20,7 @@
 //==============================================================================
 ParameterDatabase get_default_TCD3D_parameters()
 {
-  Output::print<3>("creating a default Time_CD3D parameter database");
+  Output::print<5>("creating a default Time_CD3D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default Time_CD3D database as well.
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -53,7 +53,8 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollec
 
 }
 #else /* ***********************************************************************/
-Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll)
+Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, 
+                                        TCollection& coll)
 : feSpace_(&coll, (char*)"space", (char*)"TCD3D feSpace", example.get_bc(0), 
            TDatabase::ParamDB->ANSATZ_ORDER),
   stiffMatrix_({&feSpace_}),
@@ -61,7 +62,8 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollec
   rhs_(stiffMatrix_, true),
   solution_(stiffMatrix_, false),
   old_Au(this->stiffMatrix_, true),
-  feFunction_(&feSpace_, (char*)"u", (char*)"u", solution_.get_entries(),solution_.length())
+  feFunction_(&feSpace_, (char*)"u", (char*)"u", solution_.get_entries(),
+              solution_.length())
 {
   stiffMatrix_ = BlockFEMatrix::CD3D(feSpace_);
   massMatrix_ = BlockFEMatrix::CD3D(feSpace_);
@@ -70,15 +72,15 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollec
 #endif
 
 //==============================================================================
-Time_CD3D::Time_CD3D(std::list<TCollection* >collections, 
-			      const ParameterDatabase &param_db,
-			      const Example_TimeCD3D& _example
+Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
+                     const ParameterDatabase &param_db,
+                     const Example_TimeCD3D& _example
 #ifdef _MPI
-			      , int maxSubDomainPerDof
+                     , int maxSubDomainPerDof
 #endif
-	   )
-: systems_(), example_(param_db), db(get_default_TCD3D_parameters()), 
-  solver(param_db), errors_(5,0.0)
+                     )
+: systems_(), example_(_example), db(get_default_TCD3D_parameters()), 
+  solver(param_db), errors_({})
 {
   this->db.merge(param_db,false); // update this database with given values
   this->checkParameters();
@@ -99,22 +101,13 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
 #else
     systems_.emplace_back(example_, cellCollection);
 #endif    
-    // print some useful information
-    const TFESpace3D& space = this->systems_.front().feSpace_;
-    double hMin, hMax;
-    cellCollection.GetHminHmax(&hMin, &hMax);
-    Output::print<1>("N_Cells    : ", setw(13), cellCollection.GetN_Cells());
-    Output::print<1>("h(min, max): ", setw(13), hMin, " ", setw(13), hMax);
-    Output::print<1>("dofs all   : ", setw(13), space.GetN_DegreesOfFreedom());
-    Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
-    
     // initial concentration
     this->systems_.front().feFunction_.Interpolate(example_.get_initial_cond(0));
   }
   else
   {
     auto multigrid = this->solver.get_multigrid();
-    size_t nMgLevels = multigrid->get_n_levels();
+    size_t nMgLevels = multigrid->get_n_geometric_levels();
     if(collections.size() != nMgLevels)
     {
       ErrThrow("Multigrid: expected ", nMgLevels, " collections ", 
@@ -134,6 +127,70 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
     }
     multigrid->initialize(matrices);
   }// multigrid case
+  // print useful information
+  this->output_problem_size_info();
+}
+
+//==============================================================================
+void Time_CD3D::output_problem_size_info() const
+{
+  // print some useful information
+  const TFESpace3D& space = this->systems_.front().feSpace_;
+  double hMin, hMax;
+  TCollection *coll = space.GetCollection();
+  coll->GetHminHmax(&hMin, &hMax);
+#ifndef _MPI
+  // sequential
+  Output::print<1>("N_Cells    : ", setw(13), coll->GetN_Cells());
+  Output::print<1>("h(min, max): ", setw(13), hMin, " ", setw(13), hMax);
+  Output::print<1>("dofs all   : ", setw(13), space.GetN_DegreesOfFreedom());
+  Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
+#else
+  // MPI
+  int my_rank, size;
+  auto comm = TDatabase::ParamDB->Comm;
+  MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm_size(comm, &size);
+  
+  double global_h_min = 0, global_h_max = 0;
+  MPI_Reduce(&hMin, &global_h_min, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+  MPI_Reduce(&hMax, &global_h_max, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+  
+  std::vector<int> n_own_cells(size, 0); // for each process
+  std::vector<int> n_halo_cells(size, 0); // for each process
+  int local_own_cells = coll->GetN_OwnCells();
+  int local_halo_cells = coll->GetN_HaloCells();
+  MPI_Gather(&local_own_cells, 1, MPI_INT, // send
+             &n_own_cells[0], 1, MPI_INT,  // receive
+             0, comm);                     // control
+  MPI_Gather(&local_halo_cells, 1, MPI_INT, // send
+             &n_halo_cells[0], 1, MPI_INT,  // receive
+             0, comm);                      // control
+  
+  auto par_comm = space.get_communicator();
+  int n_local_master_dof = par_comm.GetN_Master();
+  std::vector<int> n_masters(size, 0); //for each process
+  MPI_Gather(&n_local_master_dof, 1, MPI_INT, // send
+             &n_masters[0], 1, MPI_INT,       // receive
+             0, comm);                        // control
+  if(my_rank == 0)
+  {
+    Output::stat("Time_CD3D", "information on the fe space");
+    size_t sum_cells_total = 0;
+    size_t sum_dof_total = 0;
+    for(int i =0; i < size ;++i)
+    {
+      Output::dash("Process ", i, "\t n_own_cells ", n_own_cells[i], 
+                   "\t n_halo_cells ", n_halo_cells[i], 
+                   "\t h_min/h_max ", hMin, "/", hMax,
+                   "\t n_master_dof ", n_local_master_dof);
+      sum_cells_total += n_own_cells[i];
+      sum_dof_total += n_local_master_dof;
+    }
+    Output::dash("Total number of cells:              ", sum_cells_total);
+    Output::dash("Total number of degrees of freedom: ", sum_dof_total);
+  }
+#endif
 }
 
 //==============================================================================
@@ -155,7 +212,15 @@ void Time_CD3D::SystemPerGrid::descale_stiff_matrix(double tau, double theta1)
 //==============================================================================
 void Time_CD3D::SystemPerGrid::update_old_Au()
 {
+#ifdef _MPI
+  feSpace_.get_communicator().consistency_update(solution_.get_entries(), 2);
+#endif
   stiffMatrix_.apply(solution_, old_Au);
+#ifdef _MPI
+  // old_Au is used in a matrix-vector product, so we put it in consistency 
+  // level 2 here. (is this really necessary??)
+  feSpace_.get_communicator().consistency_update(old_Au.get_entries(), 2);
+#endif
 }
 
 //==============================================================================
@@ -181,15 +246,7 @@ void Time_CD3D::checkParameters()
   {
     throw std::runtime_error("Ansatz order 0 is no use in convection diffusion "
         "reaction problems! (Vanishing convection and diffusion term).");
-  }
-  // the only preconditioners implemented are Jacobi and multigrid
-  if(this->solver.get_db()["solver_type"].is("iterative")
-    && !this->solver.get_db()["preconditioner"].is("jacobi")
-    && !this->solver.get_db()["preconditioner"].is("multigrid"))
-  {
-    ErrThrow("Only SC_PRECONDITIONER_SCALAR: 1 (Jacobi) and 5 (multigrid)"
-        " are implemented so far.");
-  }
+  }  
 }
 
 //==============================================================================
@@ -204,9 +261,9 @@ void Time_CD3D::assemble_initial_time()
     // that which method is used. 
     // 
     call_assembling_routine(s, la, true);
-    
+   
     // initialize old_Au
-    s.stiffMatrix_.apply(s.solution_, s.old_Au);
+    s.update_old_Au();
   }
   SystemPerGrid& s = this->systems_.front();
   old_rhs = s.rhs_;
@@ -278,6 +335,7 @@ void Time_CD3D::assemble()
   s.massMatrix_.apply_scaled_add_actives(s.solution_, s.rhs_, 1.0);
   // rhs -= tau*theta2*A_old*uold
   s.rhs_.addScaledActive(s.old_Au, -tau*theta2);
+
   
   // copy nonactive to the solution vector
   s.solution_.copy_nonactive(s.rhs_);
@@ -302,24 +360,24 @@ void Time_CD3D::solve()
 #ifndef _MPI
   solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // sequential
 #else // parallel
-  if(solver.get_db()["solver_type"].is("iterative")) // iterative solver
-  {
-    solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // same as sequential
-  }
-  else if(solver.get_db()["solver_type"].is("direct")) // direct solvers
+  if(solver.get_db()["solver_type"].is("direct")) // direct solvers
   {
     MumpsWrapper mumps_wrapper(s.stiffMatrix_);
     mumps_wrapper.solve(s.rhs_, s.solution_);
   }
+  else
+    solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // same as sequential
 #endif
 }
 
 //==============================================================================
 void Time_CD3D::output(int m, int& image)
 {
+  bool i_am_root = true;
 #ifdef _MPI
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  i_am_root = (my_rank == 0);
 #endif
   // nothing to do if no error computation or no vtk filess
   bool noOutput = !db["output_write_vtk"] && !db["output_compute_errors"];
@@ -327,6 +385,12 @@ void Time_CD3D::output(int m, int& image)
     return;
   SystemPerGrid &s = this->systems_.front();
   s.feFunction_.PrintMinMax();
+  
+#ifdef _MPI
+  // computing errors as well as writing vtk files requires a minimum 
+  // consistency level of 1
+  s.feSpace_.get_communicator().consistency_update(s.solution_.get_entries(),1);
+#endif // _MPI
   
   //write solution for visualization
    if(m==0 || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
@@ -337,11 +401,11 @@ void Time_CD3D::output(int m, int& image)
        output.AddFEFunction(&s.feFunction_);
 #ifdef _MPI
        char SubID[] = "";
-       if(my_rank==0)
-	 mkdir(db["output_vtk_directory"], 0777);
+       if(i_am_root)
+         mkdir(db["output_vtk_directory"], 0777);
        std::string dir = db["output_vtk_directory"];
        std::string base = db["output_basename"];
-       output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);       
+       output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);
 #else
        mkdir(db["output_vtk_directory"], 0777);
     std::string filename = db["output_vtk_directory"];
@@ -354,8 +418,8 @@ void Time_CD3D::output(int m, int& image)
       else filename += ".";
       filename += std::to_string(image) + ".vtk";
       output.WriteVtk(filename.c_str());
+#endif
       image++;
-#endif      
      }
    }
   
@@ -364,45 +428,52 @@ void Time_CD3D::output(int m, int& image)
   {
     MultiIndex3D allDerivatives[4] = { D000, D100, D010, D001 };
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
-    std::vector<double> locError; 
-    locError.resize(5);
+    std::array<double, 5> locError = {};
     const TFESpace3D* space = s.feFunction_.GetFESpace3D();
     
-    s.feFunction_.GetErrors(example_.get_exact(0), 4, allDerivatives, 2, L2H1Errors, 
-			    example_.get_coeffs(), &aux, 1, &space, locError.data());
+    s.feFunction_.GetErrors(example_.get_exact(0), 4, allDerivatives, 2, 
+                            L2H1Errors, example_.get_coeffs(), &aux, 1, &space,
+                            locError.data());
 #ifdef _MPI
-    std::vector<double> errorsReduced;
-    errorsReduced.resize(4); // maximum 4; In case of SUPG one need also the SD error
-    MPI_Allreduce(locError.data(), errorsReduced.data(), 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    errors_.at(0) = locError.at(0);
-    errors_.at(1) = locError.at(1);
-#else
-    int my_rank = 0;
-#endif
+    /// @todo the GetErrors method in TFEFunction3D should already to the 
+    /// communication, it's surprising that in the mpi case the errors are 
+    /// squared, while the square root has been taken already in the sequential 
+    /// case.
+    // global (across all processes) error, L2, H1, Linf, SD-error (for SUPG)
+    std::vector<double> errorsReduced(4);
+    MPI_Reduce(locError.data(), errorsReduced.data(), 2, MPI_DOUBLE, MPI_SUM, 0,
+               MPI_COMM_WORLD);
+    MPI_Reduce(&locError[2], &errorsReduced[2], 1, MPI_DOUBLE, MPI_MAX, 0,
+               MPI_COMM_WORLD);
+    // correct values only on the root process!
+    locError[0] = sqrt(errorsReduced[0]);
+    locError[1] = sqrt(errorsReduced[1]);
+    locError[2] = errorsReduced[2];
+#endif // _MPI
     
-    Output::print<1>("time: ", TDatabase::TimeDB->CURRENTTIME);
-    Output::print<1>("  L2: ", locError.at(0));
-    Output::print<1>("  H1: ", locError.at(1));
+    if(i_am_root)
+    {
+      Output::print<1>("time   : ", TDatabase::TimeDB->CURRENTTIME);
+      Output::print<1>("  L2   : ", std::setprecision(14), locError[0]);
+      Output::print<1>("  H1   : ", std::setprecision(14), locError[1]);
+      Output::print<1>("  L_inf: ", std::setprecision(14), locError.at(2));
+    }
     double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
     
-    errors_.at(0) += (locError.at(0) * locError.at(0) 
-                    + errors_.at(1) * errors_.at(1))*tau*0.5;
-    errors_.at(1) = locError.at(0);    
+    errors_[0] += (locError[0] * locError[0] + errors_[1] * errors_[1])*tau*0.5;
+    errors_[1] = locError[0];
     
-    errors_.at(2) += (locError.at(1) * locError.at(0)
-                    + errors_.at(3) * errors_.at(3))*tau*0.5;
-    errors_.at(3) = locError.at(1);
+    errors_[2] += (locError[1] * locError[1] + errors_[3] * errors_[3])*tau*0.5;
+    errors_[3] = locError[1];
     
-    if(m==0)
-      errors_.at(4) = locError.at(0);
-    if(errors_.at(4) < locError.at(0))
-      errors_.at(4) = locError.at(0);
+    if(m == 0 || errors_.at(4) < locError[2])
+      errors_[4] = locError[2];
     
-    if(my_rank == 0)
+    if(i_am_root)
     {
-      Output::print<1>("  L2(0,T;L2)   : ", sqrt(errors_.at(0)));
-      Output::print<1>("  L2(0,T;H1)   : ", sqrt(errors_.at(2)));
-      Output::print<1>("  Linft(0,T,L2): " , errors_.at(4));
+      Output::print<1>("  L2(0,T;L2)      : ", sqrt(errors_[0]));
+      Output::print<1>("  L2(0,T;H1)      : ", sqrt(errors_[2]));
+      Output::print<1>("  L_inf(0,T,L_inf): " , errors_[4]);
     }
   }
 }

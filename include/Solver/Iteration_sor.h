@@ -23,6 +23,9 @@ class Iteration_sor : public IterativeMethod<LinearOperator, Vector>,
     /// @brief apply this object as a preconditioner
     void apply(const Vector & z, Vector & r) const override final;
     
+    /// @brief Apply this object within a smoother for multigrid
+    void apply_smoother(const Vector & z, Vector & r) const;
+
     /** @brief destructor */
     virtual ~Iteration_sor() = default;
     
@@ -34,6 +37,11 @@ class Iteration_sor : public IterativeMethod<LinearOperator, Vector>,
     /// @brief return the used linear operator
     const LinearOperator& get_operator() const;
 
+#ifdef _MPI
+    /// @brief Choose a parallelization strategy for SOR. Still experimental.
+    void set_parallel_strategy(const std::string& parallel_strategy);
+#endif
+
   protected:
     /// @brief the type of sor: forward(0), backward(1), both(2)
     int sor_type;
@@ -41,6 +49,13 @@ class Iteration_sor : public IterativeMethod<LinearOperator, Vector>,
     double omega;
     /// @brief the linear operator (usually the matrix)
     const LinearOperator & linear_operator;
+
+#ifdef _MPI
+    /// One of the strings "all_cells", "halo_0", "own_cells", each of which
+    /// corresponds with a different parallelization strategy of the SOR.
+    /// This feature is still in an experimental state.
+    std::string parallel_strategy_;
+#endif
 };
 
 #endif // __ITERATION_JACOBI__

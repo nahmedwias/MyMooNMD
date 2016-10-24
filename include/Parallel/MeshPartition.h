@@ -6,11 +6,18 @@
 // Author:      Sashikumaar Ganesan
 // History:      start of implementation  07/09/09 (Sashikumaar Ganesan)
 // =======================================================================
-#include <Domain.h>
+#ifndef __MESH_PARTITION__
+#define __MESH_PARTITION__
 
+class TDomain;
+class TVertex;
+
+namespace MeshPartitionAuxFunctions
+{
 void Sort(TVertex **Array, int length);
 
 int GetIndex(TVertex **Array, int Length, TVertex *Element);
+}
 
 #ifdef  _MPI
 
@@ -55,5 +62,6 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxCpV);
  */
 void Domain_Crop(MPI_Comm comm, TDomain *Domain);
 
+#endif
 #endif
 

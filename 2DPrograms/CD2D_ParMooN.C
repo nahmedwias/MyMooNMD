@@ -38,6 +38,7 @@ int main(int argc, char* argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
   
   // write all Parameters to the OUTFILE (not to console) for later reference
+  parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
   
   // refine grid

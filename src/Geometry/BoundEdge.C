@@ -75,10 +75,31 @@ TJoint *TBoundEdge::NewInst()
   return new TBoundEdge(BoundComp, T_0, T_1);
 }
 
-/** return the coordinates {X,Y} of parameter value T */
-int TBoundEdge::GetXYofT(double T, double &X, double &Y)
+/**
+ @brief set the local index of this joint in given neighbor 
+ @todo write a more general function that does not take index as input
+ */
+void TBoundEdge::set_index_in_neighbour(TBaseCell *neigh, int index)
 {
-  BoundComp->GetXYofT(T, X, Y);
-
-  return 0;
+    if(neigh == Neighb0)
+        IndexInNeighbor[0] = index;
+    else
+    {
+        ErrMsg("ERROR, TInnerInterfaceJoint::SetIndexInNeighbor !!!!!!!!");
+        exit(-4711);
+    }
 }
+
+
+/** get the index of this joint in given neighbor */
+int TBoundEdge::get_index_in_neighbour(const TBaseCell*const neigh) const
+{
+    if(neigh == Neighb0)
+        return IndexInNeighbor[0];
+    else
+    {
+        ErrMsg("ERROR, TBoundEdge::GetIndexInNeighbor !!!!!!!!");
+        exit(-4711);
+    }
+}
+

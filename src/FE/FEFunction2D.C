@@ -182,7 +182,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
       ErrMsg("for vector valued basis functions, you should use "
              << "TFEFunction2D::GetErrorsForVectorValuedFunction instead of "
              << "TFEFunction2D::GetErrors");
-      OutPut("No error were computed\n");
+      OutPut("No errors were computed\n");
       return;
     }
     RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(CurrentElement);
@@ -731,12 +731,12 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
   double FunctionalValues[MaxN_PointsForNodal2D];
   double FctVal[4];
   int PolynomialDegree, ApproxOrder;
-  QuadFormula2D QuadFormula;
+  QuadFormula2D QuadFormula = BaryCenterTria; //to avoid uninit warning
   bool IsIsoparametric;
   TJoint *joint;
   JointType jointtype;
   BoundTypes bdtype;
-  int N_Edges;
+  int N_Edges = 0;
   BF2DRefElements RefElement;
   RefTrans2D RefTrans, *RefTransArray;
 
@@ -1042,7 +1042,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
   int N_Points;
   double *xi, *eta;
   int *DOF;
-  RefTrans2D F_K;
+  RefTrans2D F_K = TriaAffin; //avoid uninit warning
   TRefTrans2D *rt;
   double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
   double AbsDetjk[MaxN_PointsForNodal2D];
@@ -1050,12 +1050,12 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
   double FunctionalValues[MaxN_PointsForNodal2D];
   double FctVal[4];
   int PolynomialDegree, ApproxOrder;
-  QuadFormula2D QuadFormula;
+  QuadFormula2D QuadFormula = BaryCenterTria; //to avoid uninit warning
   bool IsIsoparametric;
   TJoint *joint;
   JointType jointtype;
   BoundTypes bdtype;
-  int N_Edges;
+  int N_Edges = 0;
   BF2DRefElements RefElement;
   RefTrans2D RefTrans, *RefTransArray;
 
@@ -1082,7 +1082,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
         nf = TFEDatabase2D::GetNodalFunctional2D(NF_S_Q_Q2_2D);
         break;
       default:
-        cout << "unknown reftrans id: " << RefTrans << endl;
+        cout << "unknown reftrans id: " << endl;
         exit(0);
       break;
     }
@@ -1438,7 +1438,7 @@ void TFEFunction2D::ReadSol(char *BaseName)
 /** interpolate the old mesh fe function values to the new fe function */
 void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
 {
-  int i,j, N_Cells, N_Edges;
+  int i,j, N_Cells, N_Edges = 0;
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points, *DOF;
@@ -2248,7 +2248,7 @@ void TFEFunction2D::computeNodeValues(std::vector<double>& solutionAtNode) const
     
     for(int j=0; j<nLocalVertices; j++) {
 
-      double xi, eta;
+      double xi=0, eta=0;
       // compute coordinates of reference element
       /// @attention it works only for tria and quads in 2D
       switch(nLocalVertices) {

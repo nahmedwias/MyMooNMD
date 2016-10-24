@@ -26,6 +26,10 @@
 #include <BdPlane.h>
 #include <LinAlg.h>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif
+
 void OnlyDirichlet(double x, double y, double z, BoundCond &cond)
 {
 	cond = DIRICHLET;
@@ -266,7 +270,7 @@ void TFEFunction3D::GetErrorsForVectorValuedFunction(
     TRefTrans3D *F_K = TFEDatabase3D::GetRefTrans3D(RefTrans);
     TFEDatabase3D::SetCellForRefTrans(cell, RefTrans);
     // get quadrature formula
-    QuadFormula3D qf_id;
+    QuadFormula3D qf_id = BaryCenterTetra; //to avoid uninit warning
     switch(RefTrans)
     {
       case TetraAffin:
@@ -904,7 +908,7 @@ void TFEFunction3D::Interpolate(DoubleFunct3D *Exact)
   int N_Points;
   double *xi, *eta, *zeta;
   int *DOF;
-  RefTrans3D F_K;
+  RefTrans3D F_K = TetraAffin; //avoid uninit warning
   TRefTrans3D *rt;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
   double Z[MaxN_PointsForNodal3D];
@@ -913,12 +917,12 @@ void TFEFunction3D::Interpolate(DoubleFunct3D *Exact)
   double FunctionalValues[MaxN_PointsForNodal3D];
   double FctVal[5];
   int PolynomialDegree, ApproxOrder;
-  QuadFormula3D QuadFormula;
+  QuadFormula3D QuadFormula = BaryCenterTetra;
   bool IsIsoparametric;
   TJoint *joint;
   JointType jointtype;
   BoundTypes bdtype;
-  int N_Faces;
+  int N_Faces =0;
   BF3DRefElements RefElement;
   RefTrans3D RefTrans, *RefTransArray;
 
@@ -1160,7 +1164,7 @@ void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
   int N_Points;
   double *xi, *eta, *zeta;
   int *DOF;
-  RefTrans3D F_K;
+  RefTrans3D F_K = TetraAffin;
   TRefTrans3D *rt;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
   double Z[MaxN_PointsForNodal3D];
@@ -1169,12 +1173,12 @@ void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
   double FunctionalValues[MaxN_PointsForNodal3D];
   double FctVal[5];
   int PolynomialDegree, ApproxOrder;
-  QuadFormula3D QuadFormula;
+  QuadFormula3D QuadFormula = BaryCenterTetra;
   bool IsIsoparametric;
   TJoint *joint;
   JointType jointtype;
   BoundTypes bdtype;
-  int N_Faces;
+  int N_Faces = 0;
   BF3DRefElements RefElement;
   RefTrans3D RefTrans, *RefTransArray;
 
@@ -1331,7 +1335,7 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
   int N_Points;
   double *xi, *eta, *zeta;
   int *DOF;
-  RefTrans3D F_K;
+  RefTrans3D F_K = TetraAffin; //to avoid uninit warning
   TRefTrans3D *rt;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
   double Z[MaxN_PointsForNodal3D];
@@ -1342,12 +1346,12 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
   double values[4];
     
   int PolynomialDegree, ApproxOrder;
-  QuadFormula3D QuadFormula;
+  QuadFormula3D QuadFormula = BaryCenterTetra;
   bool IsIsoparametric;
   TJoint *joint;
   JointType jointtype;
   BoundTypes bdtype;
-  int N_Faces;
+  int N_Faces = 0;
   BF3DRefElements RefElement;
   RefTrans3D RefTrans, *RefTransArray;
 
@@ -1648,7 +1652,7 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
   int N_Cells, N_Points;
   double *xi, *eta, *zeta;
   int *DOF;
-  RefTrans3D F_K;
+  RefTrans3D F_K = TetraAffin;
   TRefTrans3D *rt;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
   double Z[MaxN_PointsForNodal3D];
@@ -1656,7 +1660,7 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
   double PointValues[MaxN_PointsForNodal3D];
   double FunctionalValues[MaxN_PointsForNodal3D];  
   int ApproxOrder;
-  QuadFormula3D QuadFormula;
+  QuadFormula3D QuadFormula = BaryCenterTetra; //avoid uninit warning
   bool IsIsoparametric;
   TJoint *joint;
   JointType jointtype;
@@ -1664,14 +1668,14 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
   BF3DRefElements RefElement;
   RefTrans3D RefTrans, *RefTransArray;
   TFEDesc3D *FEDesc_Obj;
-  int N_Faces, N_EdgeDOF, N_Joints;
+  int N_Faces=0, N_EdgeDOF, N_Joints;
   bool InnerBoundary, OuterBoundary;
   BoundCond Cond0;
   const int *TmpFV, *TmpLen;
   int MaxLen;
   double t0, xf, yf, zf;
   double *t, *s;
-  double LinComb[4];
+  double LinComb[4] = {0,0,0,0};
   int *EdgeDOF;
   
   
@@ -1887,11 +1891,23 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
 
 void TFEFunction3D::MinMax(double & min, double & max) const
 {
+#ifdef _MPI
+  //in MPI case, compare only master values
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  const int* masters = this->FESpace3D->get_communicator().GetMaster();
+#endif
+
   double val;
   max = -1e100, min = 1e100;
   
   for(int i = 0; i<Length; i++)
   {
+#ifdef _MPI
+    //skip slave values
+    if(masters[i] != my_rank)
+      continue;
+#endif
     val = Values[i];
     if(val>max) max = val;
     if(val<min) min = val;
@@ -1925,7 +1941,7 @@ void TFEFunction3D::PrintMinMax(std::string name) const
       if(name.empty())
         Output::stat("MinMax", this->Name, " min ", min, ", max ", max);
       else
-        Output::stat("MinMax", " min ", min, ", max ", max);
+        Output::stat("MinMax", name, " min ", min, ", max ", max);
     }
     else
     {

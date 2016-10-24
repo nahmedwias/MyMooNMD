@@ -9,7 +9,7 @@
 
 ParameterDatabase get_default_NSE2D_parameters()
 {
-  Output::print<3>("creating a default NSE2D parameter database");
+  Output::print<5>("creating a default NSE2D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default NSE2D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
@@ -144,7 +144,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
     }
 
     // number of multigrid levels
-    size_t n_multigrid_levels = mg_->get_n_levels();
+    size_t n_multigrid_levels = mg_->get_n_geometric_levels();
     // index of finest grid
     int finest = domain.get_ref_level(); // -> there are finest+1 grids
     // index of the coarsest grid used in this multigrid environment
@@ -343,13 +343,6 @@ void NSE2D::assemble()
       // we have to use reinterpret_casts because dynamic downcasting won't work here
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
-        //CB DEBUG
-        if(blocks.size() != 3)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-
         n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
 
@@ -359,12 +352,6 @@ void NSE2D::assemble()
 
         break;
       case 2:
-        //CB DEBUG
-        if(blocks.size() != 5)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
         n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
 
@@ -376,12 +363,6 @@ void NSE2D::assemble()
 
         break;
       case 3:
-        //CB DEBUG
-        if(blocks.size() != 6)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
         n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
@@ -394,13 +375,6 @@ void NSE2D::assemble()
         break;
 
       case 4:
-        //CB DEBUG
-        if(blocks.size() != 8)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-
         n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
@@ -420,12 +394,6 @@ void NSE2D::assemble()
         break;
 
       case 14:
-        //CB DEBUG
-        if(blocks.size() != 9)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
         n_sq_mat = 5;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
@@ -743,13 +711,19 @@ void NSE2D::output(int i)
     u2->PrintMinMax();
     s.p.PrintMinMax();
   }
+
+  outputWriter.add_fe_function(&s.p);
+  outputWriter.add_fe_vector_function(&s.u);
+  outputWriter.write();
   
+  /*
   // write solution to a vtk file
   if(db["output_write_vtk"])
   {
     outputWriter.write(i);
   }
-  
+  */
+    
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
@@ -784,6 +758,9 @@ void NSE2D::output(int i)
   } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
+
+  //do postprocessing step depending on what the example implements
+  example.do_post_processing(*this);
 }
 
 /** ************************************************************************ */

@@ -56,9 +56,9 @@ FLOW_PROBLEM: 5
 problem_type: 5
 
 ----------------------------------------------------------------------
-# Reynolds number eps=1/RE_NR
+# diffusion_coefficient=1/RE_NR (Reynolds number)
 ----------------------------------------------------------------------
-RE_NR:  1
+reynolds_number: 1
 
 ----------------------------------------------------------------------
 # type of discretization: 

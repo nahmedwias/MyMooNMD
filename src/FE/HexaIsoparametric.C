@@ -687,14 +687,14 @@ void THexaIsoparametric::SetCell(TBaseCell *cell)
   double Param1[4], Param2[4];
   TBoundFace *bdface;
   TFEDesc3D *fedesc;
-  TBaseFunct3D *bf;
+  TBaseFunct3D *bf = nullptr;
   double dt, ds;
   double T, S, xm, ym, zm, xp, yp, zp;
   TVertex **Vertices;
-  TVertex **AuxVertices;
+  TVertex **AuxVertices=nullptr;
   double x[4], y[4], z[4], factor;
   double LinComb[4];
-  int CurvedJoint;
+  int CurvedJoint = 0;
 
   N_AuxPoints = 0;
   Cell = cell;

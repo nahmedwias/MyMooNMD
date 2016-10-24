@@ -15,7 +15,6 @@
 #define __JOINT__
 
 #include <Constants.h>
-#include <Mapper.h>
 
 #ifndef __3D__
   #define MAXN_nVpoJ  3
@@ -62,6 +61,9 @@ class TJoint
     /** */
     int NeibSubDomainLocalJointNo;
     
+    /** The index of this joint in the two neighbors */
+    ///@todo set the size of the array as a function of the Joint type (e.g. 1 for boundaries)
+    int IndexInNeighbor[2];
     
 #ifdef __3D__
     int MapType;

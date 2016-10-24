@@ -718,7 +718,7 @@ double TQuadAffin::GetVolume()
 void TQuadAffin::GetOrigBoundFromRef(int joint, int N_Points, double *zeta, double *X, double *Y)
 {
   int i;
-  double Xi, Eta;
+  double Xi =0, Eta=0;
 
 
  for(i=0;i<N_Points;i++)

@@ -214,6 +214,16 @@ void DenseMatrix::printLU(std::string name) const
   OutPut(endl);
 }
 
+double DenseMatrix::norm() const
+{
+  double sum = 0;
+  for(size_t k = 0; k < leadingDimension_*nColumns_ ;++k)
+  {
+    sum += entries_[k]*entries_[k];
+  }
+  return sqrt(sum);
+}
+
 void swap(DenseMatrix& first, DenseMatrix& second)
 {
   //std::swap all members

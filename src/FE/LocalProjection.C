@@ -3476,6 +3476,10 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
             double *rhs,
                         int convection_flag) 
 {
+
+  ErrThrow("This method was dependent on two old global Database parameters ",
+           "which were removed. If you want to use it, take care of the FIXMEs.");
+
   int i, j, k, iq, N_Cells, N_Edges, N_Unknowns, index, dof_index;
   int *global_numbers, *begin_index, *dof;
   double  sx, sy, b1, b2, area, detJK, weight_det, value, value1, value_proj, hK;
@@ -3503,18 +3507,21 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
    OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);
   // get coarse grid
   // FIXME that parameter is gone! coll_coarse=Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR-1);
-  if (coll_coarse == NULL)
-  {
-    OutPut("No coarse grid !!!" << endl);
-    return;
-  }
+//  if (coll_coarse == NULL)
+//  {
+//    OutPut("No coarse grid !!!" << endl);
+//    return;
+//  }
+// END FIXME
    coeffs = new double[20];
   params = new double[10];
   memset(params, 0, 10 * SizeOfDouble);
 
   // get fine grid
   // FIXME that parameter is gone! coll = Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR);
-  N_Cells = coll->GetN_Cells();
+  //N_Cells = coll->GetN_Cells();
+  N_Cells = 1000; //A dummy number.
+  //END FIXME
   // initialise ClipBoard for fine grid
   for(i=0;i<N_Cells;i++)
     coll->GetCell(i)->SetClipBoard(i);

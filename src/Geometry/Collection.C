@@ -18,6 +18,7 @@
 #include <IsoBoundEdge.h>
 #include <BoundComp.h>
 #include <array>
+#include <BoundEdge.h>
 
 #ifdef _MPI
 #include <mpi.h>
@@ -465,10 +466,18 @@ void TCollection::GenerateCellVertNeibs()
 /// @brief create lists with vertex coordinates and element ids
 int TCollection::createElementLists()
 {
-  
-  int dim = 3;
-#ifdef __2D__
-  dim = 2;
+
+  int nVertexPerFace;
+  int nBoundaryFaces;
+
+  #ifdef __2D__
+  nVertexPerFace = 2;
+#else
+  if ( Cells[0]->GetType() == Tetrahedron) {
+    nVertexPerFace = 3; // vertex per face
+  } else {
+    nVertexPerFace = 4;
+  }
 #endif
 
   // if arrays have been created before
@@ -496,40 +505,51 @@ int TCollection::createElementLists()
   // remove duplicate
   auto it = std::unique(localVertices.begin(), localVertices.end());
   localVertices.resize(std::distance(localVertices.begin(), it));
-
   unsigned int nPoints = localVertices.size();
-  //cout << "Collection::createElementLists() Total number of points: " << nPoints << endl;
 
-  // coordinates array
-  NodesCoords.resize(dim*nPoints);
+  // fill the array with nodes coordinates
+#ifdef __2D__
+  NodesCoords.resize(2*nPoints);
   NodesReferences.resize(nPoints,0.);
   int N_=0;
-  for(unsigned int i=0;i<localVertices.size();i++){
-#ifdef __3D__
-    localVertices[i]->GetCoords(NodesCoords[N_],NodesCoords[N_+1],NodesCoords[N_+2]);
-    N_ += 3;
-#else
+  for(unsigned int i=0;i<localVertices.size();i++)
+  {
     localVertices[i]->GetCoords(NodesCoords[N_],NodesCoords[N_+1]);
     N_ += 2;
-#endif
   }
+#else
+  NodesCoords.resize(3*nPoints);
+  NodesReferences.resize(nPoints,0.);
+  int N_=0;
+  for(unsigned int i=0;i<localVertices.size();i++)
+  {
+    localVertices[i]->GetCoords(NodesCoords[N_],NodesCoords[N_+1],NodesCoords[N_+2]);
+    N_ += 3;
+  }
+#endif
   
-  ///@attention numbering starts from 1, i.e. first (see 'VERTEX OFFEST' below)
-
-  
+  /**
+     @attention in the .mesh file, numbering of the vertices within an elements
+     starts from 1, i.e. first (see 'VERTEX OFFEST' below)
+  */
   // elements array
+  int VERTEX_OFFSET = 1;
   ElementNodes.resize(N_Cells);
   ElementReferences.resize(N_Cells);
   
-  for(int i=0;i<N_Cells;i++){
-    ElementReferences[i]=Cells[i]->GetReference_ID();
+  for(int i=0; i<N_Cells; i++)
+  {
+    ElementReferences[i] = Cells[i]->GetReference_ID();
     ElementNodes[i].resize(Cells[i]->GetN_Vertices());
 
-    for (int j=0; j<Cells[i]->GetN_Vertices();j++) {
+    for (int j=0; j<Cells[i]->GetN_Vertices();j++)
+    {
       TVertex *current = Cells[i]->GetVertex(j);
-      for (unsigned int s=0; s<localVertices.size(); s++) {
-	if(current == localVertices[s]) {
-	  ElementNodes[i][j] = s+1; // VERTEX OFFSET
+      for (unsigned int s=0; s<localVertices.size(); s++)
+      {
+	if(current == localVertices[s])
+	{
+	  ElementNodes[i][j] = s+VERTEX_OFFSET; // VERTEX OFFSET
 	  break;
 	}
       }
@@ -537,21 +557,9 @@ int TCollection::createElementLists()
     
   }
  
-  
-  int nVertexPerFace;
-  if (dim==2) {
-    nVertexPerFace = 2;
-  } else {
-    if ( Cells[0]->GetType() == Tetrahedron) {
-      nVertexPerFace = 3; // vertex per face
-    } else {
-      nVertexPerFace = 4;
-    }
-  }
-
-  int nBoundaryFaces = 0;
 
 #ifdef __2D__
+  nBoundaryFaces = 0;
   int nInterfaceFaces = 0;
   for(int i=0;i<N_Cells;i++){
     for (int j=0; j<Cells[i]->GetN_Edges(); j++) {
@@ -589,299 +597,148 @@ int TCollection::createElementLists()
 
   nBoundaryFaces = nBoundaryFaces+nInterfaceFaces;
   BdFacesReferences.resize(nBoundaryFaces);
+  BdFacesNodes.resize(nVertexPerFace*nBoundaryFaces);
   
+#else
   
-#endif
-#ifdef __3D__
-
-  ///@todo implementation in 3D
-  nBoundaryFaces = 0;
   BdFacesReferences.clear();
-  for(int i=0;i<N_Cells;i++){
-
-    for (int j=0;j<Cells[i]->GetN_Faces();j++) {
-
+  for(int i=0;i<N_Cells;i++)
+  {
+    for (int j=0;j<Cells[i]->GetN_Faces();j++)
+    {
       TJoint *joint = Cells[i]->GetJoint(j);
-
-      if(!(joint->InnerJoint())) {
-	nBoundaryFaces++;
-	int local_reference = 0;//Cells[i]->GetJointReference(j);
+      if(!(joint->InnerJoint()))
+      {
+	///@todo assign a meaningful reference to the boundary face
+	int local_reference = 1;//Cells[i]->GetJointReference(j);
 	BdFacesReferences.push_back(local_reference);
       }
     }
-    }
- 
+  }
+  nBoundaryFaces = BdFacesReferences.size();
+  BdFacesNodes.resize(nVertexPerFace*nBoundaryFaces);
+  
 #endif
 
-  if (BdFacesNodes.size()==0) {
-    BdFacesNodes.resize(nVertexPerFace*nBoundaryFaces);
-  }
+  int count_boundary_elements = 0;
 
-  for(int i=0;i<N_Cells;i++){
+  for(int i=0;i<N_Cells;i++)
+  {
     
-    if (dim==2) {
-      
 #ifdef __2D__
-  int ibd = 0;
-  int nJoints = Cells[i]->GetN_Edges();
-  for (int j=0;j<nJoints;j++) {
-	bool foundVertex1= false;
-	bool foundVertex2 = false;
-	TJoint *joint = Cells[i]->GetJoint(j);
-	if(!(joint->InnerJoint())) {
-	  // dim = 2: joint n. j is a straight line between vertex j and vertex j+1
-	  ///@attention in a general case this part should depend on element type
-	  TVertex *v1 = Cells[i]->GetVertex(j);
-	  TVertex *v2 = Cells[i]->GetVertex((j+1)%nJoints);
-	  for (unsigned int k=0;k<localVertices.size(); k++) {
-	    if (v1==localVertices[k]) {
-	      BdFacesNodes[nVertexPerFace*ibd]=k+1;
-	      foundVertex1 = true;
-	    }
-	    if (v2==localVertices[k]) {
-	      BdFacesNodes[nVertexPerFace*ibd+1]=k+1;
-	      foundVertex2 = true;
-	    }
-	    if (foundVertex1&&foundVertex2)
-	      break;
-	  }
-	  ibd++;
-	
-	} else { //if(!(joint->InnerJoint())) {
 
-	  ///@todo inner/interface joints still to be finished
-	  // it is a inner joint but it could be an InterfaceJoint
-	  // get neighbor
-	  /*TBaseCell *cell_neighbor = joint->GetNeighbour(Cells[i]);
-	    int cell_reference = Cells[i]->GetReference_ID();
-	    int neighbor_reference = cell_neighbor->GetReference_ID();
+    int nJoints = Cells[i]->GetN_Edges();
+    for (int j=0;j<nJoints;j++)
+    {
+      bool foundVertex1= false;
+      bool foundVertex2 = false;
+      TJoint *joint = Cells[i]->GetJoint(j);
+      if(!(joint->InnerJoint()))
+      {
+	// 2D: joint n. j is a straight line between vertex j and vertex j+1
+	TVertex *v1 = Cells[i]->GetVertex(j);
+	TVertex *v2 = Cells[i]->GetVertex((j+1)%nJoints);
+	for (unsigned int k=0;k<localVertices.size(); k++)
+	{
+	  if (v1==localVertices[k])
+	  {
+	    BdFacesNodes[nVertexPerFace*count_boundary_elements]=k+1;
+	    foundVertex1 = true;
+	  }
+	  if (v2==localVertices[k])
+	  {
+	    BdFacesNodes[nVertexPerFace*count_boundary_elements+1]=k+1;
+	    foundVertex2 = true;
+	  }
+	  if (foundVertex1&&foundVertex2)
+	    break;
+	}
+	count_boundary_elements++;
+	
+      } else { //if(!(joint->InnerJoint())) {
+	
+	///@todo inner/interface joints still to be finished
+	// it is a inner joint but it could be an InterfaceJoint
+	// get neighbor
+	/*TBaseCell *cell_neighbor = joint->GetNeighbour(Cells[i]);
+	  int cell_reference = Cells[i]->GetReference_ID();
+	  int neighbor_reference = cell_neighbor->GetReference_ID();
 	  if (cell_reference < neighbor_reference) {
 	  double xE1 =  Cells[i] ->GetVertex(j)->GetX();
 	  double yE1 =  Cells[i] ->GetVertex(j)->GetY();
 	  double xE2 =  Cells[i] ->GetVertex((j+1)%nJoints)->GetX();
 	  double yE2 =  Cells[i] ->GetVertex((j+1)%nJoints)->GetY();
+	    
+	  for (int k=0;k<nPoints;k++) {
+	  double xV = NodesCoords[dim*k];
+	  double yV = NodesCoords[dim*k+1];
 	  
-	    for (int k=0;k<nPoints;k++) {
-	      double xV = NodesCoords[dim*k];
-	      double yV = NodesCoords[dim*k+1];
-	      
-	      double d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1);
-	      if (d1<1e-10) {
-		BdFacesNodes[nVertexPerFace*ibd]=k+1;
-	      }
-	    }
-	    for (int k=0;k<nPoints;k++) {
-	      double xV = NodesCoords[dim*k];
-	      double yV = NodesCoords[dim*k+1];
-	      
-	      double d1 = (xV-xE2)*(xV-xE2)+(yV-yE2)*(yV-yE2);
-	      if (d1<1e-10) {
-		BdFacesNodes[nVertexPerFace*ibd+1]=k+1;
-	      }
-	    }
-	    ibd++;
+	  double d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1);
+	  if (d1<1e-10) {
+	  BdFacesNodes[nVertexPerFace*ibd]=k+1;
 	  }
-	  */
+	  }
+	  for (int k=0;k<nPoints;k++) {
+	  double xV = NodesCoords[dim*k];
+	  double yV = NodesCoords[dim*k+1];
+	  
+	  double d1 = (xV-xE2)*(xV-xE2)+(yV-yE2)*(yV-yE2);
+	  if (d1<1e-10) {
+	  BdFacesNodes[nVertexPerFace*ibd+1]=k+1;
+	  }
+	  }
+	  ibd++;
+	  }
+	*/
+      }
+      
+    } //for (int j=0;j<N_Joints;j++) {
+    
+#else
+    // 3D case
+    
+    // ParMooN numbering: face j-th <-> local vertices
+    int FaceVertexTetra[][3] = { {0, 1, 2} ,{0, 3, 1}, {2, 1, 3}, {0, 2, 3} };
+    int FaceVertexHexa[][4] = { {0, 1, 2, 3} ,{0, 1, 5, 4}, {1, 2, 6, 5},
+				{3, 2, 6, 7}, {0, 3, 7, 4}, {4, 5, 6, 7} };
+    
+    TBaseCell *cell = Cells[i]; 
+    for (int j=0;j< cell->GetN_Faces();j++)
+    {
+      TJoint *joint = cell->GetJoint(j);
+      if(!(joint->InnerJoint()))
+      {
+	
+	// loop over the vertices of each face and find
+	// the corresponding index in the global vertices list
+	for (int kvertex = 0; kvertex<nVertexPerFace; kvertex++)
+	{
+	  int localVertexIndex;
+	  // local index of j-th vertex (cell numeration)
+	  if (nVertexPerFace==3)
+	    localVertexIndex = FaceVertexTetra[j][kvertex];
+	  else
+	    localVertexIndex = FaceVertexHexa[j][kvertex];
+
+	  TVertex *v_on_face = cell->GetVertex(localVertexIndex);
+	  for (unsigned int k=0; k<localVertices.size(); k++)
+	  {
+	    if (v_on_face==localVertices[k])
+	    {
+	      BdFacesNodes[nVertexPerFace*count_boundary_elements + kvertex] =
+		k + VERTEX_OFFSET;
+	    }
+	  } 
 	}
 	
-      } //for (int j=0;j<N_Joints;j++) {
-      
-#endif    
-      
-    } else { // if dim=3
-      
-#ifdef __3D__
-      
-      /*
-	nJoints = Cells[i]->GetN_Faces();
-	int vind[3];
-      int vindH[4];
-      
-      for (int j=0;j<N_Joints;j++) {
-
-	// TO BE DONE: read the reference of a Joint
-	//BdFacesReferences[j]=0;
-
-	if (NVF==3) { // tetra (tria joints)
-	  TJoint *joint = cell->GetJoint(j);
-	  if(!(joint->InnerJoint())) {
-
-	    //BdFacesReferences[ibd]=joint->GetPhysicalReference();
-	    //cout << " joint: " << ibd+1 << " ref: " << BdFacesReferences[ibd] << endl;
-	    // NUMBERING (face j = (vertex 1,v2,v3)
-	    // FACE 1 = (1,2,3), FACE 2 = (4,1,2), FACE 3 = (2,3,4), FACE 4 = (3,4,1)
-	    if (j==0) {
-	      vind[0]=0; vind[1]=1; vind[2]=2;
-	    } else if (j==1) {
-	      vind[0]=0; vind[1]=1; vind[2]=3;
-	    } else if (j==2) {
-	      vind[0]=1; vind[1]=2; vind[2]=3;
-	    } else {
-	      vind[0]=0; vind[1]=2; vind[2]=3;
-	    }
-	    
-	    
-	    xE1 =  cell ->GetVertex(vind[0])->GetX();
-	    yE1 =  cell ->GetVertex(vind[0])->GetY();
-	    zE1 =  cell ->GetVertex(vind[0])->GetZ();
-
-	    for (k=0;k<nPoints;k++) {
-	      xV = NodesCoords[dim*k];
-	      yV = NodesCoords[dim*k+1];
-	      zV = NodesCoords[dim*k+2];
-	      // find first vertex
-	      d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1)+(zV-zE1)*(zV-zE1);
-	      if (d1<1e-10) {
-		BdFacesNodes[NVF*ibd]=k+1;
-	      }
-	    }
-	    
-	    for (k=0;k<nPoints;k++) {
-	      xV = NodesCoords[dim*k];
-	      yV = NodesCoords[dim*k+1];
-	      zV = NodesCoords[dim*k+2];
-	      // find first vertex
-	      d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1)+(zV-zE1)*(zV-zE1);
-	      if (d1<1e-10) {
-		BdFacesNodes[NVF*ibd]=k+1;
-	      }
-	    }
-	    
-
-
-	    xE1 =  cell ->GetVertex(vind[1])->GetX();
-	    yE1 =  cell ->GetVertex(vind[1])->GetY();
-	    zE1 =  cell ->GetVertex(vind[1])->GetZ();
-	    for (k=0;k<nPoints;k++) {
-	      xV = NodesCoords[dim*k];
-	      yV = NodesCoords[dim*k+1];
-	      zV = NodesCoords[dim*k+2];
-	      // find second vertex
-	      d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1)+(zV-zE1)*(zV-zE1);
-	      if (d1<1e-10) {
-		BdFacesNodes[NVF*ibd+1]=k+1;
-		
-	      }
-	    }
-	    
-	    xE1 =  cell ->GetVertex(vind[2])->GetX();
-	    yE1 =  cell ->GetVertex(vind[2])->GetY();
-	    zE1 =  cell ->GetVertex(vind[2])->GetZ();
-
-	    for (k=0;k<nPoints;k++) {
-	      xV = NodesCoords[dim*k];
-	      yV = NodesCoords[dim*k+1];
-	      zV = NodesCoords[dim*k+2];
-	      // find second vertex
-	      d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1)+(zV-zE1)*(zV-zE1);
-	      if (d1<1e-10) {
-		BdFacesNodes[NVF*ibd+2]=k+1;
-		
-	      }
-	    }
-	    
-	    ibd++;
-	    
-	  } else {
-	    
-	  }// if(!(joint->InnerJoint())) {
+	count_boundary_elements++;
+      } 
 	  
-	} else {
-	  TJoint *joint = cell->GetJoint(j);
-	  if(!(joint->InnerJoint())) {
-	    // NUMBERING (face j = (vertex 1,v2,v3,v4)
-	    // FACE 1 = (1,2,3), FACE 2 = (4,1,2),
-	    //  FACE 3 = (2,3,4), FACE 4 = (3,4,1)
-	    //  FACE 5 = (2,3,4), FACE 6 = (3,4,1)
-
-	    if (j==0) {
-	      vindH[0]=0; vindH[1]=1; vindH[2]=2; vindH[3]=3;
-	    } else if (j==1) {
-	      vindH[0]=0; vindH[1]=1; vindH[2]=5; vindH[3]=4;
-	    } else if (j==2) {
-	      vindH[0]=1; vindH[1]=2; vindH[2]=6; vindH[3]=5; 
-	    } else if (j==3) {
-	      vindH[0]=2; vindH[1]=3; vindH[2]=7; vindH[3]=6;
-	    } else if (j==4) {
-	      vindH[0]=3; vindH[1]=0; vindH[2]=4; vindH[3]=7; 
-	    } else {
-	      vindH[0]=4; vindH[1]=5; vindH[2]=6; vindH[3]=7;
-	    }
-	    
-	    // find indices of vertices
-	    xE1 =  cell ->GetVertex(vindH[0])->GetX();
-	    yE1 =  cell ->GetVertex(vindH[0])->GetY();
-	    zE1 = 0;
-	    zE1 =  cell ->GetVertex(vindH[0])->GetZ();
-	    for (k=0;k<nPoints;k++) {
-	      xV = NodesCoords[dim*k];
-	      yV = NodesCoords[dim*k+1];
-	      zV = NodesCoords[dim*k+2];
-	      // find first vertex
-	      d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1)+(zV-zE1)*(zV-zE1);
-	      if (d1<1e-10) {
-		BdFacesNodes[NVF*ibd]=k+1;
-	      }
-	    }
-
-	    xE1 =  cell ->GetVertex(vindH[1])->GetX();
-	    yE1 =  cell ->GetVertex(vindH[1])->GetY();
-	    zE1 = 0;
-	    zE1 =  cell ->GetVertex(vindH[1])->GetZ();
-	    for (k=0;k<nPoints;k++) {
-	      xV = NodesCoords[dim*k];
-	      yV = NodesCoords[dim*k+1];
-	      zV = NodesCoords[dim*k+2];
-	      // find first vertex
-	      d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1)+(zV-zE1)*(zV-zE1);
-	      if (d1<1e-10) {
-		BdFacesNodes[NVF*ibd+1]=k+1;
-	      }
-	    }
-
-	    xE1 =  cell ->GetVertex(vindH[2])->GetX();
-	    yE1 =  cell ->GetVertex(vindH[2])->GetY();
-	    zE1 = 0;
-	    zE1 =  cell ->GetVertex(vindH[2])->GetZ();
-	    for (k=0;k<nPoints;k++) {
-	      xV = NodesCoords[dim*k];
-	      yV = NodesCoords[dim*k+1];
-	      zV = NodesCoords[dim*k+2];
-	      // find first vertex
-	      d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1)+(zV-zE1)*(zV-zE1);
-	      if (d1<1e-10) {
-		BdFacesNodes[NVF*ibd+2]=k+1;
-	      }
-	    }
-
-	    xE1 =  cell ->GetVertex(vindH[3])->GetX();
-	    yE1 =  cell ->GetVertex(vindH[3])->GetY();
-	    zE1 = 0;
-	    zE1 =  cell ->GetVertex(vindH[3])->GetZ();
-	    for (k=0;k<nPoints;k++) {
-	      xV = NodesCoords[dim*k];
-	      yV = NodesCoords[dim*k+1];
-	      zV = NodesCoords[dim*k+2];
-	      // find first vertex
-	      d1 = (xV-xE1)*(xV-xE1)+(yV-yE1)*(yV-yE1)+(zV-zE1)*(zV-zE1);
-	      if (d1<1e-10) {
-		BdFacesNodes[NVF*ibd+3]=k+1;
-	      }
-	    }
-	    ibd++;
-	  }
-
-	  
-	} // if NVF==4
-	
-      }//for (int j=0;j<N_Joints;j++) 
-      
-      */
+    }//for (int j=0;j<n_faces
+    
 #endif
 
-    } // if (dim==2)
- }
-  
+  } // loop over cells
   return 0;
 }
 
@@ -903,15 +760,19 @@ int TCollection::getIndexInCollection(TBaseCell *cell)
   return -1;
 }
 
-
+/**
+   Notes: 
+   (1) we always write a .mesh file with three dimensions. This
+   is done for visualization purposes (with medit).
+   (2) In two dimensions, mixed meshes (triangles+quadrilaterals) are supported
+   (3) In 3D, we only write boundary faces and volume elements
+*/
 int TCollection::writeMesh(const char *meshFileName)
-
 {
   int dim = 3;
 #ifdef __2D__
   dim = 2;
 #endif
-
 
   int nVertexPerFace;
   if (dim==2) {
@@ -928,13 +789,12 @@ int TCollection::writeMesh(const char *meshFileName)
   createElementLists();
 
   std::ofstream MESHfile; 
+  // header of .mesh file
   MESHfile.open(meshFileName);
-
   MESHfile << "MeshVersionFormatted 1" << endl;
   MESHfile << endl;
   MESHfile << "Dimension 3" << endl; //note: dim always 3 (for visualization)
   MESHfile << endl;
-
   MESHfile << "Vertices" << endl;
   unsigned int nPoints = NodesReferences.size();
   MESHfile << nPoints << endl;
@@ -949,7 +809,10 @@ int TCollection::writeMesh(const char *meshFileName)
   }
   MESHfile << endl;
 
+  // faces (egdes in 2D, triangles/quads in 3D)
   unsigned int nBoundaryFaces = BdFacesReferences.size();
+
+  // write elements: edges + surface elements in 2D, boundary faces + volume el. in 3D
   if (dim==2) {
     MESHfile << "Edges" << endl;
     MESHfile << nBoundaryFaces << endl;
@@ -1014,7 +877,7 @@ int TCollection::writeMesh(const char *meshFileName)
     
   } else { // dim=3
 
-    // surface elements
+    // surface elements: mixed meshes not allowed in 3D
     if (nVertexPerFace == 3) {
       MESHfile << "Triangles" << endl;
     } else {
@@ -1054,6 +917,32 @@ int TCollection::writeMesh(const char *meshFileName)
   return 0;
   
 }
+
+void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &edges)
+{
+  edges.clear();
+  for(int i=0;i<this->N_Cells; i++)
+    {
+      TBaseCell *cell = this->Cells[i];
+      for(int j=0;  j < cell->GetN_Joints(); j++)
+        {
+	  TJoint *joint= cell->GetJoint(j);
+	  if (joint->GetType()==BoundaryEdge)
+            {
+	      TBoundEdge *boundedge = (TBoundEdge *)joint;
+	      TBoundComp *BoundComp = boundedge->GetBoundComp();
+	      if (BoundComp->GetID() == id)
+                {
+		  ///@todo set the boundedge properties in the function MakeGrid
+		  boundedge->SetNeighbour(cell);
+		  boundedge->set_index_in_neighbour(cell,j);
+		  edges.push_back(boundedge);                 
+                }
+            }
+        }
+    }
+}
+
 #ifdef _MPI
 int TCollection::find_process_of_point(double x, double y, double z) const
 {
@@ -1096,4 +985,7 @@ int TCollection::find_process_of_point(double x, double y, double z) const
 
 
 }
+
+
+
 #endif

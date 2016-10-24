@@ -141,7 +141,7 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll, TBaseCell *cell
   const TFESpace2D *fespace;
   TFEFunction2D *fefunction;
   BaseFunct2D BaseFunct_Id;
-  FE2D FE_ID;
+  FE2D FE_ID = C_P00_2D_T_A; //avoid uninit warning
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf, **AllBaseFuncts;

@@ -391,9 +391,18 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SHISHKIN_MESH = 0;
   ParamDB->SHISHKIN_DIAM = 1.0;
   ParamDB->NSTYPE = 1;
-ParamDB->BrinkmanTYPE = 1;
+  ParamDB->BrinkmanTYPE = 1;
   ParamDB->DARCYTYPE = 1;
+    
   ParamDB->SIGMA_PERM = 1;
+  ParamDB->VISCOSITY = 1;
+  ParamDB->EFFECTIVE_VISCOSITY = 1;
+  ParamDB->PERMEABILITY = 1;
+    
+  ParamDB->equal_order_stab_weight_P1P1= 0;
+  ParamDB->equal_order_stab_weight_P2P2= 0;
+    
+    
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
   ParamDB->VMM_COARSE_LEVEL = 4711;
@@ -566,6 +575,41 @@ ParamDB->BrinkmanTYPE = 1;
   // parameters for nonlinear iteration
   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
 
+
+    
+  /** parameters for weakly imposing boundary/interface conditions */
+  ParamDB->n_neumann_boundary = 0.;
+  ParamDB->neumann_boundary_id.clear();
+  ParamDB->neumann_boundary_value.clear();
+    
+  ParamDB-> n_g_v_boundary = 0.;
+  ParamDB-> g_v_boundary_id.clear();
+  ParamDB->g_v_boundary_value.clear();
+    
+  ParamDB-> n_unvn_boundary = 0.;
+  ParamDB-> unvn_boundary_id.clear();
+  ParamDB->unvn_boundary_value.clear();
+
+  ParamDB-> n_gradunv_boundary = 0.;
+  ParamDB-> gradunv_boundary_id.clear();
+  ParamDB->gradunv_boundary_value.clear();
+    
+  ParamDB-> n_u_v_boundary = 0.;
+  ParamDB-> u_v_boundary_id.clear();
+  ParamDB->u_v_boundary_value.clear();
+    
+  ParamDB-> n_p_v_n_boundary = 0.;
+  ParamDB-> p_v_n_boundary_id.clear();
+  ParamDB-> p_v_n_boundary_value.clear();
+    
+  //Nitsche Combi - weak Dirichlet
+  ParamDB-> n_nitsche_boundary = 0.;
+  ParamDB-> nitsche_boundary_id.clear();
+  ParamDB-> nitsche_penalty.clear();
+    
+    
+    
+  
   ParamDB->TETGEN_QUALITY = 0.0;
   ParamDB->TETGEN_VOLUMEN = 0.0;
   ParamDB->TETGEN_STEINER = 0;
@@ -812,6 +856,44 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->CYLINDER_22000_YPLUS_SIDES = 1500;
   ParamDB->CYLINDER_22000_YPLUS_FRONT = 2300;
   ParamDB->CYLINDER_22000_YPLUS_BACK  = 1000;
+  
+// parameters for BULK computations
+  ParamDB->BULK_REACTION_DISC = 0;
+  ParamDB->BULK_PB_DISC = 0;
+  ParamDB->BULK_PB_DISC_STAB = 0;
+  ParamDB->BULK_PB_DISC_FCT_GROUP = 0;
+  ParamDB->BULK_COUPLING = 0;
+  ParamDB->BULK_GROWTH_RATE = 0;
+  ParamDB->BULK_REACTION_MASS_LUMPING = 0;
+  ParamDB->BULK_METHODS_OF_MOMENTS = 0;
+  ParamDB->BULK_MOM_DISC = 0;
+  ParamDB->BULK_SOLD_PARAMETER_TYPE = 0;
+  ParamDB->N_CELL_LAYERS_PSD = 0;
+  ParamDB->N_CELL_LAYERS_PSD_2 = 0;
+  ParamDB->OUTPUT_NODE_LAYER_PSD = 0;
+  ParamDB->BULK_REACTION_C_CUT = 0.0;
+
+  ParamDB->BULK_l_infty = 0.0;
+  ParamDB->BULK_u_infty = 0.0;
+  ParamDB->BULK_c_infty = 0.0;
+  ParamDB->BULK_c_C_infty_sat = 0.0;
+  ParamDB->BULK_c_C_infty = 0.0;
+  ParamDB->BULK_f_infty = 0.0;
+
+  ParamDB->BULK_density = 0.0;
+  ParamDB->BULK_dynamic_viscosity = 0.0;
+
+  ParamDB->BULK_C_g = 0.0;
+  ParamDB->BULK_C_nuc = 0.0;
+  ParamDB->BULK_C_sat = 0.0;
+  ParamDB->BULK_C_2 = 0.0;
+  ParamDB->BULK_D_A = 0.0;
+  ParamDB->BULK_D_P_0 = 0.0;
+  ParamDB->BULK_D_P_MAX = 0.0;
+  ParamDB->BULK_k_g = 0.0;
+  ParamDB->BULK_k_r = 0.0;
+  ParamDB->BULK_k_nuc = 0.0;
+  ParamDB->BULK_D_P_MIN = 0.0;
 
 // parameters for shear slip mesh update method computations
   ParamDB->SSMUM_MP_X = 0.5;
@@ -936,7 +1018,8 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->DEPENDENT_BASIS = 0;
   ParamDB->DEPENDENT_BASIS_Q1 = 0;
   ParamDB->DEPENDENT_BASIS_Q2 = 0;
-  
+ 
+    
   #ifdef _MPI
   ParamDB->Comm = MPI_COMM_WORLD;    
   #endif
@@ -947,6 +1030,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
 {
   using namespace Output; // printToFile
   
+  printToFile(">>> Start printing old database (ParamDB) <<<");
   printToFile("HOSTNAME: ", utilities::get_host_name(), " started on ", 
               utilities::get_date_and_time());
   printToFile("EXECUTED FILE: ", ExecutedFile);
@@ -999,7 +1083,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("SHISHKIN_MESH: ", ParamDB->SHISHKIN_MESH);
   printToFile("SHISHKIN_DIAM: ", ParamDB->SHISHKIN_DIAM);
   printToFile("NSTYPE: ", ParamDB->NSTYPE);
-printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
+  printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("DARCYTYPE: ", ParamDB->DARCYTYPE);
   printToFile("SIGMA_PERM: ", ParamDB->SIGMA_PERM);
   printToFile("LAPLACETYPE: ", ParamDB->LAPLACETYPE);
@@ -1346,12 +1430,19 @@ void TDatabase::WriteTimeDB()
 
   printToFile("RB_TYPE: ", TimeDB->RB_TYPE);
   printToFile("RB_TYPE2: ", TimeDB->RB_TYPE2);
-
+    
   printToFile("EXTRAPOLATE_VELOCITY: ", TimeDB->EXTRAPOLATE_VELOCITY);
   printToFile("EXTRAPOLATE_PRESSURE: ", TimeDB->EXTRAPOLATE_PRESSURE);
   printToFile("EXTRAPOLATE_STEPS: ", TimeDB->EXTRAPOLATE_STEPS);
   printToFile("EXTRAPOLATE_WEIGHT: ", TimeDB->EXTRAPOLATE_WEIGHT);
-} 
+
+  printToFile(">>> End printing old database (ParamDB) <<<");
+  printToFile("");
+    
+//  printToFile(" n_neumann_boundary: ",ParamDB->n_neumann_boundary );
+//  printToFile(" neumann_boundary_id: ", ParamDB->neumann_boundary_id);
+//  printToFile("neumann_boundary_value: ", ParamDB->neumann_boundary_value);
+}
 
 void TDatabase::CheckParameterConsistencyNSE()
 {

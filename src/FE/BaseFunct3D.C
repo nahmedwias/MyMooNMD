@@ -529,7 +529,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
 
 TGridCell *TBaseFunct3D::GenerateRefElement()
 {
-  TGridCell *Cell;
+  TGridCell *Cell =nullptr;
   TVertex *v[8];
   TJointEqN *b[6];
   int i;

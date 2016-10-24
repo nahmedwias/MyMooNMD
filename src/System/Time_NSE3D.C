@@ -20,7 +20,7 @@
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
 ParameterDatabase get_default_TNSE3D_parameters()
 {
-  Output::print<3>("creating a default TNSE3D parameter database");
+  Output::print<5>("creating a default TNSE3D parameter database");
   // we use a parmoon default database because this way these parameters are
   // available in the default NSE3D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
@@ -160,7 +160,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
       this->get_velocity_pressure_orders(velocity_pressure_orders);
     }
     // number of multigrid levels
-    size_t n_multigrid_levels = mg_->get_n_levels();
+    size_t n_multigrid_levels = mg_->get_n_geometric_levels();
     // index of the finest grid 
     int finest = domain.get_ref_level();
     int coarsest = finest - n_multigrid_levels + 1;
@@ -188,9 +188,9 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     // initialize the systems on the coarser grids
     for (int grid_no = finest; grid_no >= coarsest; --grid_no)
     {
+      //TODO What's going on here for MPI? This looks unfinished! CB 09/2016
+#ifndef _MPI
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
-#ifdef _MPI
-#else
       this->systems_.emplace_back(example_, *coll, velocity_pressure_orders,
                             type);
 #endif
@@ -1008,6 +1008,16 @@ void Time_NSE3D::compute_residuals()
   unsigned int number_u_Dof = s.solution_.length(0);
   unsigned int number_p_Dof = s.solution_.length(3);
 
+#ifdef _MPI
+    //MPI: solution in consistency level 3 (TODO: maybe this is superfluous here
+    // (because solution might be in level 3 consistency already)!)
+    auto comms = s.matrix_.get_communicators();
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->consistency_update(s.solution_.block(bl), 3);
+    }
+#endif
+
   // copy rhs to defect and compute defect
   this->defect_ = s.rhs_;
   s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
@@ -1018,48 +1028,28 @@ void Time_NSE3D::compute_residuals()
                       TDatabase::ParamDB->PRESSURE_SPACE);
   }
 
-  // square norms of the residual components
-#ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  std::vector<double> defect_m(defect_.get_entries_vector()); //copy of defect (entries)
-  //Eliminate all non-master rows in defect_m!
-  for(int ui = 0; ui < 3; ++ui)
-  {//velocity rows
-    const int* masters = s.velocitySpace_.get_communicator().GetMaster();
-    for(size_t i = 0; i<number_u_Dof; ++i)
-    {
-      if (masters[i]!=my_rank)
-      {
-        defect_m[number_u_Dof*ui + i]=0;
-      }
-    }
-  }
-  {//pressure row
-    const int* masters = s.pressureSpace_.get_communicator().GetMaster();
-    for(size_t i = 0; i<number_p_Dof; ++i)
-    {
-      if (masters[i]!=my_rank)
-      {
-        defect_m[number_u_Dof*3 + i]=0;
-      }
-    }
-  }
-  //TODO write this nicer (std!)
-  double impulse_residual = Ddot(3*number_u_Dof, &defect_m.at(0),&defect_m.at(0));
-  double mass_residual = Ddot(number_p_Dof, &defect_m.at(3*number_u_Dof),
-                              &defect_m.at(3*number_u_Dof));
-#else
-//  //should not BlockVector be able to do vector*vector?
-  double impulse_residual = Ddot(3*number_u_Dof,
-                                 &this->defect_[0], &this->defect_[0]);
+  // This is the calculation of the residual, given the defect.
+  BlockVector defect_impuls({number_u_Dof,number_u_Dof,number_u_Dof});
+  BlockVector defect_mass({number_p_Dof});
+  //copy the entries (BlockVector offers no functionality to do this more nicely)
+  for(size_t i = 0; i<3*number_u_Dof ;++i)
+    defect_impuls.get_entries()[i] = defect_.get_entries()[i];
+  for(size_t i =0 ; i<number_p_Dof ; ++i)
+    defect_mass.get_entries()[i] = defect_.get_entries()[3*number_u_Dof + i];
 
-  double mass_residual    = Ddot(number_p_Dof,
-                                 &this->defect_[3*number_u_Dof],
-                                 &this->defect_[3*number_u_Dof]);
+#ifdef _MPI
+  double impuls_residual_square = defect_impuls.norm_global({comms[0],comms[1],comms[2]});
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm_global({comms[3]});
+  mass_residual_square *= mass_residual_square;
+#else
+  double impuls_residual_square = defect_impuls.norm();
+  impuls_residual_square *= impuls_residual_square;
+  double mass_residual_square = defect_mass.norm();
+  mass_residual_square *= mass_residual_square;
 #endif
 
-  Residuals current_residual(impulse_residual, mass_residual);
+  Residuals current_residual(impuls_residual_square, mass_residual_square);
   old_residual_.add(current_residual);
 }
 

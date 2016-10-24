@@ -9,7 +9,7 @@
 
 LoopInfo::LoopInfo(std::string name)
  : name(name), initial_residual(std::numeric_limits<double>::max()),
-   old_residual(std::numeric_limits<double>::max()), initial_time(), old_time()
+   old_residual(std::numeric_limits<double>::max()), timer()
 {
 
 }
@@ -25,8 +25,7 @@ void LoopInfo::restart(std::string name, double initial_residual)
   this->name = name;
   this->initial_residual = initial_residual;
   this->old_residual = std::numeric_limits<double>::max();
-  this->initial_time.reset();
-  this->old_time.reset();
+  this->timer.reset();
 }
 
 void LoopInfo::print(unsigned int loop_index, double current_residual)
@@ -56,9 +55,9 @@ void LoopInfo::print(unsigned int loop_index, double current_residual)
     if(this->print_time_every_step)
     {
       s << "  t[s]/step: " << setprecision(4) << setw(9)
-        << old_time.elapsed_time()
+        << timer.time_since_last_start()
         << "  t[s]: " << setprecision(4) << setw(9) 
-        << initial_time.elapsed_time();
+        << timer.elapsed_time();
     }
   }
   else
@@ -67,7 +66,8 @@ void LoopInfo::print(unsigned int loop_index, double current_residual)
     this->restart(this->name, current_residual);
   }
   old_residual = current_residual;
-  old_time.reset();
+  timer.stop();
+  timer.start();
   // print only if verbosity is high enough.
   if(this->verbosity_threshold <= Output::getVerbosity() && my_rank == 0)
     Output::print<1>(s.str());
@@ -82,7 +82,8 @@ void LoopInfo::finish(unsigned int loop_index, double current_residual)
 #else
   int my_rank = 0;
 #endif
-
+  
+  timer.stop();
   using namespace std;
   std::stringstream s;
   
@@ -96,9 +97,9 @@ void LoopInfo::finish(unsigned int loop_index, double current_residual)
       << "  red/step: " << setprecision(10) << setw(15)
       << std::pow(current_residual/this->initial_residual, 1./loop_index);
     s << "  t[s]: " << setprecision(4) << setw(9) 
-      << initial_time.elapsed_time()
+      << timer.elapsed_time()
       << "  t[s]/step: " << setprecision(4) << setw(9)
-      << this->initial_time.elapsed_time()/loop_index;
+      << this->timer.elapsed_time()/loop_index;
   }
   if(my_rank == 0)
     Output::print<1>(s.str());

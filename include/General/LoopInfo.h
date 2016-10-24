@@ -43,10 +43,8 @@ private:
   double initial_residual;
   /// @brief the residual of the previous iteration
   double old_residual;
-  /// @brief the time before the iteration starts
-  Chrono initial_time;
-  /// @brief the time at the end of the last iteration
-  Chrono old_time;
+  /// @brief keep track of the duration of the loop (as well as each iteration)
+  Chrono timer;
 };
 
 #endif // LOOPINFO_H

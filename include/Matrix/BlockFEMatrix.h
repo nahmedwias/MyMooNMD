@@ -694,6 +694,15 @@ class BlockFEMatrix : public BlockMatrix
                                                     const int spaceNumber) const;
 
     /**
+     * Print information on the matrix. Works in MPI case, too.
+     * So far it prints only the block dimensions and the total number of d.o.f.
+     * (MPI case: global number of d.o.f.)
+     *
+     * TODO Might be extended by further info and depend on verbosity.
+     */
+    void print_matrix_info(std::string name) const;
+
+    /**
      * Overrides the method from the base class
      * and does nothing but print an error, when called. This ensures, that
      * no TMatrix is put into a BlockFEMatrix.
@@ -736,7 +745,7 @@ class BlockFEMatrix : public BlockMatrix
     void scale_blocks_actives(
         double factor,
         const std::vector<std::vector<size_t>>& cell_positions );
-    
+
     /// @brief turn on pressure correction
     void enable_pressure_correction() const;
     /// @brief turn off pressure correction

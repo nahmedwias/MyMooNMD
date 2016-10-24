@@ -136,7 +136,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixK, *Rhs, *MatrixRowA, *MatrixRowK;
+  double **MatrixA, **MatrixMK, *Rhs, *MatrixRowA, *MatrixRowMK;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
   double val, val1;
@@ -148,7 +148,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
 
   MatrixA = LocMatrices[0];
-  MatrixK = LocMatrices[1];
+  MatrixMK = LocMatrices[1];
   Rhs = LocRhs[0];
 
   N_ = N_BaseFuncts[0];
@@ -187,7 +187,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
   for(i=0;i<N_;i++)
   {
     MatrixRowA = MatrixA[i];
-    MatrixRowK = MatrixK[i];
+    MatrixRowMK = MatrixMK[i];
     
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -196,7 +196,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
 
     bgradv = c1*test100+c2*test010+c3*test001;
     bgradv *= delta;
-    // CHANGE TEST000 !
+    // CHANGE TEST000 = v + delta*bgradv
     test000 += bgradv;
     Rhs[i] += Mult*test000*c5;
 
@@ -215,7 +215,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
       val += val1* test000;
 
       MatrixRowA[j] += Mult * val;
-      MatrixRowK[j] += Mult * (ansatz000 * test000 + ansatz000 * bgradv);
+      MatrixRowMK[j] += Mult * (ansatz000 * test000);
     } // endfor j
   } // endfor i
 }
@@ -232,10 +232,10 @@ void MatricesAKSRhsAssemble_SUPG(double Mult, double *coeff, double *param,
   double **MatrixS, *MatrixRowS;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double val, val1, val2;
+  double val, val1, val2=0;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, c5, c6, c00, c11, c22, c33, c44, c12, c13, c23; 
+  double c0, c1, c2, c3, c4, c5, c6, c00, c11, c22, c33, c44, c12=0, c13=0, c23=0;
   double tau, bgradv, bb, res, sigma, norm_b;
   double theta1 = TDatabase::TimeDB->THETA1;
   double theta2 = TDatabase::TimeDB->THETA2;

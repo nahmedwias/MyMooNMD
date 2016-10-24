@@ -44,7 +44,9 @@ int TDomain::ReadParam(char *ParamFile)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  char line[200], *aux_char;
+  // if the max_line_length is too short, the program simply hangs
+  size_t max_line_length = 1000;
+  char line[max_line_length], *aux_char;
   int N_Param = 0, flag[7];
   std::ifstream dat(ParamFile);
 
@@ -282,6 +284,38 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->SIGMA_PERM;
       N_Param++;  
     }
+      
+      if (!strcmp(line, "VISCOSITY:"))
+      {
+          dat >> TDatabase::ParamDB->VISCOSITY;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "EFFECTIVE_VISCOSITY:"))
+      {
+          dat >> TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "PERMEABILITY:"))
+      {
+          dat >> TDatabase::ParamDB->PERMEABILITY;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "equal_order_stab_weight_P1P1:"))
+      {
+          dat >> TDatabase::ParamDB->equal_order_stab_weight_P1P1;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "equal_order_stab_weight_P2P2:"))
+      {
+          dat >> TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+          N_Param++;
+      }
+      
+      
     if (!strcmp(line, "USE_ISOPARAMETRIC:"))
     {
       dat >> TDatabase::ParamDB->USE_ISOPARAMETRIC;
@@ -2404,12 +2438,206 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
     
-    if (!strcmp(line, ":"))
+    if (!strcmp(line, ""))
     {
       dat >> TDatabase::ParamDB->DEPENDENT_BASIS_Q2;
       N_Param++;
     }
     
+      // parameters for weakly imposing boundary/interface conditions
+      if (!strcmp(line, "n_neumann_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_neumann_boundary;
+          N_Param++;
+          TDatabase::ParamDB->neumann_boundary_id.resize(TDatabase::ParamDB->n_neumann_boundary);
+          TDatabase::ParamDB->neumann_boundary_value.resize(TDatabase::ParamDB->n_neumann_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->neumann_boundary_id.begin(),
+                    TDatabase::ParamDB->neumann_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->neumann_boundary_value.begin(),
+                    TDatabase::ParamDB->neumann_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "neumann_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_neumann_boundary; ib++) {
+              dat >> TDatabase::ParamDB->neumann_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "neumann_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_neumann_boundary; ib++) {
+              dat >> TDatabase::ParamDB->neumann_boundary_value[ib];
+          }
+      }
+      
+      
+      if (!strcmp(line, "n_unvn_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_unvn_boundary;
+          N_Param++;
+          TDatabase::ParamDB->unvn_boundary_id.resize(TDatabase::ParamDB->n_unvn_boundary);
+          TDatabase::ParamDB->unvn_boundary_value.resize(TDatabase::ParamDB->n_unvn_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->unvn_boundary_id.begin(),
+                    TDatabase::ParamDB->unvn_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->unvn_boundary_value.begin(),
+                    TDatabase::ParamDB->unvn_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "unvn_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_unvn_boundary; ib++) {
+              dat >> TDatabase::ParamDB->unvn_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "unvn_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_unvn_boundary; ib++) {
+              dat >> TDatabase::ParamDB->unvn_boundary_value[ib];
+          }
+      }
+      
+      
+      if (!strcmp(line, "n_gradunv_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_gradunv_boundary;
+          N_Param++;
+          TDatabase::ParamDB->gradunv_boundary_id.resize(TDatabase::ParamDB->n_gradunv_boundary);
+          TDatabase::ParamDB->gradunv_boundary_value.resize(TDatabase::ParamDB->n_gradunv_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->gradunv_boundary_id.begin(),
+                    TDatabase::ParamDB->gradunv_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->gradunv_boundary_value.begin(),
+                    TDatabase::ParamDB->gradunv_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "gradunv_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_gradunv_boundary; ib++) {
+              dat >> TDatabase::ParamDB->gradunv_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "gradunv_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_gradunv_boundary; ib++) {
+              dat >> TDatabase::ParamDB->gradunv_boundary_value[ib];
+          }
+      }
+      
+      
+      if (!strcmp(line, "n_u_v_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_u_v_boundary;
+          N_Param++;
+          TDatabase::ParamDB->u_v_boundary_id.resize(TDatabase::ParamDB->n_u_v_boundary);
+          TDatabase::ParamDB->u_v_boundary_value.resize(TDatabase::ParamDB->n_u_v_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->u_v_boundary_id.begin(),
+                    TDatabase::ParamDB->u_v_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->u_v_boundary_value.begin(),
+                    TDatabase::ParamDB->u_v_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "u_v_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_u_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->u_v_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "u_v_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_u_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->u_v_boundary_value[ib];
+          }
+      }
+
+      
+      if (!strcmp(line, "n_g_v_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_g_v_boundary;
+          N_Param++;
+          TDatabase::ParamDB->g_v_boundary_id.resize(TDatabase::ParamDB->n_g_v_boundary);
+          TDatabase::ParamDB->g_v_boundary_value.resize(TDatabase::ParamDB->n_g_v_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->g_v_boundary_id.begin(),
+                    TDatabase::ParamDB->g_v_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->g_v_boundary_value.begin(),
+                    TDatabase::ParamDB->g_v_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "g_v_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_g_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->g_v_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "g_v_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_g_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->g_v_boundary_value[ib];
+          }
+      }
+      
+      
+      if (!strcmp(line, "n_p_v_n_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_p_v_n_boundary;
+          N_Param++;
+          TDatabase::ParamDB->p_v_n_boundary_id.resize(TDatabase::ParamDB->n_p_v_n_boundary);
+          TDatabase::ParamDB->p_v_n_boundary_value.resize(TDatabase::ParamDB->n_p_v_n_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->p_v_n_boundary_id.begin(),
+                    TDatabase::ParamDB->p_v_n_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->p_v_n_boundary_value.begin(),
+                    TDatabase::ParamDB->p_v_n_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "p_v_n_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_p_v_n_boundary; ib++) {
+              dat >> TDatabase::ParamDB->p_v_n_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "p_v_n_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_p_v_n_boundary; ib++) {
+              dat >> TDatabase::ParamDB->p_v_n_boundary_value[ib];
+          }
+      }
+      
+      // Nitsche Combi- weak Dirichlet
+      if (!strcmp(line, "n_nitsche_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_nitsche_boundary;
+          N_Param++;
+          TDatabase::ParamDB->nitsche_boundary_id.resize(TDatabase::ParamDB->n_nitsche_boundary);
+          TDatabase::ParamDB->nitsche_penalty.resize(TDatabase::ParamDB->n_nitsche_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->nitsche_boundary_id.begin(),
+                    TDatabase::ParamDB->nitsche_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->nitsche_penalty.begin(),
+                    TDatabase::ParamDB->nitsche_penalty.end(), 0.);
+      }
+      
+      if (!strcmp(line, "nitsche_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_nitsche_boundary; ib++) {
+              dat >> TDatabase::ParamDB->nitsche_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "nitsche_penalty:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_nitsche_boundary; ib++) {
+              dat >> TDatabase::ParamDB->nitsche_penalty[ib];
+          }
+      }
+
+      // ----------------------------------------------------------------
+      
+      
+      
+      
     if (!strcmp(line, "timeprofiling:"))
     {
       dat >> TDatabase::ParamDB->timeprofiling;
@@ -2429,7 +2657,7 @@ int TDomain::ReadParam(char *ParamFile)
     
  
    // read until end of line
-    dat.getline (line, 199);
+    dat.getline (line, max_line_length-1);
   }
 
   if (TDatabase::ParamDB->START_RE_NR < 0)
@@ -2462,8 +2690,8 @@ int TDomain::ReadBdParam(std::istream& dat, int &Flag)
 #ifdef __2D__
   TBoundComp2D *BdComp;
 #else
-  TBoundComp3D *BdComp;
-  TBoundComp2D *BdComp2D;
+  TBoundComp3D *BdComp=nullptr;
+  TBoundComp2D *BdComp2D=nullptr;
 #endif
 
   Flag = 0;
