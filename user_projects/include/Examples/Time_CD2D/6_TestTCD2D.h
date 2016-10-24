@@ -42,7 +42,7 @@ void BoundValue(int BdComp, double Param, double &value)
 // initial conditon
 void InitialCondition(double x,  double y, double *values)
 {
-  if ( sqrt((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5)) <= 0.0676 && x >= 0.5)
+  if ( sqrt((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5)) <= 0.26 && x >= 0.5)
     values[0] = 1;
   else
     values[0] =0;
@@ -79,7 +79,7 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
 // exact solution
 void Initial(double x, double y, double *values)
 {
-  if ( sqrt((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5)) <= 0.0676 && x >= 0.5)
+  if ( sqrt((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5)) <= .26 && x >= 0.5)
     values[0] = 1;
   else
     values[0] =0;
