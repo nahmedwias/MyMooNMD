@@ -1,11 +1,9 @@
-// u1 = sin(t) sin (PiX) sin(PiY)
-// u2 = sin(t) cos(PiX) cos(PiY)
-//
+
 double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
-  OutPut("Example: potential_flow_td.h" << endl) ;
-  TDatabase::ParamDB->INTERNAL_QUAD_RULE=99;
+  OutPut("Example: potential_flow_ex4.h" << endl) ;
+  TDatabase::ParamDB->INTERNAL_QUAD_RULE = 97;
 }
 
 // ========================================================================
@@ -32,25 +30,23 @@ void InitialP(double x, double y, double *values)
 // ========================================================================
 void ExactU1(double x, double y, double *values)
 {
-    double t = TDatabase::TimeDB->CURRENTTIME;
-    values[0] = t*(6.0*x*y);
-    values[1] = t*6.0*y;
-    values[2] = t*6.0*x;
+  values[0] = 0;
+  values[1] = 0;
+  values[2] = 0;
 }
 
 void ExactU2(double x, double y, double *values)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;    
-  values[0] = t*3.0*(x*x - y*y);
-  values[1] = t*6.0*x;
-  values[2] = -t*6.0*y;
+  values[0] = 0.;
+  values[1] = 0.;
+  values[2] = 0.;
 }
 
 void ExactP(double x, double y, double *values)
 {
-  values[0] = -(3.0*x*x*y - y*y*y);
-  values[1] = -(6.0*x*y);
-  values[2] = -(3.0*(x*x - y*y));
+  values[0] = x*x*x + y*y*y -1./2;
+  values[1] = 3.*x*x;
+  values[2] = 3.*y*y;
 }
 // ========================================================================
 // boundary conditions
@@ -63,52 +59,12 @@ void BoundCondition(int i, double t, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;
-  double x=0, y=0;
-  
-  switch(BdComp)
-  {
-    case 0: 
-      x = Param; y=0;
-      break;
-    case 1: 
-      x = 1; y = Param;
-      break;
-    case 2: 
-      x = 1-Param; y = 1;
-      break;
-    case 3: 
-      x = 0; y = 1-Param;
-      break;
-    default: cout << "wrong boundary part number" << endl;
-      break;
-  }
-  value=t*(6.0*x*y);
+  value=0.;
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;
-  double x=0, y=0;
-  
-  switch(BdComp)
-  {
-    case 0: 
-      x = Param; y=0;
-      break;
-    case 1: 
-      x = 1; y = Param;
-      break;
-    case 2: 
-      x = 1-Param; y = 1;
-      break;
-    case 3: 
-      x = 0; y = 1-Param;
-      break;
-    default: cout << "wrong boundary part number" << endl;
-      break;
-  }
- value=t*3.0*(x*x - y*y);
+ value=0.;
 }
 
 // ========================================================================
@@ -121,8 +77,8 @@ void LinCoeffs(int n_points, double *X, double *Y,
   for(int i=0;i<n_points;i++)
   {    
     coeffs[i][0] = nu;    
-    coeffs[i][1] = 0;
-    coeffs[i][2] = 0;     
+    coeffs[i][1] = 3.*X[i]*X[i];
+    coeffs[i][2] = 3.*Y[i]*Y[i];
   }
 }
 

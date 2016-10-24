@@ -3,6 +3,7 @@
 #include <LocalAssembling2D.h>
 #include <SquareMatrix2D.h>
 #include <Assemble2D.h>
+#include <LinAlg.h>
 
 using namespace std;
 
@@ -110,12 +111,12 @@ void PR_Time_NSE2D::set_projection_space() const
        TDatabase::ParamDB->PROJECTION_SPACE = 1012; //BDM_2
        break;
      case 22:
-       TDatabase::ParamDB->PROJECTION_SPACE = 1001;//RT_1
+       TDatabase::ParamDB->PROJECTION_SPACE = 1012;//BDM1
        break;
-     case 3:
+     case 23:
        TDatabase::ParamDB->PROJECTION_SPACE = 1013;
        break;
-     case 4:
+     case 24:
        TDatabase::ParamDB->PROJECTION_SPACE = 1014;
        break;
   }
@@ -326,7 +327,7 @@ void PR_Time_NSE2D::rhs_assemble()
     {
       if(tau != oldtau)
       {
-        double factor=/*TDatabase::TimeDB->THETA1**/tau;
+        double factor=TDatabase::TimeDB->THETA1*tau;
         if(oldtau !=0.)
         {
           factor /= oldtau;
@@ -402,11 +403,32 @@ void PR_Time_NSE2D::system_solve()
   if(this->solver_.is_using_multigrid())
     ErrThrow("multigrid solver is not tested yet");
   solver_.solve(sb.matrix, sb.rhs, sb.solution);
+  
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    sb.p.project_into_L20();
+  
+  this->Time_NSE2D::defect = sb.rhs; 
+  sb.matrix.apply_scaled_add(sb.solution, this->Time_NSE2D::defect,-1.);
+  
+  unsigned int nuDof = sb.solution.length(0);
+  unsigned int npDof = sb.solution.length(2);
+  double r = Ddot(2*nuDof+npDof, &this->defect[0], &this->Time_NSE2D::defect[0]);
+  cout<<"residual : " << r<<endl;
+  
+  TFEFunction2D * u1 = sb.u.GetComponent(0);
+  TFEFunction2D * u2 = sb.u.GetComponent(1);
+  double values[5];
+  double errors_[5];
+  u1->FindGradient(0.5, 0.5, errors_);
+  example_.get_exact(0)(0.5, 0.5, values);
+  cout <<"u1error :  " <<setw(20) << errors_[1]-values[1];
+  u2->FindGradient(0.5, 0.5, errors_);
+  example_.get_exact(1)(0.5, 0.5, values);
+  cout << setw(20) << errors_[1]-values[1] <<endl;
+
   // subtract the mass matrix and rescale to get back the A's
   this->descale();
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-    sb.p.project_into_L20();
 
   // copy solution for next time step
   this->oldsol_ = sb.solution;
