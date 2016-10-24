@@ -4,8 +4,7 @@
 double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
-  OutPut("Example: potential_flow_td.h" << endl) ;
-  TDatabase::ParamDB->INTERNAL_QUAD_RULE=99;
+  OutPut("Example: potential_flow_ex5.h" << endl) ;
 }
 
 // ========================================================================
@@ -13,44 +12,49 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
-  values[0] = 0;
+  double t = TDatabase::TimeDB->CURRENTTIME;
+  values[0] = t*t*t*(6.*x*y) + (1.-t*t*t)*(-3.*x*x + 3.*y*y);
 }
 
 void InitialU2(double x, double y, double *values)
 {
-  values[0]= 0;
+  double t = TDatabase::TimeDB->CURRENTTIME;
+  values[0] = t*t*t*(3.*x*x-3.*y*y) + (1.-t*t*t)*(6.*x*y);
 }
 
 void InitialP(double x, double y, double *values)
 {
-  values[0] = 0;
+  values[0] = 0.;
 }
-
-
 // ========================================================================
 // exact solution
 // ========================================================================
 void ExactU1(double x, double y, double *values)
 {
-    double t = TDatabase::TimeDB->CURRENTTIME;
-    values[0] = t*(6.0*x*y);
-    values[1] = t*6.0*y;
-    values[2] = t*6.0*x;
+  double t = TDatabase::TimeDB->CURRENTTIME;
+  values[0] = t*t*t*(6.*x*y) + (1.-t*t*t)*(-3.*x*x + 3.*y*y);
+  values[1] = t*t*t*(6.*y) + (1.-t*t*t)*(-6.*x);
+  values[2] = t*t*t*(6.*x) + (1.-t*t*t)*(6.*y);
+  values[3] = 0.0; // laplacian
+  values[4] = 3.*t*t*(6.*x*y) - 3.*t*t*(-3.*x*x + 3.*y*y); // time derivative
 }
 
 void ExactU2(double x, double y, double *values)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;    
-  values[0] = t*3.0*(x*x - y*y);
-  values[1] = t*6.0*x;
-  values[2] = -t*6.0*y;
+  double t = TDatabase::TimeDB->CURRENTTIME;
+  values[0] = t*t*t*(3.*x*x-3.*y*y) + (1.-t*t*t)*(6.*x*y);
+  values[1] = t*t*t*(6.*x) + (1.-t*t*t)*(6.*y);
+  values[2] = t*t*t*(-6.*y)+ (1.-t*t*t)*(6.*x);
+  values[3] = 0.0; // laplacian
+  values[4] = 3.*t*t*(3.*x*x-3.*y*y) - 3.*t*t*(6.*x*y);
 }
 
 void ExactP(double x, double y, double *values)
 {
-  values[0] = -(3.0*x*x*y - y*y*y);
-  values[1] = -(6.0*x*y);
-  values[2] = -(3.0*(x*x - y*y));
+  double t = TDatabase::TimeDB->CURRENTTIME;
+  values[0] = 3.*t*t*(-3.*x*x*y+ y*y*y - x*x*x + 3.*x*y*y);
+  values[1] = 3.*t*t*(-6.*x*y - 3.*x*x + 3.*y*y);
+  values[2] = 3.*t*t*(-3.*x*x + 3.*y*y + 6.*x*y);
 }
 // ========================================================================
 // boundary conditions
@@ -63,9 +67,7 @@ void BoundCondition(int i, double t, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;
-  double x=0, y=0;
-  
+  double x=0, y=0;  
   switch(BdComp)
   {
     case 0: 
@@ -83,12 +85,13 @@ void U1BoundValue(int BdComp, double Param, double &value)
     default: cout << "wrong boundary part number" << endl;
       break;
   }
-  value=t*(6.0*x*y);
+  double val[5];
+  ExactU1(x,y,val);
+  value=val[0];
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;
   double x=0, y=0;
   
   switch(BdComp)
@@ -108,7 +111,9 @@ void U2BoundValue(int BdComp, double Param, double &value)
     default: cout << "wrong boundary part number" << endl;
       break;
   }
- value=t*3.0*(x*x - y*y);
+  double val[5];
+  ExactU2(x,y,val);
+  value=val[0];
 }
 
 // ========================================================================
@@ -117,12 +122,12 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  static double nu = DIMENSIONLESS_VISCOSITY;
+  double nu = DIMENSIONLESS_VISCOSITY;
   for(int i=0;i<n_points;i++)
-  {    
+  {
     coeffs[i][0] = nu;    
     coeffs[i][1] = 0;
-    coeffs[i][2] = 0;     
+    coeffs[i][2] = 0; 
   }
 }
 

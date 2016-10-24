@@ -92,6 +92,12 @@ ParameterDatabase get_default_domain_parameters()
          "This files describes the computational mesh. Typically this files"
          " has the extension 'mesh, 'smesh', 'node' or 'poly'. "
          " currently only the smesh files are supported");
+   
+   db.add("refinement_type", (size_t)0, 
+          "This is the refinement type which can be used to refine"
+          " the mesh either by using the regular refinement or by other"
+          " for example barycentric or quads to triangles", 
+          (size_t)0, (size_t)4);
 
   return db;
 }
@@ -2324,7 +2330,11 @@ int TDomain::refine_by_barycenter()
       CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TriBary]);
       CurrCell->Refine(RefLevel);
     }
-  }cout<<"here:"<<endl;
+    else
+    {
+      ErrThrow("barycentric refinement only works for triangles");
+    }
+  }
   return 0;
 }
 
