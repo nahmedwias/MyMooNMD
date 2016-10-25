@@ -1,4 +1,4 @@
-﻿# CMakeLists.txt for subdirectory FE of ParMooN project. 
+# CMakeLists.txt for subdirectory FE of ParMooN project. 
 # Use only as subproject of ParMooN.
 # 
 # Change history:
@@ -18,6 +18,8 @@ include_directories("${CMAKE_SOURCE_DIR}/include/FE"
 #list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/ADISystem1D.C") 
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/AlgebraicFluxCorrection.C") 
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/Assemble2D.C") 
+list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/Assembler3.C") 
+list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/Assembler4.C")  
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/AuxParam2D.C") 
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/BaseFunct1D.C") 
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/BaseFunct2D.C") 
