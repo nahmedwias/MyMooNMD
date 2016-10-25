@@ -108,7 +108,7 @@ void ChannelTau180::setParameters(ParameterDatabase &db)
                   TDatabase::ParamDB->INTERNAL_QUAD_RULE);
   }  
   double inv_rev = db["reynolds_number"];
-  reynolds_number = 1./inv_rev;
+  reynolds_number = inv_rev;
 }
 
 void ChannelTau180::setZCoordinates(TCollection* Coll, int level)
@@ -123,8 +123,6 @@ void ChannelTau180::setZCoordinates(TCollection* Coll, int level)
   nLayers=TDatabase::ParamDB->N_CELL_LAYERS*(int)(pow(2.0,level));
   grid_type=TDatabase::ParamDB->GRID_TYPE;
   // cout<<grid_type<<" is grid type "<< endl;
-
-  Output::print("number of layers on grid level: ", level, "  " , nLayers );
 
   // first loop over cells
   for(i=0;i<nCells;i++)
@@ -481,7 +479,7 @@ void ChannelTau180::setPeriodicFaceJoints(TCollection* Coll)
 
 void ChannelTau180::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
 {
-  double per_x, per_y;
+  double per_x, per_y;  
   if(reynolds_number==180)
   {
     per_x=2.*Pi; per_y=2.*Pi/3.;
@@ -742,7 +740,7 @@ void ChannelTau180::eddy_viscosity(
       break;
     case SMAGORINSKY:
       ChannelTau180::computeAverageVelocity(gradu, tnse3d);
-      // Reynolds number only: 395 or 180 are used
+      // Reynolds number only: 395 or 180 are used      
       area = (reynolds_number == 395) ? 4.*Pi*Pi : 32.*Pi*Pi/3;
       nCellsPerLayer = 2*nCells/(nZLayers-1);
       hxhy = area/(2*nCellsPerLayer);
@@ -791,7 +789,7 @@ double ChannelTau180::getFrictionVelocity(std::vector< double > vec)
   // print("mean", meanDeriv);
   std::vector<double> meanVeloDerivTime;
   meanVeloDerivTime.resize(nZLayers);
-  //
+  //  
   meanVeloDerivTime=meanVelocity(meanDeriv);
   temp = 1./reynolds_number*(meanVeloDerivTime.at(0)-
                             meanVeloDerivTime.at(nZLayers-1))*0.5;  
@@ -829,10 +827,8 @@ void ChannelTau180::saveData(std::deque< std::vector< double > > m,
 {
   double t = TDatabase::TimeDB->CURRENTTIME; 
   double bulkVelocity=0.;
-  for(size_t i=0; i<nZLayers; ++i)
-  {
+  for(size_t i=0; i<nZLayers-1; ++i)
     bulkVelocity += 0.5*(m.at(0)[i+1] + m.at(0)[i])*(zLayers[i+1]-zLayers[i]);
-  }
   bulkVelocity /=2.;
   Output::print("bulk velocity : t ", t, " ", setw(8), bulkVelocity, " tau ", 
                 (TDatabase::ParamDB->INTERNAL_BULK_MEAN-bulkVelocity)+1);
@@ -845,7 +841,6 @@ void ChannelTau180::saveData(std::deque< std::vector< double > > m,
   }
   // frictionvelocity
   double u_tau = getFrictionVelocity(m.front());
-
   for(size_t i=0; i<nZLayers; ++i)
   {
     Output::print("t ", t, " ", setw(8), zLayers.at(i), " ",setw(8), 
@@ -869,7 +864,6 @@ void ChannelTau180::saveData(std::deque< std::vector< double > > m,
     R13_abs += fabs(R13);
     R23 = R.at(5)[i] - m.at(1)[i] * m.at(2)[i]; R23 /= (u_tau*u_tau);
     R23_abs += fabs(R23);
-
     Output::print("t ", t, " ", setw(8), zLayers.at(i), " ", setw(8),
                   reynolds_number*(1-fabs(1-zLayers[i])), " rms_u* ", setw(8), rmsu, 
                   " rms_v* ", setw(8), rmsw, " rms_w* ", setw(8), rmsv,
