@@ -65,8 +65,12 @@ int main(int argc, char* argv[])
   //=========================================================================
   // create an object of the Brinkman class
   Brinkman2D brinkman2d(Domain, parmoon_db, example);
+    Output::print<>("Datenbank");
+    parmoon_db.info();
   brinkman2d.assemble();
   brinkman2d.solve();
+    Output::print<>(TDatabase::ParamDB->VELOCITY_SPACE);
+        Output::print<>(TDatabase::ParamDB->PRESSURE_SPACE);
   brinkman2d.output();
 
   //=========================================================================
