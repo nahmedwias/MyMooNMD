@@ -110,7 +110,10 @@ int main(int argc, char* argv[])
    * INITIALIZING OBJECTS FOR MULTIPHASE
    ********************************************************************/
   BlockVector phase_field = tcd2d.get_solution(); // copy vector structure
-//  phase_field = 1;     // set phase field = 1 everywhere
+
+  // Set phase field = 1 everywhere when we dont use cd>nse coupling.
+  // If we use it, then do nothing, this will take the initial solution of tcd2d.
+  if (tnse_db["coupling_cd_nse"].is(false))  phase_field = 1;
 
   /** @brief Finite Element function for density field */
   BlockVector   rho_vector = update_fieldvector(rho1,rho2,phase_field,"rho_vector");
