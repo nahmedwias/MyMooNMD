@@ -1255,7 +1255,7 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
          = s.Mass_Matrix.get_blocks_uniquely();
 
     sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-    sqMatrices[0]->reset();
+//    sqMatrices[0]->reset();
 
     Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices,
                0, nullptr, 0, nullptr, nullptr,

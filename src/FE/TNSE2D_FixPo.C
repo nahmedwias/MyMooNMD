@@ -6386,7 +6386,7 @@ void TimeNSType1GalerkinMass_dimensional(double Mult, double *coeff,
                                          double **OrigValues, int *N_BaseFuncts,
                                          double ***LocMatrices, double **LocRhs)
 {
-
+cout << "CA MARCHE !!!! " << " ";
 }
 
 
