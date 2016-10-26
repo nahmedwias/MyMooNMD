@@ -1201,3 +1201,59 @@ void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
 
 }
 
+
+void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
+{
+  for(System_per_grid& s : this->systems)
+  {
+    const TFESpace2D *velocity_space = &s.velocity_space;
+
+    BoundCondFunct2D * boundary_conditions[1]
+                                           = {velocity_space->GetBoundCondition() };
+
+    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+    non_const_bound_values[0] = this->example.get_bd(0);
+    non_const_bound_values[1] = this->example.get_bd(1);
+    non_const_bound_values[2] = this->example.get_bd(2);
+
+    TFEFunction2D *fe_functions[4] =
+    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, nullptr };
+
+    LocalAssembling2D la_mass(TNSE2D, fe_functions,
+                                   this->example.get_coeffs());
+
+    if (rho_field != nullptr )
+    {
+//      fe_functions[3] = rho_field;
+//      la_mass.setBeginParameter({0});
+//      la_mass.setFeFunctions2D(fe_functions); //reset - now velo comp included
+//      la_mass.setFeValueFctIndex({0,1,3,4});
+//      la_mass.setFeValueMultiIndex({D00,D00,D00,D00});
+//      la_mass.setN_Parameters(4);
+//      la_mass.setN_FeValues(4);
+//      la_mass.setN_ParamFct(1);
+//      la_mass.setParameterFct_string("TimeNSParamsVelo_dimensional");
+//
+//      la_mass.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");
+//      //...this should do the trick
+    }
+
+    size_t n_fe_spaces = 1;
+    const TFESpace2D *fespmat[1]={velocity_space};
+
+    size_t n_square_matrices = 1;
+    TSquareMatrix2D* sqMatrices[1];
+
+    std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+         = s.Mass_Matrix.get_blocks_uniquely();
+
+    sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+    sqMatrices[0]->reset();
+
+    Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices,
+               0, nullptr, 0, nullptr, nullptr,
+               boundary_conditions, non_const_bound_values.data(),
+               la_mass);
+  }
+}
+
