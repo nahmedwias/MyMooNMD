@@ -47,6 +47,9 @@ enum LocalAssembling2D_type { ConvDiff,
                               TNSE2D,
                               TNSE2D_NL,
                               TNSE2D_Rhs,
+                              /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
+                              TNSE2D_Mass,
+                              /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
                               Darcy2D_Galerkin,
                               Brinkman2D_Galerkin1,
                               Brinkman2D_Galerkin1b,

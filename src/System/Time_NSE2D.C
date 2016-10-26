@@ -1219,23 +1219,30 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
     TFEFunction2D *fe_functions[4] =
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, nullptr };
 
-    LocalAssembling2D la_mass(TNSE2D, fe_functions,
+    LocalAssembling2D la_mass(TNSE2D_Mass, fe_functions,
                                    this->example.get_coeffs());
 
     if (rho_field != nullptr )
     {
-//      fe_functions[3] = rho_field;
-//      la_mass.setBeginParameter({0});
-//      la_mass.setFeFunctions2D(fe_functions); //reset - now velo comp included
-//      la_mass.setFeValueFctIndex({0,1,3,4});
-//      la_mass.setFeValueMultiIndex({D00,D00,D00,D00});
-//      la_mass.setN_Parameters(4);
-//      la_mass.setN_FeValues(4);
-//      la_mass.setN_ParamFct(1);
-//      la_mass.setParameterFct_string("TimeNSParamsVelo_dimensional");
-//
-//      la_mass.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");
-//      //...this should do the trick
+      fe_functions[3] = rho_field;
+      la_mass.setBeginParameter({0});
+      la_mass.setFeFunctions2D(fe_functions); //reset - now velo comp included
+      la_mass.setFeValueFctIndex({0,1,3});
+      la_mass.setFeValueMultiIndex({D00,D00,D00});
+      la_mass.setN_Parameters(3);
+      la_mass.setN_FeValues(3);
+      la_mass.setN_ParamFct(1);
+      la_mass.setParameterFct_string("TimeNSParamsVelo_dimensional");
+
+      // the following line is normally done in the above la_mass constructor
+//      la_mass.setAssembleParam_string("TimeNSType1GalerkinMass_dimensional");
+      //...this should do the trick
+    }
+    else
+    {
+      Output::warn<1>("TNSE2D", "Using this method without a valid rho_field "
+                      "won't give correct results...");
+      ErrThrow("Impossible to use this method, see warning message...");
     }
 
     size_t n_fe_spaces = 1;

@@ -122,6 +122,17 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
           return std::string("TNSE2D_RhsSUPG");
       }
       break;
+      /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
+    case LocalAssembling2D_type::TNSE2D_Mass:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+        case GALERKIN:
+          return std::string("TNSE2D_Mass");
+        case SUPG:
+          return std::string("");
+      }
+      break;
+      /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
    case LocalAssembling2D_type::Custom:
      return std::string("customized");
   }
@@ -387,6 +398,9 @@ switch(type)
   case LocalAssembling2D_type::TNSE2D:
   case LocalAssembling2D_type::TNSE2D_NL:   
   case LocalAssembling2D_type::TNSE2D_Rhs:
+  /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
+  case LocalAssembling2D_type::TNSE2D_Mass:
+  /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
     this->set_parameters_for_tnse(type);
     break;
     
@@ -2662,6 +2676,39 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
           exit(1);
       }
       break;
+
+
+
+      /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
+        case TNSE2D_Mass:
+          switch(disc_type)
+          {
+            case GALERKIN:
+            case SMAGORINSKY:
+              this->N_Terms = 1;
+              this->Derivatives = { D00 };
+              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives[0] = false;
+              this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 1;
+              this->RowSpace = { 0 };
+              this->ColumnSpace = { 0 };
+              this->N_Rhs = 0 ;
+              this->RhsSpace = {};
+              this->AssembleParam =TimeNSType1GalerkinMass_dimensional;
+              this->Manipulate = NULL;
+              break;
+            case SUPG:
+              ErrMsg("unknown LocalAssembling2D_type " << type << "  not yet implemented");
+              break;
+            default:
+              ErrMsg("unknown LocalAssembling2D_type " << type << "  " << this->name);
+              exit(1);
+          }
+          break;
+          /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
+
+
     default:
       ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
   }
@@ -2693,6 +2740,12 @@ void LocalAssembling2D::setAssembleParam_string(std::string assembleFctParam2Dna
     this->AssembleParam = TimeNSRHS_dimensional;
     Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
                     "TimeNSRHS_dimensional!");
+  }
+  else if (assembleFctParam2Dname == "TimeNSType1GalerkinMass_dimensional")
+  {
+    this->AssembleParam = TimeNSType1GalerkinMass_dimensional;
+    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
+                    "TimeNSType1GalerkinMass_dimensional!");
   }
   else
   {

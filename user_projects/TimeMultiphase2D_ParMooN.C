@@ -254,6 +254,7 @@ int main(int argc, char* argv[])
            * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
            ********************************************************************/
           tnse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
+          tnse2d.assemble_massmatrix_withfields(&new_rho_field);
         }
         if (tnse_db["dimensional_nse"].is(true))    // if 2way coupling is deactivated but 1way is active
           tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);

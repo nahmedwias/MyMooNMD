@@ -6380,3 +6380,13 @@ double ***LocMatrices, double **LocRhs)
     //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }
+
+void TimeNSType1GalerkinMass_dimensional(double Mult, double *coeff,
+                                         double *param, double hK,
+                                         double **OrigValues, int *N_BaseFuncts,
+                                         double ***LocMatrices, double **LocRhs)
+{
+
+}
+
+
