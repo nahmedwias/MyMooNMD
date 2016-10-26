@@ -1038,6 +1038,10 @@ void TimeNSRHS_dimensional(double Mult, double *coeff,
                            double **OrigValues, int *N_BaseFuncts,
                            double ***LocMatrices, double **LocRhs);
 
+void TimeNSType1GalerkinMass_dimensional(double Mult, double *coeff,
+                                         double *param, double hK,
+                                         double **OrigValues, int *N_BaseFuncts,
+                                         double ***LocMatrices, double **LocRhs);
 
 
 
