@@ -6182,7 +6182,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j,N_U, N_P;
-  double c0, c1, c2, c3, c4;
+  double c1, c2;
   double u1, u2, u3, u4;
 
   MatrixA = LocMatrices[0];
@@ -6201,11 +6201,11 @@ double ***LocMatrices, double **LocRhs)
   Orig2 = OrigValues[2];         // u
   Orig3 = OrigValues[3];         // p
 
-  c0 = coeff[0];                 // nu
+//  c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // rho taken as a coefficient from examples
-  c4 = coeff[4];                 // mu  taken as a coefficient from examples
+//  c3 = coeff[3];                 // rho taken as a coefficient from examples
+//  c4 = coeff[4];                 // mu  taken as a coefficient from examples
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
@@ -6286,7 +6286,6 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
-  double c0;
   double u1, u2, u3, u4;
 
   MatrixA = LocMatrices[0];
@@ -6297,7 +6296,7 @@ double ***LocMatrices, double **LocRhs)
   Orig1 = OrigValues[1];         // u_y
   Orig2 = OrigValues[2];         // u
 
-  c0 = coeff[0];                 // nu
+//  c0 = coeff[0];                 // nu
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
@@ -6355,7 +6354,7 @@ double ***LocMatrices, double **LocRhs)
   double test00;
   double *Orig0;
   int i, N_U;
-  double c1, c2, u3, u4;
+  double c1, c2, u3;
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -6369,7 +6368,7 @@ double ***LocMatrices, double **LocRhs)
 
 
   u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
-  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+//  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
 
   for(i=0;i<N_U;i++)
   {
@@ -6386,7 +6385,48 @@ void TimeNSType1GalerkinMass_dimensional(double Mult, double *coeff,
                                          double **OrigValues, int *N_BaseFuncts,
                                          double ***LocMatrices, double **LocRhs)
 {
-cout << "CA MARCHE !!!! " << " ";
+  double **MatrixM;
+  double val;
+  double *MatrixMRow;
+  double ansatz00;
+  double test00;
+  double *Orig0;
+  int i,j,N_U;
+  double u3;
+
+  MatrixM = LocMatrices[0];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];         // u
+
+//  c0 = coeff[0];                 // nu
+
+//  u1 = param[0];                 // u1old
+//  u2 = param[1];                 // u2old
+  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+//  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
+  /** NOTES: there are 2 ways to consider the property fields in the equations : take it
+   * as input from example objects (as a coefficient, written in the example methods or given
+   * as user input), use c3 and c4 to use this case and replace them in val, below. The other way
+   * is to read them as values from fe_functions taken as a Param in a local Assembling. This is
+   * with u3 and u4.
+   */
+
+  for(i=0;i<N_U;i++)
+  {
+    MatrixMRow = MatrixM[i];
+    test00 = Orig0[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz00 = Orig0[j];
+
+      val  = u3*ansatz00*test00;
+      MatrixMRow[j] += Mult * val;
+    }                            // endfor j
+  }                              // endfor i
 }
 
 
