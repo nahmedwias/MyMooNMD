@@ -60,11 +60,11 @@ int main(int argc, char* argv[])
   tnse_db.merge(parmoon_db,true);
   tcd_db.merge(parmoon_db,true);
 
-  tcd_db["example"]          = 16;
+  tcd_db["example"]          = 15;
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
 
-  tnse_db["example"]         = 11;
+  tnse_db["example"]         = 14;
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
 
@@ -115,7 +115,6 @@ int main(int argc, char* argv[])
   // If we use it, then do nothing, this will take the initial solution of tcd2d.
   if (tnse_db["coupling_cd_nse"].is(false))  phase_field = 1;
 
-  phase_field =1; // JUST TEMPORARY!!! THIS HAS TO BE REMOVED
   /** @brief Finite Element function for density field */
   BlockVector   rho_vector = update_fieldvector(rho1,rho2,phase_field,"rho_vector");
   TFEFunction2D rho_field  = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
@@ -213,14 +212,14 @@ int main(int argc, char* argv[])
        ********************************************************************/
       if (tcd_db["coupling_nse_cd"].is(true))
       {
-//        Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
-//        Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-////        tcd2d.assemble_stiffness_matrix_alone();   // this line is outcommented when you want to make hand tests
-//        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
-//        tcd2d.scale_stiffness_matrix();
-//        Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
-//        tcd2d.solve();
-//        Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
+        Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
+        Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
+//        tcd2d.assemble_stiffness_matrix_alone();   // this line is outcommented when you want to make hand tests
+        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
+        tcd2d.scale_stiffness_matrix();
+        Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
+        tcd2d.solve();
+        Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
 
 
 
@@ -230,7 +229,7 @@ int main(int argc, char* argv[])
         if (tnse_db["coupling_cd_nse"].is(true))
         {
           BlockVector new_phase_field = tcd2d.get_solution();
-          new_phase_field =1;   // JUST TEMPORARY
+
           // THIS LOOP HAS TO BE RECONSIDERED
 //          for (int indice=0; indice < phase_fraction.length(); indice++)
 //          {
@@ -274,8 +273,8 @@ int main(int argc, char* argv[])
 
 
     tnse2d.output(step);
-//    if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-//      tcd2d.output();
+    if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
+      tcd2d.output();
     //  tnse2d.get_solution().write("solution_velocity");
     }
   } // end for step, time loop

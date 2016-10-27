@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 6	
+refinement_n_initial_steps: 7	
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -225,12 +225,12 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## "dimension_nse=true or false".Anyway, when dimensional_nse=true
 ## the assembling routines take density and viscosity, and that's
 ## what we want.
-reynolds_number: 75.   [ 0, 1e6 ]
-fluid_density: 300.   [ 0, 1e6 ]
-fluid_dynamic_viscosity: 4.   [ 0, 1e6 ]
+reynolds_number: 10.   [ 0, 1e6 ]
+fluid_density: 10.   [ 0, 1e6 ]
+fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
-RE_NR:	75.
+RE_NR:	1.
 
 # constant convection in x- and y-direction
 user_parameter1: 2
