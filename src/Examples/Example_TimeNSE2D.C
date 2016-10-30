@@ -35,6 +35,10 @@ namespace test_5 // for semicircle, tcd example 16
 {
 #include "5_TestTNSE2D.h"
 }
+namespace test_6 // for Rayleigh-Taylor instability, tcd example 17
+{
+#include "6_TestTNSE2D.h"
+}
 // ********* END OF USER PROJECT CODE
 
 
@@ -253,6 +257,34 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       test_5::ExampleFile();
       break;
 
+    case 16:                // Test5 = Navier Stokes for the test 6 of TCD2D (semi-circle)
+      /** exact_solution */
+      exact_solution.push_back( test_6::ExactU1 );
+      exact_solution.push_back( test_6::ExactU2 );
+      exact_solution.push_back( test_6::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_6::BoundCondition );
+      boundary_conditions.push_back( test_6::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_6::U1BoundValue );
+      boundary_data.push_back( test_6::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_6::LinCoeffs;
+
+      /** initial condition */
+      initialCOndtion.push_back(test_6::InitialU1);
+      initialCOndtion.push_back(test_6::InitialU2);
+      test_6::REYNOLDS_number = get_nu();
+      test_6::USER_parameter1 = this->example_database["user_parameter1"];
+      test_6::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_6::ExampleFile();
+      break;
 
     default:
       ErrThrow("Unknown Time dependent Example_TimeNSE2D example!");

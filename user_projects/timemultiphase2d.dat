@@ -53,6 +53,7 @@ verbosity: 3   [ 1, 5 ]
 ## 13- For Convection2- in the multiphase program - FOR TNSE2D
 ## 14- DAM BREAK	  - in the multiphase program - FOR TNSE2D
 ## 15- SEMICIRCLE	  - in the multiphase program - FOR TNSE2D
+## 16- RAYLEIGH-TAYLOR- in the multiphase program - FOR TNSE2D
 ## 11- ExpSinCos 	  - in the multiphase program - FOR TCD2D
 ## 12- SinSinSin 	  - in the multiphase program - FOR TCD2D
 ## 13- SinCos    	  - in the multiphase program - FOR TCD2D
@@ -238,7 +239,7 @@ user_parameter2: 2
 
 dimensional_nse: true   { true, false }
 coupling_nse_cd: true   { true, false }
-coupling_cd_nse: true   { true, false }
+coupling_cd_nse: false   { true, false }
 
 
 ###### PARAMETERS FROM THE OLD DATABASE
@@ -265,5 +266,5 @@ UPWIND_ORDER: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.03
+ENDTIME: 0.5
 TIMESTEPLENGTH: 0.01
