@@ -226,36 +226,37 @@ int main(int argc, char* argv[])
         /********************************************************************
         * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
         ********************************************************************/
-        if (tnse_db["coupling_cd_nse"].is(true))
-        {
-          BlockVector new_phase_field = tcd2d.get_solution();
-
-          // THIS LOOP HAS TO BE RECONSIDERED
-//          for (int indice=0; indice < phase_fraction.length(); indice++)
-//          {
-//            if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
-//            if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
-//          }
-
-          /** @brief Finite Element function for density field */
-          BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-          TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*) "q");
-
-          /** @brief Finite Element function for dynamic viscosity field */
-          BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
-          TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*) "s");
-
-
-
-
-
-          /********************************************************************
-           * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
-           ********************************************************************/
-          tnse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
-          tnse2d.assemble_massmatrix_withfields(&new_rho_field);
-        }
-        else if (tnse_db["dimensional_nse"].is(true))    // if 2way coupling is deactivated but 1way is active
+//        if (tnse_db["coupling_cd_nse"].is(true))
+//        {
+//          BlockVector new_phase_field = tcd2d.get_solution();
+//
+//          // THIS LOOP HAS TO BE RECONSIDERED
+////          for (int indice=0; indice < phase_fraction.length(); indice++)
+////          {
+////            if (phase_fraction.at(indice) >= 1) phase_fraction.at(indice)=1;
+////            if (phase_fraction.at(indice) <= 0) phase_fraction.at(indice)=0;
+////          }
+//
+//          /** @brief Finite Element function for density field */
+//          BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
+//          TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*) "q");
+//
+//          /** @brief Finite Element function for dynamic viscosity field */
+//          BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
+//          TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*) "s");
+//
+//
+//
+//
+//
+//          /********************************************************************
+//           * REASSEMBLE AND CALCULATE RESIDUALS FOR NSE
+//           ********************************************************************/
+//          tnse2d.assemble_nonlinear_term_withfields(&new_rho_field,&new_mu_field);
+//          tnse2d.assemble_massmatrix_withfields(&new_rho_field);
+//        }
+//        else
+          if (tnse_db["dimensional_nse"].is(true))    // if 2way coupling is deactivated but 1way is active
           tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
         else
           tnse2d.assemble_nonlinear_term();
