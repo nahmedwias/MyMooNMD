@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 6	
+refinement_n_initial_steps: 5	
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -53,14 +53,12 @@ verbosity: 3   [ 1, 5 ]
 ## 13- For Convection2- in the multiphase program - FOR TNSE2D
 ## 14- DAM BREAK	  - in the multiphase program - FOR TNSE2D
 ## 15- SEMICIRCLE	  - in the multiphase program - FOR TNSE2D
-## 16- RAYLEIGH-TAYLOR- in the multiphase program - FOR TNSE2D
 ## 11- ExpSinCos 	  - in the multiphase program - FOR TCD2D
 ## 12- SinSinSin 	  - in the multiphase program - FOR TCD2D
 ## 13- SinCos    	  - in the multiphase program - FOR TCD2D
 ## 14- LinearSpaceTime- in the multiphase program - FOR TCD2D
 ## 15- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 16- SEMICIRCLE	  - in the multiphase program - FOR TCD2D
-## 17- RAYLEIGH-TAYLLR- in the multiphase program - FOR TCD2D
 example: 0 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
@@ -227,8 +225,8 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## "dimension_nse=true or false".Anyway, when dimensional_nse=true
 ## the assembling routines take density and viscosity, and that's
 ## what we want.
-reynolds_number: 2.   [ 0, 1e6 ]
-fluid_density: 2.   [ 0, 1e6 ]
+reynolds_number: 10.   [ 0, 1e6 ]
+fluid_density: 10.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
@@ -240,7 +238,7 @@ user_parameter2: 2
 
 dimensional_nse: true   { true, false }
 coupling_nse_cd: true   { true, false }
-coupling_cd_nse: true   { true, false }
+coupling_cd_nse: false   { true, false }
 
 
 ###### PARAMETERS FROM THE OLD DATABASE
