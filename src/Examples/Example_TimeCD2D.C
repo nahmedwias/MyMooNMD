@@ -53,7 +53,10 @@ namespace test_semicircle
 {
 #include "6_TestTCD2D.h"
 }
-
+namespace test_rayleightaylor
+{
+#include "7_TestTCD2D.h"
+}
 // ********* END OF USER PROJECT CODE
 
 
@@ -287,6 +290,25 @@ Example_TimeCD2D::Example_TimeCD2D(
       this->timeDependentCoeffs=test_semicircle::coefficients_depend_on_time;
       break;
 
+    case 17:                // 7_Test Rayleigh-Taylor Instability
+      /**Exact solution"**/
+      exact_solution.push_back(test_rayleightaylor::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( test_rayleightaylor::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_rayleightaylor::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = test_rayleightaylor::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(test_rayleightaylor::InitialCondition);
+      test_rayleightaylor::ExampleFile();
+
+      this->timeDependentRhs = test_rayleightaylor::rhs_depends_on_time;
+      this->timeDependentCoeffs=test_rayleightaylor::coefficients_depend_on_time;
+      break;
 
 
 
