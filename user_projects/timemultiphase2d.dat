@@ -227,8 +227,8 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## "dimension_nse=true or false".Anyway, when dimensional_nse=true
 ## the assembling routines take density and viscosity, and that's
 ## what we want.
-reynolds_number: 1.   [ 0, 1e6 ]
-fluid_density: 1.   [ 0, 1e6 ]
+reynolds_number: 2.   [ 0, 1e6 ]
+fluid_density: 2.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
@@ -267,5 +267,5 @@ UPWIND_ORDER: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.03
+ENDTIME: 0.01
 TIMESTEPLENGTH: 0.01
