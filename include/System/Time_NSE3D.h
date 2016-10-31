@@ -10,8 +10,9 @@
  *
  * @author     Najib Alia
  * @date       2016/04/16
- * @history    2016/04/16
- * @history    2016/06/16 (multigrid enabled)
+ * @history    2016/04/16 
+ * @history    2016/06/16 (multigrid enabled) Naveed
+ * @history    2016/10/26 (multigrid enabled)
  *
  ******************************************************************************/
 
@@ -90,11 +91,11 @@ class Time_NSE3D
        * construction is a TODO .
        */
 #ifdef _MPI
-      System_per_grid(const Example_TimeNSE3D& example,
+      System_per_grid(const Example_TimeNSE3D& ex,
                     TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
                     int maxSubDomainPerDof);
 #else
-      System_per_grid(const Example_TimeNSE3D& example, TCollection& coll,
+      System_per_grid(const Example_TimeNSE3D& ex, TCollection& coll,
                       std::pair<int, int> order, Time_NSE3D::Matrix type);
 #endif
 
@@ -143,9 +144,6 @@ class Time_NSE3D
      * which is usually not necessary.
      */
     Solver<BlockFEMatrix, BlockVector> solver_;
-
-    /// An object of the new multigrid class. Stays nullptr if not needed.
-    std::shared_ptr<Multigrid> mg_;
 
     //! @brief An array to store the current defect.
     BlockVector defect_;
@@ -212,6 +210,14 @@ class Time_NSE3D
                int maxSubDomainPerDof);
 #else
     Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+               const Example_TimeNSE3D& example);
+#endif
+    
+#ifdef _MPI
+    Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
+               const Example_TimeNSE3D& example, int maxSubDomainPerDof);
+#else
+    Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
                const Example_TimeNSE3D& example);
 #endif
     

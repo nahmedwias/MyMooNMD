@@ -104,8 +104,8 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
 #endif
 )
  : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
-   solver_(param_db), mg_(nullptr),
-   defect_(), old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
+   solver_(param_db), defect_(), old_residual_(), 
+   initial_residual_(1e10), errors_(), oldtau_()
 {
   db_.merge(param_db, false);
   this->check_parameters();
@@ -212,6 +212,102 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
     s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
     // s.solution_.print("s");
+  }
+}
+
+Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDatabase& param_db, 
+                       const Example_TimeNSE3D& ex
+#ifdef _MPI
+, int maxSubDomainPerDof
+#endif  
+)
+: db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
+   solver_(param_db), defect_(), old_residual_(), 
+   initial_residual_(1e10), errors_(), oldtau_()
+{
+  db_.merge(param_db, false);
+  this->check_parameters();
+  std::pair <int,int>
+      velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
+                               TDatabase::ParamDB->PRESSURE_SPACE);
+  // get the velocity and pressure orders
+  this->get_velocity_pressure_orders(velocity_pressure_orders);
+  
+  Time_NSE3D::Matrix type;
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case  1: type = Matrix::Type1;  break;
+    case  2: type = Matrix::Type2;  break;
+    case  3: type = Matrix::Type3;  break;
+    case  4: type = Matrix::Type4;  break;
+    case 14: type = Matrix::Type14; break;
+    default:
+      ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
+               " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
+  }
+  bool usingMultigrid = solver_.is_using_multigrid();
+  TCollection *coll = collections_.front(); // finest grid collection
+  // create finite element space and function, a matrix, rhs, and solution
+#ifdef _MPI
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+                        maxSubDomainPerDof);
+#else
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+#endif
+  if(usingMultigrid)
+  {
+    auto mg = this->solver_.get_multigrid();
+    size_t n_multigrid_levels = mg->get_n_geometric_levels();
+    size_t n_grids=collections_.size();
+    if(n_multigrid_levels != n_grids)
+    {
+      ErrThrow("Wrong number of grids for multigrid! expecting ",
+               n_multigrid_levels, " geometric grids but got", n_grids,".");
+    }
+    
+    if(mg->is_using_mdml())
+    {
+      // change the discretization on the coarse grids to lowest order 
+      // non-conforming(-1). The pressure space is chosen automatically(-4711).
+      velocity_pressure_orders={-1, -4711};
+      this->get_velocity_pressure_orders(velocity_pressure_orders);
+    }
+    else
+    {
+      // for standard multigrid, pop the finest collection - it was already
+      // used to construct a space before the "if(usingMultigrid)" clause
+      // and will not (as in mdml) be used a second time with a different discretization
+      collections_.pop_front();
+    }
+    // Construct systems per grid and store them, finest level first
+    std::list<BlockFEMatrix*> matrices;
+    // matrix on finest grid is already constructed
+    matrices.push_back(&systems_.back().matrix_);
+    
+    for(auto coll : collections_)
+    {
+#ifdef _MPI
+      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type, 
+                            maxSubDomainPerDof)
+#else
+      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+#endif
+      // prepare input argument for multigrid 
+      matrices.push_front(&systems_.back().matrix_);
+    }
+    // initialize multigrid object with matrices on all levels
+    mg->initialize(matrices);
+  }
+  
+  this->output_problem_size_info();
+  // initialize the defect of the system. It has the same structure as
+  // the rhs (and as the solution)
+  this->defect_.copy_structure(this->systems_.front().rhs_);
+  for(System_per_grid& s : this->systems_)
+  {
+    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
+    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
+    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
   }
 }
 
