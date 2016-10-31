@@ -141,6 +141,7 @@ void InitialU1(double x, double y, double z, double *values)
   {
     TDatabase::ParamDB->INTERNAL_BULK_MEAN = 15.6803;
     TDatabase::ParamDB->INTERNAL_BULK_SIMULATION = 15.6803;
+    // std::srand(1);
     values[0] = DNS_profile_180(z)
     //values[0] = 25 * z*(2-z)
       +noise*TDatabase::ParamDB->INTERNAL_BULK_SIMULATION*(2*(double)rand()/RAND_MAX-1);
