@@ -78,7 +78,7 @@ void compare(const Time_NSE3D& tnse3d, std::array<double, int(4)> errors, double
   }
 }
 
-void compute(TDomain& domain, ParameterDatabase& db,
+void compute(std::list<TCollection* > grid_collections, ParameterDatabase& db,
              std::array<std::array<double, int(4)>,3> errors, double tol
 #ifdef _MPI
              , int maxSubDomainPerDof
@@ -104,9 +104,9 @@ void compute(TDomain& domain, ParameterDatabase& db,
   Example_TimeNSE3D example(db);
   // Construct Time_NSE3D object
 #ifdef _MPI
-  Time_NSE3D tnse3d(domain, db, example, maxSubDomainPerDof);
+  Time_NSE3D tnse3d(grid_collections, db, example, maxSubDomainPerDof);
 #else
-  Time_NSE3D tnse3d(domain, db, example);
+  Time_NSE3D tnse3d(grid_collections, db, example);
 #endif
 
   int step = 0;
@@ -149,7 +149,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
   } // end of time loop
 }
 
-void check(ParameterDatabase& db, TDomain& domain,
+void check(ParameterDatabase& db, std::list<TCollection* > grid_collections,
            int velocity_order, int pressure_order,
            int nstype, int laplacetype, int nonlineartype, int time_discretizationtype,
            std::array<std::array<double, int(4)>,3> errors, double tol
@@ -166,9 +166,9 @@ void check(ParameterDatabase& db, TDomain& domain,
   TDatabase::TimeDB->TIME_DISC = time_discretizationtype;
 
 #ifdef _MPI
-  compute(domain,db,errors,tol,maxSubDomainPerDof);
+  compute(grid_collections,db,errors,tol,maxSubDomainPerDof);
 #else
-  compute(domain,db,errors,tol);
+  compute(grid_collections,db,errors,tol);
 #endif
 }
 
@@ -326,25 +326,22 @@ int main(int argc, char* argv[])
   {
     // Construct domain and refine (default = once)
     TDomain domain_hex(db);
-    size_t n_ref = domain_hex.get_n_initial_refinement_steps();
-    for(size_t i=0; i< n_ref ; i++)
-    {
-      domain_hex.RegRefineAll();
-    }
+//     size_t n_ref = domain_hex.get_n_initial_refinement_steps();
+//     for(size_t i=0; i< n_ref ; i++)
+//     {
+//       domain_hex.RegRefineAll();
+//     }
 
-// Mesh Partitioning for MPI computation
 #ifdef _MPI
-    // Partition the by now finest grid using Metis and distribute among processes.
-    // 1st step: Analyse interfaces and create edge objects,.
-    domain_hex.GenerateEdgeInfo();
-    // 2nd step: Call the mesh partitioning.
-    int maxCellsPerVertex;
-    Partition_Mesh3D(MPI_COMM_WORLD, &domain_hex, maxCellsPerVertex);
-    // 3rd step: Generate edge info anew
-    domain_hex.GenerateEdgeInfo();
-    // calculate largest possible number of processes which share one dof
-    int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+    int maxSubDomainPerDof = 0;
 #endif
+    std::list<TCollection* > grid_collections
+    = domain_hex.refine_and_get_hierarchy_of_collections(
+        db
+#ifdef _MPI
+        , maxSubDomainPerDof
+#endif
+       );
 
     //=============================================================================
     // examples ... (0 to 5)
@@ -360,7 +357,7 @@ int main(int argc, char* argv[])
 #ifndef _MPI // solve with umfpack in SEQ case
       set_errors(db["example"], 12, 1, timediscretizationtype, 
                  std::string(argv[1]),0, errors);
-      check(db, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
+      check(db, grid_collections, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
 //
 //      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
@@ -386,7 +383,7 @@ int main(int argc, char* argv[])
 //      check(db, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-      check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
+      check(db, grid_collections, 12, -4711, 4, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 #endif
     //=============================================================================
@@ -430,10 +427,10 @@ int main(int argc, char* argv[])
 //      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 #else
-      check(db, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
+      check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 
-      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
+      check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
 //      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
@@ -494,7 +491,7 @@ int main(int argc, char* argv[])
 #ifndef _MPI // solve with umfpack in SEQ case
       set_errors(db["example"], 12, 1, timediscretizationtype,
                  std::string(argv[1]),0, errors);
-      check(db, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
+      check(db, grid_collections, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
 //
 //      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
@@ -508,7 +505,7 @@ int main(int argc, char* argv[])
 #else
       set_errors(db["example"], 12, 1, timediscretizationtype,
                  std::string(argv[1]),0, errors);
-      check(db, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
+      check(db, grid_collections, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
 //      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
@@ -554,7 +551,7 @@ int main(int argc, char* argv[])
 //      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 
-      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
+      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
 //
 //      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
@@ -563,7 +560,7 @@ int main(int argc, char* argv[])
 //      check(db, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
-      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
+      check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
 //      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
@@ -625,25 +622,21 @@ int main(int argc, char* argv[])
 
     TDomain domain_tet(db);
     size_t n_ref = domain_tet.get_n_initial_refinement_steps();
-    for(size_t i=0; i< n_ref ; i++)
-    {
-      domain_tet.RegRefineAll();
-    }
+//     for(size_t i=0; i< n_ref ; i++)
+//     {
+//       domain_tet.RegRefineAll();
+//     }
 
-// Mesh Partitioning for MPI computation
 #ifdef _MPI
-    // Partition the by now finest grid using Metis and distribute among processes.
-    // 1st step: Analyse interfaces and create edge objects,.
-    domain_tet.GenerateEdgeInfo();
-    // 2nd step: Call the mesh partitioning.
-    int maxCellsPerVertex;
-    Partition_Mesh3D(MPI_COMM_WORLD, &domain_tet, maxCellsPerVertex);
-    // 3rd step: Generate edge info anew
-    domain_tet.GenerateEdgeInfo();
-    // calculate largest possible number of processes which share one dof
-    int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+    int maxSubDomainPerDof = 0;
 #endif
-
+    std::list<TCollection* > grid_collections
+    = domain_tet.refine_and_get_hierarchy_of_collections(
+        db
+#ifdef _MPI
+        , maxSubDomainPerDof
+#endif
+       );
     //=============================================================================
     // examples ... (0 to 5)
     db["example"] = 0;
@@ -661,7 +654,7 @@ int main(int argc, char* argv[])
 //      check(db, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 //
-      check(db, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
+      check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
 //
 //      check(db, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
@@ -672,7 +665,7 @@ int main(int argc, char* argv[])
 #else
       set_errors(db["example"], 2, 1, timediscretizationtype,
                  std::string(argv[1]),1,errors);
-      check(db, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
+      check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 //
 //      check(db, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
