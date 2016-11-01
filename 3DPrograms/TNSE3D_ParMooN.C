@@ -31,9 +31,27 @@ double timeC = 0;
 // =======================================================================
 int main(int argc, char* argv[])
 {
-  double t_start = GetTime();
-  Output::print("<<<<< Running ParMooN: TNSE3D Main Program >>>>>");
+#ifdef _MPI
+  //Construct and initialise the default MPI communicator.
+  MPI_Init(&argc, &argv);
+  MPI_Comm comm = MPI_COMM_WORLD;
 
+  // Hold mpi rank and size ready, check whether the current processor
+  // is responsible for output (usually root, 0).
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if(my_rank==0)
+  {
+    Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+    Output::info("Time_NSE3D", "MPI, using ", size, " processes");
+  }
+#else
+  int my_rank = 0;
+  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+  Output::info("Time_NSE3D", "SEQUENTIAL (or OMP...)");
+#endif
+  double t_start = GetTime();
   //start a stopwatch which measures time spent in program parts
   Chrono timer;
 
@@ -41,27 +59,20 @@ int main(int argc, char* argv[])
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.merge(ParameterDatabase::default_tetgen_database(), true);
+
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
-
 #ifdef _MPI
-  //Construct and initialize the default MPI communicator and store it.
-  MPI_Init(&argc, &argv);
-  MPI_Comm comm = MPI_COMM_WORLD;
   TDatabase::ParamDB->Comm = comm;
-
-  // Hold mpi rank and size ready, check whether the current processor
-  // is responsible for output (usually root, 0).
-  int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-#else
-  int my_rank = 0;
 #endif
-
   TFEDatabase3D feDatabase;
 
+  // Choose and construct example.
+  Example_TimeNSE3D example(parmoon_db);
+
+  // Do the old parameter check of the Database.
+  Database.CheckParameterConsistencyNSE();
   // =====================================================================
   // set the database values and generate mesh
   // =====================================================================
@@ -86,86 +97,34 @@ int main(int argc, char* argv[])
     Database.WriteParamDB(argv[0]);
     Database.WriteTimeDB();
   }
-
-  // Do the old parameter check of the Database.
-  Database.CheckParameterConsistencyNSE();
-  
-  // Do initial domain refinement
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-  {
-    domain.RegRefineAll();
-  }
-  
-  TCollection* coll = domain.GetCollection(It_Finest,0);
+  // Initial refinement and grid collection
+#ifdef _MPI
+  int maxSubDomainPerDof = 0;
+#endif
+  std::list<TCollection* > gridCollections
+     = domain.refine_and_get_hierarchy_of_collections(
+       parmoon_db
+#ifdef _MPI
+       , maxSubDomainPerDof
+#endif       
+    );
+  TCollection* coll = gridCollections.front();
   TOutput3D output(0,0,0,0,std::addressof(domain),coll);
   
-  output.WriteVtk(parmoon_db["output_basename"]);
-
-  // write grid into an Postscript file (before partitioning)
-  if(parmoon_db["output_write_ps"] && my_rank==0)
-    domain.PS("Domain.ps", It_Finest, 0);
-
-#ifdef _MPI
-  // Partition the by now finest grid using Metis and distribute among processes.
-
-  // 1st step: Analyse interfaces and create edge objects,.
-  domain.GenerateEdgeInfo();
-
-  // 2nd step: Call the mesh partitioning.
-
-  int maxCellsPerVertex;
-  //do the actual partitioning, and examine the return value
-  if ( Partition_Mesh3D(comm, &domain, maxCellsPerVertex) == 1)
-  {
-    /** \todo It is a known issue that Metis does not operate entirely
-     * deterministic here. On a coarse grid (as if doing the partitioning on
-     * the coarsest grid of a multgrid hierarchy) it can happen, that
-     * one process goes entirely without own cells to work on.
-     * The workarounds which were used so far (setting another metis type,
-     * doing more uniform steps than the user requested ) are unsatisfactoy
-     * imo. So this is a FIXME
-     *
-     * One can reproduce the problem when using the cd3d multigrid test program
-     * in MPI and setting LEVELS to 3 and UNIFORM_STEPS to 1.
-     *
-     * Of course the same issue occurs if one calls this upon too small
-     * a grid with too many processes.
-     *
-     */
-    ErrThrow("Partitioning did not succeed.");
-  }
-
-  // 3rd step: Generate edge info anew
-  //(since distributing changed the domain).
-  domain.GenerateEdgeInfo();
-
-  // calculate largest possible number of processes which share one dof
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-
-#endif
-
+  output.WriteVtk("mesh.vtk");
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
-
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
-
-  // Choose and construct example.
-  Example_TimeNSE3D example(parmoon_db);
-
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
-  Time_NSE3D tnse3d(domain, parmoon_db, example, maxSubDomainPerDof);
+  Time_NSE3D tnse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
-  Time_NSE3D tnse3d(domain, parmoon_db, example);
+  Time_NSE3D tnse3d(gridCollections, parmoon_db, example);
 #endif
-
-  // assemble all matrices and right hand side at start time
-  // it assembles A's, B's and M's blocks. Nonlinear blocks are
-  // added in the loops thanks to assemble_nonlinear_term()
+  
   tnse3d.assemble_initial_time();
-
+  
   double end_time = TDatabase::TimeDB->ENDTIME;
   tnse3d.current_step_ = 0;
 
@@ -174,7 +133,7 @@ int main(int argc, char* argv[])
   int image = 0;
 
   timer.restart_and_print("setting up spaces, matrices and initial assembling");
-
+  TDatabase::TimeDB->CURRENTTIME = 0.0;  
   //======================================================================
   // time iteration
   //======================================================================
@@ -190,13 +149,13 @@ int main(int argc, char* argv[])
     {
       // setting the time discretization parameters
       SetTimeDiscParameters(1);
-//      if( tnse3d.current_step_ == 1 && my_rank==0) // a few output, not very necessary
-//      {
-//        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
-//        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
-//        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
-//        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
-//      }
+     if( tnse3d.current_step_ == 1 && my_rank==0) // a few output, not very necessary
+     {
+       Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
+       Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
+       Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
+       Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
+     }
       // tau may change depending on the time discretization (adaptive time)
       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
@@ -248,7 +207,6 @@ int main(int argc, char* argv[])
         std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
       tnse3d.output(tnse3d.current_step_,image);
-      
       timer_timeit.print_total_time(
         "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
     } // end of subtime loop
