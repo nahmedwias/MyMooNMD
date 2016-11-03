@@ -33,8 +33,9 @@ set(ParMooN_VERSION_MAJOR 1)
 set(ParMooN_VERSION_MINOR 1)
 
 # Enable Fortran compiling, linking and mangling.
-enable_language(Fortran)
-include(FortranCInterface) 
+#enable_language(Fortran)
+#include(FortranCInterface) 
+#get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} /Users/blank/ParMooN/ParMooN/gfortran64)
 
 # Determine ParMoon-internal architecture variable "_ARCH" from the used system.
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
@@ -199,6 +200,14 @@ target_compile_definitions(brinkman2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### Brinkman3D ###
+# Standard executable target.
+add_executable(brinkman3d ${PROJECT_SOURCE_DIR}/3DPrograms/Brinkman3D_ParMooN.C)
+set_target_properties(brinkman3d PROPERTIES OUTPUT_NAME parMooN_brinkman3d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(brinkman3d PUBLIC -D__3D__)
+# Link in the required libraries.
+target_link_libraries(brinkman3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES}) 
 
 ### TCD2D ###
 # Standard executable target.

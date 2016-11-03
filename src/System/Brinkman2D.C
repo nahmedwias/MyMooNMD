@@ -199,10 +199,10 @@ void Brinkman2D::assemble()
         LocalAssembling2D_type type;
         
         if (db["P2P2_stab"].is(true))
-        {type=Brinkman2D_Galerkin1ResidualStab2;
+        {type=Brinkman2D_Galerkin1ResidualStabP2;
         Output::print<>("P2P2 Stabilization");}
         else if (db["P1P1_stab"].is(true))
-        {type=Brinkman2D_Galerkin1ResidualStab;
+        {type=Brinkman2D_Galerkin1ResidualStabP1;
             Output::print<>("P1P1 Stabilization");}
         else
         {type=Brinkman2D_Galerkin1;}

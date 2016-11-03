@@ -1320,7 +1320,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	      HangingRhs[i] = new double [j];
 	      memset(HangingRhs[i], 0, SizeOfDouble*j);
 	    } // endfor
-
+    
 	    LocRhs = new double* [n_rhs];
 	    righthand = new double [n_rhs*MaxN_BaseFunctions3D];
 	    for(i=0;i<n_rhs;i++)
@@ -1342,7 +1342,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  aux = new double [MaxN_QuadPoints_3D*20];
 	  for(j=0;j<MaxN_QuadPoints_3D;j++)
 	    AuxArray[j] = aux + j*20;
-
+    
 	  if(N_AllMatrices)
 	  {
 	    aux = new double
@@ -1374,6 +1374,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  // reset clipboards of all neighbours to -1
 	  for(i=0;i<N_Cells;i++)
 	  {
+        
 	    cell = Coll->GetCell(i);
 	    k = cell->GetN_Joints();
 	    for(j=0;j<k;j++)
@@ -1402,6 +1403,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	// ########################################################################
 	  for(i=0;i<N_Cells;i++)
 	  {
+        
 	      //  OutPut(i<<endl);
 	    cell = Coll->GetCell(i);
 	//     cout << "Zellenr.: " << i << endl;
@@ -1507,12 +1509,13 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 						 cell,
 						 N_AllMatrices, n_rhs,
 						 LocMatrices, LocRhs);
-
+   
 	    //OutPut("local form done " << i << endl);
 	    time1 = GetTime();
 	    // ####################################################################
 	    // add local matrices to global matrices (ansatz == test)
 	    // ####################################################################
+
 	    for(j=0;j<n_sqmatrices;j++)
 	    {
 	      // find space for this bilinear form
