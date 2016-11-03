@@ -14,6 +14,13 @@
 
 #include <BoundComp3D.h>
 
+/** @brief a plane is described by:
+    a point P=(P_x,P_y,P_z)
+    a (tangential) vector A=(A_x,A_y,A_z)
+    a (normal) vector N=(N_x,N_y,N_z)
+    the vector B is computed as B = A x N
+
+ **/
 /** a plane as a component of a boundary part */
 class TBdPlane : public TBoundComp3D
 {
@@ -28,6 +35,7 @@ class TBdPlane : public TBoundComp3D
   public:
     // Constructor
     TBdPlane(int id);
+    TBdPlane(int id,int ref);
     
     virtual ~TBdPlane () {};
 
@@ -37,6 +45,10 @@ class TBdPlane : public TBoundComp3D
                     double a_x, double a_y, double a_z,
                     double n_x, double n_y, double n_z);
 
+    void GetParams (double &p_x, double &p_y, double &p_z,
+                    double &a_x, double &a_y, double &a_z,
+                    double &n_x, double &n_y, double &n_z);
+    
     /** return the coordinates of parameter value T, S */
     virtual int GetXYZofTS(double T, double S,
                            double &X, double &Y, double &Z);
@@ -45,8 +57,21 @@ class TBdPlane : public TBoundComp3D
     virtual int GetTSofXYZ(double X, double Y, double Z,
                            double &T, double &S);
 
-    /** return parameters and coordinates of a given linear
-        combination of vertices */
+/** 
+    @brief return local parameters (t,s) and coordinates (x,y,z) 
+    of a given linear combination of vertices 
+
+    @param[in] N_points: the number of input points
+    @param[in] LinComb: the coefficients of the linear combination
+    @param[in] tp: the array of local t-coordinates
+    @param[in] sp: the array of local s-coordinates
+    @param[out] T = sum_i LinComb[i] tp[i]
+    @param[out] S = sum_i LinComb[i] sp[i]
+    @param[out] X = sum_i LinComb[i] xp[i]
+    @param[out] Y = sum_i LinComb[i] yp[i]
+    @param[out] Z = sum_i LinComb[i] zp[i]
+**/
+
     virtual int GetXYZandTS(int N_Points, double *LinComb,
                             double *xp, double *yp, double *zp,
                             double *tp, double *sp,
@@ -63,9 +88,6 @@ class TBdPlane : public TBoundComp3D
       nz = N_z;
     };
     
-    void GetParams (double &p_x, double &p_y, double &p_z,
-                    double &a_x, double &a_y, double &a_z,
-                    double &n_x, double &n_y, double &n_z);
 };
 
 #endif
