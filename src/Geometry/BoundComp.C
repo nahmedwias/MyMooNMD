@@ -10,12 +10,5 @@
 
 #include <BoundComp.h>
 
-// Constructor
-TBoundComp::TBoundComp(int id, int ref)
-{
-  ID = id;
-  refID = ref;
-  FreeBoundaryStatus = false;
-}
 
 // Methods

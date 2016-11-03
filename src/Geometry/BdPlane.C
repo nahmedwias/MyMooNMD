@@ -17,6 +17,12 @@ TBdPlane::TBdPlane(int id) : TBoundComp3D(id)
   Type = Plane;
 }
 
+// Constructor
+TBdPlane::TBdPlane(int id, int ref) : TBoundComp3D(id,ref)
+{
+  Type = Plane;
+}
+
 // Methods
 void TBdPlane::SetParams (double p_x, double p_y, double p_z,
                          double a_x, double a_y, double a_z,
@@ -47,33 +53,27 @@ int TBdPlane::GetXYZofTS(double T, double S,
   return 0;
 }
 
-/** return parameters and coordinates of a given linear
-    combination of vertices */
 int TBdPlane::GetXYZandTS(int N_Points, double *LinComb,
                           double *xp, double *yp, double *zp,
                           double *tp, double *sp,
                           double &X, double &Y, double &Z,
                           double &T, double &S)
 {
-  int i;
-  double t, s, v;
-
-  t = s = 0;
-  for(i=0;i<N_Points;i++)
+  T = 0;
+  S = 0;
+  for(int i=0;i<N_Points;i++)
   {
-    v = LinComb[i];
-    t += v*tp[i];
-    s += v*sp[i];
+    T += LinComb[i]*tp[i];
+    S += LinComb[i]*sp[i];
   }
-  T = t;
-  S = s;
+  
 
 //   X = P_x + T * A_x + S * B_x;
 //   Y = P_y + T * A_y + S * B_y;
 //   Z = P_z + T * A_z + S * B_z;
 
   X = Y = Z = 0;
-  for (i=0;i<N_Points;++i)
+  for (int i=0;i<N_Points;++i)
   {
     X += LinComb[i]*xp[i];
     Y += LinComb[i]*yp[i];
