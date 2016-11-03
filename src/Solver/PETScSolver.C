@@ -9,6 +9,7 @@
 #endif // _MPI
 #include <algorithm>
 
+
 /**
  * Adding PETSc parameters from the database to the PETSc arguments string.
  *
@@ -54,6 +55,7 @@ std::string addParameters2str(const ParameterDatabase& db)
   // For me (Ulrich) petsc did not do a single iteration if omega was not set
   // to one. I have no clue why, but it could be fixed by adding the extra 
   // option "-ksp_error_if_not_converged 1".
+    
   petsc_args.append(" -pc_sor_omega "+db["sor_omega"].value_as_string()
                     + " -ksp_error_if_not_converged 1");
   // adding damping for Richardson iteration
@@ -62,6 +64,15 @@ std::string addParameters2str(const ParameterDatabase& db)
   // BlockVector in the PETScSolver::solve method. Sometimes this solution is
   // zero, but this does not hurt.
   petsc_args.append(" -ksp_initial_guess_nonzero");
+
+    
+//// AENDERUNG
+//   petsc_args.append(" -pc_type "+db["preconditioning"].value_as_string());
+//   petsc_args.append(" -ksp_type "+db["Krylov Subspace Method"].value_as_string());
+//     Output::print('Hier Gucken');
+//    Output::print(db["Krylov Subspace Method"].value_as_string());
+//----------
+                     
   return petsc_args;
 }
 
@@ -518,22 +529,23 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
     // two-by-two block system in a saddle point problem.
     // It is assumed here, that the pressure block is last, i.e., has the row 
     // and colums index `n_block_rows-1` and `n_block_cols-1` respectively.
-    size_t last_row = n_block_rows-1;
-    size_t last_col = n_block_cols-1;
+    size_t last_block_row = n_block_rows-1;
+    size_t last_block_col = n_block_cols-1;
     sub_petsc_mats.resize(2 * 2);
     
     // velocity-velocity coupling:
-    create_sub_matrix(matrix, {0,0}, {last_row-1, last_col-1},
+    create_sub_matrix(matrix, {0,0}, {last_block_row-1, last_block_col-1},
                       sub_petsc_mats[0]);
     // velocity-pressure coupling:
-    create_sub_matrix(matrix, {0,last_col}, {last_row-1, last_col},
+    create_sub_matrix(matrix, {0,last_block_col}, {last_block_row-1, last_block_col},
                       sub_petsc_mats[1]);
     // pressure-velocity coupling:
-    create_sub_matrix(matrix, {last_row, 0}, {last_row, last_col-1},
+    create_sub_matrix(matrix, {last_block_row, 0}, {last_block_row, last_block_col-1},
                       sub_petsc_mats[2]);
     // pressure-pressure coupling (should be a zero matrix)
-    create_sub_matrix(matrix, {last_row, last_col}, {last_row, last_col},
-                      sub_petsc_mats.at(3));
+      create_sub_matrix(matrix, {last_block_row, last_block_col},
+                        {last_block_row, last_block_col},
+                        sub_petsc_mats.at(3));
     
     // currently the last block should be all zero, we check this here
     PetscReal norm = 0.0;
@@ -545,7 +557,7 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
       // saddle point problems this is zero. This is what PETSc expects.
       // The problem is that PETSc can not automatically identify the correct 
       // blocks if they are not the ones given as submatrices. We would have to
-      // somehow define index sets for PETSc. I don't know how how to do that.
+      // somehow define index sets for PETSc. I don't know how to do that.
       ErrThrow("Currently one can use PETSc for a saddle point problem only if "
                "the lower right block is zero. Here it has norm ", norm);
     }
@@ -662,6 +674,8 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   }
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    Output::print("<<HAAALLLOOOOO my_rank");
+    Output::print(my_rank);
   auto block_local2global = local_to_global_block(comms_);
   auto block_masters = get_block_masters(comms_);
   if(block_local2global.size() != n_local)

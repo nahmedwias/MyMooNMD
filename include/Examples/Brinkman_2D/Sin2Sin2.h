@@ -270,38 +270,24 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  const double eps=1./TDatabase::ParamDB->RE_NR;
-  double K = TDatabase::ParamDB->PERMEABILITY;
-  double nu = TDatabase::ParamDB->VISCOSITY;
-  double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-  double val1[4];
-  double val2[4];
-  double val3[4];
+    double val1[4];
+    double val2[4];
+    double val3[4];
     
-  for(int i = 0; i < n_points; i++)
-  {
-    coeffs[i][0] = eps;
-    coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
-      
-      // effective viscosity unsteady
-      if(X[i]>0.5)
-      {
-          coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-      }
-      else {
-          coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY *10;
-      }
-      
-    //coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+    for(int i = 0; i < n_points; i++)
+    {
+        coeffs[i][0] = 1./TDatabase::ParamDB->RE_NR;
+        coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
+        coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+        coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+        
+        ExactU1(X[i], Y[i], val1);
+        ExactU2(X[i], Y[i], val2);
+        ExactP(X[i], Y[i], val3);
+        
+        coeffs[i][1] = -coeffs[i][5]*val1[3] + val3[1] + (coeffs[i][4]/coeffs[i][6])*val1[0];  // f1
+        coeffs[i][2] = -coeffs[i][5]*val2[3] + val3[2] + (coeffs[i][4]/coeffs[i][6])*val2[0];  // f2
+        coeffs[i][3] = val1[1] + val2[2];                           // g (divergence)
+    }
     
-    ExactU1(X[i], Y[i], val1);
-    ExactU2(X[i], Y[i], val2);
-    ExactP(X[i], Y[i], val3);
-    
-    coeffs[i][1] = -nu_eff*val1[3] + val3[1] + (nu/K)*val1[0];  // f1
-    coeffs[i][2] = -nu_eff*val2[3] + val3[2] + (nu/K)*val2[0];  // f2
-    coeffs[i][3] = val1[1] + val2[2];                           // g (divergence)
-  }
-  
 }

@@ -349,7 +349,7 @@ void tests_on_quads_Nitsche(unsigned int nRefinements, ParameterDatabase& db)
     check_brinkman2d(domain, db, 1,1, reference_errors);
     
     db["example"] = 0; // Poiseuille
-   db["P1P1_stab"]=false;
+    db["P1P1_stab"]=false;
     
     //--------------------------------------------------------------------------------------------------------------------
     TDatabase::ParamDB->n_nitsche_boundary=2;
