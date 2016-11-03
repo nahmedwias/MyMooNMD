@@ -55,6 +55,12 @@ class TBdWall : public TBoundComp3D
     /** read parameter from input file */
     virtual int ReadIn(std::istream &dat);
 
+    virtual void get_normal_vector(double x, double y, double z,
+				   double& nx, double& ny, double &nz){
+      Output::print(" ** ERROR: get_normal_vector() not yet implemented for BdWall ");
+      exit(1);
+    };
+    
     /** return BdComp2D */
     TBoundComp2D* GetBdComp2D()
     { return BdComp2D; }

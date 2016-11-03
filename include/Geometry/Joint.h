@@ -15,7 +15,6 @@
 #define __JOINT__
 
 #include <Constants.h>
-#include <Mapper.h>
 
 #ifndef __3D__
   #define MAXN_nVpoJ  3

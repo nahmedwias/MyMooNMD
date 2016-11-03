@@ -43,11 +43,9 @@ public:
      * This is just a temporary solution and should probably done differently
      * Note: the LocalAssembling2D is only needed within a function of this class
      */
-    Assembler4(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
-               CoeffFct2D *coeffs);
+  Assembler4();
     
-    ///@brief The variational form to be assembled
-    LocalAssembling2D la;
+    
     ///@brief The collection on which we want to assemble
     TCollection *Coll;
     
@@ -81,6 +79,7 @@ public:
                     std::vector <const TFESpace2D*>& fespaces,
                     std::vector <const TFESpace2D*>& ferhs,
                     const Example2D& example,
+		    std::vector< LocalAssembling2D* > la_list,
                     int AssemblePhaseID=-1
                     );
 
@@ -92,23 +91,18 @@ public:
 	@param[inout] LocRhs: pointer to local rhs
     **/
     void assemble_local_system(std::vector <const TFESpace2D*>& fespaces,
-                               int i, double ***LocMatrices,double **LocRhs);
+                               int i, double ***LocMatrices,double **LocRhs,
+			       LocalAssembling2D* la);
 
     /** 
 	@brief assemble the boundary conditions
-	@param[in] fespace: the fe space of the considered rhs block
+	@param[in]ferhs : the list of fe space of rhs
 	@param[in] example: the example class where the BC (values) are specified
-	@param[in] cell, i: the cell
-	@param[in] j: the considered block of the rhs
-	@param[inout] RHS: pointer to rhs_blocks[j]
-	@param[in] DOF: pointer to global DOF: DOF = ferhs[j]->GetGlobalDOF(i)
+	@param[in] i: the cell
     */
-    void impose_boundary_conditions(const TFESpace2D *fespace,
-				    const Example2D& example,
-				    TBaseCell* cell,
-				    int i, int j,
-				    double *RHS,
-				    int *DOF);
+    void impose_boundary_conditions(int i_cell,
+				    std::vector<const TFESpace2D*>& ferhs,
+				    const Example2D& example);
  
     /** 
 	@brief add the local contribution to the global matrix

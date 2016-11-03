@@ -11,6 +11,7 @@ include_directories("${CMAKE_SOURCE_DIR}/include/General")
 # Source files used in 2D and 3D.
 list(APPEND GENERAL_SOURCES "${PROJECT_SOURCE_DIR}/src/General/Chrono.C")
 list(APPEND GENERAL_SOURCES "${PROJECT_SOURCE_DIR}/src/General/Database.C")
+list(APPEND GENERAL_SOURCES "${PROJECT_SOURCE_DIR}/src/General/FunctionEvaluation.C")
 list(APPEND GENERAL_SOURCES "${PROJECT_SOURCE_DIR}/src/General/LoopInfo.C")
 list(APPEND GENERAL_SOURCES "${PROJECT_SOURCE_DIR}/src/General/MainUtilities.C")
 list(APPEND GENERAL_SOURCES "${PROJECT_SOURCE_DIR}/src/General/MooNMD_Io.C")

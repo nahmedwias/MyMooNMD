@@ -509,7 +509,8 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
     auto npos = std::string::npos;
     if ( petsc_args.find("-pc_type lu", 0) != npos
       || petsc_args.find("-pc_type ilu", 0) != npos
-      || petsc_args.find("-pc_type cholesky", 0) != npos)
+      || petsc_args.find("-pc_type cholesky", 0) != npos
+      || petsc_args.find("-pc_type hypre", 0) != npos)
     {
       use_direct_petsc = true;
     }
