@@ -16,6 +16,9 @@
 #endif
 #include <PETScSolver.h>
 
+#include <BoundaryAssembling3D.h>
+
+
 
 ParameterDatabase get_default_Brinkman3D_parameters()
 {
@@ -473,7 +476,7 @@ void Brinkman3D::assemble()
         for(int i = 0; i<3; ++i)
             delete feFunction[i];
         
-    }// endfor auto grid
+    //////}// endfor auto grid
     
     //copy non-actives from rhs to solution on finest grid
     this->systems.front().solution.copy_nonactive(systems.front().rhs);
@@ -517,20 +520,28 @@ void Brinkman3D::assemble()
     //	             spaces_for_matrix,spaces_for_rhs,
     //	             example);
     
-    //--------------------------------------------------------------------------------------------------
-    //        // Weakly Imposing Boundary Conditions - Boundary Integrals
-    //
-    //        BoundaryAssembling2D bi;
-    //
-    //        for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
-    //        {
-    //            bi.rhs_g_v_n(s.rhs,
-    //                         v_space,
-    //                         NULL,                                                  // g = 1
-    //                         TDatabase::ParamDB->neumann_boundary_id[k],            // boundary component
-    //                         -TDatabase::ParamDB->neumann_boundary_value[k]);       // mult
-    //        }
-    //
+    --------------------------------------------------------------------------------------------------
+            // Weakly Imposing Boundary Conditions - Boundary Integrals
+    
+
+    
+    TCollection* coll = v_space->GetCollection();
+        std::vector<TBaseCell*> ListOfAllCells;
+    for (int i=0 ; i < coll->GetN_Cells(); i++)
+    {
+       ListOfAllCells[i]= coll->GetCell(i);
+    }
+    
+    BoundaryAssembling3D bi;
+    for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+    {
+        bi.rhs_g_v_n(s.rhs,
+                     v_space,
+                     NULL,                                                  // g = 1
+                     ListOfAllCells,            // boundary component
+                     -TDatabase::ParamDB->neumann_boundary_value[k]);       // mult
+    }
+    
     //        for (int k=0;k<TDatabase::ParamDB->n_g_v_boundary;k++)
     //        {
     //            bi.rhs_g_v(s.rhs,
@@ -615,7 +626,7 @@ void Brinkman3D::assemble()
     //        }
     
     //--------------------------------------------------------------------------------------------------
-    
+    }
 }
 
 /** ************************************************************************ */

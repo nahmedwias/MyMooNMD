@@ -26,16 +26,16 @@ public:
      @param[in] mult: given multiplicative factor
      @param[in] given_boundary_data: the boundary pressure (as a finite element function)
      */
+//    void rhs_g_v_n(BlockVector &rhs,
+//                   const TFESpace3D *U_Space,
+//                   BoundValueFunct3D *given_boundary_data,
+//                   int boundary_component_id,
+//                   double mult
+//                   ) ;
     void rhs_g_v_n(BlockVector &rhs,
                    const TFESpace3D *U_Space,
                    BoundValueFunct3D *given_boundary_data,
-                   int boundary_component_id,
-                   double mult
-                   ) ;
-    void rhs_g_v_n(BlockVector &rhs,
-                   const TFESpace3D *U_Space,
-                   BoundValueFunct3D *given_boundary_data,
-                   std::vector<TBoundEdge*> &edge,
+                   std::vector<TBaseCell*> &boundaryCells,
                    double mult
                    );
     
@@ -46,88 +46,88 @@ public:
      @param[in] rescale_by_h: true: divide by length of the edges
      false: do not divide by length of the edges
      */
-    void rhs_g_v(BlockVector &rhs,
-                 const TFESpace3D *U_Space,
-                 BoundValueFunct3D *given_boundary_data1,
-                 BoundValueFunct3D *given_boundary_data2,
-                 int boundary_component_id,
-                 double mult,
-                 bool rescale_by_h
-                 ) ;
-    void rhs_g_v(BlockVector &rhs,
-                 const TFESpace3D *U_Space,
-                 BoundValueFunct3D *given_boundary_data1,
-                 BoundValueFunct3D *given_boundary_data2,
-                 std::vector<TBoundEdge*> &edge,
-                 double mult,
-                 bool rescale_by_h
-                 );
-    
-    /** @brief integral (u \cdot n, v \cdot n)_{[boundary_component_id]}
-     @param[in] boundary_component_id: the boundary component to integrate on
-     @param[in] mult: given multiplicative factor
-     */
-    void matrix_v_n_v_n(BlockFEMatrix &M,
-                        const TFESpace3D *U_Space,
-                        int boundary_component_id,
-                        double mult
-                        );
-    
-    void matrix_v_n_v_n(BlockFEMatrix &M,
-                        const TFESpace3D *U_Space,
-                        std::vector<TBoundEdge*> &edge,
-                        double mult);
-    
-    /** @brief integral (\nabla u \cdot n, v)_{[boundary_component_id]}
-     @param[in] boundary_component_id: the boundary component to integrate on
-     @param[in] mult: given multiplicative factor
-     */
-    void matrix_gradv_n_v(BlockFEMatrix &M,
-                          const TFESpace3D *U_Space,
-                          int boundary_component_id,
-                          double mult
-                          );
-    
-    void matrix_gradv_n_v(BlockFEMatrix &M,
-                          const TFESpace3D *U_Space,
-                          std::vector<TBoundEdge*> &edge,
-                          double mult);
-    
-    /** @brief integral (u, v)_{[boundary_component_id]}
-     @param[in] boundary_component_id: the boundary component to integrate on
-     @param[in] mult: given multiplicative factor
-     @param[in] rescale_by_h: true: divide by length of the edges
-     false: do not divide by length of the edges
-     */
-    void matrix_u_v(BlockFEMatrix &M,
-                    const TFESpace3D *U_Space,
-                    int boundary_component_id,
-                    double mult,
-                    bool rescale_by_h
-                    );
-    
-    void matrix_u_v(BlockFEMatrix &M,
-                    const TFESpace3D *U_Space,
-                    std::vector<TBoundEdge*> &edge,
-                    double mult,
-                    bool rescale_by_h);
-    
-    /** @brief assemble integral (p, v \cdot n)_{[boundary_component_id]} into the matrix
-     @param[in] boundary_component_id: the boundary component to integrate on
-     @param[in] mult: given multiplicative factor
-     */
-    void matrix_p_v_n(BlockFEMatrix &M,
-                      const TFESpace3D *U_Space,
-                      const TFESpace3D *P_Space,
-                      int boundary_component_id,
-                      double mult
-                      );
-    
-    void matrix_p_v_n(BlockFEMatrix &M,
-                      const TFESpace3D *U_Space,
-                      const TFESpace3D *P_Space,
-                      std::vector<TBoundEdge*> &edge,
-                      double mult);
+//    void rhs_g_v(BlockVector &rhs,
+//                 const TFESpace3D *U_Space,
+//                 BoundValueFunct3D *given_boundary_data1,
+//                 BoundValueFunct3D *given_boundary_data2,
+//                 int boundary_component_id,
+//                 double mult,
+//                 bool rescale_by_h
+//                 ) ;
+//    void rhs_g_v(BlockVector &rhs,
+//                 const TFESpace3D *U_Space,
+//                 BoundValueFunct3D *given_boundary_data1,
+//                 BoundValueFunct3D *given_boundary_data2,
+//                 std::vector<TBoundEdge*> &edge,
+//                 double mult,
+//                 bool rescale_by_h
+//                 );
+//    
+//    /** @brief integral (u \cdot n, v \cdot n)_{[boundary_component_id]}
+//     @param[in] boundary_component_id: the boundary component to integrate on
+//     @param[in] mult: given multiplicative factor
+//     */
+//    void matrix_v_n_v_n(BlockFEMatrix &M,
+//                        const TFESpace3D *U_Space,
+//                        int boundary_component_id,
+//                        double mult
+//                        );
+//    
+//    void matrix_v_n_v_n(BlockFEMatrix &M,
+//                        const TFESpace3D *U_Space,
+//                        std::vector<TBoundEdge*> &edge,
+//                        double mult);
+//    
+//    /** @brief integral (\nabla u \cdot n, v)_{[boundary_component_id]}
+//     @param[in] boundary_component_id: the boundary component to integrate on
+//     @param[in] mult: given multiplicative factor
+//     */
+//    void matrix_gradv_n_v(BlockFEMatrix &M,
+//                          const TFESpace3D *U_Space,
+//                          int boundary_component_id,
+//                          double mult
+//                          );
+//    
+//    void matrix_gradv_n_v(BlockFEMatrix &M,
+//                          const TFESpace3D *U_Space,
+//                          std::vector<TBoundEdge*> &edge,
+//                          double mult);
+//    
+//    /** @brief integral (u, v)_{[boundary_component_id]}
+//     @param[in] boundary_component_id: the boundary component to integrate on
+//     @param[in] mult: given multiplicative factor
+//     @param[in] rescale_by_h: true: divide by length of the edges
+//     false: do not divide by length of the edges
+//     */
+//    void matrix_u_v(BlockFEMatrix &M,
+//                    const TFESpace3D *U_Space,
+//                    int boundary_component_id,
+//                    double mult,
+//                    bool rescale_by_h
+//                    );
+//    
+//    void matrix_u_v(BlockFEMatrix &M,
+//                    const TFESpace3D *U_Space,
+//                    std::vector<TBoundEdge*> &edge,
+//                    double mult,
+//                    bool rescale_by_h);
+//    
+//    /** @brief assemble integral (p, v \cdot n)_{[boundary_component_id]} into the matrix
+//     @param[in] boundary_component_id: the boundary component to integrate on
+//     @param[in] mult: given multiplicative factor
+//     */
+//    void matrix_p_v_n(BlockFEMatrix &M,
+//                      const TFESpace3D *U_Space,
+//                      const TFESpace3D *P_Space,
+//                      int boundary_component_id,
+//                      double mult
+//                      );
+//    
+//    void matrix_p_v_n(BlockFEMatrix &M,
+//                      const TFESpace3D *U_Space,
+//                      const TFESpace3D *P_Space,
+//                      std::vector<TBoundEdge*> &edge,
+//                      double mult);
     
     //todo: for symmetry (nitsche): ((u-g)n,q) and -((u-g),dnvn)
     

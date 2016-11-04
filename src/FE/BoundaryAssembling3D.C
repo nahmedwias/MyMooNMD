@@ -17,12 +17,12 @@
 #include <TriaAffin.h>
 #include <QuadAffin.h>
 #include <BoundaryAssembling3D.h>
-#include <BoundEdge.h>
 #include <Collection.h>
+#include <BoundFace.h>
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // (the edge list can be generated outside this class)
-void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
+/*void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
                                      const TFESpace3D *U_Space,
                                      BoundValueFunct3D *given_boundary_data,
                                      int boundary_component_id,
@@ -33,236 +33,256 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
     rhs_g_v_n(rhs,U_Space,given_boundary_data,boundaryEdgeList,mult);
 }
+*/
 
 void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
                                      const TFESpace3D *U_Space,
                                      BoundValueFunct3D *given_boundary_data,
                                      //---TBoundFace
-                                     std::vector<TBoundFace*> &boundaryFaceList,
+                                     //std::vector<TBoundFace*> &boundaryFaceList,
+                                     std::vector<TBaseCell*> &boundaryCells,
                                      double mult)
 {
     // =========================================
     int *BeginIndex = U_Space->GetBeginIndex();
     int *GlobalNumbers = U_Space->GetGlobalNumbers();
     int ActiveBound = U_Space->GetActiveBound();
+    TCollection* Coll =  U_Space->GetCollection();
     
-    for(size_t m=0;m< boundaryFaceList.size(); m++)
-    {
-        TBoundFace *boundface = boundaryFaceList[m];
-        //----GIBT ES GETNEIGHBOUR????
-        TBaseCell *cell = boundface->GetNeighbour(0);
+    for(size_t i=0; i< boundaryCells.size(); i++) {
+        
+        TBaseCell* cell = boundaryCells[i];
+        BaseFunct3D *BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
         // get basis dimension and FE space data of cell i
-        FE3D FEId = U_Space->GetFE3D(0,cell );
-        
-        int BaseVectDim = 1; // we assume only scalar FE
-        
-        //---joint_id is not available in 3d --> get_joint_values3d
-        int joint_id = boundedge->get_index_in_neighbour(cell);
-        
-        // get a quadrature formula good enough for the velocity FE space
-        int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE3D(FEId);
-        this->LineQuadFormula =  TFEDatabase3D::GetQFLineFromDegree(3*fe_degree);
-        std::vector<double> quadWeights,quadPoints;
-        get_quadrature_formula_data(quadPoints,quadWeights);
-        
-        // compute values of all basis functions at all quadrature points
-        std::vector< std::vector<double> > uorig, u_dx_orig, u_dy_orig, u_dz_orig;
-        get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,u_dx_orig,u_dy_orig, ,u_dz_orig);
-        
-        //----Neumann stuff from Assemble3d.c
-        
-        // GEÄNDERT_______
-        switch(TmpLen[m])
-        {
-            case 3:
-                // triangular face
-                FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*l);
-                FaceQuadFormula = Gauss3Tria;
-                break;
-            case 4:
-                // quadrilateral face
-                FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*l);
-                break;
-        }
-        qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
-        qf2->GetFormulaData(N_Points, FaceWeights, t, s);
-        // generate data on reference mesh cell for the 2d face of 3d cell
-        TFEDatabase3D::GetBaseFunct3DFromFE3D(CurrentElement)
-        ->MakeRefElementData(FaceQuadFormula);
-        // values of base functions in all quadrature points on face
-        JointValues = TFEDatabase3D::GetJointValues3D
-        (BaseFuncts[CurrentElement], FaceQuadFormula, m);
-        TFEDatabase3D::GetBaseFunct3D(BaseFuncts[CurrentElement])
-        ->ChangeBF(Coll, cell, N_Points, JointValues);
-        
-        switch(TmpLen[m])
-        {
-            case 3:
-                xc1 = X[1] - X[0];
-                xc2 = X[2] - X[0];
+        FE3D FEId = U_Space->GetFE3D(i,cell );
+        int fe_degree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
+        int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+        int nBasisFunctions = N_BaseFunct[FEId];
+        for(size_t m=0;m< cell->GetN_Faces(); m++) {
+            TJoint* joint = cell->GetJoint(m);
+            
+            if (joint->GetType() == BoundaryFace ||
+                joint->GetType() == IsoBoundFace) {
                 
-                yc1 = Y[1] - Y[0];
-                yc2 = Y[2] - Y[0];
+                //----GIBT ES GETNEIGHBOUR????
+                //TBaseCell *cell = boundface->GetNeighbour(0);
                 
-                zc1 = Z[1] - Z[0];
-                zc2 = Z[2] - Z[0];
-                
-                // normal vector
-                nx = yc1*zc2 - zc1*yc2;
-                ny = zc1*xc2 - xc1*zc2;
-                nz = xc1*yc2 - yc1*xc2;
-                // determinant of reference trafo
-                t2 = sqrt(nx*nx + ny*ny + nz*nz);
-                
-                for(l=0;l<N_Points;l++)
-                {
-                    JointValue = JointValues[l];
-                    t0 = t[l];
-                    t1 = s[l];
-                    // cout << "t: " << t0 << " " << t1 << endl;
-                    LinComb[0] = 1-t0-t1;
-                    LinComb[1] = t0;
-                    LinComb[2] = t1;
+                //---joint_id is not available in 3d --> get_joint_values3d
+                int joint_id_on_cell = m; //boundedge->get_index_in_neighbour(cell);
+                const int *faceVertexMap, *faceVertexMapLength;
+                int maxNVerticesPerFace;
+                // get information of faces and local vertices
+                cell->GetShapeDesc()->GetFaceVertex(faceVertexMap,faceVertexMapLength,maxNVerticesPerFace);
+                // number of vertices on face m
+                size_t nFaceVertices = faceVertexMapLength[m];
+                TBoundFace *boundface = (TBoundFace *)joint;
+                // todo: use the class Point
+                std::vector< std::vector<double> > faceVertices;
+                faceVertices.resize(nFaceVertices);
+                for (size_t l1=0; l1<nFaceVertices; l1++) {
+                    faceVertices[l1].resize(3);
+                    cell->GetVertex(faceVertexMap[m*maxNVerticesPerFace+l1])->
+                    GetCoords(faceVertices[l1][0],faceVertices[l1][1],faceVertices[l1][2]);
                     
-                    xf = LinComb[0]*X[0] + LinComb[1]*X[1]
-                    +LinComb[2]*X[2];
-                    yf = LinComb[0]*Y[0] + LinComb[1]*Y[1]
-                    +LinComb[2]*Y[2];
-                    zf = LinComb[0]*Z[0] + LinComb[1]*Z[1]
-                    +LinComb[2]*Z[2];
-                    
-                    /*if(OuterBoundary)
-                     BoundComp->GetXYZandTS(TmpLen[m], LinComb,
-                     X, Y, Z, Param1, Param2,
-                     xf, yf, zf, t0, t1);
-                     */
-                    // cout << xf << " " << yf << " " << zf << endl;
-                    BoundaryValue(xf, yf, zf, t0);
-                    // cout << "PV: " << t0 << endl;
-                    // cout << t1 << endl;
-                    t0 *= FaceWeights[l]*t2;
-                    for(k=0;k<N_;k++)
-                        if((l3 = DOF[k])<ActiveBound)
-                            RHS[l3] += t0*JointValue[k];
-                } // endfor l
-                break;
+                }
                 
-            case 4:
-                xc1=(-X[0] + X[1] + X[2] - X[3]) * 0.25;
-                xc2=(-X[0] - X[1] + X[2] + X[3]) * 0.25;
-                xc3=( X[0] - X[1] + X[2] - X[3]) * 0.25;
                 
-                yc1=(-Y[0] + Y[1] + Y[2] - Y[3]) * 0.25;
-                yc2=(-Y[0] - Y[1] + Y[2] + Y[3]) * 0.25;
-                yc3=( Y[0] - Y[1] + Y[2] - Y[3]) * 0.25;
+                QuadFormula2D FaceQuadFormula; //=BaryCenterTria;
+                switch(nFaceVertices) {
+                    case 3:
+                        // triangular face
+                        FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*fe_degree);
+                        FaceQuadFormula = Gauss3Tria;
+                        break;
+                    case 4:
+                        // quadrilateral face
+                        FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*fe_degree);
+                        break;
+                }
                 
-                zc1=(-Z[0] + Z[1] + Z[2] - Z[3]) * 0.25;
-                zc2=(-Z[0] - Z[1] + Z[2] + Z[3]) * 0.25;
-                zc3=( Z[0] - Z[1] + Z[2] - Z[3]) * 0.25;
-                
-                for(l=0;l<N_Points;l++)
-                {
-                    JointValue = JointValues[l];
-                    t0 = 0.5*(t[l]+1);
-                    t1 = 0.5*(s[l]+1);
-                    // cout << "t: " << t0 << " " << t1 << endl;
-                    LinComb[0] = (1-t0)*(1-t1);
-                    LinComb[1] = t0*(1-t1);
-                    LinComb[2] = t0*t1;
-                    LinComb[3] = (1-t0)*t1;
-                    
-                    xf = LinComb[0]*X[0] + LinComb[1]*X[1]
-                    +LinComb[2]*X[2] + LinComb[3]*X[3];
-                    yf = LinComb[0]*Y[0] + LinComb[1]*Y[1]
-                    +LinComb[2]*Y[2] + LinComb[3]*Y[3];
-                    zf = LinComb[0]*Z[0] + LinComb[1]*Z[1]
-                    +LinComb[2]*Z[2] + LinComb[3]*Z[3];
-                    
-                    /*if(OuterBoundary)
-                     BoundComp->GetXYZandTS(TmpLen[m], LinComb,
-                     X, Y, Z, Param1, Param2,
-                     xf, yf, zf, t0, t1);
-                     */
-                    // cout << xf << " " << yf << " " << zf << endl;
-                    BoundaryValue(xf, yf, zf, t0);
-                    // cout << "PV: " << t0 << endl;
-                    nx = (yc1+s[l]*yc3)*(zc2+t[l]*zc3)
-                    -(zc1+s[l]*zc3)*(yc2+t[l]*yc3);
-                    ny = (zc1+s[l]*zc3)*(xc2+t[l]*xc3)
-                    -(xc1+s[l]*xc3)*(zc2+t[l]*zc3);
-                    nz = (xc1+s[l]*xc3)*(yc2+t[l]*yc3)
-                    -(yc1+s[l]*yc3)*(xc2+t[l]*xc3);
-                    t1 = nx*nx+ny*ny+nz*nz;
-                    // cout << t1 << endl;
-                    t0 *= FaceWeights[l]*sqrt(t1);
-                    for(k=0;k<N_;k++)
-                        if((l3 = DOF[k])<ActiveBound)
-                            RHS[l3] += t0*JointValue[k];
-                } // endfor l
-                break;
-        }
+                // todo: use this code for setting quadrature formula
+                //std::vector<double> quadWeights,quadPoints;
+                //get_quadrature_formula_data(quadPoints,quadWeights);
+                // compute values of all basis functions at all quadrature points
+                //std::vector< std::vector<double> > uorig, u_dx_orig, u_dy_orig, u_dz_orig;
+                //get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,u_dx_orig,u_dy_orig, ,u_dz_orig);
 
-        //GEÄNDERT______
-        
-        
-        double x_0, x_1,x_2, y_0, y_1, y_2;
-        boundedge->get_vertices(x_0,  y_0, x_1, y_1);
-        // compute length of the edge
-        double joint_length = boundedge->get_length();
-        // normal vector to this boundary (normalized)
-        double n_x,n_y;
-        boundedge->get_normal(n_x, n_y, n_z);
-        
-        // quadrature
-        for(unsigned int k=0;k<quadPoints.size();k++)
-        {
-            ///@attention in 1D the reference joint is [-1,1] => length = 2
-//            double reference_joint_length = 2;
-            double reference_face_area = 4; // For quadrilaterals ([-1,1]x[-1,1])
-            double x = x_0+(quadPoints[k]+1.)/2.*(x_1-x_0);
-            double y = y_0+(quadPoints[k]+1.)/2.*(y_1-y_0);
-            
-            double T;
-            boundedge->GetBoundComp()->GetTofXY(x, y, T);
-            
-            int BDComponent=boundedge->GetBoundComp()->GetID();
-            
-            // get the value of p
-            double value;
-            if(given_boundary_data != nullptr)
-            {
-                given_boundary_data(BDComponent, T, value);
-            }
-            else
-            {
-                value = 1;
-            }
-            
-            // mapping from local (cell) DOF to global DOF
-            int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
-            
-            for(unsigned int l=0;l< uorig[k].size();l++)
-            {
-                int global_dof_from_local = DOF[l];
+                int N_Points;
+                double *t,*s;
+                double* faceWeights;
+                double* JointValue;
+                double *RHS;
+                // get a quadrature formula good enough for the velocity FE space
+                TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
+                qf2->GetFormulaData(N_Points, faceWeights, t, s);
+                // generate data on reference mesh cell for the 2d face of 3d cell
+                TFEDatabase3D::GetBaseFunct3DFromFE3D(FEId)
+                ->MakeRefElementData(FaceQuadFormula);
+                // values of base functions in all quadrature points on face
+                double **JointValues = TFEDatabase3D::GetJointValues3D
+                (BaseFuncts[FEId], FaceQuadFormula, m);
+                TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])
+                ->ChangeBF(Coll, cell, N_Points, JointValues);
                 
-                // if the DOF is Dirichlet, continue
-                if(global_dof_from_local >= ActiveBound)
-                    continue;
+                std::vector<double> normal;
+                normal.resize(3);
+                double transformationDeterminant;
+                double xc1, yc1, zc1, xc2, yc2, zc2, xc3, yc3, zc3;
+                switch(nFaceVertices) {
+                    case 3:
+                        // compute the 2 vectors that span the plane containing the current face
+                        xc1 = faceVertices[1][0] - faceVertices[0][0];  // faceVertices[0][0]=X(0)
+                        xc2 = faceVertices[2][0] - faceVertices[0][0];
+                        
+                        yc1 = faceVertices[1][1] - faceVertices[0][1]; // faceVertices[0][1]=Y(0)
+                        yc2 = faceVertices[2][1] - faceVertices[0][1];
+                        
+                        zc1 = faceVertices[1][2] - faceVertices[0][2]; // faceVertices[0][2]=Z(0)
+                        zc2 = faceVertices[2][2] - faceVertices[0][2];
+                        
+                        // normal vector on a plane is given by the cross product of the two spanning vectors (xc1, yc1, zc1) and (xc2, yc2, zc2) devided by the norm of this crossproduct
+                        normal[0] = yc1*zc2 - zc1*yc2;
+                        normal[1] = zc1*xc2 - xc1*zc2;
+                        normal[2] = xc1*yc2 - yc1*xc2;
+                        // determinant of reference trafo in order to get a normed normal vector
+                        transformationDeterminant =
+                        sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
+                        normal[0] /= transformationDeterminant;
+                        normal[1] /= transformationDeterminant;
+                        normal[2] /= transformationDeterminant;
+                        
+                        
+                for(size_t l=0;l<N_Points;l++)
+                {
+                    
+                    /*double value;
+                     if(given_boundary_data != nullptr)
+                     {
+                     given_boundary_data(BDComponent, T, value);
+                     }
+                     else
+                     {
+                     value = 1;
+                     }*/
+                    
+                    // mapping from local (cell) DOF to global DOF
+                    int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
+                    
+                    
+                    // basis functions on Gauss point l
+                    JointValue = JointValues[l];
+                    
+                    /*t0 = t[l];
+                     t1 = s[l];
+                     // cout << "t: " << t0 << " " << t1 << endl;
+                     LinComb[0] = 1-t0-t1;
+                     LinComb[1] = t0;
+                     LinComb[2] = t1;
+                     
+                     xf = LinComb[0]*X[0] + LinComb[1]*X[1]
+                     +LinComb[2]*X[2];
+                     yf = LinComb[0]*Y[0] + LinComb[1]*Y[1]
+                     +LinComb[2]*Y[2];
+                     zf = LinComb[0]*Z[0] + LinComb[1]*Z[1]
+                     +LinComb[2]*Z[2];
+                     BoundaryValue(xf, yf, zf, t0);*/
+                    
+                    /*
+                     for(unsigned int l=0;l< uorig[k].size();l++)
+                     {
+                     int global_dof_from_local = DOF[l];
+                     
+                     // if the DOF is Dirichlet, continue
+                     if(global_dof_from_local >= ActiveBound)
+                     continue;
+                     
+                     // updating rhs: int_gamma rhsval v \cdot n
+                     double v_x = uorig[k][l]; // value of test function (vtest = vx = vy =vz)
+                     double v_y = v_x;
+                     double v_z = v_x;
+                     // add for both components
+                     rhs.block(0)[global_dof_from_local] += mult * quadWeights[k] * value * (v_x*n_x) *
+                     (joint_length/reference_face_area);
+                     rhs.block(1)[global_dof_from_local] += mult * quadWeights[k] * value * (v_y*n_y) *
+                     (joint_length/reference_face_area);
+                     rhs.block(2)[global_dof_from_local] += mult * quadWeights[k] * value * (v_z*n_z) *
+                     (joint_length/reference_face_area);
+                     } //for(l=0;l<N_BaseFunct;l++)
+                     */
+                    
+                    for(size_t k=0;k<nBasisFunctions;k++)
+                        if(DOF[k]<ActiveBound)
+                            RHS[ DOF[k] ] += faceWeights[l]*transformationDeterminant*mult*JointValue[k];
+                } // endfor l
+                        
+                        break;
+                        
+                    case 4:
+                        //Welche Einschränkung gibt es an die Vierecke?
+                        xc1=(- faceVertices[0][0] + faceVertices[1][0] + faceVertices[2][0] - faceVertices[3][0] ) * 0.25;
+                        xc2=(- faceVertices[0][0] - faceVertices[1][0] + faceVertices[2][0] + faceVertices[3][0] ) * 0.25;
+                        xc3=(  faceVertices[0][0] - faceVertices[1][0] + faceVertices[2][0] - faceVertices[3][0] ) * 0.25;
+                        
+                        yc1=(- faceVertices[0][1] + faceVertices[1][1] + faceVertices[2][1] - faceVertices[3][1] ) * 0.25;
+                        yc2=(- faceVertices[0][1] - faceVertices[1][1] + faceVertices[2][1] + faceVertices[3][1] ) * 0.25;
+                        yc3=(  faceVertices[0][1] - faceVertices[1][1] + faceVertices[2][1] - faceVertices[3][1] ) * 0.25;
+                        
+                        zc1=(- faceVertices[0][2] + faceVertices[1][2] + faceVertices[2][2] - faceVertices[3][2] ) * 0.25;
+                        zc2=(- faceVertices[0][2] - faceVertices[1][2] + faceVertices[2][2] + faceVertices[3][2] ) * 0.25;
+                        zc3=(  faceVertices[0][2] - faceVertices[1][2] + faceVertices[2][2] - faceVertices[3][2] ) * 0.25;
+                        
+                        for(size_t l=0;l<N_Points;l++)
+                        {
+                            
+                            // mapping from local (cell) DOF to global DOF
+                            int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
+                            
+                            
+                            /*
+                             JointValue = JointValues[l];
+                            t0 = 0.5*(t[l]+1);
+                            t1 = 0.5*(s[l]+1);
+                            // cout << "t: " << t0 << " " << t1 << endl;
+                            LinComb[0] = (1-t0)*(1-t1);
+                            LinComb[1] = t0*(1-t1);
+                            LinComb[2] = t0*t1;
+                            LinComb[3] = (1-t0)*t1;
+                            
+                            xf = LinComb[0]*X[0] + LinComb[1]*X[1]
+                            +LinComb[2]*X[2] + LinComb[3]*X[3];
+                            yf = LinComb[0]*Y[0] + LinComb[1]*Y[1]
+                            +LinComb[2]*Y[2] + LinComb[3]*Y[3];
+                            zf = LinComb[0]*Z[0] + LinComb[1]*Z[1]
+                            +LinComb[2]*Z[2] + LinComb[3]*Z[3];
+                            
+                            // if(OuterBoundary)
+                            // BoundComp->GetXYZandTS(TmpLen[m], LinComb,
+                            // X, Y, Z, Param1, Param2,
+                            // xf, yf, zf, t0, t1);
+                            
+                            // cout << xf << " " << yf << " " << zf << endl;
+                            BoundaryValue(xf, yf, zf, t0);
+                            // cout << "PV: " << t0 << endl;
+                            nx = (yc1+s[l]*yc3)*(zc2+t[l]*zc3)
+                            -(zc1+s[l]*zc3)*(yc2+t[l]*yc3);
+                            ny = (zc1+s[l]*zc3)*(xc2+t[l]*xc3)
+                            -(xc1+s[l]*xc3)*(zc2+t[l]*zc3);
+                            nz = (xc1+s[l]*xc3)*(yc2+t[l]*yc3)
+                            -(yc1+s[l]*yc3)*(xc2+t[l]*xc3);
+                            t1 = nx*nx+ny*ny+nz*nz;
+                            // cout << t1 << endl;
+                            t0 *= faceWeights[l]*sqrt(t1);
+                            */
+                            for(size_t k=0;k<nBasisFunctions;k++)
+                                if( DOF[k] < ActiveBound )
+                                   RHS[ DOF[k] ] += JointValue[k]; //*t0
+                        } // endfor l
+                        break;
+                }
                 
-                // updating rhs: int_gamma rhsval v \cdot n
-                double v_x = uorig[k][l]; // value of test function (vtest = vx = vy =vz)
-                double v_y = v_x;
-                double v_z = v_x;
-                // add for both components
-                rhs.block(0)[global_dof_from_local] += mult * quadWeights[k] * value * (v_x*n_x) *
-                (joint_length/reference_face_area);
-                rhs.block(1)[global_dof_from_local] += mult * quadWeights[k] * value * (v_y*n_y) *
-                (joint_length/reference_face_area);
-                rhs.block(2)[global_dof_from_local] += mult * quadWeights[k] * value * (v_z*n_z) *
-                (joint_length/reference_face_area);
-            } //for(l=0;l<N_BaseFunct;l++)
-        }
-    } // endif
+            }
+        } // endif
+    }
 }
 
 ////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
