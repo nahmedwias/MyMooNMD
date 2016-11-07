@@ -19,6 +19,7 @@
 #include <BoundComp.h>
 #include <array>
 #include <BoundEdge.h>
+#include <BoundFace.h>
 
 #ifdef _MPI
 #include <mpi.h>
@@ -610,7 +611,9 @@ int TCollection::createElementLists()
       if(!(joint->InnerJoint()))
       {
 	///@todo assign a meaningful reference to the boundary face
-	int local_reference = 1;//Cells[i]->GetJointReference(j);
+	//int local_reference = 1;//Cells[i]->GetJointReference(j);
+	TBoundFace* boundface = (TBoundFace *)joint;
+	int local_reference = boundface->GetBoundComp()->get_physical_id();
 	BdFacesReferences.push_back(local_reference);
       }
     }
