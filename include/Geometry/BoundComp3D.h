@@ -20,6 +20,7 @@ class TBoundComp3D : public TBoundComp
   public:
     // Constructor
     TBoundComp3D(int id);
+    TBoundComp3D(int id,int ref);
 
     // Destructor
     virtual ~TBoundComp3D(){};
