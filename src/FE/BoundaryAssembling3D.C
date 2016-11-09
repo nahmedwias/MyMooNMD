@@ -18,6 +18,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
                                      const TFESpace3D *U_Space,
                                      BoundValueFunct3D *given_boundary_data,
                                      std::vector<TBaseCell*> &boundaryCells,
+				     int componentID,
                                      double mult)
 {
   for(size_t i=0; i< boundaryCells.size(); i++) {
@@ -28,62 +29,65 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     
     for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
       TJoint* joint = cell->GetJoint(joint_id);
+      //TBaseCell *cell =  boundface->GetNeighbour(0);
       
       if (joint->GetType() == BoundaryFace ||
 	  joint->GetType() == IsoBoundFace) {
 	
 	// convert the joint to an object of BoundFace type
-	//TBoundFace *boundface = (TBoundFace *)joint;
-	//TBaseCell *cell =  boundface->GetNeighbour(0);
-        
-	// ====================================
-	// get all data necessary for computing the integral:
-	// quadrature weights, points, functions values, normal, determinant
-	std:: vector<double> qWeights,qPointsT,qPointsS;
-	std::vector< std::vector<double> > basisFunctionsValues;
-  	this->getQuadratureData(U_Space, cell,joint_id,
-				qWeights,qPointsT,qPointsS,basisFunctionsValues);
-	
-	
-	std::vector<double> normal;
-	double transformationDeterminant;
-	this->computeNormalAndTransformationData(cell,joint_id,
-						 normal,transformationDeterminant);
-	// ====================================
-
-	// loop over Gauss points
-	for(size_t l=0;l<qWeights.size();l++) {
-	  double value;
-	  if(given_boundary_data != nullptr)
-	    value = 1.;//given_boundary_data(...);
-	  else
-	    value = 1;
+	TBoundFace *boundface = (TBoundFace *)joint;
+	if (boundface->GetBoundComp()->get_physical_id()==componentID) {
 	  
-	  double commonFactor = mult * qWeights[l] * transformationDeterminant;
-	  for(size_t k=0;k<basisFunctionsValues[l].size();k++) {
-	    int global_dof_from_local = DOF[k];
+	  
+	  // ====================================
+	  // get all data necessary for computing the integral:
+	  // quadrature weights, points, functions values, normal, determinant
+	  std:: vector<double> qWeights,qPointsT,qPointsS;
+	  std::vector< std::vector<double> > basisFunctionsValues;
+	  this->getQuadratureData(U_Space, cell,joint_id,
+				  qWeights,qPointsT,qPointsS,basisFunctionsValues);
+	  
+	  
+	  std::vector<double> normal;
+	  double transformationDeterminant;
+	  this->computeNormalAndTransformationData(cell,joint_id,
+						   normal,transformationDeterminant);
+	  // ====================================
+	  
+	  // loop over Gauss points
+	  for(size_t l=0;l<qWeights.size();l++) {
+	    double value;
+	    if(given_boundary_data != nullptr)
+	      value = 1.;//given_boundary_data(...);
+	    else
+	      value = 1;
 	    
-	    if(global_dof_from_local < U_Space->GetActiveBound()) {
-	      double v_x = basisFunctionsValues[l][k]; // value of test function (vtest = vx = vy =vz)
-	      double v_y = v_x;
-	      double v_z = v_x;
-	      // add for both components
-	      rhs.block(0)[global_dof_from_local] += commonFactor * value * (v_x*normal[0]);
-	      rhs.block(1)[global_dof_from_local] += commonFactor * value * (v_y*normal[1]);
-	      rhs.block(2)[global_dof_from_local] += commonFactor * value * (v_z*normal[2]);
+	    double commonFactor = mult * qWeights[l] * transformationDeterminant;
+	    for(size_t k=0;k<basisFunctionsValues[l].size();k++) {
+	      int global_dof_from_local = DOF[k];
+	      
+	      if(global_dof_from_local < U_Space->GetActiveBound()) {
+		double v_x = basisFunctionsValues[l][k]; // value of test function (vtest = vx = vy =vz)
+		double v_y = v_x;
+		double v_z = v_x;
+		// add for both components
+		rhs.block(0)[global_dof_from_local] += commonFactor * value * (v_x*normal[0]);
+		rhs.block(1)[global_dof_from_local] += commonFactor * value * (v_y*normal[1]);
+		rhs.block(2)[global_dof_from_local] += commonFactor * value * (v_z*normal[2]);
+		
+	      }
+	      
+	    } // endfor k (n. basis fcts)
+	  } // endfor l (Gauss points)
 
-	    }
-	    
-	  } // endfor k (n. basis fcts)
-	} // endfor l (Gauss points)
-	
+	} // if on componentID
       } // if boundary face
       
     } // for n. of cells
   } // loop over cells
 }
 
-void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace,TBaseCell *cell, int m,
+  void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace,TBaseCell *cell, int m,
 					     std::vector<double>& qWeights,std::vector<double>& qPointsT,
 					     std::vector<double>& qPointsS,
 					     std::vector< std::vector<double> >& basisFunctionsValues)

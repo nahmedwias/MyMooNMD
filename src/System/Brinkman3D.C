@@ -527,14 +527,16 @@ void Brinkman3D::assemble()
     std::vector<TBaseCell*> allCells;
     for (int i=0 ; i < coll->GetN_Cells(); i++)
       {
-	ListOfAllCells[i]= coll->GetCell(i);
+	allCells.push_back(coll->GetCell(i));
       }
     
     BoundaryAssembling3D bi;
+    int componentID = 1;
     for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
     {
       bi.rhs_g_v_n(s.rhs,v_space,NULL,
-		   allCells,            
+		   allCells,
+		   componentID,
 		   -TDatabase::ParamDB->neumann_boundary_value[k]);
     }
     

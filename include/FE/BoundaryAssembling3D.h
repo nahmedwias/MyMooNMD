@@ -37,7 +37,7 @@ public:
                    const TFESpace3D *U_Space,
                    BoundValueFunct3D *given_boundary_data,
                    std::vector<TBaseCell*> &boundaryCells,
-                   double mult
+                   int comp, double mult
                    );
 
     
