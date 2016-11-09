@@ -201,17 +201,16 @@ class Time_NSE3D
      * functions as well as matrices, solution and right hand side vectors are
      * initialized.
      *
-     * @param domain The domain this problem lives on.
+     * @param collections
      * @param example The example to perform
      */
-#ifdef _MPI
-    Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-               const Example_TimeNSE3D& example,
-               int maxSubDomainPerDof);
-#else
-    Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-               const Example_TimeNSE3D& example);
-#endif
+// #ifdef _MPI
+//     Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
+//                const Example_TimeNSE3D& example, int maxSubDomainPerDof);
+// #else
+//     Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
+//                const Example_TimeNSE3D& example);
+// #endif
     
 #ifdef _MPI
     Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
