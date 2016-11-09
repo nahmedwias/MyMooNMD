@@ -16,6 +16,7 @@
 #include <Database.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
+#include <Point.h>
 
 class BoundaryAssembling3D
 {
@@ -38,7 +39,16 @@ public:
                    std::vector<TBaseCell*> &boundaryCells,
                    double mult
                    );
+
     
+    void getQuadratureData(const TFESpace3D *fespace, TBaseCell *cell, int m,
+			   std::vector<double>& qWeights,std::vector<double>& qPointsT,
+			   std::vector<double>& qPointsS, std::vector< std::vector<double> >& values);
+    void computeNormalAndTransformationData(TBaseCell *cell, int m,
+					    std::vector<double>& normal,
+					    double& transformationDeterminant);
+   
+    int getNumberOfFaceVertices(TBaseCell *cell, int m);
     /** @brief integral (given 3D function, v)_{[boundary_component_id]}
      @param[in] [given_boundary_data1,given_boundary_data2]: the e.g. 3D Dirichlet boundary velocity (as a finite element function)
      @param[in] boundary_component_id: the boundary component to integrate on

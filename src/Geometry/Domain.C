@@ -4036,7 +4036,7 @@ void TDomain::buildBoundary(Mesh& m)
     if(m.faceToTetra[i][0] == -1 || m.faceToTetra[i][1] == -1)
     {
       // the face is on the boundary
-      meshBoundComps.at(counter) = new TBdPlane(counter,1),m.triangle[i].reference);
+      meshBoundComps.at(counter) = new TBdPlane(counter,m.triangle[i].reference);
 
       double p[3], a[3], b[3], n[3];
       ///@attention the lists of nodes starts from 1 (not from 0)
