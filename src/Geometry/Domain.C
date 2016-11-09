@@ -175,8 +175,8 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
     this->Init(boundname.c_str(), geoname.c_str());
     Output::print<4>("GEO and PRM files are selected");
 #ifdef __3D__
-    if(db["problem_type"].is(6)
-      && db["example"].is(7))
+    if(param_db["problem_type"].is(6)
+      && param_db["example"].is(7))
     {
       ChannelTau180::setZCoordinates(this->GetCollection(It_Finest,0), 0);
       this->MakeBdParamsConsistent(this->GetCollection(It_Finest,0));
@@ -3812,8 +3812,8 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
     this->RegRefineAll();
     //cout<<"init: " << i+1 << endl;
 #ifdef __3D__
-    if(db["problem_type"].is(6)
-      && db["example"].is(7))
+    if(parmoon_db["problem_type"].is(6)
+      && parmoon_db["example"].is(7))
     {
       ChannelTau180::setZCoordinates(this->GetCollection(It_Finest,0), 
                                      i+1);
@@ -3857,8 +3857,8 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
     this->RegRefineAll();
     // cout<<"mg: " << level+ n_ref_before+1 <<endl;
 #ifdef __3D__
-    if(db["problem_type"].is(6)
-      && db["example"].is(7))
+    if(parmoon_db["problem_type"].is(6)
+      && parmoon_db["example"].is(7))
     {
       ChannelTau180::setZCoordinates(this->GetCollection(It_Finest,0), 
                                      level+ n_ref_before+1);

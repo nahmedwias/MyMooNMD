@@ -97,124 +97,6 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
 }
 
 /**************************************************************************** */
-Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-                       const Example_TimeNSE3D& ex
-#ifdef _MPI
-                       , int maxSubDomainPerDof
-#endif
-)
- : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
-   solver_(param_db), defect_(), old_residual_(), 
-   initial_residual_(1e10), errors_(), oldtau_()
-{
-  db_.merge(param_db, false);
-  this->check_parameters();
-  std::pair <int,int>
-      velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
-                               TDatabase::ParamDB->PRESSURE_SPACE);
-  // get the velocity and pressure orders
-  this->get_velocity_pressure_orders(velocity_pressure_orders);
-
-
-  Time_NSE3D::Matrix type;
-  switch(TDatabase::ParamDB->NSTYPE)
-  {
-    case  1: type = Matrix::Type1;  break;
-    case  2: type = Matrix::Type2;  break;
-    case  3: type = Matrix::Type3;  break;
-    case  4: type = Matrix::Type4;  break;
-    case 14: type = Matrix::Type14; break;
-    default:
-      ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-               " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
-  }
-
-  // create the collection of cells from the domain (finest grid)
-  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);   
-#ifdef _MPI
-  // create finite element space and function, a matrix, rhs, and solution
-  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                        maxSubDomainPerDof);    
-#else
-  // create finite element space and function, a matrix, rhs and solution
-  // all this by calling constructor of System_Per_Grid
-  this->systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-#endif
-  bool usingMultigrid = solver_.is_using_multigrid();
-  if(usingMultigrid)
-  {
-#ifdef _MPI
-    ErrThrow("No multigrid for MPI is implemented yet: " );
-#endif
-    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-    database_mg.merge(param_db, false);
-    // construct multigrid object
-    auto mg_ = this->solver_.get_multigrid();
-    bool mdml = mg_->is_using_mdml();
-    
-    if(mdml)
-    {
-      // change the discretization on the coarse grids to lowest order 
-      // non-conforming(-1). The pressure space is chosen automatically(-4711).
-      velocity_pressure_orders = {-1, -4711};
-      this->get_velocity_pressure_orders(velocity_pressure_orders);
-    }
-    // number of multigrid levels
-    size_t n_multigrid_levels = mg_->get_n_geometric_levels();
-    // index of the finest grid 
-    int finest = domain.get_ref_level();
-    int coarsest = finest - n_multigrid_levels + 1;
-    if(mdml)
-    {
-      coarsest++;
-    }
-    else
-    {
-      // only for mdml there is another matrix on the finest grid, otherwise
-      // the next system to be created is on the next coarser grid
-      finest--;
-    }
-    
-    if(coarsest < 0 )
-    {
-      ErrThrow("the domain has not been refined often enough to do multigrid "
-               "on ", n_multigrid_levels, " levels. There are only ",
-               domain.get_ref_level() + 1, " grid levels.");
-    }
-    // Construct systems per grid and store them, finest level first    
-    std::list<BlockFEMatrix*> matrices;
-    // matrix on finest grid is already constructed
-    matrices.push_back(&systems_.back().matrix_);
-    // initialize the systems on the coarser grids
-    for (int grid_no = finest; grid_no >= coarsest; --grid_no)
-    {
-      //TODO What's going on here for MPI? This looks unfinished! CB 09/2016
-#ifndef _MPI
-      TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
-      this->systems_.emplace_back(example_, *coll, velocity_pressure_orders,
-                            type);
-#endif
-      //prepare input argument for multigrid object
-      matrices.push_front(&this->systems_.back().matrix_);
-      // interpolate the initial condition to get initial velocity
-      // this->interpolate();
-    }
-    // initialize the multigrid object on all levels
-    mg_->initialize(matrices);
-  }
-  this->output_problem_size_info();
-  // initialize the defect of the system. It has the same structure as
-  // the rhs (and as the solution)
-  this->defect_.copy_structure(this->systems_.front().rhs_);
-  for(System_per_grid& s : this->systems_)
-  {
-    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
-    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
-    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
-    // s.solution_.print("s");
-  }
-}
-
 Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDatabase& param_db, 
                        const Example_TimeNSE3D& ex
 #ifdef _MPI
@@ -288,7 +170,7 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
     {
 #ifdef _MPI
       systems_.emplace_back(example_, *coll, velocity_pressure_orders, type, 
-                            maxSubDomainPerDof)
+                            maxSubDomainPerDof);
 #else
       systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
 #endif
@@ -1240,7 +1122,7 @@ void Time_NSE3D::output(int m, int &image)
 #ifdef _MPI
       char SubID[] = "";
       if(my_rank == 0)
-	mkdir(db_["output_vtk_directory"], 0777);
+        mkdir(db_["output_vtk_directory"], 0777);
       std::string dir = db_["output_vtk_directory"];
       std::string base = db_["output_basename"];
       output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);
