@@ -524,20 +524,18 @@ void Brinkman3D::assemble()
 
     
     TCollection* coll = v_space->GetCollection();
-        std::vector<TBaseCell*> ListOfAllCells;
+    std::vector<TBaseCell*> allCells;
     for (int i=0 ; i < coll->GetN_Cells(); i++)
-    {
-       ListOfAllCells[i]= coll->GetCell(i);
-    }
+      {
+	ListOfAllCells[i]= coll->GetCell(i);
+      }
     
     BoundaryAssembling3D bi;
     for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
     {
-        bi.rhs_g_v_n(s.rhs,
-                     v_space,
-                     NULL,                                                  // g = 1
-                     ListOfAllCells,            // boundary component
-                     -TDatabase::ParamDB->neumann_boundary_value[k]);       // mult
+      bi.rhs_g_v_n(s.rhs,v_space,NULL,
+		   allCells,            
+		   -TDatabase::ParamDB->neumann_boundary_value[k]);
     }
     
     //        for (int k=0;k<TDatabase::ParamDB->n_g_v_boundary;k++)
