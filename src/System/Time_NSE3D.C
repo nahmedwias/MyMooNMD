@@ -1055,6 +1055,8 @@ void Time_NSE3D::solve()
     //kick off the solving process
     mumps_wrapper.solve(s.rhs_, s.solution_);
   }
+  else
+    this->solver_.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11, A22 and A33 matrices are
@@ -1219,21 +1221,21 @@ void Time_NSE3D::output(int m, int &image)
     errors_.at(9) = errors_.at(2);
     errors_.at(10) += (errors_.at(3) + errors_.at(11))*tau*0.5;//l2(0,t,h1)(p)
     errors_.at(11) = errors_.at(3);
-    
+    double t = TDatabase::TimeDB->CURRENTTIME;
     // print errors
     if (my_rank == 0 )
     {
-      Output::print<1>("L2(u)         : ", setprecision(10), sqrt(errors_.at(0)));
-      Output::print<1>("H1-semi(u)    : ", setprecision(10), sqrt(errors_.at(1)));
+      Output::print<1>("time: ", t, " L2(u)         : ", setprecision(10), sqrt(errors_.at(0)));
+      Output::print<1>("time: ", t, " H1-semi(u)    : ", setprecision(10), sqrt(errors_.at(1)));
       
-      Output::print<1>("L2(0,t,L2(u)) : ", setprecision(10), sqrt(errors_.at(4)));
-      Output::print<1>("L2(0,t,H1-semi(u)) : ", 
+      Output::print<1>("time: ", t, " L2(0,t,L2(u)) : ", setprecision(10), sqrt(errors_.at(4)));
+      Output::print<1>("time: ", t, " L2(0,t,H1-semi(u)) : ", 
                        setprecision(10), sqrt(errors_.at(6)));
-      Output::print<1>("L2(p)      : ", setprecision(10), sqrt(errors_.at(2)));
-      Output::print<1>("H1-semi(p)): ", setprecision(10), sqrt(errors_.at(3)));
+      Output::print<1>("time: ", t, " L2(p)      : ", setprecision(10), sqrt(errors_.at(2)));
+      Output::print<1>("time: ", t, " H1-semi(p)): ", setprecision(10), sqrt(errors_.at(3)));
       
-      Output::print<1>("L2(0,t,L2(p)) : ", setprecision(10), sqrt(errors_.at(8)) );
-      Output::print<1>("L2(0,t,H1-semi(p)) : ", setprecision(10), sqrt(errors_.at(10)) );
+      Output::print<1>("time: ", t, " L2(0,t,L2(p)) : ", setprecision(10), sqrt(errors_.at(8)) );
+      Output::print<1>("time: ", t, " L2(0,t,H1-semi(p)) : ", setprecision(10), sqrt(errors_.at(10)) );
     }
   }
    delete u1;
