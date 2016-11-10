@@ -915,10 +915,6 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   System_per_grid& s = this->systems_.front();
   size_t nu=s.solution_.length(0);
   size_t np=s.solution_.length(3);
-  Output::print("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
-                Ddot(3*nu,s.rhs_.get_entries(),s.rhs_.get_entries()) , " "  , 
-                Ddot(np,s.rhs_.get_entries()+3*nu,s.rhs_.get_entries()+3*nu)," ",
-                Ddot(3*nu+np,s.rhs_.get_entries(),s.rhs_.get_entries()));
   
   // this is the convergence ratio between actual step and last step
   // TODO : correct oldNormOfResidual to be the residual of last step
