@@ -26,7 +26,7 @@ class Example_TimeNSE3D : public Example_NonStationary3D
 public:
   /** @brief default constructor
    * 
-   * This intializes a (Navier-)Stokes example in 2D. It is chosen according
+   * This intializes a (Navier-)Stokes example in 3D. It is chosen according
    * to example_code.
    */
   Example_TimeNSE3D(const ParameterDatabase& user_input_parameter_db);
