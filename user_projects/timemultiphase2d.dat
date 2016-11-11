@@ -255,7 +255,7 @@ NSTYPE: 1
 LAPLACETYPE: 0
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
-
+ALGEBRAIC_FLU_CORRECTION: 0
 
 # parameter for time discretization
 # 
