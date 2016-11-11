@@ -14,7 +14,7 @@
 void print(const std::string name, std::vector<double> vec)
 {
   for(size_t i=0; i<vec.size(); i++)
-    Output::print(name, ": ", i, "   ", vec.at(i));  
+    Output::print(name, ": ", i, "   ", std::scientific, vec.at(i));  
   Output::print("------------------------\n");
 }
 
@@ -107,8 +107,8 @@ void ChannelTau180::setParameters(ParameterDatabase &db)
     Output::print("INTERNAL_QUAD_RULE: ",
                   TDatabase::ParamDB->INTERNAL_QUAD_RULE);
   }  
-  double inv_rev = db["reynolds_number"];
-  reynolds_number = inv_rev;
+  double renr = db["reynolds_number"];
+  reynolds_number = renr;
 }
 
 void ChannelTau180::setZCoordinates(TCollection* Coll, int level)
@@ -552,111 +552,138 @@ void ChannelTau180::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
     Output::print(i, " ", zLayers[i]);
 }
 
+void ChannelTau180::set_up_memory()
+{
+  std::vector<double> temp(nZLayers);
+  for(int i=0; i<3; i++)
+    MeanVelocity.push_back(temp);
+  
+  for(int i=0; i<6; i++)
+    ReynoldsStress.push_back(temp);
+  
+  DerivmeanVelo.resize(nZLayers);
+}
+
+
 void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
 {
-  const TFEVectFunct3D& u = tnse3d.get_velocity();
-  TFEFunction3D* u1 =u.GetComponent(0);
-  TFEFunction3D* u2 =u.GetComponent(1);
-  TFEFunction3D* u3 =u.GetComponent(2);
-  // number of velocity dofs for each component
-  size_t nuDofs = u1->GetLength();
-  // velocity vectors
-  std::vector<double> velocity_u1(u1->GetValues(),
-                                  u1->GetValues()+nuDofs);
-  std::vector<double> velocity_u2(u2->GetValues(),
-                                    u2->GetValues()+nuDofs);
-  std::vector<double> velocity_u3(u3->GetValues(),
-                                    u3->GetValues()+nuDofs);
+  const TFEVectFunct3D& U = tnse3d.get_velocity();
+  size_t nuDofs = U.GetComponent(0)->GetLength();
+  // component of solution vector
+  const std::vector<double> u1(U.GetComponent(0)->GetValues(), 
+                           U.GetComponent(0)->GetValues()+nuDofs);
+  const std::vector<double> u2(U.GetComponent(1)->GetValues(), 
+                           U.GetComponent(1)->GetValues()+nuDofs);
+  const std::vector<double> u3(U.GetComponent(2)->GetValues(), 
+                           U.GetComponent(2)->GetValues()+nuDofs);
+  std::deque<std::vector<double>> u;
+  u.push_back(u1);  u.push_back(u2);  u.push_back(u3);
 
-  // compute the summation of all values per layer
-  std::list<std::vector<double>> velocity;
-  velocity.push_back(velocity_u1);
-  velocity.push_back(velocity_u2);
-  velocity.push_back(velocity_u3);
-  
-  /// vector for spatial mean velocity
-  std::list<std::vector<double>> spatialmeanAverage;  
-  // loop over all velocity components
-  for(auto & v : velocity)
-  {
-    spatialmeanAverage.push_back(spatialMean(v));
-  }
-  //FIXME update the summation to compute the average
-  summation(velocity_u1.size());
-  //TODO put in extra function
-  for(auto &v : spatialmeanAverage)
-  {
+  // spatial mean average=>compute the summation of all values per layer
+  // and then the average 
+  std::deque<std::vector<double>> spatialMeanAverage;
+  for(auto & it : u)
+   spatialMeanAverage.push_back(spatialMean(it));
+
+  // compute the summation for averaging
+  std::vector<int> sum_layer_dofs(nZLayers);
+  summation(u1.size(), sum_layer_dofs);
+
+  // compute average
+  for(auto &v : spatialMeanAverage)
     std::transform(v.begin(), v.begin()+nZLayers, sum_layer_dofs.begin(), 
                    v.begin(), std::divides<double>());
-  }
-  // compute the mean velocity. average in time
-  std::deque<std::vector<double>> meanVelocityTimeAverage;
+  
   double T=TDatabase::TimeDB->CURRENTTIME;
   double t0=TDatabase::TimeDB->T0;
   if(T >= t0)
   {
-    for(auto v : spatialmeanAverage)
+    int i=0;
+    for(auto &it : MeanVelocity)
     {
-      meanVelocityTimeAverage.push_back(meanVelocity(v));
+      temporalMean(spatialMeanAverage.at(i),it);
+      i++;
     }
   }
   else
   {
-    //TODO check needed for all components or only for one
-    meanVelocityTimeAverage.push_back(meanVelocity(spatialmeanAverage.front()));
-  }
-  /// compute the eddy viscosity model
-  std::array<std::vector<double>, 6> eddyviscosity;
-  eddy_viscosity(eddyviscosity, tnse3d);
-  /// now computing the mean velocity of the product
-  /// u_i*u_j, i,j=1,2,3
-  /// first compute the product and then the mean velocities
-  std::list<std::vector<double>> ui_uj;
-  ui_uj.push_back(product(velocity_u1,velocity_u1)); // u1*u1
-  ui_uj.push_back(product(velocity_u2,velocity_u2)); // u2*u2
-  ui_uj.push_back(product(velocity_u3,velocity_u3)); // u3*u3
-  ui_uj.push_back(product(velocity_u1,velocity_u2)); // u1*u2
-  ui_uj.push_back(product(velocity_u1,velocity_u3)); // u1*u3
-  ui_uj.push_back(product(velocity_u2,velocity_u3)); // u2*u3
-  
-  std::list<std::vector<double>> uiujmean;
-  for(auto &v : ui_uj)
-  {
-    uiujmean.push_back(spatialMean(v));
+    temporalMean(spatialMeanAverage.at(0), MeanVelocity.front());
   }  
-  // averaging
-  for(auto &v : uiujmean)
+  /// compute the eddy viscosity model
+  // std::array<std::vector<double>, 6> eddyviscosity;
+  // eddy_viscosity(eddyviscosity, tnse3d);
+  // compute the ReynoldsStress
+  // first compute ui*uj, i=1,2,3 and the spatial mean velocities
+  std::deque<std::vector<double>>uiuj;
+  std::vector<double> temp(nZLayers);
+  for(size_t i=0; i<6; i++)
+    uiuj.push_back(temp);
+  for(size_t i=0; i<nuDofs; i++)
   {
-    std::transform(v.begin(), v.begin()+nZLayers, sum_layer_dofs.begin(), 
-                   v.begin(), std::divides<double>());
+    for(size_t j=0; j<nZLayers; j++)
+    {
+      if(fabs(zDofs[i]-zLayers[j]) < 1e-6)
+      {
+        uiuj[0][j]=uiuj[0][j]+u1.at(i)*u1.at(i);
+        uiuj[1][j]=uiuj[1][j]+u2.at(i)*u2.at(i);
+        uiuj[2][j]=uiuj[2][j]+u3.at(i)*u3.at(i);
+        uiuj[3][j]=uiuj[3][j]+u1.at(i)*u2.at(i);
+        uiuj[4][j]=uiuj[4][j]+u1.at(i)*u3.at(i);
+        uiuj[5][j]=uiuj[5][j]+u2.at(i)*u3.at(i);
+        break;
+      }
+    }
   }
-  // Reynolds stress tensor
-  std::deque<std::vector<double>> ReynoldsStress; // R_ij: in volker's paper
+  //compute average
+  for(auto &it : uiuj)
+    std::transform(it.begin(), it.begin()+nZLayers, sum_layer_dofs.begin(), 
+                       it.begin(), std::divides<double>());
   if(T >= t0)
   {
-    for(auto v : uiujmean)
+    int i=0;
+    for(auto &it : ReynoldsStress) // R_ij: in volker's paper
     {
-      ReynoldsStress.push_back(meanVelocity(v));
+      temporalMean(uiuj.at(i),it);
+      i++;
     }
   }
   /// compute root mean square (formula 11 Volker's paper)
-  std::deque<std::vector<double>> rmsInstnsities;  
-  if(T >= t0)
-    rmsInstnsities=getrms(ReynoldsStress,meanVelocityTimeAverage);
-  /// save the output into the files
-  saveData(meanVelocityTimeAverage, rmsInstnsities, ReynoldsStress);  
+  std::deque<std::vector<double>>rmsInstnsities;
+  if(T>=t0)
+    rmsInstnsities=getrms(ReynoldsStress, MeanVelocity);
+  // print and save the data
+  saveData(MeanVelocity, rmsInstnsities, ReynoldsStress);
 }
 
-void ChannelTau180::summation(size_t length)
+void ChannelTau180::temporalMean(std::vector< double > spatial_mean, 
+                                std::vector< double >& temporal_mean)
 {
-  sum_layer_dofs.resize(nZLayers);  
+  double step_length=TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double currentTime = TDatabase::TimeDB->CURRENTTIME;
+  double tstart = TDatabase::TimeDB->T0;
+  
+  double factor;
+  if(currentTime >= tstart)
+    factor= step_length/(currentTime - tstart + step_length);
+  else
+    factor = step_length/(currentTime+step_length);
+  for(size_t i=0; i<spatial_mean.size(); i++)
+  {
+    temporal_mean.at(i) = temporal_mean.at(i)
+              + factor*(spatial_mean.at(i) - temporal_mean.at(i));
+  }
+}
+
+void ChannelTau180::summation(size_t length, std::vector<int> &summ)
+{
   for(size_t i=0; i<length; ++i)
   {
     for(size_t j=0; j<nZLayers; ++j)
     {
       if(fabs(zDofs[i]-zLayers[j]) < 1e-6)
       {
-        sum_layer_dofs.at(j)++;
+        summ[j]++;
+        break;
       }
     }
   }
@@ -681,36 +708,6 @@ std::vector< double >
   }
   return temp;
 }
-
-std::vector< double > ChannelTau180::meanVelocity(std::vector<double> vecin)
-{
-  double step_length=TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double currentTime = TDatabase::TimeDB->CURRENTTIME;
-  double tstart = TDatabase::TimeDB->T0;
-  
-  std::vector<double> temp(nZLayers);
-  
-  double factor;
-  if(currentTime >= tstart)
-    factor= step_length/(currentTime - tstart + step_length);
-  else
-    factor = step_length/(currentTime+step_length);
-  
-  for(size_t i=0; i<vecin.size(); ++i)
-    temp.at(i) = temp.at(i) + factor*(vecin.at(i) - temp.at(i));
-  
-  return temp;
-}
-
-std::vector< double > ChannelTau180::product(std::vector< double > vec1, 
-                                                   std::vector< double > vec2)
-{
-  std::vector<double> res(vec1.size());
-  std::transform(vec1.begin(), vec1.end(), vec2.begin(), res.begin(),
-                 std::multiplies<double>());
-  return res;
-}
-
 
 void ChannelTau180::eddy_viscosity(
   std::array< std::vector< double>, int(6)> eddy,
@@ -786,13 +783,9 @@ double ChannelTau180::getFrictionVelocity(std::vector< double > vec)
       meanDeriv.push_back(2*a*zLayers[i]+b);
     }
   }
-  // print("mean", meanDeriv);
-  std::vector<double> meanVeloDerivTime;
-  meanVeloDerivTime.resize(nZLayers);
-  //  
-  meanVeloDerivTime=meanVelocity(meanDeriv);
-  temp = 1./reynolds_number*(meanVeloDerivTime.at(0)-
-                            meanVeloDerivTime.at(nZLayers-1))*0.5;  
+  temporalMean(meanDeriv, DerivmeanVelo);
+  temp = 1./reynolds_number*(DerivmeanVelo.at(0)-
+                            DerivmeanVelo.at(nZLayers-1))*0.5;  
   return temp;
 }
 
@@ -843,7 +836,7 @@ void ChannelTau180::saveData(std::deque< std::vector< double > > m,
   double u_tau = getFrictionVelocity(m.front());
   for(size_t i=0; i<nZLayers; ++i)
   {
-    Output::print("t ", t, " ", setw(8), zLayers.at(i), " ",setw(8), 
+    Output::print("t ", std::scientific, t, " ", setw(8), zLayers.at(i), " ",setw(8), 
                        reynolds_number*(1-fabs(1-zLayers[i])), " mu ", setw(8), m.at(0)[i], 
                        " mv ", setw(8), m.at(2)[i], " mw ", setw(8), m.at(1)[i]);
   }
@@ -864,7 +857,8 @@ void ChannelTau180::saveData(std::deque< std::vector< double > > m,
     R13_abs += fabs(R13);
     R23 = R.at(5)[i] - m.at(1)[i] * m.at(2)[i]; R23 /= (u_tau*u_tau);
     R23_abs += fabs(R23);
-    Output::print("t ", t, " ", setw(8), zLayers.at(i), " ", setw(8),
+    
+    Output::print("t ", std::scientific, t, " ", setw(8), zLayers.at(i), " ", setw(8),
                   reynolds_number*(1-fabs(1-zLayers[i])), " rms_u* ", setw(8), rmsu, 
                   " rms_v* ", setw(8), rmsw, " rms_w* ", setw(8), rmsv,
                   " R_uv ", setw(8), R13, " R_uw ", setw(8), R12, 
