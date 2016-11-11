@@ -52,12 +52,23 @@ namespace ChannelTau180
   /// for a finite element: currently only Q2-element
   /// @param[in]
   void GetCoordinatesOfDof(const Time_NSE3D& tnse3d);
-
+  
+  /// @brief mean velocities computed at each time step
+  static std::deque<std::vector<double>> MeanVelocity;
+  /// @brief Reynold Stress
+  static std::deque<std::vector<double>> ReynoldsStress;
+  /// @brief derivative of the mean velocity
+  /// only the first component of velocity
+  static std::vector<double> DerivmeanVelo;
+  /// @brief set the memory 
+  void set_up_memory();
   /// routine for computing mean velocity
   /// currently implemented for only Channel Flow with
   /// Reynolds number=180 and Turbulent Model used is
   /// the Smagorinsky
-  void computeMeanVelocity(const Time_NSE3D& tnse3d);
+  void computeMeanVelocity(const Time_NSE3D& tnse3d); // replace the names when completed
+  /// @brief this computes the temporal mean 
+  void temporalMean(std::vector< double > spatial_mean, std::vector< double >& temporal_mean);
   ///TODO: not used and therefore not completed yet 
   /// need to modify also when started implementation
   /// this function is used in the computations of "eddy_viscosity"
@@ -68,17 +79,10 @@ namespace ChannelTau180
   /// @param[in] Time_NSE3D object
   void computeAverageVelocity( std::array< std::vector< double >, int(9) > velo, 
                                const Time_NSE3D& tnse3d);
-  /// no of summations in the computations of mean velocity
-  static std::vector<int> sum_layer_dofs;
   /// compute the summation of layers
-  void summation(size_t length);
+  void summation(size_t length, std::vector< int >& summ);
   /// computations of spatial mean velocity at current time
  std::vector<double> spatialMean(std::vector< double > in);
- /// mean velocity profile (arithmatic mean)
- std::vector<double> meanVelocity(std::vector< double > vecin);
- /// compute the product of two vectors
- std::vector<double> product(std::vector<double>vec1, 
-                             std::vector<double>vec2);
  /// A_ij: contribution from the eddy-viscosity model
  /// maximum six vectors to be returned
  /// eddy_xx, eddy_yy, eddy_zz, eddy_xy, eddy_xz, eddy_yz

@@ -157,6 +157,7 @@ int main(int argc, char* argv[])
   TDatabase::TimeDB->CURRENTTIME = 0.0;
   if(parmoon_db["example"].is(7))
   {
+    ChannelTau180::set_up_memory();
     TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
     ChannelTau180::computeMeanVelocity(tnse3d);
   }
