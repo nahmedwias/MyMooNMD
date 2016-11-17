@@ -28,7 +28,7 @@ void ExampleFile()
 double DNS_profile_180(double zz)
 {
   int i;
-  double value, val;
+  double value=0, val;
 
   double z[65] =
   {
@@ -77,7 +77,7 @@ double DNS_profile_180(double zz)
 double DNS_profile_395(double zz)
 {
   int i;
-  double value, val;
+  double value=0, val;
 
   double z[129] =
   {
@@ -143,7 +143,6 @@ void InitialU1(double x, double y, double z, double *values)
     TDatabase::ParamDB->INTERNAL_BULK_SIMULATION = 15.6803;
     // std::srand(1);
     values[0] = DNS_profile_180(z)
-    //values[0] = 25 * z*(2-z)
       +noise*TDatabase::ParamDB->INTERNAL_BULK_SIMULATION*(2*(double)rand()/RAND_MAX-1);
   }
   else
@@ -154,7 +153,6 @@ void InitialU1(double x, double y, double z, double *values)
       TDatabase::ParamDB->INTERNAL_BULK_SIMULATION = 17.5452;
       values[0] = DNS_profile_395(z)
         +noise*TDatabase::ParamDB->INTERNAL_BULK_SIMULATION*(2*(double)rand()/RAND_MAX-1);
-      //OutPut(values[0] << " ");
     }
     else
     {
@@ -164,14 +162,12 @@ void InitialU1(double x, double y, double z, double *values)
   }
   if ((fabs(z)<1e-6)||(fabs(2-z)<1e-6))
     values[0] = 0;
-  // values[0] = scale*z*(2-z)+noise*2*scale*(2*(double)rand()/RAND_MAX-1)/3;
 }
 
 
 void InitialU2(double x, double y, double z, double *values)
 {
   double  noise = 0.1;
-
   values[0] = noise*TDatabase::ParamDB->INTERNAL_BULK_SIMULATION*(2*(double)rand()/RAND_MAX-1);
   if ((fabs(z)<1e-6)||(fabs(2-z)<1e-6))
     values[0] = 0;
@@ -181,7 +177,6 @@ void InitialU2(double x, double y, double z, double *values)
 void InitialU3(double x, double y, double z, double *values)
 {
   double  noise = 0.1;
-
   values[0] = noise*TDatabase::ParamDB->INTERNAL_BULK_SIMULATION*(2*(double)rand()/RAND_MAX-1);
   if ((fabs(z)<1e-6)||(fabs(2-z)<1e-6))
     values[0] = 0;
@@ -276,13 +271,14 @@ double **parameters, double **coeffs)
   u1 = TDatabase::ParamDB->INTERNAL_BULK_MEAN;
   u2 = TDatabase::ParamDB->INTERNAL_BULK_SIMULATION;
   dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-
+  //Output::print("bulk velocity: mean ", u1, " sim ", u2);
+  
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
     coeff[0] = eps;
     coeff[1] = 1 + (u1 - u2)/dt ;
-    //coeff[1] = 1;
+
     coeff[2] = 0;
     coeff[3] = 0;
     coeff[4] = coeff[1];
