@@ -486,56 +486,56 @@ double turbulentViscosity3D(double hK, double* u, double* gradu,
   int viscosityType = TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE;
   switch(viscosityType)
   {
-    case 0:// Smagorinsky
+    case 1:// Smagorinsky
       viscosity = standard(delta, frobenius_norm_tensor);
       break;
-    case 1: // p laplacian
+    case 2: // p laplacian
       viscosity = laplacian(delta, frobenius_norm_tensor);
       break;
-    case 2: // Layton SIAM J. Sci. Comput. 1996 
+    case 3: // Layton SIAM J. Sci. Comput. 1996 
       viscosity = getViscosityLayton96(delta, frobenius_norm_tensor);
       break;
-    case 3: // \|u-g_\delta \ast u\|_2
+    case 4: // \|u-g_\delta \ast u\|_2
       viscosity = normof_velocityminus_gdeltaTimesuStar(delta, u, uConv);
       break;
-    case 4: // \|Du^h-G^H\|_2
+    case 5: // \|Du^h-G^H\|_2
       viscosity = normof_Defvelocityminus_gdeltaTimesuStar(delta, gradu, uConv);
       break;
-    case 5: // all parameters free
+    case 6: // all parameters free
       viscosity = parametersFree(delta, frobenius_norm_tensor);
       break;
-    case 6: // van Driest damping for channel
+    case 7: // van Driest damping for channel
       viscosity = vanDriestDampingChannel(delta, frobenius_norm_tensor, z);
       break;
-    case 7: // van Driest damping for cylinder with squared cross--section
+    case 8: // van Driest damping for cylinder with squared cross--section
             // left and right wall at the cylinder
       viscosity = vanDriestDampingCylinder(delta, frobenius_norm_tensor, x, y);
       break;
-    case 8:  // van Driest damping for channel flow (continuous)
+    case 9:  // van Driest damping for channel flow (continuous)
       viscosity = vanDriestDampingChannelContinuous(delta, frobenius_norm_tensor, z);
       break;
-    case 9: // van Driest damping for channel flow (paper: Rudman, Blackburn'99)
+    case 10: // van Driest damping for channel flow (paper: Rudman, Blackburn'99)
       viscosity = vanDriestDampingChannelRB99(delta, frobenius_norm_tensor, z);
       break;
-    case 10:// van Driest damping for channel flow 
+    case 11:// van Driest damping for channel flow 
             // (paper: Rudman, Blackburn'99) with diff A+
       viscosity = vanDriestDampingChannelRB99APlus(delta, frobenius_norm_tensor, z);
       break;
-    case 11: // van Driest damping (continuous, classical) for cylinder 
+    case 12: // van Driest damping (continuous, classical) for cylinder 
              // with squared cross--section
       viscosity = vanDriestDampingCylinderContinuous(delta, frobenius_norm_tensor, x, y);
       break;
-    case 12:  // van Driest damping (paper: Rudman, Blackburn'99) 
+    case 13:  // van Driest damping (paper: Rudman, Blackburn'99) 
               // for cylinder with squared cross--section
       viscosity = vanDriestDampingCylinderRB99(delta, frobenius_norm_tensor, x, y);
       break;
-    case 13: // Verstappen model (J Sci Comput'11)
+    case 14: // Verstappen model (J Sci Comput'11)
       viscosity = VerstappenViscositymodelCmuMax(delta, gradu, frobenius_norm_tensor);
       break;
-    case 14: // Verstappen model (J Sci Comput'11)
+    case 15: // Verstappen model (J Sci Comput'11)
       viscosity = VerstappenViscositymodelChPhi(delta, gradu, frobenius_norm_tensor);
       break;
-    case 15: // eddy viscosity model: Vreman, Phys. Fluids 16 (10), 3670 -3681, 2004
+    case 16: // eddy viscosity model: Vreman, Phys. Fluids 16 (10), 3670 -3681, 2004
              // frobenius norm of gradient of velocity
              // use same notations as in paper
       viscosity = vermanViscosityModel(delta, gradu);
