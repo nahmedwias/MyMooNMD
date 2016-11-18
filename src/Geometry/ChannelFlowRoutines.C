@@ -749,13 +749,12 @@ void ChannelTau180::eddy_viscosity(
   }
 }
 
-double ChannelTau180::getFrictionVelocity(std::vector< double > vec)
+double ChannelTau180::getFrictionVelocity(std::vector< double > vec, 
+                                          std::vector<double> &meanDeriv)
 {
   double temp;
   /// computing the friction velocity
   /// first compute the derivative of mean velocity
-  //TODO not clear completely
-  std::vector<double> meanDeriv;
   for(size_t i=0; i<nZLayers; ++i)
   {
     if(i==0)
@@ -832,13 +831,15 @@ void ChannelTau180::saveData(std::deque< std::vector< double > > m,
   {
     return;
   }
-  // frictionvelocity
-  double u_tau = getFrictionVelocity(m.front());
+  // frictionvelocity and derivative of mean velocity
+  std::vector<double> dmu;  
+  double u_tau = getFrictionVelocity(m.front(), dmu);
   for(size_t i=0; i<nZLayers; ++i)
   {
     Output::print("t ", std::scientific, t, " ", setw(8), zLayers.at(i), " ",setw(8), 
-                       reynolds_number*(1-fabs(1-zLayers[i])), " mu ", setw(8), m.at(0)[i], 
-                       " mv ", setw(8), m.at(2)[i], " mw ", setw(8), m.at(1)[i]);
+                  reynolds_number*(1-fabs(1-zLayers[i])), " mu ", setw(8), m.at(0)[i],
+                  " dmu ", setw(8), dmu[i], 
+                  " mv ", setw(8), m.at(2)[i], " mw ", setw(8), m.at(1)[i]);
   }
   //
   double rmsu, rmsv, rmsw;
