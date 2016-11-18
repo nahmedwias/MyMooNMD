@@ -93,7 +93,8 @@ namespace ChannelTau180
                      const Time_NSE3D& tnse3d);
  /// @brief computes the friction viscosity u_tau
  /// @param[in] vec mean velocity vector for the first component only
- double getFrictionVelocity(std::vector<double> vec);
+ /// @param[in out], derivative of the mean velcoity
+ double getFrictionVelocity(std::vector< double > vec, std::vector< double >& meanDeriv);
  ///@brief compute the root mean square velocities
  ///@param[in] reynoldStress all components of Reynold Stress 
  /// (spatial,Temporal  averaged)
