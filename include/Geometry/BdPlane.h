@@ -55,6 +55,13 @@ class TBdPlane : public TBoundComp3D
 
     /** read parameter from input file */
     virtual int ReadIn(std::istream &dat);
+
+    virtual void get_normal_vector(double x, double y, double z,
+				   double& nx, double& ny, double &nz){
+      nx = N_x;
+      ny = N_y;
+      nz = N_z;
+    };
     
     void GetParams (double &p_x, double &p_y, double &p_z,
                     double &a_x, double &a_y, double &a_z,
