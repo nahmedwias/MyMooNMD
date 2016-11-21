@@ -1221,9 +1221,121 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
   delete [] KNPR;
   delete [] ELEMSREF;
 #else
-  // read mesh
-  Mesh m(MESHFILE);
-  GenerateFromMesh(m);
+
+  int IsSandwich = 0;
+  std::ifstream bdryStream(PRM);
+  if (bdryStream)
+  {
+    // read .PRM if available (for example for sandwich grid)
+    ReadBdParam(bdryStream, IsSandwich);
+    if (IsSandwich)
+    {
+      Output::print(" WARNING: Sandwich grid not yet implemented with .mesh input file");
+      Output::print("          Use a .GEO instead.");
+
+      // =======================================
+      // read the .GEO file
+      // note: this is the same as the above 2D code
+      
+      // read mesh
+      Mesh m(MESHFILE);
+      m.setBoundary(PRM);
+      unsigned int numberOfElements = m.triangle.size() + m.quad.size();
+      unsigned int maxNVertexPerElem = 3;
+      // make the ParMooN-grid
+      if (m.quad.size()) {
+	maxNVertexPerElem = 4;
+      }
+      if (numberOfElements==0) {
+	Output::print(" ** Error(Domain::Init) the mesh has no elements");
+	exit(-1);
+      }
+      
+      // vertices data
+      double *DCORVG;
+      int *KNPR;
+      unsigned int n_vertices = m.vertex.size();
+      KNPR = new int[n_vertices];
+      DCORVG =  new double[2*n_vertices];
+      
+      // fill the DCORVG array with GEO-like coordinates of two-dimensional points
+      for (unsigned int i=0; i<n_vertices; i++) {
+	
+	// check if the vertex is on the boundary
+	double localParam;
+	int partID = m.boundary.isOnComponent(m.vertex[i].x,m.vertex[i].y,localParam);
+	if (partID>=0) {
+	  DCORVG[2*i] = localParam;
+	  DCORVG[2*i+1] = 0.;
+	  KNPR[i] = partID+1;
+	} else {
+	  DCORVG[2*i] = m.vertex[i].x;
+	  DCORVG[2*i+1] = m.vertex[i].y;
+	  KNPR[i] = 0;
+	}  
+      }
+      int *KVERT,*ELEMSREF;
+      KVERT = new int[maxNVertexPerElem * numberOfElements];
+      ELEMSREF = new int[numberOfElements];
+      
+      // store triangles (+ 0 when using a mixed mesh)
+      for (unsigned int i=0;i<m.triangle.size();i++)
+	{
+	  for (unsigned int  j=0; j<3; j++) 
+	    KVERT[maxNVertexPerElem*i + j] = m.triangle[i].nodes[j];
+	  
+	  if (maxNVertexPerElem==4) KVERT[maxNVertexPerElem*i + 3] = 0;
+	  
+	  ELEMSREF[i] = m.triangle[i].reference;
+	  
+	}
+      
+      // store quadrilaterals
+      for (unsigned int i=0;i<m.quad.size();i++)
+	{
+	  for (unsigned int  j=0; j<4; j++) 
+	    KVERT[maxNVertexPerElem* (m.triangle.size() + i) + j] = m.quad[i].nodes[j];
+	  
+	  ELEMSREF[m.triangle.size()+i] = m.quad[i].reference;
+	  
+	}
+      // N_RootCells is an internal Domain variable used in other functions
+      N_RootCells = numberOfElements;
+      // =======================================
+
+      // =======================================
+      // parameters specific to the sandwich case
+      double DriftX = TDatabase::ParamDB->DRIFT_X;
+      double DriftY = TDatabase::ParamDB->DRIFT_Y;
+      double DriftZ = TDatabase::ParamDB->DRIFT_Z;
+      int N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;
+      
+      double *Lambda = new double[N_Layers];
+      for(int i=0;i<N_Layers;i++)
+      {
+	Lambda[i] = i * (1.0/(N_Layers-1));
+      }
+      // =======================================
+      
+      MakeSandwichGrid(DCORVG, KVERT, KNPR,  m.vertex.size(),maxNVertexPerElem,
+		       DriftX, DriftY, DriftZ, N_Layers, Lambda);
+      //exit(1);
+    }
+    else
+    {
+      Output::print("** ERROR: I can only initialize 3D domain using PRM for sandwich grid");
+      Output::print("** ERROR: check your input files." );
+      exit(1);
+    }
+    
+  } else {
+
+    // otherwise: proceed without a PRM file
+    // read mesh
+    Mesh m(MESHFILE);
+    GenerateFromMesh(m);
+  }
+
 #endif // __2D__
 }
 
