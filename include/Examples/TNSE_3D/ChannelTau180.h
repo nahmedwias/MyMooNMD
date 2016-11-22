@@ -133,9 +133,9 @@ void InitialU1(double x, double y, double z, double *values)
 {
   // in contrast to the literature, the coordinates y and z are interchanged!!
   // the initial setup is as in V. Gravemeier, J. Comput. Phys. (2006)
-  // with 10% random noise (positive and negative)
+  // with 10% random noise (positive and negative)  
   double  noise = 0.1;
-  double RE=1./DIMENSIONLESS_VISCOSITY;
+  double RE=1./DIMENSIONLESS_VISCOSITY;  
 
   if (RE==180)
   {
@@ -233,7 +233,16 @@ void ExactP(double x, double y,  double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  cond = DIRICHLET;
+  // TODO: We write "NEUMANN", where we actually mean "PERIODIC" 
+  // in this example. One cannot put it to "DIRICHLET" because
+  // this leads to trouble in MPI case - the periodic boundary conditions
+  // will not come through against DIRCHLET. This seems a general problem with periodic bdry.
+  if(fabs(x - 2*Pi)<1e-6 || fabs(x+2*Pi) < 1e-6)
+    cond = NEUMANN;
+  else if(fabs(y - 2*Pi/3.)<1e-6 || fabs(y+2*Pi/3.) < 1e-6)
+    cond = NEUMANN;
+  else 
+    cond = DIRICHLET;
 }
 
 

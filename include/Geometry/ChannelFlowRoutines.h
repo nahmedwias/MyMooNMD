@@ -80,9 +80,9 @@ namespace ChannelTau180
   void computeAverageVelocity( std::array< std::vector< double >, int(9) > velo, 
                                const Time_NSE3D& tnse3d);
   /// compute the summation of layers
-  void summation(size_t length, std::vector< int >& summ);
+  void count_dofs_per_layer(std::vector< int >& summ, const TFESpace3D& fesp);
   /// computations of spatial mean velocity at current time
- std::vector<double> spatialMean(std::vector< double > in);
+ std::vector<double> compute_sum_of_velocity(std::vector< double > in, const TFESpace3D& fesp);
  /// A_ij: contribution from the eddy-viscosity model
  /// maximum six vectors to be returned
  /// eddy_xx, eddy_yy, eddy_zz, eddy_xy, eddy_xz, eddy_yz
@@ -102,8 +102,8 @@ namespace ChannelTau180
  /// @return root mean square velcoity all components 
  std::deque<std::vector< double>> getrms(std::deque<std::vector<double>> reynoldStress, 
                             std::deque<std::vector<double>> meanvelo);
- ///@brief out put for plotting
- void saveData(std::deque<std::vector<double>> m, std::deque<std::vector<double>> rms, 
+ ///@brief print out the interested quantities
+ void print_quantity_of_interest(std::deque<std::vector<double>> m, std::deque<std::vector<double>> rms, 
              std::deque<std::vector<double>> R);
  
 }

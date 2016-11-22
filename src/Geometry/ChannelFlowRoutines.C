@@ -11,10 +11,21 @@
 #include <functional>
 #include <numeric>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif
+
 void print(const std::string name, std::vector<double> vec)
 {
-  for(size_t i=0; i<vec.size(); i++)
-    Output::print(name, ": ", i, "   ", std::scientific, vec.at(i));  
+  int rank=0;
+#ifdef _MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+  if(rank == 0)
+  {
+    for(size_t i=0; i<vec.size(); i++)
+      Output::print(name, ": ", i, "   ", std::scientific, vec.at(i));  
+  }
   Output::print("------------------------\n");
 }
 
@@ -511,8 +522,12 @@ void ChannelTau180::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
   std::fill(zLayers.begin(),zLayers.end(),-4711.);
   // loop over all cells
   for(size_t i=0; i<nCells; ++i)
-  {
+  {    
     TBaseCell *cell=feSpace.GetCollection()->GetCell(i);
+#ifdef _MPI
+    if(cell->IsHaloCell())
+      continue;
+#endif
     FE3D cE=feSpace.GetFE3D(i, cell);
     nBasisFunction=N_BaseFunct[cE];
 
@@ -581,19 +596,61 @@ void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
 
   // spatial mean average=>compute the summation of all values per layer
   // and then the average 
-  std::deque<std::vector<double>> spatialMeanAverage;
+  std::deque<std::vector<double>> spatialMean;
   for(auto & it : u)
-   spatialMeanAverage.push_back(spatialMean(it));
+  {
+    spatialMean.push_back(compute_sum_of_velocity(it, tnse3d.get_velocity_space()));
+  }
+  // communicate the meanvelocity and sum up
+#ifdef _MPI
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  for(size_t dim = 0; dim < spatialMean.size();++dim)
+  {
+    int n_elems = nZLayers;
+    double* sbuf = &spatialMean.at(dim).at(0);
+    double* rbuf = new double[n_elems];
+    
+    MPI_Allreduce(sbuf, rbuf, n_elems,
+                  MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    
+    for(int i =0; i < n_elems; ++i)
+    {
+      spatialMean.at(dim).at(i) = rbuf[i];
+      // if(rank == 0)
+      //  Output::print("dim: ", dim, " i: ", i, " ", rbuf[i]);
+    }    
+    delete[] rbuf;
+  }
+  //MPI_Finalize();
+#endif
 
-  // compute the summation for averaging
+  // compute the summation of layers dof for averaging
   std::vector<int> sum_layer_dofs(nZLayers);
-  summation(u1.size(), sum_layer_dofs);
+  count_dofs_per_layer(sum_layer_dofs, tnse3d.get_velocity_space());  
+  // communicate the summation of layers dofs 
+#ifdef _MPI
+    int n_elems = nZLayers;
+    int* sbuf = &sum_layer_dofs.at(0);
+    int* rbuf = new int[n_elems];
+    
+    MPI_Allreduce(sbuf, rbuf, n_elems,
+                  MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    
+    for(int i =0; i < n_elems; ++i)
+    {
+      sum_layer_dofs.at(i) = rbuf[i];
+      // Output::print("Summation i: ", i, " ", sum_layer_dofs[i]);
+    }    
+    delete[] rbuf;
+    // MPI_Finalize();
+#endif
 
   // compute average
-  for(auto &v : spatialMeanAverage)
+  for(auto &v : spatialMean)
     std::transform(v.begin(), v.begin()+nZLayers, sum_layer_dofs.begin(), 
                    v.begin(), std::divides<double>());
-  
+
   double T=TDatabase::TimeDB->CURRENTTIME;
   double t0=TDatabase::TimeDB->T0;
   if(T >= t0)
@@ -601,13 +658,13 @@ void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
     int i=0;
     for(auto &it : MeanVelocity)
     {
-      temporalMean(spatialMeanAverage.at(i),it);
+      temporalMean(spatialMean.at(i),it);
       i++;
     }
   }
   else
   {
-    temporalMean(spatialMeanAverage.at(0), MeanVelocity.front());
+    temporalMean(spatialMean.at(0), MeanVelocity.front());
   }  
   /// compute the eddy viscosity model
   // std::array<std::vector<double>, 6> eddyviscosity;
@@ -615,11 +672,17 @@ void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
   // compute the ReynoldsStress
   // first compute ui*uj, i=1,2,3 and the spatial mean velocities
   std::deque<std::vector<double>>uiuj;
-  std::vector<double> temp(nZLayers);
+  std::vector<double> temp(nZLayers, 0);
   for(size_t i=0; i<6; i++)
     uiuj.push_back(temp);
   for(size_t i=0; i<nuDofs; i++)
   {
+#ifdef _MPI
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(tnse3d.get_velocity_space().get_communicator().GetMaster()[i] != rank)
+      continue;
+#endif 
     for(size_t j=0; j<nZLayers; j++)
     {
       if(fabs(zDofs[i]-zLayers[j]) < 1e-6)
@@ -634,6 +697,26 @@ void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
       }
     }
   }
+#ifdef _MPI  
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  for(size_t dim = 0; dim < 6;++dim)
+  {
+    int n_elems = nZLayers;
+    double *sbuf = &uiuj.at(dim).at(0);
+    double* rbuf = new double[n_elems];
+    
+    MPI_Allreduce(sbuf, rbuf, n_elems,
+                  MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    
+    for(int i =0; i < n_elems; ++i)
+    {
+      uiuj.at(dim).at(i) = rbuf[i];
+      // if(rank == 0)
+      //  Output::print("dim: ", dim, " i: ", i, " ", rbuf[i]);
+    }    
+    delete[] rbuf;      
+  }
+#endif
   //compute average
   for(auto &it : uiuj)
     std::transform(it.begin(), it.begin()+nZLayers, sum_layer_dofs.begin(), 
@@ -652,7 +735,7 @@ void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
   if(T>=t0)
     rmsInstnsities=getrms(ReynoldsStress, MeanVelocity);
   // print and save the data
-  saveData(MeanVelocity, rmsInstnsities, ReynoldsStress);
+  print_quantity_of_interest(MeanVelocity, rmsInstnsities, ReynoldsStress);
 }
 
 void ChannelTau180::temporalMean(std::vector< double > spatial_mean, 
@@ -674,10 +757,16 @@ void ChannelTau180::temporalMean(std::vector< double > spatial_mean,
   }
 }
 
-void ChannelTau180::summation(size_t length, std::vector<int> &summ)
+void ChannelTau180::count_dofs_per_layer(std::vector<int> &summ, const TFESpace3D& fesp)
 {
-  for(size_t i=0; i<length; ++i)
+  for(size_t i=0; i<zDofs.size(); ++i)
   {
+#ifdef _MPI
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(fesp.get_communicator().GetMaster()[i] != rank)
+      continue;
+#endif 
     for(size_t j=0; j<nZLayers; ++j)
     {
       if(fabs(zDofs[i]-zLayers[j]) < 1e-6)
@@ -690,13 +779,18 @@ void ChannelTau180::summation(size_t length, std::vector<int> &summ)
 }
 
 std::vector< double >
-  ChannelTau180::spatialMean(std::vector< double > in)
+  ChannelTau180::compute_sum_of_velocity(std::vector< double > in, const TFESpace3D& fesp)
 {
   // summation in the computation of mean velocities  
-  std::vector<double>temp(nZLayers);
-  // cout<<temp.size()<<"  " << in.size() << endl;
+  std::vector<double>temp(nZLayers);  
   for(size_t i=0; i<in.size(); ++i)
   {
+#ifdef _MPI
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(fesp.get_communicator().GetMaster()[i] != rank)
+      continue;
+#endif 
     for(size_t j=0; j<temp.size(); ++j)
     {
       if(fabs(zDofs[i]-zLayers[j]) < 1e-6)
@@ -813,16 +907,21 @@ ChannelTau180::getrms(std::deque<std::vector<double>> reynoldStress,
   return temp;
 }
 
-void ChannelTau180::saveData(std::deque< std::vector< double > > m, 
+void ChannelTau180::print_quantity_of_interest(std::deque< std::vector< double > > meanvelocity, 
                                  std::deque< std::vector< double > > rms,
                                  std::deque< std::vector< double > > R)
 {
+  int rank=0;
+#ifdef _MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
   double t = TDatabase::TimeDB->CURRENTTIME; 
   double bulkVelocity=0.;
   for(size_t i=0; i<nZLayers-1; ++i)
-    bulkVelocity += 0.5*(m.at(0)[i+1] + m.at(0)[i])*(zLayers[i+1]-zLayers[i]);
+    bulkVelocity += 0.5*(meanvelocity.at(0)[i+1] + meanvelocity.at(0)[i])*(zLayers[i+1]-zLayers[i]);
   bulkVelocity /=2.;
-  Output::print("bulk velocity : t ", t, " ", setw(8), bulkVelocity, " tau ", 
+  if(rank==0)
+    Output::print("bulk velocity : t ", t, " ", setw(8), bulkVelocity, " tau ", 
                 (TDatabase::ParamDB->INTERNAL_BULK_MEAN-bulkVelocity)+1);
   // set the bulk velocity
   TDatabase::ParamDB->INTERNAL_BULK_SIMULATION = bulkVelocity;
@@ -833,40 +932,45 @@ void ChannelTau180::saveData(std::deque< std::vector< double > > m,
   }
   // frictionvelocity and derivative of mean velocity
   std::vector<double> dmu;  
-  double u_tau = getFrictionVelocity(m.front(), dmu);
-  for(size_t i=0; i<nZLayers; ++i)
+  double u_tau = getFrictionVelocity(meanvelocity.front(), dmu);
+  if(rank ==0)
   {
-    Output::print("t ", std::scientific, t, " ", setw(8), zLayers.at(i), " ",setw(8), 
-                  reynolds_number*(1-fabs(1-zLayers[i])), " mu ", setw(8), m.at(0)[i],
-                  " dmu ", setw(8), dmu[i], 
-                  " mv ", setw(8), m.at(2)[i], " mw ", setw(8), m.at(1)[i]);
+    for(size_t i=0; i<nZLayers; ++i)
+    {
+      Output::print("t ", std::scientific, t, " ", setw(8), zLayers.at(i), " ",setw(8), 
+                    reynolds_number*(1-fabs(1-zLayers[i])), " mu ", setw(8), meanvelocity.at(0)[i],
+                    " dmu ", setw(8), dmu[i], 
+                    " mv ", setw(8), meanvelocity.at(2)[i], " mw ", setw(8), meanvelocity.at(1)[i]);
+    }
   }
   //
   double rmsu, rmsv, rmsw;
   double R12, R13, R23;
   double R12_abs=0., R13_abs=0., R23_abs=0.;
-  for(size_t i=0; i<nZLayers; ++i)
+  if(rank ==0)
   {
-    // formula 11 Volker's paper
-    rmsu = sqrt(fabs(rms.at(0)[i]))/u_tau;
-    rmsv = sqrt(fabs(rms.at(1)[i]))/u_tau;
-    rmsw = sqrt(fabs(rms.at(2)[i]))/u_tau;
-    // formula 10 Volker's paper
-    R12 = R.at(3)[i] - m.at(0)[i] * m.at(1)[i]; R12 /= (u_tau*u_tau);
-    R12_abs += fabs(R12);
-    R13 = R.at(4)[i] - m.at(0)[i] * m.at(2)[i]; R13 /= (u_tau*u_tau);
-    R13_abs += fabs(R13);
-    R23 = R.at(5)[i] - m.at(1)[i] * m.at(2)[i]; R23 /= (u_tau*u_tau);
-    R23_abs += fabs(R23);
-    
-    Output::print("t ", std::scientific, t, " ", setw(8), zLayers.at(i), " ", setw(8),
-                  reynolds_number*(1-fabs(1-zLayers[i])), " rms_u* ", setw(8), rmsu, 
-                  " rms_v* ", setw(8), rmsw, " rms_w* ", setw(8), rmsv,
-                  " R_uv ", setw(8), R13, " R_uw ", setw(8), R12, 
-                  " R_vw ", setw(8), R23);
+    for(size_t i=0; i<nZLayers; ++i)
+    {
+      // formula 11 Volker's paper
+      rmsu = sqrt(fabs(rms.at(0)[i]))/u_tau;
+      rmsv = sqrt(fabs(rms.at(1)[i]))/u_tau;
+      rmsw = sqrt(fabs(rms.at(2)[i]))/u_tau;
+      // formula 10 Volker's paper
+      R12 = R.at(3)[i] - meanvelocity.at(0)[i] * meanvelocity.at(1)[i]; R12 /= (u_tau*u_tau);
+      R12_abs += fabs(R12);
+      R13 = R.at(4)[i] - meanvelocity.at(0)[i] * meanvelocity.at(2)[i]; R13 /= (u_tau*u_tau);
+      R13_abs += fabs(R13);
+      R23 = R.at(5)[i] - meanvelocity.at(1)[i] * meanvelocity.at(2)[i]; R23 /= (u_tau*u_tau);
+      R23_abs += fabs(R23);
+      
+      Output::print("t ", std::scientific, t, " ", setw(8), zLayers.at(i), " ", setw(8),
+                    reynolds_number*(1-fabs(1-zLayers[i])), " rms_u* ", setw(8), rmsu, 
+                    " rms_v* ", setw(8), rmsw, " rms_w* ", setw(8), rmsv,
+                    " R_uv ", setw(8), R13, " R_uw ", setw(8), R12, 
+                    " R_vw ", setw(8), R23);
+    }
+    Output::print("u_tau ", u_tau, " zero statistics ", setw(8), R12_abs/nZLayers, 
+                  " ", setw(8), R13_abs/nZLayers, " ", setw(8), R23_abs/nZLayers);
   }
-  Output::print("u_tau ", u_tau, " zero statistics ", setw(8), R12_abs/nZLayers, 
-                " ", setw(8), R13_abs/nZLayers, " ", setw(8), R23_abs/nZLayers);
-  // Output::print("u_tau: ", );
 }
 
