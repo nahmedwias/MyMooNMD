@@ -122,12 +122,7 @@ int main(int argc, char* argv[])
       ChannelTau180::setRefineDesc(coll);
       ChannelTau180::setPeriodicFaceJoints(coll);
     }
-  }
-  
-  TCollection* coll = gridCollections.front();
-  TOutput3D output(0,0,0,0,std::addressof(domain),coll);
-  
-  output.WriteVtk("mesh.vtk");
+  }  
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
   // set some parameters for time stepping
@@ -148,10 +143,11 @@ int main(int argc, char* argv[])
   
   double end_time = TDatabase::TimeDB->ENDTIME;
   tnse3d.current_step_ = 0;
+  int image = 0;
+  
+  tnse3d.output(tnse3d.current_step_,image);
 
   int n_substeps = GetN_SubSteps();
-
-  int image = 0;
 
   timer.restart_and_print("setting up spaces, matrices and initial assembling");
   TDatabase::TimeDB->CURRENTTIME = 0.0;

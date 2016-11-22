@@ -650,6 +650,14 @@ class TDomain
       , int& maxSubDomainPerDof
   #endif
       );
+  /// 
+  bool is_turbulent_channel_example()
+  {
+    if(db["example"].is(7))
+      return true;
+    else
+      return false;
+  }
      
 };
 

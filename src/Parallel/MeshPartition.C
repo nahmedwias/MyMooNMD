@@ -45,6 +45,55 @@ extern "C"
 }
 #endif
 
+// For manual mesh distribution for periodic boundaries channel flow example example.
+int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
+{ 
+  //BRUTE FORCE - find a point in the cell (barycenter)
+  TBaseCell* my_cell = coll->GetCell(cell);
+  double X[8];
+  double Y[8];
+  double Z[8];  
+  // compute coordinates of vertices
+  TVertex *vert;
+  for (int l1=0;l1<my_cell->GetN_Vertices();l1++)
+  {
+    vert=my_cell->GetVertex(l1);
+    X[l1]=vert->GetX();
+    Y[l1]=vert->GetY();
+    Z[l1]=vert->GetZ();
+    if(fabs(X[l1] - 6.2831853071) < 1e-6)
+      return 0;
+  }
+  // compute barycentre
+  double x=0; double y=0; double z=0;
+  for (int l1=0;l1<my_cell->GetN_Vertices();l1++)
+  {
+    x+=X[l1];
+    y+=Y[l1];
+    z+=Z[l1];
+  }
+  x /= my_cell->GetN_Vertices();
+  y /= my_cell->GetN_Vertices();
+  z /= my_cell->GetN_Vertices();
+  //check it!
+  if (!my_cell->PointInCell(x,y,z))
+    ErrThrow("That point is not in the cell!");
+      
+  // END BRUTE FORCE
+  
+  double my_x = x + 6.2831853071;
+  
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  
+  int l = 12.5663706143;
+  
+  int i = floor(my_x / l * size);
+    
+  // Output::print("Cell: ", cell, " x: ", my_x, " i: ", i);
+  
+  return i;
+}
 
 void MeshPartitionAuxFunctions::Sort(TVertex **Array, int length)
 {
@@ -344,6 +393,17 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   nparts = (idx_t)size;
   
   t1 = MPI_Wtime();
+  // This is project specific - manual mesh partitioning, avoiding call to metis.
+  // The aim is to hav apartitinoing, where periodic boundaries are not split between ranks.
+  if(Domain->is_turbulent_channel_example())
+  {
+    for(int cell =0; cell < N_Cells ; ++cell)
+    {
+      Cell_Rank[cell] = manual_cell_rank(Domain, coll, cell);
+    }
+  }
+  else
+  {
    if(type == 0)
     {
      METIS_PartMeshNodal(&ne, &nn, eptr, MetisVertexNumbers, NULL, NULL, &nparts, NULL, options, &edgecut, Cell_Rank, Vert_Rank);
@@ -361,6 +421,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 
   t2 = MPI_Wtime();
   OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
+  }
 
 
   /** *********************************************/
