@@ -57,7 +57,7 @@ class Time_NSE3D
       TFESpace3D velocitySpace_;
       /** @brief Finite Element space for the pressure */
       TFESpace3D pressureSpace_;
-
+      
       /** @brief the system matrix (depends strongly on
        *         TDatabase::ParamDB->NSTYPE)
        *  [ A11  A12  A13  B1T ]
@@ -91,9 +91,8 @@ class Time_NSE3D
        * construction is a TODO .
        */
 #ifdef _MPI
-      System_per_grid(const Example_TimeNSE3D& ex,
-                    TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
-                    int maxSubDomainPerDof);
+      System_per_grid(const Example_TimeNSE3D& example, TCollection& coll, std::pair< int, int > order, 
+		      Time_NSE3D::Matrix type, int maxSubDomainPerDof);
 #else
       System_per_grid(const Example_TimeNSE3D& ex, TCollection& coll,
                       std::pair<int, int> order, Time_NSE3D::Matrix type);
@@ -191,6 +190,12 @@ class Time_NSE3D
     
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
+    
+    /** @brief projection space used for VMS method*/
+    std::shared_ptr<TFESpace3D> projectionSpace_;
+      
+    /** matrices for turbulence model*/
+    std::array<std::shared_ptr<FEMatrix>, int(7)> matrices_for_turb_mod;
 
  public:
 
