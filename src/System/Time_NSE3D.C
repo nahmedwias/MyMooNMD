@@ -37,13 +37,16 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default time database
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
   db.merge(time_db,true);
+  
+  ParameterDatabase turb_mod_db = ParameterDatabase::default_turbulence_model_database();
+  db.merge(turb_mod_db,true);
 
   return db;
 }
 
 /* *************************************************************************** */
 Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
-                  TCollection& coll, std::pair< int, int > order, 
+                  TCollection& coll, std::pair< int, int > order,
                   Time_NSE3D::Matrix type
 #ifdef _MPI
                   , int maxSubDomainPerDof
@@ -112,9 +115,37 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                TDatabase::ParamDB->PRESSURE_SPACE);
+  size_t projection_order = db_["vms_projection_space_order"];
+  if(projection_order < 0)
+    projection_order = 0;
   // get the velocity and pressure orders
   this->get_velocity_pressure_orders(velocity_pressure_orders);
-  
+  if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+  {
+    projectionSpace_ = 
+       std::make_shared<TFESpace3D>(collections_.front(), (char*)"L",  
+			   (char*)"vms projection space", example_.get_bc(2), 
+		           DiscP_PSpace, projection_order);
+    switch(TDatabase::ParamDB->NSTYPE)
+    {
+      case 1: case 2:
+	ErrThrow("VMS projection cannot be supported for NSTYPE  ", 
+		 TDatabase::ParamDB->NSTYPE);
+	break;
+      case 3: case 4: case 14:
+	const TFESpace3D& velocity_space = this->get_velocity_space();
+	matrices_for_turb_mod.at(0) = std::make_shared<FEMatrix>(&velocity_space, projectionSpace_.get());
+	matrices_for_turb_mod.at(1) = std::make_shared<FEMatrix>(&velocity_space, projectionSpace_.get());
+	matrices_for_turb_mod.at(2) = std::make_shared<FEMatrix>(&velocity_space, projectionSpace_.get());
+	// 
+	matrices_for_turb_mod.at(3) = std::make_shared<FEMatrix>(projectionSpace_.get(), &velocity_space);
+	matrices_for_turb_mod.at(4) = std::make_shared<FEMatrix>(projectionSpace_.get(), &velocity_space);
+	matrices_for_turb_mod.at(5) = std::make_shared<FEMatrix>(projectionSpace_.get(), &velocity_space);
+	
+	matrices_for_turb_mod.at(6) = std::make_shared<FEMatrix>(projectionSpace_.get(), projectionSpace_.get());
+	break;
+    }
+  }
   Time_NSE3D::Matrix type;
   switch(TDatabase::ParamDB->NSTYPE)
   {

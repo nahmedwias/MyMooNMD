@@ -946,3 +946,11 @@ ParameterDatabase ParameterDatabase::default_tetgen_database()
          (size_t) 0, (size_t) 1);
   return db;
 }
+
+ParameterDatabase ParameterDatabase::default_turbulence_model_database()
+{
+  ParameterDatabase db("default database for turbulence models");
+  db.add("vms_projection_space_order", (size_t) 0, 
+    "this is the piecewise constant tensor case; case -1 refers to the adaptive method", 
+    (size_t) -1, (size_t) 4);
+}
