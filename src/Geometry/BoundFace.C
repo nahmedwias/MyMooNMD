@@ -84,3 +84,4 @@ void TBoundFace::GetParameters(double *param1, double *param2)
     param2[i] = Param2[i];
   }
 }
+
