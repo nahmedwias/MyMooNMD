@@ -55,6 +55,7 @@ int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
   double Z[8];  
   // compute coordinates of vertices
   TVertex *vert;
+  bool silly_flag = false;
   for (int l1=0;l1<my_cell->GetN_Vertices();l1++)
   {
     vert=my_cell->GetVertex(l1);
@@ -62,7 +63,7 @@ int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
     Y[l1]=vert->GetY();
     Z[l1]=vert->GetZ();
     if(fabs(X[l1] - 6.2831853071) < 1e-6)
-      return 0;
+      silly_flag = true;
   }
   // compute barycentre
   double x=0; double y=0; double z=0;
@@ -80,19 +81,26 @@ int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
     ErrThrow("That point is not in the cell!");
       
   // END BRUTE FORCE
-  
+  double my_z = z ;
   double my_x = x + 6.2831853071;
+  
+  int x_slices = 8;
   
   int size;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int z_slices = size / 7;
   
-  int l = 12.5663706143;
+  double length_x = 12.5663706143;
+  double length_z = 2.;
+  int z_part = floor(my_z / length_z * z_slices);
+
+  int x_part = floor(my_x / length_x * x_slices);
+  if (silly_flag)
+    x_part = 0;
   
-  int i = floor(my_x / l * size);
-    
   // Output::print("Cell: ", cell, " x: ", my_x, " i: ", i);
-  
-  return i;
+  //Output::print("return: ",x_part*z_slices + z_part, "  ", x_part, " ", z_part );
+  return x_part*z_slices + z_part;
 }
 
 void MeshPartitionAuxFunctions::Sort(TVertex **Array, int length)
@@ -397,6 +405,10 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   // The aim is to hav apartitinoing, where periodic boundaries are not split between ranks.
   if(Domain->is_turbulent_channel_example())
   {
+    if(size % 7 !=0) 
+      ErrThrow("sorry for this particular example we use an a priori partitioning "
+               "and are restricted to integer multiple of 7 for number of processors");
+      
     for(int cell =0; cell < N_Cells ; ++cell)
     {
       Cell_Rank[cell] = manual_cell_rank(Domain, coll, cell);
