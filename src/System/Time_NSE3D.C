@@ -115,7 +115,7 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                TDatabase::ParamDB->PRESSURE_SPACE);
-  size_t projection_order = db_["vms_projection_space_order"];
+  int projection_order = db_["vms_projection_space_order"];
   if(projection_order < 0)
     projection_order = 0;
   // get the velocity and pressure orders
@@ -933,20 +933,8 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   // stores current norm of the residual. They are normed per default in
   // the class Residuals
   const double normOfResidual        = this->get_full_residual();
-  //  const double normOfImpulseResidual = this->get_impulse_residual();
-  //  const double normOfMassResidual    = this->get_mass_residual();
-  //  const double oldNormOfResidual     = this->old_residual_[1].fullR;
   // hold the residual from up to 10 iterations ago
   const double veryOldNormOfResidual  = this->old_residual_.front().fullResidual;
-
-  //  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
-  //  Output::print("impulse_residual:  " , setw(3), normOfImpulseResidual);
-  //  Output::print("mass_residual   :  " , setw(3), normOfMassResidual);
-  //  Output::print("residual        :  " , setw(3), normOfResidual);
-  System_per_grid& s = this->systems_.front();
-  size_t nu=s.solution_.length(0);
-  size_t np=s.solution_.length(3);
-  
   // this is the convergence ratio between actual step and last step
   // TODO : correct oldNormOfResidual to be the residual of last step
   // and print it out
@@ -1313,14 +1301,15 @@ std::array< double, int(6) > Time_NSE3D::get_errors() const
 /**************************************************************************** */
 void Time_NSE3D::output_problem_size_info() const
 {
+  double h_min, h_max;
+  TCollection * coll = this->get_velocity_space().GetCollection();
+  coll->GetHminHmax(&h_min, &h_max);
+#ifndef _MPI
   // print out some information about number of DoFs and mesh size
   int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
   int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
   int n_dof = 3 * n_u + n_p; // total number of degrees of freedom
   int nActive = this->get_velocity_space().GetN_ActiveDegrees();
-  double h_min, h_max;
-  TCollection * coll = this->get_velocity_space().GetCollection();
-  coll->GetHminHmax(&h_min, &h_max);
 
   Output::print("N_Cells     : ", setw(10), coll->GetN_Cells());
   Output::print("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
@@ -1328,6 +1317,64 @@ void Time_NSE3D::output_problem_size_info() const
   Output::print("dof Pressure: ", setw(10), n_p   );
   Output::print("dof all     : ", setw(10), n_dof );
   Output::print("active dof  : ", setw(10), 3*nActive);
+#else
+  int size, my_rank;
+  auto comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm_size(comm, &size);
+  
+  double global_hmin = 0, global_hmax=0;
+  MPI_Reduce(&h_min,&global_hmin, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+  MPI_Reduce(&h_max,&global_hmax, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+  
+  std::vector<int> n_hal_cells(size,0);// hallo cells
+  std::vector<int> n_own_cells(size,0);
+  int l_hal_cells = coll->GetN_HaloCells();
+  int l_own_cells = coll->GetN_OwnCells();
+  // gather the halo cells to root
+  MPI_Gather(&l_hal_cells, 1, MPI_INT, // send
+             &n_hal_cells.at(0), 1, MPI_INT,// receive
+             0, comm); // control
+  // gather the own cells to root
+  MPI_Gather(&l_own_cells, 1, MPI_INT, // send
+             &n_own_cells.at(0), 1, MPI_INT, // receive
+             0, comm); // control
+
+  auto velocity_comm = systems_.front().velocitySpace_.get_communicator();
+  auto pressure_comm = systems_.front().pressureSpace_.get_communicator();
+  int n_loc_master_dof_velo = velocity_comm.GetN_Master();
+  std::vector<int> n_master_dof_velo(size,0);
+  MPI_Gather(&n_loc_master_dof_velo, 1, MPI_INT, // send
+             &n_master_dof_velo.at(0), 1, MPI_INT, // receive
+             0, comm); // control
+  int n_loc_master_dof_pres = pressure_comm.GetN_Master();
+  std::vector<int> n_master_dof_pres(size,0);
+  MPI_Gather(&n_loc_master_dof_pres, 1, MPI_INT, // send
+             &n_master_dof_pres.at(0), 1, MPI_INT, // receive
+             0, comm); // control
+  
+  if(my_rank == 0)
+  {
+    Output::stat("Time_NSE3D", "information on the FE space");
+    size_t n_total_cells=0; size_t n_dofs_velo = 0; size_t n_dofs_pres = 0;
+    for(int i=0; i<size; ++i)
+    {
+      Output::dash("Process ", i, "\t n_own_cells ", n_own_cells.at(i), 
+                   "\t n_halo_cells ", n_hal_cells.at(i), 
+                   "\t h_min/h_max ", h_min, "/", h_max,
+                   "\t n_master_dof_velo ", n_master_dof_velo.at(i), 
+                   "\t n_master_dof_pres ", n_master_dof_pres.at(i));
+      n_total_cells += n_own_cells.at(i);
+      n_dofs_velo += n_master_dof_velo.at(i);
+      n_dofs_pres += n_master_dof_pres.at(i);
+    }
+    Output::dash("Total number of cells:                       ", n_total_cells);
+    Output::dash("Total number of velcoity degrees of freedom: ", 3*n_dofs_velo);
+    Output::dash("Total number of pressure degrees of freedom: ", n_dofs_pres);
+    Output::dash("Total number of degrees of freedom:          ", 3*n_dofs_velo+n_dofs_pres);
+  }
+#endif
+  
 }
 
 /**************************************************************************** */
