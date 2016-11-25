@@ -32,6 +32,10 @@ void print(const std::string name, std::vector<double> vec)
 void ChannelTau180::computeAverageVelocity(
         std::array<std::vector<double>, 9> velo, const Time_NSE3D &tnse3d)
 {
+#ifdef _MPI
+  ErrThrow("MPI communications is not supported for this",
+           "function src/Geometry/ChannelFlowRoutines.C");
+#endif
   // finite element space
   const TFESpace3D& space = tnse3d.get_velocity_space();
   size_t ndofs = space.GetN_DegreesOfFreedom();
@@ -50,6 +54,7 @@ void ChannelTau180::computeAverageVelocity(
   double v1[4], v2[4], v3[4];
   int *dofs;
   std::vector<double> areas(ndofs);
+  int *N_BasFunct=TFEDatabase3D::GetN_BaseFunctFromFE3D();
   for(size_t i=0; i<nCells; ++i)
   {
     TBaseCell *cell = space.GetCollection()->GetCell(i);
@@ -59,6 +64,7 @@ void ChannelTau180::computeAverageVelocity(
     // computation of barycenter
     double sx=0, sy=0, sz=0;
     int ldof;
+    nBasisFunction=N_BasFunct[space.GetFE3D(i,cell)];
     for(size_t j=0; j<nBasisFunction; ++j)
     {
       ldof = dofs[j]; // local dofs
@@ -490,81 +496,114 @@ void ChannelTau180::setPeriodicFaceJoints(TCollection* Coll)
 
 void ChannelTau180::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
 {
-  double per_x, per_y;  
-  if(reynolds_number==180)
-  {
-    per_x=2.*Pi; per_y=2.*Pi/3.;
-  }
-  else
-  {
-    per_x=Pi; per_y=Pi/2.;
-  }
-  size_t Max=1000;  
+  int rank = 0;
+#ifdef _MPI
+  int size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
   const TFESpace3D& feSpace=tnse3d.get_velocity_space();
   /// memory for the dofs of x,y and z coordinates
   size_t nDofs=feSpace.GetN_DegreesOfFreedom();
   xDofs.resize(nDofs); yDofs.resize(nDofs); zDofs.resize(nDofs);
   
-  double locX, locY, locZ;
   for(size_t i=0; i<nDofs; ++i)
-  {
-    feSpace.GetDOFPosition(i, locX, locY, locZ);
-    xDofs.at(i)=locX; yDofs.at(i)=locY; zDofs.at(i)=locZ;
-  }
+    feSpace.GetDOFPosition(i, xDofs.at(i), yDofs.at(i), zDofs.at(i));
   /// tried the above options (I && II) but nothing works
   /// restricted to the other version "localDofs()"
   size_t nCells=feSpace.GetCollection()->GetN_Cells();
-  int *N_BaseFunct=TFEDatabase3D::GetN_BaseFunctFromFE3D();
-  int globalDof;
 
   // initialize the layer with zero
-  zLayers.resize(Max); nZLayers=0;
+  zLayers.resize(1000); nZLayers=0;
   std::fill(zLayers.begin(),zLayers.end(),-4711.);
-  // loop over all cells
+  
+    // loop over all cells - some checks on correct elements
   for(size_t i=0; i<nCells; ++i)
-  {    
+  {
     TBaseCell *cell=feSpace.GetCollection()->GetCell(i);
-#ifdef _MPI
-    if(cell->IsHaloCell())
-      continue;
-#endif
     FE3D cE=feSpace.GetFE3D(i, cell);
-    nBasisFunction=N_BaseFunct[cE];
 
     if(cE != C_Q2_3D_H_A && cE != C_Q2_3D_H_M)
     {
       ErrThrow("coordinates of dofs are not tested for the"
                "fini element ", cE, " yet");
     }
-    /// mapping from local to global degrees of freedom
-    int *dof=feSpace.GetGlobalNumbers()+feSpace.GetBeginIndex()[i];
-    for(size_t j=0; j<nBasisFunction;++j)
-    {
-      /// compute the local dofs
-      globalDof=dof[j];
-      /// peridoic b.c. are set only from one side
-      if((fabs(xDofs.at(globalDof)-per_x)<1e-6) || 
-         (fabs(yDofs.at(globalDof)-per_y)<1e-6))
-          continue;
-
-      for(size_t k=0;k<Max; ++k)
-      {
-        if(fabs(zLayers[k]-zDofs.at(globalDof)) < 1e-6)
-           break;
-        if(zLayers[k] == -4711.)
-        {
-          zLayers[k]=zDofs.at(globalDof);
-          nZLayers++;
-          break;
-        }
-      }
-    }// endfor j<nBasisFunction
-  }// endfor i<N_Cells
-  // sort the z layer
-  std::sort(zLayers.begin(), zLayers.begin()+nZLayers);
+   }// endfor i<N_Cells
   
-  for(size_t i=0;i<nZLayers;i++)
-    Output::print(i, " ", zLayers[i]);
+  // loop over ndofs
+  for(size_t i=0; i<nDofs; i++)
+  {
+#ifdef _MPI
+    if(tnse3d.get_velocity_space().get_communicator().GetMaster()[i] != rank)
+      continue;
+#endif
+    if(    fabs(xDofs.at(i)) < 1e-6 
+        && fabs(yDofs.at(i)) < 1e-6 )
+    {
+       zLayers.at(nZLayers) = zDofs.at(i);
+      ++nZLayers;
+    }
+  }
+#ifdef _MPI
+  {
+    int nZLayers_glob = 0;
+    int* recievebuf = new int[size]; 
+    // gather the nzlayers to root
+    MPI_Gather(&nZLayers, 1, MPI_INT, // send
+               recievebuf, 1, MPI_INT, // recieve
+               0, MPI_COMM_WORLD); // control
+    
+    // count the global number of zlayers on root
+    int* displs = new int[size];
+    if(rank==0)
+    {
+      for(int i =0; i< size;i++)
+      {
+        displs[i] = nZLayers_glob;
+        nZLayers_glob += recievebuf[i];
+      }
+    }
+    
+    double* sendzlayer = &zLayers.at(0);
+    double* recievezlayer = new double[nZLayers_glob];
+    // gather the zlayers from all processes to root
+    MPI_Gatherv(sendzlayer, nZLayers, MPI_DOUBLE, // send 
+                recievezlayer, recievebuf, displs, // recieve
+                MPI_DOUBLE, 0, MPI_COMM_WORLD);  // control
+    
+    if(rank==0)
+    {
+      std::sort(recievezlayer, recievezlayer+nZLayers_glob);
+      zLayers.resize(nZLayers_glob);
+      std::copy(recievezlayer,recievezlayer + nZLayers_glob, zLayers.begin());
+      /*for(int i =0; i< nZLayers_glob;i++)
+      {
+        Output::print(zLayers[i]);
+      }*/
+    }
+    
+    // give the information back to all processes
+    MPI_Bcast(&nZLayers_glob, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    nZLayers = nZLayers_glob;
+    
+    if(rank != 0)
+      zLayers.resize(nZLayers);
+    
+    MPI_Bcast(&zLayers.at(0) , nZLayers, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    /*for(int i =0; i< nZLayers;i++)
+    {
+      Output::print(zLayers.at(i));
+    }*/
+    delete [] recievebuf; delete [] recievezlayer; delete [] displs;
+  }
+#endif
+
+  if(rank == 0)
+  {
+    for(size_t i=0;i<nZLayers;i++)
+      Output::print(i, " ", zLayers[i]);
+  }
 }
 
 void ChannelTau180::set_up_memory()
@@ -608,8 +647,8 @@ void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
   for(size_t dim = 0; dim < spatialMean.size();++dim)
   {
     int n_elems = nZLayers;
-    double* sbuf = &spatialMean.at(dim).at(0);
-    double* rbuf = new double[n_elems];
+    double* sbuf = &spatialMean.at(dim).at(0);// send buffer
+    double* rbuf = new double[n_elems]; // recieve buffer
     
     MPI_Allreduce(sbuf, rbuf, n_elems,
                   MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -702,8 +741,8 @@ void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
   for(size_t dim = 0; dim < 6;++dim)
   {
     int n_elems = nZLayers;
-    double *sbuf = &uiuj.at(dim).at(0);
-    double* rbuf = new double[n_elems];
+    double *sbuf = &uiuj.at(dim).at(0); // send buffer
+    double* rbuf = new double[n_elems]; // recieve buffer
     
     MPI_Allreduce(sbuf, rbuf, n_elems,
                   MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
