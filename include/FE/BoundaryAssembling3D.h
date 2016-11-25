@@ -42,12 +42,25 @@ public:
 
     
     void getQuadratureData(const TFESpace3D *fespace, TBaseCell *cell, int m,
-			   std::vector<double>& qWeights,std::vector<double>& qPointsT,
-			   std::vector<double>& qPointsS, std::vector< std::vector<double> >& values);
+                           std::vector<double>& qWeights,std::vector<double>& qPointsT,
+                           std::vector<double>& qPointsS, std::vector< std::vector<double> >& values);
+    
+    void getQuadratureDataIncludingFirstDerivatives(const TFESpace3D *fespace,TBaseCell *cell, int m,
+                                                    std::vector<double>& qWeights,std::vector<double>& qPointsT,
+                                                    std::vector<double>& qPointsS,
+                                                    std::vector< std::vector<double> >& basisFunctionsValues,
+                                                    std::vector< std::vector<double> >& basisFunctionsValues_derivative_x,
+                                                    std::vector< std::vector<double> >& basisFunctionsValues_derivative_y,
+                                                    std::vector< std::vector<double> >& basisFunctionsValues_derivative_z);
+    
     void computeNormalAndTransformationData(TBaseCell *cell, int m,
 					    std::vector<double>& normal,
 					    double& transformationDeterminant);
-   
+    
+    void compute_h(TBaseCell *cell,
+                   int m,
+                   double &h);
+    
     int getNumberOfFaceVertices(TBaseCell *cell, int m);
     /** @brief integral (given 3D function, v)_{[boundary_component_id]}
      @param[in] [given_boundary_data1,given_boundary_data2]: the e.g. 3D Dirichlet boundary velocity (as a finite element function)
@@ -56,6 +69,17 @@ public:
      @param[in] rescale_by_h: true: divide by length of the edges
      false: do not divide by length of the edges
      */
+
+    void rhs_g_v(BlockVector &rhs,
+                 const TFESpace3D *U_Space,
+                 BoundValueFunct3D *given_boundary_data1,
+                 BoundValueFunct3D *given_boundary_data2,
+                 BoundValueFunct3D *given_boundary_data3,
+                 std::vector<TBaseCell*> &boundaryCells,
+                 int componentID,
+                 double mult,
+                 bool rescale_by_h);
+
 //    void rhs_g_v(BlockVector &rhs,
 //                 const TFESpace3D *U_Space,
 //                 BoundValueFunct3D *given_boundary_data1,
@@ -92,23 +116,28 @@ public:
 //     @param[in] boundary_component_id: the boundary component to integrate on
 //     @param[in] mult: given multiplicative factor
 //     */
-//    void matrix_gradv_n_v(BlockFEMatrix &M,
-//                          const TFESpace3D *U_Space,
-//                          int boundary_component_id,
-//                          double mult
-//                          );
-//    
-//    void matrix_gradv_n_v(BlockFEMatrix &M,
-//                          const TFESpace3D *U_Space,
-//                          std::vector<TBoundEdge*> &edge,
-//                          double mult);
-//    
+
+    void matrix_gradv_n_v(BlockFEMatrix &M,
+                          const TFESpace3D *U_Space,
+                          std::vector<TBaseCell*> &boundaryCells,
+                          int componentID,
+                          double mult);
+
+//
 //    /** @brief integral (u, v)_{[boundary_component_id]}
 //     @param[in] boundary_component_id: the boundary component to integrate on
 //     @param[in] mult: given multiplicative factor
 //     @param[in] rescale_by_h: true: divide by length of the edges
 //     false: do not divide by length of the edges
 //     */
+    
+    void matrix_u_v(BlockFEMatrix &M,
+                    const TFESpace3D *U_Space,
+                    std::vector<TBaseCell*> &boundaryCells,
+                    int componentID,
+                    double mult,
+                    bool rescale_by_h);
+    
 //    void matrix_u_v(BlockFEMatrix &M,
 //                    const TFESpace3D *U_Space,
 //                    int boundary_component_id,
@@ -138,6 +167,14 @@ public:
 //                      const TFESpace3D *P_Space,
 //                      std::vector<TBoundEdge*> &edge,
 //                      double mult);
+    
+    void matrix_p_v_n(BlockFEMatrix &M,
+                      const TFESpace3D *U_Space,
+                      const TFESpace3D *P_Space,
+                      std::vector<TBaseCell*> &boundaryCells,
+                      int componentID,
+                      double mult);
+    
     
     //todo: for symmetry (nitsche): ((u-g)n,q) and -((u-g),dnvn)
     
