@@ -371,7 +371,7 @@ void Brinkman3D::assemble()
         // //old Assemble3D.C function
         switch(TDatabase::ParamDB->NSTYPE)
         {
-            case 4:
+                case 4:
                 n_sq_mat = 9;
                 sq_matrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
                 sq_matrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks[1].get());
@@ -393,7 +393,7 @@ void Brinkman3D::assemble()
                 
                 RHSs[3] = s.rhs.block(3); // NSE type 14 includes pressure rhs
                 break;
-            case 14:
+                case 14:
                 n_sq_mat = 10;
                 sq_matrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
                 sq_matrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
@@ -425,10 +425,10 @@ void Brinkman3D::assemble()
         
         const TFESpace3D *fesprhs[4] = {v_space, v_space, v_space, p_space};  // if NSE type is 4 or 14
         
-//???        for(unsigned int i=0; i<n_sq_mat; i++)
-//            sq_matrices[i]->reset();
-//        for(unsigned int i=0; i<n_rect_mat;i++)
-//            rect_matrices[i]->reset();
+        //???        for(unsigned int i=0; i<n_sq_mat; i++)
+        //            sq_matrices[i]->reset();
+        //        for(unsigned int i=0; i<n_rect_mat;i++)
+        //            rect_matrices[i]->reset();
         
         // boundary conditions and boundary values
         BoundCondFunct3D * boundary_conditions[4]={
@@ -471,159 +471,214 @@ void Brinkman3D::assemble()
         rect_matrices[3]->write("b1t.out");
         rect_matrices[4]->write("b2t.out");
         rect_matrices[5]->write("b3t.out");
-
+        
         //delete the temorary feFunctions gained by GetComponent
         for(int i = 0; i<3; ++i)
-            delete feFunction[i];
+        delete feFunction[i];
         
-    //////}// endfor auto grid
-    
-    //copy non-actives from rhs to solution on finest grid
-    this->systems.front().solution.copy_nonactive(systems.front().rhs);
-    
-    /** When we call copy_nonactive in MPI-case, we have to remember the following:
-     * it can happen that some slave ACTTIVE DoFs are placed in the block of
-     * NON-ACTIVE DoFs (because they are at the interface between processors).
-     * Doing copy_nonactive changes then the value of these DOFs,although they are
-     * actually active.
-     * That's why we have to update the values so that the vector becomes consistent again.
-     * This is done here.
-     */
+        //////}// endfor auto grid
+        
+        //copy non-actives from rhs to solution on finest grid
+        this->systems.front().solution.copy_nonactive(systems.front().rhs);
+        
+        /** When we call copy_nonactive in MPI-case, we have to remember the following:
+         * it can happen that some slave ACTTIVE DoFs are placed in the block of
+         * NON-ACTIVE DoFs (because they are at the interface between processors).
+         * Doing copy_nonactive changes then the value of these DOFs,although they are
+         * actually active.
+         * That's why we have to update the values so that the vector becomes consistent again.
+         * This is done here.
+         */
 #ifdef _MPI
-    double *u1 = this->systems.front().solution.block(0);
-    double *u2 = this->systems.front().solution.block(1);
-    double *u3 = this->systems.front().solution.block(2);
-    double *p  = this->systems.front().solution.block(3);
-    this->systems.front().velocitySpace.get_communicator().consistency_update(u1, 3);
-    this->systems.front().velocitySpace.get_communicator().consistency_update(u2, 3);
-    this->systems.front().velocitySpace.get_communicator().consistency_update(u3, 3);
-    this->systems.front().pressureSpace.get_communicator().consistency_update(p, 3);
+        double *u1 = this->systems.front().solution.block(0);
+        double *u2 = this->systems.front().solution.block(1);
+        double *u3 = this->systems.front().solution.block(2);
+        double *p  = this->systems.front().solution.block(3);
+        this->systems.front().velocitySpace.get_communicator().consistency_update(u1, 3);
+        this->systems.front().velocitySpace.get_communicator().consistency_update(u2, 3);
+        this->systems.front().velocitySpace.get_communicator().consistency_update(u3, 3);
+        this->systems.front().pressureSpace.get_communicator().consistency_update(p, 3);
 #endif
-    
-    
-    //--------------------------------------------------------------------------------------------------
-    
-    //        Assembler4 Ass(type, fe_functions, this->example.get_coeffs());
-    // Brinkmann-specific choices
-    //        std::vector<const TFESpace3D*> spaces_for_matrix;
-    //        spaces_for_matrix.resize(2);
-    //        spaces_for_matrix[0] = v_space;
-    //        spaces_for_matrix[1] = p_space;
-    //
-    //        std::vector<const TFESpace3D*> spaces_for_rhs;
-    //        spaces_for_rhs.resize(3);
-    //        spaces_for_rhs[0] = v_space;
-    //        spaces_for_rhs[1] = v_space;
-    //        spaces_for_rhs[2] = p_space;
-    //
-    //        Ass.Assemble2D(s.matrix,s.rhs,
-    //	             spaces_for_matrix,spaces_for_rhs,
-    //	             example);
-    // Weakly Imposing Boundary Conditions - Boundary Integrals
-    
+        
+        
+        //--------------------------------------------------------------------------------------------------
+        
+        //        Assembler4 Ass(type, fe_functions, this->example.get_coeffs());
+        // Brinkmann-specific choices
+        //        std::vector<const TFESpace3D*> spaces_for_matrix;
+        //        spaces_for_matrix.resize(2);
+        //        spaces_for_matrix[0] = v_space;
+        //        spaces_for_matrix[1] = p_space;
+        //
+        //        std::vector<const TFESpace3D*> spaces_for_rhs;
+        //        spaces_for_rhs.resize(3);
+        //        spaces_for_rhs[0] = v_space;
+        //        spaces_for_rhs[1] = v_space;
+        //        spaces_for_rhs[2] = p_space;
+        //
+        //        Ass.Assemble2D(s.matrix,s.rhs,
+        //	             spaces_for_matrix,spaces_for_rhs,
+        //	             example);
+        // Weakly Imposing Boundary Conditions - Boundary Integrals
+        
+        
+        TCollection* coll = v_space->GetCollection();
+        std::vector<TBaseCell*> allCells;
+        for (int i=0 ; i < coll->GetN_Cells(); i++)
+        {
+            allCells.push_back(coll->GetCell(i));
+        }
+        
+        BoundaryAssembling3D bi;
+        
+        for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+        {
+            bi.rhs_g_v_n(s.rhs,v_space,NULL,
+                         allCells,
+                         TDatabase::ParamDB->neumann_boundary_id[k],
+                         -TDatabase::ParamDB->neumann_boundary_value[k]);
+        }
+        
+        
+        // Nitsche combination - weak Dirichlet
+        for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
+        {
+            double K = TDatabase::ParamDB->PERMEABILITY;
+            double nu = TDatabase::ParamDB->VISCOSITY;
+            double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+            double t = fabs(sqrt((nu_eff/nu)*K));
+            
+            /*           bi.matrix_gradv_n_v(s.matrix,
+             v_space,
+             TDatabase::ParamDB->nitsche_boundary_id[k],     // boundary component
+             -TDatabase::ParamDB->EFFECTIVE_VISCOSITY);      // mult
+             
+             bi.matrix_p_v_n(s.matrix,
+             v_space,
+             p_space,
+             TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
+             1.);                                                 // mult
+             
+             */
+            
+            bi.matrix_u_v(s.matrix,
+                          v_space,
+                          allCells,
+                          TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
+                          TDatabase::ParamDB->nitsche_penalty[k],               // mult
+                          true);                                                // rescale local integral by edge values
+            
+            
+            bi.rhs_g_v(s.rhs,
+                       v_space,
+                       NULL, //this->example.get_bd(0),                                 // access to U1BoundValue in the example,
+                       NULL, //this->example.get_bd(1),                                 // access to U2BoundValue in the example,
+                       NULL, //this->example.get_bd(2),                                 // access to U3BoundValue in the example,
+                       allCells,
+                       TDatabase::ParamDB->nitsche_boundary_id[k],                      // boundary component
+                       TDatabase::ParamDB->nitsche_penalty[k],                        // mult
+                       true);                                                           // rescale local integral by edge values
+            
+            bi.matrix_gradv_n_v(s.matrix,
+                                v_space,
+                                allCells,
+                                TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
+                                TDatabase::ParamDB->nitsche_penalty[k]);
+            
+            bi.matrix_p_v_n(s.matrix,
+                            v_space,
+                            p_space,
+                            allCells,
+                            TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
+                            TDatabase::ParamDB->nitsche_penalty[k]);
 
-    
-    TCollection* coll = v_space->GetCollection();
-    std::vector<TBaseCell*> allCells;
-    for (int i=0 ; i < coll->GetN_Cells(); i++)
-      {
-	allCells.push_back(coll->GetCell(i));
-      }
-    
-    BoundaryAssembling3D bi;
-    int componentID = 1;
-    for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
-    {
-      bi.rhs_g_v_n(s.rhs,v_space,NULL,
-		   allCells,
-		   componentID,
-		   -TDatabase::ParamDB->neumann_boundary_value[k]);
-    }
-    
-    //        for (int k=0;k<TDatabase::ParamDB->n_g_v_boundary;k++)
-    //        {
-    //            bi.rhs_g_v(s.rhs,
-    //                       v_space,
-    //                       this->example.get_bd(0),                                 // access to U1BoundValue in the current example
-    //                       this->example.get_bd(1),                                 // access to U2BoundValue in the current example
-    //                       TDatabase::ParamDB->g_v_boundary_id[k],                  // boundary component
-    //                       TDatabase::ParamDB->g_v_boundary_value[k],               // mult
-    //                       false);                                                  // rescale local integral by edge values
-    //        }
-    //
-    //        // test (in the true case, this function should be assembled on "DIRICHLET" boundaries
-    //        // bi.matrix_v_n_v_n(s.matrix,v_space,1,1.);
-    //
-    //        for (int k=0;k<TDatabase::ParamDB->n_unvn_boundary;k++)
-    //        {
-    //            bi.matrix_v_n_v_n(s.matrix,
-    //                              v_space,
-    //                              TDatabase::ParamDB->unvn_boundary_id[k],          // boundary component
-    //                              TDatabase::ParamDB->unvn_boundary_value[k]);      // mult
-    //        }
-    //
-    //        for (int k=0;k<TDatabase::ParamDB->n_gradunv_boundary;k++)
-    //        {
-    //            bi.matrix_gradv_n_v(s.matrix,
-    //                                v_space,
-    //                                TDatabase::ParamDB->gradunv_boundary_id[k],     // boundary component
-    //                                TDatabase::ParamDB->gradunv_boundary_value[k]); // mult
-    //        }
-    //
-    //        for (int k=0;k<TDatabase::ParamDB->n_u_v_boundary;k++)
-    //        {
-    //            bi.matrix_u_v(s.matrix,
-    //                          v_space,
-    //                          TDatabase::ParamDB->u_v_boundary_id[k],               // boundary component
-    //                          TDatabase::ParamDB->u_v_boundary_value[k],            // mult
-    //                          false);                                               // rescale local integral by edge values
-    //        }
-    //
-    //        for (int k=0;k<TDatabase::ParamDB->n_p_v_n_boundary;k++)
-    //
-    //        {
-    //            bi.matrix_p_v_n(s.matrix,
-    //                            v_space,
-    //                            p_space,
-    //                            TDatabase::ParamDB->p_v_n_boundary_id[k],           // boundary component
-    //                            TDatabase::ParamDB->p_v_n_boundary_value[k]);       // mult
-    //        }
-    //
-    //        // Nitsche combination - weak Dirichlet
-    //        for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
-    //        {
-    //            double K = TDatabase::ParamDB->PERMEABILITY;
-    //            double nu = TDatabase::ParamDB->VISCOSITY;
-    //            double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    //            double t = fabs(sqrt((nu_eff/nu)*K));
-    //
-    //            bi.matrix_gradv_n_v(s.matrix,
-    //                                v_space,
-    //                                TDatabase::ParamDB->nitsche_boundary_id[k],     // boundary component
-    //                                -TDatabase::ParamDB->EFFECTIVE_VISCOSITY);      // mult
-    //
-    //            bi.matrix_p_v_n(s.matrix,
-    //                            v_space,
-    //                            p_space,
-    //                            TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
-    //                            1.);                                                 // mult
-    //
-    //            bi.matrix_u_v(s.matrix,
-    //                          v_space,
-    //                          TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
-    //                          t*TDatabase::ParamDB->nitsche_penalty[k],               // mult
-    //                          true);                                                // rescale local integral by edge values
-    //
-    //            bi.rhs_g_v(s.rhs,
-    //                       v_space,
-    //                       this->example.get_bd(0),                                 // access to U1BoundValue in the example,
-    //                       this->example.get_bd(1),                                 // access to U2BoundValue in the example,
-    //                       TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
-    //                       t*TDatabase::ParamDB->nitsche_penalty[k],                  // mult
-    //                       true);                                                   // rescale local integral by edge values
-    //        }
-    
-    //--------------------------------------------------------------------------------------------------
+            //    }
+            
+            //        for (int k=0;k<TDatabase::ParamDB->n_g_v_boundary;k++)
+            //        {
+            //            bi.rhs_g_v(s.rhs,
+            //                       v_space,
+            //                       this->example.get_bd(0),                                 // access to U1BoundValue in the current example
+            //                       this->example.get_bd(1),                                 // access to U2BoundValue in the current example
+            //                       TDatabase::ParamDB->g_v_boundary_id[k],                  // boundary component
+            //                       TDatabase::ParamDB->g_v_boundary_value[k],               // mult
+            //                       false);                                                  // rescale local integral by edge values
+            //        }
+            //
+            //        // test (in the true case, this function should be assembled on "DIRICHLET" boundaries
+            //        // bi.matrix_v_n_v_n(s.matrix,v_space,1,1.);
+            //
+            //        for (int k=0;k<TDatabase::ParamDB->n_unvn_boundary;k++)
+            //        {
+            //            bi.matrix_v_n_v_n(s.matrix,
+            //                              v_space,
+            //                              TDatabase::ParamDB->unvn_boundary_id[k],          // boundary component
+            //                              TDatabase::ParamDB->unvn_boundary_value[k]);      // mult
+            //        }
+            //
+            //        for (int k=0;k<TDatabase::ParamDB->n_gradunv_boundary;k++)
+            //        {
+            //            bi.matrix_gradv_n_v(s.matrix,
+            //                                v_space,
+            //                                TDatabase::ParamDB->gradunv_boundary_id[k],     // boundary component
+            //                                TDatabase::ParamDB->gradunv_boundary_value[k]); // mult
+            //        }
+            //
+            //        for (int k=0;k<TDatabase::ParamDB->n_u_v_boundary;k++)
+            //        {
+            //            bi.matrix_u_v(s.matrix,
+            //                          v_space,
+            //                          TDatabase::ParamDB->u_v_boundary_id[k],               // boundary component
+            //                          TDatabase::ParamDB->u_v_boundary_value[k],            // mult
+            //                          false);                                               // rescale local integral by edge values
+            //        }
+            //
+            //        for (int k=0;k<TDatabase::ParamDB->n_p_v_n_boundary;k++)
+            //
+            //        {
+            //            bi.matrix_p_v_n(s.matrix,
+            //                            v_space,
+            //                            p_space,
+            //                            TDatabase::ParamDB->p_v_n_boundary_id[k],           // boundary component
+            //                            TDatabase::ParamDB->p_v_n_boundary_value[k]);       // mult
+            //        }
+            //
+            //        // Nitsche combination - weak Dirichlet
+            //        for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
+            //        {
+            //            double K = TDatabase::ParamDB->PERMEABILITY;
+            //            double nu = TDatabase::ParamDB->VISCOSITY;
+            //            double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+            //            double t = fabs(sqrt((nu_eff/nu)*K));
+            //
+            //            bi.matrix_gradv_n_v(s.matrix,
+            //                                v_space,
+            //                                TDatabase::ParamDB->nitsche_boundary_id[k],     // boundary component
+            //                                -TDatabase::ParamDB->EFFECTIVE_VISCOSITY);      // mult
+            //
+            //            bi.matrix_p_v_n(s.matrix,
+            //                            v_space,
+            //                            p_space,
+            //                            TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
+            //                            1.);                                                 // mult
+            //
+            //            bi.matrix_u_v(s.matrix,
+            //                          v_space,
+            //                          TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
+            //                          t*TDatabase::ParamDB->nitsche_penalty[k],               // mult
+            //                          true);                                                // rescale local integral by edge values
+            //
+            //            bi.rhs_g_v(s.rhs,
+            //                       v_space,
+            //                       this->example.get_bd(0),                                 // access to U1BoundValue in the example,
+            //                       this->example.get_bd(1),                                 // access to U2BoundValue in the example,
+            //                       TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
+            //                       t*TDatabase::ParamDB->nitsche_penalty[k],                  // mult
+            //                       true);                                                   // rescale local integral by edge values
+            //        }
+            
+            //--------------------------------------------------------------------------------------------------
+        }
     }
 }
 
