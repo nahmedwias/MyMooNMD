@@ -66,8 +66,25 @@ void ExactP(double x, double y,  double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  cond = DIRICHLET;
+    cond = DIRICHLET; // Default
+    
+
+    if (TDatabase::ParamDB->n_neumann_boundary==0) {
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average 0 (for uniqueness)
+        return;
+    }
+    else {
+        
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+        if (z==1 || z==4)
+        {
+            cond = NEUMANN;
+            return;
+        }
+    }
 }
+
+
 
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
@@ -84,7 +101,10 @@ void U2BoundValue(double x, double y, double z, double &value)
 // value of boundary condition
 void U3BoundValue(double x, double y, double z, double &value)
 {
-    value = 1-(x*x+y*y);//3*(1-(y*y+x*x));
+    if (TDatabase::ParamDB->n_neumann_boundary==0)
+        value = 1-(x*x+y*y);//3*(1-(y*y+x*x));
+    else
+        value = 0.;
 }
 
 // ========================================================================

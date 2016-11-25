@@ -13,12 +13,12 @@
 // Constructor
 TBoundComp3D::TBoundComp3D(int id) : TBoundComp(id)
 {
-  cout << "id: " << this->physical_id << endl;
+ //  cout << "id: " << this->physical_id << endl;
 }
 
 TBoundComp3D::TBoundComp3D(int id,int ref) : TBoundComp(id,ref)
 {
-  cout << "id: " << this->physical_id << endl;
+ //  cout << "id: " << this->physical_id << endl;
 }
 
 // Methods

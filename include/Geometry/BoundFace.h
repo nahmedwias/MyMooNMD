@@ -65,6 +65,8 @@ class TBoundFace : public TJoint
     void GetParameters(double *param1, double *param2);
 
     void SetParameters(double *param1, double *param2);
+
+    double Get_h(int cell_measure);
 };
 
 #endif

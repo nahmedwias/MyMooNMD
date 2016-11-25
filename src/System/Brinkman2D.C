@@ -343,12 +343,12 @@ void Brinkman2D::assemble()
                             v_space,
                             p_space,
                             TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
-                            1.);                                                 // mult
+                            1.);                                                // mult
             
             bi.matrix_u_v(s.matrix,
                           v_space,
                           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
-                          t*TDatabase::ParamDB->nitsche_penalty[k],               // mult
+                          t*TDatabase::ParamDB->nitsche_penalty[k],             // mult
                           true);                                                // rescale local integral by edge values
             
             bi.rhs_g_v(s.rhs,
@@ -356,7 +356,7 @@ void Brinkman2D::assemble()
                        this->example.get_bd(0),                                 // access to U1BoundValue in the example,
                        this->example.get_bd(1),                                 // access to U2BoundValue in the example,
                        TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
-                       t*TDatabase::ParamDB->nitsche_penalty[k],                  // mult
+                       t*TDatabase::ParamDB->nitsche_penalty[k],                // mult
                        true);                                                   // rescale local integral by edge values
         }
         
