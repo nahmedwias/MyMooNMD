@@ -3595,83 +3595,72 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
   //======================================================================
   /**
    * A_NL * P^T + AL
-   * 0 is loc matrix P0
-   * 1 is loc matrix P1
-   * 2 is loc matrix M
-   * 3 is loc matrix A(grad grad)
-   * 4 is loc matrix Anl0
-   * 5 is loc matrix Anl1
+   * 0 is loc matrix A11 linear part
+   * 1 is loc matrix A22 linear part
+   * 2 is loc matrix M   mass matrix vector valued
+   * 3 is loc matrix A11 nonlinear (rectangular)
+   * 4 is loc matrix A22 nonlinear (rectangular)
+   * 5 is loc matrix P0 projection (rectangular)
+   * 6 is loc matrix P1 projection (rectangular)
    */
-  double *P0 =  new double[nrowInput[5]*ncolInput[5]];
-  double *P1 =  new double[nrowInput[6]*ncolInput[6]];
-  // copy the matrices
-  for(int i=0; i<nrowInput[5]; ++i)
+  auto matrix_times_matrix_plus_matrix = [](unsigned int rows, unsigned int cols,
+                                            double **matrix_left, double **matrix_right, 
+                                            double **matrix_plus, double **&matrix_out)
   {
-    memcpy(P0+i*ncolInput[5], inputMat[5][i], ncolInput[5]*SizeOfDouble);
-    memcpy(P1+i*ncolInput[6], inputMat[6][i], ncolInput[6]*SizeOfDouble);
+    // rows of matrix_left are the columns of matrix_right
+    for(unsigned int i=0; i<rows; ++i)
+    {
+      for(unsigned int j=0; j< rows; ++j)
+      {
+        for(unsigned int k=0; k< cols; ++k)
+        {
+          matrix_out[i][j] += matrix_left[i][k]*matrix_right[k][j];
+        }
+        matrix_out[i][j] += matrix_plus[i][j];
+        // Output::print(i,",",j, " ", setprecision(4), matrix_out[i][j]);
+      }
+    }
+    return;
+  };
+  /*Output::print("row A11: ", nrowInput[0], " col A11: ", ncolInput[0]);
+  Output::print("row A22: ", nrowInput[1], " col A22: ", ncolInput[1]);
+  Output::print("row M: ", nrowInput[2], " col M: ", ncolInput[2]);
+  Output::print("row A11nl: ", nrowInput[3], " col A11nl: ", ncolInput[3]);
+  Output::print("row A22nl: ", nrowInput[4], " col A22nl: ", ncolInput[4]);
+  Output::print("row P0: ", nrowInput[5], " col P0: ", ncolInput[5]);
+  Output::print("row P1: ", nrowInput[6], " col P1: ", ncolInput[6]);*/
+  // P0 * A00nl   P1 * A00nl
+  // P0 * A11nl   P1 * A11nl
+  // some checks
+  if(nrowInput[5] != ncolInput[3])
+  {
+    ErrThrow("dimensions mismatch");
   }
-  // nrowInput[0]=nrowInput[1]; and ncolInput[0] = ncolInput[1]
-  double *A00= new double[nrowInput[0]*ncolInput[0]];
-  double *A01= new double[nrowInput[0]*ncolInput[0]];
-  double *A10= new double[nrowInput[0]*ncolInput[0]];
-  double *A11= new double[nrowInput[1]*ncolInput[1]];
-
-  memset(A10,0,nrowInput[0]*ncolInput[1]*SizeOfDouble);
-  memset(A01,0,nrowInput[0]*ncolInput[1]*SizeOfDouble);
-
+  unsigned int r = nrowInput[5];
+  unsigned int c = ncolInput[5];
+  double **temp = new double*[nrowInput[0]];
   for(int i=0; i<nrowInput[0]; ++i)
-  {
-    memcpy(A00+i*ncolInput[0], inputMat[0][i], ncolInput[0]*SizeOfDouble);
-    memcpy(A11+i*ncolInput[1], inputMat[1][i], ncolInput[1]*SizeOfDouble);
-  }
-  double *Anl00 = new double[nrowInput[3]*ncolInput[3]];
-  double *Anl11 = new double[nrowInput[4]*ncolInput[4]];
-  for(int i=0; i<nrowInput[3]; ++i)
-  {
-    memcpy(Anl00+i*ncolInput[3], inputMat[3][i], ncolInput[3]*SizeOfDouble);
-    memcpy(Anl11+i*ncolInput[4], inputMat[4][i], ncolInput[4]*SizeOfDouble);
-  }
-  int m, n, k;
-  // local matrix A00 = P0*Anl0 + A(grad,grad)
-  m = nrowInput[5];
-  n = ncolInput[3];
-  k = nrowInput[3];
-
-  double alpha = 1.;
-  double beta  = 1.;
-
-  //======================================================================
-  // normally dgemm uses fortran format where the entries are treated
-  // as column storage format, but we can calkulate the matrices
-  // multiplication and addition in the row-storage format as follows:
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P0, &k,
-         &beta, A00, &n);
-
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P1, &k,
-         &beta, A01, &n);
-
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P0, &k,
-         &beta, A10, &n);
-
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P1, &k,
-         &beta, A11, &n);
-
-  for(int i=0; i<n; i++)
-  {
-    memcpy(outputMat[4][i], A00+i*n, n*SizeOfDouble);
-    memcpy(outputMat[5][i], A01+i*n, n*SizeOfDouble);
-    memcpy(outputMat[6][i], A10+i*n, n*SizeOfDouble);
-    memcpy(outputMat[7][i], A11+i*n, n*SizeOfDouble);
-  }
-
-  delete [] P0;    delete [] P1;
-  delete [] A00;   delete [] A01;
-  delete [] A10;   delete [] A11;
-  delete [] Anl00; delete [] Anl11;
+    temp[i]=new double[ncolInput[0]];
+  for(int i=0; i<nrowInput[0]; ++i)
+    memset(temp[i], 0, ncolInput[0]*sizeof(double));
+  // P0*A00nl + A00(linear);
+  matrix_times_matrix_plus_matrix(r, c, inputMat[5], inputMat[3], inputMat[0], 
+                                  outputMat[4]);
+  // P1 * A00nl 
+  matrix_times_matrix_plus_matrix(r, c, inputMat[5], inputMat[4], temp, 
+                                  outputMat[5]);
+  // P0*A11nl;
+  matrix_times_matrix_plus_matrix(r, c, inputMat[6], inputMat[3], temp, 
+                                  outputMat[6]);
+  // P1 * A11nl + A11(linear) 
+  matrix_times_matrix_plus_matrix(r, c, inputMat[6], inputMat[4], inputMat[1], 
+                                  outputMat[7]);
+  delete [] temp[0];
+  delete [] temp;
 }
 
 /**************************************************************************** */
-void nonlinear_term_reconstruct(double ***inputMat, int *nrowIn, int *ncolIn,
+void nonlinear_term_reconstruct(double ***inputMat, int *nrowInput, int *ncolInput,
                                 double ***outputMat, int *nrowOut, int *ncolOut,
                                 double **inputrhs,  int *ndimIn,
                                 double **outputrhs, int *ndimOut)
@@ -3680,69 +3669,51 @@ void nonlinear_term_reconstruct(double ***inputMat, int *nrowIn, int *ncolIn,
    *  inputMat[2] = A00_nl  inputMat[3] = A11_nl
    *  inputMat[4] = P0      inputMat[5] = P1
    */
-  // preparation for dgemm_
-  double *A00 = new double[nrowIn[0]*ncolIn[0]];
-  double *A11 = new double[nrowIn[1]*ncolIn[1]];
-  // A00 and A11 have the same size
-  for(int i=0; i<nrowIn[0]; i++)
+  auto matrix_times_matrix_plus_matrix = [](unsigned int rows, unsigned int cols,
+                                            double **matrix_left, double **matrix_right, 
+                                            double **matrix_plus, double **&matrix_out)
   {
-    memcpy(A00+i*ncolIn[0], inputMat[0][i], ncolIn[0]*SizeOfDouble);
-    memcpy(A11+i*ncolIn[1], inputMat[1][i], ncolIn[1]*SizeOfDouble);
-  }
-  // empty matrices filled with zeros
-  double *A01 = new double[nrowIn[0]*ncolIn[0]];
-  double *A10 = new double[nrowIn[1]*ncolIn[1]];
-  memset(A01, 0, nrowIn[0]*ncolIn[0]*SizeOfDouble);
-  memset(A10, 0, nrowIn[1]*ncolIn[1]*SizeOfDouble);
-
-  // prepareing nonlinear matrices
-  double *Anl00 = new double[nrowIn[2]*ncolIn[2]];
-  double *Anl11 = new double[nrowIn[3]*ncolIn[3]];
-  for(int i=0; i<nrowIn[2]; i++)
+    // rows of matrix_left are the columns of matrix_right
+    for(unsigned int i=0; i<rows; ++i)
+    {
+      for(unsigned int j=0; j< rows; ++j)
+      {
+        for(unsigned int k=0; k< cols; ++k)
+        {
+          matrix_out[i][j] += matrix_left[i][k]*matrix_right[k][j];
+        }
+        matrix_out[i][j] += matrix_plus[i][j];
+        // Output::print(i,",",j, " ", setprecision(4), matrix_out[i][j]);
+      }
+    }
+    return;
+  };
+  
+  if(nrowInput[5] != ncolInput[3])
   {
-    memcpy(Anl00+i*ncolIn[2], inputMat[2][i], ncolIn[2]*SizeOfDouble);
-    memcpy(Anl11+i*ncolIn[3], inputMat[3][i], ncolIn[3]*SizeOfDouble);
+    ErrThrow("dimensions mismatch");
   }
-  // preparing P0 and p1
-  double *P0 = new double[nrowIn[4]*ncolIn[4]];
-  double *P1 = new double[nrowIn[5]*ncolIn[5]];
-  for(int i=0; i<nrowIn[4]; i++)
-  {
-    memcpy(P0+i*ncolIn[4], inputMat[4][i], ncolIn[4]*SizeOfDouble);
-    memcpy(P1+i*ncolIn[5], inputMat[5][i], ncolIn[5]*SizeOfDouble);
-  }
-
-  int m, n, k;//, lda, ldb, ldc;
-  m = nrowIn[4];
-  n = ncolIn[2];
-  k = nrowIn[2]; // = ncolIn[4]
-
-  double alpha = 1.;
-  double beta  = 1.;
-
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P0, &k,
-         &beta, A00, &n);
-
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P1, &k,
-         &beta, A01, &n);
-
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P0, &k,
-         &beta, A10, &n);
-
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P1, &k,
-         &beta, A11, &n);
-
-  for(int i=0; i<n; i++)
-  {
-    memcpy(outputMat[0][i], A00+i*n, n*SizeOfDouble);
-    memcpy(outputMat[1][i], A01+i*n, n*SizeOfDouble);
-    memcpy(outputMat[2][i], A10+i*n, n*SizeOfDouble);
-    memcpy(outputMat[3][i], A11+i*n, n*SizeOfDouble);
-  }
-  delete [] A00;   delete [] A01;
-  delete [] A10;   delete [] A11;
-  delete [] Anl00; delete [] Anl11;
-  delete [] P0;    delete [] P1;
+  unsigned int r = nrowInput[5];
+  unsigned int c = ncolInput[5];
+  double **temp = new double*[nrowInput[0]];
+  for(int i=0; i<nrowInput[0]; ++i)
+    temp[i]=new double[ncolInput[0]];
+  for(int i=0; i<nrowInput[0]; ++i)
+    memset(temp[i], 0, ncolInput[0]*sizeof(double));
+  // P0*A00nl + A00(linear);
+  matrix_times_matrix_plus_matrix(r, c, inputMat[4], inputMat[2], inputMat[0], 
+                                  outputMat[0]);
+  // P1 * A00nl 
+  matrix_times_matrix_plus_matrix(r, c, inputMat[4], inputMat[3], temp, 
+                                  outputMat[1]);
+  // P0*A11nl;
+  matrix_times_matrix_plus_matrix(r, c, inputMat[5], inputMat[2], temp, 
+                                  outputMat[2]);
+  // P1 * A11nl + A11(linear) 
+  matrix_times_matrix_plus_matrix(r, c, inputMat[5], inputMat[3], inputMat[1], 
+                                  outputMat[3]);
+  delete [] temp[0];
+  delete [] temp;
 }
 
 

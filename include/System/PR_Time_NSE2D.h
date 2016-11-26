@@ -79,6 +79,12 @@ public:
  /// subtract the mass matrix from the system matrix
  /// and recover the A-blocks by descaling
  void descale();
+ 
+ /// @brief assembling of the nonlinear terms
+ void nonlinear_assemble();
+ 
+ /// @brief check stopping criterion
+ int stop_iteration(unsigned int it_counter);
  /// getters and setters
  const TFESpace2D & get_projection_space() const
  { return this->systems_.front().projSpace_; }

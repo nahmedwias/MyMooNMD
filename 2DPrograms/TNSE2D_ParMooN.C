@@ -97,25 +97,33 @@ int main(int argc, char* argv[])
        }
        // prepare the right hand side vector
        // only needed once per time step
-       tnse2d.assemble_rhs();
+       // tnse2d.assemble_rhs();
+       tnse2d.rhs_assemble();
 
        // assemble the nonlinear matrices
-       tnse2d.assemble_nonlinear_term();
+       // tnse2d.assemble_nonlinear_term();
+       //FIXME: does this necessary or not??? 
+       //FIXME: 
+       //tnse2d.nonlinear_assemble();
        // prepare the matrices for defect computations
        // and solvers
-       tnse2d.assemble_system();
+       tnse2d.system_assemble();
+       
        // nonlinear iteration
        for(unsigned int k=0;; k++)
        {
-         if(tnse2d.stopIte(k))
-           break;
-         tnse2d.solve();
+         if(tnse2d.stop_iteration(k))
+           break;         
+         // tnse2d.solve();
+         tnse2d.system_solve();
          if(parmoon_db["problem_type"].is(4))
            break;
          // assemble the nonlinear matrices 
-         tnse2d.assemble_nonlinear_term();
+         // tnse2d.assemble_nonlinear_term();
+         tnse2d.nonlinear_assemble();
          // prepare the matrices for next nonlinear iteration
-         tnse2d.assemble_system();
+         // tnse2d.assemble_system();
+         tnse2d.system_assemble();
        }
        // post processing: error computations
        // and solutions for visualization
