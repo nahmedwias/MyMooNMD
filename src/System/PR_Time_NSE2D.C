@@ -4,6 +4,7 @@
 #include <SquareMatrix2D.h>
 #include <Assemble2D.h>
 #include <LinAlg.h>
+#include <GridTransfer.h>
 
 using namespace std;
 
@@ -457,4 +458,154 @@ void PR_Time_NSE2D::descale()
     s.matrix.scale_blocks_actives(1./(t1*tau), {{0,0}, {0,1}, {1, 0}, {1, 1}});
     i++;
   }
+}
+
+void PR_Time_NSE2D::nonlinear_assemble()
+{
+  if(TDatabase::ParamDB->DISCTYPE == GALERKIN)
+  {
+    this->Time_NSE2D::assemble_nonlinear_term();
+    return;
+  }
+  System_per_grid& sb = this->Time_NSE2D::systems.front();
+  // assembling of the nonlinear matrices for the pressure robust method
+  if(systems_.size() > 1)
+  {
+    ErrThrow("multigrid is not tested so far");
+    for( int block = 0; block < 2 ;++block)
+    {
+      std::vector<const TFESpace2D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems )
+      {
+        spaces.push_back(&s.velocity_space);
+        u_entries.push_back(s.solution.block(block));
+        u_ns_dofs.push_back(s.solution.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
+  for(system_per_grid& sd : this->systems_)
+  {
+    TFEFunction2D* fef[3]={sb.u.GetComponent(0),sb.u.GetComponent(1), &sb.p};
+    LocalAssembling2D la(RECONSTR_TNSENL, fef, example_.get_coeffs());
+    
+    size_t vsp=TDatabase::ParamDB->VELOCITY_SPACE;
+    size_t psp=TDatabase::ParamDB->PROJECTION_SPACE;
+    TDatabase::ParamDB->VELOCITY_SPACE=psp;
+    size_t nfeSp=2;
+    const TFESpace2D* vel_sp=&sb.velocity_space;
+    const TFESpace2D* pro_sp=&sd.projSpace_;
+    const TFESpace2D* pointer_to_space[2]={vel_sp, pro_sp};
+    // matrices to be assembled
+    size_t nsq_ass = 2;
+    size_t nre_ass = 4;
+    // row and column spaces
+    std::vector<int> rspace={0, 0, 1, 1, 0, 0}; // 0: velocity space
+    std::vector<int> cspace={0, 0, 0, 0, 1, 1}; // 1: projection space
+
+    // prepare everything that will be stored
+    size_t nsq_stor=4;
+    TSquareMatrix2D* sq_mat_store[4]{nullptr};
+    // rectangular matrices to be stored
+    size_t nre_stor=0;
+    TMatrix2D** re_mat_store=nullptr;
+
+    // right hand side to be assembled
+    size_t nrhs_ass = 0;
+    // row space for the right hand side
+    std::vector<int> rspace_rhs={};
+    size_t nrhs_sto=0;
+    double **rhs_stor{nullptr};
+    const TFESpace2D ** pointer_to_rhs_space{nullptr};
+    
+    std::vector<std::shared_ptr<FEMatrix>> matrices
+             = sd.modifedMassMatrix_.get_blocks_uniquely();
+    sq_mat_store[0]=reinterpret_cast<TSquareMatrix2D*>(matrices.at(0).get());
+    sq_mat_store[1]=reinterpret_cast<TSquareMatrix2D*>(matrices.at(1).get());    
+    sq_mat_store[2]=reinterpret_cast<TSquareMatrix2D*>(matrices.at(3).get());
+    sq_mat_store[3]=reinterpret_cast<TSquareMatrix2D*>(matrices.at(4).get());
+    for(size_t i=0; i< nsq_stor; i++)
+      sq_mat_store[i]->reset();
+    
+    const TFESpace2D* pre_sp=&sb.pressure_space;
+    BoundCondFunct2D *bc[3] ={ vel_sp->GetBoundCondition(),
+                               vel_sp->GetBoundCondition(),
+                               pre_sp->GetBoundCondition() };
+    // boundary values
+    std::array<BoundValueFunct2D*, 3> bv;
+    bv[0] = example_.get_bd()[0];
+    bv[1] = example_.get_bd()[1];
+    bv[2] = example_.get_bd()[2];                               
+    
+    Assemble2D_MixedFEM(nfeSp, pointer_to_space,
+                 nsq_ass, nre_ass, rspace, cspace, nrhs_ass, rspace_rhs,
+                 nsq_stor, sq_mat_store, nre_stor, re_mat_store,
+                 nrhs_sto, rhs_stor,pointer_to_rhs_space, la,
+                 nonlinear_term_reconstruct, nullptr,
+                 ProjectionMatricesNSE2D, bc, bv.data());
+    TDatabase::ParamDB->VELOCITY_SPACE=vsp;
+  }
+}
+
+int PR_Time_NSE2D::stop_iteration(unsigned int it_counter)
+{
+  if(TDatabase::ParamDB->DISCTYPE == GALERKIN)
+  {
+    return this->stopIte(it_counter);
+  }
+  System_per_grid& sb = this->systems.front();
+  unsigned int nuDof = sb.solution.length(0);
+  unsigned int npDof = sb.solution.length(2);
+  unsigned int sc_minit = db_["nonlinloop_minit"];
+  
+  this->Time_NSE2D::defect = sb.rhs;
+  sb.matrix.apply_scaled_add(sb.solution, defect, -1);
+
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
+                      TDatabase::ParamDB->VELOCITY_SPACE, 
+                      TDatabase::ParamDB->PRESSURE_SPACE);
+    
+  double residual =  Ddot(2*nuDof+npDof, &this->defect[0], &this->defect[0]);
+  double impulse_residual = Ddot(2*nuDof, &this->defect[0],
+         &this->defect[0]);
+  double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
+         &this->defect[2*nuDof]);
+  
+  Output::print("nonlinear step  :  " , setw(3), it_counter);
+  Output::print("impulse_residual:  " , setw(3), impulse_residual);
+  Output::print("mass_residual   :  " , setw(3), mass_residual);
+  Output::print("residual        :  " , setw(3), sqrt(residual));
+  if (it_counter>0)
+  {
+    Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+  }  
+  oldResidual = sqrt(residual);
+  if(it_counter==0)
+    initial_residual=sqrt(residual); 
+  
+  double epsilon    = db_["nonlinloop_epsilon"];
+  size_t max_It     = db_["nonlinloop_maxit"];
+  double conv_speed = db_["nonlinloop_slowfactor"];
+  bool slow_conv    = false;
+  
+  if(sqrt(residual) >= conv_speed*oldResidual)
+    slow_conv = true;
+  
+  if ( db_["nonlinloop_scale_epsilon_with_size"] )
+  {
+    epsilon *= sqrt(this->get_size()); 
+    Output::print("stopping tolerance for nonlinear iteration ", epsilon);
+  }
+  if( (sqrt(residual) <= epsilon) || (it_counter==max_It) )
+  {
+    Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
+                  " Reduction : ",  sqrt(residual)/initial_residual);
+    this->descale();
+    return true;
+  }
+  else
+    return false;
 }
