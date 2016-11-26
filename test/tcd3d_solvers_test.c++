@@ -58,6 +58,9 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 #else
 #endif
+  // example object
+  Example_TimeCD3D example_obj(db);
+  // domain object
   TDomain domain(db);
 
   // Intial refinement and grabbing of grids for multigrid.
@@ -73,9 +76,6 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   
   // set the time discretization 
   SetTimeDiscParameters(0);
-
-  // example object
-  Example_TimeCD3D example_obj(db);
 #ifdef _MPI
   Time_CD3D tcd3d(gridCollections, db, example_obj, maxSubDomainPerDof);
 #else
