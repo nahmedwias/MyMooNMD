@@ -103,7 +103,7 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
 {
   RefLevel = 0;
   Output::print<4>("domain is initialized");
-  db.merge(param_db, false);
+  db.merge(param_db, true);
   
   std::string geoname = db["geo_file"];
   std::string boundname = db["boundary_file"];
