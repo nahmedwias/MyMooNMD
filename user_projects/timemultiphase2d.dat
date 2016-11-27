@@ -53,13 +53,16 @@ verbosity: 3   [ 1, 5 ]
 ## 13- For Convection2- in the multiphase program - FOR TNSE2D
 ## 14- DAM BREAK	  - in the multiphase program - FOR TNSE2D
 ## 15- SEMICIRCLE	  - in the multiphase program - FOR TNSE2D
+## 16- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
+## 17- Variable nu Po.- in the multipahse program - FOR TNSE2D
+## 18- Variable nu Exp- in the multiphase program - FOR TNSE2D
 ## 11- ExpSinCos 	  - in the multiphase program - FOR TCD2D
 ## 12- SinSinSin 	  - in the multiphase program - FOR TCD2D
 ## 13- SinCos    	  - in the multiphase program - FOR TCD2D
 ## 14- LinearSpaceTime- in the multiphase program - FOR TCD2D
 ## 15- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 16- SEMICIRCLE	  - in the multiphase program - FOR TCD2D
-example: 0 [ -1, 100 ]
+example: 18 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -86,7 +89,7 @@ output_vtk_directory: .
 output_basename: multiphase_output { multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
 ## The maximum number of iterations to perform in a non-linear loop. 
-nonlinloop_maxit: 2   [ 0, 1000 ]
+nonlinloop_maxit: 5   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
 nonlinloop_epsilon: 1e-10   [ 0, 1 ]
@@ -225,8 +228,8 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## "dimension_nse=true or false".Anyway, when dimensional_nse=true
 ## the assembling routines take density and viscosity, and that's
 ## what we want.
-reynolds_number: 10.   [ 0, 1e6 ]
-fluid_density: 10.   [ 0, 1e6 ]
+reynolds_number: 1.   [ 0, 1e6 ]
+fluid_density: 1.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
@@ -236,9 +239,9 @@ RE_NR:	1.
 user_parameter1: 2
 user_parameter2: 2
 
-dimensional_nse: true   { true, false }
-coupling_nse_cd: true   { true, false }
-coupling_cd_nse: true   { true, false }
+dimensional_nse: false   { true, false }
+coupling_nse_cd: false   { true, false }
+coupling_cd_nse: false   { true, false }
 
 
 ###### PARAMETERS FROM THE OLD DATABASE
@@ -265,5 +268,10 @@ ALGEBRAIC_FLU_CORRECTION: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 1
+ENDTIME: 0.01
 TIMESTEPLENGTH: 0.01
+
+
+P1: 1
+P2: 0.5
+P3: 1

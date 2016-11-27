@@ -39,6 +39,16 @@ namespace test_6 // for Rayleigh-Taylor instability, tcd example 17
 {
 #include "6_TestTNSE2D.h"
 }
+namespace test_7 // for Poiseuille flow with variable viscosity
+{
+#include "7_Poiseuillewith_variableviscosity.h"
+}
+namespace test_8 // for exponential with variable viscosity
+{
+#include "8_Exponentialwith_variableviscosity.h"
+}
+
+
 // ********* END OF USER PROJECT CODE
 
 
@@ -285,6 +295,66 @@ Example_TimeNSE2D::Example_TimeNSE2D(
 
       test_6::ExampleFile();
       break;
+
+    case 17:                // Test7 = Poiseuille with variable viscosity
+      /** exact_solution */
+      exact_solution.push_back( test_7::ExactU1 );
+      exact_solution.push_back( test_7::ExactU2 );
+      exact_solution.push_back( test_7::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_7::BoundCondition );
+      boundary_conditions.push_back( test_7::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_7::U1BoundValue );
+      boundary_data.push_back( test_7::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_7::LinCoeffs;
+
+      /** initial condition */
+      initialCOndtion.push_back(test_7::InitialU1);
+      initialCOndtion.push_back(test_7::InitialU2);
+      test_7::REYNOLDS_number = get_nu();
+      test_7::USER_parameter1 = this->example_database["user_parameter1"];
+      test_7::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_7::ExampleFile();
+      break;
+
+
+    case 18:                // Test8 = Exponential with variable viscosity
+      /** exact_solution */
+      exact_solution.push_back( test_8::ExactU1 );
+      exact_solution.push_back( test_8::ExactU2 );
+      exact_solution.push_back( test_8::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_8::BoundCondition );
+      boundary_conditions.push_back( test_8::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_8::U1BoundValue );
+      boundary_data.push_back( test_8::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_8::LinCoeffs;
+
+      /** initial condition */
+      initialCOndtion.push_back(test_8::InitialU1);
+      initialCOndtion.push_back(test_8::InitialU2);
+      test_8::REYNOLDS_number = get_nu();
+      test_8::USER_parameter1 = this->example_database["user_parameter1"];
+      test_8::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_8::ExampleFile();
+      break;
+
 
     default:
       ErrThrow("Unknown Time dependent Example_TimeNSE2D example!");
