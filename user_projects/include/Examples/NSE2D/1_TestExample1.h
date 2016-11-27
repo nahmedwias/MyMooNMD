@@ -35,9 +35,9 @@ void ExactU2(double x, double y, double *values)
 
 void ExactP(double x, double y, double *values)
 {
-  values[0] = x-0.5;
+  values[0] = 0;
 //  values[0] = 4*(x-0.5);
-  values[1] = 1;
+  values[1] = 0;
 //  values[1] = 4;
   values[2] = 0;
   values[3] = 0;
@@ -106,6 +106,7 @@ void LinCoeffs(int n_points, double *x, double *y,
    */
 
   double nu = REYNOLDS_number; // this is actually Re-1
+  double derivative;
   int i;
   double val1[4];   // U1-Exact function and its derivatives
   double val2[4];   // U2-Exact function and its derivatives
@@ -122,11 +123,15 @@ void LinCoeffs(int n_points, double *x, double *y,
     ExactU2(x[i], y[i], val2);
     ExactP (x[i], y[i], val3);
 
+    nu = 1000*y[i]+700;
+    // derivative1 = d/dy(nu*val1[2])
+    derivative = 1000*(4-8*y[i])-8*(1000*y[i]+700);
+
     // ATTENTION: IT IS NOT CONSISTENT! THE RIGHT HAND SIDE HAS TO BE
     // COMPUTED WITH RHO AND MU IN CASE OF DIMENSIONAL NSE!
     coeff[0] = nu;
-    coeff[1] = -nu*val1[3] + val3[1]; // f1 non dimensional case
-    coeff[2] = -nu*val2[3] + val3[2]; // f2 non dimensional case
+    coeff[1] = -derivative+ val3[1]; //nu*val1[3] + val3[1]; // f1 non dimensional case
+    coeff[2] = 0+ val3[2];//-nu*val2[3] + val3[2]; // f2 non dimensional case
 
     if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 5) // Navier-Stokes (3 means Stokes)
     {

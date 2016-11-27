@@ -55,6 +55,11 @@ namespace test_example4_velocityforconvection
 {
 #include "4_TestExample4.h"
 }
+
+namespace variable_viscosity
+{
+#include "../../user_projects/include/Examples/NSE2D/variable_viscosity.h"
+}
 // ********* END OF USER PROJECT CODE
 
 
@@ -296,9 +301,35 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
 
       test_example4_velocityforconvection::ExampleFile();
       break;
+    case 15:  // variable viscosity = Generates variable viscosity problem
+      /** exact_solution */
+      exact_solution.push_back( variable_viscosity::ExactU1 );
+      exact_solution.push_back( variable_viscosity::ExactU2 );
+      exact_solution.push_back( variable_viscosity::ExactP );
 
+      /** boundary condition */
+      boundary_conditions.push_back( variable_viscosity::BoundCondition );
+      boundary_conditions.push_back( variable_viscosity::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
+      /** boundary values */
+      boundary_data.push_back( variable_viscosity::U1BoundValue );
+      boundary_data.push_back( variable_viscosity::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
 
+      /** coefficients */
+      problem_coefficients = variable_viscosity::LinCoeffs;
+
+      // Set dimensionless viscosity
+//      variable_viscosity::REYNOLDS_number = get_nu();
+//      variable_viscosity::USER_parameter1 = this->example_database["user_parameter1"];
+//      variable_viscosity::USER_parameter2 = this->example_database["user_parameter2"];
+
+      variable_viscosity::ExampleFile();
+      break;
+
+      /**************************************************************/
+      /* ABOVE THIS LINE, THE EXAMPLES ARE SPECIFIC TO USER PROJECT */
 
 
 
