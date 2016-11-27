@@ -57,6 +57,10 @@ namespace test_rayleightaylor
 {
 #include "7_TestTCD2D.h"
 }
+namespace test_8_variablevisco
+{
+#include "8_Variable_viscosity_linear.h"
+}
 // ********* END OF USER PROJECT CODE
 
 
@@ -308,6 +312,27 @@ Example_TimeCD2D::Example_TimeCD2D(
 
       this->timeDependentRhs = test_rayleightaylor::rhs_depends_on_time;
       this->timeDependentCoeffs=test_rayleightaylor::coefficients_depend_on_time;
+      break;
+
+
+    case 18:                // 8_Variable Viscosity Linear
+      /**Exact solution"**/
+      exact_solution.push_back(test_8_variablevisco::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( test_8_variablevisco::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_8_variablevisco::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = test_8_variablevisco::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(test_8_variablevisco::InitialCondition);
+      test_8_variablevisco::ExampleFile();
+
+      this->timeDependentRhs = test_8_variablevisco::rhs_depends_on_time;
+      this->timeDependentCoeffs=test_8_variablevisco::coefficients_depend_on_time;
       break;
 
 
