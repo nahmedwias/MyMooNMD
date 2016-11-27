@@ -62,6 +62,8 @@ verbosity: 3   [ 1, 5 ]
 ## 14- LinearSpaceTime- in the multiphase program - FOR TCD2D
 ## 15- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 16- SEMICIRCLE	  - in the multiphase program - FOR TCD2D
+## 17- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
+## 18- VariableViscoL.- in the multiphase program - FOR TCD2D
 example: 18 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
@@ -239,8 +241,8 @@ RE_NR:	1.
 user_parameter1: 2
 user_parameter2: 2
 
-dimensional_nse: false   { true, false }
-coupling_nse_cd: false   { true, false }
+dimensional_nse: true   { true, false }
+coupling_nse_cd: true   { true, false }
 coupling_cd_nse: false   { true, false }
 
 
