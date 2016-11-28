@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
 
-  tnse_db["example"]         = 18;
+  tnse_db["example"]         = 17;
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
 
@@ -99,9 +99,9 @@ int main(int argc, char* argv[])
   Time_CD2D         tcd2d(domain, tcd_db, example_tcd2d);     // Construct CD system
 
   double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
-  double rho2 = 1;                          // density constant of fluid2, eg 0
+  double rho2 = 0;                          // density constant of fluid2, eg 0
   double mu1  = tnse_db["fluid_dynamic_viscosity"];      // mu constant of fluid1, eg 1e-3
-  double mu2  = 1;                                    // mu constant of fluid2, eg 0
+  double mu2  = 0;                                    // mu constant of fluid2, eg 0
 
 
 
@@ -117,6 +117,7 @@ int main(int argc, char* argv[])
 
   /** @brief Finite Element function for density field */
   BlockVector   rho_vector = update_fieldvector(rho1,rho2,phase_field,"rho_vector");
+  rho_vector = 1; rho_vector.write("rho_vector");
   TFEFunction2D rho_field  = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
 
   /** @brief Finite Element function for dynamic viscosity field */
