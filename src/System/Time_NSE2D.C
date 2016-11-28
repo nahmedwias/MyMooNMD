@@ -402,6 +402,13 @@ void Time_NSE2D::assemble_initial_time()
     s.solution.copy_nonactive(s.rhs);
   }
   
+  BlockVector testing1 = this->systems.front().solution;
+  testing1 = 1;
+  const BlockVector testing2= testing1;
+  this->systems.front().matrix.apply(testing2,testing1);
+  testing1.write("vecteur_test_initial");
+
+
   // copy the current right hand side vector to the old_rhs 
   this->old_rhs = this->systems.front().rhs; 
   this->old_solution = this->systems.front().solution;
@@ -971,6 +978,12 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
   }
+
+  BlockVector testing1 = this->systems.front().solution;
+  testing1 = 1;
+  const BlockVector testing2= testing1;
+  this->systems.front().matrix.apply(testing2,testing1);
+  testing1.write("vecteur_test_DIMENSIONAL");
 
   // copy the current right hand side vector to the old_rhs
   this->old_rhs = this->systems.front().rhs;
