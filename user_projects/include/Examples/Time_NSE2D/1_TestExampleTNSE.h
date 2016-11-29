@@ -133,8 +133,8 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-//  static double nu = REYNOLDS_number;
-  double nu;
+  static double nu = REYNOLDS_number;
+
   double t = TDatabase::TimeDB->CURRENTTIME;
   double t1, t2, t3, t5, t6, t8, t9, t10, t14, t16;
   double t17, t22, t23, t27, t36, t39, t41;
@@ -150,10 +150,8 @@ void LinCoeffs(int n_points, double *X, double *Y,
 //    double rho = parameters[i][2];
 //    double mu  = parameters[i][3];
 
-    nu = exp(10)*y+exp(20*x)*x;//exp(25*a*(Y[i]-1)*(Y[i]-1)/(1));
-
     coeff[0] = nu;
-//cout << coeff[0] << endl;
+
     t1 = cos(t);
     t2 = 0.3141592653589793E1*x;
     t3 = sin(t2);

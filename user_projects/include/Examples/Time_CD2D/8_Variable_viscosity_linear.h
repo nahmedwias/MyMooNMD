@@ -17,9 +17,9 @@ void Exact(double x, double y, double *values)
 {
 //  double t=TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = exp(10)*y+exp(20*x)*x;//1000*y+700;
+  values[0] = 1000*y+700;
   values[1] = 0;
-  values[2] = 0;//1000;
+  values[2] = 1000;
   values[3] = 0;
 }
 
@@ -37,16 +37,16 @@ void BoundValue(int BdComp, double Param, double &value)
   switch(BdComp)
   {
     case 0:
-      value = exp(20*Param)*Param;//700;
+      value = 700;
     break;
     case 1:
-      value = exp(10)*Param+exp(20*1)*1;//1000*Param+700;
+      value = 1000*Param+700;
     break;
     case 2:
-      value = exp(10)*1+exp(20*(1-Param))*(1-Param);//1700;
+      value = 1700;
     break;
     case 3:
-      value = exp(10)*(1-Param);//1000*(1-Param)+700;
+      value = 1000*(1-Param)+700;
     break;
   } // endswitch
 }
@@ -56,7 +56,7 @@ void InitialCondition(double x,  double y, double *values)
 {
 //  double t=TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = exp(10)*y+exp(20*x)*x;//1000*y+700;
+  values[0] = 1000*y+700;
 }
 
 void BilinearCoeffs(int n_points, double *X, double *Y,
@@ -79,7 +79,7 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
     coeff[2] = 1;
     coeff[3] = 0;
 
-    coeff[4] = exp(20*x)*(1+20*x);//1000;
+    coeff[4] = 1000;
   }
 }
 
@@ -88,8 +88,8 @@ void Initial(double x, double y, double *values)
 {
 //  double t=TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = exp(10)*y+exp(20*x)*x;//1000*y+700;
-  values[1] = 0;//1000;
+  values[0] = 1000*y+700;
+  values[1] = 1000;
   values[2] = 0;
   values[3] = 0;
 }

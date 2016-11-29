@@ -139,9 +139,8 @@ void LinCoeffs(int n_points, double *X, double *Y,
     coeff = coeffs[i];
     x = X[i];
     y = Y[i];
-    nu = exp(10)*y+exp(20*x)*x;//exp(25*a*(Y[i]-1)*(Y[i]-1)/(1));
+
     coeff[0] = nu;
-//    cout << coeff[0] << " ";
 
     t1 = cos(t);
     t2 = 0.3141592653589793E1*x;
