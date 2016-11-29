@@ -1,7 +1,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: linear_space_time.h" << endl);
+  OutPut("Example: 8_Variable_viscosity_linear.h" << endl);
 }
 
 double get_nu()
@@ -18,8 +18,8 @@ void Exact(double x, double y, double *values)
 //  double t=TDatabase::TimeDB->CURRENTTIME;
 
   values[0] = 1000*y+700;
-  values[1] = 1000;
-  values[2] = 0;
+  values[1] = 0;
+  values[2] = 1000;
   values[3] = 0;
 }
 
