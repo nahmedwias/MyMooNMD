@@ -64,7 +64,8 @@ verbosity: 3   [ 1, 5 ]
 ## 16- SEMICIRCLE	  - in the multiphase program - FOR TCD2D
 ## 17- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
 ## 18- VariableViscoL.- in the multiphase program - FOR TCD2D
-example: 17 [ -1, 100 ]
+## 19- VariableViscoE.- in the multiphase program - FOR TCD2D
+example: 19 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -241,9 +242,9 @@ RE_NR:	1.
 user_parameter1: 2
 user_parameter2: 2
 
-dimensional_nse: true   { true, false }
-coupling_nse_cd: false   { true, false }
-coupling_cd_nse: true   { true, false }
+dimensional_nse: false   { true, false }
+coupling_nse_cd: true   { true, false }
+coupling_cd_nse: false   { true, false }
 
 
 ###### PARAMETERS FROM THE OLD DATABASE
@@ -260,7 +261,7 @@ NSTYPE: 1
 LAPLACETYPE: 0
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
-ALGEBRAIC_FLU_CORRECTION: 0
+ALGEBRAIC_FLUX_CORRECTION: 0
 
 # parameter for time discretization
 # 

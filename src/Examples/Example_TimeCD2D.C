@@ -61,6 +61,10 @@ namespace test_8_variablevisco
 {
 #include "8_Variable_viscosity_linear.h"
 }
+namespace test_9_variablevisco2
+{
+#include "9_Variable_viscosity_exponential.h"
+}
 // ********* END OF USER PROJECT CODE
 
 
@@ -334,6 +338,29 @@ Example_TimeCD2D::Example_TimeCD2D(
       this->timeDependentRhs = test_8_variablevisco::rhs_depends_on_time;
       this->timeDependentCoeffs=test_8_variablevisco::coefficients_depend_on_time;
       break;
+
+
+    case 19:                // 9_Variable Viscosity Exponential
+      /**Exact solution"**/
+      exact_solution.push_back(test_9_variablevisco2::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( test_9_variablevisco2::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_9_variablevisco2::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = test_9_variablevisco2::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(test_9_variablevisco2::InitialCondition);
+      test_9_variablevisco2::ExampleFile();
+
+      this->timeDependentRhs = test_9_variablevisco2::rhs_depends_on_time;
+      this->timeDependentCoeffs=test_9_variablevisco2::coefficients_depend_on_time;
+      break;
+
+
 
 
 
