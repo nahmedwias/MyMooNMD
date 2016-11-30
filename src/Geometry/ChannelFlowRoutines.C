@@ -991,15 +991,15 @@ void ChannelTau180::print_quantity_of_interest(std::deque< std::vector< double >
     for(size_t i=0; i<nZLayers; ++i)
     {
       // formula 11 Volker's paper
-      rmsu = sqrt(fabs(rms.at(0)[i]))/u_tau;
-      rmsv = sqrt(fabs(rms.at(1)[i]))/u_tau;
-      rmsw = sqrt(fabs(rms.at(2)[i]))/u_tau;
+      rmsu = sqrt(fabs(rms.at(0)[i]));
+      rmsv = sqrt(fabs(rms.at(1)[i]));
+      rmsw = sqrt(fabs(rms.at(2)[i]));
       // formula 10 Volker's paper
-      R12 = R.at(3)[i] - meanvelocity.at(0)[i] * meanvelocity.at(1)[i]; //R12 /= (u_tau*u_tau);
+      R12 = R.at(3)[i] - meanvelocity.at(0)[i] * meanvelocity.at(1)[i]; 
       R12_abs += fabs(R12);
-      R13 = R.at(4)[i] - meanvelocity.at(0)[i] * meanvelocity.at(2)[i]; //R13 /= (u_tau*u_tau);
+      R13 = R.at(4)[i] - meanvelocity.at(0)[i] * meanvelocity.at(2)[i]; 
       R13_abs += fabs(R13);
-      R23 = R.at(5)[i] - meanvelocity.at(1)[i] * meanvelocity.at(2)[i]; //R23 /= (u_tau*u_tau);
+      R23 = R.at(5)[i] - meanvelocity.at(1)[i] * meanvelocity.at(2)[i]; 
       R23_abs += fabs(R23);
       
       Output::print("t ", std::scientific, t, " ", setw(8), zLayers.at(i), " ", setw(8),
