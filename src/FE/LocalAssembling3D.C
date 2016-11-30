@@ -228,6 +228,9 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
         case SMAGORINSKY:
           this->set_parameters_for_tnse_smagorinsky(type);
           break;
+        case VMS_PROJECTION:
+          this->set_parameters_for_tnse_vms_model(type);
+          break;
         default:
           ErrThrow("DISCTYPE", TDatabase::ParamDB->DISCTYPE , "is not supported yet!!");  
       }
@@ -1471,5 +1474,134 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
      break;
         default:
           ErrThrow("Unknown LocalAssembling3D_type");
+  }
+}
+
+void LocalAssembling3D::set_parameters_for_tnse_vms_model(LocalAssembling3D_type type)
+{
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  if(nstype !=3 || nstype !=4)
+  {
+    ErrThrow(" VMS is only supported for NSTYE 3 and 4");
+  }
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+  {
+    ErrThrow(" VMS in only supported for SC_NONLIN_ITE_TYPE_SADDLE ",
+    "fixed point iteration, i.e., SC_NONLIN_ITE_TYPE_SADDLE = 0");
+  }
+  
+  this->N_Parameters = 22;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { TimeNSParamsVelo_GradVelo_LargeScale3D };
+  this->N_FEValues = 19;
+  this->FEValue_FctIndex = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2,
+                             3, 4, 5, 6, 7, 8, 9 };
+  // u1old, u2old, u3old, all derivatives of u1, u2, u3
+  this->FEValue_MultiIndex = { D000, D000, D000, 
+                               D100, D100, D100,
+                               D010, D010, D010,
+                               D001, D001, D001, 
+                               D000, D000, D000,
+                               D000, D000, D000,
+                               D000};
+  this->BeginParameter = { 0 };
+  
+  // switch over all (linear + nonlinear ) and nonlinear (only ) types
+  switch(type)
+  {
+    case LocalAssembling3D_type::TNSE3D_LinGAL:
+      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
+      {
+        case 0: // fixed point iteration
+          switch(nstype)
+          {
+            case 3:
+              break;
+            case 4:
+              this->N_Terms = 6;
+              this->Derivatives = {D100, D010, D001, D000, D000, D000};
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 1, 2 }; // 0: velocity, 1: pressure, 2: projection
+              this->N_Matrices = 23;
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, // A-block
+                                    0, // Mass 
+                                    2, // L-matrix (vms)
+                                    1, 1, 1, 0, 0, 0, // B-block
+                                    0, 0, 0, 2, 2, 2 }; // vms matrices
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0,  0, 0, 0, 
+                                    0, // Mass 
+                                    2, // L-matrix (vms)
+                                    0, 0, 0, 1, 1, 1, // B-block
+                                    2, 2, 2, 0, 0, 0}; // vms matrices
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 1};
+              this->Manipulate = NULL;
+              this->AssembleParam=TimeNSType4VMS_ProjectionDD3D;
+              break;
+          }
+          break; // fixed point iteration
+        case 1: // newton iteration
+          ErrThrow("Set parameters for newton iteration");
+          break; // newton iteration
+      }
+      break; // LocalAssembling3D_type::TNSE3D_LinGAL:
+    case LocalAssembling3D_type::TNSE3D_NLGAL:
+      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
+      {
+        case 0:// fixed point iteration
+          switch(nstype)
+          {
+            case 3: case 4:
+              this->N_Terms = 5;
+              this->Derivatives = {D100, D010, D001, D000, D000};
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 2 }; // 0: velocity, 2: projection
+              this->N_Matrices = 12;
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, // A - block 
+                                    0, 0, 0 }; // vms matrices
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                    2, 2, 2}; // vms matrices
+              this->N_Rhs = 0;
+              this->RhsSpace = { };
+          
+              this->Manipulate = NULL;
+              this->AssembleParam=TimeNSType3_4NLVMS_ProjectionDD3D;
+              break;
+          }
+          break;// fixed point iteration 
+        case 1: // newton iteration 
+          ErrThrow("Set parameters for newton iteration");
+          break; // newton iteration
+      }
+      break; // LocalAssembling3D_type::TNSE3D_NLGAL:
+    case LocalAssembling3D_type::TNSE3D_Rhs:
+      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
+      {
+        case 0: // fixed point iteration 
+          this->N_Terms = 1;
+          this->Derivatives = { D000 };
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = false;
+          this->Needs2ndDerivatives[1] = false;
+          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = { };
+          this->ColumnSpace = { };
+          this->N_Rhs = 4 ; 
+          this->RhsSpace = {0, 0, 0, 0};
+          this->AssembleParam = TimeNSRHS3D;
+          this->Manipulate = NULL;
+         break;
+        case 1: // newton iteration 
+          ErrThrow("Set parameters for newton iteration");
+          break; // newton iteration
+      }
+      break;
+    default:
+      ErrThrow("Unknown LocalAssembling3D_type");
   }
 }

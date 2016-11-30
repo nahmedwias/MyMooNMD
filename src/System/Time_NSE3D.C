@@ -7,6 +7,7 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <Multigrid.h>
+#include <Variational_MultiScale3D.h>
 
 #include <sys/stat.h>
 
@@ -115,17 +116,29 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                TDatabase::ParamDB->PRESSURE_SPACE);
-  int projection_order = db_["vms_projection_space_order"];
-  if(projection_order < 0)
-    projection_order = 0;
   // get the velocity and pressure orders
   this->get_velocity_pressure_orders(velocity_pressure_orders);
   if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
   {
+    // VMS projection order 
+    int projection_order = db_["vms_projection_space_order"];
+    if(projection_order < 0)
+      projection_order = 0;
+    // projection space
     projectionSpace_ = 
        std::make_shared<TFESpace3D>(collections_.front(), (char*)"L",  
 			   (char*)"vms projection space", example_.get_bc(2), 
 		           DiscP_PSpace, projection_order);
+    int ndofP = projectionSpace_->GetN_DegreesOfFreedom();
+    // create vector for vms projection
+    this->vms.resize(6*ndofP);
+    // finite element vector function for vms projection
+    this->vms_projection = 
+       std::make_shared<TFEVectFunct3D>(projectionSpace_.get(), (char*)"v", (char*)"v", 
+                                        &vms[0], ndofP, 6);
+    // matrices for the vms method needs to assemble only on the 
+    // finest grid. On the coarsest grids, the SMAGORINSKY model 
+    // is used and for that matrices are available on all grids:
     switch(TDatabase::ParamDB->NSTYPE)
     {
       case 1: case 2:
@@ -134,14 +147,15 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 	break;
       case 3: case 4: case 14:
 	const TFESpace3D& velocity_space = this->get_velocity_space();
+        // matrices G_tilde
 	matrices_for_turb_mod.at(0) = std::make_shared<FEMatrix>(&velocity_space, projectionSpace_.get());
 	matrices_for_turb_mod.at(1) = std::make_shared<FEMatrix>(&velocity_space, projectionSpace_.get());
 	matrices_for_turb_mod.at(2) = std::make_shared<FEMatrix>(&velocity_space, projectionSpace_.get());
-	// 
+	// matrices G
 	matrices_for_turb_mod.at(3) = std::make_shared<FEMatrix>(projectionSpace_.get(), &velocity_space);
 	matrices_for_turb_mod.at(4) = std::make_shared<FEMatrix>(projectionSpace_.get(), &velocity_space);
 	matrices_for_turb_mod.at(5) = std::make_shared<FEMatrix>(projectionSpace_.get(), &velocity_space);
-	
+	// mass matrix 
 	matrices_for_turb_mod.at(6) = std::make_shared<FEMatrix>(projectionSpace_.get(), projectionSpace_.get());
 	break;
     }
@@ -363,12 +377,17 @@ void Time_NSE3D::assemble_initial_time()
   size_t nSquareMatrices = 10; // maximum number of square matrices (type 14)
   size_t nRectMatrices   = 6;  // maximum number of rectangular matrices (type 14)
   size_t nRhs     = 4;         // maximum number of right hand sides (type 14)
+  if(TDatabase::ParamDB->DISCTYPE==VMS_PROJECTION)
+  {
+    nSquareMatrices +=1;
+    nRectMatrices += 6;
+  }
 
   std::vector<TSquareMatrix3D*> sqMatrices(nSquareMatrices);
   std::vector<TMatrix3D*>       rectMatrices(nRectMatrices);
   std::vector<double*>          rhsArray(nRhs);
 
-  for(System_per_grid& s : this->systems_) // from back to front (coarse to fine)
+  for(System_per_grid& s : this->systems_) // from front to back (fine to coarse)
   {
     const TFESpace3D *v_space = &s.velocitySpace_;
     const TFESpace3D *p_space = &s.pressureSpace_;
@@ -461,7 +480,7 @@ void Time_NSE3D::assemble_initial_time()
         {
           ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 15.");
         }
-        nSquareMatrices = 10;
+        // nSquareMatrices = 10;
         sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
         sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
         sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
@@ -473,16 +492,29 @@ void Time_NSE3D::assemble_initial_time()
         sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
         // mass matrices
         sqMatrices[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-
+        if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+        {
+          sqMatrices[10] 
+            = reinterpret_cast<TSquareMatrix3D*>(matrices_for_turb_mod.at(6).get());
+        }
         // rectangular matrices
-        nRectMatrices = 6;
+        // nRectMatrices = 6;
         rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //first the lying B blocks
         rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
         rectMatrices[2] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
         rectMatrices[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  //than the standing B blocks
         rectMatrices[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
         rectMatrices[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
-
+        if(TDatabase::ParamDB->DISCTYPE==VMS_PROJECTION)
+        {
+          rectMatrices[6] = reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
+          rectMatrices[7] = reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
+          rectMatrices[8] = reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
+          
+          rectMatrices[9] = reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(3).get());
+          rectMatrices[10] = reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(4).get());
+          rectMatrices[11] = reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(5).get());
+        }
         // right hand side must be adapted
         rhsArray[3] = s.rhs_.block(3); // NSE type 4 includes pressure rhs_
         rhsSpaces[3] = p_space;
@@ -562,6 +594,7 @@ void Time_NSE3D::assemble_initial_time()
                nRectMatrices, rectMatrices.data(),
                nRhs, rhsArray.data(), rhsSpaces,
                boundary_conditions, boundary_values.data(), localAssembling);
+    // VMS_ProjectionUpdateMatrices3D(s.matrix_, matrices_for_turb_mod);
     /** manage dirichlet condition by copying non-actives DoFs
      * from rhs to solution of front grid (=finest grid)
      * Note: this operation can also be done inside the loop, so that

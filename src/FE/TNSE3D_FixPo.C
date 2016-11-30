@@ -4101,7 +4101,7 @@ void TimeNSType4VMS_ProjectionDD3D(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixM11Row;// , *MatrixM22Row, *MatrixM33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
@@ -4120,21 +4120,21 @@ void TimeNSType4VMS_ProjectionDD3D(double Mult, double *coeff,
   MatrixA32 = LocMatrices[7];
   MatrixA33 = LocMatrices[8];
   MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  MatrixL   = LocMatrices[12];
-  MatrixB1  = LocMatrices[13];
-  MatrixB2  = LocMatrices[14];
-  MatrixB3  = LocMatrices[15];
-  MatrixB1T = LocMatrices[16];
-  MatrixB2T = LocMatrices[17];
-  MatrixB3T = LocMatrices[18];
-  Matrix_tilde_G11  = LocMatrices[19];
-  Matrix_tilde_G22  = LocMatrices[20];
-  Matrix_tilde_G33  = LocMatrices[21];
-  Matrix_G11  = LocMatrices[22];
-  Matrix_G22  = LocMatrices[23];
-  Matrix_G33  = LocMatrices[24];
+  // MatrixM22 = LocMatrices[10];
+  // MatrixM33 = LocMatrices[11];
+  MatrixL   = LocMatrices[10];
+  MatrixB1  = LocMatrices[11];
+  MatrixB2  = LocMatrices[12];
+  MatrixB3  = LocMatrices[13];
+  MatrixB1T = LocMatrices[14];
+  MatrixB2T = LocMatrices[15];
+  MatrixB3T = LocMatrices[16];
+  Matrix_tilde_G11  = LocMatrices[17];
+  Matrix_tilde_G22  = LocMatrices[18];
+  Matrix_tilde_G33  = LocMatrices[19];
+  Matrix_G11  = LocMatrices[20];
+  Matrix_G22  = LocMatrices[21];
+  Matrix_G33  = LocMatrices[22];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -4181,8 +4181,8 @@ Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'"
     Matrix32Row = MatrixA32[i];
     Matrix33Row = MatrixA33[i];
     MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
+    // MatrixM22Row  = MatrixM22[i];
+    // MatrixM33Row  = MatrixM33[i];
 
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -4237,8 +4237,8 @@ Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'"
 
       val = Mult*(ansatz000*test000);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
+      // MatrixM22Row[j] += val;
+      // MatrixM33Row[j] += val;
     } // endfor j
 
     MatrixRow1 = MatrixB1T[i];

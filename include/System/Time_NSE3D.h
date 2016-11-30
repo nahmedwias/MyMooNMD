@@ -130,7 +130,9 @@ class Time_NSE3D
     /** @brief A complete system on each involved grid.
      *
      * Note that the size of this double ended queue is at least one and
-     * larger only when a multgrid preconditioner is used.
+     * larger only when a multgrid preconditioner is used. In the multigrid
+     * case, the systems_ are ordered from front to back 
+     * (finest to coarses)
      */
     std::deque<System_per_grid> systems_;
 
@@ -193,7 +195,11 @@ class Time_NSE3D
     
     /** @brief projection space used for VMS method*/
     std::shared_ptr<TFESpace3D> projectionSpace_;
-      
+    
+    /** @brief finite element function for vms projection*/
+    // can we rename it to large scales?? also check BlockVector!! currently just vector
+    std::vector<double> vms; 
+    std::shared_ptr<TFEVectFunct3D> vms_projection;
     /** matrices for turbulence model*/
     std::array<std::shared_ptr<FEMatrix>, int(7)> matrices_for_turb_mod;
 
