@@ -226,6 +226,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->set_parameters_for_tnse(type);
           break;
         case SMAGORINSKY:
+	case SMAGORINSKY_COARSE:
           this->set_parameters_for_tnse_smagorinsky(type);
           break;
         case VMS_PROJECTION:
@@ -1480,7 +1481,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
 void LocalAssembling3D::set_parameters_for_tnse_vms_model(LocalAssembling3D_type type)
 {
   int nstype = TDatabase::ParamDB->NSTYPE;
-  if(nstype !=3 || nstype !=4)
+  if(nstype !=3 && nstype !=4)
   {
     ErrThrow(" VMS is only supported for NSTYE 3 and 4");
   }
@@ -1490,19 +1491,16 @@ void LocalAssembling3D::set_parameters_for_tnse_vms_model(LocalAssembling3D_type
     "fixed point iteration, i.e., SC_NONLIN_ITE_TYPE_SADDLE = 0");
   }
   
-  this->N_Parameters = 22;
+  this->N_Parameters = 16;
   this->N_ParamFct = 1;
   this->ParameterFct =  { TimeNSParamsVelo_GradVelo_LargeScale3D };
-  this->N_FEValues = 19;
-  this->FEValue_FctIndex = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2,
-                             3, 4, 5, 6, 7, 8, 9 };
-  // u1old, u2old, u3old, all derivatives of u1, u2, u3
+  this->N_FEValues = 16;
+  this->FEValue_FctIndex = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 3};
+  // u1old, u2old, u3old, all derivatives of u1, u2, u3, projection space
   this->FEValue_MultiIndex = { D000, D000, D000, 
                                D100, D100, D100,
                                D010, D010, D010,
                                D001, D001, D001, 
-                               D000, D000, D000,
-                               D000, D000, D000,
                                D000};
   this->BeginParameter = { 0 };
   
@@ -1516,13 +1514,15 @@ void LocalAssembling3D::set_parameters_for_tnse_vms_model(LocalAssembling3D_type
           switch(nstype)
           {
             case 3:
+	      ErrThrow("NSTYPE 3 is not yet supported for VMS_PROJECTION");
               break;
             case 4:
               this->N_Terms = 6;
               this->Derivatives = {D100, D010, D001, D000, D000, D000};
-              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives = new bool[3];
               this->Needs2ndDerivatives[0] = false;
               this->Needs2ndDerivatives[1] = false;
+              this->Needs2ndDerivatives[2] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1, 2 }; // 0: velocity, 1: pressure, 2: projection
               this->N_Matrices = 23;
               this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, // A-block

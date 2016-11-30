@@ -194,14 +194,21 @@ class Time_NSE3D
     void output_problem_size_info() const;
     
     /** @brief projection space used for VMS method*/
-    std::shared_ptr<TFESpace3D> projectionSpace_;
+    std::shared_ptr<TFESpace3D> projection_space_;
     
     /** @brief finite element function for vms projection*/
     // can we rename it to large scales?? also check BlockVector!! currently just vector
-    std::vector<double> vms; 
-    std::shared_ptr<TFEVectFunct3D> vms_projection;
+    std::vector<double> vms_small_resolved_scales; 
+    std::shared_ptr<TFEVectFunct3D> vms_small_resolved_scales_fefct;
     /** matrices for turbulence model*/
     std::array<std::shared_ptr<FEMatrix>, int(7)> matrices_for_turb_mod;
+    
+    // piecewise constant space containing the labels of the local projection space
+    std::shared_ptr<TFESpace3D> label_for_local_projection_space_;
+    // vector used for indicating local projection space 
+    std::vector<double> label_for_local_projection;
+    // finite element function for local projection space
+    std::shared_ptr<TFEFunction3D> label_for_local_projection_fefct;
 
  public:
 
