@@ -597,6 +597,9 @@ void ChannelTau180::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
     }*/
     delete [] recievebuf; delete [] recievezlayer; delete [] displs;
   }
+#else
+// sort the zlayers
+std::sort(zLayers.begin(), zLayers.begin()+nZLayers);
 #endif
 
   if(rank == 0)
