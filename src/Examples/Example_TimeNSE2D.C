@@ -15,38 +15,39 @@ namespace lin_space_time
 
 
 /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
-namespace test_example1_sincos
+namespace example10_sincos_tnse2d   //
 {
-#include "1_TestExampleTNSE.h"
+#include "../../user_projects/include/Examples/Time_NSE2D/10_SinCos_TNSE2D.h"
 }
-namespace test_example2_forconvectiontest1
+namespace example20_coupling_nse_cd // test coupling NSE>CD = Generate the velocity field (1,-1)
 {
-#include "2_TestExampleForTCDTestExample1.h"
+#include "../../user_projects/include/Examples/Time_NSE2D/20_CouplingNSE_CD.h"
 }
-namespace test_example3_forconvectiontest2
+namespace example21_coupling_nse_cd // test coupling NSE>CD = Generate the velocity field (1,2)
 {
-#include "3_TestExampleForTCDTestExample2.h"
+#include "../../user_projects/include/Examples/Time_NSE2D/21_CouplingNSE_CD.h"
 }
-namespace test_4 // for dam break, tcd example 15
+namespace example30_poiseuille_variablevisco // Coupling CD>NSE Poiseuille with variable viscosity
 {
-#include "4_TestTNSE2D.h"
+#include "../../user_projects/include/Examples/Time_NSE2D/30_CouplingCD_NSE_Poiseuille_variableviscosity.h"
 }
-namespace test_5 // for semicircle, tcd example 16
+namespace example31_poiseuille_variablevisco // Coupling CD>NSE Poiseuille with variable viscosity exponential
 {
-#include "5_TestTNSE2D.h"
+#include "../../user_projects/include/Examples/Time_NSE2D/31_CouplingCD_NSE_Exponential_variableviscosity.h"
 }
-namespace test_6 // for Rayleigh-Taylor instability, tcd example 17
+namespace example40_dambreak_nse_cd // 2 way coupling for dam break
 {
-#include "6_TestTNSE2D.h"
+#include "../../user_projects/include/Examples/Time_NSE2D/40_DamBreakNSE_CD.h"
 }
-namespace test_7 // for Poiseuille flow with variable viscosity
+namespace example41_semicircle_nse_cd // 2 way coupling for rotating semi circle
 {
-#include "7_Poiseuillewith_variableviscosity.h"
+#include "../../user_projects/include/Examples/Time_NSE2D/41_SemiCircleNSE_CD.h"
 }
-namespace test_8 // for exponential with variable viscosity
+namespace example42_rayleightaylor_nse_cd   // 2 way coupling for Rayleigh-Taylor instability
 {
-#include "8_Exponentialwith_variableviscosity.h"
+#include "../../user_projects/include/Examples/Time_NSE2D/42_RayleighTaylorNSE_CD.h"
 }
+
 
 
 // ********* END OF USER PROJECT CODE
@@ -117,243 +118,238 @@ Example_TimeNSE2D::Example_TimeNSE2D(
 
 
       /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
-    case 11:                // TestExample1 = Bsp1 = sincos
+    case 10:                // Bsp1 = sincos  = SAME AS IN TNSE2D
       /** exact_solution */
-      exact_solution.push_back( test_example1_sincos::ExactU1 );
-      exact_solution.push_back( test_example1_sincos::ExactU2 );
-      exact_solution.push_back( test_example1_sincos::ExactP );
+      exact_solution.push_back( example10_sincos_tnse2d::ExactU1 );
+      exact_solution.push_back( example10_sincos_tnse2d::ExactU2 );
+      exact_solution.push_back( example10_sincos_tnse2d::ExactP );
 
       /** boundary condition */
-      boundary_conditions.push_back( test_example1_sincos::BoundCondition );
-      boundary_conditions.push_back( test_example1_sincos::BoundCondition );
+      boundary_conditions.push_back( example10_sincos_tnse2d::BoundCondition );
+      boundary_conditions.push_back( example10_sincos_tnse2d::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_example1_sincos::U1BoundValue );
-      boundary_data.push_back( test_example1_sincos::U2BoundValue );
+      boundary_data.push_back( example10_sincos_tnse2d::U1BoundValue );
+      boundary_data.push_back( example10_sincos_tnse2d::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
 
       /** coefficients */
-      problem_coefficients = test_example1_sincos::LinCoeffs;
+      problem_coefficients = example10_sincos_tnse2d::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(test_example1_sincos::InitialU1);
-      initialCOndtion.push_back(test_example1_sincos::InitialU2);
-      test_example1_sincos::REYNOLDS_number = get_nu();
-      test_example1_sincos::USER_parameter1 = this->example_database["user_parameter1"];
-      test_example1_sincos::USER_parameter2 = this->example_database["user_parameter2"];
+      initialCOndtion.push_back(example10_sincos_tnse2d::InitialU1);
+      initialCOndtion.push_back(example10_sincos_tnse2d::InitialU2);
+      example10_sincos_tnse2d::REYNOLDS_number = get_nu();
+      example10_sincos_tnse2d::USER_parameter1 = this->example_database["user_parameter1"];
+      example10_sincos_tnse2d::USER_parameter2 = this->example_database["user_parameter2"];
 
-
-
-      test_example1_sincos::ExampleFile();
+      example10_sincos_tnse2d::ExampleFile();
       break;
 
-    case 12:                // TestExample2 = Generate the velocity field for Convection Test Example 1 (1,-1)
+    case 20:                // Test coupling NSE>CD = Generate the velocity field (1,-1) for Convection example 20
       /** exact_solution */
-      exact_solution.push_back( test_example2_forconvectiontest1::ExactU1 );
-      exact_solution.push_back( test_example2_forconvectiontest1::ExactU2 );
-      exact_solution.push_back( test_example2_forconvectiontest1::ExactP );
+      exact_solution.push_back( example20_coupling_nse_cd::ExactU1 );
+      exact_solution.push_back( example20_coupling_nse_cd::ExactU2 );
+      exact_solution.push_back( example20_coupling_nse_cd::ExactP );
 
       /** boundary condition */
-      boundary_conditions.push_back( test_example2_forconvectiontest1::BoundCondition );
-      boundary_conditions.push_back( test_example2_forconvectiontest1::BoundCondition );
+      boundary_conditions.push_back( example20_coupling_nse_cd::BoundCondition );
+      boundary_conditions.push_back( example20_coupling_nse_cd::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_example2_forconvectiontest1::U1BoundValue );
-      boundary_data.push_back( test_example2_forconvectiontest1::U2BoundValue );
+      boundary_data.push_back( example20_coupling_nse_cd::U1BoundValue );
+      boundary_data.push_back( example20_coupling_nse_cd::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
 
       /** coefficients */
-      problem_coefficients = test_example2_forconvectiontest1::LinCoeffs;
+      problem_coefficients = example20_coupling_nse_cd::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(test_example2_forconvectiontest1::InitialU1);
-      initialCOndtion.push_back(test_example2_forconvectiontest1::InitialU2);
-      test_example2_forconvectiontest1::REYNOLDS_number = get_nu();
-      test_example2_forconvectiontest1::USER_parameter1 = this->example_database["user_parameter1"];
-      test_example2_forconvectiontest1::USER_parameter2 = this->example_database["user_parameter2"];
+      initialCOndtion.push_back(example20_coupling_nse_cd::InitialU1);
+      initialCOndtion.push_back(example20_coupling_nse_cd::InitialU2);
+      example20_coupling_nse_cd::REYNOLDS_number = get_nu();
+      example20_coupling_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
+      example20_coupling_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
-
-
-      test_example2_forconvectiontest1::ExampleFile();
+      example20_coupling_nse_cd::ExampleFile();
       break;
 
-    case 13:                // TestExample3 = Generate the velocity field for Convection Test Example 2 (1,2)
+    case 21:                // CouplingNSE_CD = Generate the velocity field (1,2) for Convection Example 21
       /** exact_solution */
-      exact_solution.push_back( test_example3_forconvectiontest2::ExactU1 );
-      exact_solution.push_back( test_example3_forconvectiontest2::ExactU2 );
-      exact_solution.push_back( test_example3_forconvectiontest2::ExactP );
+      exact_solution.push_back( example21_coupling_nse_cd::ExactU1 );
+      exact_solution.push_back( example21_coupling_nse_cd::ExactU2 );
+      exact_solution.push_back( example21_coupling_nse_cd::ExactP );
 
       /** boundary condition */
-      boundary_conditions.push_back( test_example3_forconvectiontest2::BoundCondition );
-      boundary_conditions.push_back( test_example3_forconvectiontest2::BoundCondition );
+      boundary_conditions.push_back( example21_coupling_nse_cd::BoundCondition );
+      boundary_conditions.push_back( example21_coupling_nse_cd::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_example3_forconvectiontest2::U1BoundValue );
-      boundary_data.push_back( test_example3_forconvectiontest2::U2BoundValue );
+      boundary_data.push_back( example21_coupling_nse_cd::U1BoundValue );
+      boundary_data.push_back( example21_coupling_nse_cd::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
 
       /** coefficients */
-      problem_coefficients = test_example3_forconvectiontest2::LinCoeffs;
+      problem_coefficients = example21_coupling_nse_cd::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(test_example3_forconvectiontest2::InitialU1);
-      initialCOndtion.push_back(test_example3_forconvectiontest2::InitialU2);
-      test_example3_forconvectiontest2::REYNOLDS_number = get_nu();
-      test_example3_forconvectiontest2::USER_parameter1 = this->example_database["user_parameter1"];
-      test_example3_forconvectiontest2::USER_parameter2 = this->example_database["user_parameter2"];
+      initialCOndtion.push_back(example21_coupling_nse_cd::InitialU1);
+      initialCOndtion.push_back(example21_coupling_nse_cd::InitialU2);
+      example21_coupling_nse_cd::REYNOLDS_number = get_nu();
+      example21_coupling_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
+      example21_coupling_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
-      test_example3_forconvectiontest2::ExampleFile();
+      example21_coupling_nse_cd::ExampleFile();
       break;
 
-
-    case 14:                // Test4 = Navier Stokes for the test 5 of TCD2D (sort of dam break)
+    case 30:                // Coupling CD_NSE Poiseuille with variable viscosity
       /** exact_solution */
-      exact_solution.push_back( test_4::ExactU1 );
-      exact_solution.push_back( test_4::ExactU2 );
-      exact_solution.push_back( test_4::ExactP );
+      exact_solution.push_back( example30_poiseuille_variablevisco::ExactU1 );
+      exact_solution.push_back( example30_poiseuille_variablevisco::ExactU2 );
+      exact_solution.push_back( example30_poiseuille_variablevisco::ExactP );
 
       /** boundary condition */
-      boundary_conditions.push_back( test_4::BoundCondition );
-      boundary_conditions.push_back( test_4::BoundCondition );
+      boundary_conditions.push_back( example30_poiseuille_variablevisco::BoundCondition );
+      boundary_conditions.push_back( example30_poiseuille_variablevisco::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_4::U1BoundValue );
-      boundary_data.push_back( test_4::U2BoundValue );
+      boundary_data.push_back( example30_poiseuille_variablevisco::U1BoundValue );
+      boundary_data.push_back( example30_poiseuille_variablevisco::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
 
       /** coefficients */
-      problem_coefficients = test_4::LinCoeffs;
+      problem_coefficients = example30_poiseuille_variablevisco::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(test_4::InitialU1);
-      initialCOndtion.push_back(test_4::InitialU2);
-      test_4::REYNOLDS_number = get_nu();
-      test_4::USER_parameter1 = this->example_database["user_parameter1"];
-      test_4::USER_parameter2 = this->example_database["user_parameter2"];
+      initialCOndtion.push_back(example30_poiseuille_variablevisco::InitialU1);
+      initialCOndtion.push_back(example30_poiseuille_variablevisco::InitialU2);
+      example30_poiseuille_variablevisco::REYNOLDS_number = get_nu();
+      example30_poiseuille_variablevisco::USER_parameter1 = this->example_database["user_parameter1"];
+      example30_poiseuille_variablevisco::USER_parameter2 = this->example_database["user_parameter2"];
 
-      test_4::ExampleFile();
+      example30_poiseuille_variablevisco::ExampleFile();
       break;
 
-    case 15:                // Test5 = Navier Stokes for the test 6 of TCD2D (semi-circle)
+
+    case 31:                // Example31 Coupling CD>NSE = Poiseuille with variable viscosity exponential
       /** exact_solution */
-      exact_solution.push_back( test_5::ExactU1 );
-      exact_solution.push_back( test_5::ExactU2 );
-      exact_solution.push_back( test_5::ExactP );
+      exact_solution.push_back( example30_poiseuille_variablevisco::ExactU1 );
+      exact_solution.push_back( example30_poiseuille_variablevisco::ExactU2 );
+      exact_solution.push_back( example30_poiseuille_variablevisco::ExactP );
 
       /** boundary condition */
-      boundary_conditions.push_back( test_5::BoundCondition );
-      boundary_conditions.push_back( test_5::BoundCondition );
+      boundary_conditions.push_back( example30_poiseuille_variablevisco::BoundCondition );
+      boundary_conditions.push_back( example30_poiseuille_variablevisco::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_5::U1BoundValue );
-      boundary_data.push_back( test_5::U2BoundValue );
+      boundary_data.push_back( example30_poiseuille_variablevisco::U1BoundValue );
+      boundary_data.push_back( example30_poiseuille_variablevisco::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
 
       /** coefficients */
-      problem_coefficients = test_5::LinCoeffs;
+      problem_coefficients = example30_poiseuille_variablevisco::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(test_5::InitialU1);
-      initialCOndtion.push_back(test_5::InitialU2);
-      test_5::REYNOLDS_number = get_nu();
-      test_5::USER_parameter1 = this->example_database["user_parameter1"];
-      test_5::USER_parameter2 = this->example_database["user_parameter2"];
+      initialCOndtion.push_back(example30_poiseuille_variablevisco::InitialU1);
+      initialCOndtion.push_back(example30_poiseuille_variablevisco::InitialU2);
+      example30_poiseuille_variablevisco::REYNOLDS_number = get_nu();
+      example30_poiseuille_variablevisco::USER_parameter1 = this->example_database["user_parameter1"];
+      example30_poiseuille_variablevisco::USER_parameter2 = this->example_database["user_parameter2"];
 
-      test_5::ExampleFile();
+      example30_poiseuille_variablevisco::ExampleFile();
       break;
 
-    case 16:                // Test5 = Navier Stokes for the test 6 of TCD2D (semi-circle)
-      /** exact_solution */
-      exact_solution.push_back( test_6::ExactU1 );
-      exact_solution.push_back( test_6::ExactU2 );
-      exact_solution.push_back( test_6::ExactP );
+    case 40:                // Example40 = 2-way-coupling :sort of dam break
+         /** exact_solution */
+         exact_solution.push_back( example40_dambreak_nse_cd::ExactU1 );
+         exact_solution.push_back( example40_dambreak_nse_cd::ExactU2 );
+         exact_solution.push_back( example40_dambreak_nse_cd::ExactP );
 
-      /** boundary condition */
-      boundary_conditions.push_back( test_6::BoundCondition );
-      boundary_conditions.push_back( test_6::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+         /** boundary condition */
+         boundary_conditions.push_back( example40_dambreak_nse_cd::BoundCondition );
+         boundary_conditions.push_back( example40_dambreak_nse_cd::BoundCondition );
+         boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
-      /** boundary values */
-      boundary_data.push_back( test_6::U1BoundValue );
-      boundary_data.push_back( test_6::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+         /** boundary values */
+         boundary_data.push_back( example40_dambreak_nse_cd::U1BoundValue );
+         boundary_data.push_back( example40_dambreak_nse_cd::U2BoundValue );
+         boundary_data.push_back( BoundaryValueHomogenous );
 
-      /** coefficients */
-      problem_coefficients = test_6::LinCoeffs;
+         /** coefficients */
+         problem_coefficients = example40_dambreak_nse_cd::LinCoeffs;
 
-      /** initial condition */
-      initialCOndtion.push_back(test_6::InitialU1);
-      initialCOndtion.push_back(test_6::InitialU2);
-      test_6::REYNOLDS_number = get_nu();
-      test_6::USER_parameter1 = this->example_database["user_parameter1"];
-      test_6::USER_parameter2 = this->example_database["user_parameter2"];
+         /** initial condition */
+         initialCOndtion.push_back(example40_dambreak_nse_cd::InitialU1);
+         initialCOndtion.push_back(example40_dambreak_nse_cd::InitialU2);
+         example40_dambreak_nse_cd::REYNOLDS_number = get_nu();
+         example40_dambreak_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
+         example40_dambreak_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
-      test_6::ExampleFile();
-      break;
+         example40_dambreak_nse_cd::ExampleFile();
+         break;
 
-    case 17:                // Test7 = Poiseuille with variable viscosity
-      /** exact_solution */
-      exact_solution.push_back( test_7::ExactU1 );
-      exact_solution.push_back( test_7::ExactU2 );
-      exact_solution.push_back( test_7::ExactP );
+       case 41:                // Example 41_= 2 way coupling for rotating semi-circle
+         /** exact_solution */
+         exact_solution.push_back( example41_semicircle_nse_cd::ExactU1 );
+         exact_solution.push_back( example41_semicircle_nse_cd::ExactU2 );
+         exact_solution.push_back( example41_semicircle_nse_cd::ExactP );
 
-      /** boundary condition */
-      boundary_conditions.push_back( test_7::BoundCondition );
-      boundary_conditions.push_back( test_7::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+         /** boundary condition */
+         boundary_conditions.push_back( example41_semicircle_nse_cd::BoundCondition );
+         boundary_conditions.push_back( example41_semicircle_nse_cd::BoundCondition );
+         boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
-      /** boundary values */
-      boundary_data.push_back( test_7::U1BoundValue );
-      boundary_data.push_back( test_7::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+         /** boundary values */
+         boundary_data.push_back( example41_semicircle_nse_cd::U1BoundValue );
+         boundary_data.push_back( example41_semicircle_nse_cd::U2BoundValue );
+         boundary_data.push_back( BoundaryValueHomogenous );
 
-      /** coefficients */
-      problem_coefficients = test_7::LinCoeffs;
+         /** coefficients */
+         problem_coefficients = example41_semicircle_nse_cd::LinCoeffs;
 
-      /** initial condition */
-      initialCOndtion.push_back(test_7::InitialU1);
-      initialCOndtion.push_back(test_7::InitialU2);
-      test_7::REYNOLDS_number = get_nu();
-      test_7::USER_parameter1 = this->example_database["user_parameter1"];
-      test_7::USER_parameter2 = this->example_database["user_parameter2"];
+         /** initial condition */
+         initialCOndtion.push_back(example41_semicircle_nse_cd::InitialU1);
+         initialCOndtion.push_back(example41_semicircle_nse_cd::InitialU2);
+         example41_semicircle_nse_cd::REYNOLDS_number = get_nu();
+         example41_semicircle_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
+         example41_semicircle_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
-      test_7::ExampleFile();
-      break;
+         example41_semicircle_nse_cd::ExampleFile();
+         break;
 
+       case 42:                // Example 42 = 2-WAY-COUPLING FOR RAYLEIGH TAYLOR INSTABILITY
+         /** exact_solution */
+         exact_solution.push_back( example42_rayleightaylor_nse_cd::ExactU1 );
+         exact_solution.push_back( example42_rayleightaylor_nse_cd::ExactU2 );
+         exact_solution.push_back( example42_rayleightaylor_nse_cd::ExactP );
 
-    case 18:                // Test8 = Exponential with variable viscosity
-      /** exact_solution */
-      exact_solution.push_back( test_8::ExactU1 );
-      exact_solution.push_back( test_8::ExactU2 );
-      exact_solution.push_back( test_8::ExactP );
+         /** boundary condition */
+         boundary_conditions.push_back( example42_rayleightaylor_nse_cd::BoundCondition );
+         boundary_conditions.push_back( example42_rayleightaylor_nse_cd::BoundCondition );
+         boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
-      /** boundary condition */
-      boundary_conditions.push_back( test_8::BoundCondition );
-      boundary_conditions.push_back( test_8::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+         /** boundary values */
+         boundary_data.push_back( example42_rayleightaylor_nse_cd::U1BoundValue );
+         boundary_data.push_back( example42_rayleightaylor_nse_cd::U2BoundValue );
+         boundary_data.push_back( BoundaryValueHomogenous );
 
-      /** boundary values */
-      boundary_data.push_back( test_8::U1BoundValue );
-      boundary_data.push_back( test_8::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
+         /** coefficients */
+         problem_coefficients = example42_rayleightaylor_nse_cd::LinCoeffs;
 
-      /** coefficients */
-      problem_coefficients = test_8::LinCoeffs;
+         /** initial condition */
+         initialCOndtion.push_back(example42_rayleightaylor_nse_cd::InitialU1);
+         initialCOndtion.push_back(example42_rayleightaylor_nse_cd::InitialU2);
+         example42_rayleightaylor_nse_cd::REYNOLDS_number = get_nu();
+         example42_rayleightaylor_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
+         example42_rayleightaylor_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
-      /** initial condition */
-      initialCOndtion.push_back(test_8::InitialU1);
-      initialCOndtion.push_back(test_8::InitialU2);
-      test_8::REYNOLDS_number = get_nu();
-      test_8::USER_parameter1 = this->example_database["user_parameter1"];
-      test_8::USER_parameter2 = this->example_database["user_parameter2"];
-
-      test_8::ExampleFile();
-      break;
+         example42_rayleightaylor_nse_cd::ExampleFile();
+         break;
 
 
     default:

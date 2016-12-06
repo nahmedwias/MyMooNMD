@@ -16,12 +16,10 @@ namespace sin_sin_sin
 {
 #include "TCD_2D/Sin3.h"
 }
-
 namespace sin_cos
 {
 #include "TCD_2D/SinCos1.h"
 }
-
 namespace rotating_bodies_1
 {
 #include "TCD_2D/Rotating_Bodies.h"
@@ -29,42 +27,39 @@ namespace rotating_bodies_1
 
 
 /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
-namespace test_example1_expsincos
+namespace example10_sincos_tcd2d            // example 10
 {
-#include "1_TestExampleTCD2D.h"
+#include "../../user_projects/include/Examples/Time_CD2D/10_SinCos_TCD2D.h"
 }
-namespace test_example2_sinsinsin
+namespace example20_coupling_expsincos      //example 20
 {
-#include "2_TestExampleTCD2D.h"
+#include "../../user_projects/include/Examples/Time_CD2D/20_CouplingNSE_CD_ExpSinCos.h"
 }
-namespace test_example3_sincos
+namespace example21_coupling_sinsinsin      //example 21
 {
-#include "3_TestExampleTCD2D.h"
+#include "../../user_projects/include/Examples/Time_CD2D/21_CouplingNSE_CD_SinSinSin.h"
 }
-namespace test_example4_linear
+namespace example30_linear_variablevisco    // example 30
 {
-#include "4_TestExampleTCD2D.h"
+#include "../../user_projects/include/Examples/Time_CD2D/30_Variable_viscosity_linear.h"
 }
-namespace test_2phase
+namespace example31_expon_variablevisco     // example 31
 {
-#include "5_TestTCD2D.h"
+#include "../../user_projects/include/Examples/Time_CD2D/31_Variable_viscosity_exponential.h"
 }
-namespace test_semicircle
+namespace example40_dambreak_cd_nse         // example 40
 {
-#include "6_TestTCD2D.h"
+#include "../../user_projects/include/Examples/Time_CD2D/40_DamBreakCD_NSE.h"
 }
-namespace test_rayleightaylor
+namespace example41_semicircle_cd_nse       // example 41
 {
-#include "7_TestTCD2D.h"
+#include "../../user_projects/include/Examples/Time_CD2D/41_SemiCircleCD_NSE.h"
 }
-namespace test_8_variablevisco
+namespace example42_rayleightaylor_cd_nse   // example 42
 {
-#include "8_Variable_viscosity_linear.h"
+#include "../../user_projects/include/Examples/Time_CD2D/42_RayleighTaylorCD_NSE.h"
 }
-namespace test_9_variablevisco2
-{
-#include "9_Variable_viscosity_exponential.h"
-}
+
 // ********* END OF USER PROJECT CODE
 
 
@@ -178,187 +173,167 @@ Example_TimeCD2D::Example_TimeCD2D(
 
 
       /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
-    case 11:                // 1_TestExample Exp-Sin-Cos
+    case 10:                // Example 10 Standard TCD2D example Sin-Cos, 0 coupling
       /**Exact solution"**/
-      exact_solution.push_back(test_example1_expsincos::Exact);
+      exact_solution.push_back(example10_sincos_tcd2d::Exact);
       /** boundary condition */
-      boundary_conditions.push_back( test_example1_expsincos::BoundCondition );
+      boundary_conditions.push_back( example10_sincos_tcd2d::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_example1_expsincos::BoundValue );
+      boundary_data.push_back( example10_sincos_tcd2d::BoundValue );
 
       /** coefficients */
-      problem_coefficients = test_example1_expsincos::BilinearCoeffs;
+      problem_coefficients = example10_sincos_tcd2d::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(test_example1_expsincos::InitialCondition);
-      test_example1_expsincos::ExampleFile();
+      initialCOndtion.push_back(example10_sincos_tcd2d::InitialCondition);
+      example10_sincos_tcd2d::ExampleFile();
 
-      this->timeDependentRhs = test_example1_expsincos::rhs_depends_on_time;
-      this->timeDependentCoeffs=test_example1_expsincos::coefficients_depend_on_time;
+      this->timeDependentRhs = example10_sincos_tcd2d::rhs_depends_on_time;
+      this->timeDependentCoeffs=example10_sincos_tcd2d::coefficients_depend_on_time;
       break;
 
-    case 12:                // 2_TestExample Sin-Sin-Sin
+    case 20:                // 20_CouplingNSE_CD Exp-Sin-Cos
       /**Exact solution"**/
-      exact_solution.push_back(test_example2_sinsinsin::Exact);
+      exact_solution.push_back(example20_coupling_expsincos::Exact);
       /** boundary condition */
-      boundary_conditions.push_back( test_example2_sinsinsin::BoundCondition );
+      boundary_conditions.push_back( example20_coupling_expsincos::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_example2_sinsinsin::BoundValue );
+      boundary_data.push_back( example20_coupling_expsincos::BoundValue );
 
       /** coefficients */
-      problem_coefficients = test_example2_sinsinsin::BilinearCoeffs;
+      problem_coefficients = example20_coupling_expsincos::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(test_example2_sinsinsin::InitialCondition);
-      test_example2_sinsinsin::ExampleFile();
+      initialCOndtion.push_back(example20_coupling_expsincos::InitialCondition);
+      example20_coupling_expsincos::ExampleFile();
 
-      this->timeDependentRhs = test_example2_sinsinsin::rhs_depends_on_time;
-      this->timeDependentCoeffs=test_example2_sinsinsin::coefficients_depend_on_time;
+      this->timeDependentRhs = example20_coupling_expsincos::rhs_depends_on_time;
+      this->timeDependentCoeffs=example20_coupling_expsincos::coefficients_depend_on_time;
       break;
 
-    case 13:                // 3_TestExample Sin-Cos
+    case 21:                // 21_CouplingNSE_CD Sin-Sin-Sin
       /**Exact solution"**/
-      exact_solution.push_back(test_example3_sincos::Exact);
+      exact_solution.push_back(example21_coupling_sinsinsin::Exact);
       /** boundary condition */
-      boundary_conditions.push_back( test_example3_sincos::BoundCondition );
+      boundary_conditions.push_back( example21_coupling_sinsinsin::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_example3_sincos::BoundValue );
+      boundary_data.push_back( example21_coupling_sinsinsin::BoundValue );
 
       /** coefficients */
-      problem_coefficients = test_example3_sincos::BilinearCoeffs;
+      problem_coefficients = example21_coupling_sinsinsin::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(test_example3_sincos::InitialCondition);
-      test_example3_sincos::ExampleFile();
+      initialCOndtion.push_back(example21_coupling_sinsinsin::InitialCondition);
+      example21_coupling_sinsinsin::ExampleFile();
 
-      this->timeDependentRhs = test_example3_sincos::rhs_depends_on_time;
-      this->timeDependentCoeffs=test_example3_sincos::coefficients_depend_on_time;
+      this->timeDependentRhs = example21_coupling_sinsinsin::rhs_depends_on_time;
+      this->timeDependentCoeffs=example21_coupling_sinsinsin::coefficients_depend_on_time;
       break;
 
-    case 14:                // 4_TestExample Linear Space Time
+    case 30:                // Example 30 CouplingCD_NSE_ Poiseuille Variable Viscosity Linear
       /**Exact solution"**/
-      exact_solution.push_back(test_example4_linear::Exact);
+      exact_solution.push_back(example30_linear_variablevisco::Exact);
       /** boundary condition */
-      boundary_conditions.push_back( test_example4_linear::BoundCondition );
+      boundary_conditions.push_back( example30_linear_variablevisco::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_example4_linear::BoundValue );
+      boundary_data.push_back( example30_linear_variablevisco::BoundValue );
 
       /** coefficients */
-      problem_coefficients = test_example4_linear::BilinearCoeffs;
+      problem_coefficients = example30_linear_variablevisco::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(test_example4_linear::InitialCondition);
-      test_example4_linear::ExampleFile();
+      initialCOndtion.push_back(example30_linear_variablevisco::InitialCondition);
+      example30_linear_variablevisco::ExampleFile();
 
-      this->timeDependentRhs = test_example4_linear::rhs_depends_on_time;
-      this->timeDependentCoeffs=test_example4_linear::coefficients_depend_on_time;
+      this->timeDependentRhs = example30_linear_variablevisco::rhs_depends_on_time;
+      this->timeDependentCoeffs=example30_linear_variablevisco::coefficients_depend_on_time;
       break;
 
-    case 15:                // 5_Test 2 phase in a square box
+    case 31:                // Example 31: Coupling CD>NSE Variable Viscosity Exponential
       /**Exact solution"**/
-      exact_solution.push_back(test_2phase::Exact);
+      exact_solution.push_back(example31_expon_variablevisco::Exact);
       /** boundary condition */
-      boundary_conditions.push_back( test_2phase::BoundCondition );
+      boundary_conditions.push_back( example31_expon_variablevisco::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_2phase::BoundValue );
+      boundary_data.push_back( example31_expon_variablevisco::BoundValue );
 
       /** coefficients */
-      problem_coefficients = test_2phase::BilinearCoeffs;
+      problem_coefficients = example31_expon_variablevisco::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(test_2phase::InitialCondition);
-      test_2phase::ExampleFile();
+      initialCOndtion.push_back(example31_expon_variablevisco::InitialCondition);
+      example31_expon_variablevisco::ExampleFile();
 
-      this->timeDependentRhs = test_2phase::rhs_depends_on_time;
-      this->timeDependentCoeffs=test_2phase::coefficients_depend_on_time;
+      this->timeDependentRhs = example31_expon_variablevisco::rhs_depends_on_time;
+      this->timeDependentCoeffs=example31_expon_variablevisco::coefficients_depend_on_time;
       break;
 
-    case 16:                // 6_Test rotating semi-circle
+    case 40:                // Example 40: 2 way-coupling for Dam Break (2 phases in a square box)
       /**Exact solution"**/
-      exact_solution.push_back(test_semicircle::Exact);
+      exact_solution.push_back(example40_dambreak_cd_nse::Exact);
       /** boundary condition */
-      boundary_conditions.push_back( test_semicircle::BoundCondition );
+      boundary_conditions.push_back( example40_dambreak_cd_nse::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_semicircle::BoundValue );
+      boundary_data.push_back( example40_dambreak_cd_nse::BoundValue );
 
       /** coefficients */
-      problem_coefficients = test_semicircle::BilinearCoeffs;
+      problem_coefficients = example40_dambreak_cd_nse::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(test_semicircle::InitialCondition);
-      test_semicircle::ExampleFile();
+      initialCOndtion.push_back(example40_dambreak_cd_nse::InitialCondition);
+      example40_dambreak_cd_nse::ExampleFile();
 
-      this->timeDependentRhs = test_semicircle::rhs_depends_on_time;
-      this->timeDependentCoeffs=test_semicircle::coefficients_depend_on_time;
+      this->timeDependentRhs = example40_dambreak_cd_nse::rhs_depends_on_time;
+      this->timeDependentCoeffs=example40_dambreak_cd_nse::coefficients_depend_on_time;
       break;
 
-    case 17:                // 7_Test Rayleigh-Taylor Instability
+    case 41:                // Example 41 2 way coupling: rotating semi-circle
       /**Exact solution"**/
-      exact_solution.push_back(test_rayleightaylor::Exact);
+      exact_solution.push_back(example41_semicircle_cd_nse::Exact);
       /** boundary condition */
-      boundary_conditions.push_back( test_rayleightaylor::BoundCondition );
+      boundary_conditions.push_back( example41_semicircle_cd_nse::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_rayleightaylor::BoundValue );
+      boundary_data.push_back( example41_semicircle_cd_nse::BoundValue );
 
       /** coefficients */
-      problem_coefficients = test_rayleightaylor::BilinearCoeffs;
+      problem_coefficients = example41_semicircle_cd_nse::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(test_rayleightaylor::InitialCondition);
-      test_rayleightaylor::ExampleFile();
+      initialCOndtion.push_back(example41_semicircle_cd_nse::InitialCondition);
+      example41_semicircle_cd_nse::ExampleFile();
 
-      this->timeDependentRhs = test_rayleightaylor::rhs_depends_on_time;
-      this->timeDependentCoeffs=test_rayleightaylor::coefficients_depend_on_time;
+      this->timeDependentRhs = example41_semicircle_cd_nse::rhs_depends_on_time;
+      this->timeDependentCoeffs=example41_semicircle_cd_nse::coefficients_depend_on_time;
       break;
 
-
-    case 18:                // 8_Variable Viscosity Linear
+    case 42:                // Example 42: 2-WAY-COUPLING for Rayleigh-Taylor Instability
       /**Exact solution"**/
-      exact_solution.push_back(test_8_variablevisco::Exact);
+      exact_solution.push_back(example42_rayleightaylor_cd_nse::Exact);
       /** boundary condition */
-      boundary_conditions.push_back( test_8_variablevisco::BoundCondition );
+      boundary_conditions.push_back( example42_rayleightaylor_cd_nse::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( test_8_variablevisco::BoundValue );
+      boundary_data.push_back( example42_rayleightaylor_cd_nse::BoundValue );
 
       /** coefficients */
-      problem_coefficients = test_8_variablevisco::BilinearCoeffs;
+      problem_coefficients = example42_rayleightaylor_cd_nse::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(test_8_variablevisco::InitialCondition);
-      test_8_variablevisco::ExampleFile();
+      initialCOndtion.push_back(example42_rayleightaylor_cd_nse::InitialCondition);
+      example42_rayleightaylor_cd_nse::ExampleFile();
 
-      this->timeDependentRhs = test_8_variablevisco::rhs_depends_on_time;
-      this->timeDependentCoeffs=test_8_variablevisco::coefficients_depend_on_time;
+      this->timeDependentRhs = example42_rayleightaylor_cd_nse::rhs_depends_on_time;
+      this->timeDependentCoeffs=example42_rayleightaylor_cd_nse::coefficients_depend_on_time;
       break;
 
 
-    case 19:                // 9_Variable Viscosity Exponential
-      /**Exact solution"**/
-      exact_solution.push_back(test_9_variablevisco2::Exact);
-      /** boundary condition */
-      boundary_conditions.push_back( test_9_variablevisco2::BoundCondition );
-
-      /** boundary values */
-      boundary_data.push_back( test_9_variablevisco2::BoundValue );
-
-      /** coefficients */
-      problem_coefficients = test_9_variablevisco2::BilinearCoeffs;
-
-      /** Initial condition*/
-      initialCOndtion.push_back(test_9_variablevisco2::InitialCondition);
-      test_9_variablevisco2::ExampleFile();
-
-      this->timeDependentRhs = test_9_variablevisco2::rhs_depends_on_time;
-      this->timeDependentCoeffs=test_9_variablevisco2::coefficients_depend_on_time;
-      break;
 
 
 

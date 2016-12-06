@@ -7,7 +7,7 @@
 
 void ExampleFile()
 {
-  Output::info<3>("Example: 7_TestTCD2D.h");
+  Output::info<3>("Example: 42_RayleighTaylorCD_NSE.h");
 }
 
 double get_nu()
