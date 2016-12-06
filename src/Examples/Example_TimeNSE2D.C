@@ -35,6 +35,10 @@ namespace example31_poiseuille_variablevisco // Coupling CD>NSE Poiseuille with 
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/31_CouplingCD_NSE_Exponential_variableviscosity.h"
 }
+namespace example32_SinCosExp // Coupling CD>NSE with SinCosExp
+{
+#include "../../user_projects/include/Examples/Time_NSE2D/32_CouplingCD_NSE_SinCosExp.h"
+}
 namespace example40_dambreak_nse_cd // 2 way coupling for dam break
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/40_DamBreakNSE_CD.h"
@@ -263,6 +267,36 @@ Example_TimeNSE2D::Example_TimeNSE2D(
 
       example31_poiseuille_variablevisco::ExampleFile();
       break;
+
+    case 32:                // Example32 Coupling CD>NSE = SinCosExp
+      /** exact_solution */
+      exact_solution.push_back( example32_SinCosExp::ExactU1 );
+      exact_solution.push_back( example32_SinCosExp::ExactU2 );
+      exact_solution.push_back( example32_SinCosExp::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( example32_SinCosExp::BoundCondition );
+      boundary_conditions.push_back( example32_SinCosExp::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( example32_SinCosExp::U1BoundValue );
+      boundary_data.push_back( example32_SinCosExp::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = example32_SinCosExp::LinCoeffs;
+
+      /** initial condition */
+      initialCOndtion.push_back(example32_SinCosExp::InitialU1);
+      initialCOndtion.push_back(example32_SinCosExp::InitialU2);
+//      example32_SinCosExp::REYNOLDS_number = get_nu();
+//      example32_SinCosExp::USER_parameter1 = this->example_database["user_parameter1"];
+//      example32_SinCosExp::USER_parameter2 = this->example_database["user_parameter2"];
+
+      example32_SinCosExp::ExampleFile();
+      break;
+
 
     case 40:                // Example40 = 2-way-coupling :sort of dam break
          /** exact_solution */
