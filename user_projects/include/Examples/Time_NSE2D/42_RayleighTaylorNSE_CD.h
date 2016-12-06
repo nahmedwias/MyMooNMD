@@ -1,7 +1,8 @@
-// Navier-Stokes problem, SinCos (Bsp1)
-// 
-// u(x,y) = (sin(t)*sin(Pi*x)*sin(Pi*y), sin(t)*cos(Pi*x)*cos(Pi*y))
-// p(x,y) = sin(t)*(sin(Pi*x)+cos(Pi*y)-2/Pi)
+// Navier-Stokes problem, Rayleigh-Taylor instability
+// Goes with example 7_Test_CD2D to reproduce Rayleigh-Taylor instability
+// 2 fluids upon one another. The heavier is above. Only gravity.
+// initial velocity =0 everyhwere.
+// See paper Fraigneau et al (2001)
 
 // some variables from user input
 double REYNOLDS_number;
@@ -12,7 +13,7 @@ double USER_parameter2;
 
 void ExampleFile()
 {
-  Output::info<3>("Example: 5_TestTNSE2D.h ") ;
+  Output::info<3>("Example: 42_RayleighTaylorNSE_CD.h ") ;
   TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
 }
 
@@ -66,8 +67,10 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+  if (i == 0 || i ==2 )
+    cond = DIRICHLET;   // top and bottom
+  else
+    cond = NEUMANN;     // right and left
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)

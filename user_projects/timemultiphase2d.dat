@@ -48,24 +48,23 @@ verbosity: 3   [ 1, 5 ]
 ## 2 - sincos		  - in the standard TCD2D program
 ## 3 - rotatingbodies - in the standard TCD2D program
 ## ONLY THE EXAMPLES BELOW SHOULD BE USED IN THE MULTIPHASE PROGRAM
-## 11- bsp1 (sincos)  - in the multiphase program - FOR TNSE2D
-## 12- For Convection1- in the multiphase program - FOR TNSE2D
-## 13- For Convection2- in the multiphase program - FOR TNSE2D
-## 14- DAM BREAK	  - in the multiphase program - FOR TNSE2D
-## 15- SEMICIRCLE	  - in the multiphase program - FOR TNSE2D
-## 16- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
-## 17- Variable nu Po.- in the multipahse program - FOR TNSE2D
-## 18- Variable nu Exp- in the multiphase program - FOR TNSE2D
-## 11- ExpSinCos 	  - in the multiphase program - FOR TCD2D
-## 12- SinSinSin 	  - in the multiphase program - FOR TCD2D
-## 13- SinCos    	  - in the multiphase program - FOR TCD2D
-## 14- LinearSpaceTime- in the multiphase program - FOR TCD2D
-## 15- DAM BREAK	  - in the multiphase program - FOR TCD2D
-## 16- SEMICIRCLE	  - in the multiphase program - FOR TCD2D
-## 17- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-## 18- VariableViscoL.- in the multiphase program - FOR TCD2D
-## 19- VariableViscoE.- in the multiphase program - FOR TCD2D
-example: 18 [ -1, 100 ]
+## 10- bsp1 (sincos)  - in the multiphase program - FOR TNSE2D
+## 10- SinCos    	  - in the multiphase program - FOR TCD2D
+## 20- Coupling NSE_CD- in the multiphase program - FOR TNSE2D
+## 20- Coupl.ExpSinCos- in the multiphase program - FOR TCD2D
+## 21- Coupling NSE_CD- in the multiphase program - FOR TNSE2D
+## 21- Coupl.SinSinSin- in the multiphase program - FOR TCD2D
+## 30- Variable nu Po.- in the multipahse program - FOR TNSE2D
+## 30- VariableViscoL.- in the multiphase program - FOR TCD2D
+## 31- Variable nu Exp- in the multiphase program - FOR TNSE2D
+## 31- VariableViscoE.- in the multiphase program - FOR TCD2D
+## 40- DAM BREAK	  - in the multiphase program - FOR TNSE2D
+## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
+## 41- SEMICIRCLE	  - in the multiphase program - FOR TNSE2D
+## 41- SEMICIRCLE	  - in the multiphase program - FOR TCD2D
+## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
+## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
+example: 20 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -242,9 +241,9 @@ RE_NR:	1.
 user_parameter1: 2
 user_parameter2: 2
 
-dimensional_nse: true   { true, false }
-coupling_nse_cd: true   { true, false }
-coupling_cd_nse: true   { true, false }
+dimensional_nse: false   { true, false }
+coupling_nse_cd: false   { true, false }
+coupling_cd_nse: false   { true, false }
 
 
 ###### PARAMETERS FROM THE OLD DATABASE

@@ -12,7 +12,7 @@ double USER_parameter2;
 
 void ExampleFile()
 {
-  OutPut("Example: 1_TestExampleTNSE.h , SinCos" << endl) ;
+  OutPut("Example: 10_SinCos_TNSE2D.h " << endl) ;
   TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
 }
 

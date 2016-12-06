@@ -8,7 +8,7 @@ double USER_parameter3;
 
 void ExampleFile()
 {
-  Output::print<1>("Example: Variable_viscosity.h");
+  Output::print<1>("Example: 31_CouplingCD_NSE_Exponential_variablevisco.h");
 }
 
 // ========================================================================

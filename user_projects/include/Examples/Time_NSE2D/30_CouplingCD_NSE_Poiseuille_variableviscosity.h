@@ -11,7 +11,7 @@ double USER_parameter3;
 
 void ExampleFile()
 {
-  Output::info<1>("Example", "TestExample1.h");
+  Output::info<1>("Example", "30_CouplingCD_NSE_Poiseuille_variablevisco.h");
 }
 
 // ========================================================================

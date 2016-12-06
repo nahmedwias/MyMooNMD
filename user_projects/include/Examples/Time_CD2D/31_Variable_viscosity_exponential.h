@@ -1,7 +1,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: 9_Variable_viscosity_exponential.h" << endl);
+  OutPut("Example: 31_Variable_viscosity_exponential.h" << endl);
 }
 
 double get_nu()
@@ -71,11 +71,11 @@ void InitialCondition(double x,  double y, double *values)
 void BilinearCoeffs(int n_points, double *X, double *Y,
         double **parameters, double **coeffs)
 {
-  double eps=1/TDatabase::ParamDB->RE_NR;
+//  double eps=1/TDatabase::ParamDB->RE_NR;
 //  double a=1, b=2, c=1;
   int i;
-  double *coeff, x, y;
-  double t=TDatabase::TimeDB->CURRENTTIME;
+  double *coeff, y;//x, y;
+//  double t=TDatabase::TimeDB->CURRENTTIME;
 
   double a = TDatabase::ParamDB->P1;
   double h = TDatabase::ParamDB->P2;
@@ -84,7 +84,7 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-    x = X[i];
+//    x = X[i];
     y = Y[i];
 
     coeff[0] = 0;

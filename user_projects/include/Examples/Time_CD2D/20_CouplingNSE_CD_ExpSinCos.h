@@ -10,7 +10,7 @@
 
 void ExampleFile()
 {
-  Output::print<1>("Example: exp.h");
+  Output::print<1>("Example: 20_CouplingNSE_CD_ExpSinCos.h");
 }
 
 constexpr bool rhs_depends_on_time = true;
