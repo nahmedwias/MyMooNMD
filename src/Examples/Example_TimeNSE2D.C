@@ -237,31 +237,31 @@ Example_TimeNSE2D::Example_TimeNSE2D(
 
     case 31:                // Example31 Coupling CD>NSE = Poiseuille with variable viscosity exponential
       /** exact_solution */
-      exact_solution.push_back( example30_poiseuille_variablevisco::ExactU1 );
-      exact_solution.push_back( example30_poiseuille_variablevisco::ExactU2 );
-      exact_solution.push_back( example30_poiseuille_variablevisco::ExactP );
+      exact_solution.push_back( example31_poiseuille_variablevisco::ExactU1 );
+      exact_solution.push_back( example31_poiseuille_variablevisco::ExactU2 );
+      exact_solution.push_back( example31_poiseuille_variablevisco::ExactP );
 
       /** boundary condition */
-      boundary_conditions.push_back( example30_poiseuille_variablevisco::BoundCondition );
-      boundary_conditions.push_back( example30_poiseuille_variablevisco::BoundCondition );
+      boundary_conditions.push_back( example31_poiseuille_variablevisco::BoundCondition );
+      boundary_conditions.push_back( example31_poiseuille_variablevisco::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( example30_poiseuille_variablevisco::U1BoundValue );
-      boundary_data.push_back( example30_poiseuille_variablevisco::U2BoundValue );
+      boundary_data.push_back( example31_poiseuille_variablevisco::U1BoundValue );
+      boundary_data.push_back( example31_poiseuille_variablevisco::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
 
       /** coefficients */
-      problem_coefficients = example30_poiseuille_variablevisco::LinCoeffs;
+      problem_coefficients = example31_poiseuille_variablevisco::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(example30_poiseuille_variablevisco::InitialU1);
-      initialCOndtion.push_back(example30_poiseuille_variablevisco::InitialU2);
-      example30_poiseuille_variablevisco::REYNOLDS_number = get_nu();
-      example30_poiseuille_variablevisco::USER_parameter1 = this->example_database["user_parameter1"];
-      example30_poiseuille_variablevisco::USER_parameter2 = this->example_database["user_parameter2"];
+      initialCOndtion.push_back(example31_poiseuille_variablevisco::InitialU1);
+      initialCOndtion.push_back(example31_poiseuille_variablevisco::InitialU2);
+      example31_poiseuille_variablevisco::REYNOLDS_number = get_nu();
+      example31_poiseuille_variablevisco::USER_parameter1 = this->example_database["user_parameter1"];
+      example31_poiseuille_variablevisco::USER_parameter2 = this->example_database["user_parameter2"];
 
-      example30_poiseuille_variablevisco::ExampleFile();
+      example31_poiseuille_variablevisco::ExampleFile();
       break;
 
     case 40:                // Example40 = 2-way-coupling :sort of dam break
