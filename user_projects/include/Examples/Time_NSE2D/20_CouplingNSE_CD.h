@@ -88,13 +88,13 @@ void LinCoeffs(int n_points, double *X, double *Y,
 {
   static double nu = REYNOLDS_number;
   int i;
-  double *coeff, x, y; 
+  double *coeff;// x, y;
 
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-    x = X[i];
-    y = Y[i];
+//    x = X[i];
+//    y = Y[i];
 //    double rho = parameters[i][2];
 //    double mu  = parameters[i][3];
 

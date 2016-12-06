@@ -58,13 +58,14 @@ verbosity: 3   [ 1, 5 ]
 ## 30- VariableViscoL.- in the multiphase program - FOR TCD2D
 ## 31- Variable nu Exp- in the multiphase program - FOR TNSE2D
 ## 31- VariableViscoE.- in the multiphase program - FOR TCD2D
+## 32- CD>NSESinCosExp- in the multiphase program - FOR TNSE2D
 ## 40- DAM BREAK	  - in the multiphase program - FOR TNSE2D
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 41- SEMICIRCLE	  - in the multiphase program - FOR TNSE2D
 ## 41- SEMICIRCLE	  - in the multiphase program - FOR TCD2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-example: 21 [ -1, 100 ]
+example: 32 [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -91,10 +92,10 @@ output_vtk_directory: .
 output_basename: multiphase_output { multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
 ## The maximum number of iterations to perform in a non-linear loop. 
-nonlinloop_maxit: 5   [ 0, 1000 ]
+nonlinloop_maxit: 7   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
-nonlinloop_epsilon: 1e-10   [ 0, 1 ]
+nonlinloop_epsilon: 1e-9   [ 0, 1 ]
 
 ## Damping factor 'w' for the nonlinear iteration. The solution of 
 ## the k-th iterate will be scaled by 'w'. Then The previous solution, 
@@ -241,8 +242,8 @@ RE_NR:	1.
 user_parameter1: 2
 user_parameter2: 2
 
-dimensional_nse: true   { true, false }
-coupling_nse_cd: true   { true, false }
+dimensional_nse: false   { true, false }
+coupling_nse_cd: false   { true, false }
 coupling_cd_nse: false   { true, false }
 
 
@@ -270,7 +271,7 @@ ALGEBRAIC_FLUX_CORRECTION: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.05
+ENDTIME: 0.1
 TIMESTEPLENGTH: 0.01
 
 
