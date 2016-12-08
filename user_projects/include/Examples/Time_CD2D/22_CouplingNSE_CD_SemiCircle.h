@@ -7,7 +7,7 @@
 
 void ExampleFile()
 {
-  Output::info<3>("Example: 22_SemiCircleNSE_CD.h");
+  Output::info<3>("Example: 22_CouplingNSE_CD_Semicircle.h");
 }
 
 double get_nu()
@@ -66,11 +66,11 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
     // those lines are for the coupling!!
     // IF YOU WANT TO TEST THE COUPLING,
     // YOU HAVE TO UNCOMMENT THEM! AND COMMENT THE REST
-//    u_x = parameters[i][0];
-//    u_y = parameters[i][1];
+    u_x = parameters[i][0];
+    u_y = parameters[i][1];
 
-    u_x = 2*(y-0.5);
-    u_y = -2*(x-0.5);
+//    u_x = 2*(y-0.5);
+//    u_y = -2*(x-0.5);
 
     coeff[0] = 0;
     coeff[1] = u_x;

@@ -68,6 +68,29 @@ int main(int argc, char* argv[])
 //  tnse_db["example"]         = 18;
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
+//  int tnse_example_number     = tnse_db["example"]; // just for convenience
+
+  /********************************************************************
+   * MANAGE PARAMETERS FOR BENCHMARK PROBLEMS!
+   ********************************************************************/
+  switch(tcd_example_number)
+  {
+    case 10:
+      tcd_db["coupling_nse_cd"]  = false;
+      tnse_db["coupling_cd_nse"] = false;
+      break;
+    case 20: case 21: case 22:
+      tnse_db["dimensional_nse"] = true;
+      tcd_db["coupling_nse_cd"]  = true;
+      tnse_db["coupling_cd_nse"] = false;
+      break;
+    case 30: case 31: case 32:
+    case 40: case 42:
+//      tnse_db["dimensional_nse"] = true;
+//      tcd_db["coupling_nse_cd"]  = true;
+//      tnse_db["coupling_cd_nse"] = true;
+      break;
+  }
 
 
   TDomain domain(argv[1], parmoon_db);            // Initialize geometry
