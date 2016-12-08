@@ -90,7 +90,7 @@ output_vtk_directory: .
 
 ## This string is prepended to most files written by ParMooN. 
 ## Especially this includes vtk-files 
-output_basename: multiphase_outputs { multiphase_tconvection_output, multiphase_tnse_output, multiphase_outputs }
+output_basename: multiphase_output { multiphase_tconvection_output, multiphase_tnse_output, multiphase_output}
 
 ## The maximum number of iterations to perform in a non-linear loop. 
 nonlinloop_maxit: 5   [ 0, 1000 ]
@@ -252,7 +252,7 @@ coupling_cd_nse: true   { true, false }
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 
-ANSATZ_ORDER: 1
+ANSATZ_ORDER: 2
 
 Par_P0: 0
 Par_P3: 1
@@ -272,7 +272,7 @@ ALGEBRAIC_FLUX_CORRECTION: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.2
+ENDTIME: 2
 TIMESTEPLENGTH: 0.01
 
 
