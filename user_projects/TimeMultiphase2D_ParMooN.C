@@ -15,7 +15,7 @@
 #include <LoopInfo.h>
 #include <ParameterDatabase.h>
 #include <TimeDiscRout.h>
-
+#include <FEFunctionInterpolator.h>
 
 
 // ***** LIST OF FUNCTIONS USED IN MAIN PROGRAMM ***** //
@@ -158,6 +158,18 @@ int main(int argc, char* argv[])
   TFEFunction2D rho_field = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
   TFEFunction2D mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*)"m");
 
+//  // Interpolate the fields
+//  const TFESpace2D* into_space = &tnse2d.get_velocity_space();
+//  FEFunctionInterpolator interpolator(into_space);
+//  size_t length_interpolated = rho_field0.GetLength();
+//  std::vector<double> entries_rho(length_interpolated, 0.0);
+//  std::vector<double> entries_mu(length_interpolated, 0.0);
+//  TFEFunction2D rho_field =
+//      interpolator.interpolate(rho_field0,entries_rho);
+//  TFEFunction2D mu_field =
+//      interpolator.interpolate(mu_field0,entries_mu);
+
+
   /********************************************************************
    * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
    ********************************************************************/
@@ -165,6 +177,7 @@ int main(int argc, char* argv[])
     tnse2d.assemble_initial_time_withfields(&rho_field,&mu_field); // assemble linear term
   else
     tnse2d.assemble_initial_time();                                // assemble linear term
+
 
   if (tcd_db["solve_cd"].is(true))
   {
