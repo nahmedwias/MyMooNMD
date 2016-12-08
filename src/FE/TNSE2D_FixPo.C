@@ -6272,8 +6272,6 @@ double ***LocMatrices, double **LocRhs)
   }                              // endfor i
 }
 
-
-
 void TimeNSType1_2NLGalerkin_dimensional(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
@@ -6330,56 +6328,6 @@ double ***LocMatrices, double **LocRhs)
   }                              // endfor i
 }
 
-
-void TimeNSParamsVelo_dimensional(double *in, double *out)
-{
-  out[0] = in[2];   // u1old
-  out[1] = in[3];   // u2old
-  out[2] = in[4];   // rho_field
-  out[3] = in[5];   // mu_field
-//  for (int i=0; i<7;i++)
-//  {
-//    cout << "in i = " << i << " " << in[i] << endl;
-//  }
-}
-
-
-
-void TimeNSRHS_dimensional(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
-{
-  double *Rhs1, *Rhs2;
-  double test00;
-  double *Orig0;
-  int i, N_U;
-  double c1, c2, u3;
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-
-  N_U = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];         // u
-
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-
-
-  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
-//  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
-
-  for(i=0;i<N_U;i++)
-  {
-    test00 = Orig0[i];
-
-    Rhs1[i] += u3*Mult*test00*c1;
-    Rhs2[i] += u3*Mult*test00*c2;
-    //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
-  }                              // endfor i
-}
-
 void TimeNSType1GalerkinMass_dimensional(double Mult, double *coeff,
                                          double *param, double hK,
                                          double **OrigValues, int *N_BaseFuncts,
@@ -6429,4 +6377,276 @@ void TimeNSType1GalerkinMass_dimensional(double Mult, double *coeff,
   }                              // endfor i
 }
 
+void TimeNSParamsVelo_dimensional(double *in, double *out)
+{
+  out[0] = in[2];   // u1old
+  out[1] = in[3];   // u2old
+  out[2] = in[4];   // rho_field
+  out[3] = in[5];   // mu_field
+//  for (int i=0; i<7;i++)
+//  {
+//    cout << "in i = " << i << " " << in[i] << endl;
+//  }
+}
 
+void TimeNSRHS_dimensional(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double *Rhs1, *Rhs2;
+  double test00;
+  double *Orig0;
+  int i, N_U;
+  double c1, c2, u3;
+
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];         // u
+
+  c1 = coeff[1];                 // f1
+  c2 = coeff[2];                 // f2
+
+
+  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+//  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
+  for(i=0;i<N_U;i++)
+  {
+    test00 = Orig0[i];
+
+    Rhs1[i] += u3*Mult*test00*c1;
+    Rhs2[i] += u3*Mult*test00*c2;
+    //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
+  }                              // endfor i
+}
+
+
+
+// ======================================================================
+// Type 3, Standard Galerkin, D(u):D(v)
+// Type 3, Coletti, D(u):D(v)
+// Type 3, GL00Convolution, D(u):D(v)
+// ======================================================================
+void TimeNSType3GalerkinDD_dimensional(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double **MatrixA21 = LocMatrices[2];
+  double **MatrixA22 = LocMatrices[3];
+  double **MatrixM11 = LocMatrices[4];
+  double **MatrixB1  = LocMatrices[5];
+  double **MatrixB2  = LocMatrices[6];
+
+  double *Rhs1 = LocRhs[0];
+  double *Rhs2 = LocRhs[1];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double *Orig0 = OrigValues[0];         // u_x
+  double *Orig1 = OrigValues[1];         // u_y
+  double *Orig2 = OrigValues[2];         // u
+  double *Orig3 = OrigValues[3];         // p
+
+  // double c0 = coeff[0];              // nu
+  double c1 = coeff[1];                 // f1
+  double c2 = coeff[2];                 // f2
+  // double c3 = coeff[3];              // rho taken as a coefficient from examples
+  // double c4 = coeff[4];              // mu  taken as a coefficient from examples
+
+  double u1 = param[0];                 // u1old
+  double u2 = param[1];                 // u2old
+  double u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+  double u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+
+  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *MatrixM11Row;
+  double *MatrixRow1, *MatrixRow2;
+  double val, val1;
+
+  for(int i=0;i<N_U;i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix12Row = MatrixA12[i];
+    Matrix21Row = MatrixA21[i];
+    Matrix22Row = MatrixA22[i];
+    MatrixM11Row  = MatrixM11[i];
+
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    Rhs1[i] += u3*Mult*test00*c1;
+    Rhs2[i] += u3*Mult*test00*c2;
+
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val1 = u3*(u1*ansatz10+u2*ansatz01)*test00;
+      val  = u4*(2*test10*ansatz10+test01*ansatz01);
+      val += val1;
+      Matrix11Row[j] += Mult * val;
+
+      val  = u4*(test01*ansatz10);
+      Matrix12Row[j] += Mult * val;
+
+      val  = u4*(test10*ansatz01);
+      Matrix21Row[j] += Mult * val;
+
+      val  = u4*(test10*ansatz10+2*test01*ansatz01);
+      val += val1;
+      Matrix22Row[j] += Mult * val;
+
+      val = u3*Mult*(ansatz00*test00);
+      MatrixM11Row[j] += val;
+    }                            // endfor j
+  }                              // endfor i
+
+  for(int i=0;i<N_P;i++)
+  {
+    MatrixRow1 = MatrixB1[i];
+    MatrixRow2 = MatrixB2[i];
+
+    test00 = Orig3[i];
+
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val = -u3*Mult*test00*ansatz10;
+      MatrixRow1[j] += val;
+
+      val = -u3*Mult*test00*ansatz01;
+      MatrixRow2[j] += val;
+    }                            // endfor j
+
+  }                              // endfor i
+}
+
+// ======================================================================
+// Type 3, Standard Galerkin, D(u):D(v), only nonlinear diagonal blocks
+// Type 4, Standard Galerkin, D(u):D(v), only nonlinear diagonal blocks
+// Type 3, Coletti, D(u):D(v), only nonlinear diagonal blocks
+// Type 4, Coletti, D(u):D(v), only nonlinear diagonal blocks
+// ======================================================================
+void TimeNSType3_4NLGalerkinDD_dimensional(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11, **MatrixA22;
+  double val, val1;
+  double *Matrix11Row, *Matrix22Row;
+  double ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j, N_U;
+
+  MatrixA11 = LocMatrices[0];
+  MatrixA22 = LocMatrices[1];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];         // u_x
+  Orig1 = OrigValues[1];         // u_y
+  Orig2 = OrigValues[2];         // u
+
+  // double c0 = coeff[0];              // nu
+  // double c1 = coeff[1];                 // f1
+  // double c2 = coeff[2];                 // f2
+  // double c3 = coeff[3];              // rho taken as a coefficient from examples
+  // double c4 = coeff[4];              // mu  taken as a coefficient from examples
+
+  double u1 = param[0];                 // u1old
+  double u2 = param[1];                 // u2old
+  double u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+  double u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
+  for(i=0;i<N_U;i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix22Row = MatrixA22[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val1 = u3*(u1*ansatz10+u2*ansatz01)*test00;
+      val  = u4*(2*test10*ansatz10+test01*ansatz01);
+      val += val1;
+      Matrix11Row[j] += Mult * val;
+
+      val  = u4*(test10*ansatz10+2*test01*ansatz01);
+      val += val1;
+      Matrix22Row[j] += Mult * val;
+
+    }                            // endfor j
+  }                              // endfor i
+}
+
+void TimeNSType3GalerkinDDMass_dimensional(double Mult, double *coeff,
+                                         double *param, double hK,
+                                         double **OrigValues, int *N_BaseFuncts,
+                                         double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixM;
+  double val;
+  double *MatrixMRow;
+  double ansatz00;
+  double test00;
+  double *Orig0;
+  int i,j,N_U;
+  double u3;
+
+  MatrixM = LocMatrices[0];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];         // u
+
+//  c0 = coeff[0];                 // nu
+
+//  u1 = param[0];                 // u1old
+//  u2 = param[1];                 // u2old
+  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
+//  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+
+  /** NOTES: there are 2 ways to consider the property fields in the equations : take it
+   * as input from example objects (as a coefficient, written in the example methods or given
+   * as user input), use c3 and c4 to use this case and replace them in val, below. The other way
+   * is to read them as values from fe_functions taken as a Param in a local Assembling. This is
+   * with u3 and u4.
+   */
+
+  for(i=0;i<N_U;i++)
+  {
+    MatrixMRow = MatrixM[i];
+    test00 = Orig0[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz00 = Orig0[j];
+
+      val  = u3*ansatz00*test00;
+      MatrixMRow[j] += Mult * val;
+    }                            // endfor j
+  }                              // endfor i
+}
