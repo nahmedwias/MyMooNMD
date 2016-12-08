@@ -650,7 +650,7 @@ void Time_CD2D::assemble_rhs_vector
     {
       // In the SUPG case:
       // M = (u,v) + \tau (u,b.grad v)
-      LocalAssembling2D_type mass_supg = LocalAssembling2D_type::TCD2D_Mass;;
+      LocalAssembling2D_type mass_supg = LocalAssembling2D_type::TCD2D_Mass;
 
       LocalAssembling2D la_m_supg(mass_supg, pointer_to_function,
                                   this->example.get_coeffs());
