@@ -85,6 +85,10 @@ int main(int argc, char* argv[])
       tnse_db["coupling_cd_nse"] = false;
       break;
     case 30: case 31: case 32:
+      tnse_db["dimensional_nse"] = true;
+      tcd_db["coupling_nse_cd"]  = false;
+      tnse_db["coupling_cd_nse"] = true;
+      break;
     case 40: case 42:
 //      tnse_db["dimensional_nse"] = true;
 //      tcd_db["coupling_nse_cd"]  = true;
@@ -195,8 +199,6 @@ int main(int argc, char* argv[])
 
 
 
-
-
   /********************************************************************
    * TIME ITERATION LOOP
    ********************************************************************/
@@ -248,49 +250,42 @@ int main(int argc, char* argv[])
      ********************************************************************/
     if (tcd_db["solve_cd"].is(true))
     {
+      Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
       if (tcd_db["coupling_nse_cd"].is(true))
       {
         tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
-
-        Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
-        Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-        if (tcd_example_number >=20 && tcd_example_number <= 22)    // examples with true coupling
-        {
-          tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
-        }
-        else
-        {
-          tcd2d.assemble_stiffness_matrix_alone();
-        }
+        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
         tcd2d.scale_stiffness_matrix();
-        Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
         tcd2d.solve();
-        Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
-
-        /********************************************************************
-         * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
-         ********************************************************************/
-        if (tnse_db["coupling_cd_nse"].is(true))
-        {
-          BlockVector new_phase_field = tcd2d.get_solution();
-
-          /** @brief Finite Element function for density field */
-          BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-          new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
-          TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),new_rho_vector,(char*) "q");
-          rho_field = new_rho_field;
-
-          /** @brief Finite Element function for dynamic viscosity field */
-          BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
-          TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),new_mu_vector,(char*) "s");
-          mu_field = new_mu_field;
-        }
         tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
       }
+      else  // if we solve TCD2D standard, without any coupling
+      {
+        tcd2d.assemble();
+        tcd2d.solve();
+        tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
+      }
+      Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
+
+      /********************************************************************
+       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
+       ********************************************************************/
+      if (tnse_db["coupling_cd_nse"].is(true))
+      {
+        BlockVector new_phase_field = tcd2d.get_solution();
+
+        /** @brief Finite Element function for density field */
+        BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
+        new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
+        TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),new_rho_vector,(char*) "q");
+        rho_field = new_rho_field;
+
+        /** @brief Finite Element function for dynamic viscosity field */
+        BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
+        TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),new_mu_vector,(char*) "s");
+        mu_field = new_mu_field;
+      }
     }
-
-
-
 
     tnse2d.output(step);
     if(tcd_db["solve_cd"].is(true))
@@ -298,7 +293,7 @@ int main(int argc, char* argv[])
       if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
         tcd2d.output();
     }
-//    tnse2d.get_solution().write("solution_velocity");
+    //    tnse2d.get_solution().write("solution_velocity");
     }
   } // end for step, time loop
 
