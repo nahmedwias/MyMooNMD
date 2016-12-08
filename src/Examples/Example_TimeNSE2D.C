@@ -27,6 +27,10 @@ namespace example21_coupling_nse_cd // test coupling NSE>CD = Generate the veloc
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/21_CouplingNSE_CD.h"
 }
+namespace example22_semicircle_nse_cd // 1 way coupling for rotating semi circle
+{
+#include "../../user_projects/include/Examples/Time_NSE2D/22_SemiCircleNSE_CD.h"
+}
 namespace example30_poiseuille_variablevisco // Coupling CD>NSE Poiseuille with variable viscosity
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/30_CouplingCD_NSE_Poiseuille_variableviscosity.h"
@@ -42,10 +46,6 @@ namespace example32_SinCosExp // Coupling CD>NSE with SinCosExp
 namespace example40_dambreak_nse_cd // 2 way coupling for dam break
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/40_DamBreakNSE_CD.h"
-}
-namespace example41_semicircle_nse_cd // 2 way coupling for rotating semi circle
-{
-#include "../../user_projects/include/Examples/Time_NSE2D/41_SemiCircleNSE_CD.h"
 }
 namespace example42_rayleightaylor_nse_cd   // 2 way coupling for Rayleigh-Taylor instability
 {
@@ -209,6 +209,35 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       example21_coupling_nse_cd::ExampleFile();
       break;
 
+    case 22:                // Example 22= 1 way coupling for rotating semi-circle
+      /** exact_solution */
+      exact_solution.push_back( example22_semicircle_nse_cd::ExactU1 );
+      exact_solution.push_back( example22_semicircle_nse_cd::ExactU2 );
+      exact_solution.push_back( example22_semicircle_nse_cd::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( example22_semicircle_nse_cd::BoundCondition );
+      boundary_conditions.push_back( example22_semicircle_nse_cd::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( example22_semicircle_nse_cd::U1BoundValue );
+      boundary_data.push_back( example22_semicircle_nse_cd::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = example22_semicircle_nse_cd::LinCoeffs;
+
+      /** initial condition */
+      initialCOndtion.push_back(example22_semicircle_nse_cd::InitialU1);
+      initialCOndtion.push_back(example22_semicircle_nse_cd::InitialU2);
+      example22_semicircle_nse_cd::REYNOLDS_number = get_nu();
+      example22_semicircle_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
+      example22_semicircle_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
+
+      example22_semicircle_nse_cd::ExampleFile();
+      break;
+
     case 30:                // Coupling CD_NSE Poiseuille with variable viscosity
       /** exact_solution */
       exact_solution.push_back( example30_poiseuille_variablevisco::ExactU1 );
@@ -325,35 +354,6 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          example40_dambreak_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
          example40_dambreak_nse_cd::ExampleFile();
-         break;
-
-       case 41:                // Example 41_= 2 way coupling for rotating semi-circle
-         /** exact_solution */
-         exact_solution.push_back( example41_semicircle_nse_cd::ExactU1 );
-         exact_solution.push_back( example41_semicircle_nse_cd::ExactU2 );
-         exact_solution.push_back( example41_semicircle_nse_cd::ExactP );
-
-         /** boundary condition */
-         boundary_conditions.push_back( example41_semicircle_nse_cd::BoundCondition );
-         boundary_conditions.push_back( example41_semicircle_nse_cd::BoundCondition );
-         boundary_conditions.push_back( BoundConditionNoBoundCondition );
-
-         /** boundary values */
-         boundary_data.push_back( example41_semicircle_nse_cd::U1BoundValue );
-         boundary_data.push_back( example41_semicircle_nse_cd::U2BoundValue );
-         boundary_data.push_back( BoundaryValueHomogenous );
-
-         /** coefficients */
-         problem_coefficients = example41_semicircle_nse_cd::LinCoeffs;
-
-         /** initial condition */
-         initialCOndtion.push_back(example41_semicircle_nse_cd::InitialU1);
-         initialCOndtion.push_back(example41_semicircle_nse_cd::InitialU2);
-         example41_semicircle_nse_cd::REYNOLDS_number = get_nu();
-         example41_semicircle_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
-         example41_semicircle_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
-
-         example41_semicircle_nse_cd::ExampleFile();
          break;
 
        case 42:                // Example 42 = 2-WAY-COUPLING FOR RAYLEIGH TAYLOR INSTABILITY

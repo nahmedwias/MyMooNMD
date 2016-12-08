@@ -39,6 +39,10 @@ namespace example21_coupling_sinsinsin      //example 21
 {
 #include "../../user_projects/include/Examples/Time_CD2D/21_CouplingNSE_CD_SinSinSin.h"
 }
+namespace example22_coupling_semicircle       // example 2
+{
+#include "../../user_projects/include/Examples/Time_CD2D/22_SemiCircleNSE_CD.h"
+}
 namespace example30_linear_variablevisco    // example 30
 {
 #include "../../user_projects/include/Examples/Time_CD2D/30_Variable_viscosity_linear.h"
@@ -54,10 +58,6 @@ namespace example32_variablevisco_beltrami  // example 32
 namespace example40_dambreak_cd_nse         // example 40
 {
 #include "../../user_projects/include/Examples/Time_CD2D/40_DamBreakCD_NSE.h"
-}
-namespace example41_semicircle_cd_nse       // example 41
-{
-#include "../../user_projects/include/Examples/Time_CD2D/41_SemiCircleCD_NSE.h"
 }
 namespace example42_rayleightaylor_cd_nse   // example 42
 {
@@ -237,6 +237,26 @@ Example_TimeCD2D::Example_TimeCD2D(
       this->timeDependentCoeffs=example21_coupling_sinsinsin::coefficients_depend_on_time;
       break;
 
+    case 22:                // Example 22: 1 way coupling: rotating semi-circle
+      /**Exact solution"**/
+      exact_solution.push_back(example22_coupling_semicircle::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( example22_coupling_semicircle::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( example22_coupling_semicircle::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = example22_coupling_semicircle::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(example22_coupling_semicircle::InitialCondition);
+      example22_coupling_semicircle::ExampleFile();
+
+      this->timeDependentRhs = example22_coupling_semicircle::rhs_depends_on_time;
+      this->timeDependentCoeffs=example22_coupling_semicircle::coefficients_depend_on_time;
+      break;
+
     case 30:                // Example 30 CouplingCD_NSE_ Poiseuille Variable Viscosity Linear
       /**Exact solution"**/
       exact_solution.push_back(example30_linear_variablevisco::Exact);
@@ -317,25 +337,6 @@ Example_TimeCD2D::Example_TimeCD2D(
       this->timeDependentCoeffs=example40_dambreak_cd_nse::coefficients_depend_on_time;
       break;
 
-    case 41:                // Example 41 2 way coupling: rotating semi-circle
-      /**Exact solution"**/
-      exact_solution.push_back(example41_semicircle_cd_nse::Exact);
-      /** boundary condition */
-      boundary_conditions.push_back( example41_semicircle_cd_nse::BoundCondition );
-
-      /** boundary values */
-      boundary_data.push_back( example41_semicircle_cd_nse::BoundValue );
-
-      /** coefficients */
-      problem_coefficients = example41_semicircle_cd_nse::BilinearCoeffs;
-
-      /** Initial condition*/
-      initialCOndtion.push_back(example41_semicircle_cd_nse::InitialCondition);
-      example41_semicircle_cd_nse::ExampleFile();
-
-      this->timeDependentRhs = example41_semicircle_cd_nse::rhs_depends_on_time;
-      this->timeDependentCoeffs=example41_semicircle_cd_nse::coefficients_depend_on_time;
-      break;
 
     case 42:                // Example 42: 2-WAY-COUPLING for Rayleigh-Taylor Instability
       /**Exact solution"**/
