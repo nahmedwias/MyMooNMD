@@ -876,7 +876,26 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
       la.setN_ParamFct(1);
       la.setParameterFct_string("TimeNSParamsVelo_dimensional");
 
-      la.setAssembleParam_string("TimeNSType1Galerkin_dimensional");  //this is for dimensional NSE
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+          la.setAssembleParam_string("TimeNSType1Galerkin_dimensional");  //this is for dimensional NSE
+          break;
+        case 3:
+          switch(TDatabase::ParamDB->LAPLACETYPE)
+          {
+            case 1:
+              // Assembling routine for NSType 3 with DD
+              la.setAssembleParam_string("TimeNSType3GalerkinDD_dimensional");
+              break;
+            default:
+              ErrThrow("NSTYPE 3 works only with LAPLACETYPE 1, please correct input parameter!");
+          }
+          break;
+        default:
+          ErrThrow("Time_NSE2D: NSType 2 and 4 are not implemented yet for the Dimensional NSE!");
+      }
+
       //...this should do the trick
     }
 
@@ -1053,7 +1072,26 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
       la_nonlinear.setN_ParamFct(1);
       la_nonlinear.setParameterFct_string("TimeNSParamsVelo_dimensional");
 
-      la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+          la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");  //this is for dimensional NSE
+          break;
+        case 3:
+          switch(TDatabase::ParamDB->LAPLACETYPE)
+          {
+            case 1:
+              // Assembling routine for NSType 3 with DD
+              la_nonlinear.setAssembleParam_string("TimeNSType3_4NLGalerkinDD_dimensional");
+              break;
+            default:
+              ErrThrow("NSTYPE 3 works only with LAPLACETYPE 1, please correct input parameter!");
+          }
+          break;
+            default:
+              ErrThrow("Time_NSE2D: NSType 2 and 4 are not implemented yet for the Dimensional NSE!");
+      }
+
       //...this should do the trick
     }
 
@@ -1247,8 +1285,26 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
       la_mass.setN_ParamFct(1);
       la_mass.setParameterFct_string("TimeNSParamsVelo_dimensional");
 
-      // the following line is normally done in the above la_mass constructor
-//      la_mass.setAssembleParam_string("TimeNSType1GalerkinMass_dimensional");
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+          // the following line is normally done in the above la_mass constructor
+          //la_mass.setAssembleParam_string("TimeNSType1GalerkinMass_dimensional"); //this is for dimensional NSE
+          break;
+        case 3:
+          switch(TDatabase::ParamDB->LAPLACETYPE)
+          {
+            case 1:
+              // Assembling routine for NSType 3 with DD
+              la_mass.setAssembleParam_string("TimeNSType3GalerkinDDMass_dimensional");
+              break;
+            default:
+              ErrThrow("NSTYPE 3 works only with LAPLACETYPE 1, please correct input parameter!");
+          }
+          break;
+            default:
+              ErrThrow("Time_NSE2D: NSType 2 and 4 are not implemented yet for the Dimensional NSE!");
+      }
       //...this should do the trick
     }
     else

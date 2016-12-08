@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   tnse_db.merge(parmoon_db,true);
   tcd_db.merge(parmoon_db,true);
 
-  tcd_db["example"]          = 10;
+//  tcd_db["example"]          = 10;
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
 
@@ -185,6 +185,7 @@ int main(int argc, char* argv[])
     {
       tnse2d.assemble_rhs_withfields(&rho_field,&mu_field);
       tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
+      tnse2d.assemble_massmatrix_withfields(&rho_field);
     }
     else
     {
@@ -220,8 +221,8 @@ int main(int argc, char* argv[])
     {
       Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
       Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-//      tcd2d.assemble_stiffness_matrix_alone();   // this line is outcommented when you want to make hand tests
-      tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
+      tcd2d.assemble_stiffness_matrix_alone();   // this line is outcommented when you want to make hand tests
+//      tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
       tcd2d.scale_stiffness_matrix();
       Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
       tcd2d.solve();
@@ -236,6 +237,7 @@ int main(int argc, char* argv[])
 
         /** @brief Finite Element function for density field */
         BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
+        new_rho_vector=1;
         TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),new_rho_vector,(char*) "q");
         rho_field = new_rho_field;
 
@@ -243,11 +245,6 @@ int main(int argc, char* argv[])
         BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
         TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),new_mu_vector,(char*) "s");
         mu_field = new_mu_field;
-
-        /********************************************************************
-         * REASSEMBLE FOR NSE
-         ********************************************************************/
-        tnse2d.assemble_massmatrix_withfields(&rho_field);
       }
     }
 
