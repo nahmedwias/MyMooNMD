@@ -63,10 +63,12 @@ int main(int argc, char* argv[])
 //  tcd_db["example"]          = 10;
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
+  int tcd_example_number     = tcd_db["example"]; // just for convenience
 
 //  tnse_db["example"]         = 18;
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
+
 
   TDomain domain(argv[1], parmoon_db);            // Initialize geometry
 
@@ -100,9 +102,8 @@ int main(int argc, char* argv[])
 
   double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
   double rho2 = 0;                          // density constant of fluid2, eg 0
-  double mu1  = tnse_db["fluid_dynamic_viscosity"];      // mu constant of fluid1, eg 1e-3
+  double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of fluid1, eg 1e-3
   double mu2  = 0;                                    // mu constant of fluid2, eg 0
-
 
 
 
@@ -110,21 +111,25 @@ int main(int argc, char* argv[])
    * INITIALIZING OBJECTS FOR MULTIPHASE
    ********************************************************************/
   BlockVector phase_field = tcd2d.get_solution(); // copy vector structure
+  BlockVector rho_vector  = update_fieldvector(rho1,rho2,phase_field,"rho_vector");
+  BlockVector mu_vector   = update_fieldvector(mu1, mu2, phase_field,"mu_vector" );
 
   // Set phase field = 1 everywhere when we dont use cd>nse coupling.
   // If we use it, then do nothing, this will take the initial solution of tcd2d.
-  if (tnse_db["coupling_cd_nse"].is(false))  phase_field = 1;
+  if (tnse_db["coupling_cd_nse"].is(false))
+  {
+    phase_field = 1;
+    rho_vector = rho1;
+    mu_vector  = mu1;
+  }
+  else  // for the case rho = constant, and only viscosity depends on TCD2D
+  {
+    rho_vector = rho1;  // comment this out if needed
+  }
 
-  /** @brief Finite Element function for density field */
-  BlockVector   rho_vector = update_fieldvector(rho1,rho2,phase_field,"rho_vector");
-  rho_vector = 1; rho_vector.write("rho_vector");
-  TFEFunction2D rho_field  = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
-
-  /** @brief Finite Element function for dynamic viscosity field */
-  BlockVector   mu_vector = update_fieldvector(mu1, mu2, phase_field,"mu_vector" );
+  /** @brief Finite Element function for density and viscosity field */
+  TFEFunction2D rho_field = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
   TFEFunction2D mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*)"m");
-
-
 
   /********************************************************************
    * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
@@ -221,8 +226,14 @@ int main(int argc, char* argv[])
     {
       Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
       Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
-      tcd2d.assemble_stiffness_matrix_alone();   // this line is outcommented when you want to make hand tests
-//      tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
+      if (tcd_example_number >=20 && tcd_example_number <= 22)    // examples with true coupling
+      {
+        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
+      }
+      else
+      {
+        tcd2d.assemble_stiffness_matrix_alone();
+      }
       tcd2d.scale_stiffness_matrix();
       Output::print<1>("================== JE COMMENCE A RESOUDRE  =============");
       tcd2d.solve();
@@ -237,7 +248,7 @@ int main(int argc, char* argv[])
 
         /** @brief Finite Element function for density field */
         BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-        new_rho_vector=1;
+        new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
         TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),new_rho_vector,(char*) "q");
         rho_field = new_rho_field;
 
@@ -246,7 +257,6 @@ int main(int argc, char* argv[])
         TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),new_mu_vector,(char*) "s");
         mu_field = new_mu_field;
       }
-
       tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
     }
 
