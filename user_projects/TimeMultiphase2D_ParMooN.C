@@ -246,9 +246,11 @@ int main(int argc, char* argv[])
         TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),new_mu_vector,(char*) "s");
         mu_field = new_mu_field;
       }
+
+      tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
     }
 
-    tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
+
 
 
     tnse2d.output(step);

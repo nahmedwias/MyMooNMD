@@ -16,7 +16,7 @@ double USER_parameter2;
 
 void ExampleFile()
 {
-  Output::info<3>("Example: 41_SemiCircleNSE_CD.h ") ;
+  Output::info<3>("Example: 22_SemiCircleNSE_CD.h ") ;
   TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
 }
 

@@ -7,7 +7,7 @@
 
 void ExampleFile()
 {
-  Output::info<3>("Example: 41_SemiCircleCD_NSE.h");
+  Output::info<3>("Example: 22_SemiCircleNSE_CD.h");
 }
 
 double get_nu()
@@ -52,7 +52,6 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
         double **parameters, double **coeffs)
 {
 //  double eps=1/TDatabase::ParamDB->RE_NR;
-//  double a=1, b=2, c=1;
   double u_x,u_y;
   int i;
   double *coeff;
