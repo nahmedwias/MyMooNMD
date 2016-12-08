@@ -721,8 +721,6 @@ void Time_CD2D::assemble_rhs_vector
   systems[0].solution.copy_nonactive(systems[0].rhs);
 }
 
-
-
 void Time_CD2D::assemble_stiffness_matrix_alone()
 {
   LocalAssembling2D_type stiff_type = LocalAssembling2D_type::TCD2D;
@@ -759,8 +757,6 @@ void Time_CD2D::assemble_stiffness_matrix_alone()
                &fe_space, &boundary_conditions, non_const_bound_value, la);
   }
 }
-
-
 
 void Time_CD2D::assemble_stiffness_matrix_alone_with_convection
 (const TFEVectFunct2D* convection_field)
@@ -876,8 +872,6 @@ void Time_CD2D::assemble_stiffness_matrix_alone_with_convection
   }
 }
 
-
-
 void Time_CD2D::scale_stiffness_matrix()
 {
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -896,6 +890,8 @@ void Time_CD2D::scale_stiffness_matrix()
     s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
   }
 }
+
+
 
 
 void Time_CD2D::assemble_initial_time_with_convection
@@ -1023,4 +1019,174 @@ void Time_CD2D::assemble_initial_time_with_convection
   old_rhs = s.rhs; //put up initial old_rhs
 }
 
+void Time_CD2D::assemble_with_convection
+(const TFEVectFunct2D* convection_field)
+{
+  LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;
+
+  for(auto &s : this->systems)
+  {
+
+    TFEFunction2D* fe_funct[3] = {&s.fe_function,
+                                  nullptr, nullptr};
+
+    // create two local assembling object (second one will only be needed in SUPG case)
+    LocalAssembling2D la_a_rhs(stiff_rhs, fe_funct,
+                               this->example.get_coeffs());
+
+    if (convection_field)    // assembles initial RHS and Stiffness with convection field
+    {
+      // =========================== HERE CODE FOR CONVECTION FIELD
+      cout << "J'AI DETECTE LA PRESENCE D'UN CONVECTION FIELD" << endl;
+ // step 1 : interpolate the given convection_field to our fe space
+ //      const TFESpace2D& space = s.fe_space;
+ //      size_t n_dofs = space.GetN_DegreesOfFreedom();
+ //      std::string name("interpolated velo space");
+ //      std::string description("interpolated velo space");
+ //      std::vector<double> interp_funct_values(n_dofs,0.0);
+
+ //      // set up an interpolator object  (ptr will be shared later)
+ //      const TFESpace2D* into_space = &s.fe_space;
+ //      FEFunctionInterpolator interpolator(into_space);
+ //
+ //      // length of the values array of the interpolated velo must equal length of the
+ //      // concentration fe function
+ //      size_t length_interpolated = s.fe_function.GetLength();
+ //
+ //      std::vector<double> entries_velo_x(length_interpolated, 0.0);
+ //      std::vector<double> entries_velo_y(length_interpolated, 0.0);
+
+ // this awful call is due to the way a TFEVectFunct2D creates new dynamically
+ // allocated TFEFunction2D objects
+      TFEFunction2D* convection_x = convection_field->GetComponent(0);
+      TFEFunction2D* convection_y = convection_field->GetComponent(1);
+
+ //      TFEFunction2D interpolated_convection_x =
+ //          interpolator.interpolate(*convection_x, entries_velo_x);
+ //
+ //      TFEFunction2D interpolated_convection_y =
+ //          interpolator.interpolate(*convection_y, entries_velo_y);
+ //
+ //      delete convection_x; // call to GetComponent dynamically created fe functs
+ //      delete convection_y;
+
+      // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
+
+      // set up the input...
+      std::vector<int> beginParameter = {0};
+
+      //fill up the new fe function array
+      //pointer_to_function[0] = &s.fe_function;
+      fe_funct[1] = convection_x;
+      fe_funct[2] = convection_y;
+
+      std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
+      // for second fe value use function 2
+      std::vector<MultiIndex2D> feValueMultiIndex = {D00, D00}; // to produce first fe value use 0th derivative,
+      // for second fe value as well
+      int N_parameters = 2; // two parameters...
+      int N_feValues = 2;   //..both of which stem from the evaluation of fe fcts
+      int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+
+      // chose the parameter function ("in-out function") which shears away
+      // the first to "in" values (x,y) and passes only u_x and u_y
+      std::vector<ParamFct*> parameterFct = {NSParamsVelo};
+
+      // ...and call the corresponding setters
+      la_a_rhs.setBeginParameter(beginParameter);
+      la_a_rhs.setFeFunctions2D(fe_funct); //reset - now velo comp included
+      la_a_rhs.setFeValueFctIndex(feValueFctIndex);
+      la_a_rhs.setFeValueMultiIndex(feValueMultiIndex);
+      la_a_rhs.setN_Parameters(N_parameters);
+      la_a_rhs.setN_FeValues(N_feValues);
+      la_a_rhs.setN_ParamFct(N_paramFct);
+      la_a_rhs.setParameterFct(parameterFct);
+      //...this should do the trick
+      //===============================================================END CODE
+    }
+    else
+    {
+      cout << " JE SUIS ICI" << endl;
+      //      TFEFunction2D * pointer_to_function = &s.fe_function;
+    }
+
+
+    if(TDatabase::ParamDB->DISCTYPE == SUPG)
+    {
+      // In the SUPG case:
+      // M = (u,v) + \tau (u,b.grad v)
+      LocalAssembling2D_type mass_supg = LocalAssembling2D_type::TCD2D_Mass;;
+
+      LocalAssembling2D la_m_supg(mass_supg, fe_funct,
+                               this->example.get_coeffs());
+
+      //call assembling, including mass matrix (SUPG!)
+      call_assembling_routine(s, la_a_rhs, la_m_supg , true);
+    }
+    else
+    {//call assembling, ignoring mass matrix part (third argument is not relevant)
+      call_assembling_routine(s, la_a_rhs, la_a_rhs , false);
+    }
+  }
+
+  // here the modifications due to time discretization begin
+  if ( TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 2 )
+  {
+    do_algebraic_flux_correction();
+    return; // modifications due to time discretization are per-
+            // formed inside the afc scheme, so step out here!
+  }
+
+  double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  // preparing rhs
+  System_per_grid& s = this->systems.front();
+
+  if(TDatabase::TimeDB->THETA4)
+  {
+    // scale by time step length and theta4 (only active dofs)
+    s.rhs.scaleActive(tau*TDatabase::TimeDB->THETA4);
+    // add old right hand side scaled by time step length and theta3 (only
+    // active dofs)
+    if(TDatabase::TimeDB->THETA3 != 0.)
+      s.rhs.addScaledActive((this->old_rhs), tau*TDatabase::TimeDB->THETA3);
+
+    // save old right hand side (only if THETA3 != 0)
+    if(TDatabase::TimeDB->THETA3)
+    {
+      this->old_rhs.addScaledActive(s.rhs, -1./(tau*TDatabase::TimeDB->THETA3));
+      this->old_rhs.scaleActive(-TDatabase::TimeDB->THETA3/TDatabase::TimeDB->THETA4);
+    }
+  }
+  else
+  {
+    if(TDatabase::TimeDB->TIME_DISC == 0)
+    {
+      ErrThrow("Forward Euler method is not supported. "
+          "Choose TDatabase::TimeDB->TIME_DISC as 1 (bw Euler)"
+          " or 2 (Crank-Nicoloson)");
+    }
+  }
+
+  for(auto &s : this->systems)
+  {
+    // rhs += M*uold
+    s.mass_matrix.apply_scaled_add_actives(s.solution, s.rhs, 1.0);
+    // rhs -= tau*theta2*A_old*uold
+    s.rhs.addScaledActive(s.old_Au, -tau*TDatabase::TimeDB->THETA2);
+
+    // preparing the left hand side, i.e., the system matrix
+    // stiffness matrix is scaled by tau*THETA1, after solving
+    // the matrix needs to be descaled if the coeffs does not depends
+    // on time
+
+    //scale  stiffness matrix...
+    const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
+    s.stiff_matrix.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, cell_positions);
+    // ...and add the mass matrix
+    const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
+    s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
+  }
+  //this->systems[0].rhs.copy_nonactive(this->systems[0].solution);
+  systems[0].solution.copy_nonactive(systems[0].rhs);
+}
 

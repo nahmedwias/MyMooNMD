@@ -281,6 +281,8 @@ class Time_CD2D
     void scale_stiffness_matrix();
     void assemble_initial_time_with_convection
     (const TFEVectFunct2D* convection_field = nullptr);
+    void assemble_with_convection
+    (const TFEVectFunct2D* convection_field = nullptr);
 };
 
 #endif
