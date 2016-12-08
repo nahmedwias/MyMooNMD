@@ -55,16 +55,22 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
   double u_x,u_y;
   int i;
   double *coeff;
-//  double x, y;
+  double x, y;
 
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-//    x = X[i];
-//    y = Y[i];
+    x = X[i];
+    y = Y[i];
 
-    u_x = parameters[i][0];
-    u_y = parameters[i][1];
+    // those lines are for the coupling!!
+    // IF YOU WANT TO TEST THE COUPLING,
+    // YOU HAVE TO UNCOMMENT THEM! AND COMMENT THE REST
+//    u_x = parameters[i][0];
+//    u_y = parameters[i][1];
+
+    u_x = 2*(y-0.5);
+    u_y = -2*(x-0.5);
 
     coeff[0] = 0;
     coeff[1] = u_x;
