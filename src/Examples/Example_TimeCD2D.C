@@ -47,6 +47,10 @@ namespace example31_expon_variablevisco     // example 31
 {
 #include "../../user_projects/include/Examples/Time_CD2D/31_Variable_viscosity_exponential.h"
 }
+namespace example32_variablevisco_beltrami  // example 32
+{
+#include "../../user_projects/include/Examples/Time_CD2D/32_Variable_viscosity_Beltrami.h"
+}
 namespace example40_dambreak_cd_nse         // example 40
 {
 #include "../../user_projects/include/Examples/Time_CD2D/40_DamBreakCD_NSE.h"
@@ -271,6 +275,26 @@ Example_TimeCD2D::Example_TimeCD2D(
 
       this->timeDependentRhs = example31_expon_variablevisco::rhs_depends_on_time;
       this->timeDependentCoeffs=example31_expon_variablevisco::coefficients_depend_on_time;
+      break;
+
+    case 32:                // Example 32: Coupling CD>NSE Variable Viscosity Beltrami
+      /**Exact solution"**/
+      exact_solution.push_back(example32_variablevisco_beltrami::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( example32_variablevisco_beltrami::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( example32_variablevisco_beltrami::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = example32_variablevisco_beltrami::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCOndtion.push_back(example32_variablevisco_beltrami::InitialCondition);
+      example32_variablevisco_beltrami::ExampleFile();
+
+      this->timeDependentRhs = example32_variablevisco_beltrami::rhs_depends_on_time;
+      this->timeDependentCoeffs=example32_variablevisco_beltrami::coefficients_depend_on_time;
       break;
 
     case 40:                // Example 40: 2 way-coupling for Dam Break (2 phases in a square box)
