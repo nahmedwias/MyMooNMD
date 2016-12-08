@@ -222,8 +222,6 @@ int main(int argc, char* argv[])
     }
     tnse2d.assemble_system();
 
-    tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
-
     /********************************************************************
      * NON LINEAR LOOP
      ********************************************************************/
@@ -247,6 +245,8 @@ int main(int argc, char* argv[])
      ********************************************************************/
     if (tcd_db["coupling_nse_cd"].is(true))
     {
+      tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
+
       Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
       Output::print<1>("================== JE COMMENCE A ASSEMBLER =============");
       if (tcd_example_number >=20 && tcd_example_number <= 22)    // examples with true coupling

@@ -832,6 +832,11 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "A pure one-way cd -> nse coupling makes no sense in our multiphase model.",
          {true,false});
 
+  db.add("solve_cd", true,
+         "Parameter to indicate if we want to solve the TCD equation "
+         "in parallel to TNSE. This means more computation and more "
+         "output on the screen.", {true,false});
+
 
   return db;
 }
