@@ -253,9 +253,10 @@ int main(int argc, char* argv[])
       Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
       if (tcd_db["coupling_nse_cd"].is(true))
       {
-        tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
-        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
-        tcd2d.scale_stiffness_matrix();
+//        tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
+//        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
+//        tcd2d.scale_stiffness_matrix();
+        tcd2d.assemble_with_convection(&tnse2d.get_velocity());
         tcd2d.solve();
         tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
       }
