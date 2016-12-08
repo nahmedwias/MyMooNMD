@@ -41,7 +41,7 @@ namespace example21_coupling_sinsinsin      //example 21
 }
 namespace example22_coupling_semicircle       // example 2
 {
-#include "../../user_projects/include/Examples/Time_CD2D/22_SemiCircleNSE_CD.h"
+#include "../../user_projects/include/Examples/Time_CD2D/22_CouplingNSE_CD_SemiCircle.h"
 }
 namespace example30_linear_variablevisco    // example 30
 {
