@@ -59,6 +59,7 @@ verbosity: 3   [ 1, 5 ]
 ## 31- Variable nu Exp- in the multiphase program - FOR TNSE2D
 ## 31- VariableViscoE.- in the multiphase program - FOR TCD2D
 ## 32- CD>NSESinCosExp- in the multiphase program - FOR TNSE2D
+## 32- VariableVisco32- in the multiphase program - FOR TCD2D
 ## 40- DAM BREAK	  - in the multiphase program - FOR TNSE2D
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 41- SEMICIRCLE	  - in the multiphase program - FOR TNSE2D
@@ -92,7 +93,7 @@ output_vtk_directory: .
 output_basename: multiphase_output { multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
 ## The maximum number of iterations to perform in a non-linear loop. 
-nonlinloop_maxit: 9   [ 0, 1000 ]
+nonlinloop_maxit: 1   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
 nonlinloop_epsilon: 1e-9   [ 0, 1 ]
@@ -277,4 +278,4 @@ TIMESTEPLENGTH: 0.01
 
 P1: 1
 P2: 0.1
-P3: 500
+P3: 5
