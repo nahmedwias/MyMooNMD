@@ -246,7 +246,7 @@ user_parameter2: 2
 dimensional_nse: true   { true, false }
 coupling_nse_cd: true   { true, false }
 coupling_cd_nse: true   { true, false }
-solve_cd: true   { true, false }	
+solve_cd: false   { true, false }	
 
 ###### PARAMETERS FROM THE OLD DATABASE
 VELOCITY_SPACE: 12
