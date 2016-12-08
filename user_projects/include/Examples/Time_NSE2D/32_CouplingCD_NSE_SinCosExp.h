@@ -244,24 +244,30 @@ void LinCoeffs(int n_points, double *X, double *Y,
     // we should have nu=Re=1, only vmin and vmax vary
     // Please choose one of the formulas and comment the 2 others
 //    eps1 = vmin+(vmax-vmin)*x*x*(1-x)*y*y*(1-y)*721/16;
-//    eps2 = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)));
-    eps3 = vmin+(vmax-vmin)*(1-exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10))));
+    eps2 = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)));
+//    eps3 = vmin+(vmax-vmin)*(1-exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10))));
 
 
     // if eps = visco1, use these right hand side values
 //    coeff[0] = nu*eps1;
 //    coeff[1] = nu*val1[3]*(1-eps1);
-//    coeff[2] = nu*val2[3]*(1-eps1);
+//    coeff[2] = nu*val2[3]*(-1+eps1);
 
     // if eps = visco2, use these right hand side values
-//    coeff[0] = nu*eps2;
-//    coeff[1] = nu*val1[3]*(1-eps2);
-//    coeff[2] = nu*val2[3]*(-1+eps2);
+    coeff[0] = nu*eps2;
+    coeff[1] = nu*val1[3]*(1-eps2);
+    coeff[2] = nu*val2[3]*(-1+eps2);
+//    coeff[1] = nu*val1[3]*(1-eps2)+2*10e14*nu*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
+//    *exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*N_OSCILLATIONS*pi*(vmax-vmin)*pow((x-0.5),9)
+//    *sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+//    coeff[2] = nu*val2[3]*(-1+eps2)-2*10e14*nu*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
+//    *exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*N_OSCILLATIONS*pi*(vmax-vmin)*pow((y-0.5),9)
+//    *sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
 
     // if eps = visco3, use these right hand side values
-    coeff[0] = nu*eps3;
-    coeff[1] = nu*val1[3]*(1-eps3);
-    coeff[2] = nu*val2[3]*(-1+eps3);
+//    coeff[0] = nu*eps3;
+//    coeff[1] = nu*val1[3]*(1-eps3);
+//    coeff[2] = nu*val2[3]*(-1+eps3);
   }
 }
 
