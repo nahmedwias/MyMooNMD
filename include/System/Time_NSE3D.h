@@ -30,6 +30,8 @@
 #include <ParameterDatabase.h>
 #include <Solver.h>
 
+#include <LocalAssembling3D.h>
+
 #include <MainUtilities.h> // FixedSizeQueu
 
 #include <vector>
@@ -401,6 +403,25 @@ class Time_NSE3D
 
     /** @brief return the computed errors (computed in output()) */
     std::array<double, int(6)> get_errors() const;
+    
+    //=========================================================================
+private:
+  /**
+   * This will initialize the matrices depending on DISCTYPE and 
+   * NSTYPE.
+   * @param s system on a particular grid
+   * @param type local assembling type
+   * @param sqMatrices square matrices for different DISCTYPE and different 
+   * NSTYPE
+   * @param reMatrirces rectangular matrices 
+   */
+  void prepare_matrices(System_per_grid& s, LocalAssembling3D_type type,
+                          std::vector<TSquareMatrix3D*> &sqMatrices,
+                          std::vector<TMatrix3D*> &reMatrirces);
+  /**
+   */
+  void boundary_data(System_per_grid& s, std::vector<BoundCondFunct3D*> &bc, 
+                     std::vector<BoundValueFunct3D*> &bv);
 };
 
 

@@ -489,9 +489,8 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
   double **Values = new double* [N_FEValues];
   double ***orig_values = new double** [N_FEValues];
   int **Index = new int* [N_FEValues];
-  double Temp[2 + N_FEValues];
+  double Temp[3 + N_FEValues];
   int n;
-
    // collect information
   for(int j=0;j<N_FEValues;j++)
   {
@@ -510,7 +509,6 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
     BeginIndex = fespace->GetBeginIndex();
     Index[j] = GlobalNumbers + BeginIndex[cellnum];
   } // endfor j
-
 
   // loop over all quadrature points
   for(int i=0;i<n_points;i++)
@@ -534,7 +532,6 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
         s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
       Temp[k] = s;
     }  // endfor j
-
     // loop to calculate all parameters
     for(int j=0;j<N_ParamFct;j++)
     {
@@ -546,7 +543,6 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
       ParameterFct[j](Temp, currparam);
     } // endfor j
   } // endfor i
-  
   delete [] N_BaseFunct;
   delete [] Values;
   delete [] orig_values;
@@ -1494,7 +1490,7 @@ void LocalAssembling3D::set_parameters_for_tnse_vms_model(LocalAssembling3D_type
   this->N_Parameters = 16;
   this->N_ParamFct = 1;
   this->ParameterFct =  { TimeNSParamsVelo_GradVelo_LargeScale3D };
-  this->N_FEValues = 16;
+  this->N_FEValues = 13;
   this->FEValue_FctIndex = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 3};
   // u1old, u2old, u3old, all derivatives of u1, u2, u3, projection space
   this->FEValue_MultiIndex = { D000, D000, D000, 

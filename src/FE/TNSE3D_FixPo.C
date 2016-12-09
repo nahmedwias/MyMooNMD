@@ -874,9 +874,6 @@ void TimeNSType1Smagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  // double delta =  CharacteristicFilterWidth(hK);
-  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
-  //                         -4711);
   double *x = &param[12];
   double *y = &param[13];
   double *z = &param[14];
@@ -1357,9 +1354,6 @@ void TimeNSType2Smagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  // double delta =  CharacteristicFilterWidth(hK);
-  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
-  //                         -4711);
   double *x = &param[12];
   double *y = &param[13];
   double *z = &param[14];
@@ -3438,9 +3432,6 @@ void TimeNSType4Smagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  // double delta =  CharacteristicFilterWidth(hK);
-  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
-  //                         -4711);
   double *x = &param[12];
   double *y = &param[13];
   double *z = &param[14];
@@ -4970,10 +4961,6 @@ void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff,
   u1 = param[0]; // u1old
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
-
-  //double delta =  CharacteristicFilterWidth(hK);
-  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[12],&param[12],&param[13],&param[14],
-  //                         -4711);
   
   double *x = &param[12];
   double *y = &param[13];
@@ -5284,10 +5271,6 @@ void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  // double delta =  CharacteristicFilterWidth(hK);
-  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[12],&param[12],&param[13],&param[14],
-  //                        -4711);
-  
   double *x = &param[12];
   double *y = &param[13];
   double *z = &param[14];
@@ -5371,9 +5354,6 @@ void TimeNSType3_4NLSmagorinskyDD3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  // double delta =  CharacteristicFilterWidth(hK);
-  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&dummy_param[0],&param[12],&param[13],&param[14],
-  //                         -4711);
   double *x = &param[12];
   double *y = &param[13];
   double *z = &param[14];
