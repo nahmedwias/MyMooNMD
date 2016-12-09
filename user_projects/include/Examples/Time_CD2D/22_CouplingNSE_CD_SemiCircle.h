@@ -69,8 +69,10 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
     u_x = parameters[i][0];
     u_y = parameters[i][1];
 
-//    u_x = 2*(y-0.5);
-//    u_y = -2*(x-0.5);
+    double u_x1 = 2*(y-0.5);
+    double u_y1 = -2*(x-0.5);
+
+    Output::print<1>("x= ", x, " y= ", y, " u_x = ", u_x, " ux1 = ", u_x1, " uy = ", u_y, " uy1 = ", u_y1);
 
     coeff[0] = 0;
     coeff[1] = u_x;

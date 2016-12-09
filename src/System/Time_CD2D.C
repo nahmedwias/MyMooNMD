@@ -535,6 +535,7 @@ void Time_CD2D::call_assembling_routine(
   Assemble2D(1, &fe_space, N_Matrices, stiff_block, 0, NULL, 1, &rhs_entries,
              &fe_space, &boundary_conditions, non_const_bound_value, la_stiff);
 
+  Output::print<1>("IF MASS MATRIX IS ALSO CONCERNED, REASSEMBLED!");
   // If assemble_both is true, we also (re)assemble the mass matrix.
   if (assemble_both)
   {
@@ -957,6 +958,13 @@ void Time_CD2D::assemble_initial_time_with_convection
       //pointer_to_function[0] = &s.fe_function;
       fe_funct[1] = convection_x;
       fe_funct[2] = convection_y;
+
+      int test1 = fe_funct[0]->GetFESpace2D()->GetN_DegreesOfFreedom();
+      int test2 = fe_funct[1]->GetFESpace2D()->GetN_DegreesOfFreedom();
+      int test3 = fe_funct[1]->GetFESpace2D()->GetN_DegreesOfFreedom();
+      cout << "Degres of freedoms of scalar field = " << test1 << endl;
+      cout << "Degres of freedoms of velo x compo = " << test2 << endl;
+      cout << "Degres of freedoms of velo y compo = " << test3 << endl;
 
       std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
       // for second fe value use function 2

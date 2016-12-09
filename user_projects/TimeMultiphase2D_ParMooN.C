@@ -80,8 +80,8 @@ int main(int argc, char* argv[])
       tnse_db["coupling_cd_nse"] = false;
       break;
     case 20: case 21: case 22:
-      tnse_db["dimensional_nse"] = true;
-      tcd_db["coupling_nse_cd"]  = true;
+//      tnse_db["dimensional_nse"] = true;
+//      tcd_db["coupling_nse_cd"]  = true;
       tnse_db["coupling_cd_nse"] = false;
       break;
     case 30: case 31: case 32:
@@ -183,11 +183,14 @@ int main(int argc, char* argv[])
   if (tcd_db["solve_cd"].is(true))
   {
     if (tcd_db["coupling_nse_cd"].is(true))
+    {
       tcd2d.assemble_initial_time_with_convection(&tnse2d.get_velocity());
+      cout << " I ASSEMBLED TCD2D WITH TNSE2D VELOCITY!!!" << endl;
+    }
     else
       tcd2d.assemble_initial_time();
   }
-
+exit(0);
    double end_time = TDatabase::TimeDB->ENDTIME;
    int step = 0;
    int n_substeps = GetN_SubSteps();
