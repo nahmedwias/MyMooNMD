@@ -85,9 +85,10 @@ int main(int argc, char* argv[])
       tnse_db["coupling_cd_nse"] = false;
       break;
     case 30: case 31: case 32:
-      tnse_db["dimensional_nse"] = true;
+//      tnse_db["dimensional_nse"] = true;
       tcd_db["coupling_nse_cd"]  = false;
-      tnse_db["coupling_cd_nse"] = true;
+//      tnse_db["coupling_cd_nse"] = true;
+//      tcd_db["solve_cd"] = true;
       break;
     case 40: case 42:
 //      tnse_db["dimensional_nse"] = true;
