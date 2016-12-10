@@ -485,6 +485,8 @@ void Time_NSE3D::assemble_initial_time()
     {
       std::vector<std::shared_ptr<FEMatrix>> blocks
          = s.matrix_.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix3D(matrices_for_turb_mod.at(6));
       // update stiffness matrix
       VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
@@ -762,6 +764,8 @@ void Time_NSE3D::assemble_nonlinear_term()
     {
       std::vector<std::shared_ptr<FEMatrix>> blocks
          = s.matrix_.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix3D(matrices_for_turb_mod.at(6));
       // update stiffness matrix
       VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
@@ -1330,15 +1334,19 @@ void Time_NSE3D::prepare_matrices(System_per_grid& s,
                                          std::vector<TSquareMatrix3D*> &sqMatrices,
                                          std::vector<TMatrix3D*> &rectMatrices)
 {
+  rectMatrices.resize(0);
+  sqMatrices.resize(0);
   std::vector<std::shared_ptr<FEMatrix>> blocks
          = s.matrix_.get_blocks_uniquely();
-  // get the blocks of the mass matrix 
-  std::vector<std::shared_ptr<FEMatrix>> mass_blocks
-         = s.massMatrix_.get_blocks_uniquely();
   
   switch(type)
   {
-    case LocalAssembling3D_type::TNSE3D_LinGAL:      
+    case LocalAssembling3D_type::TNSE3D_LinGAL:
+    {
+      // get the blocks of the mass matrix 
+      std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+         = s.massMatrix_.get_blocks_uniquely();
+  
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
@@ -1451,7 +1459,9 @@ void Time_NSE3D::prepare_matrices(System_per_grid& s,
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
       }
       break;// all matrices 
-    case LocalAssembling3D_type::TNSE3D_NLGAL: // nonlinear 
+    }
+    case LocalAssembling3D_type::TNSE3D_NLGAL: // nonlinear
+    {
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1: case 2:
@@ -1471,6 +1481,7 @@ void Time_NSE3D::prepare_matrices(System_per_grid& s,
               break;
             case SMAGORINSKY:
             case VMS_PROJECTION:
+            case SMAGORINSKY_COARSE:
               sqMatrices.resize(9);
               blocks = s.matrix_.get_blocks_uniquely({{0,0}, {0,1}, {0,2}, 
                                                   {1,0}, {1,1}, {1,2},
@@ -1491,12 +1502,13 @@ void Time_NSE3D::prepare_matrices(System_per_grid& s,
                 rectMatrices[0]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
                 rectMatrices[1]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
                 rectMatrices[2]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
-              }
+              }              
               break;
           }
           break;
       } // switch over NSTYPE
       break; // nonlinear
+    }
   }  
   // reset matrices
   for(auto mat : sqMatrices)
