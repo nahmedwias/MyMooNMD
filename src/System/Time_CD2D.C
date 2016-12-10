@@ -8,6 +8,7 @@
 #include <LocalProjection.h>
 #include <ConvDiff2D.h>
 #include <NSE2D_FixPo.h>
+#include <FEFunctionInterpolator.h>
 
 /**************************************************************************** */
 ParameterDatabase get_default_TCD2D_parameters()
@@ -925,29 +926,29 @@ void Time_CD2D::assemble_initial_time_with_convection
 //      std::vector<double> interp_funct_values(n_dofs,0.0);
 
 //      // set up an interpolator object  (ptr will be shared later)
-//      const TFESpace2D* into_space = &s.fe_space;
-//      FEFunctionInterpolator interpolator(into_space);
-//
-//      // length of the values array of the interpolated velo must equal length of the
-//      // concentration fe function
-//      size_t length_interpolated = s.fe_function.GetLength();
-//
-//      std::vector<double> entries_velo_x(length_interpolated, 0.0);
-//      std::vector<double> entries_velo_y(length_interpolated, 0.0);
+      const TFESpace2D* into_space = &s.fe_space;
+      FEFunctionInterpolator interpolator(into_space);
+
+      // length of the values array of the interpolated velo must equal length of the
+      // concentration fe function
+      size_t length_interpolated = s.fe_function.GetLength();
+
+      std::vector<double> entries_velo_x(length_interpolated, 0.0);
+      std::vector<double> entries_velo_y(length_interpolated, 0.0);
 
       // this awful call is due to the way a TFEVectFunct2D creates new dynamically
       // allocated TFEFunction2D objects
       TFEFunction2D* convection_x = convection_field->GetComponent(0);
       TFEFunction2D* convection_y = convection_field->GetComponent(1);
 
-//      TFEFunction2D interpolated_convection_x =
-//          interpolator.interpolate(*convection_x, entries_velo_x);
-//
-//      TFEFunction2D interpolated_convection_y =
-//          interpolator.interpolate(*convection_y, entries_velo_y);
-//
-//      delete convection_x; // call to GetComponent dynamically created fe functs
-//      delete convection_y;
+      TFEFunction2D interpolated_convection_x =
+          interpolator.interpolate(*convection_x, entries_velo_x);
+
+      TFEFunction2D interpolated_convection_y =
+          interpolator.interpolate(*convection_y, entries_velo_y);
+
+      delete convection_x; // call to GetComponent dynamically created fe functs
+      delete convection_y;
 
       // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
 
@@ -956,8 +957,8 @@ void Time_CD2D::assemble_initial_time_with_convection
 
       //fill up the new fe function array
       //pointer_to_function[0] = &s.fe_function;
-      fe_funct[1] = convection_x;
-      fe_funct[2] = convection_y;
+      fe_funct[1] = &interpolated_convection_x;//convection_x;
+      fe_funct[2] = &interpolated_convection_y;//convection_y;
 
       int test1 = fe_funct[0]->GetFESpace2D()->GetN_DegreesOfFreedom();
       int test2 = fe_funct[1]->GetFESpace2D()->GetN_DegreesOfFreedom();
