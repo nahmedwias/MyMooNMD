@@ -252,7 +252,7 @@ solve_cd: true   { true, false }
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 
-ANSATZ_ORDER: 1
+ANSATZ_ORDER: 2
 
 Par_P0: 0
 Par_P3: 1
