@@ -404,12 +404,9 @@ void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pr
 /**************************************************************************** */
 void Time_NSE3D::assemble_initial_time()
 {
-  size_t nRhs     = 4;         // maximum number of right hand sides (type 14)
-  
-  std::vector<TSquareMatrix3D*> sqMatrices;//(nSquareMatrices);
-  std::vector<TMatrix3D*>       rectMatrices;//(nRectMatrices);
-  std::vector<double*>          rhsArray(nRhs);
-    
+  std::vector<TSquareMatrix3D*> sqMatrices;
+  std::vector<TMatrix3D*>       rectMatrices;
+  std::vector<double*> rhsArray(3);
   // from front to back (fine to coarse grid)
   for(System_per_grid& s : this->systems_) 
   {
@@ -420,14 +417,26 @@ void Time_NSE3D::assemble_initial_time()
     std::vector<const TFESpace3D*> spaces;
     spaces.push_back(v_space);
     spaces.push_back(p_space);
-    
     // spaces for right-hand side
-    const TFESpace3D *rhsSpaces[4] = {v_space, v_space, v_space, p_space}; // NSTYPE 4 or 14
+    std::vector<const TFESpace3D*> rhsSpaces(3);
+    if(TDatabase::ParamDB->NSTYPE == 4 || TDatabase::ParamDB->NSTYPE == 14)
+    {
+      rhsArray.resize(4);
+      rhsSpaces.resize(4);
+    }
+    rhsArray[0]=s.rhs_.block(0);
+    rhsArray[1]=s.rhs_.block(1);
+    rhsArray[2]=s.rhs_.block(2);
+    
+    rhsSpaces[0]=v_space;
+    rhsSpaces[1]=v_space;
+    rhsSpaces[2]=v_space;
+    if(TDatabase::ParamDB->NSTYPE == 4 || TDatabase::ParamDB->NSTYPE == 14)
+    {
+      rhsArray[3]=s.rhs_.block(3);
+      rhsSpaces[3]=p_space;
+    }
     s.rhs_.reset();
-    rhsArray[0] = s.rhs_.block(0);
-    rhsArray[1] = s.rhs_.block(1);
-    rhsArray[2] = s.rhs_.block(2);
-    rhsArray[3] = nullptr; //will be reset for type 4 and 14
     
     // finite element functions for nonlinear convective term
     // for initial assembling, they correspond to the initial condition    
@@ -446,12 +455,7 @@ void Time_NSE3D::assemble_initial_time()
       // append function for the labels of the local projection
       fe_functions.push_back(this->label_for_local_projection_fefct.get());
     }
-    // NSE type 14 includes pressure rhs_
-    if(TDatabase::ParamDB->NSTYPE == 4 || TDatabase::ParamDB->NSTYPE == 14)
-    {
-      rhsArray[3] = s.rhs_.block(3); 
-      rhsSpaces[3] = p_space;
-    }
+    
     // assign boundary conditions and boundary values
     std::vector<BoundCondFunct3D*> boundary_conditions ;
     std::vector<BoundValueFunct3D*> boundary_values;
@@ -460,7 +464,7 @@ void Time_NSE3D::assemble_initial_time()
     // prepare matrices for assembling 
     prepare_matrices(s, LocalAssembling3D_type::TNSE3D_LinGAL, 
                      sqMatrices, rectMatrices);
-
+    
     // local assembling object - used in Assemble3D
     const LocalAssembling3D
               localAssembling(LocalAssembling3D_type::TNSE3D_LinGAL,
@@ -469,7 +473,7 @@ void Time_NSE3D::assemble_initial_time()
     Assemble3D(spaces.size(), spaces.data(),
                sqMatrices.size(), sqMatrices.data(),
                rectMatrices.size(), rectMatrices.data(),
-               nRhs, rhsArray.data(), rhsSpaces,
+               rhsArray.size(), rhsArray.data(), rhsSpaces.data(),
                boundary_conditions.data(), boundary_values.data(), localAssembling);    
     /** manage dirichlet condition by copying non-actives DoFs
      * from rhs to solution of front grid (=finest grid)
@@ -480,7 +484,7 @@ void Time_NSE3D::assemble_initial_time()
      * and doing it only on the finest grid!
      **/
     s.solution_.copy_nonactive(s.rhs_);
-    
+
     if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
     {
       std::vector<std::shared_ptr<FEMatrix>> blocks
@@ -494,7 +498,6 @@ void Time_NSE3D::assemble_initial_time()
       TDatabase::ParamDB->DISCTYPE = SMAGORINSKY_COARSE;
     }
   }// end for system per grid - the last system is the finer one (front)
-  
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
   if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY_COARSE)
     TDatabase::ParamDB->DISCTYPE = VMS_PROJECTION;
@@ -1398,7 +1401,7 @@ void Time_NSE3D::prepare_matrices(System_per_grid& s,
           sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
           sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
           // mass matrix 
-          sqMatrices[9]=reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+          sqMatrices[9]=reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
           
           // rectangular matrices 
           rectMatrices.resize(3);
