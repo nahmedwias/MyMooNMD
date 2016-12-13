@@ -163,6 +163,10 @@ class LocalAssembling2D
     /** 
      */
     void set_parameters_for_tnse(LocalAssembling2D_type type);
+    /** 
+     */
+    void set_parameters_for_tnseSUPG(LocalAssembling2D_type type);
+    
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
