@@ -29,6 +29,8 @@
 #include <ParameterDatabase.h>
 #include <PostProcessing2D.h>
 
+#include <LocalAssembling2D.h>
+
 #include <vector>
 #include <deque>
 #include <utility>
@@ -73,6 +75,11 @@ class Time_NSE2D
       /** @brief Finite element function for pressure*/
       TFEFunction2D p;
       
+      /** @brief matrices contribution from SUPG method*/
+      std::array<std::shared_ptr<FEMatrix>, int(2)> VeloTimeDer_Pres;
+      /** @brief additional right hand side from SUPG method*/
+      BlockVector rhs_stab;
+
       /** @brief constructor*/
       System_per_grid(const Example_TimeNSE2D& example, TCollection& coll, 
                       std::pair<int,int> order, Time_NSE2D::Matrix type);
@@ -259,6 +266,17 @@ class Time_NSE2D
     { return db; }
     /// @brief return the computed errors at each discre time point
     std::array<double, int(6)> get_errors();
+    
+private:
+  void call_assembling_routine(Time_NSE2D::System_per_grid& s, LocalAssembling2D_type type);
+  /// set the matrices and right hand sides for the assembling
+  void set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssembling2D_type type, 
+                    std::vector<TSquareMatrix2D*> &sqMat, std::vector<TMatrix2D*> &reMat, 
+                    std::vector<double*> &rhs);
+  /// set the spaces depending on disc types
+  void set_arrays(Time_NSE2D::System_per_grid& s, std::vector<const TFESpace2D*> &spaces, 
+                  std::vector< const TFESpace2D* >& spaces_rhs, 
+                  std::vector< TFEFunction2D*> &functions);
 };
 
 #endif // __TIME_NSE2D__
