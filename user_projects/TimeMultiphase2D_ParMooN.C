@@ -185,12 +185,11 @@ int main(int argc, char* argv[])
     if (tcd_db["coupling_nse_cd"].is(true))
     {
       tcd2d.assemble_initial_time_with_convection(&tnse2d.get_velocity());
-      cout << " I ASSEMBLED TCD2D WITH TNSE2D VELOCITY!!!" << endl;
     }
     else
       tcd2d.assemble_initial_time();
   }
-exit(0);
+  exit(0);
    double end_time = TDatabase::TimeDB->ENDTIME;
    int step = 0;
    int n_substeps = GetN_SubSteps();

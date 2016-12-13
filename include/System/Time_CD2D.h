@@ -283,6 +283,11 @@ class Time_CD2D
     (const TFEVectFunct2D* convection_field = nullptr);
     void assemble_with_convection
     (const TFEVectFunct2D* convection_field = nullptr);
+
+
+  protected:
+    std::vector<double> entries_velo_x;
+    std::vector<double> entries_velo_y;
 };
 
 #endif
