@@ -80,8 +80,8 @@ int main(int argc, char* argv[])
       tnse_db["coupling_cd_nse"] = false;
       break;
     case 20: case 21: case 22:
-//      tnse_db["dimensional_nse"] = true;
-//      tcd_db["coupling_nse_cd"]  = true;
+      tnse_db["dimensional_nse"] = true;
+      tcd_db["coupling_nse_cd"]  = true;
       tnse_db["coupling_cd_nse"] = false;
       break;
     case 30: case 31: case 32:
@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
   TFEFunction2D rho_field = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
   TFEFunction2D mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*)"m");
 
-//  // Interpolate the fields
+//  // Interpolate the fields THIS MUST BE MOVED IN THE ASSEMBLE METHOD!
 //  const TFESpace2D* into_space = &tnse2d.get_velocity_space();
 //  FEFunctionInterpolator interpolator(into_space);
 //  size_t length_interpolated = rho_field0.GetLength();
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
     else
       tcd2d.assemble_initial_time();
   }
-  exit(0);
+//  exit(0);
    double end_time = TDatabase::TimeDB->ENDTIME;
    int step = 0;
    int n_substeps = GetN_SubSteps();
