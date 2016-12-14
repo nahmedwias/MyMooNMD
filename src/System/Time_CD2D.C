@@ -557,6 +557,9 @@ void Time_CD2D::call_assembling_routine(
 
 /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
 
+
+// these 4 methods have been written for the case of nonlinear TCD
+// they are not used at the moment (14.12.2016)
 void Time_CD2D::assemble_rhs_vector
 (const TFEVectFunct2D* convection_field)
 {
@@ -894,7 +897,7 @@ void Time_CD2D::scale_stiffness_matrix()
 
 
 
-
+// these 2 methods are currently used and up to date
 void Time_CD2D::assemble_initial_time_with_convection
 (const TFEVectFunct2D* convection_field)
 {
@@ -932,7 +935,7 @@ void Time_CD2D::assemble_initial_time_with_convection
       // step 1: check if the spaces "this->systems.fe_space" and
       // "convection_field->GetFESpace2D()" are the same. If yes, no interpolation needed
       // otherwise, do the interpolation
-      if (Ndof_convection == Ndof_thisfefunction)
+      if (Ndof_convection == Ndof_thisfefunction) //this is a simple check condition...
       {
         Output::info<1>("Time_CD2D", "The spaces of the convection field and the "
             "scalar field are the same ==> There will be no interpolation.");
@@ -940,7 +943,6 @@ void Time_CD2D::assemble_initial_time_with_convection
 //        Output::print<3>("Degres of freedoms of velo x compo = " , Ndof_convection);
 
         //fill up the new fe function array
-        //pointer_to_function[0] = &s.fe_function;
         fe_funct[1] = convection_x;
         fe_funct[2] = convection_y;
 
@@ -958,11 +960,11 @@ void Time_CD2D::assemble_initial_time_with_convection
         // concentration fe function
         size_t length_interpolated = s.fe_function.GetLength();
 
-        std::vector<double> test_x(length_interpolated, 0.0);
-        std::vector<double> test_y(length_interpolated, 0.0);
+        std::vector<double> temporary_x(length_interpolated, 0.0);
+        std::vector<double> temporary_y(length_interpolated, 0.0);
 
-        this->entries_velo_x = test_x;
-        this->entries_velo_y = test_y;
+        this->entries_velo_x = temporary_x;
+        this->entries_velo_y = temporary_y;
 
         TFEFunction2D interpolated_convection_x =
             interpolator.interpolate(*convection_x, this->entries_velo_x);
@@ -1055,50 +1057,71 @@ void Time_CD2D::assemble_with_convection
 
     if (convection_field)    // assembles initial RHS and Stiffness with convection field
     {
-      // =========================== HERE CODE FOR CONVECTION FIELD
-      cout << "J'AI DETECTE LA PRESENCE D'UN CONVECTION FIELD" << endl;
- // step 1 : interpolate the given convection_field to our fe space
- //      const TFESpace2D& space = s.fe_space;
- //      size_t n_dofs = space.GetN_DegreesOfFreedom();
- //      std::string name("interpolated velo space");
- //      std::string description("interpolated velo space");
- //      std::vector<double> interp_funct_values(n_dofs,0.0);
+      // HERE IS THE CODE TO SET UP THE CONVECTION FIELD FOR LOCAL ASSEMBLING OBJECT
 
- //      // set up an interpolator object  (ptr will be shared later)
- //      const TFESpace2D* into_space = &s.fe_space;
- //      FEFunctionInterpolator interpolator(into_space);
- //
- //      // length of the values array of the interpolated velo must equal length of the
- //      // concentration fe function
- //      size_t length_interpolated = s.fe_function.GetLength();
- //
- //      std::vector<double> entries_velo_x(length_interpolated, 0.0);
- //      std::vector<double> entries_velo_y(length_interpolated, 0.0);
-
- // this awful call is due to the way a TFEVectFunct2D creates new dynamically
- // allocated TFEFunction2D objects
+      // this awful call is due to the way a TFEVectFunct2D creates new dynamically
+      // allocated TFEFunction2D objects
       TFEFunction2D* convection_x = convection_field->GetComponent(0);
       TFEFunction2D* convection_y = convection_field->GetComponent(1);
 
- //      TFEFunction2D interpolated_convection_x =
- //          interpolator.interpolate(*convection_x, entries_velo_x);
- //
- //      TFEFunction2D interpolated_convection_y =
- //          interpolator.interpolate(*convection_y, entries_velo_y);
- //
- //      delete convection_x; // call to GetComponent dynamically created fe functs
- //      delete convection_y;
+      // we assume convection_x and convection_y are not too exotic,
+      // and have the same space...
+      int Ndof_convection     = convection_x->GetFESpace2D()->GetN_DegreesOfFreedom();
+      int Ndof_thisfefunction = s.fe_space.GetN_DegreesOfFreedom();
+
+
+      // step 1: check if the spaces "this->systems.fe_space" and
+      // "convection_field->GetFESpace2D()" are the same. If yes, no interpolation needed
+      // otherwise, do the interpolation
+      if (Ndof_convection == Ndof_thisfefunction) //this is a simple check condition...
+      {
+        Output::info<1>("Time_CD2D", "The spaces of the convection field and the "
+            "scalar field are the same ==> There will be no interpolation.");
+//        Output::print<3>("Degres of freedoms of scalar field = " , Ndof_thisfefunction);
+//        Output::print<3>("Degres of freedoms of velo x compo = " , Ndof_convection);
+
+        //fill up the new fe function array
+        fe_funct[1] = convection_x;
+        fe_funct[2] = convection_y;
+
+      }
+      else  // do the interpolation
+      {
+        Output::warn<1>("Time_CD2D", "The spaces of the convection field and the "
+            "scalar field are not the same ==> Starting interpolation... this may take some time");
+
+        // set up an interpolator object  (ptr will be shared later)
+        const TFESpace2D* into_space = &s.fe_space;
+        FEFunctionInterpolator interpolator(into_space);
+
+        // length of the values array of the interpolated velo must equal length of the
+        // concentration fe function
+        size_t length_interpolated = s.fe_function.GetLength();
+
+        std::vector<double> temporary_x(length_interpolated, 0.0);
+        std::vector<double> temporary_y(length_interpolated, 0.0);
+
+        this->entries_velo_x = temporary_x;
+        this->entries_velo_y = temporary_y;
+
+        TFEFunction2D interpolated_convection_x =
+            interpolator.interpolate(*convection_x, this->entries_velo_x);
+
+        TFEFunction2D interpolated_convection_y =
+            interpolator.interpolate(*convection_y, this->entries_velo_y);
+
+        //fill up the new fe function array
+        fe_funct[1] = &interpolated_convection_x;
+        fe_funct[2] = &interpolated_convection_y;
+
+//      delete convection_x; // call to GetComponent dynamically created fe functs
+//      delete convection_y;
+
+      }
 
       // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
-
       // set up the input...
       std::vector<int> beginParameter = {0};
-
-      //fill up the new fe function array
-      //pointer_to_function[0] = &s.fe_function;
-      fe_funct[1] = convection_x;
-      fe_funct[2] = convection_y;
-
       std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
       // for second fe value use function 2
       std::vector<MultiIndex2D> feValueMultiIndex = {D00, D00}; // to produce first fe value use 0th derivative,
@@ -1123,12 +1146,6 @@ void Time_CD2D::assemble_with_convection
       //...this should do the trick
       //===============================================================END CODE
     }
-    else
-    {
-      cout << " JE SUIS ICI" << endl;
-      //      TFEFunction2D * pointer_to_function = &s.fe_function;
-    }
-
 
     if(TDatabase::ParamDB->DISCTYPE == SUPG)
     {
