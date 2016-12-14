@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 3	
+refinement_n_initial_steps: 5	
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -66,7 +66,7 @@ verbosity: 3   [ 1, 5 ]
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-example: 22  [ -1, 100 ]
+example: 32  [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -244,9 +244,9 @@ user_parameter1: 2
 user_parameter2: 2
 
 dimensional_nse: false   { true, false }
-coupling_nse_cd: true   { true, false }
+coupling_nse_cd: false   { true, false }
 coupling_cd_nse: false   { true, false }
-solve_cd: true   { true, false }	
+solve_cd: false   { true, false }	
 
 ###### PARAMETERS FROM THE OLD DATABASE
 VELOCITY_SPACE: 12
