@@ -5,6 +5,8 @@
 #include <tetgen.h>
 
 // default initialization of the mesh (dimension = 0, no elements)
+using namespace ParM;
+
 Mesh::Mesh() {
   dimension = 0;
   vertex.resize(0);
@@ -37,6 +39,11 @@ Mesh::Mesh(std::string filename) {
   hasBothTriaAndQuads = false;
   
   readFromFile(filename);
+}
+
+Mesh::~Mesh()
+{
+  Output::print("DEEEESTRUUUUUUUUUCTOOOOOOR");
 }
 
 Mesh::Mesh(std::string filename,std::string filenameBoundary) {
