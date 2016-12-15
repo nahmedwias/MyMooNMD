@@ -170,21 +170,21 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
     y = Y[i];
 
     coeff[0] = 0;
-    coeff[1] = 1;
-    coeff[2] = 1;
+    coeff[1] = 0;
+    coeff[2] = 0;
     coeff[3] = 0;
 
     // rhs = 1.d/dx + 1.d/dy
     switch(switchviscosity)
     {
       case 1:   // rhs for viscosity 1
-        coeff[4] = (721/16)*(vmax-vmin)*x*y*(-2*(-1+y)*y+x*x*(-2+3*y)+x*(2-6*y+3*y*y));
+        coeff[4] = 0;//(721/16)*(vmax-vmin)*x*y*(-2*(-1+y)*y+x*x*(-2+3*y)+x*(2-6*y+3*y*y));
         break;
       case 2:   // rhs for viscosity 2
-        coeff[4] = -(10.e14)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*(vmax-vmin)*(pow((x-0.5),9)+pow((y-0.5),9));
+        coeff[4] = 0;//-(10.e14)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*(vmax-vmin)*(pow((x-0.5),9)+pow((y-0.5),9));
         break;
       case 3:   // rhs for viscosity 3
-        coeff[4] = +(10.e14)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*(vmax-vmin)*(pow((x-0.5),9)+pow((y-0.5),9));
+        coeff[4] = 0;//+(10.e14)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*(vmax-vmin)*(pow((x-0.5),9)+pow((y-0.5),9));
         break;
       default:
         ErrThrow("Choose parameter P1 between 1 and 3.");

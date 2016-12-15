@@ -132,7 +132,7 @@ void LinCoeffs(int n_points, double *x, double *y,
   double derivative;
   int i;
   double *coeff;
-  double rho,mu; // these values come from local assembling object
+//  double rho,mu; // these values come from local assembling object
 
   double a = TDatabase::ParamDB->P1;
   double h = TDatabase::ParamDB->P2;
@@ -160,10 +160,9 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[1] = -derivative; //eps*val1[3];// + val3[1]; // f1 non dimensional case
     coeff[2] = 0;//-eps*val2[3] + val3[2]; // f2 non dimensional case
 
-    rho = parameters[i][2];
-    mu  = parameters[i][3];
-
-    Output::print<1>("x= ", x[i], " y= ", y[i], " rho = ", rho, " mu = ", mu, " eps = ", eps);
+//    rho = parameters[i][2];
+//    mu  = parameters[i][3];
+//    Output::print<1>("x= ", x[i], " y= ", y[i], " rho = ", rho, " mu = ", mu, " eps = ", eps);
 
 
 
