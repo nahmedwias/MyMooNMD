@@ -293,6 +293,12 @@ class Time_NSE2D
 
     void assemble_massmatrix_withfields(TFEFunction2D* rho_field=nullptr);
 
+  protected: // these 4 members are used when interpolating
+    // rho and mu field into same space as velocity_space
+    std::vector<double> entries_rho_scalar_field;
+    std::vector<double> entries_mu_scalar_field;
+//    TFEFunction2D interpolated_rho_field;
+//    TFEFunction2D interpolated_mu_field;
 };
 
 #endif // __TIME_NSE2D__
