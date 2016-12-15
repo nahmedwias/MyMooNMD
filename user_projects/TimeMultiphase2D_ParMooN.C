@@ -173,12 +173,14 @@ int main(int argc, char* argv[])
   /********************************************************************
    * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
    ********************************************************************/
+  TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
   if (tnse_db["dimensional_nse"].is(true))
     tnse2d.assemble_initial_time_withfields(&rho_field,&mu_field); // assemble linear term
   else
     tnse2d.assemble_initial_time();                                // assemble linear term
 
-
+  if (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION==2)
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
   if (tcd_db["solve_cd"].is(true))
   {
     if (tcd_db["coupling_nse_cd"].is(true))
@@ -223,18 +225,19 @@ int main(int argc, char* argv[])
       TDatabase::TimeDB->CURRENTTIME += tau;
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
-    if (tnse_db["dimensional_nse"].is(true))
-    {
-      tnse2d.assemble_rhs_withfields(&rho_field,&mu_field);
-      tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
-      tnse2d.assemble_massmatrix_withfields(&rho_field);
-    }
-    else
-    {
-      tnse2d.assemble_rhs();
-      tnse2d.assemble_nonlinear_term();
-    }
-    tnse2d.assemble_system();
+      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
+      if (tnse_db["dimensional_nse"].is(true))
+      {
+        tnse2d.assemble_rhs_withfields(&rho_field,&mu_field);
+        tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
+        tnse2d.assemble_massmatrix_withfields(&rho_field);
+      }
+      else
+      {
+        tnse2d.assemble_rhs();
+        tnse2d.assemble_nonlinear_term();
+      }
+      tnse2d.assemble_system();
 
     /********************************************************************
      * NON LINEAR LOOP
@@ -257,6 +260,8 @@ int main(int argc, char* argv[])
     /********************************************************************
      * SOLVING CD2D WITH NSE2D SOLUTION
      ********************************************************************/
+    if (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION==2)
+      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
     if (tcd_db["solve_cd"].is(true))
     {
       Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
