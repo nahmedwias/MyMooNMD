@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
     else
       tcd2d.assemble_initial_time();
   }
-  exit(0);
+
    double end_time = TDatabase::TimeDB->ENDTIME;
    int step = 0;
    int n_substeps = GetN_SubSteps();
