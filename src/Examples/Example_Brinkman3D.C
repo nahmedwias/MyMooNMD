@@ -31,37 +31,7 @@ namespace poiseuille //0
 {
 #include "Brinkman_3D/Poiseuille.h"
 }
-//namespace poiseuille
-//{
-//#include "Brinkman_3D/Poiseuille.h"
-//}
 
-//namespace Poiseuille_Hannukainen
-//{
-//#include "Brinkman_3D/Poiseuille_Hannukainen.h"
-//}
-//namespace Poiseuille_Hannukainen_with_inscribed_physical_sphere
-//{
-//#include "Brinkman_3D/Poiseuille_Hannukainen_with_inscribed_physical_sphere.h"
-//}
-//
-//namespace sine_cosine
-//{
-//#include "Brinkman_3D/SinCos.h"
-//}
-//namespace sine2_sine2
-//{
-//#include "Brinkman_3D/Sin2Sin2.h"
-//}
-////namespace driven_cavity
-////{
-////#include "Brinkman_3D/DrivenCavity.h"
-////}
-////
-////namespace flow_around_cylinder
-////{
-////#include "Brinkman_3D/flow_around_cylinder.h"
-////}
 
 
 
