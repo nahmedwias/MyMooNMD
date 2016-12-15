@@ -5,7 +5,7 @@
 #include <DirectSolver.h>
 #include <GridTransfer.h>
 #include <LocalAssembling2D.h>
-
+#include <FEFunctionInterpolator.h>
 
 /* *************************************************************************** */
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
@@ -861,12 +861,67 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
 
     LocalAssembling2D la(TNSE2D, fe_functions,
                          this->example.get_coeffs());
+
     // the following should add fluid property fluids
     // to obtain a dimensional formulation of NSE
     if (rho_field != nullptr && mu_field != nullptr)
     {
-      fe_functions[3] = rho_field;
-      fe_functions[4] = mu_field;
+      // HERE IS THE CODE TO SET UP THE RHO AND MU FIELDS FOR LOCAL ASSEMBLING OBJECT
+
+      // we assume rho and mu fields are not too exotic,
+      // and have the same space...
+      int Ndof_rho     = rho_field->GetFESpace2D()->GetN_DegreesOfFreedom();
+      int Ndof_velocity = velo_space->GetN_DegreesOfFreedom();
+
+      // step 1: check if the velocity space and "rho_field->GetSFESpace2d()"
+      // are the same. If yes, no interpolation needed
+      // otherwise, do the interpolation
+      if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
+      {
+        Output::info<1>("Time_NSE2D", "The spaces of the velocity field and the "
+                   "scalar field (rho) are the same ==> There will be no interpolation.");
+//        Output::print<3>("Degres of freedoms of scalar field rho= " , Ndof_rho);
+//        Output::print<3>("Degres of freedoms of velocity   = " , Ndof_velocity);
+
+        //fill up the new fe function array
+        fe_functions[3] = rho_field;
+        fe_functions[4] = mu_field;
+      }
+      else  // do the interpolation
+      {
+        Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
+                        "scalar field are not the same ==> Starting interpolation... this may take some time");
+
+        // set up an interpolator object  (ptr will be shared later)
+        // we interpolate into velo_space
+        FEFunctionInterpolator interpolator(velo_space);
+
+        // length of the values array of the interpolated rho
+        // velo must equal length of the velocity components
+        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
+
+        std::vector<double> temporary_rho(length_interpolated, 0.0);
+        std::vector<double> temporary_mu(length_interpolated, 0.0);
+
+        this->entries_rho_scalar_field = temporary_rho;
+        this->entries_mu_scalar_field = temporary_mu;
+
+        TFEFunction2D interpolated_rho_field =
+            interpolator.interpolate(*rho_field,
+                                     this->entries_rho_scalar_field);
+
+        TFEFunction2D interpolated_mu_field =
+            interpolator.interpolate(*mu_field,
+                                     this->entries_mu_scalar_field);
+
+        //fill up the new fe function array
+        fe_functions[3] = &interpolated_rho_field;
+        fe_functions[4] = &interpolated_mu_field;
+
+      }
+
+      // step 2 - set all the 'parameter'-related values in la accordingly
+      // set up the input...
       la.setBeginParameter({0});
       la.setFeFunctions2D(fe_functions); //reset - now velo comp included
       la.setFeValueFctIndex({0,1,3,4});
@@ -895,10 +950,8 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
         default:
           ErrThrow("Time_NSE2D: NSType 2 and 4 are not implemented yet for the Dimensional NSE!");
       }
-
       //...this should do the trick
     }
-
 
 
     std::vector<std::shared_ptr<FEMatrix>> blocks
@@ -1059,10 +1112,66 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
                                    this->example.get_coeffs());
 
 
+    // the following should add fluid property fluids
+    // to obtain a dimensional formulation of NSE
     if (rho_field != nullptr && mu_field != nullptr)
     {
-      fe_functions[3] = rho_field;
-      fe_functions[4] = mu_field;
+      // HERE IS THE CODE TO SET UP THE RHO AND MU FIELDS FOR LOCAL ASSEMBLING OBJECT
+
+      // we assume rho and mu fields are not too exotic,
+      // and have the same space...
+      int Ndof_rho     = rho_field->GetFESpace2D()->GetN_DegreesOfFreedom();
+      int Ndof_velocity = velocity_space->GetN_DegreesOfFreedom();
+
+      // step 1: check if the velocity space and "rho_field->GetSFESpace2d()"
+      // are the same. If yes, no interpolation needed
+      // otherwise, do the interpolation
+      if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
+      {
+        Output::info<1>("Time_NSE2D", "The spaces of the velocity field and the "
+                        "scalar field (rho) are the same ==> There will be no interpolation.");
+//        Output::print<3>("Degres of freedoms of scalar field rho= " , Ndof_rho);
+//        Output::print<3>("Degres of freedoms of velocity   = " , Ndof_velocity);
+
+        //fill up the new fe function array
+        fe_functions[3] = rho_field;
+        fe_functions[4] = mu_field;
+      }
+      else  // do the interpolation
+      {
+        Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
+                        "scalar field are not the same ==> Starting interpolation... this may take some time");
+
+        // set up an interpolator object  (ptr will be shared later)
+        // we interpolate into velo_space
+        FEFunctionInterpolator interpolator(velocity_space);
+
+        // length of the values array of the interpolated rho
+        // velo must equal length of the velocity components
+        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
+
+        std::vector<double> temporary_rho(length_interpolated, 0.0);
+        std::vector<double> temporary_mu(length_interpolated, 0.0);
+
+        this->entries_rho_scalar_field = temporary_rho;
+        this->entries_mu_scalar_field = temporary_mu;
+
+        TFEFunction2D interpolated_rho_field =
+            interpolator.interpolate(*rho_field,
+                                     this->entries_rho_scalar_field);
+
+        TFEFunction2D interpolated_mu_field =
+            interpolator.interpolate(*mu_field,
+                                     this->entries_mu_scalar_field);
+
+        //fill up the new fe function array
+        fe_functions[3] = &interpolated_rho_field;
+        fe_functions[4] = &interpolated_mu_field;
+
+      }
+
+      // step 2 - set all the 'parameter'-related values in la accordingly
+      // set up the input...
       la_nonlinear.setBeginParameter({0});
       la_nonlinear.setFeFunctions2D(fe_functions); //reset - now velo comp included
       la_nonlinear.setFeValueFctIndex({0,1,3,4});
@@ -1091,11 +1200,8 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
             default:
               ErrThrow("Time_NSE2D: NSType 2 and 4 are not implemented yet for the Dimensional NSE!");
       }
-
       //...this should do the trick
     }
-
-
 
 
     std::vector<std::shared_ptr<FEMatrix>> blocks
@@ -1143,6 +1249,7 @@ void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
   const double theta4 = TDatabase::TimeDB->THETA4;
 
   System_per_grid& s = this->systems.front();
+  const TFESpace2D * velo_space = &s.velocity_space;
   // reset the right hand side
   s.rhs.reset();
   // assembling of the right hand side
@@ -1157,8 +1264,62 @@ void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
   // to obtain a dimensional formulation of NSE
   if (rho_field != nullptr && mu_field != nullptr)
   {
-    fe_functions[3] = rho_field;
-    fe_functions[4] = mu_field;
+    // HERE IS THE CODE TO SET UP THE RHO AND MU FIELDS FOR LOCAL ASSEMBLING OBJECT
+
+    // we assume rho and mu fields are not too exotic,
+    // and have the same space...
+    int Ndof_rho     = rho_field->GetFESpace2D()->GetN_DegreesOfFreedom();
+    int Ndof_velocity = s.velocity_space.GetN_DegreesOfFreedom();
+
+    // step 1: check if the velocity space and "rho_field->GetSFESpace2d()"
+    // are the same. If yes, no interpolation needed
+    // otherwise, do the interpolation
+    if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
+    {
+      Output::info<1>("Time_NSE2D", "The spaces of the velocity field and the "
+                 "scalar field (rho) are the same ==> There will be no interpolation.");
+//        Output::print<3>("Degres of freedoms of scalar field rho= " , Ndof_rho);
+//        Output::print<3>("Degres of freedoms of velocity   = " , Ndof_velocity);
+
+      //fill up the new fe function array
+      fe_functions[3] = rho_field;
+      fe_functions[4] = mu_field;
+    }
+    else  // do the interpolation
+    {
+      Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
+                      "scalar field are not the same ==> Starting interpolation... this may take some time");
+
+      // set up an interpolator object  (ptr will be shared later)
+      // we interpolate into velo_space
+      FEFunctionInterpolator interpolator(velo_space);
+
+      // length of the values array of the interpolated rho
+      // velo must equal length of the velocity components
+      size_t length_interpolated = s.u.GetComponent(0)->GetLength();
+
+      std::vector<double> temporary_rho(length_interpolated, 0.0);
+      std::vector<double> temporary_mu(length_interpolated, 0.0);
+
+      this->entries_rho_scalar_field = temporary_rho;
+      this->entries_mu_scalar_field = temporary_mu;
+
+      TFEFunction2D interpolated_rho_field =
+          interpolator.interpolate(*rho_field,
+                                   this->entries_rho_scalar_field);
+
+      TFEFunction2D interpolated_mu_field =
+          interpolator.interpolate(*mu_field,
+                                   this->entries_mu_scalar_field);
+
+      //fill up the new fe function array
+      fe_functions[3] = &interpolated_rho_field;
+      fe_functions[4] = &interpolated_mu_field;
+
+    }
+
+    // step 2 - set all the 'parameter'-related values in la accordingly
+    // set up the input...
     la.setBeginParameter({0});
     la.setFeFunctions2D(fe_functions); //reset - now velo comp included
     la.setFeValueFctIndex({0,1,3,4});
