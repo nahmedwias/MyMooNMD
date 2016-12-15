@@ -66,7 +66,7 @@ verbosity: 3   [ 1, 5 ]
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-example: 31  [ -1, 100 ]
+example: 32  [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -272,10 +272,10 @@ ALGEBRAIC_FLUX_CORRECTION: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.05
+ENDTIME: 0.01
 TIMESTEPLENGTH: 0.01
 
 
-P1: 1
+P1: 2
 P2: 0.5
-P3: 50
+P3: 39

@@ -216,6 +216,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
   int switchviscosity = TDatabase::ParamDB->P1;
   double vmin = TDatabase::ParamDB->P2;
   double vmax = TDatabase::ParamDB->P3;
+  double rho, mu;
 
   int i;
   double *coeff, x, y;
@@ -275,6 +276,11 @@ void LinCoeffs(int n_points, double *X, double *Y,
       default:
         ErrThrow("Choose parameter P1 between 1 and 3.");
     }
+
+//    rho = parameters[i][2];
+//    mu  = parameters[i][3];
+//    Output::print<1>("x= ", x, " y= ", y, " rho = ", rho, " mu = ", mu, " eps = ", coeff[0]);
+
   }
 }
 
