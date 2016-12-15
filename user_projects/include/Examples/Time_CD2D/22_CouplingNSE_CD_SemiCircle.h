@@ -55,7 +55,7 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
   double u_x,u_y;
   int i;
   double *coeff;
-  double x, y;
+//  double x, y;
 
   for(i=0;i<n_points;i++)
   {

@@ -134,6 +134,16 @@ int main(int argc, char* argv[])
   double mu2  = 0;                                    // mu constant of fluid2, eg 0
 
 
+  /********************************************************************
+   * SOME OUTPUT AND INFORMATION SET
+   ********************************************************************/
+  Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
+  Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
+  Output::print<1>("Convection_example number     ", tcd_db["example"]);
+  Output::print<1>("TimeNSE_example number        ", tnse_db["example"]);
+
+
 
   /********************************************************************
    * INITIALIZING OBJECTS FOR MULTIPHASE
@@ -158,17 +168,6 @@ int main(int argc, char* argv[])
   /** @brief Finite Element function for density and viscosity field */
   TFEFunction2D rho_field = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
   TFEFunction2D mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*)"m");
-
-//  // Interpolate the fields THIS MUST BE MOVED IN THE ASSEMBLE METHOD!
-//  const TFESpace2D* into_space = &tnse2d.get_velocity_space();
-//  FEFunctionInterpolator interpolator(into_space);
-//  size_t length_interpolated = rho_field0.GetLength();
-//  std::vector<double> entries_rho(length_interpolated, 0.0);
-//  std::vector<double> entries_mu(length_interpolated, 0.0);
-//  TFEFunction2D rho_field =
-//      interpolator.interpolate(rho_field0,entries_rho);
-//  TFEFunction2D mu_field =
-//      interpolator.interpolate(mu_field0,entries_mu);
 
 
   /********************************************************************
@@ -198,12 +197,6 @@ int main(int argc, char* argv[])
   /********************************************************************
    * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
    ********************************************************************/
-  Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
-  Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
-  Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
-  Output::print<1>("Convection_example number     ", tcd_db["example"]);
-  Output::print<1>("TimeNSE_example number        ", tnse_db["example"]);
-
   LoopInfo  loop_info("nonlinear");
   loop_info.print_time_every_step = true;
   loop_info.verbosity_threshold   = 1;            // full verbosity
