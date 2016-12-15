@@ -24,8 +24,6 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
                                         int componentID,
                                         double mult)
     {
-        int ActiveBound = U_Space->GetActiveBound();
-        
         std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
         /**
          * @todo: check if the matrix structure is correct:
@@ -51,7 +49,7 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
                                                     // convert the joint to an object of BoundFace type
                                                     TBoundFace *boundface = (TBoundFace *)joint;
                                                     
-                                                    Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
+                                                    //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
                                                     
                                                     if (boundface->GetBoundComp()->get_physical_id()==componentID) {
                                                         
@@ -95,9 +93,9 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
                                                                             double  n_z=normal[2];
                                                                             
                                                                             // add for all three components
-                                                                            blocks[3]->add(DOF_u[k1],  DOF_p[k2], scaleFactor*p*v_x*n_x ); // B1
-                                                                            blocks[7]->add(DOF_u[k1],  DOF_p[k2], scaleFactor*p*v_y*n_y ); // B2
-                                                                            blocks[11]->add(DOF_u[k1], DOF_p[k2], scaleFactor*p*v_z*n_z ); // B3
+                                                                            blocks[3]->add(DOF_u[k1],  DOF_p[k2], -scaleFactor*p*v_x*n_x ); // B1
+                                                                            blocks[7]->add(DOF_u[k1],  DOF_p[k2], -scaleFactor*p*v_y*n_y ); // B2
+                                                                            blocks[11]->add(DOF_u[k1], DOF_p[k2], -scaleFactor*p*v_z*n_z ); // B3
                                                                         }
                                                                     } //for(l=0;l<N_BaseFunct;l++)
                                                                 }
@@ -110,14 +108,230 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
                                         }
     }
 
+// ===========================================================================
+// int_{Gamma} q*u*n
+void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
+                                        const TFESpace3D *U_Space,
+                                        const TFESpace3D *P_Space,
+                                        std::vector<TBaseCell*> &boundaryCells,
+                                        int componentID,
+                                        double mult)
+{
+    int ActiveBound = P_Space->GetActiveBound();
+    
+    std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
+    /**
+     * @todo: check if the matrix structure is correct:
+     * we need 4 square matrices with the same FE spaces
+     */
+    ///@todo create a boundary cell list
+    // loop over all boundary cells (at the moment it consists of all cells!!)
+    for(size_t i=0; i< boundaryCells.size(); i++) {
+        
+        TBaseCell* cell = boundaryCells[i];
+        // mapping from local (cell) DOF to global DOF
+        int *DOF_u = U_Space->GetGlobalDOF(cell->GetCellIndex());
+        // mapping from local (cell) DOF to global DOF
+        int *DOF_p = P_Space->GetGlobalDOF(cell->GetCellIndex());
+        
+        // loop over the faces (joints)
+        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+            TJoint* joint = cell->GetJoint(joint_id);
+            
+            // select boundary faces
+            if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+            {
+                // convert the joint to an object of BoundFace type
+                TBoundFace *boundface = (TBoundFace *)joint;
+                
+                //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
+                
+                if (boundface->GetBoundComp()->get_physical_id()==componentID) {
+                    
+                    // get all data necessary for computing the integral:
+                    // quadrature weights, points, functions values, normal, determinant
+                    std:: vector<double> qWeights_u,qPointsT_u,qPointsS_u, qWeights_p,qPointsT_p,qPointsS_p; // S,T for parametrization in 3D
+                    std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p ;
+                    this->getQuadratureData(U_Space, cell,joint_id,
+                                            qWeights_u,qPointsT_u,qPointsS_u,basisFunctionsValues_u);
+                    this->getQuadratureData(P_Space, cell,joint_id,
+                                            qWeights_p,qPointsT_p,qPointsS_p,basisFunctionsValues_p);
+                    
+                    std::vector<double> normal;
+                    double transformationDeterminant;
+                    this->computeNormalAndTransformationData(cell, joint_id, normal,
+                                                             transformationDeterminant);
+                    
+                    // rescale local integral by mesh-size (important for Nitsche boundary)
+                    for(size_t l=0;l<qWeights_u.size();l++) {
+                        
+                        double commonFactor  = mult * qWeights_u[l] * transformationDeterminant;
+                        double scaleFactor= commonFactor;
+                        
+                        
+                        for(size_t k1=0;k1<basisFunctionsValues_p[l].size();k1++) {
+                            int global_dof_from_local_p = DOF_p[k1]; // Test-DOF
+                            
+                            if(global_dof_from_local_p < U_Space->GetActiveBound()) {
+                                double q = basisFunctionsValues_p[l][k1]; // value of test function (vtest = vx = vy =vz)
+
+                                for(size_t k2=0;k2<basisFunctionsValues_u[l].size();k2++) {
+                                    int global_dof_from_local_u = DOF_u[k2]; // Ansatz-DOF
+                                    
+                                    if(global_dof_from_local_u < U_Space->GetActiveBound()) {
+                                        double u_x = basisFunctionsValues_u[l][k2]; // value of ansatz function
+                                        double u_y = u_x; // value of ansatz function
+                                        double u_z = u_x; // value of ansatz function
+                                        
+                                        double  n_x=normal[0];
+                                        double  n_y=normal[1];
+                                        double  n_z=normal[2];
+                                        
+                                        // add for all three components
+                                        blocks[12]->add(DOF_u[k1],  DOF_p[k2], scaleFactor*q*u_x*n_x ); // B1
+                                        blocks[13]->add(DOF_u[k1],  DOF_p[k2], scaleFactor*q*u_y*n_y ); // B2
+                                        blocks[14]->add(DOF_u[k1], DOF_p[k2], scaleFactor*q*u_z*n_z ); // B3
+                                    }
+                                } //for(l=0;l<N_BaseFunct;l++)
+                            }
+                        } // endif
+                    }
+                    
+                }
+            }
+        }
+    }
+}
+
+
+// ===========================================================================
+// int_{Gamma} q*u*n
+void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
+                                      const TFESpace3D *P_Space,
+                                      BoundValueFunct3D *given_boundary_data1,
+                                      BoundValueFunct3D *given_boundary_data2,
+                                      BoundValueFunct3D *given_boundary_data3,
+                                      std::vector<TBaseCell*> &boundaryCells,
+                                      int componentID,
+                                      double mult)
+{
+    int ActiveBound = P_Space->GetActiveBound();
+    
+//    std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
+    /**
+     * @todo: check if the matrix structure is correct:
+     * we need 4 square matrices with the same FE spaces
+     */
+    ///@todo create a boundary cell list
+    // loop over all boundary cells (at the moment it consists of all cells!!)
+    for(size_t i=0; i< boundaryCells.size(); i++) {
+        
+        TBaseCell* cell = boundaryCells[i];
+//        // mapping from local (cell) DOF to global DOF
+//        int *DOF_u = U_Space->GetGlobalDOF(cell->GetCellIndex());
+        // mapping from local (cell) DOF to global DOF
+        int *DOF_p = P_Space->GetGlobalDOF(cell->GetCellIndex());
+        
+        // loop over the faces (joints)
+        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+            TJoint* joint = cell->GetJoint(joint_id);
+            
+            // select boundary faces
+            if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+            {
+                // convert the joint to an object of BoundFace type
+                TBoundFace *boundface = (TBoundFace *)joint;
+                
+                //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
+                
+                if (boundface->GetBoundComp()->get_physical_id()==componentID) {
+                    
+                    // get all data necessary for computing the integral:
+                    // quadrature weights, points, functions values, normal, determinant
+                    std:: vector<double> qWeights_u,qPointsT_u,qPointsS_u, qWeights_p,qPointsT_p,qPointsS_p; // S,T for parametrization in 3D
+                    std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p ;
+                    this->getQuadratureData(P_Space, cell,joint_id,
+                                            qWeights_u,qPointsT_u,qPointsS_u,basisFunctionsValues_u);
+                    this->getQuadratureData(P_Space, cell,joint_id,
+                                            qWeights_p,qPointsT_p,qPointsS_p,basisFunctionsValues_p);
+                    
+                    std::vector<double> normal;
+                    double transformationDeterminant;
+                    this->computeNormalAndTransformationData(cell, joint_id, normal,
+                                                             transformationDeterminant);
+                    
+                    // rescale local integral by mesh-size (important for Nitsche boundary)
+                    for(size_t l=0;l<qWeights_u.size();l++) {
+                        
+                        double commonFactor  = mult * qWeights_u[l] * transformationDeterminant;
+                        double scaleFactor= commonFactor;
+                        
+                        double value1, value2, value3;
+                        if(given_boundary_data1 != nullptr)
+                        {
+                            value1 = 1.;
+                            // given_boundary_data1(componentID);
+                        }
+                        else
+                        {
+                            value1 = 1.;
+                        }
+                        
+                        if(given_boundary_data2 != nullptr)
+                        {
+                            value2 = 1.;
+                            //given_boundary_data2(BDComponent, T, value2);
+                        }
+                        else
+                        {
+                            value2 = 1.;
+                        }
+                        if(given_boundary_data3 != nullptr)
+                        {
+                            value3 = 1.;
+                            //given_boundary_data3(BDComponent, T, value2);
+                        }
+                        else
+                        {
+                            value3 = 1.;
+                        }
+                        
+                        
+                        for(size_t k1=0;k1<basisFunctionsValues_p[l].size();k1++) {
+                            int global_dof_from_local_p = DOF_p[k1]; // Test-DOF
+                            
+                            if(global_dof_from_local_p < P_Space->GetActiveBound()) {
+                                double q = basisFunctionsValues_p[l][k1]; // value of test function (vtest = vx = vy =vz)
+                                
+                                
+                                double  n_x=normal[0];
+                                double  n_y=normal[1];
+                                double  n_z=normal[2];
+                                
+                                // add for all three components
+                                rhs.block(0)[global_dof_from_local_p] += commonFactor * q * value1 * n_x;
+                                rhs.block(1)[global_dof_from_local_p] += commonFactor * q * value2 * n_y;
+                                rhs.block(2)[global_dof_from_local_p] += commonFactor * q * value3 * n_z;
+                                
+                            } //for(l=0;l<N_BaseFunct;l++)
+                        }
+                    } // endif
+                }
+                
+            }
+        }
+    }
+}
+
+
 
 // ===========================================================================
 // int_{Gamma} mult*grad u*n*v
-void BoundaryAssembling3D::matrix_gradv_n_v(BlockFEMatrix &M,
-                                            const TFESpace3D *U_Space,
-                                            std::vector<TBaseCell*> &boundaryCells,
-                                            int componentID,
-                                            double mult)
+void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
+                                         const TFESpace3D *U_Space,
+                                         std::vector<TBaseCell*> &boundaryCells,
+                                         int componentID,
+                                         double mult)
 
 {   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
     
@@ -139,7 +353,7 @@ void BoundaryAssembling3D::matrix_gradv_n_v(BlockFEMatrix &M,
                 // convert the joint to an object of BoundFace type
                 TBoundFace *boundface = (TBoundFace *)joint;
                 
-                Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
+                //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
                 
                 if (boundface->GetBoundComp()->get_physical_id()==componentID) {
                     
@@ -209,6 +423,228 @@ void BoundaryAssembling3D::matrix_gradv_n_v(BlockFEMatrix &M,
         }
     }
 }
+
+// ===========================================================================
+// int_{Gamma} mult*grad v*n*u
+void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
+                                            const TFESpace3D *U_Space,
+                                            std::vector<TBaseCell*> &boundaryCells,
+                                            int componentID,
+                                            double mult)
+
+{   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
+    
+    ///@todo create a boundary cell list
+    // loop over all boundary cells (at the moment it consists of all cells!!)
+    for(size_t i=0; i< boundaryCells.size(); i++)
+    {
+        TBaseCell* cell = boundaryCells[i];
+        
+        // mapping from local (cell) DOF to global DOF
+        int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
+        // loop over the faces (joints)
+        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+            TJoint* joint = cell->GetJoint(joint_id);
+            
+            // select boundary faces
+            if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+            {
+                // convert the joint to an object of BoundFace type
+                TBoundFace *boundface = (TBoundFace *)joint;
+                
+                //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
+                
+                if (boundface->GetBoundComp()->get_physical_id()==componentID) {
+                    
+                    // get all data necessary for computing the integral:
+                    // quadrature weights, points, functions values, normal, determinant
+                    std:: vector<double> qWeights,qPointsT,qPointsS; // S,T for parametrization in 3D
+                    std::vector< std::vector<double> > basisFunctionsValues,basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z ;
+                    this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell,joint_id,
+                                                                     qWeights,qPointsT,qPointsS,basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z );
+                    std::vector<double> normal;
+                    double transformationDeterminant;
+                    this->computeNormalAndTransformationData(cell, joint_id, normal,
+                                                             transformationDeterminant);
+                    
+                    // rescale local integral by mesh-size (important for Nitsche boundary)
+                    for(size_t l=0;l<qWeights.size();l++) {
+                        
+                        double commonFactor = mult * qWeights[l] * transformationDeterminant;
+                        double scaleFactor = commonFactor;
+                        
+                        
+                        
+                        for(size_t k1=0;k1<basisFunctionsValues[l].size();k1++) {
+                            int global_dof_from_local = DOF[k1]; // Test-DOF
+                            
+                            if(global_dof_from_local < U_Space->GetActiveBound()) {
+                                double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
+                                double v_y = v_x;
+                                double v_z = v_x;
+                                
+                                double v_dx = basisFunctionsValues_derivative_x[l][k1];
+                                double v_dy = basisFunctionsValues_derivative_x[l][k1];
+                                double v_dz = basisFunctionsValues_derivative_x[l][k1];
+                                
+                                for(size_t k2=0;k2<basisFunctionsValues[l].size();k2++) {
+                                    int global_dof_from_local = DOF[k2]; // Ansatz-DOF
+                                    
+                                    if(global_dof_from_local < U_Space->GetActiveBound()) {
+                                        double u_x = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
+                                        double u_y = u_x;
+                                        double u_z = u_x;
+                                        
+                                        double  n_x=normal[0];
+                                        double  n_y=normal[1];
+                                        double  n_z=normal[2];
+                                        
+
+                                        
+                                        // (see the note about blocks at the beginning of the function)
+                                        blocks[0]->add(DOF[k1], DOF[k2],  -scaleFactor*(u_x)*v_dx*n_x ); // A11
+                                        blocks[0]->add(DOF[k1], DOF[k2],  -scaleFactor*(u_x)*v_dy*n_y ); // A11
+                                        blocks[0]->add(DOF[k1], DOF[k2],  -scaleFactor*(u_x)*v_dz*n_z ); // A11
+                                        //blocks[1]->add(test_DOF, ansatz_DOF, scale_factor*(vx)*uyy*nx ); // A12
+                                        //blocks[3]->add(test_DOF, ansatz_DOF, scale_factor*(vx)*uxx*ny ); // A21
+                                        blocks[5]->add(DOF[k1], DOF[k2],  -scaleFactor*(u_y)*v_dx*n_x ); // A22
+                                        blocks[5]->add(DOF[k1], DOF[k2],  -scaleFactor*(u_y)*v_dy*n_y ); // A22
+                                        blocks[5]->add(DOF[k1], DOF[k2],  -scaleFactor*(u_y)*v_dz*n_z ); // A22
+                                        
+                                        blocks[10]->add(DOF[k1], DOF[k2], -scaleFactor*(u_z)*v_dx*n_x ); // A33
+                                        blocks[10]->add(DOF[k1], DOF[k2], -scaleFactor*(u_z)*v_dy*n_y ); // A33
+                                        blocks[10]->add(DOF[k1], DOF[k2], -scaleFactor*(u_z)*v_dz*n_z ); // A33
+                                    }
+                                } //for(l=0;l<N_BaseFunct;l++)
+                            }
+                        } // endif
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+// ===========================================================================
+// int_{Gamma} mult*grad v*n*uD
+void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
+                                          const TFESpace3D *U_Space,
+                                          BoundValueFunct3D *given_boundary_data1,
+                                          BoundValueFunct3D *given_boundary_data2,
+                                          BoundValueFunct3D *given_boundary_data3,
+                                          std::vector<TBaseCell*> &boundaryCells,
+                                          int componentID,
+                                          double mult)
+
+{
+    //    std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
+    
+    ///@todo create a boundary cell list
+    // loop over all boundary cells (at the moment it consists of all cells!!)
+    for(size_t i=0; i< boundaryCells.size(); i++)
+    {
+        TBaseCell* cell = boundaryCells[i];
+        
+        // mapping from local (cell) DOF to global DOF
+        int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
+        // loop over the faces (joints)
+        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+            TJoint* joint = cell->GetJoint(joint_id);
+            
+            // select boundary faces
+            if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+            {
+                // convert the joint to an object of BoundFace type
+                TBoundFace *boundface = (TBoundFace *)joint;
+                
+                
+                
+                if (boundface->GetBoundComp()->get_physical_id()==componentID) {
+                    
+                    // get all data necessary for computing the integral:
+                    // quadrature weights, points, functions values, normal, determinant
+                    std:: vector<double> qWeights,qPointsT,qPointsS; // S,T for parametrization in 3D
+                    std::vector< std::vector<double> > basisFunctionsValues,basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z ;
+                    this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell,joint_id,
+                                                                     qWeights,qPointsT,qPointsS,basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z );
+                    std::vector<double> normal;
+                    double transformationDeterminant;
+                    this->computeNormalAndTransformationData(cell, joint_id, normal,
+                                                             transformationDeterminant);
+                    
+                    // get the boundary values of rhs
+                    // loop over Gauss points
+                    for(size_t l=0;l<qWeights.size();l++) {
+                        
+                        // rescale local integral by mesh-size (important for Nitsche boundary)
+                        double commonFactor = mult * qWeights[l] * transformationDeterminant;
+                        double scaleFactor = commonFactor;
+                        
+                        double value1, value2, value3;
+                        if(given_boundary_data1 != nullptr)
+                        {
+                            value1 = 1.;
+                            // given_boundary_data1(componentID);
+                        }
+                        else
+                        {
+                            value1 = 1.;
+                        }
+                        
+                        if(given_boundary_data2 != nullptr)
+                        {
+                            value2 = 1.;
+                            //given_boundary_data2(BDComponent, T, value2);
+                        }
+                        else
+                        {
+                            value2 = 1.;
+                        }
+                        if(given_boundary_data3 != nullptr)
+                        {
+                            value3 = 1.;
+                            //given_boundary_data3(BDComponent, T, value2);
+                        }
+                        else
+                        {
+                            value3 = 1.;
+                        }
+                        
+                        
+                        
+                        for(size_t k1=0;k1<basisFunctionsValues[l].size();k1++) {
+                            int global_dof_from_local = DOF[k1]; // Test-DOF
+                            
+                            if(global_dof_from_local < U_Space->GetActiveBound()) {
+                                double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
+                                double v_y = v_x;
+                                double v_z = v_x;
+                                
+                                double v_dx = basisFunctionsValues_derivative_x[l][k1];
+                                double v_dy = basisFunctionsValues_derivative_x[l][k1];
+                                double v_dz = basisFunctionsValues_derivative_x[l][k1];
+                                
+                                
+                                double  n_x=normal[0];
+                                double  n_y=normal[1];
+                                double  n_z=normal[2];
+                                
+                                rhs.block(0)[global_dof_from_local] += commonFactor * value1 * v_dx * n_x;
+                                rhs.block(1)[global_dof_from_local] += commonFactor * value2 * v_dy * n_y;
+                                rhs.block(2)[global_dof_from_local] += commonFactor * value3 * v_dz * n_z;
+                                
+                            }
+                        } //for(l=0;l<N_BaseFunct;l++)
+                    }
+                } // endif
+            }
+        }
+    }
+}
+
+
+
 // ===========================================================================
 // int_{Gamma} mult*u*v
 void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
@@ -239,7 +675,7 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
                 // convert the joint to an object of BoundFace type
                 TBoundFace *boundface = (TBoundFace *)joint;
                 
-                Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
+               
                 
                 if (boundface->GetBoundComp()->get_physical_id()==componentID) {
                     
@@ -306,7 +742,7 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 
 // ===========================================================================
 // int_{Gamma} mult*given_boundary_data(x,y,z)*v
-void BoundaryAssembling3D::rhs_g_v(BlockVector &rhs,
+void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
                                    const TFESpace3D *U_Space,
                                    BoundValueFunct3D *given_boundary_data1,
                                    BoundValueFunct3D *given_boundary_data2,
@@ -333,7 +769,7 @@ void BoundaryAssembling3D::rhs_g_v(BlockVector &rhs,
                 
                 // convert the joint to an object of BoundFace type
                 TBoundFace *boundface = (TBoundFace *)joint;
-Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
+
                 if (boundface->GetBoundComp()->get_physical_id()==componentID) {
 
                     // get all data necessary for computing the integral:
@@ -444,9 +880,9 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
                 
                 // convert the joint to an object of BoundFace type
                 TBoundFace *boundface = (TBoundFace *)joint;
-Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
+
                 if (boundface->GetBoundComp()->get_physical_id()==componentID) {
-                    
+      
                     // get all data necessary for computing the integral:
                     // quadrature weights, points, functions values, normal, determinant
                     std:: vector<double> qWeights,qPointsT,qPointsS;
@@ -467,7 +903,7 @@ Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID
                         else
                             value = 1;
                         
-Output::print(" value = ",value);
+
                         double commonFactor = mult * qWeights[l] * transformationDeterminant;
                         
                         for(size_t k=0;k<basisFunctionsValues[l].size();k++) {
@@ -772,94 +1208,94 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
     
 }
 
-// ===========================================================================
-///@todo This function should be a member of Boundface.C
-void BoundaryAssembling3D::compute_h(TBaseCell *cell,
-                                     int m,
-                                     double &h)
-{
-    const int *faceVertexMap, *faceVertexMapLength;
-    int maxNVerticesPerFace;
-    // For the current cell, get information of faces and local vertices
-    // faceVertexMap should be seen as an array of arrays, e.g.
-    // faceVertexMap = { {a,b,c},{b,c,d},{a,c,d},{a,b,d}}
-    // where faceVertexMap[i] contains the id of vertices defining face i
-    // faceVertexMapLength is an array specifying the length of each list
-    // note: in the case that faces of an element have differennt number of
-    // vertices (e.g. a pyramid), the faceVertexMap lists have all lenght equal to
-    // maxNVerticesPerFace, and these are filled with 0 for the faces with less vertices
-    cell->GetShapeDesc()->GetFaceVertex(faceVertexMap,faceVertexMapLength,maxNVerticesPerFace);
-    // simplify: number of vertices on face m (m=joint_id)
-    size_t nFaceVertices = faceVertexMapLength[ m ];
-    std::vector< Point > faceVertices(nFaceVertices,Point((unsigned int) 3));
-    for (size_t l1=0; l1<nFaceVertices; l1++)
-    {
-        double _x,_y,_z;
-        cell->GetVertex(faceVertexMap[ m*maxNVerticesPerFace+l1 ])->GetCoords(_x,_y,_z);
-        faceVertices[l1].x() = _x;
-        faceVertices[l1].y() = _y;
-        faceVertices[l1].z() = _z;
-    }
-    
-    std::vector<double> edge_lengths;
-    double min_edge_length, max_edge_length;
-    double edge_length1, edge_length2, edge_length3, edge_length4;
-    switch(faceVertices.size()) {
-       case 3:
-            // we consider a triangle (P0,P1,P2)
-            // and compute the edge lengths ||P1-P0||_2, ||P2-P0||_2, ||P1-P2||_2
-            edge_lengths[0] = sqrt  ((faceVertices[1].x() - faceVertices[0].x())*(faceVertices[1].x() - faceVertices[0].x())+
-                                     (faceVertices[1].y() - faceVertices[0].y())*(faceVertices[1].y() - faceVertices[0].y())+
-                                     (faceVertices[1].z() - faceVertices[0].z())*(faceVertices[1].z() - faceVertices[0].z())  );
-            
-            edge_lengths[1]= sqrt  ((faceVertices[2].x() - faceVertices[0].x())*(faceVertices[2].x() - faceVertices[0].x())+
-                                    (faceVertices[2].y() - faceVertices[0].y())*(faceVertices[2].y() - faceVertices[0].y())+
-                                    (faceVertices[2].z() - faceVertices[0].z())*(faceVertices[2].z() - faceVertices[0].z())  );
-            
-            edge_lengths[2] = sqrt  ((faceVertices[1].x() - faceVertices[2].x())*(faceVertices[1].x() - faceVertices[2].x())+
-                                     (faceVertices[1].y() - faceVertices[2].y())*(faceVertices[1].y() - faceVertices[2].y())+
-                                     (faceVertices[1].z() - faceVertices[2].z())*(faceVertices[1].z() - faceVertices[2].z())  );
-            
-            // compute the maximum and minimum edge length
-            min_edge_length = *min_element(edge_lengths.begin(), edge_lengths.end());
-            max_edge_length = *max_element(edge_lengths.begin(), edge_lengths.end());
-            
-            // set h to be the maximum edge length
-            h=max_edge_length;
-            
-            break;
-            
-        case 4:
-            // we consider a quadrilateral (P0,P1,P2,P3)
-            // and compute the edge lengths ||P1-P0||_2, ||P2-P1||_2, ||P3-P2||_2, ||P3-P0||_2
-            edge_lengths[0] = sqrt  ((faceVertices[1].x() - faceVertices[0].x())*(faceVertices[1].x() - faceVertices[0].x())+
-                                     (faceVertices[1].y() - faceVertices[0].y())*(faceVertices[1].y() - faceVertices[0].y())+
-                                     (faceVertices[1].z() - faceVertices[0].z())*(faceVertices[1].z() - faceVertices[0].z())  );
-            
-            edge_lengths[1] = sqrt  ((faceVertices[2].x() - faceVertices[1].x())*(faceVertices[2].x() - faceVertices[1].x())+
-                                     (faceVertices[2].y() - faceVertices[1].y())*(faceVertices[2].y() - faceVertices[1].y())+
-                                     (faceVertices[2].z() - faceVertices[1].z())*(faceVertices[2].z() - faceVertices[1].z())  );
-            
-            edge_lengths[2] = sqrt  ((faceVertices[3].x() - faceVertices[2].x())*(faceVertices[3].x() - faceVertices[2].x())+
-                                     (faceVertices[3].y() - faceVertices[2].y())*(faceVertices[3].y() - faceVertices[2].y())+
-                                     (faceVertices[3].z() - faceVertices[2].z())*(faceVertices[3].z() - faceVertices[2].z())  );
-            
-            edge_lengths[3] = sqrt  ((faceVertices[3].x() - faceVertices[0].x())*(faceVertices[3].x() - faceVertices[0].x())+
-                                     (faceVertices[3].y() - faceVertices[0].y())*(faceVertices[3].y() - faceVertices[0].y())+
-                                     (faceVertices[3].z() - faceVertices[0].z())*(faceVertices[3].z() - faceVertices[0].z())  );
-            
-            // compute the maximum and minimum edge length
-            min_edge_length = *min_element(edge_lengths.begin(), edge_lengths.end());
-            max_edge_length = *max_element(edge_lengths.begin(), edge_lengths.end());
-            
-            // set h to be the maximum edge length
-            h=max_edge_length;
-            
-            break;
-            
-    } // triangles or quadrilaterals
-    
-}
+//// ===========================================================================
+/////@todo This function should be a member of Boundface.C
+//void BoundaryAssembling3D::compute_h(TBaseCell *cell,
+//                                     int m,
+//                                     double &h)
+//{
+//    const int *faceVertexMap, *faceVertexMapLength;
+//    int maxNVerticesPerFace;
+//    // For the current cell, get information of faces and local vertices
+//    // faceVertexMap should be seen as an array of arrays, e.g.
+//    // faceVertexMap = { {a,b,c},{b,c,d},{a,c,d},{a,b,d}}
+//    // where faceVertexMap[i] contains the id of vertices defining face i
+//    // faceVertexMapLength is an array specifying the length of each list
+//    // note: in the case that faces of an element have differennt number of
+//    // vertices (e.g. a pyramid), the faceVertexMap lists have all lenght equal to
+//    // maxNVerticesPerFace, and these are filled with 0 for the faces with less vertices
+//    cell->GetShapeDesc()->GetFaceVertex(faceVertexMap,faceVertexMapLength,maxNVerticesPerFace);
+//    // simplify: number of vertices on face m (m=joint_id)
+//    size_t nFaceVertices = faceVertexMapLength[ m ];
+//    std::vector< Point > faceVertices(nFaceVertices,Point((unsigned int) 3));
+//    for (size_t l1=0; l1<nFaceVertices; l1++)
+//    {
+//        double _x,_y,_z;
+//        cell->GetVertex(faceVertexMap[ m*maxNVerticesPerFace+l1 ])->GetCoords(_x,_y,_z);
+//        faceVertices[l1].x() = _x;
+//        faceVertices[l1].y() = _y;
+//        faceVertices[l1].z() = _z;
+//    }
+//    
+//    std::vector<double> edge_lengths;
+//    double min_edge_length, max_edge_length;
+//    double edge_length1, edge_length2, edge_length3, edge_length4;
+//    switch(faceVertices.size()) {
+//       case 3:
+//            // we consider a triangle (P0,P1,P2)
+//            // and compute the edge lengths ||P1-P0||_2, ||P2-P0||_2, ||P1-P2||_2
+//            edge_lengths[0] = sqrt  ((faceVertices[1].x() - faceVertices[0].x())*(faceVertices[1].x() - faceVertices[0].x())+
+//                                     (faceVertices[1].y() - faceVertices[0].y())*(faceVertices[1].y() - faceVertices[0].y())+
+//                                     (faceVertices[1].z() - faceVertices[0].z())*(faceVertices[1].z() - faceVertices[0].z())  );
+//            
+//            edge_lengths[1]= sqrt  ((faceVertices[2].x() - faceVertices[0].x())*(faceVertices[2].x() - faceVertices[0].x())+
+//                                    (faceVertices[2].y() - faceVertices[0].y())*(faceVertices[2].y() - faceVertices[0].y())+
+//                                    (faceVertices[2].z() - faceVertices[0].z())*(faceVertices[2].z() - faceVertices[0].z())  );
+//            
+//            edge_lengths[2] = sqrt  ((faceVertices[1].x() - faceVertices[2].x())*(faceVertices[1].x() - faceVertices[2].x())+
+//                                     (faceVertices[1].y() - faceVertices[2].y())*(faceVertices[1].y() - faceVertices[2].y())+
+//                                     (faceVertices[1].z() - faceVertices[2].z())*(faceVertices[1].z() - faceVertices[2].z())  );
+//            
+//            // compute the maximum and minimum edge length
+//            min_edge_length = *min_element(edge_lengths.begin(), edge_lengths.end());
+//            max_edge_length = *max_element(edge_lengths.begin(), edge_lengths.end());
+//            
+//            // set h to be the maximum edge length
+//            h=max_edge_length;
+//            
+//            break;
+//            
+//        case 4:
+//            // we consider a quadrilateral (P0,P1,P2,P3)
+//            // and compute the edge lengths ||P1-P0||_2, ||P2-P1||_2, ||P3-P2||_2, ||P3-P0||_2
+//            edge_lengths[0] = sqrt  ((faceVertices[1].x() - faceVertices[0].x())*(faceVertices[1].x() - faceVertices[0].x())+
+//                                     (faceVertices[1].y() - faceVertices[0].y())*(faceVertices[1].y() - faceVertices[0].y())+
+//                                     (faceVertices[1].z() - faceVertices[0].z())*(faceVertices[1].z() - faceVertices[0].z())  );
+//            
+//            edge_lengths[1] = sqrt  ((faceVertices[2].x() - faceVertices[1].x())*(faceVertices[2].x() - faceVertices[1].x())+
+//                                     (faceVertices[2].y() - faceVertices[1].y())*(faceVertices[2].y() - faceVertices[1].y())+
+//                                     (faceVertices[2].z() - faceVertices[1].z())*(faceVertices[2].z() - faceVertices[1].z())  );
+//            
+//            edge_lengths[2] = sqrt  ((faceVertices[3].x() - faceVertices[2].x())*(faceVertices[3].x() - faceVertices[2].x())+
+//                                     (faceVertices[3].y() - faceVertices[2].y())*(faceVertices[3].y() - faceVertices[2].y())+
+//                                     (faceVertices[3].z() - faceVertices[2].z())*(faceVertices[3].z() - faceVertices[2].z())  );
+//            
+//            edge_lengths[3] = sqrt  ((faceVertices[3].x() - faceVertices[0].x())*(faceVertices[3].x() - faceVertices[0].x())+
+//                                     (faceVertices[3].y() - faceVertices[0].y())*(faceVertices[3].y() - faceVertices[0].y())+
+//                                     (faceVertices[3].z() - faceVertices[0].z())*(faceVertices[3].z() - faceVertices[0].z())  );
+//            
+//            // compute the maximum and minimum edge length
+//            min_edge_length = *min_element(edge_lengths.begin(), edge_lengths.end());
+//            max_edge_length = *max_element(edge_lengths.begin(), edge_lengths.end());
+//            
+//            // set h to be the maximum edge length
+//            h=max_edge_length;
+//            
+//            break;
+//            
+//    } // triangles or quadrilaterals
+//    
+//}
 
 
 // ===========================================================================

@@ -601,14 +601,15 @@ void TDatabase::SetDefaultParameters()
   ParamDB-> n_p_v_n_boundary = 0.;
   ParamDB-> p_v_n_boundary_id.clear();
   ParamDB-> p_v_n_boundary_value.clear();
+
     
-  //Nitsche Combi - weak Dirichlet
+  // Nitsche Combination - Weak Dirichlet Boundary Conditions 
   ParamDB-> n_nitsche_boundary = 0.;
   ParamDB-> nitsche_boundary_id.clear();
   ParamDB-> nitsche_penalty.clear();
-    
-    
-    
+  ParamDB-> s1 = 0;
+  ParamDB-> s2 = 0;
+
   
   ParamDB->TETGEN_QUALITY = 0.0;
   ParamDB->TETGEN_VOLUMEN = 0.0;
