@@ -4739,7 +4739,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
-  double c0, c1, c2, c3, c4;
+  double c1, c2;//c0,  c3, c4;
   double u1, u2, u3, u4;
 
   MatrixA = LocMatrices[0];
@@ -4757,11 +4757,11 @@ double ***LocMatrices, double **LocRhs)
   Orig2 = OrigValues[2];         // u
   Orig3 = OrigValues[3];         // p
 
-  c0 = coeff[0];                 // nu
+//  c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // rho taken as a coefficient from examples
-  c4 = coeff[4];                 // mu  taken as a coefficient from examples
+//  c3 = coeff[3];                 // rho taken as a coefficient from examples
+//  c4 = coeff[4];                 // mu  taken as a coefficient from examples
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
@@ -4837,7 +4837,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
-  double c0;
+//  double c0;
   double u1, u2, u3, u4;
 
   MatrixA = LocMatrices[0];
@@ -4848,7 +4848,7 @@ double ***LocMatrices, double **LocRhs)
   Orig1 = OrigValues[1];         // u_y
   Orig2 = OrigValues[2];         // u
 
-  c0 = coeff[0];                 // nu
+//  c0 = coeff[0];                 // nu
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
