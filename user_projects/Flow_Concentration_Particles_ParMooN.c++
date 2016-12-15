@@ -34,6 +34,9 @@
 #include <Coupled_Time_CDR_2D.h>
 #include <Example_TimeCD2D.h>
 
+//for the particles object
+#include <BrushWrapper.h>
+
 
 int main(int argc, char* argv[])
 {
@@ -41,10 +44,12 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
-  // read all input parameters in three different databases
+  // read all input parameters into four different databases
   ParameterDatabase general_database("General Database");
   ParameterDatabase flow_database("Flow Database");
   ParameterDatabase conc_database("Conc Database");
+  ParameterDatabase particle_database("Particle Database");
+
   flow_database.merge(general_database, true);
   conc_database.merge(general_database, true);
 
@@ -52,6 +57,7 @@ int main(int argc, char* argv[])
   general_database.read(fs);
   flow_database.read(fs);
   conc_database.read(fs);
+  particle_database.read(fs);
   fs.close();
 
   Output::print(">>>>>>", "Starting ParMooN Program: Flow, Concentration, Particles (2D).");
@@ -107,29 +113,36 @@ int main(int argc, char* argv[])
   flow_object.output();
 
 
-  // PART 4: SOLVING THE CDRE IN A TIME LOOP //////////////////////////////////
+  // PART 4: SET UP PARTICLE- AND CDRE OBJECT //////////////////////////////////
+  Output::info("PROGRAM PART", "Constructing particles- and cdre object.");
 
   //set global parameters which are to be used for Time_CD2D construction here...
   TDatabase::ParamDB->ANSATZ_ORDER = 1;
-
   Example_TimeCoupledCDR2D example_conc(conc_database);
   Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
 
-  Output::info("PROGRAM PART", "Solving the coupled system.");
+  // the particles object which wraps up Brush
+  TCollection* coll = domain.GetCollection(It_Finest, 0); //take finest grid collection for now
+  BrushWrapper part_object(coll, particle_database);
+
+  // PART 5: SET UP INITIAL STATES /////////////////////////////////////////////
+  Output::info("PROGRAM PART", "Setting up initial states.");
 
   //get the velocity field of the precomputed velo object
   const TFEVectFunct2D& velo_field = flow_object.get_velocity();
 
-  // assemble matrices and right hand side at start time
-  //conc_object.assemble_initial_time(&velo_field);
+  // concentrations: assemble matrices and right hand side at start time
   conc_object.assemble_initial_time(&velo_field);
+  conc_object.output();
+
+  // TODO Q: any initialization of particles object necessary?
+
+  // PART 6: SOLVE THE SYSTEM IN A TIME LOOP ///////////////////////////////////
+  Output::info("PROGRAM PART", "Solving the coupled system.");
 
   double end_time = TDatabase::TimeDB->ENDTIME;
   int step = 0;
   int n_substeps = GetN_SubSteps();
-
-  conc_object.output();
-
   // time iteration
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
@@ -155,5 +168,8 @@ int main(int argc, char* argv[])
 
 
   Output::close_file();
+
+  delete coll; //the collection which was required for the particle object
+
   return 0;
 }

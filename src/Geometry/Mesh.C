@@ -43,7 +43,7 @@ Mesh::Mesh(std::string filename) {
 
 Mesh::~Mesh()
 {
-  Output::print("DEEEESTRUUUUUUUUUCTOOOOOOR");
+  //TODO Shouldn't this try to clean away meshTrifaceHash?
 }
 
 Mesh::Mesh(std::string filename,std::string filenameBoundary) {
