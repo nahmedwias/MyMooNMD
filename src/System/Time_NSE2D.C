@@ -1434,9 +1434,57 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
     LocalAssembling2D la_mass(TNSE2D_Mass, fe_functions,
                                    this->example.get_coeffs());
 
-    if (rho_field != nullptr )
+    // the following should add fluid property fluids
+    // to obtain a dimensional formulation of NSE
+    if (rho_field != nullptr)
     {
-      fe_functions[3] = rho_field;
+      // HERE IS THE CODE TO SET UP THE RHO AND MU FIELDS FOR LOCAL ASSEMBLING OBJECT
+
+      // we assume rho and mu fields are not too exotic,
+      // and have the same space...
+      int Ndof_rho     = rho_field->GetFESpace2D()->GetN_DegreesOfFreedom();
+      int Ndof_velocity = velocity_space->GetN_DegreesOfFreedom();
+
+      // step 1: check if the velocity space and "rho_field->GetSFESpace2d()"
+      // are the same. If yes, no interpolation needed
+      // otherwise, do the interpolation
+      if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
+      {
+        Output::info<1>("Time_NSE2D", "The spaces of the velocity field and the "
+                        "scalar field (rho) are the same ==> There will be no interpolation.");
+        //        Output::print<3>("Degres of freedoms of scalar field rho= " , Ndof_rho);
+        //        Output::print<3>("Degres of freedoms of velocity   = " , Ndof_velocity);
+
+        //fill up the new fe function array
+        fe_functions[3] = rho_field;
+      }
+      else  // do the interpolation
+      {
+        Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
+                        "scalar field are not the same ==> Starting interpolation... this may take some time");
+
+        // set up an interpolator object  (ptr will be shared later)
+        // we interpolate into velo_space
+        FEFunctionInterpolator interpolator(velocity_space);
+
+        // length of the values array of the interpolated rho
+        // velo must equal length of the velocity components
+        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
+
+        std::vector<double> temporary_rho(length_interpolated, 0.0);
+
+        this->entries_rho_scalar_field = temporary_rho;
+
+        TFEFunction2D interpolated_rho_field =
+            interpolator.interpolate(*rho_field,
+                                     this->entries_rho_scalar_field);
+
+        //fill up the new fe function array
+        fe_functions[3] = &interpolated_rho_field;
+      }
+
+      // step 2 - set all the 'parameter'-related values in la_mass accordingly
+      // set up the input...
       la_mass.setBeginParameter({0});
       la_mass.setFeFunctions2D(fe_functions); //reset - now velo comp included
       la_mass.setFeValueFctIndex({0,1,3});
