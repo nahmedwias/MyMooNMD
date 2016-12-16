@@ -293,7 +293,29 @@ class Time_NSE2D
 
     void assemble_massmatrix_withfields(TFEFunction2D* rho_field=nullptr);
 
-  protected: // these 4 members are used when interpolating
+// ======================================================================
+    // The following members are used for IMEX
+/** @brief This returns the number of the current time step.
+     * This counter is set at 0 before the time loop and is incremented at each
+     * time step (but not at each sub-step) in the main program.
+     * It can be useful to give info to the members of the class. It is for example
+     * used in IMEX scheme to detect when we passed 2 time steps, so that we
+     * are guaranteed to have saved both old_solution_ and old_solution2_ correctly.    */
+    int current_step_;
+
+    /** @brief Construct the extrapolated solution.
+     * At the moment, only IMEX is implemented. */
+    void construct_extrapolated_solution();
+
+    bool imex_scheme(bool print_info);
+
+    /** @brief constructs a solution vector extrapolated from previous steps
+     * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
+  protected:
+    BlockVector extrapolated_solution_;
+// ======================================================================
+
+  protected: // these members are used when interpolating
     // rho and mu field into same space as velocity_space
     std::vector<double> entries_rho_scalar_field;
     std::vector<double> entries_mu_scalar_field;

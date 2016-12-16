@@ -536,7 +536,7 @@ Example Example::Darcy(const ParameterDatabase& param_db)
         for(size_t i = 0; i < n_plus; i++)
           value -= (y - plus[2 * i + 1])
                    / r(x, y, plus[2 * i], plus[2 * i + 1]);
-        for(int i = 0; i < n_minus; i++)
+        for(unsigned int i = 0; i < n_minus; i++)
           value += (y - minus[2 * i + 1])
                    / r(x, y, minus[2 * i], minus[2 * i + 1]);
         value *= 0.25;
