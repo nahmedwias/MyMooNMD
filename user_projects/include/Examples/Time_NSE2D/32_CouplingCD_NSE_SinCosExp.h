@@ -216,7 +216,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
   int switchviscosity = TDatabase::ParamDB->P1;
   double vmin = TDatabase::ParamDB->P2;
   double vmax = TDatabase::ParamDB->P3;
-  double rho, mu;
+//  double rho, mu;
 
   int i;
   double *coeff, x, y;
