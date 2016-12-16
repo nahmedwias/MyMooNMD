@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 4
+refinement_n_initial_steps: 6
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -66,7 +66,7 @@ verbosity: 3   [ 1, 5 ]
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-example: 31  [ -1, 100 ]
+example: 40  [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -232,22 +232,22 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## "dimension_nse=true or false".Anyway, when dimensional_nse=true
 ## the assembling routines take density and viscosity, and that's
 ## what we want.
-reynolds_number: 1.   [ 0, 1e6 ]
+reynolds_number: 1.e6   [ 0, 1e6 ]
 fluid_density: 1.   [ 0, 1e6 ]
-fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
+fluid_dynamic_viscosity: 1.e-6   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
-RE_NR:	1.
+RE_NR:	1.e6
 
 # constant convection in x- and y-direction
 user_parameter1: 2
 user_parameter2: 2
 
 dimensional_nse: true   { true, false }
-coupling_nse_cd: false   { true, false }
+coupling_nse_cd: true   { true, false }
 coupling_cd_nse: true  { true, false }
 solve_cd: true   { true, false }	
-time_discretization: 4	{ 0, 1, 2, 3, 4 }
+time_discretization: 2	{ 0, 1, 2, 3, 4 }
 
 ###### PARAMETERS FROM THE OLD DATABASE
 VELOCITY_SPACE: 12
@@ -273,7 +273,7 @@ ALGEBRAIC_FLUX_CORRECTION: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.03
+ENDTIME: 0.05
 TIMESTEPLENGTH: 0.01
 
 
