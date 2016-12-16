@@ -1,0 +1,68 @@
+##### DEFAULT PARAMETERS : START
+VERSION: 1
+boundary_file: ../mesh/flow_around_cylinder3D.PRM
+output_basename: flowaroundcylinder.vtk
+outfile: flow_around_cylinder.out
+output_vtk_directory: ./
+output_write_vtk: true
+output_write_ps: false
+output_compute_errors: true
+
+DRIFT_Z: 0.41
+N_CELL_LAYERS: 6
+example: 6
+reynolds_number: 1000
+
+INPUT_QUAD_RULE: 99
+LAPLACETYPE: 0
+NSTYPE: 1
+PRESSURE_SPACE: -4711
+DISCTYPE: 1
+USE_ISOPARAMETRIC: 0
+
+residual_reduction: 0.1
+gmres_restart: 20
+damping_factor: 0.8
+
+verbosity: 2
+##### VARIABLE PARAMETERS : START
+#geo_file: ../mesh/flow_around_cylinder_triangles3D.GEO
+geo_file: ../mesh/flow_around_cylinder_quads3D.GEO
+VELOCITY_SPACE: 2
+solver_type: direct
+direct_solver_type: umfpack
+refinement_n_initial_steps: 0
+preconditioner: multigrid
+iterative_solver_type: fgmres
+max_n_iterations: 10
+
+residual_tolerance: 1.0e-8
+nonlinloop_maxit: 20
+nonlinloop_slowfactor: 1.0
+nonlinloop_epsilon: 1.0e-5
+nonlinloop_scale_epsilon_with_size: false
+
+multigrid_n_levels: 2
+multigrid_cycle_type: F
+multigrid_smoother: nodal_vanka
+multigrid_smoother_coarse: nodal_vanka
+multigrid_type: standard
+multigrid_correction_damp_factor: 0.8
+multigrid_n_pre_smooth: 2
+multigrid_n_post_smooth: 2
+multigrid_coarse_residual: 0.1
+multigrid_coarse_max_n_iterations: 10
+multigrid_vanka_damp_factor: 0.8
+
+----------------------------------------------------------------------
+# parameter for time discretization
+# 
+# 0: Forward Euler
+# 1: Backward Euler
+# 2: Crank-Nicolson
+# 3: Fractional step
+TIME_DISC: 2
+STARTTIME: 0
+ENDTIME: 8
+TIMESTEPLENGTH: 0.1
+time_discretization: 4
