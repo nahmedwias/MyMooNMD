@@ -25,6 +25,10 @@ ParameterDatabase get_default_TNSE2D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
+  // a default time database
+  ParameterDatabase time_db = ParameterDatabase::default_time_database();
+  db.merge(time_db,true);
+
   return db;
 }
 /* *************************************************************************** */
