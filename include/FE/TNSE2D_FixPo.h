@@ -112,6 +112,22 @@ void TimeNSType2SUPG(double Mult, double *coeff, double *param, double hK,
 void TimeNSType2NLSUPG(double Mult, double *coeff, double *param, double hK, 
                        double **OrigValues, int *N_BaseFuncts,
                        double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
+// declaration for all Navier-Stokes problems of type 14
+// towards: Residual Based VMS method
+// ======================================================================
+void TimeNSType4SUPG(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK, 
+               double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, 
+               double** LocRhs);
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 14
 // towards: Residual Based VMS method
