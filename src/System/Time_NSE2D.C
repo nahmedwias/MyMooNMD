@@ -164,6 +164,21 @@ void Time_NSE2D::set_parameters()
       db["problem_type"] = 6;
     }
   }
+
+  // Tell the user he is using IMEX
+  if(db["time_discretization"].is(4))
+  {
+    if(solver.is_using_multigrid())
+    {
+      ErrThrow("Multigrid with IMEX-scheme is not implemented yet");
+    }
+    else
+    {
+      Output::info<1>("check_parameters",
+                      "The IMEX scheme has been chosen as a time discretization scheme!\n");
+    }
+  }
+
   if(TDatabase::TimeDB->TIME_DISC == 0)
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 
@@ -647,8 +662,14 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   if(it_counter == 0)
     initial_residual = sqrt(residual);
   
+  /** Parameters for stopping criteria (desired precision epsilon, max number
+   *  of iteration,IMEX_scheme : if IMEX is used, we only
+   *  need to solve the nonlinear iterations for the first time step in order
+   *  to obtain both initial solution and the one after. Then, the extrapolated
+   *  scheme is solved just once, as a linear system. ) */
   size_t Max_It = db["nonlinloop_maxit"];
   double limit = db["nonlinloop_epsilon"];
+
   if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
@@ -662,8 +683,13 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
                    " Reduction : ",  sqrt(residual)/initial_residual);
      // descale the matrices, since only the diagonal A block will 
      // be reassembled in the next time step
-     this->deScaleMatrices();     
-     return true;
+     if (this->imex_scheme(0) && it_counter>0)
+       return true; // in these conditions, the matrix are already descaled
+     else
+     {
+       this->deScaleMatrices();
+       return true;
+     }
    }
    else
      return false;
@@ -1544,3 +1570,30 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
   }
 }
 
+bool Time_NSE2D::imex_scheme(bool print_info)
+{
+  //IMEX-scheme needs to get out of the iteration directly after the 1st solve()
+  bool interruption_condition  = (db["time_discretization"].is(4))*
+                      (this->current_step_>=3);
+
+  // change maximum number of nonlin_iterations to 1 in IMEX case
+  if (interruption_condition)
+  {
+    db["nonlinloop_maxit"] = 1;
+    if(print_info) // condition is here just to print it once
+      Output::info<1>("Nonlinear Loop MaxIteration",
+                    "The parameter 'nonlinloop_maxit' was changed to 1."
+                    " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+  }
+  return interruption_condition;
+}
+
+void Time_NSE2D::construct_extrapolated_solution()
+{
+  this->extrapolated_solution_.reset();
+  this->extrapolated_solution_ = this->old_solution;
+  this->extrapolated_solution_.scale(-1.);
+  this->extrapolated_solution_.add_scaled(this->systems.front().solution,2.);
+  this->extrapolated_solution_.copy_nonactive(this->systems.front().rhs);
+  // Now extrapolated_solution_ = 2*u(t-1)-u(t-2), only on the finest mesh
+}
