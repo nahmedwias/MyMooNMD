@@ -208,9 +208,9 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
 // int_{Gamma} q*u*n
 void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
                                       const TFESpace3D *P_Space,
+                                      BoundValueFunct3D *given_boundary_data0,
                                       BoundValueFunct3D *given_boundary_data1,
                                       BoundValueFunct3D *given_boundary_data2,
-                                      BoundValueFunct3D *given_boundary_data3,
                                       std::vector<TBaseCell*> &boundaryCells,
                                       int componentID,
                                       double mult)
@@ -266,37 +266,15 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
                         double commonFactor  = mult * qWeights_u[l] * transformationDeterminant;
                         double scaleFactor= commonFactor;
                         
-                        double value1, value2, value3;
-                        if(given_boundary_data1 != nullptr)
-                        {
-                            value1 = 1.;
-                            // given_boundary_data1(componentID);
-                        }
-                        else
-                        {
-                            value1 = 1.;
-                        }
-                        
-                        if(given_boundary_data2 != nullptr)
-                        {
-                            value2 = 1.;
-                            //given_boundary_data2(BDComponent, T, value2);
-                        }
-                        else
-                        {
-                            value2 = 1.;
-                        }
-                        if(given_boundary_data3 != nullptr)
-                        {
-                            value3 = 1.;
-                            //given_boundary_data3(BDComponent, T, value2);
-                        }
-                        else
-                        {
-                            value3 = 1.;
-                        }
-                        
-                        
+			std::vector<double> uDirichlet(3);
+                        uDirichlet[0]=0.;
+                        uDirichlet[1]=0.;
+			uDirichlet[2]=0.;
+			// getXYZofTS(...)
+			// given_boundary_data0(x,y,z,uDirichlet[0]);
+			// given_boundary_data1(x,y,z,uDirichlet[1]);
+			// given_boundary_data2(x,y,z,uDirichlet[2]);
+			
                         for(size_t k1=0;k1<basisFunctionsValues_p[l].size();k1++) {
                             int global_dof_from_local_p = DOF_p[k1]; // Test-DOF
                             
@@ -309,9 +287,9 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
                                 double  n_z=normal[2];
                                 
                                 // add for all three components
-                                rhs.block(0)[global_dof_from_local_p] += commonFactor * q * value1 * n_x;
-                                rhs.block(1)[global_dof_from_local_p] += commonFactor * q * value2 * n_y;
-                                rhs.block(2)[global_dof_from_local_p] += commonFactor * q * value3 * n_z;
+                                rhs.block(0)[global_dof_from_local_p] += commonFactor * q * uDirichlet[0] * normal[0];
+                                rhs.block(1)[global_dof_from_local_p] += commonFactor * q * uDirichlet[1] * normal[1];
+                                rhs.block(2)[global_dof_from_local_p] += commonFactor * q * uDirichlet[2] * normal[2];
                                 
                             } //for(l=0;l<N_BaseFunct;l++)
                         }
@@ -530,9 +508,9 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
 // int_{Gamma} mult*grad v*n*uD
 void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
                                           const TFESpace3D *U_Space,
+                                          BoundValueFunct3D *given_boundary_data0,
                                           BoundValueFunct3D *given_boundary_data1,
                                           BoundValueFunct3D *given_boundary_data2,
-                                          BoundValueFunct3D *given_boundary_data3,
                                           std::vector<TBaseCell*> &boundaryCells,
                                           int componentID,
                                           double mult)
@@ -581,36 +559,15 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
                         double commonFactor = mult * qWeights[l] * transformationDeterminant;
                         double scaleFactor = commonFactor;
                         
-                        double value1, value2, value3;
-                        if(given_boundary_data1 != nullptr)
-                        {
-                            value1 = 1.;
-                            // given_boundary_data1(componentID);
-                        }
-                        else
-                        {
-                            value1 = 1.;
-                        }
-                        
-                        if(given_boundary_data2 != nullptr)
-                        {
-                            value2 = 1.;
-                            //given_boundary_data2(BDComponent, T, value2);
-                        }
-                        else
-                        {
-                            value2 = 1.;
-                        }
-                        if(given_boundary_data3 != nullptr)
-                        {
-                            value3 = 1.;
-                            //given_boundary_data3(BDComponent, T, value2);
-                        }
-                        else
-                        {
-                            value3 = 1.;
-                        }
-                        
+			std::vector<double> uDirichlet(3);
+                        uDirichlet[0]=0.;
+                        uDirichlet[1]=0.;
+			uDirichlet[2]=0.;
+			// getXYZofTS(...)
+			// given_boundary_data0(x,y,z,uDirichlet[0]);
+			// given_boundary_data1(x,y,z,uDirichlet[1]);
+			// given_boundary_data2(x,y,z,uDirichlet[2]);
+			
                         
                         
                         for(size_t k1=0;k1<basisFunctionsValues[l].size();k1++) {
@@ -630,9 +587,9 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
                                 double  n_y=normal[1];
                                 double  n_z=normal[2];
                                 
-                                rhs.block(0)[global_dof_from_local] += commonFactor * value1 * v_dx * n_x;
-                                rhs.block(1)[global_dof_from_local] += commonFactor * value2 * v_dy * n_y;
-                                rhs.block(2)[global_dof_from_local] += commonFactor * value3 * v_dz * n_z;
+                                rhs.block(0)[global_dof_from_local] += commonFactor * uDirichlet[0] * v_dx * n_x;
+                                rhs.block(1)[global_dof_from_local] += commonFactor * uDirichlet[1] * v_dy * n_y;
+                                rhs.block(2)[global_dof_from_local] += commonFactor * uDirichlet[2] * v_dz * n_z;
                                 
                             }
                         } //for(l=0;l<N_BaseFunct;l++)
@@ -744,9 +701,9 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 // int_{Gamma} mult*given_boundary_data(x,y,z)*v
 void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
                                    const TFESpace3D *U_Space,
+                                   BoundValueFunct3D *given_boundary_data0,
                                    BoundValueFunct3D *given_boundary_data1,
                                    BoundValueFunct3D *given_boundary_data2,
-                                   BoundValueFunct3D *given_boundary_data3,
                                    std::vector<TBaseCell*> &boundaryCells,
                                    int componentID,
                                    double mult,
@@ -787,37 +744,19 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
                     // get the boundary values of rhs
                     // loop over Gauss points
                     for(size_t l=0;l<qWeights.size();l++) {
-                        double value1, value2, value3;
-                        if(given_boundary_data1 != nullptr)
-                        {
-                            value1 = 1.;
-                            // given_boundary_data1(componentID);
-                        }
-                        else
-                        {
-                            value1 = 1.;
-                        }
-                        
-                        if(given_boundary_data2 != nullptr)
-                        {
-                            value2 = 1.;
-                            //given_boundary_data2(BDComponent, T, value2);
-                        }
-                        else
-                        {
-                            value2 = 1.;
-                        }
-                        if(given_boundary_data3 != nullptr)
-                        {
-                            value3 = 1.;
-                            //given_boundary_data3(BDComponent, T, value2);
-                        }
-                        else
-                        {
-                            value3 = 1.;
-                        }
-                        
-                        double commonFactor = mult * qWeights[l] * transformationDeterminant;
+
+
+		      std::vector<double> uDirichlet(3);
+		      uDirichlet[0]=0.;
+		      uDirichlet[1]=0.;
+		      uDirichlet[2]=0.;
+		      // getXYZofTS(...)
+		      // given_boundary_data0(x,y,z,uDirichlet[0]);
+			// given_boundary_data1(x,y,z,uDirichlet[1]);
+			// given_boundary_data2(x,y,z,uDirichlet[2]);
+
+			
+			double commonFactor = mult * qWeights[l] * transformationDeterminant;
                         for(size_t k=0;k<basisFunctionsValues[l].size();k++) {
                             int global_dof_from_local = DOF[k];
                             
@@ -829,19 +768,19 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
                                 // add for all three components
                                 if (!rescale_by_h)
                                 {
-                                    rhs.block(0)[global_dof_from_local] += commonFactor * value1 * (v_x);
+                                    rhs.block(0)[global_dof_from_local] += commonFactor * uDirichlet[0] * (v_x);
                                     //rhs[0][global_dof_from_local+N_U] +=
-                                    rhs.block(1)[global_dof_from_local] += commonFactor * value2 * (v_y);
+                                    rhs.block(1)[global_dof_from_local] += commonFactor * uDirichlet[1] * (v_y);
                                     //rhs[0][global_dof_from_local+N_U] +=
-                                    rhs.block(2)[global_dof_from_local] += commonFactor * value3 * (v_z);
+                                    rhs.block(2)[global_dof_from_local] += commonFactor * uDirichlet[2] * (v_z);
                                 }
                                 else
                                 {
                                    double h = cell->Get_hK(0);
                                     
-                                    rhs.block(0)[global_dof_from_local] += ( commonFactor * value1 * (v_x)) /h;
-                                    rhs.block(1)[global_dof_from_local] += (commonFactor * value2 * (v_y)) /h;
-                                    rhs.block(2)[global_dof_from_local] += (commonFactor * value3 * (v_z)) /h;
+                                    rhs.block(0)[global_dof_from_local] += ( commonFactor * uDirichlet[0] * (v_x)) /h;
+                                    rhs.block(1)[global_dof_from_local] += (commonFactor * uDirichlet[1] * (v_y)) /h;
+                                    rhs.block(2)[global_dof_from_local] += (commonFactor * uDirichlet[2] * (v_z)) /h;
                                 }
                             }
                         }

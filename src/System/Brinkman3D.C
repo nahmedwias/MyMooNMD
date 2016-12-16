@@ -570,9 +570,9 @@ void Brinkman3D::assemble()
             
             bi.rhs_uD_v(s.rhs,
                        v_space,
-                       NULL, //this->example.get_bd(0),                                 // access to U1BoundValue in the example,
-                       NULL, //this->example.get_bd(1),                                 // access to U2BoundValue in the example,
-                       NULL, //this->example.get_bd(2),                                 // access to U3BoundValue in the example,
+                       this->example.get_bd(0),                                 // access to U1BoundValue in the example,
+                       this->example.get_bd(1),                                 // access to U2BoundValue in the example,
+                       this->example.get_bd(2),                                 // access to U3BoundValue in the example,
                        allCells,
                        TDatabase::ParamDB->nitsche_boundary_id[k],                      // boundary component
                        t*TDatabase::ParamDB->nitsche_penalty[k],                        // mult

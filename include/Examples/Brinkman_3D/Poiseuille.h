@@ -44,30 +44,48 @@ void ExactU3(double x, double y,  double z, double *values)
 
 void ExactP(double x, double y,  double z, double *values)
 {
-  values[0] = 4*(z-1);
+  double Length = 3.;
+  double Radius = 1.;
+  double Umax = 1.;
+  double DP = 4*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
+  double Pinlet = DP/2;
+  double Poutlet = -DP/2;
+  double zInlet = 1.;
+  values[0] = -DP/Length*(z-zInlet)+DP/2;
   values[1] = 0;
   values[2] = 0;
-  values[3] = 4;
+  values[3] = -DP/Length;
   values[4] = 0;
 }
 
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-    cond = DIRICHLET; // Default
+  double zBottom = 1.;
+  double zTop = 4.;
+  
+  // first case: 2 Neumann boundaries  (label 1 and 2), one Nitsche (label 3)
+  if ((TDatabase::ParamDB->n_neumann_boundary + TDatabase::ParamDB->n_nitsche_boundary)==3 ) {
     cond = NEUMANN;
+  } else {
+    // second case: all Dirichlet
+    cond = DIRICHLET; 
     if (TDatabase::ParamDB->n_neumann_boundary==0) {
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average = 0 (for uniqueness)
-        return;
+      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average = 0 (for uniqueness)
+      return;
+    } else {
+      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+
+      // third case:  2 Neumann boundaries (label 1 and 2), Dirichlet on label 3
+      
+      if (z==zBottom || z==zTop) {
+	cond = NEUMANN;
+	return;
+      }
     }
-    else {
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
-//        if (z==1 || z==4)
-//        {
-//            cond = NEUMANN;
-//            return;
-//        }
-    }
+    
+  }
+    
 }
 
 
@@ -87,10 +105,10 @@ void U2BoundValue(double x, double y, double z, double &value)
 void U3BoundValue(double x, double y, double z, double &value)
 {
     if (TDatabase::ParamDB->n_neumann_boundary==0 && TDatabase::ParamDB->n_nitsche_boundary==0)
-        
         value = 1-(x*x+y*y);//3*(1-(y*y+x*x));
     else
         value = 0.;
+
 }
 
 // ========================================================================
