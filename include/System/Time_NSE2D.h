@@ -74,11 +74,6 @@ class Time_NSE2D
       TFEVectFunct2D u;
       /** @brief Finite element function for pressure*/
       TFEFunction2D p;
-      
-      /** @brief matrices contribution from SUPG method*/
-      std::array<std::shared_ptr<FEMatrix>, int(2)> VeloTimeDer_Pres;
-      /** @brief additional right hand side from SUPG method*/
-      BlockVector rhs_stab;
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeNSE2D& example, TCollection& coll, 
@@ -277,6 +272,8 @@ private:
   void set_arrays(Time_NSE2D::System_per_grid& s, std::vector<const TFESpace2D*> &spaces, 
                   std::vector< const TFESpace2D* >& spaces_rhs, 
                   std::vector< TFEFunction2D*> &functions);
+  /// update B matrices and rhs which are nonlinear
+  void scale_matrices();
 };
 
 #endif // __TIME_NSE2D__
