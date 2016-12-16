@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
    double end_time = TDatabase::TimeDB->ENDTIME;
    int step = 0;
    int n_substeps = GetN_SubSteps();
-
+   tnse2d.current_step_ = 0;
 
   /********************************************************************
    * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
@@ -216,6 +216,7 @@ int main(int argc, char* argv[])
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
     step++;
+    tnse2d.current_step_++;
 
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j=0; j < n_substeps; ++j)
@@ -246,7 +247,11 @@ int main(int argc, char* argv[])
     {
       if(tnse2d.stopIte(k))
         break;
+
       tnse2d.solve();
+
+      if(tnse2d.imex_scheme(1))
+        continue; // this interrupts the NL-Loop
 
       if (tnse_db["dimensional_nse"].is(true))
         tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);

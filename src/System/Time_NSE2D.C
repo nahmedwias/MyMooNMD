@@ -578,21 +578,6 @@ void Time_NSE2D::assemble_nonlinear_term()
     size_t n_rect_matrices = 0;
     TMatrix2D** rectMatrices=nullptr;
     
-    BoundCondFunct2D * boundary_conditions[1] 
-       = {velocity_space->GetBoundCondition() };
-    
-     std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-     non_const_bound_values[0] = this->example.get_bd(0);
-     non_const_bound_values[1] = this->example.get_bd(1);
-     non_const_bound_values[2] = this->example.get_bd(2);
-     
-     
-    TFEFunction2D *fe_functions[3] = 
-      { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions,
-                                   this->example.get_coeffs());
-    
-    
     std::vector<std::shared_ptr<FEMatrix>> blocks 
          = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
     
@@ -615,10 +600,50 @@ void Time_NSE2D::assemble_nonlinear_term()
         ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
     }
+
     // reset matrices to zero
     for(size_t m=0; m<n_square_matrices; m++)
       sqMatrices[m]->reset();
     
+    BoundCondFunct2D * boundary_conditions[1]
+                  = {velocity_space->GetBoundCondition() };
+
+    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+    non_const_bound_values[0] = this->example.get_bd(0);
+    non_const_bound_values[1] = this->example.get_bd(1);
+    non_const_bound_values[2] = this->example.get_bd(2);
+
+    TFEFunction2D *fe_functions[3] = {nullptr, nullptr,&s.p};
+
+    // The assembly with the extrapolated velocity of IMEX_scheme begins
+    // at step 3
+    bool is_imex = this->imex_scheme(0);
+
+    // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
+    if(!is_imex)
+    {
+      fe_functions[0] = s.u.GetComponent(0);
+      fe_functions[1] = s.u.GetComponent(1);
+    }
+    else
+    {
+      // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
+      // Note : in this function, the non active Dofs are taken care of.
+      // Namely, extrapolated_solution takes the nonActive of the current Rhs.
+      this->construct_extrapolated_solution();
+      TFEVectFunct2D extrapolated_velocity_vector(&this->systems.front().velocity_space,
+                                                  (char*)"", (char*)"",
+                                                  extrapolated_solution_.block(0),
+                                                  extrapolated_solution_.length(0), 2);
+
+      // Construct now the corresponding fe_functions for local assembling
+      fe_functions[0] = extrapolated_velocity_vector.GetComponent(0);
+      fe_functions[1] = extrapolated_velocity_vector.GetComponent(1);
+    }
+
+    LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions,
+                                   this->example.get_coeffs());
+
     Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices,
                n_rect_matrices, rectMatrices, 0, nullptr, nullptr, 
                boundary_conditions, non_const_bound_values.data(),
@@ -660,8 +685,13 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   
   oldResidual = sqrt(residual);
   if(it_counter == 0)
+  {
     initial_residual = sqrt(residual);
-  
+
+    // saves the solution from previous time step with nonActive of current step
+    this->old_solution = this->systems.front().solution;
+  }
+
   /** Parameters for stopping criteria (desired precision epsilon, max number
    *  of iteration,IMEX_scheme : if IMEX is used, we only
    *  need to solve the nonlinear iterations for the first time step in order
@@ -1135,7 +1165,34 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
 
 
     TFEFunction2D *fe_functions[5] =
-    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, nullptr, nullptr };
+    { nullptr, nullptr, &s.p, nullptr, nullptr };
+
+    // The assembly with the extrapolated velocity of IMEX_scheme begins
+    // at step 3
+    bool is_imex = this->imex_scheme(0);
+
+    // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
+    if(!is_imex)
+    {
+      fe_functions[0] = s.u.GetComponent(0);
+      fe_functions[1] = s.u.GetComponent(1);
+    }
+    else
+    {
+      // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
+      // Note : in this function, the non active Dofs are taken care of.
+      // Namely, extrapolated_solution takes the nonActive of the current Rhs.
+      this->construct_extrapolated_solution();
+      TFEVectFunct2D extrapolated_velocity_vector(&this->systems.front().velocity_space,
+                                                  (char*)"", (char*)"",
+                                                  extrapolated_solution_.block(0),
+                                                  extrapolated_solution_.length(0), 2);
+
+      // Construct now the corresponding fe_functions for local assembling
+      fe_functions[0] = extrapolated_velocity_vector.GetComponent(0);
+      fe_functions[1] = extrapolated_velocity_vector.GetComponent(1);
+    }
+
     LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions,
                                    this->example.get_coeffs());
 
@@ -1361,8 +1418,6 @@ void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
     //...this should do the trick
   }
 
-
-
   int N_Rhs = 3;
   const TFESpace2D * v_space = &this->get_velocity_space();
   const TFESpace2D * p_space = &this->get_pressure_space();
@@ -1384,11 +1439,13 @@ void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
   Assemble2D(1, fespmat, 0, nullptr,
              0, nullptr, N_Rhs, RHSs, fesprhs,
              boundary_conditions, non_const_bound_values.data(), la);
-  // copy the non active to the solution vector
-  // since the rhs vector will be passed to the solver
-  // and is modified with matrix vector multiplication
-  // which also uses the non-actives
-  s.solution.copy_nonactive(s.rhs);
+
+
+  /* just a temporary vector which is going to be used at the end to
+   * retrieve the nonActive of rhs_. If we dont do it, the nonActive of rhs
+   * will be changed during the following matrix.vector operations and we'll
+   * loose the values of the Dirichlet nodes. */
+  BlockVector temporary = s.rhs;
 
   // now it is this->systems[i].rhs = f^k
   // scale by time step length and theta4 (only active dofs)
@@ -1434,8 +1491,12 @@ void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
     }
   }
   this->oldtau = tau;
-  // copy non active from solution into rhs vector
-  s.rhs.copy_nonactive(s.solution);
+
+  // retrieve the non active from "temporary" into rhs vector
+  s.rhs.copy_nonactive(temporary);
+
+  // copy the non active to the solution vector
+  s.solution.copy_nonactive(s.rhs);
 
   Output::print<5>("assembled the system right hand side ");
 
