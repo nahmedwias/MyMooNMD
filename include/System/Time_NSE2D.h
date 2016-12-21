@@ -74,6 +74,28 @@ class Time_NSE2D
       TFEVectFunct2D u;
       /** @brief Finite element function for pressure*/
       TFEFunction2D p;
+      
+      /** @brief MatrixK includes all the terms which are related to the 
+       * time derivatives in the fully discrete scheme Eq: (45)
+       * Ahmed, Rebollo, John and Rubino (2015)
+       * Weighted Mass matrix
+       *  [ M11  M12  0 ]
+       *  [ M21  M22  0 ]
+       *  [ 0     0   0 ]
+       * This additionaly created due to the struture of the 
+       * residual based Variational Multiscale Method: In all 
+       * other methods, for example SUPG or Galerkin, the Mass_Matrix
+       * is used.
+       */
+      BlockFEMatrix MatrixK;
+      
+      /** @brief 
+       * old solution for the computation of the residual
+       * that passes as an FEFunction to the local assembling
+       * routines
+       */
+      BlockVector Old_Sol;
+      TFEVectFunct2D u_old;
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeNSE2D& example, TCollection& coll, 
@@ -263,8 +285,10 @@ class Time_NSE2D
     std::array<double, int(6)> get_errors();
     
 private:
+  /// this routines wraps up the call to Assemble2D  
   void call_assembling_routine(Time_NSE2D::System_per_grid& s, LocalAssembling2D_type type);
-  /// set the matrices and right hand sides for the assembling
+  /// set the matrices and right hand side depending on the 
+  /// assemling routines, nstypes and the methods 
   void set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssembling2D_type type, 
                     std::vector<TSquareMatrix2D*> &sqMat, std::vector<TMatrix2D*> &reMat, 
                     std::vector<double*> &rhs);
@@ -272,8 +296,6 @@ private:
   void set_arrays(Time_NSE2D::System_per_grid& s, std::vector<const TFESpace2D*> &spaces, 
                   std::vector< const TFESpace2D* >& spaces_rhs, 
                   std::vector< TFEFunction2D*> &functions);
-  /// update B matrices and rhs which are nonlinear
-  void scale_matrices();
 };
 
 #endif // __TIME_NSE2D__

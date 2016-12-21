@@ -7,7 +7,7 @@ void ExampleFile()
 {
   OutPut("Example: linear_space_time.h" << endl) ;
 }
-
+double DIMENSIONLESS_VISCOSITY;
 // ========================================================================
 // initial solution
 // ========================================================================
@@ -67,7 +67,7 @@ void ExactP(double x, double y, double *values)
 void BoundCondition(int i, double t, BoundCond &cond)
 {
   cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
@@ -118,7 +118,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  static double nu = 1/TDatabase::ParamDB->RE_NR;
+  static double nu = DIMENSIONLESS_VISCOSITY;
   double t = TDatabase::TimeDB->CURRENTTIME;
   int i;
   double *coeff, x, y;

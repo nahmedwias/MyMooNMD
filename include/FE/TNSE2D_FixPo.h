@@ -130,7 +130,6 @@ void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK,
                double** LocRhs);
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 14
-// towards: Residual Based VMS method
 // ======================================================================
 void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK, 
                        double **OrigValues, int *N_BaseFuncts,
@@ -144,6 +143,21 @@ void TimeNSRHSSUPG(double Mult, double* coeff, double* param, double hK,
                double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, 
                double** LocRhs);
 
+// ======================================================================
+// declaration for Residual Based VMS method
+// ======================================================================
+void TimeNSType4Residual_VMS(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4NLResidual_VMS(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4RHS_Residual_VMS(double Mult, double* coeff, double* param, double hK, 
+                        double** OrigValues, int* N_BaseFuncts, 
+                        double*** LocMatrices, double** LocRhs);
+void TimeNSParams_Residual_VMS(double *in, double *out);
 // ======================================================================
 // Type 2, Upwind (only Laplacian in A block)
 // ======================================================================
