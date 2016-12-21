@@ -394,6 +394,9 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             case SUPG:
               this->set_parameters_for_tnseSUPG(type);
               break;
+            case RESIDUAL_VMS:
+              this->set_parameters_for_tnseResidual_vms(type);
+              break;
             default:
               ErrThrow("DISCTYPE ", TDatabase::ParamDB->DISCTYPE, " is not supported yet");
           }
@@ -2930,5 +2933,116 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
         break;
       }
       break;
+  }
+}
+
+void LocalAssembling2D::set_parameters_for_tnseResidual_vms(LocalAssembling2D_type type)
+{
+  if(TDatabase::ParamDB->NSTYPE < 4 )
+  { 
+    ErrThrow("Residual Based VMS method is only supported for NSTYPE 4 and 14 ", 
+             TDatabase::ParamDB->NSTYPE);
+  }
+  
+  this->N_Parameters = 17;
+  this->N_ParamFct = 1;
+  this->ParameterFct = {TimeNSParams_Residual_VMS};
+  this->N_FEValues = 15;
+  this->BeginParameter = { 0 };
+  // u1old, u2old, all derivatives of u1, u2
+  // also u1, u2 from previous time step 
+  // and derivatives of p
+  this->FEValue_MultiIndex = { D00, D00, // u1, u2 old 
+                               D10, D10, // u1x, u2x old
+                               D01, D01, // u1y, u2y old
+                               D20, D20, // u1xx, u2xx, old
+                               D02, D02, // u2yy, u2yy, old
+                               D10, D01, D00, // px, py
+                               D00, D00};  // u1, u2, previous time steps sol
+  this->FEValue_FctIndex = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 2, 2, 2,  3, 4 };
+  
+  switch(type)
+  {
+    case TNSE2D:
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 8; // Derivatives
+                          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices 
+          this->N_Matrices = 12;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2; // f1, f2, 
+          this->RhsSpace = { 0, 0 };
+          this->AssembleParam = TimeNSType4Residual_VMS;
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          break;
+      }
+    }
+    break; // TNSE2D
+    case TNSE2D_NL:
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 8; // Derivatives
+          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices 
+          this->N_Matrices = 10;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2; // only stabilization terms 
+          this->RhsSpace = {0, 0 };
+          this->AssembleParam = TimeNSType4NLResidual_VMS;
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          break;
+      }
+    }
+    break; // TNSE2D_NL
+    case TNSE2D_Rhs:
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 3; // Derivatives
+          // u_x, u_y, u
+          this->Derivatives = { D10, D01, D00};
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = {};
+          this->ColumnSpace = { };
+          this->N_Rhs = 2 ;
+          this->RhsSpace = {0, 0 };
+          this->AssembleParam =TimeNSType4RHS_Residual_VMS; 
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          break;
+      }
+    }
+    break; // TNSE2D_Rhs
   }
 }

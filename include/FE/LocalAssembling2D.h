@@ -166,6 +166,9 @@ class LocalAssembling2D
     /** 
      */
     void set_parameters_for_tnseSUPG(LocalAssembling2D_type type);
+    /**
+     */
+    void set_parameters_for_tnseResidual_vms(LocalAssembling2D_type type);
     
   public:
     /** constructor */
