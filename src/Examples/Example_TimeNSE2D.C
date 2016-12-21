@@ -43,6 +43,10 @@ namespace potential_flow_ex6 {
 #include "TNSE_2D/potential_flow_td_ex6.h"
 }
 
+namespace cosine_sin_poly
+{
+#include "TNSE_2D/cosine_sine_poly.h"
+}
 
 Example_TimeNSE2D::Example_TimeNSE2D(
   const ParameterDatabase& user_input_parameter_db)
@@ -290,6 +294,34 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = potential_flow_ex6::LinCoeffs;
 
       potential_flow_ex6::DIMENSIONLESS_VISCOSITY=this->get_nu();
+      ExampleFile();
+      break;
+    }
+    case 9:
+    {
+      using namespace cosine_sin_poly;
+      exact_solution.push_back(ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** initial conditions, in case of a non-stationary problem */
+      initialCOndtion.push_back(InitialU1);
+      initialCOndtion.push_back(InitialU2);
+      initialCOndtion.push_back(InitialP);
+      /** coefficients */
+      problem_coefficients = cosine_sin_poly::LinCoeffs;
+
+      cosine_sin_poly::DIMENSIONLESS_VISCOSITY=this->get_nu();
       ExampleFile();
       break;
     }
