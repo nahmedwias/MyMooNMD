@@ -370,7 +370,7 @@ int main(int argc, char* argv[])
       check(db, grid_collections, 12, -4711, 4, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
       TDatabase::ParamDB->DISCTYPE = 1;
-      timediscretizationtype = 2;exit(0);
+      timediscretizationtype = 2;
 //
 //      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);

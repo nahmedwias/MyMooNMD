@@ -422,7 +422,6 @@ void Time_NSE3D::assemble_initial_time()
   for(System_per_grid& s : this->systems_) 
   {
     call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_LinGAL);
-    cout<<"here it is : " << endl;
     
     /** manage dirichlet condition by copying non-actives DoFs
      * from rhs to solution of front grid (=finest grid)
@@ -619,21 +618,6 @@ void Time_NSE3D::assemble_nonlinear_term()
       const std::vector<std::vector<size_t>> cell_posi = {{0,3}, {1,3}, {2,3}};
       s.matrix_.scale_blocks(t1*tau, cell_posi);
     }
-//     s.matrix_.get_blocks().at(0)->Print("M11");
-//     s.matrix_.get_blocks().at(1)->Print("M12");
-//     s.matrix_.get_blocks().at(2)->Print("M13");
-//     s.matrix_.get_blocks().at(3)->Print("M14");
-//     s.matrix_.get_blocks().at(4)->Print("M15");
-//     s.matrix_.get_blocks().at(5)->Print("M16");
-//     s.matrix_.get_blocks().at(6)->Print("M17");
-//     s.matrix_.get_blocks().at(7)->Print("M18");
-//     s.matrix_.get_blocks().at(8)->Print("M19");
-//     s.matrix_.get_blocks().at(9)->Print("M20");
-//     s.matrix_.get_blocks().at(10)->Print("M21");
-//     s.matrix_.get_blocks().at(11)->Print("M22");
-//     s.matrix_.get_blocks().at(12)->Print("M23");
-//     s.matrix_.get_blocks().at(13)->Print("M24");
-//     s.matrix_.get_blocks().at(14)->Print("M25");
     
     // update the right hand side for the next iteration: All A blocks, standing B blocks 
     // and the right hand sides needs to be re-assemble for the SUPG and RESIDUAL_VMS
