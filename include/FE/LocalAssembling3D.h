@@ -155,6 +155,8 @@ class LocalAssembling3D
     void set_parameters_for_tnse_smagorinsky(LocalAssembling3D_type type);
     /// set parameters and functions for variational multiscale method
     void set_parameters_for_tnse_vms_model(LocalAssembling3D_type type);
+    // set parameters and functions for SUPG method
+    void set_parameters_for_tnse_supg(LocalAssembling3D_type type);
   public:
     /** Constructs a Local Assembling object of a certain type from an array
      *  of fe functions and coefficient functions.

@@ -12,7 +12,8 @@
  * @date       2016/04/16
  * @history    2016/04/16 
  * @history    2016/06/16 (multigrid enabled) Naveed
- * @history    2016/10/26 (multigrid enabled)
+ * @history    2016/10/26 (SMAGORINSKY, Projection-base VMS ) Naveed and Volker
+ * @history    2016/12/22 Residual Based VMS: Naveed 
  *
  ******************************************************************************/
 
@@ -83,6 +84,29 @@ class Time_NSE3D
       TFEVectFunct3D u_;
       /** @brief Finite Element function for pressure */
       TFEFunction3D p_;
+      
+      /** @brief MatrixK includes all the terms which are related to the 
+       * time derivatives in the fully discrete scheme Eq: (45)
+       * Ahmed, Rebollo, John and Rubino (2015)
+       * Weighted Mass matrix
+       *  [ M11  M12  M13  0]
+       *  [ M21  M22  M23  0]
+       *  [ M31  M32  M33  0]
+       *  [ 0    0    0    0]
+       * This additionaly created due to the struture of the 
+       * residual based Variational Multiscale Method: In all 
+       * other methods, for example SUPG or Galerkin, the Mass_Matrix
+       * is used.
+       */
+      BlockFEMatrix MatrixK;
+      
+      /** @brief 
+       * old solution for the computation of the residual
+       * that passes as an FEFunction to the local assembling
+       * routines
+       */
+      BlockVector Old_Sol;
+      TFEVectFunct3D u_old;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -406,6 +430,9 @@ class Time_NSE3D
     
     //=========================================================================
 private:
+  /// this routines wraps up the call to Assemble3D  
+  void call_assembling_routine(Time_NSE3D::System_per_grid& s, 
+                               LocalAssembling3D_type type);
   /**
    * This will initialize the matrices depending on DISCTYPE and 
    * NSTYPE.
@@ -415,9 +442,7 @@ private:
    * NSTYPE
    * @param reMatrirces rectangular matrices 
    */
-  void prepare_matrices(System_per_grid& s, LocalAssembling3D_type type,
-                          std::vector<TSquareMatrix3D*> &sqMatrices,
-                          std::vector<TMatrix3D*> &reMatrirces);
+  void prepare_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling3D_type type, std::vector< TSquareMatrix3D* >& sqMatrices, std::vector< TMatrix3D* >& rectMatrices, std::vector< double* >& rhs_array);
   /**
    */
   void boundary_data(System_per_grid& s, std::vector<BoundCondFunct3D*> &bc, 

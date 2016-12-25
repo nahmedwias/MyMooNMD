@@ -2925,14 +2925,14 @@ void TimeNSType4GalerkinDD3D(double Mult, double *coeff,
   MatrixA32 = LocMatrices[7];
   MatrixA33 = LocMatrices[8];
   MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  MatrixB1  = LocMatrices[12];
-  MatrixB2  = LocMatrices[13];
-  MatrixB3  = LocMatrices[14];
-  MatrixB1T = LocMatrices[15];
-  MatrixB2T = LocMatrices[16];
-  MatrixB3T = LocMatrices[17];
+  // MatrixM22 = LocMatrices[10];
+  // MatrixM33 = LocMatrices[11];
+  MatrixB1  = LocMatrices[10];
+  MatrixB2  = LocMatrices[11];
+  MatrixB3  = LocMatrices[12];
+  MatrixB1T = LocMatrices[13];
+  MatrixB2T = LocMatrices[14];
+  MatrixB3T = LocMatrices[15];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -2968,8 +2968,8 @@ void TimeNSType4GalerkinDD3D(double Mult, double *coeff,
     Matrix32Row = MatrixA32[i];
     Matrix33Row = MatrixA33[i];
     MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
+    // MatrixM22Row  = MatrixM22[i];
+    // MatrixM33Row  = MatrixM33[i];
 
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -3022,8 +3022,8 @@ void TimeNSType4GalerkinDD3D(double Mult, double *coeff,
 
       val = Mult*(ansatz000*test000);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
+      // MatrixM22Row[j] += val;
+      // MatrixM33Row[j] += val;
     } // endfor j
 
     MatrixRow1 = MatrixB1T[i];
@@ -6034,2116 +6034,677 @@ void TimeNSType3_4NLDivDivDD3D(double Mult, double *coeff,
 }
 
 // ======================================================================
-// Type 14, Extra terms in Hughes D(u):D(v)
-//         div-div, SUPG
+// Type 4, div-div, SUPG
 // ======================================================================
-void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff,
-              double *param, double hK,
-              double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
+void TimeNSType4_SUPGDD3D(double Mult, double *coeff, double *param, double hK, 
+     double **OrigValues, int *N_BaseFuncts,double ***LocMatrices, double **LocRhs)
 {
-  Output::print("Nothing has been tested yet!! :( ");
-  ErrThrow("not tested and/or adjusted yet: ");
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
-  double **MatrixA33, **MatrixK11, **MatrixK12, **MatrixK13;
-  double **MatrixK21, **MatrixK22, **MatrixK23, **MatrixK31;
-  double **MatrixK32, **MatrixK33;
-  double **MatrixS11, **MatrixS12, **MatrixS13, **MatrixS21;
-  double **MatrixS22, **MatrixS23, **MatrixS31, **MatrixS32, **MatrixS33;
-  double **MatrixM11, **MatrixM22, **MatrixM33, **MatrixC;
-  double **MatrixB1, **MatrixB2,  **MatrixB3;
-  double **MatrixBT1, **MatrixBT2,  **MatrixBT3;
-  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, *Rhs5, *Rhs6, *Rhs7, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
-  double *Matrix33Row;
-  double *MatrixK11Row, *MatrixK12Row, *MatrixK13Row, *MatrixK21Row;
-  double *MatrixK22Row, *MatrixK23Row, *MatrixK31Row, *MatrixK32Row;
-  double *MatrixK33Row;
-  double *MatrixS11Row, *MatrixS12Row, *MatrixS13Row, *MatrixS21Row;
-  double *MatrixS22Row, *MatrixS23Row, *MatrixS31Row, *MatrixS32Row;
-  double *MatrixS33Row;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row, *MatrixCRow;
-  double *MatrixB1Row, *MatrixB2Row, *MatrixB3Row;
-  double *MatrixBT1Row, *MatrixBT2Row, *MatrixBT3Row;
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double **MatrixA13 = LocMatrices[2];
+  double **MatrixA21 = LocMatrices[3];
+  double **MatrixA22 = LocMatrices[4];
+  double **MatrixA23 = LocMatrices[5];
+  double **MatrixA31 = LocMatrices[6];
+  double **MatrixA32 = LocMatrices[7];
+  double **MatrixA33 = LocMatrices[8];
+  double **MassMatrix = LocMatrices[9];
+  double **MatrixB1  = LocMatrices[10];
+  double **MatrixB2  = LocMatrices[11];
+  double **MatrixB3  = LocMatrices[12];
+  double **MatrixB1T = LocMatrices[13];
+  double **MatrixB2T = LocMatrices[14];
+  double **MatrixB3T = LocMatrices[15];
+
+  double *Rhs1 = LocRhs[0];
+  double *Rhs2 = LocRhs[1];
+  double *Rhs3 = LocRhs[2];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double *Orig0 = OrigValues[0]; // u_x
+  double *Orig1 = OrigValues[1]; // u_y
+  double *Orig2 = OrigValues[2]; // u_y
+  double *Orig3 = OrigValues[3]; // u
+  
+  double *Orig4 = OrigValues[4]; // p
+  double *Orig5 = OrigValues[5]; // p_x
+  double *Orig6 = OrigValues[6]; // p_y
+  double *Orig7 = OrigValues[7]; // p_z
+
+  double c0 = coeff[0]; // nu
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+  double c3 = coeff[3]; // f3
+
+  double u1 = param[0]; // u1old
+  double u2 = param[1]; // u2old
+  double u3 = param[2]; // u3old
+
+  double val;
+  double test000, test100, test010, test001;
   double ansatz000, ansatz100, ansatz010, ansatz001;
-  //double ansatz200, ansatz020, ansatz002;
-  double test000, test100, test010, test001;
-  double tautest001, tautest100, tautest010;
-  double sh1, sh2, ah, bth1, h1, m1, m2, ah2, bh1;  // double temp1, norm_u;
-  //OutPut("supg");
-  double *Orig0, *Orig1, *Orig2;
-  double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;  // double *Orig8, *Orig9, *Orig10;
-  int i,j,N_U, N_P;
-  double c0, c1, c2, c3;
-  double u1, u2, u3; // double px, py, pz;
-  double supg_params[2];
-
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-//  double theta1 = TDatabase::TimeDB->THETA1;
-//  double theta2 = TDatabase::TimeDB->THETA2;
-//  double theta3 = TDatabase::TimeDB->THETA3;
-//  double theta4 = TDatabase::TimeDB->THETA4;
-
-  // matrices for vicous and convective term
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
-  MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
-  MatrixA33 = LocMatrices[8]; 
-  // mass matrix
-  MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  // matrices for SUPG
-  MatrixK11 = LocMatrices[12];
-  MatrixK12 = LocMatrices[13];
-  MatrixK13 = LocMatrices[14];
-  MatrixK21 = LocMatrices[15];
-  MatrixK22 = LocMatrices[16];
-  MatrixK23 = LocMatrices[17];
-  MatrixK31 = LocMatrices[18];
-  MatrixK32 = LocMatrices[19];
-  MatrixK33 = LocMatrices[20];
-  // matrices for div-div term + extra terms
-  MatrixS11 = LocMatrices[21];
-  MatrixS12 = LocMatrices[22];
-  MatrixS13 = LocMatrices[23];
-  MatrixS21 = LocMatrices[24];
-  MatrixS22 = LocMatrices[25];
-  MatrixS23 = LocMatrices[26];
-  MatrixS31 = LocMatrices[27];
-  MatrixS32 = LocMatrices[28];
-  MatrixS33 = LocMatrices[29]; 
-
-  MatrixC   = LocMatrices[30];
-
-  // matrices for divergence constraint + extra
-  MatrixB1  = LocMatrices[31];
-  MatrixB2  = LocMatrices[32];
-  MatrixB3  = LocMatrices[33];
-  // matrices for pressure term in momentum equations +extra
-  MatrixBT1 = LocMatrices[34];
-  MatrixBT2 = LocMatrices[35];
-  MatrixBT3 = LocMatrices[36];
-
-  // right hand sides
-  // for velocity space test functions 
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
-  Rhs4 = LocRhs[3];
-  Rhs5 = LocRhs[4];
-  Rhs6 = LocRhs[5];
-  // for pressure space test functions
-  Rhs7 = LocRhs[6];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u_z
-  Orig3 = OrigValues[3];         // u
-  Orig4 = OrigValues[4];         // p_x
-  Orig5 = OrigValues[5];         // p_y
-  Orig6 = OrigValues[6];         // p_z
-  Orig7 = OrigValues[7];         // p
-//   Orig8 = OrigValues[8];         // u_xx
-//   Orig9 = OrigValues[9];         // u_yy
-//   Orig10 = OrigValues[10];       // u_zz
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // f3
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-  u3 = param[2];                 // u3old
   
-  // second order derivatives in the residual will be neglected
-  // method is for flows with small viscosity
-
-
-
-  //SUPG parameter   
-  // supg_params[0] -> for momentum balance tau_m
-  // supg_params[1] -> for continuum equ.   tau_c
-  SUPG_Param3D(u1, u2, u3, coeff, supg_params);
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////  
-//calculation of modified stab. parameters  
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-//    norm_u = sqrt(u1*u1+u2*u2+u3*u3);
-//    temp1  = (0.5*hK*norm_u)*(0.5*hK*norm_u);
-//    if(TDatabase::TimeDB->CURRENTTIME > 1.0)
-//      supg_params[0] = TDatabase::ParamDB->DELTA0*hK*hK;
-//    else
-//      supg_params[0] = 0;
-//    //graddiv par. (John/Kindl,2010)
-//    supg_params[1] = 0.5*sqrt(c0*c0 + temp1);
-supg_params[0] = hK;
-supg_params[1] = 0.0;
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-//end of calculation of modified stab. parameters  
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-   
-   
-   // assembling for velocity test functions
+  //TODO: specify the parameter accordingly
+  double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
+  double tau_c = TDatabase::ParamDB->DELTA1;
+  double tau_m_ugradv;
   
-  // dummy parameter
-  
-
-  for(i=0;i<N_U;i++)
+  for(int i=0;i<N_U;i++)
   {
-    Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
-    Matrix33Row = MatrixA33[i];
-    MatrixM11Row = MatrixM11[i];
-    MatrixM22Row = MatrixM22[i];
-    MatrixM33Row = MatrixM33[i];
-    MatrixK11Row = MatrixK11[i];
-    MatrixK12Row = MatrixK12[i];
-    MatrixK13Row = MatrixK13[i];
-    MatrixK21Row = MatrixK21[i];
-    MatrixK22Row = MatrixK22[i];
-    MatrixK23Row = MatrixK23[i];
-    MatrixK31Row = MatrixK31[i];
-    MatrixK32Row = MatrixK32[i];
-    MatrixK33Row = MatrixK33[i];
-    MatrixS11Row = MatrixS11[i];
-    MatrixS12Row = MatrixS12[i];
-    MatrixS13Row = MatrixS13[i];
-    MatrixS21Row = MatrixS21[i];
-    MatrixS22Row = MatrixS22[i];
-    MatrixS23Row = MatrixS23[i];
-    MatrixS31Row = MatrixS31[i];
-    MatrixS32Row = MatrixS32[i];
-    MatrixS33Row = MatrixS33[i];
-
     test100 = Orig0[i];
     test010 = Orig1[i];
     test001 = Orig2[i];
     test000 = Orig3[i];
 
-    //for Rhsi, i=4,5,6
-    h1 = c1*test100 + c2*test010 + c3*test001;
+    tau_m_ugradv = tau_m*(u1*test100 + u2*test010 + u3*test001);
+    Rhs1[i] += Mult*(test000+tau_m_ugradv)*c1;
+    Rhs2[i] += Mult*(test000+tau_m_ugradv)*c2;
+    Rhs3[i] += Mult*(test000+tau_m_ugradv)*c3;
 
-    //for matrices Sij, Kij, BTi, Rhs
-    sh2 = u1*test100+u2*test010+u3*test001;
-    
-    m1 = Mult*test000;
-    m2 = Mult*supg_params[0];
-      
-    // rhs, this is the part of the term which will be multiplied by theta4*tau
-    Rhs1[i] += m1*c1;
-    Rhs2[i] += m1*c2;
-    Rhs3[i] += m1*c3;
-    Rhs4[i] += m2*(u1*h1 + c1*sh2);
-    Rhs5[i] += m2*(u2*h1 + c2*sh2); 
-    Rhs6[i] += m2*(u3*h1 + c3*sh2);
-   
-
-    // test functions for div-div term
-    tautest100 = supg_params[1]*test100;
-    tautest010 = supg_params[1]*test010;
-    tautest001 = supg_params[1]*test001;
-    
-    // velocity-velocity block
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
-//       ansatz200 = Orig8[j];
-//       ansatz020 = Orig9[j];
-//       ansatz002 = Orig10[j];
-
-      //for matrices Sij, Aij, Bi
-      sh1 = u1*ansatz100+u2*ansatz010+u3*ansatz001;
       
-//       //for laplace term in S
-//       sh3 = ansatz200 + ansatz020 + ansatz002; 
+      double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
       
-      
-      
-      // matrices Aij
-      // this block will be multiplied with theta1*Delta t
-      // convection 
-      ah = sh1 * test000;
-      ah2 = test100*ansatz100+test010*ansatz010+test001*ansatz001;
-      // diffusion
-      val  = c0*(test100*ansatz100+ah2);
-      // add everything
-      val += ah;
-      Matrix11Row[j] += Mult * val;
+      double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
+                   +test001*ansatz001) + ugradu * test000;
+      double supg_term = ugradu * tau_m_ugradv;
+      double grad_div = tau_c * test100 * ansatz100;
+      MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
 
-      val  = c0*(test010*ansatz100);
-      Matrix12Row[j] += Mult * val;
+      val  = (c0+tau_c)*(test010*ansatz100);
+      MatrixA12[i][j] += Mult * val;
 
-      val  = c0*(test001*ansatz100);
-      Matrix13Row[j] += Mult * val;
+      val  = (c0+tau_c)*(test001*ansatz100);
+      MatrixA13[i][j] += Mult * val;
 
-      val  = c0*(test100*ansatz010);
-      Matrix21Row[j] += Mult * val;
+      val  = (c0+tau_c)*(test100*ansatz010);
+      MatrixA21[i][j] += Mult * val;
 
-      val  = c0*(test010*ansatz010+ah2);
-      val += ah;
-      Matrix22Row[j] += Mult * val;
+      galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
+                   +test001*ansatz001) + ugradu * test000;
+      supg_term = ugradu * tau_m_ugradv;
+      grad_div = tau_c * test010*ansatz010;
+      MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
 
-      val  = c0*(test001*ansatz010);
-      Matrix23Row[j] += Mult * val;
+      val  = (c0+tau_c)*(test001*ansatz010);
+      MatrixA23[i][j] += Mult * val;
 
-      val  = c0*(test100*ansatz001);
-      Matrix31Row[j] += Mult * val;
+      val  = (c0+tau_c)*(test100*ansatz001);
+      MatrixA31[i][j] += Mult * val;
 
-      val  = c0*(test010*ansatz001);
-      Matrix32Row[j] += Mult * val;
+      val  = (c0+tau_c)*(test010*ansatz001);
+      MatrixA32[i][j] += Mult * val;
 
-      val  = c0*(ah2+test001*ansatz001);
-      val += ah;
-      Matrix33Row[j] += Mult * val;
+      galerkin  = c0*(test100*ansatz100+test010*ansatz010
+                   +2*test001*ansatz001) + ugradu * test000;
+      supg_term = ugradu * tau_m_ugradv;
+      grad_div = tau_c * test001*ansatz001;
+      MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
+      // weighted mass matrix
+      val = Mult*ansatz000*(test000 + tau_m_ugradv);
+      MassMatrix[i][j] += val;
+    } 
 
-      // mass matrix M
-      val = ansatz000*test000;
-      MatrixM11Row[j] += Mult * val;
-      MatrixM22Row[j] += Mult * val;
-      MatrixM33Row[j] += Mult * val;
-      
-      // div-div term + extras
-      // store in matrices S
-      MatrixS11Row[j] += Mult * (tautest100*ansatz100+supg_params[0]*sh1*(u1*test100+sh2));
-      MatrixS12Row[j] += Mult * (tautest100*ansatz010+supg_params[0]*sh1*u1*test010);
-      MatrixS13Row[j] += Mult * (tautest100*ansatz001+supg_params[0]*sh1*u1*test001);
-      MatrixS21Row[j] += Mult * (tautest010*ansatz100+supg_params[0]*sh1*u2*test100);
-      MatrixS22Row[j] += Mult * (tautest010*ansatz010+supg_params[0]*sh1*(u2*test010+sh2));
-      MatrixS23Row[j] += Mult * (tautest010*ansatz001+supg_params[0]*sh1*u2*test001);
-      MatrixS31Row[j] += Mult * (tautest001*ansatz100+supg_params[0]*sh1*u3*test100);
-      MatrixS32Row[j] += Mult * (tautest001*ansatz010+supg_params[0]*sh1*u3*test010);
-      MatrixS33Row[j] += Mult * (tautest001*ansatz001+supg_params[0]*sh1*(u3*test001+sh2));
-      
-//       // laplace term in S
-//       if(TDatabase::ParamDB->DELTA1 == 100){
-//  OutPut("LAPLACEEEEEEEEEEEEEEEEEEEE");
-//  MatrixS11Row[j] += Mult * (-supg_params[0]*c0*sh3*(sh2+u1*test100));
-//  MatrixS12Row[j] += Mult * (-supg_params[0]*c0*sh3*u1*test010);
-//  MatrixS13Row[j] += Mult * (-supg_params[0]*c0*sh3*u1*test001);
-//  MatrixS21Row[j] += Mult * (-supg_params[0]*c0*sh3*u2*test100);
-//  MatrixS22Row[j] += Mult * (-supg_params[0]*c0*sh3*(sh2+u2*test010));
-//  MatrixS23Row[j] += Mult * (-supg_params[0]*c0*sh3*u2*test001);
-//  MatrixS31Row[j] += Mult * (-supg_params[0]*c0*sh3*u3*test100);
-//  MatrixS32Row[j] += Mult * (-supg_params[0]*c0*sh3*u3*test010);
-//  MatrixS33Row[j] += Mult * (-supg_params[0]*c0*sh3*(sh2+u3*test001));
-//       }
-      
-      // SUPG terms 
-      // store in matrices K
-      MatrixK11Row[j] += m2 * ansatz000 * (u1*test100+sh2);
-      MatrixK12Row[j] += m2 * u1 * ansatz000 * test010;
-      MatrixK13Row[j] += m2 * u1 * ansatz000 * test001;
-      MatrixK21Row[j] += m2 * u2 * ansatz000 * test100;
-      MatrixK22Row[j] += m2 * ansatz000 * (u2*test010+sh2);
-      MatrixK23Row[j] += m2 * u2 * ansatz000 * test001;
-      MatrixK31Row[j] += m2 * u3 * ansatz000 * test100;
-      MatrixK32Row[j] += m2 * u3 * ansatz000 * test010;
-      MatrixK33Row[j] += m2 * ansatz000 * (u3*test001+sh2);
-
-    }                            // endfor j
-
-    // pressure-velocity block, these blocks will be multiplied with Delta t
-    MatrixBT1Row = MatrixBT1[i];
-    MatrixBT2Row = MatrixBT2[i];
-    MatrixBT3Row = MatrixBT3[i];
-    for(j=0;j<N_P;j++)
+    for(int j=0;j<N_P;j++)
     {
-      // pressure ansatz functions
-      ansatz100 = Orig4[j];
-      ansatz010 = Orig5[j];
-      ansatz001 = Orig6[j];
-      ansatz000 = Orig7[j];
-
-      // for matrices BTi
-      bth1 = ansatz100*test100 + ansatz010*test010 + ansatz001*test001;
-     
-      // matrices BTi
-      MatrixBT1Row[j] += Mult*(-ansatz000*test100+supg_params[0]*(u1*bth1+ansatz100*sh2));
-      MatrixBT2Row[j] += Mult*(-ansatz000*test010+supg_params[0]*(u2*bth1+ansatz010*sh2));
-      MatrixBT3Row[j] += Mult*(-ansatz000*test001+supg_params[0]*(u3*bth1+ansatz001*sh2));
-      
-    }        // endfor j
-  }                              // endfor i
-
-  // assembling for pressure test functions
-  for(i=0;i<N_P;i++)
-  {
-    MatrixB1Row = MatrixB1[i];
-    MatrixB2Row = MatrixB2[i];
-    MatrixB3Row = MatrixB3[i];
-    MatrixCRow = MatrixC[i];
-
-    test100 = Orig4[i];
-    test010 = Orig5[i];
-    test001 = Orig6[i];
-    test000 = Orig7[i];
-
-    Rhs7[i] += Mult*time_step*supg_params[0]*(((1.0/time_step)*u1 + c1)*test100 
-            + ((1.0/time_step)*u2 + c2)*test010 + ((1.0/time_step)*u3 + c3)*test001);
-
-  
-    // velocity-pressure block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-//       ansatz200 = Orig8[j];
-//       ansatz020 = Orig9[j];
-//       ansatz002 = Orig10[j];
-      
-      sh1 = u1*ansatz100+u2*ansatz010+u3*ansatz001;
-      
-      //for laplace term in S
-      bh1 = time_step*supg_params[0]*((1./time_step)*ansatz000+sh1);
-      
-      // matrices Bi
-      MatrixB1Row[j] += Mult*(ansatz100*test000+bh1*test100);
-      MatrixB2Row[j] += Mult*(ansatz010*test000+bh1*test010);
-      MatrixB3Row[j] += Mult*(ansatz001*test000+bh1*test001);
-      
-      
-//       //laplace term in B 
-//       if(TDatabase::ParamDB->DELTA1 == 100){
-//  MatrixB1Row[j] += Mult*(-supg_params[0]*c0*sh3*test100);
-//  MatrixB2Row[j] += Mult*(-supg_params[0]*c0*sh3*test010);
-//  MatrixB3Row[j] += Mult*(-supg_params[0]*c0*sh3*test001);
-//       }
-    
+      ansatz000 = Orig4[j]; // p
+      ansatz100 = Orig5[j];
+      ansatz010 = Orig6[j];
+      ansatz001 = Orig7[j];
+      // B1T
+      val = -ansatz000*test100;
+      double supg_term = ansatz100*tau_m_ugradv;
+      MatrixB1T[i][j] += Mult*(val + supg_term);
+      // B2T 
+      val = -ansatz000*test010;
+      supg_term = ansatz010 * tau_m_ugradv;
+      MatrixB2T[i][j] += Mult*(val + supg_term);
+      // B3T 
+      val = -ansatz000*test001;
+      supg_term = ansatz001 * tau_m_ugradv;
+      MatrixB3T[i][j] += Mult*(val + supg_term);
     }
-    
-    
-    
+  } 
 
-    // pressure-pressure block
-    for(j=0;j<N_P;j++)
+  for(int i=0;i<N_P;i++)
+  {
+    test000 = Orig4[i];
+
+    for(int j=0;j<N_U;j++)
     {
-   
-      ansatz100 = Orig4[j];
-      ansatz010 = Orig5[j];
-      ansatz001 = Orig6[j];
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
 
-      //matrix C
-      MatrixCRow[j] +=  m2 * time_step * (ansatz100*test100 + ansatz010*test010 + ansatz001*test001);
-    }                   // endfor j
-  }     // endfor i
+      val = -Mult*test000*ansatz100;
+      MatrixB1[i][j] += val;
+
+      val = -Mult*test000*ansatz010;
+      MatrixB2[i][j] += val;
+
+      val = -Mult*test000*ansatz001;
+      MatrixB3[i][j] += val;
+    } // endfor j
+  } // endfor i
 }
 
-
 // ======================================================================
-// Type 4, Extra terms in Hughes D(u):D(v)
-//         div-div, SUPG
-// ======================================================================
-void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff,
-              double *param, double hK,
-              double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
+void TimeNSType4NL_SUPGDD3D(double Mult, double *coeff, double *param, double hK, 
+         double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 {
-  Output::print("Nothing has been tested yer: !! :( ");
-  ErrThrow("not tested and/or adjusted yet: ");
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double **MatrixA13 = LocMatrices[2];
+  double **MatrixA21 = LocMatrices[3];
+  double **MatrixA22 = LocMatrices[4];
+  double **MatrixA23 = LocMatrices[5];
+  double **MatrixA31 = LocMatrices[6];
+  double **MatrixA32 = LocMatrices[7];
+  double **MatrixA33 = LocMatrices[8];
+  double **MassMatrix = LocMatrices[9];
+  double **MatrixB1T  = LocMatrices[10];
+  double **MatrixB2T  = LocMatrices[11];
+  double **MatrixB3T  = LocMatrices[12];
+
+  double *Rhs1 = LocRhs[0];
+  double *Rhs2 = LocRhs[1];
+  double *Rhs3 = LocRhs[2];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double *Orig0 = OrigValues[0]; // u_x
+  double *Orig1 = OrigValues[1]; // u_y
+  double *Orig2 = OrigValues[2]; // u_y
+  double *Orig3 = OrigValues[3]; // u
   
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
-  double **MatrixA33, **MatrixK11, **MatrixK12, **MatrixK13;
-  double **MatrixK21, **MatrixK22, **MatrixK23, **MatrixK31;
-  double **MatrixK32, **MatrixK33;
-  double **MatrixS11, **MatrixS12, **MatrixS13, **MatrixS21;
-  double **MatrixS22, **MatrixS23, **MatrixS31, **MatrixS32, **MatrixS33;
-  double **MatrixC;
-  double **MatrixB1, **MatrixB2,  **MatrixB3;
-  double **MatrixBT1, **MatrixBT2,  **MatrixBT3;
-  double *Rhs4, *Rhs5, *Rhs6, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
-  double *Matrix33Row;
-  double *MatrixK11Row, *MatrixK12Row, *MatrixK13Row, *MatrixK21Row;
-  double *MatrixK22Row, *MatrixK23Row, *MatrixK31Row, *MatrixK32Row;
-  double *MatrixK33Row;
-  double *MatrixS11Row, *MatrixS12Row, *MatrixS13Row, *MatrixS21Row;
-  double *MatrixS22Row, *MatrixS23Row, *MatrixS31Row, *MatrixS32Row;
-  double *MatrixS33Row;
-  double *MatrixCRow;
-  double *MatrixB1Row, *MatrixB2Row, *MatrixB3Row;
-  double *MatrixBT1Row, *MatrixBT2Row, *MatrixBT3Row;
+  double *Orig4 = OrigValues[4]; // p
+  double *Orig5 = OrigValues[5]; // p_x
+  double *Orig6 = OrigValues[6]; // p_y
+  double *Orig7 = OrigValues[7]; // p_z
+
+  double c0 = coeff[0]; // nu
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+  double c3 = coeff[3]; // f3
+
+  double u1 = param[0]; // u1old
+  double u2 = param[1]; // u2old
+  double u3 = param[2]; // u3old
+
+  double val;
+  double test000, test100, test010, test001;
   double ansatz000, ansatz100, ansatz010, ansatz001;
-  //double ansatz200, ansatz020, ansatz002;
-  double test000, test100, test010, test001;
-  double tautest001, tautest100, tautest010;
-  double sh1, sh2, ah, bth1, h1, m2, ah2, bh1; // double norm_u;
-  //OutPut("supg");
-  double *Orig0, *Orig1, *Orig2;
-  double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7; // double *Orig8, *Orig9, *Orig10;
-  int i,j,N_U, N_P;
-  double c0, c1, c2, c3;
-  double u1, u2, u3;   // double px, py, pz;
-  double supg_params[2]   ;
-
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-//  double theta1 = TDatabase::TimeDB->THETA1;
-//  double theta2 = TDatabase::TimeDB->THETA2;
-//  double theta3 = TDatabase::TimeDB->THETA3;
-//  double theta4 = TDatabase::TimeDB->THETA4;
-
-  // matrices for vicous and convective term
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
-  MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
-  MatrixA33 = LocMatrices[8]; 
-  // matrix for SUPG
-  MatrixK11 = LocMatrices[9];
-  MatrixK12 = LocMatrices[10];
-  MatrixK13 = LocMatrices[11];
-  MatrixK21 = LocMatrices[12];
-  MatrixK22 = LocMatrices[13];
-  MatrixK23 = LocMatrices[14];
-  MatrixK31 = LocMatrices[15];
-  MatrixK32 = LocMatrices[16];
-  MatrixK33 = LocMatrices[17];
-  // matrices for div-div term + extra terms
-  MatrixS11 = LocMatrices[18];
-  MatrixS12 = LocMatrices[19];
-  MatrixS13 = LocMatrices[20];
-  MatrixS21 = LocMatrices[21];
-  MatrixS22 = LocMatrices[22];
-  MatrixS23 = LocMatrices[23];
-  MatrixS31 = LocMatrices[24];
-  MatrixS32 = LocMatrices[25];
-  MatrixS33 = LocMatrices[26]; 
-
-  MatrixC   = LocMatrices[27];
-
-  // matrices for divergence constraint + extra
-  MatrixB1  = LocMatrices[28];
-  MatrixB2  = LocMatrices[29];
-  MatrixB3  = LocMatrices[30];
-  // matrices for pressure term in momentum equations +extra
-  MatrixBT1 = LocMatrices[31];
-  MatrixBT2 = LocMatrices[32];
-  MatrixBT3 = LocMatrices[33];
-
-  // right hand sides
-  Rhs4 = LocRhs[0];
-  Rhs5 = LocRhs[1];
-  Rhs6 = LocRhs[2];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u_z
-  Orig3 = OrigValues[3];         // u
-  Orig4 = OrigValues[4];         // p_x
-  Orig5 = OrigValues[5];         // p_y
-  Orig6 = OrigValues[6];         // p_z
-  Orig7 = OrigValues[7];         // p
-//   Orig8 = OrigValues[8];         // u_xx
-//   Orig9 = OrigValues[9];         // u_yy
-//   Orig10 = OrigValues[10];       // u_zz
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // f3
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-  u3 = param[2];                 // u3old
   
-  // second order derivatives in the residual will be neglected
-  // method is for flows with small viscosity
-
-  //SUPG parameter   
-  // supg_params[0] -> for momentum balance tau_m
-  // supg_params[1] -> for continuum equ.   tau_c
-  SUPG_Param3D(u1, u2, u3, coeff, supg_params);
-
+  //TODO: specify the parameter accordingly
+  double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
+  double tau_c = TDatabase::ParamDB->DELTA1;
+  double tau_m_ugradv;
   
-///////////////////////////////////////////////////////////////////////////////////////////////////////  
-//calculation of modified stab. parameters  
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-//    norm_u = sqrt(u1*u1+u2*u2+u3*u3);
-//    temp1  = (0.5*hK*norm_u)*(0.5*hK*norm_u);
-//    if(TDatabase::TimeDB->CURRENTTIME > 1.0)
-//      supg_params[0] = TDatabase::ParamDB->DELTA0*hK*hK;
-//    else
-//      supg_params[0] = 0;
-//    //graddiv par. (John/Kindl,2010)  
-//    supg_params[1] = 0.5*sqrt(c0*c0 + temp1);
-supg_params[0] = hK;
-supg_params[1] = 0.0;
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-//end of calculation of modified stab. parameters  
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-  
-
-  for(i=0;i<N_U;i++)
+  for(int i=0;i<N_U;i++)
   {
-    Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
-    Matrix33Row = MatrixA33[i];
-    MatrixK11Row = MatrixK11[i];
-    MatrixK12Row = MatrixK12[i];
-    MatrixK13Row = MatrixK13[i];
-    MatrixK21Row = MatrixK21[i];
-    MatrixK22Row = MatrixK22[i];
-    MatrixK23Row = MatrixK23[i];
-    MatrixK31Row = MatrixK31[i];
-    MatrixK32Row = MatrixK32[i];
-    MatrixK33Row = MatrixK33[i];
-    MatrixS11Row = MatrixS11[i];
-    MatrixS12Row = MatrixS12[i];
-    MatrixS13Row = MatrixS13[i];
-    MatrixS21Row = MatrixS21[i];
-    MatrixS22Row = MatrixS22[i];
-    MatrixS23Row = MatrixS23[i];
-    MatrixS31Row = MatrixS31[i];
-    MatrixS32Row = MatrixS32[i];
-    MatrixS33Row = MatrixS33[i];
-
     test100 = Orig0[i];
     test010 = Orig1[i];
     test001 = Orig2[i];
     test000 = Orig3[i];
-//     // SUPG term for the time derivative, with scaling, theta1 already scaled with Delta t
-//     ugradu  = (u1*test100+u2*test010+u3*test001)*supg_params[0]*theta1;
 
-    //for Rhsi, i=4,5,6
-    h1 = c1*test100 + c2*test010 + c3*test001;
+    tau_m_ugradv = tau_m*(u1*test100 + u2*test010 + u3*test001);
+    Rhs1[i] += Mult*(test000+tau_m_ugradv)*c1;
+    Rhs2[i] += Mult*(test000+tau_m_ugradv)*c2;
+    Rhs3[i] += Mult*(test000+tau_m_ugradv)*c3;
 
-    //for matrices Sij, Kij, BTi, Rhs, Sij
-    sh2 = u1*test100+u2*test010+u3*test001;
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
+      
+      double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
+      
+      double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
+                   +test001*ansatz001) + ugradu * test000;
+      double supg_term = ugradu * tau_m_ugradv;
+      double grad_div = tau_c * test100 * ansatz100;
+      MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
+      // div-div terms
+      val  = (c0+tau_c)*(test010*ansatz100);
+      MatrixA12[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test001*ansatz100);
+      MatrixA13[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test100*ansatz010);
+      MatrixA21[i][j] += Mult * val;
+
+      galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
+                   +test001*ansatz001) + ugradu * test000;
+      supg_term = ugradu * tau_m_ugradv;
+      grad_div = tau_c * test010*ansatz010;
+      MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
+      // div-div terms
+      val  = (c0+tau_c)*(test001*ansatz010);
+      MatrixA23[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test100*ansatz001);
+      MatrixA31[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test010*ansatz001);
+      MatrixA32[i][j] += Mult * val;
+
+      galerkin  = c0*(test100*ansatz100+test010*ansatz010
+                   +2*test001*ansatz001) + ugradu * test000;
+      supg_term = ugradu * tau_m_ugradv;
+      grad_div = tau_c * test001*ansatz001;
+      MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
+      // weighted mass matrix
+      val = Mult*ansatz000*(test000 + tau_m_ugradv);
+      MassMatrix[i][j] += val;
+    } 
+
+    for(int j=0;j<N_P;j++)
+    {
+      ansatz000 = Orig4[j]; // p
+      ansatz100 = Orig5[j]; // p_x
+      ansatz010 = Orig6[j]; // p_y
+      ansatz001 = Orig7[j]; // p_z
+      // B1T
+      val = -ansatz000*test100;
+      double supg_term = ansatz100*tau_m_ugradv;
+      MatrixB1T[i][j] += Mult*(val + supg_term);
+      // B2T 
+      val = -ansatz000*test010;
+      supg_term = ansatz010 * tau_m_ugradv;
+      MatrixB2T[i][j] += Mult*(val + supg_term);
+      // B3T 
+      val = -ansatz000*test001;
+      supg_term = ansatz001 * tau_m_ugradv;
+      MatrixB3T[i][j] += Mult*(val + supg_term);
+    }
+  } 
+}
+// ======================================================================
+void TimeNSRhs_SUPGDD3D(double Mult, double *coeff, double *param, double hK, 
+     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+{
+  double *Rhs1 = LocRhs[0];
+  double *Rhs2 = LocRhs[1];
+  double *Rhs3 = LocRhs[2];
+  
+  double *Orig0 = OrigValues[0]; // u_x
+  double *Orig1 = OrigValues[1]; // u_y
+  double *Orig2 = OrigValues[2]; // u_z
+  double *Orig3 = OrigValues[3]; // u
+  
+  double c1 = coeff[1];
+  double c2 = coeff[2];
+  double c3 = coeff[3];
+
+  double u1=param[0]; // u1old
+  double u2=param[1]; // u2old
+  double u3=param[2]; // u3old
+  
+  int N_U = N_BaseFuncts[0];
+  //TODO: specify the parameter accordingly
+  double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
+  
+  for(int i=0; i<N_U; ++i)
+  {
+    double test100 = Orig0[i];
+    double test010 = Orig1[i];
+    double test001 = Orig2[i];
+    double test000 = Orig3[i];
     
-    m2 = Mult*supg_params[0];   
-    // rhs, this is part of the term which will be multiplied with theta4
+    double tau_m_ugradv = tau_m*(u1*test100 + u2*test010 + u3*test001);
+    Rhs1[i] += Mult*(test000 + tau_m_ugradv)*c1;
+    Rhs2[i] += Mult*(test000 + tau_m_ugradv)*c2;
+    Rhs3[i] += Mult*(test000 + tau_m_ugradv)*c3;
+  }
+}
+// ======================================================================
+// Type 4 : Residual-based VMS
+// ======================================================================
+void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, double hK, 
+     double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs)
+{
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double **MatrixA13 = LocMatrices[2];
+  double **MatrixA21 = LocMatrices[3];
+  double **MatrixA22 = LocMatrices[4];
+  double **MatrixA23 = LocMatrices[5];
+  double **MatrixA31 = LocMatrices[6];
+  double **MatrixA32 = LocMatrices[7];
+  double **MatrixA33 = LocMatrices[8];
+  double **MassMatrix = LocMatrices[9];
+  double **MatrixB1  = LocMatrices[10];
+  double **MatrixB2  = LocMatrices[11];
+  double **MatrixB3  = LocMatrices[12];
+  double **MatrixB1T = LocMatrices[13];
+  double **MatrixB2T = LocMatrices[14];
+  double **MatrixB3T = LocMatrices[15];
+
+  double *Rhs1 = LocRhs[0];
+  double *Rhs2 = LocRhs[1];
+  double *Rhs3 = LocRhs[2];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double *Orig0 = OrigValues[0]; // u_x
+  double *Orig1 = OrigValues[1]; // u_y
+  double *Orig2 = OrigValues[2]; // u_y
+  double *Orig3 = OrigValues[3]; // u
+  
+  double *Orig4 = OrigValues[4]; // p
+  double *Orig5 = OrigValues[5]; // p_x
+  double *Orig6 = OrigValues[6]; // p_y
+  double *Orig7 = OrigValues[7]; // p_z
+
+  double c0 = coeff[0]; // nu
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+  double c3 = coeff[3]; // f3
+
+  double u1 = param[0]; // u1old
+  double u2 = param[1]; // u2old
+  double u3 = param[2]; // u3old
+
+  double val;
+  double test000, test100, test010, test001;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  
+  //TODO: specify the parameter accordingly
+  double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
+  double tau_c = TDatabase::ParamDB->DELTA1;
+  double tau_m_ugradv;
+  
+  for(int i=0;i<N_U;i++)
+  {
+    test100 = Orig0[i];
+    test010 = Orig1[i];
+    test001 = Orig2[i];
+    test000 = Orig3[i];
+
+    tau_m_ugradv = tau_m*(u1*test100 + u2*test010 + u3*test001);
+    Rhs1[i] += Mult*(test000+tau_m_ugradv)*c1;
+    Rhs2[i] += Mult*(test000+tau_m_ugradv)*c2;
+    Rhs3[i] += Mult*(test000+tau_m_ugradv)*c3;
+
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
+      
+      double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
+      
+      double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
+                   +test001*ansatz001) + ugradu * test000;
+      double supg_term = ugradu * tau_m_ugradv;
+      double grad_div = tau_c * test100 * ansatz100;
+      MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
+
+      val  = (c0+tau_c)*(test010*ansatz100);
+      MatrixA12[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test001*ansatz100);
+      MatrixA13[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test100*ansatz010);
+      MatrixA21[i][j] += Mult * val;
+
+      galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
+                   +test001*ansatz001) + ugradu * test000;
+      supg_term = ugradu * tau_m_ugradv;
+      grad_div = tau_c * test010*ansatz010;
+      MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
+
+      val  = (c0+tau_c)*(test001*ansatz010);
+      MatrixA23[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test100*ansatz001);
+      MatrixA31[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test010*ansatz001);
+      MatrixA32[i][j] += Mult * val;
+
+      galerkin  = c0*(test100*ansatz100+test010*ansatz010
+                   +2*test001*ansatz001) + ugradu * test000;
+      supg_term = ugradu * tau_m_ugradv;
+      grad_div = tau_c * test001*ansatz001;
+      MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
+      // weighted mass matrix
+      val = Mult*ansatz000*(test000 + tau_m_ugradv);
+      MassMatrix[i][j] += val;
+    } 
+
+    for(int j=0;j<N_P;j++)
+    {
+      ansatz000 = Orig4[j]; // p
+      ansatz100 = Orig5[j];
+      ansatz010 = Orig6[j];
+      ansatz001 = Orig7[j];
+      // B1T
+      val = -ansatz000*test100;
+      double supg_term = ansatz100*tau_m_ugradv;
+      MatrixB1T[i][j] += Mult*(val + supg_term);
+      // B2T 
+      val = -ansatz000*test010;
+      supg_term = ansatz010 * tau_m_ugradv;
+      MatrixB2T[i][j] += Mult*(val + supg_term);
+      // B3T 
+      val = -ansatz000*test001;
+      supg_term = ansatz001 * tau_m_ugradv;
+      MatrixB3T[i][j] += Mult*(val + supg_term);
+    }
+  } 
+
+  for(int i=0;i<N_P;i++)
+  {
+    test000 = Orig4[i];
+
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+
+      val = -Mult*test000*ansatz100;
+      MatrixB1[i][j] += val;
+
+      val = -Mult*test000*ansatz010;
+      MatrixB2[i][j] += val;
+
+      val = -Mult*test000*ansatz001;
+      MatrixB3[i][j] += val;
+    } // endfor j
+  } // endfor i
+}
+// ======================================================================
+void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param, 
+ double hK, double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
+ double **LocRhs)
+{
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double **MatrixA13 = LocMatrices[2];
+  double **MatrixA21 = LocMatrices[3];
+  double **MatrixA22 = LocMatrices[4];
+  double **MatrixA23 = LocMatrices[5];
+  double **MatrixA31 = LocMatrices[6];
+  double **MatrixA32 = LocMatrices[7];
+  double **MatrixA33 = LocMatrices[8];
+  double **MassMatrix = LocMatrices[9];
+  double **MatrixB1T  = LocMatrices[10];
+  double **MatrixB2T  = LocMatrices[11];
+  double **MatrixB3T  = LocMatrices[12];
+
+  double *Rhs1 = LocRhs[0];
+  double *Rhs2 = LocRhs[1];
+  double *Rhs3 = LocRhs[2];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double *Orig0 = OrigValues[0]; // u_x
+  double *Orig1 = OrigValues[1]; // u_y
+  double *Orig2 = OrigValues[2]; // u_y
+  double *Orig3 = OrigValues[3]; // u
+  
+  double *Orig4 = OrigValues[4]; // p
+  double *Orig5 = OrigValues[5]; // p_x
+  double *Orig6 = OrigValues[6]; // p_y
+  double *Orig7 = OrigValues[7]; // p_z
+
+  double c0 = coeff[0]; // nu
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+  double c3 = coeff[3]; // f3
+
+  double u1 = param[0]; // u1old
+  double u2 = param[1]; // u2old
+  double u3 = param[2]; // u3old
+
+  double val;
+  double test000, test100, test010, test001;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  
+  //TODO: specify the parameter accordingly
+  double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
+  double tau_c = TDatabase::ParamDB->DELTA1;
+  double tau_m_ugradv;
+  
+  for(int i=0;i<N_U;i++)
+  {
+    test100 = Orig0[i];
+    test010 = Orig1[i];
+    test001 = Orig2[i];
+    test000 = Orig3[i];
+
+    tau_m_ugradv = tau_m*(u1*test100 + u2*test010 + u3*test001);
+    Rhs1[i] += Mult*(test000+tau_m_ugradv)*c1;
+    Rhs2[i] += Mult*(test000+tau_m_ugradv)*c2;
+    Rhs3[i] += Mult*(test000+tau_m_ugradv)*c3;
+
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
+      
+      double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
+      
+      double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
+                   +test001*ansatz001) + ugradu * test000;
+      double supg_term = ugradu * tau_m_ugradv;
+      double grad_div = tau_c * test100 * ansatz100;
+      MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
+      // div-div terms
+      val  = (c0+tau_c)*(test010*ansatz100);
+      MatrixA12[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test001*ansatz100);
+      MatrixA13[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test100*ansatz010);
+      MatrixA21[i][j] += Mult * val;
+
+      galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
+                   +test001*ansatz001) + ugradu * test000;
+      supg_term = ugradu * tau_m_ugradv;
+      grad_div = tau_c * test010*ansatz010;
+      MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
+      // div-div terms
+      val  = (c0+tau_c)*(test001*ansatz010);
+      MatrixA23[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test100*ansatz001);
+      MatrixA31[i][j] += Mult * val;
+
+      val  = (c0+tau_c)*(test010*ansatz001);
+      MatrixA32[i][j] += Mult * val;
+
+      galerkin  = c0*(test100*ansatz100+test010*ansatz010
+                   +2*test001*ansatz001) + ugradu * test000;
+      supg_term = ugradu * tau_m_ugradv;
+      grad_div = tau_c * test001*ansatz001;
+      MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
+      // weighted mass matrix
+      val = Mult*ansatz000*(test000 + tau_m_ugradv);
+      MassMatrix[i][j] += val;
+    } 
+
+    for(int j=0;j<N_P;j++)
+    {
+      ansatz000 = Orig4[j]; // p
+      ansatz100 = Orig5[j]; // p_x
+      ansatz010 = Orig6[j]; // p_y
+      ansatz001 = Orig7[j]; // p_z
+      // B1T
+      val = -ansatz000*test100;
+      double supg_term = ansatz100*tau_m_ugradv;
+      MatrixB1T[i][j] += Mult*(val + supg_term);
+      // B2T 
+      val = -ansatz000*test010;
+      supg_term = ansatz010 * tau_m_ugradv;
+      MatrixB2T[i][j] += Mult*(val + supg_term);
+      // B3T 
+      val = -ansatz000*test001;
+      supg_term = ansatz001 * tau_m_ugradv;
+      MatrixB3T[i][j] += Mult*(val + supg_term);
+    }
+  } 
+}
+// ======================================================================
+void TimeNSType4Residual_VMS_RhsDD3D(double Mult, double* coeff, double* param, 
+ double hK, double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, 
+ double** LocRhs)
+{
+  double *Rhs1 = LocRhs[0];
+  double *Rhs2 = LocRhs[1];
+  double *Rhs3 = LocRhs[2];
+  
+  double *Orig0 = OrigValues[0]; // u_x
+  double *Orig1 = OrigValues[1]; // u_y
+  double *Orig2 = OrigValues[2]; // u_z
+  double *Orig3 = OrigValues[3]; // u
+  
+  double c1 = coeff[1];
+  double c2 = coeff[2];
+  double c3 = coeff[3];
+
+  double u1=param[0]; // u1old
+  double u2=param[1]; // u2old
+  double u3=param[2]; // u3old
+  
+  int N_U = N_BaseFuncts[0];
+  //TODO: specify the parameter accordingly
+  double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
+  
+  for(int i=0; i<N_U; ++i)
+  {
+    double test100 = Orig0[i];
+    double test010 = Orig1[i];
+    double test001 = Orig2[i];
+    double test000 = Orig3[i];
     
-    Rhs4[i] += m2*(u1*h1 + c1*sh2);
-    Rhs5[i] += m2*(u2*h1 + c2*sh2); 
-    Rhs6[i] += m2*(u3*h1 + c3*sh2);
-    
-    // test functions for div-div term
-    tautest100 = supg_params[1]*test100;
-    tautest010 = supg_params[1]*test010;
-    tautest001 = supg_params[1]*test001;
-
-    // velocity-velocity block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-//       ansatz200 = Orig8[j];
-//       ansatz020 = Orig9[j];
-//       ansatz002 = Orig10[j];
-
-      //for matrices Sij, Aij, Bi
-      sh1 = u1*ansatz100+u2*ansatz010+u3*ansatz001;
-      
-//       //for laplace term in S
-//       sh3 = ansatz200 + ansatz020 + ansatz002;
-
-      // matrices Aij
-      // this block will be multiplied with theta1*Delta t
-      // convection 
-      ah = sh1 * test000;
-      ah2 = test100*ansatz100+test010*ansatz010+test001*ansatz001;
-      // diffusion
-      val  = c0*(test100*ansatz100+ah2);
-      // add everything
-      val += ah;
-      Matrix11Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz100);
-      Matrix12Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz100);
-      Matrix13Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz010);
-      Matrix21Row[j] += Mult * val;
-
-      val  = c0*(ah2 + test010*ansatz010);
-      val += ah;
-      Matrix22Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz010);
-      Matrix23Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz001);
-      Matrix31Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz001);
-      Matrix32Row[j] += Mult * val;
-
-      val  = c0*(ah2 + test001*ansatz001);
-      val += ah;
-      Matrix33Row[j] += Mult * val;
-      
-      // div-div term + extras
-      // store in matrices S
-      MatrixS11Row[j] += Mult * (tautest100*ansatz100+supg_params[0]*sh1*(u1*test100+sh2));
-      MatrixS12Row[j] += Mult * (tautest100*ansatz010+supg_params[0]*sh1*u1*test010);
-      MatrixS13Row[j] += Mult * (tautest100*ansatz001+supg_params[0]*sh1*u1*test001);
-      MatrixS21Row[j] += Mult * (tautest010*ansatz100+supg_params[0]*sh1*u2*test100);
-      MatrixS22Row[j] += Mult * (tautest010*ansatz010+supg_params[0]*sh1*(u2*test010+sh2));
-      MatrixS23Row[j] += Mult * (tautest010*ansatz001+supg_params[0]*sh1*u2*test001);
-      MatrixS31Row[j] += Mult * (tautest001*ansatz100+supg_params[0]*sh1*u3*test100);
-      MatrixS32Row[j] += Mult * (tautest001*ansatz010+supg_params[0]*sh1*u3*test010);
-      MatrixS33Row[j] += Mult * (tautest001*ansatz001+supg_params[0]*sh1*(u3*test001+sh2));
-      
-//       // laplace term in S
-//       if(TDatabase::ParamDB->DELTA1 == 100){
-//  MatrixS11Row[j] += Mult * (-supg_params[0]*c0*sh3*(sh2+u1*test100));
-//  MatrixS12Row[j] += Mult * (-supg_params[0]*c0*sh3*u1*test010);
-//  MatrixS13Row[j] += Mult * (-supg_params[0]*c0*sh3*u1*test001);
-//  MatrixS21Row[j] += Mult * (-supg_params[0]*c0*sh3*u2*test100);
-//  MatrixS22Row[j] += Mult * (-supg_params[0]*c0*sh3*(sh2+u2*test010));
-//  MatrixS23Row[j] += Mult * (-supg_params[0]*c0*sh3*u2*test001);
-//  MatrixS31Row[j] += Mult * (-supg_params[0]*c0*sh3*u3*test100);
-//  MatrixS32Row[j] += Mult * (-supg_params[0]*c0*sh3*u3*test010);
-//  MatrixS33Row[j] += Mult * (-supg_params[0]*c0*sh3*(sh2+u3*test001));
-//       }
-      
-      // SUPG terms 
-      // store in matrices K
-      MatrixK11Row[j] += m2 * ansatz000 * (u1*test100+sh2);
-      MatrixK12Row[j] += m2 * u1 * ansatz000 * test010;
-      MatrixK13Row[j] += m2 * u1 * ansatz000 * test001;
-      MatrixK21Row[j] += m2 * u2 * ansatz000 * test100;
-      MatrixK22Row[j] += m2 * ansatz000 * (u2*test010+sh2);
-      MatrixK23Row[j] += m2 * u2 * ansatz000 * test001;
-      MatrixK31Row[j] += m2 * u3 * ansatz000 * test100;
-      MatrixK32Row[j] += m2 * u3 * ansatz000 * test010;
-      MatrixK33Row[j] += m2 * ansatz000 * (u3*test001+sh2);
-
-    }                            // endfor j
-
-    // pressure-velocity block, these blocks will be multiplied with Delta t
-    MatrixBT1Row = MatrixBT1[i];
-    MatrixBT2Row = MatrixBT2[i];
-    MatrixBT3Row = MatrixBT3[i];
-    for(j=0;j<N_P;j++)
-    {
-      // pressure ansatz functions
-      ansatz100 = Orig4[j];
-      ansatz010 = Orig5[j];
-      ansatz001 = Orig6[j];
-      ansatz000 = Orig7[j];
-
-      // for matrices BTi
-      bth1 = ansatz100*test100 + ansatz010*test010 + ansatz001*test001;
-     
-      // matrices BTi
-      MatrixBT1Row[j] += Mult*(-ansatz000*test100+supg_params[0]*(u1*bth1+ansatz100*sh2));
-      MatrixBT2Row[j] += Mult*(-ansatz000*test010+supg_params[0]*(u2*bth1+ansatz010*sh2));
-      MatrixBT3Row[j] += Mult*(-ansatz000*test001+supg_params[0]*(u3*bth1+ansatz001*sh2));
-      
-    }        // endfor j
-  }                              // endfor i
-
-  // assembling for pressure test functions
-  for(i=0;i<N_P;i++)
-  {
-    MatrixB1Row = MatrixB1[i];
-    MatrixB2Row = MatrixB2[i];
-    MatrixB3Row = MatrixB3[i];
-    MatrixCRow = MatrixC[i];
-
-    test100 = Orig4[i];
-    test010 = Orig5[i];
-    test001 = Orig6[i];
-    test000 = Orig7[i];
-  
-    // velocity-pressure block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-//       ansatz200 = Orig8[j];
-//       ansatz020 = Orig9[j];
-//       ansatz002 = Orig10[j];
-      
-      sh1 = u1*ansatz100+u2*ansatz010+u3*ansatz001;
-      
-      //for laplace term in S
-      bh1 = time_step*supg_params[0]*((1./time_step)*ansatz000+sh1);
-      
-      // matrices Bi
-      MatrixB1Row[j] += Mult*(ansatz100*test000+bh1*test100);
-      MatrixB2Row[j] += Mult*(ansatz010*test000+bh1*test010);
-      MatrixB3Row[j] += Mult*(ansatz001*test000+bh1*test001);
-  /*    
-      //laplace term in B 
-      if(TDatabase::ParamDB->DELTA1 == 100){
-  MatrixB1Row[j] += Mult*(-supg_params[0]*c0*sh3*test100);
-  MatrixB2Row[j] += Mult*(-supg_params[0]*c0*sh3*test010);
-  MatrixB3Row[j] += Mult*(-supg_params[0]*c0*sh3*test001);
-      }
-      */
-      
-    }      
-
-    // pressure-pressure block
-    for(j=0;j<N_P;j++)
-    {
-   
-      ansatz100 = Orig4[j];
-      ansatz010 = Orig5[j];
-      ansatz001 = Orig6[j];
-
-      //matrix C
-      MatrixCRow[j] += Mult * time_step * supg_params[0] * (ansatz100*test100 + ansatz010*test010 + ansatz001*test001);
-    }                   // endfor j
-  }     // endfor i
+    double tau_m_ugradv = tau_m*(u1*test100 + u2*test010 + u3*test001);
+    Rhs1[i] += Mult*(test000 + tau_m_ugradv)*c1;
+    Rhs2[i] += Mult*(test000 + tau_m_ugradv)*c2;
+    Rhs3[i] += Mult*(test000 + tau_m_ugradv)*c3;
+  }
 }
 
-
-
-
-// ======================================================================
-// Type 4, Extra terms in Hughes D(u):D(v)
-//         div-div, SUPG
-// ======================================================================
-void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff,
-              double *param, double hK,
-              double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
-{
-  Output::print("Nothing has been tested yer: !! :( ");
-  ErrThrow("not tested and/or adjusted yet: ");
-  
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
-  double **MatrixA33, **MatrixK;
-  double **MatrixS11, **MatrixS12, **MatrixS13, **MatrixS21;
-  double **MatrixS22, **MatrixS23, **MatrixS31, **MatrixS32, **MatrixS33;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
-  double **MatrixB1, **MatrixB2,  **MatrixB3;
-  double **MatrixB1T, **MatrixB2T,  **MatrixB3T;
-  double *Rhs1, *Rhs2, *Rhs3, val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
-  double *Matrix33Row, *MatrixKRow;
-  double *MatrixS11Row, *MatrixS12Row, *MatrixS13Row, *MatrixS21Row;
-  double *MatrixS22Row, *MatrixS23Row, *MatrixS31Row, *MatrixS32Row;
-  double *MatrixS33Row;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
-  double *MatrixRow1, *MatrixRow2, *MatrixRow3;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  //double ansatz200, ansatz020, ansatz002;
-  double test000, test100, test010, test001;
-  double tautest001, tautest100, tautest010;
-  //OutPut("supg");
-  double *Orig0, *Orig1, *Orig2;
-  double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
-  int i,j,N_U, N_P;
-  double c0, c1, c2, c3;
-  double u1, u2, u3; //  double px, py, pz;
-  double supg_params[2], ugradu;
-
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-
-  theta1 *=time_step;
-  theta2 *=time_step;
-  theta3 *=time_step;
-  theta4 *=time_step;
-
-  // matrices for vicous and convective term
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
-  MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
-  MatrixA33 = LocMatrices[8]; 
-  // mass matrix
-  MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  // matrix for SUPG
-  MatrixK = LocMatrices[12];
-  // matrices for div-div term + 1st extra term
-  MatrixS11 = LocMatrices[13];
-  MatrixS12 = LocMatrices[14];
-  MatrixS13 = LocMatrices[15];
-  MatrixS21 = LocMatrices[16];
-  MatrixS22 = LocMatrices[17];
-  MatrixS23 = LocMatrices[18];
-  MatrixS31 = LocMatrices[19];
-  MatrixS32 = LocMatrices[20];
-  MatrixS33 = LocMatrices[21]; 
-
-  // matrices for divergence constraint
-  MatrixB1  = LocMatrices[22];
-  MatrixB2  = LocMatrices[23];
-  MatrixB3  = LocMatrices[24];
-  // matrices for pressure term in momentum equations
-  MatrixB1T = LocMatrices[25];
-  MatrixB2T = LocMatrices[26];
-  MatrixB3T = LocMatrices[27];
-
-  // right hand sides
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u_z
-  Orig3 = OrigValues[3];         // u
-  Orig4 = OrigValues[4];         // p_x
-  Orig5 = OrigValues[5];         // p_y
-  Orig6 = OrigValues[6];         // p_z
-  Orig7 = OrigValues[7];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // f3
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-  u3 = param[2];                 // u3old
-  
-  // second order derivatives in the residual will be neglected
-  // method is for flows with small viscosity
-
-  //SUPG parameter   
-  // supg_params[0] -> for momentum balance tau_m
-  // supg_params[1] -> for continuum equ.   tau_c
-  SUPG_Param3D(u1, u2, u3, coeff, supg_params);
-  //OutPut(supg_params[0] << " " << supg_params[1] << " : " << endl);
-  //supg_params[0] = 0;
-  // assembling for velocity test functions
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
-    Matrix33Row = MatrixA33[i];
-    MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
-    MatrixKRow  = MatrixK[i];
-    MatrixS11Row = MatrixS11[i];
-    MatrixS12Row = MatrixS12[i];
-    MatrixS13Row = MatrixS13[i];
-    MatrixS21Row = MatrixS21[i];
-    MatrixS22Row = MatrixS22[i];
-    MatrixS23Row = MatrixS23[i];
-    MatrixS31Row = MatrixS31[i];
-    MatrixS32Row = MatrixS32[i];
-    MatrixS33Row = MatrixS33[i];
-
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-    // SUPG term for the time derivative, with scaling, theta1 already scaled with Delta t
-    ugradu  = (u1*test100+u2*test010+u3*test001)*supg_params[0]*theta1;
-  	
-    // rhs, this is part of the term which will be multiplied with theta4
-    Rhs1[i] += Mult*test000*c1;
-    Rhs2[i] += Mult*test000*c2;
-    Rhs3[i] += Mult*test000*c3;
-
-    // test functions for div-div term
-    tautest100 = supg_params[1]*test100;
-    tautest010 = supg_params[1]*test010;
-    tautest001 = supg_params[1]*test001;
-    // velocity-velocity block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-
-      // this block will be multiplied with theta1*Delta t
-      // convection 
-      val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      // diffusion
-      val  = c0*(2*test100*ansatz100+test010*ansatz010
-                   +test001*ansatz001);
-      // add everything
-      val += val1;
-      Matrix11Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz100);
-      Matrix12Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz100);
-      Matrix13Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz010);
-      Matrix21Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz100+2*test010*ansatz010
-                   +test001*ansatz001);
-      val += val1;
-      Matrix22Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz010);
-      Matrix23Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz001);
-      Matrix31Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz001);
-      Matrix32Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz100+test010*ansatz010
-                   +2*test001*ansatz001);
-      val += val1;
-      Matrix33Row[j] += Mult * val;
-
-      // mass matrix
-      val = Mult*(ansatz000*test000);
-      MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
-      
-      // div-div term
-      // store in matrices S
-      MatrixS11Row[j] += Mult * tautest100*ansatz100;
-      MatrixS12Row[j] += Mult * tautest100*ansatz010;
-      MatrixS13Row[j] += Mult * tautest100*ansatz001;
-      MatrixS21Row[j] += Mult * tautest010*ansatz100;
-      MatrixS22Row[j] += Mult * tautest010*ansatz010;
-      MatrixS23Row[j] += Mult * tautest010*ansatz001;
-      MatrixS31Row[j] += Mult * tautest001*ansatz100;
-      MatrixS32Row[j] += Mult * tautest001*ansatz010;
-      MatrixS33Row[j] += Mult * tautest001*ansatz001;
-      
-      // SUPG term for the time derivative
-      // store in matrices K
-      MatrixKRow[j] += Mult * ansatz000 * ugradu;
-      
-      // 1st extra term for the time derivative
-      // store in matrices S
-      // tau_m * (u\nabla v + u) 
-      val1 = supg_params[0]*theta1*(u1*ansatz100+u2*ansatz010+u3*ansatz001)+ansatz000;
-      val = Mult*val1*u1*test100;
-      MatrixS11Row[j] += val;
-      val = Mult*val1*u1*test010;
-      MatrixS12Row[j] += val;
-      val = Mult*val1*u1*test001;
-      MatrixS13Row[j] += val;
-      val = Mult*val1*u2*test100;
-      MatrixS21Row[j] += val;
-      val = Mult*val1*u2*test010;
-      MatrixS22Row[j] += val;
-      val = Mult*val1*u2*test001;
-      MatrixS23Row[j] += val;
-      val = Mult*val1*u3*test100;
-      MatrixS31Row[j] += val;
-      val = Mult*val1*u3*test010;
-      MatrixS32Row[j] += val;
-      val = Mult*val1*u3*test001;
-      MatrixS33Row[j] += val;
-    }                            // endfor j
-
-    // pressure-velocity block, these blocks will be multiplied with Delta t
-    MatrixRow1 = MatrixB1T[i];
-    MatrixRow2 = MatrixB2T[i];
-    MatrixRow3 = MatrixB3T[i];
-    for(j=0;j<N_P;j++)
-    {
-      // pressure ansatz functions
-      ansatz100 = Orig4[j];
-      ansatz010 = Orig5[j];
-      ansatz001 = Orig6[j];
-      ansatz000 = Orig7[j];
-     
-      // pressure term 
-      val  = -ansatz000 * test100;
-      MatrixRow1[j] += Mult*val;
-
-      val  = -ansatz000 * test010;
-      MatrixRow2[j] += Mult*val;
-	  
-      val  = -ansatz000 * test001;
-      MatrixRow3[j] += Mult*val;
-      
-    }
-  }                              // endfor i
-
-  // assembling for pressure test functions
-  for(i=0;i<N_P;i++)
-  {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-    MatrixRow3 = MatrixB3[i];
-
-    test100 = Orig4[i];
-    test010 = Orig5[i];
-    test001 = Orig6[i];
-    test000 = Orig7[i];
-	
-    // velocity-pressure block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      
-      // divergence constraint
-      val = -test000*ansatz100;
-      MatrixRow1[j] += Mult*val;
-
-      val = -test000*ansatz010;
-      MatrixRow2[j] += Mult*val;
-	  
-      val = -test000*ansatz001;
-      MatrixRow3[j] += Mult*val;	  	  
-    }                            // endfor j
-  }                              // endfor i
-}
-
-void TimeNSType4VMS_SUPGDD3D_old(double Mult, double *coeff,
-              double *param, double hK,
-              double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
-{
-  Output::print("Nothing has been tested yer: !! :( ");
-  ErrThrow("not tested and/or adjusted yet: ");
-  
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
-  double **MatrixA33, **MatrixK, **MatrixC;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
-  double **MatrixB1, **MatrixB2,  **MatrixB3;
-  double **MatrixB1T, **MatrixB2T,  **MatrixB3T;
-  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
-  double *Matrix33Row, *MatrixKRow;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
-  double *MatrixRow1, *MatrixRow2, *MatrixRow3, *MatrixRowC;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  //double ansatz200, ansatz020, ansatz002;
-  double test000, test100, test010, test001;
-  double tautest001, tautest100, tautest010;
-  //OutPut("supg");
-  double *Orig0, *Orig1, *Orig2;
-  double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;  // double *Orig8, *Orig9, *Orig10;
-  int i,j,N_U, N_P;
-  double c0, c1, c2, c3, c4, c5, c6;
-  double u1, u2, u3;   // double px, py, pz;
-  double u1_x, u1_y, u1_z;
-  double u2_x, u2_y, u2_z;
-  double u3_x, u3_y, u3_z;
-  double supg_params[2], ugradu;
-
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-
-  theta1 *=time_step;
-  theta2 *=time_step;
-  theta3 *=time_step;
-  theta4 *=time_step;
-
-  // matrices for vicous and convective term
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
-  MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
-  MatrixA33 = LocMatrices[8]; 
-  // mass matrix
-  MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  // matrix for PSPG
-  MatrixC = LocMatrices[12];
-  // matrix for SUPG
-  MatrixK = LocMatrices[13];
-  // matrices for divergence constraint
-  MatrixB1  = LocMatrices[14];
-  MatrixB2  = LocMatrices[15];
-  MatrixB3  = LocMatrices[16];
-  // matrices for pressure term in momentum equations
-  MatrixB1T = LocMatrices[17];
-  MatrixB2T = LocMatrices[18];
-  MatrixB3T = LocMatrices[19];
-
-  // right hand sides
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
-  Rhs4 = LocRhs[3];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u_z
-  Orig3 = OrigValues[3];         // u
-  Orig4 = OrigValues[4];         // p_x
-  Orig5 = OrigValues[5];         // p_y
-  Orig6 = OrigValues[6];         // p_z
-  Orig7 = OrigValues[7];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // f3
-  c4 = coeff[4];                 // f1_old
-  c5 = coeff[5];                 // f2_old
-  c6 = coeff[6];                 // f3_old
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-  u3 = param[2];                 // u3old
-  u1_x = param[3];             // u1old_x
-  u2_x = param[4];             // u2old_x
-  u3_x = param[5];             // u3old_x
-  u1_y = param[6];             // u1old_y
-  u2_y = param[7];             // u2old_y
-  u3_y = param[8];             // u3old_y
-  u1_z = param[9];             // u1old_z
-  u2_z = param[10];            // u2old_z
-  u3_z = param[11];            // u3old_z
-  
-  // second order derivatives in the residual will be neglected
-  // method is for flows with small viscosity
-
-
-  //SUPG parameter   
-  // supg_params[0] -> for momentum balance tau_m
-  // supg_params[1] -> for continuum equ.   tau_c
-  SUPG_Param3D(u1, u2, u3, coeff, supg_params);
-  //OutPut(supg_params[0] << " " << supg_params[1] << " : " << endl);
-  //supg_params[0] = 0;
-  // assembling for velocity test functions
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
-    Matrix33Row = MatrixA33[i];
-    MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
-    MatrixKRow  = MatrixK[i];
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-    // SUPG term, with scaling, theta1 already with scaled with Delta t
-    ugradu  = (u1*test100+u2*test010+u3*test001)*supg_params[0]*theta1;
-	
-    // rhs, this is part of the term which will be multiplied with theta4
-    Rhs1[i] += Mult*(test000+ugradu)*c1;
-    Rhs2[i] += Mult*(test000+ugradu)*c2;
-    Rhs3[i] += Mult*(test000+ugradu)*c3;
-
-    // test functions for div-div term
-    tautest100 = supg_params[1]*test100;
-    tautest010 = supg_params[1]*test010;
-    tautest001 = supg_params[1]*test001;
-    // velocity-velocity block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-
-      // this block will be multiplied with theta1*Delta t
-      // convection 
-      val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      // diffusion + div-div term
-      val  = c0*(2*test100*ansatz100+test010*ansatz010
-                   +test001*ansatz001)+tautest100*ansatz100;
-      // add everything
-      val += val1;
-      Matrix11Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz100)+tautest100*ansatz010;
-      Matrix12Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz100)+tautest100*ansatz001;
-      Matrix13Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz010)+tautest010*ansatz100;
-      Matrix21Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz100+2*test010*ansatz010
-                   +test001*ansatz001)+tautest010*ansatz010;
-      val += val1;
-      Matrix22Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz010)+tautest010*ansatz001;
-      Matrix23Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz001)+tautest001*ansatz100;
-      Matrix31Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz001)+tautest001*ansatz010;
-      Matrix32Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz100+test010*ansatz010
-                   +2*test001*ansatz001)+tautest001*ansatz001;
-      val += val1;
-      Matrix33Row[j] += Mult * val;
-
-      // mass matrix
-      val = Mult*(ansatz000*test000);
-      MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
-
-      // SUPG block, without second order derivative 
-      // convection 
-      val = u1*ansatz100+u2*ansatz010+u3*ansatz001;
-      // test with streamline derivative
-      val *= ugradu * Mult;
-      // term in the diagonal blocks
-      Matrix11Row[j] += val;
-      Matrix22Row[j] += val;
-      Matrix33Row[j] += val;
-      // SUPG term for the time derivative
-      // store in matrices K
-      MatrixKRow[j] += Mult * ansatz000 * ugradu;
-    }                            // endfor j
-
-    // pressure-velocity block, these blocks will be multiplied with Delta t
-    MatrixRow1 = MatrixB1T[i];
-    MatrixRow2 = MatrixB2T[i];
-    MatrixRow3 = MatrixB3T[i];
-    for(j=0;j<N_P;j++)
-    {
-      // pressure ansatz functions
-      ansatz100 = Orig4[j];
-      ansatz010 = Orig5[j];
-      ansatz001 = Orig6[j];
-      ansatz000 = Orig7[j];
-     
-      // pressure term 
-      val  = -ansatz000 * test100;
-      // SUPG term
-      val +=  ansatz100 * ugradu;
-      MatrixRow1[j] += Mult*val;
-
-      val  = -ansatz000 * test010;
-      // SUPG term
-      val +=  ansatz010 * ugradu;
-      MatrixRow2[j] += Mult*val;
-	  
-      val  = -ansatz000 * test001;
-      // SUPG term
-      val +=  ansatz001 * ugradu;
-      MatrixRow3[j] += Mult*val;
-    }
-  }                              // endfor i
-  //supg_params[0] = 0;
-  // assembling for pressure test functions
-  for(i=0;i<N_P;i++)
-  {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-    MatrixRow3 = MatrixB3[i];
-    MatrixRowC = MatrixC[i];
-
-    test100 = Orig4[i];
-    test010 = Orig5[i];
-    test001 = Orig6[i];
-    test000 = Orig7[i];
-	
-    // rhs
-    // thetas already multiplied with time_step
-    val = u1-theta2*(u1*u1_x+u2*u1_y+u3*u1_z);
-    val += theta3*c4 + theta4*c1;
-    Rhs4[i] = val*test100;
-    val = u2-theta2*(u1*u2_x+u2*u2_y+u3*u2_z);
-    val += theta3*c5 + theta4*c2;
-    Rhs4[i] += val*test010;
-    val = u3-theta2*(u1*u3_x+u2*u3_y+u3*u3_z);
-    val += theta3*c6 + theta4*c3;
-    Rhs4[i] += val*test001;
-    Rhs4[i] *= Mult*time_step*supg_params[0];
-
-    // pressure-pressure block
-    for(j=0;j<N_P;j++)
-    {
-      ansatz100 = Orig4[j];
-      ansatz010 = Orig5[j];
-      ansatz001 = Orig6[j];
-	
-      val = supg_params[0] * time_step * time_step *
-	  (ansatz100*test100+ansatz010*test010+ansatz001*test001);
-      MatrixRowC[j] += Mult*val;
-    }
-
-    // velocity-pressure block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      
-      // divergence constraint
-      //val1 =  -c0*(ansatz200+ansatz020+ansatz002);
-      val1 = u1*ansatz100+u2*ansatz010+u3*ansatz001;
-      val1 *= theta1;
-      val1 += u1;
-      val1 *= time_step * supg_params[0];
-
-      val = -test000*ansatz100 + val1*test100;
-      MatrixRow1[j] += Mult*val;
-
-      val = -test000*ansatz010 + val1*test010;
-      MatrixRow2[j] += Mult*val;
-	  
-      val = -test000*ansatz001 + val1*test001;
-      MatrixRow3[j] += Mult*val;	  	  
-    }                            // endfor j
-  }                              // endfor i
-}
-
-// ======================================================================
-// Type 4, Extra terms in Hughes D(u):D(v)
-//         div-div, SUPG
-// ======================================================================
-void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
-              double *param, double hK,
-              double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
-{
-  Output::print("Nothing has been tested yer: !! :( ");
-  ErrThrow("not tested and/or adjusted yet: ");
-  
-  double *Rhs1, *Rhs2, *Rhs3; // double val, val1, val2;
-  //double ansatz000, ansatz100, ansatz010, ansatz001;
-  //double ansatz200, ansatz020, ansatz002;
-  double test000;
-  //double tautest001, tautest100, tautest010;
-  //OutPut("supg_rhs");
-  double *Orig3;
-  int i,N_U;
-  double c1, c2, c3;
-  double u1, u2, u3;  // double px, py, pz;
-  double supg_params[2];
-
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-
-  theta1 *=time_step;
-  theta2 *=time_step;
-  theta3 *=time_step;
-  theta4 *=time_step;
-
-  // right hand sides
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
-
-  N_U = N_BaseFuncts[0];
-
-  Orig3 = OrigValues[3];         // u
-
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // f3
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-  u3 = param[2];                 // u3old
-
-
-  //SUPG parameter   
-  // supg_params[0] -> for momentum balance tau_m
-  // supg_params[1] -> for continuum equ.   tau_c
-  SUPG_Param3D(u1, u2, u3, coeff, supg_params);
-  //OutPut(supg_params[0] << " " << supg_params[1] << " : " << endl);
-  //supg_params[0] = 0;
-  // assembling for velocity test functions
-  for(i=0;i<N_U;i++)
-  {
-    test000 = Orig3[i];
-	
-    // rhs, this is part of the term which will be multiplied with theta4
-    Rhs1[i] += Mult*test000*c1;
-    Rhs2[i] += Mult*test000*c2;
-    Rhs3[i] += Mult*test000*c3;
-  }                              // endfor i
-}
-
-void TimeNSType4VMS_Rhs_SUPGDD3D_old(double Mult, double *coeff,
-              double *param, double hK,
-              double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
-{
-  Output::print("Nothing has been tested yer: !! :( ");
-  ErrThrow("not tested and/or adjusted yet: ");
-  
-  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val;
-  //double ansatz000, ansatz100, ansatz010, ansatz001;
-  //double ansatz200, ansatz020, ansatz002;
-  double test000, test100, test010, test001;
-  //double tautest001, tautest100, tautest010;
-  //OutPut("supg_rhs");
-  double *Orig0, *Orig1, *Orig2;
-  double *Orig3, *Orig4, *Orig5;
-  double *Orig6;
-  int i,N_U, N_P;
-  double c1, c2, c3, c4, c5, c6;
-  double u1, u2, u3;  // double px, py, pz;
-  double u1_x, u1_y, u1_z;
-  double u2_x, u2_y, u2_z;
-  double u3_x, u3_y, u3_z;
-  double supg_params[2], ugradu;
-
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-
-  theta1 *=time_step;
-  theta2 *=time_step;
-  theta3 *=time_step;
-  theta4 *=time_step;
-
-  // right hand sides
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
-  Rhs4 = LocRhs[3];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u_z
-  Orig3 = OrigValues[3];         // u
-  Orig4 = OrigValues[4];         // p_x
-  Orig5 = OrigValues[5];         // p_y
-  Orig6 = OrigValues[6];         // p_z
-
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // f3
-  c4 = coeff[4];                 // f1_old
-  c5 = coeff[5];                 // f2_old
-  c6 = coeff[6];                 // f3_old
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-  u3 = param[2];                 // u3old
-  u1_x = param[3];             // u1old_x
-  u2_x = param[4];             // u2old_x
-  u3_x = param[5];             // u3old_x
-  u1_y = param[6];             // u1old_y
-  u2_y = param[7];             // u2old_y
-  u3_y = param[8];             // u3old_y
-  u1_z = param[9];             // u1old_z
-  u2_z = param[10];            // u2old_z
-  u3_z = param[11];            // u3old_z
-  
-  //SUPG parameter   
-  // supg_params[0] -> for momentum balance tau_m
-  // supg_params[1] -> for continuum equ.   tau_c
-  SUPG_Param3D(u1, u2, u3, coeff, supg_params);
-  //OutPut(supg_params[0] << " " << supg_params[1] << " : " << endl);
-  //supg_params[0] = 0;
-  // assembling for velocity test functions
-  for(i=0;i<N_U;i++)
-  {
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-    // SUPG term, with scaling, theta1 already with scaled with Delta t
-    ugradu  = (u1*test100+u2*test010+u3*test001)*supg_params[0]*theta1;
-	
-    // rhs, this is part of the term which will be multiplied with theta4
-    Rhs1[i] += Mult*(test000+ugradu)*c1;
-    Rhs2[i] += Mult*(test000+ugradu)*c2;
-    Rhs3[i] += Mult*(test000+ugradu)*c3;
-  }                              // endfor i
-  //supg_params[0] = 0;
-
-  // assembling for pressure test functions
-  for(i=0;i<N_P;i++)
-  {
-    test100 = Orig4[i];
-    test010 = Orig5[i];
-    test001 = Orig6[i];
-	
-    // rhs
-    // thetas already multiplied with time_step
-    val = u1-theta2*(u1*u1_x+u2*u1_y+u3*u1_z);
-    val += theta3*c4 + theta4*c1;
-    Rhs4[i] = val*test100;
-    val = u2-theta2*(u1*u2_x+u2*u2_y+u3*u2_z);
-    val += theta3*c5 + theta4*c2;
-    Rhs4[i] += val*test010;
-    val = u3-theta2*(u1*u3_x+u2*u3_y+u3*u3_z);
-    val += theta3*c6 + theta4*c3;
-    Rhs4[i] += val*test001;
-    Rhs4[i] *= Mult*time_step*supg_params[0];
-  }                              // endfor i
-}
-
-// ======================================================================
-// Type 4, Extra terms in Hughes D(u):D(v)
-//         div-div, SUPG
-// ======================================================================
-void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff,
-              double *param, double hK,
-              double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
-{
-  Output::print("Nothing has been tested yer: !! :( ");
-  ErrThrow("not tested and/or adjusted yet: ");
-  
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
-  double **MatrixA33, **MatrixK;
-  double **MatrixS11, **MatrixS12, **MatrixS13, **MatrixS21;
-  double **MatrixS22, **MatrixS23, **MatrixS31, **MatrixS32, **MatrixS33;
-  double val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
-  double *Matrix33Row, *MatrixKRow;
-  double *MatrixS11Row, *MatrixS12Row, *MatrixS13Row, *MatrixS21Row;
-  double *MatrixS22Row, *MatrixS23Row, *MatrixS31Row, *MatrixS32Row;
-  double *MatrixS33Row;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  //double ansatz200, ansatz020, ansatz002;
-  double test000, test100, test010, test001;
-  double tautest001, tautest100, tautest010;
-  //OutPut("supg");
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j,N_U;
-  double c0, u1, u2, u3;   // double px, py, pz;
-  double supg_params[2], ugradu;
-
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-
-  theta1 *=time_step;
-  theta2 *=time_step;
-  theta3 *=time_step;
-  theta4 *=time_step;
-
-  // matrices for vicous and convective term
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
-  MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
-  MatrixA33 = LocMatrices[8]; 
-    // matrix for SUPG
-  MatrixK = LocMatrices[12];
-  // matrices for div-div term + 1st extra term
-  MatrixS11 = LocMatrices[13];
-  MatrixS12 = LocMatrices[14];
-  MatrixS13 = LocMatrices[15];
-  MatrixS21 = LocMatrices[16];
-  MatrixS22 = LocMatrices[17];
-  MatrixS23 = LocMatrices[18];
-  MatrixS31 = LocMatrices[19];
-  MatrixS32 = LocMatrices[20];
-  MatrixS33 = LocMatrices[21]; 
-
-  N_U = N_BaseFuncts[0];
-
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u_z
-  Orig3 = OrigValues[3];         // u
-
-  c0 = coeff[0];                 // nu
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-  u3 = param[2];                 // u3old
-  
-  // second order derivatives in the residual will be neglected
-  // method is for flows with small viscosity
-
-  //SUPG parameter   
-  // supg_params[0] -> for momentum balance tau_m
-  // supg_params[1] -> for continuum equ.   tau_c
-  SUPG_Param3D(u1, u2, u3, coeff, supg_params);
-  //OutPut(supg_params[0] << " " << supg_params[1] << " : " << endl);
-  //supg_params[0] = 0;
-  // assembling for velocity test functions
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
-    Matrix33Row = MatrixA33[i];
-    MatrixKRow  = MatrixK[i];
-    MatrixS11Row = MatrixS11[i];
-    MatrixS12Row = MatrixS12[i];
-    MatrixS13Row = MatrixS13[i];
-    MatrixS21Row = MatrixS21[i];
-    MatrixS22Row = MatrixS22[i];
-    MatrixS23Row = MatrixS23[i];
-    MatrixS31Row = MatrixS31[i];
-    MatrixS32Row = MatrixS32[i];
-    MatrixS33Row = MatrixS33[i];
-
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-
-    // test functions for div-div term
-    tautest100 = supg_params[1]*test100;
-    tautest010 = supg_params[1]*test010;
-    tautest001 = supg_params[1]*test001;
-
-    // SUPG term for the time derivative, with scaling, theta1 already scaled with Delta t
-    ugradu  = (u1*test100+u2*test010+u3*test001)*supg_params[0]*theta1;
-    // velocity-velocity block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-
-      // this block will be multiplied with theta1*Delta t
-      // convection 
-      val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      // diffusion
-      val  = c0*(2*test100*ansatz100+test010*ansatz010
-                   +test001*ansatz001);
-      // add everything
-      val += val1;
-      Matrix11Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz100);
-      Matrix12Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz100);
-      Matrix13Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz010);
-      Matrix21Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz100+2*test010*ansatz010
-                   +test001*ansatz001);
-      val += val1;
-      Matrix22Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz010);
-      Matrix23Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz001);
-      Matrix31Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz001);
-      Matrix32Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz100+test010*ansatz010
-                   +2*test001*ansatz001);
-      val += val1;
-      Matrix33Row[j] += Mult * val;
-
-      
-      // div-div term
-      // store in matrices S
-      MatrixS11Row[j] += Mult * tautest100*ansatz100;
-      MatrixS12Row[j] += Mult * tautest100*ansatz010;
-      MatrixS13Row[j] += Mult * tautest100*ansatz001;
-      MatrixS21Row[j] += Mult * tautest010*ansatz100;
-      MatrixS22Row[j] += Mult * tautest010*ansatz010;
-      MatrixS23Row[j] += Mult * tautest010*ansatz001;
-      MatrixS31Row[j] += Mult * tautest001*ansatz100;
-      MatrixS32Row[j] += Mult * tautest001*ansatz010;
-      MatrixS33Row[j] += Mult * tautest001*ansatz001;
-      
-      // store in matrices K     
-      MatrixKRow[j] += Mult * ansatz000 * ugradu;
-      
-      // 1st extra term for the time derivative
-      // store in matrices S
-      val1 = supg_params[0]*theta1*(u1*ansatz100+u2*ansatz010+u3*ansatz001)+ansatz000;
-      val = Mult*val1*u1*test100;
-      MatrixS11Row[j] += val;
-      val = Mult*val1*u1*test010;
-      MatrixS12Row[j] += val;
-      val = Mult*val1*u1*test001;
-      MatrixS13Row[j] += val;
-      val = Mult*val1*u2*test100;
-      MatrixS21Row[j] += val;
-      val = Mult*val1*u2*test010;
-      MatrixS22Row[j] += val;
-      val = Mult*val1*u2*test001;
-      MatrixS23Row[j] += val;
-      val = Mult*val1*u3*test100;
-      MatrixS31Row[j] += val;
-      val = Mult*val1*u3*test010;
-      MatrixS32Row[j] += val;
-      val = Mult*val1*u3*test001;
-      MatrixS33Row[j] += val;
-
-    }                            // endfor j
-  }                              // endfor i
-}
-
-void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
-              double *param, double hK,
-              double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
-{
-  Output::print("Nothing has been tested yer: !! :( ");
-  ErrThrow("not tested and/or adjusted yet: ");
-  
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
-  double **MatrixA33, **MatrixK, **MatrixC;
-  double **MatrixB1, **MatrixB2,  **MatrixB3;
-  double **MatrixB1T, **MatrixB2T,  **MatrixB3T;
-  double val, val1;
-  // double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val2;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
-  double *Matrix33Row, *MatrixKRow;
-  double *MatrixRow1, *MatrixRow2, *MatrixRow3, *MatrixRowC;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  //double ansatz200, ansatz020, ansatz002;
-  double test000, test100, test010, test001;
-  double tautest001, tautest100, tautest010;
-  //OutPut("supgnl");
-  double *Orig0, *Orig1, *Orig2;
-  double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7; // double *Orig8, *Orig9, *Orig10;
-  int i,j,N_U, N_P;
-  double c0;
-  double u1, u2, u3;  // double px, py, pz;
-  double supg_params[2], ugradu;
-
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-
-  theta1 *=time_step;
-  theta2 *=time_step;
-  theta3 *=time_step;
-  theta4 *=time_step;
-
-  // matrices for vicous and convective term
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
-  MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
-  MatrixA33 = LocMatrices[8]; 
-
-  // matrix for PSPG
-  MatrixC = LocMatrices[12];
-  // matrix for SUPG
-  MatrixK = LocMatrices[13];
-  // matrices for divergence constraint
-  MatrixB1  = LocMatrices[14];
-  MatrixB2  = LocMatrices[15];
-  MatrixB3  = LocMatrices[16];
-  // matrices for pressure term in momentum equations
-  MatrixB1T = LocMatrices[17];
-  MatrixB2T = LocMatrices[18];
-  MatrixB3T = LocMatrices[19];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u_z
-  Orig3 = OrigValues[3];         // u
-  Orig4 = OrigValues[4];         // p_x
-  Orig5 = OrigValues[5];         // p_y
-  Orig6 = OrigValues[6];         // p_z
-  Orig7 = OrigValues[7];         // p
-
-  c0 = coeff[0];                 // nu
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-  u3 = param[2];                 // u3old
-
-  
-  // second order derivatives in the residual will be neglected
-  // method is for flows with small viscosity
-
-  //SUPG parameter   
-  // supg_params[0] -> for momentum balance tau_m
-  // supg_params[1] -> for continuum equ.   tau_c
-  SUPG_Param3D(u1, u2, u3, coeff, supg_params);
-  //OutPut(supg_params[0] << " " << supg_params[1] << " : " << endl);
-  //supg_params[0] = 0;
-  // assembling for velocity test functions
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
-    Matrix33Row = MatrixA33[i];
-    MatrixKRow  = MatrixK[i];
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-    // SUPG term, with scaling, theta1 already with scaled with Delta t
-    ugradu  = (u1*test100+u2*test010+u3*test001)*supg_params[0]*theta1;
-	
-    // test functions for div-div term
-    tautest100 = supg_params[1]*test100;
-    tautest010 = supg_params[1]*test010;
-    tautest001 = supg_params[1]*test001;
-    // velocity-velocity block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-
-      // this block will be multiplied with theta1*Delta t
-      // convection 
-      val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      // diffusion + div-div term
-      val  = c0*(2*test100*ansatz100+test010*ansatz010
-                   +test001*ansatz001)+tautest100*ansatz100;
-      // add everything
-      val += val1;
-      Matrix11Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz100)+tautest100*ansatz010;
-      Matrix12Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz100)+tautest100*ansatz001;
-      Matrix13Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz010)+tautest010*ansatz100;
-      Matrix21Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz100+2*test010*ansatz010
-                   +test001*ansatz001)+tautest010*ansatz010;
-      val += val1;
-      Matrix22Row[j] += Mult * val;
-
-      val  = c0*(test001*ansatz010)+tautest010*ansatz001;
-      Matrix23Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz001)+tautest001*ansatz100;
-      Matrix31Row[j] += Mult * val;
-
-      val  = c0*(test010*ansatz001)+tautest001*ansatz010;
-      Matrix32Row[j] += Mult * val;
-
-      val  = c0*(test100*ansatz100+test010*ansatz010
-                   +2*test001*ansatz001)+tautest001*ansatz001;
-      val += val1;
-      Matrix33Row[j] += Mult * val;
-
-      // mass matrix
-      //val = Mult*(ansatz000*test000);
-      //MatrixM11Row[j] += val;
-      //MatrixM22Row[j] += val;
-      //MatrixM33Row[j] += val;
-
-      // SUPG block, without second order derivative 
-      // convection 
-      val = u1*ansatz100+u2*ansatz010+u3*ansatz001;
-      // test with streamline derivative
-      val *= ugradu * Mult;
-      // term in the diagonal blocks
-      Matrix11Row[j] += val;
-      Matrix22Row[j] += val;
-      Matrix33Row[j] += val;
-      // SUPG term for the time derivative
-      // store in matrices K
-      MatrixKRow[j] += Mult * ansatz000 * ugradu;
-    }                            // endfor j
-
-    // pressure-velocity block, these blocks will be multiplied with Delta t
-    MatrixRow1 = MatrixB1T[i];
-    MatrixRow2 = MatrixB2T[i];
-    MatrixRow3 = MatrixB3T[i];
-    for(j=0;j<N_P;j++)
-    {
-      // pressure ansatz functions
-      ansatz100 = Orig4[j];
-      ansatz010 = Orig5[j];
-      ansatz001 = Orig6[j];
-      ansatz000 = Orig7[j];
-     
-      // pressure term 
-      val  = -ansatz000 * test100;
-      // SUPG term
-      val +=  ansatz100 * ugradu;
-      MatrixRow1[j] += Mult*val;
-
-      val  = -ansatz000 * test010;
-      // SUPG term
-      val +=  ansatz010 * ugradu;
-      MatrixRow2[j] += Mult*val;
-	  
-      val  = -ansatz000 * test001;
-      // SUPG term
-      val +=  ansatz001 * ugradu;
-      MatrixRow3[j] += Mult*val;
-    }
-  }                              // endfor i
-
-  //supg_params[0] = 0;
-  // assembling for pressure test functions
-  for(i=0;i<N_P;i++)
-  {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-    MatrixRow3 = MatrixB3[i];
-    MatrixRowC = MatrixC[i];
-
-    test100 = Orig4[i];
-    test010 = Orig5[i];
-    test001 = Orig6[i];
-    test000 = Orig7[i];
-	
-    // pressure-pressure block
-    for(j=0;j<N_P;j++)
-    {
-      ansatz100 = Orig4[j];
-      ansatz010 = Orig5[j];
-      ansatz001 = Orig6[j];
-	
-      val = supg_params[0] * time_step * time_step *
-	  (ansatz100*test100+ansatz010*test010+ansatz001*test001);
-      MatrixRowC[j] += Mult*val;
-    }
-
-    // velocity-pressure block
-    for(j=0;j<N_U;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      
-      // divergence constraint
-      //val1 =  -c0*(ansatz200+ansatz020+ansatz002);
-      val1 = u1*ansatz100+u2*ansatz010+u3*ansatz001;
-      val1 *= theta1;
-      val1 += u1;
-      val1 *= time_step * supg_params[0];
-
-      val = -test000*ansatz100 + val1*test100;
-      MatrixRow1[j] += Mult*val;
-
-      val = -test000*ansatz010 + val1*test010;
-      MatrixRow2[j] += Mult*val;
-	  
-      val = -test000*ansatz001 + val1*test001;
-      MatrixRow3[j] += Mult*val;	  	  
-    }                            // endfor j
-  }                              // endfor i
-}
 
 // ======================================================================
 // ROSENBROCK

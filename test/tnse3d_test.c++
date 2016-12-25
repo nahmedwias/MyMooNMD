@@ -360,6 +360,17 @@ int main(int argc, char* argv[])
                  std::string(argv[1]),0, errors);
       check(db, grid_collections, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
+      
+      // test for SUPG method
+      TDatabase::ParamDB->DISCTYPE = 2;
+      timediscretizationtype = 1;
+      TDatabase::ParamDB->DELTA0 = 0.25;
+      TDatabase::ParamDB->DELTA1 = 10.;
+
+      check(db, grid_collections, 12, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      TDatabase::ParamDB->DISCTYPE = 1;
+      timediscretizationtype = 2;exit(0);
 //
 //      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
