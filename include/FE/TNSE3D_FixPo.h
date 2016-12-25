@@ -459,120 +459,40 @@ void TimeNSType14VMS_Rhs_SUPGDD3D(double Mult, double *coeff, double *param,
 
 
 // ======================================================================
-// Type 4, VMS_SUPG, D(u):D(v)
-// ======================================================================
-//static int TimeNSType4VMS_SUPGN_Terms = 8;
-//static MultiIndex3D TimeNSType4VMS_SUPGDerivatives[8] = { D100, D010, D001, D000,
-//                                                          D100, D010, D001, D000 };
-//static int TimeNSType4VMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1 };
-//static int TimeNSType4VMS_SUPGN_Matrices = 28;
-//static int TimeNSType4VMS_SUPGRowSpace[28] = { 0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0,
-//					       1, 1, 1, 0, 0, 0};
-//
-//static int TimeNSType4VMS_SUPGColumnSpace[28] = {0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0,
-//					       0, 0, 0, 1, 1, 1};
-//
-//static int TimeNSType4VMS_SUPGN_Rhs = 4;
-//static int TimeNSType4VMS_SUPGRhsSpace[4] = { 0, 0, 0, 1};
+void TimeNSType4_SUPGDD3D(double Mult, double *coeff, double *param, double hK, 
+     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 
-void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff, 
+void TimeNSType4NL_SUPGDD3D(double Mult, double *coeff, double *param, double hK, 
+     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+
+void TimeNSRhs_SUPGDD3D(double Mult, double *coeff, double *param, double hK, 
+     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+// ======================================================================
+// Type 4, Residual based VMS D(u):D(v)
+// ======================================================================
+void TimeNSType4Residual_VMSDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
 
-//static int TimeNSType4NLVMS_SUPGN_Terms = 8;
-//static MultiIndex3D TimeNSType4NLVMS_SUPGDerivatives[8] = { D100, D010, D001, D000,
-//							  D100, D010, D001, D000 };
-//static int TimeNSType4NLVMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1 };
-//static int TimeNSType4NLVMS_SUPGN_Matrices = 22;
-//static int TimeNSType4NLVMS_SUPGRowSpace[22] = { 0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0, 0, 0,
-//						 0, 0, 0, 0};
-//
-//static int TimeNSType4NLVMS_SUPGColumnSpace[22] = {0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0, 0, 0,
-//                                               0, 0, 0, 0, 0, 0,
-//						   0, 0, 0, 0};
-//
-//static int TimeNSType4NLVMS_SUPGN_Rhs = 0;
-//static int *TimeNSType4NLVMS_SUPGRhsSpace = NULL;
-
-void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff, 
+void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
 
-// ======================================================================
-// declaration for SUPG
-// ONLY right hand sides
-// ======================================================================
-
-void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
+void TimeNSType4Residual_VMS_RhsDD3D(double Mult, double *coeff,
               double *param, double hK,
               double **OrigValues, int *N_BaseFuncts,
 				 double ***LocMatrices, double **LocRhs);
 
 
-// ======================================================================
-// Type 14, VMS_SUPG, D(u):D(v)
-// ======================================================================
-//static int TimeNSType14VMS_SUPGN_Terms =8;
-//static MultiIndex3D TimeNSType14VMS_SUPGDerivatives[8] = { D100, D010, D001, D000,
-//                             D100, D010, D001, D000};
-//static int TimeNSType14VMS_SUPGSpaceNumbers[11] = { 0, 0, 0, 0, 1, 1, 1, 1};
-//static int TimeNSType14VMS_SUPGN_Matrices = 37;
-//static int TimeNSType14VMS_SUPGRowSpace[37] = { 0, 0, 0, 0, 0, 0,
-//                                                0, 0, 0, 0, 0, 0,
-//                                                0, 0, 0, 0, 0, 0,
-//                                                0, 0, 0, 0, 0, 0,
-//                                                0, 0, 0, 0, 0, 0,
-//                  1, 1, 1, 1, 0, 0, 0};
-//
-//static int TimeNSType14VMS_SUPGColumnSpace[37] = {0, 0, 0, 0, 0, 0,
-//                                                  0, 0, 0, 0, 0, 0,
-//                                                  0, 0, 0, 0, 0, 0,
-//                                                  0, 0, 0, 0, 0, 0,
-//                                                  0, 0, 0, 0, 0, 0,
-//                    1, 0, 0, 0, 1, 1, 1};
-//
-//static int TimeNSType14VMS_SUPGN_Rhs = 7;
-//static int TimeNSType14VMS_SUPGRhsSpace[7] = { 0, 0, 0, 0, 0, 0, 1};
-
-void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff, 
+void TimeNSType14Residual_VMSDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
 
-//static int TimeNSType14NLVMS_SUPGN_Terms = 8;
-//static MultiIndex3D TimeNSType14NLVMS_SUPGDerivatives[8] = { D100, D010, D001, D000,
-//                   D100, D010, D001, D000};
-//static int TimeNSType14NLVMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1};
-//static int TimeNSType14NLVMS_SUPGN_Matrices = 34;
-//static int TimeNSType14NLVMS_SUPGRowSpace[34] = { 0, 0, 0, 0, 0, 0,
-//                                                  0, 0, 0, 0, 0, 0,
-//                                                  0, 0, 0, 0, 0, 0,
-//              0, 0, 0, 0, 0, 0,
-//              0, 0, 0, 1, 1, 1,
-//              1, 0, 0, 0};
-//
-//static int TimeNSType14NLVMS_SUPGColumnSpace[34] = {0, 0, 0, 0, 0, 0,
-//                                                    0, 0, 0, 0, 0, 0,
-//                                                    0, 0, 0, 0, 0, 0,
-//                0, 0, 0, 0, 0, 0,
-//                                                    0, 0, 0, 1, 0, 0,
-//                0, 1, 1, 1};
-//
-//static int TimeNSType14NLVMS_SUPGN_Rhs = 3;
-//static int TimeNSType14NLVMS_SUPGRhsSpace[3] = {0, 0, 0};
 
-void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff, 
+void TimeNSType14NLResidual_VMSDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
