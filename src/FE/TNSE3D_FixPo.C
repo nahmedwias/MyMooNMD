@@ -6072,6 +6072,10 @@ void TimeNSType4_SUPGDD3D(double Mult, double *coeff, double *param, double hK,
   double *Orig5 = OrigValues[5]; // p_x
   double *Orig6 = OrigValues[6]; // p_y
   double *Orig7 = OrigValues[7]; // p_z
+  
+  double *Orig8 = OrigValues[8]; // u_xx
+  double *Orig9 = OrigValues[9]; // u_yy
+  double *Orig10 = OrigValues[10]; // u_yy
 
   double c0 = coeff[0]; // nu
   double c1 = coeff[1]; // f1
@@ -6085,7 +6089,7 @@ void TimeNSType4_SUPGDD3D(double Mult, double *coeff, double *param, double hK,
   double val;
   double test000, test100, test010, test001;
   double ansatz000, ansatz100, ansatz010, ansatz001;
-  
+  double ansatz200, ansatz020, ansatz002;
   //TODO: specify the parameter accordingly
   double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
   double tau_c = TDatabase::ParamDB->DELTA1;
@@ -6110,11 +6114,14 @@ void TimeNSType4_SUPGDD3D(double Mult, double *coeff, double *param, double hK,
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
       
+      ansatz200 = Orig8[j];
+      ansatz020 = Orig9[j];
+      ansatz002 = Orig10[j];
       double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
       
       double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      double supg_term = ugradu * tau_m_ugradv;
+      double supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       double grad_div = tau_c * test100 * ansatz100;
       MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
 
@@ -6129,7 +6136,7 @@ void TimeNSType4_SUPGDD3D(double Mult, double *coeff, double *param, double hK,
 
       galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      supg_term = ugradu * tau_m_ugradv;
+      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test010*ansatz010;
       MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
 
@@ -6144,7 +6151,7 @@ void TimeNSType4_SUPGDD3D(double Mult, double *coeff, double *param, double hK,
 
       galerkin  = c0*(test100*ansatz100+test010*ansatz010
                    +2*test001*ansatz001) + ugradu * test000;
-      supg_term = ugradu * tau_m_ugradv;
+      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test001*ansatz001;
       MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
       // weighted mass matrix
@@ -6230,6 +6237,10 @@ void TimeNSType4NL_SUPGDD3D(double Mult, double *coeff, double *param, double hK
   double *Orig6 = OrigValues[6]; // p_y
   double *Orig7 = OrigValues[7]; // p_z
 
+  double *Orig8 = OrigValues[8]; // u_xx
+  double *Orig9 = OrigValues[9]; // u_yy
+  double *Orig10 = OrigValues[10]; // u_yy
+
   double c0 = coeff[0]; // nu
   double c1 = coeff[1]; // f1
   double c2 = coeff[2]; // f2
@@ -6242,7 +6253,7 @@ void TimeNSType4NL_SUPGDD3D(double Mult, double *coeff, double *param, double hK
   double val;
   double test000, test100, test010, test001;
   double ansatz000, ansatz100, ansatz010, ansatz001;
-  
+  double ansatz200, ansatz020, ansatz002;
   //TODO: specify the parameter accordingly
   double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
   double tau_c = TDatabase::ParamDB->DELTA1;
@@ -6267,14 +6278,17 @@ void TimeNSType4NL_SUPGDD3D(double Mult, double *coeff, double *param, double hK
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
       
+      ansatz200 = Orig8[j];
+      ansatz020 = Orig9[j];
+      ansatz002 = Orig10[j];
       double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
       
       double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      double supg_term = ugradu * tau_m_ugradv;
+      double supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       double grad_div = tau_c * test100 * ansatz100;
       MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
-      // div-div terms
+
       val  = (c0+tau_c)*(test010*ansatz100);
       MatrixA12[i][j] += Mult * val;
 
@@ -6286,10 +6300,10 @@ void TimeNSType4NL_SUPGDD3D(double Mult, double *coeff, double *param, double hK
 
       galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      supg_term = ugradu * tau_m_ugradv;
+      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test010*ansatz010;
       MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
-      // div-div terms
+
       val  = (c0+tau_c)*(test001*ansatz010);
       MatrixA23[i][j] += Mult * val;
 
@@ -6301,7 +6315,7 @@ void TimeNSType4NL_SUPGDD3D(double Mult, double *coeff, double *param, double hK
 
       galerkin  = c0*(test100*ansatz100+test010*ansatz010
                    +2*test001*ansatz001) + ugradu * test000;
-      supg_term = ugradu * tau_m_ugradv;
+      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test001*ansatz001;
       MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
       // weighted mass matrix
@@ -6312,9 +6326,9 @@ void TimeNSType4NL_SUPGDD3D(double Mult, double *coeff, double *param, double hK
     for(int j=0;j<N_P;j++)
     {
       ansatz000 = Orig4[j]; // p
-      ansatz100 = Orig5[j]; // p_x
-      ansatz010 = Orig6[j]; // p_y
-      ansatz001 = Orig7[j]; // p_z
+      ansatz100 = Orig5[j];
+      ansatz010 = Orig6[j];
+      ansatz001 = Orig7[j];
       // B1T
       val = -ansatz000*test100;
       double supg_term = ansatz100*tau_m_ugradv;
@@ -6407,6 +6421,10 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
   double *Orig5 = OrigValues[5]; // p_x
   double *Orig6 = OrigValues[6]; // p_y
   double *Orig7 = OrigValues[7]; // p_z
+  
+  double *Orig8 = OrigValues[8]; // u_xx
+  double *Orig9 = OrigValues[9]; // u_yy
+  double *Orig10 = OrigValues[10]; // u_yy
 
   double c0 = coeff[0]; // nu
   double c1 = coeff[1]; // f1
@@ -6420,7 +6438,7 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
   double val;
   double test000, test100, test010, test001;
   double ansatz000, ansatz100, ansatz010, ansatz001;
-  
+  double ansatz200, ansatz020, ansatz002;
   //TODO: specify the parameter accordingly
   double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
   double tau_c = TDatabase::ParamDB->DELTA1;
@@ -6445,11 +6463,14 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
       
+      ansatz200 = Orig8[j];
+      ansatz020 = Orig9[j];
+      ansatz002 = Orig10[j];
       double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
       
       double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      double supg_term = ugradu * tau_m_ugradv;
+      double supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       double grad_div = tau_c * test100 * ansatz100;
       MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
 
@@ -6464,7 +6485,7 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
 
       galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      supg_term = ugradu * tau_m_ugradv;
+      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test010*ansatz010;
       MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
 
@@ -6479,7 +6500,7 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
 
       galerkin  = c0*(test100*ansatz100+test010*ansatz010
                    +2*test001*ansatz001) + ugradu * test000;
-      supg_term = ugradu * tau_m_ugradv;
+      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test001*ansatz001;
       MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
       // weighted mass matrix
@@ -6565,6 +6586,10 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
   double *Orig6 = OrigValues[6]; // p_y
   double *Orig7 = OrigValues[7]; // p_z
 
+  double *Orig8 = OrigValues[8]; // u_xx
+  double *Orig9 = OrigValues[9]; // u_yy
+  double *Orig10 = OrigValues[10]; // u_yy
+
   double c0 = coeff[0]; // nu
   double c1 = coeff[1]; // f1
   double c2 = coeff[2]; // f2
@@ -6577,7 +6602,7 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
   double val;
   double test000, test100, test010, test001;
   double ansatz000, ansatz100, ansatz010, ansatz001;
-  
+  double ansatz200, ansatz020, ansatz002;
   //TODO: specify the parameter accordingly
   double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
   double tau_c = TDatabase::ParamDB->DELTA1;
@@ -6602,14 +6627,17 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
       
+      ansatz200 = Orig8[j];
+      ansatz020 = Orig9[j];
+      ansatz002 = Orig10[j];
       double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
       
       double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      double supg_term = ugradu * tau_m_ugradv;
+      double supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       double grad_div = tau_c * test100 * ansatz100;
       MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
-      // div-div terms
+
       val  = (c0+tau_c)*(test010*ansatz100);
       MatrixA12[i][j] += Mult * val;
 
@@ -6621,10 +6649,10 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
 
       galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      supg_term = ugradu * tau_m_ugradv;
+      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test010*ansatz010;
       MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
-      // div-div terms
+
       val  = (c0+tau_c)*(test001*ansatz010);
       MatrixA23[i][j] += Mult * val;
 
@@ -6636,7 +6664,7 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
 
       galerkin  = c0*(test100*ansatz100+test010*ansatz010
                    +2*test001*ansatz001) + ugradu * test000;
-      supg_term = ugradu * tau_m_ugradv;
+      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test001*ansatz001;
       MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
       // weighted mass matrix
@@ -6647,9 +6675,9 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
     for(int j=0;j<N_P;j++)
     {
       ansatz000 = Orig4[j]; // p
-      ansatz100 = Orig5[j]; // p_x
-      ansatz010 = Orig6[j]; // p_y
-      ansatz001 = Orig7[j]; // p_z
+      ansatz100 = Orig5[j];
+      ansatz010 = Orig6[j];
+      ansatz001 = Orig7[j];
       // B1T
       val = -ansatz000*test100;
       double supg_term = ansatz100*tau_m_ugradv;
