@@ -6387,7 +6387,7 @@ void TimeNSRhs_SUPGDD3D(double Mult, double *coeff, double *param, double hK,
 // ======================================================================
 void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, double hK, 
      double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs)
-{
+{ // A-blocks
   double **MatrixA11 = LocMatrices[0];
   double **MatrixA12 = LocMatrices[1];
   double **MatrixA13 = LocMatrices[2];
@@ -6397,13 +6397,23 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
   double **MatrixA31 = LocMatrices[6];
   double **MatrixA32 = LocMatrices[7];
   double **MatrixA33 = LocMatrices[8];
-  double **MassMatrix = LocMatrices[9];
-  double **MatrixB1  = LocMatrices[10];
-  double **MatrixB2  = LocMatrices[11];
-  double **MatrixB3  = LocMatrices[12];
-  double **MatrixB1T = LocMatrices[13];
-  double **MatrixB2T = LocMatrices[14];
-  double **MatrixB3T = LocMatrices[15];
+  // M-blocks
+  double **MatrixM11 = LocMatrices[9];
+  double **MatrixM12 = LocMatrices[10];
+  double **MatrixM13 = LocMatrices[11];
+  double **MatrixM21 = LocMatrices[12];
+  double **MatrixM22 = LocMatrices[13];
+  double **MatrixM23 = LocMatrices[14];
+  double **MatrixM31 = LocMatrices[15];
+  double **MatrixM32 = LocMatrices[16];
+  double **MatrixM33 = LocMatrices[17];
+  // B, BT-blocks
+  double **MatrixB1  = LocMatrices[18];
+  double **MatrixB2  = LocMatrices[19];
+  double **MatrixB3  = LocMatrices[20];
+  double **MatrixB1T = LocMatrices[21];
+  double **MatrixB2T = LocMatrices[22];
+  double **MatrixB3T = LocMatrices[23];
 
   double *Rhs1 = LocRhs[0];
   double *Rhs2 = LocRhs[1];
@@ -6434,6 +6444,31 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
   double u1 = param[0]; // u1old
   double u2 = param[1]; // u2old
   double u3 = param[2]; // u3old
+  // additional terms for the residual computations
+  double u1x = param[3];
+  double u2x = param[4];
+  double u3x = param[5];
+  double u1y = param[6];
+  double u2y = param[7];
+  double u3y = param[8];
+  double u1z = param[9];
+  double u2z = param[10];
+  double u3z = param[11];
+  double u1xx = param[12];
+  double u2xx = param[13];
+  double u3xx = param[14];
+  double u1yy = param[15];
+  double u2yy = param[16];
+  double u3yy = param[17];
+  double u1zz = param[18];
+  double u2zz = param[19];
+  double u3zz = param[20];
+  double px = param[21];
+  double py = param[22];
+  double pz = param[23];
+  double u1_pre_time = param[24]; // previous time solution u1
+  double u2_pre_time = param[25]; // previous time solution u2
+  double u3_pre_time = param[26]; // previous time solution u3
 
   double val;
   double test000, test100, test010, test001;
@@ -6443,7 +6478,7 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
   double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
   double tau_c = TDatabase::ParamDB->DELTA1;
   double tau_m_ugradv;
-  
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   for(int i=0;i<N_U;i++)
   {
     test100 = Orig0[i];
@@ -6455,6 +6490,22 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
     Rhs1[i] += Mult*(test000+tau_m_ugradv)*c1;
     Rhs2[i] += Mult*(test000+tau_m_ugradv)*c2;
     Rhs3[i] += Mult*(test000+tau_m_ugradv)*c3;
+    
+    // old residual in Eq(51)
+    double res1 = tau_m *(c1 - 1./dt*(u1-u1_pre_time) + c0*(u1xx + u1yy + u1zz)
+                          -(u1*u1x + u2*u1y + u3*u1z) -px );
+    double res2 = tau_m *(c2 - 1./dt*(u2-u2_pre_time) + c0*(u2xx + u2yy + u2zz)
+                          -(u1*u2x + u2*u2y + u3*u2z) -py );
+    double res3 = tau_m *(c3 - 1./dt*(u3-u3_pre_time) + c0*(u3xx + u3yy + u3zz)
+                          -(u1*u3x + u2*u3y + u3*u3z) -pz );
+    // contribution from second nonlinear term
+    Rhs1[i] += Mult*tau_m*u1*(c1*test100 + c2*test010 + c3*test001);
+    Rhs2[i] += Mult*tau_m*u2*(c1*test100 + c2*test010 + c3*test001);
+    Rhs3[i] += Mult*tau_m*u3*(c1*test100 + c2*test010 + c3*test001);
+    // contribution from third nonlinear term 
+    Rhs1[i] += Mult*tau_m*res1*(c1*test100 + c2*test010 + c3*test001);
+    Rhs2[i] += Mult*tau_m*res2*(c1*test100 + c2*test010 + c3*test001);
+    Rhs3[i] += Mult*tau_m*res3*(c1*test100 + c2*test010 + c3*test001);
 
     for(int j=0;j<N_U;j++)
     {
@@ -6466,46 +6517,105 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
       ansatz200 = Orig8[j];
       ansatz020 = Orig9[j];
       ansatz002 = Orig10[j];
+      
       double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
+      double laplacian = -c0*(ansatz200 + ansatz020 + ansatz002);
       
       double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      double supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
+      double supg_term = (laplacian + ugradu) * tau_m_ugradv;
       double grad_div = tau_c * test100 * ansatz100;
-      MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
+      // terms from the second nonlinear term b(res, 
+      // u_h, v_h)=-(res, grad(v)^T u_h) :: Eq(50)
+      double b1 = tau_m * (laplacian + ugradu ) * u1 * test100;
+      // terms from the third nonlinear term 
+      // b(res, res, v_h)
+      double b2 = tau_m * (laplacian + ugradu) * res1 * test100; 
+      MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div + b1 + b2);
 
       val  = (c0+tau_c)*(test010*ansatz100);
-      MatrixA12[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u1 * test010;
+      b2 = tau_m * ugradu * res1 * test010;
+      MatrixA12[i][j] += Mult * (val + b1 + b2);
 
       val  = (c0+tau_c)*(test001*ansatz100);
-      MatrixA13[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u1 * test001;
+      b2 = tau_m * ugradu * res1 * test001;
+      MatrixA13[i][j] += Mult * (val + b1 + b2);
 
       val  = (c0+tau_c)*(test100*ansatz010);
-      MatrixA21[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u2 * test100;
+      b2 = tau_m * ugradu * res2 * test100;
+      MatrixA21[i][j] += Mult * (val + b1 +b2);
 
       galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
+      supg_term = (laplacian + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test010*ansatz010;
-      MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
+      b1 = tau_m * (laplacian + ugradu) * u2 * test010;
+      b2 = tau_m * (laplacian + ugradu) * res2 * test010;
+      MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div + b1 + b2);
 
       val  = (c0+tau_c)*(test001*ansatz010);
-      MatrixA23[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u2 * test001;
+      b2 = tau_m * ugradu * res2 * test001;
+      MatrixA23[i][j] += Mult * (val + b1 + b2);
 
       val  = (c0+tau_c)*(test100*ansatz001);
-      MatrixA31[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u3 * test100;
+      b2 = tau_m * ugradu * res3 * test100;
+      MatrixA31[i][j] += Mult * (val + b1 + b2);
 
       val  = (c0+tau_c)*(test010*ansatz001);
-      MatrixA32[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u3 * test010;
+      b2 = tau_m * ugradu * res3 * test010;
+      MatrixA32[i][j] += Mult * (val + b1 + b2);
 
       galerkin  = c0*(test100*ansatz100+test010*ansatz010
                    +2*test001*ansatz001) + ugradu * test000;
-      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
+      supg_term = (laplacian + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test001*ansatz001;
-      MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
-      // weighted mass matrix
-      val = Mult*ansatz000*(test000 + tau_m_ugradv);
-      MassMatrix[i][j] += val;
+      b1 = tau_m * (laplacian + ugradu) * u3 * test001;
+      b2 = tau_m * (laplacian + ugradu) * res3 * test001;
+      MatrixA33[i][j] += Mult * (galerkin + supg_term + grad_div + b1 + b2);
+      
+      // weighted mass matrix (galerkin + supg ) terms
+      val = ansatz000*(test000 + tau_m_ugradv);
+      b1 = tau_m * u1   * ansatz000 * test100;
+      b2 = tau_m * res1 * ansatz000 * test100;
+      MatrixM11[i][j] += Mult*(val + b1 + b2);
+      
+      b1 = tau_m * u1   * ansatz000 * test010;
+      b2 = tau_m * res1 * ansatz000 * test010;
+      MatrixM12[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u1   * ansatz000 * test001;
+      b2 = tau_m * res1 * ansatz000 * test001;
+      MatrixM13[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u2   * ansatz000 * test100;
+      b2 = tau_m * res2 * ansatz000 * test100;
+      MatrixM21[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u2   * ansatz000 * test010;
+      b2 = tau_m * res2 * ansatz000 * test010;
+      MatrixM22[i][j] += Mult*(val + b1 + b2);
+      
+      b1 = tau_m * u2   * ansatz000 * test001;
+      b2 = tau_m * res2 * ansatz000 * test001;
+      MatrixM23[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u3   * ansatz000 * test100;
+      b2 = tau_m * res3 * ansatz000 * test100;
+      MatrixM31[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u3   * ansatz000 * test010;
+      b2 = tau_m * res3 * ansatz000 * test010;
+      MatrixM32[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u3   * ansatz000 * test001;
+      b2 = tau_m * res3 * ansatz000 * test001;
+      MatrixM33[i][j] += Mult*(val + b1 + b2);
     } 
 
     for(int j=0;j<N_P;j++)
@@ -6517,15 +6627,21 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
       // B1T
       val = -ansatz000*test100;
       double supg_term = ansatz100*tau_m_ugradv;
-      MatrixB1T[i][j] += Mult*(val + supg_term);
+      double b1 = tau_m * u1   * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      double b2 = tau_m * res1 * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      MatrixB1T[i][j] += Mult*(val + supg_term + b1 + b2);
       // B2T 
       val = -ansatz000*test010;
       supg_term = ansatz010 * tau_m_ugradv;
-      MatrixB2T[i][j] += Mult*(val + supg_term);
+      b1 = tau_m * u2   * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      b2 = tau_m * res2 * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      MatrixB2T[i][j] += Mult*(val + supg_term + b1 + b2);
       // B3T 
       val = -ansatz000*test001;
       supg_term = ansatz001 * tau_m_ugradv;
-      MatrixB3T[i][j] += Mult*(val + supg_term);
+      b1 = tau_m * u3   * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      b2 = tau_m * res3 * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      MatrixB3T[i][j] += Mult*(val + supg_term + b1 + b2);
     }
   } 
 
@@ -6564,10 +6680,18 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
   double **MatrixA31 = LocMatrices[6];
   double **MatrixA32 = LocMatrices[7];
   double **MatrixA33 = LocMatrices[8];
-  double **MassMatrix = LocMatrices[9];
-  double **MatrixB1T  = LocMatrices[10];
-  double **MatrixB2T  = LocMatrices[11];
-  double **MatrixB3T  = LocMatrices[12];
+  double **MatrixM11 = LocMatrices[9];
+  double **MatrixM12 = LocMatrices[10];
+  double **MatrixM13 = LocMatrices[11];
+  double **MatrixM21 = LocMatrices[12];
+  double **MatrixM22 = LocMatrices[13];
+  double **MatrixM23 = LocMatrices[14];
+  double **MatrixM31 = LocMatrices[15];
+  double **MatrixM32 = LocMatrices[16];
+  double **MatrixM33 = LocMatrices[17];
+  double **MatrixB1T  = LocMatrices[18];
+  double **MatrixB2T  = LocMatrices[19];
+  double **MatrixB3T  = LocMatrices[20];
 
   double *Rhs1 = LocRhs[0];
   double *Rhs2 = LocRhs[1];
@@ -6598,6 +6722,31 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
   double u1 = param[0]; // u1old
   double u2 = param[1]; // u2old
   double u3 = param[2]; // u3old
+  // additional terms for the residual computations
+  double u1x = param[3];
+  double u2x = param[4];
+  double u3x = param[5];
+  double u1y = param[6];
+  double u2y = param[7];
+  double u3y = param[8];
+  double u1z = param[9];
+  double u2z = param[10];
+  double u3z = param[11];
+  double u1xx = param[12];
+  double u2xx = param[13];
+  double u3xx = param[14];
+  double u1yy = param[15];
+  double u2yy = param[16];
+  double u3yy = param[17];
+  double u1zz = param[18];
+  double u2zz = param[19];
+  double u3zz = param[20];
+  double px = param[21];
+  double py = param[22];
+  double pz = param[23];
+  double u1_pre_time = param[24]; // previous time solution u1
+  double u2_pre_time = param[25]; // previous time solution u2
+  double u3_pre_time = param[26]; // previous time solution u3
 
   double val;
   double test000, test100, test010, test001;
@@ -6607,7 +6756,7 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
   double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
   double tau_c = TDatabase::ParamDB->DELTA1;
   double tau_m_ugradv;
-  
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   for(int i=0;i<N_U;i++)
   {
     test100 = Orig0[i];
@@ -6619,6 +6768,22 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
     Rhs1[i] += Mult*(test000+tau_m_ugradv)*c1;
     Rhs2[i] += Mult*(test000+tau_m_ugradv)*c2;
     Rhs3[i] += Mult*(test000+tau_m_ugradv)*c3;
+    
+    // old residual in Eq(51)
+    double res1 = tau_m *(c1 - 1./dt*(u1-u1_pre_time) + c0*(u1xx + u1yy + u1zz)
+                          -(u1*u1x + u2*u1y + u3*u1z) -px );
+    double res2 = tau_m *(c2 - 1./dt*(u2-u2_pre_time) + c0*(u2xx + u2yy + u2zz)
+                          -(u1*u2x + u2*u2y + u3*u2z) -py );
+    double res3 = tau_m *(c3 - 1./dt*(u3-u3_pre_time) + c0*(u3xx + u3yy + u3zz)
+                          -(u1*u3x + u2*u3y + u3*u3z) -pz );
+    // contribution from second nonlinear term
+    Rhs1[i] += Mult*tau_m*u1*(c1*test100 + c2*test010 + c3*test001);
+    Rhs2[i] += Mult*tau_m*u2*(c1*test100 + c2*test010 + c3*test001);
+    Rhs3[i] += Mult*tau_m*u3*(c1*test100 + c2*test010 + c3*test001);
+    // contribution from third nonlinear term 
+    Rhs1[i] += Mult*tau_m*res1*(c1*test100 + c2*test010 + c3*test001);
+    Rhs2[i] += Mult*tau_m*res2*(c1*test100 + c2*test010 + c3*test001);
+    Rhs3[i] += Mult*tau_m*res3*(c1*test100 + c2*test010 + c3*test001);
 
     for(int j=0;j<N_U;j++)
     {
@@ -6630,46 +6795,105 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
       ansatz200 = Orig8[j];
       ansatz020 = Orig9[j];
       ansatz002 = Orig10[j];
+      
       double ugradu = u1*ansatz100 + u2*ansatz010 + u3*ansatz001;
+      double laplacian = -c0*(ansatz200 + ansatz020 + ansatz002);
       
       double galerkin  = c0*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      double supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
+      double supg_term = (laplacian + ugradu) * tau_m_ugradv;
       double grad_div = tau_c * test100 * ansatz100;
-      MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div);
+      // terms from the second nonlinear term b(res, 
+      // u_h, v_h)=-(res, grad(v)^T u_h) :: Eq(50)
+      double b1 = tau_m * (laplacian + ugradu ) * u1 * test100;
+      // terms from the third nonlinear term 
+      // b(res, res, v_h)
+      double b2 = tau_m * (laplacian + ugradu) * res1 * test100; 
+      MatrixA11[i][j] += Mult * (galerkin + supg_term + grad_div + b1 + b2);
 
       val  = (c0+tau_c)*(test010*ansatz100);
-      MatrixA12[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u1 * test010;
+      b2 = tau_m * ugradu * res1 * test010;
+      MatrixA12[i][j] += Mult * (val + b1 + b2);
 
       val  = (c0+tau_c)*(test001*ansatz100);
-      MatrixA13[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u1 * test001;
+      b2 = tau_m * ugradu * res1 * test001;
+      MatrixA13[i][j] += Mult * (val + b1 + b2);
 
       val  = (c0+tau_c)*(test100*ansatz010);
-      MatrixA21[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u2 * test100;
+      b2 = tau_m * ugradu * res2 * test100;
+      MatrixA21[i][j] += Mult * (val + b1 +b2);
 
       galerkin  = c0*(test100*ansatz100+2*test010*ansatz010
                    +test001*ansatz001) + ugradu * test000;
-      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
+      supg_term = (laplacian + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test010*ansatz010;
-      MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div);
+      b1 = tau_m * (laplacian + ugradu) * u2 * test010;
+      b2 = tau_m * (laplacian + ugradu) * res2 * test010;
+      MatrixA22[i][j] += Mult * (galerkin + supg_term + grad_div + b1 + b2);
 
       val  = (c0+tau_c)*(test001*ansatz010);
-      MatrixA23[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u2 * test001;
+      b2 = tau_m * ugradu * res2 * test001;
+      MatrixA23[i][j] += Mult * (val + b1 + b2);
 
       val  = (c0+tau_c)*(test100*ansatz001);
-      MatrixA31[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u3 * test100;
+      b2 = tau_m * ugradu * res3 * test100;
+      MatrixA31[i][j] += Mult * (val + b1 + b2);
 
       val  = (c0+tau_c)*(test010*ansatz001);
-      MatrixA32[i][j] += Mult * val;
+      b1 = tau_m * ugradu * u3 * test010;
+      b2 = tau_m * ugradu * res3 * test010;
+      MatrixA32[i][j] += Mult * (val + b1 + b2);
 
       galerkin  = c0*(test100*ansatz100+test010*ansatz010
                    +2*test001*ansatz001) + ugradu * test000;
-      supg_term = (-c0*(ansatz200 + ansatz020 + ansatz002) + ugradu) * tau_m_ugradv;
+      supg_term = (laplacian + ugradu) * tau_m_ugradv;
       grad_div = tau_c * test001*ansatz001;
-      MatrixA33[i][j] += Mult * (galerkin + supg_term +grad_div);
-      // weighted mass matrix
-      val = Mult*ansatz000*(test000 + tau_m_ugradv);
-      MassMatrix[i][j] += val;
+      b1 = tau_m * (laplacian + ugradu) * u3 * test001;
+      b2 = tau_m * (laplacian + ugradu) * res3 * test001;
+      MatrixA33[i][j] += Mult * (galerkin + supg_term + grad_div + b1 + b2);
+      
+      // weighted mass matrix (galerkin + supg ) terms
+      val = ansatz000*(test000 + tau_m_ugradv);
+      b1 = tau_m * u1   * ansatz000 * test100;
+      b2 = tau_m * res1 * ansatz000 * test100;
+      MatrixM11[i][j] += Mult*(val + b1 + b2);
+      
+      b1 = tau_m * u1   * ansatz000 * test010;
+      b2 = tau_m * res1 * ansatz000 * test010;
+      MatrixM12[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u1   * ansatz000 * test001;
+      b2 = tau_m * res1 * ansatz000 * test001;
+      MatrixM13[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u2   * ansatz000 * test100;
+      b2 = tau_m * res2 * ansatz000 * test100;
+      MatrixM21[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u2   * ansatz000 * test010;
+      b2 = tau_m * res2 * ansatz000 * test010;
+      MatrixM22[i][j] += Mult*(val + b1 + b2);
+      
+      b1 = tau_m * u2   * ansatz000 * test001;
+      b2 = tau_m * res2 * ansatz000 * test001;
+      MatrixM23[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u3   * ansatz000 * test100;
+      b2 = tau_m * res3 * ansatz000 * test100;
+      MatrixM31[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u3   * ansatz000 * test010;
+      b2 = tau_m * res3 * ansatz000 * test010;
+      MatrixM32[i][j] += Mult*(b1 + b2);
+      
+      b1 = tau_m * u3   * ansatz000 * test001;
+      b2 = tau_m * res3 * ansatz000 * test001;
+      MatrixM33[i][j] += Mult*(val + b1 + b2);
     } 
 
     for(int j=0;j<N_P;j++)
@@ -6681,15 +6905,21 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff, double *param,
       // B1T
       val = -ansatz000*test100;
       double supg_term = ansatz100*tau_m_ugradv;
-      MatrixB1T[i][j] += Mult*(val + supg_term);
+      double b1 = tau_m * u1   * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      double b2 = tau_m * res1 * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      MatrixB1T[i][j] += Mult*(val + supg_term + b1 + b2);
       // B2T 
       val = -ansatz000*test010;
       supg_term = ansatz010 * tau_m_ugradv;
-      MatrixB2T[i][j] += Mult*(val + supg_term);
+      b1 = tau_m * u2   * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      b2 = tau_m * res2 * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      MatrixB2T[i][j] += Mult*(val + supg_term + b1 + b2);
       // B3T 
       val = -ansatz000*test001;
       supg_term = ansatz001 * tau_m_ugradv;
-      MatrixB3T[i][j] += Mult*(val + supg_term);
+      b1 = tau_m * u3   * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      b2 = tau_m * res3 * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      MatrixB3T[i][j] += Mult*(val + supg_term + b1 + b2);
     }
   } 
 }
@@ -6701,38 +6931,130 @@ void TimeNSType4Residual_VMS_RhsDD3D(double Mult, double* coeff, double* param,
   double *Rhs1 = LocRhs[0];
   double *Rhs2 = LocRhs[1];
   double *Rhs3 = LocRhs[2];
-  
+
+  int N_U = N_BaseFuncts[0];
+
   double *Orig0 = OrigValues[0]; // u_x
   double *Orig1 = OrigValues[1]; // u_y
-  double *Orig2 = OrigValues[2]; // u_z
+  double *Orig2 = OrigValues[2]; // u_y
   double *Orig3 = OrigValues[3]; // u
   
-  double c1 = coeff[1];
-  double c2 = coeff[2];
-  double c3 = coeff[3];
+  double *Orig4 = OrigValues[4]; // p
+  double *Orig5 = OrigValues[5]; // p_x
+  double *Orig6 = OrigValues[6]; // p_y
+  double *Orig7 = OrigValues[7]; // p_z
 
-  double u1=param[0]; // u1old
-  double u2=param[1]; // u2old
-  double u3=param[2]; // u3old
-  
-  int N_U = N_BaseFuncts[0];
+  double *Orig8 = OrigValues[8]; // u_xx
+  double *Orig9 = OrigValues[9]; // u_yy
+  double *Orig10 = OrigValues[10]; // u_yy
+
+  double c0 = coeff[0]; // nu
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+  double c3 = coeff[3]; // f3
+
+  double u1 = param[0]; // u1old
+  double u2 = param[1]; // u2old
+  double u3 = param[2]; // u3old
+  // additional terms for the residual computations
+  double u1x = param[3];
+  double u2x = param[4];
+  double u3x = param[5];
+  double u1y = param[6];
+  double u2y = param[7];
+  double u3y = param[8];
+  double u1z = param[9];
+  double u2z = param[10];
+  double u3z = param[11];
+  double u1xx = param[12];
+  double u2xx = param[13];
+  double u3xx = param[14];
+  double u1yy = param[15];
+  double u2yy = param[16];
+  double u3yy = param[17];
+  double u1zz = param[18];
+  double u2zz = param[19];
+  double u3zz = param[20];
+  double px = param[21];
+  double py = param[22];
+  double pz = param[23];
+  double u1_pre_time = param[24]; // previous time solution u1
+  double u2_pre_time = param[25]; // previous time solution u2
+  double u3_pre_time = param[26]; // previous time solution u3
+
+  double test000, test100, test010, test001;
   //TODO: specify the parameter accordingly
   double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
-  
-  for(int i=0; i<N_U; ++i)
+  double tau_m_ugradv;
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  for(int i=0;i<N_U;i++)
   {
-    double test100 = Orig0[i];
-    double test010 = Orig1[i];
-    double test001 = Orig2[i];
-    double test000 = Orig3[i];
+    test100 = Orig0[i];
+    test010 = Orig1[i];
+    test001 = Orig2[i];
+    test000 = Orig3[i];
+
+    tau_m_ugradv = tau_m*(u1*test100 + u2*test010 + u3*test001);
+    Rhs1[i] += Mult*(test000+tau_m_ugradv)*c1;
+    Rhs2[i] += Mult*(test000+tau_m_ugradv)*c2;
+    Rhs3[i] += Mult*(test000+tau_m_ugradv)*c3;
     
-    double tau_m_ugradv = tau_m*(u1*test100 + u2*test010 + u3*test001);
-    Rhs1[i] += Mult*(test000 + tau_m_ugradv)*c1;
-    Rhs2[i] += Mult*(test000 + tau_m_ugradv)*c2;
-    Rhs3[i] += Mult*(test000 + tau_m_ugradv)*c3;
+    // old residual in Eq(51)
+    double res1 = tau_m *(c1 - 1./dt*(u1-u1_pre_time) + c0*(u1xx + u1yy + u1zz)
+                          -(u1*u1x + u2*u1y + u3*u1z) -px );
+    double res2 = tau_m *(c2 - 1./dt*(u2-u2_pre_time) + c0*(u2xx + u2yy + u2zz)
+                          -(u1*u2x + u2*u2y + u3*u2z) -py );
+    double res3 = tau_m *(c3 - 1./dt*(u3-u3_pre_time) + c0*(u3xx + u3yy + u3zz)
+                          -(u1*u3x + u2*u3y + u3*u3z) -pz );
+    // contribution from second nonlinear term
+    Rhs1[i] += Mult*tau_m*u1*(c1*test100 + c2*test010 + c3*test001);
+    Rhs2[i] += Mult*tau_m*u2*(c1*test100 + c2*test010 + c3*test001);
+    Rhs3[i] += Mult*tau_m*u3*(c1*test100 + c2*test010 + c3*test001);
+    // contribution from third nonlinear term 
+    Rhs1[i] += Mult*tau_m*res1*(c1*test100 + c2*test010 + c3*test001);
+    Rhs2[i] += Mult*tau_m*res2*(c1*test100 + c2*test010 + c3*test001);
+    Rhs3[i] += Mult*tau_m*res3*(c1*test100 + c2*test010 + c3*test001);
   }
 }
-
+// ======================================================================
+void TimeNSType4Params_Residual_VMS(double *in, double *out)
+{
+  out[0] = in[3];
+  out[1] = in[4];
+  out[2] = in[5];
+  // u1x, u2x, u3x old
+  out[3] = in[6]; 
+  out[4] = in[7]; 
+  out[5] = in[8]; 
+  // u1y. u2y, u3y old
+  out[6] = in[9]; 
+  out[7] = in[10]; 
+  out[8] = in[11]; 
+  // u1z, u2z, u3z, old
+  out[9] = in[12]; 
+  out[10] = in[13]; 
+  out[11] = in[14]; 
+  // u1xx, u2xx, u3xx old
+  out[12] = in[15]; 
+  out[13] = in[16]; 
+  out[14] = in[17]; 
+  // u1yy, u2yy, u3yy, old
+  out[15] = in[18]; 
+  out[16] = in[19]; 
+  out[17] = in[20]; 
+  // u1zz, u2zz, u3zz, old
+  out[18] = in[21];  
+  out[19] = in[22];  
+  out[20] = in[23];  
+  // p_x, p_y, p_z
+  out[21] = in[24]; 
+  out[22] = in[25]; 
+  out[23] = in[26]; 
+  // u1, u2, u3, previous time sol's
+  out[24] = in[27]; 
+  out[25] = in[28]; 
+  out[26] = in[29]; 
+}
 
 // ======================================================================
 // ROSENBROCK

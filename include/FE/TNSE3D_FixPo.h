@@ -483,7 +483,9 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double *coeff,
 void TimeNSType4Residual_VMS_RhsDD3D(double Mult, double *coeff,
               double *param, double hK,
               double **OrigValues, int *N_BaseFuncts,
-				 double ***LocMatrices, double **LocRhs);
+              double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4Params_Residual_VMS(double *in, double *out);
 
 
 void TimeNSType14Residual_VMSDD3D(double Mult, double *coeff, 

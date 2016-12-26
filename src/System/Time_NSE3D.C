@@ -146,6 +146,13 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
   }
   
+  if((TDatabase::ParamDB->DISCTYPE == SUPG || 
+    TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS )  && 
+    (type != Matrix::Type14 && type !=Matrix::Type4))
+  {
+    ErrThrow("The SUPG method is only implemented for NSTYPE 4 and 14");
+  }
+  
   // multigrid method 
   bool usingMultigrid = solver_.is_using_multigrid();
   TCollection *coll = collections_.front(); // finest grid collection
@@ -432,6 +439,9 @@ void Time_NSE3D::assemble_initial_time()
      * and doing it only on the finest grid!
      **/
     s.solution_.copy_nonactive(s.rhs_);
+    // copy the solution to the old solution for the residual computations
+    // used in the RESIDUAL_VMS method
+    s.Old_Sol = s.solution_;
 
     if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
     {
@@ -526,7 +536,10 @@ void Time_NSE3D::assemble_rhs()
 
   // FIXME Find other solution than this submatrix method.
   // M u^{k-1} NOTE : here s.solution_ is exactly u^{k-1}
-  s.massMatrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, 1.0);
+  if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+    s.MatrixK.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
+  else
+    s.massMatrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, 1.0);
   // -tau*theta2 * A u^{k-1} NOTE : here, s.solution_ is u^{k-1}
   double factor = -tau*theta2;
   s.matrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, factor);
@@ -619,18 +632,6 @@ void Time_NSE3D::assemble_nonlinear_term()
       s.matrix_.scale_blocks(t1*tau, cell_posi);
     }
     
-    // update the right hand side for the next iteration: All A blocks, standing B blocks 
-    // and the right hand sides needs to be re-assemble for the SUPG and RESIDUAL_VMS
-    if(disctype == SUPG || disctype == RESIDUAL_VMS)
-    {
-      System_per_grid& s = this->systems_.front();
-      s.rhs_.scaleActive(tau*t4);
-      if(TDatabase::ParamDB->DISCTYPE == SUPG)
-        s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
-      // else 
-      //  s.MatrixK.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
-
-    }
     if(disctype == VMS_PROJECTION)
     {
       std::vector<std::shared_ptr<FEMatrix>> blocks
@@ -643,6 +644,17 @@ void Time_NSE3D::assemble_nonlinear_term()
       // is used on coarser grids 
       TDatabase::ParamDB->DISCTYPE = SMAGORINSKY_COARSE;
     }
+  }
+  // update the right hand side for the next iteration: All A blocks, standing B blocks 
+  // and the right hand sides needs to be re-assemble for the SUPG and RESIDUAL_VMS
+  if(disctype == SUPG || disctype == RESIDUAL_VMS)
+  {
+    System_per_grid& s = this->systems_.front();
+    s.rhs_.scaleActive(tau*t4);
+    if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+      s.MatrixK.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
+    else 
+      s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
   }
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
   if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY_COARSE)
@@ -666,13 +678,44 @@ void Time_NSE3D::assemble_system()
     // note: declaring the auxiliary cell_positions is needed by the compiler
     // to sort out the overriding of the function scale_blocks_actives(...,...)
     s.matrix_.scale_blocks_actives(factor, cell_positions);
-
-    const FEMatrix& mass_blocks =
-        *s.massMatrix_.get_blocks().at(0).get();
-
-    s.matrix_.add_matrix_actives(mass_blocks, 1.0,
+    if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+    {
+      const FEMatrix& m00 = *s.MatrixK.get_blocks().at(0).get();
+      s.matrix_.add_matrix_actives(m00, 1.0, {{0,0}}, {false});
+      
+      const FEMatrix& m01 = *s.MatrixK.get_blocks().at(1).get();
+      s.matrix_.add_matrix_actives(m01, 1.0, {{0,1}}, {false});
+      
+      const FEMatrix& m02 = *s.MatrixK.get_blocks().at(2).get();
+      s.matrix_.add_matrix_actives(m02, 1.0, {{0,2}}, {false});
+      
+      const FEMatrix& m10 = *s.MatrixK.get_blocks().at(4).get();
+      s.matrix_.add_matrix_actives(m10, 1.0, {{1,0}}, {false});
+      
+      const FEMatrix& m11 = *s.MatrixK.get_blocks().at(5).get();
+      s.matrix_.add_matrix_actives(m11, 1.0, {{1,1}}, {false});
+      
+      const FEMatrix& m12 = *s.MatrixK.get_blocks().at(6).get();
+      s.matrix_.add_matrix_actives(m12, 1.0, {{1,2}}, {false});
+      
+      const FEMatrix& m20 = *s.MatrixK.get_blocks().at(8).get();
+      s.matrix_.add_matrix_actives(m20, 1.0, {{2,0}}, {false});
+      
+      const FEMatrix& m21 = *s.MatrixK.get_blocks().at(9).get();
+      s.matrix_.add_matrix_actives(m21, 1.0, {{2,1}}, {false});
+      
+      const FEMatrix& m22 = *s.MatrixK.get_blocks().at(10).get();
+      s.matrix_.add_matrix_actives(m22, 1.0, {{2,2}}, {false});
+    }
+    else
+    {
+      const FEMatrix& mass_blocks =
+         *s.massMatrix_.get_blocks().at(0).get();
+         
+      s.matrix_.add_matrix_actives(mass_blocks, 1.0,
                                  {{0,0}, {1,1}, {2,2}},
                                  {false, false, false});
+    }
   }
 
   Output::info<5>("Assemble System", "Assembled the system matrix which"
@@ -757,6 +800,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
     {
       this->descale_matrices();
       this->old_solution_ = this->systems_.front().solution_;
+      this->systems_.front().Old_Sol = this->systems_.front().solution_;
       return true;
     }
   }
@@ -853,17 +897,24 @@ void Time_NSE3D::descale_matrices()
   double factor = tau*TDatabase::TimeDB->THETA1;
   for(System_per_grid& s : this->systems_)
   {
-    const FEMatrix& mass_blocks = *s.massMatrix_.get_blocks().at(0).get();
-    s.matrix_.add_matrix_actives(mass_blocks, -1.0,
-                                 {{0,0}, {1,1}, {2,2}},
-                                 {false, false, false});
-    const std::vector<std::vector<size_t>>
+    if(TDatabase::ParamDB->DISCTYPE != SUPG || 
+      TDatabase::ParamDB->DISCTYPE != RESIDUAL_VMS)
+    {
+      const FEMatrix& mass_blocks = *s.massMatrix_.get_blocks().at(0).get();
+      s.matrix_.add_matrix_actives(mass_blocks, -1.0,
+                                   {{0,0}, {1,1}, {2,2}},
+                                   {false, false, false});
+      const std::vector<std::vector<size_t>>
       cell_positions = {{0,0}, {0,1}, {0,2},
                         {1,0}, {1,1}, {1,2},
                         {2,0}, {2,1}, {2,2}};
-    // note: declaring the auxiliary cell_positions is needed by the compiler
-    // to sort out the overriding of the function scale_blocks_actives(...,...)
-    s.matrix_.scale_blocks_actives(1./factor, cell_positions);
+      // note: declaring the auxiliary cell_positions is needed by the compiler
+      // to sort out the overriding of the function scale_blocks_actives(...,...)
+      s.matrix_.scale_blocks_actives(1./factor, cell_positions);
+    }
+    // else::Descaling of the matrices are not needed 
+    // for the SUPG and RESIDUAL_VMS methods since the matrices will 
+    // be reassemble during the nonlinear iteration
   }
 }
 
@@ -1220,6 +1271,15 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
       fefunctions.resize(4);
       fefunctions[3]=label_for_local_projection_fefct.get();
     }
+    // 
+    if(disctype == RESIDUAL_VMS)
+    {
+      fefunctions.resize(7);
+      fefunctions[3]=&s.p_;
+      fefunctions[4]=s.u_old.GetComponent(0);
+      fefunctions[5]=s.u_old.GetComponent(1);
+      fefunctions[6]=s.u_old.GetComponent(2);
+    }
   }
   else
   {
@@ -1414,6 +1474,21 @@ void Time_NSE3D::prepare_matrices_rhs(System_per_grid& s,
             rectMatrices[10]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(4).get());
             rectMatrices[11]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(5).get());
           }
+          if(disctype == RESIDUAL_VMS)
+          {
+            sqMatrices.resize(18);
+            std::vector<std::shared_ptr<FEMatrix>> m_kblocks
+               = s.MatrixK.get_blocks_uniquely();
+            sqMatrices[9] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(0).get());
+            sqMatrices[10]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(1).get());
+            sqMatrices[11]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(2).get());
+            sqMatrices[12]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(4).get());
+            sqMatrices[13]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(5).get());
+            sqMatrices[14]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(6).get());
+            sqMatrices[15]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(8).get());
+            sqMatrices[16]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(9).get());
+            sqMatrices[17]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(10).get());
+          }
           if(nstype ==14 )
           {
             rhs_array.resize(4);
@@ -1488,6 +1563,41 @@ void Time_NSE3D::prepare_matrices_rhs(System_per_grid& s,
                 s.rhs_.reset();
               }
               break;
+            case RESIDUAL_VMS:
+              std::vector<std::shared_ptr<FEMatrix>> m_kblocks
+               = s.MatrixK.get_blocks_uniquely();
+              sqMatrices.resize(18);
+              sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+              sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+              sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+              sqMatrices[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+              sqMatrices[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+              sqMatrices[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+              sqMatrices[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+              sqMatrices[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+              sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+              
+              sqMatrices[9] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(0).get());
+              sqMatrices[10]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(1).get());
+              sqMatrices[11]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(2).get());
+              sqMatrices[12]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(4).get());
+              sqMatrices[13]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(5).get());
+              sqMatrices[14]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(6).get());
+              sqMatrices[15]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(8).get());
+              sqMatrices[16]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(9).get());
+              sqMatrices[17]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(10).get());
+              
+              rectMatrices.resize(3);
+              rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); 
+              rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+              rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+              // right hand side
+              rhs_array.resize(3);
+              rhs_array[0]=s.rhs_.block(0);
+              rhs_array[1]=s.rhs_.block(1);
+              rhs_array[2]=s.rhs_.block(2);
+              s.rhs_.reset();
+              break;// RESIDUAL_VMS
           }
           break;
       } // switch over NSTYPE
