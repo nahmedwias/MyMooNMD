@@ -6973,19 +6973,19 @@ void TimeNSType4Residual_VMS(double Mult, double *coeff, double *param, double h
       // weighted mass matrix
       galerkin = test00 * ansatz00;
       supg_term = ansatz00 * ugradv;
-      b1 = delta * u1 * ansatz00 * test10;
-      b2 = delta * res1 * u1 * test10;
+      b1 = delta * u1   * ansatz00 * test10;
+      b2 = delta * res1 * ansatz00 * test10;
       MatrixM11[i][j] += Mult * (galerkin + supg_term + b1 + b2);
 
-      b1 = delta * u1 * ansatz00 * test01;
-      b2 = delta * res1 * ansatz00 * test10;
+      b1 = delta * u1   * ansatz00 * test01;
+      b2 = delta * res1 * ansatz00 * test01;
       MatrixM12[i][j] += Mult * (b1 + b2);
       
-      b1 = delta * u2 * ansatz00 * test10;
-      b2 = delta * res2 * ansatz00 * test01;
+      b1 = delta * u2   * ansatz00 * test10;
+      b2 = delta * res2 * ansatz00 * test10;
       MatrixM21[i][j] += Mult * (b1 + b2);
       
-      b1 = delta * u2 * ansatz00 * test01;
+      b1 = delta * u2   * ansatz00 * test01;
       b2 = delta * res2 * ansatz00 * test01;
       MatrixM22[i][j] += Mult * (galerkin + supg_term + b1 + b2);
     }// endfor j<N_U
@@ -7174,19 +7174,19 @@ void TimeNSType4NLResidual_VMS(double Mult, double* coeff, double* param,
       // weighted mass matrix
       galerkin = test00 * ansatz00;
       supg_term = ansatz00 * ugradv;
-      b1 = delta * u1 * ansatz00 * test10;
-      b2 = delta * res1 * u1 * test10;
+      b1 = delta * u1   * ansatz00 * test10;
+      b2 = delta * res1 * ansatz00 * test10;
       MatrixM11[i][j] += Mult * (galerkin + supg_term + b1 + b2);
 
-      b1 = delta * u1 * ansatz00 * test01;
-      b2 = delta * res1 * ansatz00 * test10;
+      b1 = delta * u1   * ansatz00 * test01;
+      b2 = delta * res1 * ansatz00 * test01;
       MatrixM12[i][j] += Mult * (b1 + b2);
       
-      b1 = delta * u2 * ansatz00 * test10;
-      b2 = delta * res2 * ansatz00 * test01;
+      b1 = delta * u2   * ansatz00 * test10;
+      b2 = delta * res2 * ansatz00 * test10;
       MatrixM21[i][j] += Mult * (b1 + b2);
       
-      b1 = delta * u2 * ansatz00 * test01;
+      b1 = delta * u2   * ansatz00 * test01;
       b2 = delta * res2 * ansatz00 * test01;
       MatrixM22[i][j] += Mult * (galerkin + supg_term + b1 + b2);
     }// endfor j<N_U

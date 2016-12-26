@@ -235,6 +235,9 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
         case SUPG:
           this->set_parameters_for_tnse_supg(type);
           break;
+        case RESIDUAL_VMS:
+          this->set_parameters_for_tnse_residual_VMS(type);
+          break;
         default:
           ErrThrow("DISCTYPE", TDatabase::ParamDB->DISCTYPE , "is not supported yet!!");  
       }
@@ -1712,12 +1715,28 @@ void LocalAssembling3D::set_parameters_for_tnse_residual_VMS(LocalAssembling3D_t
     ErrThrow("Residual based VMS method is only supported for NSTYPE 4 and 14 ", 
              TDatabase::ParamDB->NSTYPE);
   }
-  this->N_Parameters = 3;
+  this->N_Parameters = 30;
   this->N_ParamFct = 1;
-  this->ParameterFct =  { TimeNSParamsVelo3D };
-  this->N_FEValues = 3;
-  this->FEValue_FctIndex = { 0, 1, 2 };
-  this->FEValue_MultiIndex = { D000, D000, D000 };
+  this->ParameterFct =  { TimeNSType4Params_Residual_VMS };
+  this->N_FEValues = 27;
+  this->FEValue_MultiIndex = { D000, D000, D000, // u1, u2, u3, old
+                               D100, D100, D100, // u1x, u2x, u3x old
+                               D010, D010, D010, // u1y. u2y, u3y old
+                               D001, D001, D001, // u1z, u2z, u3z, old
+                               D200, D200, D200, // u1xx, u2xx, u3xx old
+                               D020, D020, D020, // u1yy, u2yy, u3yy, old
+                               D002, D002, D002, // u1zz, u2zz, u3zz, old
+                               D100, D010, D001, // p_x, p_y, p_z
+                               D000, D000, D000}; // u1, u2, u3, previous time sol's
+  this->FEValue_FctIndex = { 0, 1, 2, 
+                             0, 1, 2, 
+                             0, 1, 2, 
+                             0, 1, 2,
+                             0, 1, 2, 
+                             0, 1, 2, 
+                             0, 1, 2, 
+                             3, 3, 3, 
+                             4, 5, 6 };
   this->BeginParameter = { 0 };
   
   switch(type)
@@ -1735,12 +1754,28 @@ void LocalAssembling3D::set_parameters_for_tnse_residual_VMS(LocalAssembling3D_t
           this->Needs2ndDerivatives[1] = true;
           this->Needs2ndDerivatives[2] = true;
           this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 }; // 0: velocity, 1: pressure
-          this->N_Matrices = 16;
-          this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+          this->N_Matrices = 24;
+          this->RowSpace    = { 0, 0, 0, // A11, A12, A13
+                                0, 0, 0, // A21, A22, A23
+                                0, 0, 0, // A31, A32, A33
+                                0, 0, 0, // M11, M12, M13
+                                0, 0, 0, // M21, M22, M23
+                                0, 0, 0, // M31, M32, M33
+                                1, 1, 1, // B1,  B2,  B3
+                                0, 0, 0  // B1T, B2T, B3T
+                                };
+          this->ColumnSpace = { 0, 0, 0, // A11, A12, A13
+                                0, 0, 0, // A21, A22, A23
+                                0, 0, 0, // A31, A32, A33
+                                0, 0, 0, // M11, M12, M13
+                                0, 0, 0, // M21, M22, M23
+                                0, 0, 0, // M31, M32, M33
+                                0, 0, 0, // B1,  B2,  B3
+                                1, 1, 1  // B1T, B2T, B3T
+                                };
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 0 };
-          this->AssembleParam = TimeNSType4_SUPGDD3D;
+          this->AssembleParam = TimeNSType4Residual_VMSDD3D;
           this->Manipulate = NULL;
           break; // NSTYPE4
         case 14:
@@ -1762,12 +1797,25 @@ void LocalAssembling3D::set_parameters_for_tnse_residual_VMS(LocalAssembling3D_t
           this->Needs2ndDerivatives[1] = true;
           this->Needs2ndDerivatives[2] = true;
           this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 }; // 0: velocity, 1: pressure
-          this->N_Matrices = 13;
-          this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+          this->N_Matrices = 21;
+          this->RowSpace    = { 0, 0, 0, // A11, A12, A13
+                                0, 0, 0, // A21, A22, A23
+                                0, 0, 0, // A31, A32, A33
+                                0, 0, 0, // M11, M12, M13
+                                0, 0, 0, // M21, M22, M23
+                                0, 0, 0, // M31, M32, M33
+                                0, 0, 0};  // B1T, B2T, B3T           
+          this->ColumnSpace = { 0, 0, 0, // A11, A12, A13
+                                0, 0, 0, // A21, A22, A23
+                                0, 0, 0, // A31, A32, A33
+                                0, 0, 0, // M11, M12, M13
+                                0, 0, 0, // M21, M22, M23
+                                0, 0, 0, // M31, M32, M33
+                                1, 1, 1  // B1T, B2T, B3T
+                                };
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 0 };
-          this->AssembleParam = TimeNSType4NL_SUPGDD3D;
+          this->AssembleParam = TimeNSType4NLResidual_VMSDD3D;
           this->Manipulate = NULL;
           break; // NSTYPE4
         case 14:
@@ -1792,7 +1840,7 @@ void LocalAssembling3D::set_parameters_for_tnse_residual_VMS(LocalAssembling3D_t
           this->ColumnSpace = { };
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 0 };
-          this->AssembleParam = TimeNSRhs_SUPGDD3D;
+          this->AssembleParam = TimeNSType4Residual_VMS_RhsDD3D;
           this->Manipulate = NULL;
           break; // NSTYPE4
         case 14:
