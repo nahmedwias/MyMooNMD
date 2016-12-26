@@ -642,7 +642,7 @@ void Time_NSE3D::assemble_nonlinear_term()
       VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids 
-      TDatabase::ParamDB->DISCTYPE = SMAGORINSKY_COARSE;
+      disctype = SMAGORINSKY_COARSE;
     }
   }
   // update the right hand side for the next iteration: All A blocks, standing B blocks 
@@ -651,13 +651,13 @@ void Time_NSE3D::assemble_nonlinear_term()
   {
     System_per_grid& s = this->systems_.front();
     s.rhs_.scaleActive(tau*t4);
-    if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+    if(disctype == RESIDUAL_VMS)
       s.MatrixK.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
     else 
       s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
   }
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
-  if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY_COARSE)
+  if(disctype == SMAGORINSKY_COARSE)
     TDatabase::ParamDB->DISCTYPE = VMS_PROJECTION;
   Output::info<5>("Assemble non linear terms", "End of the assembling of the nonlinear matrix.");
 }
