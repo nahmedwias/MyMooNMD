@@ -79,9 +79,9 @@ void ExactP(double x, double y, double *values)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
   
-  values[0] =  cos(Pi*t)*(sin(Pi*x)*sin(Pi*y) - 4./(Pi*Pi)); 
-  values[1] =  cos(Pi*t)*Pi*( cos(Pi*x) * sin(Pi*y) );
-  values[2] =  cos(Pi*t)*Pi*( sin(Pi*x) * cos(Pi*y) );
+  values[0] =  128.*(x*x*x + y*y*y - 0.5);
+  values[1] =  128.*(3.*x*x);
+  values[2] =  128.*(3.*y*y);
 }
 
 // ========================================================================
@@ -186,8 +186,8 @@ void LinCoeffs(int n_points, double *X, double *Y,
                 - 6.*yp2*x + 3.*yp2 - 6*y*xp2 + 6.*y*x + xp2 - x);
     f1 = f1 + sin(Pi*t)*nu*16.*Pi*Pi*Pi*(-1. + 2.*cos(4.*Pi*x))*sin(4.*Pi*y);
     f2 = f2 - sin(Pi*t)*nu*16.*Pi*Pi*Pi*(-1. + 2.*cos(4.*Pi*y))*sin(4.*Pi*x);
-    f1 = f1 + cos(Pi*t)*cos(Pi*x)*sin(Pi*y);
-    f2 = f2 + cos(Pi*t)*sin(Pi*x)*cos(Pi*y);
+    f1 = f1 + 128.*3.*x*x;
+    f2 = f2 + 128.*3.*y*y;
     double tempsx = sin(2.*Pi*x);
     double tempcy = cos(2.*Pi*y);
     double tempcx = cos(2.*Pi*x);
