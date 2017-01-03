@@ -22,8 +22,12 @@
 #include <FEFunction3D.h>
 #endif
 
-//Brush code for the particles
-#include <parmoon_interface.h>
+#include <valarray>
+
+namespace Brush
+{
+  class InterfacePM;
+}
 
 class BrushWrapper
 {
@@ -37,12 +41,19 @@ class BrushWrapper
 
     /// Get the k-moment of the particle distribution as piecewise constant
     /// fe function on the domain.
-    /// NOTE: The values that Brush gives are function values at
-    const TFEFunction2D& get_moment_fe(int k);
+    const TFEFunction2D& get_moment_fe(int k) const;
+
+    /// Give the values of velocity u to Brush.
+    void set_velocity(const TFEVectFunct2D& u);
+    void set_temperature(const TFEFunction2D& T);
+    void set_concentrations(std::vector<const TFEFunction2D*> c);
+
+    /// Run the particle solver.
+    void solve(double t_start, double t_end);
 
     /// Write moments of the particle distribution to a .vtk-file, which was
     /// specified in the database given to the constructor.
-    void write_vtk();
+    void output(double t);
 
   private:
 
@@ -65,7 +76,8 @@ class BrushWrapper
     std::vector<TFEFunction2D*> pd_moments_;
     std::vector<std::vector<double>> pd_moments_values_;
 
-    std::vector<std::valarray<double>> input_sample_points_;
+    /// Those are the points in space at which
+    /// Brush expects function values as input.
     std::vector<std::valarray<double>> output_sample_points_;
 
 
