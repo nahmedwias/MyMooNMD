@@ -11,7 +11,12 @@
 #include <Multigrid.h>
 #include <Upwind3D.h>
 
+//project specific
+#include <CoiledPipe.h>
+
 #include <sys/stat.h>
+
+#include <ParameterDatabase.h>
 
 #ifdef _MPI
 #include "mpi.h"
@@ -160,6 +165,7 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
+
   // set the velocity and pressure spaces
   // this function returns a pair which consists of 
   // velocity and pressure order
@@ -184,6 +190,17 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
   
   bool usingMultigrid = solver.is_using_multigrid();
   TCollection *coll = collections.front(); //the finest grid collection
+
+    //CB HERE DO MODIFICATIONS TO COLLECTION DUE TO TWIST!
+    if(true) //FIXME! only for twisted pipe example!!
+    {
+      // ...lie down the cell collection by swapping its vertices x and z coords
+      CoiledPipe::swap_x_and_z_coordinates(coll);
+
+      // ...and coil up the pipe by replacing the vertices' coords
+      CoiledPipe::coil_pipe_helically(coll);
+    }
+    //CB END MODIFICATIONS
   // create finite element space and function, a matrix, rhs, and solution
   #ifdef _MPI
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,

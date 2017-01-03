@@ -1,6 +1,6 @@
 
 #ifdef _MPI
-#  include "mpi.h"
+#include "mpi.h"
 #include <MeshPartition.h>
 #endif
 
@@ -152,8 +152,10 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
 
 //TODO This domain constructor, which is also responsible for read-in of the
 // old database, is to be reomved soon.
-TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
-  Interfaces(nullptr),db(get_default_domain_parameters())
+TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db
+                 , double drift_x, double drift_y, double drift_z,
+                 std::vector<double> segment_marks) :
+	Interfaces(nullptr),db(get_default_domain_parameters())              
 {
   RefLevel = 0;
   
@@ -172,7 +174,8 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
       )
   {
-    this->Init(boundname.c_str(), geoname.c_str());
+    this->Init(boundname.c_str(), geoname.c_str(),
+               drift_x, drift_y, drift_z, segment_marks);
     Output::print<4>("GEO and PRM files are selected");
     
   }
@@ -212,7 +215,8 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
   else 
   {
     // default cases for the tests
-    this->Init(boundname.c_str(), geoname.c_str());
+    this->Init(boundname.c_str(), geoname.c_str(),
+               drift_x, drift_y, drift_z, segment_marks);
   }
 }
 
@@ -1052,7 +1056,12 @@ void TDomain::Init(const char *PRM, const char *GEO)
 
 
 #else // 3D
-void TDomain::Init(const char *PRM, const char *GEO)
+void TDomain::Init(
+    const char *PRM, const char *GEO,
+    //from here it's params with default values, relevant only for sandwich geo
+    double drift_x, double drift_y, double drift_z,
+    std::vector<double> segment_marks
+)
 {
   int IsSandwich = 0;
 
@@ -1118,7 +1127,18 @@ void TDomain::Init(const char *PRM, const char *GEO)
       ErrThrow("cannot open GEO file");
     }
     // then read in sandwich geo.
-    ReadSandwichGeo(bdryStream);
+    if(drift_x || drift_y || drift_z)
+    {//any drift parameter is given non-zero
+      ReadSandwichGeo(bdryStream, drift_x, drift_y, drift_z, segment_marks);
+    }
+    else
+    {
+      double DriftX = TDatabase::ParamDB->DRIFT_X;
+      double DriftY = TDatabase::ParamDB->DRIFT_Y;
+      double DriftZ = TDatabase::ParamDB->DRIFT_Z;
+      ReadSandwichGeo(bdryStream, DriftX, DriftY, DriftZ, segment_marks);
+    }
+
   }
 }
 #endif // __2D__

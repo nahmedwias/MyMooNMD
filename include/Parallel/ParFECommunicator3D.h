@@ -27,6 +27,7 @@
 #include "mpi.h"
 
 #include <ParFEMapper3D.h>
+#include <string>
 
 class TParFECommunicator3D
 {

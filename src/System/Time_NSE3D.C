@@ -8,6 +8,10 @@
 #include <MainUtilities.h>
 #include <Multigrid.h>
 
+//project specific
+#include <CoiledPipe.h>
+
+
 #include <sys/stat.h>
 
 #ifdef _MPI
@@ -93,6 +97,7 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
   //print some information on the parallel infrastructure
   velocitySpace_.get_communicator().print_info();
   pressureSpace_.get_communicator().print_info();
+
 #endif
 }
 
@@ -129,6 +134,16 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
   }
   bool usingMultigrid = solver_.is_using_multigrid();
   TCollection *coll = collections_.front(); // finest grid collection
+
+  //CB HERE DO MODIFICATIONS TO COLLECTION DUE TO TWIST!
+  if(true) //FIXME! only for twisted pipe example!!
+  {
+    // ...lie down the cell collection by swapping its vertices x and z coords
+    CoiledPipe::swap_x_and_z_coordinates(coll);
+    // ...and coil up the pipe by replacing the vertices' coords
+    CoiledPipe::coil_pipe_helically(coll);
+  }
+  //CB END MODIFICATIONS
   // create finite element space and function, a matrix, rhs, and solution
 #ifdef _MPI
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,

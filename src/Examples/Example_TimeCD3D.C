@@ -32,7 +32,7 @@ Example_TimeCD3D::Example_TimeCD3D(
       boundary_conditions.push_back(BoundCondition);
       boundary_data.push_back(BoundValue);
       problem_coefficients = BilinearCoeffs;
-      initialCondtion.push_back(InitialCondition);
+      initialCondition.push_back(InitialCondition);
       ExampleFile();
     }
       break;
@@ -43,7 +43,7 @@ Example_TimeCD3D::Example_TimeCD3D(
       boundary_conditions.push_back(BoundCondition);
       boundary_data.push_back(BoundValue);
       problem_coefficients = BilinearCoeffs;
-      initialCondtion.push_back(InitialCondition);
+      initialCondition.push_back(InitialCondition);
       ExampleFile();
     }
       break;
@@ -53,7 +53,7 @@ Example_TimeCD3D::Example_TimeCD3D(
       boundary_conditions.push_back(BoundCondition);
       boundary_data.push_back(BoundValue);
       problem_coefficients = BilinearCoeffs;
-      initialCondtion.push_back(InitialCondition);
+      initialCondition.push_back(InitialCondition);
       
       concentration::PECLET_NUMBER = this->get_nu();
       ExampleFile();
