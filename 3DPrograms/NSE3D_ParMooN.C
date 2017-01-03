@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
   // Choose and construct example - in this project, this has to be done before
   // initiing the Domain, as the example itself inluences the geometry by setting
   // a global parameter (which is awful).
-  Example_NSE3D example(parmoon_db["example"], parmoon_db);
+  Example_NSE3D example(parmoon_db);
 
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1], parmoon_db,
