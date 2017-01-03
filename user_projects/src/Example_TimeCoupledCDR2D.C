@@ -82,6 +82,8 @@ Example_TimeCoupledCDR2D::Example_TimeCoupledCDR2D(const ParameterDatabase & db)
     {
       using namespace asa_crystallizer;
 
+      VELOCITY_CODE = db["velocity_code"];
+
       /** Unknwon exact solutions, put to zero. */
       exact_solution.push_back( zero_function_2D );
       exact_solution.push_back( zero_function_2D );
