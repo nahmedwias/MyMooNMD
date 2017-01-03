@@ -1070,6 +1070,8 @@ void Time_NSE3D::solve()
     //kick off the solving process
     mumps_wrapper.solve(s.rhs_, s.solution_);
   }
+  else
+    solver_.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential
 #endif
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11, A22 and A33 matrices are
@@ -1351,7 +1353,7 @@ bool Time_NSE3D::imex_scheme(bool print_info)
   if (interruption_condition)
   {
     db_["nonlinloop_maxit"] = 1;
-    if(print_info) // condition is here just to print it once
+    if(print_info && (int)db_["nonlinloop_maxit"]!=1 ) // condition is here just to print it once
       Output::info<1>("Nonlinear Loop MaxIteration",
                     "The parameter 'nonlinloop_maxit' was changed to 1."
                     " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");

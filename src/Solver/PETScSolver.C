@@ -638,6 +638,7 @@ PETScSolver::~PETScSolver()
 /* ************************************************************************** */
 void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
 {
+
   /// @todo check if matrix sizes are ok with solution and rhs sizes
   /// MatGetSize() does not work for MatNest mat type, which is used for
   /// saddle point problems.
@@ -732,5 +733,6 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   // delete petsc vectors
   VecDestroy(&b);
   VecDestroy(&x);
+
 }
 
