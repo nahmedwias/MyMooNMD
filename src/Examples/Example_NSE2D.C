@@ -35,6 +35,13 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
   switch( example_code )
   {
     case 0:
+      /** In this ParMooN branch, the Poiseuille-Flow example is adapted
+       *  to the Khinast crystallizer example. There are four different
+       *  inflow velocities, and which of them is applied is controlled by
+       *  "velocity code" (0: lowest, 3: highest velocity)
+       */
+      poiseuille::VELOCITY_CODE = user_input_parameter_db["velocity_code"];
+
       /** exact_solution */
       exact_solution.push_back( poiseuille::ExactU1 );
       exact_solution.push_back( poiseuille::ExactU2 );

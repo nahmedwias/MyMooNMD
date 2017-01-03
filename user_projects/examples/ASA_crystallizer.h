@@ -25,7 +25,8 @@ int bdry_outflow = 1;
 int bdry_lower = 2;
 
 // hard coded parameter sets for four different inflow velocities
-int velocity_code = 0;
+//  - can be controlled via input database
+int VELOCITY_CODE = 0;
 
 double inflow_T[4] = {307.6, 312.9, 313.1, 313.7}; //unit is K
 double inflow_c = 2005; // unit is mol/m^3
@@ -122,7 +123,7 @@ void BoundCond_T(int BdComp, double t, BoundCond &cond)
 void BoundValue_T(int BdComp, double Param, double &value)
 {
   if(BdComp == bdry_inflow){
-    value = inflow_T[velocity_code]; //constant, depends on parameter set
+    value = inflow_T[VELOCITY_CODE]; //constant, depends on parameter set
   }
    else if(BdComp == bdry_outflow)
   {
