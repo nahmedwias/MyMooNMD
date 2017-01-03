@@ -78,7 +78,6 @@ struct TParaDB
   int VELOCITY_SPACE;
   int PRESSURE_SPACE;
   int PRESSURE_SEPARATION;
-
   //======================================================================
   /** parameters for grid generation                                    */
   //======================================================================

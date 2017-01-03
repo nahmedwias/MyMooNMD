@@ -33,6 +33,11 @@ namespace flow_around_cylinder_stat
 {
 #include "NSE_3D/FlowAroundCylinder_stat.h"
 }
+//project: twisted pipe flow //10
+namespace twisted_pipe_flow
+{
+#include "NSE_3D/twisted_pipe_flow.h"
+}
 
 //test examples
 namespace test_u_0_p_0 //-1
@@ -209,6 +214,34 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       ExampleFile();
       break;
     }
+      case 10:
+      {
+        using namespace twisted_pipe_flow;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        ExampleFile(false);
+        break;
+      }
+
     case -1:
     {
       using namespace test_u_0_p_0;
@@ -329,6 +362,9 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       ExampleFile();
       break;
     }
+      default:
+        ErrThrow("Unknown Example code in Example_NSE3D. Exiting!");
+
   }
 }
 
@@ -341,11 +377,11 @@ void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
   else
   {
 #ifdef _MPI
-	  int my_rank;
-	  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-	  if (my_rank == 0)
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
 #endif
-	    Output::info<2>("Example_NSE3D","No post processing done for the current example.");
+    Output::info<2>("Example_NSE3D","No post processing done for the current example.");
   }
 }
 

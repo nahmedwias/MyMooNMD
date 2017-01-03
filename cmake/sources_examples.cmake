@@ -1,4 +1,4 @@
-# CMakeLists.txt for subdirectory Examples of ParMooN project. 
+﻿# CMakeLists.txt for subdirectory Examples of ParMooN project. 
 # Use only as subproject of ParMooN.
 # 
 # Change history:
@@ -49,6 +49,7 @@ list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_TimeC
 list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_NSE3D.C")
 list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_TimeNSE3D.C")
 
+list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/NSE_3D/twisted_pipe_flow.C")
 
 list(APPEND PARMOON_SOURCES_2D ${EXAMPLE_SOURCES_2D} ${EXAMPLE_SOURCES})
 list(APPEND PARMOON_SOURCES_3D ${EXAMPLE_SOURCES_3D} ${EXAMPLE_SOURCES})

@@ -28,6 +28,11 @@ namespace Bsp3
 {
   #include "TNSE_3D/Bsp3.h"   // 5
 }
+//project: twisted pipe flow
+namespace twisted_pipe_flow //10
+{
+#include "NSE_3D/twisted_pipe_flow.h"
+}
 
 namespace flow_around_cylinder_instationary
 {
@@ -67,9 +72,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       /** some variables to change values in the example */
       lin_space_time::DIMENSIONLESS_VISCOSITY = this->get_nu();
@@ -102,9 +107,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       /** some variables to change values in the example */
       AnsatzLinConst::DIMENSIONLESS_VISCOSITY = this->get_nu();
@@ -137,9 +142,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       /** some variables to change values in the example */
       Bsp0::DIMENSIONLESS_VISCOSITY = this->get_nu();
@@ -172,9 +177,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       /** some variables to change values in the example */
       Bsp1::DIMENSIONLESS_VISCOSITY = this->get_nu();
@@ -207,9 +212,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       /** some variables to change values in the example */
       Bsp2::DIMENSIONLESS_VISCOSITY = this->get_nu();
@@ -242,9 +247,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       /** some variables to change values in the example */
       Bsp3::DIMENSIONLESS_VISCOSITY = this->get_nu();
@@ -277,9 +282,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       /**post processing - drag and lift calculation and output */
       post_processing_stat = flow_around_cylinder_instationary::compute_drag_lift_pdiff;
@@ -288,6 +293,38 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       flow_around_cylinder_instationary::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ExampleFile();
+      break;
+    }
+    case 10:
+    {
+      using namespace twisted_pipe_flow;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** initial conditions */
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
+
+      ExampleFile(true);
       break;
     }
     default:

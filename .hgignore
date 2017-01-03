@@ -3,3 +3,5 @@ documentation/html/
 # files created by KDevelop 
 \.kdev4$
 include/General/ParMooN_repository_info.h
+\.project
+\.settings/

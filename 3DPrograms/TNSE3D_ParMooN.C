@@ -18,6 +18,9 @@
 
 #include <TimeDiscRout.h>
 
+//project specific
+#include <CoiledPipe.h>
+
 using namespace std;
 
 #ifdef _MPI
@@ -68,16 +71,6 @@ int main(int argc, char* argv[])
 #endif
   TFEDatabase3D feDatabase;
 
-  // Choose and construct example.
-  Example_TimeNSE3D example(parmoon_db);
-
-  // Do the old parameter check of the Database.
-  Database.CheckParameterConsistencyNSE();
-  // =====================================================================
-  // set the database values and generate mesh
-  // =====================================================================
-  // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1],parmoon_db);
 
   //open OUTFILE, this is where all output is written to (additionally to console)
   if(parmoon_db["problem_type"].is(0))
@@ -97,6 +90,43 @@ int main(int argc, char* argv[])
     Database.WriteParamDB(argv[0]);
     Database.WriteTimeDB();
   }
+  
+  // project specific: prepare the coiled geometry
+  size_t n_twists                 = parmoon_db["twisted_pipe_n_twists"];
+  size_t n_segments_per_twist     = parmoon_db["twisted_pipe_n_segments_per_twist"];
+  double l_inflow                 = parmoon_db["twisted_pipe_l_inflow"];
+  size_t n_segments_inflow        = parmoon_db["twisted_pipe_n_segments_inflow"];
+  double l_outflow                = parmoon_db["twisted_pipe_l_outflow"];
+  size_t n_segments_outflow       = parmoon_db["twisted_pipe_n_segments_outflow"];
+  double tube_radius              = parmoon_db["twisted_pipe_tube_radius"];
+  double twist_radius             = parmoon_db["twisted_pipe_twist_radius"];
+  double space_between_twists     = parmoon_db["twisted_pipe_space_between_twists"];
+
+  CoiledPipe::set_up_geoconsts(
+      n_twists,
+      n_segments_per_twist,
+      l_inflow,
+      n_segments_inflow,
+      l_outflow,
+      n_segments_outflow,
+      tube_radius,
+      twist_radius,
+      space_between_twists
+  );
+  double drift_x = 0;
+  double drift_y = 0;
+  double drift_z =CoiledPipe::GeoConsts::l_tube;
+
+  // Choose and construct example - in this project, this has to be done before
+  // initiing the Domain, as the example itself influences the geometry by setting
+  // a global parameter (which is awful).
+  Example_TimeNSE3D example(parmoon_db["example"], parmoon_db);
+
+  // Construct domain, thereby read in controls from the input file.
+  TDomain domain(argv[1],parmoon_db,
+                 drift_x, drift_y, drift_z, CoiledPipe::GeoConsts::segment_marks);
+
+  
   // Initial refinement and grid collection
 #ifdef _MPI
   int maxSubDomainPerDof = 0;
@@ -116,6 +146,83 @@ int main(int argc, char* argv[])
   domain.print_info("TNSE3D domain");
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
+
+  size_t planeSegment = parmoon_db["twisted_pipe_planeSegment"];
+
+  // variable zPlane
+  double zPlane = 0.;
+
+  if (planeSegment < n_segments_inflow)
+  {//inflow part
+	  zPlane = (double) planeSegment / n_segments_inflow * l_inflow;
+  }
+  else if (planeSegment < n_segments_inflow + n_twists * n_segments_per_twist )
+  {//twisted part
+	  size_t i_twist = planeSegment - n_segments_inflow;
+	  zPlane = l_inflow + (double) i_twist / (n_twists * n_segments_per_twist)
+			   * (drift_z - l_inflow - l_outflow);
+  }
+  else
+  {//outflow part
+	  size_t i_out = planeSegment - n_segments_inflow - n_twists * n_segments_per_twist;
+	  zPlane = l_inflow + (drift_z - l_inflow - l_outflow)
+			  + (double) i_out / n_segments_outflow * l_outflow;
+  }
+
+  // plane with position vector and normal vector
+  TVertex*  posPlane = new TVertex(0. , 0., zPlane);
+  TVertex* normPlane = new TVertex(0., 0., 1.);
+
+  // copy the straight pipe collection
+  TCollection* straightColl = domain.GetCollection(It_Finest, 0);
+  std::vector<TBaseCell*> cells = CoiledPipe::getCellsAtPlane(straightColl, posPlane, normPlane);
+
+  // discretization of the plane
+  // it will be a square of height = width = tube_radius
+  int discN = 100;
+  double h = 2*tube_radius/(discN-1);
+
+  std::vector<CoiledPipe::VertexValues> vertexList;
+
+  // some points in the plane
+  for (int i = 0; i < discN; ++i)
+  {
+	double xCoord = -tube_radius + i*h;
+
+	for (int j = 0; j < discN; ++j)
+	{
+	  double yCoord = -tube_radius + j*h;
+
+	  // if the point is in the tube
+	  if ( xCoord*xCoord + yCoord*yCoord < tube_radius*tube_radius)
+	  {
+		// already swapped x and z, because else the coiling of these
+		// vertices is going wrong
+	    CoiledPipe::VertexValues p(j+i*discN, xCoord,
+	    						   yCoord, zPlane);
+#ifdef _MPI
+	    double x, y, z;
+
+	    p.GetCoords(x, y, z);
+
+	    for (TBaseCell* cell : cells)
+	    {
+	    	if ( cell->PointInCell(x, y, z) )
+	    	{
+#endif
+	    		p.origZ = p.origX;
+	    		p.origX = zPlane - CoiledPipe::GeoConsts::l_inflow;
+
+	    		vertexList.push_back(p);
+#ifdef _MPI
+	    		break;
+	    	} // end if
+	    }// end for cells
+#endif
+	  }
+	}
+  }
+
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
   Time_NSE3D tnse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
@@ -209,6 +316,23 @@ int main(int argc, char* argv[])
       tnse3d.output(tnse3d.current_step_,image);
       timer_timeit.print_total_time(
         "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
+        
+      if (cells.empty())
+      {
+     	Output::print<2>("No cells found at zPlane = ", zPlane);
+      }
+      else
+      {
+        Output::print<2>(cells.size(), " cells found");
+      }
+      
+      std::string filename = std::string("testVelocity")
+        	  	  	  	  	 + std::string(".txt");
+
+      CoiledPipe::writeVelocityOfCells(cells, vertexList,
+     	  	 tnse3d.get_velocity(), tnse3d.get_pressure(), filename);
+
+
     } // end of subtime loop
   } // end of time loop
 
