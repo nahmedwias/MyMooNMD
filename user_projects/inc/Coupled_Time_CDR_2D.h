@@ -83,6 +83,11 @@ class Coupled_Time_CDR_2D {
     void assemble_uncoupled_part(const TFEVectFunct2D* velocity_field);
 
     /**
+     * Return the current solution fe functions of the equations.
+     */
+    std::vector<const TFEFunction2D*> get_fe_functions() const;
+
+    /**
      * Produce some output.
      */
     void output();

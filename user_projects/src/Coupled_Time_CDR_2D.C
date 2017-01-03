@@ -176,6 +176,14 @@ void Coupled_Time_CDR_2D::assemble_uncoupled_part(
   }
 }
 
+std::vector<const TFEFunction2D*> Coupled_Time_CDR_2D::get_fe_functions() const
+{
+   std::vector<const TFEFunction2D*> fe_fcts;
+   for(auto eq : this->cdProblems_)
+     fe_fcts.push_back(&eq->get_function());
+   return fe_fcts;
+}
+
 void Coupled_Time_CDR_2D::output(){
   //Let the work be done by the Time_CD objects for now.
   for (size_t equation = 0; equation<nEquations_;++equation){
