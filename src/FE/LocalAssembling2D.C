@@ -2968,7 +2968,10 @@ void LocalAssembling2D::set_parameters_for_tstokes(LocalAssembling2D_type type)
               this->N_Matrices    = 9;
               this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
               this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
-              this->AssembleParam = TimeStokesType4Galerkin;
+              if(TDatabase::ParamDB->LAPLACETYPE == 0)
+                this->AssembleParam = TimeStokesType4Galerkin;
+              else 
+                this->AssembleParam = LocAssembleCoFoGalerkin;
               break;
           default:
               ErrThrow("NSTYPE: ",
