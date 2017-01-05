@@ -1044,4 +1044,14 @@ void LocAssembleNLNSTYPE4(double Mult, double *coeff,
                   double **OrigValues, int *N_BaseFuncts,
                   double ***LocMatrices, double **LocRhs);
 
+void LocAssembleCoFoGalerkin(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs);
+
+void LocAssembleCoFoReconstruction(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs);
+
 #endif  // __TNSE2D_FIXPO__

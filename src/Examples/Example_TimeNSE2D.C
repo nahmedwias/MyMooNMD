@@ -48,6 +48,11 @@ namespace cosine_sin_poly
 #include "TNSE_2D/cosine_sine_poly.h"
 }
 
+namespace cori_betaplane
+{
+#include "TNSE_2D/coriolis_betaplane.h"
+}
+
 Example_TimeNSE2D::Example_TimeNSE2D(
   const ParameterDatabase& user_input_parameter_db)
  : Example_NonStationary2D(user_input_parameter_db)
@@ -322,6 +327,34 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = cosine_sin_poly::LinCoeffs;
 
       cosine_sin_poly::DIMENSIONLESS_VISCOSITY=this->get_nu();
+      ExampleFile();
+      break;
+    }
+    case 10:
+    {
+      using namespace cori_betaplane;
+      exact_solution.push_back(ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** initial conditions, in case of a non-stationary problem */
+      initialCOndtion.push_back(InitialU1);
+      initialCOndtion.push_back(InitialU2);
+      initialCOndtion.push_back(InitialP);
+      /** coefficients */
+      problem_coefficients = cori_betaplane::LinCoeffs;
+
+      cori_betaplane::DIMENSIONLESS_VISCOSITY=this->get_nu();
       ExampleFile();
       break;
     }
