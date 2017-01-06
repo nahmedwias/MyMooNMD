@@ -196,7 +196,8 @@ class Time_NSE3D
 
     /** @brief solution vector from previous time step (on finest mesh)*/
     BlockVector old_solution_;
-
+    
+    BlockVector old_rhs_w_old_sol;
     /** @brief constructs a solution vector extrapolated from previous steps
      * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
     BlockVector extrapolated_solution_;
@@ -360,6 +361,8 @@ class Time_NSE3D
 
     /** */
     bool imex_scheme(bool print_info);
+    
+    void assemble_for_supg();
 
 /* ******************************************************************************/
     // Declaration of special member functions - delete all but destructor.

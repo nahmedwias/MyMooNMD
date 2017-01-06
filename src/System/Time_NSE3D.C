@@ -496,6 +496,7 @@ void Time_NSE3D::assemble_initial_time()
   // copy the last right hand side and solution vectors to the old ones
   this->old_rhs_      = this->systems_.front().rhs_;
   this->old_solution_ = this->systems_.front().solution_;
+  this->old_rhs_w_old_sol = this->old_rhs_;
 }
 
 /**************************************************************************** */
@@ -529,26 +530,28 @@ void Time_NSE3D::assemble_rhs()
 
     // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
     // next we want to set old_rhs to f^k (to be used in the next time step)
-    this->old_rhs_.addScaledActive(s.rhs_, -1./(tau*theta3));
-    this->old_rhs_.scaleActive(-theta3/theta4);
+    if(TDatabase::ParamDB->DISCTYPE != SUPG)
+    {
+      this->old_rhs_.addScaledActive(s.rhs_, -1./(tau*theta3));
+      this->old_rhs_.scaleActive(-theta3/theta4);
+    }
     this->old_rhs_.copy_nonactive(s.rhs_);
   }
-
   // FIXME Find other solution than this submatrix method.
   // M u^{k-1} NOTE : here s.solution_ is exactly u^{k-1}
   if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
     s.MatrixK.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
   else
-    s.massMatrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, 1.0);
+  s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
   // -tau*theta2 * A u^{k-1} NOTE : here, s.solution_ is u^{k-1}
   double factor = -tau*theta2;
-  s.matrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, factor);
-
+  s.matrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, factor);
+ 
   // scale the BT blocks with time step length
   for(System_per_grid& s : this->systems_)
   {
     if(tau != oldtau_)
-    {
+    {    
       // TODO: change the factor to be THETA1*tau; why??
       factor = /*theta1*/tau;
       if(this->oldtau_ != 0.0)
@@ -557,28 +560,22 @@ void Time_NSE3D::assemble_rhs()
         Output::print<1>("change in tau", this->oldtau_, "->", tau);
       }
       // scale the BT transposed blocks with the current time step
-      const std::vector<std::vector<size_t>> cell_positions = {{0,3},
-                                                               {1,3},
-                                                               {2,3}};
+      const std::vector<std::vector<size_t>> 
+               cell_positions = {{0,3}, {1,3}, {2,3}};
       s.matrix_.scale_blocks(factor, cell_positions);
       if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
       {
-        const std::vector<std::vector<size_t>> cell_positions_t = {{3,0},
-                                                                   {3,1},
-                                                                   {3,2}};
+        const std::vector<std::vector<size_t>> 
+               cell_positions_t = {{3,0}, {3,1}, {3,2}};
         s.matrix_.scale_blocks(factor, cell_positions_t);
       }
     }
   }
-
   this->oldtau_ = tau;
-
   // retrieve the non active from "temporary" into rhs vector
   s.rhs_.copy_nonactive(temporary);
-
   // copy the non active to the solution vector
   s.solution_.copy_nonactive(s.rhs_);
-
   /** After copy_nonactive, the solution vectors needs to be Comm-updated
      * in MPI-case in order to be consistently saved. It is necessary that
      * the vector is consistently saved because it is the only way to
@@ -614,25 +611,11 @@ void Time_NSE3D::assemble_rhs()
 /**************************************************************************** */
 void Time_NSE3D::assemble_nonlinear_term()
 {
-  // subtract the right hand which comes from the SUPG contribution, assemble and 
-  // add it to the rhs vector for nonlinear iteration
-  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-  double t1 = TDatabase::TimeDB->THETA1;
-  double t2 = TDatabase::TimeDB->THETA2;
-  double t3 = TDatabase::TimeDB->THETA3;
-  double t4 = TDatabase::TimeDB->THETA4;
-  int disctype = TDatabase::ParamDB->DISCTYPE;
   for(System_per_grid& s : this->systems_)
   {
     call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
-    // scale the standing blocks due to nonlinearity
-    if(disctype == SUPG || disctype == RESIDUAL_VMS)
-    {
-      const std::vector<std::vector<size_t>> cell_posi = {{0,3}, {1,3}, {2,3}};
-      s.matrix_.scale_blocks(t1*tau, cell_posi);
-    }
     
-    if(disctype == VMS_PROJECTION)
+    if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
     {
       std::vector<std::shared_ptr<FEMatrix>> blocks
          = s.matrix_.get_blocks_uniquely();
@@ -642,22 +625,11 @@ void Time_NSE3D::assemble_nonlinear_term()
       VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids 
-      disctype = SMAGORINSKY_COARSE;
+      TDatabase::ParamDB->DISCTYPE = SMAGORINSKY_COARSE;
     }
   }
-  // update the right hand side for the next iteration: All A blocks, standing B blocks 
-  // and the right hand sides needs to be re-assemble for the SUPG and RESIDUAL_VMS
-  if(disctype == SUPG || disctype == RESIDUAL_VMS)
-  {
-    System_per_grid& s = this->systems_.front();
-    s.rhs_.scaleActive(tau*t4);
-    if(disctype == RESIDUAL_VMS)
-      s.MatrixK.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
-    else 
-      s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
-  }
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
-  if(disctype == SMAGORINSKY_COARSE)
+  if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY_COARSE)
     TDatabase::ParamDB->DISCTYPE = VMS_PROJECTION;
   Output::info<5>("Assemble non linear terms", "End of the assembling of the nonlinear matrix.");
 }
@@ -799,6 +771,17 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
     else
     {
       this->descale_matrices();
+      // assemble the matrices with the right solution 
+      // in order to assemble them on the right hand side 
+      // for the solver:: 
+      // So in that case no-need to descale the matrices because all the matrices 
+      // will be reassembled with the right solution
+      if(TDatabase::ParamDB->DISCTYPE == SUPG)
+      {
+        this->assemble_for_supg();
+        this->old_rhs_ = this->old_rhs_w_old_sol;
+      }
+      // 
       this->old_solution_ = this->systems_.front().solution_;
       this->systems_.front().Old_Sol = this->systems_.front().solution_;
       return true;
@@ -897,24 +880,17 @@ void Time_NSE3D::descale_matrices()
   double factor = tau*TDatabase::TimeDB->THETA1;
   for(System_per_grid& s : this->systems_)
   {
-    if(TDatabase::ParamDB->DISCTYPE != SUPG || 
-      TDatabase::ParamDB->DISCTYPE != RESIDUAL_VMS)
-    {
-      const FEMatrix& mass_blocks = *s.massMatrix_.get_blocks().at(0).get();
-      s.matrix_.add_matrix_actives(mass_blocks, -1.0,
-                                   {{0,0}, {1,1}, {2,2}},
-                                   {false, false, false});
-      const std::vector<std::vector<size_t>>
-      cell_positions = {{0,0}, {0,1}, {0,2},
-                        {1,0}, {1,1}, {1,2},
-                        {2,0}, {2,1}, {2,2}};
-      // note: declaring the auxiliary cell_positions is needed by the compiler
-      // to sort out the overriding of the function scale_blocks_actives(...,...)
-      s.matrix_.scale_blocks_actives(1./factor, cell_positions);
-    }
-    // else::Descaling of the matrices are not needed 
-    // for the SUPG and RESIDUAL_VMS methods since the matrices will 
-    // be reassemble during the nonlinear iteration
+    const FEMatrix& mass_blocks = *s.massMatrix_.get_blocks().at(0).get();
+    s.matrix_.add_matrix_actives(mass_blocks, -1.0,
+                                 {{0,0}, {1,1}, {2,2}},
+                                 {false, false, false});
+    const std::vector<std::vector<size_t>>
+        cell_positions = {{0,0}, {0,1}, {0,2},
+                          {1,0}, {1,1}, {1,2},
+                          {2,0}, {2,1}, {2,2}};
+    // note: declaring the auxiliary cell_positions is needed by the compiler
+    // to sort out the overriding of the function scale_blocks_actives(...,...)
+    s.matrix_.scale_blocks_actives(1./factor, cell_positions);
   }
 }
 
@@ -1280,6 +1256,13 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
       fefunctions[5]=s.u_old.GetComponent(1);
       fefunctions[6]=s.u_old.GetComponent(2);
     }
+    if(disctype == SUPG)
+    {
+      fefunctions.resize(6);
+      fefunctions[3]=s.u_old.GetComponent(0);
+      fefunctions[4]=s.u_old.GetComponent(1);
+      fefunctions[5]=s.u_old.GetComponent(2);
+    }
   }
   else
   {
@@ -1517,6 +1500,7 @@ void Time_NSE3D::prepare_matrices_rhs(System_per_grid& s,
           switch(disctype)
           {
             case GALERKIN:
+            case SUPG:
               sqMatrices.resize(3);
               blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
               sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
@@ -1526,7 +1510,7 @@ void Time_NSE3D::prepare_matrices_rhs(System_per_grid& s,
             case SMAGORINSKY:
             case VMS_PROJECTION:
             case SMAGORINSKY_COARSE:
-            case SUPG:
+            //case SUPG:
               sqMatrices.resize(9);
               sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
               sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
@@ -1544,23 +1528,6 @@ void Time_NSE3D::prepare_matrices_rhs(System_per_grid& s,
                 rectMatrices[0]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
                 rectMatrices[1]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
                 rectMatrices[2]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
-              }
-              if(disctype == SUPG)
-              {
-                // weighted mass matrix
-                sqMatrices.resize(10);
-                sqMatrices[9]=reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-                // rectangular matrices:: standing B-blocks
-                rectMatrices.resize(3);
-                rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); 
-                rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
-                rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
-                // right hand side
-                rhs_array.resize(3);
-                rhs_array[0]=s.rhs_.block(0);
-                rhs_array[1]=s.rhs_.block(1);
-                rhs_array[2]=s.rhs_.block(2);
-                s.rhs_.reset();
               }
               break;
             case RESIDUAL_VMS:
@@ -1613,6 +1580,7 @@ void Time_NSE3D::prepare_matrices_rhs(System_per_grid& s,
       rhs_array[0]= s.rhs_.block(0);
       rhs_array[1]= s.rhs_.block(1);
       rhs_array[2]= s.rhs_.block(2);
+
       if(nstype == 14) // TODO remove the case 4: no need the pressure block 
       {
         rhs_array.resize(4);
@@ -1621,10 +1589,50 @@ void Time_NSE3D::prepare_matrices_rhs(System_per_grid& s,
       s.rhs_.reset();
       break;
     } //LocalAssembling3D_type::TNSE3D_Rhs:
+    case LocalAssembling3D_type::TNSE3D_SUPG_Extra:
+    {
+      if(disctype != SUPG)
+      {
+        ErrThrow(" Only for SUPG method");
+      }
+      sqMatrices.resize(4);
+      sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());      
+      sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+      sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+      
+      std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+             = s.massMatrix_.get_blocks_uniquely();
+      sqMatrices[3]=reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+      
+      rectMatrices.resize(3);
+      rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); 
+      rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+      rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(11).get());  
+      
+      rhs_array.resize(3);
+      rhs_array[0] = old_rhs_w_old_sol.block(0);
+      rhs_array[1] = old_rhs_w_old_sol.block(1);
+      rhs_array[2] = old_rhs_w_old_sol.block(2);
+      old_rhs_w_old_sol.reset();
+      break;
+    } // LocalAssembling3D_type::TNSE3D_SUPG_Extra:
   }  
   // reset matrices
   for(auto mat : sqMatrices)
     mat->reset();
   for(auto remat : rectMatrices)
     remat->reset();
+}
+
+void Time_NSE3D::assemble_for_supg()
+{
+  for(System_per_grid& s : this->systems_)
+  {
+    call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_SUPG_Extra);
+   
+    // scale the BT transposed blocks with the current time step
+    const std::vector<std::vector<size_t>> 
+       cell_positions = {{0,3}, {1,3}, {2,3}};
+    s.matrix_.scale_blocks(TDatabase::TimeDB->TIMESTEPLENGTH, cell_positions);
+  }
 }

@@ -465,8 +465,13 @@ void TimeNSType4_SUPGDD3D(double Mult, double *coeff, double *param, double hK,
 void TimeNSType4NL_SUPGDD3D(double Mult, double *coeff, double *param, double hK, 
      double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 
+void TimeNSType4_SUPGExtraDD3D(double Mult, double *coeff, double *param, double hK, 
+     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+
 void TimeNSRhs_SUPGDD3D(double Mult, double *coeff, double *param, double hK, 
      double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4Params_SUPG(double *in, double *out);
 // ======================================================================
 // Type 4, Residual based VMS D(u):D(v)
 // ======================================================================
