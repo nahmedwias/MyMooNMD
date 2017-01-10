@@ -160,18 +160,6 @@ struct TParaDB
   int SOLD_PARAMETER_SCALING;
   double SOLD_PARAMETER_SCALING_FACTOR;
 
-  /** parameters for controlling algebraic flux correction (FEM-FCT schemes) */
-  //! 0 - No AFC. 1 - FEM-TVD. Add more here!
-  int ALGEBRAIC_FLUX_CORRECTION;
-  //! TODO Use and comment!
-  int FEM_FCT_LINEAR_TYPE;
-  //! TODO Use and comment!
-  int FEM_FCT_PRELIMITING;
-  //! TODO Use and comment!
-  int FEM_FCT_GROUP_FEM;
-  //! TODO Use and comment!
-  int GROUP_FEM;
-
   //======================================================================
   /** parameters for vectorial FE (Raviart-Thomas, Brezzi-Douglas-Marini) */
   //======================================================================

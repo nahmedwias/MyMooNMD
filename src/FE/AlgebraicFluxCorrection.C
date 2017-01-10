@@ -456,6 +456,20 @@ void ZalesaksFluxLimiter(
 
 }
 
+ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
+{
+  ParameterDatabase db("default algebraic flux correction database");
+
+  // Type of AFC to be applied.
+  db.add("algebraic_flux_correction", "none", " Chose which type of afc to use.",
+         {"none", "default", "fem-tvd", "fem-fct-cn"});
+
+  db.add("afc_prelimiter", 0, "Chose an afc flux prelimiting scheme. Options "
+      "are 0 (none), 1 (min-mod), 2 (grad-direction), 3 (both)", {0,1,2,3});
+
+  return db;
+}
+
 // ////////////////////////////////////////////////////////////////////////////
 // Implementation of the methods in the namespace AlgebraicFluxCorrection    //
 // ////////////////////////////////////////////////////////////////////////////
@@ -878,21 +892,13 @@ void AlgebraicFluxCorrection::correct_dirichlet_rows(FEMatrix& MatrixA)
 	size_t diriHighBound;
 	size_t diriLowBound;
 #ifdef __3D__
-	if(MatrixA.GetFESpace3D())      //it's a 3D matrix!
-	{
-    diriHighBound = MatrixA.GetFESpace3D()->GetDirichletBound();
-    diriLowBound = diriHighBound - MatrixA.GetFESpace3D()->GetN_Dirichlet();
-	}
+  diriHighBound = MatrixA.GetFESpace3D()->GetDirichletBound();
+  diriLowBound = diriHighBound - MatrixA.GetFESpace3D()->GetN_Dirichlet();
+#elif __2D__
+  diriHighBound = MatrixA.GetFESpace2D()->GetDirichletBound();
+  diriLowBound = diriHighBound - MatrixA.GetFESpace2D()->GetN_Dirichlet();
 #endif
-	if(MatrixA.GetFESpace2D()) //it's a 2D matrix!
-	{
-	  diriHighBound = MatrixA.GetFESpace2D()->GetDirichletBound();
-	  diriLowBound = diriHighBound - MatrixA.GetFESpace2D()->GetN_Dirichlet();
-	}
-	else
-	{
-	  ErrThrow("This matrix has neither 2D nor 3D FE Test Space!");
-	}
+
 
 	// loop over rows and set them to unity-vectors
 	for (size_t rowIndex = diriLowBound;
