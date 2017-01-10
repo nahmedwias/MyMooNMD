@@ -79,8 +79,8 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
                      , int maxSubDomainPerDof
 #endif
                      )
-: systems_(), example_(_example), db(get_default_TCD3D_parameters()), 
-  solver(param_db), errors_({})
+:  db(get_default_TCD3D_parameters()),
+  solver(param_db), systems_(), example_(_example), errors_({})
 {
   this->db.merge(param_db,false); // update this database with given values
   this->checkParameters();
@@ -294,7 +294,7 @@ void Time_CD3D::assemble()
     }
   }
   
-  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 2)
+  if(db.contains("algebraic_flux_correction"))
   {
     ErrThrow("Take care of this later");
   }
@@ -530,7 +530,7 @@ void Time_CD3D::descale_stiffness()
   double theta1 = TDatabase::TimeDB->THETA1;
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   // restore the stiffMatrix_ and store the old_Au
-  if(!TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+  if(!db.contains("algebraic_flux_correction"))
   {
     for(auto &s : this->systems_)
     {
