@@ -170,6 +170,14 @@ void Time_CD2D::set_parameters()
       db["problem_type"] = 2;
     }
   }
+
+  // an error when using ansatz order 0
+  if(TDatabase::ParamDB->ANSATZ_ORDER == 0)
+  {
+    throw std::runtime_error("Ansatz order 0 is no use in convection diffusion "
+        "reaction problems! (Vanishing convection and diffusion term).");
+  }
+
   //////////////// Algebraic flux correction ////////////
   if(!db["algebraic_flux_correction"].is("none"))
   {//some kind of afc enabled
@@ -179,6 +187,9 @@ void Time_CD2D::set_parameters()
       Output::print("Only kind of algebraic flux correction"
           " for TCD problems is Crank-Nicolson FEM-FCT (fem-fct-cn).");
     }
+
+    if(solver.is_using_multigrid())
+      ErrThrow("Multgrid and FEM-FCT are not yet enabled in Time_CD2D"); //TODO
 
     if(TDatabase::TimeDB->TIME_DISC !=2)
     {

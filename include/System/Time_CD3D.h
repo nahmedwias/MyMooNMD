@@ -277,8 +277,10 @@ class Time_CD3D
      * of pure mass and stiffness matrix and right hand side
      * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
      *
+     *
      * Which afc algorithm is performed is determined by switching over
-     * ALGEBRAIC_FLUX_CORRECTION (so far only 2: linear C-N FEM-FCT).
+     * the algebraic_flux_correction parameter of the database. (So far only
+     * fem-fct-cn is enabled.)
      */
     void do_algebraic_flux_correction();
 

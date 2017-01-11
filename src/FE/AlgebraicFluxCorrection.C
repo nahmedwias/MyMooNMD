@@ -1,17 +1,10 @@
 #include <Database.h>
 #include <LinAlg.h>
-//#ifdef __2D__
+#ifdef __2D__
 #include <FEFunction2D.h>
-#include <FEDatabase2D.h>
-#include <FE2D.h>
-//#endif
-//#ifdef __3D__
-//#include <SquareMatrix3D.h>
-//#include <DiscreteForm3D.h>
-//#include <FEFunction3D.h>
-//#include <FEDatabase3D.h>
-//#include <FE3D.h>
-//#endif
+#elif __3D__
+#include <FEFunction3D.h>
+#endif
 #include <AlgebraicFluxCorrection.h>
 #include <IsoBoundEdge.h>
 #include <BoundComp.h>
