@@ -48,6 +48,15 @@ class TBoundFace : public TJoint
     /** return boundary component */
     TBoundComp3D *GetBoundComp()
     { return BoundComp; }
+    
+    /// @brief return the coordinates of a point from its parametrization
+    void GetXYZofTS(double T, double S, double &X, double &Y, double &Z)
+    { this->BoundComp->GetXYZofTS(T, S, X, Y, Z); }
+    
+    /// @brief return the parametrization of a point from its coordinates
+    void GetTSofXYZ(double X, double Y, double Z, double &T, double &S)
+    { this->BoundComp->GetTSofXYZ(X, Y, Z, T, S); }
+    
 
     /** return both parameters arrays */
     void GetParameters(double *param1, double *param2);

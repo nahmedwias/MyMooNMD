@@ -74,6 +74,50 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(dense_matrix ParMooN_test_dense_matrix)
   list(APPEND parmoon_tests ParMooN_test_dense_matrix)
   
+  # analytical function test
+  add_executable(ParMooN_test_analytical_function analytical_function_test.c++)
+  target_link_libraries(ParMooN_test_analytical_function 
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(analytical_function ParMooN_test_analytical_function)
+  list(APPEND parmoon_tests ParMooN_test_analytical_function)
+  
+  # boundary condition test (2d and 3d)
+  add_executable(ParMooN_test_boundary_condition2d boundary_condition_test.c++)
+  target_link_libraries(ParMooN_test_boundary_condition2d
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(boundary_condition2d ParMooN_test_boundary_condition2d)
+  list(APPEND parmoon_tests ParMooN_test_boundary_condition2d)
+  add_executable(ParMooN_test_boundary_condition3d boundary_condition_test.c++)
+  target_link_libraries(ParMooN_test_boundary_condition3d
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(boundary_condition3d ParMooN_test_boundary_condition3d)
+  list(APPEND parmoon_tests ParMooN_test_boundary_condition3d)
+  
+  # boundary data test (2d and 3d)
+  add_executable(ParMooN_test_boundary_data2d boundary_data_test.c++)
+  target_link_libraries(ParMooN_test_boundary_data2d
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(boundary_data2d ParMooN_test_boundary_data2d)
+  list(APPEND parmoon_tests ParMooN_test_boundary_data2d)
+  add_executable(ParMooN_test_boundary_data3d boundary_data_test.c++)
+  target_link_libraries(ParMooN_test_boundary_data3d
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(boundary_data3d ParMooN_test_boundary_data3d)
+  list(APPEND parmoon_tests ParMooN_test_boundary_data3d)
+  
+  # function evaluation test
+  add_executable(ParMooN_test_function_evaluation function_evaluation_test.c++)
+  target_link_libraries(ParMooN_test_function_evaluation
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(function_evaluation ParMooN_test_function_evaluation)
+  list(APPEND parmoon_tests ParMooN_test_function_evaluation)
+  
   #cd2d test
   add_executable(ParMooN_test_cd2d cd2d_test.c++)
   target_link_libraries(ParMooN_test_cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
@@ -160,6 +204,8 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(NAME nse3d_seq_lsc COMMAND ParMooN_test_nse3d_solver_seq lsc)
   #multigrid with cell_vanka_jacobi smoother (works in SEQ and MPI)
   add_test(NAME nse3d_seq_cell_vanka_seq COMMAND ParMooN_test_nse3d_solver_seq cell_vanka_jacobi)
+  # petsc
+  add_test(NAME nse3d_seq_petsc COMMAND ParMooN_test_nse3d_solver_seq petsc)
   
   # direct solver test
   add_executable(ParMooN_test_direct_solver direct_solver_test.c++)

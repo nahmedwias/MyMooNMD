@@ -103,8 +103,12 @@ class TBoundEdge : public TJoint
     void UpdateParameters(TVertex *Begin, TVertex *End);
 #endif
 
-    /** return the coordinates {X,Y} of parameter value T */
-    int GetXYofT(double T, double &X, double &Y);
+    /** @brief return the coordinates {X,Y} of parameter value T */
+    void GetXYofT(double T, double &X, double &Y)
+    { BoundComp->GetXYofT(T, X, Y); }
+    /** @brief return parameter value T of the coordinates {X,Y} */
+    void GetTofXY(double X, double Y, double& T)
+    { BoundComp->GetTofXY(X, Y, T); }
 
     /** return boundary component */
     TBoundComp2D *GetBoundComp() const

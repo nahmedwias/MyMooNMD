@@ -157,12 +157,17 @@ class TMatrix
     { return *structure; }
     
     /// @brief return matrix entries as a pointer to const double
+    /// @note try to avoid this method and use TMatrix::get_entries() instead
     const double *GetEntries() const
     { return &entries[0]; }
     
     /// @brief return matrix entries as a pointer to double
     double *GetEntries()
     { return &entries[0]; }
+    
+    /// @brief return the entries as a std::vector
+    const std::vector<double>& get_entries()
+    { return entries; }
     
     /// @brief get a vector of the diagonal entries of this matrix.
     /// This will work even if the structure does not have entries on the

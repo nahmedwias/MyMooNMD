@@ -44,7 +44,9 @@ int TDomain::ReadParam(char *ParamFile)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  char line[200], *aux_char;
+  // if the max_line_length is too short, the program simply hangs
+  size_t max_line_length = 1000;
+  char line[max_line_length], *aux_char;
   int N_Param = 0, flag[7];
   std::ifstream dat(ParamFile);
 
@@ -1924,40 +1926,12 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->REACTOR_P30;
       N_Param++;
     }
-
-    if (!strcmp(line, "ALGEBRAIC_FLUX_CORRECTION:"))
-    {
-      dat >> TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION;
-      N_Param++;
-    }
-    if (!strcmp(line, "FEM_FCT_LINEAR_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE;
-      N_Param++;
-    }
-    if (!strcmp(line, "FEM_FCT_PRELIMITING:"))
-    {
-      dat >> TDatabase::ParamDB->FEM_FCT_PRELIMITING;
-      N_Param++;
-    }
-    if (!strcmp(line, "FEM_FCT_GROUP_FEM:"))
-    {
-      dat >> TDatabase::ParamDB->FEM_FCT_GROUP_FEM;
-      N_Param++;
-    }
-      
-    if (!strcmp(line, "GROUP_FEM:"))
-    {
-      dat >> TDatabase::ParamDB->GROUP_FEM;
-      N_Param++;
-    }
     
     if (!strcmp(line, "WENO_TYPE:"))
     {
       dat >> TDatabase::ParamDB->WENO_TYPE;
       N_Param++;
     }
-
 
    if (!strcmp(line, "CHANNEL_STATISTICS2_WITH_MODEL:"))
     {
@@ -2655,7 +2629,7 @@ int TDomain::ReadParam(char *ParamFile)
     
  
    // read until end of line
-    dat.getline (line, 199);
+    dat.getline (line, max_line_length-1);
   }
 
   if (TDatabase::ParamDB->START_RE_NR < 0)

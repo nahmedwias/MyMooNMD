@@ -12,6 +12,7 @@
 #define __BOUNDCOMP3D__
 
 #include <BoundComp.h>
+#include <MooNMD_Io.h>
 
 /** components of boundary faces */
 class TBoundComp3D : public TBoundComp
@@ -38,6 +39,9 @@ class TBoundComp3D : public TBoundComp
                             double *tp, double *sp,
                             double &X, double &Y, double &Z,
                             double &T, double &S) = 0;
+
+    virtual void get_normal_vector(double x, double y, double z,
+				   double& nx, double& ny, double &nz) = 0;
 
 };
 

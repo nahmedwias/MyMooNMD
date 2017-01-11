@@ -1,18 +1,15 @@
 // Brinkman problem, Poiseuille-Problem
-
-//double stab_weight;
-
-
-void ExampleFile()
-{
-  Output::print<1>("Example: Poiseuille.h");
-}
 /*
  Square [0,1]x[0,1]
  effective viscosity = 1
  u(x,y) = (4y(1-y),0),
  p(x,y) = 0.5-x
  */
+
+void ExampleFile()
+{
+  Output::print<1>("Example: Poiseuille.h");
+}
 
 // ========================================================================
 // exact solution
@@ -45,14 +42,20 @@ void ExactP(double x, double y, double *values)
 
 void BoundCondition(int i, double Param, BoundCond &cond)
 {
+
     cond = DIRICHLET; // Default
+    
+    if (TDatabase::ParamDB->n_neumann_boundary==0)
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average 0 (for uniqueness)
+    else
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
     
     for (int j=0; j<TDatabase::ParamDB->n_neumann_boundary; j++)
     {
         if (i==TDatabase::ParamDB->neumann_boundary_id[j])
         {
             cond = NEUMANN;
-            TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+            //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
             return;
         }
     }
@@ -60,16 +63,14 @@ void BoundCondition(int i, double Param, BoundCond &cond)
     {
         if (i==TDatabase::ParamDB->nitsche_boundary_id[j])
         {
+            // Todo:
+            //Output::print(cond);
             cond = DIRICHLET_WEAK;
-            //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+            // TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+            
             return;
         }
     }
-    
-    if (TDatabase::ParamDB->n_neumann_boundary==0)
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average 0 (for uniqueness)
-    else
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
 
@@ -123,36 +124,11 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // (the lhs of the Brinkman problem computed at quadrature points - for the error norms)
 // ========================================================================
-//void LinCoeffs(int n_points, double *x, double *y,
-//               double **parameters, double **coeffs)
-//{
-//  static double eps = 1./TDatabase::ParamDB->RE_NR;
-//  double *coeff;
-//    
-//    for(int i=0;i<n_points;i++)
-//    {
-//        coeff = coeffs[i];
-//        
-//        coeff[0] = eps;
-//        //coeff[1] = 1 + 8*eps + 4*y*(1-y);
-//        coeff[1] = 1 + 8*eps + 4*y[i]*(1-y[i]);   //0;  // f1 (rhs of Brinkman problem for u1)
-//        coeff[2] = 0;                                   // f2 (rhs of Brinkman problem for u2)
-//        coeff[3] = 0;                                   // g (divergence term=u1_x+u2_y)
-//        coeff[4]=TDatabase::ParamDB->VISCOSITY;
-//        coeff[5]=TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-//        coeff[6]=TDatabase::ParamDB->PERMEABILITY;
-//    }
-//    
-//}
-
-void LinCoeffs(int n_points, double *x, double *y,
+/*void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
-    static double eps = 1./TDatabase::ParamDB->RE_NR;
-    static double nu     = TDatabase::ParamDB->VISCOSITY;
-    static double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    static double K      = TDatabase::ParamDB->PERMEABILITY;
-    double *coeff;
+  static double eps = 1./TDatabase::ParamDB->RE_NR;
+  double *coeff;
     
     for(int i=0;i<n_points;i++)
     {
@@ -160,7 +136,40 @@ void LinCoeffs(int n_points, double *x, double *y,
         
         coeff[0] = eps;
         //coeff[1] = 1 + 8*eps + 4*y*(1-y);
-        coeff[1] = -1 + 8*nu_eff + (nu/K)*4*y[i]*(1-y[i]);   //0;  // f1 (rhs of Brinkman problem for u1)
+        coeff[1] = -1 + 8*eps + 4*y[i]*(1-y[i]);   //0;  // f1 (rhs of Brinkman problem for u1)
+        coeff[2] = 0;                                   // f2 (rhs of Brinkman problem for u2)
+        coeff[3] = 0;                                   // g (divergence term=u1_x+u2_y)
+        coeff[4]=TDatabase::ParamDB->VISCOSITY;
+        coeff[5]=TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+        coeff[6]=TDatabase::ParamDB->PERMEABILITY;
+    }
+    
+}
+
+*/
+
+void LinCoeffs(int n_points, double *x, double *y,
+               //std::vector<std::vector<double>> parameters,
+               double **Parameters,
+               //std::vector<std::vector<double>> coeffs,
+               double **coeffs)
+{
+    
+//    static double eps = 1./TDatabase::ParamDB->RE_NR;
+//    static double nu     = TDatabase::ParamDB->VISCOSITY;
+//    static double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+//    static double K      = TDatabase::ParamDB->PERMEABILITY;
+    
+  //std::vector<double> coeff;
+    double *coeff;
+    
+    for(int i=0;i<n_points;i++)
+    {
+        coeff = coeffs[i];
+        
+        coeff[0] = 1./TDatabase::ParamDB->RE_NR;
+	double eps = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+        coeff[1] = -1 + 8*eps + 4*y[i]*(1-y[i]);
         coeff[2] = 0;                                   // f2 (rhs of Brinkman problem for u2)
         coeff[3] = 0;                                   // g (divergence term=u1_x+u2_y)
         coeff[4]=TDatabase::ParamDB->VISCOSITY;
@@ -168,6 +177,7 @@ void LinCoeffs(int n_points, double *x, double *y,
         coeff[6]=TDatabase::ParamDB->PERMEABILITY;
         coeff[7]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
         coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+        coeff[1] = -1 + 8*coeffs[i][5] + (coeff[4]/coeff[6])*4*y[i]*(1-y[i]);   //0;  // f1 (rhs of Brinkman problem for u1)
     }
 }
 
