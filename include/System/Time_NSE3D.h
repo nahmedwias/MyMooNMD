@@ -107,6 +107,10 @@ class Time_NSE3D
        */
       BlockVector Old_Sol;
       TFEVectFunct3D u_old;
+      TFEFunction3D p_old;
+      
+      BlockVector solution_minus2;
+      TFEVectFunct3D u_min2;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -402,8 +406,6 @@ class Time_NSE3D
 
     TFEVectFunct3D& get_velocity()
     { return this->systems_.front().u_; }
-
-    TFEFunction3D *get_velocity_component(int i);
 
     const TFEFunction3D& get_pressure() const
     { return this->systems_.front().p_; }

@@ -475,6 +475,8 @@ void TimeNSType4Params_SUPG(double *in, double *out);
 // ======================================================================
 // Type 4, Residual based VMS D(u):D(v)
 // ======================================================================
+void TimeNSType4Params_Residual_VMS_Extrapolate(double *in, double *out);
+
 void TimeNSType4Residual_VMSDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
@@ -491,6 +493,11 @@ void TimeNSType4Residual_VMS_RhsDD3D(double Mult, double *coeff,
               double ***LocMatrices, double **LocRhs);
 
 void TimeNSType4Params_Residual_VMS(double *in, double *out);
+
+void TimeNSType4_Residual_VMS_ExtraDD3D(double Mult, double *coeff,
+              double *param, double hK,
+              double **OrigValues, int *N_BaseFuncts,
+              double ***LocMatrices, double **LocRhs);
 
 
 void TimeNSType14Residual_VMSDD3D(double Mult, double *coeff, 
