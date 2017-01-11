@@ -6461,6 +6461,9 @@ void TimeNSRhs_SUPGDD3D(double Mult, double *coeff, double *param, double hK,
 }
 // ======================================================================
 // Type 4 : Residual-based VMS
+// assembling routine for residual-based VMS method of Bazilevs et al. (2007)
+// references go to Ahmed et. al, Arch. Computat. Methods Eng. 24, 115 - 164 (2017)
+// all matrices and right-hand side
 // ======================================================================
 void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, double hK, 
      double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs)
@@ -6559,10 +6562,21 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
   double test000, test100, test010, test001;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double ansatz200, ansatz020, ansatz002;
+
   double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
   double tau_c = TDatabase::ParamDB->DELTA1;
+
   double tau_m_ugradv;
   double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+   
+  // old residual to be used Eq(51)
+  double res1 = tau_m *(c1_old - 1./dt*(u1_min1-u1_min2) + c0*(u1xx + u1yy + u1zz)
+                          -(u1*u1x + u2*u1y + u3*u1z) -px );
+  double res2 = tau_m *(c2_old - 1./dt*(u2_min1-u2_min2) + c0*(u2xx + u2yy + u2zz)
+                          -(u1*u2x + u2*u2y + u3*u2z) -py );
+  double res3 = tau_m *(c3_old - 1./dt*(u3_min1-u3_min2) + c0*(u3xx + u3yy + u3zz)
+                          -(u1*u3x + u2*u3y + u3*u3z) -pz );
+
   
   for(int i=0;i<N_U;i++)
   {
@@ -6570,26 +6584,19 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
     test010 = Orig1[i];
     test001 = Orig2[i];
     test000 = Orig3[i];
-
+    // streamline derivative with extrapolated velocity from previous time
     tau_m_ugradv = tau_m*(u1_min1*test100 + u2_min1*test010 + u3_min1*test001);
-    
+    // contribution to rhs from Galerkin discretization and SUPG term 
     Rhs1[i] += Mult*(test000+tau_m_ugradv)*c1;
     Rhs2[i] += Mult*(test000+tau_m_ugradv)*c2;
     Rhs3[i] += Mult*(test000+tau_m_ugradv)*c3;
     
-    // old residual in Eq(51)
-    double res1 = tau_m *(c1_old - 1./dt*(u1_min1-u1_min2) + c0*(u1xx + u1yy + u1zz)
-                          -(u1*u1x + u2*u1y + u3*u1z) -px );
-    double res2 = tau_m *(c2_old - 1./dt*(u2_min1-u2_min2) + c0*(u2xx + u2yy + u2zz)
-                          -(u1*u2x + u2*u2y + u3*u2z) -py );
-    double res3 = tau_m *(c3_old - 1./dt*(u3_min1-u3_min2) + c0*(u3xx + u3yy + u3zz)
-                          -(u1*u3x + u2*u3y + u3*u3z) -pz );
-
     // contribution from second nonlinear term
     Rhs1[i] += Mult*tau_m*u1_min1*(c1*test100 + c2*test010 + c3*test001);
     Rhs2[i] += Mult*tau_m*u2_min1*(c1*test100 + c2*test010 + c3*test001);
     Rhs3[i] += Mult*tau_m*u3_min1*(c1*test100 + c2*test010 + c3*test001);
-    // // contribution from third nonlinear term 
+    
+    // contribution from third nonlinear term 
     Rhs1[i] += Mult*tau_m*res1*(c1*test100 + c2*test010 + c3*test001);
     Rhs2[i] += Mult*tau_m*res2*(c1*test100 + c2*test010 + c3*test001);
     Rhs3[i] += Mult*tau_m*res3*(c1*test100 + c2*test010 + c3*test001);
@@ -6608,22 +6615,36 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
       double laplacian = -c0*(ansatz200 + ansatz020 + ansatz002);
       double ugradu = (u1*ansatz100 + u2*ansatz010 + u3*ansatz001);
       
+      // stiffness matrix blocks
+      // viscous term (deformation tensor)
       val  = 2*c0*(test100*ansatz100+0.5*test010*ansatz010
                    +0.5*test001*ansatz001);
+      // convective term 
       val += ugradu*test000;
+      // velocity contribution of SUPG term 
       val += (laplacian + ugradu)*tau_m_ugradv;
+      // grad-div term 
       val += tau_c * test100 * ansatz100;
+      // FOR EFFICIENCY: MERGE SEOCND CROSS AND SUBGRID TERM 
+      // second cross term 
       val += tau_m * (laplacian + ugradu) * u1_min1 * test100;
+      // subgrid term 
       val += tau_m * (laplacian + ugradu) * res1 * test100;
       MatrixA11[i][j] += Mult * val;
 
+      // viscous term and grad-div term 
       val  = c0*(test010*ansatz100) + tau_c * test100 * ansatz010;
+      // second cross term
       val += tau_m * ugradu * u1_min1 * test010;
+      // subgrid term 
       val += tau_m * ugradu * res1 * test010;
       MatrixA12[i][j] += Mult * val;
 
+      // viscous term and grad-div term 
       val  = c0*(test001*ansatz100) + tau_c * test100 * ansatz001;
+      // second cross term
       val += tau_m * ugradu * u1_min1 * test001;
+      // subgrid term 
       val += tau_m * ugradu * res1 * test001;
       MatrixA13[i][j] += Mult * val;
 
@@ -6665,15 +6686,19 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
       val += tau_m * (laplacian + ugradu) * res3 * test001;
       MatrixA33[i][j] += Mult * val;
       
-      // weighted mass matrix (galerkin + supg ) terms
+      // mass matrix blocks
+      // Galerkin + SUPG term 
       val = ansatz000*(test000 + tau_m_ugradv);
+      // second cross term 
       val += tau_m * u1_min1   * ansatz000 * test100;
+      // subgrid term 
       val += tau_m * res1 * ansatz000 * test100;
       MatrixM11[i][j] += Mult * val;
 
       val = tau_m * u1_min1   * ansatz000 * test010;
       val += tau_m * res1 * ansatz000 * test010;
       MatrixM12[i][j] += Mult*val;
+      
       val = tau_m * u1_min1   * ansatz000 * test001;
       val += tau_m * res1 * ansatz000 * test001;
       MatrixM13[i][j] += Mult*val;
@@ -6705,16 +6730,22 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
       MatrixM33[i][j] += Mult * val;
     }
 
+    // coupling pressure (ansatz) - velocity (test)
     for(int j=0;j<N_P;j++)
     {
       ansatz000 = Orig4[j]; // p
       ansatz100 = Orig5[j];
       ansatz010 = Orig6[j];
       ansatz001 = Orig7[j];
+      
       // B1T
+      // Galerkin
       val  = -ansatz000 * test100;
+      // SUPG
       val +=  ansatz100 * tau_m_ugradv;
+      // second cross term 
       val += tau_m * u1_min1   * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
+      // subgrid term 
       val += tau_m * res1 * (ansatz100 * test100 + ansatz010 * test010 + ansatz001 * test001);
       MatrixB1T[i][j] += Mult*val;
       
@@ -6734,6 +6765,7 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
     }
   } 
 
+  // coupling velocity (ansatz) - pressure (test)
   for(int i=0;i<N_P;i++)
   {
     test000 = Orig4[i];
