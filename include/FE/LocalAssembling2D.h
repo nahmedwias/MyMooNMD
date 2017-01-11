@@ -73,7 +73,7 @@ class LocalAssembling2D
     /** @brief number of involved spaces (typically one or two) */
     int N_Spaces;
 
-    /** @brief for each space we store a bool indicatin if second derivatives 
+    /** @brief for each space we store a bool indicating if second derivatives
      *         are needed */
     bool *Needs2ndDerivatives;
 
@@ -114,7 +114,6 @@ class LocalAssembling2D
     int N_Matrices;
     int N_Rhs;
     
-    
     /** number of stored parameter functions (ParamFct) */
     int N_ParamFct;
     
@@ -139,6 +138,9 @@ class LocalAssembling2D
     /** which multiindex is used for FE value i */
     std::vector<MultiIndex2D> FEValue_MultiIndex;
 
+    /** values of parameter functions stored for computing local forms */
+    std::vector< std::vector<double> > parameter_functions_values;
+    
     /** Depending on the NSTYPE and the NSE_NONLINEAR_FORM all parameters are 
      * set within this function. This function is called from the constructor 
      * in case of Navier-Stokes problems. It only exists in order to not make 
@@ -289,23 +291,68 @@ class LocalAssembling2D
 			 TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
 			 std::vector<int> myFEValue_FctIndex, std::vector<MultiIndex2D> myFEValue_MultiIndex);
 
+    LocalAssembling2D(LocalAssembling2D &la)=delete;
+    
     /** destructor */
     ~LocalAssembling2D();
     
     
 
     /** return local stiffness matrix */
-    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
-                       double *X, double *Y,
-                       int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
-                       double **Parameters, double **AuxArray,
-                       TBaseCell *Cell, int N_Matrices, int N_Rhs,
-                       double ***LocMatrix, double **LocRhs,
+    void GetLocalForms(int N_Points,
+                       double *weights,
+                       double *AbsDetjk,
+                       double *X,
+                       double *Y,
+                       int *N_BaseFuncts,
+                       BaseFunct2D *BaseFuncts,
+                       double **Parameters,
+                       double **AuxArray,
+                       TBaseCell *Cell,
+                       int N_Matrices,
+                       int N_Rhs,
+                       double ***LocMatrix,
+                       double **LocRhs,
                        double factor = 1.);
-    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
-                       double *X, double *Y, int *N_BaseFuncts,
-                       BaseFunct2D *BaseFuncts, TBaseCell *Cell,
-                       double ***LocMatrix, double **LocRhs,
+
+    
+    void get_local_forms(int N_Points,
+			 double *weights,double *AbsDetjk,
+			 double *X,double *Y,
+                         int *N_BaseFuncts,BaseFunct2D *BaseFuncts,
+                         //double** AuxArray,
+                         TBaseCell *Cell,
+                         int N_Matrices,
+                         int N_Rhs,
+                         double ***LocMatrix,
+                         double **LocRhs,
+                         double factor=1.);
+    
+    
+    void GetLocalForms(int N_Points,
+                       double *weights,
+                       double *AbsDetjk,
+                       double *X,
+                       double *Y,
+                       int *N_BaseFuncts,
+                       BaseFunct2D *BaseFuncts,
+                       TBaseCell *Cell,
+                       int N_Matrices,
+                       int N_Rhs,
+                       double ***LocMatrix,
+                       double **LocRhs,
+                       double factor = 1.);
+    
+    void GetLocalForms(int N_Points,
+                       double *weights,
+                       double *AbsDetjk,
+                       double *X,
+                       double *Y,
+                       int *N_BaseFuncts,
+                       BaseFunct2D *BaseFuncts,
+                       TBaseCell *Cell,
+                       double ***LocMatrix,
+                       double **LocRhs,
                        double factor = 1.);
     
     
@@ -323,6 +370,13 @@ class LocalAssembling2D
                        TBaseCell *cell, int cellnum,
                        double *s, int joint,
                        double **Parameters);
+    
+    //HIER///////////////////////////////////////////////////
+    
+    void compute_parameters(int n_points, TCollection *Coll,
+                            TBaseCell *cell, int cellnum,
+                            double *x, double *y);
+    
     
     /** return name */
     const std::string& get_name() const

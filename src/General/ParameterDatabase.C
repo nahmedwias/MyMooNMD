@@ -1,5 +1,6 @@
 #include <ParameterDatabase.h>
 #include <iostream>
+#include <cmath>
 #include <algorithm>
 #include <ctime>
 #include <memory>

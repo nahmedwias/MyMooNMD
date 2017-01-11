@@ -7,6 +7,7 @@
  * @date 2016/01/13
  * @author Clemens Bartsch, Naveed Ahmed
  */
+#include <AlgebraicFluxCorrection.h>
 #include <Time_CD2D.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
@@ -126,10 +127,11 @@ int main(int argc, char* argv[])
     db["example"] = 3;
     db["reynolds_number"] = 1e-20;
 
+    db.merge(AlgebraicFluxCorrection::default_afc_database(), true);
+    db["algebraic_flux_correction"].set("fem-fct-cn");
+
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
-    TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 2;
-    TDatabase::ParamDB->FEM_FCT_PRELIMITING = 0;
 
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=0.02;

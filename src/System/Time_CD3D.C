@@ -5,6 +5,7 @@
 #include <LinAlg.h>
 #include <Multigrid.h>
 #include <Output3D.h>
+#include <AlgebraicFluxCorrection.h>
 
 #include <MainUtilities.h>
 
@@ -30,6 +31,10 @@ ParameterDatabase get_default_TCD3D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   parmoon_db.merge(out_db, true);
   
+  // a default afc database
+  ParameterDatabase afc_db = AlgebraicFluxCorrection::default_afc_database();
+  parmoon_db.merge(afc_db, true);
+
   return parmoon_db;  
 }
 //==============================================================================
@@ -79,8 +84,8 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
                      , int maxSubDomainPerDof
 #endif
                      )
-: systems_(), example_(_example), db(get_default_TCD3D_parameters()), 
-  solver(param_db), errors_({})
+:  db(get_default_TCD3D_parameters()),
+  solver(param_db), systems_(), example_(_example), errors_({})
 {
   this->db.merge(param_db,false); // update this database with given values
   this->checkParameters();
@@ -246,7 +251,46 @@ void Time_CD3D::checkParameters()
   {
     throw std::runtime_error("Ansatz order 0 is no use in convection diffusion "
         "reaction problems! (Vanishing convection and diffusion term).");
-  }  
+  }
+
+  //////////////// Algebraic flux correction ////////////
+  if(!db["algebraic_flux_correction"].is("none"))
+  {//some kind of afc enabled
+
+    if(solver.is_using_multigrid())
+      ErrThrow("Multgrid and FEM-FCT are not yet enabled in Time_CD2D"); //TODO
+
+    if(!db["algebraic_flux_correction"].is("fem-fct-cn"))
+    {
+      db["algebraic_flux_correction"].set("fem-fct-cn");
+      Output::print("Only kind of algebraic flux correction"
+          " for TCD problems is Crank-Nicolson FEM-FCT (fem-fct-cn).");
+    }
+
+    if(TDatabase::TimeDB->TIME_DISC !=2)
+    {
+      ErrThrow("Algebraic flux correction with FEM-FCT is "
+          "implemented for Crank-Nicolson time stepping scheme only. "
+          "Set TDatabase::TimeDB->TIME_DISC to 2.")
+    }
+
+    if(TDatabase::ParamDB->ANSATZ_ORDER != 1)
+    {
+      ErrThrow("Algebraic flux correction with FEM-FCT does only work for"
+          "linear elements. Change ANSATZ_ORDER to 1!");
+    }
+
+    //make sure that galerkin discretization is used
+    if (TDatabase::ParamDB->DISCTYPE != 1)
+    {//some other disctype than galerkin
+      TDatabase::ParamDB->DISCTYPE = 1;
+      Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
+                    "Correction is enabled.");
+    }
+
+    // when using afc, create system matrices as if all dofs were active
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1; //FIXME THIS IS DANGEROUS, does not go well with BlockFEMatrix!
+  }
 }
 
 //==============================================================================
@@ -294,10 +338,14 @@ void Time_CD3D::assemble()
     }
   }
   
-  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 2)
+  // here the modifications due to time discretization begin
+  if (!db["algebraic_flux_correction"].is("none") )
   {
-    ErrThrow("Take care of this later");
+    do_algebraic_flux_correction();
+    return; // modifications due to time discretization are per-
+            // formed inside the afc scheme, so step out here!
   }
+
   // preparing the right hand side 
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   double theta1 = TDatabase::TimeDB->THETA1;
@@ -307,7 +355,7 @@ void Time_CD3D::assemble()
   
   SystemPerGrid & s = this->systems_.front();
   
-  if(TDatabase::TimeDB->THETA4)
+  if(theta4)
   {
     // scale the right hand side by theta4 and tau
     s.rhs_.scaleActive(tau*theta4);
@@ -530,7 +578,7 @@ void Time_CD3D::descale_stiffness()
   double theta1 = TDatabase::TimeDB->THETA1;
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   // restore the stiffMatrix_ and store the old_Au
-  if(!TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+  if(db["algebraic_flux_correction"].is("none"))
   {
     for(auto &s : this->systems_)
     {
@@ -540,7 +588,9 @@ void Time_CD3D::descale_stiffness()
   }
   else
   {
-    ErrThrow("AFC scheme is not implemented yet" );
+    //in AFC case the stiffness matrix is "ruined" by now -
+    Output::print("AFC does not yet reset the stiffness"
+        "matrix and old_Au correctly!");
   }
 }
 
@@ -555,3 +605,77 @@ std::array< double, int(3) > Time_CD3D::get_errors() const
 }
 
 //==============================================================================
+
+// Note: This is almost entirely copy-and-paste from the 2D-case.
+// That is a strong indication, that we actually need a better type
+// hierarchy in the sense of object-orientation.
+void Time_CD3D::do_algebraic_flux_correction()
+{
+  //determine which kind of afc to use
+  if(db["algebraic_flux_correction"].is("default") ||
+      db["algebraic_flux_correction"].is("fem-fct-cn"))
+  {
+    //TODO implement for multigrid!
+    SystemPerGrid& s = systems_.front();
+
+    //get references to the relevant objects
+
+    const TFESpace3D& feSpace = s.feSpace_; //space
+    const FEMatrix& mass = *s.massMatrix_.get_blocks().at(0).get(); // mass
+    FEMatrix& stiff = *s.stiffMatrix_.get_blocks_uniquely().at(0).get(); //stiffness
+    //vector entry arrays
+    const std::vector<double>& solEntries = s.solution_.get_entries_vector();
+    std::vector<double>& rhsEntries = s.rhs_.get_entries_vector();
+    std::vector<double>& oldRhsEntries = old_rhs.get_entries_vector();
+
+    // fill a vector "neumannToDirichlet" with those rows that got
+    // internally treated as Neumann although they are Dirichlet
+    int firstDiriDof = feSpace.GetActiveBound();
+    int nDiri = feSpace.GetN_Dirichlet();
+    std::vector<int> neumToDiri(nDiri, 0);
+    std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
+
+    //determine prelimiter from Database
+    AlgebraicFluxCorrection::Prelimiter prelim;
+    switch((int) db["afc_prelimiter"])
+    {
+      case 1:
+        prelim = AlgebraicFluxCorrection::Prelimiter::MIN_MOD;
+        Output::print<2>("FEM-FCT: MinMod prelimiter chosen.");
+        break;
+      case 2:
+        prelim = AlgebraicFluxCorrection::Prelimiter::GRAD_DIRECTION;
+        Output::print<2>("FEM-FCT: Gradient direcetion prelimiter chosen.");
+        break;
+      case 3:
+        prelim = AlgebraicFluxCorrection::Prelimiter::BOTH;
+        Output::print<2>("FEM-FCT: Double prelimiting (MinMod & Gradient) chosen.");
+        break;
+      default:
+        prelim = AlgebraicFluxCorrection::Prelimiter::NONE;
+        Output::print<2>("FEM-FCT: No prelimiting chosen.");
+    }
+
+    //get current timestep length from Database
+    double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+
+    // apply C-N FEM-FCT
+    AlgebraicFluxCorrection::crank_nicolson_fct(
+        mass, stiff,
+        solEntries,
+        rhsEntries, oldRhsEntries,
+        delta_t,
+        neumToDiri,
+        prelim );
+
+    //...and finally correct the entries in the Dirichlet rows
+    AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
+    //...and in the right hand side, too
+    s.rhs_.copy_nonactive(old_rhs);
+  }
+  else
+  {
+    ErrThrow("The chosen algebraic flux correction scheme is unknown "
+        "to class Time_CD3D.");
+  }
+}

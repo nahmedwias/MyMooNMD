@@ -97,15 +97,15 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
 }
 
 /**************************************************************************** */
-Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDatabase& param_db, 
                        const Example_TimeNSE3D& ex
 #ifdef _MPI
-                       , int maxSubDomainPerDof
-#endif
+, int maxSubDomainPerDof
+#endif  
 )
- : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
-   solver_(param_db), mg_(nullptr),
-   defect_(), old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
+: db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
+   solver_(param_db), defect_(), old_residual_(), 
+   initial_residual_(1e10), errors_(), oldtau_()
 {
   db_.merge(param_db, false);
   this->check_parameters();
@@ -114,8 +114,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
                                TDatabase::ParamDB->PRESSURE_SPACE);
   // get the velocity and pressure orders
   this->get_velocity_pressure_orders(velocity_pressure_orders);
-
-
+  
   Time_NSE3D::Matrix type;
   switch(TDatabase::ParamDB->NSTYPE)
   {
@@ -128,99 +127,82 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
       ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
   }
-
-  // create the collection of cells from the domain (finest grid)
-  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);    
-#ifdef _MPI
-  // create finite element space and function, a matrix, rhs, and solution
-  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                        maxSubDomainPerDof);    
-#else
-  // create finite element space and function, a matrix, rhs and solution
-  // all this by calling constructor of System_Per_Grid
-  this->systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-#endif
-  // Initial velocity = interpolation of initial conditions
-  this->interpolate();
-  
   bool usingMultigrid = solver_.is_using_multigrid();
+  TCollection *coll = collections_.front(); // finest grid collection
+  // create finite element space and function, a matrix, rhs, and solution
+#ifdef _MPI
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+                        maxSubDomainPerDof);
+#else
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+#endif
   if(usingMultigrid)
   {
-#ifdef _MPI
-    ErrThrow("No multigrid for MPI is implemented yet: " );
-#endif
-    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-    database_mg.merge(param_db, false);
-    // construct multigrid object
-    auto mg_ = this->solver_.get_multigrid();
-    bool mdml = mg_->is_using_mdml();
+    auto mg = this->solver_.get_multigrid();
+    size_t n_multigrid_levels = mg->get_n_geometric_levels();
+    size_t n_grids=collections_.size();
+    if(n_multigrid_levels != n_grids)
+    {
+      ErrThrow("Wrong number of grids for multigrid! expecting ",
+               n_multigrid_levels, " geometric grids but got", n_grids,".");
+    }
     
-    if(mdml)
+    if(mg->is_using_mdml())
     {
       // change the discretization on the coarse grids to lowest order 
       // non-conforming(-1). The pressure space is chosen automatically(-4711).
-      velocity_pressure_orders = {-1, -4711};
+      velocity_pressure_orders={-1, -4711};
       this->get_velocity_pressure_orders(velocity_pressure_orders);
-    }
-    // number of multigrid levels
-    size_t n_multigrid_levels = mg_->get_n_geometric_levels();
-    // index of the finest grid 
-    int finest = domain.get_ref_level();
-    int coarsest = finest - n_multigrid_levels + 1;
-    if(mdml)
-    {
-      coarsest++;
     }
     else
     {
-      // only for mdml there is another matrix on the finest grid, otherwise
-      // the next system to be created is on the next coarser grid
-      finest--;
+      // for standard multigrid, pop the finest collection - it was already
+      // used to construct a space before the "if(usingMultigrid)" clause
+      // and will not (as in mdml) be used a second time with a different discretization
+      collections_.pop_front();
     }
-    
-    if(coarsest < 0 )
-    {
-      ErrThrow("the domain has not been refined often enough to do multigrid "
-               "on ", n_multigrid_levels, " levels. There are only ",
-               domain.get_ref_level() + 1, " grid levels.");
-    }
-    // Construct systems per grid and store them, finest level first    
+    // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
     // matrix on finest grid is already constructed
     matrices.push_back(&systems_.back().matrix_);
-    // initialize the systems on the coarser grids
-    for (int grid_no = finest; grid_no >= coarsest; --grid_no)
+    
+    for(auto coll : collections_)
     {
-      //TODO What's going on here for MPI? This looks unfinished! CB 09/2016
-#ifndef _MPI
-      TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
-      this->systems_.emplace_back(example_, *coll, velocity_pressure_orders,
-                            type);
+#ifdef _MPI
+      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type, 
+                            maxSubDomainPerDof);
+#else
+      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
 #endif
-      //prepare input argument for multigrid object
-      matrices.push_front(&this->systems_.back().matrix_);
-      // interpolate the initial condition to get initial velocity
-      this->interpolate();
+      // prepare input argument for multigrid 
+      matrices.push_front(&systems_.back().matrix_);
     }
-    // initialize the multigrid object on all levels
-    mg_->initialize(matrices);
+    // initialize multigrid object with matrices on all levels
+    mg->initialize(matrices);
   }
+  
   this->output_problem_size_info();
   // initialize the defect of the system. It has the same structure as
   // the rhs (and as the solution)
-  this->defect_.copy_structure(this->systems_.front().rhs_);    
+  this->defect_.copy_structure(this->systems_.front().rhs_);
+  for(System_per_grid& s : this->systems_)
+  {
+    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
+    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
+    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
+  }
 }
 
 ///**************************************************************************** */
 void Time_NSE3D::interpolate()
 {
-  TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
-  TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
-  TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
-  
-  u1->Interpolate(example_.get_initial_cond(0));
-  u2->Interpolate(example_.get_initial_cond(1));
-  u3->Interpolate(example_.get_initial_cond(2));
+//   TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
+//   TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
+//   TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
+//   
+//   u1->Interpolate(example_.get_initial_cond(0));
+//   u2->Interpolate(example_.get_initial_cond(1));
+//   u3->Interpolate(example_.get_initial_cond(2));  
 }
 
 ///**************************************************************************** */
@@ -549,7 +531,15 @@ void Time_NSE3D::assemble_initial_time()
                nRectMatrices, rectMatrices.data(),
                nRhs, rhsArray.data(), rhsSpaces,
                boundary_conditions, boundary_values.data(), localAssembling);
-
+    /** manage dirichlet condition by copying non-actives DoFs
+     * from rhs to solution of front grid (=finest grid)
+     * Note: this operation can also be done inside the loop, so that
+     * the s.solution is corrected on every grid. This is the case in
+     * TNSE2D.
+     * TODO: CHECK WHAT IS THE DIFFERENCE BETWEEN doing this on every grid
+     * and doing it only on the finest grid!
+     **/
+    s.solution_.copy_nonactive(s.rhs_);
   }// end for system per grid - the last system is the finer one (front)
 
   /** manage dirichlet condition by copying non-actives DoFs
@@ -560,7 +550,7 @@ void Time_NSE3D::assemble_initial_time()
   * TODO: CHECK WHAT IS THE DIFFERENCE BETWEEN doing this on every grid
   * and doing it only on the finest grid!
   * **/
-  this->systems_.front().solution_.copy_nonactive(this->systems_.front().rhs_);
+  // this->systems_.front().solution_.copy_nonactive(this->systems_.front().rhs_);
 
   /** After copy_nonactive, the solution vectors needs to be Comm-updated
    * in MPI-case in order to be consistently saved. It is necessary that
@@ -585,7 +575,6 @@ void Time_NSE3D::assemble_initial_time()
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
     this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
   #endif
-
   // copy the last right hand side and solution vectors to the old ones
   this->old_rhs_      = this->systems_.front().rhs_;
   this->old_solution_ = this->systems_.front().solution_;
@@ -923,7 +912,14 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   //  Output::print("impulse_residual:  " , setw(3), normOfImpulseResidual);
   //  Output::print("mass_residual   :  " , setw(3), normOfMassResidual);
   //  Output::print("residual        :  " , setw(3), normOfResidual);
-
+  System_per_grid& s = this->systems_.front();
+  size_t nu=s.solution_.length(0);
+  size_t np=s.solution_.length(3);
+  Output::print("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
+                Ddot(3*nu,s.rhs_.get_entries(),s.rhs_.get_entries()) , " "  , 
+                Ddot(np,s.rhs_.get_entries()+3*nu,s.rhs_.get_entries()+3*nu)," ",
+                Ddot(3*nu+np,s.rhs_.get_entries(),s.rhs_.get_entries()));
+  
   // this is the convergence ratio between actual step and last step
   // TODO : correct oldNormOfResidual to be the residual of last step
   // and print it out
@@ -1059,6 +1055,8 @@ void Time_NSE3D::solve()
     //kick off the solving process
     mumps_wrapper.solve(s.rhs_, s.solution_);
   }
+  else
+    solver_.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential
 #endif
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11, A22 and A33 matrices are
@@ -1126,7 +1124,7 @@ void Time_NSE3D::output(int m, int &image)
 #ifdef _MPI
       char SubID[] = "";
       if(my_rank == 0)
-	mkdir(db_["output_vtk_directory"], 0777);
+        mkdir(db_["output_vtk_directory"], 0777);
       std::string dir = db_["output_vtk_directory"];
       std::string base = db_["output_basename"];
       output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);

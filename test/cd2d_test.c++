@@ -22,6 +22,7 @@
  * @author Clemens Bartsch
  *
  */
+#include <AlgebraicFluxCorrection.h>
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
@@ -288,6 +289,9 @@ int main(int argc, char* argv[])
     db.add("refinement_n_initial_steps", (size_t) 3,"");
     db.add("multigrid_n_levels", (size_t) 0, "");
 
+    db.merge(AlgebraicFluxCorrection::default_afc_database(), true);
+    db["algebraic_flux_correction"].set("fem-tvd");
+
     // default construct a domain object
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
@@ -295,7 +299,6 @@ int main(int argc, char* argv[])
 
     TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
     TDatabase::ParamDB->DISCTYPE = 1; //Galerkin Desicreitzation
-    TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 1; //FEM-TVD type afc
     TDatabase::ParamDB->DELTA0 = 0.3;
     TDatabase::ParamDB->DELTA1 = 0.;
     TDatabase::ParamDB->SDFEM_TYPE = 0;

@@ -16,7 +16,20 @@ include_directories("${CMAKE_SOURCE_DIR}/include/Examples"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TCD_2D"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TCD_3D"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TNSE_2D"
-		     "${CMAKE_SOURCE_DIR}/include/Examples/Brinkman_2D")
+                    "${CMAKE_SOURCE_DIR}/include/Examples/Brinkman_2D")
+
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/BoundaryCondition.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/BoundaryData.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/PDECoefficients.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/AnalyticalFunction.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/Example.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/Example_Brinkman.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/Example_ConvDiff.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/Example_Darcy.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/Example_NavierStokes.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/Example_NonStationary.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/Example_Time_ConvDiff.C")
+list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/Example_Time_NavierStokes.C")
 
 # Source files to be added to the 2D library.
 list(APPEND EXAMPLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Examples/Example2D.C")
@@ -37,5 +50,5 @@ list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_NSE3D
 list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_TimeNSE3D.C")
 
 
-list(APPEND PARMOON_SOURCES_2D ${EXAMPLE_SOURCES_2D})
-list(APPEND PARMOON_SOURCES_3D ${EXAMPLE_SOURCES_3D})
+list(APPEND PARMOON_SOURCES_2D ${EXAMPLE_SOURCES_2D} ${EXAMPLE_SOURCES})
+list(APPEND PARMOON_SOURCES_3D ${EXAMPLE_SOURCES_3D} ${EXAMPLE_SOURCES})
