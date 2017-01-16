@@ -49,29 +49,48 @@ extern "C"
 int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
 { 
   //BRUTE FORCE - find a point in the cell (barycenter)
-  TBaseCell* my_cell = coll->GetCell(cell);
+ TBaseCell* my_cell = coll->GetCell(cell);
   double X[8];
   double Y[8];
   double Z[8];  
   // compute coordinates of vertices
   TVertex *vert;
   bool silly_flag = false;
-  for (int l1=0;l1<my_cell->GetN_Vertices();l1++)
+  double re_nr = TDatabase::ParamDB->RE_NR;
+  double xt, length_x;
+  
+  if(re_nr == 180.)
+  {
+    length_x = 12.5663706143;
+    xt = 6.2831853071;
+  }
+  else if(re_nr == 395.)
+  {
+    length_x = 6.2831853071;
+    xt = 3.1415926535;
+    Output::print("here i am ", length_x, "  ", xt);
+  }
+  else
+  {
+    ErrThrow("manual partition does not work for RE_NR other than 180 && 395 ");
+  }
+    
+  for (int l1=0; l1<my_cell->GetN_Vertices(); l1++)
   {
     vert=my_cell->GetVertex(l1);
-    X[l1]=vert->GetX();
-    Y[l1]=vert->GetY();
-    Z[l1]=vert->GetZ();
-    if(fabs(X[l1] - 6.2831853071) < 1e-6)
+    X[l1] = vert->GetX();
+    Y[l1] = vert->GetY();
+    Z[l1] = vert->GetZ();
+    if(fabs(X[l1] - xt) < 1e-6)
       silly_flag = true;
   }
   // compute barycentre
   double x=0; double y=0; double z=0;
-  for (int l1=0;l1<my_cell->GetN_Vertices();l1++)
+  for (int l1=0; l1<my_cell->GetN_Vertices(); l1++)
   {
-    x+=X[l1];
-    y+=Y[l1];
-    z+=Z[l1];
+    x += X[l1];
+    y += Y[l1];
+    z += Z[l1];
   }
   x /= my_cell->GetN_Vertices();
   y /= my_cell->GetN_Vertices();
@@ -82,7 +101,7 @@ int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
       
   // END BRUTE FORCE
   double my_z = z ;
-  double my_x = x + 6.2831853071;
+  double my_x = x + xt;
   
   int x_slices = 8;
   
@@ -90,7 +109,6 @@ int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   int z_slices = size / 7;
   
-  double length_x = 12.5663706143;
   double length_z = 2.;
   int z_part = floor(my_z / length_z * z_slices);
 
