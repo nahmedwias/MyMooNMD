@@ -237,12 +237,24 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
   // in this example. One cannot put it to "DIRICHLET" because
   // this leads to trouble in MPI case - the periodic boundary conditions
   // will not come through against DIRCHLET. This seems a general problem with periodic bdry.
-  if(fabs(x - 2*Pi)<1e-6 || fabs(x+2*Pi) < 1e-6)
-    cond = NEUMANN;
-  else if(fabs(y - 2*Pi/3.)<1e-6 || fabs(y+2*Pi/3.) < 1e-6)
-    cond = NEUMANN;
-  else 
-    cond = DIRICHLET;
+  if(TDatabase::ParamDB->RE_NR == 180)
+  {
+    if(fabs(x - 2*Pi)<1e-6 || fabs(x+2*Pi) < 1e-6)
+      cond = NEUMANN;
+    else if(fabs(y - 2*Pi/3.)<1e-6 || fabs(y+2*Pi/3.) < 1e-6)
+      cond = NEUMANN;
+    else 
+      cond = DIRICHLET;
+  }
+  else if(TDatabase::ParamDB->RE_NR == 395)
+  {
+    if(fabs(x - Pi)<1e-6 || fabs(x+Pi) < 1e-6)
+      cond = NEUMANN;
+    else if(fabs(y - Pi/2.)<1e-6 || fabs(y+Pi/2.) < 1e-6)
+      cond = NEUMANN;
+    else 
+      cond = DIRICHLET;
+  }
 }
 
 
