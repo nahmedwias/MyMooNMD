@@ -6606,188 +6606,34 @@ double ***LocMatrices, double **LocRhs)
 }
 
 
-void LocAssembleCoFoReconstruction(double Mult, double *coeff, double *param, double hK,
- double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+void LocRoutine_BestAprrox(double Mult, double *coeff, double *param, double hK,
+  double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11 = LocMatrices[0]; // sv
-  double **MatrixA22 = LocMatrices[1];
-  double **MatrixM   = LocMatrices[2]; // vv 
-  double **MatrixCoFo1 = LocMatrices[3]; // rectangular matrix
-  double **MatrixCoFo2 = LocMatrices[4]; // rectangular matrix
-  
-  double *Rhs = LocRhs[0];
-  
-  int scalar_nbf = N_BaseFuncts[0]; // nbasis for V_h
-  int vector_nbf = N_BaseFuncts[1]; // nbasis for BDM
-  
-  double *Orig0  = OrigValues[0]; // u_x
-  double *Orig1  = OrigValues[1]; // u_y
-  double *Orig2  = OrigValues[2]; // u
-  double *OrigV0 = OrigValues[3]; // p
-
-  double nu = coeff[0];  // nu
-  double f1 = coeff[1];  // f1
-  double f2 = coeff[2];  // f2
-  double omega = coeff[3];
-
-  double ansatz10, ansatz01;
-  double test10, test01, val;
-
-  for(int i=0;i<scalar_nbf; i++)
-  {
-    test10 = Orig0[i];
-    test01 = Orig1[i];    
-
-    for(int j=0;j<scalar_nbf;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];      
-
-      val  = nu*(test10*ansatz10+test01*ansatz01);
-      MatrixA11[i][j] += Mult * val;
-      
-      MatrixA22[i][j] += Mult * val;
-    }
-  }
-
-  std::vector<int> sign(vector_nbf);
-  for(int i=0;i<vector_nbf;i++)
-    sign[i] = GetSignOfThisDOF(vector_nbf, i);
-  
-  double testx00, testy00;
-  for(int i=0; i<vector_nbf; i++)
-  {
-    testx00 = sign[i] * OrigV0[i];
-    testy00 = sign[i] * OrigV0[vector_nbf+i];
-    
-    // assmeble rhs 
-    Rhs[i] += Mult*( testx00*f1 + testy00*f2);
-
-    // mass matrix
-    for(int j=0; j<vector_nbf; j++)
-    {
-      double ansatzx00 = sign[j]*OrigV0[j];
-      double ansatzy00 = sign[j]*OrigV0[j+vector_nbf];
-      
-      val = testx00*ansatzx00 + testy00*ansatzy00;
-      MatrixM[i][j] += Mult*val;
-    }
-    
-    for(int j=0; j<scalar_nbf; ++j)
-    {
-      double ansatz00 = Orig2[j];
-      val = omega * ansatz00 * testy00; 
-      MatrixCoFo1[i][j] += Mult * val;
-      
-      val = -omega*ansatz00*testx00;
-      MatrixCoFo2[i][j] += Mult * val;
-    }
-  }  
-}
-
-void LocAssembleCoFoGalerkin(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA11 = LocMatrices[0];
-  double **MatrixA12 = LocMatrices[1];
-  double **MatrixA21 = LocMatrices[2];
-  double **MatrixA22 = LocMatrices[3];
-  
-  double **MatrixM11 = LocMatrices[4];
-  double **MatrixB1 = LocMatrices[5];
-  double **MatrixB2 = LocMatrices[6];
-  double **MatrixB1T = LocMatrices[7];
-  double **MatrixB2T = LocMatrices[8];
+  double **Matrix = LocMatrices[0];
 
   double *Rhs1 = LocRhs[0];
   double *Rhs2 = LocRhs[1];
 
   int N_U = N_BaseFuncts[0];
-  int N_P = N_BaseFuncts[1];
 
-  double *Orig0 = OrigValues[0];         // u_x
-  double *Orig1 = OrigValues[1];         // u_y
-  double *Orig2 = OrigValues[2];         // u
-  double *Orig3 = OrigValues[3];         // p
+  double *Orig0 = OrigValues[0];
 
-  double c0 = coeff[0];                 // nu
-  double c1 = coeff[1];                 // f1
-  double c2 = coeff[2];                 // f2
-  double omega = coeff[3]; // omega
-
-  double *Matrix11Row, *Matrix22Row;
-  double *MatrixM11Row;
-  double *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01, val;
-
+  double inu0 = coeff[3];
+  double inu1 = coeff[4];
+  double test00, ansatz00;
+  
   for(int i=0;i<N_U;i++)
   {
-    Matrix11Row = MatrixA11[i];
-    Matrix22Row = MatrixA22[i];
-    MatrixM11Row  = MatrixM11[i];
+    test00 = Orig0[i];
 
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
+    Rhs1[i] += Mult*test00*inu0;
+    Rhs2[i] += Mult*test00*inu1;
 
     for(int j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz00 = Orig0[j];
 
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      Matrix11Row[j] += Mult * val;
-      
-      MatrixA12[i][j] += Mult*(omega * ansatz00 * test00);
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      Matrix22Row[j] += Mult * val;
-      
-      MatrixA21[i][j] -= Mult*(omega * ansatz00 * test00);
-
-      val = Mult*(ansatz00*test00);
-      MatrixM11Row[j] += val;
-    }                            // endfor j
-
-    MatrixRow1 = MatrixB1T[i];
-    MatrixRow2 = MatrixB2T[i];
-    for(int j=0;j<N_P;j++)
-    {
-      ansatz00 = Orig3[j];
-
-      val = -Mult*ansatz00*test10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*ansatz00*test01;
-      MatrixRow2[j] += val;
+      Matrix[i][j] += Mult * ansatz00*test00;
     }
-  }                              // endfor i
-
-  for(int i=0;i<N_P;i++)
-  {
-   MatrixRow1 = MatrixB1[i];
-   MatrixRow2 = MatrixB2[i];
-
-   test00 = Orig3[i];
-
-   for(int j=0;j<N_U;j++)
-   {
-     ansatz10 = Orig0[j];
-     ansatz01 = Orig1[j];
-
-     val = -Mult*test00*ansatz10;
-     MatrixRow1[j] += val;
-
-     val = -Mult*test00*ansatz01;
-     MatrixRow2[j] += val;
-   }                            // endfor j
-
-  }                              // endfor i
+  }
 }

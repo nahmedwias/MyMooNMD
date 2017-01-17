@@ -62,6 +62,9 @@ public:
   /// in the nonlinear term, then the matrices should also be assembled
   /// using the reconstruction concept
   void all_assemble();
+  
+  /// @brief assemble nonlinear matrices 
+  void nonlinear_assemble();
 
   /// getters and setters
   const TFESpace2D & get_projection_space() const

@@ -3607,18 +3607,21 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
                                             double **matrix_left, double **matrix_right, 
                                             double **matrix_plus, double **&matrix_out)
   {
-    // rows of matrix_left are the columns of matrix_right
+    for(unsigned int k=0; k<cols; ++k)
+    {
+      for(unsigned int i=0; i< rows; ++i)
+      {
+        double temp = matrix_left[i][k];
+        for(unsigned int j=0; j< rows; ++j)
+        {
+          matrix_out[i][j] += temp*matrix_right[k][j];
+        }
+      }
+    }
     for(unsigned int i=0; i<rows; ++i)
     {
-      for(unsigned int j=0; j< rows; ++j)
-      {
-        for(unsigned int k=0; k< cols; ++k)
-        {
-          matrix_out[i][j] += matrix_left[i][k]*matrix_right[k][j];
-        }
+      for(unsigned int j=0; j<rows; ++j)
         matrix_out[i][j] += matrix_plus[i][j];
-        // Output::print(i,",",j, " ", setprecision(4), matrix_out[i][j]);
-      }
     }
     return;
   };
@@ -3674,17 +3677,21 @@ void nonlinear_term_reconstruct(double ***inputMat, int *nrowInput, int *ncolInp
                                             double **matrix_plus, double **&matrix_out)
   {
     // rows of matrix_left are the columns of matrix_right
+    for(unsigned int k=0; k<cols; ++k)
+    {
+      for(unsigned int i=0; i< rows; ++i)
+      {
+        double temp = matrix_left[i][k];
+        for(unsigned int j=0; j< rows; ++j)
+        {
+          matrix_out[i][j] += temp*matrix_right[k][j];
+        }
+      }
+    }
     for(unsigned int i=0; i<rows; ++i)
     {
-      for(unsigned int j=0; j< rows; ++j)
-      {
-        for(unsigned int k=0; k< cols; ++k)
-        {
-          matrix_out[i][j] += matrix_left[i][k]*matrix_right[k][j];
-        }
+      for(unsigned int j=0; j<rows; ++j)
         matrix_out[i][j] += matrix_plus[i][j];
-        // Output::print(i,",",j, " ", setprecision(4), matrix_out[i][j]);
-      }
     }
     return;
   };
@@ -3693,8 +3700,8 @@ void nonlinear_term_reconstruct(double ***inputMat, int *nrowInput, int *ncolInp
   {
     ErrThrow("dimensions mismatch");
   }
-  unsigned int r = nrowInput[5];
-  unsigned int c = ncolInput[5];
+  unsigned int r = nrowInput[4];
+  unsigned int c = ncolInput[4];
   double **temp = new double*[nrowInput[0]];
   for(int i=0; i<nrowInput[0]; ++i)
     temp[i]=new double[ncolInput[0]];

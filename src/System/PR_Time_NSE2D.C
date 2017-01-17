@@ -519,9 +519,10 @@ void PR_Time_NSE2D::nonlinear_assemble()
     size_t nrhs_sto=0;
     double **rhs_stor{nullptr};
     const TFESpace2D ** pointer_to_rhs_space{nullptr};
-    
+    // TODO: Oh man what's that???? need to assemble nonlinear 
+    // matrices but assembling mass matrices :: stupid stupid stupid
     std::vector<std::shared_ptr<FEMatrix>> matrices
-             = sd.modifedMassMatrix_.get_blocks_uniquely();
+             = sb.matrix.get_blocks_uniquely();
     sq_mat_store[0]=reinterpret_cast<TSquareMatrix2D*>(matrices.at(0).get());
     sq_mat_store[1]=reinterpret_cast<TSquareMatrix2D*>(matrices.at(1).get());    
     sq_mat_store[2]=reinterpret_cast<TSquareMatrix2D*>(matrices.at(3).get());

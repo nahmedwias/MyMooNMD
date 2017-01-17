@@ -60,6 +60,7 @@ int main(int argc, char* argv[])
   double end_time = TDatabase::TimeDB->ENDTIME;
   int step = 0;
   int n_substeps = GetN_SubSteps();
+  tnse2d.output(step);
   // ======================================================================
   // time iteration
   // ======================================================================

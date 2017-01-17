@@ -62,6 +62,7 @@ enum LocalAssembling2D_type { ConvDiff,
                               RECONSTR_TNSE,
                               RECONSTR_TNSENL,
                               NO_LOCAL_ASSEMBLE,
+                              BEST_APPROXIMATION,
                               Custom /// Customized local assembling object. To be used with non-standard problems.
 };
 

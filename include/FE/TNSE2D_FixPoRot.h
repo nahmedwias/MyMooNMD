@@ -146,3 +146,9 @@ void TStokes_PSPG_GRADDIV_Rhs(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
+
+//=========================================================================
+void TimeNSType4PresRobRot(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
