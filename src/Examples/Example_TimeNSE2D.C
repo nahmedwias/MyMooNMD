@@ -53,6 +53,11 @@ namespace cori_betaplane
 #include "TNSE_2D/coriolis_betaplane.h"
 }
 
+namespace gresho_vortex
+{
+#include "TNSE_2D/gresho_vortex.h"
+}
+
 Example_TimeNSE2D::Example_TimeNSE2D(
   const ParameterDatabase& user_input_parameter_db)
  : Example_NonStationary2D(user_input_parameter_db)
@@ -356,6 +361,33 @@ Example_TimeNSE2D::Example_TimeNSE2D(
 
       cori_betaplane::DIMENSIONLESS_VISCOSITY=this->get_nu();
       ExampleFile();
+      break;
+    }
+    case 11:
+    {
+      using namespace gresho_vortex;
+      exact_solution.push_back(ExactU1);
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** initial conditions, in case of a non-stationary problem */
+      initialCOndtion.push_back(InitialU1);
+      initialCOndtion.push_back(InitialU2);
+      initialCOndtion.push_back(InitialP);
+      /** coefficients */
+      problem_coefficients = gresho_vortex::LinCoeffs;
+
+      gresho_vortex::DIMENSIONLESS_VISCOSITY=this->get_nu();
       break;
     }
     default:

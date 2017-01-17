@@ -163,3 +163,77 @@ void PR_NSE2D::all_assemble()
     TDatabase::ParamDB->VELOCITY_SPACE = vspace_;
   }
 }
+
+void PR_NSE2D::nonlinear_assemble()
+{
+  // standard Galerkin case
+  if(TDatabase::ParamDB->DISCTYPE == GALERKIN)
+  {
+    this->NSE2D::assemble_nonlinear_term();
+    return;
+  }
+  
+  for(System_per_grid& s : this->systems)
+  {
+    std::vector<TFEFunction2D*> fefct;
+    fefct.push_back(s.u.GetComponent(0));
+    fefct.push_back(s.u.GetComponent(1));
+    fefct.push_back(&s.p);
+    // local assembling object
+    LocalAssembling2D la(RECONSTR_NLGALERKIN, fefct.data(), example_.get_coeffs());
+    // setting the space for sign in GetSignOfThisDOF();
+    size_t vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
+    TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
+    // prepare everything which is needed for assembling matrices 
+    size_t nfesp = 2;
+    const TFESpace2D* pro_sp  = &this->get_projection_space();
+    const TFESpace2D* vel_sp = &s.velocity_space;
+    // pointers to the fespace
+    const TFESpace2D* pointer_to_space[2] = { vel_sp, pro_sp };
+    
+    size_t nsq_ass=2;
+    size_t nre_ass=4;
+    // row space for assembling matrices
+    std::vector<int> rspace ={0, 0, 1, 1, 0, 0}; 
+    // cols space for assembling matrices
+    std::vector<int> cspace ={0, 0, 0, 0, 1, 1}; 
+    // square matrices to be stored
+    size_t nsq_stor = 4;
+    TSquareMatrix2D* sq_mat_store[4]{nullptr};
+    // rectangular matrices to be stored
+    size_t nre_store = 0;
+    TMatrix2D** re_mat_store=nullptr;
+     // right hand side to be assembled
+    size_t nrhs_ass = 0;
+    // row space for the right hand side
+    std::vector<int> rspace_rhs={};
+    size_t nrhs_sto=0;
+    double **rhs_stor{nullptr};
+    const TFESpace2D ** pointer_to_rhs_space{nullptr};
+    
+    // matrices
+    std::vector<std::shared_ptr<FEMatrix>>mat
+                        = s.matrix.get_blocks_uniquely();
+    sq_mat_store[0] = reinterpret_cast<TSquareMatrix2D*>(mat.at(0).get());
+    sq_mat_store[1] = reinterpret_cast<TSquareMatrix2D*>(mat.at(1).get());
+    sq_mat_store[2] = reinterpret_cast<TSquareMatrix2D*>(mat.at(3).get());
+    sq_mat_store[3] = reinterpret_cast<TSquareMatrix2D*>(mat.at(4).get());
+    // boundary conditions and boundary values
+    const TFESpace2D* pre_sp = &s.pressure_space;
+    BoundCondFunct2D *bc[3]={vel_sp->GetBoundCondition(), 
+                             vel_sp->GetBoundCondition(),
+                             pre_sp->GetBoundCondition()};
+    std::array<BoundValueFunct2D*, 3> bv;
+    bv[0]=example_.get_bd(0);
+    bv[1]=example_.get_bd(1);
+    bv[2]=example_.get_bd(2);
+    
+    Assemble2D_MixedFEM(nfesp, pointer_to_space,
+                 nsq_ass, nre_ass, rspace, cspace, nrhs_ass, rspace_rhs,
+                 nsq_stor, sq_mat_store, nre_store, re_mat_store,
+                 nrhs_sto, rhs_stor,pointer_to_rhs_space, la,
+                 nonlinear_term_reconstruct, nullptr,
+                 ProjectionMatricesNSE2D, bc, bv.data());
+    TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
+  }
+}

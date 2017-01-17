@@ -426,6 +426,21 @@ switch(type)
     this->Manipulate = NULL;
     break;
   ////////////////////////////////////////////////////////////////////////////
+  case LocalAssembling2D_type::BEST_APPROXIMATION:
+    this->N_Terms = 1;
+    this->Derivatives = { D00 };
+    this->Needs2ndDerivatives = new bool[2];
+    this->Needs2ndDerivatives[0] = false;
+    this->Needs2ndDerivatives[1] = false;
+    this->FESpaceNumber = { 0};
+    this->N_Matrices = 1;
+    this->RowSpace = {0 };
+    this->ColumnSpace = { 0 };
+    this->N_Rhs = 2;
+    this->RhsSpace = { 0, 0 };
+    this->AssembleParam = LocRoutine_BestAprrox; 
+    this->Manipulate = NULL;
+    break;
   case LocalAssembling2D_type::TSTOKES:
   case LocalAssembling2D_type::TSTOKES_Rhs:
     this->set_parameters_for_tstokes(type);
@@ -2862,21 +2877,31 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->Needs2ndDerivatives[0] = false;
       this->Needs2ndDerivatives[1] = false;
       this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: vector valued velocity
-      this->N_Matrices = 7;
-      this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0 };
-      this->ColumnSpace = { 0, 0, 1, 0, 0, 1, 1 };
+      if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0) // convective form 
+      {
+        this->N_Matrices = 7;
+        this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0 };
+        this->ColumnSpace = { 0, 0, 1, 0, 0, 1, 1 };
+      }
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==2) // rotational form 
+      {
+        this->N_Matrices = 9;
+        //                   A  A  M  Anl Anl P  P  A12 A21
+        this->RowSpace    = {0, 0, 1, 1,  1,  0, 0, 1, 1}; // 
+        this->ColumnSpace = {0, 0, 1, 0,  0,  1, 1, 0, 0}; // 
+      }
       this->N_Rhs = 1;
       this->RhsSpace = { 1 };
       this->AssembleParam = LocAssembleNSTYPE4;
       this->Manipulate = NULL;
-      
+        
       this->N_Parameters = 2;
       this->N_ParamFct = 1;
-      this->ParameterFct =  { NSParamsVelo };
-      this->N_FEValues = 1;
-      this->FEValue_FctIndex = { 0 };
+      this->ParameterFct = {TimeNSParams2};
+      this->N_FEValues = 2;
+      this->BeginParameter = { 0 };
       this->FEValue_MultiIndex = { D00, D00 };
-      this->BeginParameter = { 1 }; 
+      this->FEValue_FctIndex = { 0, 1 };
       break;
     case RECONSTR_TNSENL:
       if(TDatabase::ParamDB->LAPLACETYPE && TDatabase::ParamDB->NSTYPE !=4)
@@ -2898,11 +2923,11 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       
       this->N_Parameters = 2;
       this->N_ParamFct = 1;
-      this->ParameterFct =  { NSParamsVelo };
+      this->ParameterFct =  { TimeNSParams2 };
       this->N_FEValues = 2;
-      this->FEValue_FctIndex = { 0, 1 };
-      this->FEValue_MultiIndex = { D00, D00 };
       this->BeginParameter = { 0 };
+      this->FEValue_MultiIndex = { D00, D00 };
+      this->FEValue_FctIndex = { 0, 1 };
       break;
     case NO_LOCAL_ASSEMBLE:
       if(TDatabase::ParamDB->LAPLACETYPE && TDatabase::ParamDB->NSTYPE !=4)
@@ -2968,10 +2993,7 @@ void LocalAssembling2D::set_parameters_for_tstokes(LocalAssembling2D_type type)
               this->N_Matrices    = 9;
               this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
               this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
-              if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                this->AssembleParam = TimeStokesType4Galerkin;
-              else 
-                this->AssembleParam = LocAssembleCoFoGalerkin;
+              this->AssembleParam = TimeStokesType4Galerkin;
               break;
           default:
               ErrThrow("NSTYPE: ",

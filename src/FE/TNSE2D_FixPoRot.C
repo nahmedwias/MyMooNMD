@@ -9,6 +9,7 @@
 #include <Convolution.h>
 #include <MooNMD_Io.h>
 #include <TNSE2D_Routines.h>
+#include <Darcy2DMixed.h>
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v)
@@ -1892,3 +1893,88 @@ double ***LocMatrices, double **LocRhs)
 }
 
 
+void TimeNSType4PresRobRot(double Mult, double *coeff,
+                           double *param, double hK,
+                           double **OrigValues, int *N_BaseFuncts,
+                           double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11 = LocMatrices[0]; // sv
+  double **MatrixA22 = LocMatrices[1];
+  double **MatrixM   = LocMatrices[2]; // vv 
+  double **MatrixA11NL = LocMatrices[3]; // rectangular matrix
+  double **MatrixA22NL = LocMatrices[4]; // rectangular matrix
+  double **MatrixA12NL = LocMatrices[5]; // rectangular matrix
+  double **MatrixA21NL = LocMatrices[6]; // rectangular matrix
+  
+  double *Rhs = LocRhs[0];
+  
+  int scalar_nbf = N_BaseFuncts[0]; // nbasis for V_h
+  int vector_nbf = N_BaseFuncts[1]; // nbasis for BDM
+  
+  double *Orig0  = OrigValues[0]; // u_x
+  double *Orig1  = OrigValues[1]; // u_y
+  // double *Orig2  = OrigValues[2]; // u
+  double *OrigV0 = OrigValues[3]; // p
+
+  double nu = coeff[0];  // nu
+  double f1 = coeff[1];  // f1
+  double f2 = coeff[2];  // f2
+
+  double u1 = param[0];  // u1old
+  double u2 = param[1];  // u2old
+
+  double ansatz10, ansatz01;
+  double test10, test01, val;
+  
+  for(int i=0;i<scalar_nbf; i++)
+  {
+    test10 = Orig0[i];
+    test01 = Orig1[i];    
+
+    for(int j=0;j<scalar_nbf;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];      
+
+      val  = nu*(test10*ansatz10+test01*ansatz01);
+      MatrixA11[i][j] += Mult * val;
+      
+      MatrixA22[i][j] += Mult * val;
+    }
+  }
+  
+  std::vector<int> sign(vector_nbf);
+  for(int i=0;i<vector_nbf;i++)
+    sign[i] = GetSignOfThisDOF(vector_nbf, i);
+  double testx00, testy00;
+  for(int i=0; i<vector_nbf; i++)
+  {
+    testx00 = sign[i] * OrigV0[i];
+    testy00 = sign[i] * OrigV0[vector_nbf+i];
+    
+    // assmeble rhs 
+    Rhs[i] += Mult*( testx00*f1 + testy00*f2);
+    
+    // mass matrix
+    for(int j=0; j<vector_nbf; j++)
+    {
+      double ansatzx00 = sign[j]*OrigV0[j];
+      double ansatzy00 = sign[j]*OrigV0[j+vector_nbf];
+      
+      val = testx00*ansatzx00 + testy00*ansatzy00;
+      MatrixM[i][j] += Mult*val;
+    }
+    
+    // assembling of modified nonlinear term
+    for(int j=0; j<scalar_nbf; j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      val = (u1*ansatz10 + u2*ansatz01)*testx00;
+      MatrixA11NL[i][j] += Mult * val;
+      
+      val = (u1*ansatz10 + u2*ansatz01)*testy00;
+      MatrixA22NL[i][j] += Mult * val;
+    }
+  }  
+}
