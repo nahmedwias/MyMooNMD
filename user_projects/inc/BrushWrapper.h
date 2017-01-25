@@ -65,6 +65,8 @@ class BrushWrapper
 
     PostProcessing2D output_writer_;
 
+    std::ofstream moment_stats_file_;
+
     TCollection* pd_moments_grid_; //NO OWNERSHIP TAKEN.
 
     // This is all adapted to 0th order elements.

@@ -23,7 +23,9 @@ void ZeroBoundaryValues(int BdComp, double Param, double &value)
 //Get the barycenter of a ParMooN grid cell.
 std::valarray<double> center_point(const TBaseCell& cell)
 {
-  //TODO 3D?!
+#ifdef __3D__
+  ErrThrow("Does center point calculation work in 3D?");
+#endif
   std::valarray<double> p(0.0,3);
 
   unsigned int n_verts = cell.GetN_Vertices();
@@ -42,7 +44,7 @@ std::valarray<double> center_point(const TBaseCell& cell)
 int fe_order = 0;
 
 BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
-: db_(db), output_writer_(db_),
+: db_(db), output_writer_(db_), moment_stats_file_(db_["out_part_moments_file"].get<std::string>()),
   pd_moments_grid_(coll),
   pd_moments_space_(pd_moments_grid_, (char*)"psd-moms", (char*)"psd-moms",
                     DirichletBoundaryConditions, fe_order, nullptr)
@@ -50,7 +52,8 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
 
   // set up Brushs ParMooN interface
   interface_ = new Brush::InterfacePM(
-      db_["geo_file"], db_["sweep_file"], " ",
+      db_["geo_file"], db_["third_dim_stretch"],
+      db_["sweep_file"], " ",
       db_["therm_file"], db_["chem_file"],
       db_["max_sp_per_cell"], db_["max_m0_per_cell"],
       1 // number of species in the continuous phase TODO hard coded so far
@@ -78,6 +81,9 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
   output_writer_.add_fe_function(pd_moments_[0]);
   output_writer_.add_fe_function(pd_moments_[1]);
   output_writer_.add_fe_function(pd_moments_[2]);
+
+  //write a nice header into the particle stats file
+  interface_->write_header(moment_stats_file_);
 
   // fill them and add them to the output and print them (which is a temporary test)
   // tell the interface which sample points parMooN is interested in
@@ -202,5 +208,12 @@ void BrushWrapper::solve(double t_start, double t_end)
 void BrushWrapper::output(double t)
 {
   output_writer_.write(t);
-  //TODO It would be good to let Brush itself print some information.
+
+  //TODO enable this for only certain steps
+  interface_->write_particle_stats(t, moment_stats_file_);
+
 }
+
+
+
+
