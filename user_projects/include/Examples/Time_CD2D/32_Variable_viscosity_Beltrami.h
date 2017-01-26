@@ -170,8 +170,8 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
     y = Y[i];
 
     coeff[0] = 0;
-    coeff[1] = 0;
-    coeff[2] = 0;
+    coeff[1] = 1;
+    coeff[2] = 1;
     coeff[3] = 0;
 
     // rhs = 1.d/dx + 1.d/dy
