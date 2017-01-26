@@ -582,33 +582,29 @@ void BlockVector::copy_structure(const BlockVector& r)
 }
 
 /** ************************************************************************ */
-void BlockVector::write_fo_file(std::string filename)
+void BlockVector::write_to_stream(std::ostream& os) const
 {
-  std::ofstream dat(filename);
-  if(!dat)
+  if(!os.good())
   {
-    ErrMsg("cannot open file '" << filename << "' to save data. return");
-    return;
+    ErrThrow("cannot read stream to save data. return");
   }
-  dat << this->length() << endl;
-  dat.write((char *) this->get_entries(), sizeof(double) * this->length());
-  dat.close();
+  os << this->length() << endl;
+  os.write((char *) this->get_entries(), sizeof(double) * this->length());
 }
 
 /** ************************************************************************ */
-void BlockVector::read_from_file(std::string filename)
+void BlockVector::read_from_stream(std::istream& is)
 {
-  std::ifstream dat(filename);
-  if(!dat)
+  if(!is.good())
   {
-    ErrThrow("cannot open file '", filename, "' to read data");
+    ErrThrow("stream in bad state, cannot read data");
   }
-  
+
   // check if the size of this vector and the number of doubles in the file
   // coincide:
   unsigned int length_read;
   std::string line;
-  std::getline(dat, line);
+  std::getline(is, line);
   std::istringstream parser( std::string( line.begin(), line.end() ) );
   parser >> length_read >> std::ws;
   if(!parser || parser.get() != EOF)
@@ -628,9 +624,34 @@ void BlockVector::read_from_file(std::string filename)
     ErrThrow("unexpected size to be read. Expected: ", this->length(),
              "\tin file: ", length_read);
   }
-  // now we are sure that (this->length == length_read) 
-  
-  dat.read((char *)this->get_entries(), sizeof(double) * length_read);
+  // now we are sure that (this->length == length_read)
+
+  is.read((char *)this->get_entries(), sizeof(double) * length_read);
+}
+
+
+/** ************************************************************************ */
+void BlockVector::write_to_file(std::string filename) const
+{
+  std::ofstream dat(filename);
+  if(!dat)
+  {
+    ErrMsg("cannot open file '" << filename << "' to save data. return");
+    return;
+  }
+  this->write_to_stream(dat);
+  dat.close();
+}
+
+/** ************************************************************************ */
+void BlockVector::read_from_file(std::string filename)
+{
+  std::ifstream dat(filename);
+  if(!dat)
+  {
+    ErrThrow("cannot open file '", filename, "' to read data");
+  }
+  this->read_from_stream(dat);
   dat.close();
 }
 
