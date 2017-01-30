@@ -27,6 +27,7 @@
 namespace Brush
 {
   class InterfacePM;
+  class ParMooNData;
 }
 
 class BrushWrapper
@@ -43,10 +44,20 @@ class BrushWrapper
     /// fe function on the domain.
     const TFEFunction2D& get_moment_fe(int k) const;
 
-    /// Give the values of velocity u to Brush.
-    void set_velocity(const TFEVectFunct2D& u);
-    void set_temperature(const TFEFunction2D& T);
-    void set_concentrations(std::vector<const TFEFunction2D*> c);
+    /**
+     * Reset the fluid phase data in Brush, i.e., velocity, pressure, temperature
+     * and all species concentrations.
+     * @param[in] u The fluid velocity (all components).
+     * @param[in] p The pressure.
+     * @param[in] species All transported species, the first of which
+     *            is supposed to be temperature. The following must be in that
+     *            order in which Brush expects them.
+     * TODO Determine, fix and comment on units for all these quantities.
+     */
+    void reset_fluid_phase(
+        const TFEVectFunct2D& u,
+        const TFEFunction2D& p,
+        std::vector<const TFEFunction2D*> species);
 
     /// Run the particle solver.
     void solve(double t_start, double t_end);
