@@ -10,6 +10,8 @@
 #include <parmoon_interface.h>
 #include <parmoon_data.h>
 
+#include <ASA_crystallizer.h> //TODO This should be handled at runtime instead!
+
 
 // TODO Before we think about proper boundary conditions we go for Dirichlet zero.
 void DirichletBoundaryConditions(int BdComp, double t, BoundCond &cond)
@@ -24,15 +26,42 @@ void ZeroBoundaryValues(int BdComp, double Param, double &value)
 //TODO Use an std::function instead
 typedef double my_funct_type (const std::vector<double>&);
 
+// With given values ux, uy, p, T and ASA conc in a certain point,
+// will evaluate the molar concentration of EtOH, which is a derived quantity.
 //TODO Move to an example!
 double derived_concentration_EtOH(const std::vector<double>& data)
 {
+  if (data.size() != 7)
+    throw std::runtime_error("derived_concentration_EtOH: expected 7 data points."
+        " ux, uy, p, T, ASA, 0(CH3CH2OH) , 0(ASASUP)");
+
   return 1; //TODO CODE!
 }
 //TODO Move to an example!
+// With given values ux, uy, p, T and ASA conc in a certain point,
+// will evaluate the supersaturation concentration of ASA, which is a
+// derived quantity.
 double derived_concentration_ASASUP(const std::vector<double>& data)
 {
-  return 1; //TODO CODE!
+  if (data.size() != 7)
+    throw std::runtime_error("derived_concentration_EtOH: expected 7 data points."
+        " ux, uy, p, T, ASA, CH3CH2OH , 0(ASASUP)");
+
+    double T = data[3]; //grab temperature, the only relevant input data.
+
+    //theoretical supersaturation in terms of ASA mole fraction, as given by Eder et al.
+    double chi_sat = pow(10, 27.769 - (2500.906/T) - 8.323 * log10(T));
+
+    //now this has to be transformed to supersaturation in
+    // terms of molar concentration, which is a bit cumbersome
+    double M_S = chi_sat*Physics::M_ASA + (1-chi_sat)*Physics::M_Ethanol; //molar mass of solution
+    double w_Ethanol = 1 - chi_sat*(Physics::M_ASA/M_S); //Ethanol mass fraction
+    double rho_S = Physics::rho_E / w_Ethanol; //density of solution calculated under "ideal solution" asumption
+
+    //now here comes supersaturation in terms of molar concentration
+    double c_sat = chi_sat * rho_S / M_S;
+
+    return c_sat;
 }
 
 //Get the barycenter of a ParMooN grid cell.
@@ -142,7 +171,7 @@ void BrushWrapper::reset_fluid_phase(
 {
   size_t n_points = output_sample_points_.size();
   //TODO "decoder-vektor" koennte im Beispiel gespeichert sein
-  Brush::DataPM pm_data({"ux","uy","p","T","ASA","EtOH","ASASUP"}, n_points);
+  Brush::DataPM pm_data({"ux","uy","p","T","ASA","CH3CH2OH","ASASUP"}, n_points);
 
   //For the velocity we need two xtra fe functions
   TFEFunction2D* u0_fe = u.GetComponent(0);
@@ -157,7 +186,7 @@ void BrushWrapper::reset_fluid_phase(
   fe_functs[0] = u0_fe;
   fe_functs[1] = u1_fe;
   fe_functs[2] = &p;
-  std::copy( species.begin() , species.end(), fe_functs.begin() + 3);
+  std::copy( species.begin() , species.end(), &fe_functs[3]);
 
   std::vector<my_funct_type*> derived_concentrations(n_specs_derived);
   derived_concentrations[0] = derived_concentration_EtOH;   //TODO do not hard code
@@ -176,7 +205,7 @@ void BrushWrapper::reset_fluid_phase(
     // point evaluations of all fe functions
     for(size_t i = 0 ; i < dim + 1 + n_specs ; ++i)
     {
-      double eval[5]; // will include differentials, thus length is '5')
+      double eval[3]; // will include differentials, thus length is '3')
       fe_functs[i]->FindGradient(x,y,eval);
       data_set[i] = eval[0];
     }
@@ -196,7 +225,7 @@ void BrushWrapper::reset_fluid_phase(
   delete u1_fe;
 
   //give the data to Brush
-  //interface_->reset_fluid_phase(pm_data);
+  interface_->reset_fluid_phase(pm_data);
 
 }
 
@@ -225,7 +254,6 @@ void BrushWrapper::output(double t)
   interface_->write_particle_stats(t, moment_stats_file_);
 
 }
-
 
 
 

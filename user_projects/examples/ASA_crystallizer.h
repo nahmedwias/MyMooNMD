@@ -48,58 +48,33 @@ namespace Physics
   double M_ASA = 0.18016; //molar mass of ASA (kg/mol)
 }
 
-//A helper function relevant in the coupling of concentration, temperature and psd
-// TODO F is integral of psd at (t,x) in inner coordinate from 0 to m_max
-double F_growth(double T, double c, double F)
-{
-  //theoretical supersaturation in terms of ASA mole fraction, as given by Eder et al.
-  double chi_sat = pow(10, 27.769 - (2500.906/T) - 8.323 * log10(T));
-
-  //now this has to be transformed to supersaturation in
-  // terms of molar concentration, which is a bit cumbersome
-  double M_S = chi_sat*Physics::M_ASA + (1-chi_sat)*Physics::M_Ethanol; //molar mass of solution
-  double w_Ethanol = 1 - chi_sat*(Physics::M_ASA/M_S); //Ethanol mass fraction
-  double rho_S = Physics::rho_E / w_Ethanol; //density of solution calculated under "ideal solution" asumption
-
-  //now here comes supersaturation in terms of molar concentration
-  double c_sat = chi_sat * rho_S / M_S;
-
-  // calculate the actual growth coefficient
-  double k_g = 1.2e-5; //some coefficient, chosen as in Carina's diss
-  double g = 1; //some exponent, chosen as in Carina's diss
-  double G = c > c_sat ? k_g * ( (c - c_sat) / c_sat) : 0; //^g - do this only if g is not 1!
-
-  double F_growth = - G * F;
-
-  return F_growth;
-}
-
 //term responsible for the coupling on the right hand side in temperature equation
-double couplingTerm_T( const double* const params ) //must contain all that is necessary: T,c,F (already integral!)
+double couplingTerm_T( const double* const params ) //must contain all that is necessary: T,c,F (zeroth moment)
 {
-  //term responsible for the coupling on the right hand side in temperature equation
-  double T = params[0];
-  double c = params[1];
-  double F = params[2]; //parameter functions takes care of that
-  F = 1e5;//FIXME Take value from param, instead!
-
-  double constant = Physics::delta_h_cryst / (Physics::rho_E * Physics::C_E);
-
-  return constant * F_growth(T,c,F); //watch out! sign differs from the way the equation was scetched
+//  //term responsible for the coupling on the right hand side in temperature equation
+//  double T = params[0];
+//  double c = params[1];
+//  double F = params[2]; //parameter functions takes care of that
+//
+//  double constant = Physics::delta_h_cryst / (Physics::rho_E * Physics::C_E);
+//
+//  return constant * F_growth(T,c,F); //watch out! sign differs from the way the equation was scetched
+  return 0; // no more coupling - the coupling terms will be reactivated
+            // if there is an actual reaction taking place in the fluid
 }
 
-double couplingTerm_C_ASA( const double* const params ) //must contain all that is necessary: T,c,F (already integral!)
+double couplingTerm_C_ASA( const double* const params ) //must contain all that is necessary: T,c,F (zeroth moment)
 {
-  double T = params[0];
-  double c = params[1];
-  double F = params[2]; //parameter functions takes care of that
-  F = 1e5;//FIXME Take value from param, instead!
-
-  double constant = 1 / Physics::M_ASA;
-
-  return - constant * F_growth(T,c,F); //watch out! sign differs from the way the equation was scetched
+//  double T = params[0];
+//  double c = params[1];
+//  double F = params[2]; //parameter functions takes care of that
+//
+//  double constant = 1 / Physics::M_ASA;
+//
+//  return - constant * F_growth(T,c,F); //watch out! sign differs from the way the equation was scetched
+  return 0; // no more coupling - the coupling terms will be reactivated
+            // if there is an actual reaction taking place in the fluid
 }
-
 
 
 //Just print some informations on the example.
@@ -145,7 +120,7 @@ void Coefficients_T(int n_points, double *x, double *y,
     coeffs[i][2] = parameters[i][1];//convection in y direction
     coeffs[i][3] = 0; //no reaction.
 
-    coeffs[i][4] = 0; //rhs treated in coupling term.
+    coeffs[i][4] = 0; //TODO rhs comes in from Brush
   }
 }
 
@@ -160,7 +135,7 @@ void BoundCond_C_ASA(int BdComp, double t, BoundCond &cond)
   if ( BdComp == bdry_inflow )
     cond = DIRICHLET;
   else if ( BdComp == bdry_outflow )
-    cond = NEUMANN; //TODO not clear to me, why here Neumann 0 is chosen!
+    cond = NEUMANN;
   else //wall boundary
     cond = NEUMANN; //impermeability
 }
@@ -169,11 +144,11 @@ void BoundValue_C_ASA(int BdComp, double Param, double &value)
 {
   if(BdComp == bdry_inflow){
     double t = TDatabase::TimeDB->CURRENTTIME;
-    if (t > 1) t = 1; //TODO standard trick: linearly raise inflow
+    if (t > 1) t = 1; //standard trick: linearly raise inflow
     value = t * inflow_c; //constant, depends on parameter set
   }
   else if ( BdComp == bdry_outflow )
-    value = 0; //TODO not clear to me, why here Neumann 0 is chosen!
+    value = 0;
   else //wall boundary
     value = 0; //impermeability
 }
@@ -188,7 +163,7 @@ void Coefficients_C_ASA(int n_points, double *x, double *y,
     coeffs[i][2] =  parameters[i][1];//convection in y direction
     coeffs[i][3] = 0; //no reaction.
 
-    coeffs[i][4] = 0; //rhs treated in coupling term.
+    coeffs[i][4] = 0; //TODO rhs comes in from Brush
   }
 }
 
@@ -257,5 +232,31 @@ void RhsAssemblingFunction_T(
     Rhs[i] -= Mult*coupledTerm*Orig[i]; //(Mult contains quad weigth, and maybe even the determinant due to trafo)
   }
 }
+
+////A helper function relevant in the coupling of concentration, temperature and psd
+//// TODO Turn this into a function that translates ASA and T into ASASUP (supersaturation)
+//double F_growth(double T, double c, double F)
+//{
+//  //theoretical supersaturation in terms of ASA mole fraction, as given by Eder et al.
+//  double chi_sat = pow(10, 27.769 - (2500.906/T) - 8.323 * log10(T));
+//
+//  //now this has to be transformed to supersaturation in
+//  // terms of molar concentration, which is a bit cumbersome
+//  double M_S = chi_sat*Physics::M_ASA + (1-chi_sat)*Physics::M_Ethanol; //molar mass of solution
+//  double w_Ethanol = 1 - chi_sat*(Physics::M_ASA/M_S); //Ethanol mass fraction
+//  double rho_S = Physics::rho_E / w_Ethanol; //density of solution calculated under "ideal solution" asumption
+//
+//  //now here comes supersaturation in terms of molar concentration
+//  double c_sat = chi_sat * rho_S / M_S;
+//
+//  // calculate the actual growth coefficient
+//  double k_g = 1.2e-5; //some coefficient, chosen as in Carina's diss
+//  double g = 1; //some exponent, chosen as in Carina's diss
+//  double G = c > c_sat ? k_g * ( (c - c_sat) / c_sat) : 0; //^g - do this only if g is not 1!
+//
+//  double F_growth = - G * F;
+//
+//  return F_growth;
+//}
 
 #endif /* USER_PROJECTS_EXAMPLES_ASA_CRYSTALLIZER_H_ */
