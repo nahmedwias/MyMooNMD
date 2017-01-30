@@ -118,8 +118,8 @@ int main(int argc, char* argv[])
 
   //set global parameters which are to be used for Time_CD2D construction here...
   TDatabase::ParamDB->ANSATZ_ORDER = 1;
-//  Example_TimeCoupledCDR2D example_conc(conc_database);
-//  Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
+  Example_TimeCoupledCDR2D example_conc(conc_database);
+  Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
 
   // the particles object which wraps up Brush
   TCollection* coll = domain.GetCollection(It_Finest, 0); //take finest grid collection for now
@@ -130,18 +130,16 @@ int main(int argc, char* argv[])
 
   //get the velocity field of the precomputed velo object
   const TFEVectFunct2D& velo_field = flow_object.get_velocity();
+  const TFEFunction2D& pressure = flow_object.get_pressure();
 
   // concentrations: assemble matrices and right hand side at start time
-//  conc_object.assemble_initial_time(&velo_field);
-//  conc_object.output();
+  conc_object.assemble_initial_time(&velo_field);
+  conc_object.output();
 
-  //set velocity in particles object
-  part_object.set_velocity(velo_field);
-//  // set temperature and concentrations in the particle object!
-//  std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
-//  part_object.set_temperature(*fcts[0]);
-//  part_object.set_concentrations(fcts);
-//  part_object.output();
+  //set fluid phase in the particle object
+  std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
+  part_object.reset_fluid_phase(velo_field, pressure, fcts);
+  part_object.output(TDatabase::TimeDB->CURRENTTIME);
 
   // PART 6: SOLVE THE SYSTEM IN A TIME LOOP ///////////////////////////////////
   Output::info("PROGRAM PART", "Solving the coupled system.");
@@ -164,15 +162,14 @@ int main(int argc, char* argv[])
 
       Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
-//      //solve cdr system
-//      conc_object.assemble_uncoupled_part(&velo_field);
-//      conc_object.couple_and_solve(&velo_field); //TODO Moments of psd must enter here!
-//      conc_object.output();
+      //solve cdr system
+      conc_object.assemble_uncoupled_part(&velo_field);
+      conc_object.couple_and_solve(&velo_field); //TODO sources/sinks due to particles must enter here!
+      conc_object.output();
 
       //update and solve particles
-//      std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
-//      part_object.set_temperature(*fcts[0]); //renew temperature
-//      part_object.set_concentrations(fcts);  //renew concentrations
+      std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
+      part_object.reset_fluid_phase(velo_field, pressure, fcts);
       part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + tau);
       part_object.output(TDatabase::TimeDB->CURRENTTIME);
     }

@@ -8,6 +8,7 @@
 #include <BrushWrapper.h>
 //Brush code for the particles
 #include <parmoon_interface.h>
+#include <parmoon_data.h>
 
 
 // TODO Before we think about proper boundary conditions we go for Dirichlet zero.
@@ -18,6 +19,20 @@ void DirichletBoundaryConditions(int BdComp, double t, BoundCond &cond)
 void ZeroBoundaryValues(int BdComp, double Param, double &value)
 {
       value = 0;
+}
+
+//TODO Use an std::function instead
+typedef double my_funct_type (const std::vector<double>&);
+
+//TODO Move to an example!
+double derived_concentration_EtOH(const std::vector<double>& data)
+{
+  return 1; //TODO CODE!
+}
+//TODO Move to an example!
+double derived_concentration_ASASUP(const std::vector<double>& data)
+{
+  return 1; //TODO CODE!
 }
 
 //Get the barycenter of a ParMooN grid cell.
@@ -55,8 +70,7 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
       db_["geo_file"], db_["third_dim_stretch"],
       db_["sweep_file"], " ",
       db_["therm_file"], db_["chem_file"],
-      db_["max_sp_per_cell"], db_["max_m0_per_cell"],
-      1 // number of species in the continuous phase TODO hard coded so far
+      db_["max_sp_per_cell"], db_["max_m0_per_cell"]
   );
 
   // load the initial particle solution
@@ -120,84 +134,82 @@ BrushWrapper::~BrushWrapper()
   }
 }
 
-void BrushWrapper::set_velocity(const TFEVectFunct2D& u)
-{ // NOTE: This will only set the velocity at the center points
-  // of Brush's cells, as Brush expects. I am aware that this point
-  // evaluation means loss of information - this whole process of exchanging
-  // information might be reworked later.
+void BrushWrapper::reset_fluid_phase(
+    const TFEVectFunct2D& u,
+    const TFEFunction2D& p,
+    std::vector<const TFEFunction2D*> species
+    )
+{
   size_t n_points = output_sample_points_.size();
-  std::vector<double> u0(n_points,0);
-  std::vector<double> u1(n_points,0);
+  //TODO "decoder-vektor" koennte im Beispiel gespeichert sein
+  Brush::DataPM pm_data({"ux","uy","p","T","ASA","EtOH","ASASUP"}, n_points);
 
+  //For the velocity we need two xtra fe functions
   TFEFunction2D* u0_fe = u.GetComponent(0);
   TFEFunction2D* u1_fe = u.GetComponent(1);
 
-  for (size_t p = 0 ; p < n_points ; ++p)
-  {
-    double vals0[5];
-    double vals1[5];
-    double x = output_sample_points_[p][0];
-    double y = output_sample_points_[p][1];
-    u0_fe->FindGradient(x,y,vals0);
-    u1_fe->FindGradient(x,y,vals1);
-    u0.at(p)=vals0[0];
-    u1.at(p)=vals1[0];
-  }
+  //prepare a vector of pointers to FEFunctions
+  size_t dim = 2;
+  size_t n_specs = species.size();
+  size_t n_specs_derived = 2; //TODO EtOH and ASASUP - but do not hard code!
 
-  interface_->fill_velocity_buffer(u0,0);
-  interface_->fill_velocity_buffer(u1,1);
+  std::vector<const TFEFunction2D*> fe_functs(dim + 1 + n_specs);
+  fe_functs[0] = u0_fe;
+  fe_functs[1] = u1_fe;
+  fe_functs[2] = &p;
+  std::copy( species.begin() , species.end(), fe_functs.begin() + 3);
+
+  std::vector<my_funct_type*> derived_concentrations(n_specs_derived);
+  derived_concentrations[0] = derived_concentration_EtOH;   //TODO do not hard code
+  derived_concentrations[1] = derived_concentration_ASASUP; //TODO do not hard code
+
+  //loop over all evaluation points (i.e., Brushs cell midpoints)
+  for (size_t point = 0 ; point < n_points ; ++point)
+  {
+    //x and y value of the current output sample point
+    double x = output_sample_points_[point][0];
+    double y = output_sample_points_[point][1];
+
+    size_t data_set_size = dim + 1 + n_specs + n_specs_derived;
+    std::vector<double> data_set(data_set_size , 0.0);
+
+    // point evaluations of all fe functions
+    for(size_t i = 0 ; i < dim + 1 + n_specs ; ++i)
+    {
+      double eval[5]; // will include differentials, thus length is '5')
+      fe_functs[i]->FindGradient(x,y,eval);
+      data_set[i] = eval[0];
+    }
+
+    for(size_t i = dim + 1 + n_specs; i < data_set_size; ++i)
+    {
+      size_t index = i - (dim + 1 + n_specs);
+      double f = derived_concentrations[index](data_set); //TODO evaluate the 'index'th derived concentration function
+      data_set[i] = f;
+    }
+
+    //now the data set is finished and can be put to the data vector
+    pm_data.add_data_set(data_set);
+  }
 
   delete u0_fe;
   delete u1_fe;
+
+  //give the data to Brush
+  //interface_->reset_fluid_phase(pm_data);
+
 }
 
-void BrushWrapper::set_temperature(const TFEFunction2D& T)
-{
-  size_t n_points = output_sample_points_.size();
-  std::vector<double> T_values(n_points,0);
-
-  for (size_t p = 0 ; p < n_points ; ++p)
-   {
-     double vals[5];
-     double x = output_sample_points_[p][0];
-     double y = output_sample_points_[p][1];
-     T.FindGradient(x,y,vals);
-     T_values.at(p)=vals[0];
-   }
-
-   interface_->fill_temperature_buffer(T_values);
-}
-
-void BrushWrapper::set_concentrations(std::vector<const TFEFunction2D*> c)
-{
-  // FIXME Note that the first element is supposed to be temperature and is disregarded.
-  for( size_t i=1 ; i< c.size() ; ++i )
-  {
-    size_t n_points = output_sample_points_.size();
-    std::vector<double> ci_values(n_points,0);
-
-    for (size_t p = 0 ; p < n_points ; ++p)
-    {
-      double vals[5];
-      double x = output_sample_points_[p][0];
-      double y = output_sample_points_[p][1];
-      c[i]->FindGradient(x,y,vals);
-      ci_values.at(p)=vals[0];
-    }
-
-    interface_->fill_concentration_buffer(ci_values,i-1);
-  }
-}
 
 void BrushWrapper::solve(double t_start, double t_end)
 {
   //now call the solver
   interface_->run_particle_phase(t_start, t_end);
 
-  //and get the ensemble statistics updated
+  // Updating stats and fetching moments is only relevant for
+  // visualization and the output!
+  // TODO Get this (Brush to ParMooN) right after ParMooN to Brush
   interface_->update_stats();
-
-  // store the updated moments
   interface_->fetch_moment(0, &pd_moments_values_[0].at(0));
   interface_->fetch_moment(1, &pd_moments_values_[1].at(0));
   interface_->fetch_moment(2, &pd_moments_values_[2].at(0));
