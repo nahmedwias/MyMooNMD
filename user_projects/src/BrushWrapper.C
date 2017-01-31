@@ -12,6 +12,7 @@
 
 #include <ASA_crystallizer.h> //TODO This should be handled at runtime instead!
 
+#include <algorithm>
 
 // TODO Before we think about proper boundary conditions we go for Dirichlet zero.
 void DirichletBoundaryConditions(int BdComp, double t, BoundCond &cond)
@@ -41,13 +42,16 @@ double derived_concentration_EtOH(const std::vector<double>& data)
 // With given values ux, uy, p, T and ASA conc in a certain point,
 // will evaluate the supersaturation concentration of ASA, which is a
 // derived quantity.
+// Temperature must be in K and ASA concentration in mol/m^3. Output
+// will also be in mol/m^3.
 double derived_concentration_ASASUP(const std::vector<double>& data)
 {
   if (data.size() != 7)
     throw std::runtime_error("derived_concentration_EtOH: expected 7 data points."
         " ux, uy, p, T, ASA, CH3CH2OH , 0(ASASUP)");
 
-    double T = data[3]; //grab temperature, the only relevant input data.
+    double T = data[3];     // grab temperature
+    double c_asa = data[4]; // grab ASA concentration
 
     //theoretical supersaturation in terms of ASA mole fraction, as given by Eder et al.
     double chi_sat = pow(10, 27.769 - (2500.906/T) - 8.323 * log10(T));
@@ -56,12 +60,17 @@ double derived_concentration_ASASUP(const std::vector<double>& data)
     // terms of molar concentration, which is a bit cumbersome
     double M_S = chi_sat*Physics::M_ASA + (1-chi_sat)*Physics::M_Ethanol; //molar mass of solution
     double w_Ethanol = 1 - chi_sat*(Physics::M_ASA/M_S); //Ethanol mass fraction
+    //TODO ideal solution assumption is questionable here!
     double rho_S = Physics::rho_E / w_Ethanol; //density of solution calculated under "ideal solution" asumption
 
     //now here comes supersaturation in terms of molar concentration
     double c_sat = chi_sat * rho_S / M_S;
+    double c_supsat = std::max(0.0, c_asa - c_sat);
 
-    return c_sat;
+//    if (c_supsat > 0)
+//      Output::print("c_asa: ", c_asa, ", c_sat: ", c_sat , ", supsat: ", c_supsat, " mol/m^3");
+
+    return c_supsat;
 }
 
 //Get the barycenter of a ParMooN grid cell.
@@ -155,7 +164,7 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
 BrushWrapper::~BrushWrapper()
 {
   //FIXME THERE IS A BUG (CONNECTED TO THE MOON-GEOMETRY) WHEN
-  // CALLING THE FOLLOWING DESTRUCTOR EXPLICITELY!!!
+  // CALLING THE FOLLOWING DESTRUCTOR!!!
   //delete interface_;
   for (auto f : pd_moments_)
   {
