@@ -144,8 +144,10 @@ void BoundValue_C_ASA(int BdComp, double Param, double &value)
 {
   if(BdComp == bdry_inflow){
     double t = TDatabase::TimeDB->CURRENTTIME;
-    if (t > 1) t = 1; //standard trick: linearly raise inflow
-    value = t * inflow_c; //constant, depends on parameter set
+    if (t < 0.1) //standard trick: linearly raise inflow
+      value = 10 * t * inflow_c; //constant, depends on parameter set
+    else
+      value = inflow_c; //constant, depends on parameter set
   }
   else if ( BdComp == bdry_outflow )
     value = 0;

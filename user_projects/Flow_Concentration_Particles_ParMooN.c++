@@ -175,6 +175,7 @@ int main(int argc, char* argv[])
     }
   }
 
+  Output::print(">>>>>> Program completed <<<<<<");
 
   Output::close_file();
 
