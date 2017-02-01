@@ -129,9 +129,9 @@ int main(int argc, char* argv[])
   Time_CD2D         tcd2d(domain, tcd_db, example_tcd2d);     // Construct CD system
 
   double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
-  double rho2 = 0;                          // density constant of fluid2, eg 0
+  double rho2 = 1;                          // density constant of fluid2, eg 0
   double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of fluid1, eg 1e-3
-  double mu2  = 0;                                    // mu constant of fluid2, eg 0
+  double mu2  = 1;                                    // mu constant of fluid2, eg 0
 
 
   /********************************************************************
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
   }
   else  // for the case rho = constant, and only viscosity depends on TCD2D
   {
-    rho_vector = rho1;  // comment this out if needed
+//    rho_vector = rho1;  // comment this out if needed
   }
 
   /** @brief Finite Element function for density and viscosity field */
@@ -296,7 +296,7 @@ int main(int argc, char* argv[])
 
         /** @brief Finite Element function for density field */
         BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-        new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
+//        new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
         TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),new_rho_vector,(char*) "q");
         rho_field = new_rho_field;
 
