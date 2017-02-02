@@ -12,7 +12,8 @@
  * @date       2016/04/16
  * @history    2016/04/16 
  * @history    2016/06/16 (multigrid enabled) Naveed
- * @history    2016/10/26 (multigrid enabled)
+ * @history    2016/10/26 (SMAGORINSKY, Projection-base VMS ) Naveed and Volker
+ * @history    2016/12/22 Residual Based VMS: Naveed 
  *
  ******************************************************************************/
 
@@ -29,6 +30,8 @@
 
 #include <ParameterDatabase.h>
 #include <Solver.h>
+
+#include <LocalAssembling3D.h>
 
 #include <MainUtilities.h> // FixedSizeQueu
 
@@ -57,7 +60,7 @@ class Time_NSE3D
       TFESpace3D velocitySpace_;
       /** @brief Finite Element space for the pressure */
       TFESpace3D pressureSpace_;
-
+      
       /** @brief the system matrix (depends strongly on
        *         TDatabase::ParamDB->NSTYPE)
        *  [ A11  A12  A13  B1T ]
@@ -81,6 +84,36 @@ class Time_NSE3D
       TFEVectFunct3D u_;
       /** @brief Finite Element function for pressure */
       TFEFunction3D p_;
+      
+      /** @brief MatrixK includes all the terms which are related to the 
+       * time derivatives in the fully discrete scheme Eq: (45)
+       * Ahmed, Rebollo, John and Rubino (2015)
+       * Weighted Mass matrix
+       *  [ M11  M12  M13  0]
+       *  [ M21  M22  M23  0]
+       *  [ M31  M32  M33  0]
+       *  [ 0    0    0    0]
+       * This additionaly created due to the struture of the 
+       * residual based Variational Multiscale Method: In all 
+       * other methods, for example SUPG or Galerkin, the Mass_Matrix
+       * is used.
+       */
+      BlockFEMatrix MatrixK;
+      
+      /** @brief 
+       * old solution for the computation of the residual
+       * that passes as an FEFunction to the local assembling
+       * routines
+       */
+      BlockVector Old_Sol;
+      TFEVectFunct3D u_old;
+      TFEFunction3D p_old;
+      
+      BlockVector solution_minus2;
+      TFEVectFunct3D u_min2;
+      
+      BlockVector extrap_sol;
+      TFEVectFunct3D u_extrapolated;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -91,9 +124,8 @@ class Time_NSE3D
        * construction is a TODO .
        */
 #ifdef _MPI
-      System_per_grid(const Example_TimeNSE3D& ex,
-                    TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
-                    int maxSubDomainPerDof);
+      System_per_grid(const Example_TimeNSE3D& example, TCollection& coll, std::pair< int, int > order, 
+		      Time_NSE3D::Matrix type, int maxSubDomainPerDof);
 #else
       System_per_grid(const Example_TimeNSE3D& ex, TCollection& coll,
                       std::pair<int, int> order, Time_NSE3D::Matrix type);
@@ -131,7 +163,9 @@ class Time_NSE3D
     /** @brief A complete system on each involved grid.
      *
      * Note that the size of this double ended queue is at least one and
-     * larger only when a multgrid preconditioner is used.
+     * larger only when a multgrid preconditioner is used. In the multigrid
+     * case, the systems_ are ordered from front to back 
+     * (finest to coarses)
      */
     std::deque<System_per_grid> systems_;
 
@@ -169,7 +203,8 @@ class Time_NSE3D
 
     /** @brief solution vector from previous time step (on finest mesh)*/
     BlockVector old_solution_;
-
+    
+    BlockVector old_rhs_w_old_sol;
     /** @brief constructs a solution vector extrapolated from previous steps
      * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
     BlockVector extrapolated_solution_;
@@ -191,6 +226,23 @@ class Time_NSE3D
     
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
+    
+    /** @brief projection space used for VMS method*/
+    std::shared_ptr<TFESpace3D> projection_space_;
+    
+    /** @brief finite element function for vms projection*/
+    // can we rename it to large scales?? also check BlockVector!! currently just vector
+    std::vector<double> vms_small_resolved_scales; 
+    std::shared_ptr<TFEVectFunct3D> vms_small_resolved_scales_fefct;
+    /** matrices for turbulence model*/
+    std::array<std::shared_ptr<FEMatrix>, int(7)> matrices_for_turb_mod;
+    
+    // piecewise constant space containing the labels of the local projection space
+    std::shared_ptr<TFESpace3D> label_for_local_projection_space_;
+    // vector used for indicating local projection space 
+    std::vector<double> label_for_local_projection;
+    // finite element function for local projection space
+    std::shared_ptr<TFEFunction3D> label_for_local_projection_fefct;
 
  public:
 
@@ -204,6 +256,14 @@ class Time_NSE3D
      * @param collections
      * @param example The example to perform
      */
+// #ifdef _MPI
+//     Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
+//                const Example_TimeNSE3D& example, int maxSubDomainPerDof);
+// #else
+//     Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
+//                const Example_TimeNSE3D& example);
+// #endif
+    
 #ifdef _MPI
     Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
                const Example_TimeNSE3D& example, int maxSubDomainPerDof);
@@ -308,6 +368,8 @@ class Time_NSE3D
 
     /** */
     bool imex_scheme(bool print_info);
+    
+    void assemble_for_supg();
 
 /* ******************************************************************************/
     // Declaration of special member functions - delete all but destructor.
@@ -348,8 +410,6 @@ class Time_NSE3D
     TFEVectFunct3D& get_velocity()
     { return this->systems_.front().u_; }
 
-    TFEFunction3D *get_velocity_component(int i);
-
     const TFEFunction3D& get_pressure() const
     { return this->systems_.front().p_; }
 
@@ -375,6 +435,26 @@ class Time_NSE3D
 
     /** @brief return the computed errors (computed in output()) */
     std::array<double, int(6)> get_errors() const;
+    
+    //=========================================================================
+private:
+  /// this routines wraps up the call to Assemble3D  
+  void call_assembling_routine(Time_NSE3D::System_per_grid& s, 
+                               LocalAssembling3D_type type);
+  /**
+   * This will initialize the matrices depending on DISCTYPE and 
+   * NSTYPE.
+   * @param s system on a particular grid
+   * @param type local assembling type
+   * @param sqMatrices square matrices for different DISCTYPE and different 
+   * NSTYPE
+   * @param reMatrirces rectangular matrices 
+   */
+  void prepare_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling3D_type type, std::vector< TSquareMatrix3D* >& sqMatrices, std::vector< TMatrix3D* >& rectMatrices, std::vector< double* >& rhs_array);
+  /**
+   */
+  void boundary_data(System_per_grid& s, std::vector<BoundCondFunct3D*> &bc, 
+                     std::vector<BoundValueFunct3D*> &bv);
 };
 
 

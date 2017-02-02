@@ -977,8 +977,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
   
   return 0;
 }
-
-#else
+#endif
+#ifdef __3D__
 int TDomain::ReadSandwichGeo(std::istream& dat)
 {
   char line[100];
@@ -1054,7 +1054,7 @@ int TDomain::ReadSandwichGeo(std::istream& dat)
                  
 //      MPI_Finalize();
 //      exit(0);
-   }  */   
+   }  */
   else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 180)
   {
     // turbulent channel flow for Re_tau = 180, IMPORTANT !!!
@@ -1067,7 +1067,7 @@ int TDomain::ReadSandwichGeo(std::istream& dat)
       else
        Lambda[i] = 1-cos(i*Pi/(N_Layers-1));
 
-       OutPut("z coordinate " << Lambda[i] <<endl);
+       Output::print("z coordinate ", Lambda[i]);
        Lambda[i] /= 2.0;
       }
      Lambda[0] = 0;
@@ -1081,7 +1081,7 @@ int TDomain::ReadSandwichGeo(std::istream& dat)
     for(i=0;i<N_Layers;i++)
      {
       Lambda[i] = tanh(4.50*i/(N_Layers-1))/tanh(4.50);
-      OutPut("z coordinate " << Lambda[i] <<endl);
+      Output::print("z coordinate ", Lambda[i]);
      }
     Lambda[0] = 0;
     Lambda[N_Layers-1] = 1;     
@@ -1097,10 +1097,6 @@ int TDomain::ReadSandwichGeo(std::istream& dat)
      }
 
   }
-
-
-
-
   // for WIND TUNNEL
   /*if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1506)
   {
@@ -2726,7 +2722,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
       exit(-1);
   } // endswitch(NVE)
 
-//   cout << "N_RootCells: " << N_RootCells << endl;
+  cout << "N_RootCells: " << N_RootCells << endl;
   for(i=0;i<N_RootCells;i++)
     CellTree[i]->SetClipBoard(i);
 

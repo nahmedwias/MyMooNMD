@@ -13,19 +13,6 @@
 //      M block from time discretization
 //      B1, B2 (divergence blocks)
 // ======================================================================
-
-int TimeNSType1N_Terms = 4;
-MultiIndex2D TimeNSType1Derivatives[4] = { D10, D01, D00, D00 };
-int TimeNSType1SpaceNumbers[4] = { 0, 0, 0, 1 };
-int TimeNSType1N_Matrices = 4;
-int TimeNSType1RowSpace[4] = { 0, 0, 1, 1 };
-int TimeNSType1ColumnSpace[4] = { 0, 0, 0, 0 };
-int TimeNSType1N_Rhs = 2;
-int TimeNSType1RhsSpace[2] = { 0, 0 };
-
-// ======================================================================
-// Type 1, Standard Galerkin
-// ======================================================================
 void TimeNSType1Galerkin(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
@@ -102,41 +89,12 @@ void TimeNSType1GroupFEM(double Mult, double *coeff, double *param, double hK,
 //      B1, B2 (divergence blocks), 
 //      B1T, B2T (gradient blocks)
 // ======================================================================
-
-int TimeNSType2N_Terms = 4;
-MultiIndex2D TimeNSType2Derivatives[4] = { D10, D01, D00, D00 };
-int TimeNSType2SpaceNumbers[4] = { 0, 0, 0, 1 };
-int TimeNSType2N_Matrices = 6;
-int TimeNSType2RowSpace[6] = { 0, 0, 1, 1, 0, 0 };
-int TimeNSType2ColumnSpace[6] = { 0, 0, 0, 0, 1, 1 };
-int TimeNSType2N_Rhs = 2;
-int TimeNSType2RhsSpace[2] = { 0, 0 };
-
-// ======================================================================
 // Type 2, Standard Galerkin
 // ======================================================================
 void TimeNSType2Galerkin(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// declaration for all Navier-Stokes problems of type 2 SUPG
-//      one A block, 
-//      M block from time discretization
-//      K block from supg discretization 
-//      B1, B2 (divergence blocks), 
-//      B1T, B2T (gradient blocks)
-// ======================================================================
-int TimeNSType2N_TermsSUPG = 8;
-MultiIndex2D TimeNSType2DerivativesSUPG[8] = { D10, D01, D00, D00 };
-int TimeNSType2SpaceNumbersSUPG[8] = { 0, 0, 0, 1 };
-int TimeNSType2N_MatricesSUPG = 7;
-int TimeNSType2RowSpaceSUPG[7] = { 0, 0, 1, 1, 0, 0 };
-int TimeNSType2ColumnSpaceSUPG[7] = { 0, 0, 0, 0, 1, 1 };
-int TimeNSType2N_RhsSUPG = 2;
-int TimeNSType2RhsSpaceSUPG[2] = { 0, 0 };
-
 // ======================================================================
 // Type 2, Standard SUPG
 // ======================================================================
@@ -149,23 +107,57 @@ void TimeNSType2SUPG(double Mult, double *coeff, double *param, double hK,
 //      B1T, B2T (gradient blocks)
 //      WITHOUT right hand sides
 // ======================================================================
-int TimeNSType2NLN_TermsSUPG = 8;
-MultiIndex2D TimeNSType2NLDerivativesSUPG[8] = { D10, D01, D00 };
-int TimeNSType2NLSpaceNumbersSUPG[8] = { 0, 0, 0 };
-int TimeNSType2NLN_MatricesSUPG = 4;
-int TimeNSType2NLRowSpaceSUPG[4] = { 0 };
-int TimeNSType2NLColumnSpaceSUPG[4] = { 0 };
-int TimeNSType2NLN_RhsSUPG = 2;
-int TimeNSType2NLRhsSpaceSUPG[2] = {0, 0};
-// ======================================================================
 // Type 2, Standard SUPG
 // ======================================================================
 void TimeNSType2NLSUPG(double Mult, double *coeff, double *param, double hK, 
                        double **OrigValues, int *N_BaseFuncts,
                        double ***LocMatrices, double **LocRhs);
+
 // ======================================================================
+// declaration for all Navier-Stokes problems of type 14
+// towards: Residual Based VMS method
+// ======================================================================
+void TimeNSType4SUPG(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
 
+void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
 
+void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK, 
+               double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, 
+               double** LocRhs);
+// ======================================================================
+// declaration for all Navier-Stokes problems of type 14
+// ======================================================================
+void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSRHSSUPG(double Mult, double* coeff, double* param, double hK, 
+               double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, 
+               double** LocRhs);
+
+// ======================================================================
+// declaration for Residual Based VMS method
+// ======================================================================
+void TimeNSType4Residual_VMS(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4NLResidual_VMS(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4RHS_Residual_VMS(double Mult, double* coeff, double* param, double hK, 
+                        double** OrigValues, int* N_BaseFuncts, 
+                        double*** LocMatrices, double** LocRhs);
+void TimeNSParams_Residual_VMS(double *in, double *out);
 // ======================================================================
 // Type 2, Upwind (only Laplacian in A block)
 // ======================================================================
