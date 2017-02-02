@@ -67,6 +67,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       initialCOndtion.push_back(lin_space_time::InitialU2);
       
       lin_space_time::ExampleFile();
+      lin_space_time::DIMENSIONLESS_VISCOSITY = this->get_nu();
       break;
     case 2:
       break;

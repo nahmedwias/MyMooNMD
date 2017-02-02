@@ -946,3 +946,45 @@ ParameterDatabase ParameterDatabase::default_tetgen_database()
          (size_t) 0, (size_t) 1);
   return db;
 }
+
+ParameterDatabase ParameterDatabase::default_turbulence_model_database()
+{
+  ParameterDatabase db("default database for turbulence models");
+  db.add("vms_projection_space_order", (int ) 0, 
+  
+  // Parameters for projection-based VMS method, John (2016), Chapter 8.8.6
+  
+  // polynomial order of the projection space for projection-based VMS
+    "this is the piecewise constant tensor case; case -1 refers to the adaptive method", 
+    (int ) -1, (int ) 4);
+
+  // parameter for lowest turbulent intensity in adaptive projection-based VMS, 
+  // John (2016), p. 638, C_1
+  db.add("vms_projection_adapt_lower", 0.25, 
+    "parameter for lowest turbulent intensity", 0. , 1.0);
+  
+  // parameter for medium turbulent intensity in adaptive projection-based VMS, 
+  // John (2016), p. 638, C_2
+  db.add("vms_projection_adapt_medium", 1.0, 
+    "parameter for medium turbulent intensity", 0. , 10.0);
+  
+  // parameter for large turbulent intensity in adaptive projection-based VMS, 
+  // John (2016), p. 638, C_3
+  db.add("vms_projection_adapt_large", 3.0, 
+    "parameter for large turbulent intensity", 0. , (double) 1.0e10);
+
+  // parameter for number of steps between the adaptive choices of the projection
+  // space
+  db.add("vms_projection_adapt_steps", (size_t) 1, 
+   "number of steps between adaptive choices of the projection space", 
+    (size_t) 1, (size_t) 1000000);
+
+  // parameter for criterion for comparing the local turbulent intensities in 
+  // adaptive projection-based VMS; John, Kindl (2010), JCP
+  // 1 - formula (5), 2 - formula (6), 3 - formula (7) 
+  db.add("vms_projection_adapt_comp_crit", (size_t) 1, 
+   "criterion for comparing the local turbulent intensities in adaptive projection-based VMS", 
+    (size_t) 1, (size_t) 3);
+      
+  return db;
+}
