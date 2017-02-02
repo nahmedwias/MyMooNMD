@@ -45,6 +45,10 @@ private:
   double old_residual;
   /// @brief keep track of the duration of the loop (as well as each iteration)
   Chrono timer;
+  /// @brief store the number of iterations across multiple loops.
+  /// @details This is updated whenever an iteration finished. For example,
+  /// this is used to count the linear iterations during a nonlinear iteration.
+  unsigned int n_previous_iterations;
 };
 
 #endif // LOOPINFO_H
