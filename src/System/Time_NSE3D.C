@@ -73,7 +73,10 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
      Old_Sol.length(3)),
    solution_minus2(matrix_, false),
    u_min2(&velocitySpace_, (char*) "uold", (char*)"uold", solution_minus2.block(0), 
-         solution_minus2.length(0), 3)
+         solution_minus2.length(0), 3), 
+   extrap_sol(matrix_, false),
+   u_extrapolated(&velocitySpace_, (char*) "u_extra", (char*)"u_extra", extrap_sol.block(0), 
+         extrap_sol.length(0), 3)
 {
   // Mass Matrix
   // Output::increaseVerbosity(5);
@@ -789,13 +792,15 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
       if((TDatabase::ParamDB->DISCTYPE == SUPG) 
         || (TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS))
       {
-        this->assemble_for_supg();
-        this->old_rhs_ = this->old_rhs_w_old_sol;
+        this->systems_.front().Old_Sol = this->systems_.front().solution_;
         this->systems_.front().solution_minus2 = this->old_solution_;
+        // 
+        this->assemble_for_supg();
+        //
+        this->old_rhs_ = this->old_rhs_w_old_sol;
       }
       // 
       this->old_solution_ = this->systems_.front().solution_;
-      this->systems_.front().Old_Sol = this->systems_.front().solution_;
       return true;
     }
   }
@@ -859,7 +864,7 @@ void Time_NSE3D::compute_residuals()
 void Time_NSE3D::solve()
 {
   System_per_grid& s = systems_.front();
-  
+
 #ifndef _MPI
   solver_.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
@@ -1304,9 +1309,26 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
     if(disctype == SUPG)
     {
       fefunctions.resize(6);
-      fefunctions[3]=s.u_old.GetComponent(0);
-      fefunctions[4]=s.u_old.GetComponent(1);
-      fefunctions[5]=s.u_old.GetComponent(2);
+      if(TDatabase::TimeDB->EXTRAPOLATE_VELOCITY)
+      {
+        // 3./2.*u^{n-1} - 1./2.*u^{n-2}
+        // this extrapolation is only used for the tests functions
+        // this does not means that we have an IMEX_scheme
+        s.extrap_sol.reset();
+        s.extrap_sol = s.solution_minus2;
+        s.extrap_sol.scale(-1./2.);
+        s.extrap_sol.add_scaled(s.Old_Sol, 3./2.);
+        
+        fefunctions[3]=s.u_extrapolated.GetComponent(0);
+        fefunctions[4]=s.u_extrapolated.GetComponent(1);
+        fefunctions[5]=s.u_extrapolated.GetComponent(2);
+      }
+      else
+      {
+        fefunctions[3]=s.u_old.GetComponent(0);
+        fefunctions[4]=s.u_old.GetComponent(1);
+        fefunctions[5]=s.u_old.GetComponent(2);        
+      }
     }
   }
   else

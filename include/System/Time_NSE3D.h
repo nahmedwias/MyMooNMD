@@ -111,6 +111,9 @@ class Time_NSE3D
       
       BlockVector solution_minus2;
       TFEVectFunct3D u_min2;
+      
+      BlockVector extrap_sol;
+      TFEVectFunct3D u_extrapolated;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
