@@ -6334,13 +6334,9 @@ void TimeNSType4_SUPGExtraDD3D(double Mult, double* coeff, double* param, double
   double c2 = coeff[2]; // f2
   double c3 = coeff[3]; // f3
 
-  double u1 = param[0]; // u1old
-  double u2 = param[1]; // u2old
-  double u3 = param[2]; // u3old
-  
-  // double u1_pt = param[3];
-  // double u2_pt = param[4];
-  // double u3_pt = param[5];
+  double u1 = param[3]; // u1old
+  double u2 = param[4]; // u2old
+  double u3 = param[5]; // u3old
 
   double val;
   double test000, test100, test010, test001;
@@ -6437,9 +6433,9 @@ void TimeNSRhs_SUPGDD3D(double Mult, double *coeff, double *param, double hK,
   double c2 = coeff[2];
   double c3 = coeff[3];
 
-  double u1=param[0]; // u1old
-  double u2=param[1]; // u2old
-  double u3=param[2]; // u3old
+  double u1=param[3]; // u1old
+  double u2=param[4]; // u2old
+  double u3=param[5]; // u3old
   
   int N_U = N_BaseFuncts[0];
   
