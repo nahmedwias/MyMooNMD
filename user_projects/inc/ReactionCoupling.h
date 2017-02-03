@@ -45,11 +45,9 @@ class ReactionCoupling {
 
     /** @brief Assembles the right hand side for the linearized_decoupled strategy.
      * @param latestSolutions The TFEFunctions pointer Array to be handed to the aux Object.
-     * @param coupledTerm The Abbildungsvorschrift of the coupling.
      * */
     void assembleLinearDecoupled(
-        TFEFunction2D** latestSolutions,
-        std::vector<TFEFunction2D*> further_functions = {});
+        TFEFunction2D** latestSolutions);
 
 
     //Declaration of special member functions - rule of zero

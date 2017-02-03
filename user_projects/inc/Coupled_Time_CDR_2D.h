@@ -60,16 +60,14 @@ class Coupled_Time_CDR_2D {
     void assemble_uncoupled_part();
 
 
-
     /**
      * Solve the system. Contains a loop in which the coupled part is assembled,
      * put to the right hand side and the resulting equations is solved.
-     * The coupled part may depend on further FE functions (given in further_functions),
-     * and the velocity field (which is not used currently).
+     * The coupled part may depend on the velocity field and certain additional
+     * source and sink terms, which might stem, e.g., from the kinetics of transported particles.
      */
     void couple_and_solve(
-        const TFEVectFunct2D* velocity_field,
-        std::vector<TFEFunction2D*> further_functions = {});
+        std::vector<TFEFunction2D*> sources_and_sinks);
 
     /**
      * Assembling functions for the case of coupling with a velocity field

@@ -162,9 +162,11 @@ int main(int argc, char* argv[])
 
       Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
+      //TODO Enable to solve in a loop.
+
       //solve cdr system
       conc_object.assemble_uncoupled_part(&velo_field);
-      conc_object.couple_and_solve(&velo_field); //TODO sources/sinks due to particles must enter here!
+      conc_object.couple_and_solve(part_object.sources_and_sinks());
       conc_object.output();
 
       //update and solve particles

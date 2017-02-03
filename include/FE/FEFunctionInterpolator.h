@@ -27,7 +27,7 @@
 class FEFunctionInterpolator{
   public:
     /**
-     * Construct and Interpolater object whith a given FESpace. That is the
+     * Construct an Interpolater object whith a given FESpace. That is the
      * space the interpolator is going to project into.
      * @param fe_space
      */
@@ -40,7 +40,7 @@ class FEFunctionInterpolator{
      * the value for its own memory. Usually the values are administered by
      * a BlockVector, which also takes care of the deletion.
      * For the new, interpolating fe function one has to provide memory and
-     * must take care that it does not go out of scope before the fe functio.
+     * must take care that it does not go out of scope before the fe function.
      * This is currently (2016/02/05) under investigation.
      *
      * So far the only sensible way to call this method is using the

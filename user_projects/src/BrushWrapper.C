@@ -94,12 +94,13 @@ std::valarray<double> center_point(const TBaseCell& cell)
   return p;
 }
 
+// use 0-order elements, because that is the 'language' Brush speaks
 int fe_order = 0;
 
 BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
 : db_(db), output_writer_(db_), moment_stats_file_(db_["out_part_moments_file"].get<std::string>()),
-  pd_moments_grid_(coll),
-  pd_moments_space_(pd_moments_grid_, (char*)"psd-moms", (char*)"psd-moms",
+  from_brush_grid_(coll),
+  from_brush_space_(from_brush_grid_, (char*)"psd-moms", (char*)"psd-moms",
                     DirichletBoundaryConditions, fe_order, nullptr)
 {
 
@@ -114,42 +115,52 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
   // load the initial particle solution
   interface_->set_initial_particles(db_["init_partsol_file"]);
 
-  // set up FE functions and their values
+  // get those points where Brush expects values from ParMooN
+  output_sample_points_ = interface_->get_cell_centers();
 
-  int fe_length = pd_moments_space_.GetN_DegreesOfFreedom();
-
+  // Set up and initialize FE functions which receive their data from Brush
+  int fe_length = from_brush_space_.GetN_DegreesOfFreedom();
   std::vector<double> dummy_fe_values(fe_length, 0.0);
-  pd_moments_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
 
-  pd_moments_.resize(3);
-  pd_moments_.at(0) = new TFEFunction2D(&pd_moments_space_,
-        (char*)"pd-m0", (char*)"", &pd_moments_values_[0].at(0), fe_length);
-  pd_moments_.at(1) = new TFEFunction2D(&pd_moments_space_,
-        (char*)"pd-m1", (char*)"", &pd_moments_values_[1].at(0), fe_length);
-  pd_moments_.at(2) = new TFEFunction2D(&pd_moments_space_,
-        (char*)"pd-m2", (char*)"", &pd_moments_values_[2].at(0), fe_length);
-
-  //add the fe function to the output writer for later use
-  output_writer_.add_fe_function(pd_moments_[0]);
-  output_writer_.add_fe_function(pd_moments_[1]);
-  output_writer_.add_fe_function(pd_moments_[2]);
-
-  //write a nice header into the particle stats file
-  interface_->write_header(moment_stats_file_);
-
-  // fill them and add them to the output and print them (which is a temporary test)
   // tell the interface which sample points parMooN is interested in
   // (for a start: the cell centers of all cells)
   int n_cells = coll->GetN_Cells();
-  std::vector<std::valarray<double>> parmoon_cell_centers(n_cells,{0,0,0}); //z value will stay 0
+  std::vector<std::valarray<double>> parmoon_cell_centers(n_cells,{0,0,0}); //z value will stay 0 in 2D
   for(int c = 0; c < n_cells; ++c)
   {
     parmoon_cell_centers[c] = center_point(*coll->GetCell(c));
   }
+  interface_->set_output_sample_points(parmoon_cell_centers); //set ParMooN points in Brush
 
-  interface_->set_output_sample_points(parmoon_cell_centers);
+  // *** The source-and-sink functions contain the back-coupling from Brush to ParMooN
+  int n_terms = 2; //TODO Do not hard code!
 
-  output_sample_points_ = interface_->get_cell_centers();
+  source_and_sink_requests_= { Exmpl::SourceAndSinkTerms::ASACrystEnergyRelease,
+                               Exmpl::SourceAndSinkTerms::ASACrystConcConsumption }; //TODO Do not hard code!
+
+  source_and_sink_fcts_values_ = std::vector<std::vector<double>>(n_terms, dummy_fe_values);
+
+  source_and_sink_fcts_.resize(n_terms);
+  source_and_sink_fcts_.at(0) = new TFEFunction2D(&from_brush_space_,
+        (char*)"T_sources", (char*)"", &source_and_sink_fcts_values_[0].at(0), fe_length); //TODO don't hard code!
+  source_and_sink_fcts_.at(1) = new TFEFunction2D(&from_brush_space_,
+        (char*)"c_ASA_sinks", (char*)"", &source_and_sink_fcts_values_[1].at(0), fe_length); //TODO don't hard code!
+
+  // *** The moments functions are only used for output and visualization.
+  pd_moments_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
+
+  pd_moments_.resize(3);
+  pd_moments_.at(0) = new TFEFunction2D(&from_brush_space_,
+        (char*)"pd-m0", (char*)"", &pd_moments_values_[0].at(0), fe_length);
+  pd_moments_.at(1) = new TFEFunction2D(&from_brush_space_,
+        (char*)"pd-m1", (char*)"", &pd_moments_values_[1].at(0), fe_length);
+  pd_moments_.at(2) = new TFEFunction2D(&from_brush_space_,
+        (char*)"pd-m2", (char*)"", &pd_moments_values_[2].at(0), fe_length);
+
+  //add the moments functions to the output writer
+  output_writer_.add_fe_function(pd_moments_[0]);
+  output_writer_.add_fe_function(pd_moments_[1]);
+  output_writer_.add_fe_function(pd_moments_[2]);
 
   //force an update of all ensemble stats
   interface_->update_stats();
@@ -158,6 +169,10 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
   interface_->fetch_moment(0, &pd_moments_values_[0].at(0));
   interface_->fetch_moment(1, &pd_moments_values_[1].at(0));
   interface_->fetch_moment(2, &pd_moments_values_[2].at(0));
+
+  // Finally write a nice header into the particle stats file,
+  // so that it can be filled with data from now on.
+  interface_->write_header(moment_stats_file_);
 
 }
 
@@ -170,6 +185,22 @@ BrushWrapper::~BrushWrapper()
   {
     delete f;
   }
+  for (auto f : source_and_sink_fcts_)
+  {
+    delete f;
+  }
+}
+
+std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
+{
+
+  // Let the interface recalculate the function values.
+  interface_->fetch_sources_and_sinks(
+      source_and_sink_requests_,
+      source_and_sink_fcts_values_
+        );
+
+  return source_and_sink_fcts_;
 }
 
 void BrushWrapper::reset_fluid_phase(
@@ -222,7 +253,7 @@ void BrushWrapper::reset_fluid_phase(
     for(size_t i = dim + 1 + n_specs; i < data_set_size; ++i)
     {
       size_t index = i - (dim + 1 + n_specs);
-      double f = derived_concentrations[index](data_set); //TODO evaluate the 'index'th derived concentration function
+      double f = derived_concentrations[index](data_set);
       data_set[i] = f;
     }
 
@@ -259,7 +290,7 @@ void BrushWrapper::output(double t)
 {
   output_writer_.write(t);
 
-  //TODO enable this for only certain steps
+  //TODO enable doing this for only certain time steps
   interface_->write_particle_stats(t, moment_stats_file_);
 
 }
