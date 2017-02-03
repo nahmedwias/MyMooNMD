@@ -4,11 +4,14 @@
 
 #include <Coupled_Time_CDR_2D.h>
 #include <CoupledCDR_2D.h> //for SolvingStrategy type
+#include <FEFunctionInterpolator.h>
+#include <LinAlg.h> //in the future: use an actual BLAS instead!
 #include <ParameterDatabase.h>
 #include <ReactionCoupling.h>
 #include <Time_CD2D.h>
 
 #include <algorithm>
+
 
 ParameterDatabase get_default_Coupled_Time_CDR_2D_parameters()
 {
@@ -95,11 +98,58 @@ void Coupled_Time_CDR_2D::assemble_uncoupled_part()
 }
 
 void Coupled_Time_CDR_2D::couple_and_solve(
-    const TFEVectFunct2D* velocity_field,
-    std::vector<TFEFunction2D*> further_functions)
+    std::vector<TFEFunction2D*> sources_and_sinks)
 {
+  // Check input
+  if (sources_and_sinks.size() != nEquations_)
+  {
+    ErrThrow("Wrong number of sources-and-sinks functions.");
+  }
   // Put up an array of pointers to the solutions of previous iteration
   TFEFunction2D** previousSolutions = new TFEFunction2D*[nEquations_];
+
+  // add additional sources-and-sink terms to the right hand side
+  for (size_t eq = 0; eq<nEquations_;++eq){
+
+    // transform the given function to the fe space of the cdr eq
+    const TFESpace2D& into_space = this->cdProblems_[eq]->get_space();
+    size_t n_dofs_interp = into_space.GetN_DegreesOfFreedom();
+    std::vector<double> interp_funct_values(n_dofs_interp, 0.0);
+
+    // set up an interpolator object
+    FEFunctionInterpolator interpolator(&into_space);
+
+    TFEFunction2D interp_funct =
+        interpolator.interpolate(*sources_and_sinks[eq], interp_funct_values);
+
+    // Now hope that it worked out - and add the values of the freshly interpolated
+    // function to the right hand side of the current equation.
+    std::vector<double>& rhs_entries = cdProblems_[eq]->get_rhs().get_entries_vector();
+
+    //CB DEBUG
+    // This is good value for money debug code - it prints out the interpolated
+    // ParMooN representation of Brushs return values (i.e., sources and sinks).
+//    Output::print("I am adding the following vector of size ",
+//                  n_dofs_interp, " to eq ", eq, ", which has size ",rhs_entries.size(),":");
+//    for (auto vals : interp_funct_values)
+//      std::cout << vals << " ";
+//    std::cout << std ::endl;
+    ParameterDatabase debug_out_db = ParameterDatabase::default_output_database();
+    debug_out_db["output_write_vtk"] = true;
+    std::string outname = "debug";
+    outname+=std::to_string(eq) + "." + std::to_string(TDatabase::TimeDB->CURRENTTIME);
+    debug_out_db["output_basename"].set_range(std::set<std::string>({outname, "parmoon"}));
+    debug_out_db["output_basename"] = outname;
+    debug_out_db["output_vtk_directory"].set_range(std::set<std::string>({std::string("VTK"), "."}));
+    debug_out_db["output_vtk_directory"]="VTK";
+    PostProcessing2D debug_output(debug_out_db);
+    debug_output.add_fe_function(&interp_funct);
+    debug_output.write(0);
+    //END DEBUG
+
+    Daxpy(n_dofs_interp, 1.0, &interp_funct_values.at(0), &rhs_entries.at(0));
+
+  }
 
   // Store the original right hand sides of the CDR Equations without coupling.
   std::vector<BlockVector> originalRightHandSides;
@@ -123,7 +173,7 @@ void Coupled_Time_CDR_2D::couple_and_solve(
 
       // assemble the coupling term
       coupledParts_[equation]
-                    ->assembleLinearDecoupled(previousSolutions, further_functions);
+                    ->assembleLinearDecoupled(previousSolutions);
 
       // add coupled rhs to rhs of the uncoupled equation
       cdProblems_[equation]->get_rhs().add_scaled(coupledParts_[equation]->getRightHandSide(),1);

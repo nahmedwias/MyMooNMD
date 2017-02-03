@@ -37,20 +37,13 @@ ReactionCoupling::ReactionCoupling(CoupledCDR_2D::SolvingStrategy strategy, Asse
 
 // Assembling routine for the "linearized_decoupled" solution strategy.
 void ReactionCoupling::assembleLinearDecoupled(
-    TFEFunction2D** latestSolutions,
-    std::vector<TFEFunction2D*> further_functions){
+    TFEFunction2D** latestSolutions){
 
-  size_t n_further_functions = further_functions.size();
-  size_t n_incoming_functions = nCoupled_ + n_further_functions;
+  size_t n_incoming_functions = nCoupled_;
   TFEFunction2D* incoming_functions[n_incoming_functions];
 
   for(size_t i = 0; i < n_incoming_functions; ++i)
-  {
-    if(i < nCoupled_)
       incoming_functions[i] = latestSolutions[i];
-    else
-      incoming_functions[i] = further_functions[i-nCoupled_];
-  }
 
 
 	// ****** Start constructing the LocalAssembling2D object ******

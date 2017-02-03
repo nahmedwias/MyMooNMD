@@ -30,6 +30,11 @@ namespace Brush
   class ParMooNData;
 }
 
+namespace Exmpl
+{
+  enum class SourceAndSinkTerms;
+}
+
 class BrushWrapper
 {
   public:
@@ -40,9 +45,11 @@ class BrushWrapper
     /// Destructor.
     ~BrushWrapper();
 
-    /// Get the k-moment of the particle distribution as piecewise constant
-    /// fe function on the domain.
-    const TFEFunction2D& get_moment_fe(int k) const;
+    ///Implicitely deletes copying and moving.
+
+    /// Let Brush compute the source and sink terms which will
+    /// be added to the right hand side of the CDR equations.
+    std::vector<TFEFunction2D*> sources_and_sinks();
 
     /**
      * Reset the fluid phase data in Brush, i.e., velocity, pressure, temperature
@@ -68,24 +75,32 @@ class BrushWrapper
 
   private:
 
+    /// The database for control parameters.
     ParameterDatabase db_;
 
-    // TODO Ownership for the object is taken, but there is some trouble with the
-    // destructor.
+    /// The ParMooN interface of Brush which is wrapped up by 'this'.
+    /// TODO Ownership for the object is taken, but there is some trouble with the
+    /// destructor.
     Brush::InterfacePM* interface_;
+
 
     PostProcessing2D output_writer_;
 
     std::ofstream moment_stats_file_;
 
-    TCollection* pd_moments_grid_; //NO OWNERSHIP TAKEN.
+    /// All functions which come from Brush start their life in ParMooN
+    /// as 0th order fe functions on the following grid and fe space.
+    TCollection* from_brush_grid_; //NO OWNERSHIP TAKEN.
+    TFESpace2D from_brush_space_;
 
-    // This is all adapted to 0th order elements.
+    std::vector<Exmpl::SourceAndSinkTerms> source_and_sink_requests_;
+    std::vector<TFEFunction2D*> source_and_sink_fcts_;
+    std::vector<std::vector<double>> source_and_sink_fcts_values_;
+
     // The function values of the moments which come
     // from Bruhs are directly written into pd_moments_values_,
     // i.e. they can be directly used as fe values of 0th order moments.
     // Anything else would require an extrapolation.
-    TFESpace2D pd_moments_space_;
     std::vector<TFEFunction2D*> pd_moments_;
     std::vector<std::vector<double>> pd_moments_values_;
 

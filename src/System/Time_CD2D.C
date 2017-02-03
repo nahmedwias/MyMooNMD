@@ -647,7 +647,6 @@ void Time_CD2D::modify_and_call_assembling_routine(
   delete rough_velo_x; // call to GetComponent dynamically created fe functs
   delete rough_velo_y;
 
-  //velocity_interpolated.Interpolate(velocity_field);
   // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
 
   // set up the input...
