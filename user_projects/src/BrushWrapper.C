@@ -191,7 +191,7 @@ BrushWrapper::~BrushWrapper()
   }
 }
 
-std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
+std::vector<const TFEFunction2D*> BrushWrapper::sources_and_sinks()
 {
 
   // Let the interface recalculate the function values.

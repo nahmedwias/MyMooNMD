@@ -120,7 +120,7 @@ void Coefficients_T(int n_points, double *x, double *y,
     coeffs[i][2] = parameters[i][1];//convection in y direction
     coeffs[i][3] = 0; //no reaction.
 
-    coeffs[i][4] = 0; //TODO rhs comes in from Brush
+    coeffs[i][4] = parameters[i][2]; //rhs, interpolated sources and sinks from Brush
   }
 }
 
@@ -165,7 +165,7 @@ void Coefficients_C_ASA(int n_points, double *x, double *y,
     coeffs[i][2] =  parameters[i][1];//convection in y direction
     coeffs[i][3] = 0; //no reaction.
 
-    coeffs[i][4] = 0; //TODO rhs comes in from Brush
+    coeffs[i][4] = parameters[i][2]; //rhs, interpolated sources and sinks from Brush
   }
 }
 

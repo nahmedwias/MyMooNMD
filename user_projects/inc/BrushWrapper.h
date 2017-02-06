@@ -49,7 +49,7 @@ class BrushWrapper
 
     /// Let Brush compute the source and sink terms which will
     /// be added to the right hand side of the CDR equations.
-    std::vector<TFEFunction2D*> sources_and_sinks();
+    std::vector<const TFEFunction2D*> sources_and_sinks();
 
     /**
      * Reset the fluid phase data in Brush, i.e., velocity, pressure, temperature
@@ -94,7 +94,7 @@ class BrushWrapper
     TFESpace2D from_brush_space_;
 
     std::vector<Exmpl::SourceAndSinkTerms> source_and_sink_requests_;
-    std::vector<TFEFunction2D*> source_and_sink_fcts_;
+    std::vector<const TFEFunction2D*> source_and_sink_fcts_;
     std::vector<std::vector<double>> source_and_sink_fcts_values_;
 
     // The function values of the moments which come

@@ -226,9 +226,6 @@ void Time_CD2D::set_parameters()
 void Time_CD2D::assemble_initial_time(const TFEVectFunct2D* velocity_field)
 {
 
-  //check the velocity field input
-  check_velocity_field(velocity_field);
-
   // chose the types for the local assembling objects
   LocalAssembling2D_type mass = LocalAssembling2D_type::TCD2D_Mass;
   LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;
@@ -282,10 +279,10 @@ void Time_CD2D::assemble_initial_time(const TFEVectFunct2D* velocity_field)
 }
 
 /**************************************************************************** */
-void Time_CD2D::assemble(const TFEVectFunct2D* velocity_field)
+void Time_CD2D::assemble(
+    const TFEVectFunct2D* velocity_field,
+    const TFEFunction2D* sources_and_sinks)
 {
-  //check the velocity field input
-  check_velocity_field(velocity_field);
 
   LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;  
   
@@ -299,6 +296,7 @@ void Time_CD2D::assemble(const TFEVectFunct2D* velocity_field)
 
     if(TDatabase::ParamDB->DISCTYPE == SUPG)
     {
+      Output::warn("SUPG IS UNCHECKED IN THIS BRANCH (COUPLED CDR)!");
       // In the SUPG case:
       // M = (u,v) + \tau (u,b.grad v)
       LocalAssembling2D_type mass_supg = LocalAssembling2D_type::TCD2D_Mass;;
@@ -306,27 +304,26 @@ void Time_CD2D::assemble(const TFEVectFunct2D* velocity_field)
       LocalAssembling2D la_m_supg(mass_supg, &pointer_to_function,
                                this->example.get_coeffs());
 
-      if(velocity_field) //TODO thisn on-sepeartion of modification and call leads to spaghetti code!
-      { // modify the local assembling object for the stiffness matrix,
-        // should a velocity field be given
-        modify_and_call_assembling_routine(s, la_a_rhs, la_m_supg , true, velocity_field);
+      if(velocity_field && sources_and_sinks)
+      {//use both
+        modify_and_call_assembling_routine(s, la_a_rhs, la_m_supg ,
+                                           true, velocity_field, sources_and_sinks);
       }
       else
-      {
+      {//or none
         //call assembling, including mass matrix (SUPG!)
         call_assembling_routine(s, la_a_rhs, la_m_supg , true);
       }
     }
     else //non SUPG
     {//call assembling, ignoring mass matrix part (third argument is not relevant)
-      if(velocity_field)
-      {
-        // modify the local assembling object for the stiffness matrix,
-        // should a velocity field be given
-        modify_and_call_assembling_routine(s, la_a_rhs, la_a_rhs , false, velocity_field);
+      if(velocity_field && sources_and_sinks)
+      {//use both
+        modify_and_call_assembling_routine(s, la_a_rhs, la_a_rhs ,
+                                           false, velocity_field, sources_and_sinks);
       }
       else
-      {
+      {//or none: nothing external given, no modifications necessary
         call_assembling_routine(s, la_a_rhs, la_a_rhs , false);
       }
     }
@@ -609,6 +606,121 @@ void Time_CD2D::call_assembling_routine(
   }
 }
 
+// Used as a "ParamFunction" (a MooNMD specific oddity
+// of the assembling process) in the following. Shears away the first two parameters
+// which are usually spatial x and y and passes on the three next paramters
+void ThreeFEParametersFunction(double *in, double *out)
+{
+  out[0] = in[2];
+  out[1] = in[3];
+  out[2] = in[4];
+}
+void TwoFEParametersFunction(double *in, double *out)
+{
+  out[0] = in[2];
+  out[1] = in[3];
+}
+
+void Time_CD2D::modify_and_call_assembling_routine(
+    System_per_grid& s,
+    LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
+    bool assemble_both,
+    const TFEVectFunct2D* velocity_field,
+    const TFEFunction2D* sources_and_sinks)
+{
+  // step 1 - transform the given Function to our FESpace (project? interpolate?)
+  const TFESpace2D& space = s.fe_space;
+  size_t n_dofs = space.GetN_DegreesOfFreedom();
+  std::string name("interpolated velo space");
+  std::string description("interpolated velo space");
+  std::vector<double> interp_funct_values(n_dofs,0.0);
+
+  // set up an interpolator object  (ptr will be shared later)
+  const TFESpace2D* into_space = &s.fe_space;
+  FEFunctionInterpolator interpolator(into_space);
+
+  // length of the values array of the interpolated velo must equal length of the
+  // concentration fe function
+  size_t length_interpolated = s.fe_function.GetLength();
+
+  std::vector<double> entries_velo_x(length_interpolated, 0.0);
+  std::vector<double> entries_velo_y(length_interpolated, 0.0);
+
+  // this awful call is due to the way a TFEVectFunct2D creates new dynamically
+  // allocated TFEFunction2D objects
+  TFEFunction2D* rough_velo_x = velocity_field->GetComponent(0);
+  TFEFunction2D* rough_velo_y = velocity_field->GetComponent(1);
+
+  TFEFunction2D interpolated_velo_x =
+      interpolator.interpolate(*rough_velo_x, entries_velo_x);
+
+  TFEFunction2D interpolated_velo_y =
+      interpolator.interpolate(*rough_velo_y, entries_velo_y);
+
+  delete rough_velo_x; // call to GetComponent dynamically created fe functs
+  delete rough_velo_y;
+
+  //step 2 - interpolate sources and sinks
+  std::vector<double> entries_source_and_sinks(length_interpolated, 0.0);
+  TFEFunction2D interpolated_sources_and_sinks =
+      interpolator.interpolate(*sources_and_sinks, entries_source_and_sinks);
+
+  //CB DEBUG
+  // This is good value for money debug code - it prints out the interpolated
+  // ParMooN representation of Brushs return values (i.e., sources and sinks).
+  ParameterDatabase debug_out_db = ParameterDatabase::default_output_database();
+  debug_out_db["output_write_vtk"] = true;
+  std::string outname = "debug";
+  outname+=std::string(s.fe_function.GetName()) + "." + std::to_string(TDatabase::TimeDB->CURRENTTIME);
+  debug_out_db["output_basename"].set_range(std::set<std::string>({outname, "parmoon"}));
+  debug_out_db["output_basename"] = outname;
+  debug_out_db["output_vtk_directory"].set_range(std::set<std::string>({std::string("VTK"), "."}));
+  debug_out_db["output_vtk_directory"]="VTK";
+  PostProcessing2D debug_output(debug_out_db);
+  debug_output.add_fe_function(&interpolated_sources_and_sinks);
+  debug_output.write(0);
+  //END DEBUG
+
+  // step 3 - set all the 'parameter'-related values in la_a_rhs accordingly
+
+  // set up the input...
+  std::vector<int> beginParameter = {0};
+
+  TFEFunction2D* fe_funct[4]; //fill up the new fe function array (4th entry is option, see below)
+  fe_funct[0] = &s.fe_function;
+  fe_funct[1] = &interpolated_velo_x;
+  fe_funct[2] = &interpolated_velo_y;
+  fe_funct[3] = &interpolated_sources_and_sinks;
+
+  std::vector<int> feValueFctIndex = {1,2,3}; // to produce first fe value use fe function 1,
+                                              // for second fe value use function 2,
+                                              // for third fe value use function 3
+  std::vector<MultiIndex2D> feValueMultiIndex = {D00,D00,D00}; // to produce first fe value use 0th derivative,
+                                                            // for second and third fe value as well
+  int N_parameters = 3; // three parameters...
+  int N_feValues = 3;   //..all of which stem from the evaluation of fe fcts
+  int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+
+  // chose the parameter function ("in-out function") which shears away
+  // the first to "in" values (x,y) and passes u_x, u_y and f
+  std::vector<ParamFct*> parameterFct = {ThreeFEParametersFunction};
+
+  // ...and call the corresponding setters
+  la_stiff.setBeginParameter(beginParameter);
+  la_stiff.setFeFunctions2D(fe_funct); //reset - now velo comp included
+  la_stiff.setFeValueFctIndex(feValueFctIndex);
+  la_stiff.setFeValueMultiIndex(feValueMultiIndex);
+  la_stiff.setN_Parameters(N_parameters);
+  la_stiff.setN_FeValues(N_feValues);
+  la_stiff.setN_ParamFct(N_paramFct);
+  la_stiff.setParameterFct(parameterFct);
+  //...I expect that to do the trick.
+
+  // step 4 - the assembling must be done before the velo functions
+  // run out of scope
+  call_assembling_routine(s, la_stiff, la_mass , assemble_both);
+}
+
 void Time_CD2D::modify_and_call_assembling_routine(
     System_per_grid& s,
     LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
@@ -647,12 +759,12 @@ void Time_CD2D::modify_and_call_assembling_routine(
   delete rough_velo_x; // call to GetComponent dynamically created fe functs
   delete rough_velo_y;
 
-  // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
+  // step 3 - set all the 'parameter'-related values in la_a_rhs accordingly
 
   // set up the input...
   std::vector<int> beginParameter = {0};
 
-  TFEFunction2D* fe_funct[3]; //fill up the new fe function array
+  TFEFunction2D* fe_funct[4]; //fill up the new fe function array (4th entry is option, see below)
   fe_funct[0] = &s.fe_function;
   fe_funct[1] = &interpolated_velo_x;
   fe_funct[2] = &interpolated_velo_y;
@@ -667,7 +779,7 @@ void Time_CD2D::modify_and_call_assembling_routine(
 
   // chose the parameter function ("in-out function") which shears away
   // the first to "in" values (x,y) and passes only u_x and u_y
-  std::vector<ParamFct*> parameterFct = {NSParamsVelo};
+  std::vector<ParamFct*> parameterFct = {TwoFEParametersFunction};
 
   // ...and call the corresponding setters
   la_stiff.setBeginParameter(beginParameter);
@@ -680,16 +792,7 @@ void Time_CD2D::modify_and_call_assembling_routine(
   la_stiff.setParameterFct(parameterFct);
   //...I expect that to do the trick.
 
-  // step 3 - the assembling must be done before the velo functions
+  // step 4 - the assembling must be done before the velo functions
   // run out of scope
   call_assembling_routine(s, la_stiff, la_mass , assemble_both);
-}
-
-
-void Time_CD2D::check_velocity_field(const TFEFunction2D* velocity_field) const
-{
-  if (velocity_field)
-  {
-
-  }
 }

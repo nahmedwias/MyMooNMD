@@ -66,19 +66,18 @@ class Coupled_Time_CDR_2D {
      * The coupled part may depend on the velocity field and certain additional
      * source and sink terms, which might stem, e.g., from the kinetics of transported particles.
      */
-    void couple_and_solve(
-        std::vector<TFEFunction2D*> sources_and_sinks);
+    void couple_and_solve();
 
     /**
      * Assembling functions for the case of coupling with a velocity field
      * (and other functions, e.g. a particle size distribution from a PBE).
      */
-    void assemble_initial_time(const TFEVectFunct2D* velocity_field,
-                               std::vector<const TFEFunction2D*> further_functions = {});
+    void assemble_initial_time(const TFEVectFunct2D* velocity_field);
 
     /// We assume that the "uncoupled" (CD) parts do only depend on the velocity
     /// field, but neither on each other nor on other FE functions .
-    void assemble_uncoupled_part(const TFEVectFunct2D* velocity_field);
+    void assemble_uncoupled_part(const TFEVectFunct2D* velocity_field,
+                                 std::vector<const TFEFunction2D*> sources_and_sinks);
 
     /**
      * Return the current solution fe functions of the equations.
