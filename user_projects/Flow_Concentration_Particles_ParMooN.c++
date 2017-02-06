@@ -164,16 +164,16 @@ int main(int argc, char* argv[])
 
       //TODO Enable to solve in a loop.
 
-      //solve cdr system
-      conc_object.assemble_uncoupled_part(&velo_field);
-      conc_object.couple_and_solve(part_object.sources_and_sinks());
-      conc_object.output();
-
       //update and solve particles
       std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
       part_object.reset_fluid_phase(velo_field, pressure, fcts);
       part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + tau);
       part_object.output(TDatabase::TimeDB->CURRENTTIME);
+
+      //solve cdr system
+      conc_object.assemble_uncoupled_part(&velo_field, part_object.sources_and_sinks());
+      conc_object.couple_and_solve();
+      conc_object.output();
     }
   }
 

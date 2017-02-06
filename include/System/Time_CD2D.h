@@ -198,7 +198,8 @@ class Time_CD2D
      * on the same Collection of grid cells as this object (which might not
      * even be the right thing to check).
      */
-    void assemble(const TFEVectFunct2D* velocity_field = nullptr);
+    void assemble(const TFEVectFunct2D* velocity_field = nullptr,
+                  const TFEFunction2D* sources_and_sinks = nullptr);
     
     /**
      * Descales the stiffness matrices from the modifications due to time
@@ -313,15 +314,14 @@ class Time_CD2D
         System_per_grid& s,
         LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
         bool assemble_both,
-        const TFEVectFunct2D* velocity_field);
+        const TFEVectFunct2D* velocity_field,
+        const TFEFunction2D* sources_and_sinks);
 
-    /**
-     * Perform some checks on the velocity field. So far none there are none...
-     * TODO What wrong input must be caught here?
-     *
-     * @param velocity_field The velocity field to be checked.
-     */
-    void check_velocity_field(const TFEFunction2D* velocity_field) const;
+    void modify_and_call_assembling_routine(
+        System_per_grid& s,
+        LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
+        bool assemble_both,
+        const TFEVectFunct2D* velocity_field);
 };
 
 #endif
