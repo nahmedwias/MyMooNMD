@@ -21,6 +21,7 @@ list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/CD3D.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/NSE3D.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/Time_CD3D.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/Time_NSE3D.C")
+list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/Particles.C")
 
 # Source files to be added to both 2D and 3D library
 list(APPEND SYST_SOURCES "${PROJECT_SOURCE_DIR}/src/System/Residuals.C")
