@@ -5,7 +5,7 @@
 ## to. In general ParMooN produces text output on the console as well 
 ## as in this file. For this to properly work, you should call 
 ## `Output::set_outfile(db["outfile"]);` in your main program. 
-outfile: multiphase_output.out
+outfile: multiphase_output37.out
 
 ## This is a file describing the boundary of the computational 
 ## domain. You probably want to adjust this to be the path to some file 
@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 5
+refinement_n_initial_steps: 7
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -90,13 +90,13 @@ output_vtk_directory: .
 
 ## This string is prepended to most files written by ParMooN. 
 ## Especially this includes vtk-files 
-output_basename: multiphase_output { multiphase_tconvection_output, multiphase_tnse_output, multiphase_output, no_stab2}
+output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output, no_stab2}
 
 ## The maximum number of iterations to perform in a non-linear loop. 
-nonlinloop_maxit: 10   [ 0, 1000 ]
+nonlinloop_maxit: 20   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
-nonlinloop_epsilon: 1e-9   [ 0, 1 ]
+nonlinloop_epsilon: 1e-13   [ 0, 1 ]
 
 ## Damping factor 'w' for the nonlinear iteration. The solution of 
 ## the k-th iterate will be scaled by 'w'. Then The previous solution, 
@@ -273,10 +273,10 @@ ALGEBRAIC_FLUX_CORRECTION: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 0.1
-TIMESTEPLENGTH: 0.01
+ENDTIME: 0.0001
+TIMESTEPLENGTH: 0.0001
 
 
 P1: 1
-P2: 0.5
+P2: 1e-06
 P3: 1
