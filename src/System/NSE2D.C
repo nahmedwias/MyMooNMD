@@ -133,8 +133,8 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   if(usingMultigrid)
   {
     // Construct multigrid object
-    auto mg_ = this->solver.get_multigrid();
-    bool mdml = mg_->is_using_mdml();
+    auto mg = solver.get_multigrid();
+    bool mdml = mg->is_using_mdml();
     if(mdml)
     {
       // change the discretization on the coarse grids to lowest order 
@@ -143,34 +143,26 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       this->get_velocity_pressure_orders(velocity_pressure_orders);
     }
 
-    // number of multigrid levels
-    size_t n_multigrid_levels = mg_->get_n_geometric_levels();
-    // index of finest grid
-    int finest = domain.get_ref_level(); // -> there are finest+1 grids
-    // index of the coarsest grid used in this multigrid environment
-    int coarsest = finest - n_multigrid_levels + 1;
+    //determine multigrid levels
+    int second_grid;
+    int coarsest_grid = domain.get_ref_level() - mg->get_n_geometric_levels() + 1;
     if(mdml)
-    {
-      coarsest++;
-    }
+      second_grid = domain.get_ref_level(); //the finest grid is taken a second time in mdml
     else
+      second_grid = domain.get_ref_level() - 1;
+
+    if(coarsest_grid < 0 )
     {
-      // only for mdml there is another matrix on the finest grid, otherwise
-      // the next system to be created is on the next coarser grid
-      finest--;
+      ErrThrow("The domain has not been refined often enough to do multigrid "
+          "on ", mg->get_n_geometric_levels(), " geometric levels (",
+          mg->get_n_algebraic_levels()," algebraic levels). There are"
+          " only ", domain.get_ref_level() + 1, " geometric grid levels.");
     }
-    if(coarsest < 0 )
-    {
-      ErrThrow("the domain has not been refined often enough to do multigrid "
-               "on ", n_multigrid_levels, " levels. There are only ",
-               domain.get_ref_level() + 1, " grid levels.");
-    }
-    
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
     // matrix on finest grid is already constructed
     matrices.push_back(&systems.back().matrix);
-    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
+    for(int grid_no = second_grid; grid_no >= coarsest_grid; --grid_no)
     {
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
       systems.emplace_back(example, *coll, velocity_pressure_orders, type);
@@ -178,7 +170,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       matrices.push_front(&systems.back().matrix);
     }
     // initialize the multigrid object with all the matrices on all levels
-    mg_->initialize(matrices);
+    mg->initialize(matrices);
   }
   
   outputWriter.add_fe_vector_function(&this->get_velocity());
