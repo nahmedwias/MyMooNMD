@@ -1926,40 +1926,12 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->REACTOR_P30;
       N_Param++;
     }
-
-    if (!strcmp(line, "ALGEBRAIC_FLUX_CORRECTION:"))
-    {
-      dat >> TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION;
-      N_Param++;
-    }
-    if (!strcmp(line, "FEM_FCT_LINEAR_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE;
-      N_Param++;
-    }
-    if (!strcmp(line, "FEM_FCT_PRELIMITING:"))
-    {
-      dat >> TDatabase::ParamDB->FEM_FCT_PRELIMITING;
-      N_Param++;
-    }
-    if (!strcmp(line, "FEM_FCT_GROUP_FEM:"))
-    {
-      dat >> TDatabase::ParamDB->FEM_FCT_GROUP_FEM;
-      N_Param++;
-    }
-      
-    if (!strcmp(line, "GROUP_FEM:"))
-    {
-      dat >> TDatabase::ParamDB->GROUP_FEM;
-      N_Param++;
-    }
     
     if (!strcmp(line, "WENO_TYPE:"))
     {
       dat >> TDatabase::ParamDB->WENO_TYPE;
       N_Param++;
     }
-
 
    if (!strcmp(line, "CHANNEL_STATISTICS2_WITH_MODEL:"))
     {

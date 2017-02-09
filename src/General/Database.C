@@ -544,13 +544,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SOLD_PARAMETER_SCALING = 0;
   ParamDB->SOLD_PARAMETER_SCALING_FACTOR = 1.0;
 
-  /** parameters for controlling algebraic flux correction (FEM-FCT schemes) */
-  ParamDB->ALGEBRAIC_FLUX_CORRECTION = 0;
-  ParamDB->FEM_FCT_LINEAR_TYPE = 1;
-  ParamDB->FEM_FCT_PRELIMITING = 0;
-  ParamDB->FEM_FCT_GROUP_FEM = 0;
-  ParamDB->GROUP_FEM = 0;
-
   /** parameters for controling the program */
   ParamDB->WRITE_GRAPE = FALSE; 
   ParamDB->WRITE_GMV = FALSE; 
@@ -1302,11 +1295,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("VMS_ADAPT_COMP: ", ParamDB->VMS_ADAPT_COMP); 
 
   printToFile("SUPERCONVERGENCE_ORDER: ", ParamDB->SUPERCONVERGENCE_ORDER);
-  printToFile("ALGEBRAIC_FLUX_CORRECTION: ", ParamDB->ALGEBRAIC_FLUX_CORRECTION);
-  printToFile("FEM_FCT_LINEAR_TYPE: ", ParamDB->FEM_FCT_LINEAR_TYPE);
-  printToFile("FEM_FCT_PRELIMITING: ", ParamDB->FEM_FCT_PRELIMITING);
-  printToFile("FEM_FCT_GROUP_FEM: ", ParamDB->FEM_FCT_GROUP_FEM);
-  printToFile("GROUP_FEM: ", ParamDB->GROUP_FEM);
   printToFile("WENO_TYPE: ", ParamDB->WENO_TYPE);
   
   printToFile("WRITE_SNAPSHOTS: ", ParamDB->WRITE_SNAPSHOTS);
@@ -1469,24 +1457,6 @@ void TDatabase::CheckParameterConsistencyNSE()
       Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE,
                   " because of SC_NONLIN_ITE_TYPE_SADDLE  = ",
                   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
-  }
-
-
-  if (ParamDB->GROUP_FEM)
-  {
-    if (ParamDB->DISCTYPE != GALERKIN)
-    {
-      ParamDB->DISCTYPE = GALERKIN;
-      if(my_rank==0)
-      Output::info("NSE Parameter Consistency","GROUP_FEM: changed DISCTYPE to ", ParamDB->DISCTYPE);
-    }
-    if (ParamDB->NSTYPE != 1)
-    {
-      //ParamDB->NSTYPE = 1;
-      //Output::info("NSE Parameter Consistency","GROUP_FEM: changed NSTYPE to ", ParamDB->NSTYPE);
-      if(my_rank==0)
-        Output::warn("NSE Parameter Consistency","GROUP_FEM works properly only with NSTYPE = 1");
-    }
   }
 
 

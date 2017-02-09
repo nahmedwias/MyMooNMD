@@ -118,6 +118,14 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(function_evaluation ParMooN_test_function_evaluation)
   list(APPEND parmoon_tests ParMooN_test_function_evaluation)
   
+  # read/write fe function
+  add_executable(ParMooN_test_read_write_fe_function read_write_fe_function_test.c++)
+  target_link_libraries(ParMooN_test_read_write_fe_function
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(read_write_fe_function ParMooN_test_read_write_fe_function)
+  list(APPEND parmoon_tests ParMooN_test_read_write_fe_function)
+  
   #cd2d test
   add_executable(ParMooN_test_cd2d cd2d_test.c++)
   target_link_libraries(ParMooN_test_cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})

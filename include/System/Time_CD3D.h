@@ -67,13 +67,6 @@ class Time_CD3D
 #endif
 
       /**
-       * Gives a non-const pointer to the one block which is stored
-       * by matrix. FIXME Is terribly unsafe as it makes use
-       * of a deprecated block matrix method and must be replaced soon.
-       */
-      [[deprecated]]TSquareMatrix3D* get_stiff_matrix_pointer();
-
-      /**
        * Reset the stiffness matrix A to its 'pure' state before the
        * modifications due to a one-step/fractional-step theta scheme.
        * Sets A = 1/(tau*theta_1)*(A - mass)
@@ -107,16 +100,6 @@ class Time_CD3D
       ~SystemPerGrid() = default;
 
     };
-    /** @brief a complete system on each grid 
-     * 
-     * Note that the size of this deque is at least one and larger than that
-     * only in case of multigrid (when it holds as many systems as there are
-     * multigrid levels).
-     */
-    std::deque<SystemPerGrid> systems_;
-    
-    /** @brief Definition of the used example */
-    const Example_TimeCD3D example_;
     
     /** @brief a local parameter database which controls this class
      *
@@ -135,9 +118,17 @@ class Time_CD3D
      */
     Solver<BlockFEMatrix, BlockVector> solver;
     
-    /** @brief store the errors to compute accumulated error norms */
-    std::array<double, 5> errors_;
+    /** @brief a complete system on each grid
+     *
+     * Note that the size of this deque is at least one and larger than that
+     * only in case of multigrid (when it holds as many systems as there are
+     * multigrid levels).
+     */
+    std::deque<SystemPerGrid> systems_;
     
+    /** @brief Definition of the used example */
+    const Example_TimeCD3D example_;
+
     /** @brief set parameters in database
      * 
      * This functions checks if the parameters in the database are meaningful 
@@ -156,8 +147,12 @@ class Time_CD3D
      */
     BlockVector old_rhs;
     
+    /** @brief store the errors to compute accumulated error norms */
+    std::array<double, 5> errors_;
+
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
+
   public:
     /** @brief The standard constructor, can be used for multigrid and non-multigrid.
      *
@@ -282,8 +277,10 @@ class Time_CD3D
      * of pure mass and stiffness matrix and right hand side
      * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
      *
+     *
      * Which afc algorithm is performed is determined by switching over
-     * ALGEBRAIC_FLUX_CORRECTION (so far only 2: linear C-N FEM-FCT).
+     * the algebraic_flux_correction parameter of the database. (So far only
+     * fem-fct-cn is enabled.)
      */
     void do_algebraic_flux_correction();
 
