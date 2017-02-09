@@ -1055,6 +1055,8 @@ void Time_NSE3D::solve()
     //kick off the solving process
     mumps_wrapper.solve(s.rhs_, s.solution_);
   }
+  else
+    solver_.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential
 #endif
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11, A22 and A33 matrices are

@@ -149,7 +149,7 @@ int Boundary::isOnComponent(double x, double y, double &t)
 	  double pi=acos(-1.0);
 	  double angle0 = parts[i][k].parameters[4];
 	  double angle1 = parts[i][k].parameters[5];
-	  double theta=atan2(y,x);
+	  double theta=atan2(y-parts[i][k].parameters[1],x-parts[i][k].parameters[0]);
 
 	  if (angle0<angle1) {
 	    // the boundary has "positive" sign

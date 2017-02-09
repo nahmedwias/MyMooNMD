@@ -25,6 +25,10 @@ ParameterDatabase get_default_TCD2D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
+  // a default afc database
+  ParameterDatabase afc_db = AlgebraicFluxCorrection::default_afc_database();
+  db.merge(afc_db, true);
+
   return db;
 }
 
@@ -75,14 +79,6 @@ void Time_CD2D::System_per_grid::update_old_Au()
 }
 
 /**************************************************************************** */
-TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
-{
-  std::vector<std::shared_ptr<FEMatrix>> blocks =
-      stiff_matrix.get_blocks_TERRIBLY_UNSAFE();
-  return reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-}
-
-/**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		int reference_id)
  : Time_CD2D(domain, param_db, Example_TimeCD2D(param_db), reference_id)
@@ -96,7 +92,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
  : db(get_default_TCD2D_parameters()), solver(param_db), systems(), example(ex),
    errors(5, 0.0), timeDependentOutput(param_db)
 {
-  db.merge(param_db);
+  db.merge(param_db, false);
   this->set_parameters();
   // this is the L^inf(L^2(Omega)) error, initialize with some large number
   errors[4] = 1.e10; 
@@ -174,15 +170,26 @@ void Time_CD2D::set_parameters()
       db["problem_type"] = 2;
     }
   }
+
+  // an error when using ansatz order 0
+  if(TDatabase::ParamDB->ANSATZ_ORDER == 0)
+  {
+    throw std::runtime_error("Ansatz order 0 is no use in convection diffusion "
+        "reaction problems! (Vanishing convection and diffusion term).");
+  }
+
   //////////////// Algebraic flux correction ////////////
-  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 0)
+  if(!db["algebraic_flux_correction"].is("none"))
   {//some kind of afc enabled
-    if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 2 )
+    if(!db["algebraic_flux_correction"].is("fem-fct-cn"))
     {
-      TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 2;
+      db["algebraic_flux_correction"].set("fem-fct-cn");
       Output::print("Only kind of algebraic flux correction"
-          " for TCD problems is Crank-Nicolson FEM-FCT (2).");
+          " for TCD problems is Crank-Nicolson FEM-FCT (fem-fct-cn).");
     }
+
+    if(solver.is_using_multigrid())
+      ErrThrow("Multgrid and FEM-FCT are not yet enabled in Time_CD2D"); //TODO
 
     if(TDatabase::TimeDB->TIME_DISC !=2)
     {
@@ -286,7 +293,7 @@ void Time_CD2D::assemble()
   }
   
   // here the modifications due to time discretization begin
-  if ( TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 2 )
+  if (!db["algebraic_flux_correction"].is("none") )
   {
     do_algebraic_flux_correction();
     return; // modifications due to time discretization are per-
@@ -351,7 +358,7 @@ void Time_CD2D::assemble()
 void Time_CD2D::descale_stiffness(double tau, double theta_1)
 {
     // restore stiffness matrix and store old_Au on all grids
-    if(!TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+    if(db["algebraic_flux_correction"].is("none"))
     {
       for(auto &s : this->systems)
       {
@@ -441,72 +448,71 @@ std::array< double, int(3) > Time_CD2D::get_errors() const
 void Time_CD2D::do_algebraic_flux_correction()
 {
   //determine which kind of afc to use
-  switch (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+  if(db["algebraic_flux_correction"].is("default") ||
+      db["algebraic_flux_correction"].is("fem-fct-cn"))
   {
-    case 2: //Crank Nicolson FEM-FCT
-    { //TODO implement for multigrid!
-      System_per_grid& s = systems.front();
+    //TODO implement for multigrid!
+    System_per_grid& s = systems.front();
 
-      //get references to the relevant objects
+    //get references to the relevant objects
 
-      const TFESpace2D& feSpace = s.fe_space; //space
-      const FEMatrix& mass = *s.mass_matrix.get_blocks().at(0).get(); // mass
-      FEMatrix& stiff = *s.stiff_matrix.get_blocks_uniquely().at(0).get(); //stiffness
-      //vector entry arrays
-      const std::vector<double>& solEntries = s.solution.get_entries_vector();
-      std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
-      std::vector<double>& oldRhsEntries = old_rhs.get_entries_vector();
+    const TFESpace2D& feSpace = s.fe_space; //space
+    const FEMatrix& mass = *s.mass_matrix.get_blocks().at(0).get(); // mass
+    FEMatrix& stiff = *s.stiff_matrix.get_blocks_uniquely().at(0).get(); //stiffness
+    //vector entry arrays
+    const std::vector<double>& solEntries = s.solution.get_entries_vector();
+    std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
+    std::vector<double>& oldRhsEntries = old_rhs.get_entries_vector();
 
-      // fill a vector "neumannToDirichlet" with those rows that got
-      // internally treated as Neumann although they are Dirichlet
-      int firstDiriDof = feSpace.GetActiveBound();
-      int nDiri = feSpace.GetN_Dirichlet();
-      std::vector<int> neumToDiri(nDiri, 0);
-      std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
+    // fill a vector "neumannToDirichlet" with those rows that got
+    // internally treated as Neumann although they are Dirichlet
+    int firstDiriDof = feSpace.GetActiveBound();
+    int nDiri = feSpace.GetN_Dirichlet();
+    std::vector<int> neumToDiri(nDiri, 0);
+    std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
 
-      //determine prelimiter from Database
-      AlgebraicFluxCorrection::Prelimiter prelim;
-      switch(TDatabase::ParamDB->FEM_FCT_PRELIMITING)
-      {
-        case 1:
-          prelim = AlgebraicFluxCorrection::Prelimiter::MIN_MOD;
-          Output::print<2>("FEM-FCT: MinMod prelimiter chosen.");
-          break;
-        case 2:
-          prelim = AlgebraicFluxCorrection::Prelimiter::GRAD_DIRECTION;
-          Output::print<2>("FEM-FCT: Gradient direcetion prelimiter chosen.");
-          break;
-        case 3:
-          prelim = AlgebraicFluxCorrection::Prelimiter::BOTH;
-          Output::print<2>("FEM-FCT: Double prelimiting (MinMod & Gradient) chosen.");
-          break;
-        default:
-          prelim = AlgebraicFluxCorrection::Prelimiter::NONE;
-          Output::print<2>("FEM-FCT: No prelimiting chosen.");
-      }
-
-      //get current timestep length from Database
-      double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-
-      // apply C-N FEM-FCT
-      AlgebraicFluxCorrection::crank_nicolson_fct(
-          mass, stiff,
-          solEntries,
-          rhsEntries, oldRhsEntries,
-          delta_t,
-          neumToDiri,
-          prelim );
-
-      //...and finally correct the entries in the Dirichlet rows
-      AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
-      //...and in the right hand side, too
-      s.rhs.copy_nonactive(old_rhs);
-      break;
-    }
-    default:
+    //determine prelimiter from Database
+    AlgebraicFluxCorrection::Prelimiter prelim;
+    switch((int) db["afc_prelimiter"])
     {
-      ErrThrow("The chosen ALGEBRAIC_FLUX_CORRECTION scheme is unknown to class Time_CD2D.");
+      case 1:
+        prelim = AlgebraicFluxCorrection::Prelimiter::MIN_MOD;
+        Output::print<2>("FEM-FCT: MinMod prelimiter chosen.");
+        break;
+      case 2:
+        prelim = AlgebraicFluxCorrection::Prelimiter::GRAD_DIRECTION;
+        Output::print<2>("FEM-FCT: Gradient direcetion prelimiter chosen.");
+        break;
+      case 3:
+        prelim = AlgebraicFluxCorrection::Prelimiter::BOTH;
+        Output::print<2>("FEM-FCT: Double prelimiting (MinMod & Gradient) chosen.");
+        break;
+      default:
+        prelim = AlgebraicFluxCorrection::Prelimiter::NONE;
+        Output::print<2>("FEM-FCT: No prelimiting chosen.");
     }
+
+    //get current timestep length from Database
+    double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+
+    // apply C-N FEM-FCT
+    AlgebraicFluxCorrection::crank_nicolson_fct(
+        mass, stiff,
+        solEntries,
+        rhsEntries, oldRhsEntries,
+        delta_t,
+        neumToDiri,
+        prelim );
+
+    //...and finally correct the entries in the Dirichlet rows
+    AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
+    //...and in the right hand side, too
+    s.rhs.copy_nonactive(old_rhs);
+  }
+  else
+  {
+    ErrThrow("The chosen algebraic flux correction scheme is unknown "
+        "to class Time_CD2D.");
   }
 }
 

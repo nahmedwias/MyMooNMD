@@ -13,6 +13,13 @@
 #ifndef ALGEBRAIC_FLUX_CORRECTION_H_
 #define ALGEBRAIC_FLUX_CORRECTION_H_
 
+#include <ParameterDatabase.h>
+
+#include <vector>
+
+class TMatrix;
+class FEMatrix;
+
 namespace AlgebraicFluxCorrection {
 
 /**
@@ -27,6 +34,13 @@ enum class Prelimiter
 {
     NONE, MIN_MOD, GRAD_DIRECTION, BOTH
 };
+
+/**
+ * Sets up and returns a default algebraic flux correction database,
+ * which contains all control parameters necessary for an algebraic
+ * flux correction. All of them are initialized with default values.
+ */
+ParameterDatabase default_afc_database();
 
 /**
  * FEM-TVD ('Total Variation Diminishing') algorithm for steady-state

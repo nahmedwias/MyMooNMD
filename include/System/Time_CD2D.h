@@ -57,13 +57,6 @@ class Time_CD2D
       System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
 
       /**
-       * Gives a non-const pointer to the one block which is stored
-       * by matrix. FIXME Is terribly unsafe as it makes use
-       * of a deprecated block matrix method and must be replaced soon.
-       */
-      [[deprecated]]TSquareMatrix2D* get_stiff_matrix_pointer();
-
-      /**
        * Reset the stiffness matrix A to its 'pure' state before the
        * modifications due to a one-step/fractional-step theta scheme.
        * Sets A = 1/(tau*theta_1)*(A - mass)
@@ -243,7 +236,8 @@ class Time_CD2D
      * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
      *
      * Which afc algorithm is performed is determined by switching over
-     * ALGEBRAIC_FLUX_CORRECTION (so far only 2: linear C-N FEM-FCT).
+     * the algebraic_flux_correction parameter of the database. (So far only
+     * fem-fct-cn is enabled.)
      */
     void do_algebraic_flux_correction();
 
