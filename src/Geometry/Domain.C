@@ -48,7 +48,7 @@
 
 #include <string.h>
 #include <vector>
-
+#include <ChannelFlowRoutines.h>
 extern "C"
 {
   #include "triangle.h"
@@ -103,7 +103,7 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
 {
   RefLevel = 0;
   Output::print<4>("domain is initialized");
-  db.merge(param_db, false);
+  db.merge(param_db, true);
   
   std::string geoname = db["geo_file"];
   std::string boundname = db["boundary_file"];
@@ -174,7 +174,15 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
   {
     this->Init(boundname.c_str(), geoname.c_str());
     Output::print<4>("GEO and PRM files are selected");
-    
+#ifdef __3D__
+    if(param_db["problem_type"].is(6)
+      && param_db["example"].is(7))
+    {
+      ChannelTau180::setZCoordinates(this->GetCollection(It_Finest,0), 0);
+      this->MakeBdParamsConsistent(this->GetCollection(It_Finest,0));
+      ChannelTau180::checkZCoordinates(this->GetCollection(It_Finest,0), 0);
+    }
+#endif
   }
   else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
 	   && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
@@ -3912,7 +3920,21 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   }
 
   for(int i = 0; i < n_ref_before; i++)
+  {
     this->RegRefineAll();
+    //cout<<"init: " << i+1 << endl;
+#ifdef __3D__
+    if(parmoon_db["problem_type"].is(6)
+      && parmoon_db["example"].is(7))
+    {
+      ChannelTau180::setZCoordinates(this->GetCollection(It_Finest,0), 
+                                     i+1);
+      this->MakeBdParamsConsistent(this->GetCollection(It_Finest,0));
+      ChannelTau180::checkZCoordinates(this->GetCollection(It_Finest,0), 
+                                       i+1);
+    }
+#endif
+  }
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -3945,6 +3967,18 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   for(int level=0; level <  n_ref_after; ++level)
   {
     this->RegRefineAll();
+    // cout<<"mg: " << level+ n_ref_before+1 <<endl;
+#ifdef __3D__
+    if(parmoon_db["problem_type"].is(6)
+      && parmoon_db["example"].is(7))
+    {
+      ChannelTau180::setZCoordinates(this->GetCollection(It_Finest,0), 
+                                     level+ n_ref_before+1);
+      this->MakeBdParamsConsistent(this->GetCollection(It_Finest,0));
+      ChannelTau180::checkZCoordinates(this->GetCollection(It_Finest,0), 
+                                       level+ n_ref_before+1);
+    }
+#endif 
 #ifdef _MPI
     this->GenerateEdgeInfo();  // has to be called anew after every refinement step
     Domain_Crop(MPI_COMM_WORLD, this); // remove unwanted cells in the halo after refinement

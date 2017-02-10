@@ -42,6 +42,7 @@ enum class LocalAssembling3D_type { CD3D, /// Stationary convection diffusion re
                                     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
                                     TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
                                     TNSE3D_NLGAL,    /// Non-linear part of time-dependant NS in 3D
+                                    TNSE3D_SUPG_Extra, /// 
                                     TNSE3D_Rhs,      /// Rhs part of time-dependent NS in 3D
                                     Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
@@ -153,6 +154,12 @@ class LocalAssembling3D
     void set_parameters_for_tnse(LocalAssembling3D_type type);
     /// SMAGORINSKY model
     void set_parameters_for_tnse_smagorinsky(LocalAssembling3D_type type);
+    /// set parameters and functions for variational multiscale method
+    void set_parameters_for_tnse_vms_model(LocalAssembling3D_type type);
+    // set parameters and functions for SUPG method
+    void set_parameters_for_tnse_supg(LocalAssembling3D_type type);
+    // set parameters and functions for residual based VMS method
+    void set_parameters_for_tnse_residual_VMS(LocalAssembling3D_type type);
   public:
     /** Constructs a Local Assembling object of a certain type from an array
      *  of fe functions and coefficient functions.

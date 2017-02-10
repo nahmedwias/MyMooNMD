@@ -7,6 +7,7 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <Multigrid.h>
+#include <Variational_MultiScale3D.h>
 
 #include <sys/stat.h>
 
@@ -37,13 +38,16 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default time database
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
   db.merge(time_db,true);
+  
+  ParameterDatabase turb_mod_db = ParameterDatabase::default_turbulence_model_database();
+  db.merge(turb_mod_db,true);
 
   return db;
 }
 
 /* *************************************************************************** */
 Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
-                  TCollection& coll, std::pair< int, int > order, 
+                  TCollection& coll, std::pair< int, int > order,
                   Time_NSE3D::Matrix type
 #ifdef _MPI
                   , int maxSubDomainPerDof
@@ -60,7 +64,19 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
    u_(&velocitySpace_, (char*)"u", (char*)"u", solution_.block(0),
      solution_.length(0), 3),
    p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
-     solution_.length(3))
+     solution_.length(3)), 
+   MatrixK({&velocitySpace_, &velocitySpace_, &velocitySpace_, &pressureSpace_}),
+   Old_Sol(matrix_, false),
+   u_old(&velocitySpace_, (char*) "uold", (char*)"uold", Old_Sol.block(0), 
+         Old_Sol.length(0), 3),
+   p_old(&pressureSpace_, (char*)"p", (char*)"p", Old_Sol.block(3),
+     Old_Sol.length(3)),
+   solution_minus2(matrix_, false),
+   u_min2(&velocitySpace_, (char*) "uold", (char*)"uold", solution_minus2.block(0), 
+         solution_minus2.length(0), 3), 
+   extrap_sol(matrix_, false),
+   u_extrapolated(&velocitySpace_, (char*) "u_extra", (char*)"u_extra", extrap_sol.block(0), 
+         extrap_sol.length(0), 3)
 {
   // Mass Matrix
   // Output::increaseVerbosity(5);
@@ -80,9 +96,17 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
       break;
     case Time_NSE3D::Matrix::Type4:
       matrix_ = BlockFEMatrix::NSE3D_Type4(velocitySpace_, pressureSpace_);
+      if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+      {
+        MatrixK = BlockFEMatrix::NSE3D_Type4(velocitySpace_, pressureSpace_);
+      }
       break;
     case Time_NSE3D::Matrix::Type14:
       matrix_ = BlockFEMatrix::NSE3D_Type14(velocitySpace_, pressureSpace_);
+      if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+      {
+        MatrixK = BlockFEMatrix::NSE3D_Type4(velocitySpace_, pressureSpace_);
+      }
       break;
     default:
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
@@ -109,12 +133,14 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 {
   db_.merge(param_db, false);
   this->check_parameters();
+  
+  // get the velocity and pressure orders
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                TDatabase::ParamDB->PRESSURE_SPACE);
-  // get the velocity and pressure orders
   this->get_velocity_pressure_orders(velocity_pressure_orders);
   
+  // get matrix type
   Time_NSE3D::Matrix type;
   switch(TDatabase::ParamDB->NSTYPE)
   {
@@ -127,6 +153,15 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
       ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
   }
+  
+  if((TDatabase::ParamDB->DISCTYPE == SUPG || 
+    TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS )  && 
+    (type != Matrix::Type14 && type !=Matrix::Type4))
+  {
+    ErrThrow("The SUPG method is only implemented for NSTYPE 4 and 14");
+  }
+  
+  // multigrid method 
   bool usingMultigrid = solver_.is_using_multigrid();
   TCollection *coll = collections_.front(); // finest grid collection
   // create finite element space and function, a matrix, rhs, and solution
@@ -135,7 +170,75 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
                         maxSubDomainPerDof);
 #else
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-#endif
+#endif  
+  // projection-based VMS, only on the finest level 
+  if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+  {
+    // VMS projection order 
+    int projection_order = db_["vms_projection_space_order"];
+    if(projection_order < 0)
+      projection_order = 0;
+    
+    // projection space
+    projection_space_ = 
+       std::make_shared<TFESpace3D>(collections_.front(), (char*)"L",  
+                           (char*)"vms projection space", example_.get_bc(2), 
+                           DiscP_PSpace, projection_order);
+    int ndofP = projection_space_->GetN_DegreesOfFreedom();
+   
+    // create vector for vms projection, used if small resolved scales are needed
+    this->vms_small_resolved_scales.resize(6*ndofP);
+    // finite element vector function for vms projection
+    this->vms_small_resolved_scales_fefct = 
+       std::make_shared<TFEVectFunct3D>(projection_space_.get(), (char*)"v", (char*)"v", 
+                                        &vms_small_resolved_scales[0], ndofP, 6);
+
+ 
+    // create the label space, used in the adaptive method   
+    int n_cells = collections_.front()->GetN_Cells();
+    // initialize the piecewise constant vector
+    if(projection_order == 0)
+      this->label_for_local_projection.resize(n_cells, 0);
+    else if(projection_order == 1)
+      this->label_for_local_projection.resize(n_cells, 1);
+    else
+      ErrThrow("local projection space is not defined");
+    
+    // create fefunction for the labels such that they can be passed to the assembling routines
+    label_for_local_projection_space_ = 
+      std::make_shared<TFESpace3D>(collections_.front(), (char*)"label_for_local_projection", 
+                                   (char*)"label_for_local_projection", example_.get_bc(2), DiscP_PSpace, 0);
+    // finite element function for local projection space
+    this->label_for_local_projection_fefct = 
+      std::make_shared<TFEFunction3D>(label_for_local_projection_space_.get(), (char*)"vms_local_projection_space_fefct", 
+                                      (char*)"vms_local_projection_space_fefct", &label_for_local_projection[0], 
+                                      n_cells);
+   
+    // matrices for the vms method needs to assemble only on the 
+    // finest grid. On the coarsest grids, the SMAGORINSKY model 
+    // is used and for that matrices are available on all grids:
+    switch(TDatabase::ParamDB->NSTYPE)
+    {
+      case 1: case 2:
+        ErrThrow("VMS projection cannot be supported for NSTYPE  ", 
+                 TDatabase::ParamDB->NSTYPE);
+        break;
+      case 3: case 4: case 14:
+        const TFESpace3D& velocity_space = this->get_velocity_space();
+        // matrices G_tilde
+        matrices_for_turb_mod.at(0) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        matrices_for_turb_mod.at(1) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        matrices_for_turb_mod.at(2) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        // matrices G
+        matrices_for_turb_mod.at(3) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        matrices_for_turb_mod.at(4) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        matrices_for_turb_mod.at(5) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        // mass matrix 
+        matrices_for_turb_mod.at(6) = std::make_shared<FEMatrix>(projection_space_.get(), projection_space_.get());
+        break;
+    }
+  }
+  // prepartaion of the multigrid 
   if(usingMultigrid)
   {
     auto mg = this->solver_.get_multigrid();
@@ -190,6 +293,9 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
     s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
     s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
     s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
+    
+    s.Old_Sol = s.solution_;
+    s.solution_minus2 = s.solution_;
   }
 }
 
@@ -310,8 +416,7 @@ void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pr
       break;
     // discontinuous spaces
     case 1:case 2: case 3: case 4: case 5:
-      // TODO CHECK IF THIS IS CORRECT!!! IN NSE3D,pressure_order=1  ?!!
-      pressure_order = -(velocity_order-1)*10;
+      // pressure order is chosen correctly
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
@@ -328,209 +433,13 @@ void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pr
 /**************************************************************************** */
 void Time_NSE3D::assemble_initial_time()
 {
-  size_t nFESpace = 2;         // number of spaces for assembling matrices
-  size_t nSquareMatrices = 10; // maximum number of square matrices (type 14)
-  size_t nRectMatrices   = 6;  // maximum number of rectangular matrices (type 14)
-  size_t nRhs     = 4;         // maximum number of right hand sides (type 14)
-
-  std::vector<TSquareMatrix3D*> sqMatrices(nSquareMatrices);
-  std::vector<TMatrix3D*>       rectMatrices(nRectMatrices);
-  std::vector<double*>          rhsArray(nRhs);
-
-  for(System_per_grid& s : this->systems_) // from back to front (coarse to fine)
+  std::vector<TSquareMatrix3D*> sqMatrices;
+  std::vector<TMatrix3D*>       rectMatrices;
+  std::vector<double*> rhsArray(3);
+  // from front to back (fine to coarse grid)
+  for(System_per_grid& s : this->systems_) 
   {
-    const TFESpace3D *v_space = &s.velocitySpace_;
-    const TFESpace3D *p_space = &s.pressureSpace_;
-
-    // spaces for matrices
-    const TFESpace3D *spaces[2] = {v_space, p_space};
-    const TFESpace3D *rhsSpaces[4] = {v_space, v_space, v_space, p_space}; // NSTYPE 4 or 14
-
-    // spaces for right hand sides
-    s.rhs_.reset();
-    rhsArray[0] = s.rhs_.block(0);
-    rhsArray[1] = s.rhs_.block(1);
-    rhsArray[2] = s.rhs_.block(2);
-    rhsArray[3] = nullptr; //will be reset for type 4 and 14
-
-    std::vector<std::shared_ptr<FEMatrix>> blocks
-         = s.matrix_.get_blocks_uniquely();
-    std::vector<std::shared_ptr<FEMatrix>> mass_blocks
-         = s.massMatrix_.get_blocks_uniquely();
-
-    switch(TDatabase::ParamDB->NSTYPE)
-    {
-      case 1:
-        if(blocks.size() != 4)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 4.");
-        }
-        nSquareMatrices = 2;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-        // mass matrix
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-
-        // rectangular matrices
-        nRectMatrices = 3;
-        rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(1).get());
-        rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(2).get());
-        rectMatrices[2] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());
-
-        nRhs = 3;
-        break;
-      case 2:
-        if(blocks.size() != 7)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 7.");
-        }
-        nSquareMatrices = 2;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-        // mass matrix
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-
-        // rectangular matrices
-        nRectMatrices = 6;
-        rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(4).get()); //first the lying B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(5).get());
-        rectMatrices[2] = reinterpret_cast<TMatrix3D*>(blocks.at(6).get());
-        rectMatrices[3] = reinterpret_cast<TMatrix3D*>(blocks.at(1).get()); //then the standing B blocks
-        rectMatrices[4] = reinterpret_cast<TMatrix3D*>(blocks.at(2).get());
-        rectMatrices[5] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());
-
-        nRhs = 3;
-        break;
-      case 3:
-        if(blocks.size() != 12)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 12.");
-        }
-        nSquareMatrices = 10;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-        sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
-        sqMatrices[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
-        sqMatrices[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
-        sqMatrices[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
-        sqMatrices[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
-        sqMatrices[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
-        sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
-        // mass matrices
-        sqMatrices[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-
-        // rectangular matrices
-        nRectMatrices = 3;
-        rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  // standing B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
-        rectMatrices[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
-
-        nRhs = 3;
-        break;
-      case 4:
-        if(blocks.size() != 15)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 15.");
-        }
-        nSquareMatrices = 10;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-        sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
-        sqMatrices[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
-        sqMatrices[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
-        sqMatrices[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
-        sqMatrices[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
-        sqMatrices[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
-        sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
-        // mass matrices
-        sqMatrices[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-
-        // rectangular matrices
-        nRectMatrices = 6;
-        rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //first the lying B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
-        rectMatrices[2] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
-        rectMatrices[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  //than the standing B blocks
-        rectMatrices[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
-        rectMatrices[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
-
-        // right hand side must be adapted
-        rhsArray[3] = s.rhs_.block(3); // NSE type 4 includes pressure rhs_
-        rhsSpaces[3] = p_space;
-        nRhs = 4;
-        break;
-      case 14: // TODO: NSType14 has still to be implemented
-        if(blocks.size() != 16)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 16.");
-        }
-        nSquareMatrices = 11;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-        sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
-        sqMatrices[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
-        sqMatrices[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
-        sqMatrices[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
-        sqMatrices[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
-        sqMatrices[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
-        sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
-        // mass matrices
-        sqMatrices[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-        // C block pressure pressure
-        sqMatrices[10] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
-
-        // rectangular matrices
-        nRectMatrices = 6;
-        rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //first the lying B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
-        rectMatrices[2] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
-        rectMatrices[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  //than the standing B blocks
-        rectMatrices[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
-        rectMatrices[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
-
-        // right hand side must be adapted
-        rhsArray[3] = s.rhs_.block(3); // NSE type 14 includes pressure rhs_
-        rhsSpaces[3]  = p_space;
-        nRhs = 4;
-        break;
-      default:
-        ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-               " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
-    } // end switch NSType
-
-    for(unsigned int i=0; i<nSquareMatrices; i++)
-      sqMatrices[i]->reset();
-    for(unsigned int i=0; i<nRectMatrices;i++)
-      rectMatrices[i]->reset();
-
-    // Boundary conditions and value
-    BoundCondFunct3D * boundary_conditions[4] = {
-      v_space->getBoundCondition(), v_space->getBoundCondition(),
-      v_space->getBoundCondition(), p_space->getBoundCondition() };
-
-    std::array<BoundValueFunct3D*, 4> boundary_values;
-    boundary_values[0] = example_.get_bd(0);
-    boundary_values[1] = example_.get_bd(1);
-    boundary_values[2] = example_.get_bd(2);
-    boundary_values[3] = example_.get_bd(3);
-
-    // Finite element functions for non-linear terms
-    // for initial assembling, they correspond to the initial conditions
-    TFEFunction3D *fe_functions[4] =
-      { s.u_.GetComponent(0),
-        s.u_.GetComponent(1),
-        s.u_.GetComponent(2),
-        &s.p_ };
-
-    // local assembling object - used in Assemble3D
-    const LocalAssembling3D
-              localAssembling(LocalAssembling3D_type::TNSE3D_LinGAL,
-                              fe_functions,this->example_.get_coeffs());
-
-    // assemble all the matrices and right hand side
-    Assemble3D(nFESpace, spaces,
-               nSquareMatrices, sqMatrices.data(),
-               nRectMatrices, rectMatrices.data(),
-               nRhs, rhsArray.data(), rhsSpaces,
-               boundary_conditions, boundary_values.data(), localAssembling);
+    call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_LinGAL);
     /** manage dirichlet condition by copying non-actives DoFs
      * from rhs to solution of front grid (=finest grid)
      * Note: this operation can also be done inside the loop, so that
@@ -539,8 +448,27 @@ void Time_NSE3D::assemble_initial_time()
      * TODO: CHECK WHAT IS THE DIFFERENCE BETWEEN doing this on every grid
      * and doing it only on the finest grid!
      **/
-    s.solution_.copy_nonactive(s.rhs_);
+    s.solution_.copy_nonactive(s.rhs_);    
+    // copy the solution to the old solution for the residual computations
+    // used in the RESIDUAL_VMS method
+    s.Old_Sol.copy_nonactive(s.rhs_);
+    s.solution_minus2.copy_nonactive(s.rhs_);
+    if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+    {
+      std::vector<std::shared_ptr<FEMatrix>> blocks
+         = s.matrix_.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix3D(matrices_for_turb_mod.at(6));
+      // update stiffness matrix
+      VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
+      // reset flag for projection-based VMS method such that Smagorinsky LES method
+      // is used on coarser grids 
+      TDatabase::ParamDB->DISCTYPE = SMAGORINSKY_COARSE;
+    }
   }// end for system per grid - the last system is the finer one (front)
+  // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
+  if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY_COARSE)
+    TDatabase::ParamDB->DISCTYPE = VMS_PROJECTION;
 
   /** manage dirichlet condition by copying non-actives DoFs
   * from rhs to solution of front grid (=finest grid)
@@ -578,6 +506,8 @@ void Time_NSE3D::assemble_initial_time()
   // copy the last right hand side and solution vectors to the old ones
   this->old_rhs_      = this->systems_.front().rhs_;
   this->old_solution_ = this->systems_.front().solution_;
+  // this->systems_.front().solution_minus2 = this->old_solution_;
+  this->old_rhs_w_old_sol = this->old_rhs_;
 }
 
 /**************************************************************************** */
@@ -587,56 +517,13 @@ void Time_NSE3D::assemble_rhs()
 
   // TODO Should it be timesteplength or currenttimesteplength
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-//  const double theta1 = TDatabase::TimeDB->THETA1;
+ //  const double theta1 = TDatabase::TimeDB->THETA1;
   const double theta2 = TDatabase::TimeDB->THETA2;
   const double theta3 = TDatabase::TimeDB->THETA3;
   const double theta4 = TDatabase::TimeDB->THETA4;
-
   // reset the right hand side of the grid of interest (finest)
   s.rhs_.reset();
-
-  // some definitions necessary for assembling
-  TFEFunction3D *fe_functions[4] =
-  { s.u_.GetComponent(0),
-    s.u_.GetComponent(1),
-    s.u_.GetComponent(2),
-    &s.p_ };
-
-  int nRhs = 4;  // number of rhs blocks - TODO for NSType 4 and 14, it is 4
-  const TFESpace3D *v_space = &this->get_velocity_space();
-  const TFESpace3D *p_space = &this->get_pressure_space();
-
-  // TODO Implement the case NSType 4 and 14 where there's a 4th rhs block
-  std::vector<double*> rhsArray(nRhs);
-  rhsArray[0] = s.rhs_.block(0);
-  rhsArray[1] = s.rhs_.block(1);
-  rhsArray[2] = s.rhs_.block(2);
-  rhsArray[3] = s.rhs_.block(3);
-
-  const TFESpace3D *spaces[2] = {v_space, p_space};
-  const TFESpace3D *rhsSpaces[4] = {v_space, v_space, v_space, p_space};
-
-  BoundCondFunct3D *boundary_conditions[4] = {
-             v_space->getBoundCondition(), v_space->getBoundCondition(),
-             v_space->getBoundCondition(), p_space->getBoundCondition() };
-
-   std::array<BoundValueFunct3D*, 4> boundary_values;
-   boundary_values[0] = this->example_.get_bd(0);
-   boundary_values[1] = this->example_.get_bd(1);
-   boundary_values[2] = this->example_.get_bd(2);
-   boundary_values[3] = this->example_.get_bd(3);
-
-   // Assembling the right hand side
-  LocalAssembling3D
-      localAssembling(LocalAssembling3D_type::TNSE3D_Rhs,
-                      fe_functions,this->example_.get_coeffs());
-
-  Assemble3D(1, spaces,
-             0, nullptr,
-             0, nullptr,
-             nRhs, rhsArray.data(), rhsSpaces,
-             boundary_conditions, boundary_values.data(), localAssembling);
-
+  call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_Rhs);
   /* just a temporary vector which is going to be used at the end to
    * retrieve the nonActive of rhs_. If we dont do it, the nonActive of rhs
    * will be changed during the following matrix.vector operations and we'll
@@ -654,23 +541,30 @@ void Time_NSE3D::assemble_rhs()
 
     // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
     // next we want to set old_rhs to f^k (to be used in the next time step)
-    this->old_rhs_.addScaledActive(s.rhs_, -1./(tau*theta3));
-    this->old_rhs_.scaleActive(-theta3/theta4);
+    if(TDatabase::ParamDB->DISCTYPE != SUPG
+      && TDatabase::ParamDB->DISCTYPE != RESIDUAL_VMS )
+    {
+      this->old_rhs_.addScaledActive(s.rhs_, -1./(tau*theta3));
+      this->old_rhs_.scaleActive(-theta3/theta4);
+    }
     this->old_rhs_.copy_nonactive(s.rhs_);
   }
-
+  
   // FIXME Find other solution than this submatrix method.
   // M u^{k-1} NOTE : here s.solution_ is exactly u^{k-1}
-  s.massMatrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, 1.0);
+  if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+    s.MatrixK.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
+  else
+  s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
   // -tau*theta2 * A u^{k-1} NOTE : here, s.solution_ is u^{k-1}
   double factor = -tau*theta2;
-  s.matrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, factor);
+  s.matrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, factor);
 
   // scale the BT blocks with time step length
   for(System_per_grid& s : this->systems_)
   {
     if(tau != oldtau_)
-    {
+    {    
       // TODO: change the factor to be THETA1*tau; why??
       factor = /*theta1*/tau;
       if(this->oldtau_ != 0.0)
@@ -679,25 +573,20 @@ void Time_NSE3D::assemble_rhs()
         Output::print<1>("change in tau", this->oldtau_, "->", tau);
       }
       // scale the BT transposed blocks with the current time step
-      const std::vector<std::vector<size_t>> cell_positions = {{0,3},
-                                                               {1,3},
-                                                               {2,3}};
+      const std::vector<std::vector<size_t>> 
+               cell_positions = {{0,3}, {1,3}, {2,3}};
       s.matrix_.scale_blocks(factor, cell_positions);
       if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
       {
-        const std::vector<std::vector<size_t>> cell_positions_t = {{3,0},
-                                                                   {3,1},
-                                                                   {3,2}};
+        const std::vector<std::vector<size_t>> 
+               cell_positions_t = {{3,0}, {3,1}, {3,2}};
         s.matrix_.scale_blocks(factor, cell_positions_t);
       }
     }
   }
-
   this->oldtau_ = tau;
-
   // retrieve the non active from "temporary" into rhs vector
   s.rhs_.copy_nonactive(temporary);
-
   // copy the non active to the solution vector
   s.solution_.copy_nonactive(s.rhs_);
 
@@ -729,131 +618,32 @@ void Time_NSE3D::assemble_rhs()
   * otherwise, ones compares with the old_residual_ from
   * the previous time iteration, which is not correct. */
   this->old_residual_ = FixedSizeQueue<10,Residuals>();
-
   Output::info<5>("Assemble_rhs()", "End of the assembling of right hand side.");
 }
 
 /**************************************************************************** */
 void Time_NSE3D::assemble_nonlinear_term()
 {
-  size_t nFESpace = 1; // space needed to assemble matrices
-  size_t nSquareMatrices = 3;  // maximum 3 square matrices to be assembled
-  size_t nRectMatrices = 0;
-  size_t nRhs = 0; // no right hand side to be assembled here
-
-  std::vector<TSquareMatrix3D*> sqMatrices(nSquareMatrices);
-  std::vector<TMatrix3D*>       rectMatrices{nullptr};
-  std::vector<double*>          rhsArray{nullptr};
-
-  const TFESpace3D **rhsSpaces{nullptr};
-
   for(System_per_grid& s : this->systems_)
-  {
-    // spaces for matrices
-    const TFESpace3D *spaces[1]={ &s.velocitySpace_ };
-
-    std::vector<std::shared_ptr<FEMatrix>> blocks;
+  {    
+    call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
     
-    switch(TDatabase::ParamDB->NSTYPE)
+    if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
     {
-      case 1:
-      case 2:
-        blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
-        nSquareMatrices = 1;
-        sqMatrices.resize(nSquareMatrices);
-        sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-        break;
-      case 3:
-      case 4:
-      case 14:
-        if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY)
-        {
-          nSquareMatrices = 9;
-          blocks = s.matrix_.get_blocks_uniquely({{0,0}, {0,1}, {0,2}, 
-                                                  {1,0}, {1,1}, {1,2},
-                                                  {2,0}, {2,1}, {2,2}});
-          sqMatrices.resize(nSquareMatrices);
-          sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-          sqMatrices.at(1) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-          sqMatrices.at(2) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
-          sqMatrices.at(3) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(3).get());
-          sqMatrices.at(4) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
-          sqMatrices.at(5) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
-          sqMatrices.at(6) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
-          sqMatrices.at(7) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(7).get());
-          sqMatrices.at(8) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
-        }
-        else
-        {
-          nSquareMatrices = 3;
-          blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
-          sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-          sqMatrices.at(1) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-          sqMatrices.at(2) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
-        }
-        break;
-      default:
-        ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-               " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
-    } // end switch nstypes
-
-    // reset matrices to zero
-    for(auto mat : sqMatrices)
-    {
-      mat->reset();
+      std::vector<std::shared_ptr<FEMatrix>> blocks
+         = s.matrix_.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix3D(matrices_for_turb_mod.at(6));
+      // update stiffness matrix
+      VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
+      // reset flag for projection-based VMS method such that Smagorinsky LES method
+      // is used on coarser grids 
+      TDatabase::ParamDB->DISCTYPE = SMAGORINSKY_COARSE;
     }
-
-    // Prepare info about boundary condition for assembling routines
-    BoundCondFunct3D *boundary_conditions[1] = {spaces[0]->getBoundCondition()};
-
-    std::array<BoundValueFunct3D*, 3> boundary_values;
-    boundary_values[0] = this->example_.get_bd(0);
-    boundary_values[1] = this->example_.get_bd(1);
-    boundary_values[2] = this->example_.get_bd(2);
-
-    TFEFunction3D *fe_functions[3] = {nullptr, nullptr,nullptr};
-
-    // The assembly with the extrapolated velocity of IMEX_scheme begins
-    // at step 3
-    bool is_imex = this->imex_scheme(0);
-
-    // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
-    if(!is_imex)
-    {
-      fe_functions[0] = s.u_.GetComponent(0);
-      fe_functions[1] = s.u_.GetComponent(1);
-      fe_functions[2] = s.u_.GetComponent(2);
-    }
-    else
-    {
-      // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
-      // Note : in this function, the non active Dofs are taken care of.
-      // Namely, extrapolated_solution takes the nonActive of the current Rhs.
-      this->construct_extrapolated_solution();
-      TFEVectFunct3D extrapolated_velocity_vector(&this->systems_.front().velocitySpace_,
-                                                  (char*)"", (char*)"",
-                                                  extrapolated_solution_.block(0),
-                                                  extrapolated_solution_.length(0), 3);
-
-      // Construct now the corresponding fe_functions for local assembling
-      fe_functions[0] = extrapolated_velocity_vector.GetComponent(0);
-      fe_functions[1] = extrapolated_velocity_vector.GetComponent(1);
-      fe_functions[2] = extrapolated_velocity_vector.GetComponent(2);
-
-    }
-
-    // assemble nonlinear matrices
-    LocalAssembling3D
-        localAssembling(LocalAssembling3D_type::TNSE3D_NLGAL,
-                        fe_functions, this->example_.get_coeffs());
-
-    Assemble3D(nFESpace, spaces,
-               nSquareMatrices, sqMatrices.data(),
-               nRectMatrices, rectMatrices.data(),
-               nRhs, rhsArray.data(), rhsSpaces,
-               boundary_conditions, boundary_values.data(), localAssembling);
   }
-
+  // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
+  if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY_COARSE)
+    TDatabase::ParamDB->DISCTYPE = VMS_PROJECTION;
   Output::info<5>("Assemble non linear terms", "End of the assembling of the nonlinear matrix.");
 }
 
@@ -869,17 +659,47 @@ void Time_NSE3D::assemble_system()
       cell_positions = {{0,0}, {0,1}, {0,2},
                         {1,0}, {1,1}, {1,2},
                         {2,0}, {2,1}, {2,2}};
-
     // note: declaring the auxiliary cell_positions is needed by the compiler
     // to sort out the overriding of the function scale_blocks_actives(...,...)
     s.matrix_.scale_blocks_actives(factor, cell_positions);
-
-    const FEMatrix& mass_blocks =
-        *s.massMatrix_.get_blocks().at(0).get();
-
-    s.matrix_.add_matrix_actives(mass_blocks, 1.0,
+    if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+    {
+      const FEMatrix& m00 = *s.MatrixK.get_blocks().at(0).get();
+      s.matrix_.add_matrix_actives(m00, 1.0, {{0,0}}, {false});
+      
+      const FEMatrix& m01 = *s.MatrixK.get_blocks().at(1).get();
+      s.matrix_.add_matrix_actives(m01, 1.0, {{0,1}}, {false});
+      
+      const FEMatrix& m02 = *s.MatrixK.get_blocks().at(2).get();
+      s.matrix_.add_matrix_actives(m02, 1.0, {{0,2}}, {false});
+      
+      const FEMatrix& m10 = *s.MatrixK.get_blocks().at(4).get();
+      s.matrix_.add_matrix_actives(m10, 1.0, {{1,0}}, {false});
+      
+      const FEMatrix& m11 = *s.MatrixK.get_blocks().at(5).get();
+      s.matrix_.add_matrix_actives(m11, 1.0, {{1,1}}, {false});
+      
+      const FEMatrix& m12 = *s.MatrixK.get_blocks().at(6).get();
+      s.matrix_.add_matrix_actives(m12, 1.0, {{1,2}}, {false});
+      
+      const FEMatrix& m20 = *s.MatrixK.get_blocks().at(8).get();
+      s.matrix_.add_matrix_actives(m20, 1.0, {{2,0}}, {false});
+      
+      const FEMatrix& m21 = *s.MatrixK.get_blocks().at(9).get();
+      s.matrix_.add_matrix_actives(m21, 1.0, {{2,1}}, {false});
+      
+      const FEMatrix& m22 = *s.MatrixK.get_blocks().at(10).get();
+      s.matrix_.add_matrix_actives(m22, 1.0, {{2,2}}, {false});
+    }
+    else
+    {
+      const FEMatrix& mass_blocks =
+         *s.massMatrix_.get_blocks().at(0).get();
+         
+      s.matrix_.add_matrix_actives(mass_blocks, 1.0,
                                  {{0,0}, {1,1}, {2,2}},
                                  {false, false, false});
+    }
   }
 
   Output::info<5>("Assemble System", "Assembled the system matrix which"
@@ -902,24 +722,8 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   // stores current norm of the residual. They are normed per default in
   // the class Residuals
   const double normOfResidual        = this->get_full_residual();
-  //  const double normOfImpulseResidual = this->get_impulse_residual();
-  //  const double normOfMassResidual    = this->get_mass_residual();
-  //  const double oldNormOfResidual     = this->old_residual_[1].fullR;
   // hold the residual from up to 10 iterations ago
   const double veryOldNormOfResidual  = this->old_residual_.front().fullResidual;
-
-  //  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
-  //  Output::print("impulse_residual:  " , setw(3), normOfImpulseResidual);
-  //  Output::print("mass_residual   :  " , setw(3), normOfMassResidual);
-  //  Output::print("residual        :  " , setw(3), normOfResidual);
-  System_per_grid& s = this->systems_.front();
-  size_t nu=s.solution_.length(0);
-  size_t np=s.solution_.length(3);
-  Output::print("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
-                Ddot(3*nu,s.rhs_.get_entries(),s.rhs_.get_entries()) , " "  , 
-                Ddot(np,s.rhs_.get_entries()+3*nu,s.rhs_.get_entries()+3*nu)," ",
-                Ddot(3*nu+np,s.rhs_.get_entries(),s.rhs_.get_entries()));
-  
   // this is the convergence ratio between actual step and last step
   // TODO : correct oldNormOfResidual to be the residual of last step
   // and print it out
@@ -934,7 +738,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
     initial_residual_ = normOfResidual;
 
     // saves the solution from previous time step with nonActive of current step
-    this->old_solution_ = this->systems_.front().solution_;
+    //this->old_solution_ = this->systems_.front().solution_;
   }
 
   /** Parameters for stopping criteria (desired precision epsilon, max number
@@ -946,7 +750,8 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   size_t max_It     = db_["nonlinloop_maxit"];
   double conv_speed = db_["nonlinloop_slowfactor"];
   bool slow_conv    = false;
-
+  System_per_grid& s=this->systems_.front();  
+  
   if ( db_["nonlinloop_scale_epsilon_with_size"] )
   {
     epsilon *= sqrt(this->get_size());
@@ -979,6 +784,23 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
     else
     {
       this->descale_matrices();
+      // assemble the matrices with the right solution 
+      // in order to assemble them on the right hand side 
+      // for the solver:: 
+      // So in that case no-need to descale the matrices because all the matrices 
+      // will be reassembled with the right solution
+      if((TDatabase::ParamDB->DISCTYPE == SUPG) 
+        || (TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS))
+      {
+        this->systems_.front().Old_Sol = this->systems_.front().solution_;
+        this->systems_.front().solution_minus2 = this->old_solution_;
+        // 
+        this->assemble_for_supg();
+        //
+        this->old_rhs_ = this->old_rhs_w_old_sol;
+      }
+      // 
+      this->old_solution_ = this->systems_.front().solution_;
       return true;
     }
   }
@@ -1042,7 +864,7 @@ void Time_NSE3D::compute_residuals()
 void Time_NSE3D::solve()
 {
   System_per_grid& s = systems_.front();
-  
+
 #ifndef _MPI
   solver_.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
@@ -1056,7 +878,7 @@ void Time_NSE3D::solve()
     mumps_wrapper.solve(s.rhs_, s.solution_);
   }
   else
-    solver_.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential
+    this->solver_.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11, A22 and A33 matrices are
@@ -1075,17 +897,49 @@ void Time_NSE3D::descale_matrices()
   double factor = tau*TDatabase::TimeDB->THETA1;
   for(System_per_grid& s : this->systems_)
   {
-    const FEMatrix& mass_blocks = *s.massMatrix_.get_blocks().at(0).get();
-    s.matrix_.add_matrix_actives(mass_blocks, -1.0,
-                                 {{0,0}, {1,1}, {2,2}},
-                                 {false, false, false});
-    const std::vector<std::vector<size_t>>
-      cell_positions = {{0,0}, {0,1}, {0,2},
-                        {1,0}, {1,1}, {1,2},
-                        {2,0}, {2,1}, {2,2}};
-    // note: declaring the auxiliary cell_positions is needed by the compiler
-    // to sort out the overriding of the function scale_blocks_actives(...,...)
-    s.matrix_.scale_blocks_actives(1./factor, cell_positions);
+    if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+    {
+      const FEMatrix& m00 = *s.MatrixK.get_blocks().at(0).get();
+      s.matrix_.add_matrix_actives(m00, -1.0, {{0,0}}, {false});
+      
+      const FEMatrix& m01 = *s.MatrixK.get_blocks().at(1).get();
+      s.matrix_.add_matrix_actives(m01, -1.0, {{0,1}}, {false});
+      
+      const FEMatrix& m02 = *s.MatrixK.get_blocks().at(2).get();
+      s.matrix_.add_matrix_actives(m02, -1.0, {{0,2}}, {false});
+      
+      const FEMatrix& m10 = *s.MatrixK.get_blocks().at(4).get();
+      s.matrix_.add_matrix_actives(m10, -1.0, {{1,0}}, {false});
+      
+      const FEMatrix& m11 = *s.MatrixK.get_blocks().at(5).get();
+      s.matrix_.add_matrix_actives(m11, -1.0, {{1,1}}, {false});
+      
+      const FEMatrix& m12 = *s.MatrixK.get_blocks().at(6).get();
+      s.matrix_.add_matrix_actives(m12, -1.0, {{1,2}}, {false});
+      
+      const FEMatrix& m20 = *s.MatrixK.get_blocks().at(8).get();
+      s.matrix_.add_matrix_actives(m20, -1.0, {{2,0}}, {false});
+      
+      const FEMatrix& m21 = *s.MatrixK.get_blocks().at(9).get();
+      s.matrix_.add_matrix_actives(m21, -1.0, {{2,1}}, {false});
+      
+      const FEMatrix& m22 = *s.MatrixK.get_blocks().at(10).get();
+      s.matrix_.add_matrix_actives(m22, -1.0, {{2,2}}, {false});
+    }
+    else
+    {
+      const FEMatrix& mass_blocks = *s.massMatrix_.get_blocks().at(0).get();
+      s.matrix_.add_matrix_actives(mass_blocks, -1.0,
+                                   {{0,0}, {1,1}, {2,2}},
+                                   {false, false, false});
+    }
+     const std::vector<std::vector<size_t>>
+          cell_positions = {{0,0}, {0,1}, {0,2},
+                            {1,0}, {1,1}, {1,2},
+                            {2,0}, {2,1}, {2,2}};
+      // note: declaring the auxiliary cell_positions is needed by the compiler
+      // to sort out the overriding of the function scale_blocks_actives(...,...)
+      s.matrix_.scale_blocks_actives(1./factor, cell_positions);
   }
 }
 
@@ -1101,6 +955,7 @@ void Time_NSE3D::output(int m, int &image)
       return;
 
   System_per_grid& s = this->systems_.front();
+
   TFEFunction3D* u1 = s.u_.GetComponent(0);
   TFEFunction3D* u2 = s.u_.GetComponent(1);
   TFEFunction3D* u3 = s.u_.GetComponent(2);
@@ -1221,21 +1076,21 @@ void Time_NSE3D::output(int m, int &image)
     errors_.at(9) = errors_.at(2);
     errors_.at(10) += (errors_.at(3) + errors_.at(11))*tau*0.5;//l2(0,t,h1)(p)
     errors_.at(11) = errors_.at(3);
-    
+    double t = TDatabase::TimeDB->CURRENTTIME;
     // print errors
     if (my_rank == 0 )
     {
-      Output::print<1>("L2(u)         : ", setprecision(10), sqrt(errors_.at(0)));
-      Output::print<1>("H1-semi(u)    : ", setprecision(10), sqrt(errors_.at(1)));
+      Output::print<1>("time: ", t, " L2(u)         : ", setprecision(10), sqrt(errors_.at(0)));
+      Output::print<1>("time: ", t, " H1-semi(u)    : ", setprecision(10), sqrt(errors_.at(1)));
       
-      Output::print<1>("L2(0,t,L2(u)) : ", setprecision(10), sqrt(errors_.at(4)));
-      Output::print<1>("L2(0,t,H1-semi(u)) : ", 
+      Output::print<1>("time: ", t, " L2(0,t,L2(u)) : ", setprecision(10), sqrt(errors_.at(4)));
+      Output::print<1>("time: ", t, " L2(0,t,H1-semi(u)) : ", 
                        setprecision(10), sqrt(errors_.at(6)));
-      Output::print<1>("L2(p)      : ", setprecision(10), sqrt(errors_.at(2)));
-      Output::print<1>("H1-semi(p)): ", setprecision(10), sqrt(errors_.at(3)));
+      Output::print<1>("time: ", t, " L2(p)      : ", setprecision(10), sqrt(errors_.at(2)));
+      Output::print<1>("time: ", t, " H1-semi(p)): ", setprecision(10), sqrt(errors_.at(3)));
       
-      Output::print<1>("L2(0,t,L2(p)) : ", setprecision(10), sqrt(errors_.at(8)) );
-      Output::print<1>("L2(0,t,H1-semi(p)) : ", setprecision(10), sqrt(errors_.at(10)) );
+      Output::print<1>("time: ", t, " L2(0,t,L2(p)) : ", setprecision(10), sqrt(errors_.at(8)) );
+      Output::print<1>("time: ", t, " L2(0,t,H1-semi(p)) : ", setprecision(10), sqrt(errors_.at(10)) );
     }
   }
    delete u1;
@@ -1286,14 +1141,15 @@ std::array< double, int(6) > Time_NSE3D::get_errors() const
 /**************************************************************************** */
 void Time_NSE3D::output_problem_size_info() const
 {
+  double h_min, h_max;
+  TCollection * coll = this->get_velocity_space().GetCollection();
+  coll->GetHminHmax(&h_min, &h_max);
+#ifndef _MPI
   // print out some information about number of DoFs and mesh size
   int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
   int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
   int n_dof = 3 * n_u + n_p; // total number of degrees of freedom
   int nActive = this->get_velocity_space().GetN_ActiveDegrees();
-  double h_min, h_max;
-  TCollection * coll = this->get_velocity_space().GetCollection();
-  coll->GetHminHmax(&h_min, &h_max);
 
   Output::print("N_Cells     : ", setw(10), coll->GetN_Cells());
   Output::print("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
@@ -1301,6 +1157,64 @@ void Time_NSE3D::output_problem_size_info() const
   Output::print("dof Pressure: ", setw(10), n_p   );
   Output::print("dof all     : ", setw(10), n_dof );
   Output::print("active dof  : ", setw(10), 3*nActive);
+#else
+  int size, my_rank;
+  auto comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm_size(comm, &size);
+  
+  double global_hmin = 0, global_hmax=0;
+  MPI_Reduce(&h_min,&global_hmin, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+  MPI_Reduce(&h_max,&global_hmax, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+  
+  std::vector<int> n_hal_cells(size,0);// hallo cells
+  std::vector<int> n_own_cells(size,0);
+  int l_hal_cells = coll->GetN_HaloCells();
+  int l_own_cells = coll->GetN_OwnCells();
+  // gather the halo cells to root
+  MPI_Gather(&l_hal_cells, 1, MPI_INT, // send
+             &n_hal_cells.at(0), 1, MPI_INT,// receive
+             0, comm); // control
+  // gather the own cells to root
+  MPI_Gather(&l_own_cells, 1, MPI_INT, // send
+             &n_own_cells.at(0), 1, MPI_INT, // receive
+             0, comm); // control
+
+  auto velocity_comm = systems_.front().velocitySpace_.get_communicator();
+  auto pressure_comm = systems_.front().pressureSpace_.get_communicator();
+  int n_loc_master_dof_velo = velocity_comm.GetN_Master();
+  std::vector<int> n_master_dof_velo(size,0);
+  MPI_Gather(&n_loc_master_dof_velo, 1, MPI_INT, // send
+             &n_master_dof_velo.at(0), 1, MPI_INT, // receive
+             0, comm); // control
+  int n_loc_master_dof_pres = pressure_comm.GetN_Master();
+  std::vector<int> n_master_dof_pres(size,0);
+  MPI_Gather(&n_loc_master_dof_pres, 1, MPI_INT, // send
+             &n_master_dof_pres.at(0), 1, MPI_INT, // receive
+             0, comm); // control
+  
+  if(my_rank == 0)
+  {
+    Output::stat("Time_NSE3D", "information on the FE space");
+    size_t n_total_cells=0; size_t n_dofs_velo = 0; size_t n_dofs_pres = 0;
+    for(int i=0; i<size; ++i)
+    {
+      Output::dash("Process ", i, "\t n_own_cells ", n_own_cells.at(i), 
+                   "\t n_halo_cells ", n_hal_cells.at(i), 
+                   "\t h_min/h_max ", h_min, "/", h_max,
+                   "\t n_master_dof_velo ", n_master_dof_velo.at(i), 
+                   "\t n_master_dof_pres ", n_master_dof_pres.at(i));
+      n_total_cells += n_own_cells.at(i);
+      n_dofs_velo += n_master_dof_velo.at(i);
+      n_dofs_pres += n_master_dof_pres.at(i);
+    }
+    Output::dash("Total number of cells:                       ", n_total_cells);
+    Output::dash("Total number of velcoity degrees of freedom: ", 3*n_dofs_velo);
+    Output::dash("Total number of pressure degrees of freedom: ", n_dofs_pres);
+    Output::dash("Total number of degrees of freedom:          ", 3*n_dofs_velo+n_dofs_pres);
+  }
+#endif
+  
 }
 
 /**************************************************************************** */
@@ -1312,19 +1226,6 @@ void Time_NSE3D::construct_extrapolated_solution()
   this->extrapolated_solution_.add_scaled(this->systems_.front().solution_,2.);
   this->extrapolated_solution_.copy_nonactive(this->systems_.front().rhs_);
   // Now extrapolated_solution_ = 2*u(t-1)-u(t-2), only on the finest mesh
-}
-
-/**************************************************************************** */
-TFEFunction3D* Time_NSE3D::get_velocity_component(int i)
-{
-  if(i==0)
-    return this->systems_.front().u_.GetComponent(0);
-  else if(i==1)
-    return this->systems_.front().u_.GetComponent(1);
-  else  if(i==2)
-    return this->systems_.front().u_.GetComponent(2);
-  else
-    throw std::runtime_error("There are only three velocity components!");
 }
 
 /**************************************************************************** */
@@ -1346,3 +1247,446 @@ bool Time_NSE3D::imex_scheme(bool print_info)
   return interruption_condition;
 }
 
+void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s, 
+                                         LocalAssembling3D_type type)
+{
+  // set arrays of spaces used to 
+  // assemble matrices and right hand side 
+  std::vector<const TFESpace3D*> spaces_mat(2);
+  spaces_mat[0] = &s.velocitySpace_;
+  spaces_mat[1] = &s.pressureSpace_;
+  // spaces for right hand side
+  std::vector<const TFESpace3D*> spaces_rhs(3);
+  spaces_rhs[0] = &s.velocitySpace_;
+  spaces_rhs[1] = &s.velocitySpace_;
+  spaces_rhs[2] = &s.velocitySpace_;
+  // finite element functions for nonlinear convective term
+  // for initial assembling, they correspond to the initial condition    
+  std::vector<TFEFunction3D*> fefunctions(3);
+  int disctype = TDatabase::ParamDB->DISCTYPE;
+  // The assembly with the extrapolated velocity of IMEX_scheme begins
+  // at step 3
+  bool is_imex = this->imex_scheme(0);
+  if(!is_imex)
+  {
+    fefunctions[0]=s.u_.GetComponent(0); fefunctions[1]=s.u_.GetComponent(1);
+    fefunctions[2]=s.u_.GetComponent(2); 
+
+    if(disctype == VMS_PROJECTION)
+    {
+      spaces_mat.resize(4);
+      // projection space
+      spaces_mat[2]=projection_space_.get();
+      // label space that indicates local projection space
+      spaces_mat[3]=label_for_local_projection_space_.get();
+      // append function for the labels of the local projection
+      fefunctions.resize(4);
+      fefunctions[3]=label_for_local_projection_fefct.get();
+    }
+    // 
+    if(disctype == RESIDUAL_VMS)
+    {
+      if(type == LocalAssembling3D_type::TNSE3D_SUPG_Extra)
+      {
+        fefunctions.resize(7);
+        fefunctions[3]=&s.p_;
+        fefunctions[4]=s.u_old.GetComponent(0);
+        fefunctions[5]=s.u_old.GetComponent(1);
+        fefunctions[6]=s.u_old.GetComponent(2);
+      }
+      else
+      {
+        fefunctions.resize(10);
+        fefunctions[3]=s.u_old.GetComponent(0);
+        fefunctions[4]=s.u_old.GetComponent(1);
+        fefunctions[5]=s.u_old.GetComponent(2);
+        fefunctions[6]=&s.p_old;
+        fefunctions[7]=s.u_min2.GetComponent(0);
+        fefunctions[8]=s.u_min2.GetComponent(1);
+        fefunctions[9]=s.u_min2.GetComponent(2);
+      }
+    }
+    if(disctype == SUPG)
+    {
+      fefunctions.resize(6);
+      if(TDatabase::TimeDB->EXTRAPOLATE_VELOCITY)
+      {
+        // 3./2.*u^{n-1} - 1./2.*u^{n-2}
+        // this extrapolation is only used for the tests functions
+        // this does not means that we have an IMEX_scheme
+        s.extrap_sol.reset();
+        s.extrap_sol = s.solution_minus2;
+        s.extrap_sol.scale(-1./2.);
+        s.extrap_sol.add_scaled(s.Old_Sol, 3./2.);
+        
+        fefunctions[3]=s.u_extrapolated.GetComponent(0);
+        fefunctions[4]=s.u_extrapolated.GetComponent(1);
+        fefunctions[5]=s.u_extrapolated.GetComponent(2);
+      }
+      else
+      {
+        fefunctions[3]=s.u_old.GetComponent(0);
+        fefunctions[4]=s.u_old.GetComponent(1);
+        fefunctions[5]=s.u_old.GetComponent(2);        
+      }
+    }
+  }
+  else
+  {
+    // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
+    // Note : in this function, the non active Dofs are taken care of.
+    // Namely, extrapolated_solution takes the nonActive of the current Rhs.
+    this->construct_extrapolated_solution();
+    TFEVectFunct3D extrapolated_velocity_vector(&this->systems_.front().velocitySpace_,
+                                                (char*)"", (char*)"",
+                                                extrapolated_solution_.block(0),
+                                                extrapolated_solution_.length(0), 3);
+
+    // Construct now the corresponding fe_functions for local assembling
+    fefunctions[0]=extrapolated_velocity_vector.GetComponent(0);
+    fefunctions[1]=extrapolated_velocity_vector.GetComponent(1);
+    fefunctions[2]=extrapolated_velocity_vector.GetComponent(2);
+  }
+  // assign boundary conditions and boundary values
+  std::vector<BoundCondFunct3D*>  bound_cond;
+  std::vector<BoundValueFunct3D*> bound_valu;
+  boundary_data(s,bound_cond,bound_valu);
+  // prepare matrices and rhs for assembling 
+  std::vector<TSquareMatrix3D*> sqMatrices;
+  std::vector<TMatrix3D*> rectMatrices;
+  std::vector<double*> rhs_array;
+  prepare_matrices_rhs(s, type, sqMatrices, rectMatrices, rhs_array);
+      // local assembling object - used in Assemble3D
+  const LocalAssembling3D la(type, fefunctions.data(),this->example_.get_coeffs());
+
+  // assemble all the matrices and right hand side
+  Assemble3D(spaces_mat.size(), spaces_mat.data(),
+             sqMatrices.size(), sqMatrices.data(),
+             rectMatrices.size(), rectMatrices.data(),
+             rhs_array.size(), rhs_array.data(), spaces_rhs.data(),
+             bound_cond.data(), bound_valu.data(), la);
+}
+
+
+void Time_NSE3D::boundary_data(System_per_grid& s, 
+                               std::vector<BoundCondFunct3D*> &bc, 
+                               std::vector<BoundValueFunct3D*> &bv)
+{
+  // assign boundary conditions
+  bc.resize(3); 
+  bc.at(0) = s.velocitySpace_.getBoundCondition();
+  bc.at(1) = s.velocitySpace_.getBoundCondition();
+  bc.at(2) = s.velocitySpace_.getBoundCondition();
+  // bc.at(3) = s.pressureSpace_.getBoundCondition();
+  // assign boundary values  
+  bv.resize(3);
+  bv.at(0) = example_.get_bd(0);
+  bv.at(1) = example_.get_bd(1);
+  bv.at(2) = example_.get_bd(2);
+  //bv.at(3) = example_.get_bd(3);
+}
+
+void Time_NSE3D::prepare_matrices_rhs(System_per_grid& s,
+                                  LocalAssembling3D_type type,
+                                  std::vector<TSquareMatrix3D*> &sqMatrices,
+                                  std::vector<TMatrix3D*> &rectMatrices, 
+                                  std::vector<double*> &rhs_array)
+{
+  rectMatrices.resize(0);
+  sqMatrices.resize(0);
+  rhs_array.resize(0);
+  
+  std::vector<std::shared_ptr<FEMatrix>> blocks
+         = s.matrix_.get_blocks_uniquely();
+  int disctype = TDatabase::ParamDB->DISCTYPE;
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  switch(type)
+  {
+    case LocalAssembling3D_type::TNSE3D_LinGAL:
+    {
+      // right had side which is common for all nstypes
+      rhs_array.resize(3);
+      rhs_array[0]=s.rhs_.block(0);
+      rhs_array[1]=s.rhs_.block(1);
+      rhs_array[2]=s.rhs_.block(2);
+      // get the blocks of the mass matrix 
+      std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+         = s.massMatrix_.get_blocks_uniquely();
+  
+      switch(nstype)
+      {
+        case 1:
+          if(blocks.size() != 4)
+          {
+            ErrThrow("NSTYPE 1: Wrong blocks.size() ", blocks.size(), " instead of 4.");
+          }
+          sqMatrices.resize(2);
+          sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+          // mass matrix
+          sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+          
+          rectMatrices.resize(3);
+          rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(1).get());
+          rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(2).get());
+          rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get());
+          break;
+        case 2:
+          if(blocks.size() != 7)
+          {
+            ErrThrow("NSTYPE 2: Wrong blocks.size() ", blocks.size(), " instead of 7.");
+          }
+          sqMatrices.resize(2);
+          sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+          // mass matrix
+          sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+          
+          rectMatrices.resize(6);
+          rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(4).get()); //first the lying B blocks
+          rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(5).get());
+          rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(6).get());
+          rectMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks.at(1).get()); //then the standing B blocks
+          rectMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks.at(2).get());
+          rectMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get());
+          break;
+        case 3:
+          if(blocks.size() != 12)
+          {
+            ErrThrow("NSTYPE 3: Wrong blocks.size() ", blocks.size(), " instead of 12.");
+          }
+          sqMatrices.resize(10);
+          sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+          sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+          sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+          sqMatrices[3]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+          sqMatrices[4]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+          sqMatrices[5]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+          sqMatrices[6]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+          sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+          sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+          // mass matrix 
+          sqMatrices[9]=reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+          
+          // rectangular matrices 
+          rectMatrices.resize(3);
+          rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  // standing B blocks
+          rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+          rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+          break;
+        case 4:
+        case 14:
+          if(nstype==4 && blocks.size() != 15)
+          {
+            ErrThrow("NSTYPE 4: Wrong blocks.size() ", blocks.size(), " instead of 15.");
+          }
+          if(nstype==14 && blocks.size() != 16)
+          {
+            ErrThrow("NSTYPE 14: Wrong blocks.size() ", blocks.size(), " instead of 16.");
+          }
+          // square matrices
+          sqMatrices.resize(10);
+          sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+          sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+          sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+          sqMatrices[3]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+          sqMatrices[4]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+          sqMatrices[5]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+          sqMatrices[6]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+          sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+          sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+          // mass matrix 
+          sqMatrices[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+
+          // additional matrices of the VMS method
+          // mass matrix L of projection space 
+          if(disctype == VMS_PROJECTION)
+          {
+            sqMatrices.resize(11);
+            sqMatrices[10]=reinterpret_cast<TSquareMatrix3D*>(
+                                            matrices_for_turb_mod.at(6).get());
+          }
+          // rectangular matrices 
+          rectMatrices.resize(6);
+          rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); // standing B blocks
+          rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
+          rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
+          rectMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks
+          rectMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+          rectMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+          if(disctype == VMS_PROJECTION)
+          {
+            rectMatrices.resize(12);
+            // matrices  \tilde G_11, \tilde G_24, \tilde G_36
+            rectMatrices[6]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
+            rectMatrices[7]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
+            rectMatrices[8]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
+            // matrices G_11, G_42, G_63
+            rectMatrices[9]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(3).get());
+            rectMatrices[10]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(4).get());
+            rectMatrices[11]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(5).get());
+          }
+          if(disctype == RESIDUAL_VMS)
+          {
+            sqMatrices.resize(18);
+            std::vector<std::shared_ptr<FEMatrix>> m_kblocks
+               = s.MatrixK.get_blocks_uniquely();
+            sqMatrices[9] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(0).get());
+            sqMatrices[10]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(1).get());
+            sqMatrices[11]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(2).get());
+            sqMatrices[12]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(4).get());
+            sqMatrices[13]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(5).get());
+            sqMatrices[14]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(6).get());
+            sqMatrices[15]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(8).get());
+            sqMatrices[16]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(9).get());
+            sqMatrices[17]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(10).get());
+          }
+          if(nstype ==14 )
+          {
+            rhs_array.resize(4);
+            rhs_array[3] = s.rhs_.block(3);
+          }
+          break;
+        default:
+          ErrThrow("TDatabase::ParamDB->NSTYPE = ", nstype ,
+               " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
+      }
+      s.rhs_.reset();
+      break; 
+    } //LocalAssembling3D_type::TNSE3D_LinGAL
+    case LocalAssembling3D_type::TNSE3D_NLGAL: // nonlinear
+    {
+      std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+             = s.massMatrix_.get_blocks_uniquely();
+      switch(nstype)
+      {
+        case 1: case 2:
+          blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
+          sqMatrices.resize(1);
+          sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+          break;
+        case 3: case 4:
+          switch(disctype)
+          {
+            case GALERKIN:
+            case SUPG:
+              sqMatrices.resize(3);
+              blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
+              sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+              sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+              sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+              break;
+            case SMAGORINSKY:
+            case VMS_PROJECTION:
+            case SMAGORINSKY_COARSE:
+            case RESIDUAL_VMS:
+            //case SUPG:
+              sqMatrices.resize(9);
+              sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+              sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+              sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+              sqMatrices[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+              sqMatrices[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+              sqMatrices[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+              sqMatrices[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+              sqMatrices[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+              sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+              // rectangular matrices for vms projection 
+              if(disctype==VMS_PROJECTION)
+              {
+                rectMatrices.resize(3);
+                rectMatrices[0]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
+                rectMatrices[1]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
+                rectMatrices[2]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
+              }
+              break;
+          }
+          break;
+      } // switch over NSTYPE
+      break; // nonlinear
+    }//LocalAssembling3D_type::TNSE3D_NLGAL:
+    case LocalAssembling3D_type::TNSE3D_Rhs:
+    {
+      // no matrices to be assembled
+      sqMatrices.resize(0);
+      rectMatrices.resize(0);
+      // right hand side 
+      rhs_array.resize(3);
+      rhs_array[0]= s.rhs_.block(0);
+      rhs_array[1]= s.rhs_.block(1);
+      rhs_array[2]= s.rhs_.block(2);
+
+      if(nstype == 14) // TODO remove the case 4: no need the pressure block 
+      {
+        rhs_array.resize(4);
+        rhs_array[3]=s.rhs_.block(3);
+      }
+      s.rhs_.reset();
+      break;
+    } //LocalAssembling3D_type::TNSE3D_Rhs:
+    case LocalAssembling3D_type::TNSE3D_SUPG_Extra:
+    {
+      if(TDatabase::ParamDB->DISCTYPE == SUPG)
+      {
+        sqMatrices.resize(4);
+        sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());      
+        sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+        sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+        std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+            = s.massMatrix_.get_blocks_uniquely();
+        sqMatrices[3]=reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+      }
+      else
+      {
+        sqMatrices.resize(18);
+        sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+        sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+        sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+        sqMatrices[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+        sqMatrices[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+        sqMatrices[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+        sqMatrices[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+        sqMatrices[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+        sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+        std::vector<std::shared_ptr<FEMatrix>> m_kblocks
+               = s.MatrixK.get_blocks_uniquely();
+        sqMatrices[9] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(0).get());
+        sqMatrices[10] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(1).get());
+        sqMatrices[11] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(2).get());
+        sqMatrices[12] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(4).get());
+        sqMatrices[13] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(5).get());
+        sqMatrices[14] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(6).get());
+        sqMatrices[15] =reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(8).get());
+        sqMatrices[16]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(9).get());
+        sqMatrices[17]=reinterpret_cast<TSquareMatrix3D*>(m_kblocks.at(10).get());
+      }
+      rectMatrices.resize(3);
+      rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); 
+      rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+      rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(11).get());  
+      
+      rhs_array.resize(3);
+      rhs_array[0] = old_rhs_w_old_sol.block(0);
+      rhs_array[1] = old_rhs_w_old_sol.block(1);
+      rhs_array[2] = old_rhs_w_old_sol.block(2);
+      old_rhs_w_old_sol.reset();
+      break;
+    } // LocalAssembling3D_type::TNSE3D_SUPG_Extra:
+  }
+  // reset matrices
+  for(auto mat : sqMatrices)
+    mat->reset();
+  for(auto remat : rectMatrices)
+    remat->reset();
+}
+
+void Time_NSE3D::assemble_for_supg()
+{
+  for(System_per_grid& s : this->systems_)
+  {
+    call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_SUPG_Extra);
+   
+    // scale the BT transposed blocks with the current time step
+    const std::vector<std::vector<size_t>> 
+       cell_positions = {{0,3}, {1,3}, {2,3}};
+    s.matrix_.scale_blocks(TDatabase::TimeDB->TIMESTEPLENGTH, cell_positions);
+  }
+}

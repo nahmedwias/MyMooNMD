@@ -23,6 +23,7 @@
 #include <MainUtilities.h>
 #include <ParFECommunicator3D.h>
 #include <ParameterDatabase.h>
+#include <Example_NSE3D.h>
 
 #include <mpi.h>
 #include <string>
@@ -57,6 +58,10 @@ int main(int argc, char* argv[])
   db.add("geo_file", "Default_UnitCube_Hexa", "", 
          {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
   // default construct a domain object
+  // example database is not necessary for mumps_wrapper test
+  // but it's included due to some examples are used to 
+  // partition the domain
+  db.merge(Example_NSE3D::default_example_database());
   TDomain domain(db);
 
 

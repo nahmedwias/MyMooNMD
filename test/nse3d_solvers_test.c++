@@ -319,6 +319,7 @@ int main(int argc, char* argv[])
     db.add("boundary_file", "Default_UnitCube", "");
     db.add("geo_file", "Default_UnitCube_Hexa", "", 
 	   {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
+    db.merge(Example_NSE3D::default_example_database());
     TDomain domain_hex(db);
 
     // Intial refinement and grabbing of grids for multigrid.
@@ -333,7 +334,6 @@ int main(int argc, char* argv[])
     #endif
         );
 
-    db.merge(Example_NSE3D::default_example_database());
 
     if(std::string(argv[1]) == std::string("cell_vanka_jacobi"))
     {//the cell vanka case - test only on Q2/P1-disc element (MPI parallelized & disc press)

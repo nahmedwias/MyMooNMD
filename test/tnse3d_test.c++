@@ -306,6 +306,7 @@ int main(int argc, char* argv[])
   db.merge(Example3D::default_example_database());
   db["problem_type"].set<size_t>(6);
   db["nonlinloop_slowfactor"]=1.;
+  // db.add("example", (size_t) 0, "", (size_t) 0, (size_t) 1);
   db.add("boundary_file", "Default_UnitCube", "");
   db.add("geo_file", "Default_UnitCube_Hexa", "", 
          {"Default_UnitCube_Hexa","Default_UnitCube_Tetra"});
@@ -318,7 +319,8 @@ int main(int argc, char* argv[])
 
   set_solver_globals(std::string(argv[1]), db);
   double tol = get_tolerance(std::string(argv[1]));
-  std::array<std::array<double, int(4)>,3> errors;
+  std::array<std::array<double, int(4)>,3> errors;  
+  db.merge(Example_TimeNSE3D::default_example_database());
 
   //=======================================================================
   //============= PROGRAM 1 : HEXAHEDRA GRID ==============================
@@ -342,7 +344,6 @@ int main(int argc, char* argv[])
         , maxSubDomainPerDof
 #endif
        );
-
     //=============================================================================
     // examples ... (0 to 5)
     db["example"] = 0;
@@ -359,6 +360,17 @@ int main(int argc, char* argv[])
                  std::string(argv[1]),0, errors);
       check(db, grid_collections, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
+      
+      // test for SUPG method
+      TDatabase::ParamDB->DISCTYPE = 2;
+      timediscretizationtype = 1;
+      TDatabase::ParamDB->DELTA0 = 0.25;
+      TDatabase::ParamDB->DELTA1 = 10.;
+
+      check(db, grid_collections, 12, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      TDatabase::ParamDB->DISCTYPE = 1;
+      timediscretizationtype = 2;
 //
 //      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
