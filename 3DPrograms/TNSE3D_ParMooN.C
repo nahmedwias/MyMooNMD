@@ -13,6 +13,7 @@
 #include <Chrono.h>
 #include <TetGenMeshLoader.h>
 #include <Output3D.h>
+#include <ChannelFlowRoutines.h>
 
 #include <sys/stat.h>
 
@@ -71,6 +72,11 @@ int main(int argc, char* argv[])
   // Choose and construct example.
   Example_TimeNSE3D example(parmoon_db);
 
+  // set parameters for particular examples
+  if(parmoon_db["example"].is(7))
+  {
+    ChannelTau180::setParameters(parmoon_db);
+  }
   // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
   // =====================================================================
@@ -108,10 +114,15 @@ int main(int argc, char* argv[])
        , maxSubDomainPerDof
 #endif       
     );
-  TCollection* coll = gridCollections.front();
-  TOutput3D output(0,0,0,0,std::addressof(domain),coll);
-  
-  output.WriteVtk("mesh.vtk");
+  //TODO: move this also to the Domain class
+  if(parmoon_db["example"].is(7))
+  {
+    for(auto coll : gridCollections)
+    {
+      ChannelTau180::setRefineDesc(coll);
+      ChannelTau180::setPeriodicFaceJoints(coll);
+    }
+  }  
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
   // set some parameters for time stepping
@@ -123,17 +134,29 @@ int main(int argc, char* argv[])
   Time_NSE3D tnse3d(gridCollections, parmoon_db, example);
 #endif
   
+  if(parmoon_db["example"].is(7))
+  {
+    ChannelTau180::GetCoordinatesOfDof(tnse3d);
+  }
+  
   tnse3d.assemble_initial_time();
   
   double end_time = TDatabase::TimeDB->ENDTIME;
   tnse3d.current_step_ = 0;
+  int image = 0;
+  
+  tnse3d.output(tnse3d.current_step_,image);
 
   int n_substeps = GetN_SubSteps();
 
-  int image = 0;
-
   timer.restart_and_print("setting up spaces, matrices and initial assembling");
-  TDatabase::TimeDB->CURRENTTIME = 0.0;  
+  TDatabase::TimeDB->CURRENTTIME = 0.0;
+  if(parmoon_db["example"].is(7))
+  {
+    ChannelTau180::set_up_memory();
+    TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
+    ChannelTau180::computeMeanVelocity(tnse3d);
+  }
   //======================================================================
   // time iteration
   //======================================================================
@@ -190,7 +213,7 @@ int main(int argc, char* argv[])
 
         tnse3d.solve();
 
-        if(tnse3d.imex_scheme(1))
+	if(tnse3d.imex_scheme(1))
           continue;
 
         tnse3d.assemble_nonlinear_term();
@@ -207,6 +230,20 @@ int main(int argc, char* argv[])
         std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
       tnse3d.output(tnse3d.current_step_,image);
+      
+      if(parmoon_db["example"].is(7))
+      {
+        if (TDatabase::TimeDB->CURRENTTIME>=TDatabase::TimeDB->T0)
+        {
+          if (TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION == 0)
+          {
+            TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
+            TDatabase::TimeDB->T0 = TDatabase::TimeDB->CURRENTTIME;
+          }
+        }
+        ChannelTau180::computeMeanVelocity(tnse3d);
+      }
+      
       timer_timeit.print_total_time(
         "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
     } // end of subtime loop
