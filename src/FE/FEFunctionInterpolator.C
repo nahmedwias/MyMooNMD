@@ -211,6 +211,10 @@ TFEFunction2D FEFunctionInterpolator::interpolate(
     }
     catch(std::runtime_error &e)
     {
+      // TODO Whenever an exception is caught here, that is a sign, that
+      // the space this thing should interpolate from did change. One could think
+      // about printing a warning and resetting the cheat_sheet instead of
+      // ending the program here
       Output::print("Caught an exception calling interpolation.Interpolate(&original_funct, cheat_sheet_.get())");
       Output::print(e.what());
       exit(-1);
