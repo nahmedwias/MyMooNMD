@@ -55,6 +55,7 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
 {
   stiff_matrix = BlockFEMatrix::CD2D(fe_space);
   mass_matrix = BlockFEMatrix::CD2D(fe_space);
+  //leave the interpolators as is
 }
 
 
@@ -637,7 +638,14 @@ void Time_CD2D::modify_and_call_assembling_routine(
 
   // set up an interpolator object  (ptr will be shared later)
   const TFESpace2D* into_space = &s.fe_space;
-  FEFunctionInterpolator interpolator(into_space);
+  if(!s.velocity_interpolator_)
+  {//if not done so yet, set up the interpolator for the velocity
+    s.velocity_interpolator_ = std::make_shared<FEFunctionInterpolator>(into_space);
+  }
+  if(!s.brush_interpolator_)
+  {//if not done so yet, set up the interpolator for the velocity
+    s.brush_interpolator_ = std::make_shared<FEFunctionInterpolator>(into_space);
+  }
 
   // length of the values array of the interpolated velo must equal length of the
   // concentration fe function
@@ -651,11 +659,17 @@ void Time_CD2D::modify_and_call_assembling_routine(
   TFEFunction2D* rough_velo_x = velocity_field->GetComponent(0);
   TFEFunction2D* rough_velo_y = velocity_field->GetComponent(1);
 
-  TFEFunction2D interpolated_velo_x =
-      interpolator.interpolate(*rough_velo_x, entries_velo_x);
 
-  TFEFunction2D interpolated_velo_y =
-      interpolator.interpolate(*rough_velo_y, entries_velo_y);
+
+  TFEFunction2D interpolated_velo_x =
+        s.velocity_interpolator_->interpolate(*rough_velo_x, entries_velo_x, true);
+
+    TFEFunction2D interpolated_velo_y =
+        s.velocity_interpolator_->interpolate(*rough_velo_y, entries_velo_y, true);
+
+  std::shared_ptr<FEInterpolationCheatSheet> brush_interpolator_;
+
+
 
   delete rough_velo_x; // call to GetComponent dynamically created fe functs
   delete rough_velo_y;
@@ -663,7 +677,7 @@ void Time_CD2D::modify_and_call_assembling_routine(
   //step 2 - interpolate sources and sinks
   std::vector<double> entries_source_and_sinks(length_interpolated, 0.0);
   TFEFunction2D interpolated_sources_and_sinks =
-      interpolator.interpolate(*sources_and_sinks, entries_source_and_sinks);
+      s.brush_interpolator_->interpolate(*sources_and_sinks, entries_source_and_sinks,true); //FIXME Store a brush_interpolator_!!!
 
   //CB DEBUG
   // This is good value for money debug code - it prints out the interpolated
@@ -736,7 +750,10 @@ void Time_CD2D::modify_and_call_assembling_routine(
 
   // set up an interpolator object  (ptr will be shared later)
   const TFESpace2D* into_space = &s.fe_space;
-  FEFunctionInterpolator interpolator(into_space);
+  if(!s.velocity_interpolator_)
+  {//if not done so yet, set up the interpolator for the velocity
+    s.velocity_interpolator_ = std::make_shared<FEFunctionInterpolator>(into_space);
+  }
 
   // length of the values array of the interpolated velo must equal length of the
   // concentration fe function
@@ -751,10 +768,10 @@ void Time_CD2D::modify_and_call_assembling_routine(
   TFEFunction2D* rough_velo_y = velocity_field->GetComponent(1);
 
   TFEFunction2D interpolated_velo_x =
-      interpolator.interpolate(*rough_velo_x, entries_velo_x);
+      s.velocity_interpolator_->interpolate(*rough_velo_x, entries_velo_x,true);
 
   TFEFunction2D interpolated_velo_y =
-      interpolator.interpolate(*rough_velo_y, entries_velo_y);
+      s.velocity_interpolator_->interpolate(*rough_velo_y, entries_velo_y,true);
 
   delete rough_velo_x; // call to GetComponent dynamically created fe functs
   delete rough_velo_y;

@@ -24,8 +24,10 @@
 
 #include <vector>
 #include <deque>
+#include <memory>
 
-class LocalAssembling2D; //forward declaration
+class LocalAssembling2D; //forward declarations
+class FEFunctionInterpolator;
 
 class Time_CD2D
 {
@@ -52,6 +54,10 @@ class Time_CD2D
       BlockVector old_Au;
       /** @brief Finite element function */
       TFEFunction2D fe_function;
+
+      //Store interpolators which are reused in all time steps.
+      std::shared_ptr<FEFunctionInterpolator> velocity_interpolator_;
+      std::shared_ptr<FEFunctionInterpolator> brush_interpolator_;
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
