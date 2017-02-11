@@ -24,6 +24,41 @@
 #include <vector>
 #include <FESpace.h>
 
+// Experimental Macro to avoid double code.
+#ifdef __2D__
+#define TFESpaceXD TFESpace2D
+#elif __3D__
+#define TFESpaceXD TFESpace3D
+#endif
+/// TODO Comment!
+class FEInterpolationCheatSheet{
+
+  public:
+    /// Constructor. Needs both old and new space
+    FEInterpolationCheatSheet(
+        const TFESpaceXD* old_fe_space, const TFESpaceXD* new_fe_space);
+
+    int get_cheat(int new_cell, int new_point) const
+    {
+      return cheat_sheet.at(new_cell).at(new_point);
+    }
+
+    size_t get_n_points_to_cell(int cell) const
+    {
+      return cheat_sheet.at(cell).size();
+    }
+
+    size_t get_n_cells() const
+    {
+      return cheat_sheet.size();
+    }
+
+  private:
+    /// This is the data. TODO Comment!
+    std::vector<std::vector<int>> cheat_sheet;
+};
+#undef TFESpaceXD
+
 class FEFunctionInterpolator{
   public:
     /**
@@ -31,7 +66,7 @@ class FEFunctionInterpolator{
      * space the interpolator is going to project into.
      * @param fe_space
      */
-    FEFunctionInterpolator(const TFESpace* fe_space);
+    FEFunctionInterpolator(const TFESpace* into_space);
 
     /**
      * Project a given TFEFunction onto our space and return a reference to
@@ -67,7 +102,8 @@ class FEFunctionInterpolator{
      */
     TFEFunction2D interpolate(
         const TFEFunction2D& original_funct,
-        std::vector<double>& values_memory ) const;
+        std::vector<double>& values_memory,
+        bool use_cheat_sheet) const;
 
     //TFEFunction3D& interpolate(
     //  const TFEFunction3D& original_funct,
@@ -113,6 +149,9 @@ class FEFunctionInterpolator{
 
     //! The dimension of the stored space to project into.
     size_t dimension_;
+
+
+    mutable std::shared_ptr<FEInterpolationCheatSheet> cheat_sheet_;
 
     /**
      * Use this as a developmental tool to see, if we can maintain the 1D/2D/3D

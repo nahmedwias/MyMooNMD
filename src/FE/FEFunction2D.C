@@ -17,6 +17,7 @@
 #include <BoundEdge.h>
 #include <FEDatabase2D.h>
 #include <FEFunction2D.h>
+#include <FEFunctionInterpolator.h> //CB In fact I do not like this mutual include.
 #include <string.h>
 #include <AllRefTrans.h>
 #include <NodalFunctional2D.h>
@@ -1436,7 +1437,8 @@ void TFEFunction2D::ReadSol(char *BaseName)
 
 
 /** interpolate the old mesh fe function values to the new fe function */
-void TFEFunction2D::Interpolate(const TFEFunction2D *OldFeFunction)
+void TFEFunction2D::Interpolate(const TFEFunction2D *OldFeFunction,
+                                const FEInterpolationCheatSheet* cheat_sheet)
 {
   int i,j, N_Cells, N_Edges = 0;
   int N_DOFs, N_LocalDOFs;
@@ -1470,6 +1472,14 @@ void TFEFunction2D::Interpolate(const TFEFunction2D *OldFeFunction)
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
   N_DOFs = FESpace2D->GetN_DegreesOfFreedom();
+
+  if(cheat_sheet)
+  {
+    if(N_Cells != (int) cheat_sheet->get_n_cells())
+    {
+      throw std::runtime_error("Cheat sheet does not have the right number of cells.");
+    }
+  }
 
   
   IntIndex = new int[N_DOFs];
@@ -1543,9 +1553,29 @@ void TFEFunction2D::Interpolate(const TFEFunction2D *OldFeFunction)
     TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
     TFEDatabase2D::GetOrigFromRef(RefTrans, N_Points, xi, eta, X, Y, AbsDetjk);
 
+    if(cheat_sheet)
+    {//here is a very good plae to check whether the cheat sheet has at least
+     //the right number of entries
+      if(N_Points != (int) cheat_sheet->get_n_points_to_cell(i))
+      {
+        Output::print(N_Points);
+        Output::print(cheat_sheet->get_n_points_to_cell(i));
+        throw std::runtime_error("Cheat sheet has wrong number of points in one cell!");
+      }
+    }
+
     for(j=0;j<N_Points;j++)
     {
-      OldFeFunction->FindGradient(X[j], Y[j], values);
+      if(cheat_sheet)
+      {//find fct value and dervtvs, but give a hint from the cheat sheet.
+        int cheat = cheat_sheet->get_cheat(i,j);
+        OldFeFunction->FindGradientLocal(
+            OldFeFunction->GetFESpace2D()->GetCollection()->GetCell(cheat), cheat, X[j], Y[j], values);
+      }
+      else
+      {
+        OldFeFunction->FindGradient(X[j], Y[j], values);
+      }
       PointValues[j] = values[0]; 
     }
 

@@ -20,8 +20,8 @@
 
 class TFEFunction2D;
 class TAuxParam2D;
+class FEInterpolationCheatSheet;
 #include <FESpace2D.h>
-//#include <AuxParam2D.h>
 
 /** a function from a finite element space */
 class TFEFunction2D
@@ -108,7 +108,8 @@ class TFEFunction2D
     * Note that this is rather slow, because no further information is 
     * required. The function 'OldFeFunction' could even live on a larger domain.
     */
-    void Interpolate(const TFEFunction2D *F);
+    void Interpolate(const TFEFunction2D *F,
+                     const FEInterpolationCheatSheet* cheat_sheet = nullptr);
     
     /**
      * @brief project this functions into the space L20 (having zero mean value)
