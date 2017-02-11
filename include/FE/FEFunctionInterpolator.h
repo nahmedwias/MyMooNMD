@@ -54,7 +54,10 @@ class FEInterpolationCheatSheet{
     }
 
   private:
-    /// This is the data. TODO Comment!
+    /// This is the data.
+    /// FIXME This should be changed in such a way as that it can hold
+    /// multiple cells per interpolation point - the following calls which use
+    /// a cheat sheet must then be changed accordingly.
     std::vector<std::vector<int>> cheat_sheet;
 };
 #undef TFESpaceXD
