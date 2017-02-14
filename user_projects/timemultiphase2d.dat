@@ -5,7 +5,7 @@
 ## to. In general ParMooN produces text output on the console as well 
 ## as in this file. For this to properly work, you should call 
 ## `Output::set_outfile(db["outfile"]);` in your main program. 
-outfile: multiphase_output37.out
+outfile: multiphase_output.out
 
 ## This is a file describing the boundary of the computational 
 ## domain. You probably want to adjust this to be the path to some file 
@@ -22,7 +22,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #geo_file: ../../mesh/flow_around_cylinder.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 7
+refinement_n_initial_steps: 6
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -66,7 +66,7 @@ verbosity: 3   [ 1, 5 ]
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-example: 32  [ -1, 100 ]
+example: 22  [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -96,7 +96,7 @@ output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tn
 nonlinloop_maxit: 20   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
-nonlinloop_epsilon: 1e-13   [ 0, 1 ]
+nonlinloop_epsilon: 1e-8   [ 0, 1 ]
 
 ## Damping factor 'w' for the nonlinear iteration. The solution of 
 ## the k-th iterate will be scaled by 'w'. Then The previous solution, 
@@ -239,31 +239,24 @@ diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
 RE_NR:	1.
 
-# constant convection in x- and y-direction
-user_parameter1: 2
-user_parameter2: 2
-
-dimensional_nse: false   { true, false }
-coupling_nse_cd: false   { true, false }
+dimensional_nse: true   { true, false }
+coupling_nse_cd: true   { true, false }
 coupling_cd_nse: false  { true, false }
-solve_cd: false   { true, false }	
+solve_cd: true   { true, false }	
 time_discretization: 2	{ 0, 1, 2, 3, 4 }
 
 ###### PARAMETERS FROM THE OLD DATABASE
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 
-ANSATZ_ORDER: 2
-
-Par_P0: 0
-Par_P3: 1
+ANSATZ_ORDER: 1
 
 DISCTYPE:  1
 NSTYPE: 3
 LAPLACETYPE: 1
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
-ALGEBRAIC_FLUX_CORRECTION: 0
+ALGEBRAIC_FLUX_CORRECTION: 2
 
 # parameter for time discretization
 # 
@@ -273,10 +266,15 @@ ALGEBRAIC_FLUX_CORRECTION: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 1.
-TIMESTEPLENGTH: 0.01
+ENDTIME: 2.0
+TIMESTEPLENGTH: 0.1
 
-
+# other parameters
 P1: 1
 P2: 1
 P3: 1
+Par_P0: 0
+Par_P3: 1
+# constant convection in x- and y-direction
+user_parameter1: 2
+user_parameter2: 2
