@@ -399,7 +399,6 @@ void Time_NSE2D::assemble_system()
   }
   Output::print<5>("Assembled the system matrix which will be passed to the ", 
                    "solver");
-
 }
 /**************************************************************************** */
 
@@ -483,18 +482,27 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   
   if ( (((sqrt(residual)<=limit)||(it_counter==Max_It))) )
    {
-     Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
-                   " Reduction : ",  sqrt(residual)/initial_residual);
-     // descale the matrices, since only the diagonal A block will 
-     // be reassembled in the next time step
-     this->deScaleMatrices();   
      for(System_per_grid& s: this->systems)
      {
        s.solution_m2 = s.solution_m1;
        s.solution_m1 = s.solution;
      }
      this->old_solution = s.solution;
-     return true;
+     
+     Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
+                   " Reduction : ",  sqrt(residual)/initial_residual);
+     
+     if(imex_scheme(0) && it_counter >0)
+     {
+       return true;
+     }
+     else
+     {
+       // descale the matrices, since only the diagonal A block will 
+       // be reassembled in the next time step
+       this->deScaleMatrices();
+       return true;
+     }     
    }
    else
      return false;  
@@ -820,20 +828,18 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s,
         case 3:
         case 4:
         case 14:
-          sqMat.resize(4);
+          sqMat.resize(2);
           sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-          sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-          sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-          sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+          sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
           reMat.resize(0);
           // right hand side
           rhs_array.resize(0);
           if(TDatabase::ParamDB->DISCTYPE==SUPG)
           {
-            sqMat.resize(5);
+            sqMat.resize(3);
             std::vector<std::shared_ptr<FEMatrix>> mass_blocks
                = s.Mass_Matrix.get_blocks_uniquely();
-            sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+            sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
             
             rhs_array.resize(2);            
             rhs_array[0] = s.rhs.block(0);
@@ -918,13 +924,6 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
     functions[0] = extr_u.GetComponent(0);
     functions[1] = extr_u.GetComponent(1);
     functions[2] = &s.p;
-  }
-
-  if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
-  {
-    functions.resize(5);
-    functions[3] = s.u_m1.GetComponent(0);
-    functions[4] = s.u_m1.GetComponent(1);
   }
 }
 /**************************************************************************** */
@@ -1055,8 +1054,7 @@ void Time_NSE2D::assemble_rhs_supg()
     bdf_assemble_rhs();
     for(System_per_grid& s : this->systems)
       s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, {{0,2}, {1,2}});
-  }if(TDatabase::TimeDB->CURRENTTIME == 0.005){
-  this->systems.front().matrix.get_blocks().at(1)->Print("A");exit(0);}
+  }
 }
 
 /**************************************************************************** */

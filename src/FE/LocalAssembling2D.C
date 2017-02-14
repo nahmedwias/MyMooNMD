@@ -2870,10 +2870,10 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
           // 0: velocity space, 1: pressure space
           this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
           // total number of matrices 
-          this->N_Matrices = 7;
+          this->N_Matrices = 5;
           // in the lower right corner
-          this->RowSpace =    { 0, 0, 0, 0, 0,  0, 0};
-          this->ColumnSpace = { 0, 0, 0, 0, 0,  1, 1};
+          this->RowSpace =    { 0, 0, 0,  0, 0};
+          this->ColumnSpace = { 0, 0, 0,  1, 1};
           this->N_Rhs = 2; // only stabilization terms 
           this->RhsSpace = {0, 0 };
           this->AssembleParam = TimeNSType4NLSUPG;

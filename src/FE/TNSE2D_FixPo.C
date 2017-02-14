@@ -6241,14 +6241,12 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
                        double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11 = LocMatrices[0];
-  double **MatrixA12 = LocMatrices[1];
-  double **MatrixA21 = LocMatrices[2];
-  double **MatrixA22 = LocMatrices[3];
+  double **MatrixA22 = LocMatrices[1];
   // mass matrix and the weighted mass matrix
-  double **MatrixM = LocMatrices[4];
+  double **MatrixM = LocMatrices[2];
   
-  double **MatrixB1T = LocMatrices[5];
-  double **MatrixB2T = LocMatrices[6];
+  double **MatrixB1T = LocMatrices[3];
+  double **MatrixB2T = LocMatrices[4];
   
   double *Rhs1 = LocRhs[0];
   double *Rhs2 = LocRhs[1];
@@ -6311,12 +6309,7 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
       // grad div contribution
       Matrix11Row[j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
       Matrix22Row[j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
-      
-      val = tau_c * test10*ansatz01;
-      MatrixA12[i][j] += Mult * val; // A12 block
-      
-      val = tau_c * test01*ansatz10;
-      MatrixA21[i][j] += Mult * val; // A21 block 
+
       // weighted mass matrix
       val = ansatz00 * (test00 + ugrad);
       MatrixM[i][j] += Mult * val;      
