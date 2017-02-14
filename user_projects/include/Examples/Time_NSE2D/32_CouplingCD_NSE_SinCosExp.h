@@ -222,8 +222,8 @@ void LinCoeffs(int n_points, double *X, double *Y,
   double *coeff, x, y;
   double nu=1/TDatabase::ParamDB->RE_NR;
   double eps1, eps2, eps3;// fac;
-//  double t=TDatabase::TimeDB->CURRENTTIME;
-//  double pi = 3.14159265358979;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+  double pi = 3.14159265358979;
 
   double val1[4];   // U1-Exact function and its derivatives
   double val2[4];   // U2-Exact function and its derivatives
@@ -250,8 +250,14 @@ void LinCoeffs(int n_points, double *X, double *Y,
         eps1 = vmin+(vmax-vmin)*x*x*(1-x)*y*y*(1-y)*721/16;
         // if eps = visco1, use these right hand side values
         coeff[0] = nu*eps1;
-        coeff[1] = nu*val1[3]*(1-eps1);
-        coeff[2] = nu*val2[3]*(-1+eps1);
+        //coeff[1] = nu*val1[3]*(1-eps1);
+        //coeff[2] = nu*val2[3]*(-1+eps1);
+        coeff[1] = nu*val1[3]*(1-eps1)-2*nu*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
+            ((721/8)*(vmax-vmin)*(1-x)*x*(1-y)*y*y-(721/16)*(vmax-vmin)*x*x*(1-y)*y*y)*
+            sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+        coeff[2] = nu*val1[3]*(-1+eps1)+2*nu*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
+            ((721/8)*(vmax-vmin)*(1-x)*x*x*(1-y)*y-(721/16)*(vmax-vmin)*x*x*(1-x)*y*y)*
+            sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
         break;
       case 2:
         eps2 = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)));
