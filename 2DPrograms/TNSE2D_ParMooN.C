@@ -4,6 +4,7 @@
 #include <Example_TimeNSE2D.h>
 #include <Time_NSE2D.h>
 #include <TimeDiscRout.h>
+#include <LoopInfo.h>
 
 using namespace std;
 
@@ -47,6 +48,7 @@ int main(int argc, char* argv[])
   Example_TimeNSE2D example( parmoon_db );
   // create an object of Time_NSE2D class
   Time_NSE2D tnse2d(Domain, parmoon_db, example);
+  tnse2d.current_step_ = 0;
   // assemble everything at the start time
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary 
@@ -54,21 +56,30 @@ int main(int argc, char* argv[])
   
   double end_time = TDatabase::TimeDB->ENDTIME; 
   int step = 0;
+  
   int n_substeps = GetN_SubSteps();
-    
+  if(TDatabase::TimeDB->TIME_DISC == 5)
+  {
+    n_substeps = 1;
+  }
+  //tnse2d.output(step);
+  LoopInfo loop_info("nonlinear");
+  loop_info.print_time_every_step = true;
+  loop_info.verbosity_threshold=1;  
   // ======================================================================
   // time iteration
   // ======================================================================
    while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
    {
      step++;
+     tnse2d.current_step_++;
      // Output::print("mem before: ", GetMemory());
      TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
      for(int j=0; j < n_substeps; ++j)
      {
        // setting the time disc parameters
        SetTimeDiscParameters(1);
-       if(step==1)
+       if(tnse2d.current_step_==1)
        {
          Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
          Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
@@ -77,22 +88,58 @@ int main(int argc, char* argv[])
        }
        double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
        TDatabase::TimeDB->CURRENTTIME += tau;
-       
        Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-       // prepare the right hand side vector
-       // only needed once per time step
-       tnse2d.assemble_rhs();
+       if(TDatabase::TimeDB->TIME_DISC == 5)
+       {
+         // PERFORM: first step using the BDF1 method
+         if(tnse2d.current_step_==1)
+         {
+           tnse2d.perform_bdf1_first();
+           continue;
+         }
+         else
+         {
+           if(TDatabase::ParamDB->DISCTYPE != SUPG)
+           {
+             tnse2d.bdf_assemble_rhs();
+           }
+           else
+           {
+             if(tnse2d.current_step_==2)
+               Output::print("Due to the nonlinearity, the right hand side is assembled ",
+                             "together with the nonlinear assembling");
+           }
+         }
+       }
+       else
+       {
+         // prepare the right hand side vector
+         // only needed once per time step
+         tnse2d.assemble_rhs();
+       }       
        // assemble the nonlinear matrices
        tnse2d.assemble_nonlinear_term();
        // prepare the matrices for defect computations
        // and solvers
-       tnse2d.assemble_system();
+       tnse2d.assemble_system();       
        // nonlinear iteration
        for(unsigned int k=0;; k++)
        {
          if(tnse2d.stopIte(k))
+         //{
+        //   Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
+         //  Output::print<1>("Residuals :", tnse2d.getResiduals());           
            break;
+         //}
+         //else
+         //{
+          // Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
+          // Output::print<1>("Residuals :", tnse2d.getResiduals());           
+         //}           
          tnse2d.solve();
+
+         if(tnse2d.imex_scheme(1))
+          continue;
          // assemble the nonlinear matrices 
          tnse2d.assemble_nonlinear_term();
          // prepare the matrices for next nonlinear iteration
@@ -100,7 +147,7 @@ int main(int argc, char* argv[])
        }
        // post processing: error computations
        // and solutions for visualization
-       tnse2d.output(step);
+       tnse2d.output(tnse2d.current_step_);
      }
    }
   // ======================================================================

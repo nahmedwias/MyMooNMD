@@ -837,8 +837,9 @@ ParameterDatabase ParameterDatabase::default_time_database()
          "1 -> Backward Euler, "
          "2 -> Crank-Nicholson, "
          "3 -> Fractional step."
-         "4 -> Extrapolated Crank_Nicholson (or IMplicit-EXplicit, IMEX)",
-         (size_t)0 , (size_t)4 );
+         "4 -> Extrapolated Crank_Nicholson (or IMplicit-EXplicit, IMEX)"
+         "5 -> Backward Difference Formula second order (BDF2)",
+         (size_t)0 , (size_t)5 );
   
   return db;
 }

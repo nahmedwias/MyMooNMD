@@ -6156,14 +6156,9 @@ void TimeNSType4SUPG(double Mult, double *coeff, double *param, double hK,
 
   double test10, test01, test00;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
-  // initially for the test case 
-  double delta0 = TDatabase::ParamDB->DELTA0;
-  double delta1 = TDatabase::ParamDB->DELTA1;
-  double r=2;
-  double delta, tau;
-  delta =  hK*hK/(r*r*(c0+1));
-  delta =  delta0*delta;
-  tau =  delta1 *(1+c0);
+  double tau_m, tau_c;
+  tau_m =  hK*hK*TDatabase::ParamDB->DELTA0;
+  tau_c =  TDatabase::ParamDB->DELTA1;
   
   
   for(int i=0; i<N_U; ++i)
@@ -6172,7 +6167,7 @@ void TimeNSType4SUPG(double Mult, double *coeff, double *param, double hK,
     test01 = Orig1[i];
     test00 = Orig2[i];
     
-    double ugrad = delta * (u1*test10+u2*test01);
+    double ugrad = tau_m * (u1*test10+u2*test01);
     // right hand side 
     // standard terms 
     Rhs1[i] += Mult*(test00+ugrad)*c1;
@@ -6193,13 +6188,13 @@ void TimeNSType4SUPG(double Mult, double *coeff, double *param, double hK,
       // supg contribution
       val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugrad;
       // grad div contribution
-      MatrixA11[i][j] += Mult * (val + tau*test10*ansatz10); // A11 block
-      MatrixA22[i][j] += Mult * (val + tau*test01*ansatz01); // A22 block
+      MatrixA11[i][j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
+      MatrixA22[i][j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
       
-      val = tau * test10*ansatz01;
+      val = tau_c * test10*ansatz01;
       MatrixA12[i][j] += Mult * val; // A12 block
       
-      val = tau * test01*ansatz10;
+      val = tau_c * test01*ansatz10;
       MatrixA21[i][j] += Mult * val; // A21 block 
       
       // weighted mass matrix
@@ -6282,26 +6277,19 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
   double test10, test01, test00;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
   // initially for the test case 
-  double delta0 = TDatabase::ParamDB->DELTA0;
-  double delta1 = TDatabase::ParamDB->DELTA1;
-  double r=2;
+  double tau_m =  TDatabase::ParamDB->DELTA0*hK*hK;  
+  double tau_c = TDatabase::ParamDB->DELTA1;
   
-  double delta =  hK*hK/(r*r*(c0+1));
-  delta =  delta0*delta;
-  
-  double tau =  delta1 *(1+c0);
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   for(int i=0; i<N_U; ++i)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
     test00 = Orig2[i];
     
-    double ugrad = delta * (u1*test10+u2*test01);
+    double ugrad = tau_m * (u1*test10+u2*test01);
     // right hand side 
     Rhs1[i] += Mult*(test00+ugrad)*c1;
     Rhs2[i] += Mult*(test00+ugrad)*c2;
@@ -6321,15 +6309,14 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
       // supg contribution
       val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) )*ugrad;
       // grad div contribution
-      Matrix11Row[j] += Mult * (val + tau*test10*ansatz10); // A11 block
-      Matrix22Row[j] += Mult * (val + tau*test01*ansatz01); // A22 block
+      Matrix11Row[j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
+      Matrix22Row[j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
       
-      val = tau * test10*ansatz01;
-      Matrix12Row[j] += Mult * val; // A12 block
+      val = tau_c * test10*ansatz01;
+      MatrixA12[i][j] += Mult * val; // A12 block
       
-      val = tau * test01*ansatz10;
-      Matrix21Row[j] += Mult * val; // A21 block 
-      
+      val = tau_c * test01*ansatz10;
+      MatrixA21[i][j] += Mult * val; // A21 block 
       // weighted mass matrix
       val = ansatz00 * (test00 + ugrad);
       MatrixM[i][j] += Mult * val;      
@@ -6404,31 +6391,9 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
 
   double test10, test01, test00;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
-  // initially for the test case 
-  double delta0 = TDatabase::ParamDB->DELTA0;
-  double delta1 = TDatabase::ParamDB->DELTA1;
-  double r=2;
-  double maxu = fabs(u1);
-  if (fabs(u2)>maxu)
-    maxu = fabs(u2);
-  maxu = sqrt(u1*u1+u2*u2);
   
-  double delta, tau;
-  if (TDatabase::ParamDB->NSTYPE > 10)
-  {
-    delta = r*r*r*r*c0/(hK*hK) + r*maxu/hK;
-    delta =  delta0/delta;
-
-    tau = r*r*c0 + hK*maxu/r;
-    tau *= delta1;
-  }
-  else
-  {
-    delta =  hK*hK/(r*r*(c0+1));
-    delta =  delta0*delta;
-
-    tau =  delta1 *(1+c0);
-  }
+  double tau_m =  hK*hK*TDatabase::ParamDB->DELTA0;
+  double tau_c =  TDatabase::ParamDB->DELTA1;
   
   for(int i=0; i<N_U; ++i)
   {
@@ -6436,7 +6401,7 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
     test01 = Orig1[i];
     test00 = Orig2[i];
     
-    double ugrad = delta * (u1*test10+u2*test01);
+    double ugrad = tau_m * (u1*test10+u2*test01);
     // right hand side 
     // standard terms 
     Rhs1[i] += Mult*test00*c1;
@@ -6460,13 +6425,13 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
       // supg contribution
       val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugrad;
       // grad div contribution
-      MatrixA11[i][j] += Mult * (val + tau*test10*ansatz10); // A11 block
-      MatrixA22[i][j] += Mult * (val + tau*test01*ansatz01); // A22 block
+      MatrixA11[i][j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
+      MatrixA22[i][j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
       
-      val = tau * test10*ansatz01;
+      val = tau_c * test10*ansatz01;
       MatrixA12[i][j] += Mult * val; // A12 block
       
-      val = tau * test01*ansatz10;
+      val = tau_c * test01*ansatz10;
       MatrixA21[i][j] += Mult * val; // A21 block 
       
       // weighted mass matrix
@@ -6501,7 +6466,7 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
     test10 = Orig4[i];
     test01 = Orig5[i];
     
-    Rhs3[i] -= Mult*delta*(c1*test10+c2*test01);
+    Rhs3[i] -= Mult*tau_m*(c1*test10+c2*test01);
     
     // velocity-pressure block
     for(int j=0;j<N_U;j++)
@@ -6515,20 +6480,20 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
 
       // divergence constraint
       double val = -test00*ansatz10;
-      val +=  delta * (-c0*(ansatz20+ansatz02)+ (u1*ansatz10+u2*ansatz01) ) * test10;
+      val +=  tau_m * (-c0*(ansatz20+ansatz02)+ (u1*ansatz10+u2*ansatz01) ) * test10;
       if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
-        val += 1./time_step*(delta * ansatz00 * test10);
+        val += 1./time_step*(tau_m * ansatz00 * test10);
       else
-        val += delta * ansatz00 * test10;
+        val += tau_m * ansatz00 * test10;
       MatrixB1[i][j] += Mult*val;
 
       val = -test00*ansatz01;
-      val +=  delta * (-c0*(ansatz20+ansatz02)+ (u1*ansatz10+u2*ansatz01) ) * test01;
+      val +=  tau_m * (-c0*(ansatz20+ansatz02)+ (u1*ansatz10+u2*ansatz01) ) * test01;
       // time derivative coupled with pressure term 
       if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
-        val += 1./time_step * (delta * ansatz00 * test01);
+        val += 1./time_step * (tau_m * ansatz00 * test01);
       else
-        val += delta * ansatz00 * test01;
+        val += tau_m * ansatz00 * test01;
       MatrixB2[i][j] += Mult*val;      
     }
     // pressure-pressure block
@@ -6538,7 +6503,7 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
       ansatz10=Orig4[j];
       ansatz01=Orig5[j];
       
-      double val = delta * (ansatz10*test10+ansatz01*test01);
+      double val = tau_m * (ansatz10*test10+ansatz01*test01);
       MatrixC[i][j] += Mult * val;
     }
   }
@@ -6713,7 +6678,7 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
 void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK, 
                double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, 
                double** LocRhs)
-{
+{  
   double *Rhs1 = LocRhs[0];
   double *Rhs2 = LocRhs[1];
   
@@ -6728,16 +6693,7 @@ void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK,
   double u1=param[0];
   double u2=param[1];
 
-  // initially for the test case 
-  double delta0 = TDatabase::ParamDB->DELTA0;
-  double delta1 = TDatabase::ParamDB->DELTA1;
-  double r=2.;
-  double maxu = fabs(u1);
-  if (fabs(u2)>maxu)
-    maxu = fabs(u2);
-  maxu = sqrt(u1*u1+u2*u2);
-  
-  double delta =  delta0*hK*hK/(r*r*(c0+1));
+  double tau_m =  TDatabase::ParamDB->DELTA0*hK*hK;
   
   double test10, test01, test00;  
   int N_U = N_BaseFuncts[0];
@@ -6747,11 +6703,11 @@ void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK,
     test01 = Orig1[i];
     test00 = Orig2[i];
     
-    double ugrad = delta * (u1*test10+u2*test01);
+    double ugradv = tau_m * (u1*test10+u2*test01);
     // right hand side 
     // standard terms 
-    Rhs1[i] += Mult*c1*(test00 + ugrad);
-    Rhs2[i] += Mult*c2*(test00 + ugrad);
+    Rhs1[i] += Mult*c1*(test00 + ugradv);
+    Rhs2[i] += Mult*c2*(test00 + ugradv);    
   }
 }
 
