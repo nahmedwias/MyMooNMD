@@ -39,8 +39,12 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 // value of boundary condition
 void BoundValue(int i, double Param, double &value)
 {
-  if (i == 2)
-    value = 1;  // top
+  double rho_min = TDatabase::ParamDB->P2; // this is the density of the bottom fluid
+
+  if (i == 0)
+    value = rho_min;  // bottom
+  else if (i == 2)
+    value = 3*rho_min; // top = heavy fluid with ratio 3
   else
     value = 0;
 }
@@ -48,10 +52,13 @@ void BoundValue(int i, double Param, double &value)
 // initial conditon
 void InitialCondition(double x,  double y, double *values)
 {
-  if ( y >= 0.5)
-    values[0] = 1;
-  else
-    values[0] = 0;
+  double rho_min = TDatabase::ParamDB->P2; // this is the density of the bottom fluid
+  double pi = 3.14159265358979;
+  double d = 1.0; // this is the width of the rectangular domain
+  double interface0 = -0.1*d*(cos(2*pi*(x)/d)); // this is the initial interface, as given in (Fraigneau et al,01)
+
+  // Initial fluids density field
+  values[0] = rho_min*(2+tanh((y-interface0)/(0.01*d)));
 }
 
 void BilinearCoeffs(int n_points, double *X, double *Y,
@@ -74,8 +81,8 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
     u_y = parameters[i][1];
 
     coeff[0] = 0;
-    coeff[1] = u_x;
-    coeff[2] = u_y;
+    coeff[1] = u_x;//0;
+    coeff[2] = u_y;//0;
     coeff[3] = 0;
 
     coeff[4] = 0;
@@ -85,9 +92,12 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
 // exact solution
 void Initial(double x, double y, double *values)
 {
-  if ( x <= 0.3 && y <= 0.7)
-    values[0] = 1;
-  else
-    values[0] =0;
+  double rho_min = TDatabase::ParamDB->P2; // this is the density of the bottom fluid
+  double pi = 3.14159265358979;
+  double d = 1.; // this is the width of the rectangular domain
+  double interface0 = -0.1*d*cos(2*pi*x/d); // this is the initial interface, as given in (Fraigneau et al,01)
+
+  // Initial fluids density field
+  values[0] = rho_min*(2+tanh((y-interface0)/(0.01*d)));
 }
 

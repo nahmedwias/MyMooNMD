@@ -162,7 +162,8 @@ int main(int argc, char* argv[])
   }
   else  // for the case rho = constant, and only viscosity depends on TCD2D
   {
-    rho_vector = rho1;  // comment this out if needed
+    mu_vector = mu1; // uncomment in case mu must stay constant
+//    rho_vector = rho1;  // uncomment in case rho must stay constant
   }
 
   /** @brief Finite Element function for density and viscosity field */
@@ -206,6 +207,7 @@ int main(int argc, char* argv[])
 
   stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
   stopwatch.reset();
+  stopwatch.start();
 
 
 
@@ -296,12 +298,13 @@ int main(int argc, char* argv[])
 
         /** @brief Finite Element function for density field */
         BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-        new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
+//        new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
         TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),new_rho_vector,(char*) "q");
         rho_field = new_rho_field;
 
         /** @brief Finite Element function for dynamic viscosity field */
         BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
+        new_mu_vector = 1; // for the case mu=constant and only density depends on TCD2D
         TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),new_mu_vector,(char*) "s");
         mu_field = new_mu_field;
       }

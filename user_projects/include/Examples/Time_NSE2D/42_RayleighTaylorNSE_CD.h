@@ -1,5 +1,5 @@
 // Navier-Stokes problem, Rayleigh-Taylor instability
-// Goes with example 7_Test_CD2D to reproduce Rayleigh-Taylor instability
+// Goes with example 42_TCD2D to reproduce Rayleigh-Taylor instability
 // 2 fluids upon one another. The heavier is above. Only gravity.
 // initial velocity =0 everyhwere.
 // See paper Fraigneau et al (2001)
@@ -67,10 +67,10 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  if (i == 0 || i ==2 )
+//  if (i == 0 || i ==2 )
     cond = DIRICHLET;   // top and bottom
-  else
-    cond = NEUMANN;     // right and left
+//  else
+//    cond = NEUMANN;     // right and left
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
