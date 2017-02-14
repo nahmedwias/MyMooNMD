@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
          // prepare the right hand side vector
          // only needed once per time step
          tnse2d.assemble_rhs();
-       }       
+       }
        // assemble the nonlinear matrices
        tnse2d.assemble_nonlinear_term();
        // prepare the matrices for defect computations
@@ -126,16 +126,8 @@ int main(int argc, char* argv[])
        for(unsigned int k=0;; k++)
        {
          if(tnse2d.stopIte(k))
-         //{
-        //   Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
-         //  Output::print<1>("Residuals :", tnse2d.getResiduals());           
            break;
-         //}
-         //else
-         //{
-          // Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
-          // Output::print<1>("Residuals :", tnse2d.getResiduals());           
-         //}           
+         
          tnse2d.solve();
 
          if(tnse2d.imex_scheme(1))
