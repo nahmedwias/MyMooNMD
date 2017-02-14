@@ -1034,7 +1034,7 @@ void TDomain::Init(const char *PRM, const char *GEO)
       Output::print("** Note: using .GEO and .PRM files is only allowed with the         **");
       Output::print("** purpose of converting .GEO -> .mesh                              **");      
       Output::print("** **************************************************************** **");
-      exit(1);
+      // exit(1);
     }      
     else 
     {

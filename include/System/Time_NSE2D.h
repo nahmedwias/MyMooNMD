@@ -28,7 +28,7 @@
 
 #include <ParameterDatabase.h>
 #include <PostProcessing2D.h>
-
+#include <Residuals.h>
 #include <LocalAssembling2D.h>
 
 #include <vector>
@@ -94,8 +94,9 @@ class Time_NSE2D
        * that passes as an FEFunction to the local assembling
        * routines
        */
-      BlockVector Old_Sol;
-      TFEVectFunct2D u_old;
+      BlockVector solution_m1;
+      BlockVector solution_m2;
+      TFEVectFunct2D u_m1;
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeNSE2D& example, TCollection& coll, 
@@ -137,6 +138,8 @@ class Time_NSE2D
      */
     BlockVector defect;
 
+    ///@brief The norms of residuals from up to 10 previous iterations
+    FixedSizeQueue<10, Residuals> oldResiduals;
     /**
     * @brief store the square root of the residual from previous iteration
     */
@@ -240,6 +243,15 @@ class Time_NSE2D
     
     /** @brief solve the system */
     void solve();
+    
+    /** 
+     * @brief Compute the defect Ax-b and store its norm in NSE2D::oldResiduals
+     * 
+     * where A is the current matrix, x is the current solution and b is the 
+     * right hand side. Call this function after assembling the nonlinear
+     * matrix with the current solution. 
+     */
+    void computeNormsOfResiduals();
 
     /** @brief check if one of the stopping criteria is fulfilled
      * 
@@ -254,7 +266,49 @@ class Time_NSE2D
      * compute errors and write solution
      */
     void output(int m);
+
+    /** @brief this returns the number of the current time step 
+     * In the main programe:: initialize this parameter to 0 before
+     * the time iterations
+     * This will also serves for the semi-implicit schemes.
+     * For example, in the BDF2 scheme where in the first step
+     * backward Euler time stepping is used to get the solution
+     * at the second time step to be sure that one have at least 
+     * 2 initial solutions
+     */
+    int current_step_;
+    /** @brief check if the semi-implicit scheme is used
+     */
+    bool imex_scheme(bool print_info);
+
+    /** @brief perform the first step of BDF2 method
+     * In the first step, one have to use the BDF1 (backwar Euler)
+     * method to compute the solution at first time step which
+     * together with the u0 used in the next time step
+     *
+    */
+    void perform_bdf1_first();
+    /** @brief prepare the right-hand side for the BDF-schemes*/
+    void bdf_assemble_rhs();
     
+    /** @brief SUPG case only; 
+     * preparing and assembling of the right hand side
+     * this function serves to assemble the right-hand 
+     * side for the SUPG method 
+     */
+    void assemble_rhs_supg();
+    
+    /** @brief modify matrices according to the Slip type boundary 
+     * conditions 
+     * If the mass matrix (also BT's are independent of solution ) 
+     * is independent of solution then it only needs to modify only
+     * once:
+     * NOTE: mass matrix and BT's are solution dependent for 
+     * residual-VMS, and SUPG case.
+     * Nonlinear matrices needs to be modify within each
+     * time step and also within non-linear iteration
+     */
+    void modify_slip_bc(bool modify_all);
     // getters and setters
     /*const BlockMatrixNSE2D & get_matrix() const
     { return this->systems.front().matrix; }*/
@@ -263,12 +317,19 @@ class Time_NSE2D
 
     const TFEVectFunct2D & get_velocity() const
     { return this->systems.front().u; }
+    
+    const TFEVectFunct2D & get_velocity_old() const 
+    { return this->systems.front().u_m1;}
     // try not to use this as it is not const
     TFEFunction2D *get_velocity_component(int i)
     { return (i==0) ? this->systems.front().u.GetComponent(0)
                     : this->systems.front().u.GetComponent(1); }
     const TFEFunction2D & get_pressure() const
     { return this->systems.front().p; }
+    
+    TFEFunction2D & get_pressure() 
+    { return this->systems.front().p; }
+        
     const TFESpace2D & get_velocity_space() const
     { return this->systems.front().velocity_space; }
     const TFESpace2D & get_pressure_space() const
