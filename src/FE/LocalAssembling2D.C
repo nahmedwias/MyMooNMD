@@ -2803,14 +2803,26 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
   { 
     ErrThrow("SUPG method is only supported for NSTYPE 4 and 14 ", TDatabase::ParamDB->NSTYPE);
   }
-  // common
-  this->N_Parameters = 2;
-  this->N_ParamFct = 1;
-  this->ParameterFct = {TimeNSParams2};
-  this->N_FEValues = 2;
-  this->BeginParameter = { 0 };
-  this->FEValue_MultiIndex = { D00, D00 };
-  this->FEValue_FctIndex = { 0, 1 };    
+  if(TDatabase::ParamDB->NSTYPE == 4)
+  {
+    this->N_Parameters = 3;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParams2};
+    this->N_FEValues = 3;
+    this->BeginParameter = { 0 };
+    this->FEValue_MultiIndex = { D00, D00, D00 };
+    this->FEValue_FctIndex = { 0, 1, 2 };    
+  }
+  if(TDatabase::ParamDB->NSTYPE == 14)
+  {
+    this->N_Parameters = 4;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParamsSUPG};
+    this->N_FEValues = 4;
+    this->BeginParameter = { 0 };
+    this->FEValue_MultiIndex = { D00, D00, D00, D00 };
+    this->FEValue_FctIndex = { 0, 1, 2, 3 };
+  }
   
   switch(type)
   {
@@ -2889,10 +2901,10 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
           // 0: velocity space, 1: pressure space
           this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
           // total number of matrices 
-          this->N_Matrices = 9;
+          this->N_Matrices = 10;
           // in the lower right corner
-          this->RowSpace =    { 0, 0, 0, 0, 0, 1, 1, 0, 0};
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->RowSpace =    { 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
           this->N_Rhs = 3; // only stabilization terms 
           this->RhsSpace = {0, 0, 1 };
           this->AssembleParam = TimeNSType14NLSUPG;
@@ -2928,7 +2940,7 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
           this->ColumnSpace = { };
           this->N_Rhs = 3 ;
           this->RhsSpace = {0, 0, 1};
-          this->AssembleParam =TimeNSRHSSUPG; 
+          this->AssembleParam =TimeNSType14RHSSUPG; 
           this->Manipulate = NULL;
         break;
       }

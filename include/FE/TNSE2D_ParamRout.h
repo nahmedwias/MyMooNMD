@@ -19,20 +19,12 @@ MultiIndex2D TimeNSAllDerivatives[3] = { D00, D10, D01 };
 // ========================================================================
 // parameters: u1old, u2old
 // ========================================================================
-
 void TimeNSParams2(double *in, double *out);
 
-int TimeNSN_FESpaces2 = 1;
-int TimeNSN_Fct2 = 2;
-int TimeNSN_ParamFct2 = 1;
-int TimeNSN_FEValues2 = 2;
-int TimeNSN_Params2 = 2;
-int TimeNSFEFctIndex2[2] = { 0, 1 };
-MultiIndex2D TimeNSFEMultiIndex2[2] = { D00, D00 };
-ParamFct *TimeNSFct2[1] = { TimeNSParams2 };
-int TimeNSBeginParam2[1] = { 0 };
-
-
+// ========================================================================
+// parameters: u1old, u2old, u1_previous time, u2_previous time
+// ========================================================================
+void TimeNSParamsSUPG(double *in, double *out);
 
 // ========================================================================
 // Rosenbrock Methods
