@@ -22,7 +22,7 @@ boundary_file: ../mesh/UnitSquare.PRM
 geo_file: ../mesh/UnitSquare.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 5
+refinement_n_initial_steps: 6
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -93,7 +93,7 @@ output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output, no_stab2}
 
 ## The maximum number of iterations to perform in a non-linear loop. 
-nonlinloop_maxit: 20   [ 0, 1000 ]
+nonlinloop_maxit: 1   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
 nonlinloop_epsilon: 1e-8   [ 0, 1 ]
@@ -249,14 +249,14 @@ time_discretization: 2	{ 0, 1, 2, 3, 4 }
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 
-ANSATZ_ORDER: 2
+ANSATZ_ORDER: 1
 
 DISCTYPE:  1
 NSTYPE: 3
 LAPLACETYPE: 1
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
-ALGEBRAIC_FLUX_CORRECTION: 0
+ALGEBRAIC_FLUX_CORRECTION: 2
 
 # parameter for time discretization
 # 
@@ -266,7 +266,7 @@ ALGEBRAIC_FLUX_CORRECTION: 0
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 10.
+ENDTIME: 1.
 TIMESTEPLENGTH: 0.01
 
 # other parameters

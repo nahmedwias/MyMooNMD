@@ -896,7 +896,7 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
     const TFESpace2D * pres_space = &s.pressure_space;
     // variables which are same for all nstypes
     size_t n_fe_spaces = 2;
-    const TFESpace2D *fespmat[2] = {velo_space, pres_space};
+    const TFESpace2D *fespmat[4] = {velo_space, pres_space,nullptr,nullptr};
 
     size_t n_square_matrices = 6; //
     TSquareMatrix2D *sqMatrices[6]{nullptr}; // maximum number of square matrices
@@ -951,34 +951,38 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
       else  // do the interpolation
       {
         Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                        "scalar field are not the same ==> Starting interpolation... this may take some time");
+                        "scalar field are not the same ==> Adapting the assemble method.");
 
-        // set up an interpolator object  (ptr will be shared later)
-        // we interpolate into velo_space
-        FEFunctionInterpolator interpolator(velo_space);
-
-        // length of the values array of the interpolated rho
-        // velo must equal length of the velocity components
-        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
-
-        std::vector<double> temporary_rho(length_interpolated, 0.0);
-        std::vector<double> temporary_mu(length_interpolated, 0.0);
-
-        this->entries_rho_scalar_field = temporary_rho;
-        this->entries_mu_scalar_field = temporary_mu;
-
-        TFEFunction2D interpolated_rho_field =
-            interpolator.interpolate(*rho_field,
-                                     this->entries_rho_scalar_field);
-
-        TFEFunction2D interpolated_mu_field =
-            interpolator.interpolate(*mu_field,
-                                     this->entries_mu_scalar_field);
-
-        //fill up the new fe function array
-        fe_functions[3] = &interpolated_rho_field;
-        fe_functions[4] = &interpolated_mu_field;
-
+        fe_functions[3] = rho_field;
+        fe_functions[4] = mu_field;
+        fespmat[2] = rho_field->GetFESpace2D();
+        fespmat[3] = mu_field->GetFESpace2D();
+        n_fe_spaces = 4;
+//        // set up an interpolator object  (ptr will be shared later)
+//        // we interpolate into velo_space
+//        FEFunctionInterpolator interpolator(velo_space);
+//
+//        // length of the values array of the interpolated rho
+//        // velo must equal length of the velocity components
+//        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
+//
+//        std::vector<double> temporary_rho(length_interpolated, 0.0);
+//        std::vector<double> temporary_mu(length_interpolated, 0.0);
+//
+//        this->entries_rho_scalar_field = temporary_rho;
+//        this->entries_mu_scalar_field = temporary_mu;
+//
+//        TFEFunction2D interpolated_rho_field =
+//            interpolator.interpolate(*rho_field,
+//                                     this->entries_rho_scalar_field);
+//
+//        TFEFunction2D interpolated_mu_field =
+//            interpolator.interpolate(*mu_field,
+//                                     this->entries_mu_scalar_field);
+//
+//        //fill up the new fe function array
+//        fe_functions[3] = &interpolated_rho_field;
+//        fe_functions[4] = &interpolated_mu_field;
       }
 
       // step 2 - set all the 'parameter'-related values in la accordingly
@@ -1151,7 +1155,7 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
   {
     const TFESpace2D *velocity_space = &s.velocity_space;
     size_t n_fe_spaces = 1;
-    const TFESpace2D *fespmat[1]={velocity_space};
+    const TFESpace2D *fespmat[3]={velocity_space,nullptr,nullptr};
 
     size_t n_square_matrices;
     TSquareMatrix2D* sqMatrices[2]{nullptr};
@@ -1229,34 +1233,38 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
       else  // do the interpolation
       {
         Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                        "scalar field are not the same ==> Starting interpolation... this may take some time");
+                        "scalar field are not the same ==> Adapting the assemble method");
 
-        // set up an interpolator object  (ptr will be shared later)
-        // we interpolate into velo_space
-        FEFunctionInterpolator interpolator(velocity_space);
-
-        // length of the values array of the interpolated rho
-        // velo must equal length of the velocity components
-        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
-
-        std::vector<double> temporary_rho(length_interpolated, 0.0);
-        std::vector<double> temporary_mu(length_interpolated, 0.0);
-
-        this->entries_rho_scalar_field = temporary_rho;
-        this->entries_mu_scalar_field = temporary_mu;
-
-        TFEFunction2D interpolated_rho_field =
-            interpolator.interpolate(*rho_field,
-                                     this->entries_rho_scalar_field);
-
-        TFEFunction2D interpolated_mu_field =
-            interpolator.interpolate(*mu_field,
-                                     this->entries_mu_scalar_field);
-
-        //fill up the new fe function array
-        fe_functions[3] = &interpolated_rho_field;
-        fe_functions[4] = &interpolated_mu_field;
-
+        fe_functions[3] = rho_field;
+        fe_functions[4] = mu_field;
+        fespmat[1] = rho_field->GetFESpace2D();
+        fespmat[2] = mu_field->GetFESpace2D();
+        n_fe_spaces = 3;
+//        // set up an interpolator object  (ptr will be shared later)
+//        // we interpolate into velo_space
+//        FEFunctionInterpolator interpolator(velocity_space);
+//
+//        // length of the values array of the interpolated rho
+//        // velo must equal length of the velocity components
+//        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
+//
+//        std::vector<double> temporary_rho(length_interpolated, 0.0);
+//        std::vector<double> temporary_mu(length_interpolated, 0.0);
+//
+//        this->entries_rho_scalar_field = temporary_rho;
+//        this->entries_mu_scalar_field = temporary_mu;
+//
+//        TFEFunction2D interpolated_rho_field =
+//            interpolator.interpolate(*rho_field,
+//                                     this->entries_rho_scalar_field);
+//
+//        TFEFunction2D interpolated_mu_field =
+//            interpolator.interpolate(*mu_field,
+//                                     this->entries_mu_scalar_field);
+//
+//        //fill up the new fe function array
+//        fe_functions[3] = &interpolated_rho_field;
+//        fe_functions[4] = &interpolated_mu_field;
       }
 
       // step 2 - set all the 'parameter'-related values in la accordingly
@@ -1332,13 +1340,34 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
 void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
                                          TFEFunction2D* mu_field)
 {
+  System_per_grid& s = this->systems.front();
+
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
   const double theta2 = TDatabase::TimeDB->THETA2;
   const double theta3 = TDatabase::TimeDB->THETA3;
   const double theta4 = TDatabase::TimeDB->THETA4;
 
-  System_per_grid& s = this->systems.front();
-  const TFESpace2D * velo_space = &s.velocity_space;
+
+  int N_Rhs = 3;
+  const TFESpace2D * v_space = &this->get_velocity_space();
+  const TFESpace2D * p_space = &this->get_pressure_space();
+
+  double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
+
+  size_t nfespace = 1;
+  const TFESpace2D *fespmat[3] = {v_space, nullptr,nullptr};
+  const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
+
+  BoundCondFunct2D * boundary_conditions[3] = {
+                                               v_space->GetBoundCondition(), v_space->GetBoundCondition(),
+                                               p_space->GetBoundCondition() };
+
+  std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+  non_const_bound_values[0] = this->example.get_bd(0);
+  non_const_bound_values[1] = this->example.get_bd(1);
+  non_const_bound_values[2] = this->example.get_bd(2);
+
+
   // reset the right hand side
   s.rhs.reset();
   // assembling of the right hand side
@@ -1377,34 +1406,38 @@ void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
     else  // do the interpolation
     {
       Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                      "scalar field are not the same ==> Starting interpolation... this may take some time");
+                      "scalar field are not the same ==> adapting assemble method");
 
-      // set up an interpolator object  (ptr will be shared later)
-      // we interpolate into velo_space
-      FEFunctionInterpolator interpolator(velo_space);
-
-      // length of the values array of the interpolated rho
-      // velo must equal length of the velocity components
-      size_t length_interpolated = s.u.GetComponent(0)->GetLength();
-
-      std::vector<double> temporary_rho(length_interpolated, 0.0);
-      std::vector<double> temporary_mu(length_interpolated, 0.0);
-
-      this->entries_rho_scalar_field = temporary_rho;
-      this->entries_mu_scalar_field = temporary_mu;
-
-      TFEFunction2D interpolated_rho_field =
-          interpolator.interpolate(*rho_field,
-                                   this->entries_rho_scalar_field);
-
-      TFEFunction2D interpolated_mu_field =
-          interpolator.interpolate(*mu_field,
-                                   this->entries_mu_scalar_field);
-
-      //fill up the new fe function array
-      fe_functions[3] = &interpolated_rho_field;
-      fe_functions[4] = &interpolated_mu_field;
-
+      fe_functions[3] = rho_field;
+      fe_functions[4] = mu_field;
+      nfespace = 3;
+      fespmat[1] = rho_field->GetFESpace2D();
+      fespmat[2] = mu_field->GetFESpace2D();
+//      // set up an interpolator object  (ptr will be shared later)
+//      // we interpolate into velo_space
+//      FEFunctionInterpolator interpolator(velo_space);
+//
+//      // length of the values array of the interpolated rho
+//      // velo must equal length of the velocity components
+//      size_t length_interpolated = s.u.GetComponent(0)->GetLength();
+//
+//      std::vector<double> temporary_rho(length_interpolated, 0.0);
+//      std::vector<double> temporary_mu(length_interpolated, 0.0);
+//
+//      this->entries_rho_scalar_field = temporary_rho;
+//      this->entries_mu_scalar_field = temporary_mu;
+//
+//      TFEFunction2D interpolated_rho_field =
+//          interpolator.interpolate(*rho_field,
+//                                   this->entries_rho_scalar_field);
+//
+//      TFEFunction2D interpolated_mu_field =
+//          interpolator.interpolate(*mu_field,
+//                                   this->entries_mu_scalar_field);
+//
+//      //fill up the new fe function array
+//      fe_functions[3] = &interpolated_rho_field;
+//      fe_functions[4] = &interpolated_mu_field;
     }
 
     // step 2 - set all the 'parameter'-related values in la accordingly
@@ -1422,25 +1455,7 @@ void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
     //...this should do the trick
   }
 
-  int N_Rhs = 3;
-  const TFESpace2D * v_space = &this->get_velocity_space();
-  const TFESpace2D * p_space = &this->get_pressure_space();
-
-  double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
-
-  const TFESpace2D *fespmat[2] = {v_space, p_space};
-  const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
-
-  BoundCondFunct2D * boundary_conditions[3] = {
-                                               v_space->GetBoundCondition(), v_space->GetBoundCondition(),
-                                               p_space->GetBoundCondition() };
-
-  std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-  non_const_bound_values[0] = this->example.get_bd(0);
-  non_const_bound_values[1] = this->example.get_bd(1);
-  non_const_bound_values[2] = this->example.get_bd(2);
-
-  Assemble2D(1, fespmat, 0, nullptr,
+  Assemble2D(nfespace, fespmat, 0, nullptr,
              0, nullptr, N_Rhs, RHSs, fesprhs,
              boundary_conditions, non_const_bound_values.data(), la);
 
@@ -1513,6 +1528,9 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
   {
     const TFESpace2D *velocity_space = &s.velocity_space;
 
+    size_t n_fe_spaces = 1;
+    const TFESpace2D *fespmat[2]={velocity_space,nullptr};
+
     BoundCondFunct2D * boundary_conditions[1]
                                            = {velocity_space->GetBoundCondition() };
 
@@ -1554,26 +1572,29 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
       else  // do the interpolation
       {
         Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                        "scalar field are not the same ==> Starting interpolation... this may take some time");
+                        "scalar field are not the same ==> adapting assemble method");
 
-        // set up an interpolator object  (ptr will be shared later)
-        // we interpolate into velo_space
-        FEFunctionInterpolator interpolator(velocity_space);
-
-        // length of the values array of the interpolated rho
-        // velo must equal length of the velocity components
-        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
-
-        std::vector<double> temporary_rho(length_interpolated, 0.0);
-
-        this->entries_rho_scalar_field = temporary_rho;
-
-        TFEFunction2D interpolated_rho_field =
-            interpolator.interpolate(*rho_field,
-                                     this->entries_rho_scalar_field);
-
-        //fill up the new fe function array
-        fe_functions[3] = &interpolated_rho_field;
+        fe_functions[3] = rho_field;
+        n_fe_spaces = 2;
+        fespmat[1] = rho_field->GetFESpace2D();
+//        // set up an interpolator object  (ptr will be shared later)
+//        // we interpolate into velo_space
+//        FEFunctionInterpolator interpolator(velocity_space);
+//
+//        // length of the values array of the interpolated rho
+//        // velo must equal length of the velocity components
+//        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
+//
+//        std::vector<double> temporary_rho(length_interpolated, 0.0);
+//
+//        this->entries_rho_scalar_field = temporary_rho;
+//
+//        TFEFunction2D interpolated_rho_field =
+//            interpolator.interpolate(*rho_field,
+//                                     this->entries_rho_scalar_field);
+//
+//        //fill up the new fe function array
+//        fe_functions[3] = &interpolated_rho_field;
       }
 
       // step 2 - set all the 'parameter'-related values in la_mass accordingly
@@ -1615,9 +1636,6 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
                       "won't give correct results...");
       ErrThrow("Impossible to use this method, see warning message...");
     }
-
-    size_t n_fe_spaces = 1;
-    const TFESpace2D *fespmat[1]={velocity_space};
 
     size_t n_square_matrices = 1;
     TSquareMatrix2D* sqMatrices[1];
