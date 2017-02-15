@@ -93,77 +93,58 @@ double TurbulentViscosity(double delta, double* gradU, double* u, double* uConv)
 }
 
 /******************************************************************************/
-//
-// computation of SUPG parameter following 
-// Bazilevs, Calo, Cottrell, Hughes, Reali, Scovazzi
-//
+// Stabilization parameters for residual-based VMS methods
+// of Bazilevs et al. (2007)
+// references go to Ahmed et. al, Arch. Computat. Methods Eng. 24, 115 - 164 (2017)
 /******************************************************************************/
-
-void SUPG_Param2D(double Mult, double* u, double* coeff, double* params)
+void stabilization_parameters(double Mult, double* u, double* coeff, double* params)
 {
-    double x0, x1, x2, y0, y1, y2, g11, g12, g22;
-    double d11, d12, d21, d22, nu, tau_c, tau_m;
-    double u1, u2, rec_detjk;
-    double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;    
-    double C_I = TDatabase::ParamDB->DELTA0;
+  double x0 = TDatabase::ParamDB->INTERNAL_VERTEX_X[0];
+  double y0 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[0];
+  double x1 = TDatabase::ParamDB->INTERNAL_VERTEX_X[1];
+  double y1 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[1];
+  double x2 = TDatabase::ParamDB->INTERNAL_VERTEX_X[2];
+  double y2 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[2];
+  
+  double d11, d12, d21, d22;
+  double rec_detjk = 1./coeff[19];
+  // triangle
+  if (TDatabase::ParamDB->INTERNAL_VERTEX_X[3]== -4711)
+  {
+    d11 = (y2-y1) * rec_detjk;  //dxi/dx
+    d12 = (x1-x2) * rec_detjk;  //dxi/dy
+    d21 = (y0-y1) * rec_detjk;  //deta/dx
+    d22 = (x1-x0) * rec_detjk;  //deta/dy
+  }
+  else
+  {
+    // quadrilateral
+    d11 = (y2-y1) * 0.5 * rec_detjk;  //dxi/dx
+    d12 = (x1-x2) * 0.5 * rec_detjk;  //dxi/dy
+    d21 = (y0-y1) * 0.5 * rec_detjk;  //deta/dx
+    d22 = (x1-x0) * 0.5 * rec_detjk;  //deta/dy
+  }
 
-    nu = coeff[0];        
-    rec_detjk = coeff[19];
-    rec_detjk = 1/rec_detjk;
-    u1 = u[0];
-    u2 = u[1];
-    
-    x0 = TDatabase::ParamDB->INTERNAL_VERTEX_X[0];
-    y0 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[0];
-    x1 = TDatabase::ParamDB->INTERNAL_VERTEX_X[1];
-    y1 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[1];
-    x2 = TDatabase::ParamDB->INTERNAL_VERTEX_X[2];
-    y2 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[2];
-    
-    // triangle
-    if (TDatabase::ParamDB->INTERNAL_VERTEX_X[3]== -4711)
-    {
-	d11 = (y2-y1) * rec_detjk;  //dxi/dx
-	d12 = (x1-x2) * rec_detjk;  //dxi/dy
-	d21 = (y0-y1) * rec_detjk;  //deta/dx
-	d22 = (x1-x0) * rec_detjk;  //deta/dy
-    }
-    else
-    {
-	// quadrilateral
-	d11 = (y2-y1) * 0.5 * rec_detjk;  //dxi/dx
-	d12 = (x1-x2) * 0.5 * rec_detjk;  //dxi/dy
-	d21 = (y0-y1) * 0.5 * rec_detjk;  //deta/dx
-	d22 = (x1-x0) * 0.5 * rec_detjk;  //deta/dy
-    }
-	
-    g11 = d11*d11 + d21*d21;
-    g12 = d11*d12 + d21*d22;
-    g22 = d12*d12 + d22*d22;
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;    
+  double cinv = TDatabase::ParamDB->DELTA0;
+  double tau_m, tau_c;
+  
+  double g11 = d11*d11 + d21*d21;
+  double g12 = d11*d12 + d21*d22;
+  double g22 = d12*d12 + d22*d22;
 
-    tau_m = g11*g11 + 2*g12*g12 + g22*g22; // G:G
-    tau_m *= C_I*nu*nu;
-    tau_m +=  4/(time_step*time_step); 
-    tau_m += u1 * (g11*u1+g12*u2) + u2*(g12*u1+g22*u2);
-    tau_m = 1/sqrt(tau_m); // this is the parameter for the momentum equation
+  tau_m = g11*g11 + 2.*g12*g12 + g22*g22; // G:G
+  tau_m *= cinv*coeff[0]*coeff[0]; 
+  tau_m +=  4./(dt*dt); 
+  tau_m += u[0] * (g11*u[0]+g12*u[1]) + u[1]*(g12*u[0]+g22*u[1]);
+  tau_m = 1./sqrt(tau_m); 
  
-    tau_c = (d11+d21)*(d11+d21)+(d12+d22)*(d12+d22);
-    tau_c *= tau_m;
-    tau_c = 1/tau_c;
+  tau_c = (d11+d21)*(d11+d21)+(d12+d22)*(d12+d22);
+  tau_c *= tau_m;
+  tau_c = 1./tau_c;
 
-    params[0] = tau_m;
-    params[1] = tau_c;
-
-/*    delta = (d11*d11+d21*d21)*(d11*d11+d21*d21)+2*(d11*d12+d21*d22)*(d11*d12+d21*d22)+  // G:G
-	(d12*d12+d22*d22)*(d12*d12+d22*d22);
-    delta *= C_I*nu*nu;         
-    delta += 4/(time_step*time_step);  
-    delta += u1*u1*(d11*d11+d21*d21)+2*u1*u2*(d11*d12+d21*d22)+u2*u2*(d12*d12+d22*d22);  // uGu
-    delta = 1/sqrt(delta); // this is the parameter for the momentum equation
-    
-    delta *= ((d11+d21)*(d11+d21)+(d12+d22)*(d12+d22));   // gg
-    delta = 1/delta; // this is the parameter for the mass equation
-*/    
+  params[0] = tau_m;
+  params[1] = tau_c;
 }
 
 
@@ -5529,7 +5510,13 @@ void TimeNSParams2(double *in, double *out)
   out[1] = in[3];                // u2old
 }
 
-
+void TimeNSParamsSUPG(double *in, double *out)
+{
+  out[0] = in[2];                // u1old
+  out[1] = in[3];                // u2old
+  out[2] = in[4];                // u1-previous time
+  out[3] = in[5];                // u2-previous time
+}
 // comment: routine can be replaced by  TimeNSParamsVelo_GradVelo !!!
 void TimeNSParams2RB(double *in, double *out)
 {
@@ -6355,10 +6342,7 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
   // velocity part 
   double *Rhs1 = LocRhs[0];
   double *Rhs2 = LocRhs[1];
-  double *Rhs3 = LocRhs[2]; // pressure part
-  double *Rhs4 = LocRhs[3]; // stabilization part 
-  double *Rhs5 = LocRhs[4]; // stabilization part 
-  
+  double *Rhs3 = LocRhs[2]; // pressure part  
   
   
   double *Orig0 = OrigValues[0]; // u_x
@@ -6381,12 +6365,18 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
 
   double u1=param[0];
   double u2=param[1];
+  
+  double u1_combined_old_time = param[2];
+  double u2_combined_old_time = param[3];
 
   double test10, test01, test00;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
   
-  double tau_m =  hK*hK*TDatabase::ParamDB->DELTA0;
-  double tau_c =  TDatabase::ParamDB->DELTA1;
+  // stabilization parameters
+  double stab_param[2];  
+  stabilization_parameters(Mult, param, coeff, stab_param);
+  double tau_m = stab_param[0];
+  double tau_c = stab_param[1];
   
   for(int i=0; i<N_U; ++i)
   {
@@ -6394,14 +6384,11 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
     test01 = Orig1[i];
     test00 = Orig2[i];
     
-    double ugrad = tau_m * (u1*test10+u2*test01);
+    double ugradv = tau_m * (u1*test10+u2*test01);
     // right hand side 
     // standard terms 
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
-    // stabilization part 
-    Rhs4[i] += Mult*ugrad*c1;
-    Rhs5[i] += Mult*ugrad*c2;
+    Rhs1[i] += Mult*(test00+ugradv)*c1;
+    Rhs2[i] += Mult*(test00+ugradv)*c2;
     // velocity-velocity blocks
     for(int j=0; j<N_U; ++j)
     {
@@ -6416,7 +6403,7 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
       double val  = c0*(test10*ansatz10 + test01*ansatz01) // diffusion term
                      + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
       // supg contribution
-      val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugrad;
+      val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugradv;
       // grad div contribution
       MatrixA11[i][j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
       MatrixA22[i][j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
@@ -6428,7 +6415,7 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
       MatrixA21[i][j] += Mult * val; // A21 block 
       
       // weighted mass matrix
-      val = ansatz00 * (test00 + ugrad);
+      val = ansatz00 * (test00 + ugradv);
       MatrixM[i][j] += Mult * val;      
     }// endfor j<N_U
     
@@ -6440,17 +6427,13 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
       ansatz01 = Orig5[j];
       
       // pressure term
-      double val  = -ansatz00 * test10; // Galerkin term
-      val +=  ansatz10 * ugrad; // SUPG term (grad p, u grad v)
-      MatrixB1T[i][j] += Mult * val;
+      MatrixB1T[i][j] += Mult * (-ansatz00 * test10 + ansatz10 * ugradv);
       
-      val  = -ansatz00 * test01; // Galerkin term
-      val +=  ansatz01 * ugrad; // SUPG term (grad p, u grad v)
-      MatrixB2T[i][j] += Mult*val;
+      MatrixB2T[i][j] += Mult * (-ansatz00 * test01 + ansatz01 * ugradv);
     }
   }
   
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH; // time step length
   // pressure test functions
   for(int i=0; i<N_P; ++i)
   {
@@ -6459,9 +6442,10 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
     test10 = Orig4[i];
     test01 = Orig5[i];
     
-    Rhs3[i] -= Mult*tau_m*(c1*test10+c2*test01);
+    // u*_combined_old_time = (2 * u_{n-1} - 0.5 * u_{n-2} ) / dt
+    Rhs3[i] += Mult*tau_m*((u1_combined_old_time/dt + c1 )*test10 + 
+                           (u2_combined_old_time/dt + c2 )*test01);
     
-    // velocity-pressure block
     for(int j=0;j<N_U;j++)
     {
       // velocity ansatz functions
@@ -6472,22 +6456,17 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
       ansatz02 = Orig7[j];
 
       // divergence constraint
-      double val = -test00*ansatz10;
-      val +=  tau_m * (-c0*(ansatz20+ansatz02)+ (u1*ansatz10+u2*ansatz01) ) * test10;
-      if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
-        val += 1./time_step*(tau_m * ansatz00 * test10);
-      else
-        val += tau_m * ansatz00 * test10;
-      MatrixB1[i][j] += Mult*val;
+      double val = -test00*ansatz10; // galerkin part
+      // supg terms 
+      val -=  tau_m * (ansatz00/dt - c0*(ansatz20+ansatz02) 
+                       + (u1*ansatz10+u2*ansatz01) ) * test10;
+      MatrixB1[i][j] -= Mult*val;
 
       val = -test00*ansatz01;
-      val +=  tau_m * (-c0*(ansatz20+ansatz02)+ (u1*ansatz10+u2*ansatz01) ) * test01;
-      // time derivative coupled with pressure term 
-      if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
-        val += 1./time_step * (tau_m * ansatz00 * test01);
-      else
-        val += tau_m * ansatz00 * test01;
-      MatrixB2[i][j] += Mult*val;      
+      val -=  tau_m * (ansatz00/dt - c0*(ansatz20+ansatz02) 
+                       + (u1*ansatz10+u2*ansatz01) ) * test01;
+
+      MatrixB2[i][j] -= Mult*val;      
     }
     // pressure-pressure block
     for(int j=0; j<N_P; ++j)
@@ -6512,14 +6491,19 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
   double **MatrixA22 = LocMatrices[3];
   // mass matrix and the weighted mass matrix
   double **MatrixM = LocMatrices[4];
+  // pressure pressure block
+  double **MatrixC = LocMatrices[5];
   
-  double **MatrixB1 = LocMatrices[5];
-  double **MatrixB2 = LocMatrices[6];
-  double **MatrixB1T= LocMatrices[7];
-  double **MatrixB2T= LocMatrices[8];
+  double **MatrixB1 = LocMatrices[6];
+  double **MatrixB2 = LocMatrices[7];
+  double **MatrixB1T= LocMatrices[8];
+  double **MatrixB2T= LocMatrices[9];
   
+  // velocity part 
   double *Rhs1 = LocRhs[0];
   double *Rhs2 = LocRhs[1];
+  double *Rhs3 = LocRhs[2]; // pressure part  
+  
   
   double *Orig0 = OrigValues[0]; // u_x
   double *Orig1 = OrigValues[1]; // u_y
@@ -6541,45 +6525,29 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
 
   double u1=param[0];
   double u2=param[1];
+  
+  double u1_combined_old_time = param[2];
+  double u2_combined_old_time = param[3];
 
   double test10, test01, test00;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
-  // initially for the test case 
-  double delta0 = TDatabase::ParamDB->DELTA0;
-  double delta1 = TDatabase::ParamDB->DELTA1;
-  double r=2;
-  double maxu = fabs(u1);
-  if (fabs(u2)>maxu)
-    maxu = fabs(u2);
-  maxu = sqrt(u1*u1+u2*u2);
   
-  double delta, tau;
+  double stab_param[2];  
+  stabilization_parameters(Mult, param, coeff, stab_param);
+  double tau_m = stab_param[0];
+  double tau_c = stab_param[1];
   
-  if(TDatabase::ParamDB->NSTYPE > 10) // equal order interpolation
-  {
-    delta = r*r*r*r*c0/(hK*hK) + r*maxu/hK;
-    delta =  delta0/delta;
-
-    tau = r*r*c0 + hK*maxu/r;
-    tau *= delta1;
-  }
-  else // inf-sup pair of elements
-  {
-    delta =  hK*hK/(r*r*(c0+1));
-    delta =  delta0*delta;
-
-    tau =  delta1 *(1+c0);
-  }
   for(int i=0; i<N_U; ++i)
   {
     test10 = Orig0[i];
     test01 = Orig1[i];
     test00 = Orig2[i];
     
-    double ugrad = delta * (u1*test10+u2*test01);
+    double ugradv = tau_m * (u1*test10+u2*test01);
     // right hand side 
-    Rhs1[i] += Mult*ugrad*c1;
-    Rhs2[i] += Mult*ugrad*c2;
+    // standard terms 
+    Rhs1[i] += Mult*(test00+ugradv)*c1;
+    Rhs2[i] += Mult*(test00+ugradv)*c2;
     // velocity-velocity blocks
     for(int j=0; j<N_U; ++j)
     {
@@ -6594,19 +6562,19 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
       double val  = c0*(test10*ansatz10 + test01*ansatz01) // diffusion term
                      + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
       // supg contribution
-      val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) )*ugrad;
+      val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugradv;
       // grad div contribution
-      MatrixA11[i][j] += Mult * (val + tau*test10*ansatz10); // A11 block
-      MatrixA22[i][j] += Mult * (val + tau*test01*ansatz01); // A22 block
+      MatrixA11[i][j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
+      MatrixA22[i][j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
       
-      val = tau * test10*ansatz01;
+      val = tau_c * test10*ansatz01;
       MatrixA12[i][j] += Mult * val; // A12 block
       
-      val = tau * test01*ansatz10;
+      val = tau_c * test01*ansatz10;
       MatrixA21[i][j] += Mult * val; // A21 block 
       
       // weighted mass matrix
-      val = ansatz00 * (test00 + ugrad);
+      val = ansatz00 * (test00 + ugradv);
       MatrixM[i][j] += Mult * val;      
     }// endfor j<N_U
     
@@ -6618,17 +6586,13 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
       ansatz01 = Orig5[j];
       
       // pressure term
-      double val  = -ansatz00 * test10; // Galerkin term
-      val +=  ansatz10 * ugrad; // SUPG term (grad p, u grad v)
-      MatrixB1T[i][j] += Mult * val;
+      MatrixB1T[i][j] += Mult * (-ansatz00 * test10 + ansatz10 * ugradv);
       
-      val  = -ansatz00 * test01; // Galerkin term
-      val +=  ansatz01 * ugrad; // SUPG term (grad p, u grad v)
-      MatrixB2T[i][j] += Mult*val;
+      MatrixB2T[i][j] += Mult * (-ansatz00 * test01 + ansatz01 * ugradv);
     }
   }
   
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH; // time step length
   // pressure test functions
   for(int i=0; i<N_P; ++i)
   {
@@ -6637,7 +6601,10 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
     test10 = Orig4[i];
     test01 = Orig5[i];
     
-    // velocity-pressure block
+    // u*_combined_old_time = (2 * u_{n-1} - 0.5 * u_{n-2} )
+    Rhs3[i] += Mult*tau_m*((u1_combined_old_time/dt + c1 )*test10 + 
+                           (u2_combined_old_time/dt + c2 )*test01  );
+    
     for(int j=0;j<N_U;j++)
     {
       // velocity ansatz functions
@@ -6648,22 +6615,28 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
       ansatz02 = Orig7[j];
 
       // divergence constraint
-      double val = -test00*ansatz10;
-      val +=  delta * (-c0*(ansatz20+ansatz02)+ (u1*ansatz10+u2*ansatz01) ) * test10;
-      if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
-        val += 1./time_step*(delta * ansatz00 * test10);
-      else
-        val += delta * ansatz00 * test10;
-      MatrixB1[i][j] += Mult*val;
+      // scaling with factor*step_length is done within the main class
+      double val = -test00*ansatz10; // galerkin part
+      // supg terms 
+      val -=  tau_m * (ansatz00/dt - c0*(ansatz20+ansatz02) 
+                       + (u1*ansatz10+u2*ansatz01) ) * test10;
+      MatrixB1[i][j] -= Mult*val;
 
       val = -test00*ansatz01;
-      val +=  delta * (-c0*(ansatz20+ansatz02)+ (u1*ansatz10+u2*ansatz01) ) * test01;
-      // time derivative coupled with pressure term 
-      if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
-        val += 1./time_step * (delta * ansatz00 * test01);
-      else
-        val += delta * ansatz00 * test01;
-      MatrixB2[i][j] += Mult*val;      
+      val -=  tau_m * (ansatz00/dt - c0*(ansatz20+ansatz02) 
+                       + (u1*ansatz10+u2*ansatz01) ) * test01;
+
+      MatrixB2[i][j] -= Mult*val;      
+    }
+    // pressure-pressure block
+    for(int j=0; j<N_P; ++j)
+    {
+      // pressure ansatz
+      ansatz10=Orig4[j];
+      ansatz01=Orig5[j];
+      
+      double val = tau_m * (ansatz10*test10+ansatz01*test01);
+      MatrixC[i][j] += Mult * val;
     }
   }
 }
@@ -6704,7 +6677,7 @@ void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK,
   }
 }
 
-void TimeNSRHSSUPG(double Mult, double* coeff, double* param, double hK, 
+void TimeNSType14RHSSUPG(double Mult, double* coeff, double* param, double hK, 
                double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, 
                double** LocRhs)
 {
@@ -6725,42 +6698,24 @@ void TimeNSRHSSUPG(double Mult, double* coeff, double* param, double hK,
 
   double u1=param[0];
   double u2=param[1];
+  double u1_combined_old_time = param[2];
+  double u2_combined_old_time = param[3];
 
-  // initially for the test case 
-  double delta0 = TDatabase::ParamDB->DELTA0;
-  double delta1 = TDatabase::ParamDB->DELTA1;
-  double r=2.;
-  double maxu = fabs(u1);
-  if (fabs(u2)>maxu)
-    maxu = fabs(u2);
-  maxu = sqrt(u1*u1+u2*u2);
-  
-  double delta, tau;
-  if (TDatabase::ParamDB->NSTYPE > 10)
-  {
-    delta = r*r*r*r*c0/(hK*hK) + r*maxu/hK;
-    delta =  delta0/delta;
-
-    tau = r*r*c0 + hK*maxu/r;
-    tau *= delta1;
-  }
-  else
-  {
-    delta =  hK*hK/(r*r*(c0+1));
-    delta =  delta0*delta;
-
-    tau =  delta1 *(1+c0);
-  }
+  double stab_param[2];  
+  stabilization_parameters(Mult, param, coeff, stab_param);
+  double tau_m = stab_param[0];
+  double tau_c = stab_param[1];
 
   double test10, test01, test00;  
   int N_U = N_BaseFuncts[0];
+ 
   for(int i=0; i<N_U; ++i)
   {
     test10 = Orig0[i];
     test01 = Orig1[i];
     test00 = Orig2[i];
     
-    double ugrad = delta * (u1*test10+u2*test01);
+    double ugrad = tau_m * (u1*test10+u2*test01);
     // right hand side 
     // standard terms 
     Rhs1[i] += Mult*(test00+ugrad)*c1;
@@ -6768,11 +6723,13 @@ void TimeNSRHSSUPG(double Mult, double* coeff, double* param, double hK,
   }
   
   int N_P = N_BaseFuncts[1];
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH; // time step length
   for(int i=0; i<N_P; ++i)
   {
     test10 = Orig3[i];
     test01 = Orig4[i];
-    Rhs3[i] += Mult*delta*(c1*test10+c2*test01);
+    Rhs3[i] += Mult*tau_m*((u1_combined_old_time/dt + c1 )*test10 + 
+                           (u2_combined_old_time/dt + c2 )*test01  );
   }
 }
 // ======================================================================

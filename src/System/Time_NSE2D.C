@@ -206,7 +206,7 @@ void Time_NSE2D::set_parameters()
   }
   if(TDatabase::ParamDB->DISCTYPE == SUPG)
   {
-    if(TDatabase::TimeDB->TIME_DISC !=5)
+    if(TDatabase::TimeDB->TIME_DISC !=5 && TDatabase::TimeDB->TIME_DISC !=1)
     {
       ErrThrow("TIME_DISC: " , TDatabase::TimeDB->TIME_DISC, 
                " does not supported for SUPG method" , 
@@ -368,8 +368,6 @@ void Time_NSE2D::assemble_rhs()
       {
         const std::vector<std::vector<size_t>> cell_positions_t = {{2,0}, {2,1}};
 	s.matrix.scale_blocks(factor, cell_positions_t);
-        if(TDatabase::ParamDB->NSTYPE == 14 )
-          s.matrix.scale_blocks(-factor, {{2,2}});
       }      
     }
   }
@@ -394,6 +392,9 @@ void Time_NSE2D::assemble_system()
     // note: declaring the auxiliary cell_positions is needed by the compiler
     // to sort out the overriding of the function scale_blocks_actives(...,...)
     s.matrix.scale_blocks_actives(factor, cell_positions);
+    if(TDatabase::ParamDB->NSTYPE == 14)
+      s.matrix.scale_blocks_actives(factor, {{2,2}});
+
     const FEMatrix& mass = *s.Mass_Matrix.get_blocks().at(0).get();
     s.matrix.add_matrix_actives(mass, 1.0, {{0,0}, {1,1}}, {false, false});
   }
@@ -511,7 +512,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
 void Time_NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-  
+//  s.rhs.print("r");exit(0);
   solver.solve(s.matrix, s.rhs, s.solution);
   
   // Important: We have to descale the matrices, since they are scaled
@@ -538,6 +539,11 @@ void Time_NSE2D::deScaleMatrices()
     // note: declaring the auxiliary cell_positions is needed by the compiler
     // to sort out the overriding of the function scale_blocks_actives(...,...)
     s.matrix.scale_blocks_actives(1./factor, cell_positions);
+    
+    if(TDatabase::ParamDB->NSTYPE == 14)
+    {
+      s.matrix.scale_blocks(1./factor, {{2,2}});
+    }
   }
 }
 
@@ -782,16 +788,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s,
           reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
           reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
           
-          if(TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
-          {
-            std::vector<std::shared_ptr<FEMatrix>> mKblocks
-               = s.MatrixK.get_blocks_uniquely();
-            sqMat.resize(8);
-            sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mKblocks.at(0).get());
-            sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mKblocks.at(1).get());
-            sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mKblocks.at(3).get());
-            sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mKblocks.at(4).get());
-          }
           // right hand side 
           rhs_array.resize(2);
           rhs_array[0] = s.rhs.block(0);
@@ -827,7 +823,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s,
           break;
         case 3:
         case 4:
-        case 14:
           sqMat.resize(2);
           sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
           sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
@@ -850,6 +845,33 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s,
             reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
             s.rhs.reset();
           }
+          break;
+        case 14:
+          // we need to re-assemble all the matrices due to the solution
+          // dependency of the stabilization parameters
+          sqMat.resize(6);
+          sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+          sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+          sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());  
+          sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+          // mass matrix
+          std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+               = s.Mass_Matrix.get_blocks_uniquely();
+          sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+          // pressure-pressure block
+          sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+          // rectangular matrices
+          reMat.resize(4);
+          reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); 
+          reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+          reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); 
+          reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+          
+          rhs_array.resize(3);
+          rhs_array[0] = s.rhs.block(0);
+          rhs_array[1] = s.rhs.block(1);
+          rhs_array[2] = s.rhs.block(2);
+          s.rhs.reset();
           break;
       }// endswitch NSTYPE
       break;
@@ -887,7 +909,6 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
                             std::vector< TFEFunction2D* >& functions)
 {
   spaces.resize(2);
-  functions.resize(2);
   spaces_rhs.resize(2);
   
   spaces[0] = &s.velocity_space;
@@ -924,6 +945,30 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
     functions[0] = extr_u.GetComponent(0);
     functions[1] = extr_u.GetComponent(1);
     functions[2] = &s.p;
+  }
+  
+  if(TDatabase::ParamDB->NSTYPE == 14)
+  {
+    if((TDatabase::TimeDB->TIME_DISC==1) || (current_step_ == 1))
+    {
+      functions.resize(4);
+      functions[2] = s.u_m1.GetComponent(0);
+      functions[3] = s.u_m1.GetComponent(1);
+    }
+    else
+    {
+      BlockVector combined_old_sols = s.solution_m1;
+      combined_old_sols.scale(2.);
+      combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+      combined_old_sols.copy_nonactive(s.rhs);
+      
+      TFEVectFunct2D comb_old_u(&s.velocity_space, (char*)"ex", (char*)"ex", 
+                 combined_old_sols.block(0), combined_old_sols.length(0), 2);
+    
+      functions.resize(4);
+      functions[2] = comb_old_u.GetComponent(0);
+      functions[3] = comb_old_u.GetComponent(1);
+    }
   }
 }
 /**************************************************************************** */
@@ -969,7 +1014,6 @@ void Time_NSE2D::perform_bdf1_first()
     this->assemble_system();
   }
   output(1);
-  
   // descale the B and BT blocks:: these needs 
   // to be scaled with the correct scales for 
   // the BDF2 method
@@ -1036,24 +1080,34 @@ void Time_NSE2D::bdf_assemble_rhs()
 /**************************************************************************** */
 void Time_NSE2D::assemble_rhs_supg()
 {
+  // cout<<TDatabase::TimeDB->THETA1<<endl;
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-  if(current_step_ == 1)
+  if((TDatabase::TimeDB->TIME_DISC==1) || (current_step_ == 1))
   {
     System_per_grid& s = this->systems.front();
     s.solution.copy_nonactive(s.rhs);
     s.rhs.scaleActive(tau);
-    
+
     s.Mass_Matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, 1.0);
     // rescale the BT blocks, because they were 
     // reassembled during nonlinear iteration
     for(System_per_grid& s : this->systems)
+    {
       s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, {{0,2}, {1,2}});
+      if(TDatabase::ParamDB->NSTYPE==14)
+        s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, {{2,0}, {2,1}});
+    }      
+    s.rhs.copy_nonactive(s.solution);
   }
   else
   {
     bdf_assemble_rhs();
     for(System_per_grid& s : this->systems)
+    {
       s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, {{0,2}, {1,2}});
+      if(TDatabase::ParamDB->NSTYPE==14)
+        s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, {{2,0}, {2,1}});
+    }
   }
 }
 
