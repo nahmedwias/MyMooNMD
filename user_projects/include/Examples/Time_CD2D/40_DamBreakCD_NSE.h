@@ -45,17 +45,17 @@ void InitialCondition(double x,  double y, double *values)
 //  double vmin=0;
 //  double vmax=1;
 //  values[0] = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.3),10)+5*pow((y-0.7),10)));
-//  if ( x <= 0.3 && y <= 0.7)
-//    values[0] = 1;
-//  else
-//    values[0] =0;
-  double A = 1;
-  double a = 20;
-  double b = 0;
-  double c = 20;
-  double x0 = 0.5;
-  double y0 = 0.7;
-  values[0]= A*exp(-a*pow(x-x0,2)+2*b*(x-x0)*(y-y0)-c*pow(y-y0,2));
+  if ( x <= 0.3 && y <= 0.7)
+    values[0] = 1;
+  else
+    values[0] =0;
+//  double A = 1;
+//  double a = 20;
+//  double b = 0;
+//  double c = 20;
+//  double x0 = 0.5;
+//  double y0 = 0.7;
+//  values[0]= A*exp(-a*pow(x-x0,2)+2*b*(x-x0)*(y-y0)-c*pow(y-y0,2));
 }
 
 void BilinearCoeffs(int n_points, double *X, double *Y,
