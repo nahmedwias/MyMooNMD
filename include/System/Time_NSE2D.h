@@ -97,6 +97,13 @@ class Time_NSE2D
       BlockVector solution_m1;
       BlockVector solution_m2;
       TFEVectFunct2D u_m1;
+      TFEVectFunct2D u_m2;
+      
+      BlockVector combined_old_sols;
+      TFEVectFunct2D comb_old_u;
+      
+      BlockVector extrapolate_sol;
+      TFEVectFunct2D extrapolate_u;
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeNSE2D& example, TCollection& coll, 
