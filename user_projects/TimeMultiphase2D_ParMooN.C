@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
   Time_CD2D         tcd2d(domain, tcd_db, example_tcd2d);     // Construct CD system
 
   double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
-  double rho2 = 1;                          // density constant of fluid2, eg 0
+  double rho2 = 0;                          // density constant of fluid2, eg 0
   double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of fluid1, eg 1e-3
   double mu2  = 0;                                    // mu constant of fluid2, eg 0
 
