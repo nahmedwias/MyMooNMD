@@ -6433,7 +6433,9 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
     }
   }
   
-  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH; // time step length
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH; 
+  double t1 = TDatabase::TimeDB->THETA1;
+  
   // pressure test functions
   for(int i=0; i<N_P; ++i)
   {
@@ -6458,12 +6460,12 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
       // divergence constraint
       double val = -test00*ansatz10; // galerkin part
       // supg terms 
-      val -=  tau_m * (ansatz00/dt - c0*(ansatz20+ansatz02) 
+      val -=  tau_m * (ansatz00/(t1*dt) - c0*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test10;
       MatrixB1[i][j] -= Mult*val;
 
       val = -test00*ansatz01;
-      val -=  tau_m * (ansatz00/dt - c0*(ansatz20+ansatz02) 
+      val -=  tau_m * (ansatz00/(t1*dt) - c0*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test01;
 
       MatrixB2[i][j] -= Mult*val;      
@@ -6592,7 +6594,8 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
     }
   }
   
-  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH; // time step length
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH; 
+  double t1 = TDatabase::TimeDB->THETA1;
   // pressure test functions
   for(int i=0; i<N_P; ++i)
   {
@@ -6618,12 +6621,12 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
       // scaling with factor*step_length is done within the main class
       double val = -test00*ansatz10; // galerkin part
       // supg terms 
-      val -=  tau_m * (ansatz00/dt - c0*(ansatz20+ansatz02) 
+      val -=  tau_m * (ansatz00/(t1*dt) - c0*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test10;
       MatrixB1[i][j] -= Mult*val;
 
       val = -test00*ansatz01;
-      val -=  tau_m * (ansatz00/dt - c0*(ansatz20+ansatz02) 
+      val -=  tau_m * (ansatz00/(t1*dt) - c0*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test01;
 
       MatrixB2[i][j] -= Mult*val;      

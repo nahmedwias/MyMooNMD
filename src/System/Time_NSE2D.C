@@ -49,7 +49,15 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example,
    solution_m1(matrix, false),
    u_m1(&velocity_space, (char*)"u", (char*)"u", solution_m1.block(0), 
         solution_m1.length(0), 2),
-   solution_m2(matrix, false)
+   solution_m2(matrix, false), 
+   u_m2(&velocity_space, (char*)"u", (char*)"u", solution_m2.block(0), 
+        solution_m2.length(0), 2),
+   combined_old_sols(matrix, false),
+   comb_old_u(&velocity_space, (char*)"u", (char*)"u", combined_old_sols.block(0), 
+        combined_old_sols.length(0), 2), 
+   extrapolate_sol(matrix, false),
+   extrapolate_u(&velocity_space, (char*)"u", (char*)"u", extrapolate_sol.block(0), 
+        extrapolate_sol.length(0), 2)
 {
   // Mass Matrix
   // Output::increaseVerbosity(5);
@@ -933,41 +941,40 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
   else
   {
     // extrapolate velocity and pressure if needed
-    BlockVector extr_vel = s.solution_m1;
+    s.extrapolate_sol.reset();
+    s.extrapolate_sol = s.solution_m1;
+    s.extrapolate_sol.scale(2.);
+    s.extrapolate_sol.add_scaled(s.solution_m2, -1.);   
     
-    extr_vel.scale(2.);
-    extr_vel.add_scaled(s.solution_m2, -1.);
-    extr_vel.copy_nonactive(s.rhs);
-    TFEVectFunct2D extr_u(&s.velocity_space, 
-                          (char*)"ex", (char*)"ex", extr_vel.block(0), 
-                          extr_vel.length(0), 2);
-    
-    functions[0] = extr_u.GetComponent(0);
-    functions[1] = extr_u.GetComponent(1);
+    functions[0] = s.extrapolate_u.GetComponent(0);
+    functions[1] = s.extrapolate_u.GetComponent(1);
     functions[2] = &s.p;
   }
   
   if(TDatabase::ParamDB->NSTYPE == 14)
   {
-    if((TDatabase::TimeDB->TIME_DISC==1) || (current_step_ == 1))
+    if((TDatabase::TimeDB->TIME_DISC==1) || (current_step_ <= 1))
     {
       functions.resize(4);
       functions[2] = s.u_m1.GetComponent(0);
       functions[3] = s.u_m1.GetComponent(1);
+
     }
     else
     {
-      BlockVector combined_old_sols = s.solution_m1;
-      combined_old_sols.scale(2.);
-      combined_old_sols.add_scaled(s.solution_m2, -1./2.);
-      combined_old_sols.copy_nonactive(s.rhs);
-      
-      TFEVectFunct2D comb_old_u(&s.velocity_space, (char*)"ex", (char*)"ex", 
-                 combined_old_sols.block(0), combined_old_sols.length(0), 2);
-    
+      // reset 
+      s.combined_old_sols.reset();
+      // copy and scale the solution at previous time step with 
+      // factor 2
+      s.combined_old_sols = s.solution_m1;
+      s.combined_old_sols.scale(2.);
+      // subtract with right factor the solution at pre-previous 
+      // solution
+      s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+
       functions.resize(4);
-      functions[2] = comb_old_u.GetComponent(0);
-      functions[3] = comb_old_u.GetComponent(1);
+      functions[2] = s.comb_old_u.GetComponent(0);
+      functions[3] = s.comb_old_u.GetComponent(1);
     }
   }
 }
