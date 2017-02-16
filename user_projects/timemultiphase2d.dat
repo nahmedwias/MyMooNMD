@@ -11,18 +11,18 @@ outfile: multiphase_output.out
 ## domain. You probably want to adjust this to be the path to some file 
 ## which typically has the extension 'PRM'. See the documentation 
 ## for GEO and PRM files. 
-boundary_file: Default_UnitSquare
-#boundary_file: ../mesh/UnitSquare.PRM
+#boundary_file: Default_UnitSquare
+boundary_file: ../mesh/UnitSquare.PRM
 
 ## This files describes the computational mesh. You probably want to 
 ## adjust this to be the path to some file which typically has the 
 ## extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM 
 ## files. 
-geo_file: UnitSquare   { TwoTriangles, UnitSquare }
-#geo_file: ../mesh/UnitSquare.mesh
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+geo_file: ../mesh/UnitSquare.mesh
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 7
+refinement_n_initial_steps: 5
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -66,7 +66,7 @@ verbosity: 3   [ 1, 5 ]
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-example: 40   [ -1, 100 ]
+example: 42   [ -1, 100 ]
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
@@ -93,7 +93,7 @@ output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output, no_stab2}
 
 ## The maximum number of iterations to perform in a non-linear loop. 
-nonlinloop_maxit: 1   [ 0, 1000 ]
+nonlinloop_maxit: 20   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
 nonlinloop_epsilon: 1e-8   [ 0, 1 ]
@@ -232,12 +232,12 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 ## "dimension_nse=true or false".Anyway, when dimensional_nse=true
 ## the assembling routines take density and viscosity, and that's
 ## what we want.
-reynolds_number: 40.   [ 0, 1e6 ]
-fluid_density: 40.   [ 0, 1e6 ]
+reynolds_number: 1.   [ 0, 1e6 ]
+fluid_density: 1.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
-RE_NR:	40.
+RE_NR:	1.
 
 dimensional_nse: true   { true, false }
 coupling_nse_cd: true   { true, false }
@@ -266,12 +266,12 @@ ALGEBRAIC_FLUX_CORRECTION: 2
 # 3: Fractional step
 TIME_DISC: 2
 STARTTIME: 0
-ENDTIME: 1.0
+ENDTIME: 5.0
 TIMESTEPLENGTH: 0.01
 
 # other parameters
 P1: 1
-P2: 200
+P2: 319
 P3: 1
 Par_P0: 0
 Par_P3: 1
