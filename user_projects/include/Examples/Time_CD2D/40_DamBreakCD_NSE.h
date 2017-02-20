@@ -30,13 +30,20 @@ void Exact(double x, double y, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(int BdComp, double Param, BoundCond &cond)
 {
-  cond = NEUMANN;
+//  if (BdComp == 1 || BdComp==2)
+//    cond = DIRICHLET;
+//  else
+    cond = NEUMANN;
 }
 
 // value of boundary condition
 void BoundValue(int BdComp, double Param, double &value)
 {
-  value =0;
+//  double rho_min = TDatabase::ParamDB->P2;
+//  if (BdComp==1 || BdComp==2)
+//    value = rho_min;  // this is Dirichlet
+//  else
+    value =0;
 }
 
 // initial conditon
@@ -47,10 +54,11 @@ void InitialCondition(double x,  double y, double *values)
 //  values[0] = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.3),10)+5*pow((y-0.7),10)));
 //  double columnsize = 0.05715;
 //  if ( x <= columnsize && y <= columnsize)
+  double rho_min = TDatabase::ParamDB->P2; // this is the density of the bottom fluid
   if ( x <= 0.3 && y <= 0.7)
-    values[0] = 1;
+    values[0] = 10*rho_min;
   else
-    values[0] = 0;
+    values[0] = rho_min;
 //  double A = 1;
 //  double a = 20;
 //  double b = 0;
