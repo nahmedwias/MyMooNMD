@@ -74,7 +74,7 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
   
   size_t n_geo_levels = this->get_n_geometric_levels();
 
-  //Determine the number of algebraci levels (depth of space hierarchy)
+  //Determine the number of algebraic levels (depth of space hierarchy)
   if(type_ == MultigridType::MDML)
     n_algebraic_levels_ = n_geo_levels + 1;
   else
@@ -108,12 +108,9 @@ void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
   // Create the levels and collect them in a list
   if(matrices.size() != n_algebraic_levels_)
   {
-    Output::warn<2>("Multigrid::initialize", "the number of multigrid levels "
+    ErrThrow("Multigrid::initialize", " The number of algebraic multigrid levels "
                     "was set to ", n_algebraic_levels_, ", but there are ",
-                    matrices.size(), " matrices given. I will assume ", 
-                    matrices.size(), " multigrid levels from now on.");
-
-    n_algebraic_levels_ = matrices.size();
+                    matrices.size(), " matrices given. Please check your program!");
   }
   auto coarsest = matrices.front();
   for(auto mat : matrices)
@@ -160,11 +157,10 @@ const BlockVector& Multigrid::get_finest_sol()
 void Multigrid::cycle()
 {
   Output::info<4>("Multigrid", "Starting multigrid cycle of type ", (int) control_.get_type());
-
   size_t n_steps = control_.get_n_steps();
   size_t finest = levels_.size() - 1;
 
-//  //Start with 0 solution TODO enable other start solution!
+  //Start with 0 solution TODO enable other start solution!
   levels_.at(finest).solution_ = 0.0;
   //...but copy non-actives
   levels_.at(finest).solution_.copy_nonactive(levels_.at(finest).rhs_);
