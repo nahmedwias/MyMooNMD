@@ -768,7 +768,7 @@ int *TimeNSRHSColumnSpaceSUPG = NULL;
 int TimeNSRHSN_RhsSUPG = 4;
 int TimeNSRHSRhsSpaceSUPG[4] = { 0, 0, 0, 0 };
 
-void TimeNSRHSSUPG(double Mult, double *coeff, double *param, double hK, 
+void TimeNSType14RHSSUPG(double Mult, double *coeff, double *param, double hK, 
                    double **OrigValues, int *N_BaseFuncts,
                    double ***LocMatrices, double **LocRhs);
 
