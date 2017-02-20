@@ -58,6 +58,9 @@ class ParameterDatabase
     
     /// turbulence model database
     static ParameterDatabase default_turbulence_model_database();
+    
+    /// space discretization database
+    static ParameterDatabase default_space_disc_database();
 
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;

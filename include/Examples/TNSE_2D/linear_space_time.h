@@ -122,5 +122,24 @@ void LinCoeffs(int n_points, double *X, double *Y,
 
     coeffs[i][1] = u1[4] - nu*u1[3] + u1[0]*u1[1] + u2[0]*u1[2] + p[1];
     coeffs[i][2] = u2[4] - nu*u2[3] + u1[0]*u2[1] + u2[0]*u2[2] + p[2];
+    
+    if( (TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS) && 
+        (TDatabase::TimeDB->CURRENTTIME > TDatabase::TimeDB->STARTTIME))
+    {
+      double ct = TDatabase::TimeDB->CURRENTTIME;
+      double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      double pt = ct - dt;
+      TDatabase::TimeDB->CURRENTTIME = pt;
+      double u1pt[5], u2pt[5], ppt[4];
+      ExactU1(X[i], Y[i], u1pt);
+      ExactU2(X[i], Y[i], u2pt);
+      ExactP(X[i], Y[i], ppt);
+      
+      coeffs[i][3] = u1pt[4] - nu*u1pt[3] + u1pt[0]*u1pt[1] + u2pt[0]*u1pt[2] + ppt[1];
+      coeffs[i][4] = u2pt[4] - nu*u2pt[3] + u1pt[0]*u2pt[1] + u2pt[0]*u2pt[2] + ppt[2];
+      TDatabase::TimeDB->CURRENTTIME = ct;
+      
+    }
+    
   }
 }
