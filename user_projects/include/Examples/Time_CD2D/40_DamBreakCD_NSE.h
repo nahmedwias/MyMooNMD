@@ -45,10 +45,12 @@ void InitialCondition(double x,  double y, double *values)
 //  double vmin=0;
 //  double vmax=1;
 //  values[0] = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.3),10)+5*pow((y-0.7),10)));
+//  double columnsize = 0.05715;
+//  if ( x <= columnsize && y <= columnsize)
   if ( x <= 0.3 && y <= 0.7)
     values[0] = 1;
   else
-    values[0] =0;
+    values[0] = 0;
 //  double A = 1;
 //  double a = 20;
 //  double b = 0;
