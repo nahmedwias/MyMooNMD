@@ -2,7 +2,7 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <Example_TimeNSE2D.h>
-#include <Time_NSE2D.h>
+#include <Time_NSE2D_BDF.h>
 #include <TimeDiscRout.h>
 #include <LoopInfo.h>
 
@@ -18,6 +18,8 @@ int main(int argc, char* argv[])
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
+  //std::string time_disc = parmoon_db["time_discretization"];
+  //parmoon_db.merge(ParameterDatabase::default_time_database(time_disc), true);
 
   // ======================================================================
   // set the database values and generate mesh
@@ -47,7 +49,7 @@ int main(int argc, char* argv[])
 
   Example_TimeNSE2D example( parmoon_db );
   // create an object of Time_NSE2D class
-  Time_NSE2D tnse2d(Domain, parmoon_db, example);
+  Time_NSE2D_BDF tnse2d(Domain, parmoon_db, example);
   tnse2d.current_step_ = 0;
   // assemble everything at the start time
   // this includes assembling of all A's, B's
@@ -75,72 +77,47 @@ int main(int argc, char* argv[])
      tnse2d.current_step_++;
      // Output::print("mem before: ", GetMemory());
      TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-     for(int j=0; j < n_substeps; ++j)
+     if(tnse2d.current_step_ == 1)
      {
-       // setting the time disc parameters
-       SetTimeDiscParameters(1);
-       if(tnse2d.current_step_==1)
-       {
-         Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
-         Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
-         Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
-         Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
-       }
-       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-       TDatabase::TimeDB->CURRENTTIME += tau;
-       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-       if(TDatabase::TimeDB->TIME_DISC == 5)
-       {
-         // PERFORM: first step using the BDF1 method
-         if(tnse2d.current_step_==1)
-         {
-           tnse2d.perform_bdf1_first();
-           continue;
-         }
-         else
-         {
-           if(TDatabase::ParamDB->DISCTYPE != SUPG)
-           {
-             tnse2d.bdf_assemble_rhs();
-           }
-           else
-           {
-             if(tnse2d.current_step_==2)
-               Output::print("Due to the nonlinearity, the right hand side is assembled ",
-                             "together with the nonlinear assembling");
-           }
-         }
-       }
-       else
-       {
-         // prepare the right hand side vector
-         // only needed once per time step
-         tnse2d.assemble_rhs();
-       }
-       // assemble the nonlinear matrices
-       tnse2d.assemble_nonlinear_term();
-       // prepare the matrices for defect computations
-       // and solvers
-       tnse2d.assemble_system();       
-       // nonlinear iteration
-       for(unsigned int k=0;; k++)
-       {
-         if(tnse2d.stopIte(k))
-           break;
-         
-         tnse2d.solve();
-
-         if(tnse2d.imex_scheme(1))
-          continue;
-         // assemble the nonlinear matrices 
-         tnse2d.assemble_nonlinear_term();
-         // prepare the matrices for next nonlinear iteration
-         tnse2d.assemble_system();
-       }
-       // post processing: error computations
-       // and solutions for visualization
-       tnse2d.output(tnse2d.current_step_);
+       Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
+       Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
+       Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
+       Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
      }
+     // TODO: this needs to be update according to the new database
+     // system: 
+     SetTimeDiscParameters(1);
+     double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+     TDatabase::TimeDB->CURRENTTIME += tau;
+     Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+     
+     // prepare the right hand side vector
+     // only needed once per time step
+     tnse2d.assemble_rhs();
+     
+     // assemble the nonlinear matrices
+     tnse2d.assemble_nonlinear_term();
+     // prepare the matrices for defect computations
+     // and solvers
+     tnse2d.assemble_system();       
+     // nonlinear iteration
+     for(unsigned int k=0;; k++)
+     {
+       if(tnse2d.stopIte(k))
+         break;
+       
+       tnse2d.solve();
+
+       if(tnse2d.imex_scheme(1))
+        continue;
+       // assemble the nonlinear matrices 
+       tnse2d.assemble_nonlinear_term();
+       // prepare the matrices for next nonlinear iteration
+       tnse2d.assemble_system();
+     }
+     // post processing: error computations
+     // and solutions for visualization
+     tnse2d.output(tnse2d.current_step_);
    }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
