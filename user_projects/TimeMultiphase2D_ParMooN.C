@@ -209,7 +209,8 @@ int main(int argc, char* argv[])
   stopwatch.reset();
   stopwatch.start();
 
-
+  Chrono nse_nl_stopwatch;
+  Chrono nse_timeit_stopwatch;
 
 
   /********************************************************************
@@ -245,6 +246,7 @@ int main(int argc, char* argv[])
     /********************************************************************
      * NON LINEAR LOOP
      ********************************************************************/
+      nse_timeit_stopwatch.restart_and_print("preparation of NSE iterations");
     for(unsigned int k = 0;; k++)
     {
       if(tnse2d.stopIte(k))
@@ -261,8 +263,12 @@ int main(int argc, char* argv[])
         tnse2d.assemble_nonlinear_term();
 
       tnse2d.assemble_system();
+      nse_nl_stopwatch.restart_and_print("solving and reassembling in the NSE "
+                                  " iterations " + std::to_string(k));
     } // end for k, non linear loop
 
+    nse_timeit_stopwatch.restart_and_print("total solving time for NSE in time iteration "
+                                  +std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
     /********************************************************************
      * SOLVING CD2D WITH NSE2D SOLUTION
@@ -309,6 +315,9 @@ int main(int argc, char* argv[])
         mu_field = new_mu_field;
       }
     }
+
+    stopwatch.restart_and_print("total time for iteration " +
+                                std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
     tnse2d.output(step);
     if(tcd_db["solve_cd"].is(true))
