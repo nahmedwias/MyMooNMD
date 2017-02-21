@@ -324,6 +324,9 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
     
     if((TDatabase::ParamDB->DISCTYPE == SDFEM)
       || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
+      || (TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+      || (TDatabase::ParamDB->DISCTYPE == SUPG_EXTR)
+      || (TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS_EXTR)
       || (TDatabase::ParamDB->CELL_MEASURE == 4))
     {
       TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
@@ -1489,7 +1492,10 @@ double factor
     Parameters->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param);
 
     if ((TDatabase::ParamDB->DISCTYPE == SDFEM)||
-      (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
+      (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
+      || (TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+      || (TDatabase::ParamDB->DISCTYPE == SUPG_EXTR)
+      || (TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS_EXTR)    )
     {
       TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
       N_Edges = cell->GetN_Edges();
@@ -9531,6 +9537,9 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
     if((TDatabase::ParamDB->DISCTYPE == SDFEM)
       || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
+      || (TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS)
+      || (TDatabase::ParamDB->DISCTYPE == SUPG_EXTR)
+      || (TDatabase::ParamDB->DISCTYPE == RESIDUAL_VMS_EXTR)
       || (TDatabase::ParamDB->CELL_MEASURE == 4))
     {
       TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;

@@ -128,6 +128,27 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
 void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK, 
                double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, 
                double** LocRhs);
+
+// ======================================================================
+void TimeNSType4SUPGExtr(double Mult, double* coeff, double* param, double hK, 
+  double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs);
+
+void TimeNSType4NLSUPGExtr(double Mult, double* coeff, double* param, double hK, 
+  double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs);
+
+void TimeNSType4RHSSUPGExtr(double Mult, double* coeff, double* param, double hK, 
+  double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs);
+
+void TimeNSType4SUPGExtrParam(double *in, double *out);
+// type 14
+void TimeNSType14SUPGExtr(double Mult, double* coeff, double* param, double hK, 
+  double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs);
+
+void TimeNSType14NLSUPGExtr(double Mult, double* coeff, double* param, double hK, 
+  double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs);
+
+void TimeNSType14RHSSUPGExtr(double Mult, double* coeff, double* param, double hK, 
+  double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs);
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 14
 // ======================================================================
@@ -146,18 +167,8 @@ void TimeNSRHSSUPG(double Mult, double* coeff, double* param, double hK,
 // ======================================================================
 // declaration for Residual Based VMS method
 // ======================================================================
-void TimeNSType4Residual_VMS(double Mult, double *coeff, double *param, double hK, 
-                       double **OrigValues, int *N_BaseFuncts,
-                       double ***LocMatrices, double **LocRhs);
+// ======================================================================
 
-void TimeNSType4NLResidual_VMS(double Mult, double *coeff, double *param, double hK, 
-                       double **OrigValues, int *N_BaseFuncts,
-                       double ***LocMatrices, double **LocRhs);
-
-void TimeNSType4RHS_Residual_VMS(double Mult, double* coeff, double* param, double hK, 
-                        double** OrigValues, int* N_BaseFuncts, 
-                        double*** LocMatrices, double** LocRhs);
-void TimeNSParams_Residual_VMS(double *in, double *out);
 // ======================================================================
 // Type 2, Upwind (only Laplacian in A block)
 // ======================================================================

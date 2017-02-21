@@ -47,6 +47,7 @@ enum LocalAssembling2D_type { ConvDiff,
                               TNSE2D,
                               TNSE2D_NL,
                               TNSE2D_Rhs,
+                              TNSE2D_SUPG_Extra,
                               Darcy2D_Galerkin,
                               Brinkman2D_Galerkin1,
                               Brinkman2D_Galerkin1b,
@@ -166,9 +167,14 @@ class LocalAssembling2D
     /** 
      */
     void set_parameters_for_tnseSUPG(LocalAssembling2D_type type);
+    
+    void set_parameters_for_tnseSUPG_Extr(LocalAssembling2D_type type);
     /**
      */
     void set_parameters_for_tnseResidual_vms(LocalAssembling2D_type type);
+    /**
+     */
+    void set_parameters_for_tnseResidual_vms_Extr(LocalAssembling2D_type type);
     
   public:
     /** constructor */
