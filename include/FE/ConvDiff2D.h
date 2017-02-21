@@ -149,4 +149,18 @@ void RhsAssemble_RhsAdjointH1Error(double Mult, double *coeff, double *param,
 
 
 
+
+
+
+
+
+/* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+
+void LocalMatrixA_alone(double Mult, double *coeff, double *param,
+                            double hK,
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs);
+
+
+
 #endif // __CONVDIFF2D__

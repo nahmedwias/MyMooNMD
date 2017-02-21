@@ -258,7 +258,30 @@ class Time_CD2D
      */
     void call_assembling_routine(Time_CD2D::System_per_grid& system,
                                  LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
-                                 bool assemble_both);
+                                 bool assemble_both, bool with_convectionfield);
+
+
+
+
+
+
+/* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+  public:
+    void assemble_rhs_vector
+    (const TFEVectFunct2D* convection_field = nullptr);
+    void assemble_stiffness_matrix_alone();
+    void assemble_stiffness_matrix_alone_with_convection
+    (const TFEVectFunct2D* convection_field = nullptr);
+    void scale_stiffness_matrix();
+    void assemble_initial_time_with_convection
+    (const TFEVectFunct2D* convection_field = nullptr);
+    void assemble_with_convection
+    (const TFEVectFunct2D* convection_field = nullptr);
+
+
+  protected:
+    std::vector<double> entries_velo_x;
+    std::vector<double> entries_velo_y;
 };
 
 #endif

@@ -1012,4 +1012,52 @@ void GridAssemble4(double Mult, double *coeff,
 
 // ======================================================================
 
+
+
+
+
+/* *************BELOW THIS LINE USER SPECIFIC CODE **********/
+void TimeNSType1Galerkin_dimensional(double Mult, double *coeff,
+                                     double *param, double hK,
+                                     double **OrigValues, int *N_BaseFuncts,
+                                     double ***LocMatrices, double **LocRhs);
+
+
+void TimeNSType1_2NLGalerkin_dimensional(double Mult, double *coeff,
+                                         double *param, double hK,
+                                         double **OrigValues, int *N_BaseFuncts,
+                                         double ***LocMatrices, double **LocRhs);
+
+
+
+void TimeNSParamsVelo_dimensional(double *in, double *out);
+
+
+void TimeNSRHS_dimensional(double Mult, double *coeff,
+                           double *param, double hK,
+                           double **OrigValues, int *N_BaseFuncts,
+                           double ***LocMatrices, double **LocRhs);
+
+void TimeNSType1GalerkinMass_dimensional(double Mult, double *coeff,
+                                         double *param, double hK,
+                                         double **OrigValues, int *N_BaseFuncts,
+                                         double ***LocMatrices, double **LocRhs);
+
+
+void TimeNSType3GalerkinDD_dimensional(double Mult, double *coeff,
+                                       double *param, double hK,
+                                       double **OrigValues, int *N_BaseFuncts,
+                                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSType3_4NLGalerkinDD_dimensional(double Mult, double *coeff,
+                                           double *param, double hK,
+                                           double **OrigValues, int *N_BaseFuncts,
+                                           double ***LocMatrices, double **LocRhs);
+
+void TimeNSType3GalerkinDDMass_dimensional(double Mult, double *coeff,
+                                         double *param, double hK,
+                                         double **OrigValues, int *N_BaseFuncts,
+                                         double ***LocMatrices, double **LocRhs);
+
+
 #endif  // __TNSE2D_FIXPO__
