@@ -259,6 +259,68 @@ class Time_NSE2D
     { return db; }
     /// @brief return the computed errors at each discre time point
     std::array<double, int(6)> get_errors();
+
+
+
+
+
+
+
+    /** ***************BELOW THIS LINE, USER SPECIFIC CODE ********/
+  public:
+
+    /** @brief assemble matrix,
+     *
+     * This assembles everything which is not related to the nonlinear term.
+     * I.e. it assembles a Stokes matrix.
+     */
+    void assemble_initial_time_withfields(TFEFunction2D* rho_field=nullptr,
+                                          TFEFunction2D* mu_field=nullptr);
+
+    /** @brief assemble nonlinear term
+     *
+     * The matrix blocks to which the nonlinear term contributes are reset to
+     * zero and then completely reassembled, including the linear and nonlinear
+     * terms. If this->assemble() has been called before, the matrix is now set
+     * up correctly.
+     */
+    void assemble_nonlinear_term_withfields(TFEFunction2D* rho_field=nullptr,
+                                            TFEFunction2D* mu_field=nullptr);
+
+
+    void assemble_rhs_withfields(TFEFunction2D* rho_field=nullptr,
+                                 TFEFunction2D* mu_field=nullptr);
+
+    void assemble_massmatrix_withfields(TFEFunction2D* rho_field=nullptr);
+
+// ======================================================================
+    // The following members are used for IMEX
+/** @brief This returns the number of the current time step.
+     * This counter is set at 0 before the time loop and is incremented at each
+     * time step (but not at each sub-step) in the main program.
+     * It can be useful to give info to the members of the class. It is for example
+     * used in IMEX scheme to detect when we passed 2 time steps, so that we
+     * are guaranteed to have saved both old_solution_ and old_solution2_ correctly.    */
+    int current_step_;
+
+    /** @brief Construct the extrapolated solution.
+     * At the moment, only IMEX is implemented. */
+    void construct_extrapolated_solution();
+
+    bool imex_scheme(bool print_info);
+
+    /** @brief constructs a solution vector extrapolated from previous steps
+     * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
+  protected:
+    BlockVector extrapolated_solution_;
+// ======================================================================
+
+  protected: // these members are used when interpolating
+    // rho and mu field into same space as velocity_space
+    std::vector<double> entries_rho_scalar_field;
+    std::vector<double> entries_mu_scalar_field;
+//    TFEFunction2D interpolated_rho_field;
+//    TFEFunction2D interpolated_mu_field;
 };
 
 #endif // __TIME_NSE2D__

@@ -6,7 +6,8 @@
 #
 
 # Include header files. 
-include_directories("${CMAKE_SOURCE_DIR}/include/System")
+include_directories("${CMAKE_SOURCE_DIR}/include/System"
+		    )
 
 # Source files to be added to the 2D library.
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/CD2D.C")

@@ -26,6 +26,46 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
+
+
+
+
+/***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJCET *****/
+namespace example_layout
+{
+#include "0_ExampleLayout.h"
+}
+
+namespace test_example1_poiseuille
+{
+#include "1_TestExample1.h"
+}
+
+namespace test_example2_sincos
+{
+#include "2_TestExample2.h"
+}
+
+namespace test_example3_drivencavity
+{
+#include "3_TestExample3.h"
+}
+
+namespace test_example4_velocityforconvection
+{
+#include "4_TestExample4.h"
+}
+
+namespace variable_viscosity
+{
+#include "../../user_projects/include/Examples/NSE2D/variable_viscosity.h"
+}
+// ********* END OF USER PROJECT CODE
+
+
+
+
+
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -124,6 +164,175 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
 
       flow_around_cylinder::ExampleFile();
       break;
+
+
+
+
+
+      /**************************************************************/
+      /* BELOW THIS LINE, THE EXAMPLES ARE SPECIFIC TO USER PROJECT */
+    case 10:
+      /** exact_solution */
+      exact_solution.push_back( example_layout::ExactU1 );
+      exact_solution.push_back( example_layout::ExactU2 );
+      exact_solution.push_back( example_layout::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( example_layout::BoundCondition );
+      boundary_conditions.push_back( example_layout::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( example_layout::U1BoundValue );
+      boundary_data.push_back( example_layout::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = example_layout::LinCoeffs;
+
+      // Set dimensionless viscosity
+      example_layout::REYNOLDS_number = get_nu();
+      example_layout::USER_parameter1 = this->example_database["user_parameter1"];
+      example_layout::USER_parameter2 = this->example_database["user_parameter2"];
+
+      example_layout::ExampleFile();
+      break;
+    case 11:  // TestExample 1 = Poiseuille
+      /** exact_solution */
+      exact_solution.push_back( test_example1_poiseuille::ExactU1 );
+      exact_solution.push_back( test_example1_poiseuille::ExactU2 );
+      exact_solution.push_back( test_example1_poiseuille::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_example1_poiseuille::BoundCondition );
+      boundary_conditions.push_back( test_example1_poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example1_poiseuille::U1BoundValue );
+      boundary_data.push_back( test_example1_poiseuille::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_example1_poiseuille::LinCoeffs;
+
+      // Set dimensionless viscosity
+      test_example1_poiseuille::REYNOLDS_number = get_nu();
+      test_example1_poiseuille::USER_parameter1 = this->example_database["user_parameter1"];
+      test_example1_poiseuille::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_example1_poiseuille::ExampleFile();
+      break;
+    case 12:  // TestExample 2 = SinCos
+      /** exact_solution */
+      exact_solution.push_back( test_example2_sincos::ExactU1 );
+      exact_solution.push_back( test_example2_sincos::ExactU2 );
+      exact_solution.push_back( test_example2_sincos::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_example2_sincos::BoundCondition );
+      boundary_conditions.push_back( test_example2_sincos::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example2_sincos::U1BoundValue );
+      boundary_data.push_back( test_example2_sincos::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_example2_sincos::LinCoeffs;
+
+      // Set dimensionless viscosity
+      test_example2_sincos::REYNOLDS_number = get_nu();
+      test_example2_sincos::USER_parameter1 = this->example_database["user_parameter1"];
+      test_example2_sincos::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_example2_sincos::ExampleFile();
+      break;
+    case 13:  // TestExample 3 = DrivenCavity
+      /** exact_solution */
+      exact_solution.push_back( test_example3_drivencavity::ExactU1 );
+      exact_solution.push_back( test_example3_drivencavity::ExactU2 );
+      exact_solution.push_back( test_example3_drivencavity::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_example3_drivencavity::BoundCondition );
+      boundary_conditions.push_back( test_example3_drivencavity::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example3_drivencavity::U1BoundValue );
+      boundary_data.push_back( test_example3_drivencavity::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_example3_drivencavity::LinCoeffs;
+
+      // Set dimensionless viscosity
+      test_example3_drivencavity::REYNOLDS_number = get_nu();
+      test_example3_drivencavity::USER_parameter1 = this->example_database["user_parameter1"];
+      test_example3_drivencavity::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_example3_drivencavity::ExampleFile();
+      break;
+    case 14:  // TestExample 4 = Generates the velocity field for the convection example "Two interior Layers"
+      /** exact_solution */
+      exact_solution.push_back( test_example4_velocityforconvection::ExactU1 );
+      exact_solution.push_back( test_example4_velocityforconvection::ExactU2 );
+      exact_solution.push_back( test_example4_velocityforconvection::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( test_example4_velocityforconvection::BoundCondition );
+      boundary_conditions.push_back( test_example4_velocityforconvection::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( test_example4_velocityforconvection::U1BoundValue );
+      boundary_data.push_back( test_example4_velocityforconvection::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = test_example4_velocityforconvection::LinCoeffs;
+
+      // Set dimensionless viscosity
+      test_example4_velocityforconvection::REYNOLDS_number = get_nu();
+      test_example4_velocityforconvection::USER_parameter1 = this->example_database["user_parameter1"];
+      test_example4_velocityforconvection::USER_parameter2 = this->example_database["user_parameter2"];
+
+      test_example4_velocityforconvection::ExampleFile();
+      break;
+    case 15:  // variable viscosity = Generates variable viscosity problem
+      /** exact_solution */
+      exact_solution.push_back( variable_viscosity::ExactU1 );
+      exact_solution.push_back( variable_viscosity::ExactU2 );
+      exact_solution.push_back( variable_viscosity::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( variable_viscosity::BoundCondition );
+      boundary_conditions.push_back( variable_viscosity::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( variable_viscosity::U1BoundValue );
+      boundary_data.push_back( variable_viscosity::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = variable_viscosity::LinCoeffs;
+
+      // Set dimensionless viscosity
+//      variable_viscosity::REYNOLDS_number = get_nu();
+//      variable_viscosity::USER_parameter1 = this->example_database["user_parameter1"];
+//      variable_viscosity::USER_parameter2 = this->example_database["user_parameter2"];
+
+      variable_viscosity::ExampleFile();
+      break;
+
+      /**************************************************************/
+      /* ABOVE THIS LINE, THE EXAMPLES ARE SPECIFIC TO USER PROJECT */
+
+
+
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
