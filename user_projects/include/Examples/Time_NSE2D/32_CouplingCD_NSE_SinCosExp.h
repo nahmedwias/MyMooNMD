@@ -21,9 +21,9 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
+  double nu = TDatabase::ParamDB->P2;
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu=1/TDatabase::ParamDB->RE_NR;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -cos(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y)*fac;
@@ -35,7 +35,7 @@ void InitialU2(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = sin(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
@@ -46,7 +46,7 @@ void InitialP(double x, double y, double *values)
   // values[0] = -(cos(2*N_OSCILLATIONS*pi*x)+cos(2*N_OSCILLATIONS*pi*y))/4.0;
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-4*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -(cos(2*N_OSCILLATIONS*pi*x)+cos(2*N_OSCILLATIONS*pi*y))*fac/4.0;
@@ -59,7 +59,7 @@ void ExactU1(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -cos(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y)*fac;
@@ -73,7 +73,7 @@ void ExactU2(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = sin(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
@@ -87,7 +87,7 @@ void ExactP(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-4*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -(cos(2*N_OSCILLATIONS*pi*x)+cos(2*N_OSCILLATIONS*pi*y))*fac/4.0;
@@ -108,7 +108,7 @@ void BoundCondition(int i, double t, BoundCond &cond)
 void U1BoundValue(int BdComp, double Param, double &value)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
   double fac;
   double pi = 3.14159265358979;
 
@@ -159,7 +159,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
 void U2BoundValue(int BdComp, double Param, double &value)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
   double fac;
   double pi = 3.14159265358979;
   value = 0;
@@ -220,7 +220,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
 
   int i;
   double *coeff, x, y;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
   double eps1, eps2, eps3;// fac;
   double t=TDatabase::TimeDB->CURRENTTIME;
   double pi = 3.14159265358979;
@@ -241,43 +241,42 @@ void LinCoeffs(int n_points, double *X, double *Y,
     ExactU2(x, y, val2);
     ExactP (x, y, val3);
 
-    // eps is the variable viscosity, nu is just a constant
-    // we should have nu=Re=1, only vmin and vmax vary
+    // eps is the variable viscosity, nu = vmin
     // Please choose one of the formulas and comment the 2 others
     switch(switchviscosity)
     {
       case 1:
         eps1 = vmin+(vmax-vmin)*x*x*(1-x)*y*y*(1-y)*721/16;
         // if eps = visco1, use these right hand side values
-        coeff[0] = nu*eps1;
-        //coeff[1] = nu*val1[3]*(1-eps1);
-        //coeff[2] = nu*val2[3]*(-1+eps1);
-        coeff[1] = nu*val1[3]*(1-eps1)-2*nu*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
+        coeff[0] = eps1;
+        //coeff[1] = val1[3]*(1-eps1);
+        //coeff[2] = val2[3]*(-1+eps1);
+        coeff[1] = val1[3]*(nu-eps1)-2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
             ((721/8)*(vmax-vmin)*(1-x)*x*(1-y)*y*y-(721/16)*(vmax-vmin)*x*x*(1-y)*y*y)*
             sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
-        coeff[2] = nu*val1[3]*(-1+eps1)+2*nu*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
+        coeff[2] = val1[3]*(-nu+eps1)+2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
             ((721/8)*(vmax-vmin)*(1-x)*x*x*(1-y)*y-(721/16)*(vmax-vmin)*x*x*(1-x)*y*y)*
             sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
         break;
       case 2:
         eps2 = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)));
         // if eps = visco2, use these right hand side values
-        coeff[0] = nu*eps2;
-        coeff[1] = nu*val1[3]*(1-eps2);
-        coeff[2] = nu*val2[3]*(-1+eps2);
-//    coeff[1] = nu*val1[3]*(1-eps2)+2*10e14*nu*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
+        coeff[0] = eps2;
+        coeff[1] = val1[3]*(nu-eps2);
+        coeff[2] = val2[3]*(-nu+eps2);
+//    coeff[1] = val1[3]*(nu-eps2)+2*10e14*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
 //    *exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*N_OSCILLATIONS*pi*(vmax-vmin)*pow((x-0.5),9)
 //    *sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
-//    coeff[2] = nu*val2[3]*(-1+eps2)-2*10e14*nu*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
+//    coeff[2] = nu*val2[3]*(-nu+eps2)-2*10e14*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
 //    *exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*N_OSCILLATIONS*pi*(vmax-vmin)*pow((y-0.5),9)
 //    *sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
         break;
       case 3:
         eps3 = vmin+(vmax-vmin)*(1-exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10))));
         // if eps = visco3, use these right hand side values
-        coeff[0] = nu*eps3;
-        coeff[1] = nu*val1[3]*(1-eps3);
-        coeff[2] = nu*val2[3]*(-1+eps3);
+        coeff[0] = eps3;
+        coeff[1] = val1[3]*(nu-eps3);
+        coeff[2] = val2[3]*(-nu+eps3);
         break;
       default:
         ErrThrow("Choose parameter P1 between 1 and 3.");
