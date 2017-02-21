@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 //      tnse_db["dimensional_nse"] = true;
       tcd_db["coupling_nse_cd"]  = false;
 //      tnse_db["coupling_cd_nse"] = true;
-//      tcd_db["solve_cd"] = true;
+      tcd_db["solve_cd"] = true;
       break;
     case 40: case 42:
 //      tnse_db["dimensional_nse"] = true;
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
   else
     tnse2d.assemble_initial_time();                                // assemble linear term
 
-  if (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION==2)
+  if (!tcd_db["algebraic_flux_correction"].is("none"))
     TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
   if (tcd_db["solve_cd"].is(true))
   {
@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
     /********************************************************************
      * SOLVING CD2D WITH NSE2D SOLUTION
      ********************************************************************/
-    if (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION==2)
+    if (!tcd_db["algebraic_flux_correction"].is("none"))
       TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
     if (tcd_db["solve_cd"].is(true))
     {
