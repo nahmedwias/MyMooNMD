@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 //      tnse_db["dimensional_nse"] = true;
       tcd_db["coupling_nse_cd"]  = false;
 //      tnse_db["coupling_cd_nse"] = true;
-      tcd_db["solve_cd"] = true;
+//      tcd_db["solve_cd"] = true;
       break;
     case 40: case 42:
 //      tnse_db["dimensional_nse"] = true;
@@ -263,11 +263,11 @@ int main(int argc, char* argv[])
         tnse2d.assemble_nonlinear_term();
 
       tnse2d.assemble_system();
-      nse_nl_stopwatch.restart_and_print("solving and reassembling in the NSE "
-                                  " iterations " + std::to_string(k));
+      nse_nl_stopwatch.restart_and_print("solving+reassembling NL iter. "
+                                          + std::to_string(k));
     } // end for k, non linear loop
 
-    nse_timeit_stopwatch.restart_and_print("total solving time for NSE in time iteration "
+    nse_timeit_stopwatch.restart_and_print("total NSE time iter. "
                                   +std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
     /********************************************************************
@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
       }
     }
 
-    stopwatch.restart_and_print("total time for iteration " +
+    stopwatch.restart_and_print("total whole iter. " +
                                 std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
     tnse2d.output(step);

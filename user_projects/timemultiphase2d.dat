@@ -8,20 +8,20 @@ ENDTIME: 0.02
 TIMESTEPLENGTH: 0.01
 
 P1: 1
-P2: 10
-P3: 10
+P2: 0.0001
+P3: 0.0001
 
 ########################## Fixed Parameters 
 boundary_file: Default_UnitSquare
-#boundary_file: ../mesh/UnitSquare.PRM
 geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+#boundary_file: ../mesh/UnitSquare.PRM
 #geo_file: ../mesh/UnitSquare.mesh
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
 verbosity: 1   [ 1, 5 ]
 
-output_write_vtk: true   { true, false }
+output_write_vtk: false   { true, false }
 output_write_ps: false   { true, false }
 output_compute_errors: true   { true, false }
 output_vtk_directory: .
@@ -75,6 +75,7 @@ STARTTIME: 0
 time_discretization: 2	{ 0, 1, 2, 3, 4 }
 
 ########################## Fixed Parameters BRANCH-SPECIFIC
+########################## needs to be cleaned...
 reynolds_number: 1.   [ 0, 1e6 ]
 fluid_density: 1.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
