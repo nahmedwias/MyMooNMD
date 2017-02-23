@@ -1,3 +1,4 @@
+
 // time dependent Navier-Stokes problem 
 //
 // Tafti, Computers & Fluids (25), p. 647 - 665, 1996
@@ -21,7 +22,8 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
-  double nu = TDatabase::ParamDB->P2;
+  double nu = 1/TDatabase::ParamDB->RE_NR;
+//  double nu = TDatabase::ParamDB->P2;
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
  
@@ -33,9 +35,10 @@ void InitialU1(double x, double y, double *values)
 
 void InitialU2(double x, double y, double *values)
 {
+  double nu = 1/TDatabase::ParamDB->RE_NR;
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu = TDatabase::ParamDB->P2;
+//  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = sin(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
@@ -46,7 +49,8 @@ void InitialP(double x, double y, double *values)
   // values[0] = -(cos(2*N_OSCILLATIONS*pi*x)+cos(2*N_OSCILLATIONS*pi*y))/4.0;
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu = TDatabase::ParamDB->P2;
+  double nu = 1/TDatabase::ParamDB->RE_NR;
+//  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-4*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -(cos(2*N_OSCILLATIONS*pi*x)+cos(2*N_OSCILLATIONS*pi*y))*fac/4.0;
@@ -59,35 +63,38 @@ void ExactU1(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu = TDatabase::ParamDB->P2;
+  double nu = 1/TDatabase::ParamDB->RE_NR;
+  //double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -cos(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y)*fac;
   values[1] = N_OSCILLATIONS*pi*sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y)*fac;
   values[2] = -N_OSCILLATIONS*pi*cos(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
-  values[3] = 2*fac*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*
-      cos(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+  values[3] = 0;//2*fac*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*
+      //cos(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
 }
 
 void ExactU2(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu = TDatabase::ParamDB->P2;
+//  double nu = TDatabase::ParamDB->P2;
+  double nu = 1/TDatabase::ParamDB->RE_NR;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = sin(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
   values[1] = N_OSCILLATIONS*pi*cos(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
   values[2] = -N_OSCILLATIONS*pi* sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y)*fac;;
-  values[3] = -2*fac*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*
-      cos(N_OSCILLATIONS*pi*y)*sin(N_OSCILLATIONS*pi*x);
+  values[3] = 0;//-2*fac*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*
+      //cos(N_OSCILLATIONS*pi*y)*sin(N_OSCILLATIONS*pi*x);
 }
 
 void ExactP(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu = TDatabase::ParamDB->P2;
+//  double nu = TDatabase::ParamDB->P2;
+  double nu = 1/TDatabase::ParamDB->RE_NR;
  
   fac = exp(-4*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -(cos(2*N_OSCILLATIONS*pi*x)+cos(2*N_OSCILLATIONS*pi*y))*fac/4.0;
@@ -102,27 +109,28 @@ void ExactP(double x, double y, double *values)
 void BoundCondition(int i, double t, BoundCond &cond)
 {
   cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+//  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
-  double nu = TDatabase::ParamDB->P2;
+//  double nu = TDatabase::ParamDB->P2;
+  double nu = 1/TDatabase::ParamDB->RE_NR;
   double fac;
   double pi = 3.14159265358979;
 
   switch(BdComp)
   {
-  case 0: 
+  case 0:
   case 2:
     value=0;
     break;
-    case 1: 
+    case 1:
       fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
       value = -cos(N_OSCILLATIONS*pi)*sin(N_OSCILLATIONS*pi*Param)*fac;
       break;
-    case 3: 
+    case 3:
       fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
       value = -sin(N_OSCILLATIONS*pi*(1-Param))*fac;
       break;
@@ -159,21 +167,22 @@ void U1BoundValue(int BdComp, double Param, double &value)
 void U2BoundValue(int BdComp, double Param, double &value)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
-  double nu = TDatabase::ParamDB->P2;
+//  double nu = TDatabase::ParamDB->P2;
+  double nu = 1/TDatabase::ParamDB->RE_NR;
   double fac;
   double pi = 3.14159265358979;
   value = 0;
   switch(BdComp)
   {
-  case 1: 
+  case 1:
   case 3:
     value=0;
     break;
-  case 0: 
+  case 0:
     fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
     value = sin(N_OSCILLATIONS*pi*Param)*fac;
     break;
-  case 2: 
+  case 2:
     fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
     value = sin(N_OSCILLATIONS*pi*(1-Param))*cos(N_OSCILLATIONS*pi)*fac;
     break;
@@ -213,14 +222,15 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  int switchviscosity = TDatabase::ParamDB->P1;
-  double vmin = TDatabase::ParamDB->P2;
-  double vmax = TDatabase::ParamDB->P3;
+//  int switchviscosity = TDatabase::ParamDB->P1;
+//  double vmin = TDatabase::ParamDB->P2;
+//  double vmax = TDatabase::ParamDB->P3;
 //  double rho, mu;
 
   int i;
   double *coeff, x, y;
-  double nu = TDatabase::ParamDB->P2;
+//  double nu = TDatabase::ParamDB->P2;
+  double nu = 1/TDatabase::ParamDB->RE_NR;
   double eps1, eps2, eps3;// fac;
   double t=TDatabase::TimeDB->CURRENTTIME;
   double pi = 3.14159265358979;
@@ -237,50 +247,50 @@ void LinCoeffs(int n_points, double *X, double *Y,
     x = X[i];
     y = Y[i];
 
-    ExactU1(x, y, val1);
-    ExactU2(x, y, val2);
-    ExactP (x, y, val3);
+//    ExactU1(x, y, val1);
+//    ExactU2(x, y, val2);
+//    ExactP (x, y, val3);
 
     // eps is the variable viscosity, nu = vmin
     // Please choose one of the formulas and comment the 2 others
-    switch(switchviscosity)
-    {
-      case 1:
-        eps1 = vmin+(vmax-vmin)*x*x*(1-x)*y*y*(1-y)*721/16;
+//    switch(switchviscosity)
+//    {
+//      case 1:
+//        eps1 = vmin+(vmax-vmin)*x*x*(1-x)*y*y*(1-y)*721/16;
         // if eps = visco1, use these right hand side values
-        coeff[0] = eps1;
+        coeff[0] = nu;//eps1;
         //coeff[1] = val1[3]*(1-eps1);
         //coeff[2] = val2[3]*(-1+eps1);
-        coeff[1] = val1[3]*(nu-eps1)-2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
-            ((721/8)*(vmax-vmin)*(1-x)*x*(1-y)*y*y-(721/16)*(vmax-vmin)*x*x*(1-y)*y*y)*
-            sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
-        coeff[2] = val1[3]*(-nu+eps1)+2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
-            ((721/8)*(vmax-vmin)*(1-x)*x*x*(1-y)*y-(721/16)*(vmax-vmin)*x*x*(1-x)*y*y)*
-            sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
-        break;
-      case 2:
-        eps2 = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)));
-        // if eps = visco2, use these right hand side values
-        coeff[0] = eps2;
-        coeff[1] = val1[3]*(nu-eps2);
-        coeff[2] = val2[3]*(-nu+eps2);
-//    coeff[1] = val1[3]*(nu-eps2)+2*10e14*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
-//    *exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*N_OSCILLATIONS*pi*(vmax-vmin)*pow((x-0.5),9)
-//    *sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
-//    coeff[2] = nu*val2[3]*(-nu+eps2)-2*10e14*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
-//    *exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*N_OSCILLATIONS*pi*(vmax-vmin)*pow((y-0.5),9)
-//    *sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
-        break;
-      case 3:
-        eps3 = vmin+(vmax-vmin)*(1-exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10))));
-        // if eps = visco3, use these right hand side values
-        coeff[0] = eps3;
-        coeff[1] = val1[3]*(nu-eps3);
-        coeff[2] = val2[3]*(-nu+eps3);
-        break;
-      default:
-        ErrThrow("Choose parameter P1 between 1 and 3.");
-    }
+        coeff[1] = 0;//val1[3]*(nu-eps1)-2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
+            //((721/8)*(vmax-vmin)*(1-x)*x*(1-y)*y*y-(721/16)*(vmax-vmin)*x*x*(1-y)*y*y)*
+            //sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+        coeff[2] = 0;//val1[3]*(-nu+eps1)+2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
+            //((721/8)*(vmax-vmin)*(1-x)*x*x*(1-y)*y-(721/16)*(vmax-vmin)*x*x*(1-x)*y*y)*
+            //sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+//        break;
+//      case 2:
+//        eps2 = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)));
+//        // if eps = visco2, use these right hand side values
+//        coeff[0] = eps2;
+//        coeff[1] = val1[3]*(nu-eps2);
+//        coeff[2] = val2[3]*(-nu+eps2);
+////    coeff[1] = val1[3]*(nu-eps2)+2*10e14*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
+////    *exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*N_OSCILLATIONS*pi*(vmax-vmin)*pow((x-0.5),9)
+////    *sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+////    coeff[2] = nu*val2[3]*(-nu+eps2)-2*10e14*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)
+////    *exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)))*N_OSCILLATIONS*pi*(vmax-vmin)*pow((y-0.5),9)
+////    *sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+//        break;
+//      case 3:
+//        eps3 = vmin+(vmax-vmin)*(1-exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10))));
+//        // if eps = visco3, use these right hand side values
+//        coeff[0] = eps3;
+//        coeff[1] = val1[3]*(nu-eps3);
+//        coeff[2] = val2[3]*(-nu+eps3);
+//        break;
+//      default:
+//        ErrThrow("Choose parameter P1 between 1 and 3.");
+//    }
 
 //    rho = parameters[i][2];
 //    mu  = parameters[i][3];
@@ -319,7 +329,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
 //    case 2: value = 0;
 //            break;
 //    case 3:
-//	    value = 0;
+//      value = 0;
 //            break;
 //    default: cout << "wrong boundary part number: " << BdComp << endl;
 //  }
@@ -337,14 +347,14 @@ void LinCoeffs(int n_points, double *X, double *Y,
 //    case 2: value = 0;
 //            break;
 //    case 3:
-//	    value = 0;
+//      value = 0;
 //            break;
 //    default: cout << "wrong boundary part number: " << BdComp << endl;
 //  }
 //}
 //
 //void EvaluateSolution(TFEFunction2D **PArray, TFEVectFunct2D  **UArray, double *err,
-//		 int *flags)
+//     int *flags)
 //{
 //  // so special evaluations in this example
 //  return;
