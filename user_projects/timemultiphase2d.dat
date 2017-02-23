@@ -2,14 +2,14 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 2
+refinement_n_initial_steps: 4
 
-ENDTIME: 0.02
-TIMESTEPLENGTH: 0.01
+ENDTIME: 1.0
+TIMESTEPLENGTH: 0.04
 
 P1: 1
-P2: 0.0001
-P3: 0.0001
+P2: 1
+P3: 1
 
 ########################## Fixed Parameters 
 boundary_file: Default_UnitSquare
@@ -60,10 +60,10 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
-ANSATZ_ORDER: 1
-NSTYPE: 3
-LAPLACETYPE: 1
-algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
+#ANSATZ_ORDER: 1
+NSTYPE: 1
+LAPLACETYPE: 0
+#algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
 DISCTYPE:  1
 NSE_NONLINEAR_FORM: 0
