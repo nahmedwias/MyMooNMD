@@ -2,28 +2,32 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 5
+refinement_n_initial_steps: 7
 
-ENDTIME: 0.06
+ENDTIME: 0.3
 TIMESTEPLENGTH: 0.01
 
-fluid_density: 1000.   [ 0, 1e6 ]
+fluid_density: 100.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 reynolds_number: 1.  [ 0, 1e6 ]
 RE_NR:	1.
-P1: 800
-P2: 10
-P3: 1
+P1: 800  # density ratio
+P2: 10	 # viscosity ratio
+
+P3: 0.5	 # x0 position
+P4: 0.1	 # y0 position
+P5: 0.05 # circle radius
+
 
 ########################## Fixed Parameters 
-#boundary_file: Default_UnitSquare
-#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
-boundary_file: ../mesh/dambreak.PRM
-geo_file: ../mesh/dambreak_quad.GEO
+boundary_file: Default_UnitSquare
+geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+#boundary_file: ../mesh/dambreak.PRM
+#geo_file: ../mesh/dambreak_quad.GEO
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
-verbosity: 1   [ 1, 5 ]
+verbosity: 3   [ 1, 5 ]
 
 output_write_vtk: true   { true, false }
 output_write_ps: false   { true, false }
@@ -115,7 +119,9 @@ solve_cd: true   { true, false }
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 41- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
 ## 41- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-example: 40   [ -1, 100 ]
+## 50- GasStirringTest- in the multiphase program - FOR TNSE2D
+## 50- GasStirringTest- in the multiphase program - FOR TCD2D
+example: 50   [ -1, 100 ]
 
 ########################## Parameters need to be cleaned
 Par_P0: 0

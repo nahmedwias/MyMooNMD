@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
   // both fluid properties are needed only in Dam break so far
   double rho2 = 0;        // density constant of gas, eg 0
   double mu2  = 0;        // mu constant of gas, eg 0
-  if (tcd_example_number == 40)
+  if (tcd_example_number == 40 ||tcd_example_number == 50 )
   {
   double density_ratio = TDatabase::ParamDB->P1;
   double viscosity_ratio = TDatabase::ParamDB->P2;
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
         rho1=1;
         rho_vector = rho1;  // uncommented because rho must stay constant=1
         break;
-      case 40: // dam break, both rho and mu are variable, nothing happens
+      case 40: case 50: // dam break, both rho and mu are variable, nothing happens
         break;
       default:
         ErrThrow("Coupling CD>NSE is not allowed in example "
