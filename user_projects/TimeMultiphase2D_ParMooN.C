@@ -17,7 +17,6 @@
 #include <TimeDiscRout.h>
 #include <FEFunctionInterpolator.h>
 
-
 // ***** LIST OF FUNCTIONS USED IN MAIN PROGRAMM ***** //
 TFEFunction2D update_fieldfunction(const TFESpace2D* feSpace_, BlockVector& vector_, char* name_)
 {
@@ -128,14 +127,19 @@ int main(int argc, char* argv[])
   Example_TimeCD2D  example_tcd2d(tcd_db);                    // Construct Example for CD
   Time_CD2D         tcd2d(domain, tcd_db, example_tcd2d);     // Construct CD system
 
+  double rho1 = tnse_db["fluid_density"];           // density constant of liquid, eg 1000
+  double mu1  = tnse_db["fluid_dynamic_viscosity"]; // mu constant of liquid, eg 1e-3
+
+  // both fluid properties are needed only in Dam break so far
+  double rho2 = 0;        // density constant of gas, eg 0
+  double mu2  = 0;        // mu constant of gas, eg 0
+  if (tcd_example_number == 42)
+  {
   double density_ratio = TDatabase::ParamDB->P1;
   double viscosity_ratio = TDatabase::ParamDB->P2;
-
-  double rho1 = tnse_db["fluid_density"];   // density constant of liquid, eg 1000
-  double rho2 = rho1/density_ratio;                          // density constant of gas, eg 0
-  double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of liquid, eg 1e-3
-  double mu2  = mu1/viscosity_ratio;                                    // mu constant of gas, eg 0
-
+  rho2 = rho1/density_ratio;         // density constant of gas, eg 0
+  mu2  = mu1/viscosity_ratio;        // mu constant of gas, eg 0
+  }
 
   /********************************************************************
    * SOME OUTPUT AND INFORMATION SET
@@ -165,8 +169,22 @@ int main(int argc, char* argv[])
   }
   else  // for the case rho = constant, and only viscosity depends on TCD2D
   {
-//    mu_vector = mu1; // uncomment in case mu must stay constant
-//    rho_vector = rho1;  // uncomment in case rho must stay constant
+    switch(tcd_example_number)
+        {
+      case 42: // rayleigh taylor = mu=1, density variable (ratio)
+        mu1=1;
+        mu_vector = mu1; // uncommented because mu must stay constant=1
+        break;
+      case 30: case 31: case 32:  // examples where rho=1, nu variable
+        rho1=1;
+        rho_vector = rho1;  // uncommented because rho must stay constant=1
+        break;
+      case 40: // dam break, both rho and mu are variable, nothing happens
+        break;
+      default:
+        ErrThrow("Coupling CD>NSE is not allowed in example "
+            + std::to_string(tcd_example_number) + ". Exiting...");
+        }
   }
   phase_field.write("vector_phi");
   mu_vector.write("vector_mu");
@@ -310,13 +328,27 @@ int main(int argc, char* argv[])
 
         /** @brief Finite Element function for density field */
         BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-//        new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
+        switch(tcd_example_number)
+                {
+              case 30: case 31: case 32:  // examples where rho=1, nu variable
+                new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
+                break;
+              default:
+                break;
+                }
         TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),new_rho_vector,(char*) "q");
         rho_field = new_rho_field;
 
         /** @brief Finite Element function for dynamic viscosity field */
         BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
-//        new_mu_vector = 1; // for the case mu=constant and only density depends on TCD2D
+        switch(tcd_example_number)
+                {
+              case 42:
+                new_mu_vector = 1; // for the case mu=constant and only density depends on TCD2D
+                break;
+              default:
+                break;
+                }
         TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),new_mu_vector,(char*) "s");
         mu_field = new_mu_field;
       }
