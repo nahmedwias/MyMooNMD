@@ -4,28 +4,28 @@
 outfile: multiphase_output.out
 refinement_n_initial_steps: 5
 
-ENDTIME: 0.20
-TIMESTEPLENGTH: 0.001
+ENDTIME: 0.06
+TIMESTEPLENGTH: 0.01
 
-fluid_density: 1.   [ 0, 1e6 ]
+fluid_density: 1000.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 reynolds_number: 1.  [ 0, 1e6 ]
 RE_NR:	1.
-P1: 1
-P2: 1
+P1: 800
+P2: 10
 P3: 1
 
 ########################## Fixed Parameters 
-boundary_file: Default_UnitSquare
-geo_file: UnitSquare   { TwoTriangles, UnitSquare }
-#boundary_file: ../mesh/dambreak.PRM
-#geo_file: ../mesh/dambreak_quad.GEO
+#boundary_file: Default_UnitSquare
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+boundary_file: ../mesh/dambreak.PRM
+geo_file: ../mesh/dambreak_quad.GEO
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
 verbosity: 1   [ 1, 5 ]
 
-output_write_vtk: false   { true, false }
+output_write_vtk: true   { true, false }
 output_write_ps: false   { true, false }
 output_compute_errors: true   { true, false }
 output_vtk_directory: .
@@ -83,10 +83,10 @@ time_discretization: 2	{ 0, 1, 2, 3, 4 }
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
 
-dimensional_nse: false   { true, false }
-coupling_nse_cd: false   { true, false }
-coupling_cd_nse: false   { true, false }
-solve_cd: false   { true, false }	
+dimensional_nse: true   { true, false }
+coupling_nse_cd: true   { true, false }
+coupling_cd_nse: true   { true, false }
+solve_cd: true   { true, false }	
 
 ## See the class 'Example' and its derived classes.
 ## 0 - bsp1 (sincos)  - in the standard TNSE2D program
@@ -115,7 +115,7 @@ solve_cd: false   { true, false }
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 41- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
 ## 41- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-example: 32   [ -1, 100 ]
+example: 40   [ -1, 100 ]
 
 ########################## Parameters need to be cleaned
 Par_P0: 0

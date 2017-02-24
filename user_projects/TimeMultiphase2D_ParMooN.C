@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
   // both fluid properties are needed only in Dam break so far
   double rho2 = 0;        // density constant of gas, eg 0
   double mu2  = 0;        // mu constant of gas, eg 0
-  if (tcd_example_number == 41)
+  if (tcd_example_number == 40)
   {
   double density_ratio = TDatabase::ParamDB->P1;
   double viscosity_ratio = TDatabase::ParamDB->P2;
