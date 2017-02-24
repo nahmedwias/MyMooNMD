@@ -54,9 +54,10 @@ void InitialCondition(double x,  double y, double *values)
 //  values[0] = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.3),10)+5*pow((y-0.7),10)));
 //  double columnsize = 0.05715;
 //  if ( x <= columnsize && y <= columnsize)
+  double density_ratio = TDatabase::ParamDB->P1;
   double rho_min = TDatabase::ParamDB->P2; // this is the density of the bottom fluid
-  if ( x <= 0.3 && y <= 0.7)
-    values[0] = 10*rho_min;
+  if ( x <= 0.05715 && y <= 0.05715)
+    values[0] = density_ratio*rho_min;
   else
     values[0] = rho_min;
 //  double A = 1;
