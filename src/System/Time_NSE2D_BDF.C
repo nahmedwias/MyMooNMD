@@ -221,14 +221,14 @@ void Time_NSE2D_BDF::set_parameters()
     TDatabase::ParamDB->DISCTYPE = 1;
   else if (db["disctype"].is("supg"))
   {
-    if(db["rbvms_test_anzats_extrapolate"].is("only_test"))
+    if(db["ansatz_test_extrapolate"].is("only_velocity_test"))
       TDatabase::ParamDB->DISCTYPE = -2;
     else
       TDatabase::ParamDB->DISCTYPE = 2;
   }
   else if (db["disctype"].is("residual_based_vms"))
   {
-    if(db["rbvms_test_anzats_extrapolate"].is("only_test"))
+    if(db["ansatz_test_extrapolate"].is("only_velocity_test"))
       TDatabase::ParamDB->DISCTYPE = -101;
     else
       TDatabase::ParamDB->DISCTYPE = 101;
@@ -279,10 +279,10 @@ void Time_NSE2D_BDF::set_parameters()
     TDatabase::TimeDB->TIME_DISC == 5;
   }
   
-//   TDatabase::TimeDB->TIMESTEPLENGTH = db["time_step_length"];
-//   TDatabase::TimeDB->ENDTIME = db["time_end"];
-//   TDatabase::TimeDB->STARTTIME = db["time_start"];
-//   TDatabase::TimeDB->CURRENTTIMESTEPLENGTH = db["current_time_step_length"];
+  TDatabase::TimeDB->TIMESTEPLENGTH = db["time_step_length"];
+  TDatabase::TimeDB->ENDTIME = db["time_end"];
+  TDatabase::TimeDB->STARTTIME = db["time_start"];
+  TDatabase::TimeDB->CURRENTTIMESTEPLENGTH = db["current_time_step_length"];
 }
 
 /**************************************************************************** */
@@ -401,9 +401,12 @@ void Time_NSE2D_BDF::assemble_rhs(bool rhs_assemble)
   s.solution.copy_nonactive(s.rhs);
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
   double t4 = TDatabase::TimeDB->THETA4;
-  
+  // scale the current right hand side with the factor tau*theta4
   s.rhs.scaleActive(tau*t4);
-  
+  s.matrix.get_blocks().at(0)->Print("M");
+  if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
+    this->modify_slip_bc(true);
+  exit(0);
   // mass matrix contribution to the right hand side
   if(db["time_discretization"].is("bdf_two") && current_step_ > 1)
   {
@@ -428,7 +431,7 @@ void Time_NSE2D_BDF::assemble_rhs(bool rhs_assemble)
   
   for(auto &s: this->systems)
   {
-    if(db["rbvms_test_anzats_extrapolate"].is("only_test"))
+    if(db["ansatz_test_extrapolate"].is("only_velocity_test"))
     {
       // in this case one have to re-assemble the mass matrix and 
       // b-blocks, so the scaling with the factor times step length
@@ -469,7 +472,7 @@ void Time_NSE2D_BDF::assemble_nonlinear_term()
     this->call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
   
   if( (db["disctype"].is("supg") || db["disctype"].is("residual_based_vms"))
-     && (db["rbvms_test_anzats_extrapolate"].is("no_extrapolation")) )
+     && (db["ansatz_test_extrapolate"].is("no_extrapolation")) )
   {
     // rhs and the nonlinear matrices are assemble during the function call 
     // "assemble_nonlinear_term()". The right-hand side for the solver needs 
@@ -478,7 +481,7 @@ void Time_NSE2D_BDF::assemble_nonlinear_term()
   }
   
   if( (db["disctype"].is("supg") || db["disctype"].is("residual_based_vms"))
-     && (db["rbvms_test_anzats_extrapolate"].is("only_test")) 
+     && (db["ansatz_test_extrapolate"].is("only_velocity_test")) 
      && (TDatabase::ParamDB->NSTYPE == 14))
   {
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
@@ -711,8 +714,12 @@ std::vector< const TFESpace2D* >& spaces_rhs, std::vector< TFEFunction2D*> &func
     // extrapolation is used in the weighted test functions occurs
     //  due the supg/rbVMS method 
     if( (db["disctype"].is("supg") || db["disctype"].is("residual_based_vms") )
-       && (db["rbvms_test_anzats_extrapolate"].is("only_test")) ) 
-    { // constant extrapolation
+       && (db["ansatz_test_extrapolate"].is("only_velocity_test")) ) 
+    { 
+      // The extrapolation is only used in the veloicyt/pressure test functions
+      // Depending on the time order the extrapolation is used: i.e.,
+      // BDF1: constant extrapolation
+      // BDF2: linear extrapolation
       if(db["time_discretization"].is("backward_euler") || current_step_ <=1)
       {
         if(db["disctype"].is("supg"))
@@ -986,7 +993,7 @@ void Time_NSE2D_BDF::set_matrices_rhs(Time_NSE2D_BDF::System_per_grid& s,
           }
           else if(db["disctype"].is("supg"))
           {
-            if(db["rbvms_test_anzats_extrapolate"].is("only_test"))
+            if(db["ansatz_test_extrapolate"].is("only_velocity_test"))
             {
               sqMat.resize(2);
               sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
@@ -1000,7 +1007,7 @@ void Time_NSE2D_BDF::set_matrices_rhs(Time_NSE2D_BDF::System_per_grid& s,
           }
           else if(db["disctype"].is("residual_based_vms"))
           {
-            if(db["rbvms_test_anzats_extrapolate"].is("only_test"))
+            if(db["ansatz_test_extrapolate"].is("only_velocity_test"))
             {
               sqMat.resize(4);
               sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
@@ -1026,7 +1033,7 @@ void Time_NSE2D_BDF::set_matrices_rhs(Time_NSE2D_BDF::System_per_grid& s,
           }
           else if(db["disctype"].is("supg"))
           {
-            if(db["rbvms_test_anzats_extrapolate"].is("only_test"))
+            if(db["ansatz_test_extrapolate"].is("only_velocity_test"))
             {
               sqMat.resize(2);
               sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
@@ -1044,7 +1051,7 @@ void Time_NSE2D_BDF::set_matrices_rhs(Time_NSE2D_BDF::System_per_grid& s,
           }
           else if(db["disctype"].is("residual_based_vms"))
           {
-            if(db["rbvms_test_anzats_extrapolate"].is("only_test"))
+            if(db["ansatz_test_extrapolate"].is("only_velocity_test"))
             {
               sqMat.resize(4);
               sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
@@ -1274,4 +1281,89 @@ void Time_NSE2D_BDF::output_problem_size_info() const
   Output::dash("dof velocity active:  ", setw(10), 2*n_u_active);
   Output::dash("dof pressure       :  ", setw(10), n_p);
   Output::dash("dof all            :  ", setw(10), n_dof);
+}
+
+void Time_NSE2D_BDF::modify_slip_bc(bool BT_Mass)
+{
+  // modification of the matrices due to the 
+  // slip type boundary conditions: If the mass matrices,
+  // the off-diagonal A-blocks , and the BT's block,
+  // are unchanged during the time iteration, then this modification
+  // is done only once in the time loop. However, in the SUPG
+  // and residual based VMS method these matrices are also 
+  // updated during the time steps, so modification of all 
+  // of them including the right-hand side is necessary.The 
+  // modification of the diagonal A-blocks are necessary 
+  // in any case.
+  if(TDatabase::ParamDB->NSTYPE < 4)
+  {
+    ErrThrow("Slip with friction b.c. is only implemented for NSTYPE 4");
+  }
+  std::vector<const TFESpace2D*> spaces_mat(1);
+  std::vector<double*> rhs_array(2);
+  std::vector<const TFESpace2D*> rhs_space(2);
+  
+  for(System_per_grid& s: this->systems)
+  {
+    spaces_mat[0] = &s.velocity_space;
+    rhs_space[0] = spaces_mat[0];
+    rhs_space[1] = spaces_mat[0];
+    
+    rhs_array[0] = s.rhs.block(0);
+    rhs_array[1] = s.rhs.block(1);
+    
+    std::vector<std::shared_ptr<FEMatrix>> blocks
+         = s.matrix.get_blocks_uniquely();
+    
+    std::vector<std::shared_ptr<FEMatrix>> mass_blocks;
+    
+    mass_blocks = s.Mass_Matrix.get_blocks_uniquely();
+    if(db["disctype"].is("residual_based_vms"))
+    {
+      mass_blocks = s.MatrixK.get_blocks_uniquely();
+    }
+    
+    std::vector<const BoundCondFunct2D*> bc(3);
+    bc[0]=s.velocity_space.GetBoundCondition();
+    bc[1]=bc[0];
+    bc[2]=s.pressure_space.GetBoundCondition();
+    // boundary values:
+    std::vector<BoundValueFunct2D*>bv(3);
+    bv[0]=example.get_bd(0);
+    bv[1]=example.get_bd(1);
+    bv[2]=example.get_bd(2);
+    
+    std::vector<TSquareMatrix2D*> sqMat;
+    std::vector<TMatrix2D*> reMat;
+    sqMat.resize(5);
+    sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+    sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+    sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());  
+    sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+
+     if(db["disctype"].is("residual_based_vms"))
+     {
+       sqMat.resize(8);
+       sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+       sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
+       sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());  
+       sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+     }
+     if(BT_Mass)
+       sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+
+     reMat.resize(0);
+     if(BT_Mass)
+     {
+       reMat.resize(2);    
+       reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
+       reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+     }
+     // update the matrices and right hand side
+     Assemble2DSlipBC(spaces_mat.size(), spaces_mat.data(), 
+                   sqMat.size(), sqMat.data(), reMat.size(), reMat.data(), 
+                   rhs_array.size(), rhs_array.data(), rhs_space.data(), 
+                   bc.data(), bv.data(), s.u.GetComponent(0), s.u.GetComponent(1));
+  }
+
 }

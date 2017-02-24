@@ -1,5 +1,5 @@
 /** ************************************************************************* 
- * @name         Time_NSE2D
+ * @name         Time_NSE2D_BDF
  * @brief        store everything needed to solve a time dependent convection 
  *               diffusion reaction problem
  *               Stores matrix, right hand side, FE spaces, FE functions 
@@ -97,14 +97,23 @@ class Time_NSE2D_BDF
        */
       BlockVector solution_m1;
       BlockVector solution_m2;
+      /** @brief Finite element function for old velocities*/
       TFEVectFunct2D u_m1;
       TFEVectFunct2D u_m2;
       TFEFunction2D p_old;
-      
+      /** @brief linear combination of the old solutions
+       * this is needed for the assembling of the pressure 
+       * right-hand side when the SUPG or residual based
+       * vms methods are considered
+       */      
       BlockVector combined_old_sols;
+      /// the corresponding FE function
       TFEVectFunct2D comb_old_u;
       
+      /// In the case of implicit explicit schemes
+      /// one needs extrapolation of the solution
       BlockVector extrapolate_sol;
+      /// the corresponding fe function
       TFEVectFunct2D extrapolate_u;
 
       /** @brief constructor*/
@@ -200,9 +209,30 @@ public:
      */
     void assemble_rhs(bool rhs_assemble = true);
     
+    /** @brief Assemble the system matrix
+     * This function will prepare the system which will be 
+     * used for solvers
+     */
     void assemble_system();
+    
+    /** @brief assemble nonlinear term
+     * 
+     * The matrix blocks to which the nonlinear term contributes are reset to 
+     * zero and then completely reassembled, including the linear and nonlinear
+     * terms. If this->assemble() has been called before, the matrix is now set
+     * up correctly. 
+     */
     void assemble_nonlinear_term();
+    
+    /** @brief solve the system */
     void solve();
+    /** @brief check if one of the stopping criteria is fulfilled
+     * 
+     * either converged, maximun number of iterations reached, or slow 
+     * convergence
+     * 
+     * @param it_counter current iterate
+     */
     bool stopIte(unsigned int it_counter);
     
     ParameterDatabase pre_step_time_db;
@@ -211,15 +241,36 @@ public:
      * during the function call Time_NSE2D::assemble_system():
      */
     void deScaleMatrices();
-    void output(int m);
     
+    /** @brief
+     * compute errors and write solution
+     */
+    void output(int m);
+    /** @brief this returns the number of the current time step 
+     * In the main programe:: initialize this parameter to 0 before
+     * the time iterations
+     * This will also serves for the semi-implicit schemes.
+     * For example, in the BDF2 scheme where in the first step
+     * backward Euler time stepping is used to get the solution
+     * at the second time step to be sure that one have at least 
+     * 2 initial solutions
+     */
     int current_step_;
     /** @brief check if the semi-implicit scheme is used
      */
     bool imex_scheme(bool print_info);
 
-    
-    void modify_slip_bc(bool modify_all);
+    /** @brief modify matrices according to the Slip type boundary 
+     * conditions 
+     * If the mass matrix (also BT's are independent of solution ) 
+     * is independent of solution then it only needs to modify only
+     * once:
+     * NOTE: mass matrix and BT's are solution dependent for 
+     * residual-VMS, and SUPG case.
+     * Nonlinear matrices needs to be modify within each
+     * time step and also within non-linear iteration
+     */
+    void modify_slip_bc(bool BT_Mass);
     // getters and setters
     /*const BlockMatrixNSE2D & get_matrix() const
     { return this->systems.front().matrix; }*/

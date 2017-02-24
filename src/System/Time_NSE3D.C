@@ -330,7 +330,7 @@ void Time_NSE3D::check_parameters()
  }
 
  // Tell the user he is using IMEX
- if(db_["time_discretization"].is(4))
+ if(db_["extrapolate_velocity"].is("linear_extrapolate"))
  {
    if(solver_.is_using_multigrid())
    {
@@ -1232,7 +1232,7 @@ void Time_NSE3D::construct_extrapolated_solution()
 bool Time_NSE3D::imex_scheme(bool print_info)
 {
   //IMEX-scheme needs to get out of the iteration directly after the 1st solve()
-  bool interruption_condition  = (db_["time_discretization"].is(4))*
+  bool interruption_condition  = (db_["extrapolate_velocity"].is("linear_extrapolate"))*
                       (this->current_step_>=3);
 
   // change maximum number of nonlin_iterations to 1 in IMEX case

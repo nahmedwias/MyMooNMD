@@ -830,13 +830,13 @@ ParameterDatabase ParameterDatabase::default_time_database()
          "time adaptivity, it only corresponds to the initial value.",
          0., 0.5);
   
-  db.add("extrapolate_velocity", (size_t)0, 
-         "This is the extrapolate velcotity parameter"
-         "These values can be used with BDF's schemes or Crank_Nicholson"
-         "0 corresponds to no extrapolation"
-         "1 corresponds to constant extrapolation"
-         "2 corresponds to linear extrapolation", 
-         (size_t)0, (size_t)5 );
+//   db.add("extrapolate_velocity", (size_t)0, 
+//          "This is the extrapolate velcotity parameter"
+//          "These values can be used with BDF's schemes or Crank_Nicholson"
+//          "0 corresponds to no extrapolation"
+//          "1 corresponds to constant extrapolation"
+//          "2 corresponds to linear extrapolation", 
+//          (size_t)0, (size_t)5 );
     
 //   db.add("time_discretization", (size_t)2,
 //          "This is the time discretization scheme. The following values are "
@@ -848,27 +848,37 @@ ParameterDatabase ParameterDatabase::default_time_database()
 //          "4 -> Extrapolated Crank_Nicholson (or IMplicit-EXplicit, IMEX)"
 //          "5 -> Backward Difference Formula second order (BDF2)",
 //          (size_t)0 , (size_t)5 );
+  db.add("extrapolate_velocity", "constant_extrapolate", 
+         "This is the extrapolate velcotity parameter"
+         "These values can be used with BDF's schemes or Crank_Nicholson",
+         {"constant_extrapolate", "linear_extrapolate", "quadratic_extrapolate"});
   
+  db.add("ansatz_test_extrapolate", "no_extrapolation",
+         "This is the parameter for deciding the extrapolation in test"
+         " or ansatz functions. This is due to the non-linear terms appearing"
+        "in the SUPG or Residual Based VMS methods", 
+         {"only_velocity_test", "no_extrapolation"});
+  /*
   db.add("time_discretization", "backward_euler",
          "Determine the time stepping scheme: currently supported are",
-         {"backward_euler", "crank_nicolson", "bdf_two", "fractional_step"}); 
+         {"backward_euler", "crank_nicolson", "bdf_two", "fractional_step"});*/ 
   
-  db.add("current_time_step_length", 0.05, 
-          "This is the current time step which can be used for internal setting", 
-         0., 10.);
+//   db.add("current_time_step_length", 0.05, 
+//           "This is the current time step which can be used for internal setting", 
+//          0., 10.);
            
-  db.add("theta1", 1.0, 
-          "These are parameters for the time stepping scheme", 
-         0., 1.);
-  db.add("theta2", 0.0, 
-          "These are parameters for the time stepping scheme", 
-         0., 1.);
-  db.add("theta3", 0.0, 
-          "These are parameters for the time stepping scheme", 
-         0., 1.);
-  db.add("theta4", 1.0, 
-          "These are parameters for the time stepping scheme", 
-         0., 1.0);
+//   db.add("theta1", 1.0, 
+//           "These are parameters for the time stepping scheme", 
+//          0., 1.);
+//   db.add("theta2", 0.0, 
+//           "These are parameters for the time stepping scheme", 
+//          0., 1.);
+//   db.add("theta3", 0.0, 
+//           "These are parameters for the time stepping scheme", 
+//          0., 1.);
+//   db.add("theta4", 1.0, 
+//           "These are parameters for the time stepping scheme", 
+//          0., 1.0);
   return db;
 }
 
@@ -1015,10 +1025,6 @@ ParameterDatabase ParameterDatabase::default_turbulence_model_database()
    "criterion for comparing the local turbulent intensities in adaptive projection-based VMS", 
     (size_t) 1, (size_t) 3);
   
-  db.add("rbvms_test_anzats_extrapolate", "no_extrapolation", 
-         "Determine whether to use extrapolated solution only for test,"
-         " or also for ansatz ", 
-         {"no_extrapolation", "only_test", "full_extrapolate"});
   return db;
 }
 ParameterDatabase ParameterDatabase::default_space_disc_database()
@@ -1028,7 +1034,7 @@ ParameterDatabase ParameterDatabase::default_space_disc_database()
   db.add("disctype", "galerkin",
          "Determine the space discretization: currently supported are",
          {"galerkin", "supg", "local_projection", "vms_projection", 
-           "residual_based_vms", "grad_div"});
+           "residual_based_vms", "grad_div", "smagorinsky"});
   
   db.add("delta0", 0.25, 
          "This is the stabilization parameter used for the supg-pspg method",

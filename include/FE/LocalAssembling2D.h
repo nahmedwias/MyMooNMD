@@ -175,6 +175,10 @@ class LocalAssembling2D
     /**
      */
     void set_parameters_for_tnseResidual_vms_Extr(LocalAssembling2D_type type);
+    /**
+     * 
+     */
+    void set_parameters_for_Smagorinsky(LocalAssembling2D_type tyep);
     
   public:
     /** constructor */

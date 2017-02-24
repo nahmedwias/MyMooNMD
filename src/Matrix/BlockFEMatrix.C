@@ -300,6 +300,26 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity)
   return my_matrix;
 
 }
+
+BlockFEMatrix BlockFEMatrix::Mass_Matrix_NSE2D(const TFESpace2D& velocity, 
+                              const TFESpace2D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0); //
+  
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+  
+  return my_matrix;
+}
 #elif __3D__
 //3D named constructors
 BlockFEMatrix BlockFEMatrix::CD3D( const TFESpace3D& space )
@@ -1586,4 +1606,42 @@ void BlockFEMatrix::scale_blocks_actives( double scaling_factor,
     }
   }
 }
+/* ************************************************************************* */
+void BlockFEMatrix::add_blockfe_matrix(const BlockFEMatrix& Matrix, double factor)
+{
+  if(this->test_spaces_rowwise_ != Matrix.test_spaces_rowwise_)
+  {
+    ErrThrow("test spaces are not same");
+  }
+  if(this->ansatz_spaces_columnwise_ != Matrix.ansatz_spaces_columnwise_)
+  {
+    ErrThrow("ansatz spaces are not same");
+  }
+  
+  int colors = Matrix.color_count_.size();
+  
+  for(int c = 0; c<colors; ++c)
+  {
+    FEMatrix* matrix_to_add;
+    std::vector<std::vector<size_t>> blocks_to_add_to;
+    std::vector<bool> is_transposed;
+    for(int br=0; br<Matrix.n_cell_rows_; ++br)
+    {
+      for(int bc=0; bc<Matrix.n_cell_columns_; ++ bc)
+      {
+        if(Matrix.cell_grid_[br][bc].color_ == c)
+        {
+          matrix_to_add = dynamic_cast<FEMatrix*>(Matrix.cell_grid_[br][bc].block_.get());          
+          blocks_to_add_to.push_back({br,bc});
+          is_transposed.push_back(Matrix.cell_grid_[br][bc].is_transposed_);
+        }
+      }
+    }
+    if(matrix_to_add->GetN_Entries() == 0)
+      continue;
+    this->add_matrix_actives(*matrix_to_add, factor, blocks_to_add_to,is_transposed);
+  }
+}
+
+
 /* ************************************************************************* */

@@ -16,6 +16,7 @@
 #include <TNSE2D_ParamRout.h>
 #include <Brinkman2D_Mixed.h>// local assembling routines for 2D Navier-Stokes
 #include <assemble_routine_tnse2D_supg.h>
+#include <assemble_routine_tnse2D_smagorinsky.h>
 
 #include <MooNMD_Io.h>
 #include <string.h>
@@ -404,6 +405,9 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             case RESIDUAL_VMS:
               this->set_parameters_for_tnseResidual_vms(type);
               break;
+            case SMAGORINSKY:
+              this->set_parameters_for_Smagorinsky(type);
+              break;
             default:
               ErrThrow("DISCTYPE ", TDatabase::ParamDB->DISCTYPE, " is not supported yet");
           }
@@ -609,7 +613,7 @@ void LocalAssembling2D::GetLocalForms(int N_Points,
     
     //this->GetParameters(N_Points, NULL, Cell, ??Cell->GetCellIndex(), X, Y,
     //                    Parameters);
-    
+
     for(int i=0; i<N_Matrices; ++i)
     {
         double **CurrentMatrix = LocMatrix[i];
@@ -632,7 +636,7 @@ void LocalAssembling2D::GetLocalForms(int N_Points,
     // for 2Phase flow problems (Sashikumaar Ganesan)
     AuxArray[0][0] = Cell->GetPhase_ID();
     // *****************************************************
-    
+
     if(Coeffs)
         Coeffs(N_Points, X, Y, Parameters, AuxArray);
     
@@ -664,7 +668,7 @@ void LocalAssembling2D::GetLocalForms(int N_Points,
         }
         
         double *Param = Parameters[i];
-        
+
         for(int j=0; j<N_Terms; j++)
             OrigValues[j] = AllOrigValues[j][i];
         
@@ -3162,3 +3166,75 @@ void LocalAssembling2D::set_parameters_for_tnseResidual_vms(LocalAssembling2D_ty
 {
   ErrThrow("not implemented ");
 }
+
+void LocalAssembling2D::set_parameters_for_Smagorinsky(LocalAssembling2D_type tyep)
+{
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  if(nstype < 4)
+    ErrThrow("SMAGORINSKY: ", " only tested for NSTYPE 4");
+  
+  this->N_Parameters = 8;
+  this->N_ParamFct = 1;
+  this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+  this->BeginParameter = { 0 };
+  this->N_FEValues = 6;
+  this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+  this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+  
+  this->N_Terms = 4;
+  this->Derivatives = { D10, D01, D00, D00};
+  this->FESpaceNumber = { 0, 0, 0, 1};  
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  
+  switch(type)
+  {
+    case TNSE2D:
+      switch(nstype){
+        case 1: case 2: case 3: break;
+        case 4:
+          this->N_Matrices = 9;
+          this->RowSpace =    { 0, 0, 0, 0, 0, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2; 
+          this->RhsSpace = { 0, 0 };
+          this->AssembleParam = TimeNSType4SmagorinskyDD;
+          this->Manipulate = NULL;
+          break;
+      }// nstype
+      break; // break; TNSE2D
+//--------------
+    case TNSE2D_NL:
+      switch(nstype){
+        case 1: case 2: case 3: break;
+        case 4: 
+          this->N_Matrices = 4;
+          this->RowSpace =    { 0, 0, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0};
+          this->N_Rhs = 0; 
+          this->RhsSpace = { };
+          this->AssembleParam = TimeNSType3_4NLSmagorinskyDD;
+          this->Manipulate = NULL;
+          break;
+      }
+      break; // break TNSE2D_NL
+//--------------
+    case TNSE2D_Rhs:
+      this->N_Terms = 1;
+      this->Derivatives = { D00 };
+      this->Needs2ndDerivatives = new bool[1];
+      this->Needs2ndDerivatives[0] = false;
+      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 0;
+      this->RowSpace = {};
+      this->ColumnSpace = { };
+      this->N_Rhs = 2 ;
+      this->RhsSpace = {0, 0};
+      this->AssembleParam =TimeNSRHS; 
+      this->Manipulate = NULL;
+      break;
+  }
+}
+

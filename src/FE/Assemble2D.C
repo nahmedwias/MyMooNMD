@@ -2280,14 +2280,14 @@ double factor
 //
 // =======================================================================
 
-void Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
+void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 int n_matrices, TMatrix2D **matrices,
-int n_rhs, double **rhs, TFESpace2D **ferhs,
-TDiscreteForm2D *DiscreteForm,
+int n_rhs, double **rhs, const TFESpace2D **ferhs,
+//TDiscreteForm2D *DiscreteForm,
 BoundCondFunct2D **BoundaryConditions,
 BoundValueFunct2D **BoundaryValues,
-TAuxParam2D *Parameters,
+// TAuxParam2D *Parameters,
 TFEFunction2D *u1, TFEFunction2D *u2)
 {
   int N_AllMatrices = n_sqmatrices+n_matrices;
@@ -2372,7 +2372,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 #ifdef __3D__
   double z0, z1;
 #endif
-
   int axial3D = TDatabase::ParamDB->Axial3D;
   
   // ########################################################################
@@ -2439,13 +2438,13 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 
   }                                               // endif n_rhs
 
-  N_Parameters = Parameters->GetN_Parameters();
-  if(N_Parameters)
-  {
-    aux = new double [MaxN_QuadPoints_2D*N_Parameters];
-    for(j=0;j<MaxN_QuadPoints_2D;j++)
-      Param[j] = aux + j*N_Parameters;
-  }
+  //N_Parameters = 0; //Parameters->GetN_Parameters();
+//   if(N_Parameters)
+//   {
+//     aux = new double [MaxN_QuadPoints_2D*N_Parameters];
+//     for(j=0;j<MaxN_QuadPoints_2D;j++)
+//       Param[j] = aux + j*N_Parameters;
+//   }
 
   // 20 <= number of term in bilinear form
   aux = new double [MaxN_QuadPoints_2D*40];
@@ -2858,8 +2857,8 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                       //OutPut ("1 " << integral[0] << " " << integral[1] << endl);
 
                       // edge not parallel to y axis or penetration
-//                       if ((fabs(ny)>eps)||(penetration_penalty<1e3))
-                      if ((fabs(tx)>eps)||(penetration_penalty>0))
+                      // if ((fabs(tx)>eps)||(penetration_penalty>0))
+                       if ((fabs(ny)>eps)||(penetration_penalty<1e3))
                        {
 //                         if(comp==0 || comp==1 || comp==5 )
 //                          cout << j <<  " X " << x << " Y " << y <<endl;
@@ -2990,8 +2989,8 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 
                       // edge not parallel to x-axis or pentration
 
-//                      if ((fabs(nx) > eps)|| (penetration_penalty < 1e3))
-                     if ((fabs(nx) > eps) || (fabs(penetration_penalty) > 0.0))
+                     // if ((fabs(nx) > eps) || (fabs(penetration_penalty) > 0.0))
+                     if ((fabs(nx) > eps)|| (penetration_penalty < 1e3))
                       {
                         // OutPut("nox" << endl);
                         if (n_sqmatrices>2)
@@ -3139,10 +3138,10 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     delete [] RhsGlobalNumbers;
   }
 
-  if(N_Parameters)
-  {
-    delete [] Param[0];
-  }
+//   if(N_Parameters)
+//   {
+//     delete [] Param[0];
+//   }
 
   if(N_AllMatrices)
   {
@@ -9534,6 +9533,9 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     
     //Parameters->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param);
     la.GetParameters(N_Points, Coll, cell, i, X, Y, Param);
+//    int kk = 0;
+//    cout<<" local forms "<< Param[kk][0] << "  " << Param[kk][1] << "  "
+//         << Param[kk][2] << "  " <<Param[kk][3] <<"  " <<Param[kk][4] <<"  " <<Param[kk][5]<<endl;
 
     if((TDatabase::ParamDB->DISCTYPE == SDFEM)
       || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)

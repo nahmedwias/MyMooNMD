@@ -78,6 +78,7 @@ void BoundCondition(int i, double t, BoundCond &cond)
 {
   cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
   TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
@@ -108,7 +109,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
   }
 }
 
-void ComputeVorticiyThickness(TFEFunction2D *Vorticity, double &thickness)
+void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
 {
   int i,j,k,l,found,max_lines,N_Cells,N_Edges,N_Vort;
   TCollection *Coll;
@@ -202,7 +203,16 @@ void ComputeVorticiyThickness(TFEFunction2D *Vorticity, double &thickness)
   return;
 }
 
-void EvaluateSolution(const Time_NSE2D &tnse2d)
+void EvaluateSolution(const Time_NSE2D_Merged &tnse2d, double & zero_vort)
 {
+  const TFEFunction2D& vorticity(tnse2d.get_vorticity_funct());
+  double thickness;
+  ComputeVorticiyThickness(&vorticity, thickness);
+
+  if(zero_vort < 0)
+    zero_vort = thickness;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+  Output::print( t, " ", "vorticity thickness: ", thickness,
+                 " ", thickness/zero_vort);
 }
 #endif // MIXINGLAYERSLIP_H
