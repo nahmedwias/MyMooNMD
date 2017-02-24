@@ -18,7 +18,6 @@
 #define HALOCELL 0
 #define NONHALO  1
 
-extern double timeC;
 
 #ifndef _HYBRID
 TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace)

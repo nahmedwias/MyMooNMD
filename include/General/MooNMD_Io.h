@@ -320,7 +320,8 @@ namespace Output
     }
   }
   
-  // implementationof the errThrow method
+  // implementation of the errThrow method
+  /// @todo adapt to MPI (write rank and call MPI_Finalize())
   template<typename ... Arguments>
   [[ noreturn ]] void errThrow(std::string file, int line,
                                Arguments const& ... args)
