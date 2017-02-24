@@ -2,32 +2,32 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 4
+refinement_n_initial_steps: 5
 
-ENDTIME: 1.0
-TIMESTEPLENGTH: 0.04
+ENDTIME: 0.20
+TIMESTEPLENGTH: 0.01
 
-P1: 1
+P1: 1000
 P2: 1
 P3: 1
 
 ########################## Fixed Parameters 
-boundary_file: Default_UnitSquare
-geo_file: UnitSquare   { TwoTriangles, UnitSquare }
-#boundary_file: ../mesh/UnitSquare.PRM
-#geo_file: ../mesh/UnitSquare.mesh
+#boundary_file: Default_UnitSquare
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+boundary_file: ../mesh/dambreak.PRM
+geo_file: ../mesh/dambreak_quad.GEO
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
 verbosity: 1   [ 1, 5 ]
 
-output_write_vtk: false   { true, false }
+output_write_vtk: true   { true, false }
 output_write_ps: false   { true, false }
 output_compute_errors: true   { true, false }
 output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
-nonlinloop_maxit: 20   [ 0, 1000 ]
+nonlinloop_maxit: 50   [ 0, 1000 ]
 nonlinloop_epsilon: 1e-8   [ 0, 1 ] 
 nonlinloop_damping_factor: 1   [ 0, 1 ]
 nonlinloop_slowfactor: 1   [ 0, 10 ]
@@ -60,10 +60,10 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
-#ANSATZ_ORDER: 1
+ANSATZ_ORDER: 1
 NSTYPE: 1
 LAPLACETYPE: 0
-#algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
+algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
 DISCTYPE:  1
 NSE_NONLINEAR_FORM: 0
@@ -83,10 +83,10 @@ diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
 RE_NR:	1.
 
-dimensional_nse: false   { true, false }
-coupling_nse_cd: false   { true, false }
-coupling_cd_nse: false   { true, false }
-solve_cd: false   { true, false }	
+dimensional_nse: true   { true, false }
+coupling_nse_cd: true   { true, false }
+coupling_cd_nse: true   { true, false }
+solve_cd: true   { true, false }	
 
 ## See the class 'Example' and its derived classes.
 ## 0 - bsp1 (sincos)  - in the standard TNSE2D program
@@ -115,7 +115,7 @@ solve_cd: false   { true, false }
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
 ## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
-example: 32   [ -1, 100 ]
+example: 40   [ -1, 100 ]
 
 ########################## Parameters need to be cleaned
 Par_P0: 0

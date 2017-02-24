@@ -165,6 +165,9 @@ int main(int argc, char* argv[])
     mu_vector = mu1; // uncomment in case mu must stay constant
 //    rho_vector = rho1;  // uncomment in case rho must stay constant
   }
+  phase_field.write("vector_phi");
+  mu_vector.write("vector_mu");
+  rho_vector.write("vector_rho");
 
   /** @brief Finite Element function for density and viscosity field */
   TFEFunction2D rho_field = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
