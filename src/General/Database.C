@@ -442,7 +442,7 @@ void TDatabase::SetDefaultParameters()
 
   ParamDB->FRICTION_CONSTANT = 0.0;      // free slip 
   ParamDB->FRICTION_POWER = 0.0;         // free slip
-  ParamDB->FRICTION_TYPE = 0;            // friction type
+  ParamDB->FRICTION_TYPE = 1;            // friction type
   ParamDB->FRICTION_U0 = 1.0;            // U_0
   ParamDB->PENETRATION_CONSTANT = 1e12;  // no penetration
   ParamDB->PENETRATION_POWER = -2;        // no penetration

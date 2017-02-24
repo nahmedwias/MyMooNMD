@@ -405,7 +405,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
 
 /*! Function wrapper for drag and lift computation, copied and adapted from
         the static case (Benchmark_Neum.h). */
-void compute_drag_and_lift(const Time_NSE2D &tnse2d)
+void compute_drag_and_lift(const Time_NSE2D &tnse2d, double& val)
 {
   double Cd, Cl, dP1[4], dP2[4];
 

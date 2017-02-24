@@ -151,7 +151,7 @@ void compute(std::list<TCollection* > grid_collections, ParameterDatabase& db,
 
 void check(ParameterDatabase& db, std::list<TCollection* > grid_collections,
            int velocity_order, int pressure_order,
-           int nstype, int laplacetype, int nonlineartype, int time_discretizationtype,
+           int nstype, int laplacetype, int nonlineartype, std::string time_discretizationtype,
            std::array<std::array<double, int(4)>,3> errors, double tol
 #ifdef _MPI
            , int maxSubDomainPerDof
@@ -163,7 +163,10 @@ void check(ParameterDatabase& db, std::list<TCollection* > grid_collections,
   TDatabase::ParamDB->NSTYPE = nstype;
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlineartype;
   TDatabase::ParamDB->LAPLACETYPE = laplacetype;
-  TDatabase::TimeDB->TIME_DISC = time_discretizationtype;
+  if(time_discretizationtype.compare("backward_euler"))
+    TDatabase::TimeDB->TIME_DISC = 1;
+  else if(time_discretizationtype.compare("crank_nicolson"))
+    TDatabase::TimeDB->TIME_DISC = 2;
 
 #ifdef _MPI
   compute(grid_collections,db,errors,tol,maxSubDomainPerDof);
@@ -257,7 +260,7 @@ double get_tolerance(std::string solver_name)
 }
 
 void set_errors(int example, int velocity_order, int nstype,
-                int timediscretizationtype, std::string solver_name,
+                std::string timediscretizationtype, std::string solver_name,
                 bool istetra,
                 std::array<std::array<double, int(4)>,3>& errors)
 {
@@ -350,7 +353,7 @@ int main(int argc, char* argv[])
     int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
-    int timediscretizationtype = 2;
+    std::string timediscretizationtype = "crank_nicolson";
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing Q2/P1-disc elements for several NSTypes");
@@ -495,7 +498,7 @@ int main(int argc, char* argv[])
 #endif
     //=============================================================================
     // BACKWARD-EULER TIME STEPPING SCHEME=========================================
-    timediscretizationtype = 1;
+    timediscretizationtype = "backward_euler";
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing Q2/P1-disc elements for several NSTypes");
@@ -655,7 +658,7 @@ int main(int argc, char* argv[])
     int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
-    int timediscretizationtype = 2;
+    std::string timediscretizationtype = "crank_nicolson";
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing P2/P1 elements for several NSTypes");
@@ -713,7 +716,7 @@ int main(int argc, char* argv[])
 #endif
     //=============================================================================
     // BACKWARD EULER TIME STEPPING SCHEME=========================================
-    timediscretizationtype = 1;
+    timediscretizationtype = "backward_euler";
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing P2/P1 elements for several NSTypes");

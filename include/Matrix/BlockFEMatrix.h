@@ -249,6 +249,9 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for 2D NSE problems
      */
     static BlockFEMatrix Mass_NSE2D(const TFESpace2D& velocity);
+    
+    static BlockFEMatrix Mass_Matrix_NSE2D(const TFESpace2D& velocity, 
+                              const TFESpace2D& pressure);
 
 #elif __3D__
     /**
@@ -777,6 +780,8 @@ class BlockFEMatrix : public BlockMatrix
     /// @brief Destructor. Tidies up nice and clean.
     virtual ~BlockFEMatrix() = default;
 
+    void add_blockfe_matrix(const BlockFEMatrix& Matrix, double factor = 1.);
+    
   protected:
 #ifdef __2D__
     /// Store pointers to the testspaces rowwise. (TODO could be changed to weak_ptr)
@@ -801,6 +806,8 @@ class BlockFEMatrix : public BlockMatrix
     /// methods `enable_pressure_correction`/`disable_pressure_correction` must
     /// be const as well.
     mutable bool pressure_correction;
+    
+    
 
   private:
     /**

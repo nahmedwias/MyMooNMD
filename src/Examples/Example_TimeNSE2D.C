@@ -2,6 +2,7 @@
 #include <Database.h>
 #include <MainUtilities.h>
 #include <Time_NSE2D.h>
+#include <Time_NSE2D_Merged.h>
 #include <FEDatabase2D.h>
 
 #include <string>
@@ -107,7 +108,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       flow_around_cylinder::DIMENSIONLESS_VISCOSITY = this->get_nu();
       
       /**post processing - drag and lift calculation and output */
-      post_processing_stat = flow_around_cylinder::compute_drag_and_lift;
+      // post_processing_stat = flow_around_cylinder::compute_drag_and_lift;
       break;
     case 3:
       exact_solution.push_back( mixing_layer_slip::ExactU1 );
@@ -142,11 +143,11 @@ Example_TimeNSE2D::Example_TimeNSE2D(
   }
 }
 
-void Example_TimeNSE2D::do_post_processing(const Time_NSE2D& tnse2d) const
+void Example_TimeNSE2D::do_post_processing(const Time_NSE2D_Merged& tnse2d, double& val) const
 {
   if(post_processing_stat)
   {
-    post_processing_stat(tnse2d);
+    post_processing_stat(tnse2d, val);
   }
   else
   {

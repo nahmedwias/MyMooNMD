@@ -458,14 +458,6 @@ void TimeNSType4Smagorinsky(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
-// Type 4, Smagorinsky, D(u):D(v)
-// ======================================================================
-void TimeNSType4SmagorinskyDD(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
 // Type 4, Coletti, (grad u, grad v)
 // ======================================================================
 void TimeNSType4Coletti(double Mult, double *coeff, 
@@ -714,15 +706,6 @@ int TimeNSType3NLSmagorinskyRowSpace[4] = { 0, 0, 0, 0 };
 int TimeNSType3NLSmagorinskyColumnSpace[4] = { 0, 0, 0, 0 };
 
 void TimeNSType3_4NLSmagorinsky(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 3, Standard Smagorinsky, D(u):D(v), only nonlinear diagonal blocks
-// Type 4, Standard Smagorinsky, D(u):D(v), only nonlinear diagonal blocks
-// ======================================================================
-void TimeNSType3_4NLSmagorinskyDD(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
