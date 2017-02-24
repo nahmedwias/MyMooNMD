@@ -379,12 +379,10 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 
 /** determine the value of function and its first derivatives at
     the given point */
-void TFEFunction2D::FindGradient(double x, double y, double *values) const
+void TFEFunction2D::FindGradient(double x, double y, double *values, std::vector<int> containing_cells) const
 {
-  int i,j, N_Cells;
   double xi, eta;
-  TBaseCell *cell;
-  TCollection *Coll;
+  TCollection *Coll = FESpace2D->GetCollection();
   FE2D FE_ID;
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
@@ -392,95 +390,172 @@ void TFEFunction2D::FindGradient(double x, double y, double *values) const
   int N_BaseFunct;
   double *uorig, *uxorig, *uyorig, *uref, *uxiref, *uetaref;
 
-  int *Numbers, N_Found;
+  int *Numbers;
   double u, ux, uy;
   double val;
-  int *GlobalNumbers, *BeginIndex;
+  int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
+  int *BeginIndex = FESpace2D->GetBeginIndex();
 
-  N_Found = 0;
   values[0] = 0;
   values[1] = 0;
   values[2] = 0;
 
-  BeginIndex = FESpace2D->GetBeginIndex();
-  GlobalNumbers = FESpace2D->GetGlobalNumbers();
 
-  Coll = FESpace2D->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  for(i=0;i<N_Cells;i++)
-  {
-    cell = Coll->GetCell(i);
-    if(cell->PointInCell(x,y))
+  if(containing_cells.empty())
+  {//containing cells not given - must search through the entire collection
+    int N_Found = 0;
+    int N_Cells = Coll->GetN_Cells();
+    for(int i=0;i<N_Cells;i++)
     {
-      N_Found++;
-      // cout << "point found" << endl;
-      FE_ID = FESpace2D->GetFE2D(i, cell);
-      FE_Obj = TFEDatabase2D::GetFE2D(FE_ID);
-      RefTrans = FE_Obj->GetRefTransID();
-
-      // set cell for reference transformation
-      TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
-
-      // find local coordinates of the given point
-      TFEDatabase2D::GetRefFromOrig(RefTrans, x, y, xi, eta);
-      // cout << " xi: " << xi << endl;
-      // cout << "eta: " << eta << endl;
-
-      // get base function object
-      bf = FE_Obj->GetBaseFunct2D();
-      N_BaseFunct = bf->GetDimension();
-
-      uorig = new double[N_BaseFunct];
-      uxorig = new double[N_BaseFunct];
-      uyorig = new double[N_BaseFunct];
-
-      uref = new double[N_BaseFunct];
-      uxiref = new double[N_BaseFunct];
-      uetaref = new double[N_BaseFunct];
-
-      bf->GetDerivatives(D00, xi, eta, uref);
-      bf->GetDerivatives(D10, xi, eta, uxiref);
-      bf->GetDerivatives(D01, xi, eta, uetaref);
-
-      TFEDatabase2D::GetOrigValues(RefTrans, xi, eta, bf, Coll, (TGridCell *)cell,
-        uref, uxiref, uetaref, uorig, uxorig, uyorig);
-
-      u = 0;
-      ux = 0;
-      uy = 0;
-      Numbers = GlobalNumbers + BeginIndex[i];
-      for(j=0;j<N_BaseFunct;j++)
+      TBaseCell* cell = Coll->GetCell(i);
+      if(cell->PointInCell(x,y))
       {
-        val = Values[Numbers[j]];      
-        u += uorig[j]*val;
-        ux += uxorig[j]*val;
-        uy += uyorig[j]*val;
-      }
+        N_Found++;
+        // cout << "point found" << endl;
+        FE_ID = FESpace2D->GetFE2D(i, cell);
+        FE_Obj = TFEDatabase2D::GetFE2D(FE_ID);
+        RefTrans = FE_Obj->GetRefTransID();
 
-      values[0] += u;
-      values[1] += ux;
-      values[2] += uy;
+        // set cell for reference transformation
+        TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
 
-      delete[] uorig;
-      delete[] uxorig;
-      delete[] uyorig;
-      delete[] uref;
-      delete[] uxiref;
-      delete[] uetaref;
+        // find local coordinates of the given point
+        TFEDatabase2D::GetRefFromOrig(RefTrans, x, y, xi, eta);
+        // cout << " xi: " << xi << endl;
+        // cout << "eta: " << eta << endl;
 
-    }                                             // endif
-  }                                               // endfor
+        // get base function object
+        bf = FE_Obj->GetBaseFunct2D();
+        N_BaseFunct = bf->GetDimension();
 
-  if(N_Found>0)
-  {
-    values[0] /= N_Found;
-    values[1] /= N_Found;
-    values[2] /= N_Found;
+        uorig = new double[N_BaseFunct];
+        uxorig = new double[N_BaseFunct];
+        uyorig = new double[N_BaseFunct];
+
+        uref = new double[N_BaseFunct];
+        uxiref = new double[N_BaseFunct];
+        uetaref = new double[N_BaseFunct];
+
+        bf->GetDerivatives(D00, xi, eta, uref);
+        bf->GetDerivatives(D10, xi, eta, uxiref);
+        bf->GetDerivatives(D01, xi, eta, uetaref);
+
+        TFEDatabase2D::GetOrigValues(RefTrans, xi, eta, bf, Coll, (TGridCell *)cell,
+                                     uref, uxiref, uetaref, uorig, uxorig, uyorig);
+
+        u = 0;
+        ux = 0;
+        uy = 0;
+        Numbers = GlobalNumbers + BeginIndex[i];
+        for(int j=0;j<N_BaseFunct;j++)
+        {
+          val = Values[Numbers[j]];
+          u += uorig[j]*val;
+          ux += uxorig[j]*val;
+          uy += uyorig[j]*val;
+        }
+
+        values[0] += u;
+        values[1] += ux;
+        values[2] += uy;
+
+        delete[] uorig;
+        delete[] uxorig;
+        delete[] uyorig;
+        delete[] uref;
+        delete[] uxiref;
+        delete[] uetaref;
+
+      }                                             // endif
+    }                                               // endfor
+
+    if(N_Found>0)
+    {
+      values[0] /= N_Found;
+      values[1] /= N_Found;
+      values[2] /= N_Found;
+    }
+    else
+    {
+      OutPut(" Point not found " <<   "x " <<x <<   " y " << y <<  endl);
+      exit(0);
+    }
   }
   else
   {
-   OutPut(" Point not found " <<   "x " <<x <<   " y " << y <<  endl);
-   exit(0);
+    for(auto c : containing_cells)
+    {
+      TBaseCell* cell = Coll->GetCell(c);
+      if(cell->PointInCell(x,y))
+      {
+        // cout << "point found" << endl;
+        FE_ID = FESpace2D->GetFE2D(c, cell);
+        FE_Obj = TFEDatabase2D::GetFE2D(FE_ID);
+        RefTrans = FE_Obj->GetRefTransID();
+
+        // set cell for reference transformation
+        TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
+
+        // find local coordinates of the given point
+        TFEDatabase2D::GetRefFromOrig(RefTrans, x, y, xi, eta);
+        // cout << " xi: " << xi << endl;
+        // cout << "eta: " << eta << endl;
+
+        // get base function object
+        bf = FE_Obj->GetBaseFunct2D();
+        N_BaseFunct = bf->GetDimension();
+
+        uorig = new double[N_BaseFunct];
+        uxorig = new double[N_BaseFunct];
+        uyorig = new double[N_BaseFunct];
+
+        uref = new double[N_BaseFunct];
+        uxiref = new double[N_BaseFunct];
+        uetaref = new double[N_BaseFunct];
+
+        bf->GetDerivatives(D00, xi, eta, uref);
+        bf->GetDerivatives(D10, xi, eta, uxiref);
+        bf->GetDerivatives(D01, xi, eta, uetaref);
+
+        TFEDatabase2D::GetOrigValues(RefTrans, xi, eta, bf, Coll, (TGridCell *)cell,
+                                     uref, uxiref, uetaref, uorig, uxorig, uyorig);
+
+        u = 0;
+        ux = 0;
+        uy = 0;
+        Numbers = GlobalNumbers + BeginIndex[c];
+        for(int j=0;j<N_BaseFunct;j++)
+        {
+          val = Values[Numbers[j]];
+          u += uorig[j]*val;
+          ux += uxorig[j]*val;
+          uy += uyorig[j]*val;
+        }
+
+        values[0] += u;
+        values[1] += ux;
+        values[2] += uy;
+
+        delete[] uorig;
+        delete[] uxorig;
+        delete[] uyorig;
+        delete[] uref;
+        delete[] uxiref;
+        delete[] uetaref;
+
+      }
+      else
+      {
+          ErrThrow("Point (",x,",",y,") not in cell ", c," as cheat says!");
+      }
+    }// end loop over containing cells
+
+    //now average the summed up values
+    int n_containing_cells = containing_cells.size();
+    values[0] /= n_containing_cells;
+    values[1] /= n_containing_cells;
+    values[2] /= n_containing_cells;
+
   }
   
 }
@@ -1568,9 +1643,8 @@ void TFEFunction2D::Interpolate(const TFEFunction2D *OldFeFunction,
     {
       if(cheat_sheet)
       {//find fct value and dervtvs, but give a hint from the cheat sheet.
-        int cheat = cheat_sheet->get_cheat(i,j);
-        OldFeFunction->FindGradientLocal(
-            OldFeFunction->GetFESpace2D()->GetCollection()->GetCell(cheat), cheat, X[j], Y[j], values);
+        FEInterpolationCheatSheet::ContainingCells cheat = cheat_sheet->get_cheats(i,j);
+        OldFeFunction->FindGradient(X[j], Y[j], values, cheat);
       }
       else
       {
