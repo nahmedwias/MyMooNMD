@@ -22,8 +22,8 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
-  double nu = 1/TDatabase::ParamDB->RE_NR;
-//  double nu = TDatabase::ParamDB->P2;
+//  double nu = 1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
  
@@ -35,10 +35,10 @@ void InitialU1(double x, double y, double *values)
 
 void InitialU2(double x, double y, double *values)
 {
-  double nu = 1/TDatabase::ParamDB->RE_NR;
+//  double nu = 1/TDatabase::ParamDB->RE_NR;
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-//  double nu = TDatabase::ParamDB->P2;
+  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = sin(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
@@ -49,8 +49,8 @@ void InitialP(double x, double y, double *values)
   // values[0] = -(cos(2*N_OSCILLATIONS*pi*x)+cos(2*N_OSCILLATIONS*pi*y))/4.0;
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu = 1/TDatabase::ParamDB->RE_NR;
-//  double nu = TDatabase::ParamDB->P2;
+//  double nu = 1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-4*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -(cos(2*N_OSCILLATIONS*pi*x)+cos(2*N_OSCILLATIONS*pi*y))*fac/4.0;
@@ -63,38 +63,38 @@ void ExactU1(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-  double nu = 1/TDatabase::ParamDB->RE_NR;
-  //double nu = TDatabase::ParamDB->P2;
+//  double nu = 1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -cos(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y)*fac;
   values[1] = N_OSCILLATIONS*pi*sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y)*fac;
   values[2] = -N_OSCILLATIONS*pi*cos(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
-  values[3] = 0;//2*fac*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*
-      //cos(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+  values[3] = 2*fac*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*
+      cos(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
 }
 
 void ExactU2(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-//  double nu = TDatabase::ParamDB->P2;
-  double nu = 1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
+//  double nu = 1/TDatabase::ParamDB->RE_NR;
  
   fac = exp(-2*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = sin(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
   values[1] = N_OSCILLATIONS*pi*cos(N_OSCILLATIONS*pi*x)*cos(N_OSCILLATIONS*pi*y)*fac;
   values[2] = -N_OSCILLATIONS*pi* sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y)*fac;;
-  values[3] = 0;//-2*fac*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*
-      //cos(N_OSCILLATIONS*pi*y)*sin(N_OSCILLATIONS*pi*x);
+  values[3] = -2*fac*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*
+      cos(N_OSCILLATIONS*pi*y)*sin(N_OSCILLATIONS*pi*x);
 }
 
 void ExactP(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME, fac;
   double pi = 3.14159265358979;
-//  double nu = TDatabase::ParamDB->P2;
-  double nu = 1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
+//  double nu = 1/TDatabase::ParamDB->RE_NR;
  
   fac = exp(-4*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*nu*t);
   values[0] = -(cos(2*N_OSCILLATIONS*pi*x)+cos(2*N_OSCILLATIONS*pi*y))*fac/4.0;
@@ -115,8 +115,8 @@ void BoundCondition(int i, double t, BoundCond &cond)
 void U1BoundValue(int BdComp, double Param, double &value)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
-//  double nu = TDatabase::ParamDB->P2;
-  double nu = 1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
+//  double nu = 1/TDatabase::ParamDB->RE_NR;
   double fac;
   double pi = 3.14159265358979;
 
@@ -167,8 +167,8 @@ void U1BoundValue(int BdComp, double Param, double &value)
 void U2BoundValue(int BdComp, double Param, double &value)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
-//  double nu = TDatabase::ParamDB->P2;
-  double nu = 1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
+//  double nu = 1/TDatabase::ParamDB->RE_NR;
   double fac;
   double pi = 3.14159265358979;
   value = 0;
@@ -222,15 +222,15 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-//  int switchviscosity = TDatabase::ParamDB->P1;
-//  double vmin = TDatabase::ParamDB->P2;
-//  double vmax = TDatabase::ParamDB->P3;
+  int switchviscosity = TDatabase::ParamDB->P1;
+  double vmin = TDatabase::ParamDB->P2;
+  double vmax = TDatabase::ParamDB->P3;
 //  double rho, mu;
 
   int i;
   double *coeff, x, y;
-//  double nu = TDatabase::ParamDB->P2;
-  double nu = 1/TDatabase::ParamDB->RE_NR;
+  double nu = TDatabase::ParamDB->P2;
+//  double nu = 1/TDatabase::ParamDB->RE_NR;
   double eps1, eps2, eps3;// fac;
   double t=TDatabase::TimeDB->CURRENTTIME;
   double pi = 3.14159265358979;
@@ -247,27 +247,27 @@ void LinCoeffs(int n_points, double *X, double *Y,
     x = X[i];
     y = Y[i];
 
-//    ExactU1(x, y, val1);
-//    ExactU2(x, y, val2);
-//    ExactP (x, y, val3);
+    ExactU1(x, y, val1);
+    ExactU2(x, y, val2);
+    ExactP (x, y, val3);
 
     // eps is the variable viscosity, nu = vmin
     // Please choose one of the formulas and comment the 2 others
-//    switch(switchviscosity)
-//    {
-//      case 1:
-//        eps1 = vmin+(vmax-vmin)*x*x*(1-x)*y*y*(1-y)*721/16;
-        // if eps = visco1, use these right hand side values
-        coeff[0] = nu;//eps1;
-        //coeff[1] = val1[3]*(1-eps1);
-        //coeff[2] = val2[3]*(-1+eps1);
-        coeff[1] = 0;//val1[3]*(nu-eps1)-2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
-            //((721/8)*(vmax-vmin)*(1-x)*x*(1-y)*y*y-(721/16)*(vmax-vmin)*x*x*(1-y)*y*y)*
-            //sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
-        coeff[2] = 0;//val1[3]*(-nu+eps1)+2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
-            //((721/8)*(vmax-vmin)*(1-x)*x*x*(1-y)*y-(721/16)*(vmax-vmin)*x*x*(1-x)*y*y)*
-            //sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
-//        break;
+    switch(switchviscosity)
+    {
+      case 1:
+        eps1 = vmin+(vmax-vmin)*x*x*(1-x)*y*y*(1-y)*721/16;
+        //if eps = visco1, use these right hand side values
+        coeff[0] = eps1;
+//        coeff[1] = val1[3]*(1-eps1);
+//        coeff[2] = val2[3]*(-1+eps1);
+        coeff[1] = val1[3]*(nu-eps1)-2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
+            ((721/8)*(vmax-vmin)*(1-x)*x*(1-y)*y*y-(721/16)*(vmax-vmin)*x*x*(1-y)*y*y)*
+            sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+        coeff[2] = val1[3]*(-nu+eps1)+2*exp(-2*nu*N_OSCILLATIONS*N_OSCILLATIONS*pi*pi*t)*N_OSCILLATIONS*pi*
+            ((721/8)*(vmax-vmin)*(1-x)*x*x*(1-y)*y-(721/16)*(vmax-vmin)*x*x*(1-x)*y*y)*
+            sin(N_OSCILLATIONS*pi*x)*sin(N_OSCILLATIONS*pi*y);
+        break;
 //      case 2:
 //        eps2 = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.5),10)+pow((y-0.5),10)));
 //        // if eps = visco2, use these right hand side values
@@ -290,8 +290,9 @@ void LinCoeffs(int n_points, double *X, double *Y,
 //        break;
 //      default:
 //        ErrThrow("Choose parameter P1 between 1 and 3.");
-//    }
+    }
 
+//    cout << coeff[0] << coeff[1] << coeff[2];
 //    rho = parameters[i][2];
 //    mu  = parameters[i][3];
 //    Output::print<1>("x= ", x, " y= ", y, " rho = ", rho, " mu = ", mu, " eps = ", coeff[0]);
