@@ -1,5 +1,5 @@
 // Navier-Stokes problem, Rayleigh-Taylor instability
-// Goes with example 42_TCD2D to reproduce Rayleigh-Taylor instability
+// Goes with example 41_TCD2D to reproduce Rayleigh-Taylor instability
 // 2 fluids upon one another. The heavier is above. Only gravity.
 // initial velocity =0 everyhwere.
 // See paper Fraigneau et al (2001)

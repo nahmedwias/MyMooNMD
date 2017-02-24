@@ -59,9 +59,9 @@ namespace example40_dambreak_cd_nse         // example 40
 {
 #include "../../user_projects/include/Examples/Time_CD2D/40_DamBreakCD_NSE.h"
 }
-namespace example42_rayleightaylor_cd_nse   // example 42
+namespace example41_rayleightaylor_cd_nse   // example 41
 {
-#include "../../user_projects/include/Examples/Time_CD2D/42_RayleighTaylorCD_NSE.h"
+#include "../../user_projects/include/Examples/Time_CD2D/41_RayleighTaylorCD_NSE.h"
 }
 
 // ********* END OF USER PROJECT CODE
@@ -338,24 +338,24 @@ Example_TimeCD2D::Example_TimeCD2D(
       break;
 
 
-    case 42:                // Example 42: 2-WAY-COUPLING for Rayleigh-Taylor Instability
+    case 41:                // Example 41: 2-WAY-COUPLING for Rayleigh-Taylor Instability
       /**Exact solution"**/
-      exact_solution.push_back(example42_rayleightaylor_cd_nse::Exact);
+      exact_solution.push_back(example41_rayleightaylor_cd_nse::Exact);
       /** boundary condition */
-      boundary_conditions.push_back( example42_rayleightaylor_cd_nse::BoundCondition );
+      boundary_conditions.push_back( example41_rayleightaylor_cd_nse::BoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( example42_rayleightaylor_cd_nse::BoundValue );
+      boundary_data.push_back( example41_rayleightaylor_cd_nse::BoundValue );
 
       /** coefficients */
-      problem_coefficients = example42_rayleightaylor_cd_nse::BilinearCoeffs;
+      problem_coefficients = example41_rayleightaylor_cd_nse::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example42_rayleightaylor_cd_nse::InitialCondition);
-      example42_rayleightaylor_cd_nse::ExampleFile();
+      initialCOndtion.push_back(example41_rayleightaylor_cd_nse::InitialCondition);
+      example41_rayleightaylor_cd_nse::ExampleFile();
 
-      this->timeDependentRhs = example42_rayleightaylor_cd_nse::rhs_depends_on_time;
-      this->timeDependentCoeffs=example42_rayleightaylor_cd_nse::coefficients_depend_on_time;
+      this->timeDependentRhs = example41_rayleightaylor_cd_nse::rhs_depends_on_time;
+      this->timeDependentCoeffs=example41_rayleightaylor_cd_nse::coefficients_depend_on_time;
       break;
 
 
