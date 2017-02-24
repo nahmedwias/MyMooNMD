@@ -68,9 +68,9 @@ void ReactionCoupling::assembleLinearDecoupled(
 	TFEFunction2D **myFEFunctions2D = incoming_functions; //The FE functions to be evaluated are the latest solutions
 	int myN_FEValues = n_incoming_functions; //here all parameters are FE values, and their number equals n_incoming_functions
 	std::vector<int> myFEValue_FctIndex(myN_FEValues);
-	for (size_t i =0; i < myN_FEValues;++i) myFEValue_FctIndex[i]=i; //each FE_Value[i] comes from FE_Function[i]
+	for (int i =0; i < myN_FEValues;++i) myFEValue_FctIndex[i]=i; //each FE_Value[i] comes from FE_Function[i]
 	std::vector<MultiIndex2D> myFEValue_MultiIndex(myN_FEValues);
-	for (size_t i =0; i < myN_FEValues;++i) myFEValue_MultiIndex[i]=D00;  //which is to say, from its "underived" version
+	for (int i =0; i < myN_FEValues;++i) myFEValue_MultiIndex[i]=D00;  //which is to say, from its "underived" version
 
 	//Construct the LocalAssembling2D object from the above values.
 	LocalAssembling2D localAssembler(

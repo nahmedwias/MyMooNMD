@@ -34,7 +34,7 @@ FEInterpolationCheatSheet::FEInterpolationCheatSheet(
         const TFESpaceXD* old_fe_space, const TFESpaceXD* new_fe_space)
 {
   size_t n_cells_new_space = new_fe_space->GetN_Cells();
-  cheat_sheet= std::vector<std::vector<int>>(n_cells_new_space);
+  cheat_sheet= std::vector<std::vector<ContainingCells>>(n_cells_new_space);
 
   for(size_t c_new = 0; c_new < n_cells_new_space;++c_new)
   {
@@ -51,7 +51,7 @@ FEInterpolationCheatSheet::FEInterpolationCheatSheet(
     int n_points;
     nf->GetPointsForAll(n_points, xi, eta); //now we found out the number of nf points
 
-    std::vector<int> cheats_for_cell(n_points);
+    std::vector<ContainingCells> cheats_for_cell(n_points);
     cheat_sheet.at(c_new) = cheats_for_cell;
 
     BF2DRefElements RefElement = Element->GetBaseFunct2D()->GetRefElement();
@@ -125,9 +125,8 @@ FEInterpolationCheatSheet::FEInterpolationCheatSheet(
       for(int c_old = 0; c_old < n_old_cells; ++c_old)
       {
         if(old_fe_space->GetCollection()->GetCell(c_old)->PointInCell(X.at(p),Y.at(p)))
-        {//it's in c_old!
-          cheat_sheet.at(c_new).at(p) = c_old;
-          break; // break the loop, one containing cell is enough
+        {//it's in c_old - push c_old back to the list of cells which contaiin point p!
+          cheat_sheet.at(c_new).at(p).push_back(c_old);
         }
       }
     }

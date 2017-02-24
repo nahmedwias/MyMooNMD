@@ -34,11 +34,13 @@
 class FEInterpolationCheatSheet{
 
   public:
+    typedef std::vector<int> ContainingCells;
+
     /// Constructor. Needs both old and new space
     FEInterpolationCheatSheet(
         const TFESpaceXD* old_fe_space, const TFESpaceXD* new_fe_space);
 
-    int get_cheat(int new_cell, int new_point) const
+    ContainingCells get_cheats(int new_cell, int new_point) const
     {
       return cheat_sheet.at(new_cell).at(new_point);
     }
@@ -58,7 +60,7 @@ class FEInterpolationCheatSheet{
     /// FIXME This should be changed in such a way as that it can hold
     /// multiple cells per interpolation point - the following calls which use
     /// a cheat sheet must then be changed accordingly.
-    std::vector<std::vector<int>> cheat_sheet;
+    std::vector<std::vector<ContainingCells>> cheat_sheet;
 };
 #undef TFESpaceXD
 

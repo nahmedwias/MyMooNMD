@@ -88,8 +88,13 @@ class TFEFunction2D
                   double * const errors) const;
     
     /** determine the value of function and its first derivatives at
-        the given point */
-    void FindGradient(double x, double y, double *values) const;
+        the given point
+      @param containing_cells An array holding all cells in which the point (x,y)
+      is contained. It defaults to {}. Gives the option to avoid searching for (x,y)
+      in all cells of the collection, at the cost of caching the data somewhere
+      else in the program.
+        */
+    void FindGradient(double x, double y, double *values, std::vector<int> containing_cells = {}) const;
 
     /** determine the value of function and its first derivatives at
         the given point */

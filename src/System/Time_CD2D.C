@@ -406,8 +406,9 @@ void Time_CD2D::descale_stiffness(double tau, double theta_1)
     else
     {
       //in AFC case the stiffness matrix is "ruined" by now -
-      Output::print("AFC does not yet reset the stiffness"
-          "matrix and old_Au correctly!");
+      // TODO Keep this in mind - but do not print it all the time.
+      // Output::print("AFC does not yet reset the stiffness"
+      //  "matrix and old_Au correctly!");
     }
 }
 
@@ -636,7 +637,7 @@ void Time_CD2D::modify_and_call_assembling_routine(
   std::string description("interpolated velo space");
   std::vector<double> interp_funct_values(n_dofs,0.0);
 
-  // set up an interpolator object  (ptr will be shared later)
+  // set up interpolator objects
   const TFESpace2D* into_space = &s.fe_space;
   if(!s.velocity_interpolator_)
   {//if not done so yet, set up the interpolator for the velocity
@@ -659,17 +660,11 @@ void Time_CD2D::modify_and_call_assembling_routine(
   TFEFunction2D* rough_velo_x = velocity_field->GetComponent(0);
   TFEFunction2D* rough_velo_y = velocity_field->GetComponent(1);
 
-
-
   TFEFunction2D interpolated_velo_x =
         s.velocity_interpolator_->interpolate(*rough_velo_x, entries_velo_x, true);
 
     TFEFunction2D interpolated_velo_y =
         s.velocity_interpolator_->interpolate(*rough_velo_y, entries_velo_y, true);
-
-  std::shared_ptr<FEInterpolationCheatSheet> brush_interpolator_;
-
-
 
   delete rough_velo_x; // call to GetComponent dynamically created fe functs
   delete rough_velo_y;
@@ -677,23 +672,23 @@ void Time_CD2D::modify_and_call_assembling_routine(
   //step 2 - interpolate sources and sinks
   std::vector<double> entries_source_and_sinks(length_interpolated, 0.0);
   TFEFunction2D interpolated_sources_and_sinks =
-      s.brush_interpolator_->interpolate(*sources_and_sinks, entries_source_and_sinks,true); //FIXME Store a brush_interpolator_!!!
+      s.brush_interpolator_->interpolate(*sources_and_sinks, entries_source_and_sinks,true);
 
-  //CB DEBUG
-  // This is good value for money debug code - it prints out the interpolated
-  // ParMooN representation of Brushs return values (i.e., sources and sinks).
-  ParameterDatabase debug_out_db = ParameterDatabase::default_output_database();
-  debug_out_db["output_write_vtk"] = true;
-  std::string outname = "debug";
-  outname+=std::string(s.fe_function.GetName()) + "." + std::to_string(TDatabase::TimeDB->CURRENTTIME);
-  debug_out_db["output_basename"].set_range(std::set<std::string>({outname, "parmoon"}));
-  debug_out_db["output_basename"] = outname;
-  debug_out_db["output_vtk_directory"].set_range(std::set<std::string>({std::string("VTK"), "."}));
-  debug_out_db["output_vtk_directory"]="VTK";
-  PostProcessing2D debug_output(debug_out_db);
-  debug_output.add_fe_function(&interpolated_sources_and_sinks);
-  debug_output.write(0);
-  //END DEBUG
+//  //CB DEBUG - outcommented for now
+//  // This is good value for money debug code - it prints out the interpolated
+//  // ParMooN representation of Brushs return values (i.e., sources and sinks).
+//  ParameterDatabase debug_out_db = ParameterDatabase::default_output_database();
+//  debug_out_db["output_write_vtk"] = true;
+//  std::string outname = "debug";
+//  outname+=std::string(s.fe_function.GetName()) + "." + std::to_string(TDatabase::TimeDB->CURRENTTIME);
+//  debug_out_db["output_basename"].set_range(std::set<std::string>({outname, "parmoon"}));
+//  debug_out_db["output_basename"] = outname;
+//  debug_out_db["output_vtk_directory"].set_range(std::set<std::string>({std::string("VTK"), "."}));
+//  debug_out_db["output_vtk_directory"]="VTK";
+//  PostProcessing2D debug_output(debug_out_db);
+//  debug_output.add_fe_function(&interpolated_sources_and_sinks);
+//  debug_output.write(0);
+//  //END DEBUG
 
   // step 3 - set all the 'parameter'-related values in la_a_rhs accordingly
 
