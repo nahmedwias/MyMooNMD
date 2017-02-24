@@ -51,7 +51,10 @@ namespace example41_rayleightaylor_nse_cd   // 2 way coupling for Rayleigh-Taylo
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/41_RayleighTaylorNSE_CD.h"
 }
-
+namespace example50_gasstirring_nse_cd   // 2 way coupling for Gas Stirring test
+{
+#include "../../user_projects/include/Examples/Time_NSE2D/50_GasStirringTestNSE_CD.h"
+}
 
 
 // ********* END OF USER PROJECT CODE
@@ -383,6 +386,35 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          example41_rayleightaylor_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
          example41_rayleightaylor_nse_cd::ExampleFile();
+         break;
+
+       case 50:                // Example 50 = 2-WAY-COUPLING FOR Gas Stirring Test
+         /** exact_solution */
+         exact_solution.push_back( example50_gasstirring_nse_cd::ExactU1 );
+         exact_solution.push_back( example50_gasstirring_nse_cd::ExactU2 );
+         exact_solution.push_back( example50_gasstirring_nse_cd::ExactP );
+
+         /** boundary condition */
+         boundary_conditions.push_back( example50_gasstirring_nse_cd::BoundCondition );
+         boundary_conditions.push_back( example50_gasstirring_nse_cd::BoundCondition );
+         boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+         /** boundary values */
+         boundary_data.push_back( example50_gasstirring_nse_cd::U1BoundValue );
+         boundary_data.push_back( example50_gasstirring_nse_cd::U2BoundValue );
+         boundary_data.push_back( BoundaryValueHomogenous );
+
+         /** coefficients */
+         problem_coefficients = example50_gasstirring_nse_cd::LinCoeffs;
+
+         /** initial condition */
+         initialCOndtion.push_back(example50_gasstirring_nse_cd::InitialU1);
+         initialCOndtion.push_back(example50_gasstirring_nse_cd::InitialU2);
+         example50_gasstirring_nse_cd::REYNOLDS_number = get_nu();
+         example50_gasstirring_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
+         example50_gasstirring_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
+
+         example50_gasstirring_nse_cd::ExampleFile();
          break;
 
 
