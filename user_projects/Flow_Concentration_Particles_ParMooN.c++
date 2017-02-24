@@ -147,6 +147,10 @@ int main(int argc, char* argv[])
   double end_time = TDatabase::TimeDB->ENDTIME;
   int step = 0;
   int n_substeps = GetN_SubSteps();
+
+  int output_steps_parts = particle_database["output_all_k_steps"];
+  int output_steps_concs = conc_database["output_all_k_steps"];
+
   // time iteration
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
@@ -168,13 +172,16 @@ int main(int argc, char* argv[])
       std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
       part_object.reset_fluid_phase(velo_field, pressure, fcts);
       part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + tau);
-      part_object.output(TDatabase::TimeDB->CURRENTTIME);
 
       //solve cdr system
       conc_object.assemble_uncoupled_part(&velo_field, part_object.sources_and_sinks());
       conc_object.couple_and_solve();
-      conc_object.output();
     }
+
+    if(step %  output_steps_parts == 0)
+      part_object.output(TDatabase::TimeDB->CURRENTTIME);
+    if(step % output_steps_concs == 0)
+      conc_object.output();
   }
 
   Output::print(">>>>>> Program completed <<<<<<");
