@@ -630,19 +630,9 @@ void Time_CD2D::modify_and_call_assembling_routine(
     const TFEVectFunct2D* velocity_field,
     const TFEFunction2D* sources_and_sinks)
 {
-  // step 1 - transform the given Function to our FESpace (project? interpolate?)
-  const TFESpace2D& space = s.fe_space;
-  size_t n_dofs = space.GetN_DegreesOfFreedom();
-  std::string name("interpolated velo space");
-  std::string description("interpolated velo space");
-  std::vector<double> interp_funct_values(n_dofs,0.0);
-
+  // step 1 - interpolate values from Brush
   // set up interpolator objects
   const TFESpace2D* into_space = &s.fe_space;
-  if(!s.velocity_interpolator_)
-  {//if not done so yet, set up the interpolator for the velocity
-    s.velocity_interpolator_ = std::make_shared<FEFunctionInterpolator>(into_space);
-  }
   if(!s.brush_interpolator_)
   {//if not done so yet, set up the interpolator for the velocity
     s.brush_interpolator_ = std::make_shared<FEFunctionInterpolator>(into_space);
@@ -652,22 +642,10 @@ void Time_CD2D::modify_and_call_assembling_routine(
   // concentration fe function
   size_t length_interpolated = s.fe_function.GetLength();
 
-  std::vector<double> entries_velo_x(length_interpolated, 0.0);
-  std::vector<double> entries_velo_y(length_interpolated, 0.0);
-
   // this awful call is due to the way a TFEVectFunct2D creates new dynamically
   // allocated TFEFunction2D objects
   TFEFunction2D* rough_velo_x = velocity_field->GetComponent(0);
   TFEFunction2D* rough_velo_y = velocity_field->GetComponent(1);
-
-  TFEFunction2D interpolated_velo_x =
-        s.velocity_interpolator_->interpolate(*rough_velo_x, entries_velo_x, true);
-
-    TFEFunction2D interpolated_velo_y =
-        s.velocity_interpolator_->interpolate(*rough_velo_y, entries_velo_y, true);
-
-  delete rough_velo_x; // call to GetComponent dynamically created fe functs
-  delete rough_velo_y;
 
   //step 2 - interpolate sources and sinks
   std::vector<double> entries_source_and_sinks(length_interpolated, 0.0);
@@ -697,8 +675,8 @@ void Time_CD2D::modify_and_call_assembling_routine(
 
   TFEFunction2D* fe_funct[4]; //fill up the new fe function array (4th entry is option, see below)
   fe_funct[0] = &s.fe_function;
-  fe_funct[1] = &interpolated_velo_x;
-  fe_funct[2] = &interpolated_velo_y;
+  fe_funct[1] = rough_velo_x;
+  fe_funct[2] = rough_velo_y;
   fe_funct[3] = &interpolated_sources_and_sinks;
 
   std::vector<int> feValueFctIndex = {1,2,3}; // to produce first fe value use fe function 1,
@@ -706,8 +684,8 @@ void Time_CD2D::modify_and_call_assembling_routine(
                                               // for third fe value use function 3
   std::vector<MultiIndex2D> feValueMultiIndex = {D00,D00,D00}; // to produce first fe value use 0th derivative,
                                                             // for second and third fe value as well
-  int N_parameters = 3; // three parameters...
-  int N_feValues = 3;   //..all of which stem from the evaluation of fe fcts
+  int N_parameters = 5; // five parameters (first two are x and y!)...
+  int N_feValues = 3;   //..three of which stem from the evaluation of fe fcts
   int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
 
   // chose the parameter function ("in-out function") which shears away
@@ -728,6 +706,9 @@ void Time_CD2D::modify_and_call_assembling_routine(
   // step 4 - the assembling must be done before the velo functions
   // run out of scope
   call_assembling_routine(s, la_stiff, la_mass , assemble_both);
+
+  delete rough_velo_x; // call to GetComponent dynamically created fe functs
+  delete rough_velo_y;
 }
 
 void Time_CD2D::modify_and_call_assembling_routine(
@@ -736,40 +717,11 @@ void Time_CD2D::modify_and_call_assembling_routine(
     bool assemble_both,
     const TFEVectFunct2D* velocity_field)
 {
-  // step 1 - transform the given Function to our FESpace (project? interpolate?)
-  const TFESpace2D& space = s.fe_space;
-  size_t n_dofs = space.GetN_DegreesOfFreedom();
-  std::string name("interpolated velo space");
-  std::string description("interpolated velo space");
-  std::vector<double> interp_funct_values(n_dofs,0.0);
-
-  // set up an interpolator object  (ptr will be shared later)
-  const TFESpace2D* into_space = &s.fe_space;
-  if(!s.velocity_interpolator_)
-  {//if not done so yet, set up the interpolator for the velocity
-    s.velocity_interpolator_ = std::make_shared<FEFunctionInterpolator>(into_space);
-  }
-
-  // length of the values array of the interpolated velo must equal length of the
-  // concentration fe function
-  size_t length_interpolated = s.fe_function.GetLength();
-
-  std::vector<double> entries_velo_x(length_interpolated, 0.0);
-  std::vector<double> entries_velo_y(length_interpolated, 0.0);
 
   // this awful call is due to the way a TFEVectFunct2D creates new dynamically
   // allocated TFEFunction2D objects
-  TFEFunction2D* rough_velo_x = velocity_field->GetComponent(0);
-  TFEFunction2D* rough_velo_y = velocity_field->GetComponent(1);
-
-  TFEFunction2D interpolated_velo_x =
-      s.velocity_interpolator_->interpolate(*rough_velo_x, entries_velo_x,true);
-
-  TFEFunction2D interpolated_velo_y =
-      s.velocity_interpolator_->interpolate(*rough_velo_y, entries_velo_y,true);
-
-  delete rough_velo_x; // call to GetComponent dynamically created fe functs
-  delete rough_velo_y;
+  TFEFunction2D* raw_velo_x = velocity_field->GetComponent(0);
+  TFEFunction2D* raw_velo_y = velocity_field->GetComponent(1);
 
   // step 3 - set all the 'parameter'-related values in la_a_rhs accordingly
 
@@ -778,15 +730,15 @@ void Time_CD2D::modify_and_call_assembling_routine(
 
   TFEFunction2D* fe_funct[4]; //fill up the new fe function array (4th entry is option, see below)
   fe_funct[0] = &s.fe_function;
-  fe_funct[1] = &interpolated_velo_x;
-  fe_funct[2] = &interpolated_velo_y;
+  fe_funct[1] = raw_velo_x;
+  fe_funct[2] = raw_velo_y;
 
   std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
                                              // for second fe value use function 2
   std::vector<MultiIndex2D> feValueMultiIndex = {D00, D00}; // to produce first fe value use 0th derivative,
                                                             // for second fe value as well
-  int N_parameters = 2; // two parameters...
-  int N_feValues = 2;   //..both of which stem from the evaluation of fe fcts
+  int N_parameters = 4; // four parameters (first two are x and y)...
+  int N_feValues = 2;   //..two of which stem from the evaluation of fe fcts
   int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
 
   // chose the parameter function ("in-out function") which shears away
@@ -807,4 +759,7 @@ void Time_CD2D::modify_and_call_assembling_routine(
   // step 4 - the assembling must be done before the velo functions
   // run out of scope
   call_assembling_routine(s, la_stiff, la_mass , assemble_both);
+
+  delete raw_velo_x; // call to GetComponent dynamically created fe functs
+  delete raw_velo_y;
 }
