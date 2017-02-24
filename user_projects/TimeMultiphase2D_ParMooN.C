@@ -287,7 +287,7 @@ int main(int argc, char* argv[])
         tnse2d.assemble_nonlinear_term();
 
       tnse2d.assemble_system();
-      nse_nl_stopwatch.restart_and_print("solving+reassembling NL iter. "
+      nse_nl_stopwatch.restart_and_print("solving and reassembling NL iter. "
                                           + std::to_string(k));
     } // end for k, non linear loop
 
