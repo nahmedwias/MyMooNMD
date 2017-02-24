@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 //      tnse_db["coupling_cd_nse"] = true;
 //      tcd_db["solve_cd"] = true;
       break;
-    case 40: case 42:
+    case 40: case 41:
 //      tnse_db["dimensional_nse"] = true;
 //      tcd_db["coupling_nse_cd"]  = true;
 //      tnse_db["coupling_cd_nse"] = true;
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
   // both fluid properties are needed only in Dam break so far
   double rho2 = 0;        // density constant of gas, eg 0
   double mu2  = 0;        // mu constant of gas, eg 0
-  if (tcd_example_number == 42)
+  if (tcd_example_number == 41)
   {
   double density_ratio = TDatabase::ParamDB->P1;
   double viscosity_ratio = TDatabase::ParamDB->P2;
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
   {
     switch(tcd_example_number)
         {
-      case 42: // rayleigh taylor = mu=1, density variable (ratio)
+      case 41: // rayleigh taylor = mu=1, density variable (ratio)
         mu1=1;
         mu_vector = mu1; // uncommented because mu must stay constant=1
         break;
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
         BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
         switch(tcd_example_number)
                 {
-              case 42:
+              case 41:
                 new_mu_vector = 1; // for the case mu=constant and only density depends on TCD2D
                 break;
               default:

@@ -113,8 +113,8 @@ solve_cd: false   { true, false }
 ## 32- VariableVisco32- in the multiphase program - FOR TCD2D
 ## 40- DAM BREAK	  - in the multiphase program - FOR TNSE2D
 ## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
-## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
-## 42- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
+## 41- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
+## 41- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
 example: 32   [ -1, 100 ]
 
 ########################## Parameters need to be cleaned
