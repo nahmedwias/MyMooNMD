@@ -52,7 +52,8 @@ void InitialCondition(double x,  double y, double *values)
   double x0 = TDatabase::ParamDB->P3; // x position of initial circle
   double y0 = TDatabase::ParamDB->P4; // y position of initial circle
   double radius = TDatabase::ParamDB->P5; // radius of circle
-  if ( y <= 0.8 )
+
+  if ( y <= 0.7 )
     values[0] = 1; // liquid bath
   else
     values[0] = 0; // gas at the top of liquid
@@ -60,6 +61,7 @@ void InitialCondition(double x,  double y, double *values)
   {
     values[0] = 0; // gas circle in the bottom of the liquid
   }
+
 //  double A = 1;
 //  double a = 20;
 //  double b = 0;

@@ -15,8 +15,8 @@ P1: 800  # density ratio
 P2: 10	 # viscosity ratio
 
 P3: 0.5	 # x0 position
-P4: 0.1	 # y0 position
-P5: 0.05 # circle radius
+P4: 0.06	 # y0 position
+P5: 0.1 # circle radius
 
 
 ########################## Fixed Parameters 
