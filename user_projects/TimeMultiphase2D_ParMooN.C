@@ -128,10 +128,13 @@ int main(int argc, char* argv[])
   Example_TimeCD2D  example_tcd2d(tcd_db);                    // Construct Example for CD
   Time_CD2D         tcd2d(domain, tcd_db, example_tcd2d);     // Construct CD system
 
-  double rho1 = tnse_db["fluid_density"];   // density constant of fluid1, eg 1000
-  double rho2 = 0;                          // density constant of fluid2, eg 0
-  double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of fluid1, eg 1e-3
-  double mu2  = 0;                                    // mu constant of fluid2, eg 0
+  double density_ratio = TDatabase::ParamDB->P1;
+  double viscosity_ratio = TDatabase::ParamDB->P2;
+
+  double rho1 = tnse_db["fluid_density"];   // density constant of liquid, eg 1000
+  double rho2 = rho1/density_ratio;                          // density constant of gas, eg 0
+  double mu1  = tnse_db["fluid_dynamic_viscosity"];   // mu constant of liquid, eg 1e-3
+  double mu2  = mu1/viscosity_ratio;                                    // mu constant of gas, eg 0
 
 
   /********************************************************************
@@ -162,7 +165,7 @@ int main(int argc, char* argv[])
   }
   else  // for the case rho = constant, and only viscosity depends on TCD2D
   {
-    mu_vector = mu1; // uncomment in case mu must stay constant
+//    mu_vector = mu1; // uncomment in case mu must stay constant
 //    rho_vector = rho1;  // uncomment in case rho must stay constant
   }
   phase_field.write("vector_phi");
@@ -313,7 +316,7 @@ int main(int argc, char* argv[])
 
         /** @brief Finite Element function for dynamic viscosity field */
         BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
-        new_mu_vector = 1; // for the case mu=constant and only density depends on TCD2D
+//        new_mu_vector = 1; // for the case mu=constant and only density depends on TCD2D
         TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),new_mu_vector,(char*) "s");
         mu_field = new_mu_field;
       }
