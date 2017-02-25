@@ -1,6 +1,22 @@
 #include <TimeDiscretization.h>
 #include <Database.h>
-
+#define RESET   "\033[0m"
+#define BLACK   "\033[30m"      /* Black */
+#define RED     "\033[31m"      /* Red */
+#define GREEN   "\033[32m"      /* Green */
+#define YELLOW  "\033[33m"      /* Yellow */
+#define BLUE    "\033[34m"      /* Blue */
+#define MAGENTA "\033[35m"      /* Magenta */
+#define CYAN    "\033[36m"      /* Cyan */
+#define WHITE   "\033[37m"      /* White */
+#define BOLDBLACK   "\033[1m\033[30m"      /* Bold Black */
+#define BOLDRED     "\033[1m\033[31m"      /* Bold Red */
+#define BOLDGREEN   "\033[1m\033[32m"      /* Bold Green */
+#define BOLDYELLOW  "\033[1m\033[33m"      /* Bold Yellow */
+#define BOLDBLUE    "\033[1m\033[34m"      /* Bold Blue */
+#define BOLDMAGENTA "\033[1m\033[35m"      /* Bold Magenta */
+#define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
+#define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
 ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
 {
@@ -79,13 +95,13 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
   if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
   {
     // right hand side with tau*..
-    rhs[0].scaleActive(bdf_coefficients[1]*current_time_step_length);
+    rhs[0].scaleActive(bdf_coefficients[2]*current_time_step_length);
 
     mass_matrix.apply_scaled_add_actives(old_solutions[0], rhs[0],
                                            bdf_coefficients[0]);
     mass_matrix.apply_scaled_add_actives(old_solutions[1], rhs[0],
                                            bdf_coefficients[1]);
-    Output::print<5>("bdf2_stage ", pre_stage_bdf);
+    Output::print<5>(RED, "bdf2_stage ", pre_stage_bdf, BLACK);
   }
   else if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
   {
@@ -130,9 +146,9 @@ void TimeDiscretization::prepare_system_matrix(
   // scaling of the B and BT's blocks
   if((this->current_step_==1) && (it_counter==0)){
       double factor;
-      if(db["time_discretization"].is("backward_euler"))
+      if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
         factor = current_time_step_length;
-      else if(db["time_discretization"].is("bdf_two"))
+      else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
         factor = current_time_step_length*bdf_coefficients[2];
       else if(db["time_discretization"].is("crank_nicolson"))
         factor = current_time_step_length*0.5;//this have to be adopted according to the stages
@@ -154,7 +170,7 @@ void TimeDiscretization::reset_linear_matrices(BlockFEMatrix& matrix,
   double factor;
   if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
     factor = step_length;
-  else if(db["time_discretization"].is("bdf_two"))
+  else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
     factor = bdf_coefficients[2]*step_length;
   else if(db["time_discretization"].is("crank_nicolson"))
     factor = step_length*0.5;

@@ -3,9 +3,11 @@
 #include <Assemble2D.h>
 #include <LinAlg.h>
 #include <DirectSolver.h>
+#include <MainUtilities.h>
 
 #include <GridTransfer.h>
 #include <Domain.h>
+#include <LocalProjection.h>
 
 /* *************************************************************************** */
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
@@ -222,6 +224,11 @@ void Time_NSE2D_Merged::set_parameters()
     TDatabase::ParamDB->LAPLACETYPE =1;
   }
 
+  if(db["disctype"].is("local_projection"))
+  {
+     TDatabase::ParamDB->DISCTYPE = 1;
+  }
+
   // the only case where one have to re-assemble the right hand side
   if(db["disctype"].is("supg") || db["disctype"].is("residual_based_vms"))
     is_rhs_and_mass_matrix_nonlinear = true;
@@ -244,6 +251,7 @@ void Time_NSE2D_Merged::get_velocity_pressure_orders(std::pair< int, int > &velo
         order = velocity_order;
       break;
     case -1: case -2: case -3: case -4: case -5: case -101:
+    case 100: case 201: case 302:
       order = velocity_order;
       break;
     // conforming fe spaces with bubbles on triangles
@@ -278,6 +286,7 @@ void Time_NSE2D_Merged::get_velocity_pressure_orders(std::pair< int, int > &velo
           // standard conforming velo and discontinuous pressure
           // this is not stable on triangles !!!
         case 12: case 13: case 14: case 15:
+        case -11: case -12: case -13: case -14:
           pressure_order = -(velocity_order-1)*10;
           break;
         case 22: case 23: case 24:
@@ -308,6 +317,9 @@ void Time_NSE2D_Merged::assemble_initial_time()
   for(auto &s : this->systems)
   {
     call_assembling_routine(s, TNSE2D);
+    //update matrices for local projection stabilization
+    if(db["disctype"].is("local_projection"))
+      update_matrices_lps(s);
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
     //
@@ -367,6 +379,8 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     for(System_per_grid & s : systems)
     {
       call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
+      if(db["disctype"].is("local_projection"))
+        update_matrices_lps(s);
       if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 )
       {
         this->modify_slip_bc();
@@ -389,6 +403,8 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     for(System_per_grid& s : systems)
     {
       call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
+      if(db["disctype"].is("local_projection"))
+        update_matrices_lps(s);
 
       if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 )
       {
@@ -584,16 +600,16 @@ void Time_NSE2D_Merged::output(int m)
   }
 
 
-  int n= s.solution.length(0);
-  double *sol = s.solution.get_entries();
-  StreamFunction(&s.velocity_space, sol,sol+n,
-                 stream_function_space.get(), psi.data());
   if(db["example"].is(3))// mixing layer example
   {
+    int n= s.solution.length(0);
+    double *sol = s.solution.get_entries();
+    StreamFunction(&s.velocity_space, sol,sol+n,
+                     stream_function_space.get(), psi.data());
     ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
-                               vorticity_funct->GetValues(), divergence->GetValues());
+                               vorticity.data(), divergence->GetValues());
+    example.do_post_processing(*this, zero_vorticity);
   }
-  example.do_post_processing(*this, zero_vorticity);
 
   if(time_stepping_scheme.current_step_ % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
   {
@@ -602,7 +618,6 @@ void Time_NSE2D_Merged::output(int m)
       outputWriter.write(TDatabase::TimeDB->CURRENTTIME);
     }
   }
-
   delete u1;
   delete u2;
 }
@@ -1035,7 +1050,7 @@ void Time_NSE2D_Merged::prepared_postprocessing(TCollection *coll)
   vorticity.resize(2*n_vort_dofs, 0.);
   vorticity_funct
     = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"voritcity",
-                            (char*)"vorticity", vorticity.data()+n_vort_dofs, n_vort_dofs);
+                            (char*)"vorticity", vorticity.data(), n_vort_dofs);
   divergence
     = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"dievergence",
                             (char*)"divergence", vorticity.data(), n_vort_dofs);
@@ -1051,4 +1066,18 @@ void Time_NSE2D_Merged::prepared_postprocessing(TCollection *coll)
   outputWriter.add_fe_function(stream_function.get());
   outputWriter.add_fe_function(vorticity_funct.get());
   outputWriter.add_fe_function(divergence.get());
+}
+
+void Time_NSE2D_Merged::update_matrices_lps(System_per_grid &s)
+{
+  if(TDatabase::ParamDB->NSTYPE==4)
+  {
+    //update matrices for local projection stabilization
+    std::vector<std::shared_ptr<FEMatrix>> blocks;
+    blocks = s.matrix.get_blocks_uniquely();
+    std::vector< TSquareMatrix2D* > sqMat(2);
+    sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+    sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+    UltraLocalProjection(sqMat[0], FALSE);
+  }
 }

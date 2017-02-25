@@ -85,9 +85,10 @@ void U1BoundValue(int BdComp, double Param, double &value)
 {
   if(BdComp>3)
   {
-    ErrThrow( "ERROR in file " , __FILE__ , ", line: ",  __LINE__ , 
+    ErrThrow( "ERROR in file " , __FILE__ , ", line: ",  __LINE__ ,
               ": wrong boundary part number: " , BdComp);
   }
+  value =0.;
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
