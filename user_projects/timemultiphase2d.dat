@@ -2,7 +2,7 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 7
+refinement_n_initial_steps: 4
 
 ENDTIME: 0.3
 TIMESTEPLENGTH: 0.01
@@ -11,7 +11,7 @@ fluid_density: 100.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 reynolds_number: 1.  [ 0, 1e6 ]
 RE_NR:	1.
-P1: 800  # density ratio
+P1: 100  # density ratio
 P2: 10	 # viscosity ratio
 
 P3: 0.5	 # x0 position
@@ -20,10 +20,10 @@ P5: 0.1 # circle radius
 
 
 ########################## Fixed Parameters 
-boundary_file: Default_UnitSquare
-geo_file: UnitSquare   { TwoTriangles, UnitSquare }
-#boundary_file: ../mesh/dambreak.PRM
-#geo_file: ../mesh/dambreak_quad.GEO
+#boundary_file: Default_UnitSquare
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+boundary_file: ../mesh/ladle_2D/00MYLADLE_v3.PRM
+geo_file: ../mesh/ladle_2D/00MYLADLE_v3.GEO
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
@@ -35,7 +35,7 @@ output_compute_errors: true   { true, false }
 output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
-nonlinloop_maxit: 50   [ 0, 1000 ]
+nonlinloop_maxit: 6   [ 0, 1000 ]
 nonlinloop_epsilon: 1e-8   [ 0, 1 ] 
 nonlinloop_damping_factor: 1   [ 0, 1 ]
 nonlinloop_slowfactor: 1   [ 0, 10 ]
