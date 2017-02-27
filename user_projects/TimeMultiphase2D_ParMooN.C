@@ -18,31 +18,6 @@
 #include <FEFunctionInterpolator.h>
 #include <VOF_TwoPhase2D.h>
 
-// ***** LIST OF FUNCTIONS USED IN MAIN PROGRAMM ***** //
-TFEFunction2D update_fieldfunction(const TFESpace2D* feSpace_, BlockVector& vector_, char* name_)
-{
-  TFEFunction2D result_fieldfunction(feSpace_, name_, name_,
-                                     vector_.block(0),
-                                     vector_.length(0));
-
-  return result_fieldfunction;
-}
-
-BlockVector   update_fieldvector(double property_field1, double property_field2,
-                               BlockVector phasefraction_vector_, std::string text_)
-{
-  BlockVector result_fieldvector = phasefraction_vector_;
-  BlockVector unity              = phasefraction_vector_; unity = 1;
-  result_fieldvector.scale(property_field1 - property_field2);
-  result_fieldvector.add_scaled(unity, property_field2);
-//  result_fieldvector.write(text_);
-  return result_fieldvector;
-}
-
-
-
-
-
 
 // ***** MAIN PROGRAM ***** //
 int main(int argc, char* argv[])
@@ -68,8 +43,9 @@ int main(int argc, char* argv[])
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
 
-  TDomain domain(argv[1], parmoon_db);            // Initialize geometry
 
+
+  TDomain domain(argv[1], parmoon_db);            // Initialize geometry
 
   /********************************************************************
    * WRITE PARAMETERS TO OUTFILE
@@ -87,247 +63,188 @@ int main(int argc, char* argv[])
   domain.print_info("Multiphase2D domain");      // Output domain info
 
 
-  /********************************************************************
-   * DECLARING OBJECTS FOR TimeNSE2D AND TimeCD2D
-   ********************************************************************/
-  SetTimeDiscParameters(0);                                   // Initialize parameters for time discretization
+
 
   /********************************************************************
    * Creating VOF object, which contains both TimeNSE2D and TimeCD2D
    ********************************************************************/
+  SetTimeDiscParameters(0);                      // Initialize parameters for time discretization
   VOF_TwoPhase2D vof(domain,tnse_db,tcd_db);
+  vof.manage_example_parameters();
 
-  /********************************************************************
-   * SOME OUTPUT AND INFORMATION SET
-   ********************************************************************/
+   /* SOME OUTPUT AND INFORMATION SET */
   vof.output_initial_info();
 
-  /********************************************************************
-   * INITIALIZING OBJECTS FOR MULTIPHASE
-   ********************************************************************/
-  /* This calculates rho and mu vectors with tcd2d initial solution */
+  /* This calculates rho and mu vectors depending on example number
+   * Check that the vectors are as expected using "output_vectors(..)" */
   vof.update_field_vectors();
-  vof.output_vectors("vector_phi","vector_rho","vector_mu");
+//  vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
 
 
 
-  cout << "PROGRAM SUCCESSFUL UNTIL LAST LINE!!" << endl;
-  exit(0);
+  /********************************************************************
+   * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
+   ********************************************************************/
+  TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
+  if (vof.tnse_variable_fluid_ == true)
+    vof.tnse2d_.assemble_initial_time_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_); // assemble linear term
+  else
+    vof.tnse2d_.assemble_initial_time();                                // assemble linear term
+
+  if (!tcd_db["algebraic_flux_correction"].is("none"))
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
+  if (vof.solve_convection_ == true)
+  {
+    if (vof.nse2cd_coupling_ == true)
+    {
+      vof.phaseconvection2d_.assemble_initial_time_with_convection(&vof.tnse2d_.get_velocity());
+    }
+    else
+      vof.phaseconvection2d_.assemble_initial_time();
+  }
+
+   double end_time = TDatabase::TimeDB->ENDTIME;
+   int step = 0;
+   int n_substeps = GetN_SubSteps();
+   vof.tnse2d_.current_step_ = 0;
+
+  /********************************************************************
+   * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
+   ********************************************************************/
+  LoopInfo  loop_info("nonlinear");
+  loop_info.print_time_every_step = true;
+  loop_info.verbosity_threshold   = 1;            // full verbosity
+//  loop_info.print(0, tnse2d.getFullResidual());
+
+  stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
+  stopwatch.reset();
+  stopwatch.start();
+
+  Chrono nse_nl_stopwatch;
+  Chrono nse_timeit_stopwatch;
 
 
 
 
 
-//  // Set phase field = 1 everywhere when we dont use cd>nse coupling.
-//  // If we use it, then do nothing, this will take the initial solution of tcd2d.
-//  if (tnse_db["coupling_cd_nse"].is(false))
-//  {
-//    phase_field = 1;
-//    rho_vector = rho1;
-//    mu_vector  = mu1;
-//  }
-//  else  // for the case rho = constant, and only viscosity depends on TCD2D
-//  {
-//    switch(tcd_example_number)
-//        {
-//      case 41: // rayleigh taylor = mu=1, density variable (ratio)
-//        mu1=1;
-//        mu_vector = mu1; // uncommented because mu must stay constant=1
-//        break;
-//      case 30: case 31: case 32:  // examples where rho=1, nu variable
-//        rho1=1;
-//        rho_vector = rho1;  // uncommented because rho must stay constant=1
-//        break;
-//      case 40: case 50: // dam break, both rho and mu are variable, nothing happens
-//        break;
-//      default:
-//        ErrThrow("Coupling CD>NSE is not allowed in example "
-//            + std::to_string(tcd_example_number) + ". Exiting...");
-//        }
-//  }
-//  phase_field.write("vector_phi");
-//  mu_vector.write("vector_mu");
-//  rho_vector.write("vector_rho");
-//
-//  /** @brief Finite Element function for density and viscosity field */
-//  TFEFunction2D rho_field = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
-//  TFEFunction2D mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*)"m");
 
 
-//  /********************************************************************
-//   * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
-//   ********************************************************************/
-//  TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
-//  if (tnse_db["dimensional_nse"].is(true))
-//    tnse2d.assemble_initial_time_withfields(&rho_field,&mu_field); // assemble linear term
-//  else
-//    tnse2d.assemble_initial_time();                                // assemble linear term
-//
-//  if (!tcd_db["algebraic_flux_correction"].is("none"))
-//    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
-//  if (tcd_db["solve_cd"].is(true))
-//  {
-//    if (tcd_db["coupling_nse_cd"].is(true))
-//    {
-//      tcd2d.assemble_initial_time_with_convection(&tnse2d.get_velocity());
-//    }
-//    else
-//      tcd2d.assemble_initial_time();
-//  }
-//
-//   double end_time = TDatabase::TimeDB->ENDTIME;
-//   int step = 0;
-//   int n_substeps = GetN_SubSteps();
-//   tnse2d.current_step_ = 0;
-//
-//  /********************************************************************
-//   * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
-//   ********************************************************************/
-//  LoopInfo  loop_info("nonlinear");
-//  loop_info.print_time_every_step = true;
-//  loop_info.verbosity_threshold   = 1;            // full verbosity
-////  loop_info.print(0, tnse2d.getFullResidual());
-//
-//  stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
-//  stopwatch.reset();
-//  stopwatch.start();
-//
-//  Chrono nse_nl_stopwatch;
-//  Chrono nse_timeit_stopwatch;
-//
-//
-//  /********************************************************************
-//   * TIME ITERATION LOOP
-//   ********************************************************************/
-//  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
-//  {
-//    step++;
-//    tnse2d.current_step_++;
-//
-//    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-//    for(int j=0; j < n_substeps; ++j)
-//    {
-//      SetTimeDiscParameters(1);            // setting the time disc parameters
-//      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-//      TDatabase::TimeDB->CURRENTTIME += tau;
-//      Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-//
-//      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
-//      if (tnse_db["dimensional_nse"].is(true))
-//      {
-//        tnse2d.assemble_rhs_withfields(&rho_field,&mu_field);
-//        tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
-//        tnse2d.assemble_massmatrix_withfields(&rho_field);
-//      }
-//      else
-//      {
-//        tnse2d.assemble_rhs();
-//        tnse2d.assemble_nonlinear_term();
-//      }
-//      tnse2d.assemble_system();
-//
-//    /********************************************************************
-//     * NON LINEAR LOOP
-//     ********************************************************************/
-//      nse_timeit_stopwatch.restart_and_print("preparation of NSE iterations");
-//    for(unsigned int k = 0;; k++)
-//    {
-//      if(tnse2d.stopIte(k))
-//        break;
-//
-//      tnse2d.solve();
-//
-//      if(tnse2d.imex_scheme(1))
-//        continue; // this interrupts the NL-Loop
-//
-//      if (tnse_db["dimensional_nse"].is(true))
-//        tnse2d.assemble_nonlinear_term_withfields(&rho_field,&mu_field);
-//      else
-//        tnse2d.assemble_nonlinear_term();
-//
-//      tnse2d.assemble_system();
-//      nse_nl_stopwatch.restart_and_print("solving and reassembling NL iter. "
-//                                          + std::to_string(k));
-//    } // end for k, non linear loop
-//
-//    nse_timeit_stopwatch.restart_and_print("total NSE time iter. "
-//                                  +std::to_string(TDatabase::TimeDB->CURRENTTIME));
-//
-//    /********************************************************************
-//     * SOLVING CD2D WITH NSE2D SOLUTION
-//     ********************************************************************/
-//    if (!tcd_db["algebraic_flux_correction"].is("none"))
-//      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
-//    if (tcd_db["solve_cd"].is(true))
-//    {
-//      Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
-//      if (tcd_db["coupling_nse_cd"].is(true))
-//      {
-////        tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
-////        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
-////        tcd2d.scale_stiffness_matrix();
-//        tcd2d.assemble_with_convection(&tnse2d.get_velocity());
-//        tcd2d.solve();
-//        tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
-//      }
-//      else  // if we solve TCD2D standard, without any coupling
-//      {
-//        tcd2d.assemble();
-//        tcd2d.solve();
-//        tcd2d.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
-//      }
-//      Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
-//
-//      /********************************************************************
-//       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
-//       ********************************************************************/
-//      if (tnse_db["coupling_cd_nse"].is(true))
-//      {
-//        BlockVector new_phase_field = tcd2d.get_solution();
-//
-//        /** @brief Finite Element function for density field */
-//        BlockVector   new_rho_vector = update_fieldvector(rho1,rho2,new_phase_field,"rho_vector");
-//        switch(tcd_example_number)
-//                {
-//              case 30: case 31: case 32:  // examples where rho=1, nu variable
-//                new_rho_vector=1; // for the case where rho = constant and only viscosity depends on TCD2D
-//                break;
-//              default:
-//                break;
-//                }
-//        TFEFunction2D new_rho_field  = update_fieldfunction(&tcd2d.get_space(),new_rho_vector,(char*) "q");
-//        rho_field = new_rho_field;
-//
-//        /** @brief Finite Element function for dynamic viscosity field */
-//        BlockVector   new_mu_vector = update_fieldvector(mu1, mu2, new_phase_field,"mu_vector" );
-//        switch(tcd_example_number)
-//                {
-//              case 41:
-//                new_mu_vector = 1; // for the case mu=constant and only density depends on TCD2D
-//                break;
-//              default:
-//                break;
-//                }
-//        TFEFunction2D new_mu_field  = update_fieldfunction(&tcd2d.get_space(),new_mu_vector,(char*) "s");
-//        mu_field = new_mu_field;
-//      }
-//    }
-//
-//    stopwatch.restart_and_print("total whole iter. " +
-//                                std::to_string(TDatabase::TimeDB->CURRENTTIME));
-//
-//    tnse2d.output(step);
-//    if(tcd_db["solve_cd"].is(true))
-//    {
-//      if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-//        tcd2d.output();
-//    }
-//    //    tnse2d.get_solution().write("solution_velocity");
-//    }
-//  } // end for step, time loop
-//
-//  stopwatch.print_total_time("total solving duration: ");
-//  Output::close_file();
+
+
+
+
+
+  /********************************************************************
+   * TIME ITERATION LOOP
+   ********************************************************************/
+  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  {
+    step++;
+    vof.tnse2d_.current_step_++;
+
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    for(int j=0; j < n_substeps; ++j)
+    {
+      SetTimeDiscParameters(1);            // setting the time disc parameters
+      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      TDatabase::TimeDB->CURRENTTIME += tau;
+      Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+
+      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
+      if (vof.tnse_variable_fluid_ == true)
+      {
+        vof.tnse2d_.assemble_rhs_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
+        vof.tnse2d_.assemble_nonlinear_term_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
+        vof.tnse2d_.assemble_massmatrix_withfields(&vof.rho_fefunction_);
+      }
+      else
+      {
+        vof.tnse2d_.assemble_rhs();
+        vof.tnse2d_.assemble_nonlinear_term();
+      }
+      vof.tnse2d_.assemble_system();
+
+
+    /********************************************************************
+     * NON LINEAR LOOP
+     ********************************************************************/
+      nse_timeit_stopwatch.restart_and_print("preparation of NSE iterations");
+    for(unsigned int k = 0;; k++)
+    {
+      if(vof.tnse2d_.stopIte(k))
+        break;
+
+      vof.tnse2d_.solve();
+
+      if(vof.tnse2d_.imex_scheme(1))
+        continue; // this interrupts the NL-Loop
+
+      if (vof.tnse_variable_fluid_ == true)
+        vof.tnse2d_.assemble_nonlinear_term_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
+      else
+        vof.tnse2d_.assemble_nonlinear_term();
+
+      vof.tnse2d_.assemble_system();
+      nse_nl_stopwatch.restart_and_print("solving and reassembling NL iter. "
+                                          + std::to_string(k));
+    } // end for k, non linear loop
+
+    nse_timeit_stopwatch.restart_and_print("total NSE time iter. "
+                                  +std::to_string(TDatabase::TimeDB->CURRENTTIME));
+
+
+    /********************************************************************
+     * SOLVING CD2D WITH NSE2D SOLUTION
+     ********************************************************************/
+    if (!tcd_db["algebraic_flux_correction"].is("none"))
+      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
+    if (vof.solve_convection_ == true )
+    {
+      Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
+      if (vof.nse2cd_coupling_ == true)
+      {
+//        tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
+//        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
+//        tcd2d.scale_stiffness_matrix();
+        vof.phaseconvection2d_.assemble_with_convection(&vof.tnse2d_.get_velocity());
+        vof.phaseconvection2d_.solve();
+        vof.phaseconvection2d_.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
+      }
+      else  // if we solve TCD2D standard, without any coupling
+      {
+        vof.phaseconvection2d_.assemble();
+        vof.phaseconvection2d_.solve();
+        vof.phaseconvection2d_.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
+      }
+      Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
+
+
+      /********************************************************************
+       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
+       ********************************************************************/
+      if (vof.cd2nse_coupling_ == true )
+      {
+        vof.update_field_vectors();
+//        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
+      }
+    }
+
+    stopwatch.restart_and_print("total whole iter. " +
+                                std::to_string(TDatabase::TimeDB->CURRENTTIME));
+
+    vof.tnse2d_.output(step);
+    if(vof.solve_convection_ == true)
+    {
+      if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
+        vof.phaseconvection2d_.output();
+    }
+    //    vof.tnse2d_.get_solution().write("solution_velocity");
+    }
+  } // end for step, time loop
+
+  stopwatch.print_total_time("total solving duration: ");
+  Output::close_file();
+
   return 0;
 }
 // end main

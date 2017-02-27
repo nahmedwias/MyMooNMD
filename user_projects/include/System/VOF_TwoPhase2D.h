@@ -14,6 +14,7 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <FESpace2D.h>
+#include <FEFunction2D.h>
 #include <Time_NSE2D.h>
 #include <Time_CD2D.h>
 #include <Example_TimeNSE2D.h>
@@ -60,6 +61,13 @@ class VOF_TwoPhase2D
     /* Vector equal to property fields at the nodes */
     BlockVector rho_vector_;
     BlockVector mu_vector_;
+    BlockVector unity_vector_; // same structure and equals to 1
+
+    /* FEFunction equal to property fields, construction
+     * based on the above BlockVectors
+     */
+    TFEFunction2D rho_fefunction_;
+    TFEFunction2D mu_fefunction_;
 
   public:
     /** @brief constructor*/
