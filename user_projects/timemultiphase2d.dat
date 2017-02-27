@@ -23,7 +23,7 @@ P5: 0.06 # y0 position
 P6: 0.1  # circle radius
 
 ## Two phase flow
-P7: 100 # density 2 - min - gas
+P7: 1 # density 2 - min - gas
 P8: 1   # viscosity 2 - min - gas
 
 
@@ -129,7 +129,7 @@ solve_cd: true   { true, false }
 ## 41- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
 ## 50- GasStirringTest- in the multiphase program - FOR TNSE2D
 ## 50- GasStirringTest- in the multiphase program - FOR TCD2D
-example: 32   [ -1, 100 ]
+example: 50   [ -1, 100 ]
 
 ########################## Parameters need to be cleaned
 Par_P0: 0
