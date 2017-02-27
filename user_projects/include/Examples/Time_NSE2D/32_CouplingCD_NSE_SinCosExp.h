@@ -231,7 +231,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
   double *coeff, x, y;
   double nu = TDatabase::ParamDB->P2;
 //  double nu = 1/TDatabase::ParamDB->RE_NR;
-  double eps1, eps2, eps3;// fac;
+  double eps1;//, eps2, eps3;// fac;
   double t=TDatabase::TimeDB->CURRENTTIME;
   double pi = 3.14159265358979;
 

@@ -16,6 +16,7 @@
 #include <ParameterDatabase.h>
 #include <TimeDiscRout.h>
 #include <FEFunctionInterpolator.h>
+#include <VOF_TwoPhase2D.h>
 
 // ***** LIST OF FUNCTIONS USED IN MAIN PROGRAMM ***** //
 TFEFunction2D update_fieldfunction(const TFESpace2D* feSpace_, BlockVector& vector_, char* name_)
@@ -121,6 +122,9 @@ int main(int argc, char* argv[])
    * DECLARING OBJECTS FOR TimeNSE2D AND TimeCD2D
    ********************************************************************/
   SetTimeDiscParameters(0);                                   // Initialize parameters for time discretization
+
+  // this is a test
+  VOF_TwoPhase2D vof(domain,tnse_db,tcd_db);
 
   Example_TimeNSE2D example_tnse2d(tnse_db);                  // Construct Example for NSE
   Time_NSE2D        tnse2d(domain, tnse_db, example_tnse2d);  // Construct NSE system

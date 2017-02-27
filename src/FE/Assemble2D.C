@@ -9576,9 +9576,9 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       int N_ = N_BaseFunct[CurrentElement];
 
       double **Matrix = LocMatrices[j];
-      double *Entries = sqmatrices[j]->GetEntries();
-      const int *RowPtr = sqmatrices[j]->GetRowPtr();
-      const int *ColInd = sqmatrices[j]->GetKCol();
+//      double *Entries = sqmatrices[j]->GetEntries();
+//      const int *RowPtr = sqmatrices[j]->GetRowPtr();
+//      const int *ColInd = sqmatrices[j]->GetKCol();
 
       double *CurrentHangingEntries = HangingEntries[j];
       const int *HangingRowPtr = sqmatrices[j]->GetHangingRowPtr();
@@ -10274,7 +10274,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
     double *Entries = sqmatrices[j]->GetEntries();
     const int *RowPtr = sqmatrices[j]->GetRowPtr();
-    const int *ColInd = sqmatrices[j]->GetKCol();
+//    const int *ColInd = sqmatrices[j]->GetKCol();
 
     int ActiveBound = fespace->GetActiveBound();
 
@@ -10287,7 +10287,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       THNDesc *HNDescr_Obj = TFEDatabase2D::GetHNDesc2D(HNDescr);
       int k = HNDescr_Obj->GetN_Nodes();
       double *Coupling = HNDescr_Obj->GetCoeff();
-      int *DOF = hn->GetDOF();
+//      int *DOF = hn->GetDOF();
 
       Entries[n] = 1.0;
       n++;

@@ -13,8 +13,8 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
   bool deformation_tensor = false;
   double initial_time = 0.0; // should this be taken from the database?
 
-  bool lhs_depends_on_time = true;
-  bool rhs_depends_on_time = true;
+//  bool lhs_depends_on_time = true;
+//  bool rhs_depends_on_time = true;
   // indicate if two or three space dimensions
   bool two_d = true;
 #ifdef __3D__
@@ -115,8 +115,8 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         bd.push_back(BoundaryData(g2));
         bd.push_back(BoundaryData(0.0)); // all zero for pressure
         // the coefficient function
-        lhs_depends_on_time = false;
-        rhs_depends_on_time = true;
+//        lhs_depends_on_time = false;
+//        rhs_depends_on_time = true;
         f = [reynolds, only_stokes, p](const Point& point, double time,
                                        std::vector<double>& coeffs)
         {
@@ -267,8 +267,8 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         bd.push_back(BoundaryData(g3));
         bd.push_back(BoundaryData(0.0)); // all zero for pressure
         // the coefficient function
-        lhs_depends_on_time = false;
-        rhs_depends_on_time = true;
+//        lhs_depends_on_time = false;
+//        rhs_depends_on_time = true;
         f = [reynolds, only_stokes, p, u1, u2, u3, pr](
             const Point& point, double time, std::vector<double>& coeffs)
         {
@@ -368,8 +368,8 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
       bd.push_back(BoundaryData(0.0));
       bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
-      lhs_depends_on_time = false;
-      rhs_depends_on_time = false;
+//      lhs_depends_on_time = false;
+//      rhs_depends_on_time = false;
       f = [reynolds](const Point& point, double time,
                      std::vector<double>& coeffs)
       {
@@ -437,8 +437,8 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
       }
       bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
-      lhs_depends_on_time = false;
-      rhs_depends_on_time = false;
+//      lhs_depends_on_time = false;
+//      rhs_depends_on_time = false;
       f = [reynolds, only_stokes](const Point& point, double time,
                                   std::vector<double>& coeffs)
       {
