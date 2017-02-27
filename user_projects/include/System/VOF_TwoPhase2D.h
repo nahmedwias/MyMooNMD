@@ -28,9 +28,7 @@
 
 class VOF_TwoPhase2D
 {
-
   public:
-
     Example_TimeNSE2D example_tnse2d_;
     Time_NSE2D tnse2d_;
     Example_TimeCD2D example_tcd2d_;
@@ -38,7 +36,6 @@ class VOF_TwoPhase2D
 
     /* example number of vof = example of tnse= tcd */
     int example_number_;
-
     /* rhol = constant density of liquid phase
      * default value is 1 */
     double rhol_ = 1;
@@ -52,6 +49,10 @@ class VOF_TwoPhase2D
      * default value is 0 */
     double mug_  = 0;
 
+    /* Vector equal to property fields at the nodes */
+    BlockVector rho_vector_;
+    BlockVector mu_vector_;
+
   public:
     /** @brief constructor*/
     VOF_TwoPhase2D(const TDomain& domain,
@@ -59,6 +60,7 @@ class VOF_TwoPhase2D
                    const ParameterDatabase& param_db_tcd
                    );
 
+    /*************************************************************/
    /**
     * Special member functions mostly deleted
     * ...needs to be optimized
@@ -78,7 +80,23 @@ class VOF_TwoPhase2D
    //! Default destructor. Most likely causes memory leaks.
    ~VOF_TwoPhase2D() = default;
 
+   /*************************************************************/
 
+   /* Check that the input parameters are consistent,
+    * and correct/throw errors if not the case
+    */
+   void manage_example_parameters();
+
+   /* Update the BlockVectors rho and mu with the phase fraction
+    * vector, via the equation: rho = rhol.phi + rhog.(1-phi)
+    * idem for mu
+    */
+   void update_field_vectors();
+
+   /* Write the vectors in a file for output */
+   void output_vectors(std::string filename_phi,
+                       std::string filename_rho,
+                       std::string filename_mu);
 
 };
 
