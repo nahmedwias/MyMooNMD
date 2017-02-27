@@ -13,8 +13,8 @@
 
 void ExampleFile()
 {
-  OutPut("Example: 32_CouplingCD_NSE_SinCosExp.h Number of oscillations: ");
-  OutPut(N_OSCILLATIONS << endl) ;
+  OutPut("Example: 32_CouplingCD_NSE_SinCosExp.h Number of oscillations: " +
+         std::to_string(N_OSCILLATIONS));
 }
 
 // ========================================================================

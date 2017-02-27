@@ -39,7 +39,7 @@ void BoundCondition(int BdComp, double Param, BoundCond &cond)
 // value of boundary condition
 void BoundValue(int BdComp, double Param, double &value)
 {
-//  double rho_min = TDatabase::ParamDB->P2;
+//  double rho_min = TDatabase::ParamDB->P7;
 //  if (BdComp==1 || BdComp==2)
 //    value = rho_min;  // this is Dirichlet
 //  else
@@ -54,8 +54,8 @@ void InitialCondition(double x,  double y, double *values)
 //  values[0] = vmin+(vmax-vmin)*exp(-10e13*(pow((x-0.3),10)+5*pow((y-0.7),10)));
 //  double columnsize = 0.05715;
 //  if ( x <= columnsize && y <= columnsize)
-//  double density_ratio = TDatabase::ParamDB->P1;
-//  double rho_min = TDatabase::ParamDB->P2; // this is the density of the bottom fluid
+//  double density_ratio = TDatabase::ParamDB->P7;
+//  double rho_min = TDatabase::ParamDB->P7; // this is the density of the bottom fluid
   if ( x <= 0.05715 && y <= 0.05715)
     values[0] = 1;//density_ratio*rho_min;
   else

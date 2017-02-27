@@ -40,7 +40,7 @@ void BoundCondition(int BdComp, double Param, BoundCond &cond)
 void BoundValue(int BdComp, double Param, double &value)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
-//  double rho_min = TDatabase::ParamDB->P2;
+//  double rho_min = TDatabase::ParamDB->P7;
 //  if (BdComp==1 || BdComp==2)
 //    value = rho_min;  // this is Dirichlet
 //  else
@@ -59,9 +59,9 @@ void BoundValue(int BdComp, double Param, double &value)
 // initial conditon
 void InitialCondition(double x,  double y, double *values)
 {
-//  double x0 = TDatabase::ParamDB->P3; // x position of initial circle
-//  double y0 = TDatabase::ParamDB->P4; // y position of initial circle
-//  double radius = TDatabase::ParamDB->P5; // radius of circle
+//  double x0 = TDatabase::ParamDB->P4; // x position of initial circle
+//  double y0 = TDatabase::ParamDB->P5; // y position of initial circle
+//  double radius = TDatabase::ParamDB->P6; // radius of circle
   if ( y <= 0.7 )
     values[0] = 1; // liquid bath
   else

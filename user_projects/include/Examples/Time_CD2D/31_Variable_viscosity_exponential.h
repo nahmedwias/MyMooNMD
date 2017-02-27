@@ -1,7 +1,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: 31_Variable_viscosity_exponential.h" << endl);
+  OutPut("Example: 31_Variable_viscosity_exponential.h");
 }
 
 double get_nu()

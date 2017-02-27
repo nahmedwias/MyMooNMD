@@ -28,12 +28,29 @@
 
 class VOF_TwoPhase2D
 {
+
   public:
+
     Example_TimeNSE2D example_tnse2d_;
-    Example_TimeCD2D example_tcd2d_;
     Time_NSE2D tnse2d_;
+    Example_TimeCD2D example_tcd2d_;
     Time_CD2D phaseconvection2d_;
 
+    /* example number of vof = example of tnse= tcd */
+    int example_number_;
+
+    /* rhol = constant density of liquid phase
+     * default value is 1 */
+    double rhol_ = 1;
+    /* mul = constant dyn. visco of liquid phase
+     * default value is 1 */
+    double mul_  = 1;
+    /* rhog = constant density of gas phase
+     * default value is 0 */
+    double rhog_ = 0;
+    /* mug = constant dyn. visco of gas phase
+     * default value is 0 */
+    double mug_  = 0;
 
   public:
     /** @brief constructor*/
