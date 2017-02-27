@@ -107,10 +107,11 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
     TFESpace2D& space = this->systems.front().fe_space;
     double hmin, hmax;
     coll->GetHminHmax(&hmin, &hmax);
-    Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
-    Output::print<1>("h(min,max) : ", setw(12), hmin, " ", setw(12), hmax);
-    Output::print<1>("dof        : ", setw(12), space.GetN_DegreesOfFreedom());
-    Output::print<1>("active dof : ", setw(12), space.GetN_ActiveDegrees());
+    Output::stat("TCD2D", "Mesh data and problem size");
+    Output::dash("N_Cells            :  ", setw(12), coll->GetN_Cells());
+    Output::dash("h(min,max)         :  ", setw(12), hmin, " ", setw(12), hmax);
+    Output::dash("dof                :  ", setw(12), space.GetN_DegreesOfFreedom());
+    Output::dash("active dof         :  ", setw(12), space.GetN_ActiveDegrees());
     
     // old right hand side
     old_rhs.copy_structure(this->systems[0].rhs);

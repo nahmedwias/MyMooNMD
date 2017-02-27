@@ -126,6 +126,26 @@ int main(int argc, char* argv[])
   // this is a test
   VOF_TwoPhase2D vof(domain,tnse_db,tcd_db);
 
+  cout << "rhol = " << vof.rhol_ << endl;
+  cout << "mul = "  << vof.mul_ << endl;
+  cout << "rhog = " << vof.rhog_ << endl;
+  cout << "mug = "  << vof.mug_ << endl;
+  cout << "example = "  << vof.example_number_ << endl;
+
+  /********************************************************************
+   * SOME OUTPUT AND INFORMATION SET
+   ********************************************************************/
+  Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
+  Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
+  Output::print<1>("Convection_example number     ", tcd_db["example"]);
+  Output::print<1>("TimeNSE_example number        ", tnse_db["example"]);
+
+
+
+  cout << "PROGRAM SUCCESSFUL UNTIL LAST LINE!!" << endl;
+  exit(0);
+
   Example_TimeNSE2D example_tnse2d(tnse_db);                  // Construct Example for NSE
   Time_NSE2D        tnse2d(domain, tnse_db, example_tnse2d);  // Construct NSE system
   Example_TimeCD2D  example_tcd2d(tcd_db);                    // Construct Example for CD
@@ -139,21 +159,11 @@ int main(int argc, char* argv[])
   double mu2  = 0;        // mu constant of gas, eg 0
   if (tcd_example_number == 40 ||tcd_example_number == 50 )
   {
-  double density_ratio = TDatabase::ParamDB->P1;
-  double viscosity_ratio = TDatabase::ParamDB->P2;
+  double density_ratio = TDatabase::ParamDB->P7;
+  double viscosity_ratio = TDatabase::ParamDB->P8;
   rho2 = rho1/density_ratio;         // density constant of gas, eg 0
   mu2  = mu1/viscosity_ratio;        // mu constant of gas, eg 0
   }
-
-  /********************************************************************
-   * SOME OUTPUT AND INFORMATION SET
-   ********************************************************************/
-  Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
-  Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
-  Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
-  Output::print<1>("Convection_example number     ", tcd_db["example"]);
-  Output::print<1>("TimeNSE_example number        ", tnse_db["example"]);
-
 
 
   /********************************************************************

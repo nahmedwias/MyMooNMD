@@ -39,7 +39,7 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 // value of boundary condition
 void BoundValue(int i, double Param, double &value)
 {
-  double rho_min = TDatabase::ParamDB->P2; // this is the density of the bottom fluid
+  double rho_min = TDatabase::ParamDB->P7; // this is the density of the bottom fluid
 
   if (i == 0)
     value = rho_min;  // bottom
@@ -52,7 +52,7 @@ void BoundValue(int i, double Param, double &value)
 // initial conditon
 void InitialCondition(double x,  double y, double *values)
 {
-  double rho_min = TDatabase::ParamDB->P2; // this is the density of the bottom fluid
+  double rho_min = TDatabase::ParamDB->P7; // this is the density of the bottom fluid
   double pi = 3.14159265358979;
   double d = 1.0; // this is the width of the rectangular domain
   double interface0 = -0.1*d*(cos(2*pi*(x)/d)); // this is the initial interface, as given in (Fraigneau et al,01)
@@ -92,7 +92,7 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
 // exact solution
 void Initial(double x, double y, double *values)
 {
-  double rho_min = TDatabase::ParamDB->P2; // this is the density of the bottom fluid
+  double rho_min = TDatabase::ParamDB->P7; // this is the density of the bottom fluid
   double pi = 3.14159265358979;
   double d = 1.; // this is the width of the rectangular domain
   double interface0 = -0.1*d*cos(2*pi*x/d); // this is the initial interface, as given in (Fraigneau et al,01)

@@ -12,7 +12,7 @@ double USER_parameter2;
 
 void ExampleFile()
 {
-  OutPut("Example: 21_CouplingNSE_CD.h , Velocity Field (1,2)" << endl) ;
+  OutPut("Example: 21_CouplingNSE_CD.h , Velocity Field (1,2)") ;
   TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
 }
 

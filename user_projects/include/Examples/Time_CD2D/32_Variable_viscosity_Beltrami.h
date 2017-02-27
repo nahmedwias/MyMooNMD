@@ -1,7 +1,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: 32_Variable_viscosity_Beltrami.h" << endl);
+  OutPut("Example: 32_Variable_viscosity_Beltrami.h");
 }
 
 double get_nu()
