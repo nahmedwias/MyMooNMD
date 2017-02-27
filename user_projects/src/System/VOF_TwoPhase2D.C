@@ -9,7 +9,13 @@ VOF_TwoPhase2D::VOF_TwoPhase2D(const TDomain& domain,
 : example_tnse2d_(param_db_tnse),
   tnse2d_(domain,param_db_tnse,example_tnse2d_),
   example_tcd2d_(param_db_tcd),
-  phaseconvection2d_(domain,param_db_tcd,example_tcd2d_)
+  phaseconvection2d_(domain,param_db_tcd,example_tcd2d_),
+  tnse_variable_fluid_(param_db_tnse["dimensional_nse"]),
+  solve_convection_(param_db_tcd["solve_cd"]),
+  nse2cd_coupling_(param_db_tcd["coupling_nse_cd"]),
+  cd2nse_coupling_(param_db_tnse["coupling_cd_nse"]),
+  rho_vector_(phaseconvection2d_.get_solution()),
+  mu_vector_(phaseconvection2d_.get_solution())
 {
   /* First, check and set consistent parameters  */
   manage_example_parameters();
@@ -18,15 +24,19 @@ VOF_TwoPhase2D::VOF_TwoPhase2D(const TDomain& domain,
   rhol_ = param_db_tnse["fluid_density"];
   mul_  = param_db_tnse["fluid_dynamic_viscosity"];
 
+  /* Initialize vectors to constant values of one phase, e.g. liquid  */
+  this->rho_vector_ = rhol_;
+  this->mu_vector_ = mul_;
 
 
-  cout << "Constructor of VOF TWO PHASE 2D IS OK!" << endl;
 }
 
 /** Check and set input parameters */
 void VOF_TwoPhase2D::manage_example_parameters()
 {
-  // Check example number consistency
+  /********************************************************************
+     * Check example number consistency!
+     ********************************************************************/
   if (example_tnse2d_.get_database()["example"].value_as_string()
         != example_tcd2d_.get_database()["example"].value_as_string())
   {
@@ -34,6 +44,35 @@ void VOF_TwoPhase2D::manage_example_parameters()
   }
   else
     example_number_ = example_tnse2d_.get_database()["example"];
+
+  /********************************************************************
+   * MANAGE PARAMETERS FOR BENCHMARK PROBLEMS!
+   ********************************************************************/
+  switch(example_number_)
+  {
+    case 10:
+      this->nse2cd_coupling_  = false;
+      this->cd2nse_coupling_  = false;
+      break;
+    case 20: case 21: case 22:
+      this->tnse_variable_fluid_ = true;
+      this->nse2cd_coupling_     = true;
+      this->cd2nse_coupling_     = false;
+      break;
+    case 30: case 31: case 32:
+//      this->tnse_variable_fluid_ = true;
+      this->nse2cd_coupling_  = false;
+//      this->cd2nse_coupling_  = true;
+//      this->solve_convection_ = true;
+      break;
+    case 40: case 41:
+//      this->tnse_variable_fluid_ = true;
+//      this->nse2cd_coupling_  = true;
+//      this->cd2nse_coupling_  = true;
+//      this->solve_convection_ = true;
+      break;
+  }
+
 
   switch(example_number_)
   {
@@ -71,7 +110,24 @@ void VOF_TwoPhase2D::output_vectors(std::string filename_phi,
   this->mu_vector_.write(filename_mu);
 }
 
-
-
-
+/* Print some info, mostly useful after the constructor */
+void VOF_TwoPhase2D::output_initial_info()
+{
+  Output::print<3>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print<3>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
+  Output::print<3>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
+  Output::print<3>("Convection_example number     ",
+                   this->example_tcd2d_.get_database()["example"]);
+  Output::print<3>("Time NSE Example number       ",
+                   this->example_tnse2d_.get_database()["example"]);
+  Output::print<3>("Fluid properties are non constant : "
+      + std::to_string(this->tnse_variable_fluid_));
+  Output::print<3>("TCD is solved            : " + std::to_string(this->solve_convection_));
+  Output::print<3>("Coupling NSE >> CD is    : " + std::to_string(this->nse2cd_coupling_));
+  Output::print<3>("Coupling CD >> NSE is    : " + std::to_string(this->cd2nse_coupling_));
+  Output::print<3>("The density   of liquid is ", this->rhol_);
+  Output::print<3>("The viscosity of liquid is ", this->mul_);
+  Output::print<3>("The density   of gas    is ", this->rhog_);
+  Output::print<3>("The viscosity of gas    is ", this->mug_);
+}
 

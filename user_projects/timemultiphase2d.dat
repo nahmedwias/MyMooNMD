@@ -13,8 +13,8 @@ reynolds_number: 1.  [ 0, 1e6 ]
 RE_NR:	1.
 
 ## Beltrami/variable viscosity example 
-P1: 1  # density ratio
-P2: 10	 # viscosity ratio
+P1: 1  
+P2: 10	 
 P3: 1
 
 ## Position of bubble
