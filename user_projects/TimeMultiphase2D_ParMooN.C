@@ -63,40 +63,10 @@ int main(int argc, char* argv[])
 //  tcd_db["example"]          = 10;
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
-  int tcd_example_number     = tcd_db["example"]; // just for convenience
 
 //  tnse_db["example"]         = 18;
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
-//  int tnse_example_number     = tnse_db["example"]; // just for convenience
-
-  /********************************************************************
-   * MANAGE PARAMETERS FOR BENCHMARK PROBLEMS!
-   ********************************************************************/
-  switch(tcd_example_number)
-  {
-    case 10:
-      tcd_db["coupling_nse_cd"]  = false;
-      tnse_db["coupling_cd_nse"] = false;
-      break;
-    case 20: case 21: case 22:
-      tnse_db["dimensional_nse"] = true;
-      tcd_db["coupling_nse_cd"]  = true;
-      tnse_db["coupling_cd_nse"] = false;
-      break;
-    case 30: case 31: case 32:
-//      tnse_db["dimensional_nse"] = true;
-      tcd_db["coupling_nse_cd"]  = false;
-//      tnse_db["coupling_cd_nse"] = true;
-//      tcd_db["solve_cd"] = true;
-      break;
-    case 40: case 41:
-//      tnse_db["dimensional_nse"] = true;
-//      tcd_db["coupling_nse_cd"]  = true;
-//      tnse_db["coupling_cd_nse"] = true;
-      break;
-  }
-
 
   TDomain domain(argv[1], parmoon_db);            // Initialize geometry
 
@@ -117,37 +87,27 @@ int main(int argc, char* argv[])
   domain.print_info("Multiphase2D domain");      // Output domain info
 
 
-
   /********************************************************************
    * DECLARING OBJECTS FOR TimeNSE2D AND TimeCD2D
    ********************************************************************/
   SetTimeDiscParameters(0);                                   // Initialize parameters for time discretization
 
-  // this is a test
+  /********************************************************************
+   * Creating VOF object, which contains both TimeNSE2D and TimeCD2D
+   ********************************************************************/
   VOF_TwoPhase2D vof(domain,tnse_db,tcd_db);
-
-  cout << "rhol = " << vof.rhol_ << endl;
-  cout << "mul = "  << vof.mul_ << endl;
-  cout << "rhog = " << vof.rhog_ << endl;
-  cout << "mug = "  << vof.mug_ << endl;
-  cout << "example = "  << vof.example_number_ << endl;
 
   /********************************************************************
    * SOME OUTPUT AND INFORMATION SET
    ********************************************************************/
-  Output::print<1>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
-  Output::print<1>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
-  Output::print<1>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
-  Output::print<1>("Convection_example number     ", tcd_db["example"]);
-  Output::print<1>("TimeNSE_example number        ", tnse_db["example"]);
-
+  vof.output_initial_info();
 
   /********************************************************************
    * INITIALIZING OBJECTS FOR MULTIPHASE
    ********************************************************************/
   /* This calculates rho and mu vectors with tcd2d initial solution */
   vof.update_field_vectors();
-  vof.output_vectors("vector_phi","rho_vector_phi","mu_vector_phi");
+  vof.output_vectors("vector_phi","vector_rho","vector_mu");
 
 
 
@@ -157,7 +117,7 @@ int main(int argc, char* argv[])
 
 
 
-//
+
 //  // Set phase field = 1 everywhere when we dont use cd>nse coupling.
 //  // If we use it, then do nothing, this will take the initial solution of tcd2d.
 //  if (tnse_db["coupling_cd_nse"].is(false))
@@ -192,8 +152,8 @@ int main(int argc, char* argv[])
 //  /** @brief Finite Element function for density and viscosity field */
 //  TFEFunction2D rho_field = update_fieldfunction(&tcd2d.get_space(),rho_vector,(char*)"r");
 //  TFEFunction2D mu_field  = update_fieldfunction(&tcd2d.get_space(),mu_vector,(char*)"m");
-//
-//
+
+
 //  /********************************************************************
 //   * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
 //   ********************************************************************/

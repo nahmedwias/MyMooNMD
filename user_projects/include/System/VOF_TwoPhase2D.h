@@ -34,7 +34,7 @@ class VOF_TwoPhase2D
     Example_TimeCD2D example_tcd2d_;
     Time_CD2D phaseconvection2d_;
 
-    /* example number of vof = example of tnse= tcd */
+    /* example number of vof=example of tnse=tcd */
     int example_number_;
     /* rhol = constant density of liquid phase
      * default value is 1 */
@@ -48,6 +48,14 @@ class VOF_TwoPhase2D
     /* mug = constant dyn. visco of gas phase
      * default value is 0 */
     double mug_  = 0;
+
+    /* Boolean parameters which activates and
+     * controls different features of this class
+     */
+    bool tnse_variable_fluid_ = false;
+    bool solve_convection_    = false;
+    bool nse2cd_coupling_     = false;
+    bool cd2nse_coupling_     = false;
 
     /* Vector equal to property fields at the nodes */
     BlockVector rho_vector_;
@@ -97,6 +105,9 @@ class VOF_TwoPhase2D
    void output_vectors(std::string filename_phi,
                        std::string filename_rho,
                        std::string filename_mu);
+
+   /* Print some info, mostly useful after the constructor */
+   void output_initial_info();
 
 };
 
