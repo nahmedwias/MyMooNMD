@@ -28,6 +28,10 @@ public:
 
     //
     unsigned int current_step_;
+    
+    /// parameter to be set for scaling and descaling of the 
+    /// pressure-velocity blocks
+    unsigned int n_scale_block;
 
     void set_time_disc_parameters();
 
@@ -41,9 +45,21 @@ public:
         const BlockFEMatrix& mass_matrix, std::vector<BlockVector> & rhs, 
         const std::vector<BlockVector> old_solutions);
     
-    //
+    /// @brief this function will prepare the BlockFEMatrix 
+    /// which passes to the solver. In details, the system_matrix
+    /// will be scaled depending on the time stepping scheme
+    /// and the mass matrix will be added to it. The B-blocks
+    /// will be only scaled with the corresponding factor:
+    /// @param system_matrix stiffness matrix
+    /// @param mass_matrix  the mass matrix
+    /// @param it_counter nonlinear iteration counter 
+    /// @param nl_b_block the BT and B-blocks are nonlinear
+    ///        nl_b_block = 0, 2 means B and BT's blocks have 
+    ///        to be scaled 
+    ///        nl_b_block = 1 means only the BT's have to be scaled
     void prepare_system_matrix(BlockFEMatrix& system_matrix, 
-        const BlockFEMatrix& mass_matrix, unsigned int it_counter);
+        const BlockFEMatrix& mass_matrix, 
+        unsigned int it_counter);
     
     // 
     void reset_linear_matrices(BlockFEMatrix& matrix, 

@@ -357,6 +357,8 @@ private:
   void restrict_function();
   /// update matrices for local projection stabilization
   void update_matrices_lps(Time_NSE2D_Merged::System_per_grid& s);
+  /// 
+  void assemble_rhs_nonlinear();
 };
 
 #endif // TIME_NSE2D_MERGED_H

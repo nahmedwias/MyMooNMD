@@ -215,7 +215,31 @@ void Time_NSE2D_Merged::set_parameters()
   // set the discretization parameters
   // standard Galerkin
   if(db["disctype"].is("galerkin"))
+  {
     TDatabase::ParamDB->DISCTYPE = 1;
+    /// set scaling factor for B, BT's block
+    time_stepping_scheme.n_scale_block = 0;
+  }
+  if(db["disctype"].is("supg"))
+  {
+    TDatabase::ParamDB->DISCTYPE = 2;
+    /// set scaling factor for B, BT's block
+    time_stepping_scheme.n_scale_block = 1;
+    if(TDatabase::ParamDB->NSTYPE==14)
+      time_stepping_scheme.n_scale_block = 3;
+  }
+  if(db["disctype"].is("residual_based_vms"))
+  {
+    TDatabase::ParamDB->DISCTYPE == 101;
+    time_stepping_scheme.n_scale_block = 2;
+
+    if(TDatabase::ParamDB->NSTYPE==14)
+      time_stepping_scheme.n_scale_block = 3;
+  }
+  
+  // set parameter used for scaling and descaling
+  // of the B, B'T (C) blocks 
+  
   // Smagorinsky
   if(db["disctype"].is("smagorinsky"))
   {
@@ -232,7 +256,6 @@ void Time_NSE2D_Merged::set_parameters()
   // the only case where one have to re-assemble the right hand side
   if(db["disctype"].is("supg") || db["disctype"].is("residual_based_vms"))
     is_rhs_and_mass_matrix_nonlinear = true;
-
 }
 
 /**************************************************************************** */
@@ -335,7 +358,11 @@ void Time_NSE2D_Merged::assemble_initial_time()
 /**************************************************************************** */
 void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
 {
-  if(it_counter == 0 || is_rhs_and_mass_matrix_nonlinear == true)
+  // case 1. standard Galerkin case:: Mass matrix, B's blocks
+  // and right hand side is linear 
+  // case 2. SUPG method: all matrices and right hand sides are
+  // nonlinear except B-matrices
+  if(it_counter == 0 /*&& time_stepping_scheme.current_step_==1*/)
   {
     // initialize the rhs from the time discretization
     rhs_from_time_disc = this->systems.front().rhs;
@@ -371,49 +398,39 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
                      rhs_, oldsolutions);
     rhs_from_time_disc=rhs_[0];
     old_rhs=s.rhs;
-
-    //Nonlinear assembling requires an approximate velocity solution on every grid!
-    if(this->systems.size() > 1)
-      this->restrict_function();
-    // assemble the nonlinear matrices
-    for(System_per_grid & s : systems)
-    {
-      call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
-      if(db["disctype"].is("local_projection"))
-        update_matrices_lps(s);
-      if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 )
-      {
-        this->modify_slip_bc();
-      }
-      // also prepare the system matrices for the solver within the same
-      // loop::
-    }
-    for(System_per_grid& s : this->systems)
-    {
-      // at the very first time step one have to scale the B, BT's blocks
-      // if they are not changing within the time steps
-      time_stepping_scheme.prepare_system_matrix(s.matrix, s.mass_matrix, it_counter);
-    }
+    // copy the non-actives
+    rhs_from_time_disc.copy_nonactive(s.solution);
   }
-  else
+  //Nonlinear assembling requires an approximate velocity solution on every grid!
+  if(this->systems.size() > 1)
+    this->restrict_function();
+  // assemble the nonlinear matrices
+  for(System_per_grid & s : systems)
   {
-    if(this->systems.size() > 1)
-      this->restrict_function();
-    // assemble nonlinear matrices
-    for(System_per_grid& s : systems)
-    {
-      call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
-      if(db["disctype"].is("local_projection"))
-        update_matrices_lps(s);
-
-      if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 )
-      {
-        this->modify_slip_bc();
-      }
-    }
-    // prepare the system matrix for solving
-    for(System_per_grid & s : this->systems)
-      time_stepping_scheme.prepare_system_matrix(s.matrix, s.mass_matrix, it_counter);
+    call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
+    if(db["disctype"].is("local_projection"))
+      update_matrices_lps(s);
+  }
+  // slip boundary modification of matrices
+  if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 )
+  {
+    if(is_rhs_and_mass_matrix_nonlinear)
+      this->modify_slip_bc(true, true);
+    else
+      this->modify_slip_bc();
+  }
+  // prepare the right-hand side if it is nonlinear, assembling already 
+  // done together with the matrices
+  if(is_rhs_and_mass_matrix_nonlinear)
+  {
+    this->assemble_rhs_nonlinear();
+  }
+  //
+  // also prepare the system matrices for the solver
+  for(System_per_grid& s : this->systems)
+  {
+    // call the preparing method
+    time_stepping_scheme.prepare_system_matrix(s.matrix, s.mass_matrix, it_counter);
   }
   Output::print<5>("Assembling of matrices and right hand side is done");
 }
@@ -522,9 +539,29 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
 void Time_NSE2D_Merged::solve()
 {
   System_per_grid& s = this->systems.front();
+  // CB DEBUG
+  if(TDatabase::TimeDB->CURRENTTIME==1.05)
+  {
+    rhs_from_time_disc.print("rhs");
+    s.solution.print("sol");
+    s.matrix.get_blocks().at(0)->Print("M1");
+    s.matrix.get_blocks().at(1)->Print("M2");
+    s.matrix.get_blocks().at(3)->Print("M3");
+    s.matrix.get_blocks().at(4)->Print("M4");
 
-  // s.solution.print("r");
+    s.matrix.get_blocks().at(2)->Print("B1");
+    s.matrix.get_blocks().at(5)->Print("B2");
+    s.matrix.get_blocks().at(6)->Print("B3");
+    s.matrix.get_blocks().at(7)->Print("B4");exit(0);
+  }
+  // END DEBUG
   solver.solve(s.matrix, rhs_from_time_disc, s.solution);
+  // CB DEBUG
+  // if(TDatabase::TimeDB->CURRENTTIME==0.05)
+  // {
+  //   s.solution.print("solafter");
+  // }
+  // CEND DEBUG
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are
   // reset and assembled again but the A12 and A21 are scaled, so
@@ -532,18 +569,20 @@ void Time_NSE2D_Merged::solve()
   for(System_per_grid & s : this->systems)
     time_stepping_scheme.reset_linear_matrices(s.matrix, s.mass_matrix);
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-     s.p.project_into_L20();
+  // if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  //    s.p.project_into_L20();
 }
 
 /**************************************************************************** */
 void Time_NSE2D_Merged::output(int m)
 {
+  System_per_grid& s = this->systems.front();
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+     s.p.project_into_L20();
   bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
   if(no_output)
     return;
 
-  System_per_grid& s = this->systems.front();
   TFEFunction2D * u1 = s.u.GetComponent(0);
   TFEFunction2D * u2 = s.u.GetComponent(1);
 
@@ -696,7 +735,10 @@ void Time_NSE2D_Merged::call_assembling_routine(Time_NSE2D_Merged::System_per_gr
                bc.data(), bv.data(), la);
   // we are assembling only one mass matrix M11, but in general we need the
   // diagonal block M22 to be the same
-  if(!db["disctype"].is("residual_based_vms") && (time_stepping_scheme.current_step_ == 0) )
+  // For SUPG method, mass matrix is non-linear and will be changed during 
+  // the nonlinear assembling, therefor also copy the M11 to M22.
+  if((!db["disctype"].is("residual_based_vms") && (time_stepping_scheme.current_step_ == 0) )
+    || db["disctype"].is("supg"))
   {
     s.mass_matrix.replace_blocks(*s.mass_matrix.get_blocks().at(0).get(), {{1,1}}, {false});
   }
@@ -713,18 +755,18 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
 
   std::vector<std::shared_ptr<FEMatrix>> blocks
          = s.matrix.get_blocks_uniquely();
+        // get the blocks of the mass matrix
+  std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+        = s.mass_matrix.get_blocks_uniquely();
 
   switch(type)
   {
     case TNSE2D:
     {
       // right hand side: for NSTYPE: 1,2 and 3, size is 2
-        rhs_array.resize(2);
-        rhs_array[0] = s.rhs.block(0);
-        rhs_array[1] = s.rhs.block(1);
-      // get the blocks of the mass matrix
-      std::vector<std::shared_ptr<FEMatrix>> mass_blocks
-        = s.mass_matrix.get_blocks_uniquely();
+      rhs_array.resize(2);
+      rhs_array[0] = s.rhs.block(0);
+      rhs_array[1] = s.rhs.block(1);
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
@@ -817,10 +859,9 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
       s.rhs.reset();
       break;
     }// case TNSE2D
+// case TNSE2D       
     case TNSE2D_NL:
     {
-      std::vector<std::shared_ptr<FEMatrix>> blocks
-         = s.matrix.get_blocks_uniquely();
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
@@ -835,16 +876,33 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
           sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
           sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
 
+          reMat.resize(0);
+          // right hand side
+          rhs_array.resize(0);
           if(db["disctype"].is("smagorinsky"))
           {
             sqMat.resize(4);
             sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
             sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
             sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-          }
-          reMat.resize(0);
-          // right hand side
-          rhs_array.resize(0);
+          }  
+          // In the case of SUPG: together with the other contributions to 
+          // the viscous and nonlinear terms, additional Mass matrix, BT-block, 
+          // and right-had-side needs to be assembled during the nonlinear 
+          // iteration due to the weighted test function.
+          if(db["disctype"].is("supg"))
+          {
+            sqMat.resize(3);
+            sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+            reMat.resize(2); 
+            reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); 
+            reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+            rhs_array.resize(2);
+            rhs_array[0] = s.rhs.block(0);
+            rhs_array[1] = s.rhs.block(1);
+            s.rhs.reset(); // reset to zero
+          }            
+          
           break;
         case 14:
           // we need to re-assemble all the matrices due to the solution
@@ -876,6 +934,7 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
       }// endswitch NSTYPE
       break;
     }
+//---------------------------    
     case TNSE2D_Rhs:
     {
       // no matrices to be assembled
@@ -927,6 +986,32 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
   functions[0] = s.u.GetComponent(0);
   functions[1] = s.u.GetComponent(1);
   functions[2] = &s.p;
+  
+  if(db["disctype"].is("supg") && TDatabase::ParamDB->NSTYPE == 14)
+  {
+    // part of the time derivative tested with pressue needs 
+    // to be assembled together with the right-hand side (rhs3)
+    if(db["time_discretization"].is("backward_euler") || 
+       time_stepping_scheme.pre_stage_bdf <= 1)
+    {
+      functions.resize(4);
+      functions[2] = s.u_m1.GetComponent(0);
+      functions[3] = s.u_m1.GetComponent(1);
+    }
+    if(db["time_discretization"].is("bdf_two"))
+    {
+      s.combined_old_sols.reset();
+      // copy and scale the solution at previous time step with factor 2
+      s.combined_old_sols = s.solution_m1;
+      s.combined_old_sols.scale(2.);
+      // subtract with right factor the solution at pre-previous solution
+      s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+
+      functions.resize(4);
+      functions[2] = s.comb_old_u.GetComponent(0);
+      functions[3] = s.comb_old_u.GetComponent(1);
+    }    
+  }
 }
 
 /**************************************************************************** */
@@ -1080,4 +1165,35 @@ void Time_NSE2D_Merged::update_matrices_lps(System_per_grid &s)
     sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
     UltraLocalProjection(sqMat[0], FALSE);
   }
+}
+
+void Time_NSE2D_Merged::assemble_rhs_nonlinear()
+{
+  // initialize the rhs from the time discretization
+  rhs_from_time_disc = this->systems.front().rhs;
+  rhs_from_time_disc.reset();
+  System_per_grid& s = this->systems.front();
+  
+  // copy the right hand side to the "rhs_from_time_disc"
+  rhs_from_time_disc = s.rhs;
+  // all matrices from the previous time step are available
+  unsigned int n_sols = time_stepping_scheme.n_old_solutions();
+  std::vector<BlockVector> oldsolutions(n_sols);
+  oldsolutions[0] = s.solution_m1;
+  if(oldsolutions.size() == 2)
+    oldsolutions[1] = s.solution_m2;
+  // one needs two right hand sides only for the crank-Nicolson
+  // and fractional step theta schemes
+  std::vector<BlockVector> rhs_(2);
+  rhs_[0] = rhs_from_time_disc; // current rhs
+  rhs_[1] = old_rhs; // old right hand side is needed for the Crank-Nicolson time stepping
+
+  // prepare the right hand side for the solver
+  time_stepping_scheme.prepare_rhs_from_time_disc(s.matrix, s.mass_matrix,
+                   rhs_, oldsolutions);
+  rhs_from_time_disc=rhs_[0];
+  old_rhs=s.rhs;
+  // copy the non-actives
+  rhs_from_time_disc.copy_nonactive(s.rhs);
+  s.solution.copy_nonactive(s.rhs);
 }
