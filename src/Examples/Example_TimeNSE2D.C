@@ -47,9 +47,13 @@ namespace example40_dambreak_nse_cd // 2 way coupling for dam break
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/40_DamBreakNSE_CD.h"
 }
-namespace example41_rayleightaylor_nse_cd   // 2 way coupling for Rayleigh-Taylor instability
+namespace example41_rayleightaylor_nse_cd   // Rayleigh-Taylor instability (Fraigneau 2001)
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/41_RayleighTaylorNSE_CD.h"
+}
+namespace example42_rayleightaylor2_nse_cd   // Rayleigh-Taylor instability (Pochet 2013)
+{
+#include "../../user_projects/include/Examples/Time_NSE2D/42_RayleighTaylor2NSE_CD.h"
 }
 namespace example50_gasstirring_nse_cd   // 2 way coupling for Gas Stirring test
 {
@@ -386,6 +390,36 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          example41_rayleightaylor_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
          example41_rayleightaylor_nse_cd::ExampleFile();
+         break;
+
+       case 42:                // Example 42 = 2-WAY-COUPLING FOR RAYLEIGH TAYLOR INSTABILITY
+                               // From Pochet et al 2013
+         /** exact_solution */
+         exact_solution.push_back( example42_rayleightaylor2_nse_cd::ExactU1 );
+         exact_solution.push_back( example42_rayleightaylor2_nse_cd::ExactU2 );
+         exact_solution.push_back( example42_rayleightaylor2_nse_cd::ExactP );
+
+         /** boundary condition */
+         boundary_conditions.push_back( example42_rayleightaylor2_nse_cd::BoundCondition );
+         boundary_conditions.push_back( example42_rayleightaylor2_nse_cd::BoundCondition );
+         boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+         /** boundary values */
+         boundary_data.push_back( example42_rayleightaylor2_nse_cd::U1BoundValue );
+         boundary_data.push_back( example42_rayleightaylor2_nse_cd::U2BoundValue );
+         boundary_data.push_back( BoundaryValueHomogenous );
+
+         /** coefficients */
+         problem_coefficients = example42_rayleightaylor2_nse_cd::LinCoeffs;
+
+         /** initial condition */
+         initialCOndtion.push_back(example42_rayleightaylor2_nse_cd::InitialU1);
+         initialCOndtion.push_back(example42_rayleightaylor2_nse_cd::InitialU2);
+         example42_rayleightaylor2_nse_cd::REYNOLDS_number = get_nu();
+         example42_rayleightaylor2_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
+         example42_rayleightaylor2_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
+
+         example42_rayleightaylor2_nse_cd::ExampleFile();
          break;
 
        case 50:                // Example 50 = 2-WAY-COUPLING FOR Gas Stirring Test

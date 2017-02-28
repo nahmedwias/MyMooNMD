@@ -78,7 +78,7 @@ void VOF_TwoPhase2D::manage_example_parameters()
                       ":coupling nse2cd must be false, but the other booleans"
                       " are free to be changed.");
       break;
-    case 40: case 41: case 50:
+    case 40: case 41: case 42: case 50:
 //      this->tnse_variable_fluid_ = true;
 //      this->nse2cd_coupling_  = true;
 //      this->cd2nse_coupling_  = true;
@@ -91,6 +91,13 @@ void VOF_TwoPhase2D::manage_example_parameters()
  * depending on the example number */
 void VOF_TwoPhase2D::update_field_vectors()
 {
+  // note : the following two lines are redundant in the initial
+  // time...because already equal in the constructor...
+  // but necessary to recalculate it before updating..
+  // it may be not nice to calculate the property fields by
+  // using only the values at nodes with blockvector...any better way?
+  this->rho_vector_ = this->phaseconvection2d_.get_solution();
+  this->mu_vector_ = this->phaseconvection2d_.get_solution();
   //At this point, rhol and mul = phase fraction
   switch(example_number_)
   {
@@ -110,7 +117,7 @@ void VOF_TwoPhase2D::update_field_vectors()
       // rayleigh taylor: visco = 1 and rho=phase field
       this->mu_vector_ = this->unity_vector_;
       break;
-    case 40: case 50:
+    case 40: case 42: case 50:
       // dambreak and 2-phase flows
       this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
       this->mug_  = TDatabase::ParamDB->P8; // mu of gas  = mu2 =mumin
