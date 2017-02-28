@@ -74,6 +74,10 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
     rk = std::make_shared<RungeKuttaTable>(db["time_discretization"]);
   }
   current_time_step_length = db["time_step_length"];
+  TDatabase::TimeDB->TIMESTEPLENGTH = current_time_step_length;
+  TDatabase::TimeDB->CURRENTTIMESTEPLENGTH = current_time_step_length;
+  
+  n_scale_block = 0;
 
   Output::print<5>("Time discretization is initialized with ",
                 db["time_discretization"]);
@@ -121,7 +125,8 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
 }
 
 void TimeDiscretization::prepare_system_matrix(
-  BlockFEMatrix& system_matrix, const BlockFEMatrix& mass_matrix, unsigned int it_counter)
+  BlockFEMatrix& system_matrix, const BlockFEMatrix& mass_matrix, 
+  unsigned int it_counter)
 {
   if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
   {
@@ -136,26 +141,52 @@ void TimeDiscretization::prepare_system_matrix(
   else if(db["time_discretization"].is("crank_nicolson"))
   {
     const std::vector<std::vector<size_t>> cells = {{0,0},{0,1},{1,0},{1,1}};
-    system_matrix.scale_blocks_actives(current_time_step_length*bdf_coefficients[2], cells);
+    system_matrix.scale_blocks_actives(current_time_step_length*0.5, cells);
   }
   else
     ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
   // add the scaled block matrices
   system_matrix.add_blockfe_matrix(mass_matrix);
-
-  // scaling of the B and BT's blocks
-  if((this->current_step_==1) && (it_counter==0)){
-      double factor;
-      if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
-        factor = current_time_step_length;
-      else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
-        factor = current_time_step_length*bdf_coefficients[2];
-      else if(db["time_discretization"].is("crank_nicolson"))
-        factor = current_time_step_length*0.5;//this have to be adopted according to the stages
-      else
-        ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
-
+  
+  /// @DETAILS: scaling of the B and BT's blocks (also "C")
+  double factor;
+  if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
+    factor = current_time_step_length;
+  else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
+    factor = current_time_step_length*bdf_coefficients[2];
+  else if(db["time_discretization"].is("crank_nicolson"))
+    factor = current_time_step_length*0.5;//this have to be adopted according to the stages
+    else
+      ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
+  // either at the very first time or if both B-blocks are nonlinear
+  // then rescale the corresponding blocks  
+  if((this->current_step_==1) && (it_counter==0) && (n_scale_block==0)) 
+  {
     const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+    system_matrix.scale_blocks(factor, cells);
+  }
+  // supg case with and without pressure block
+  if(n_scale_block == 1)
+  {
+    if(current_step_==1 && it_counter == 0)
+    {
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+      system_matrix.scale_blocks(factor, cells);
+    }
+    else
+    {
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2}};
+      system_matrix.scale_blocks(factor, cells);
+    }
+  }
+  else if(n_scale_block == 2)
+  {
+    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+    system_matrix.scale_blocks(factor, cells);
+  }
+  else if(n_scale_block == 3)
+  {
+    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
     system_matrix.scale_blocks(factor, cells);
   }
   Output::print<5>("addition of the mass and stiffness matrix done ");
@@ -180,6 +211,22 @@ void TimeDiscretization::reset_linear_matrices(BlockFEMatrix& matrix,
   // reset the matrices
   const std::vector<std::vector<size_t>> cells = {{0,0},{0,1},{1,0},{1,1}};
   matrix.scale_blocks_actives(1./factor, cells);
+  
+  if(n_scale_block == 2){
+    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+    matrix.scale_blocks(1./factor, cells);
+  }
+  // only BT blocks are nonlinear so scale them properly
+  if(n_scale_block == 1) 
+  {
+    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2}};
+    matrix.scale_blocks(1./factor, cells);
+  }
+  
+  if(n_scale_block == 3){
+    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
+    matrix.scale_blocks(1./factor, {{2,2}});
+  }
 }
 
 void TimeDiscretization::set_time_disc_parameters()
@@ -187,9 +234,17 @@ void TimeDiscretization::set_time_disc_parameters()
   // the first step needs to be done by the backward Euler
   // or Crank-Nicolson scheme
   if(db["time_discretization"].is("bdf_two") &&
-          (this->current_step_ == 2))
+          (this->current_step_ >= 2))
   {
     this->pre_stage_bdf = false;
+    TDatabase::TimeDB->THETA1 = 2./3;
+    TDatabase::TimeDB->THETA2 = 0.;
+    TDatabase::TimeDB->THETA3 = 0.;
+    TDatabase::TimeDB->THETA4 = 2./3.;
   }
+  // set the global parameters used in the local assembling routines 
+  // and at some other places
+  TDatabase::TimeDB->TIMESTEPLENGTH = current_time_step_length;
+  TDatabase::TimeDB->CURRENTTIMESTEPLENGTH = current_time_step_length;
   Output::print<5>("BDF2 scheme with the steps perform ", pre_stage_bdf);
 }
