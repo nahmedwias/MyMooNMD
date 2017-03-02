@@ -32,6 +32,11 @@ public:
     /// parameter to be set for scaling and descaling of the 
     /// pressure-velocity blocks
     unsigned int n_scale_block;
+    
+    /// @brief this will be used to indicate the matrices B, BT
+    /// are linear or nonlinear and are setted in the class
+    /// Time_NSE2D_Merged.h (later will be in Time_NSE2D.)
+    std::string b_bt_linear_nl;
 
     void set_time_disc_parameters();
 
@@ -83,6 +88,12 @@ public:
       {
         ErrThrow("I am not implemented");
       }
+    }
+   
+    //getters
+    double get_step_length()
+    {
+      return current_time_step_length;
     }
 };
 

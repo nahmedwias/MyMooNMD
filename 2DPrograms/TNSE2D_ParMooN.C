@@ -50,7 +50,10 @@ int main(int argc, char* argv[])
   Example_TimeNSE2D example( parmoon_db );
   // create an object of Time_NSE2D class
   Time_NSE2D_Merged tnse2d(Domain, parmoon_db, example);
+  
   tnse2d.time_stepping_scheme.current_step_ = 0;
+  tnse2d.time_stepping_scheme.set_time_disc_parameters();
+  
   // assemble everything at the start time
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary

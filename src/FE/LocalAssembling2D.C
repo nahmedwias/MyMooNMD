@@ -17,6 +17,7 @@
 #include <Brinkman2D_Mixed.h>// local assembling routines for 2D Navier-Stokes
 #include <assemble_routine_tnse2D_supg.h>
 #include <assemble_routine_tnse2D_smagorinsky.h>
+#include <assemble_routine_tnse2D_RVMS.h>
 
 #include <MooNMD_Io.h>
 #include <string.h>

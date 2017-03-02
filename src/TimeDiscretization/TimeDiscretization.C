@@ -18,6 +18,7 @@
 #define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
+/* ****************************************************************************/
 ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
 {
   ParameterDatabase db("default ParMooN time parameters database");
@@ -54,6 +55,7 @@ ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
   return db;
 }
 
+/* ****************************************************************************/
 TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
 : db(default_TimeDiscretization_database())
 {
@@ -78,11 +80,14 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
   TDatabase::TimeDB->CURRENTTIMESTEPLENGTH = current_time_step_length;
   
   n_scale_block = 0;
+  
+  b_bt_linear_nl= "linear";
 
   Output::print<5>("Time discretization is initialized with ",
                 db["time_discretization"]);
 }
 
+/* ****************************************************************************/
 void TimeDiscretization::prepare_timestep(BlockFEMatrix& system_matrix,
   const BlockFEMatrix& mass_matrix, std::vector<BlockVector> & rhs,
   const std::vector<BlockVector> old_solutions)
@@ -90,6 +95,7 @@ void TimeDiscretization::prepare_timestep(BlockFEMatrix& system_matrix,
   //TODO: here the idea can be implemented of multisteps
 }
 
+/* ****************************************************************************/
 void TimeDiscretization::prepare_rhs_from_time_disc(
      BlockFEMatrix& system_matrix, const BlockFEMatrix& mass_matrix,
      std::vector<BlockVector> & rhs, const std::vector<BlockVector> old_solutions)
@@ -124,6 +130,7 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
   }
 }
 
+/* ****************************************************************************/
 void TimeDiscretization::prepare_system_matrix(
   BlockFEMatrix& system_matrix, const BlockFEMatrix& mass_matrix, 
   unsigned int it_counter)
@@ -147,7 +154,7 @@ void TimeDiscretization::prepare_system_matrix(
     ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
   // add the scaled block matrices
   system_matrix.add_blockfe_matrix(mass_matrix);
-  
+
   /// @DETAILS: scaling of the B and BT's blocks (also "C")
   double factor;
   if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
@@ -158,40 +165,71 @@ void TimeDiscretization::prepare_system_matrix(
     factor = current_time_step_length*0.5;//this have to be adopted according to the stages
     else
       ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
-  // either at the very first time or if both B-blocks are nonlinear
-  // then rescale the corresponding blocks  
-  if((this->current_step_==1) && (it_counter==0) && (n_scale_block==0)) 
-  {
+  //BEGIN DEBUG
+  // cout<< "pre_stage_bdf  " << pre_stage_bdf << " time_discretization " 
+  // << db["time_discretization"] << "  " << factor<< endl;
+  // system_matrix.get_blocks().at(6)->Print("B1T");exit(0);
+  //END DEBUG
+      
+  // standard case when all B-blocks have to be scaled only once for all 
+  // time steps if equi-disctinct time stepping is used
+  if( (b_bt_linear_nl.compare("linear")==0) && (current_step_ == 1) 
+      && (it_counter==0))
+  {// scale the B, BT blocks once 
     const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
     system_matrix.scale_blocks(factor, cells);
   }
-  // supg case with and without pressure block
-  if(n_scale_block == 1)
+  else if(b_bt_linear_nl.compare("nonlinear")==0)
   {
-    if(current_step_==1 && it_counter == 0)
-    {
-      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+    // inf-sup stable case 
+    if(n_scale_block==2)
+    {// scale all four blocks at first nonlinear-iteration step 
+      if(it_counter==0){
+        const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+        system_matrix.scale_blocks(factor, cells);
+      }
+      else{//scale only the BT blocks due to the re-assembling 
+        const std::vector<std::vector<size_t>> cells = {{0,2},{1,2}};
+        system_matrix.scale_blocks(factor, cells);
+      }
+    }
+    if(n_scale_block==5)
+    {//
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
       system_matrix.scale_blocks(factor, cells);
     }
-    else
-    {
-      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2}};
-      system_matrix.scale_blocks(factor, cells);
+  }
+  else if(b_bt_linear_nl.compare("solution_dependent") ==0)
+  {
+    // inf-sup case
+    if(n_scale_block==4){
+      if(it_counter==0){
+        const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+        system_matrix.scale_blocks(factor, cells);
+      }
+      else{
+        const std::vector<std::vector<size_t>> cells = {{2,0},{2,1}};
+        system_matrix.scale_blocks(factor, cells);
+      }
+    }
+    else{
+      if(it_counter==0){
+        const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
+        system_matrix.scale_blocks(factor, cells);
+      }
+      else{
+        const std::vector<std::vector<size_t>> cells = {{2,0},{2,1}};
+        system_matrix.scale_blocks(factor, cells);
+      }
     }
   }
-  else if(n_scale_block == 2)
-  {
-    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
-    system_matrix.scale_blocks(factor, cells);
+  else{
+    ErrThrow("Please check the scaling of the B, BT blocks");
   }
-  else if(n_scale_block == 3)
-  {
-    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
-    system_matrix.scale_blocks(factor, cells);
-  }
+  
   Output::print<5>("addition of the mass and stiffness matrix done ");
 }
-
+/* ****************************************************************************/
 void TimeDiscretization::reset_linear_matrices(BlockFEMatrix& matrix,
                                                const BlockFEMatrix& mass)
 {
@@ -211,35 +249,36 @@ void TimeDiscretization::reset_linear_matrices(BlockFEMatrix& matrix,
   // reset the matrices
   const std::vector<std::vector<size_t>> cells = {{0,0},{0,1},{1,0},{1,1}};
   matrix.scale_blocks_actives(1./factor, cells);
-  
-  if(n_scale_block == 2){
-    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
-    matrix.scale_blocks(1./factor, cells);
-  }
-  // only BT blocks are nonlinear so scale them properly
-  if(n_scale_block == 1) 
-  {
-    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2}};
-    matrix.scale_blocks(1./factor, cells);
-  }
-  
-  if(n_scale_block == 3){
-    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
-    matrix.scale_blocks(1./factor, {{2,2}});
-  }
+  // No need to reset the B, BT and C blocks because they are only scaled once during
+  // the time step or re-assembled and scaled in the nonlinear case.
 }
 
+/* ****************************************************************************/
 void TimeDiscretization::set_time_disc_parameters()
 {
   // the first step needs to be done by the backward Euler
   // or Crank-Nicolson scheme
+  if(db["time_discretization"].is("backward_euler"))
+  {
+    TDatabase::TimeDB->THETA1 = 1.0;
+    TDatabase::TimeDB->THETA2 = 0.0;
+    TDatabase::TimeDB->THETA3 = 0.0;
+    TDatabase::TimeDB->THETA4 = 1.0;
+  }
+  if(db["time_discretization"].is("bdf_two") && (current_step_<=1) )
+  {
+    TDatabase::TimeDB->THETA1 = 1.0;
+    TDatabase::TimeDB->THETA2 = 0.0;
+    TDatabase::TimeDB->THETA3 = 0.0;
+    TDatabase::TimeDB->THETA4 = 1.0;
+  }
   if(db["time_discretization"].is("bdf_two") &&
           (this->current_step_ >= 2))
   {
     this->pre_stage_bdf = false;
     TDatabase::TimeDB->THETA1 = 2./3;
-    TDatabase::TimeDB->THETA2 = 0.;
-    TDatabase::TimeDB->THETA3 = 0.;
+    TDatabase::TimeDB->THETA2 = 0.0;
+    TDatabase::TimeDB->THETA3 = 0.0;
     TDatabase::TimeDB->THETA4 = 2./3.;
   }
   // set the global parameters used in the local assembling routines 
