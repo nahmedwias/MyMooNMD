@@ -86,6 +86,7 @@ class Time_NSE2D_Merged
       BlockVector solution_m1;
       BlockVector solution_m2;
       TFEVectFunct2D u_m1;
+      TFEFunction2D p_old;
       TFEVectFunct2D u_m2;
 
       BlockVector combined_old_sols;
