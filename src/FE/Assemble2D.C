@@ -9936,20 +9936,33 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
           }
 
             // only one boundary condition per edge allowed
-            int l,k,l3;
+            int l,k,l3, ii, dof_ii, jj, dof_jj, ll, found;
             QuadFormula1D LineQuadFormula;
             TQuadFormula1D *qf1;
-            double s,t;
+            double s,t, integral[2];
             int *EdgeDOF;
             double *LineWeights, *zeta;
             double x0, x1, y0,y1;
-            double hE;
+            double hE, nx, ny, tx, ty, x, y, val;
             double **JointValues;
             double *JointValue;
             double FunctionalValues[MaxN_BaseFunctions2D];
             double PointValues[MaxN_PointsForNodal2D];
             int N_LinePoints;
-            
+            int *RowPtr1, *ColInd1,*RowPtr2, *ColInd2,*RowPtr3,
+            *ColInd3,*RowPtr4, *RowPtr5 ;
+            double *Entries1,*Entries2,*Entries3,*Entries4,*Entries5;
+            double penetration_penalty, r_axial, beta_h;
+            double friction_constant= TDatabase::ParamDB->FRICTION_CONSTANT;
+            double friction_power = TDatabase::ParamDB->FRICTION_POWER;
+            double penetration_constant = TDatabase::ParamDB->PENETRATION_CONSTANT;
+            double penetration_power = TDatabase::ParamDB->PENETRATION_POWER;
+            int friction_type = TDatabase::ParamDB->FRICTION_TYPE;
+            int axial3D = TDatabase::ParamDB->Axial3D;
+            double friction_parameter = 0, u1_values[3],u2_values[3];
+            double RE_NR, tangential_velo, U0, denominator;
+            // TFEFunction2D *u1, *u2;
+
             if(Cond0 == Cond1)
             {
                 switch(Cond0)
@@ -10067,6 +10080,509 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
               case SLIP_FRICTION_PENETRATION_RESISTANCE:
                 // do nothing here
                 // everything is done in Assemble2DSlipBC, see below
+                // edge is assumed to be straight line
+                // get polynomial degree of fe
+                l = TFEDatabase2D::GetPolynomialDegreeFromFE2D
+                  (CurrentElement);
+                // get a suitable line quadrature formula
+                LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*l);
+                qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
+                qf1->GetFormulaData(N_LinePoints, LineWeights, zeta);
+                TFEDatabase2D::GetBaseFunct2DFromFE2D(CurrentElement)
+                  ->MakeRefElementData(LineQuadFormula);
+                // get values of test functions in all quadrature points
+                // on joint m
+                JointValues=TFEDatabase2D::GetJointValues2D(
+                  BaseFuncts[CurrentElement], LineQuadFormula, m);
+                TFEDatabase2D::GetBaseFunct2D(BaseFuncts[CurrentElement])
+                  ->ChangeBF(Coll, cell, N_LinePoints, JointValues);
+                // get vertices of boundary edge
+#ifdef __3D__
+                cell->GetVertex(m)->GetCoords(x0, y0, z0);
+                cell->GetVertex((m+1) % N_Joints)->GetCoords(x1, y1, z1);
+#else
+                cell->GetVertex(m)->GetCoords(x0, y0);
+                cell->GetVertex((m+1) % N_Joints)->GetCoords(x1, y1);
+#endif
+                // compute length of the boundary edge
+                hE = sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
+                // compute normal vector to this boundary (normalized)
+                nx = (y1-y0)/hE;
+                ny = (x0-x1)/hE;
+                // tangential normal vector to this boundary (normalized)
+                tx = (x1-x0)/hE;
+                ty = (y1-y0)/hE;
+
+//                   OutPut("A " << x0 << " " << y0 << " B " << x1 << " " << y1 << endl);
+//                   OutPut("t " << tx << " " << ty << " n " << nx << " " << ny << endl);
+
+//                 delta = CharacteristicFilterWidth(hK);
+#ifdef  __CHANNELSTEPSLIP__
+                // upper boundary - free slip
+                if (comp==6)
+                  friction_constant = 0;
+#endif
+                // penalty value for weak imposition of no penetration bc
+                penetration_penalty = penetration_constant*pow(hE,penetration_power);
+
+                // parameter for friction
+                //BoundaryValue(comp, (t0+t1)/2.0,friction_parameter);
+//                 switch(friction_type)
+//                 {
+//                   case 1:
+//                     // linear friction
+//                     friction_parameter = friction_constant * pow(hE,friction_power);
+//                     //OutPut("fric " <<  friction_parameter << endl);
+//                     break;
+//                   case 2:
+//                     // nonlinear type 1
+//                     // beta = sqrt(Re)(w\cdot tau)/(U_0/2-(w\cdot tau)
+//                     // centre of the boundary edge
+//                     x = (x1+x0)/2.0;
+//                     y = (y1+y0)/2.0;
+//                     // compute velocity in (x,y);
+//                     u1->FindGradientLocal(cell,i,x,y,u1_values);
+//                     u2->FindGradientLocal(cell,i,x,y,u2_values);
+//                     // compute tangential velocity
+//                     tangential_velo = u1_values[0]*tx + u2_values[0]*ty;
+//                     // get Reynolds number
+//                     RE_NR = TDatabase::ParamDB->RE_NR;
+//                     U0 = TDatabase::ParamDB->FRICTION_U0;
+//                     denominator = U0/2-tangential_velo;
+//                     if (fabs(denominator)<1e-8)
+//                     {
+//                       OutPut("nonlinear slip bc type 1, denominator zero !!!" << endl);
+//                       exit(4711);
+//                     }
+//                     friction_parameter = sqrt(RE_NR) * tangential_velo/denominator;
+//                     friction_parameter = fabs(friction_parameter);
+//                     OutPut("x " << x << " y " << y);
+//                     OutPut(" friction paramater " << friction_parameter << endl);
+//                     break;
+//                 }
+
+                hE = hE/2;
+                EdgeDOF = FEDesc_Obj->GetJointDOF(m);
+
+                // compute additional matrix entries
+                // for all velo dof in the mesh cell
+                // ii - test function
+                for (ii=0;ii<N_;ii++)
+                {
+                  // look for 'ii'-th row in all matrices
+                  dof_ii = DOF[ii];
+                  // Dirichlet node
+                  if (dof_ii>=ActiveBound)
+                    continue;
+
+                  // !!!!!! assumed that A_11 - A_22 are in sqmatrices[0] - [3]
+                  // first velocity component -> matrices A_11 and A_12 (and M_11)
+                  if (j==0)
+                  {
+                    Entries1 = sqmatrices[0]->GetEntries();
+                    RowPtr1 = sqmatrices[0]->GetRowPtr();
+                    ColInd1 = sqmatrices[0]->GetKCol();
+
+                    if (n_sqmatrices>2)
+                    {
+                      Entries2 = sqmatrices[2]->GetEntries();
+                      RowPtr2 = sqmatrices[2]->GetRowPtr();
+                      ColInd2 = sqmatrices[2]->GetKCol();
+                    }
+
+                    // time dependent problem and NSTYPE 4
+                    if (n_sqmatrices==8)
+                    {
+                      Entries3 = sqmatrices[4]->GetEntries();
+                      RowPtr3 = sqmatrices[4]->GetRowPtr();
+                      ColInd3 = sqmatrices[4]->GetKCol();
+                      Entries4 = sqmatrices[6]->GetEntries();
+                      RowPtr4 = sqmatrices[6]->GetRowPtr();
+                    }
+
+                    if (n_matrices==2)
+                    {
+                      Entries5 = matrices[0]->GetEntries();
+                      RowPtr5 = matrices[0]->GetRowPtr();
+                    }
+                  }
+                  // second velocity component -> matrices A_21 and A_22
+                  if (j==1)
+                  {
+                    if (n_sqmatrices>2)
+                    {
+                      Entries1 = sqmatrices[3]->GetEntries();
+                      RowPtr1 = sqmatrices[3]->GetRowPtr();
+                      ColInd1 = sqmatrices[3]->GetKCol();
+                    }
+
+                    Entries2 = sqmatrices[1]->GetEntries();
+                    RowPtr2 = sqmatrices[1]->GetRowPtr();
+                    ColInd2 = sqmatrices[1]->GetKCol();
+
+                    // time dependent problem and NSTYPE 4
+                    if (n_sqmatrices==8)
+                    {
+                      Entries3 = sqmatrices[5]->GetEntries();
+                      RowPtr3 = sqmatrices[5]->GetRowPtr();
+                      ColInd3 = sqmatrices[5]->GetKCol();
+                      Entries4 = sqmatrices[7]->GetEntries();
+                      RowPtr4 = sqmatrices[7]->GetRowPtr();
+                    }
+                    if (n_matrices==2)
+                    {
+                      Entries5 = matrices[1]->GetEntries();
+                      RowPtr5 = matrices[1]->GetRowPtr();
+                    }
+                  }
+
+                  //OutPut("ii " << dof_ii << endl);
+                  // for all dof in the mesh cell
+                  // jj - ansatz function
+                  for (jj=0;jj<N_;jj++)
+                  {
+                    dof_jj = DOF[jj];
+                    // OutPut("jj " << dof_jj << endl);
+                    // initialize the boundary integrals
+                    for (l=0;l<2;l++)
+                      integral[l] = 0;
+
+
+                  // compute boundary integrals
+                  // first component of the velocity
+                  if (j==0)
+                  {
+                    for(l=0;l<N_LinePoints;l++)
+                    {
+                      // values of test functions in this quadrature point
+                      JointValue = JointValues[l];
+                      // get quadrature point on the boundary
+                      x = x0 + 0.5*(x1-x0)*(zeta[l]+1);
+                      y = y0 + 0.5*(y1-y0)*(zeta[l]+1);
+
+                      if(!axial3D)
+                       { r_axial = 1.;}
+                      else if(axial3D && fabs(x)<1e-12)
+                       { r_axial = 0.0; }
+                      else
+                       { r_axial = fabs(x); }
+
+                      // added varient for impinging droplets - Sashi
+                      if(fabs(x)>1e-12)
+                       { beta_h = fabs(x); }
+                      else
+                       { beta_h = 1.;}
+
+                      switch(friction_type)
+                      {
+                       case 1:
+                        friction_parameter = friction_constant * pow(hE,friction_power);
+                        break;
+
+                       case 2:
+                        friction_parameter = friction_constant*pow(hE,friction_power)/(beta_h);
+                        break;
+
+                       case 3:
+                        friction_parameter = friction_constant * pow(hE,friction_power)/(beta_h*beta_h);
+                        break;
+
+                       case 4:
+                        friction_parameter = friction_constant *pow(hE,friction_power)/(beta_h*beta_h*beta_h);
+                        break;
+
+                       case 12: // Volker part
+                          // nonlinear type 1
+                          // beta = sqrt(Re)(w\cdot tau)/(U_0/2-(w\cdot tau)
+                          // centre of the boundary edge
+                          x = (x1+x0)/2.0;
+                          y = (y1+y0)/2.0;
+                          // compute velocity in (x,y);
+                          la.get_fe_function(0)->FindGradientLocal(cell,i,x,y,u1_values);
+                          la.get_fe_function(1)->FindGradientLocal(cell,i,x,y,u2_values);
+//                          u1->FindGradientLocal(cell,i,x,y,u1_values);
+//                          u2->FindGradientLocal(cell,i,x,y,u2_values);
+                          // compute tangential velocity
+                          tangential_velo = u1_values[0]*tx + u2_values[0]*ty;
+                          // get Reynolds number
+                          RE_NR = TDatabase::ParamDB->RE_NR;
+                          U0 = TDatabase::ParamDB->FRICTION_U0;
+                          denominator = U0/2-tangential_velo;
+                          if (fabs(denominator)<1e-8)
+                          {
+                            OutPut("nonlinear slip bc type 1, denominator zero !!!" << endl);
+                            exit(4711);
+                          }
+                          friction_parameter = sqrt(RE_NR) * tangential_velo/denominator;
+                          friction_parameter = fabs(friction_parameter);
+                          OutPut("x " << x << " y " << y);
+                          OutPut(" friction paramater " << friction_parameter << endl);
+                          break;
+
+                      default:
+                       Error("Slip with friction Type not maching !!!!!!!!!!" << endl);
+                       Error("file: " << __FILE__ << " line " << __LINE__ << endl);
+                       exit(-1);
+
+                      }
+
+                      //t = t0 + 0.5*(t1-t0)*(zeta[l]+1);
+
+                       // weight times determinant of reference trafo
+                       // r_axial = 0, on axial BD so integrals are always zero on Axial BD
+                       s = hE * LineWeights[l]*r_axial;
+                       // (A_11)_{ii,jj}
+                       // OutPut ("before " << integral[0] << " " << integral[1] << endl);
+                       val = penetration_penalty*JointValue[jj]*nx*JointValue[ii]*nx;
+                       val += friction_parameter*JointValue[jj]*tx*JointValue[ii]*tx;
+                       integral[0] += val*s;
+                       // Frict_Force1 += val*s;
+
+                       // (A_12)_{ii,jj}
+                       val =  penetration_penalty*JointValue[jj]*ny*JointValue[ii]*nx;
+                       val+= friction_parameter*JointValue[jj]*ty*JointValue[ii]*tx;
+                       integral[1] += val*s;
+                       //Frict_Force2 += val*s;
+                       //OutPut("    s   " <<s << endl);
+                       //OutPut("       " << penetration_penalty*JointValue[jj]*nx*JointValue[ii]*nx<< endl);
+                       //OutPut("       " << friction_parameter*JointValue[jj]*tx*JointValue[ii]*tx << endl);
+                       //OutPut("       " << penetration_penalty*JointValue[jj]*ny*JointValue[ii]*nx << endl);
+                       //OutPut("       " << friction_parameter*JointValue[jj]*ty*JointValue[ii]*tx << endl);
+                     }
+
+                    // edge not parallel to y axis or penetration
+                    // if ((fabs(ny)>eps)||(penetration_penalty<1e3))
+                    if ((fabs(tx)>eps)||(penetration_penalty>0))
+                    {
+                      //if(comp==0 || comp==1 || comp==5 )
+                      // cout << j <<  " X " << x << " Y " << y <<endl;
+                      // update first matrix
+                      found = 0;
+                      for (ll=RowPtr1[dof_ii];ll < RowPtr1[dof_ii+1]; ll++)
+                      {
+                        if (ColInd1[ll] == dof_jj)
+                        {
+                          //OutPut("noy0 " << integral[0] << " ");
+                          Entries1[ll] += integral[0];
+                          found = 1;
+                          break;
+                        }
+                      }
+                      if (!found)
+                      {
+                        OutPut("ERROR A_11 " << endl);
+                        exit(4711);
+                      }
+                      // update second matrix
+                      if (n_sqmatrices>2)
+                      {
+                        found = 0;
+                        for (ll=RowPtr2[dof_ii];ll < RowPtr2[dof_ii+1]; ll++)
+                        {
+                          if (ColInd2[ll] == dof_jj)
+                          {
+                            found = 1;
+                            //OutPut("noy1 " << integral[1] << " ");
+                            Entries2[ll] += integral[1];
+                            break;
+                          }
+                        }
+                        if (!found)
+                        {
+                          OutPut("ERROR A_12 "<< endl);
+                          exit(4711);
+                        }
+                      }
+                    }
+                    else   // edge parallel to y-axis and no panetration
+                   {
+                     found = 0;
+                     for (ll=0;ll<N_EdgeDOF; ll++)
+                     {
+                       if (dof_ii==DOF[EdgeDOF[ll]])
+                       {
+                         found =1;
+                         break;
+                       }
+                     }
+                     if (!found)
+                       continue;
+                     // OutPut("y" << endl);
+                     // update first matrix, set diagonal entry to 1
+                     // all other entries to zero
+                     for (ll=RowPtr1[dof_ii];ll < RowPtr1[dof_ii+1]; ll++)
+                     {
+                       if (ColInd1[ll] == dof_ii)
+                         Entries1[ll] = 1;
+                       else
+                         Entries1[ll] = 0;
+                     }
+                     // update second matrix, set all entries to zero
+                     if (n_sqmatrices>2)
+                     {
+                       for (ll=RowPtr2[dof_ii];ll < RowPtr2[dof_ii+1]; ll++)
+                         Entries2[ll] = 0;
+                     }
+
+                     if (n_sqmatrices==8)
+                     {                         // M_11, set off diagonal to zero
+                       for (ll=RowPtr3[dof_ii];ll < RowPtr3[dof_ii+1]; ll++)
+                       {
+                         if (ColInd3[ll] != dof_ii)
+                           Entries3[ll] = 0;
+                       }
+                       // M_12, set row to zero
+                       for (ll=RowPtr4[dof_ii];ll < RowPtr4[dof_ii+1]; ll++)
+                         Entries4[ll] = 0;
+                     }
+
+                     if (n_matrices==2)
+                       for (ll=RowPtr5[dof_ii];ll < RowPtr5[dof_ii+1]; ll++)
+                         Entries5[ll] = 0;
+
+                     // set rhs to zero
+                     RHS[dof_ii] = 0;
+                   }
+                  }
+
+                  // second component
+                   if (j==1)
+                   {
+                     for(l=0;l<N_LinePoints;l++)
+                     {
+                       // values of test functions in this quadrature point
+                       JointValue = JointValues[l];
+                       // get quadrature point on the boundary
+                       x = x0 + 0.5*(x1-x0)*(zeta[l]+1);
+                       y = y0 + 0.5*(y1-y0)*(zeta[l]+1);
+
+                       if(!axial3D)
+                        { r_axial = 1.;}
+                       else if(axial3D && fabs(x)<1e-12)
+                        { r_axial = 0.0; }
+                       else
+                        { r_axial = fabs(x); }
+
+                       //t = t0 + 0.5*(t1-t0)*(zeta[l]+1);
+                       // get velocity in this quadrature point
+
+                       // weight times determinant of reference trafo
+                       s = hE * LineWeights[l]*r_axial;
+                       // (A_21)_{ii,jj}
+                       val = penetration_penalty*JointValue[jj]*nx*JointValue[ii]*ny;
+                       val += friction_parameter*JointValue[jj]*ty*JointValue[ii]*tx;
+                       integral[0] += s*val;
+
+                       // (A_22)_{ii,jj}
+                       val = penetration_penalty*JointValue[jj]*ny*JointValue[ii]*ny;
+                       val += friction_parameter*JointValue[jj]*ty*JointValue[ii]*ty;
+                       integral[1] += s*val;
+                     }
+
+                     //if ((integral[0]==0)&&( integral[1]==0)) continue;
+                     //OutPut ("2 " << integral[0] << " " << integral[1] << endl);
+
+                     // edge not parallel to x-axis or pentration
+
+                     // if ((fabs(nx) > eps)|| (penetration_penalty < 1e3))
+                    if ((fabs(nx) > eps) || (fabs(penetration_penalty) > 0.0))
+                     {
+                       // OutPut("nox" << endl);
+                       if (n_sqmatrices>2)
+                       {
+                         // update first matrix
+                         found = 0;
+                         for (ll=RowPtr1[dof_ii];ll < RowPtr1[dof_ii+1]; ll++)
+                         {
+                           if (ColInd1[ll] == dof_jj)
+                           {
+                             Entries1[ll] += integral[0];
+                             found =1 ;
+                             break;
+                           }
+                         }
+                         if (!found)
+                         {
+                           OutPut("ERROR A_21 "<< endl);
+                           exit(4711);
+                         }
+                       }
+                       // update second matrix
+                       found = 0;
+                       for (ll=RowPtr2[dof_ii];ll < RowPtr2[dof_ii+1]; ll++)
+                       {
+                         if (ColInd2[ll] == dof_jj)
+                         {
+                           Entries2[ll] += integral[1];
+                           found =1 ;
+                           break;
+                         }
+                       }
+                       if (!found)
+                       {
+                         OutPut("ERROR A_22 "<< endl);
+                         exit(4711);
+                       }
+                     }
+                    else // edge parallel to x-axis and no penetration
+                     {
+                       //OutPut("x ");
+                       found = 0;
+                       for (ll=0;ll<N_EdgeDOF; ll++)
+                       {
+                         if (dof_ii==DOF[EdgeDOF[ll]])
+                         {
+                           found =1;
+                           break;
+                         }
+                       }
+                       if (!found)
+                         continue;
+
+                       // update first matrix, set all entries to zero
+                       if (n_sqmatrices>2)
+                       {
+                         for (ll=RowPtr1[dof_ii];ll < RowPtr1[dof_ii+1]; ll++)
+                           Entries1[ll] = 0;
+                       }
+                       // update second matrix, set diagonal entry to 1,
+                       // all other entries to 0
+                       for (ll=RowPtr2[dof_ii];ll < RowPtr2[dof_ii+1]; ll++)
+                       {
+                         if (ColInd2[ll] == dof_ii)
+                         { Entries2[ll] = 1; }
+                         else
+                          {  Entries2[ll] = 0; }
+                       }
+
+                       // set rhs to zero
+                       RHS[dof_ii] = 0;
+
+                       // update mass matrix
+                       if (n_sqmatrices==8)
+                       {
+                         for (ll=RowPtr3[dof_ii];ll < RowPtr3[dof_ii+1]; ll++)
+                         {                       //M_22
+                           if (ColInd3[ll] != dof_ii)
+                             Entries3[ll] = 0;
+                         }
+                         // M_21
+                         for (ll=RowPtr4[dof_ii];ll < RowPtr4[dof_ii+1]; ll++)
+                           Entries4[ll] = 0;
+                       }
+
+                       if (n_matrices==2)
+                         for (ll=RowPtr5[dof_ii];ll < RowPtr5[dof_ii+1]; ll++)
+                           Entries5[ll] = 0;
+
+                     }
+                   }          // end first component (j==1)
+                  }           // end inner loop over dof (jj)
+                }             // end outer loop over dof (ii)
+
+                TFEDatabase2D::GetBaseFunct2D(BaseFuncts[CurrentElement])
+                ->ChangeBF(Coll, cell, N_LinePoints, JointValues);
+                cout << " I ARRIVED HERE WITHOUT SEGFAULTING" << endl;
                 break;
 
             case FREESURF:
