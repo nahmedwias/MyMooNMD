@@ -67,9 +67,13 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-//  if (i == 0 || i == 2 )
+  if (i == 0 || i == 2 )
     cond = DIRICHLET;   // top and bottom
-//  else
+  else
+  {
+    cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
+    TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+  }
 //    cond = NEUMANN;     // right and left
 }
 
