@@ -179,7 +179,7 @@ void TimeDiscretization::prepare_system_matrix(
     const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
     system_matrix.scale_blocks(factor, cells);
   }
-  else if(b_bt_linear_nl.compare("nonlinear")==0)
+  if(b_bt_linear_nl.compare("nonlinear")==0)
   {
     // inf-sup stable case 
     if(n_scale_block==2)
@@ -199,7 +199,7 @@ void TimeDiscretization::prepare_system_matrix(
       system_matrix.scale_blocks(factor, cells);
     }
   }
-  else if(b_bt_linear_nl.compare("solution_dependent") ==0)
+  if(b_bt_linear_nl.compare("solution_dependent") ==0)
   {
     // inf-sup case
     if(n_scale_block==4){
@@ -223,9 +223,9 @@ void TimeDiscretization::prepare_system_matrix(
       }
     }
   }
-  else{
-    ErrThrow("Please check the scaling of the B, BT blocks");
-  }
+//   else{
+//     ErrThrow("Please check the scaling of the B, BT blocks");
+//   }
   
   Output::print<5>("addition of the mass and stiffness matrix done ");
 }
@@ -280,6 +280,11 @@ void TimeDiscretization::set_time_disc_parameters()
     TDatabase::TimeDB->THETA2 = 0.0;
     TDatabase::TimeDB->THETA3 = 0.0;
     TDatabase::TimeDB->THETA4 = 2./3.;
+    if(current_step_==2)
+    {
+      Output::print("BDF2 with new parameters : ", bdf_coefficients[0], "  ",
+                    bdf_coefficients[1],"  ", bdf_coefficients[2]);
+    }
   }
   // set the global parameters used in the local assembling routines 
   // and at some other places
