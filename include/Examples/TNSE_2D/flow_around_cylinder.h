@@ -75,8 +75,6 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  cond = DIRICHLET;
-  
   switch(i)
   {
     case 1:
@@ -95,38 +93,12 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
   switch(BdComp)
   {
-    case 0: value = 0;
-            break;
-    case 1: value=sin(Pi*t/8)*6*Param*(1-Param);
-            break;
-    case 2: value = 0;
-            break;
-    case 3: value=sin(Pi*t/8)*6*Param*(1-Param);
-            break;
-    case 4: value=0;
-            break;
-    default: cout << "wrong boundary part number: " << BdComp << endl;
-  }
-
-}
-
-void U1BoundValue_diff(int BdComp, double Param, double &value)
-{
-  double t=TDatabase::TimeDB->CURRENTTIME;
-
-  switch(BdComp)
-  {
-    case 0: value = 0;
-            break;
-    case 1: value=1.0*Pi/8*cos(Pi*t/8)*6*Param*(1-Param);
-            break;
-    case 2: value = 0;
-            break;
-    case 3: value=1.0*Pi/8*cos(Pi*t/8)*6*Param*(1-Param);
-            break;
-    case 4: value=0;
-            break;
-    default: cout << "wrong boundary part number: " << BdComp << endl;
+    case 3: 
+       value=sin(Pi*t/8)*6*Param*(1-Param);
+       break;
+    default: 
+       value = 0;
+       break;
   }
 
 }
@@ -136,13 +108,6 @@ void U2BoundValue(int BdComp, double Param, double &value)
   value = 0;
   if(BdComp>4) cout << "wrong boundary part number: " << BdComp << endl;
 }
-
-void U2BoundValue_diff(int BdComp, double Param, double &value)
-{
-  value = 0;
-  if(BdComp>4) cout << "wrong boundary part number: " << BdComp << endl;
-}
-
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
@@ -405,7 +370,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
 
 /*! Function wrapper for drag and lift computation, copied and adapted from
         the static case (Benchmark_Neum.h). */
-void compute_drag_and_lift(const Time_NSE2D &tnse2d, double& val)
+void compute_drag_and_lift(const Time_NSE2D_Merged &tnse2d, double& val)
 {
   double Cd, Cl, dP1[4], dP2[4];
 

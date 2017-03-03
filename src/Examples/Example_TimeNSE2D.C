@@ -108,7 +108,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       flow_around_cylinder::DIMENSIONLESS_VISCOSITY = this->get_nu();
       
       /**post processing - drag and lift calculation and output */
-      // post_processing_stat = flow_around_cylinder::compute_drag_and_lift;
+      post_processing_stat = flow_around_cylinder::compute_drag_and_lift;
       break;
     case 3:
       exact_solution.push_back( mixing_layer_slip::ExactU1 );

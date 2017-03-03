@@ -2632,13 +2632,13 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   }
   else
   {
-    this->N_Parameters = 2;
+    this->N_Parameters = 4;
     this->N_ParamFct = 1;
     this->ParameterFct = {TimeNSParams2};
     this->N_FEValues = 2;
     this->BeginParameter = { 0 };
     this->FEValue_MultiIndex = { D00, D00 };
-    this->FEValue_FctIndex = { 0, 1 };    
+    this->FEValue_FctIndex = { 0, 1 };
   }
   
   

@@ -362,7 +362,7 @@ void Time_NSE2D_Merged::assemble_initial_time()
   // copy the current right hand side vector to the old_rhs
   this->old_rhs = this->systems.front().rhs;
   // set the solution vectors
-  this->old_solution = this->systems.front().solution;
+  this->old_solution = this->systems.front().solution;  
 }
 
 /**************************************************************************** */
@@ -381,11 +381,7 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     // only assembles the right-hand side
     call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_Rhs);
     //BEGIN DEBUG
-    if(TDatabase::TimeDB->CURRENTTIME== -1.2){
-      s.solution_m1.print("s");
-      s.solution_m2.print("s");
-      s.rhs.print("rhs");exit(0);      
-    }
+    // s.rhs.print("rhs");
     //END DEBUG
     // copy the non active to the solution vector
     // since the rhs vector will be passed to the solver
@@ -416,6 +412,9 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     old_rhs=s.rhs;
     // copy the non-actives
     rhs_from_time_disc.copy_nonactive(s.solution);
+    //BEGIN DEBUG
+    // rhs_from_time_disc.print("rhs");exit(0);
+    //END DEBUG
   }
   //Nonlinear assembling requires an approximate velocity solution on every grid!
   if(this->systems.size() > 1)
@@ -488,11 +487,6 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
 {
   //TODO This has no "slow convergence criterion yet!"
   System_per_grid& s = this->systems.front();
-  //BEGIN DEBUG
-  // cout <<db["time_discretization"]<<endl;
-  // s.solution.print("s");
-  // s.matrix.get_blocks().at(6)->Print("B1T");exit(0);
-  //END DEBUG
   unsigned int nuDof = s.solution.length(0);
   unsigned int npDof = s.solution.length(2);
   // unsigned int sc_minit = db["nonlinloop_minit"];
@@ -535,6 +529,9 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
 
   if ( (((sqrt(residual)<=limit)||(it_counter==Max_It))) )
    {
+     // project the solution
+     s.p.project_into_L20();
+
      for(System_per_grid& s: this->systems)
      {
        s.solution_m2 = s.solution_m1;
@@ -566,46 +563,21 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
 void Time_NSE2D_Merged::solve()
 {
   System_per_grid& s = this->systems.front();
-  // CB DEBUG
-  if(TDatabase::TimeDB->CURRENTTIME==1.05)
-  {
-    rhs_from_time_disc.print("rhs");
-    s.solution.print("sol");
-    s.matrix.get_blocks().at(0)->Print("M1");
-    s.matrix.get_blocks().at(1)->Print("M2");
-    s.matrix.get_blocks().at(3)->Print("M3");
-    s.matrix.get_blocks().at(4)->Print("M4");
-
-    s.matrix.get_blocks().at(2)->Print("B1");
-    s.matrix.get_blocks().at(5)->Print("B2");
-    s.matrix.get_blocks().at(6)->Print("B3");
-    s.matrix.get_blocks().at(7)->Print("B4");exit(0);
-  }
-  // END DEBUG
+  
   solver.solve(s.matrix, rhs_from_time_disc, s.solution);
-  // CB DEBUG
-  // if(TDatabase::TimeDB->CURRENTTIME==0.05)
-  // {
-  //   s.solution.print("solafter");
-  // }
-  // CEND DEBUG
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are
   // reset and assembled again but the A12 and A21 are scaled, so
   // for the next iteration we have to descale, see assemble_system()
   for(System_per_grid & s : this->systems)
     time_stepping_scheme.reset_linear_matrices(s.matrix, s.mass_matrix);
-
-  // if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-  //    s.p.project_into_L20();
 }
 
 /**************************************************************************** */
 void Time_NSE2D_Merged::output(int m)
 {
   System_per_grid& s = this->systems.front();
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-     s.p.project_into_L20();
+
   bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
   if(no_output)
     return;
@@ -686,6 +658,11 @@ void Time_NSE2D_Merged::output(int m)
     ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
                                vorticity.data(), divergence->GetValues());
     example.do_post_processing(*this, zero_vorticity);
+  }
+  else
+  {
+    double temp=0;
+    example.do_post_processing(*this, temp);
   }
 
   if(time_stepping_scheme.current_step_ % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
@@ -1352,6 +1329,7 @@ void Time_NSE2D_Merged::prepared_postprocessing(TCollection *coll)
 
 void Time_NSE2D_Merged::update_matrices_lps(System_per_grid &s)
 {
+  ErrThrow("local projection is not checked yet");
   if(TDatabase::ParamDB->NSTYPE==4)
   {
     //update matrices for local projection stabilization
