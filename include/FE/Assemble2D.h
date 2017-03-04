@@ -85,18 +85,6 @@ void Assemble2D_FCT(int n_fespaces, TFESpace2D **fespaces, int n_sqmatrices,
 #endif
 );
 
-
-/** assembling of slip type bc */
-void old_Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
-                      int n_sqmatrices, TSquareMatrix2D **sqmatrices,
-                      int n_matrices, TMatrix2D **matrices,
-                      int n_rhs, double **rhs, TFESpace2D **ferhs,
-                      TDiscreteForm2D *DiscreteForm,
-                      BoundCondFunct2D **BoundaryConditions,
-                      BoundValueFunct2D **BoundaryValues,
-                      TAuxParam2D *parameters,
-                      TFEFunction2D *u1, TFEFunction2D *u2);
-
 /** assembling for methods which need values on neighbour cells */
 void Assemble2D_neigh(int n_fespaces, TFESpace2D **fespaces,
                       int n_sqmatrices, TSquareMatrix2D **sqmatrices,
