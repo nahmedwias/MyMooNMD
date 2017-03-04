@@ -10,7 +10,7 @@
  *               and the solution vector
  *
  * @author       Naveed Ahmed
- * @History      16.09.2015
+ * @History      20.02.2017
 **************************************************************************/
 
 
@@ -203,10 +203,14 @@ public:
      */
     void assemble_initial_time();
 
+    /** @brief This will assemble the right-hand side, will prepare the 
+     * right-hand side using the class TimeDiscretization object. 
+     * The pressure blocks are scaled properly and the nonlinear matrices
+     * are assembled again. The system matrix is assemble using the 
+     * object of class TimeDiscretization and modify the matrices if needed.
+     */
     void assemble_matrices_rhs(unsigned int it_counter);
-
-    void do_time_step();
-
+    
     /** @brief assemble nonlinear term
      *
      * The matrix blocks to which the nonlinear term contributes are reset to
@@ -255,23 +259,6 @@ public:
     /** @brief check if the semi-implicit scheme is used
      */
     bool imex_scheme(bool print_info);
-
-    /** @brief perform the first step of BDF2 method
-     * In the first step, one have to use the BDF1 (backwar Euler)
-     * method to compute the solution at first time step which
-     * together with the u0 used in the next time step
-     *
-    */
-//    void perform_bdf1_first();
-//    /** @brief prepare the right-hand side for the BDF-schemes*/
-//    void bdf_assemble_rhs();
-
-//    /** @brief SUPG case only;
-//     * preparing and assembling of the right hand side
-//     * this function serves to assemble the right-hand
-//     * side for the SUPG method
-//     */
-//    void assemble_rhs_supg();
 
     /** @brief modify matrices according to the Slip type boundary
      * conditions
@@ -341,24 +328,27 @@ public:
     std::array<double, int(6)> get_errors();
 
 private:
-  /// this routines wraps up the call to Assemble2D
-  void call_assembling_routine(Time_NSE2D_Merged::System_per_grid& s, LocalAssembling2D_type type);
-  /// set the matrices and right hand side depending on the
+  /// @brief this routines wraps up the call to Assemble2D
+  void call_assembling_routine(Time_NSE2D_Merged::System_per_grid& s, 
+                          LocalAssembling2D_type type);
+  /// @brief set the matrices and right hand side depending on the
   /// assemling routines, nstypes and the methods
   void set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s, LocalAssembling2D_type type,
-                    std::vector<TSquareMatrix2D*> &sqMat, std::vector<TMatrix2D*> &reMat,
-                    std::vector<double*> &rhs);
-  /// set the spaces depending on disc types
-  void set_arrays(Time_NSE2D_Merged::System_per_grid& s, std::vector<const TFESpace2D*> &spaces,
-                  std::vector< const TFESpace2D* >& spaces_rhs,
-                  std::vector< TFEFunction2D*> &functions);
-  /// restrict the function to on every grid
+        std::vector<TSquareMatrix2D*> &sqMat, std::vector<TMatrix2D*> &reMat,
+        std::vector<double*> &rhs);
+  /// @brief set the spaces depending on disc types
+  void set_arrays(Time_NSE2D_Merged::System_per_grid& s, 
+        std::vector<const TFESpace2D*> &spaces, std::vector< const TFESpace2D* >& spaces_rhs,
+        std::vector< TFEFunction2D*> &functions);
+  /// @brief restrict the function to on every grid
   /// nonliear assembling requires an approximate velocity
   /// on every grid
   void restrict_function();
   /// update matrices for local projection stabilization
   void update_matrices_lps(Time_NSE2D_Merged::System_per_grid& s);
-  /// 
+  /// @brief Special case for the SUPG and RBVMS method. The right-hand side is 
+  /// nonlinear and need a complete re-assembling before passing to the solver 
+  /// for solving.
   void assemble_rhs_nonlinear();
 };
 
