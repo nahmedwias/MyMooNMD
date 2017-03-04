@@ -350,12 +350,7 @@ void Time_NSE2D_Merged::assemble_initial_time()
       update_matrices_lps(s);
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
-    //
-    //BEGIN DEBUG
-    // cout <<db["time_discretization"]<<endl;
-    // s.solution.print("s");
-    // s.matrix.get_blocks().at(6)->Print("B1T");exit(0);
-    //END DEBUG
+
     s.solution_m1 = s.solution;
     s.solution_m2 = s.solution;
   }
@@ -405,6 +400,9 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     if((time_stepping_scheme.current_step_ == 1 || db["disctype"].is("residual_based_vms")) 
         && TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
         this->modify_slip_bc(true, true);
+    //NOTE: scale the B blocks only at the first iteration
+    for(System_per_grid& sys : this->systems)
+      time_stepping_scheme.scale_descale_all_b_blocks(sys.matrix, "scale");
     // prepare the right hand side for the solver
     time_stepping_scheme.prepare_rhs_from_time_disc(s.matrix, s.mass_matrix,
                      rhs_, oldsolutions);
@@ -427,7 +425,7 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     // cout <<db["time_discretization"]<<endl;
     // s.solution.print("s");
     // s.matrix.get_blocks().at(6)->Print("B1T");exit(0);
-  //END DEBUG
+    //END DEBUG
     if(db["disctype"].is("local_projection"))
       update_matrices_lps(s);
   }
@@ -453,15 +451,10 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
   {
     // call the preparing method
     time_stepping_scheme.prepare_system_matrix(s.matrix, s.mass_matrix, it_counter);
+    if(db["disctype"].is("supg") || db["disctype"].is("residual_based_vms"))
+      time_stepping_scheme.scale_nl_b_blocks(s.matrix);
   }
   Output::print<5>("Assembling of matrices and right hand side is done");
-}
-
-/**************************************************************************** */
-void Time_NSE2D_Merged::do_time_step()
-{
-  // right hand side needs only to be assembled on the
-  //time_stepping_scheme.prepare_timestep();
 }
 
 /**************************************************************************** */
@@ -490,6 +483,10 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
   unsigned int nuDof = s.solution.length(0);
   unsigned int npDof = s.solution.length(2);
   // unsigned int sc_minit = db["nonlinloop_minit"];
+  //BEGIN DEBUG
+  // if(TDatabase::TimeDB->CURRENTTIME==-0.00375){
+  // s.matrix.get_blocks().at(2)->Print("B1");exit(0);}
+  //END DEBUG
 
   this->defect = rhs_from_time_disc;
   s.matrix.apply_scaled_add(s.solution, defect,-1.);
@@ -551,7 +548,11 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
        // descale the matrices, since only the diagonal A block will
        // be reassembled in the next time step
        for(System_per_grid & s : this->systems)
+       {
          time_stepping_scheme.reset_linear_matrices(s.matrix, s.mass_matrix);
+         // descale if it's rescaled at the next time step for bdf schemes
+         time_stepping_scheme.scale_descale_all_b_blocks(s.matrix, "descale");
+       }
        return true;
      }
    }

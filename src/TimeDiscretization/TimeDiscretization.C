@@ -154,79 +154,7 @@ void TimeDiscretization::prepare_system_matrix(
     ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
   // add the scaled block matrices
   system_matrix.add_blockfe_matrix(mass_matrix);
-
-  /// @DETAILS: scaling of the B and BT's blocks (also "C")
-  double factor;
-  if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
-    factor = current_time_step_length;
-  else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
-    factor = current_time_step_length*bdf_coefficients[2];
-  else if(db["time_discretization"].is("crank_nicolson"))
-    factor = current_time_step_length*0.5;//this have to be adopted according to the stages
-    else
-      ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
-  //BEGIN DEBUG
-  // cout<< "pre_stage_bdf  " << pre_stage_bdf << " time_discretization " 
-  // << db["time_discretization"] << "  " << factor<< endl;
-  // system_matrix.get_blocks().at(6)->Print("B1T");exit(0);
-  //END DEBUG
-      
-  // standard case when all B-blocks have to be scaled only once for all 
-  // time steps if equi-disctinct time stepping is used
-  if( (b_bt_linear_nl.compare("linear")==0) && (current_step_ == 1) 
-      && (it_counter==0))
-  {// scale the B, BT blocks once 
-    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
-    system_matrix.scale_blocks(factor, cells);
-  }
-  if(b_bt_linear_nl.compare("nonlinear")==0)
-  {
-    // inf-sup stable case 
-    if(n_scale_block==2)
-    {// scale all four blocks at first nonlinear-iteration step 
-      if(it_counter==0){
-        const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
-        system_matrix.scale_blocks(factor, cells);
-      }
-      else{//scale only the BT blocks due to the re-assembling 
-        const std::vector<std::vector<size_t>> cells = {{0,2},{1,2}};
-        system_matrix.scale_blocks(factor, cells);
-      }
-    }
-    if(n_scale_block==5)
-    {//
-      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
-      system_matrix.scale_blocks(factor, cells);
-    }
-  }
-  if(b_bt_linear_nl.compare("solution_dependent") ==0)
-  {
-    // inf-sup case
-    if(n_scale_block==4){
-      if(it_counter==0){
-        const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
-        system_matrix.scale_blocks(factor, cells);
-      }
-      else{
-        const std::vector<std::vector<size_t>> cells = {{2,0},{2,1}};
-        system_matrix.scale_blocks(factor, cells);
-      }
-    }
-    else{
-      if(it_counter==0){
-        const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
-        system_matrix.scale_blocks(factor, cells);
-      }
-      else{
-        const std::vector<std::vector<size_t>> cells = {{2,0},{2,1}};
-        system_matrix.scale_blocks(factor, cells);
-      }
-    }
-  }
-//   else{
-//     ErrThrow("Please check the scaling of the B, BT blocks");
-//   }
-  
+ 
   Output::print<5>("addition of the mass and stiffness matrix done ");
 }
 /* ****************************************************************************/
@@ -251,6 +179,87 @@ void TimeDiscretization::reset_linear_matrices(BlockFEMatrix& matrix,
   matrix.scale_blocks_actives(1./factor, cells);
   // No need to reset the B, BT and C blocks because they are only scaled once during
   // the time step or re-assembled and scaled in the nonlinear case.
+}
+
+/* ****************************************************************************/
+void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix, 
+                                          std::string scale_dscale)
+{
+  /// @DETAILS: scaling of the B and BT's blocks (also "C")
+  double factor;
+  if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
+    factor = current_time_step_length;
+  else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
+    factor = current_time_step_length*bdf_coefficients[2];
+  else if(db["time_discretization"].is("crank_nicolson"))
+    factor = current_time_step_length*0.5;//this have to be adopted according to the stages
+  else
+    ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
+  
+  if(current_step_==1 && scale_dscale.compare("scale")==0)
+  {
+    if(n_scale_block==5)
+      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}, {2,2}});
+    else
+      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}});
+  }
+  // in the case of bdf2, we need to descale the b-blocks because of the scaling
+  // argument, then rescale in the next lines
+  if(db["time_discretization"].is("bdf_two") && current_step_ == 1 
+    && scale_dscale.compare("descale")==0)
+  {
+    if(n_scale_block==5)
+      matrix.scale_blocks(1./factor, {{0,2},{1,2},{2,0},{2,1}, {2,2}});
+    else
+      matrix.scale_blocks(1./factor, {{0,2},{1,2},{2,0},{2,1}});
+  }
+  // rescale the blocks with bdf bdf_coefficients
+  if(db["time_discretization"].is("bdf_two") && current_step_ == 2 
+    && scale_dscale.compare("scale")==0)
+  {
+    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+    if(n_scale_block==5)
+      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}, {2,2}});
+    else
+      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}});
+  }
+}
+
+/* ****************************************************************************/
+void TimeDiscretization::scale_nl_b_blocks(BlockFEMatrix& matrix)
+{
+  /// @DETAILS: scaling of the B and BT's blocks (also "C")
+  double factor;
+  if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
+    factor = current_time_step_length;
+  else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
+    factor = current_time_step_length*bdf_coefficients[2];
+  else if(db["time_discretization"].is("crank_nicolson"))
+    factor = current_time_step_length*0.5;//this have to be adopted according to the stages
+  else
+    ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
+  
+  if(b_bt_linear_nl.compare("nonlinear")==0)
+  {
+    // inf-sup stable case 
+
+    if(n_scale_block==2)
+    {   const std::vector<std::vector<size_t>> cells = {{0,2},{1,2}};
+        matrix.scale_blocks(factor, cells);
+    }
+    if(n_scale_block==5)
+    {
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
+      matrix.scale_blocks(factor, cells);
+    }
+  }
+  //
+  if(b_bt_linear_nl.compare("solution_dependent") ==0)
+  {
+    ErrThrow("Not yet tested");
+    const std::vector<std::vector<size_t>> cells = {{2,0},{2,1}};
+    matrix.scale_blocks(factor, cells);
+  }
 }
 
 /* ****************************************************************************/

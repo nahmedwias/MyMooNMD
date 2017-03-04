@@ -216,11 +216,11 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
       // pressure term
       double val  = -ansatz00 * test10; // Galerkin term
       val +=  ansatz10 * ugrad; // SUPG term (grad p, u grad v)
-      MatrixB1T[i][j] -= Mult * (ansatz00 * test10 - ansatz10 * ugrad);
+      MatrixB1T[i][j] += Mult * val;
       
       val  = -ansatz00 * test01; // Galerkin term
       val +=  ansatz01 * ugrad; // SUPG term (grad p, u grad v)
-      MatrixB2T[i][j] -= Mult*(ansatz00 * test01 - ansatz01 * ugrad);
+      MatrixB2T[i][j] += Mult*val;
     }
   }
 }

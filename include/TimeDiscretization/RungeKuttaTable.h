@@ -1,6 +1,16 @@
 #ifndef RUNGEKUTTATABLE_H
 #define RUNGEKUTTATABLE_H
 
+/** ***************************************************************************
+*
+* @name       RungeKuttaTable
+* @brief      
+*
+* @author     Naveed Ahmed, Ulrich Wilbrandt 
+* @date       30.01.2015
+*
+******************************************************************************/
+
 #include<vector>
 #include <memory>
 
