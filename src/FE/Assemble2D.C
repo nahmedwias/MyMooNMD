@@ -11035,7 +11035,7 @@ void Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
 
   }                                               // endif n_rhs
 
-  N_Parameters = Parameters->GetN_Parameters();
+  N_Parameters = la.GetN_Parameters();
   if(N_Parameters)
   {
     aux = new double [MaxN_QuadPoints_2D*N_Parameters];
@@ -11401,8 +11401,8 @@ void Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
                     x = (x1+x0)/2.0;
                     y = (y1+y0)/2.0;
                     // compute velocity in (x,y);
-                    u1->FindGradientLocal(cell,i,x,y,u1_values);
-                    u2->FindGradientLocal(cell,i,x,y,u2_values);
+                    la.get_fe_function(0)->FindGradientLocal(cell,i,x,y,u1_values);
+                    la.get_fe_function(1)->FindGradientLocal(cell,i,x,y,u2_values);
                     // compute tangential velocity
                     tangential_velo = u1_values[0]*tx + u2_values[0]*ty;
                     // get Reynolds number
