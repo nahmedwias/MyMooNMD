@@ -269,6 +269,12 @@ class Time_NSE2D
     /** ***************BELOW THIS LINE, USER SPECIFIC CODE ********/
   public:
 
+    /**@brief this is a call to assemble2Dslipbc(), which sets up
+     * everything needed for "Slip with friction, Penetration
+     * with resistance" Boundary conditions in RHS and matrices
+     */
+    void apply_slip_penetration_bc();
+
     /** @brief assemble matrix,
      *
      * This assembles everything which is not related to the nonlinear term.
