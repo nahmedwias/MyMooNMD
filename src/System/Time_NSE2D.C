@@ -886,13 +886,48 @@ std::array< double, int(6) > Time_NSE2D::get_errors()
 
 /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
 /** ************************************************************************ */
+
+/**************************************************************************** */
 void Time_NSE2D::apply_slip_penetration_bc()
 {
 
+  System_per_grid& s = this->systems.front();
+  // reset the right hand side
+  //  s.rhs.reset();
+  // assembling of the right hand side
+  TFEFunction2D *fe_functions[3] =
+  { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
+
+  LocalAssembling2D la(TNSE2D_Rhs, fe_functions,
+                           this->example.get_coeffs());
+
+  int N_Rhs = 3;
+  const TFESpace2D * v_space = &this->get_velocity_space();
+  const TFESpace2D * p_space = &this->get_pressure_space();
+
+  double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
+
+  const TFESpace2D *fespmat[2] = {v_space, p_space};
+  const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
+
+  BoundCondFunct2D * boundary_conditions[3] = {
+             v_space->GetBoundCondition(), v_space->GetBoundCondition(),
+              p_space->GetBoundCondition() };
+
+   std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+   non_const_bound_values[0] = this->example.get_bd(0);
+   non_const_bound_values[1] = this->example.get_bd(1);
+   non_const_bound_values[2] = this->example.get_bd(2);
+
+   Assemble2DSlipBC(1, fespmat, 0, nullptr,
+              0, nullptr, N_Rhs, RHSs, fesprhs,
+              boundary_conditions, non_const_bound_values.data(), la);
+
+  Output::print<3>("Finished to apply Slip and Penetration BCs.");
+
 }
 
-
-
+/**************************************************************************** */
 void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
                      TFEFunction2D* mu_field)
 {
