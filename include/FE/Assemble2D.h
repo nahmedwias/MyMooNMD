@@ -39,6 +39,16 @@ void Assemble2D(int n_fespaces,
                 , int AssemblePhaseID = -1
                 );
 
+/** assembling of slip type bc */
+void Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
+                      int n_sqmatrices, TSquareMatrix2D **sqmatrices,
+                      int n_matrices, TMatrix2D **matrices,
+                      int n_rhs, double **rhs, TFESpace2D **ferhs,
+                      BoundCondFunct2D **BoundaryConditions,
+                      BoundValueFunct2D **BoundaryValues,
+                      LocalAssembling2D& la);
+
+
 //Hier/////////////////////////////////////////////////
 /** a function from a finite element space */
 void Assemble2D(int n_fespaces,
@@ -72,7 +82,7 @@ void Assemble2D_FCT(int n_fespaces, TFESpace2D **fespaces, int n_sqmatrices,
 
 
 /** assembling of slip type bc */
-void Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
+void old_Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
                       int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                       int n_matrices, TMatrix2D **matrices,
                       int n_rhs, double **rhs, TFESpace2D **ferhs,
