@@ -886,6 +886,13 @@ std::array< double, int(6) > Time_NSE2D::get_errors()
 
 /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
 /** ************************************************************************ */
+void Time_NSE2D::apply_slip_penetration_bc()
+{
+
+}
+
+
+
 void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
                      TFEFunction2D* mu_field)
 {
@@ -1128,8 +1135,7 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
   this->old_solution = this->systems.front().solution;
 }
 
-
-
+/**************************************************************************** */
 void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
                                                     TFEFunction2D* mu_field)
 {
@@ -1335,8 +1341,7 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
   Output::print<5>("Assembled the nonlinear matrix only ");
 }
 
-
-
+/**************************************************************************** */
 void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
                                          TFEFunction2D* mu_field)
 {
@@ -1521,7 +1526,7 @@ void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
 
 }
 
-
+/**************************************************************************** */
 void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
 {
   for(System_per_grid& s : this->systems)
@@ -1653,6 +1658,7 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
   }
 }
 
+/**************************************************************************** */
 bool Time_NSE2D::imex_scheme(bool print_info)
 {
   //IMEX-scheme needs to get out of the iteration directly after the 1st solve()
@@ -1671,6 +1677,7 @@ bool Time_NSE2D::imex_scheme(bool print_info)
   return interruption_condition;
 }
 
+/**************************************************************************** */
 void Time_NSE2D::construct_extrapolated_solution()
 {
   this->extrapolated_solution_.reset();
