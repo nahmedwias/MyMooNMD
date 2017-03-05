@@ -219,6 +219,15 @@ target_compile_definitions(tnse2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### TNSE2D_BDF2 temporary ###
+# Standard executable target.
+add_executable(tnse2d_bdf ${PROJECT_SOURCE_DIR}/2DPrograms/TNSE2D_BDF_12_ParMooN.C)
+set_target_properties(tnse2d_bdf PROPERTIES OUTPUT_NAME parMooN_tnse2d_bdf_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(tnse2d_bdf PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(tnse2d_bdf parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ### MESH ###
 # Standard executable target.
 add_executable(mesh ${PROJECT_SOURCE_DIR}/2DPrograms/mesh_ParMooN.C)
