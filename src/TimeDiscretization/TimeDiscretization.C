@@ -228,9 +228,9 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
     if((db["time_discretization"].is("backward_euler") && current_step_ >= 2) ||
     (db["time_discretization"].is("bdf_two") && current_step_ >= 3) )
     if(n_scale_block==5)
-      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}});
+      matrix.scale_blocks(factor, {{0,2},{1,2}, {2,2}});
     else
-      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}, {2,2}});
+      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}});
   }
 }
 
