@@ -217,11 +217,20 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
   if(db["time_discretization"].is("bdf_two") && current_step_ == 2 
     && scale_dscale.compare("scale")==0)
   {
-    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
     if(n_scale_block==5)
       matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}, {2,2}});
     else
       matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}});
+  }
+  // scaling of the blocks for the Residual Based VMS method
+  if(b_bt_linear_nl.compare("solution_dependent") == 0)
+  {
+    if((db["time_discretization"].is("backward_euler") && current_step_ >= 2) ||
+    (db["time_discretization"].is("bdf_two") && current_step_ >= 3) )
+    if(n_scale_block==5)
+      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}});
+    else
+      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}, {2,2}});
   }
 }
 
@@ -256,9 +265,10 @@ void TimeDiscretization::scale_nl_b_blocks(BlockFEMatrix& matrix)
   //
   if(b_bt_linear_nl.compare("solution_dependent") ==0)
   {
-    ErrThrow("Not yet tested");
-    const std::vector<std::vector<size_t>> cells = {{2,0},{2,1}};
-    matrix.scale_blocks(factor, cells);
+    if(n_scale_block == 5){
+      const std::vector<std::vector<size_t>> cells = {{2,0},{2,1}};
+      matrix.scale_blocks(factor, cells);
+    }
   }
 }
 

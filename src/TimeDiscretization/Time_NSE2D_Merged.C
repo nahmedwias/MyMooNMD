@@ -374,7 +374,13 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     rhs_from_time_disc.reset();
     System_per_grid& s = this->systems.front();
     // only assembles the right-hand side
-    call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_Rhs);
+    if(db["disctype"].is("residual_based_vms"))
+    {
+      for(System_per_grid& sys : this->systems)
+        call_assembling_routine(sys, LocalAssembling2D_type::TNSE2D_Rhs);
+    }
+    else
+      call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_Rhs);
     //BEGIN DEBUG
     // s.rhs.print("rhs");
     //END DEBUG
@@ -403,6 +409,9 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     //NOTE: scale the B blocks only at the first iteration
     for(System_per_grid& sys : this->systems)
       time_stepping_scheme.scale_descale_all_b_blocks(sys.matrix, "scale");
+    //BEGIN DEBUG
+     // s.matrix.get_blocks().at(2)->Print("B1T");exit(0);
+    //END DEBUG
     // prepare the right hand side for the solver
     time_stepping_scheme.prepare_rhs_from_time_disc(s.matrix, s.mass_matrix,
                      rhs_, oldsolutions);
@@ -411,7 +420,10 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     // copy the non-actives
     rhs_from_time_disc.copy_nonactive(s.solution);
     //BEGIN DEBUG
-    // rhs_from_time_disc.print("rhs");exit(0);
+    if(TDatabase::TimeDB->CURRENTTIME==-0.0025)
+    {
+      s.matrix.get_blocks().at(7)->Print("B1T");exit(0);
+    }
     //END DEBUG
   }
   //Nonlinear assembling requires an approximate velocity solution on every grid!
@@ -484,8 +496,7 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
   unsigned int npDof = s.solution.length(2);
   // unsigned int sc_minit = db["nonlinloop_minit"];
   //BEGIN DEBUG
-  // if(TDatabase::TimeDB->CURRENTTIME==-0.00375){
-  // s.matrix.get_blocks().at(2)->Print("B1");exit(0);}
+  // s.matrix.get_blocks().at(2)->Print("A1");
   //END DEBUG
 
   this->defect = rhs_from_time_disc;
@@ -523,7 +534,6 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
     limit *= sqrt(this->get_size());
     Output::print("stopping tolerance for nonlinear iteration ", limit);
   }
-
   if ( (((sqrt(residual)<=limit)||(it_counter==Max_It))) )
    {
      // project the solution
@@ -566,6 +576,12 @@ void Time_NSE2D_Merged::solve()
   System_per_grid& s = this->systems.front();
   
   solver.solve(s.matrix, rhs_from_time_disc, s.solution);
+    if(TDatabase::TimeDB->CURRENTTIME==-0.0025)
+    {
+      Output::print(db["disctype"]);
+      systems.front().matrix.get_combined_matrix()->Print("B1T");exit(0);
+    }
+
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are
   // reset and assembled again but the A12 and A21 are scaled, so
