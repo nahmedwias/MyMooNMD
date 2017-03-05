@@ -685,12 +685,12 @@ void TimeNSType14Residual_VMS(double Mult, double* coeff, double* param, double 
       // supg terms 
       val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test10;
-      reMatrixB1[i][j] += Mult * val;
+      reMatrixB1[i][j] -= Mult * val;
       
       val = -test00*ansatz01;
       val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test01;
-      reMatrixB2[i][j] += Mult * val;
+      reMatrixB2[i][j] -= Mult * val;
     }
     
     for(int j=0; j<N_P; ++j)
@@ -1042,12 +1042,12 @@ void TimeNSType14RHS_Residual_VMS(double Mult, double* coeff, double* param,
       // supg terms 
       val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test10;
-      reMatrixB1[i][j] += Mult * val;
+      reMatrixB1[i][j] -= Mult * val;
       
       val = -test00*ansatz01;
       val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test01;                       
-      reMatrixB2[i][j] += Mult * val;
+      reMatrixB2[i][j] -= Mult * val;
     }
     
     for(int j=0; j<N_P; ++j)

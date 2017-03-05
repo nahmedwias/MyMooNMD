@@ -89,7 +89,7 @@ list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/TNSE2D_FixPoRot.C")
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/TNSE2D_FixPo_SSMUM.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Upwind.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Brinkman2D_Mixed.C")
-list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/assemble_routine_tnse2D_supg.C")
+## list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/assemble_routine_tnse2D_supg.C")
 
 # Source files only used in 3D
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/Assemble3D.C") 
