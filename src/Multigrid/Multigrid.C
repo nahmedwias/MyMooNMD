@@ -201,10 +201,17 @@ int Multigrid::cycle_step(size_t step, size_t level)
   size_t coarsest = 0;
   if(level == coarsest)
   {//we're on coarsest level
-    if (my_rank == 0)
-      Output::info<4>("COARSE SOLVE", "Level ", level);
     double res = 1e10;
-
+    if ((my_rank == 0) && (Output::getVerbosity()>=4))
+    {
+      Output::info<4>("COARSE SOLVE", "Level ", level);
+      levels_.at(level).calculate_defect();
+      res = levels_.at(level).residual_;
+      Output::info<4>("COARSE GRID bef.", "Level ", level, " res: ", res);
+    }
+    else
+      levels_.at(level).calculate_defect();
+    
     //start coarse grid time measurement
     coarse_grid_timer.start();
 
@@ -214,7 +221,7 @@ int Multigrid::cycle_step(size_t step, size_t level)
       levels_.at(coarsest).calculate_defect();
       res = levels_.at(coarsest).residual_;
       if (my_rank == 0)
-        Output::dash<4>("Coarse Grid Iteration ", i, " res: ", res);
+        Output::dash<4>("Coarse Grid Iteration ", i+1, " res: ", res);
     }
 
     //stop coarse grid time measurement
@@ -231,20 +238,47 @@ int Multigrid::cycle_step(size_t step, size_t level)
 
     if(coming_from_below)
     {
-      if (my_rank == 0)
-        Output::info<4>("POST SMOOTH", "Level ", level);
+      // compute and print more information, for debugging
+      if ((my_rank == 0) && (Output::getVerbosity()>=4))
+      {   
+	double res;
+	levels_.at(level).calculate_defect();
+	res = levels_.at(level).residual_;
+        Output::info<4>("POST SMOOTH bef.", "Level ", level, " res: ", res);
+      }
       for(size_t i = 0; i < n_post_smooths_; ++i)
         levels_.at(level).apply_smoother(); //post smoothing
+      // compute and print more information, for debugging
+      if ((my_rank == 0) && (Output::getVerbosity()>=4))
+      {   
+	double res;	
+	levels_.at(level).calculate_defect();
+	res = levels_.at(level).residual_;
+        Output::info<4>("POST SMOOTH done", "Level ", level, " res: ", res);
+      }
     }
     if(going_down)
     {
-      if (my_rank == 0)
-        Output::info<4>("PRE SMOOTH", "Level ", level);
+      // compute and print more information, for debugging
+      if ((my_rank == 0) && (Output::getVerbosity()>=4))
+      {
+        double res;
+	levels_.at(level).calculate_defect();
+	res = levels_.at(level).residual_;
+        Output::info<4>("PRE SMOOTH bef.", "Level ", level, " res: ", res);
+      }
       for(size_t i = 0; i < n_pre_smooths_; ++i)
         levels_.at(level).apply_smoother(); //pre smoothing
       levels_.at(level).calculate_defect(); //defect calculation
       set_solution_in_coarser_grid_to_zero(level); //set start iterate on coarser level to 0
       update_rhs_in_coarser_grid(level);
+      // compute and print more information, for debugging
+      if ((my_rank == 0) && (Output::getVerbosity()>=4))
+      {
+        double res;
+	res = levels_.at(level).residual_;
+        Output::info<4>("PRE SMOOTH done", "Level ", level, " res: ", res);
+      }
       return level - 1;
     }
     else if(going_up)

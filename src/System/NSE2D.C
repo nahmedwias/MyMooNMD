@@ -459,7 +459,7 @@ void NSE2D::assemble_nonlinear_term()
             && this->solver.get_multigrid()->is_using_mdml();
   bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
   
-  if(mdml && !is_stokes)
+  if ((mdml && !is_stokes)||(TDatabase::ParamDB->DISCTYPE == UPWIND ))
   {
     // in case of upwinding we only assemble the linear terms. The nonlinear
     // term is not assembled but replaced by a call to the upwind method.
@@ -680,17 +680,17 @@ void NSE2D::solve()
   std::shared_ptr<BlockVector> old_solution(nullptr);
   if(damping != 1.0)
     old_solution = std::make_shared<BlockVector>(s.solution);
-  
+  // solve linear problem 
   solver.solve(s.matrix,s.rhs, s.solution);
-
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-    s.p.project_into_L20();
-  
+  // apply damping if prescribed
   if(damping != 1.0)
   {
     s.solution.scale(damping);
     s.solution.add_scaled(*old_solution, damping);
   }
+  // project pressure if necessary
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    s.p.project_into_L20();
 }
 
 /** ************************************************************************ */
