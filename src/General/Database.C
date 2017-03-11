@@ -385,7 +385,7 @@ void TDatabase::SetDefaultParameters()
   
   ParamDB->DISCTYPE = 1;
   ParamDB->INTL_DISCTYPE = 1;
-  ParamDB->UPWIND_ORDER = 1;
+  ParamDB->UPWIND_ORDER = 0;
   ParamDB->UPWIND_FLUX_DAMP = 1;
   ParamDB->UPWIND_APPLICATION = 0;
   ParamDB->SHISHKIN_MESH = 0;
