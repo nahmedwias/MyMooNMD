@@ -59,7 +59,7 @@ ParameterDatabase Solver<L, V>::default_solver_database()
   db.add<size_t>("max_n_iterations", 100,
                  "Maximum number of iterations of the iterative solver. This "
                  "is used as a stopping criterion of the iteration.",
-                 {0, 1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000} );
+                  0, 100000 );
   
   db.add<size_t>("min_n_iterations", 0,
                  "Minimum number of iterations of the iterative solver. This "
@@ -78,7 +78,12 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "the product of the initial residual and this parameter, the "
          "iteration is terminated. A value of 0.0 therefore effectively "
          "disables this stopping criterion.", 0.0, 1.0);
-  
+ 
+  db.add("divergence_factor", 1.e10,
+	 "If the norm of the residual increases by a factor that is larger, " 
+	 "the iteration is stopped and the execution of the code will be" 
+	 "stopped, too.", 1.0, 1.e36);
+ 
   db.add<size_t>("gmres_restart", 20, "The number of gmres iterations until "
                  "a restart is done. Larger numbers lead to more memory "
                  "consumption, smaller numbers typically mean more "
@@ -272,6 +277,8 @@ void Solver<L, V>::update_matrix(const L& matrix)
       double reduc = db["residual_reduction"];
       size_t restart = db["gmres_restart"]; // only for gmres
       double damping = db["damping_factor"];
+      double divergence_factor = db["divergence_factor"];
+
       if(this->is_using_multigrid())
       {
         this->preconditioner = std::make_shared<Iteration_multigrid<L, V>>(
@@ -287,9 +294,9 @@ void Solver<L, V>::update_matrix(const L& matrix)
                                                           matrix, 
                                                           this->preconditioner);
       this->iterative_method->set_stopping_parameters(max_it, min_it, tol, 
-                                                      reduc, 2., damping, 
+                                                      reduc, divergence_factor, damping, 
                                                       restart);
-    }
+   }
     else
     {
       this->preconditioner->update();
