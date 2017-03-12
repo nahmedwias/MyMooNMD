@@ -65,16 +65,17 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     else
     {
       vs_db["solver_type"] = "iterative";
-      vs_db["iterative_solver_type"] = "fgmres";
+      vs_db["iterative_solver_type"] = "bi_cgstab";
       //vs_db["preconditioner"] = "no_preconditioner";
       //vs_db["preconditioner"] = "jacobi";
       vs_db["preconditioner"] = "ssor";
       vs_db["sor_omega"] = 1.0;
-      vs_db["max_n_iterations"] = 10;
-      vs_db["residual_tolerance"] = 1.0e-9; // hardly ever reached
-      vs_db["residual_reduction"] = 0.1;    // the actual stopping criterion
-      vs_db["gmres_restart"] = 20;
+      vs_db["max_n_iterations"] = 1000;
+      vs_db["residual_tolerance"] = 8.0e-9; // hardly ever reached
+      vs_db["residual_reduction"] = 1e-2;    // the actual stopping criterion
+      vs_db["gmres_restart"] = 50;
       vs_db["damping_factor"] = 1.0; // no damping
+      //vs_db["divergence_factor"] = 1.0e10; // stop because of divergence
     }
     this->velocity_solver.reset(new Solver<BlockFEMatrix, BlockVector>(vs_db));
     this->velocity_solver->update_matrix(this->velocity_block);
@@ -193,7 +194,8 @@ void solve_velocity(std::shared_ptr<Solver<BlockFEMatrix>> velocity_solver,
                     const BlockVector& rhs, BlockVector& sol)
 {
   unsigned int verbosity = Output::getVerbosity();
-  Output::suppressAll();
+  //Output::suppressAll();
+  Output::setVerbosity(1);
   velocity_solver->solve(rhs, sol);
   Output::setVerbosity(verbosity); // reset verbosity for further output
 }
