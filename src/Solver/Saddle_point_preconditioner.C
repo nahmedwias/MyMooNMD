@@ -67,13 +67,13 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
       vs_db["solver_type"] = "iterative";
       vs_db["iterative_solver_type"] = "fgmres";
       //vs_db["preconditioner"] = "no_preconditioner";
-      vs_db["preconditioner"] = "jacobi";
-      //vs_db["preconditioner"] = "ssor";
-      vs_db["sor_omega"] = 1.5;
-      vs_db["max_n_iterations"] = 100;
-      vs_db["residual_tolerance"] = 1.0e-12; // hardly ever reached
-      vs_db["residual_reduction"] = 0.01;    // the actual stopping criterion
-      vs_db["gmres_restart"] = 10;
+      //vs_db["preconditioner"] = "jacobi";
+      vs_db["preconditioner"] = "ssor";
+      vs_db["sor_omega"] = 1.0;
+      vs_db["max_n_iterations"] = 10;
+      vs_db["residual_tolerance"] = 1.0e-9; // hardly ever reached
+      vs_db["residual_reduction"] = 0.1;    // the actual stopping criterion
+      vs_db["gmres_restart"] = 20;
       vs_db["damping_factor"] = 1.0; // no damping
     }
     this->velocity_solver.reset(new Solver<BlockFEMatrix, BlockVector>(vs_db));
