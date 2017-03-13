@@ -11,6 +11,8 @@
 #include <Multigrid.h>
 #include <Upwind3D.h>
 
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
+
 #include <sys/stat.h>
 
 #ifdef _MPI
@@ -195,16 +197,18 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
   if(usingMultigrid)
   {
     // Construct multigrid object
-    auto mg = this->solver.get_multigrid();
+    auto mg = solver.get_multigrid();
+    bool mdml = mg->is_using_mdml();
+
 
     //Check whether number of given grids is alright
-    size_t n_multigrid_levels = mg->get_n_geometric_levels();
+    size_t n_geo_multigrid_levels = mg->get_n_geometric_levels();
     size_t n_grids = collections.size();
-    if(n_multigrid_levels != n_grids )
+    if(n_geo_multigrid_levels != n_grids )
       ErrThrow("Wrong number of grids for multigrid! I was expecting ",
-               n_multigrid_levels, " geometric grids but only got ", n_grids,".");
+               n_geo_multigrid_levels, " geometric grids but only got ", n_grids,".");
 
-    if(mg->is_using_mdml())
+    if(mdml)
     {
       // change the discretization on the coarse grids to lowest order 
       // non-conforming(-1). The pressure space is chosen automatically(-4711).
@@ -501,6 +505,10 @@ void NSE3D::assemble_linear_terms()
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_Linear, 
                          feFunction.data(), example_.get_coeffs());
     
+    //HOTFIX: Check the documentation - this ensures that in Galerkin disc,
+    // the convective term is not assembled at this point.
+    assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+
     // assemble now the matrices and right hand side 
     Assemble3D(nFESpace, spaces, 
                nSqMatrices, sqMatrices.data(),
@@ -570,7 +578,7 @@ void NSE3D::assemble_non_linear_term()
   bool mdml =  this->solver.is_using_multigrid() 
             && this->solver.get_multigrid()->is_using_mdml();
   bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
-  if(mdml && !is_stokes)
+  if ((mdml && !is_stokes)||(TDatabase::ParamDB->DISCTYPE == UPWIND ))
   {
     // in case of upwinding we only assemble the linear terms. The nonlinear
     // term is not assembled but replaced by a call to the upwind method.
@@ -628,9 +636,11 @@ void NSE3D::assemble_non_linear_term()
 
     //decide wether to assemble by upwinding or not
     bool finest_grid = (&s == &systems_.at(0));
-    bool upwinding = mdml && !finest_grid && !is_stokes;
+    bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND
+                        || (mdml && !finest_grid))
+                        && !is_stokes;
     
-    if(!upwinding)
+    if(!do_upwinding)
     {
       for(auto mat : sqMatrices)
       {
@@ -640,6 +650,9 @@ void NSE3D::assemble_non_linear_term()
       const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
                                  feFunction.data(), example_.get_coeffs());
       
+      //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
       // assemble now the matrices and right hand side 
       Assemble3D(nFESpace, spaces, nSqMatrices, sqMatrices.data(),
                  nReMatrices, reMatrices.data(), nRhs, rhsArray.data(), 
@@ -799,16 +812,15 @@ void NSE3D::solve()
     this->solver.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential
 #endif
   
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-  {
-   s.p_.project_into_L20();
-  }
-  
   if(damping != 1.0)
   {
     s.solution_.scale(damping);
     s.solution_.add_scaled(*old_solution, damping);
   }
+
+  // project pressure if necessary
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    s.p_.project_into_L20();
 }
 
 void NSE3D::output(int i)
