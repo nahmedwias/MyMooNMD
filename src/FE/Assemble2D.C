@@ -10334,6 +10334,7 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
                   if (dof_ii>=ActiveBound)
                     continue;
 
+                  cout << "NOMBRE DE MATRIX=" << n_sqmatrices << endl;
                   // !!!!!! assumed that A_11 - A_22 are in sqmatrices[0] - [3]
                   // first velocity component -> matrices A_11 and A_12 (and M_11)
                   if (j==0)
@@ -10342,7 +10343,7 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
                     RowPtr1 = sqmatrices[0]->GetRowPtr();
                     ColInd1 = sqmatrices[0]->GetKCol();
 
-                    if (n_sqmatrices>2)
+                    if (n_sqmatrices>2)  //nstype 3 and 4
                     {
                       Entries2 = sqmatrices[2]->GetEntries();
                       RowPtr2 = sqmatrices[2]->GetRowPtr();
@@ -10350,6 +10351,7 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
                     }
 
                     // time dependent problem and NSTYPE 4
+                    // entries 3 = M11, entries4 = M12
                     if (n_sqmatrices==8)
                     {
                       Entries3 = sqmatrices[4]->GetEntries();
@@ -10369,17 +10371,18 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
                   if (j==1)
                   {
                     if (n_sqmatrices>2)
-                    {
+                    { // entries1 = A21
                       Entries1 = sqmatrices[3]->GetEntries();
                       RowPtr1 = sqmatrices[3]->GetRowPtr();
                       ColInd1 = sqmatrices[3]->GetKCol();
                     }
-
+                    // entries 2 = A22
                     Entries2 = sqmatrices[1]->GetEntries();
                     RowPtr2 = sqmatrices[1]->GetRowPtr();
                     ColInd2 = sqmatrices[1]->GetKCol();
 
                     // time dependent problem and NSTYPE 4
+                    // entries 3 = M22, entries4 = M21
                     if (n_sqmatrices==8)
                     {
                       Entries3 = sqmatrices[5]->GetEntries();
