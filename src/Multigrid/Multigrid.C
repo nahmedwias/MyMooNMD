@@ -30,16 +30,16 @@ SmootherCode string_to_smoother_code(std::string code)
     return SmootherCode::NODAL_VANKA;
   else if(code == std::string("cell_vanka"))
     return SmootherCode::CELL_VANKA;
-  else if(code == std::string("batch_vanka"))
-    return SmootherCode::BATCH_VANKA;
+  else if(code == std::string("patch_vanka"))
+    return SmootherCode::PATCH_VANKA;
   else if(code == std::string("cell_vanka_jacobi"))
     return SmootherCode::CELL_VANKA_JACOBI;
   else if(code == std::string("nodal_vanka_store"))
     return SmootherCode::NODAL_VANKA_STORE;
   else if(code == std::string("cell_vanka_store"))
     return SmootherCode::CELL_VANKA_STORE;
-  else if(code == std::string("batch_vanka_store"))
-    return SmootherCode::BATCH_VANKA_STORE;
+  else if(code == std::string("patch_vanka_store"))
+    return SmootherCode::PATCH_VANKA_STORE;
   else
   {
     Output::warn("SmootherCode", "The string ", code,
@@ -436,18 +436,18 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "care, that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
          {"jacobi", "sor",
-          "nodal_vanka", "cell_vanka", "batch_vanka",
+          "nodal_vanka", "cell_vanka", "patch_vanka",
           "cell_vanka_jacobi",
-          "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
+          "nodal_vanka_store", "cell_vanka_store", "patch_vanka_store", "no_smoother"});
 
   db.add("multigrid_smoother_coarse", "direct_solve",
          "The smoother to use on the coarsest level. You should take care, "
          "that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
          {"direct_solve", "jacobi", "sor",
-          "nodal_vanka", "cell_vanka", "batch_vanka",
+          "nodal_vanka", "cell_vanka", "patch_vanka",
           "cell_vanka_jacobi",
-          "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
+          "nodal_vanka_store", "cell_vanka_store", "patch_vanka_store", "no_smoother"});
 
   db.add("multigrid_correction_damp_factor", 1.0,
          "The damping factor which is used when applying the coarse grid "
