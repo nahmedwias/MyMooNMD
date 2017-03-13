@@ -10514,8 +10514,8 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
                       //OutPut ("1 " << integral[0] << " " << integral[1] << endl);
 
                       // edge not parallel to y axis or penetration
-//                       if ((fabs(ny)>eps)||(penetration_penalty<1e3))
-                      if ((fabs(tx)>eps)||(penetration_penalty>0))
+                       if ((fabs(ny)>eps)||(penetration_penalty<1e3))
+//                      if ((fabs(tx)>eps)||(penetration_penalty>0))
                        {
 //                         if(comp==0 || comp==1 || comp==5 )
 //                          cout << j <<  " X " << x << " Y " << y <<endl;
@@ -10646,8 +10646,8 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
 
                       // edge not parallel to x-axis or pentration
 
-//                      if ((fabs(nx) > eps)|| (penetration_penalty < 1e3))
-                     if ((fabs(nx) > eps) || (fabs(penetration_penalty) > 0.0))
+                      if ((fabs(nx) > eps)|| (penetration_penalty < 1e3))
+//                     if ((fabs(nx) > eps) || (fabs(penetration_penalty) > 0.0))
                       {
                         // OutPut("nox" << endl);
                         if (n_sqmatrices>2)
