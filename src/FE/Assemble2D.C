@@ -10334,7 +10334,7 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
                   if (dof_ii>=ActiveBound)
                     continue;
 
-                  cout << "NOMBRE DE MATRIX=" << n_sqmatrices << endl;
+//                  cout << "NOMBRE DE MATRIX=" << n_sqmatrices << endl;
                   // !!!!!! assumed that A_11 - A_22 are in sqmatrices[0] - [3]
                   // first velocity component -> matrices A_11 and A_12 (and M_11)
                   if (j==0)

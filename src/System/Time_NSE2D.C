@@ -888,43 +888,101 @@ std::array< double, int(6) > Time_NSE2D::get_errors()
 /** ************************************************************************ */
 
 /**************************************************************************** */
-void Time_NSE2D::apply_slip_penetration_bc()
+void Time_NSE2D::apply_slip_penetration_bc(bool change_B_Mass_blocks,
+                                           bool change_A_offdiagonal_blocks)
 {
+  // modification of the matrices due to the
+  // slip type boundary conditions: If the mass matrices,
+  // the off-diagonal A-blocks , and the BT's block,
+  // are unchanged during the time iteration, then this modification
+  // is done only once in the time loop. However, in the SUPG
+  // and residual based VMS method these matrices are also
+  // updated during the time steps, so modification of all
+  // of them including the right-hand side is necessary.The
+  // modification of the diagonal A-blocks are necessary
+  // in any case.
+  if(TDatabase::ParamDB->NSTYPE < 4)
+  {
+    ErrThrow("Slip with friction b.c. is only implemented for NSTYPE 4");
+  }
+  std::vector<const TFESpace2D*> fespmat(1);
+  std::vector<double*> rhs_array(2);
+  std::vector<const TFESpace2D*> fesprhs(2);
 
-  System_per_grid& s = this->systems.front();
-  // reset the right hand side
-  //  s.rhs.reset();
-  // assembling of the right hand side
-  TFEFunction2D *fe_functions[3] =
-  { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
+  for(System_per_grid& s: this->systems)
+  {
+    // preparing local assembling object for assemble2dslipbc
+    TFEFunction2D *fe_functions[3] =
+    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
 
-  LocalAssembling2D la(TNSE2D_Rhs, fe_functions,
-                           this->example.get_coeffs());
+    LocalAssembling2D la(TNSE2D_Rhs, fe_functions,
+                             this->example.get_coeffs());
 
-  int N_Rhs = 3;
-  const TFESpace2D * v_space = &this->get_velocity_space();
-  const TFESpace2D * p_space = &this->get_pressure_space();
+    fespmat[0] = &s.velocity_space;
+    fesprhs[0] = fespmat[0];
+    fesprhs[1] = fespmat[0];
 
-  double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
+    rhs_array[0] = s.rhs.block(0);
+    rhs_array[1] = s.rhs.block(1);
 
-  const TFESpace2D *fespmat[2] = {v_space, p_space};
-  const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
+    std::vector<std::shared_ptr<FEMatrix>> blocks;
+    blocks = s.matrix.get_blocks_uniquely();
 
-  BoundCondFunct2D * boundary_conditions[3] = {
-             v_space->GetBoundCondition(), v_space->GetBoundCondition(),
-              p_space->GetBoundCondition() };
+    std::vector<std::shared_ptr<FEMatrix>> mass_blocks;
+    mass_blocks = s.Mass_Matrix.get_blocks_uniquely(true);
+    // s.mass_matrix.print_coloring_pattern("M", true);exit(0);
+    //cout<<mass_blocks.size()<<endl;exit(0);
 
-   std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-   non_const_bound_values[0] = this->example.get_bd(0);
-   non_const_bound_values[1] = this->example.get_bd(1);
-   non_const_bound_values[2] = this->example.get_bd(2);
+    std::vector<const BoundCondFunct2D*> boundary_conditions(3);
+    boundary_conditions[0]=s.velocity_space.GetBoundCondition();
+    boundary_conditions[1]=boundary_conditions[0];
+    boundary_conditions[2]=s.pressure_space.GetBoundCondition();
 
-   Assemble2DSlipBC(1, fespmat, 0, nullptr,
-              0, nullptr, N_Rhs, RHSs, fesprhs,
-              boundary_conditions, non_const_bound_values.data(), la);
+    // boundary values:
+    std::vector<BoundValueFunct2D*> non_const_bound_values(3);
+    non_const_bound_values[0] = this->example.get_bd(0);
+    non_const_bound_values[1] = this->example.get_bd(1);
+    non_const_bound_values[2] = this->example.get_bd(2);
 
+    std::vector<TSquareMatrix2D*> sqMat;
+    std::vector<TMatrix2D*> reMat;
+    sqMat.resize(2);
+    // all 4 A blocks at the first time step
+    // and only the first 2 within the nonlinear loop
+    sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());//a11
+    sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());//a22
+
+    // if the off-diagonal are not changing within the non-linear loop
+    // then dont need to assemble them again
+    if(change_A_offdiagonal_blocks)
+    {
+      sqMat.resize(4);
+      sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());//a12
+      sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());//a21
+    }
+
+    // either at the first time step
+    // or every time step if M and B's are changing
+    reMat.resize(0);
+    if(change_B_Mass_blocks)
+    {
+      sqMat.resize(8);
+      sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+      sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+      sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
+      sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());
+      reMat.resize(2);
+      reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
+      reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+    }
+    // update the matrices and right hand side
+    Assemble2DSlipBC(fespmat.size(), fespmat.data(),
+                   sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
+                   rhs_array.size(), rhs_array.data(), fesprhs.data(),
+                   boundary_conditions.data(), non_const_bound_values.data(),la);
+
+  }
   Output::print<3>("Finished to apply Slip and Penetration BCs.");
-
 }
 
 /**************************************************************************** */

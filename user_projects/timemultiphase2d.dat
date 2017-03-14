@@ -80,7 +80,7 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 ANSATZ_ORDER: 1
-NSTYPE: 3
+NSTYPE: 4
 LAPLACETYPE: 1
 algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
