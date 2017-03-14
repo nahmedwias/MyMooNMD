@@ -968,13 +968,14 @@ void Time_NSE2D::apply_slip_penetration_bc(bool change_A_offdiagonal_blocks,
     {
       sqMat.resize(5);
       sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());//m11
-//      sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());//m22
-//      sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());//m12
-//      sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());//m21
+//      sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());//m22 ATTENTION CHECK THE
+//      sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());//m12 BLOCK NUMBER AGAIN!!
+//      sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(2).get());//m21
       reMat.resize(2);
       reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
       reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
     }
+//    cout << "PROBLEME N EST PAS ICI MAIS DANS ASSEMBLE" << endl;
     // update the matrices and right hand side
     Assemble2DSlipBC(fespmat.size(), fespmat.data(),
                    sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
@@ -982,6 +983,7 @@ void Time_NSE2D::apply_slip_penetration_bc(bool change_A_offdiagonal_blocks,
                    boundary_conditions.data(), non_const_bound_values.data(),la);
 
   }
+//  this->systems.front().Mass_Matrix.get_blocks().at(3)->Print("test"); exit(0);
   Output::print<3>("Finished to apply Slip and Penetration BCs.");
 }
 

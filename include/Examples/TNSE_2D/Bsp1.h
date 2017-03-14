@@ -99,7 +99,7 @@ void BoundCondition(int i, double t, BoundCond &cond)
   }
   else
     cond = DIRICHLET;
-//  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
