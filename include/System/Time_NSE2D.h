@@ -273,8 +273,8 @@ class Time_NSE2D
      * everything needed for "Slip with friction, Penetration
      * with resistance" Boundary conditions in RHS and matrices
      */
-    void apply_slip_penetration_bc(bool change_B_Mass_blocks = false,
-                                   bool change_A_offdiagonal_blocks = false);
+    void apply_slip_penetration_bc(bool change_A_offdiagonal_blocks = false,
+                                   bool change_B_Mass_blocks = false);
 
     /** @brief assemble matrix,
      *
