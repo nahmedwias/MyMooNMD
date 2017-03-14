@@ -9983,7 +9983,7 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
   double *Entries1 = nullptr;
   double *Entries2 = nullptr;
   double *Entries3 = nullptr;
-  double *Entries4 = nullptr;
+//  double *Entries4 = nullptr;
   double *Entries5 = nullptr;
 
   const int *ColInd1 = nullptr;
@@ -9992,7 +9992,7 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
   const int* RowPtr2 = nullptr;
   const int* ColInd3 = nullptr;
   const int* RowPtr3 = nullptr;
-  const int* RowPtr4 = nullptr;
+//  const int* RowPtr4 = nullptr;
   const int* RowPtr5 = nullptr;
   double *RHS;
   double **HangingEntries = nullptr;
@@ -10352,13 +10352,13 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
 
                     // time dependent problem and NSTYPE 4
                     // entries 3 = M11, entries4 = M12
-                    if (n_sqmatrices==8)
+                    if (n_sqmatrices==5)
                     {
                       Entries3 = sqmatrices[4]->GetEntries();
                       RowPtr3 = sqmatrices[4]->GetRowPtr();
                       ColInd3 = sqmatrices[4]->GetKCol();
-                      Entries4 = sqmatrices[6]->GetEntries();
-                      RowPtr4 = sqmatrices[6]->GetRowPtr();
+//                      Entries4 = sqmatrices[6]->GetEntries();
+//                      RowPtr4 = sqmatrices[6]->GetRowPtr();
                     }
 
                     if (n_matrices==2)
@@ -10383,13 +10383,13 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
 
                     // time dependent problem and NSTYPE 4
                     // entries 3 = M22, entries4 = M21
-                    if (n_sqmatrices==8)
+                    if (n_sqmatrices==5)
                     {
-                      Entries3 = sqmatrices[5]->GetEntries();
-                      RowPtr3 = sqmatrices[5]->GetRowPtr();
-                      ColInd3 = sqmatrices[5]->GetKCol();
-                      Entries4 = sqmatrices[7]->GetEntries();
-                      RowPtr4 = sqmatrices[7]->GetRowPtr();
+//                      Entries3 = sqmatrices[5]->GetEntries();
+//                      RowPtr3 = sqmatrices[5]->GetRowPtr();
+//                      ColInd3 = sqmatrices[5]->GetKCol();
+//                      Entries4 = sqmatrices[7]->GetEntries();
+//                      RowPtr4 = sqmatrices[7]->GetRowPtr();
                     }
                     if (n_matrices==2)
                     {
@@ -10587,7 +10587,7 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
                             Entries2[ll] = 0;
                         }
 
-                        if (n_sqmatrices==8)
+                        if (n_sqmatrices==5)
                         {                         // M_11, set off diagonal to zero
                           for (ll=RowPtr3[dof_ii];ll < RowPtr3[dof_ii+1]; ll++)
                           {
@@ -10595,8 +10595,8 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
                               Entries3[ll] = 0;
                           }
                           // M_12, set row to zero
-                          for (ll=RowPtr4[dof_ii];ll < RowPtr4[dof_ii+1]; ll++)
-                            Entries4[ll] = 0;
+//                          for (ll=RowPtr4[dof_ii];ll < RowPtr4[dof_ii+1]; ll++)
+//                            Entries4[ll] = 0;
                         }
 
                         if (n_matrices==2)
@@ -10722,16 +10722,16 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
                         RHS[dof_ii] = 0;
 
                         // update mass matrix
-                        if (n_sqmatrices==8)
+                        if (n_sqmatrices==5)
                         {
-                          for (ll=RowPtr3[dof_ii];ll < RowPtr3[dof_ii+1]; ll++)
-                          {                       //M_22
-                            if (ColInd3[ll] != dof_ii)
-                              Entries3[ll] = 0;
-                          }
-                          // M_21
-                          for (ll=RowPtr4[dof_ii];ll < RowPtr4[dof_ii+1]; ll++)
-                            Entries4[ll] = 0;
+//                          for (ll=RowPtr3[dof_ii];ll < RowPtr3[dof_ii+1]; ll++)
+//                          {                       //M_22
+//                            if (ColInd3[ll] != dof_ii)
+//                              Entries3[ll] = 0;
+//                          }
+//                           //M_21
+//                          for (ll=RowPtr4[dof_ii];ll < RowPtr4[dof_ii+1]; ll++)
+//                            Entries4[ll] = 0;
                         }
 
                         if (n_matrices==2)

@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
        tnse2d.assemble_rhs();
        // assemble the nonlinear matrices
        tnse2d.assemble_nonlinear_term();
-       tnse2d.apply_slip_penetration_bc();
+       tnse2d.apply_slip_penetration_bc(true,true);
        // prepare the matrices for defect computations
        // and solvers
        tnse2d.assemble_system();
