@@ -5,7 +5,11 @@ outfile: multiphase_output.out
 refinement_n_initial_steps: 6
 
 FRICTION_TYPE: 1
-ENDTIME: 2.
+FRICTION_CONSTANT: 0
+FRICTION_POWER: 0.
+PENETRATION_CONSTANT: 1.e12
+PENETRATION_POWER: -2
+ENDTIME: 0.01
 TIMESTEPLENGTH: 0.01
 
 fluid_density: 1.5.   [ 0, 1e6 ]
@@ -46,7 +50,7 @@ output_compute_errors: true   { true, false }
 output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
-nonlinloop_maxit: 6   [ 0, 1000 ]
+nonlinloop_maxit: 1   [ 0, 1000 ]
 nonlinloop_epsilon: 1e-8   [ 0, 1 ] 
 nonlinloop_damping_factor: 1   [ 0, 1 ]
 nonlinloop_slowfactor: 1   [ 0, 10 ]

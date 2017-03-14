@@ -96,6 +96,7 @@ int main(int argc, char* argv[])
          tnse2d.solve();
          // assemble the nonlinear matrices 
          tnse2d.assemble_nonlinear_term();
+         tnse2d.apply_slip_penetration_bc(true,true);
          // prepare the matrices for next nonlinear iteration
          tnse2d.assemble_system();
        }
