@@ -888,8 +888,8 @@ std::array< double, int(6) > Time_NSE2D::get_errors()
 /** ************************************************************************ */
 
 /**************************************************************************** */
-void Time_NSE2D::apply_slip_penetration_bc(bool change_B_Mass_blocks,
-                                           bool change_A_offdiagonal_blocks)
+void Time_NSE2D::apply_slip_penetration_bc(bool change_A_offdiagonal_blocks,
+                                           bool change_B_Mass_blocks)
 {
   // modification of the matrices due to the
   // slip type boundary conditions: If the mass matrices,
