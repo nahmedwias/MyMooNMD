@@ -31,6 +31,18 @@ namespace sharp_boundary_layer
   #include "CD_2D/SharpBoundaryLayer.h"
 }
 
+// ***************THE FOLLOWING EXAMPLES ARE SPECIFIC TO USER PROJECT
+namespace convectionequation_layout
+{
+  #include "../../user_projects/include/Examples/CD2D/0_ExampleLayout_ConvectionEquation.h"
+}
+namespace doublepoiseuille_test
+{
+  #include "../../user_projects/include/Examples/CD2D/1_ExampleDoublePoiseuille.h"
+}
+// ********* END OF USER PROJECT CODE
+
+
 Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db) 
  : Example2D(user_input_parameter_db)
 {
@@ -98,6 +110,52 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
 
       sharp_boundary_layer::ExampleFile();
       break;
+
+
+
+
+
+
+      // ******* BELOW IS CODE SPECIFIC TO USER PROJECTS ************
+    case 10:   //convectionequation_layout
+      /** exact_solution */
+      exact_solution.push_back( convectionequation_layout::Exact );
+
+      /** boundary condition */
+      boundary_conditions.push_back( convectionequation_layout::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( convectionequation_layout::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = convectionequation_layout::BilinearCoeffs;
+
+      convectionequation_layout::ExampleFile();
+
+      convectionequation_layout::USER1 = this->example_database["user_parameter1"];
+      convectionequation_layout::USER2 = this->example_database["user_parameter2"];
+
+      break;
+    case 11:   //double poiseuille test
+      /** exact_solution */
+      exact_solution.push_back( doublepoiseuille_test::Exact );
+
+      /** boundary condition */
+      boundary_conditions.push_back( doublepoiseuille_test::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( doublepoiseuille_test::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = doublepoiseuille_test::BilinearCoeffs;
+
+      doublepoiseuille_test::ExampleFile();
+
+      doublepoiseuille_test::USER1 = this->example_database["user_parameter1"];
+      doublepoiseuille_test::USER2 = this->example_database["user_parameter2"];
+
+      break;
+
 
     default:
       ErrThrow("Unknown name of the convection-diffusion (CD2D) example!", 

@@ -16,7 +16,11 @@ include_directories("${CMAKE_SOURCE_DIR}/include/Examples"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TCD_2D"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TCD_3D"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TNSE_2D"
-                    "${CMAKE_SOURCE_DIR}/include/Examples/Brinkman_2D")
+		    "${CMAKE_SOURCE_DIR}/include/Examples/Brinkman_2D"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/CD2D"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/NSE2D"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/Time_NSE2D"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/Time_CD2D")
 
 list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/BoundaryCondition.C")
 list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/BoundaryData.C")
