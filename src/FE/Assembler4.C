@@ -131,7 +131,7 @@ void Assembler4::init(BlockFEMatrix &M,
         this->hangingEntries[i+this->n_square_matrices].resize(j);
     }
     this->hangingRhs.resize(rhs_blocks.size());
-    for(int i=0;i<this->n_rhs_blocks;i++)
+    for(unsigned int i=0;i<this->n_rhs_blocks;i++)
     {
         int j = ferhs[i]->GetN_Hanging();
         this->hangingRhs[i].resize(j);
@@ -165,7 +165,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
     {
         LocRhs = new double* [n_rhs_blocks];
         righthand = new double [n_rhs_blocks* maximum_number_base_function];
-        for(int i=0;i<n_rhs_blocks;i++)
+        for(unsigned int i=0;i<n_rhs_blocks;i++)
             LocRhs[i] = righthand+i* maximum_number_base_function;
     }                                               // endif n_rhs_blocks
     
@@ -325,7 +325,7 @@ void Assembler4::impose_boundary_conditions(int i_cell,
 {
   
   TBaseCell *cell = this->Coll->GetCell(i_cell);
-  for(int j=0;j<rhs_blocks.size();j++)
+  for(unsigned int j=0;j<rhs_blocks.size();j++)
     {
       const TFESpace2D *fespace = ferhs[j];
       int *DOF = ferhs[j]->GetGlobalDOF(i_cell);
@@ -769,7 +769,7 @@ void Assembler4::add_local_to_global_rhs(int i,
     TBaseCell *cell = this->Coll->GetCell(i);
     int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
     
-    for(int j=0;j<rhs_blocks.size();j++)
+    for(unsigned int j=0;j<rhs_blocks.size();j++)
     {
         const TFESpace2D *fespace = ferhs[j];
         int ActiveBound = fespace->GetActiveBound();
@@ -972,7 +972,7 @@ void Assembler4::handle_hanging_nodes(std::vector<const TFESpace2D*>& ferhs)
         }                                             // endfor i
     }                                               // endfor j
     
-    for(int j=0;j<n_rhs_blocks;j++)
+    for(unsigned int j=0;j<n_rhs_blocks;j++)
     {
         const TFESpace2D *fespace = ferhs[j];
         THangingNode **HangingNodes = fespace->GetHangingNodes();

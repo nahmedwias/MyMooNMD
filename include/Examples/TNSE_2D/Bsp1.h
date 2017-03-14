@@ -92,8 +92,14 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+  if (i==0)
+  {
+    cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
+    TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+  }
+  else
+    cond = DIRICHLET;
+//  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)

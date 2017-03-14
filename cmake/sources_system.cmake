@@ -6,7 +6,9 @@
 #
 
 # Include header files. 
-include_directories("${CMAKE_SOURCE_DIR}/include/System")
+include_directories("${CMAKE_SOURCE_DIR}/include/System"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/System"
+		    )
 
 # Source files to be added to the 2D library.
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/CD2D.C")
@@ -15,6 +17,7 @@ list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Darcy2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Time_CD2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Time_NSE2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Brinkman2D.C")
+list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/System/VOF_TwoPhase2D.C")
 
 # Source files to be added to the 3D library.
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/CD3D.C")

@@ -39,6 +39,21 @@ void Assemble2D(int n_fespaces,
                 , int AssemblePhaseID = -1
                 );
 
+/** assembling of slip type bc */
+void Assemble2DSlipBC(int n_fespaces,
+                      const TFESpace2D **fespaces,
+                      int n_sqmatrices,
+                      TSquareMatrix2D **sqmatrices,
+                      int n_matrices,
+                      TMatrix2D **matrices,
+                      int n_rhs,
+                      double **rhs,
+                      const TFESpace2D **ferhs,
+                      BoundCondFunct2D **BoundaryConditions,
+                      BoundValueFunct2D **BoundaryValues,
+                      LocalAssembling2D& la);
+
+
 //Hier/////////////////////////////////////////////////
 /** a function from a finite element space */
 void Assemble2D(int n_fespaces,
@@ -69,18 +84,6 @@ void Assemble2D_FCT(int n_fespaces, TFESpace2D **fespaces, int n_sqmatrices,
                     , TAux2D3D *Aux2D3D
 #endif
 );
-
-
-/** assembling of slip type bc */
-void Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
-                      int n_sqmatrices, TSquareMatrix2D **sqmatrices,
-                      int n_matrices, TMatrix2D **matrices,
-                      int n_rhs, double **rhs, TFESpace2D **ferhs,
-                      TDiscreteForm2D *DiscreteForm,
-                      BoundCondFunct2D **BoundaryConditions,
-                      BoundValueFunct2D **BoundaryValues,
-                      TAuxParam2D *parameters,
-                      TFEFunction2D *u1, TFEFunction2D *u2);
 
 /** assembling for methods which need values on neighbour cells */
 void Assemble2D_neigh(int n_fespaces, TFESpace2D **fespaces,

@@ -60,7 +60,7 @@ public:
     /// @brief specify sizes of the linear system
     int n_square_matrices;
     int n_rectangular_matrices;
-    int n_rhs_blocks;
+    unsigned int n_rhs_blocks;
     int n_all_matrices;
     
     int maximum_number_base_function;

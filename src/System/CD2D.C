@@ -8,6 +8,9 @@
 #include <Assemble2D.h>
 #include <Upwind.h>
 #include <LocalProjection.h>
+#include <FEFunctionInterpolator.h>
+
+#include <NSE2D_FixPo.h>
 
 ParameterDatabase get_default_CD2D_parameters()
 {
@@ -398,5 +401,164 @@ double CD2D::get_SD_error() const
 double CD2D::get_L_inf_error() const
 {
   return this->errors[3];
+}
+
+
+
+/** ***************BELOW THIS LINE, USER SPECIFIC CODE ***********/
+void CD2D::assemble_with_convection(const TFEVectFunct2D* convection_field)
+{
+  // Check first the input velocity_field
+  check_convection_field(convection_field);
+
+  LocalAssembling2D_type t = LocalAssembling2D_type::ConvDiff;
+  bool mdml = this->solver.is_using_multigrid()
+             && this->solver.get_multigrid()->is_using_mdml();
+  // in case of mdml, we need to change the local assembling, (not yet
+  // implemented)
+
+  // this loop has more than one iteration only in case of multigrid
+  for(auto & s : this->systems)
+  {
+    TFEFunction2D *pointer_to_function[3] = {&s.fe_function, nullptr,nullptr}; // just initialize
+    // create a local assembling object which is needed to assemble the matrix
+    LocalAssembling2D la(t, pointer_to_function, example.get_coeffs());
+
+    if (convection_field)
+    {
+      // =========================== HERE CODE FOR CONVECTION FIELD
+      cout << "J'AI DETECTE LA PRESENCE D'UN CONVECTION FIELD" << endl;
+      // step 1 : interpolate the given convection_field to our fe space
+//      const TFESpace2D& space = s.fe_space;
+//      size_t n_dofs = space.GetN_DegreesOfFreedom();
+//      std::string name("interpolated velo space");
+//      std::string description("interpolated velo space");
+//      std::vector<double> interp_funct_values(n_dofs,0.0);
+
+//      // set up an interpolator object  (ptr will be shared later)
+//      const TFESpace2D* into_space = &s.fe_space;
+//      FEFunctionInterpolator interpolator(into_space);
+//
+//      // length of the values array of the interpolated velo must equal length of the
+//      // concentration fe function
+//      size_t length_interpolated = s.fe_function.GetLength();
+//
+//      std::vector<double> entries_velo_x(length_interpolated, 0.0);
+//      std::vector<double> entries_velo_y(length_interpolated, 0.0);
+
+      // this awful call is due to the way a TFEVectFunct2D creates new dynamically
+      // allocated TFEFunction2D objects
+      TFEFunction2D* convection_x = convection_field->GetComponent(0);
+      TFEFunction2D* convection_y = convection_field->GetComponent(1);
+
+//      TFEFunction2D interpolated_convection_x =
+//          interpolator.interpolate(*convection_x, entries_velo_x);
+//
+//      TFEFunction2D interpolated_convection_y =
+//          interpolator.interpolate(*convection_y, entries_velo_y);
+//
+//      delete convection_x; // call to GetComponent dynamically created fe functs
+//      delete convection_y;
+
+      // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
+
+      // set up the input...
+      std::vector<int> beginParameter = {0};
+
+      //fill up the new fe function array
+      //pointer_to_function[0] = &s.fe_function;
+      pointer_to_function[1] = convection_x;
+      pointer_to_function[2] = convection_y;
+
+      std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
+      // for second fe value use function 2
+      std::vector<MultiIndex2D> feValueMultiIndex = {D00, D00}; // to produce first fe value use 0th derivative,
+      // for second fe value as well
+      int N_parameters = 2; // two parameters...
+      int N_feValues = 2;   //..both of which stem from the evaluation of fe fcts
+      int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+
+      // chose the parameter function ("in-out function") which shears away
+      // the first to "in" values (x,y) and passes only u_x and u_y
+      std::vector<ParamFct*> parameterFct = {NSParamsVelo};
+
+      // ...and call the corresponding setters
+      la.setBeginParameter(beginParameter);
+      la.setFeFunctions2D(pointer_to_function); //reset - now velo comp included
+      la.setFeValueFctIndex(feValueFctIndex);
+      la.setFeValueMultiIndex(feValueMultiIndex);
+      la.setN_Parameters(N_parameters);
+      la.setN_FeValues(N_feValues);
+      la.setN_ParamFct(N_paramFct);
+      la.setParameterFct(parameterFct);
+      //...this should do the trick
+    //===============================================================END CODE
+    }
+    else
+    {
+      cout << " JE SUIS ICI" << endl;
+//      TFEFunction2D * pointer_to_function = &s.fe_function;
+    }
+
+    // assemble the system matrix with given local assembling, solution and rhs
+    const TFESpace2D * fe_space = &s.fe_space;
+    BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
+    int N_Matrices = 1;
+    double * rhs_entries = s.rhs.get_entries();
+
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
+    TSquareMatrix2D * matrix = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+
+    BoundValueFunct2D * non_const_bound_value[1] {example.get_bd()[0]};
+
+    // reset right hand side and matrix to zero (just in case)
+    s.rhs.reset();
+    matrix->reset();
+
+    // assemble
+    Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
+               &fe_space, &boundary_conditions, non_const_bound_value, la);
+
+    // apply local projection stabilization method
+    if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION
+        && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
+    {
+      if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
+      {
+        UltraLocalProjection((void *)&matrix, false);
+      }
+      else
+      {
+        ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
+      }
+    }
+
+    bool finest_grid = &systems.front() == &s;
+    if(mdml && !finest_grid)
+    {
+      UpwindForConvDiff(la.GetCoeffFct(), matrix, rhs_entries, fe_space,
+                        nullptr, nullptr, false);
+    }
+
+    // copy Dirichlet values from rhs to solution vector (this is not really
+    // necessary in case of a direct solver)
+    s.solution.copy_nonactive(s.rhs);
+  }
+
+  // when using afc, do it now
+  if(!db["algebraic_flux_correction"].is("none") )
+  {
+    do_algebraic_flux_correction();
+  }
+
+}
+
+/** ************************************************************************ */
+void CD2D::check_convection_field(const TFEFunction2D* convection_field) const
+{
+  if (convection_field)
+  {
+
+  }
 }
 

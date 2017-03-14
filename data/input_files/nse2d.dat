@@ -20,7 +20,7 @@ boundary_file: Default_UnitSquare
 geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 
 ## number of uniform refinements of the initial mesh
-refinement_n_initial_steps: 5
+refinement_n_initial_steps: 6
 
 ## Determine which kind of problem you want to solve. A value of 0 means 
 ## not set. Other values have the following meanings: 1: stationary 
@@ -33,7 +33,7 @@ problem_type: 5   [ 0, 6 ]
 ## Set the verbosity of ParMooN. The higher the number, the more will 
 ## output you will get. Such output will be written to console and the 
 ## 'outfile'. 
-verbosity: 1   [ 1, 5 ]
+verbosity: 3   [ 1, 5 ]
 
 ## Choose which example to run. Note that depending on the type of 
 ## problem you want to solve, different values are meaningful here. 
@@ -42,11 +42,11 @@ verbosity: 1   [ 1, 5 ]
 ## 1 - driven cavity
 ## 2 - sine cosine
 ## 3 - flow around cylinder
-example: 0
+example: 15
 
 ## This parameter can control, whether an output methodof a system 
 ## class will produce VTK output or not. 
-output_write_vtk: false   { true, false }
+output_write_vtk: true   { true, false }
 
 ## Draw a postscript file of the domain. This only works in two space 
 ## dimensions. Usually this is used in the main program. 
@@ -69,7 +69,7 @@ output_vtk_directory: .
 output_basename: parmoon
 
 ## The maximum number of iterations to perform in a non-linear loop. 
-nonlinloop_maxit: 100   [ 0, 1000 ]
+nonlinloop_maxit: 10   [ 0, 1000 ]
 
 ## At which absolute residual to break the nonlinear loop. 
 nonlinloop_epsilon: 1e-10   [ 0, 1 ]
@@ -198,12 +198,13 @@ multigrid_vanka_damp_factor: 1   [ 0, 1 ]
 # -1 : use lowest order nonconforming elements
 # -2 : use Q2/P1 discont on quadrilaterals
 # -3 : use Q3/P2 discont on quadrilaterals
-VELOCITY_SPACE: 2
-PRESSURE_SPACE: 1
+VELOCITY_SPACE: 12
+PRESSURE_SPACE: -4711
 
 ----------------------------------------------------------------------
 # diffusion_coefficient=1/reynolds_number
-reynolds_number:  1.0e3
+reynolds_number:  1.
+RE_NR:	1
 
 ----------------------------------------------------------------------
 # type of discretization: 
@@ -220,7 +221,7 @@ DISCTYPE:  1
 ----------------------------------------------------------------------
 # type of Navier-Stokes system
 #
-NSTYPE: 14
+NSTYPE: 3
 
 ----------------------------------------------------------------------
 # Laplace type 
@@ -248,4 +249,9 @@ UPWIND_ORDER: 0
 DELTA0:  0.25
 DELTA1:  0.00
 
-
+----------------------------------------------------------------------
+# External Parameters
+P1: 1
+P2: 0.5
+P3: 1
+FLOW_PROBLEM_TYPE: 5

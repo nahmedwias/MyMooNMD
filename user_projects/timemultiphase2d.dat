@@ -1,0 +1,146 @@
+[ ParMooN database for Multiphase2D ]
+
+########################## Main Parameters changing 
+outfile: multiphase_output.out
+refinement_n_initial_steps: 6
+
+FRICTION_TYPE: 1
+ENDTIME: 2.
+TIMESTEPLENGTH: 0.01
+
+fluid_density: 1.5.   [ 0, 1e6 ]
+fluid_dynamic_viscosity: 0.00195   [ 0, 1e6 ]
+reynolds_number: 769.23   [ 0, 1e6 ]
+RE_NR:	769.23
+
+## Beltrami/variable viscosity example 
+P1: 1  
+P2: 10	 
+P3: 1
+
+## Position of bubble
+P4: 0.5	 # x0 position
+P5: 0.06 # y0 position
+P6: 0.1  # circle radius
+
+## Two phase flow
+P7: 1. # density 2 - min - gas
+P8: 0.0013 # viscosity 2 - min - gas
+
+
+########################## Fixed Parameters 
+boundary_file: Default_UnitSquare
+geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+#boundary_file: ../mesh/RTInstab_Fraigneau.PRM
+#geo_file: ../mesh/RTInstab_Fraigneau.GEO
+#boundary_file: ../mesh/ladle_2D/00MYLADLE_v3.PRM
+#geo_file: ../mesh/ladle_2D/00MYLADLE_v3.GEO
+
+# 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
+problem_type: 6   [ 0, 6 ]
+verbosity: 3   [ 1, 5 ]
+
+output_write_vtk: true   { true, false }
+output_write_ps: false   { true, false }
+output_compute_errors: true   { true, false }
+output_vtk_directory: .
+output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
+
+nonlinloop_maxit: 6   [ 0, 1000 ]
+nonlinloop_epsilon: 1e-8   [ 0, 1 ] 
+nonlinloop_damping_factor: 1   [ 0, 1 ]
+nonlinloop_slowfactor: 1   [ 0, 10 ]
+nonlinloop_scale_epsilon_with_size: false   { true, false }
+
+solver_type: direct   { direct, iterative }
+direct_solver_type: umfpack   { mumps, pardiso, umfpack }
+iterative_solver_type: fgmres   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
+max_n_iterations: 100   { 0, 1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000 }
+min_n_iterations: 0   { 0, 1, 2, 3, 4, 5, 10 }
+residual_tolerance: 1e-10   [ 0, 100 ]
+residual_reduction: 0   [ 0, 1 ]
+gmres_restart: 20   [ 1, 1000 ]
+
+preconditioner: no_preconditioner   { least_squares_commutator, least_squares_commutator_boundary, multigrid, no_preconditioner, semi_implicit_method_for_pressure_linked_equations }
+multigrid_type: standard {standard, mdml}.
+saddle_point_preconditioner_direct_velocity_solve: true   { true, false }
+damping_factor: 1   [ 0, 1 ] 
+multigrid_n_levels: 0   [ 0, 5 ]
+damping_factor_finest_grid: 0.8   [ 0, 1 ]
+multigrid_cycle_type: V   { F, V, W }
+multigrid_smoother: cell_vanka_jacobi   { batch_vanka, cell_vanka, no_smoother, nodal_vanka, cell_vanka_jacobi }
+multigrid_smoother_coarse: direct_solve   { batch_vanka, cell_vanka, direct_solve, no_smoother, nodal_vanka, cell_vanka_jacobi }
+multigrid_correction_damp_factor: 0.8   [ 0, 1 ]
+multigrid_n_pre_smooth: 2   [ 1, 10 ]
+multigrid_n_post_smooth: 2   [ 1, 10 ]
+multigrid_coarse_residual: 0.1   [ 0, 1 ]
+multigrid_coarse_max_n_iterations: 10   [ 1, 100 ]
+multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
+
+VELOCITY_SPACE: 12
+PRESSURE_SPACE: -4711
+ANSATZ_ORDER: 1
+NSTYPE: 3
+LAPLACETYPE: 1
+algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
+
+DISCTYPE:  1
+NSE_NONLINEAR_FORM: 0
+UPWIND_ORDER: 0
+
+# 0:ForEuler # 1:BackEuler # 2:CN # 3:FractStep # 4:IMEX
+TIME_DISC: 2
+STARTTIME: 0
+time_discretization: 2	{ 0, 1, 2, 3, 4 }
+
+########################## Fixed Parameters BRANCH-SPECIFIC
+########################## needs to be cleaned...
+diffusion_coefficient: 1.   [ 0, 1e6 ]
+PE_NR:	1.
+
+dimensional_nse: true   { true, false }
+coupling_nse_cd: true   { true, false }
+coupling_cd_nse: true   { true, false }
+solve_cd: true   { true, false }	
+
+## See the class 'Example' and its derived classes.
+## 0 - bsp1 (sincos)  - in the standard TNSE2D program
+## 1 - lin_space_time - in the standard TNSE2D program
+## -1- linearspacetime- in the standard TCD2D program
+## 0 - expsincos 	  - in the standard TCD2D program
+## 1 - sinsinsin	  - in the standard TCD2D program
+## 2 - sincos		  - in the standard TCD2D program
+## 3 - rotatingbodies - in the standard TCD2D program
+## ONLY THE EXAMPLES BELOW SHOULD BE USED IN THE MULTIPHASE PROGRAM
+## 10- bsp1 (sincos)  - in the multiphase program - FOR TNSE2D
+## 10- SinCos    	  - in the multiphase program - FOR TCD2D
+## 20- Coupling NSE_CD- in the multiphase program - FOR TNSE2D
+## 20- Coupl.ExpSinCos- in the multiphase program - FOR TCD2D
+## 21- Coupling NSE_CD- in the multiphase program - FOR TNSE2D
+## 21- Coupl.SinSinSin- in the multiphase program - FOR TCD2D
+## 22- SEMICIRCLE	  - in the multiphase program - FOR TNSE2D
+## 22- SEMICIRCLE	  - in the multiphase program - FOR TCD2D
+## 30- Variable nu Po.- in the multipahse program - FOR TNSE2D
+## 30- VariableViscoL.- in the multiphase program - FOR TCD2D
+## 31- Variable nu Exp- in the multiphase program - FOR TNSE2D
+## 31- VariableViscoE.- in the multiphase program - FOR TCD2D
+## 32- CD>NSESinCosExp- in the multiphase program - FOR TNSE2D
+## 32- VariableVisco32- in the multiphase program - FOR TCD2D
+## 40- DAM BREAK	  - in the multiphase program - FOR TNSE2D
+## 40- DAM BREAK	  - in the multiphase program - FOR TCD2D
+## 41- RAYLEIGHTAYLOR - in the multiphase program - FOR TNSE2D
+## 41- RAYLEIGHTAYLOR - in the multiphase program - FOR TCD2D
+## 42- RAYLEIGHTAYLOR2- in the multiphase program - FOR TNSE2D
+## 42- RAYLEIGHTAYLOR2- in the multiphase program - FOR TCD2D
+## 50- GasStirringTest- in the multiphase program - FOR TNSE2D
+## 50- GasStirringTest- in the multiphase program - FOR TCD2D
+example: 0   [ -1, 100 ]
+
+########################## Parameters need to be cleaned
+Par_P0: 0
+Par_P3: 1
+# constant convection in x- and y-direction
+user_parameter1: 2
+user_parameter2: 2
+
+
