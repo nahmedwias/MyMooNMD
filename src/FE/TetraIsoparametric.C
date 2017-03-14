@@ -806,8 +806,7 @@ void TTetraIsoparametric::SetCell(TBaseCell *cell)
            }
          }
 
-
-    if(ApproximationOrder==2 && TDatabase::ParamDB->MOVING_BOUNDARY && N_AuxVertices==3)
+      if(ApproximationOrder==2 && TDatabase::ParamDB->MOVING_BOUNDARY && N_AuxVertices==3)
       {
 //      additional vertices should have been already added in this face in the main program
         LocIsoDOF[0] = 1;
@@ -856,6 +855,7 @@ void TTetraIsoparametric::SetCell(TBaseCell *cell)
      {
        cout<< " ApproximationOrder " <<ApproximationOrder<< " " << N_AuxVertices << " " <<TDatabase::ParamDB->MOVING_BOUNDARY<< endl;
       OutPut("Tetra isoparametric for approximation order other than 2 has to be implemented !!! "<<endl;);
+      OutPut("set USE_ISOPARAMETRIC: 0 "<<endl;);
       exit(0);
 
       }
@@ -863,6 +863,9 @@ void TTetraIsoparametric::SetCell(TBaseCell *cell)
    } // endfor i
 //  OutPut(N_AuxPoints << " : N_AuxPoints, " <<  " N_QuadPoints  :" << N_QuadPoints << endl);
 
+///@todo There was a special routine in MooNMD for isoparametric finite elements of the 
+/// standard benchmark problem 'Flow around a circular cylinder in 3d' for second and
+/// third order tetrahedra. This routine should be available again in future. 
 
 //   if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY==1)
 //   {
@@ -871,6 +874,7 @@ void TTetraIsoparametric::SetCell(TBaseCell *cell)
 //     // benchmark
 //     // one has to change in addition in FEDatabase3D.C , ~ line 748
 //    cout<< "Check tetraisoparametric.C !!!!!!!!!!!!!!!!!!!!! "<<endl;
+// 
 //     exit(0);
 //     // no boundary face
 //     if(N_AuxPoints == 0)
@@ -1020,7 +1024,7 @@ void TTetraIsoparametric::SetCell(TBaseCell *cell)
 //       } // endfor i
 //     } // endif
 //   }
-//  
+ 
 
   /*if (N_AuxPoints)
   {
