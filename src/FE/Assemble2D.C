@@ -50,9 +50,10 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
   ErrMsg("This function is deprecated/outdated. Use the one with the "
          << "LocalAssembling2D object!");
   LocalAssembling2D la(LocalAssembling2D_type::Custom, *Parameters, *DiscreteForm);
+  double *param_stab;
   Assemble2D(n_fespaces, fespaces, n_sqmatrices, sqmatrices, n_matrices,
              matrices, n_rhs, rhs, ferhs, BoundaryConditions, BoundaryValues,
-             la, 
+             la, param_stab,
 #ifdef __3D__
              Aux2D3D,
 #endif
@@ -9331,7 +9332,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
                 TMatrix2D** matrices, int n_rhs, double** rhs,
                 const TFESpace2D** ferhs, BoundCondFunct2D** BoundaryConditions,
                 BoundValueFunct2D** BoundaryValues, LocalAssembling2D& la,
-                int AssemblePhaseID)
+                double *stab_param, int AssemblePhaseID)
 {
     FE2D LocalUsedElements[N_FEs2D];
     int **GlobalNumbers, **BeginIndex;
@@ -9575,6 +9576,10 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
                      Param, AuxArray, cell, N_AllMatrices, n_rhs, LocMatrices,
                      LocRhs);
 
+    if(stab_param)
+    {
+      stab_param[i] = TDatabase::ParamDB->P14;
+    }
     int N_Joints = cell->GetN_Joints();
     // ####################################################################
     // add local/cellwise matrices to global matrices (ansatz == test)

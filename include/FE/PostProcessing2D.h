@@ -61,6 +61,18 @@ class PostProcessing2D
   */
   std::vector<double> timeValues;
 
+  /**
+   * This pointer points to scalar values for all cells set by
+   * @a setCellValues .
+   * 
+   * Currently there can be just one value.
+   */
+  double* cellValues;
+  
+  /**
+   * A descriptive name for @a cellValues .
+   */
+  std::string cellValuesName;
 
   ///@brief sort a list of vertices according to nodes id
   ///@todo replace the array by a vector
@@ -79,6 +91,20 @@ class PostProcessing2D
 
   /// @brief add a FEVectFunct into this output object
   void add_fe_vector_function(const TFEVectFunct2D *fevectfunct);
+
+  /**
+   * @brief add values for each cell
+   *
+   * The input vector is assumed to be order according to the cells in the 
+   * collection. The size is GetN_Cells().
+   * 
+   * @param in_cellValues vector containing the values for each cell
+   *
+   * @todo care about const correctness
+   */
+  void setCellValues(double *in_cellValues);
+  
+  void setCellValuesName(std::string &name);
   
   /**
      @brief write data to files during time dependent problems.

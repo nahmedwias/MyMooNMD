@@ -173,10 +173,15 @@ class Time_NSE2D_Merged
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
 
-
+    /// 
     bool is_rhs_and_mass_matrix_nonlinear;
-    //
+    ///
     BlockVector rhs_from_time_disc;
+    /// 
+    bool compute_param;
+    std::shared_ptr<TFESpace2D> stab_space;
+    std::vector<double> stab_param;
+    std::shared_ptr<TFEFunction2D> stab_param_function;
 public:
     Time_NSE2D_Merged(const TDomain& domain, const ParameterDatabase& param_db,
                int reference_id = -4711);

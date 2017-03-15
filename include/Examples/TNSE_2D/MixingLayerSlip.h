@@ -5,6 +5,163 @@ double DIMENSIONLESS_VISCOSITY;
 
 #define U_INFTY 1
 
+#include <vector>
+#include <Time_NSE2D_Merged.h>
+#include <algorithm>
+
+namespace Mixing_layer
+{
+  std::vector<double> layers;
+  size_t nlayers;
+  std::vector<double>xDofs, yDofs;
+  size_t nDofs;
+  
+  std::vector< double > temporal_mean_u1; 
+  std::vector< double > temporal_mean_u2; 
+  std::vector< double > R11; 
+  std::vector< double > R22;
+  
+  void fill_arrays(const Time_NSE2D_Merged& tnse2d)
+  {
+     const TFESpace2D& space = tnse2d.get_velocity_space();
+     nDofs=space.GetN_DegreesOfFreedom();
+     
+     xDofs.resize(nDofs); yDofs.resize(nDofs); 
+    
+    for(size_t i=0; i<nDofs; ++i)
+      space.GetDOFPosition(i, xDofs.at(i), yDofs.at(i));
+    
+    
+    nlayers =0;
+    layers.resize(10000);
+    
+    for(size_t i=0; i<nDofs; i++)
+    {
+      if(fabs(xDofs.at(i)) < 1e-6 )
+      {
+        layers.at(nlayers) = yDofs.at(i);
+        nlayers++;
+      }
+    }
+    layers.shrink_to_fit();
+    
+    std::sort(layers.begin(), layers.begin()+nlayers);
+  
+    temporal_mean_u1.resize(nlayers, 0.);
+    temporal_mean_u2.resize(nlayers, 0.);
+    R11.resize(nlayers, 0.);
+    R22.resize(nlayers, 0.);
+  }
+  
+  void compute_mean_velocity(const Time_NSE2D_Merged& tnse2d);
+  
+};
+
+void Mixing_layer::compute_mean_velocity(const Time_NSE2D_Merged& tnse2d)
+{
+  
+  
+  const TFEVectFunct2D& U = tnse2d.get_velocity();
+  size_t nuDofs = U.GetComponent(0)->GetLength();
+  const std::vector<double> u1(U.GetComponent(0)->GetValues(), 
+                           U.GetComponent(0)->GetValues()+nuDofs);
+  const std::vector<double> u2(U.GetComponent(1)->GetValues(), 
+                           U.GetComponent(1)->GetValues()+nuDofs);
+ 
+  std::vector<double> u1_spt_mean(nlayers), u2_spt_mean(nlayers);
+  std::vector<int> counts_ndofs_per_layer(nlayers);
+  for(size_t i=0; i<u1.size(); ++i)
+  {
+    for(size_t j=0; j<nlayers; ++j)
+    {
+      if(fabs(yDofs[i]-layers[j]) < 1e-6)
+      {
+        u1_spt_mean.at(j) = u1_spt_mean.at(j) + u1.at(i);
+        u2_spt_mean.at(j) = u2_spt_mean.at(j) + u2.at(i);
+        
+        counts_ndofs_per_layer.at(j)++;
+        break;
+      }
+    }
+  }
+  // compute the average
+  for(size_t i=0; i<nlayers; ++i)
+  {
+    u1_spt_mean.at(i) /= counts_ndofs_per_layer.at(i);
+    u2_spt_mean.at(i) /= counts_ndofs_per_layer.at(i);
+  }
+  
+  // temporal mean velocity profile
+  double step_length=TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double currentTime = TDatabase::TimeDB->CURRENTTIME;
+  double tstart = TDatabase::TimeDB->T0;
+  
+  double factor;
+  if(currentTime >= tstart)
+    factor= step_length/(currentTime - tstart + step_length);
+  else
+    factor = step_length/(currentTime+step_length);
+  
+  for(size_t i=0; i<u1_spt_mean.size(); i++)
+  {
+    temporal_mean_u1.at(i) = temporal_mean_u1.at(i)
+        + factor*(u1_spt_mean.at(i) - temporal_mean_u1.at(i));
+    temporal_mean_u2.at(i) = temporal_mean_u2.at(i)
+        + factor*(u2_spt_mean.at(i) - temporal_mean_u2.at(i));
+  }
+  
+  // computation of rms velocity profile
+  // 1. add the product of velocities 
+  std::vector<double> u1u1_spt_mean(nlayers);
+  std::vector<double> u2u2_spt_mean(nlayers);
+  for(size_t i=0; i<u1.size(); ++i)
+  {
+    for(size_t j=0; j<nlayers; ++j)
+    {
+      if(fabs(yDofs[i]-layers[j]) < 1e-6)
+      {
+        u1u1_spt_mean[j] = u1u1_spt_mean[j] + u1[i]*u1[i];
+        u2u2_spt_mean[j] = u2u2_spt_mean[j] + u2[i]*u2[i];
+        break;
+      }
+    }
+  }
+  
+  //2. compute the average
+  for(size_t i=0; i<nlayers; ++i)
+  {
+    u1u1_spt_mean.at(i) /= counts_ndofs_per_layer.at(i);
+    u2u2_spt_mean.at(i) /= counts_ndofs_per_layer.at(i);
+  }
+  //3. compute the Reynold stress 
+  for(size_t i=0; i<u1u1_spt_mean.size(); ++i)
+  {
+    R11.at(i) = R11.at(i) + factor*(u1u1_spt_mean.at(i) - R11.at(i));
+    R22.at(i) = R22.at(i) + factor*(u2u2_spt_mean.at(i) - R22.at(i));
+  }
+  
+  std::vector<double> rms_u1(nlayers), rms_u2(nlayers);
+  // now compute the rms velocities
+  for(size_t i=0; i<nlayers; ++i)
+  {
+    rms_u1.at(i) = R11[i] - pow(temporal_mean_u1.at(i), 2);
+    rms_u2.at(i) = R22[i] - pow(temporal_mean_u2.at(i), 2);
+  }
+  
+  // print out the 
+  double rms_u, rms_v;
+  double t = TDatabase::TimeDB->CURRENTTIME; 
+  for(size_t i=0; i<nlayers; ++i)
+  {
+    rms_u = sqrt(fabs(rms_u1.at(i)));
+    rms_v = sqrt(fabs(rms_u2.at(i)));
+    Output::print("t ", std::scientific, t," ", setw(8), layers.at(i), 
+                  " mu ", setw(8), temporal_mean_u1.at(i), " mv ", setw(8),
+                  temporal_mean_u2.at(9), " rms_u ", setw(8), rms_u, " rms_v ", 
+                  setw(8), rms_v);
+  }
+}
+
 void ExampleFile()
 {
   Output::print("Example: MixingLayerSlip.h (correct vorticity thickness,");
@@ -215,5 +372,8 @@ void EvaluateSolution(const Time_NSE2D_Merged &tnse2d, double & zero_vort)
   double t=TDatabase::TimeDB->CURRENTTIME;
   Output::print( t, " ", "vorticity thickness: ", thickness,
                  " ", thickness/zero_vort);
+  
+  /// computation of the mean velocity profile
+  
 }
 #endif // MIXINGLAYERSLIP_H
