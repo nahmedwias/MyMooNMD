@@ -281,8 +281,6 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
     stabilization_parameters_equal_order(Mult, param, coeff, stab_param);
   double tau_m = stab_param[0];
   double tau_c = stab_param[1];
-  tau_m = TDatabase::ParamDB->DELTA0*hK;
-  tau_c = TDatabase::ParamDB->DELTA1*hK;
   
   for(int i=0; i<N_U; ++i)
   {
@@ -444,8 +442,7 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
     stabilization_parameters_equal_order(Mult, param, coeff, stab_param);
   double tau_m = stab_param[0];
   double tau_c = stab_param[1];
-   tau_m = TDatabase::ParamDB->DELTA0*hK;
-  tau_c = TDatabase::ParamDB->DELTA1*hK;
+  
   for(int i=0; i<N_U; ++i)
   {
     test10 = Orig0[i];
@@ -571,7 +568,7 @@ void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK,
   double u2=param[1];
 
   double tau_m =  TDatabase::ParamDB->DELTA0*hK*hK;
-   tau_m = TDatabase::ParamDB->DELTA0*hK;
+  
   double test10, test01, test00;  
   int N_U = N_BaseFuncts[0];
   for(int i=0; i<N_U; ++i)
