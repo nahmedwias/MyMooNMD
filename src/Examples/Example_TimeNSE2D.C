@@ -3,6 +3,8 @@
 #include <MainUtilities.h>
 #include <Time_NSE2D.h>
 #include <Time_NSE2D_Merged.h>
+#include <algorithm> // don't know why we need this:: otherwise algorithm is needed in MixingLayerSlip for sorting
+                    // and compiler complains about namespace ...
 #include <FEDatabase2D.h>
 
 #include <string>

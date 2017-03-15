@@ -5,7 +5,11 @@
 #include <TriaAffin.h>
 #include <QuadBilinear.h>
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::ofstream;
+using std::string;
+using std::ios_base;
 
 PostProcessing2D::PostProcessing2D(const ParameterDatabase& param_db)
  : testcaseDir(), testcaseName(), period(1), FEFunctionArray(),
@@ -66,6 +70,16 @@ void PostProcessing2D::add_fe_vector_function(
     }
   }
   FEVectFunctArray.push_back(fevectfunction);
+}
+
+void PostProcessing2D::setCellValues(double *in_cellValues)
+{
+  this->cellValues = in_cellValues;
+}
+
+void PostProcessing2D::setCellValuesName(std::string &name)
+{
+  this->cellValuesName = name;
 }
 
 void PostProcessing2D::write(double current_time)
@@ -279,6 +293,21 @@ void PostProcessing2D::writeVtk(std::string name)
     }
   }
   dat << endl << endl;
+  
+  // if we have cell values ...
+  if(cellValues!=nullptr)
+  {
+      // ... write them into the vtk
+      dat << "CELL_DATA " << N_Elements << endl;
+      dat << "SCALARS " << cellValuesName << " float 1" << endl;
+      dat << "LOOKUP_TABLE default" << endl;
+      for(int i=0;i<N_Elements;i++)
+      {
+        dat << cellValues[i] << endl;
+      }
+  }
+  
+  dat << endl;
   dat << "POINT_DATA " << N_Vertices << endl;
 
   // function values

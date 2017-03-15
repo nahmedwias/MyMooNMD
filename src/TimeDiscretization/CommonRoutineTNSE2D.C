@@ -15,24 +15,34 @@ void stabilization_parameters_equal_order(double Mult, double* u, double* coeff,
   double y1 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[1];
   double x2 = TDatabase::ParamDB->INTERNAL_VERTEX_X[2];
   double y2 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[2];
-
+ 
   double d11, d12, d21, d22;
   double rec_detjk = 1./coeff[19];
+  
+  
   // triangle
   if (TDatabase::ParamDB->INTERNAL_VERTEX_X[3]== -4711)
   {
-    d11 = (y2-y1) * rec_detjk;  //dxi/dx
-    d12 = (x1-x2) * rec_detjk;  //dxi/dy
+    d11 = (y2-y0) * rec_detjk;  //dxi/dx
+    d12 = (x0-x2) * rec_detjk;  //dxi/dy
     d21 = (y0-y1) * rec_detjk;  //deta/dx
     d22 = (x1-x0) * rec_detjk;  //deta/dy
   }
   else
   {
+    double x3 = TDatabase::ParamDB->INTERNAL_VERTEX_X[3];
+    double y3 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[3];
+    double xc1=(-x0 + x1 + x2 - x3) * 0.25;
+    double xc2=(-x0 - x1 + x2 + x3) * 0.25;
+    double yc1=(-y0 + y1 + y2 - y3) * 0.25;
+    double yc2=(-y0 - y1 + y2 + y3) * 0.25;
+    
+    double rec_detjk = 1./(xc1*yc2 - xc2*yc1);
     // quadrilateral
-    d11 = (y2-y1) * 0.5 * rec_detjk;  //dxi/dx
-    d12 = (x1-x2) * 0.5 * rec_detjk;  //dxi/dy
-    d21 = (y0-y1) * 0.5 * rec_detjk;  //deta/dx
-    d22 = (x1-x0) * 0.5 * rec_detjk;  //deta/dy
+    d11 = yc2 * rec_detjk;  //dxi/dx
+    d12 = -xc2 * rec_detjk;  //dxi/dy
+    d21 = -yc1 * rec_detjk;  //deta/dx
+    d22 = xc1 * rec_detjk;  //deta/dy
   }
 
   double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -55,4 +65,8 @@ void stabilization_parameters_equal_order(double Mult, double* u, double* coeff,
 
   params[0] = tau_m;
   params[1] = tau_c;
+  
+  // for output 
+  TDatabase::ParamDB->P14 = tau_m;
+  TDatabase::ParamDB->P15 = tau_c;
 }

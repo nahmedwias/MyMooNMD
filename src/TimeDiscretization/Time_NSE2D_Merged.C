@@ -135,6 +135,18 @@ Time_NSE2D_Merged::Time_NSE2D_Merged(const TDomain& domain,
   // post-processing
   if(db["example"].is(3))
     this->prepared_postprocessing(coll);
+  // stabilization parameter
+  if(TDatabase::ParamDB->NSTYPE==14)
+  {
+    stab_space = std::make_shared<TFESpace2D>(coll, (char*)"stab space", 
+                       (char*)"stab space", example.get_bc(2), DiscP_PSpace, 0, nullptr);
+    
+    this->stab_param.resize(coll->GetN_Cells(), 0);
+    
+    stab_param_function=
+   std::make_shared<TFEFunction2D>(stab_space.get(), (char*)"stab", (char*)"stab",
+                                   stab_param.data(), coll->GetN_Cells());
+  }
 
   if(usingMultigrid)
   {
@@ -186,6 +198,14 @@ Time_NSE2D_Merged::Time_NSE2D_Merged(const TDomain& domain,
 
   outputWriter.add_fe_vector_function(&this->get_velocity());
   outputWriter.add_fe_function(&this->get_pressure());
+  
+  if(TDatabase::ParamDB->NSTYPE==14)
+  {
+    outputWriter.add_fe_function(stab_param_function.get());
+    outputWriter.setCellValues(stab_param.data());
+    std::string name = "param";
+    outputWriter.setCellValuesName(name);
+  }
 
   // print out the information (cells, dofs, etc)
   this->output_problem_size_info();
@@ -261,6 +281,7 @@ void Time_NSE2D_Merged::set_parameters()
   // the only case where one have to re-assemble the right hand side
   if(db["disctype"].is("supg"))
     is_rhs_and_mass_matrix_nonlinear = true;
+  compute_param = false;
 }
 
 /**************************************************************************** */
@@ -430,9 +451,11 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
   if(this->systems.size() > 1)
     this->restrict_function();
   // assemble the nonlinear matrices
+  compute_param = true;
   for(System_per_grid & s : systems)
   {
     call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
+    compute_param = false;
     //BEGIN DEBUG
     // cout <<db["time_discretization"]<<endl;
     // s.solution.print("s");
@@ -759,12 +782,17 @@ void Time_NSE2D_Merged::call_assembling_routine(Time_NSE2D_Merged::System_per_gr
   LocalAssembling2D la(type, fefunctios.data(),
                            this->example.get_coeffs());
 
+  double *temp;
+  if(compute_param)
+    temp = stab_param.data();
+  else
+    temp = nullptr;
   // assemble all the matrices and right hand side
   Assemble2D(spaces_mat.size(), spaces_mat.data(),
                sqMatrices.size(), sqMatrices.data(),
                rectMatrices.size(), rectMatrices.data(),
                rhs_array.size(), rhs_array.data(), spaces_rhs.data(),
-               bc.data(), bv.data(), la);
+               bc.data(), bv.data(), la, temp);
   // we are assembling only one mass matrix M11, but in general we need the
   // diagonal block M22 to be the same
   // For SUPG method, mass matrix is non-linear and will be changed during 

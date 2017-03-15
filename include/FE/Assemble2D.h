@@ -33,6 +33,7 @@ void Assemble2D(int n_fespaces,
                 BoundCondFunct2D **BoundaryConditions,
                 BoundValueFunct2D **BoundaryValues,
                 LocalAssembling2D& la
+                , double *stab_param=nullptr
 #ifdef __3D__
                 , TAux2D3D *Aux2D3D
 #endif
