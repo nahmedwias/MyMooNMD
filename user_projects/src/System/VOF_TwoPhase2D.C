@@ -85,6 +85,18 @@ void VOF_TwoPhase2D::manage_example_parameters()
 //      this->solve_convection_ = true;
       break;
   }
+
+  if (this->tnse_variable_fluid_) // using variable rho and mu requires
+  {                               // NSTYPE 3 or 4, LAPLACETYPE 1
+    if (TDatabase::ParamDB->LAPLACETYPE != 1
+        || (TDatabase::ParamDB->NSTYPE != 4
+        &&  TDatabase::ParamDB->NSTYPE != 3))
+    {
+      ErrThrow("In order to assemble TNSE2D with variable fluid properties,"
+          "LAPLACTYPE must be 1 and NSTYPE 3 or 4. If the problem contains"
+          " slip conditions, you must use NSTYPE 4.");
+    }
+  }
 }
 
 /** Update the vectors mu and rho with the phase fraction vector,
