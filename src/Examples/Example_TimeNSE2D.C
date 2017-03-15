@@ -12,6 +12,10 @@ namespace lin_space_time
 {
 #include "TNSE_2D/linear_space_time.h"
 }
+namespace sincosexp
+{
+#include "TNSE_2D/SinCosExp.h"
+}
 
 Example_TimeNSE2D::Example_TimeNSE2D(
   const ParameterDatabase& user_input_parameter_db)
@@ -68,7 +72,30 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       
       lin_space_time::ExampleFile();
       break;
-    case 2:
+    case 2: // SinCosExp
+      /** exact_solution */
+      exact_solution.push_back(sincosexp::ExactU1 );
+      exact_solution.push_back(sincosexp::ExactU2 );
+      exact_solution.push_back(sincosexp::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back(sincosexp::BoundCondition );
+      boundary_conditions.push_back(sincosexp::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back(sincosexp::U1BoundValue );
+      boundary_data.push_back(sincosexp::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients =sincosexp::LinCoeffs;
+
+      initialCOndtion.push_back(sincosexp::InitialU1);
+      initialCOndtion.push_back(sincosexp::InitialU2);
+
+     sincosexp::ExampleFile();
+
       break;
     default:
       ErrThrow("Unknown Time dependent Example_TimeNSE2D example!");
