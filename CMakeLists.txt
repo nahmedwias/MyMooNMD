@@ -254,6 +254,15 @@ target_compile_definitions(timemultiphase2d PUBLIC -D__2D__)
 # Link in the required libraries
 target_link_libraries(timemultiphase2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### TLinearElasticity2D ###
+# Standard executable target.
+add_executable(tlinearelasticity2d ${PROJECT_SOURCE_DIR}/user_projects/TLinearElasticity2D_ParMooN.C)
+set_target_properties(tlinearelasticity2d PROPERTIES OUTPUT_NAME parMooN_tlinearelasticity2d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(tlinearelasticity2d PUBLIC -D__2D__)
+# Link in the required libraries
+target_link_libraries(tlinearelasticity2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ### Standard 3D Programs ###
 
 ### CD3D ###
