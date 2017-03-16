@@ -1,7 +1,32 @@
 #include <Time_LinElastic2D.h>
 #include <Database.h>
+#include <DirectSolver.h>
+#include <MainUtilities.h>
 
 
+/**************************************************************************** */
+ParameterDatabase get_default_Time_LinElastic2D_parameters()
+{
+  Output::print<5>("creating a default Time_LinElastic2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("TLinElastic2D parameter database");
+
+  //set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  // a default time database
+  ParameterDatabase time_db = ParameterDatabase::default_time_database();
+  db.merge(time_db,true);
+
+  return db;
+}
 
 
 /**************************************************************************** */
@@ -35,7 +60,11 @@ Time_LinElastic2D::Time_LinElastic2D(const TDomain& domain,
                                      const ParameterDatabase& param_db,
                                      const Example_TimeLinElastic2D& ex,
                                      int reference_id)
-: systems_()
+: db_(get_default_Time_LinElastic2D_parameters()),
+  example_(ex), solver_(param_db), outputwriter_(param_db),
+  systems_()
 {
+  db_.merge(param_db,false);
+
   cout << "CONSTRUCTOR2 OK!" << endl;
 }
