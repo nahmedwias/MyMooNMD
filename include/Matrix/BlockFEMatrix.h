@@ -250,6 +250,41 @@ class BlockFEMatrix : public BlockMatrix
      */
     static BlockFEMatrix Mass_NSE2D(const TFESpace2D& velocity);
 
+    /**
+     * Named constructor for a matrix of ParMooN-specific Time_LinElastic2D.
+     * The matrix takes the block structure
+     *
+     * ( K11 K12 )
+     * ( K21 K22 )
+     *
+     * This structure is used for stiffness.
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param space Ansatz- equals testspace.
+     * @return A newly constructed BlockFEMatrix for Time_LinElastic2D
+     * problems, with 4 blocks.
+     */
+    static BlockFEMatrix LinElastic2D( const TFESpace2D& space);
+
+    /**
+     * Named constructor for a matrix of ParMooN-specific Time_LinElastic2D.
+     * The matrix takes the block structure
+     *
+     * ( M11  0  )
+     * (  0  M22 )
+     *
+     * This structure is used for mass matrix.
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param space Ansatz- equals testspace.
+     * @return A newly constructed BlockFEMatrix for Time_LinElastic2D
+     * problems, with 4 blocks.
+     */
+    static BlockFEMatrix Mass_LinElastic2D( const TFESpace2D& space);
+
+
 #elif __3D__
     /**
      * @brief Named constructor for a block Matrix used in 3D convection-
