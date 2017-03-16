@@ -1,6 +1,6 @@
 /** ************************************************************************
  * 
- * @name         TLinElastic2D
+ * @name         Time_LinElastic2D
  * @brief        store everything needed to solve a 2D linear elastic
  *               problem
  *               
@@ -8,8 +8,8 @@
  * @History      16.03.2017
 **************************************************************************/
 
-#ifndef __TLinElastic2D__
-#define __TLinElastic2D__
+#ifndef __Time_LinElastic2D__
+#define __Time_LinElastic2D__
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
@@ -23,13 +23,13 @@
 #include <utility>
 #include <array>
 
-class TLinElastic2D
+class Time_LinElastic2D
 {
   public:
     int test = 1;
 
     /** @brief constructor*/
-    TLinElastic2D();
+    Time_LinElastic2D();
 
     /*************************************************************/
    /**
@@ -37,20 +37,20 @@ class TLinElastic2D
     * ...needs to be optimized
     */
    //! Delete copy constructor.
-    TLinElastic2D(const TLinElastic2D&) = delete;
+    Time_LinElastic2D(const Time_LinElastic2D&) = delete;
 
    //! Delete move constructor.
-    TLinElastic2D(TLinElastic2D&&) = delete;
+    Time_LinElastic2D(Time_LinElastic2D&&) = delete;
 
    //! Delete copy assignment operator.
-    TLinElastic2D& operator=(const TLinElastic2D&) = delete;
+    Time_LinElastic2D& operator=(const Time_LinElastic2D&) = delete;
 
    //! Delete move assignment operator.
-    TLinElastic2D& operator=(TLinElastic2D&&) = delete;
+    Time_LinElastic2D& operator=(Time_LinElastic2D&&) = delete;
 
    //! Default destructor. Most likely causes memory leaks.
-   ~TLinElastic2D() = default;
+   ~Time_LinElastic2D() = default;
 
 };
 
-#endif // __TLinElastic2D__
+#endif // __Time_LinElastic2D__
