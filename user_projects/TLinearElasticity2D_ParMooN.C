@@ -48,18 +48,20 @@ int main(int argc, char* argv[])
 
 
   /********************************************************************
-   * Creating TLinElastic object
+   * CREATING TLinElastic OBJECT
    ********************************************************************/
   SetTimeDiscParameters(0);    // Initialize parameters for time discretization
-
 
   Example_TimeLinElastic2D ElasticityExample(parmoon_db);
   Time_LinElastic2D ElasticStructure(domain, parmoon_db,ElasticityExample);
 
+  ElasticStructure.assemble_initial_time();
 
+  ElasticStructure.get_lamecoefficients_lambda().write("lambda");
+  ElasticStructure.get_lamecoefficients_mu().write("mu");
+  cout << ElasticStructure.get_db()["lamecoeff_lambda"] << endl;
+  cout << ElasticStructure.get_db()["lamecoeff_mu"] << endl;
   cout << "HELLO WOOOORLD!" << endl;
-  cout << ElasticStructure.test << endl;
-
 
   return 0;
 }
