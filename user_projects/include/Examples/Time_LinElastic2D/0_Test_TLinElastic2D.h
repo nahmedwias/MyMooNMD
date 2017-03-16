@@ -31,7 +31,7 @@ void ExactU2(double x, double y, double *values)
 // initial displacement and velocity
 void InitialU1(double x, double y, double *values)
 {
-  values[0] = 0;
+  values[0] = x+y;
 }
 void InitialU2(double x, double y, double *values)
 {

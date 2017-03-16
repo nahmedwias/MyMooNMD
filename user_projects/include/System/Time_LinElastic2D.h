@@ -116,6 +116,8 @@ class Time_LinElastic2D
     /** @brief store errors  */
 //    std::vector<double> errors_;
 
+    /** @brief write some information (number of cells, dofs, ...) */
+    void output_problem_size_info() const;
 
 
   public:
@@ -151,6 +153,31 @@ class Time_LinElastic2D
 
    //! Default destructor. Most likely causes memory leaks.
    ~Time_LinElastic2D() = default;
+
+   /*************************************************************/
+   /* Getters and setters */
+   const TFESpace2D & get_fe_space() const
+   { return this->systems_.front().fe_space_; }
+   const BlockVector& get_solution() const
+   { return this->systems_.front().solution_; }
+   const BlockVector& get_rhs() const
+   { return this->systems_.front().rhs_; }
+   const TFEVectFunct2D & get_displacement() const
+   { return this->systems_.front().u_; }
+   // try not to use this as it is not const
+   TFEFunction2D *get_displacement_component(int i)
+   { return (i==0) ? this->systems_.front().u_.GetComponent(0)
+                   : this->systems_.front().u_.GetComponent(1); }
+   unsigned int get_size() const
+   { return this->systems_.front().solution_.length(); }
+   const Example_TimeLinElastic2D & get_example() const
+   { return example_; }
+   const ParameterDatabase & get_db() const
+   { return db_; }
+   const BlockFEMatrix & get_stiff_matrix() const
+   { return this->systems_.front().stiffness_matrix_; }
+   const BlockFEMatrix & get_mass_matrix() const
+   { return this->systems_.front().mass_matrix_; }
 
 };
 
