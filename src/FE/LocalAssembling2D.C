@@ -2954,7 +2954,82 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
 //==============================================================================
 void LocalAssembling2D::set_parameters_for_tlinelastic(LocalAssembling2D_type type)
 {
-  N_Terms = 4;
+  // common for all
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Manipulate = NULL;
+
+  switch(type)
+  {
+    case TLinElastic2D_Stiffness:
+      this->N_Terms = 4;
+      this->Derivatives = { D10, D01, D00, D00 };
+      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+      this->N_Rhs = 3; // NOTE: check why is this always three??
+      this->RhsSpace = { 0, 0, 0 };
+
+      this->N_Parameters = 2;
+      this->N_ParamFct = 1;
+      this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+      this->BeginParameter = { 0 };
+      this->N_FEValues = 6;
+      this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+      this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+
+      this->N_Matrices    = 2;
+      this->RowSpace      = { 0, 0 };
+      this->ColumnSpace   = { 0, 0 };
+      this->AssembleParam = TimeNSType3_4NLGalerkin;
+      break;
+
+    case TLinElastic2D_Mass:
+      this->N_Terms = 4;
+      this->Derivatives = { D10, D01, D00, D00 };
+      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+      this->N_Rhs = 3; // NOTE: check why is this always three??
+      this->RhsSpace = { 0, 0, 0 };
+
+      this->N_Parameters = 2;
+      this->N_ParamFct = 1;
+      this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+      this->BeginParameter = { 0 };
+      this->N_FEValues = 6;
+      this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+      this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+
+      this->N_Matrices    = 2;
+      this->RowSpace      = { 0, 0 };
+      this->ColumnSpace   = { 0, 0 };
+      this->AssembleParam = TimeNSType3_4NLGalerkin;
+      break;
+
+    case TLinElastic2D_Rhs:
+      this->N_Terms = 4;
+      this->Derivatives = { D10, D01, D00, D00 };
+      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+      this->N_Rhs = 3; // NOTE: check why is this always three??
+      this->RhsSpace = { 0, 0, 0 };
+
+      this->N_Parameters = 2;
+      this->N_ParamFct = 1;
+      this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+      this->BeginParameter = { 0 };
+      this->N_FEValues = 6;
+      this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+      this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+
+      this->N_Matrices    = 2;
+      this->RowSpace      = { 0, 0 };
+      this->ColumnSpace   = { 0, 0 };
+      this->AssembleParam = TimeNSType3_4NLGalerkin;
+      break;
+    default:
+      ErrThrow("Something is wrong here...");
+      break;
+  }
+
+
   cout << "CONSTRUCTOR OF LOCAL ASSEMBLING OK!" << endl;
 }
 
