@@ -15,7 +15,9 @@
 #include <BlockVector.h>
 #include <FESpace2D.h>
 #include <FEVectFunct2D.h>
-#
+#include <Solver.h>
+#include <PostProcessing2D.h>
+
 #include <Example_TimeLinElastic2D.h>
 
 #include <MainUtilities.h>
@@ -81,13 +83,6 @@ class Time_LinElastic2D
       ~System_per_grid() = default;
     };
 
-    /** @brief a complete system on each grid
-     *
-     * Note that the size of this deque is at least one and larger only in case
-     * of multigrid.
-     */
-    std::deque<System_per_grid> systems_;
-
     /** @brief a local parameter database which controls this class
      *
      * The database given to the constructor will be merged into this one. Only
@@ -96,20 +91,27 @@ class Time_LinElastic2D
      * other parameters such as solver parameters. Those are only in the
      * Solver object.
      */
-//    ParameterDatabase db_;
+    ParameterDatabase db_;
 
     /** @brief Definition of the used example */
-//    const Example_TimeLinElastic2D example_;
+    const Example_TimeLinElastic2D example_;
 
     /** @brief a solver object which will solve the linear system
      *
      * Storing it means that for a direct solver we also store the factorization
      * which is usually not necessary.
      */
-//    Solver<BlockFEMatrix, BlockVector> solver_;
+    Solver<BlockFEMatrix, BlockVector> solver_;
 
     /** @brief class for output handling */
-//    PostProcessing2D outputWriter_;
+    PostProcessing2D outputwriter_;
+
+    /** @brief a complete system on each grid
+     *
+     * Note that the size of this deque is at least one and larger only in case
+     * of multigrid.
+     */
+    std::deque<System_per_grid> systems_;
 
     /** @brief store errors  */
 //    std::vector<double> errors_;
