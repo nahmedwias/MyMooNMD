@@ -25,6 +25,12 @@ ParameterDatabase get_default_Time_LinElastic2D_parameters()
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
   db.merge(time_db,true);
 
+  // add parameters specific to LinElastic2D
+  db.add("lamecoeff_lambda", 0.5,
+         "Lame coefficient lambda.", 0.,1000.);
+  db.add("lamecoeff_mu", 0.5,
+         "Lame coefficient mu.", 0.,1000.);
+
   return db;
 }
 
@@ -39,11 +45,17 @@ Time_LinElastic2D::System_per_grid::System_per_grid(const Example_TimeLinElastic
   rhs_(this->stiffness_matrix_,true),
   solution_(this->stiffness_matrix_,false),
   u_(&fe_space_,(char*)"u", (char*)"u", solution_.block(0),
-     solution_.length(0), 2)
+     solution_.length(0), 2),
+  vector_lambda_(solution_),
+  lambda_(&fe_space_,(char*)"lambda", (char*)"lambda",
+          vector_lambda_.block(0), vector_lambda_.length(0)),
+  vector_mu_(solution_),
+  mu_(&fe_space_,(char*)"mu", (char*)"mu",
+       vector_mu_.block(0), vector_mu_.length(0))
 {
   // K has 4 blocks, M has 2 diagonal blocks
-//  stiffness_matrix_ = BlockFEMatrix::LinElastic2D(fe_space_);
-//  mass_matrix_ = BlockFEMatrix::Mass_LinElastic2D(fe_space_);
+  stiffness_matrix_ = BlockFEMatrix::LinElastic2D(fe_space_);
+  mass_matrix_ = BlockFEMatrix::Mass_LinElastic2D(fe_space_);
 
   cout << "CONSTRUCTOR OF SYSTEM PER GRID OK!!" << endl;
 }
@@ -79,6 +91,10 @@ Time_LinElastic2D::Time_LinElastic2D(const TDomain& domain,
     // create finite element space and function, a matrix, rhs, and solution
     this->systems_.emplace_back(this->example_, *coll);
 
+    // Initialization of Lame coefficients
+    this->systems_.front().vector_lambda_= db_["lamecoeff_lambda"];
+    this->systems_.front().vector_mu_= db_["lamecoeff_mu"];
+
     // interpolate initial displacements
     TFEFunction2D * u1 = this->systems_.front().u_.GetComponent(0);
     TFEFunction2D * u2 = this->systems_.front().u_.GetComponent(1);
@@ -99,6 +115,45 @@ Time_LinElastic2D::Time_LinElastic2D(const TDomain& domain,
   cout << "CONSTRUCTOR2 OK!" << endl;
 }
 
+/**************************************************************************** */
+void Time_LinElastic2D::assemble_initial_time()
+{
+  for(auto &s : this->systems_)
+  {
+    s.rhs_.reset();
+
+    /* First, Local assembling */
+    /* the first two fe_functions are u1, u2, just in case..
+     * it is not used normally in the local assembling object
+     * the two other fe_functions are lambda and mu functions
+     * they can be constant or variable
+     * */
+    TFEFunction2D * fe_functions[4] = {s.u_.GetComponent(0),
+                                       s.u_.GetComponent(1),
+                                       &s.lambda_, &s.mu_};
+
+
+    /* Second, input information for Assemble2D */
+//    const TFESpace2D * space = &s.fe_space_;
+//    size_t n_fe_space = 1;
+//    size_t n_square_matrices = 6; //
+//    TSquareMatrix2D *sqMatrices[6]{nullptr}; // maximum number of square matrices
+//    size_t nRhs = 2;
+//    double *RHSs[2] = {s.rhs_.block(0), s.rhs_.block(1)};
+//    const TFESpace2D *fe_rhs[2] = {space, space};
+//    BoundCondFunct2D * boundary_conditions[3] = {
+//      velo_space->GetBoundCondition(), velo_space->GetBoundCondition(),
+//      pres_space->GetBoundCondition() };
+//
+//    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+//    non_const_bound_values[0] = example.get_bd()[0];
+//    non_const_bound_values[1] = example.get_bd()[1];
+//    non_const_bound_values[2] = example.get_bd()[2];
+
+  }
+
+  cout << "END OF ASSEMBLE INITIAL TIME" << endl;
+}
 
 /**************************************************************************** */
 void Time_LinElastic2D::output_problem_size_info() const

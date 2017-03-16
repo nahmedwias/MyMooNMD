@@ -5,6 +5,9 @@ outfile: linearelastic.out
 refinement_n_initial_steps: 2
 verbosity: 5   [ 1, 5 ]
 
+lamecoeff_lambda: 50 [ 0., 1000.]
+lamecoeff_mu: 5 [ 0., 1000.]
+
 ANSATZ_ORDER: 1
 
 # 0:ForEuler # 1:BackEuler # 2:CN # 3:FractStep # 4:IMEX

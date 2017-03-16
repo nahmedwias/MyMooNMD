@@ -57,6 +57,12 @@ class Time_LinElastic2D
       BlockVector solution_;
       /** @brief Finite element vector for displacement*/
       TFEVectFunct2D u_;
+      /** @brief Finite element function for Lame coefficient Lambda */
+      BlockVector vector_lambda_;
+      TFEFunction2D lambda_;
+      /** @brief Finite element function for Lame coefficient Lambda */
+      BlockVector vector_mu_;
+      TFEFunction2D mu_;
 
       /** @brief constructor */
       System_per_grid(const Example_TimeLinElastic2D& example,
@@ -121,8 +127,6 @@ class Time_LinElastic2D
 
 
   public:
-    int test = 1;
-
     /** @brief constructor*/
     Time_LinElastic2D(const TDomain& domain,
                       const ParameterDatabase& param_db,
@@ -133,6 +137,15 @@ class Time_LinElastic2D
                       const ParameterDatabase& param_db,
                       const Example_TimeLinElastic2D& ex,
                       int reference_id = -4711);
+
+    /** @brief Assemble all the matrices and rhs before the time iterations
+     *
+     * This includes the assembling of: Stiff_matrix, Mass_Matrix,
+     * rhs
+     */
+    void assemble_initial_time();
+
+
 
     /*************************************************************/
    /**
@@ -162,6 +175,10 @@ class Time_LinElastic2D
    { return this->systems_.front().solution_; }
    const BlockVector& get_rhs() const
    { return this->systems_.front().rhs_; }
+   const BlockVector& get_lamecoefficients_lambda() const
+   { return this->systems_.front().vector_lambda_; }
+   const BlockVector& get_lamecoefficients_mu() const
+   { return this->systems_.front().vector_mu_; }
    const TFEVectFunct2D & get_displacement() const
    { return this->systems_.front().u_; }
    // try not to use this as it is not const
