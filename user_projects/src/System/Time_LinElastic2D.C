@@ -2,7 +2,7 @@
 #include <Database.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
-
+#include <LocalAssembling2D.h>
 
 /**************************************************************************** */
 ParameterDatabase get_default_Time_LinElastic2D_parameters()
@@ -34,7 +34,6 @@ ParameterDatabase get_default_Time_LinElastic2D_parameters()
   return db;
 }
 
-
 /**************************************************************************** */
 Time_LinElastic2D::System_per_grid::System_per_grid(const Example_TimeLinElastic2D& example,
                                                     TCollection& coll)
@@ -60,7 +59,6 @@ Time_LinElastic2D::System_per_grid::System_per_grid(const Example_TimeLinElastic
   cout << "CONSTRUCTOR OF SYSTEM PER GRID OK!!" << endl;
 }
 
-
 /**************************************************************************** */
 Time_LinElastic2D::Time_LinElastic2D(const TDomain& domain,
                                      const ParameterDatabase& param_db,
@@ -69,7 +67,6 @@ Time_LinElastic2D::Time_LinElastic2D(const TDomain& domain,
 {
   cout << "CONSTRUCTOR1 OK!" << endl;
 }
-
 
 /**************************************************************************** */
 Time_LinElastic2D::Time_LinElastic2D(const TDomain& domain,
@@ -131,6 +128,10 @@ void Time_LinElastic2D::assemble_initial_time()
     TFEFunction2D * fe_functions[4] = {s.u_.GetComponent(0),
                                        s.u_.GetComponent(1),
                                        &s.lambda_, &s.mu_};
+
+    LocalAssembling2D local_assembling(TLinElastic2D_Stiffness,
+                                       fe_functions,
+                                       this->example_.get_coeffs());
 
 
     /* Second, input information for Assemble2D */

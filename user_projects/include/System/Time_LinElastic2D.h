@@ -69,24 +69,24 @@ class Time_LinElastic2D
                       TCollection& coll);
 
       /**
-       * Special member functions mostly deleted,
-       * for struct takes ownership of the bad
-       * classes TFEFunction2D and TFESpace2D.
-       */
-      //! Delete copy constructor.
-      System_per_grid(const System_per_grid&) = delete;
-
-      //! Delete move constructor.
-      System_per_grid(System_per_grid&&) = delete;
-
-      //! Delete copy assignment operator.
-      System_per_grid& operator=(const System_per_grid&) = delete;
-
-      //! Delete move assignment operator.
-      System_per_grid& operator=(System_per_grid&&) = delete;
-
-      //! Default destructor. Most likely causes memory leaks.
-      ~System_per_grid() = default;
+//       * Special member functions mostly deleted,
+//       * for struct takes ownership of the bad
+//       * classes TFEFunction2D and TFESpace2D.
+//       */
+//      //! Delete copy constructor.
+//      System_per_grid(const System_per_grid&) = delete;
+//
+//      //! Delete move constructor.
+//      System_per_grid(System_per_grid&&) = delete;
+//
+//      //! Delete copy assignment operator.
+//      System_per_grid& operator=(const System_per_grid&) = delete;
+//
+//      //! Delete move assignment operator.
+//      System_per_grid& operator=(System_per_grid&&) = delete;
+//
+//      //! Default destructor. Most likely causes memory leaks.
+//      ~System_per_grid() = default;
     };
 
     /** @brief a local parameter database which controls this class
