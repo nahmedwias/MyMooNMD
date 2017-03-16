@@ -300,6 +300,45 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity)
   return my_matrix;
 
 }
+
+BlockFEMatrix BlockFEMatrix::LinElastic2D( const TFESpace2D& space)
+{
+  BlockFEMatrix my_matrix({&space,&space});
+
+  // create new blocks with correct structures
+  // filled with 0 (=FEMatrix)
+  FEMatrix block_u0_u0({&space,&space});
+  FEMatrix block_u0_u1(block_u0_u0);
+  FEMatrix block_u1_u0(block_u0_u0);
+  FEMatrix block_u1_u1(block_u0_u0);
+  //all copy constructed, share one TStructure
+
+  // fill in the blocks in my_matrix
+  my_matrix.replace_blocks(block_u0_u0, {{0,0}}, {false});
+  my_matrix.replace_blocks(block_u0_u1, {{0,1}}, {false});
+  my_matrix.replace_blocks(block_u1_u0, {{1,0}}, {false});
+  my_matrix.replace_blocks(block_u1_u1, {{1,1}}, {false});
+
+  return my_matrix;
+
+}
+
+BlockFEMatrix BlockFEMatrix::Mass_LinElastic2D( const TFESpace2D& space)
+{
+  BlockFEMatrix my_matrix({&space,&space});
+
+  // create new blocks with correct structures
+  // filled with 0 (=FEMatrix)
+  FEMatrix block_m0_m0({&space,&space});
+
+  // fill in the blocks in my_matrix
+  my_matrix.replace_blocks(block_m0_m0, {{0,0}, {1, 1}},
+                           {false, false});
+
+   return my_matrix;
+}
+
+
 #elif __3D__
 //3D named constructors
 BlockFEMatrix BlockFEMatrix::CD3D( const TFESpace3D& space )

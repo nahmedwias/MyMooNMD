@@ -41,6 +41,10 @@ Time_LinElastic2D::System_per_grid::System_per_grid(const Example_TimeLinElastic
   u_(&fe_space_,(char*)"u", (char*)"u", solution_.block(0),
      solution_.length(0), 2)
 {
+  // K has 4 blocks, M has 2 diagonal blocks
+//  stiffness_matrix_ = BlockFEMatrix::LinElastic2D(fe_space_);
+//  mass_matrix_ = BlockFEMatrix::Mass_LinElastic2D(fe_space_);
+
   cout << "CONSTRUCTOR OF SYSTEM PER GRID OK!!" << endl;
 }
 
@@ -65,6 +69,22 @@ Time_LinElastic2D::Time_LinElastic2D(const TDomain& domain,
   systems_()
 {
   db_.merge(param_db,false);
+
+  /* Construction of the systems per Grid */
+  bool usingMultigrid = this->solver_.is_using_multigrid();
+  if(!usingMultigrid)
+  {
+    // create the collection of cells from the domain (finest grid)
+    TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+    // create finite element space and function, a matrix, rhs, and solution
+    this->systems_.emplace_back(this->example_, *coll);
+
+  }
+  else
+  {
+    ErrThrow("MULTIGRID NOT IMPLEMENTED YET!!!");
+  }
+
 
   cout << "CONSTRUCTOR2 OK!" << endl;
 }
