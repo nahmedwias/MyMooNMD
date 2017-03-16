@@ -49,6 +49,9 @@ enum LocalAssembling2D_type { ConvDiff,
                               TNSE2D_Rhs,
                               /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
                               TNSE2D_Mass,
+                              TLinElastic2D_Stiffness,
+                              TLinElastic2D_Mass,
+                              TLinElastic2D_Rhs,
                               /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
                               Darcy2D_Galerkin,
                               Brinkman2D_Galerkin1,
@@ -166,6 +169,14 @@ class LocalAssembling2D
     /** 
      */
     void set_parameters_for_tnse(LocalAssembling2D_type type);
+    /** This functions sets all local assembling parameters
+     * for time-dependent linear elasticity 2D problems.
+     * It is called in the local assembling constructor
+     * (less cumbersome than putting everything in the
+     * already heavy constructor)
+     */
+    void set_parameters_for_tlinelastic(LocalAssembling2D_type type);
+
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,

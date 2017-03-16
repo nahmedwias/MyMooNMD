@@ -129,6 +129,12 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
               return std::string("");
       }
             break;
+   case LocalAssembling2D_type::TLinElastic2D_Stiffness:
+     return std::string("TLinElastic2D_Stiffness");
+   case LocalAssembling2D_type::TLinElastic2D_Mass:
+     return std::string("TLinElastic2D_Mass");
+   case LocalAssembling2D_type::TLinElastic2D_Rhs:
+     return std::string("TLinElastic2D_Rhs");
             /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
    case LocalAssembling2D_type::Custom:
      return std::string("customized");
@@ -400,7 +406,13 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
   /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
     this->set_parameters_for_tnse(type);
     break;
-    
+  ////////////////////////////////////////////////////////////////////////////
+    // TLinearElasticity2D problems
+  case TLinElastic2D_Stiffness:
+  case TLinElastic2D_Mass:
+  case TLinElastic2D_Rhs:
+    this->set_parameters_for_tlinelastic(type);
+    break;
   default:
     ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);
     throw("unknown LocalAssembling2D_type");
@@ -2939,6 +2951,12 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   
 }
 
+//==============================================================================
+void LocalAssembling2D::set_parameters_for_tlinelastic(LocalAssembling2D_type type)
+{
+  N_Terms = 4;
+  cout << "CONSTRUCTOR OF LOCAL ASSEMBLING OK!" << endl;
+}
 
 
 
