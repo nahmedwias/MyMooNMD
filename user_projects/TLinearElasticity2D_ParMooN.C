@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 
 
   Example_TimeLinElastic2D ElasticityExample(parmoon_db);
-  Time_LinElastic2D ElasticStructure;
+  Time_LinElastic2D ElasticStructure(domain, parmoon_db,ElasticityExample);
 
 
   cout << "HELLO WOOOORLD!" << endl;
