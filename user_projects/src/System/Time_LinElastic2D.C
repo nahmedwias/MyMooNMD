@@ -1,10 +1,10 @@
-#include <TLinElastic2D.h>
+#include <Time_LinElastic2D.h>
 
 
 
 
 /**************************************************************************** */
-TLinElastic2D::TLinElastic2D()
+Time_LinElastic2D::Time_LinElastic2D()
 {
   cout << "CONSTRUCTOR OK!" << endl;
 }

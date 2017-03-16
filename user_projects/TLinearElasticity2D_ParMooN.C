@@ -13,8 +13,8 @@
 #include <ParameterDatabase.h>
 #include <TimeDiscRout.h>
 
-#include <TLinElastic2D.h>
-//#include <ici, la classe pr example linear elasticity>
+#include <Example_TimeLinElastic2D.h>
+#include <Time_LinElastic2D.h>
 
 using namespace std;
 
@@ -52,7 +52,9 @@ int main(int argc, char* argv[])
    ********************************************************************/
   SetTimeDiscParameters(0);    // Initialize parameters for time discretization
 
-  TLinElastic2D ElasticStructure;
+
+  Example_TimeLinElastic2D ElasticityExample(parmoon_db);
+  Time_LinElastic2D ElasticStructure;
 
 
   cout << "HELLO WOOOORLD!" << endl;
