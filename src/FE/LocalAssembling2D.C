@@ -15,6 +15,7 @@
 #include <TNSE2D_FixPoRot.h>
 #include <TNSE2D_ParamRout.h>
 #include <Brinkman2D_Mixed.h> // local assembling routines for 2D Navier-Stokes
+#include <TLinElastic2D_routines.h>
 
 #include <MooNMD_Io.h>
 #include <string.h>
@@ -129,6 +130,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
               return std::string("");
       }
             break;
+   case LocalAssembling2D_type::TLinElastic2D_WholeSystem:
+     return std::string("TLinElastic2D_WholeSystem");
    case LocalAssembling2D_type::TLinElastic2D_Stiffness:
      return std::string("TLinElastic2D_Stiffness");
    case LocalAssembling2D_type::TLinElastic2D_Mass:
@@ -408,6 +411,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
     break;
   ////////////////////////////////////////////////////////////////////////////
     // TLinearElasticity2D problems
+  case TLinElastic2D_WholeSystem:
   case TLinElastic2D_Stiffness:
   case TLinElastic2D_Mass:
   case TLinElastic2D_Rhs:
@@ -2962,68 +2966,89 @@ void LocalAssembling2D::set_parameters_for_tlinelastic(LocalAssembling2D_type ty
 
   switch(type)
   {
-    case TLinElastic2D_Stiffness:
-      this->N_Terms = 4;
-      this->Derivatives = { D10, D01, D00, D00 };
-      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-      this->N_Rhs = 3; // NOTE: check why is this always three??
-      this->RhsSpace = { 0, 0, 0 };
+    case TLinElastic2D_WholeSystem:
+      this->N_Terms = 3;
+      this->Derivatives = { D10, D01, D00 };
+      this->FESpaceNumber = { 0, 0, 0 }; // 0: displacement
+      this->N_Rhs = 2;
+      this->RhsSpace = { 0, 0 };
 
-      this->N_Parameters = 2;
+      this->N_Parameters = 5;
       this->N_ParamFct = 1;
-      this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+      this->ParameterFct = {ParameterFunction};
       this->BeginParameter = { 0 };
-      this->N_FEValues = 6;
-      this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
-      this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+      this->N_FEValues = 5; // u1,u2,lambda,mu,rho
+      this->FEValue_MultiIndex = { D00, D00, D00, D00, D00 };
+      this->FEValue_FctIndex = { 0, 1, 2, 3, 4 };
 
-      this->N_Matrices    = 2;
-      this->RowSpace      = { 0, 0 };
-      this->ColumnSpace   = { 0, 0 };
-      this->AssembleParam = TimeNSType3_4NLGalerkin;
+      this->N_Matrices    = 6;  // 4 A blocks and 2 M blocks
+      this->RowSpace      = { 0, 0, 0, 0, 0, 0 };
+      this->ColumnSpace   = { 0, 0, 0, 0, 0, 0 };
+      this->AssembleParam = TimeLinearElasticityWholeSystem;
       break;
 
-    case TLinElastic2D_Mass:
-      this->N_Terms = 4;
-      this->Derivatives = { D10, D01, D00, D00 };
-      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-      this->N_Rhs = 3; // NOTE: check why is this always three??
-      this->RhsSpace = { 0, 0, 0 };
-
-      this->N_Parameters = 2;
-      this->N_ParamFct = 1;
-      this->ParameterFct = {TimeNSParamsVelo_GradVelo};
-      this->BeginParameter = { 0 };
-      this->N_FEValues = 6;
-      this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
-      this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
-
-      this->N_Matrices    = 2;
-      this->RowSpace      = { 0, 0 };
-      this->ColumnSpace   = { 0, 0 };
-      this->AssembleParam = TimeNSType3_4NLGalerkin;
-      break;
-
-    case TLinElastic2D_Rhs:
-      this->N_Terms = 4;
-      this->Derivatives = { D10, D01, D00, D00 };
-      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-      this->N_Rhs = 3; // NOTE: check why is this always three??
-      this->RhsSpace = { 0, 0, 0 };
-
-      this->N_Parameters = 2;
-      this->N_ParamFct = 1;
-      this->ParameterFct = {TimeNSParamsVelo_GradVelo};
-      this->BeginParameter = { 0 };
-      this->N_FEValues = 6;
-      this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
-      this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
-
-      this->N_Matrices    = 2;
-      this->RowSpace      = { 0, 0 };
-      this->ColumnSpace   = { 0, 0 };
-      this->AssembleParam = TimeNSType3_4NLGalerkin;
-      break;
+//    case TLinElastic2D_Stiffness:
+//      this->N_Terms = 3;
+//      this->Derivatives = { D10, D01, D00 };
+//      this->FESpaceNumber = { 0, 0, 0 }; // 0: displacement
+//      this->N_Rhs = 0;
+//      this->RhsSpace = { 0 };
+//
+//      this->N_Parameters = 4;
+//      this->N_ParamFct = 1;
+//      this->ParameterFct = {ParameterFunctionStiffness};
+//      this->BeginParameter = { 0 };
+//      this->N_FEValues = 6;
+//      this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+//      this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+//
+//      this->N_Matrices    = 4;
+//      this->RowSpace      = { 0, 0, 0, 0 };
+//      this->ColumnSpace   = { 0, 0, 0, 0 };
+//      this->AssembleParam = TimeLinearElasticityStiffness;
+//      break;
+//
+//    case TLinElastic2D_Mass:
+//      this->N_Terms = 1;
+//      this->Derivatives = { D00 };
+//      this->FESpaceNumber = { 0 }; // 0: displacement
+//      this->N_Rhs = 0;
+//      this->RhsSpace = { 0 };
+//
+////      this->N_Parameters = 2;
+////      this->N_ParamFct = 1;
+////      this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+////      this->BeginParameter = { 0 };
+////      this->N_FEValues = 6;
+////      this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+////      this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+//
+//      this->N_Matrices    = 1;
+//      this->RowSpace      = { 0 };
+//      this->ColumnSpace   = { 0 };
+//      this->AssembleParam = TimeLinearElasticityMass;
+//      break;
+//
+//    case TLinElastic2D_Rhs:
+//      this->N_Terms = 3;
+//      this->Derivatives = { D10, D01, D00 };
+//      this->FESpaceNumber = { 0, 0, 0 }; // 0: displacement
+//      this->N_Rhs = 2;
+//      this->RhsSpace = { 0, 0 };
+//
+////      this->N_Parameters = 2;
+////      this->N_ParamFct = 1;
+////      this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+////      this->BeginParameter = { 0 };
+////      this->N_FEValues = 6;
+////      this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+////      this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+//
+//      this->N_Matrices    = 0;
+//      this->RowSpace      = {};
+//      this->ColumnSpace   = {};
+//      this->AssembleParam =  TimeLinearElasticityRhs;
+//      break;
     default:
       ErrThrow("Something is wrong here...");
       break;

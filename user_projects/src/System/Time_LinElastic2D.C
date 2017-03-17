@@ -29,7 +29,9 @@ ParameterDatabase get_default_Time_LinElastic2D_parameters()
   db.add("lamecoeff_lambda", 0.5,
          "Lame coefficient lambda.", 0.,1000.);
   db.add("lamecoeff_mu", 0.5,
-         "Lame coefficient mu.", 0.,1000.);
+         "Lame coefficient mu.", 0., 1000.);
+  db.add("rho_material", 7800.,
+         "Density of material.", 0., 10000. );
 
   return db;
 }
@@ -50,7 +52,11 @@ Time_LinElastic2D::System_per_grid::System_per_grid(const Example_TimeLinElastic
           vector_lambda_.block(0), vector_lambda_.length(0)),
   vector_mu_(solution_),
   mu_(&fe_space_,(char*)"mu", (char*)"mu",
-       vector_mu_.block(0), vector_mu_.length(0))
+       vector_mu_.block(0), vector_mu_.length(0)),
+ vector_rho_(solution_),
+ rho_(&fe_space_,(char*)"rho", (char*)"rho",
+            vector_rho_.block(0), vector_rho_.length(0))
+
 {
   // K has 4 blocks, M has 2 diagonal blocks
   stiffness_matrix_ = BlockFEMatrix::LinElastic2D(fe_space_);
@@ -90,7 +96,8 @@ Time_LinElastic2D::Time_LinElastic2D(const TDomain& domain,
 
     // Initialization of Lame coefficients
     this->systems_.front().vector_lambda_= db_["lamecoeff_lambda"];
-    this->systems_.front().vector_mu_= db_["lamecoeff_mu"];
+    this->systems_.front().vector_mu_    = db_["lamecoeff_mu"];
+    this->systems_.front().vector_rho_   = db_["rho_material"];
 
     // interpolate initial displacements
     TFEFunction2D * u1 = this->systems_.front().u_.GetComponent(0);
@@ -125,11 +132,11 @@ void Time_LinElastic2D::assemble_initial_time()
      * the two other fe_functions are lambda and mu functions
      * they can be constant or variable
      * */
-    TFEFunction2D * fe_functions[4] = {s.u_.GetComponent(0),
+    TFEFunction2D * fe_functions[5] = {s.u_.GetComponent(0),
                                        s.u_.GetComponent(1),
-                                       &s.lambda_, &s.mu_};
+                                       &s.lambda_, &s.mu_, &s.rho_};
 
-    LocalAssembling2D local_assembling(TLinElastic2D_Stiffness,
+    LocalAssembling2D local_assembling(TLinElastic2D_WholeSystem,
                                        fe_functions,
                                        this->example_.get_coeffs());
 

@@ -59,8 +59,11 @@ int main(int argc, char* argv[])
 
   ElasticStructure.get_lamecoefficients_lambda().write("lambda");
   ElasticStructure.get_lamecoefficients_mu().write("mu");
+  ElasticStructure.get_density_rho().write("rho");
+
   cout << ElasticStructure.get_db()["lamecoeff_lambda"] << endl;
   cout << ElasticStructure.get_db()["lamecoeff_mu"] << endl;
+  cout << ElasticStructure.get_db()["rho_material"] << endl;
   cout << "HELLO WOOOORLD!" << endl;
 
   return 0;

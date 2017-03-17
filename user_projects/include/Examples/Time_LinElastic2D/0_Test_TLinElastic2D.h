@@ -98,14 +98,11 @@ void Coefficients(int n_points, double *X, double *Y,
 //    x = X[i];
 //    y = Y[i];
 
-    coeff[0] = 0;//eps;
-    coeff[1] = 0;//b1;
-    coeff[2] = 0;//b2;
-    coeff[3] = 0;//c;
+    coeff[0] = 0;  // Lame coefficient Lambda, if used
+    coeff[1] = 0;  // Lame coefficient mu, if used
+    coeff[2] = 0;  // RHS1
+    coeff[3] = 0;  // RHS2
 
-    coeff[4] = 0;
-    // rhs from previous time step
-    coeff[5] = 0;
   }
 }
 

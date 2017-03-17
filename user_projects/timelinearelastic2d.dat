@@ -7,6 +7,7 @@ verbosity: 5   [ 1, 5 ]
 
 lamecoeff_lambda: 50 [ 0., 1000.]
 lamecoeff_mu: 5 [ 0., 1000.]
+rho_material: 7800 [ 0., 10000. ]
 
 ANSATZ_ORDER: 1
 

@@ -63,6 +63,9 @@ class Time_LinElastic2D
       /** @brief Finite element function for Lame coefficient Lambda */
       BlockVector vector_mu_;
       TFEFunction2D mu_;
+      /** @brief Finite element function for Lame coefficient Lambda */
+      BlockVector vector_rho_;
+      TFEFunction2D rho_;
 
       /** @brief constructor */
       System_per_grid(const Example_TimeLinElastic2D& example,
@@ -179,6 +182,8 @@ class Time_LinElastic2D
    { return this->systems_.front().vector_lambda_; }
    const BlockVector& get_lamecoefficients_mu() const
    { return this->systems_.front().vector_mu_; }
+   const BlockVector& get_density_rho() const
+   { return this->systems_.front().vector_rho_; }
    const TFEVectFunct2D & get_displacement() const
    { return this->systems_.front().u_; }
    // try not to use this as it is not const
