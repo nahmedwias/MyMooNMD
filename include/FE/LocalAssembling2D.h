@@ -49,7 +49,8 @@ enum LocalAssembling2D_type { ConvDiff,
                               TNSE2D_Rhs,
                               /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
                               TNSE2D_Mass,
-                              TLinElastic2D_Stiffness,
+                              TLinElastic2D_WholeSystem,
+                              TLinElastic2D_Stiffness,  // these 3 are not used yet
                               TLinElastic2D_Mass,
                               TLinElastic2D_Rhs,
                               /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
