@@ -296,6 +296,8 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity)
   
   my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}, {1, 1}}, 
                            {false, false});
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,1}, {1, 0}},
+                             {false, false});
 
   return my_matrix;
 
