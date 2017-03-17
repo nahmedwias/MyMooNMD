@@ -294,13 +294,18 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity)
 {
   BlockFEMatrix my_matrix({&velocity, &velocity});
   
-  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}, {1, 1}}, 
-                           {false, false});
-  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,1}, {1, 0}},
-                             {false, false});
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}, {1,1}}, {false,false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+
+//  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}, {1, 1}},
+//                           {false, false}); //default version
 
   return my_matrix;
-
 }
 
 BlockFEMatrix BlockFEMatrix::LinElastic2D( const TFESpace2D& space)
