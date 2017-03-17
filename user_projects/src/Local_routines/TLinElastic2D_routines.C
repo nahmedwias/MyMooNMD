@@ -101,6 +101,7 @@ void TimeLinearElasticityWholeSystem(double Mult, double *coeff,
       MatrixMRow1[j] += val;
       MatrixMRow2[j] += val;
     } // endfor j
+//    cout << "lambda = " << lambda << " mu =  " << mu << " rho = " << rho << endl;
   } // endfor i
 }
 
@@ -145,7 +146,12 @@ void TimeLinearElasticityRhs(double Mult, double *coeff,
 // ======================================================================
 void ParameterFunction(double *in, double *out)
 {
-
+  // in[0] and in[1] are x and y coordinates
+  out[0] = in[2];   //  u1
+  out[1] = in[3];   //  u2
+  out[2] = in[4];   //  lambda
+  out[3] = in[5];   //  rho
+  out[4] = in[6];   //  mu
 }
 
 

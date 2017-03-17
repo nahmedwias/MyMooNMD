@@ -3,6 +3,7 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <LocalAssembling2D.h>
+#include <Assemble2D.h>
 
 /**************************************************************************** */
 ParameterDatabase get_default_Time_LinElastic2D_parameters()
@@ -124,13 +125,11 @@ void Time_LinElastic2D::assemble_initial_time()
 {
   for(auto &s : this->systems_)
   {
-    s.rhs_.reset();
-
     /* First, Local assembling */
     /* the first two fe_functions are u1, u2, just in case..
      * it is not used normally in the local assembling object
-     * the two other fe_functions are lambda and mu functions
-     * they can be constant or variable
+     * the three other fe_functions are lambda, mu  and rho
+     * functions. They can be constant or variable
      * */
     TFEFunction2D * fe_functions[5] = {s.u_.GetComponent(0),
                                        s.u_.GetComponent(1),
@@ -142,24 +141,49 @@ void Time_LinElastic2D::assemble_initial_time()
 
 
     /* Second, input information for Assemble2D */
-//    const TFESpace2D * space = &s.fe_space_;
-//    size_t n_fe_space = 1;
-//    size_t n_square_matrices = 6; //
-//    TSquareMatrix2D *sqMatrices[6]{nullptr}; // maximum number of square matrices
-//    size_t nRhs = 2;
-//    double *RHSs[2] = {s.rhs_.block(0), s.rhs_.block(1)};
-//    const TFESpace2D *fe_rhs[2] = {space, space};
-//    BoundCondFunct2D * boundary_conditions[3] = {
-//      velo_space->GetBoundCondition(), velo_space->GetBoundCondition(),
-//      pres_space->GetBoundCondition() };
-//
-//    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-//    non_const_bound_values[0] = example.get_bd()[0];
-//    non_const_bound_values[1] = example.get_bd()[1];
-//    non_const_bound_values[2] = example.get_bd()[2];
+    size_t n_fe_space = 1;
+    const TFESpace2D * space = &s.fe_space_;
+    size_t n_square_matrices = 6;
+    TSquareMatrix2D *sqMatrices[6]{nullptr}; // maximum number of square matrices
+    size_t nRhs = 2;
+    double *RHSs[2] = {s.rhs_.block(0), s.rhs_.block(1)};
+    const TFESpace2D *fe_rhs[2] = {space, space};
 
+    BoundCondFunct2D * boundary_conditions[2] = {
+      space->GetBoundCondition(), space->GetBoundCondition() };
+    std::array<BoundValueFunct2D*, 2> non_const_bound_values;
+    non_const_bound_values[0] = example_.get_bd()[0];
+    non_const_bound_values[1] = example_.get_bd()[1];
+
+    //set matrices
+     std::vector<std::shared_ptr<FEMatrix>> stiffness_blocks =
+         s.stiffness_matrix_.get_blocks_uniquely();
+     std::vector<std::shared_ptr<FEMatrix>> mass_blocks =
+         s.mass_matrix_.get_blocks_uniquely();
+     sqMatrices[0] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(0).get());
+     sqMatrices[1] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(1).get());
+     sqMatrices[2] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(2).get());
+     sqMatrices[3] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(3).get());
+     sqMatrices[4] =reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+     sqMatrices[5] =reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
+
+     /* Three, reset or preprocess for Assemble2D */
+     s.rhs_.reset();
+//     sqMatrices[0]->reset(); sqMatrices[1]->reset(); sqMatrices[2]->reset();
+//     sqMatrices[3]->reset(); sqMatrices[4]->reset(); sqMatrices[5]->reset();
+
+     /* Four, Assemble2D */
+     Assemble2D(n_fe_space, &space, n_square_matrices,
+                sqMatrices, 0, NULL, nRhs, RHSs,
+                fe_rhs, boundary_conditions,
+                non_const_bound_values.data(), local_assembling);
   }
-
+//  this->get_stiff_matrix().get_blocks().at(0)->Print("A11");
+//  this->get_stiff_matrix().get_blocks().at(1)->Print("A12");
+//  this->get_stiff_matrix().get_blocks().at(2)->Print("A21");
+//  this->get_stiff_matrix().get_blocks().at(3)->Print("A22");
+//  this->get_stiff_matrix().print_matrix_info("stiffness");
+//  this->get_mass_matrix().print_matrix_info("mass");
   cout << "END OF ASSEMBLE INITIAL TIME" << endl;
 }
 

@@ -330,10 +330,11 @@ BlockFEMatrix BlockFEMatrix::Mass_LinElastic2D( const TFESpace2D& space)
   // create new blocks with correct structures
   // filled with 0 (=FEMatrix)
   FEMatrix block_m0_m0({&space,&space});
+  FEMatrix block_m1_m1(block_m0_m0);
 
   // fill in the blocks in my_matrix
-  my_matrix.replace_blocks(block_m0_m0, {{0,0}, {1, 1}},
-                           {false, false});
+  my_matrix.replace_blocks(block_m0_m0, {{0,0}}, {false});
+  my_matrix.replace_blocks(block_m1_m1, {{1,1}}, {false});
 
    return my_matrix;
 }
