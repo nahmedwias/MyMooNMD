@@ -212,7 +212,7 @@ class Time_NSE2D
      * terms. If this->assemble() has been called before, the matrix is now set
      * up correctly. 
      */
-    void assemble_nonlinear_term();
+    void assemble_nonlinear_term(unsigned int it_counter = 0);
     
     /** @brief solve the system */
     void solve();

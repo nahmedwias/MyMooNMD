@@ -550,7 +550,7 @@ void Time_NSE2D::assemble_system()
 }
 
 /**************************************************************************** */
-void Time_NSE2D::assemble_nonlinear_term()
+void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
 {
   //Nonlinear assembling requires an approximate velocity solution on every grid!
   if(systems.size() > 1)
@@ -653,6 +653,15 @@ void Time_NSE2D::assemble_nonlinear_term()
                boundary_conditions, non_const_bound_values.data(),
                la_nonlinear);
   }
+  if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
+  {
+    if (it_count==0)
+      this->apply_slip_penetration_bc(true,true);
+    else
+      this->apply_slip_penetration_bc(false,false);
+    Output::print<4>("Applied Slip and Penetration BC.");
+  }
+
   Output::print<5>("Assembled the nonlinear matrix only ");
 }
 

@@ -147,8 +147,13 @@ int main(int argc, char* argv[])
       if (vof.tnse_variable_fluid_ == true)
       {
         vof.tnse2d_.assemble_rhs_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
-        vof.tnse2d_.assemble_nonlinear_term_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
         vof.tnse2d_.assemble_massmatrix_withfields(&vof.rho_fefunction_);
+        vof.tnse2d_.assemble_nonlinear_term_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
+        if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
+          {
+            vof.tnse2d_.apply_slip_penetration_bc(true,true);
+            Output::print<4>("Applied Slip and Penetration BC.");
+          }
       }
       else
       {
@@ -173,7 +178,14 @@ int main(int argc, char* argv[])
         continue; // this interrupts the NL-Loop
 
       if (vof.tnse_variable_fluid_ == true)
+      {
         vof.tnse2d_.assemble_nonlinear_term_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
+        if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
+        {
+          vof.tnse2d_.apply_slip_penetration_bc(false,false);
+          Output::print<4>("Applied Slip and Penetration BC.");
+        }
+      }
       else
         vof.tnse2d_.assemble_nonlinear_term();
 
