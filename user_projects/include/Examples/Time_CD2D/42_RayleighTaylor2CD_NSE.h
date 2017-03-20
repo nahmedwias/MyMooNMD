@@ -57,7 +57,7 @@ void InitialCondition(double x,  double y, double *values)
 //  double rho_min = TDatabase::ParamDB->P7; // this is the density of the bottom fluid
   double pi = 3.14159265358979;
   double d = 1.0; // this is the width of the rectangular domain
-  double interface0 = -0.05*d*(cos(2*pi*(x)/d)); // this is the initial interface, as given in (Pochet,13)
+  double interface0 = 1+0.05*d*(cos(2*pi*(x)/d)); // this is the initial interface, as given in (Pochet,13)
 
   // Initial fluids density field
   values[0] = 1*(0.5+0.5*tanh((y-interface0)/(0.01*d)));
