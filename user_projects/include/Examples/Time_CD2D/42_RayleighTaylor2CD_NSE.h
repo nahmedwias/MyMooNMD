@@ -32,23 +32,51 @@ void Exact(double x, double y, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(int i, double Param, BoundCond &cond)
 {
-  if (i == 0 || i == 2 )
-    cond = DIRICHLET;  // top and bottom
-  else
-    cond = NEUMANN;    // left and right
+  switch(i)
+  {
+    case 0:  // bottom
+    case 9:  // top
+      cond = DIRICHLET;
+      break;
+    case  1: case  2: case  3:
+    case  4: case  5: case  6:
+    case  7: case  8: case 10:
+    case 11: case 12: case 13:
+    case 14: case 15: case 16:
+    case 17: case 18:
+      cond = NEUMANN;     // right and left
+     break;
+    default:
+      ErrThrow("Problem with Boundary number.");
+  }
 }
 
 // value of boundary condition
 void BoundValue(int i, double Param, double &value)
 {
+  // NOTE: THIS PART DEPENDS HIGHLY ON THE GEOMETRY
+  // CHECK THE BOUNDARY IF IT IS DIVIDED INTO SEVERAL
+  // PARTS!!
 //  double rho_min = TDatabase::ParamDB->P7; // this is the density of the bottom fluid
-
-  if (i == 0)
-    value = 0;//rho_min;  // bottom
-  else if (i == 2)
-    value = 1;//1.5*rho_min; // top = heavy fluid
-  else
-    value = 0;
+  switch(i)
+  {
+    case 0:  // bottom
+      value = 0;
+      break;
+    case 9:  // top
+      value = 1;
+      break;
+    case  1: case  2: case  3:
+    case  4: case  5: case  6:
+    case  7: case  8: case 10:
+    case 11: case 12: case 13:
+    case 14: case 15: case 16:
+    case 17: case 18:
+       value = 0;     // right and left
+     break;
+    default:
+      ErrThrow("Problem with Boundary number.");
+  }
 }
 
 // initial conditon
@@ -57,7 +85,7 @@ void InitialCondition(double x,  double y, double *values)
 //  double rho_min = TDatabase::ParamDB->P7; // this is the density of the bottom fluid
   double pi = 3.14159265358979;
   double d = 1.0; // this is the width of the rectangular domain
-  double interface0 = 1+0.05*d*(cos(2*pi*(x)/d)); // this is the initial interface, as given in (Pochet,13)
+  double interface0 = 2-(-0.05*d*(cos(2*pi*(x)/d)) ); // this is the initial interface, as given in (Pochet,13)
 
   // Initial fluids density field
   values[0] = 1*(0.5+0.5*tanh((y-interface0)/(0.01*d)));

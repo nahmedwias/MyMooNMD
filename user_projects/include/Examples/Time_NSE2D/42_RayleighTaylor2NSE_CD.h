@@ -67,15 +67,31 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  if (i == 0 || i == 2 )
-    cond = DIRICHLET;   // top and bottom
-  else
+  // NOTE: THIS PART DEPENDS HIGHLY ON THE GEOMETRY
+  // CHECK THE BOUNDARY IF IT IS DIVIDED INTO SEVERAL
+  // PARTS!!
+  switch(i)
   {
-    cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
-    TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
-//    cond = NEUMANN;     // right and left
+    case 0:  // bottom
+    case 9:  // top
+      cond = DIRICHLET;
+      break;
+    case  1: case  2: case  3:
+    case  4: case  5: case  6:
+    case  7: case  8: case 10:
+    case 11: case 12: case 13:
+    case 14: case 15: case 16:
+    case 17: case 18:
+      cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
+     TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+     TDatabase::ParamDB->FRICTION_TYPE = 1;
+     TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
+     TDatabase::ParamDB->PENETRATION_POWER= -2;
+      //    cond = NEUMANN;     // right and left
+     break;
+    default:
+      ErrThrow("Problem with Boundary number.");
   }
-
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)

@@ -2,11 +2,11 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 5
+refinement_n_initial_steps: 4
 
 FRICTION_TYPE: 1
 
-ENDTIME: 2.
+ENDTIME: 1.7
 TIMESTEPLENGTH: 0.01
 
 fluid_density: 1.5.   [ 0, 1e6 ]
@@ -34,8 +34,8 @@ P8: 0.0013 # viscosity 2 - min - gas
 #geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #boundary_file: ../mesh/RTInstab_Fraigneau.PRM
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
-boundary_file: ../mesh/RTInstab_Pochet.PRM
-geo_file: ../mesh/RTInstab_Pochet.GEO
+boundary_file: ../mesh/RTInstab_PochetOrig.PRM
+geo_file: ../mesh/RTInstab_PochetOrig.GEO
 #boundary_file: ../mesh/ladle_2D/00MYLADLE_v3.PRM
 #geo_file: ../mesh/ladle_2D/00MYLADLE_v3.GEO
 
