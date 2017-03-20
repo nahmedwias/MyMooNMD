@@ -2,11 +2,9 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 4
+refinement_n_initial_steps: 5
 
-FRICTION_TYPE: 1
-
-ENDTIME: 1.7
+ENDTIME: 2.
 TIMESTEPLENGTH: 0.01
 
 fluid_density: 1.5.   [ 0, 1e6 ]
