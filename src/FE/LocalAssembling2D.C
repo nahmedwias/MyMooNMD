@@ -2934,7 +2934,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
               this->ColumnSpace = { 0 };
               this->N_Rhs = 0 ;
               this->RhsSpace = {};
-              this->AssembleParam =TimeNSType1GalerkinMass_dimensional;
+              this->AssembleParam =TimeNSType1_3_4GalerkinDDMass_dimensional;
               this->Manipulate = NULL;
               break;
             case SUPG:
@@ -3067,44 +3067,44 @@ void LocalAssembling2D::setAssembleParam_string(std::string assembleFctParam2Dna
   if ( assembleFctParam2Dname == "TimeNSType1Galerkin_dimensional" )
   {
     this->AssembleParam = TimeNSType1Galerkin_dimensional;
-    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
+    Output::info<4>("LocalAssembling2D", "Set AssembleParam to "
                     "TimeNSType1Galerkin_dimensional!");
   }
   else if (assembleFctParam2Dname == "TimeNSType1_2NLGalerkin_dimensional")
   {
     this->AssembleParam = TimeNSType1_2NLGalerkin_dimensional;
-    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
+    Output::info<4>("LocalAssembling2D", "Set AssembleParam to "
                     "TimeNSType1_2NLGalerkin_dimensional!");
   }
   else if (assembleFctParam2Dname == "TimeNSRHS_dimensional")
   {
     this->AssembleParam = TimeNSRHS_dimensional;
-    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
+    Output::info<4>("LocalAssembling2D", "Set AssembleParam to "
                     "TimeNSRHS_dimensional!");
   }
-  else if (assembleFctParam2Dname == "TimeNSType1GalerkinMass_dimensional")
+  else if (assembleFctParam2Dname == "TimeNSType1_3_4GalerkinDDMass_dimensional")
   {
-    this->AssembleParam = TimeNSType1GalerkinMass_dimensional;
-    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
-                    "TimeNSType1GalerkinMass_dimensional!");
+    this->AssembleParam = TimeNSType1_3_4GalerkinDDMass_dimensional;
+    Output::info<4>("LocalAssembling2D", "Set AssembleParam to "
+                    "TimeNSType1_3_4GalerkinDDMass_dimensional!");
   }
   else if (assembleFctParam2Dname == "TimeNSType3GalerkinDD_dimensional")
   {
     this->AssembleParam = TimeNSType3GalerkinDD_dimensional;
-    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
+    Output::info<4>("LocalAssembling2D", "Set AssembleParam to "
                     "TimeNSType3GalerkinDD_dimensional!");
+  }
+  else if (assembleFctParam2Dname == "TimeNSType4GalerkinDD_dimensional")
+  {
+    this->AssembleParam = TimeNSType4GalerkinDD_dimensional;
+    Output::info<4>("LocalAssembling2D", "Set AssembleParam to "
+                    "TimeNSType4GalerkinDD_dimensional!");
   }
   else if (assembleFctParam2Dname == "TimeNSType3_4NLGalerkinDD_dimensional")
   {
     this->AssembleParam = TimeNSType3_4NLGalerkinDD_dimensional;
-    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
+    Output::info<4>("LocalAssembling2D", "Set AssembleParam to "
                     "TimeNSType3_4NLGalerkinDD_dimensional!");
-  }
-  else if (assembleFctParam2Dname == "TimeNSType3GalerkinDDMass_dimensional")
-  {
-    this->AssembleParam = TimeNSType3GalerkinDDMass_dimensional;
-    Output::info<3>("LocalAssembling2D", "Set AssembleParam to "
-                    "TimeNSType3GalerkinDDMass_dimensional!");
   }
   else
   {
@@ -3119,7 +3119,7 @@ void LocalAssembling2D::setParameterFct_string(std::string parameterFctname)
   if ( parameterFctname == "TimeNSParamsVelo_dimensional" )
   {
     this->ParameterFct = {TimeNSParamsVelo_dimensional};
-    Output::info<3>("LocalAssembling2D", "Set ParameterFct to "
+    Output::info<4>("LocalAssembling2D", "Set ParameterFct to "
                     "TimeNSParamVelo_dimensional!");
   }
   else

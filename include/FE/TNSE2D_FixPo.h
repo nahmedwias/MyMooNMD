@@ -1038,13 +1038,13 @@ void TimeNSRHS_dimensional(double Mult, double *coeff,
                            double **OrigValues, int *N_BaseFuncts,
                            double ***LocMatrices, double **LocRhs);
 
-void TimeNSType1GalerkinMass_dimensional(double Mult, double *coeff,
-                                         double *param, double hK,
-                                         double **OrigValues, int *N_BaseFuncts,
-                                         double ***LocMatrices, double **LocRhs);
-
 
 void TimeNSType3GalerkinDD_dimensional(double Mult, double *coeff,
+                                       double *param, double hK,
+                                       double **OrigValues, int *N_BaseFuncts,
+                                       double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4GalerkinDD_dimensional(double Mult, double *coeff,
                                        double *param, double hK,
                                        double **OrigValues, int *N_BaseFuncts,
                                        double ***LocMatrices, double **LocRhs);
@@ -1054,7 +1054,7 @@ void TimeNSType3_4NLGalerkinDD_dimensional(double Mult, double *coeff,
                                            double **OrigValues, int *N_BaseFuncts,
                                            double ***LocMatrices, double **LocRhs);
 
-void TimeNSType3GalerkinDDMass_dimensional(double Mult, double *coeff,
+void TimeNSType1_3_4GalerkinDDMass_dimensional(double Mult, double *coeff,
                                          double *param, double hK,
                                          double **OrigValues, int *N_BaseFuncts,
                                          double ***LocMatrices, double **LocRhs);

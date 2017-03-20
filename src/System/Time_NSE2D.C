@@ -1098,24 +1098,27 @@ void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
       la.setN_ParamFct(1);
       la.setParameterFct_string("TimeNSParamsVelo_dimensional");
 
-      switch(TDatabase::ParamDB->NSTYPE)
+      switch(TDatabase::ParamDB->LAPLACETYPE)
       {
         case 1:
-          la.setAssembleParam_string("TimeNSType1Galerkin_dimensional");  //this is for dimensional NSE
-          break;
-        case 3:
-          switch(TDatabase::ParamDB->LAPLACETYPE)
+          switch(TDatabase::ParamDB->NSTYPE)
           {
-            case 1:
+            case 3:
               // Assembling routine for NSType 3 with DD
               la.setAssembleParam_string("TimeNSType3GalerkinDD_dimensional");
               break;
+            case 4:
+              // Assembling routine for NSType 3 with DD
+              la.setAssembleParam_string("TimeNSType4GalerkinDD_dimensional");
+              break;
             default:
-              ErrThrow("NSTYPE 3 works only with LAPLACETYPE 1, please correct input parameter!");
+              ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
+                  "When there is Slip BC, use exclusively NSTYPE4.");
           }
           break;
         default:
-          ErrThrow("Time_NSE2D: NSType 2 and 4 are not implemented yet for the Dimensional NSE!");
+          ErrThrow("Assembling with variable fields require LAPLACETYPE=1, "
+              "please correct input parameter!");
       }
       //...this should do the trick
     }
@@ -1379,24 +1382,27 @@ void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
       la_nonlinear.setN_ParamFct(1);
       la_nonlinear.setParameterFct_string("TimeNSParamsVelo_dimensional");
 
-      switch(TDatabase::ParamDB->NSTYPE)
+      switch(TDatabase::ParamDB->LAPLACETYPE)
       {
         case 1:
-          la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");  //this is for dimensional NSE
-          break;
-        case 3:
-          switch(TDatabase::ParamDB->LAPLACETYPE)
+          switch(TDatabase::ParamDB->NSTYPE)
           {
             case 1:
+              la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");  //this is for dimensional NSE
+              break;
+            case 3:
+            case 4:
               // Assembling routine for NSType 3 with DD
               la_nonlinear.setAssembleParam_string("TimeNSType3_4NLGalerkinDD_dimensional");
               break;
             default:
-              ErrThrow("NSTYPE 3 works only with LAPLACETYPE 1, please correct input parameter!");
+              ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
+                  "When there is Slip BC, use exclusively NSTYPE4.");
           }
           break;
-            default:
-              ErrThrow("Time_NSE2D: NSType 2 and 4 are not implemented yet for the Dimensional NSE!");
+        default:
+          ErrThrow("Assembling with variable fields requires LAPLACETYPE=1, "
+                  "please correct input parameter!");
       }
       //...this should do the trick
     }
@@ -1708,25 +1714,25 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
       la_mass.setN_ParamFct(1);
       la_mass.setParameterFct_string("TimeNSParamsVelo_dimensional");
 
-      switch(TDatabase::ParamDB->NSTYPE)
+      switch(TDatabase::ParamDB->LAPLACETYPE)
       {
         case 1:
-          // the following line is normally done in the above la_mass constructor
-          //la_mass.setAssembleParam_string("TimeNSType1GalerkinMass_dimensional"); //this is for dimensional NSE
-          break;
-        case 3:
-          switch(TDatabase::ParamDB->LAPLACETYPE)
+          switch(TDatabase::ParamDB->NSTYPE)
           {
             case 1:
-              // Assembling routine for NSType 3 with DD
-              la_mass.setAssembleParam_string("TimeNSType3GalerkinDDMass_dimensional");
+            case 3:
+            case 4:
+              // the following line is normally done in the above la_mass constructor
+              //la_mass.setAssembleParam_string("TimeNSType1_3_4GalerkinDDMass_dimensional");
               break;
             default:
-              ErrThrow("NSTYPE 3 works only with LAPLACETYPE 1, please correct input parameter!");
+              ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
+                  "When there is Slip BC, use exclusively NSTYPE4.");
           }
           break;
-            default:
-              ErrThrow("Time_NSE2D: NSType 2 and 4 are not implemented yet for the Dimensional NSE!");
+        default:
+          ErrThrow("Assembling with variable fields requires LAPLACETYPE=1, "
+                  "please correct input parameter!");
       }
       //...this should do the trick
     }

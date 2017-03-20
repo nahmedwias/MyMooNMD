@@ -1476,16 +1476,20 @@ void TDatabase::CheckParameterConsistencyNSE()
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==1))
   {
-    ParamDB->NSTYPE = 3 ;
     if(my_rank==0)
-      Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
+      ErrThrow("LAPLACETYPE 1 and NSTYPE 1 ARE NOT COMPATIBLE.");
+//    ParamDB->NSTYPE = 3 ;
+//    if(my_rank==0)
+//      Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
   }
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==2))
   {
-    ParamDB->NSTYPE = 4 ;
     if(my_rank==0)
-      Output::info("NSE Parameter Consistency","NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
+      ErrThrow("LAPLACETYPE 1 and NSTYPE 2 ARE NOT COMPATIBLE.");
+//    ParamDB->NSTYPE = 4 ;
+//    if(my_rank==0)
+//      Output::info("NSE Parameter Consistency","NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
   }
 
   // equal order
