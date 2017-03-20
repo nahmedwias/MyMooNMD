@@ -984,7 +984,7 @@ void Time_NSE2D::apply_slip_penetration_bc(bool change_A_offdiagonal_blocks,
       reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
       reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
     }
-    cout << "PROBLEME N EST PAS ICI MAIS DANS ASSEMBLE" << endl;
+
     // update the matrices and right hand side
     Assemble2DSlipBC(fespmat.size(), fespmat.data(),
                    sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),

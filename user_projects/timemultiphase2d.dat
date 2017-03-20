@@ -6,7 +6,7 @@ refinement_n_initial_steps: 5
 
 FRICTION_TYPE: 1
 
-ENDTIME: 1.
+ENDTIME: 2.
 TIMESTEPLENGTH: 0.01
 
 fluid_density: 1.5.   [ 0, 1e6 ]
