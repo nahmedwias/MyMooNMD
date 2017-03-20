@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary 
   tnse2d.assemble_initial_time();
-  tnse2d.apply_slip_penetration_bc(true,true);
+
   double end_time = TDatabase::TimeDB->ENDTIME; 
   int step = 0;
   int n_substeps = GetN_SubSteps();

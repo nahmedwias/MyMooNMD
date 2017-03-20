@@ -2,11 +2,11 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 6
+refinement_n_initial_steps: 5
 
 FRICTION_TYPE: 1
 
-ENDTIME: 0.01
+ENDTIME: 0.2
 TIMESTEPLENGTH: 0.01
 
 fluid_density: 1.5.   [ 0, 1e6 ]
@@ -30,10 +30,10 @@ P8: 0.0013 # viscosity 2 - min - gas
 
 
 ########################## Fixed Parameters 
-boundary_file: Default_UnitSquare
-geo_file: UnitSquare   { TwoTriangles, UnitSquare }
-#boundary_file: ../mesh/RTInstab_Fraigneau.PRM
-#geo_file: ../mesh/RTInstab_Fraigneau.GEO
+#boundary_file: Default_UnitSquare
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+boundary_file: ../mesh/RTInstab_Fraigneau.PRM
+geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/ladle_2D/00MYLADLE_v3.PRM
 #geo_file: ../mesh/ladle_2D/00MYLADLE_v3.GEO
 
@@ -81,7 +81,7 @@ multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 ANSATZ_ORDER: 1
-NSTYPE: 4
+NSTYPE: 3
 LAPLACETYPE: 1
 algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
@@ -135,7 +135,7 @@ solve_cd: true   { true, false }
 ## 42- RAYLEIGHTAYLOR2- in the multiphase program - FOR TCD2D
 ## 50- GasStirringTest- in the multiphase program - FOR TNSE2D
 ## 50- GasStirringTest- in the multiphase program - FOR TCD2D
-example: 0   [ -1, 100 ]
+example: 42   [ -1, 100 ]
 
 ########################## Parameters need to be cleaned
 Par_P0: 0
