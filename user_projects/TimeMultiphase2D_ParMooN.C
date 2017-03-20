@@ -44,7 +44,6 @@ int main(int argc, char* argv[])
   tnse_db["output_basename"] = "multiphase_tnse_output";
 
 
-
   TDomain domain(argv[1], parmoon_db);            // Initialize geometry
 
   /********************************************************************
@@ -61,8 +60,6 @@ int main(int argc, char* argv[])
   if(parmoon_db["output_write_ps"]) domain.PS("Domain.ps", It_Finest, 0);
 
   domain.print_info("Multiphase2D domain");      // Output domain info
-
-
 
 
   /********************************************************************
@@ -90,7 +87,7 @@ int main(int argc, char* argv[])
     vof.tnse2d_.assemble_initial_time_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_); // assemble linear term
   else
     vof.tnse2d_.assemble_initial_time();                                // assemble linear term
-//  vof.tnse2d_.apply_slip_penetration_bc(true,true);
+  vof.tnse2d_.apply_slip_penetration_bc(true,true);
 //  cout << "SUCCESS" << endl;
 //  exit(0);
   if (!tcd_db["algebraic_flux_correction"].is("none"))
@@ -124,12 +121,6 @@ int main(int argc, char* argv[])
 
   Chrono nse_nl_stopwatch;
   Chrono nse_timeit_stopwatch;
-
-
-
-
-
-
 
 
 
