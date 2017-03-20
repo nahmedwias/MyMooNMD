@@ -32,8 +32,10 @@ P8: 0.0013 # viscosity 2 - min - gas
 ########################## Fixed Parameters 
 #boundary_file: Default_UnitSquare
 #geo_file: UnitSquare   { TwoTriangles, UnitSquare }
-boundary_file: ../mesh/RTInstab_Fraigneau.PRM
-geo_file: ../mesh/RTInstab_Fraigneau.GEO
+#boundary_file: ../mesh/RTInstab_Fraigneau.PRM
+#geo_file: ../mesh/RTInstab_Fraigneau.GEO
+boundary_file: ../mesh/RTInstab_Pochet.PRM
+geo_file: ../mesh/RTInstab_Pochet.GEO
 #boundary_file: ../mesh/ladle_2D/00MYLADLE_v3.PRM
 #geo_file: ../mesh/ladle_2D/00MYLADLE_v3.GEO
 
