@@ -1,8 +1,8 @@
 [ ParMooN database for LinearElasticity2D ]
 
 ########################## Main Parameters changing 
-outfile: linearelastic.out
-refinement_n_initial_steps: 2
+outfile: linearelasticity_output.out
+refinement_n_initial_steps: 6
 verbosity: 5   [ 1, 5 ]
 
 lamecoeff_lambda: 50 [ 0., 1000.]
