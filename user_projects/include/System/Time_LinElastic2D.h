@@ -11,10 +11,11 @@
 #ifndef __Time_LinElastic2D__
 #define __Time_LinElastic2D__
 
+#include <FEVectFunct2D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <FESpace2D.h>
-#include <FEVectFunct2D.h>
+
 #include <Solver.h>
 #include <PostProcessing2D.h>
 
@@ -55,15 +56,23 @@ class Time_LinElastic2D
       BlockVector rhs_;
       /** @brief solution vector = displacement */
       BlockVector solution_;
-      /** @brief Finite element vector for displacement*/
+      /** @brief Finite element vector for displacement */
       TFEVectFunct2D u_;
+      /** @brief vector velocity */
+      BlockVector velocity_;
+      /** @brief Finite element vector for velocity */
+      TFEVectFunct2D v_;
+      /** @brief vector acceleration */
+      BlockVector acceleration_;
+      /** @brief Finite element vector for acceleration */
+      TFEVectFunct2D a_;
       /** @brief Finite element function for Lame coefficient Lambda */
       BlockVector vector_lambda_;
       TFEFunction2D lambda_;
-      /** @brief Finite element function for Lame coefficient Lambda */
+      /** @brief Finite element function for Lame coefficient Mu */
       BlockVector vector_mu_;
       TFEFunction2D mu_;
-      /** @brief Finite element function for Lame coefficient Lambda */
+      /** @brief Finite element function for density rho */
       BlockVector vector_rho_;
       TFEFunction2D rho_;
 
@@ -148,7 +157,11 @@ class Time_LinElastic2D
      */
     void assemble_initial_time();
 
-
+    /** @brief Solves the system Ma0 = F-K.d0
+     * to obtain an initial acceleration for input
+     * in the Newmark Scheme.
+     */
+    void solve_initial_acceleration();
 
     /*************************************************************/
    /**
@@ -176,6 +189,8 @@ class Time_LinElastic2D
    { return this->systems_.front().fe_space_; }
    const BlockVector& get_solution() const
    { return this->systems_.front().solution_; }
+   const BlockVector& get_velocity_vector() const
+   { return this->systems_.front().velocity_; }
    const BlockVector& get_rhs() const
    { return this->systems_.front().rhs_; }
    const BlockVector& get_lamecoefficients_lambda() const
@@ -186,6 +201,8 @@ class Time_LinElastic2D
    { return this->systems_.front().vector_rho_; }
    const TFEVectFunct2D & get_displacement() const
    { return this->systems_.front().u_; }
+   const TFEVectFunct2D & get_velocity_field() const
+   { return this->systems_.front().v_; }
    // try not to use this as it is not const
    TFEFunction2D *get_displacement_component(int i)
    { return (i==0) ? this->systems_.front().u_.GetComponent(0)

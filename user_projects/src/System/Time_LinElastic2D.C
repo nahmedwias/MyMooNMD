@@ -48,6 +48,12 @@ Time_LinElastic2D::System_per_grid::System_per_grid(const Example_TimeLinElastic
   solution_(this->stiffness_matrix_,false),
   u_(&fe_space_,(char*)"u", (char*)"u", solution_.block(0),
      solution_.length(0), 2),
+  velocity_(this->stiffness_matrix_,false),
+  v_(&fe_space_,(char*)"v", (char*)"v", velocity_.block(0),
+     velocity_.length(0), 2),
+  acceleration_(this->stiffness_matrix_,false),
+  a_(&fe_space_,(char*)"a", (char*)"a", acceleration_.block(0),
+     acceleration_.length(0), 2),
   vector_lambda_(solution_),
   lambda_(&fe_space_,(char*)"lambda", (char*)"lambda",
           vector_lambda_.block(0), vector_lambda_.length(0)),
@@ -103,10 +109,15 @@ Time_LinElastic2D::Time_LinElastic2D(const TDomain& domain,
     // interpolate initial displacements
     TFEFunction2D * u1 = this->systems_.front().u_.GetComponent(0);
     TFEFunction2D * u2 = this->systems_.front().u_.GetComponent(1);
+    TFEFunction2D * v1 = this->systems_.front().v_.GetComponent(0);
+    TFEFunction2D * v2 = this->systems_.front().v_.GetComponent(1);
     u1->Interpolate(example_.get_initial_cond(0));
     u2->Interpolate(example_.get_initial_cond(1));
+    v1->Interpolate(example_.get_initial_cond(2));
+    v2->Interpolate(example_.get_initial_cond(3));
     // add the fe function to the output object.
     outputwriter_.add_fe_vector_function(&this->systems_.front().u_);
+    outputwriter_.add_fe_vector_function(&this->systems_.front().v_);
   }
   else
   {
@@ -160,16 +171,16 @@ void Time_LinElastic2D::assemble_initial_time()
          s.stiffness_matrix_.get_blocks_uniquely();
      std::vector<std::shared_ptr<FEMatrix>> mass_blocks =
          s.mass_matrix_.get_blocks_uniquely();
-     sqMatrices[0] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(0).get());
-     sqMatrices[1] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(1).get());
-     sqMatrices[2] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(2).get());
-     sqMatrices[3] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(3).get());
-     sqMatrices[4] =reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-     sqMatrices[5] =reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
+     sqMatrices[0] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(0).get());//K11
+     sqMatrices[1] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(1).get());//K12
+     sqMatrices[2] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(2).get());//K21
+     sqMatrices[3] =reinterpret_cast<TSquareMatrix2D*>(stiffness_blocks.at(3).get());//K22
+     sqMatrices[4] =reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());//M11
+     sqMatrices[5] =reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());//M22
 
      /* Three, reset or preprocess for Assemble2D */
      s.rhs_.reset();
-//     sqMatrices[0]->reset(); sqMatrices[1]->reset(); sqMatrices[2]->reset();
+//sqMatrices[0]->reset(); //sqMatrices[1]->reset(); sqMatrices[2]->reset();
 //     sqMatrices[3]->reset(); sqMatrices[4]->reset(); sqMatrices[5]->reset();
 
      /* Four, Assemble2D */
@@ -185,6 +196,12 @@ void Time_LinElastic2D::assemble_initial_time()
 //  this->get_stiff_matrix().print_matrix_info("stiffness");
 //  this->get_mass_matrix().print_matrix_info("mass");
   cout << "END OF ASSEMBLE INITIAL TIME" << endl;
+}
+
+/**************************************************************************** */
+void Time_LinElastic2D::solve_initial_acceleration()
+{
+
 }
 
 /**************************************************************************** */

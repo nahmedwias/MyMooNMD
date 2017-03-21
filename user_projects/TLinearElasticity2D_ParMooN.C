@@ -56,6 +56,7 @@ int main(int argc, char* argv[])
   Time_LinElastic2D ElasticStructure(domain, parmoon_db,ElasticityExample);
 
   ElasticStructure.assemble_initial_time();
+  ElasticStructure.solve_initial_acceleration();
 
   ElasticStructure.get_lamecoefficients_lambda().write("lambda");
   ElasticStructure.get_lamecoefficients_mu().write("mu");
