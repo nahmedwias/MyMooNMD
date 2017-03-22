@@ -69,12 +69,12 @@ int main(int argc, char* argv[])
   VOF_TwoPhase2D vof(domain,tnse_db,tcd_db);
   vof.manage_example_parameters();
 
-   /* SOME OUTPUT AND INFORMATION SET */
-  vof.output_initial_info();
-
   /* This calculates rho and mu vectors depending on example number
    * Check that the vectors are as expected using "output_vectors(..)" */
   vof.update_field_vectors();
+
+  /* SOME OUTPUT AND INFORMATION SET */
+  vof.output_initial_info();
   vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
 
 
@@ -87,9 +87,7 @@ int main(int argc, char* argv[])
     vof.tnse2d_.assemble_initial_time_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_); // assemble linear term
   else
     vof.tnse2d_.assemble_initial_time();                                // assemble linear term
-  vof.tnse2d_.apply_slip_penetration_bc(true,true);
-//  cout << "SUCCESS" << endl;
-//  exit(0);
+
   if (!tcd_db["algebraic_flux_correction"].is("none"))
     TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
   if (vof.solve_convection_ == true)
