@@ -176,16 +176,16 @@ void Brinkman2D::assemble()
         const TFESpace2D * p_space = &s.pressure_space;
         
         // declare the variables which Assemble2D needs and each brinkman type has to fill
-        size_t N_FESpaces = 2;
+//        size_t N_FESpaces = 2;
         
-        const TFESpace2D *fespmat[2] = {v_space, p_space};
-        TSquareMatrix2D *sq_matrices[5]{nullptr}; // it's five pointers maximum (Type14)
+//        const TFESpace2D *fespmat[2] = {v_space, p_space};
+//        TSquareMatrix2D *sq_matrices[5]{nullptr}; // it's five pointers maximum (Type14)
         
-        TMatrix2D *rect_matrices[4]{nullptr}; // it's four pointers maximum (Types 2, 4, 14)
+//        TMatrix2D *rect_matrices[4]{nullptr}; // it's four pointers maximum (Types 2, 4, 14)
 
-        BoundCondFunct2D * boundary_conditions[3] = {
-            v_space->GetBoundCondition(), v_space->GetBoundCondition(),
-            p_space->GetBoundCondition() };
+//        BoundCondFunct2D * boundary_conditions[3] = {
+//            v_space->GetBoundCondition(), v_space->GetBoundCondition(),
+//            p_space->GetBoundCondition() };
 
         std::array<BoundValueFunct2D*, 3> non_const_bound_values;
         non_const_bound_values[0] = example.get_bd()[0];
@@ -216,24 +216,24 @@ void Brinkman2D::assemble()
         //--------------------------------------------------------------------------------------------------
         // call the assemble method with the information that has been patched together
         // //old Assemble2D.C function
-        size_t n_sq_mat = 5;
-        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-        sq_matrices[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+//        size_t n_sq_mat = 5;
+//        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+//        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+//        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+//        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+//        sq_matrices[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
         
-        size_t n_rect_mat = 4;
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); // first the lying B blocks
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); // than the standing B blocks
-        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+//        size_t n_rect_mat = 4;
+//        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); // first the lying B blocks
+//        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+//        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); // than the standing B blocks
+//        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
         
-        double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; // third place gets only filled
-        RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
-        const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
-        fesprhs[2]  = p_space;
-        size_t N_Rhs = 3; // is 3 if NSE type is 4 or 14 (else it is 2)
+//        double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; // third place gets only filled
+//        RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
+//        const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
+//        fesprhs[2]  = p_space;
+//        size_t N_Rhs = 3; // is 3 if NSE type is 4 or 14 (else it is 2)
 	
 	
 	/*Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
