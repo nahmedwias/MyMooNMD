@@ -183,8 +183,8 @@ void Time_CD2D::set_parameters()
   {//some kind of afc enabled
     if(!db["algebraic_flux_correction"].is("fem-fct-cn"))
     {
-      db["algebraic_flux_correction"].set("fem-fct-cn");
-      Output::print("Only kind of algebraic flux correction"
+//      db["algebraic_flux_correction"].set("fem-fct-cn");
+      ErrThrow("Only kind of algebraic flux correction"
           " for TCD problems is Crank-Nicolson FEM-FCT (fem-fct-cn).");
     }
 
@@ -207,8 +207,8 @@ void Time_CD2D::set_parameters()
     //make sure that galerkin discretization is used
     if (TDatabase::ParamDB->DISCTYPE != 1)
     {//some other disctype than galerkin
-      TDatabase::ParamDB->DISCTYPE = 1;
-      Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
+//      TDatabase::ParamDB->DISCTYPE = 1;
+      ErrThrow("DISCTYPE must be = 1(GALERKIN) because Algebraic Flux ",
                     "Correction is enabled.");
     }
 
