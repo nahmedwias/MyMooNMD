@@ -147,12 +147,12 @@ double **OrigValues, int *N_BaseFuncts,
 //      WITHOUT right hand sides
 // ======================================================================
 
-int TimeNSType4_SSMUM_NLN_Terms = 3;
-MultiIndex2D TimeNSType4_SSMUM_NLDerivatives[3] = { D10, D01, D00 };
-int TimeNSType4_SSMUM_NLSpaceNumbers[3] = { 0, 0, 0 };
-int TimeNSType4_SSMUM_NLN_Matrices = 4;
-int TimeNSType4_SSMUM_NLRowSpace[4] = { 0, 0, 0, 0 };
-int TimeNSType4_SSMUM_NLColumnSpace[4] = { 0, 0, 0, 0 };
-int TimeNSType4_SSMUM_NLN_Rhs = 0;
-int *TimeNSType4_SSMUM_NLRhsSpace = NULL;
+//int TimeNSType4_SSMUM_NLN_Terms = 3;
+//MultiIndex2D TimeNSType4_SSMUM_NLDerivatives[3] = { D10, D01, D00 };
+//int TimeNSType4_SSMUM_NLSpaceNumbers[3] = { 0, 0, 0 };
+//int TimeNSType4_SSMUM_NLN_Matrices = 4;
+//int TimeNSType4_SSMUM_NLRowSpace[4] = { 0, 0, 0, 0 };
+//int TimeNSType4_SSMUM_NLColumnSpace[4] = { 0, 0, 0, 0 };
+//int TimeNSType4_SSMUM_NLN_Rhs = 0;
+//int *TimeNSType4_SSMUM_NLRhsSpace = NULL;
 

@@ -5,7 +5,9 @@
 #include <Upwind.h>
 #include <GridTransfer.h>
 #include <Multigrid.h>
-#include<Assemble2D.h>
+#include <Assemble2D.h>
+
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 
 ParameterDatabase get_default_NSE2D_parameters()
 {
@@ -409,6 +411,9 @@ void NSE2D::assemble()
             "I don't know how to pass its blocks to Assemble2D.");
     }
 
+    //HOTFIX: Check the documentation!
+    assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+
     // call the assemble method with the information that has been patched together
     Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
@@ -545,6 +550,10 @@ void NSE2D::assemble_nonlinear_term()
         //reset the matrices, linear part is assembled anew
         sq_mat[i]->reset();
       }
+
+      //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
       //do the actual assembling
       Assemble2D(n_fe_spaces, fe_spaces, n_sq_mat, sq_mat, n_rect_mat, rect_mat,
                  n_rhs, rhs, fe_rhs, boundary_conditions,
