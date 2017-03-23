@@ -7,7 +7,10 @@
 // ======================================================================
 #include <Convolution.h>
 #include <Database.h>
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 #include <TNSE2D_Routines.h>
+
+Hotfixglobal_AssembleNSE assemble_nse(Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION);
 
 // ======================================================================
 // compute parameter for RFB stabilization
@@ -229,7 +232,10 @@ double ***LocMatrices, double **LocRhs)
       ansatz01 = Orig1[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
 
       MatrixRow[j] += Mult * val;
     }                            // endfor j
@@ -824,7 +830,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz01 = Orig1[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
 
       MatrixRow[j] += Mult * val;
     }                            // endfor j
@@ -1375,7 +1383,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz01 = Orig1[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix11Row[j] += Mult * val;
 
       // val  = 0;
@@ -1385,7 +1395,9 @@ double ***LocMatrices, double **LocRhs)
       // Matrix21Row[j] += Mult * val;
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix22Row[j] += Mult * val;
 
     }                            // endfor j
@@ -2109,7 +2121,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz01 = Orig1[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix11Row[j] += Mult * val;
 
       // val  = 0;
@@ -2119,7 +2133,9 @@ double ***LocMatrices, double **LocRhs)
       // Matrix21Row[j] += Mult * val;
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix22Row[j] += Mult * val;
 
     }                            // endfor j
