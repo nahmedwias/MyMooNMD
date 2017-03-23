@@ -5,11 +5,10 @@
 #include <Upwind.h>
 #include <GridTransfer.h>
 #include <Multigrid.h>
-#include <Assemble2D.h>
-
-#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
-#include <LocalAssembling2D.h>
-#include <NSE2D_FixPo.h>
+#include "../../include/AssembleRoutines/Assemble2D.h"
+#include "../../include/AssembleRoutines/Hotfixglobal_AssembleNSE.h" // a temporary hotfix - check documentation!
+#include "../../include/AssembleRoutines/LocalAssembling2D.h"
+#include "../../include/AssembleRoutines/NSE2D_FixPo.h"
 
 ParameterDatabase get_default_NSE2D_parameters()
 {

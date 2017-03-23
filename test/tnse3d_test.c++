@@ -621,7 +621,7 @@ int main(int argc, char* argv[])
     db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
 
     TDomain domain_tet(db);
-    size_t n_ref = domain_tet.get_n_initial_refinement_steps();
+//    size_t n_ref = domain_tet.get_n_initial_refinement_steps();
 //     for(size_t i=0; i< n_ref ; i++)
 //     {
 //       domain_tet.RegRefineAll();
