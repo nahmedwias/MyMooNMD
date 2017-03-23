@@ -212,14 +212,14 @@ void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
   int i;
-  double *coeff, x, y; 
+  double *coeff;//, x, y;
   double nu=1/TDatabase::ParamDB->RE_NR;
 
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-    x = X[i];
-    y = Y[i];
+//    x = X[i];
+//    y = Y[i];
 
     coeff[0] = nu;
 
