@@ -5,8 +5,8 @@
  ************************************************************************  */
 #include <Database.h>
 #include <Darcy2D.h>
-#include <Assemble2D.h>
 #include <MainUtilities.h>
+#include "../../include/AssembleRoutines/Assemble2D.h"
 
 
 ParameterDatabase get_default_Darcy2D_parameters()

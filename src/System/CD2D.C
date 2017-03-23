@@ -4,13 +4,13 @@
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
 #include <PostProcessing2D.h>
-#include <LocalAssembling2D.h>
-#include <Assemble2D.h>
 #include <Upwind.h>
 #include <LocalProjection.h>
 #include <FEFunctionInterpolator.h>
 
-#include <NSE2D_FixPo.h>
+#include "../../include/AssembleRoutines/Assemble2D.h"
+#include "../../include/AssembleRoutines/LocalAssembling2D.h"
+#include "../../include/AssembleRoutines/NSE2D_FixPo.h"
 
 ParameterDatabase get_default_CD2D_parameters()
 {

@@ -3,12 +3,12 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <AlgebraicFluxCorrection.h>
-#include <LocalAssembling2D.h>
-#include <Assemble2D.h>
 #include <LocalProjection.h>
-#include <ConvDiff2D.h>
-#include <NSE2D_FixPo.h>
 #include <FEFunctionInterpolator.h>
+#include "../../include/AssembleRoutines/Assemble2D.h"
+#include "../../include/AssembleRoutines/ConvDiff2D.h"
+#include "../../include/AssembleRoutines/LocalAssembling2D.h"
+#include "../../include/AssembleRoutines/NSE2D_FixPo.h"
 
 /**************************************************************************** */
 ParameterDatabase get_default_TCD2D_parameters()
