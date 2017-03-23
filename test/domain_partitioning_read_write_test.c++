@@ -5,6 +5,7 @@
 #include <ParameterDatabase.h>
 
 #include <mpi.h>
+#include <stdio.h>
 
 int main(int argc, char **argv)
 {
@@ -19,8 +20,10 @@ int main(int argc, char **argv)
   TFEDatabase3D FEDatabase;
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
+  Output::setVerbosity(5);
+
   // add some parameters to the database.
-  db.add("read_metis", true, "");
+  db.add("read_metis", false, "");
   db.add("read_metis_file", "metis_domain_decomp.out", "");
   db.add("write_metis", true, "");
   db.add("write_metis_file", "metis_domain_decomp.out", "");
@@ -38,7 +41,7 @@ int main(int argc, char **argv)
     = domain_original.refine_and_get_hierarchy_of_collections( db , maxSubDomainPerDof );
 
   domain_original.print_info("original domain");
-  return 0;
+
   // Construct the "copy" domain - first change the database accordingly.
   db["read_metis"] = true;
   db["write_metis"] = false;
@@ -46,8 +49,6 @@ int main(int argc, char **argv)
   TDomain domain_copycat(db);
   std::list<TCollection* > grids_copy
     = domain_copycat.refine_and_get_hierarchy_of_collections( db , maxSubDomainPerDof );
-
-
 
   domain_copycat.print_info("copied domain");
 
@@ -84,6 +85,10 @@ int main(int argc, char **argv)
       }
     }
   }
+
+  // tidy up in the build directory
+  if(my_rank == 0)
+	  remove("metis_domain_decomp.out");
 
   MPI_Finalize();
 
