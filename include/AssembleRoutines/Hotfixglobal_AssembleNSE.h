@@ -5,8 +5,8 @@
  *      Author: bartsch
  */
 
-#ifndef INCLUDE_FE_HOTFIXGLOBAL_ASSEMBLENSE_H_
-#define INCLUDE_FE_HOTFIXGLOBAL_ASSEMBLENSE_H_
+#ifndef INCLUDE_ASSEMBLEROUTINES_HOTFIXGLOBAL_ASSEMBLENSE_H_
+#define INCLUDE_ASSEMBLEROUTINES_HOTFIXGLOBAL_ASSEMBLENSE_H_
 
 /**
  * This enum class is, as is stated, part of a hotfix. It influences the
@@ -30,4 +30,4 @@ enum class Hotfixglobal_AssembleNSE{ WITH_CONVECTION, WITHOUT_CONVECTION};
 extern Hotfixglobal_AssembleNSE assemble_nse;
 
 
-#endif /* INCLUDE_FE_HOTFIXGLOBAL_ASSEMBLENSE_H_ */
+#endif /* INCLUDE_ASSEMBLEROUTINES_HOTFIXGLOBAL_ASSEMBLENSE_H_ */
