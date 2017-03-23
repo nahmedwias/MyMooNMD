@@ -121,7 +121,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   # read/write fe function
   add_executable(ParMooN_test_read_write_fe_function read_write_fe_function_test.c++)
   target_link_libraries(ParMooN_test_read_write_fe_function
-                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
                         ${_EXTERN_LIBRARIES})
   add_test(read_write_fe_function ParMooN_test_read_write_fe_function)
   list(APPEND parmoon_tests ParMooN_test_read_write_fe_function)
@@ -359,7 +359,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   
   #read_write_fe_function_mpi tests
   set(_EXEC_NAME ParMooN_test_read_write_fe_function_mpi)
-  set(_FILE_NAME read_write_fe_function_test_MPI.c++)
+  set(_FILE_NAME read_write_fe_function_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
   add_test(NAME read_write_fe_function_mpi_mumps COMMAND mpirun -n 2 ParMooN_test_read_write_fe_function_mpi mumps)

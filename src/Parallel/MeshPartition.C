@@ -32,7 +32,7 @@
 #include <Quadrangle.h>
 #include <MacroCell.h>
 #include <Edge.h>
-
+#include <Read_write_metis.h>
 #ifdef __2D__
   #include <FEDatabase2D.h>
 #endif
@@ -343,6 +343,141 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   nn =  (idx_t)N_RootVertices;
   nparts = (idx_t)size;
   
+  // todo Marvin
+  // Here is the place where Metis is called. Metis is the
+  // external program which takes care of partitioning the mesh.
+  // Metis should only be called if read_metis is false - otherwise
+  // read-in must happen. The only "relevant" argument is the array
+  // "Cell_Rank" - this must be filled from the read-in file, somehow
+  // like this:
+  // for(int cell =0; cell < N_Cells ; ++cell)
+  // {
+  //   Cell_Rank[cell] = "read from file, to which rank this cell should belong "
+  // }
+  //
+  Domain->get_database()["read_metis"].info();
+  bool read_metis = Domain->get_database()["read_metis"];
+  bool write_metis = Domain->get_database()["write_metis"];
+
+  ReadWriteMetis readWrite{};
+
+  if(read_metis)
+  {
+	  readWrite.readFile(Domain, size,  N_Cells, Cell_Rank);
+//  {
+//	  std::string file_name = Domain->get_database()["read_metis_file"];
+//
+//	  std::ifstream ifs; //Deklarieren von ifs zum Oeffnen der Textdatei
+//	  ifs.open(file_name); //Textdatei wird geoeffnet
+//	  if(ifs.is_open())
+//	      {
+//		      std::string line;
+//		      int l =0; //a line counter
+//		      while (std::getline(ifs, line)) //Reading line by line
+//		      {
+//		    	  if(l==0)//we expect this line to hold "ParMooN Mesh Partition File"
+//		    	  {
+//		    		  if (line!="ParMooN Mesh Partition File"){throw std::runtime_error("The first line of the written-file does not match.");}
+//		    		  ++l;
+//		    		  continue;
+//		    	  }
+//		    	  else if(l==1)
+//		    		  // Reads the total Number of Cells and the Number of Partitions
+//		    		  //  of the written file and compares them to current configuration
+//		    		  // throws error if they don't match
+//		    	  {
+//		    		  int position = line.find_first_of(',');
+//		    		  std::string number_partition = line.substr(position+1);
+//		    		  std::string number_cells = line.substr(0, position);
+//		    		  number_partition.erase (0,14);
+//		    		  number_cells.erase (0,9);
+//		    		  int total_partition_number;
+//		    		  try
+//		    		  {
+//		    			  total_partition_number=std::stoi(number_partition);
+//		    			  if (total_partition_number != size)
+//		    			  {
+//		    				  throw std::runtime_error("The total number of partitions of the written file does not match the total number of partitions that is used");
+//		    			  }
+//		    		  }
+//		    		  catch (std::exception& e)
+//		    		  {
+//		    			  Output::print(e.what());
+//		    		  }
+//		    		  int total_number_of_cells;
+//		    		  try
+//		    		  {
+//		    			  total_number_of_cells=std::stoi(number_cells);
+//		    			  if (total_number_of_cells!=N_Cells)
+//		    			  {
+//		    				  throw std::runtime_error("The total number of cells of the written file does not match the total number of cells that are used.");
+//		    			  }
+//		    		  }
+//		    		  catch (std::exception& e)
+//		    		  {
+//		    			  Output::print(e.what());
+//		    		  }
+//		    		  ++l;
+//		    		  continue;
+//		    	  }
+//		    	  else
+//		    	  {
+//		    		  int Comment = line.find_first_of('#'); //Looks for lines that start with #
+//		    		  if (Comment == 0){cout<<line<<endl;continue;} // If a Line starts with # it prints the comment
+//		    		  else
+//		    			  //Here we write out the Cellnumber and the matching Cell_Rank.
+//		    			  //If the partition number or number of cells is too big, than an error is thrown
+//		    		  {
+//		    			  int pos = line.find_first_of(',');
+//		    		  	  std::string Rank = line.substr(pos+1);
+//		    		  	  std::string Cell = line.substr(0, pos);
+//		    		  	  Rank.erase (0,5);
+//		    		  	  Cell.erase (0,5);
+//		    		  	  int Rank_Number;
+//		    		  	  try
+//		    		  	  {
+//		    		  		  Rank_Number=std::stoi(Rank);
+//		    		  		  if (Rank_Number >= size)
+//		    		  		  {
+//		    		  			  ErrThrow("****************************************The input file contains a rank greater than mpi_size.");
+//		    		  		  }
+//		    		  	  }
+//		    		  	  catch (std::exception& e)
+//		    		  	  {
+//		    		  		  Output::print(e.what());
+//		    		  	  }
+//
+//		    		  	  int Cellnumber;
+//		    		  	  try
+//		    		  	  {
+//		    		  		  Cellnumber=std::stoi(Cell);
+//		    		  		  if (Cellnumber>=N_Cells)
+//		    		  		  {
+//		    		  			ErrThrow("****************************************The input file contains a cell number greater than the maximal cell number. Additionally the cell number does not match to the used line number l-2.");
+//		    		  		  }
+//		    		  	  }
+//		    		  	  catch (std::exception& e)
+//		    		  	  {
+//		    		  		Output::print(e.what());
+//		    		  	  }
+//		    		  	  Cell_Rank[l-2]=Rank_Number;
+//		    			 //cout<<"The "<<l-2<<" entry of the CellRank is: "<< Cell_Rank[l-2]<<endl;
+//
+//		    			  if (l>N_Cells+1){ErrThrow("****************************************The file has more lines than it should.");}
+//		    			  ++l;
+//		    		  }
+//		    	  }
+//
+//		      }
+//		      if (l-2!=N_Cells){ErrThrow("****************************************The file has less lines than it should.");}
+//	      }
+//	  else
+//	  {
+//	     ErrThrow("**********************************The file was not read. ");
+//	  }
+  }
+  else
+  {
   t1 = MPI_Wtime();
    if(type == 0)
     {
@@ -354,13 +489,35 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
                        &nparts, NULL, options, &edgecut, Cell_Rank, Vert_Rank);
     }
    else
-    {
+   {
      cout<<" Error METIS_PartMesh implemented for Par_P2 = 0 or 1 !!" <<endl;
      MPI_Abort(comm, 0);
-    }
+   }
+   std:: cout << Cell_Rank;
+   t2 = MPI_Wtime();
+   OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
+  }
+  Domain->get_database()["write_metis"].info();
 
-  t2 = MPI_Wtime();
-  OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
+  if(write_metis)
+  {
+	  readWrite.writeFile(Domain,size, N_Cells, Cell_Rank);
+//	  std::string file_name = Domain->get_database()["write_metis_file"];
+//	  std::ofstream ofs (file_name); //Create write-txt-file
+//	  ofs << "ParMooN Mesh Partition File\n" << "N_Cells: "<< N_Cells << " ,N_Processors: " << size <<"\n";
+//
+//	  for(int i =0; i < N_Cells ; i++) // Loop cell entries of cell rank
+//	  {
+//	  ofs <<"Cell "<< i<< " ,Rank "<< Cell_Rank[i] <<endl; //Write entries of each Cell of Cell_Rank in seperate line in txt-file
+//	  }
+//	  ofs.close(); //closes write in file
+  }
+  // todo Marvin
+  // Here is the place to write the mesh partition, if called to do so.
+  // As with the read-in, the only necessary information is which cell
+  // belongs to which process. That information, stored in "Cell_Rank",
+  // must be written to the write-out file (of course in the very format
+  // that you intend to be read in).
 
 
   /** *********************************************/
