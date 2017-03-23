@@ -14,14 +14,14 @@
 //      B1, B2 (divergence blocks)
 // ======================================================================
 
-int TimeNSType1N_Terms = 4;
-MultiIndex2D TimeNSType1Derivatives[4] = { D10, D01, D00, D00 };
-int TimeNSType1SpaceNumbers[4] = { 0, 0, 0, 1 };
-int TimeNSType1N_Matrices = 4;
-int TimeNSType1RowSpace[4] = { 0, 0, 1, 1 };
-int TimeNSType1ColumnSpace[4] = { 0, 0, 0, 0 };
-int TimeNSType1N_Rhs = 2;
-int TimeNSType1RhsSpace[2] = { 0, 0 };
+//int TimeNSType1N_Terms = 4;
+//MultiIndex2D TimeNSType1Derivatives[4] = { D10, D01, D00, D00 };
+//int TimeNSType1SpaceNumbers[4] = { 0, 0, 0, 1 };
+//int TimeNSType1N_Matrices = 4;
+//int TimeNSType1RowSpace[4] = { 0, 0, 1, 1 };
+//int TimeNSType1ColumnSpace[4] = { 0, 0, 0, 0 };
+//int TimeNSType1N_Rhs = 2;
+//int TimeNSType1RhsSpace[2] = { 0, 0 };
 
 // ======================================================================
 // Type 1, Standard Galerkin
@@ -78,9 +78,9 @@ void TimeNSType1GL00Convolution(double Mult, double *coeff,
 // ======================================================================
 // Type 1, GL00AuxProblem
 // ======================================================================
-int TimeNSType1GL00AuxProblemN_Matrices = 5;
-int TimeNSType1GL00AuxProblemRowSpace[5] = { 0, 0, 2, 1, 1 };
-int TimeNSType1GL00AuxProblemColumnSpace[5] = { 0, 0, 2, 0, 0 };
+//int TimeNSType1GL00AuxProblemN_Matrices = 5;
+//int TimeNSType1GL00AuxProblemRowSpace[5] = { 0, 0, 2, 1, 1 };
+//int TimeNSType1GL00AuxProblemColumnSpace[5] = { 0, 0, 2, 0, 0 };
 
 void TimeNSType1GL00AuxProblem(double Mult, double *coeff,
                         double *param, double hK,
@@ -103,14 +103,14 @@ void TimeNSType1GroupFEM(double Mult, double *coeff, double *param, double hK,
 //      B1T, B2T (gradient blocks)
 // ======================================================================
 
-int TimeNSType2N_Terms = 4;
-MultiIndex2D TimeNSType2Derivatives[4] = { D10, D01, D00, D00 };
-int TimeNSType2SpaceNumbers[4] = { 0, 0, 0, 1 };
-int TimeNSType2N_Matrices = 6;
-int TimeNSType2RowSpace[6] = { 0, 0, 1, 1, 0, 0 };
-int TimeNSType2ColumnSpace[6] = { 0, 0, 0, 0, 1, 1 };
-int TimeNSType2N_Rhs = 2;
-int TimeNSType2RhsSpace[2] = { 0, 0 };
+//int TimeNSType2N_Terms = 4;
+//MultiIndex2D TimeNSType2Derivatives[4] = { D10, D01, D00, D00 };
+//int TimeNSType2SpaceNumbers[4] = { 0, 0, 0, 1 };
+//int TimeNSType2N_Matrices = 6;
+//int TimeNSType2RowSpace[6] = { 0, 0, 1, 1, 0, 0 };
+//int TimeNSType2ColumnSpace[6] = { 0, 0, 0, 0, 1, 1 };
+//int TimeNSType2N_Rhs = 2;
+//int TimeNSType2RhsSpace[2] = { 0, 0 };
 
 // ======================================================================
 // Type 2, Standard Galerkin
@@ -128,14 +128,14 @@ void TimeNSType2Galerkin(double Mult, double *coeff,
 //      B1, B2 (divergence blocks), 
 //      B1T, B2T (gradient blocks)
 // ======================================================================
-int TimeNSType2N_TermsSUPG = 8;
-MultiIndex2D TimeNSType2DerivativesSUPG[8] = { D10, D01, D00, D00 };
-int TimeNSType2SpaceNumbersSUPG[8] = { 0, 0, 0, 1 };
-int TimeNSType2N_MatricesSUPG = 7;
-int TimeNSType2RowSpaceSUPG[7] = { 0, 0, 1, 1, 0, 0 };
-int TimeNSType2ColumnSpaceSUPG[7] = { 0, 0, 0, 0, 1, 1 };
-int TimeNSType2N_RhsSUPG = 2;
-int TimeNSType2RhsSpaceSUPG[2] = { 0, 0 };
+//int TimeNSType2N_TermsSUPG = 8;
+//MultiIndex2D TimeNSType2DerivativesSUPG[8] = { D10, D01, D00, D00 };
+//int TimeNSType2SpaceNumbersSUPG[8] = { 0, 0, 0, 1 };
+//int TimeNSType2N_MatricesSUPG = 7;
+//int TimeNSType2RowSpaceSUPG[7] = { 0, 0, 1, 1, 0, 0 };
+//int TimeNSType2ColumnSpaceSUPG[7] = { 0, 0, 0, 0, 1, 1 };
+//int TimeNSType2N_RhsSUPG = 2;
+//int TimeNSType2RhsSpaceSUPG[2] = { 0, 0 };
 
 // ======================================================================
 // Type 2, Standard SUPG
@@ -149,14 +149,14 @@ void TimeNSType2SUPG(double Mult, double *coeff, double *param, double hK,
 //      B1T, B2T (gradient blocks)
 //      WITHOUT right hand sides
 // ======================================================================
-int TimeNSType2NLN_TermsSUPG = 8;
-MultiIndex2D TimeNSType2NLDerivativesSUPG[8] = { D10, D01, D00 };
-int TimeNSType2NLSpaceNumbersSUPG[8] = { 0, 0, 0 };
-int TimeNSType2NLN_MatricesSUPG = 4;
-int TimeNSType2NLRowSpaceSUPG[4] = { 0 };
-int TimeNSType2NLColumnSpaceSUPG[4] = { 0 };
-int TimeNSType2NLN_RhsSUPG = 2;
-int TimeNSType2NLRhsSpaceSUPG[2] = {0, 0};
+//int TimeNSType2NLN_TermsSUPG = 8;
+//MultiIndex2D TimeNSType2NLDerivativesSUPG[8] = { D10, D01, D00 };
+//int TimeNSType2NLSpaceNumbersSUPG[8] = { 0, 0, 0 };
+//int TimeNSType2NLN_MatricesSUPG = 4;
+//int TimeNSType2NLRowSpaceSUPG[4] = { 0 };
+//int TimeNSType2NLColumnSpaceSUPG[4] = { 0 };
+//int TimeNSType2NLN_RhsSUPG = 2;
+//int TimeNSType2NLRhsSpaceSUPG[2] = {0, 0};
 // ======================================================================
 // Type 2, Standard SUPG
 // ======================================================================
@@ -210,9 +210,9 @@ void TimeNSType2GL00Convolution(double Mult, double *coeff,
 // ======================================================================
 // Type 2, GL00AuxProblem
 // ======================================================================
-int TimeNSType2GL00AuxProblemN_Matrices = 7;
-int TimeNSType2GL00AuxProblemRowSpace[7] = { 0, 0, 2, 1, 1, 0, 0 };
-int TimeNSType2GL00AuxProblemColumnSpace[7] = { 0, 0, 2, 0, 0, 1, 1 };
+//int TimeNSType2GL00AuxProblemN_Matrices = 7;
+//int TimeNSType2GL00AuxProblemRowSpace[7] = { 0, 0, 2, 1, 1, 0, 0 };
+//int TimeNSType2GL00AuxProblemColumnSpace[7] = { 0, 0, 2, 0, 0, 1, 1 };
 
 void TimeNSType2GL00AuxProblem(double Mult, double *coeff,
                         double *param, double hK,
@@ -225,14 +225,14 @@ void TimeNSType2GL00AuxProblem(double Mult, double *coeff,
 //      B1, B2 (divergence blocks), 
 // ======================================================================
 
-int TimeNSType3N_Terms = 4;
-MultiIndex2D TimeNSType3Derivatives[4] = { D10, D01, D00, D00 };
-int TimeNSType3SpaceNumbers[4] = { 0, 0, 0, 1 };
-int TimeNSType3N_Matrices = 8;
-int TimeNSType3RowSpace[8] = { 0, 0, 0, 0, 0, 0, 1, 1 };
-int TimeNSType3ColumnSpace[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-int TimeNSType3N_Rhs = 2;
-int TimeNSType3RhsSpace[2] = { 0, 0 };
+//int TimeNSType3N_Terms = 4;
+//MultiIndex2D TimeNSType3Derivatives[4] = { D10, D01, D00, D00 };
+//int TimeNSType3SpaceNumbers[4] = { 0, 0, 0, 1 };
+//int TimeNSType3N_Matrices = 8;
+//int TimeNSType3RowSpace[8] = { 0, 0, 0, 0, 0, 0, 1, 1 };
+//int TimeNSType3ColumnSpace[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+//int TimeNSType3N_Rhs = 2;
+//int TimeNSType3RhsSpace[2] = { 0, 0 };
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v)
@@ -337,9 +337,9 @@ void TimeNSType3GL00ConvolutionDD(double Mult, double *coeff,
 // ======================================================================
 // Type 3, GL00AuxProblem, (grad u, grad v)
 // ======================================================================
-int TimeNSType3GL00AuxProblemN_Matrices = 9;
-int TimeNSType3GL00AuxProblemRowSpace[9] =  { 0, 0, 0, 0, 0, 0, 2, 1, 1 };
-int TimeNSType3GL00AuxProblemColumnSpace[9] = { 0, 0, 0, 0, 0, 0, 2, 0, 0 };
+//int TimeNSType3GL00AuxProblemN_Matrices = 9;
+//int TimeNSType3GL00AuxProblemRowSpace[9] =  { 0, 0, 0, 0, 0, 0, 2, 1, 1 };
+//int TimeNSType3GL00AuxProblemColumnSpace[9] = { 0, 0, 0, 0, 0, 0, 2, 0, 0 };
 
 void TimeNSType3GL00AuxProblem(double Mult, double *coeff,
                         double *param, double hK,
@@ -358,15 +358,15 @@ void TimeNSType3GL00AuxProblemDD(double Mult, double *coeff,
 // ======================================================================
 // Type 3, VMSProjection, D(u):D(v)
 // ======================================================================
-int TimeNSType3VMSProjectionN_Terms = 5;
-MultiIndex2D TimeNSType3VMSProjectionDerivatives[5] = { D10, D01, D00, D00, D00 };
-int TimeNSType3VMSProjectionSpaceNumbers[5] = { 0, 0, 0, 1, 3 };
-int TimeNSType3VMSProjectionN_Matrices = 13;
-int TimeNSType3VMSProjectionRowSpace[13] = { 0, 0, 0, 0, 0, 0, 
-                                              3, 1, 1, 0, 0, 3, 3};
-int TimeNSType3VMSProjectionColumnSpace[13] = { 0, 0, 0, 0, 0, 0, 
-                                                 3, 0, 0, 3, 3, 0, 0};
-                                           
+//int TimeNSType3VMSProjectionN_Terms = 5;
+//MultiIndex2D TimeNSType3VMSProjectionDerivatives[5] = { D10, D01, D00, D00, D00 };
+//int TimeNSType3VMSProjectionSpaceNumbers[5] = { 0, 0, 0, 1, 3 };
+//int TimeNSType3VMSProjectionN_Matrices = 13;
+//int TimeNSType3VMSProjectionRowSpace[13] = { 0, 0, 0, 0, 0, 0,
+//                                              3, 1, 1, 0, 0, 3, 3};
+//int TimeNSType3VMSProjectionColumnSpace[13] = { 0, 0, 0, 0, 0, 0,
+//                                                 3, 0, 0, 3, 3, 0, 0};
+//
 void TimeNSType3VMSProjectionDD(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
@@ -380,14 +380,14 @@ void TimeNSType3VMSProjectionDD(double Mult, double *coeff,
 //      B1T, B2T (gradient blocks)
 // ======================================================================
 
-int TimeNSType4N_Terms = 4;
-MultiIndex2D TimeNSType4Derivatives[4] = { D10, D01, D00, D00 };
-int TimeNSType4SpaceNumbers[4] = { 0, 0, 0, 1 };
-int TimeNSType4N_Matrices = 10;
-int TimeNSType4RowSpace[10] = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
-int TimeNSType4ColumnSpace[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
-int TimeNSType4N_Rhs = 2;
-int TimeNSType4RhsSpace[2] = { 0, 0 };
+//int TimeNSType4N_Terms = 4;
+//MultiIndex2D TimeNSType4Derivatives[4] = { D10, D01, D00, D00 };
+//int TimeNSType4SpaceNumbers[4] = { 0, 0, 0, 1 };
+//int TimeNSType4N_Matrices = 10;
+//int TimeNSType4RowSpace[10] = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
+//int TimeNSType4ColumnSpace[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
+//int TimeNSType4N_Rhs = 2;
+//int TimeNSType4RhsSpace[2] = { 0, 0 };
 
 // if convolution of velocity should be computed
 //int TimeNSType4N_MatricesConvU = 11;
@@ -497,11 +497,11 @@ void TimeNSType4GL00ConvolutionDD(double Mult, double *coeff,
 // ======================================================================
 // Type 4, GL00AuxProblem, (grad u, grad v)
 // ======================================================================
-int TimeNSType4GL00AuxProblemN_Matrices = 11;
-int TimeNSType4GL00AuxProblemRowSpace[11] =  
-    { 0, 0, 0, 0, 0, 0, 2, 1, 1, 0, 0 };
-int TimeNSType4GL00AuxProblemColumnSpace[11] = 
-    { 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 1 };
+//int TimeNSType4GL00AuxProblemN_Matrices = 11;
+//int TimeNSType4GL00AuxProblemRowSpace[11] =
+//    { 0, 0, 0, 0, 0, 0, 2, 1, 1, 0, 0 };
+//int TimeNSType4GL00AuxProblemColumnSpace[11] =
+//    { 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 1 };
 
 void TimeNSType4GL00AuxProblem(double Mult, double *coeff,
                         double *param, double hK,
@@ -520,14 +520,14 @@ void TimeNSType4GL00AuxProblemDD(double Mult, double *coeff,
 // ======================================================================
 // Type 4, VMSProjection, D(u):D(v)
 // ======================================================================
-int TimeNSType4VMSProjectionN_Terms = 5;
-MultiIndex2D TimeNSType4VMSProjectionDerivatives[5] = { D10, D01, D00, D00, D00 };
-int TimeNSType4VMSProjectionSpaceNumbers[5] = { 0, 0, 0, 1, 3 };
-int TimeNSType4VMSProjectionN_Matrices = 15;
-int TimeNSType4VMSProjectionRowSpace[15] = { 0, 0, 0, 0, 0, 0, 
-                                              3, 1, 1, 0, 0, 0, 0, 3, 3};
-int TimeNSType4VMSProjectionColumnSpace[15] = { 0, 0, 0, 0, 0, 0, 
-                                                 3, 0, 0, 1, 1, 3, 3, 0, 0};
+//int TimeNSType4VMSProjectionN_Terms = 5;
+//MultiIndex2D TimeNSType4VMSProjectionDerivatives[5] = { D10, D01, D00, D00, D00 };
+//int TimeNSType4VMSProjectionSpaceNumbers[5] = { 0, 0, 0, 1, 3 };
+//int TimeNSType4VMSProjectionN_Matrices = 15;
+//int TimeNSType4VMSProjectionRowSpace[15] = { 0, 0, 0, 0, 0, 0,
+//                                              3, 1, 1, 0, 0, 0, 0, 3, 3};
+//int TimeNSType4VMSProjectionColumnSpace[15] = { 0, 0, 0, 0, 0, 0,
+//                                                 3, 0, 0, 1, 1, 3, 3, 0, 0};
                                            
 void TimeNSType4VMSProjectionDD(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -544,14 +544,14 @@ void TimeNSType4VMSProjectionDD(double Mult, double *coeff,
 //      WITHOUT right hand sides
 // ======================================================================
 
-int TimeNSType1NLN_Terms = 3;
-MultiIndex2D TimeNSType1NLDerivatives[3] = { D10, D01, D00 };
-int TimeNSType1NLSpaceNumbers[3] = { 0, 0, 0 };
-int TimeNSType1NLN_Matrices = 1;
-int TimeNSType1NLRowSpace[1] = { 0 };
-int TimeNSType1NLColumnSpace[1] = { 0 };
-int TimeNSType1NLN_Rhs = 0;
-int *TimeNSType1NLRhsSpace = NULL;
+//int TimeNSType1NLN_Terms = 3;
+//MultiIndex2D TimeNSType1NLDerivatives[3] = { D10, D01, D00 };
+//int TimeNSType1NLSpaceNumbers[3] = { 0, 0, 0 };
+//int TimeNSType1NLN_Matrices = 1;
+//int TimeNSType1NLRowSpace[1] = { 0 };
+//int TimeNSType1NLColumnSpace[1] = { 0 };
+//int TimeNSType1NLN_Rhs = 0;
+//int *TimeNSType1NLRhsSpace = NULL;
 
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 2
@@ -559,15 +559,15 @@ int *TimeNSType1NLRhsSpace = NULL;
 //      WITHOUT B1T, B2T (gradient blocks)
 //      WITHOUT right hand sides
 // ======================================================================
-
-int TimeNSType2NLN_Terms = 3;
-MultiIndex2D TimeNSType2NLDerivatives[3] = { D10, D01, D00 };
-int TimeNSType2NLSpaceNumbers[3] = { 0, 0, 0 };
-int TimeNSType2NLN_Matrices = 1;
-int TimeNSType2NLRowSpace[1] = { 0 };
-int TimeNSType2NLColumnSpace[1] = { 0 };
-int TimeNSType2NLN_Rhs = 0;
-int *TimeNSType2NLRhsSpace = NULL;
+//
+//int TimeNSType2NLN_Terms = 3;
+//MultiIndex2D TimeNSType2NLDerivatives[3] = { D10, D01, D00 };
+//int TimeNSType2NLSpaceNumbers[3] = { 0, 0, 0 };
+//int TimeNSType2NLN_Matrices = 1;
+//int TimeNSType2NLRowSpace[1] = { 0 };
+//int TimeNSType2NLColumnSpace[1] = { 0 };
+//int TimeNSType2NLN_Rhs = 0;
+//int *TimeNSType2NLRhsSpace = NULL;
 
 // ======================================================================
 // Type 1, Standard Galerkin, only nonlinear part
@@ -615,14 +615,14 @@ void TimeNSType1_2NLSmagorinsky(double Mult, double *coeff,
 //      WITHOUT right hand sides
 // ======================================================================
 
-int TimeNSType3NLN_Terms = 3;
-MultiIndex2D TimeNSType3NLDerivatives[3] = { D10, D01, D00 };
-int TimeNSType3NLSpaceNumbers[3] = { 0, 0, 0 };
-int TimeNSType3NLN_Matrices = 2;
-int TimeNSType3NLRowSpace[2] = { 0, 0 };
-int TimeNSType3NLColumnSpace[2] = { 0, 0 };
-int TimeNSType3NLN_Rhs = 0;
-int *TimeNSType3NLRhsSpace = NULL;
+//int TimeNSType3NLN_Terms = 3;
+//MultiIndex2D TimeNSType3NLDerivatives[3] = { D10, D01, D00 };
+//int TimeNSType3NLSpaceNumbers[3] = { 0, 0, 0 };
+//int TimeNSType3NLN_Matrices = 2;
+//int TimeNSType3NLRowSpace[2] = { 0, 0 };
+//int TimeNSType3NLColumnSpace[2] = { 0, 0 };
+//int TimeNSType3NLN_Rhs = 0;
+//int *TimeNSType3NLRhsSpace = NULL;
 
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 4
@@ -631,14 +631,14 @@ int *TimeNSType3NLRhsSpace = NULL;
 //      WITHOUT right hand sides
 // ======================================================================
 
-int TimeNSType4NLN_Terms = 3;
-MultiIndex2D TimeNSType4NLDerivatives[3] = { D10, D01, D00 };
-int TimeNSType4NLSpaceNumbers[3] = { 0, 0, 0 };
-int TimeNSType4NLN_Matrices = 2;
-int TimeNSType4NLRowSpace[2] = { 0, 0 };
-int TimeNSType4NLColumnSpace[2] = { 0, 0 };
-int TimeNSType4NLN_Rhs = 0;
-int *TimeNSType4NLRhsSpace = NULL;
+//int TimeNSType4NLN_Terms = 3;
+//MultiIndex2D TimeNSType4NLDerivatives[3] = { D10, D01, D00 };
+//int TimeNSType4NLSpaceNumbers[3] = { 0, 0, 0 };
+//int TimeNSType4NLN_Matrices = 2;
+//int TimeNSType4NLRowSpace[2] = { 0, 0 };
+//int TimeNSType4NLColumnSpace[2] = { 0, 0 };
+//int TimeNSType4NLN_Rhs = 0;
+//int *TimeNSType4NLRhsSpace = NULL;
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v), only nonlinear part
@@ -706,9 +706,9 @@ void TimeNSType3_4NLLayton96DD(double Mult, double *coeff,
 // Type 3, Standard Smagorinsky, (grad u, grad v), only nonlinear part
 // Type 4, Standard Smagorinsky, (grad u, grad v), only nonlinear part
 // ======================================================================
-int TimeNSType3NLSmagorinskyN_Matrices = 4;
-int TimeNSType3NLSmagorinskyRowSpace[4] = { 0, 0, 0, 0 };
-int TimeNSType3NLSmagorinskyColumnSpace[4] = { 0, 0, 0, 0 };
+//int TimeNSType3NLSmagorinskyN_Matrices = 4;
+//int TimeNSType3NLSmagorinskyRowSpace[4] = { 0, 0, 0, 0 };
+//int TimeNSType3NLSmagorinskyColumnSpace[4] = { 0, 0, 0, 0 };
 
 void TimeNSType3_4NLSmagorinsky(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -728,12 +728,12 @@ void TimeNSType3_4NLSmagorinskyDD(double Mult, double *coeff,
 // Type 3, VMSProjection, D(u):D(v), only nonlinear diagonal blocks
 // Type 4, VMSProjection, D(u):D(v), only nonlinear diagonal blocks
 // ======================================================================
-int TimeNSType3NLVMSProjectionN_Terms = 4;
-MultiIndex2D TimeNSType3NLVMSProjectionDerivatives[4] = { D10, D01, D00, D00 };
-int TimeNSType3NLVMSProjectionSpaceNumbers[4] = { 0, 0, 0, 3 };
-int TimeNSType3NLVMSProjectionN_Matrices = 6;
-int TimeNSType3NLVMSProjectionRowSpace[6] = { 0, 0, 0, 0, 0, 0};
-int TimeNSType3NLVMSProjectionColumnSpace[6] = { 0, 0, 0, 0, 3, 3 };
+//int TimeNSType3NLVMSProjectionN_Terms = 4;
+//MultiIndex2D TimeNSType3NLVMSProjectionDerivatives[4] = { D10, D01, D00, D00 };
+//int TimeNSType3NLVMSProjectionSpaceNumbers[4] = { 0, 0, 0, 3 };
+//int TimeNSType3NLVMSProjectionN_Matrices = 6;
+//int TimeNSType3NLVMSProjectionRowSpace[6] = { 0, 0, 0, 0, 0, 0};
+//int TimeNSType3NLVMSProjectionColumnSpace[6] = { 0, 0, 0, 0, 3, 3 };
 
 void TimeNSType3_4NLVMSProjectionDD(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -749,14 +749,14 @@ void TimeNSType3_4NLVMSProjectionDD(double Mult, double *coeff,
 //      ONLY right hand sides
 // ======================================================================
 
-int TimeNSRHSN_Terms = 1;
-MultiIndex2D TimeNSRHSDerivatives[1] = { D00 };
-int TimeNSRHSSpaceNumbers[1] = { 0 };
-int TimeNSRHSN_Matrices = 0;
-int *TimeNSRHSRowSpace = NULL;
-int *TimeNSRHSColumnSpace = NULL;
-int TimeNSRHSN_Rhs = 2;
-int TimeNSRHSRhsSpace[2] = { 0, 0 };
+//int TimeNSRHSN_Terms = 1;
+//MultiIndex2D TimeNSRHSDerivatives[1] = { D00 };
+//int TimeNSRHSSpaceNumbers[1] = { 0 };
+//int TimeNSRHSN_Matrices = 0;
+//int *TimeNSRHSRowSpace = NULL;
+//int *TimeNSRHSColumnSpace = NULL;
+//int TimeNSRHSN_Rhs = 2;
+//int TimeNSRHSRhsSpace[2] = { 0, 0 };
 
 // ======================================================================
 // right-hand side ONLY
@@ -767,14 +767,14 @@ void TimeNSRHS(double Mult, double *coeff,
                double ***LocMatrices, double **LocRhs);
 //=======================================================================
 //=======================================================================
-int TimeNSRHSN_TermsSUPG = 3;
-MultiIndex2D TimeNSRHSDerivativesSUPG[3] = { D10, D01, D00 };
-int TimeNSRHSSpaceNumbersSUPG[3] = { 0, 0, 0 };
-int TimeNSRHSN_MatricesSUPG = 0;
-int *TimeNSRHSRowSpaceSUPG = NULL;
-int *TimeNSRHSColumnSpaceSUPG = NULL;
-int TimeNSRHSN_RhsSUPG = 4;
-int TimeNSRHSRhsSpaceSUPG[4] = { 0, 0, 0, 0 };
+//int TimeNSRHSN_TermsSUPG = 3;
+//MultiIndex2D TimeNSRHSDerivativesSUPG[3] = { D10, D01, D00 };
+//int TimeNSRHSSpaceNumbersSUPG[3] = { 0, 0, 0 };
+//int TimeNSRHSN_MatricesSUPG = 0;
+//int *TimeNSRHSRowSpaceSUPG = NULL;
+//int *TimeNSRHSColumnSpaceSUPG = NULL;
+//int TimeNSRHSN_RhsSUPG = 4;
+//int TimeNSRHSRhsSpaceSUPG[4] = { 0, 0, 0, 0 };
 
 void TimeNSRHSSUPG(double Mult, double *coeff, double *param, double hK, 
                    double **OrigValues, int *N_BaseFuncts,
@@ -786,14 +786,14 @@ void TimeNSRHSAuxProblemU(double Mult, double *coeff,
                           double **OrigValues, int *N_BaseFuncts,
                           double ***LocMatrices, double **LocRhs);
 
-int TimeNSRHSColN_Terms = 3;
-MultiIndex2D TimeNSRHSColDerivatives[3] = { D10, D01, D00 };
-int TimeNSRHSColSpaceNumbers[3] = { 0, 0, 0 };
-int TimeNSRHSColN_Matrices = 0;
-int *TimeNSRHSColRowSpace = NULL;
-int *TimeNSRHSColColumnSpace = NULL;
-int TimeNSRHSColN_Rhs = 2;
-int TimeNSRHSColRhsSpace[2] = { 0, 0 };
+//int TimeNSRHSColN_Terms = 3;
+//MultiIndex2D TimeNSRHSColDerivatives[3] = { D10, D01, D00 };
+//int TimeNSRHSColSpaceNumbers[3] = { 0, 0, 0 };
+//int TimeNSRHSColN_Matrices = 0;
+//int *TimeNSRHSColRowSpace = NULL;
+//int *TimeNSRHSColColumnSpace = NULL;
+//int TimeNSRHSColN_Rhs = 2;
+//int TimeNSRHSColRhsSpace[2] = { 0, 0 };
 
 // ======================================================================
 // right-hand side ONLY, Coletti model
@@ -826,14 +826,14 @@ void TimeNSRHSGL00AuxProblemPaper2(double Mult, double *coeff,
 // ONLY, Galdi-Layton model with auxiliary problem
 // ======================================================================
 
-int TimeNSGL00AuxProblemRHSN_Terms = 1;
-MultiIndex2D TimeNSGL00AuxProblemRHSDerivatives[1] = { D00 };
-int TimeNSGL00AuxProblemRHSSpaceNumbers[1] = { 0 };
-int TimeNSGL00AuxProblemRHSN_Matrices = 0;
-int *TimeNSGL00AuxProblemRHSRowSpace = NULL;
-int *TimeNSGL00AuxProblemRHSColumnSpace = NULL;
-int TimeNSGL00AuxProblemRHSN_Rhs = 3;
-int TimeNSGL00AuxProblemRHSRhsSpace[3] = { 0, 0, 0 };
+//int TimeNSGL00AuxProblemRHSN_Terms = 1;
+//MultiIndex2D TimeNSGL00AuxProblemRHSDerivatives[1] = { D00 };
+//int TimeNSGL00AuxProblemRHSSpaceNumbers[1] = { 0 };
+//int TimeNSGL00AuxProblemRHSN_Matrices = 0;
+//int *TimeNSGL00AuxProblemRHSRowSpace = NULL;
+//int *TimeNSGL00AuxProblemRHSColumnSpace = NULL;
+//int TimeNSGL00AuxProblemRHSN_Rhs = 3;
+//int TimeNSGL00AuxProblemRHSRhsSpace[3] = { 0, 0, 0 };
 
 void TimeNSGL00AuxProblemRHS(double Mult, double *coeff,
                double *param, double hK,
@@ -917,14 +917,14 @@ void TimeNSAuxMatrixGL00AuxProblem(double Mult, double *coeff,
 // assemble matrix for auxiliary problem
 // ======================================================================
 
-int MatrixAuxiliaryProblemN_Terms = 3;
-MultiIndex2D MatrixAuxiliaryProblemDerivatives[3] = { D10, D01, D00};
-int MatrixAuxiliaryProblemSpaceNumbers[3] = { 0, 0, 0};
-int MatrixAuxiliaryProblemN_Matrices = 1;
-int MatrixAuxiliaryProblemRowSpace[1] = { 0 };
-int MatrixAuxiliaryProblemColumnSpace[1] = { 0 };
-int MatrixAuxiliaryProblemN_Rhs = 0;
-int *MatrixAuxiliaryProblemRhsSpace = NULL;
+//int MatrixAuxiliaryProblemN_Terms = 3;
+//MultiIndex2D MatrixAuxiliaryProblemDerivatives[3] = { D10, D01, D00};
+//int MatrixAuxiliaryProblemSpaceNumbers[3] = { 0, 0, 0};
+//int MatrixAuxiliaryProblemN_Matrices = 1;
+//int MatrixAuxiliaryProblemRowSpace[1] = { 0 };
+//int MatrixAuxiliaryProblemColumnSpace[1] = { 0 };
+//int MatrixAuxiliaryProblemN_Rhs = 0;
+//int *MatrixAuxiliaryProblemRhsSpace = NULL;
 
 void MatrixAuxiliaryProblem(double Mult, double *coeff, 
                             double *param, double hK, 
