@@ -4,6 +4,12 @@
 //===============================================================================
 // everything for the full Projection-Based VMS method
 //===============================================================================
+void TimeNSParamsVelo_GradVelo_LargeScale2D(double *in, double *out);
+
+void TimeNSType4VMS_ProjectionDD2D(double Mult, double *coeff,
+                double *param, double hK,
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs);
 
 
 
