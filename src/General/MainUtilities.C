@@ -449,9 +449,9 @@ void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
   
                 psi[IVTH] = psi[IVT] + v1*dn1 + v2*dn2;
               break;
-            default:
-                cerr << "no stream function calculation possible for";
-                cerr << " the base function set: " << basefunct << endl;
+            //default:
+            //    cerr << "no stream function calculation possible for";
+            //    cerr << " the base function set: " << basefunct << endl;
           }
         } // endif
 

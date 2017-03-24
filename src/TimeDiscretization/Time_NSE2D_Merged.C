@@ -696,7 +696,7 @@ void Time_NSE2D_Merged::output(int m)
   if(db["example"].is(3))// mixing layer example
   {
     ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
-                               vorticity.data(), divergence->GetValues());
+                               vorticity_funct->GetValues(), divergence->GetValues());
     example.do_post_processing(*this, zero_vorticity);
   }
   else
@@ -1367,7 +1367,7 @@ void Time_NSE2D_Merged::prepared_postprocessing(TCollection *coll)
     vorticity.resize(2*n_vort_dofs, 0.);
     vorticity_funct 
       = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"voritcity",
-                              (char*)"vorticity", vorticity.data(), n_vort_dofs);
+                              (char*)"vorticity", vorticity.data()+n_vort_dofs, n_vort_dofs);
     divergence
       = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"dievergence",
                             (char*)"divergence", vorticity.data(), n_vort_dofs);
@@ -1378,17 +1378,24 @@ void Time_NSE2D_Merged::prepared_postprocessing(TCollection *coll)
 
 void Time_NSE2D_Merged::update_matrices_lps(System_per_grid &s)
 {
-  ErrThrow("local projection is not checked yet");
-  if(TDatabase::ParamDB->NSTYPE==4)
+  std::vector<std::shared_ptr<FEMatrix>> blocks;
+  blocks = s.matrix.get_blocks_uniquely();
+  if(TDatabase::ParamDB->NSTYPE==3 || TDatabase::ParamDB->NSTYPE==4)
   {
     //update matrices for local projection stabilization
-    std::vector<std::shared_ptr<FEMatrix>> blocks;
-    blocks = s.matrix.get_blocks_uniquely();
     std::vector< TSquareMatrix2D* > sqMat(2);
     sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
     sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
     UltraLocalProjection(sqMat[0], FALSE);
+    UltraLocalProjection(sqMat[1], FALSE);
   }
+  else
+  {
+    std::vector< TSquareMatrix2D* > sqMat(1);
+    sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+    UltraLocalProjection(sqMat[0], FALSE);
+  }
+  
 }
 
 void Time_NSE2D_Merged::assemble_rhs_nonlinear()
