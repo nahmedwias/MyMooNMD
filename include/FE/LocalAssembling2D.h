@@ -180,6 +180,10 @@ class LocalAssembling2D
      */
     void set_parameters_for_Smagorinsky(LocalAssembling2D_type tyep);
     
+    /* set parameters and functions for Projection-Based VMS */
+    void set_parameters_for_tnse_PB_VMS(LocalAssembling2D_type type);
+
+
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
