@@ -400,6 +400,9 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             case SUPG_EXTR:
               this->set_parameters_for_tnseSUPG_Extr(type);
               break;
+            case VMS_PROJECTION: // Projection-based VMS
+              this->set_parameters_for_tnse_PB_VMS(type);
+              break;
             case RESIDUAL_VMS_EXTR:
               this->set_parameters_for_tnseResidual_vms_Extr(type);
               break;
@@ -3238,4 +3241,10 @@ void LocalAssembling2D::set_parameters_for_Smagorinsky(LocalAssembling2D_type ty
       break;
   }
 }
+
+void LocalAssembling2D::set_parameters_for_tnse_PB_VMS(LocalAssembling2D_type type)
+{
+
+}
+
 
