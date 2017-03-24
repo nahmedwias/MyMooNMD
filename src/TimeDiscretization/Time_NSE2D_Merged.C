@@ -133,8 +133,7 @@ Time_NSE2D_Merged::Time_NSE2D_Merged(const TDomain& domain,
   u2->Interpolate(example.get_initial_cond(1));
 
   // post-processing
-  if(db["example"].is(3))
-    this->prepared_postprocessing(coll);
+  this->prepared_postprocessing(coll);
   // stabilization parameter
   if(TDatabase::ParamDB->NSTYPE==14)
   {
@@ -688,13 +687,14 @@ void Time_NSE2D_Merged::output(int m)
       Output::print<1>(t, " L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
     }
   }
+
   
+  int n= s.solution.length(0);
+  double *sol = s.solution.get_entries();
+  StreamFunction(&s.velocity_space, sol,sol+n,
+                     stream_function_space.get(), psi.data());
   if(db["example"].is(3))// mixing layer example
   {
-    int n= s.solution.length(0);
-    double *sol = s.solution.get_entries();
-    StreamFunction(&s.velocity_space, sol,sol+n,
-                     stream_function_space.get(), psi.data());
     ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
                                vorticity.data(), divergence->GetValues());
     example.do_post_processing(*this, zero_vorticity);
@@ -1346,18 +1346,6 @@ void Time_NSE2D_Merged::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
 /**************************************************************************** */
 void Time_NSE2D_Merged::prepared_postprocessing(TCollection *coll)
 {
-  zero_vorticity = -4711;
-  vorticity_space
-    =std::make_shared<TFESpace2D>(coll, (char*)"vorticity space", (char*)"vorticity space",
-                            example.get_bc(0), ContP_USpace, 1, nullptr);
-  n_vort_dofs = vorticity_space->GetN_DegreesOfFreedom();
-  vorticity.resize(2*n_vort_dofs, 0.);
-  vorticity_funct
-    = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"voritcity",
-                            (char*)"vorticity", vorticity.data(), n_vort_dofs);
-  divergence
-    = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"dievergence",
-                            (char*)"divergence", vorticity.data(), n_vort_dofs);
   stream_function_space
      = std::make_shared<TFESpace2D>(coll, (char*)"stream function space",
                          (char*)"stream function space", example.get_bc(0), 1, nullptr);
@@ -1368,8 +1356,24 @@ void Time_NSE2D_Merged::prepared_postprocessing(TCollection *coll)
                           (char*)"streamfunction", psi.data(), n_psi);
   // add to the wrapper
   outputWriter.add_fe_function(stream_function.get());
-  outputWriter.add_fe_function(vorticity_funct.get());
-  outputWriter.add_fe_function(divergence.get());
+
+  if(db["example"].is(3))
+  {
+    zero_vorticity = -4711;
+    vorticity_space
+      =std::make_shared<TFESpace2D>(coll, (char*)"vorticity space", (char*)"vorticity space",
+                                example.get_bc(0), ContP_USpace, 1, nullptr);
+    n_vort_dofs = vorticity_space->GetN_DegreesOfFreedom();
+    vorticity.resize(2*n_vort_dofs, 0.);
+    vorticity_funct 
+      = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"voritcity",
+                              (char*)"vorticity", vorticity.data(), n_vort_dofs);
+    divergence
+      = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"dievergence",
+                            (char*)"divergence", vorticity.data(), n_vort_dofs);
+    outputWriter.add_fe_function(vorticity_funct.get());
+    outputWriter.add_fe_function(divergence.get());
+  }
 }
 
 void Time_NSE2D_Merged::update_matrices_lps(System_per_grid &s)
