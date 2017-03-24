@@ -3,9 +3,9 @@
 #include <FEDatabase2D.h>
 #include <Example_TimeNSE2D.h>
 #include <Time_NSE2D_Merged.h>
-#include <MixingLayerSlip.h>
 #include <TimeDiscRout.h>
 #include <LoopInfo.h>
+#include <MeanVelocity.h>
 
 using namespace std;
 
@@ -51,11 +51,11 @@ int main(int argc, char* argv[])
   Example_TimeNSE2D example( parmoon_db );
   // create an object of Time_NSE2D class
   Time_NSE2D_Merged tnse2d(Domain, parmoon_db, example);
-  if(parmoon_db["example"].is(3))
+  if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4))
   {
-    Mixing_layer::fill_arrays(tnse2d);
+    MeanVelocity::fill_arrays(tnse2d);
   }
-  
+
   tnse2d.time_stepping_scheme.current_step_ = 0;
   tnse2d.time_stepping_scheme.set_time_disc_parameters();
   
@@ -85,9 +85,9 @@ int main(int argc, char* argv[])
       tnse2d.solve();
     }
     tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
-    if(parmoon_db["example"].is(3))
+    if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4))
     {
-      Mixing_layer::compute_mean_velocity(tnse2d);
+      MeanVelocity::compute_mean_velocity(tnse2d);
     }
   }
   // ======================================================================

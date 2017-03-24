@@ -1,18 +1,13 @@
-#ifndef MIXINGLAYERSLIP_H
-#define MIXINGLAYERSLIP_H
+#ifndef MIXINGLAYERSLIPSMALLSQUARES_H
+#define MIXINGLAYERSLIPSMALLSQUARES_H
 
 double DIMENSIONLESS_VISCOSITY;
 
 #define U_INFTY 1
 
-#include <vector>
-#include <Time_NSE2D_Merged.h>
-#include <algorithm>
-
 void ExampleFile()
 {
-  Output::print("Example: MixingLayerSlip.h (correct vorticity thickness,");
-  Output::print(" scale old one by 4), U_INFTY ", U_INFTY);
+  Output::print("Example: MixingLayerSlipSmallSquares.h");
 }
 
 // ========================================================================
@@ -20,26 +15,22 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
-  double z, sigma;
+  double rho_0, z1, z2;
 
-  sigma = 1/TDatabase::ParamDB->P8;
-  z = 2*y/sigma;
-  if (z>=0)
-    values[0] = U_INFTY * (1-exp(-2*z))/(1+exp(-2*z));
-  else
-    values[0] = U_INFTY * (exp(2*z)-1)/(exp(2*z)+1);
-  values[0] -= 0.001* U_INFTY *exp(-z*z)*cos(8*Pi*x)*8*y/(sigma*sigma);
-  values[0] -= 0.001* U_INFTY *exp(-z*z)*cos(20*Pi*x)*8*y/(sigma*sigma);
+  rho_0 = 1./28.;
+  z1 = (4*y-2)/rho_0;
+  z2 = (y-0.5)/rho_0;
+  values[0] = U_INFTY * (exp(z1)-1)/(exp(z1)+1);
+  values[0] -= 0.001*0.001 * U_INFTY * exp(-z2*z2)*cos(8*Pi*x)*2*z2;
 }
 
 void InitialU2(double x, double y, double *values)
 {
-  double z, sigma;
+  double rho_0, z2;
 
-  sigma = 1/TDatabase::ParamDB->P8;
-  z = 2*y/sigma;
-  values[0] = 0.001*U_INFTY*exp(-z*z)*sin(8*Pi*x)*8*Pi;
-  values[0] += 0.001*U_INFTY*exp(-z*z)*sin(20*Pi*x)*20*Pi;
+  rho_0 = 1./28.;
+  z2 = (y-0.5)/rho_0;
+  values[0] = -0.001*0.001*U_INFTY* exp(-z2*z2)*sin(8*Pi*x)*8*Pi;
 }
 
 void InitialP(double x, double y, double *values)
@@ -201,7 +192,7 @@ void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
       max = fabs(aver_vort[i]);
   }
 
-  thickness =  4*U_INFTY/max; // (2*U_INFTY)/(max/2) (divide max by length of
+  thickness =  2.*U_INFTY/max; // (2*U_INFTY)/(max/2) (divide max by length of
                                // the integration domain)
   delete global_y_coord;
   delete aver_vort;
@@ -223,4 +214,4 @@ void EvaluateSolution(const Time_NSE2D_Merged &tnse2d, double & zero_vort)
   /// computation of the mean velocity profile
   
 }
-#endif // MIXINGLAYERSLIP_H
+#endif // MIXINGLAYERSLIPSMALLSQUARES_H

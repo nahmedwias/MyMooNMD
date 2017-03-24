@@ -992,6 +992,10 @@ void TDomain::Init(const char *PRM, const char *GEO)
   {
     PeriodicSquares();
   }
+  else if (!strcmp(GEO, "PeriodicTriangles"))
+  {
+    PeriodicTriangles();
+  }
   else if (!strcmp(GEO, "PeriodicSquaresLarge"))
   {
     PeriodicSquaresLarge();

@@ -1,11 +1,17 @@
+#ifndef DRIVEN_CAVITY_H
+#define DRIVEN_CAVITY_H
+
+
 // Navier-Stokes problem, Driven Cavity
 // 
 // u(x,y) = ?
 // p(x,y) = ?
+double DIMENSIONLESS_VISCOSITY;
+
 
 void ExampleFile()
 {
-  Output::print<1>("Example: DrivenCavity.h");
+  Output::print("Example: DrivenCavity.h");  
 }
 // ========================================================================
 // initial solution
@@ -59,27 +65,47 @@ void ExactP(double x, double y, double *values)
 void BoundCondition(int i, double t, BoundCond &cond)
 {
   cond = DIRICHLET;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;
-
+  double x_1=0.1;
+  double x = 1- Param;
+  
+  if(BdComp>3)
+  {
+    ErrThrow( "ERROR in file " , __FILE__ , ", line: ",  __LINE__ ,
+              ": wrong boundary part number: " , BdComp);
+  }
   switch(BdComp)
   {
-    case 0: 
-            value=0;
+    case 0: value=0;
             break;
-    case 1: 
-            value=0;
+    case 1: value=0;
             break;
-    case 2:  
-            value=1; // top moving side velocity
+    case 2:
+    {
+       if (x <= x_1)
+       {
+          value = cos(Pi*(x_1-x)/x_1);
+          value= 1 -(1 - value)*(1- value)/4;
+       }
+       else
+       {
+         if (x >= 1-x_1)
+         {
+          value = cos(Pi*(x-(1-x_1))/x_1);
+          value= 1 -(1 - value)*(1- value)/4;
+         }
+         else
+           value = 1.0;
+       }
             break;
-    case 3: 
-            value=0;
+    }
+    case 3: value=0;
             break;
-    default: cout << "wrong boundary part number" << endl;
+    default: Output::print( "wrong boundary part number" );
             break;
   }
 }
@@ -95,17 +121,11 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  int i;
-  double *coeff, x, y; 
-  static double eps=1/TDatabase::ParamDB->RE_NR;
-
-  for(i=0;i<n_points;i++)
+  for(int i=0;i<n_points;i++)
   {
-    coeff = coeffs[i];
-    x = X[i];
-    y = Y[i];
+    double *coeff = coeffs[i];
 
-    coeff[0] = eps;
+    coeff[0] = DIMENSIONLESS_VISCOSITY;
 
     coeff[1] = 0;  // f1
     coeff[2] = 0;  // f2
@@ -113,3 +133,4 @@ void LinCoeffs(int n_points, double *X, double *Y,
 }
 
 
+#endif

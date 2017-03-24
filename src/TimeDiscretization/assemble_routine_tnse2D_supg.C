@@ -277,10 +277,31 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
   
   // stabilization parameters
-  double stab_param[2];  
+  double tau_m, tau_c;
+  if(TDatabase::ParamDB->P1 == 100)
+  {
+    double t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+    tau_m = 4./(t*t);
+    double u = sqrt(u1*u1+u2*u2);
+    tau_m += 4.*u/(hK*hK);
+    double hp4 = pow(hK,4);
+    tau_m += 32.*c0*c0/hp4;
+    
+    tau_m = 1./sqrt(tau_m);
+    
+    tau_c = hK*hK/(8.*tau_m);
+    
+    TDatabase::ParamDB->P14 = tau_m;
+    TDatabase::ParamDB->P15 = tau_c;
+  }
+  else
+  {
+    double stab_param[2];  
     stabilization_parameters_equal_order(Mult, param, coeff, stab_param);
-  double tau_m = stab_param[0];
-  double tau_c = stab_param[1];
+    tau_m = stab_param[0];
+    tau_c = stab_param[1];
+  }
+  
   
   for(int i=0; i<N_U; ++i)
   {
@@ -438,10 +459,31 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
   double test10, test01, test00;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
   
-  double stab_param[2];  
+  // stabilization parameters
+  double tau_m, tau_c;
+  if(TDatabase::ParamDB->P1==100)
+  {
+    double t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+    tau_m = 4./(t*t);
+    double u = sqrt(u1*u1+u2*u2);
+    tau_m += 4.*u/(hK*hK);
+    double hp4 = pow(hK,4);
+    tau_m += 32.*c0*c0/hp4;
+    
+    tau_m = 1./sqrt(tau_m);
+    
+    tau_c = hK*hK/(8.*tau_m);
+    
+    TDatabase::ParamDB->P14 = tau_m;
+    TDatabase::ParamDB->P15 = tau_c;
+  }
+  else
+  {
+    double stab_param[2];  
     stabilization_parameters_equal_order(Mult, param, coeff, stab_param);
-  double tau_m = stab_param[0];
-  double tau_c = stab_param[1];
+    tau_m = stab_param[0];
+    tau_c = stab_param[1];
+  }
   
   for(int i=0; i<N_U; ++i)
   {
@@ -610,10 +652,26 @@ void TimeNSType14RHSSUPG(double Mult, double* coeff, double* param, double hK,
   double u1_combined_old_time = param[2];
   double u2_combined_old_time = param[3];
 
-  double stab_param[2];  
-  stabilization_parameters_equal_order(Mult, param, coeff, stab_param);
-  double tau_m = stab_param[0];
-  double tau_c = stab_param[1];
+  // stabilization parameters
+  double tau_m;
+  if(TDatabase::ParamDB->P1 == 100)
+  {
+    double t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+    tau_m = 4./(t*t);
+    double u = sqrt(u1*u1+u2*u2);
+    tau_m += 4.*u/(hK*hK);
+    double hp4 = pow(hK,4);
+    tau_m += 32.*c0*c0/hp4;
+    tau_m = 1./sqrt(tau_m);
+    
+    TDatabase::ParamDB->P14 = tau_m;
+  }
+  else
+  {
+    double stab_param[2];  
+    stabilization_parameters_equal_order(Mult, param, coeff, stab_param);
+    tau_m = stab_param[0];
+  }
 
   double test10, test01, test00;  
   int N_U = N_BaseFuncts[0];

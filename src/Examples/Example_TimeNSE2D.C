@@ -28,6 +28,21 @@ namespace mixing_layer_slip
 #include "TNSE_2D/MixingLayerSlip.h"
 }
 
+namespace lid_driven_cavity
+{
+#include "TNSE_2D/DrivenCavity.h"
+}
+
+namespace channel_step
+{
+#include "TNSE_2D/ChannelStep.h"
+}
+
+namespace mixing_layer_slip_small_squares
+{
+#include "TNSE_2D/MixingLayerSlipSmallSquares.h"
+}
+
 Example_TimeNSE2D::Example_TimeNSE2D(
   const ParameterDatabase& user_input_parameter_db)
  : Example_NonStationary2D(user_input_parameter_db)
@@ -139,6 +154,84 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       
       /**post processing - drag and lift calculation and output */
       post_processing_stat = mixing_layer_slip::EvaluateSolution;
+      break;
+    case 4:
+      exact_solution.push_back( lid_driven_cavity::ExactU1 );
+      exact_solution.push_back( lid_driven_cavity::ExactU2 );
+      exact_solution.push_back( lid_driven_cavity::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( lid_driven_cavity::BoundCondition );
+      boundary_conditions.push_back( lid_driven_cavity::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( lid_driven_cavity::U1BoundValue );
+      boundary_data.push_back( lid_driven_cavity::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = lid_driven_cavity::LinCoeffs;
+      
+      initialCOndtion.push_back(lid_driven_cavity::InitialU1);
+      initialCOndtion.push_back(lid_driven_cavity::InitialU2);
+      
+      lid_driven_cavity::ExampleFile();
+      
+      lid_driven_cavity::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      break;
+    case 5:
+      exact_solution.push_back( channel_step::ExactU1 );
+      exact_solution.push_back( channel_step::ExactU2 );
+      exact_solution.push_back( channel_step::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( channel_step::BoundCondition );
+      boundary_conditions.push_back( channel_step::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( channel_step::U1BoundValue );
+      boundary_data.push_back( channel_step::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = channel_step::LinCoeffs;
+      
+      initialCOndtion.push_back(channel_step::InitialU1);
+      initialCOndtion.push_back(channel_step::InitialU2);
+      
+      channel_step::ExampleFile();
+      
+      channel_step::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      break;
+    case 6:
+      exact_solution.push_back( mixing_layer_slip_small_squares::ExactU1 );
+      exact_solution.push_back( mixing_layer_slip_small_squares::ExactU2 );
+      exact_solution.push_back( mixing_layer_slip_small_squares::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( mixing_layer_slip_small_squares::BoundCondition );
+      boundary_conditions.push_back( mixing_layer_slip_small_squares::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( mixing_layer_slip_small_squares::U1BoundValue );
+      boundary_data.push_back( mixing_layer_slip_small_squares::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = mixing_layer_slip_small_squares::LinCoeffs;
+      
+      initialCOndtion.push_back(mixing_layer_slip_small_squares::InitialU1);
+      initialCOndtion.push_back(mixing_layer_slip_small_squares::InitialU2);
+      
+      mixing_layer_slip_small_squares::ExampleFile();
+      
+      mixing_layer_slip_small_squares::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      
+      /**post processing - drag and lift calculation and output */
+      post_processing_stat = mixing_layer_slip_small_squares::EvaluateSolution;
       break;
     default:
       ErrThrow("Unknown Time dependent Example_TimeNSE2D example!");
