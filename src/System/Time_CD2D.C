@@ -205,11 +205,11 @@ void Time_CD2D::set_parameters()
     }
 
     //make sure that galerkin discretization is used
-    if (TDatabase::ParamDB->DISCTYPE != 1)
+    if (!db["space_discretization_type"].is("galerkin"))
     {//some other disctype than galerkin
-      TDatabase::ParamDB->DISCTYPE = 1;
-      Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
-                    "Correction is enabled.");
+      db["space_discretization_type"] = "galerkin";
+      Output::warn<1>("Parameter 'space_discretization_type' changed to "
+          " 'galerkin' because Algebraic Flux Correction is enabled.");
     }
 
     // when using afc, create system matrices as if all dofs were active
@@ -235,7 +235,7 @@ void Time_CD2D::assemble_initial_time()
     call_assembling_routine(s, la_a_rhs, la_mass , true);
 
     // apply local projection stabilization method on stiffness matrix only!
-    if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION
+    if(db["space_discretization_type"].is("local_projection")
         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
     {
       if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
@@ -274,7 +274,7 @@ void Time_CD2D::assemble()
     LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
                                this->example.get_coeffs());
 
-    if(TDatabase::ParamDB->DISCTYPE == SUPG)
+    if(db["space_discretization_type"].is("supg"))
     {
       // In the SUPG case:
       // M = (u,v) + \tau (u,b.grad v)

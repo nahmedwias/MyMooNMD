@@ -1346,3531 +1346,3532 @@ void FDM2FEM(int N, double *fdm_array, double *fem_array, int *dof_conversion)
 // ComputeStages_FDM2D
 // computes the stages in explicit RK methods combined with a FDM
 /******************************************************************************/
+// THIS METHOD IS COMMENTED BECAUSE IT CALLS THE DEPRECATED GLOBAL PARAMETER "DISCTYPE"
+// It needs to be adapted if needed
+//#ifdef __2D__
+//void ComputeStages_FDM2D(int dim, CoeffFct2D *Coeffs, BoundCondFunct2D *bound_cond,
+//BoundValueFunct2D *bound_val,
+//double *sol, double **stages, int current_stage, int N_x, int N_y,
+//int *dof_conversion, double *x_coord, double *y_coord)
+//{
+//  int i, j, N_x1, N_y1, N2;
+//  double tau, valx, valy, valz, val[6], coord[6], value;
+//  double *sol_curr, coeff_array[20], *coeff, *current_stage_fdm;
+//  double d1, d2, d3, d4, uhx[3], omega[3], alpha[3], d[3], beta[3], av[5], c_e = 1e-6;
+//  BoundCond cond;
+//
+//  // set time of the stage, in main already new time level
+//  tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+//  TDatabase::TimeDB->CURRENTTIME += (TDatabase::TimeDB->RK_c[current_stage] - 1)* tau;
+//  N_x1 = N_x+1;
+//  N_y1 = N_y+1;
+//  N2 = (N_x1)*(N_y1);
+//  // allocate arrays
+//  sol_curr = stages[5];
+//  coeff = coeff_array;
+//
+//  // compute linear combination of current stages
+//  // numeration of dof corresponding to fe space
+//  current_stage_fdm = stages[current_stage];
+//  memset(current_stage_fdm, 0, N2 * SizeOfDouble);
+//  // initialize current stage
+//  memcpy(sol_curr,sol,N2*SizeOfDouble);
+//  // add previous stages
+//  for (i=0;i<current_stage;i++)
+//    Daxpy(N2, tau*TDatabase::TimeDB->RK_A[current_stage][i], stages[i], sol_curr);
+//
+//  //N1_[0] = N_x1;
+//  //N1_[1] = N_y1;
+//  //coordinates[0] = x_coord;
+//  //coordinates[1] = y_coord;
+//  //InitializeConvectiveTermFDM(2, offset_, offset1_, N1_);
+//
+//  // discretization of pde with FDM
+//  // loop over all nodes of the FDM grid
+//  for ( i=0 ; i<N2 ; i++ )
+//  {
+//    // coefficients of the equation
+//    Coeffs(1, &x_coord[i], &y_coord[i], NULL, &coeff);
+//    // compute the diffusive term
+//    if (( i%(N_x1)!=0 )&&( (i+1)%(N_x1)!=0 )&&(i<= N_x1*N_y)&&(i>N_x))
+//    {
+//      // diffusive term wrt x
+//      val[0] = sol_curr[i-1];
+//      val[1] = sol_curr[i];
+//      val[2] = sol_curr[i+1];
+//      coord[0] = x_coord[i-1];
+//      coord[1] = x_coord[i];
+//      coord[2] = x_coord[i+1];
+//      valx = 2*DividedDifferences(2, val, coord);
+//      // diffusive term wrt y
+//      val[0] = sol_curr[i-N_x1];
+//      val[2] = sol_curr[i+N_x1];
+//      coord[0] = y_coord[i-N_x1];;
+//      coord[1] = y_coord[i];
+//      coord[2] = y_coord[i+N_x1];
+//      valy = 2*DividedDifferences(2, val, coord);
+//      // diffusive term wrt x
+//      // add also reactive term and rhs
+//      current_stage_fdm[i] = coeff[0]*(valx + valy) - coeff[3]*sol_curr[i] + coeff[4];
+//      //OutPut(coeff[0] << " " << coeff[3] << " " << coeff[4] << endl);
+//    }
+//
+//    /* ConvectiveTermFDM(2, i,
+//          coeff+1, sol_curr, current_stage_fdm, coordinates,
+//          offset_, offset1_);
+//          continue;*/
+//    switch(TDatabase::ParamDB->DISCTYPE)
+//    {
+//      case GALERKIN:
+//        exit(1);
+//        break;
+//        // simple upwind scheme
+//      case UPWIND:
+//        // compute the term A_x
+//        if (coeff[1] >= 0)
+//        {
+//          // not on boundary x = x_min -> in the "x-sense" exists a left neighbour
+//          if ( i%(N_x1)!=0 )
+//            current_stage_fdm[i] -= coeff[1]*(sol_curr[i]-sol_curr[i-1])/(x_coord[i]-x_coord[i-1]);
+//        }
+//        else
+//        {
+//          // not on boundary x = x_max -> in the "x-sense" exists a right neighbour
+//          if ( (i+1)%(N_x1)!=0 )
+//            current_stage_fdm[i] -= coeff[1]*(sol_curr[i+1]-sol_curr[i])/(x_coord[i+1]-x_coord[i]);
+//        }
+//
+//        // compute the term A_y
+//        if (coeff[2] >= 0)
+//        {
+//          // not on boundary y = y_min -> in the "y-sense" exists a left neighbour
+//          if ((i%((N_x1)*(N_y1)))>N_x )
+//            current_stage_fdm[i] -= coeff[2]*(sol_curr[i]-sol_curr[i-(N_x1)])/(y_coord[i]-y_coord[i-(N_x1)]);
+//        }
+//        else
+//        {
+//          // not on boundary y = y_max -> in the "y-sense" exists a right neighbour
+//          if ((i%((N_x1)*(N_y1)))<((N_x1)*N_y) )
+//            current_stage_fdm[i] -= coeff[2]*(sol_curr[i+(N_x1)]-sol_curr[i])/(y_coord[i+(N_x1)]-y_coord[i]);
+//        }
+//        break;
+//      case ENO_3:
+//        // compute the term A_x
+//        coeff[1] = - coeff[1];
+//        coeff[2] = - coeff[2];
+//        if (coeff[1] <=  0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on left boundary
+//          if ( i%(N_x1)==0 )
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+1];
+//            val[5] = sol_curr[i+2];
+//            coord[0] = 2 * x_coord[i]-x_coord[i+3];
+//            coord[1] = 2 * x_coord[i]-x_coord[i+2];
+//            coord[2] = 2 * x_coord[i]-x_coord[i+1];
+//            coord[3] = x_coord[i];
+//            coord[4] = x_coord[i+1];
+//            coord[5] = x_coord[i+2];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (i-1)%(N_x1)==0 )
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+1];
+//              val[5] = sol_curr[i+2];
+//              coord[0] = 2 * x_coord[i-1]-x_coord[i+1];
+//              coord[1] = 2 * x_coord[i-1]-x_coord[i];
+//              coord[2] = x_coord[i-1];
+//              coord[3] = x_coord[i];
+//              coord[4] = x_coord[i+1];
+//              coord[5] = x_coord[i+2];
+//            }
+//            else
+//            {
+//              // next layer on left boundary
+//              if ( (i-2)%(N_x1)==0 )
+//              {
+//                val[0] = val[1] = sol_curr[i-2];
+//                val[2] = sol_curr[i-1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+1];
+//                val[5] = sol_curr[i+2];
+//                coord[0] = 2 * x_coord[i-2]-x_coord[i-1];
+//                coord[1] = x_coord[i-2];
+//                coord[2] = x_coord[i-1];
+//                coord[3] = x_coord[i];
+//                coord[4] = x_coord[i+1];
+//                coord[5] = x_coord[i+2];
+//              }
+//              else
+//              {
+//                // point on right boundary
+//                if ( (i+1)%(N_x1)==0 )
+//                {
+//                  val[0] = sol_curr[i-3];
+//                  val[1] = sol_curr[i-2];
+//                  val[2] = sol_curr[i-1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = x_coord[i-3];
+//                  coord[1] = x_coord[i-2];
+//                  coord[2] = x_coord[i-1];
+//                  coord[3] = x_coord[i];
+//                  coord[4] = 2 *  x_coord[i] - x_coord[i-1];
+//                  coord[5] = 2 *  x_coord[i] - x_coord[i-2];
+//                }
+//                else
+//                {
+//                  // point next to right boundary
+//                  if ( (i+2)%(N_x1)==0 )
+//                  {
+//                    val[0] = sol_curr[i-3];
+//                    val[1] = sol_curr[i-2];
+//                    val[2] = sol_curr[i-1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+1];
+//                    coord[0] = x_coord[i-3];
+//                    coord[1] = x_coord[i-2];
+//                    coord[2] = x_coord[i-1];
+//                    coord[3] = x_coord[i];
+//                    coord[4] = x_coord[i+1];
+//                    coord[5] = 2 *  x_coord[i+1] - x_coord[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-3];
+//                    val[1] = sol_curr[i-2];
+//                    val[2] = sol_curr[i-1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+1];
+//                    val[5] = sol_curr[i+2];
+//                    coord[0] = x_coord[i-3];
+//                    coord[1] = x_coord[i-2];
+//                    coord[2] = x_coord[i-1];
+//                    coord[3] = x_coord[i];
+//                    coord[4] = x_coord[i+1];
+//                    coord[5] = x_coord[i+2];
+//                    /*sol_help = sol_curr+i-3;
+//                                val[0] = *sol_help;
+//                                val[1] = *(sol_help+1);
+//                                val[2] = *(sol_help+2);
+//                                val[3] = *(sol_help+3);
+//                                val[4] = *(sol_help+4);
+//                                val[5] = *(sol_help+5);
+//                                sol_help = x_coord+i-3;
+//                                coord[0] = *sol_help;
+//                                coord[1] = *(sol_help+1);
+//                                coord[2] = *(sol_help+2);
+//                    coord[3] = *(sol_help+3);
+//                    coord[4] = *(sol_help+4);
+//                    coord[5] = *(sol_help+5);*/
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+2,coord+2);
+//          d2 = DividedDifferences(2,val+1,coord+1);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              //value = DividedDifferences(1,val+1,coord+1);
+//              value =  (val[2]-val[1])/(coord[2]-coord[1]);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              //OutPut("a3a ");
+//            }
+//            else
+//            {
+//              //value = DividedDifferences(1,val+2,coord+2);
+//              valx = coord[3]-coord[2];
+//              value = (val[3]-val[2])/valx;
+//              value += d1 * valx;
+//              value += d4 * valx*(coord[3]-coord[4]);
+//              //OutPut("a2 ");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              //value = DividedDifferences(1,val,coord);
+//              value = (val[1]-val[0])/(coord[1]-coord[0]);
+//              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
+//              valx = coord[3]-coord[0];
+//              valy = coord[3]-coord[1];
+//              valz = coord[3]-coord[2];
+//              //value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
+//              //  + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
+//              value += d3 * (valy * valz + valx * valz + valx * valy);
+//              //OutPut("a4 ");
+//            }
+//            else
+//            {
+//              //value = DividedDifferences(1,val+1,coord+1);
+//              value = (val[2]-val[1])/(coord[2]-coord[1]);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              //OutPut("a3b ");
+//              // OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
+//            }
+//          }
+//        }
+//        else
+//        {
+//          // prepare vectors for divided differences
+//          // point on left boundary
+//          if ( i%(N_x1)==0 )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+1];
+//            val[4] = sol_curr[i+2];
+//            val[5] = sol_curr[i+3];
+//            coord[0] = 2 * x_coord[i]-x_coord[i+2];
+//            coord[1] = 2 * x_coord[i]-x_coord[i+1];
+//            coord[2] = x_coord[i];
+//            coord[3] = x_coord[i+1];
+//            coord[4] = x_coord[i+2];
+//            coord[5] = x_coord[i+3];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (i-1)%(N_x1)==0 )
+//            {
+//              val[0] = val[1] = sol_curr[i-1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+1];
+//              val[4] = sol_curr[i+2];
+//              val[5] = sol_curr[i+3];
+//              coord[0] = 2 * x_coord[i-1]-x_coord[i];
+//              coord[1] = x_coord[i-1];
+//              coord[2] = x_coord[i];
+//              coord[3] = x_coord[i+1];
+//              coord[4] = x_coord[i+2];
+//              coord[5] = x_coord[i+3];
+//            }
+//            else
+//            {
+//              // point on right boundary
+//              if ( (i+1)%(N_x1)==0 )
+//              {
+//                val[0] = sol_curr[i-2];
+//                val[1] = sol_curr[i-1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = x_coord[i-2];
+//                coord[1] = x_coord[i-1];
+//                coord[2] = x_coord[i];
+//                coord[3] = 2 *  x_coord[i] - x_coord[i-1];
+//                coord[4] = 2 *  x_coord[i] - x_coord[i-2];
+//                coord[5] = 2 *  x_coord[i] - x_coord[i-3];
+//              }
+//              else
+//              {
+//                // point next to right boundary
+//                if ( (i+2)%(N_x1)==0 )
+//                {
+//                  val[0] = sol_curr[i-2];
+//                  val[1] = sol_curr[i-1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+1];
+//                  coord[0] = x_coord[i-2];
+//                  coord[1] = x_coord[i-1];
+//                  coord[2] = x_coord[i];
+//                  coord[3] = x_coord[i+1];
+//                  coord[4] = 2 *  x_coord[i+1] - x_coord[i];
+//                  coord[5] = 2 *  x_coord[i+1] - x_coord[i-1];
+//                }
+//                else
+//                {
+//                  // point in next layer to right boundary
+//                  if ( (i+3)%(N_x1)==0 )
+//                  {
+//                    val[0] = sol_curr[i-2];
+//                    val[1] = sol_curr[i-1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+1];
+//                    val[4] = val[5] = sol_curr[i+2];
+//                    coord[0] = x_coord[i-2];
+//                    coord[1] = x_coord[i-1];
+//                    coord[2] = x_coord[i];
+//                    coord[3] = x_coord[i+1];
+//                    coord[4] = x_coord[i+2];
+//                    coord[5] = 2 *  x_coord[i+2] - x_coord[i+1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-2];
+//                    val[1] = sol_curr[i-1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+1];
+//                    val[4] = sol_curr[i+2];
+//                    val[5] = sol_curr[i+3];
+//                    coord[0] = x_coord[i-2];
+//                    coord[1] = x_coord[i-1];
+//                    coord[2] = x_coord[i];
+//                    coord[3] = x_coord[i+1];
+//                    coord[4] = x_coord[i+2];
+//                    coord[5] = x_coord[i+3];
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+1,coord+1);
+//          d2 = DividedDifferences(2,val+2,coord+2);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val,coord);
+//              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
+//              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
+//              //OutPut("A3 ");
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * (coord[2]-coord[1]);
+//              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
+//              //OutPut("A2a ");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              valx = coord[2]-coord[1];
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * valx;
+//              value += d3 * valx*(coord[2]-coord[3]);
+//              //OutPut("A2b ");
+//            }
+//            else
+//            {
+//              valx = coord[2]-coord[3];
+//              value = DividedDifferences(1,val+2,coord+2);
+//              value += d2 * valx;
+//              value += d4 * valx*(coord[2]-coord[4]);
+//              //comparison with backward difference in node i
+//              //OutPut("A1b ");
+//              //OutPut("A1 " << value <<"  " <<   DividedDifferences(1,val+1,coord+1) << ":");
+//            }
+//          }
+//        }                                         // end coeff[1] <=0
+//        //OutPut(value << " ");
+//        current_stage_fdm[i] += coeff[1] * value;
+//        // compute the term A_y
+//        if (coeff[2]  <= 0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on bottom boundary
+//          if ( i<=N_x )
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+N_x1];
+//            val[5] = sol_curr[i+2 * N_x1];
+//            coord[0] = 2 * y_coord[i]-y_coord[i+3*N_x1];
+//            coord[1] = 2 * y_coord[i]-y_coord[i+2*N_x1];
+//            coord[2] = 2 * y_coord[i]-y_coord[i+N_x1];
+//            coord[3] = y_coord[i];
+//            coord[4] = y_coord[i+N_x1];
+//            coord[5] = y_coord[i+2 * N_x1];
+//          }
+//          else
+//          {
+//            // point next to bottom boundary
+//            if ( (i>=N_x1)&&(i<2*N_x1) )
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-N_x1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+N_x1];
+//              val[5] = sol_curr[i+2*N_x1];
+//              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i+N_x1];
+//              coord[1] = 2 * y_coord[i-N_x1]-y_coord[i];
+//              coord[2] = y_coord[i-N_x1];
+//              coord[3] = y_coord[i];
+//              coord[4] = y_coord[i+N_x1];
+//              coord[5] = y_coord[i+2*N_x1];
+//            }
+//            else
+//            {
+//              // next layer on bottom boundary
+//              if ( (i>=2*N_x1)&&(i<3*N_x1) )
+//              {
+//                val[0] = val[1] = sol_curr[i-2*N_x1];
+//                val[2] = sol_curr[i-N_x1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+N_x1];
+//                val[5] = sol_curr[i+2*N_x1];
+//                coord[0] = 2 * y_coord[i-2*N_x1]-y_coord[i-N_x1];
+//                coord[1] = y_coord[i-2*N_x1];
+//                coord[2] = y_coord[i-N_x1];
+//                coord[3] = y_coord[i];
+//                coord[4] = y_coord[i+N_x1];
+//                coord[5] = y_coord[i+2*N_x1];
+//              }
+//              else
+//              {
+//                // point on top boundary
+//                if ( i>= N_y*N_x1)
+//                {
+//                  val[0] = sol_curr[i-3*N_x1];
+//                  val[1] = sol_curr[i-2*N_x1];
+//                  val[2] = sol_curr[i-N_x1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = y_coord[i-3*N_x1];
+//                  coord[1] = y_coord[i-2*N_x1];
+//                  coord[2] = y_coord[i-N_x1];
+//                  coord[3] = y_coord[i];
+//                  coord[4] = 2 *  y_coord[i] - y_coord[i-N_x1];
+//                  coord[5] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
+//                }
+//                else
+//                {
+//                  // point next to top boundary
+//                  if (( i>= (N_y-1)*N_x1)&&(i<N_y*N_x1))
+//                  {
+//                    val[0] = sol_curr[i-3*N_x1];
+//                    val[1] = sol_curr[i-2*N_x1];
+//                    val[2] = sol_curr[i-N_x1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+N_x1];
+//                    coord[0] = y_coord[i-3*N_x1];
+//                    coord[1] = y_coord[i-2*N_x1];
+//                    coord[2] = y_coord[i-N_x1];
+//                    coord[3] = y_coord[i];
+//                    coord[4] = y_coord[i+N_x1];
+//                    coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    // if (i==14382)
+//                    //  OutPut("herea "<< coeff[2] << endl);
+//                    val[0] = sol_curr[i-3*N_x1];
+//                    val[1] = sol_curr[i-2*N_x1];
+//                    val[2] = sol_curr[i-N_x1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+N_x1];
+//                    val[5] = sol_curr[i+2*N_x1];
+//                    coord[0] = y_coord[i-3*N_x1];
+//                    coord[1] = y_coord[i-2*N_x1];
+//                    coord[2] = y_coord[i-N_x1];
+//                    coord[3] = y_coord[i];
+//                    coord[4] = y_coord[i+N_x1];
+//                    coord[5] = y_coord[i+2*N_x1];
+//                    // if (i==14382)
+//                    //	OutPut("val " << val[0] -1 << endl);
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+2,coord+2);
+//          d2 = DividedDifferences(2,val+1,coord+1);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              //OutPut("a3a ");
+//              //OutPut("a3 " << value << " ");
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+2,coord+2);
+//              value += d1 * (coord[3]-coord[2]);
+//              value += d4 * (coord[3]-coord[2])*(coord[3]-coord[4]);
+//              //OutPut("a2 ");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val,coord);
+//              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
+//              value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
+//                + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
+//              // OutPut("a4 ");
+//              //OutPut("a4 " << coeff[2]  << "  " << DividedDifferences(2,val+2,coord+2) << "  "
+//              // << DividedDifferences(2,val+1,coord+1) << "  " << DividedDifferences(3,val,coord)
+//              // << "  " << DividedDifferences(3,val+1,coord+1)
+//              //<< endl);
+//            }
+//            else
+//            {
+//              // if (i==14382)
+//              //  OutPut("case2a "<< d3 << " " << d4 << endl);
+//
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              // comparison with backward difference in node i
+//              // OutPut("a3b ");
+//              //OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
+//            }
+//          }
+//        }
+//        else
+//        {
+//          // prepare vectors for divided differences
+//          // point on bottom boundary
+//          if ( i<=N_x )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+N_x1];
+//            val[4] = sol_curr[i+2*N_x1];
+//            val[5] = sol_curr[i+3*N_x1];
+//            coord[0] = 2 * y_coord[i]-y_coord[i+2*N_x1];
+//            coord[1] = 2 * y_coord[i]-y_coord[i+N_x1];
+//            coord[2] = y_coord[i];
+//            coord[3] = y_coord[i+N_x1];
+//            coord[4] = y_coord[i+2*N_x1];
+//            coord[5] = y_coord[i+3*N_x1];
+//          }
+//          else
+//          {
+//            // point next to bottom boundary
+//            if ( (i>=N_x1)&&(i<2*N_x1) )
+//            {
+//              val[0] = val[1] = sol_curr[i-N_x1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+N_x1];
+//              val[4] = sol_curr[i+2*N_x1];
+//              val[5] = sol_curr[i+3*N_x1];
+//              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i];
+//              coord[1] = y_coord[i-N_x1];
+//              coord[2] = y_coord[i];
+//              coord[3] = y_coord[i+N_x1];
+//              coord[4] = y_coord[i+2*N_x1];
+//              coord[5] = y_coord[i+3*N_x1];
+//            }
+//            else
+//            {
+//              // point on top boundary
+//              if ( i>= N_y*N_x1)
+//              {
+//                val[0] = sol_curr[i-2*N_x1];
+//                val[1] = sol_curr[i-N_x1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = y_coord[i-2*N_x1];
+//                coord[1] = y_coord[i-N_x1];
+//                coord[2] = y_coord[i];
+//                coord[3] = 2 *  y_coord[i] - y_coord[i-N_x1];
+//                coord[4] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
+//                coord[5] = 2 *  y_coord[i] - y_coord[i-3*N_x1];
+//              }
+//              else
+//              {
+//                // point next to top boundary
+//                if (( i>= (N_y-1)*N_x1)&&(i<N_y*N_x1))
+//                {
+//                  val[0] = sol_curr[i-2*N_x1];
+//                  val[1] = sol_curr[i-N_x1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+N_x1];
+//                  coord[0] = y_coord[i-2*N_x1];
+//                  coord[1] = y_coord[i-N_x1];
+//                  coord[2] = y_coord[i];
+//                  coord[3] = y_coord[i+N_x1];
+//                  coord[4] = 2 *  y_coord[i+N_x1] - y_coord[i];
+//                  coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i-N_x1];
+//                }
+//                else
+//                {
+//                  // point in next layer to top boundary
+//                  if (( i>= (N_y-2)*N_x1)&&(i<(N_y-1)*N_x1))
+//                  {
+//                    val[0] = sol_curr[i-2*N_x1];
+//                    val[1] = sol_curr[i-N_x1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+N_x1];
+//                    val[4] = val[5] = sol_curr[i+2*N_x1];
+//                    coord[0] = y_coord[i-2*N_x1];
+//                    coord[1] = y_coord[i-N_x1];
+//                    coord[2] = y_coord[i];
+//                    coord[3] = y_coord[i+N_x1];
+//                    coord[4] = y_coord[i+2*N_x1];
+//                    coord[5] = 2 *  y_coord[i+2*N_x1] - y_coord[i+N_x1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    // if (i==14382)
+//                    //  OutPut("here "<< coeff[2] << endl);
+//                    val[0] = sol_curr[i-2*N_x1];
+//                    val[1] = sol_curr[i-N_x1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+N_x1];
+//                    val[4] = sol_curr[i+2*N_x1];
+//                    val[5] = sol_curr[i+3*N_x1];
+//                    coord[0] = y_coord[i-2*N_x1];
+//                    coord[1] = y_coord[i-N_x1];
+//                    coord[2] = y_coord[i];
+//                    coord[3] = y_coord[i+N_x1];
+//                    coord[4] = y_coord[i+2*N_x1];
+//                    coord[5] = y_coord[i+3*N_x1];
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+1,coord+1);
+//          d2 = DividedDifferences(2,val+2,coord+2);
+//          // if (i==14382)
+//          // OutPut("d1 "<< d1 << " d2 " << d2 << endl);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val,coord);
+//              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
+//              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
+//              // OutPut("A3 ");
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * (coord[2]-coord[1]);
+//              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
+//              // OutPut("A2a ");
+//              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            // if (i==14382)
+//            //OutPut("d3 "<< d3 << " d4 " << d4 << endl);
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * (coord[2]-coord[1]);
+//              value += d3 * (coord[2]-coord[1])*(coord[2]-coord[3]);
+//              // if (i==14382)
+//              //	OutPut("A2b " << value << endl);
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+2,coord+2);
+//              value += d2 * (coord[2]-coord[3]);
+//              value += d4 * (coord[2]-coord[3])*(coord[2]-coord[4]);
+//              // comparison with backward difference in node i
+//              //if (i==14382)
+//              //	OutPut("A1b " <<  value << endl);
+//              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
+//            }
+//          }
+//        }                                         // end coeff[2] <=0
+//        //OutPut(value << endl);
+//        current_stage_fdm[i] += coeff[2] * value;
+//        break;
+//      case WENO_5:
+//        d[0] = 0.3;
+//        d[1] = 0.6;
+//        d[2] = 0.1;
+//        // compute the term A_x
+//        coeff[1] = - coeff[1];
+//        coeff[2] = - coeff[2];
+//        if (coeff[1] <=  0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on left boundary
+//          if ( i%(N_x1)==0 )
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+1];
+//            val[5] = sol_curr[i+2];
+//            coord[0] = 2 * x_coord[i]-x_coord[i+3];
+//            coord[1] = 2 * x_coord[i]-x_coord[i+2];
+//            coord[2] = 2 * x_coord[i]-x_coord[i+1];
+//            coord[3] = x_coord[i];
+//            coord[4] = x_coord[i+1];
+//            coord[5] = x_coord[i+2];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (i-1)%(N_x1)==0 )
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+1];
+//              val[5] = sol_curr[i+2];
+//              coord[0] = 2 * x_coord[i-1]-x_coord[i+1];
+//              coord[1] = 2 * x_coord[i-1]-x_coord[i];
+//              coord[2] = x_coord[i-1];
+//              coord[3] = x_coord[i];
+//              coord[4] = x_coord[i+1];
+//              coord[5] = x_coord[i+2];
+//            }
+//            else
+//            {
+//              // next layer on left boundary
+//              if ( (i-2)%(N_x1)==0 )
+//              {
+//                val[0] = val[1] = sol_curr[i-2];
+//                val[2] = sol_curr[i-1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+1];
+//                val[5] = sol_curr[i+2];
+//                coord[0] = 2 * x_coord[i-2]-x_coord[i-1];
+//                coord[1] = x_coord[i-2];
+//                coord[2] = x_coord[i-1];
+//                coord[3] = x_coord[i];
+//                coord[4] = x_coord[i+1];
+//                coord[5] = x_coord[i+2];
+//              }
+//              else
+//              {
+//                // point on right boundary
+//                if ( (i+1)%(N_x1)==0 )
+//                {
+//                  val[0] = sol_curr[i-3];
+//                  val[1] = sol_curr[i-2];
+//                  val[2] = sol_curr[i-1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = x_coord[i-3];
+//                  coord[1] = x_coord[i-2];
+//                  coord[2] = x_coord[i-1];
+//                  coord[3] = x_coord[i];
+//                  coord[4] = 2 *  x_coord[i] - x_coord[i-1];
+//                  coord[5] = 2 *  x_coord[i] - x_coord[i-2];
+//                }
+//                else
+//                {
+//                  // point next to right boundary
+//                  if ( (i+2)%(N_x1)==0 )
+//                  {
+//                    val[0] = sol_curr[i-3];
+//                    val[1] = sol_curr[i-2];
+//                    val[2] = sol_curr[i-1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+1];
+//                    coord[0] = x_coord[i-3];
+//                    coord[1] = x_coord[i-2];
+//                    coord[2] = x_coord[i-1];
+//                    coord[3] = x_coord[i];
+//                    coord[4] = x_coord[i+1];
+//                    coord[5] = 2 *  x_coord[i+1] - x_coord[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-3];
+//                    val[1] = sol_curr[i-2];
+//                    val[2] = sol_curr[i-1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+1];
+//                    val[5] = sol_curr[i+2];
+//                    coord[0] = x_coord[i-3];
+//                    coord[1] = x_coord[i-2];
+//                    coord[2] = x_coord[i-1];
+//                    coord[3] = x_coord[i];
+//                    coord[4] = x_coord[i+1];
+//                    coord[5] = x_coord[i+2];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
+//          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
+//          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[3] + av[4];
+//          valy = 3*av[2] - 4*av[3] + av[4];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[1] - 2*av[2] + av[3];
+//          valy = av[1] - av[3];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[0] - 2*av[1] +av[2];
+//          valy = av[0] - 4*av[1] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }
+//        else                                      // - coeff[1] > 0
+//        {
+//          // prepare vectors for divided differences
+//          // point on left boundary
+//          if ( i%(N_x1)==0 )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+1];
+//            val[4] = sol_curr[i+2];
+//            val[5] = sol_curr[i+3];
+//            coord[0] = 2 * x_coord[i]-x_coord[i+2];
+//            coord[1] = 2 * x_coord[i]-x_coord[i+1];
+//            coord[2] = x_coord[i];
+//            coord[3] = x_coord[i+1];
+//            coord[4] = x_coord[i+2];
+//            coord[5] = x_coord[i+3];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (i-1)%(N_x1)==0 )
+//            {
+//              val[0] = val[1] = sol_curr[i-1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+1];
+//              val[4] = sol_curr[i+2];
+//              val[5] = sol_curr[i+3];
+//              coord[0] = 2 * x_coord[i-1]-x_coord[i];
+//              coord[1] = x_coord[i-1];
+//              coord[2] = x_coord[i];
+//              coord[3] = x_coord[i+1];
+//              coord[4] = x_coord[i+2];
+//              coord[5] = x_coord[i+3];
+//            }
+//            else
+//            {
+//              // point on right boundary
+//              if ( (i+1)%(N_x1)==0 )
+//              {
+//                val[0] = sol_curr[i-2];
+//                val[1] = sol_curr[i-1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = x_coord[i-2];
+//                coord[1] = x_coord[i-1];
+//                coord[2] = x_coord[i];
+//                coord[3] = 2 *  x_coord[i] - x_coord[i-1];
+//                coord[4] = 2 *  x_coord[i] - x_coord[i-2];
+//                coord[5] = 2 *  x_coord[i] - x_coord[i-3];
+//              }
+//              else
+//              {
+//                // point next to right boundary
+//                if ( (i+2)%(N_x1)==0 )
+//                {
+//                  val[0] = sol_curr[i-2];
+//                  val[1] = sol_curr[i-1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+1];
+//                  coord[0] = x_coord[i-2];
+//                  coord[1] = x_coord[i-1];
+//                  coord[2] = x_coord[i];
+//                  coord[3] = x_coord[i+1];
+//                  coord[4] = 2 *  x_coord[i+1] - x_coord[i];
+//                  coord[5] = 2 *  x_coord[i+1] - x_coord[i-1];
+//                }
+//                else
+//                {
+//                  // point in next layer to right boundary
+//                  if ( (i+3)%(N_x1)==0 )
+//                  {
+//                    val[0] = sol_curr[i-2];
+//                    val[1] = sol_curr[i-1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+1];
+//                    val[4] = val[5] = sol_curr[i+2];
+//                    coord[0] = x_coord[i-2];
+//                    coord[1] = x_coord[i-1];
+//                    coord[2] = x_coord[i];
+//                    coord[3] = x_coord[i+1];
+//                    coord[4] = x_coord[i+2];
+//                    coord[5] = 2 *  x_coord[i+2] - x_coord[i+1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-2];
+//                    val[1] = sol_curr[i-1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+1];
+//                    val[4] = sol_curr[i+2];
+//                    val[5] = sol_curr[i+3];
+//                    coord[0] = x_coord[i-2];
+//                    coord[1] = x_coord[i-1];
+//                    coord[2] = x_coord[i];
+//                    coord[3] = x_coord[i+1];
+//                    coord[4] = x_coord[i+2];
+//                    coord[5] = x_coord[i+3];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
+//          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
+//          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[1] + av[0];
+//          valy = 3*av[2] - 4*av[1] + av[0];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[3] - 2*av[2] + av[1];
+//          valy = av[3] - av[1];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[4] - 2*av[3] +av[2];
+//          valy = av[4] - 4*av[3] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }                                         // end coeff[1] <=0
+//        //OutPut(value << " ");
+//        current_stage_fdm[i] += coeff[1] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
+//        // compute the term A_y
+//        if (coeff[2]  <= 0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on bottom boundary
+//          if ( i<=N_x )
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+N_x1];
+//            val[5] = sol_curr[i+2 * N_x1];
+//            coord[0] = 2 * y_coord[i]-y_coord[i+3*N_x1];
+//            coord[1] = 2 * y_coord[i]-y_coord[i+2*N_x1];
+//            coord[2] = 2 * y_coord[i]-y_coord[i+N_x1];
+//            coord[3] = y_coord[i];
+//            coord[4] = y_coord[i+N_x1];
+//            coord[5] = y_coord[i+2 * N_x1];
+//          }
+//          else
+//          {
+//            // point next to bottom boundary
+//            if ( (i>=N_x1)&&(i<2*N_x1) )
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-N_x1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+N_x1];
+//              val[5] = sol_curr[i+2*N_x1];
+//              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i+N_x1];
+//              coord[1] = 2 * y_coord[i-N_x1]-y_coord[i];
+//              coord[2] = y_coord[i-N_x1];
+//              coord[3] = y_coord[i];
+//              coord[4] = y_coord[i+N_x1];
+//              coord[5] = y_coord[i+2*N_x1];
+//            }
+//            else
+//            {
+//              // next layer on bottom boundary
+//              if ( (i>=2*N_x1)&&(i<3*N_x1) )
+//              {
+//                val[0] = val[1] = sol_curr[i-2*N_x1];
+//                val[2] = sol_curr[i-N_x1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+N_x1];
+//                val[5] = sol_curr[i+2*N_x1];
+//                coord[0] = 2 * y_coord[i-2*N_x1]-y_coord[i-N_x1];
+//                coord[1] = y_coord[i-2*N_x1];
+//                coord[2] = y_coord[i-N_x1];
+//                coord[3] = y_coord[i];
+//                coord[4] = y_coord[i+N_x1];
+//                coord[5] = y_coord[i+2*N_x1];
+//              }
+//              else
+//              {
+//                // point on top boundary
+//                if ( i>= N_y*N_x1)
+//                {
+//                  val[0] = sol_curr[i-3*N_x1];
+//                  val[1] = sol_curr[i-2*N_x1];
+//                  val[2] = sol_curr[i-N_x1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = y_coord[i-3*N_x1];
+//                  coord[1] = y_coord[i-2*N_x1];
+//                  coord[2] = y_coord[i-N_x1];
+//                  coord[3] = y_coord[i];
+//                  coord[4] = 2 *  y_coord[i] - y_coord[i-N_x1];
+//                  coord[5] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
+//                }
+//                else
+//                {
+//                  // point next to top boundary
+//                  if (( i>= (N_y-1)*N_x1)&&(i<N_y*N_x1))
+//                  {
+//                    val[0] = sol_curr[i-3*N_x1];
+//                    val[1] = sol_curr[i-2*N_x1];
+//                    val[2] = sol_curr[i-N_x1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+N_x1];
+//                    coord[0] = y_coord[i-3*N_x1];
+//                    coord[1] = y_coord[i-2*N_x1];
+//                    coord[2] = y_coord[i-N_x1];
+//                    coord[3] = y_coord[i];
+//                    coord[4] = y_coord[i+N_x1];
+//                    coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    // if (i==14382)
+//                    //  OutPut("herea "<< coeff[2] << endl);
+//                    val[0] = sol_curr[i-3*N_x1];
+//                    val[1] = sol_curr[i-2*N_x1];
+//                    val[2] = sol_curr[i-N_x1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+N_x1];
+//                    val[5] = sol_curr[i+2*N_x1];
+//                    coord[0] = y_coord[i-3*N_x1];
+//                    coord[1] = y_coord[i-2*N_x1];
+//                    coord[2] = y_coord[i-N_x1];
+//                    coord[3] = y_coord[i];
+//                    coord[4] = y_coord[i+N_x1];
+//                    coord[5] = y_coord[i+2*N_x1];
+//                    // if (i==14382)
+//                    //	OutPut("val " << val[0] -1 << endl);
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
+//          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
+//          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[3] + av[4];
+//          valy = 3*av[2] - 4*av[3] + av[4];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[1] - 2*av[2] + av[3];
+//          valy = av[1] - av[3];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[0] - 2*av[1] +av[2];
+//          valy = av[0] - 4*av[1] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }
+//        else
+//        {
+//          // prepare vectors for divided differences
+//          // point on bottom boundary
+//          if ( i<=N_x )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+N_x1];
+//            val[4] = sol_curr[i+2*N_x1];
+//            val[5] = sol_curr[i+3*N_x1];
+//            coord[0] = 2 * y_coord[i]-y_coord[i+2*N_x1];
+//            coord[1] = 2 * y_coord[i]-y_coord[i+N_x1];
+//            coord[2] = y_coord[i];
+//            coord[3] = y_coord[i+N_x1];
+//            coord[4] = y_coord[i+2*N_x1];
+//            coord[5] = y_coord[i+3*N_x1];
+//          }
+//          else
+//          {
+//            // point next to bottom boundary
+//            if ( (i>=N_x1)&&(i<2*N_x1) )
+//            {
+//              val[0] = val[1] = sol_curr[i-N_x1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+N_x1];
+//              val[4] = sol_curr[i+2*N_x1];
+//              val[5] = sol_curr[i+3*N_x1];
+//              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i];
+//              coord[1] = y_coord[i-N_x1];
+//              coord[2] = y_coord[i];
+//              coord[3] = y_coord[i+N_x1];
+//              coord[4] = y_coord[i+2*N_x1];
+//              coord[5] = y_coord[i+3*N_x1];
+//            }
+//            else
+//            {
+//              // point on top boundary
+//              if ( i>= N_y*N_x1)
+//              {
+//                val[0] = sol_curr[i-2*N_x1];
+//                val[1] = sol_curr[i-N_x1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = y_coord[i-2*N_x1];
+//                coord[1] = y_coord[i-N_x1];
+//                coord[2] = y_coord[i];
+//                coord[3] = 2 *  y_coord[i] - y_coord[i-N_x1];
+//                coord[4] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
+//                coord[5] = 2 *  y_coord[i] - y_coord[i-3*N_x1];
+//              }
+//              else
+//              {
+//                // point next to top boundary
+//                if (( i>= (N_y-1)*N_x1)&&(i<N_y*N_x1))
+//                {
+//                  val[0] = sol_curr[i-2*N_x1];
+//                  val[1] = sol_curr[i-N_x1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+N_x1];
+//                  coord[0] = y_coord[i-2*N_x1];
+//                  coord[1] = y_coord[i-N_x1];
+//                  coord[2] = y_coord[i];
+//                  coord[3] = y_coord[i+N_x1];
+//                  coord[4] = 2 *  y_coord[i+N_x1] - y_coord[i];
+//                  coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i-N_x1];
+//                }
+//                else
+//                {
+//                  // point in next layer to top boundary
+//                  if (( i>= (N_y-2)*N_x1)&&(i<(N_y-1)*N_x1))
+//                  {
+//                    val[0] = sol_curr[i-2*N_x1];
+//                    val[1] = sol_curr[i-N_x1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+N_x1];
+//                    val[4] = val[5] = sol_curr[i+2*N_x1];
+//                    coord[0] = y_coord[i-2*N_x1];
+//                    coord[1] = y_coord[i-N_x1];
+//                    coord[2] = y_coord[i];
+//                    coord[3] = y_coord[i+N_x1];
+//                    coord[4] = y_coord[i+2*N_x1];
+//                    coord[5] = 2 *  y_coord[i+2*N_x1] - y_coord[i+N_x1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    // if (i==14382)
+//                    //  OutPut("here "<< coeff[2] << endl);
+//                    val[0] = sol_curr[i-2*N_x1];
+//                    val[1] = sol_curr[i-N_x1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+N_x1];
+//                    val[4] = sol_curr[i+2*N_x1];
+//                    val[5] = sol_curr[i+3*N_x1];
+//                    coord[0] = y_coord[i-2*N_x1];
+//                    coord[1] = y_coord[i-N_x1];
+//                    coord[2] = y_coord[i];
+//                    coord[3] = y_coord[i+N_x1];
+//                    coord[4] = y_coord[i+2*N_x1];
+//                    coord[5] = y_coord[i+3*N_x1];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
+//          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
+//          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[1] + av[0];
+//          valy = 3*av[2] - 4*av[1] + av[0];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[3] - 2*av[2] + av[1];
+//          valy = av[3] - av[1];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[4] - 2*av[3] +av[2];
+//          valy = av[4] - 4*av[3] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }                                         // end coeff[2] <=0
+//        //OutPut(value << endl);
+//        current_stage_fdm[i] += coeff[2] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
+//        break;
+//    }
+//    // set Dirichlet boundary conditions
+//    // on bottom
+//    if (i<= N_x)
+//    {
+//      bound_cond(0, x_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//    // inflow from the left x = x_min (left)
+//    if ( i%(N_x1)==0 )
+//    {
+//      bound_cond(3, 1.0-y_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//    // on top
+//    if (i> (N_x1)*N_y)
+//    {
+//      bound_cond(2, 1.0-x_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//    // on the right hand side
+//    if ( (i+1)%(N_x1)==0 )
+//    {
+//      bound_cond(1, y_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//
+//  }
+//  // reset time
+//  TDatabase::TimeDB->CURRENTTIME -= (TDatabase::TimeDB->RK_c[current_stage] - 1)* tau;
+//}
+//#endif
 
-#ifdef __2D__
-void ComputeStages_FDM2D(int dim, CoeffFct2D *Coeffs, BoundCondFunct2D *bound_cond,
-BoundValueFunct2D *bound_val,
-double *sol, double **stages, int current_stage, int N_x, int N_y,
-int *dof_conversion, double *x_coord, double *y_coord)
-{
-  int i, j, N_x1, N_y1, N2;
-  double tau, valx, valy, valz, val[6], coord[6], value;
-  double *sol_curr, coeff_array[20], *coeff, *current_stage_fdm;
-  double d1, d2, d3, d4, uhx[3], omega[3], alpha[3], d[3], beta[3], av[5], c_e = 1e-6;
-  BoundCond cond;
-
-  // set time of the stage, in main already new time level
-  tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-  TDatabase::TimeDB->CURRENTTIME += (TDatabase::TimeDB->RK_c[current_stage] - 1)* tau;
-  N_x1 = N_x+1;
-  N_y1 = N_y+1;
-  N2 = (N_x1)*(N_y1);
-  // allocate arrays
-  sol_curr = stages[5];
-  coeff = coeff_array;
-
-  // compute linear combination of current stages
-  // numeration of dof corresponding to fe space
-  current_stage_fdm = stages[current_stage];
-  memset(current_stage_fdm, 0, N2 * SizeOfDouble);
-  // initialize current stage
-  memcpy(sol_curr,sol,N2*SizeOfDouble);
-  // add previous stages
-  for (i=0;i<current_stage;i++)
-    Daxpy(N2, tau*TDatabase::TimeDB->RK_A[current_stage][i], stages[i], sol_curr);
-
-  //N1_[0] = N_x1;
-  //N1_[1] = N_y1;
-  //coordinates[0] = x_coord;
-  //coordinates[1] = y_coord;
-  //InitializeConvectiveTermFDM(2, offset_, offset1_, N1_);
-
-  // discretization of pde with FDM
-  // loop over all nodes of the FDM grid
-  for ( i=0 ; i<N2 ; i++ )
-  {
-    // coefficients of the equation
-    Coeffs(1, &x_coord[i], &y_coord[i], NULL, &coeff);
-    // compute the diffusive term
-    if (( i%(N_x1)!=0 )&&( (i+1)%(N_x1)!=0 )&&(i<= N_x1*N_y)&&(i>N_x))
-    {
-      // diffusive term wrt x
-      val[0] = sol_curr[i-1];
-      val[1] = sol_curr[i];
-      val[2] = sol_curr[i+1];
-      coord[0] = x_coord[i-1];
-      coord[1] = x_coord[i];
-      coord[2] = x_coord[i+1];
-      valx = 2*DividedDifferences(2, val, coord);
-      // diffusive term wrt y
-      val[0] = sol_curr[i-N_x1];
-      val[2] = sol_curr[i+N_x1];
-      coord[0] = y_coord[i-N_x1];;
-      coord[1] = y_coord[i];
-      coord[2] = y_coord[i+N_x1];
-      valy = 2*DividedDifferences(2, val, coord);
-      // diffusive term wrt x
-      // add also reactive term and rhs
-      current_stage_fdm[i] = coeff[0]*(valx + valy) - coeff[3]*sol_curr[i] + coeff[4];
-      //OutPut(coeff[0] << " " << coeff[3] << " " << coeff[4] << endl);
-    }
-
-    /* ConvectiveTermFDM(2, i,
-          coeff+1, sol_curr, current_stage_fdm, coordinates,
-          offset_, offset1_);
-          continue;*/
-    switch(TDatabase::ParamDB->DISCTYPE)
-    {
-      case GALERKIN:
-        exit(1);
-        break;
-        // simple upwind scheme
-      case UPWIND:
-        // compute the term A_x
-        if (coeff[1] >= 0)
-        {
-          // not on boundary x = x_min -> in the "x-sense" exists a left neighbour
-          if ( i%(N_x1)!=0 )
-            current_stage_fdm[i] -= coeff[1]*(sol_curr[i]-sol_curr[i-1])/(x_coord[i]-x_coord[i-1]);
-        }
-        else
-        {
-          // not on boundary x = x_max -> in the "x-sense" exists a right neighbour
-          if ( (i+1)%(N_x1)!=0 )
-            current_stage_fdm[i] -= coeff[1]*(sol_curr[i+1]-sol_curr[i])/(x_coord[i+1]-x_coord[i]);
-        }
-
-        // compute the term A_y
-        if (coeff[2] >= 0)
-        {
-          // not on boundary y = y_min -> in the "y-sense" exists a left neighbour
-          if ((i%((N_x1)*(N_y1)))>N_x )
-            current_stage_fdm[i] -= coeff[2]*(sol_curr[i]-sol_curr[i-(N_x1)])/(y_coord[i]-y_coord[i-(N_x1)]);
-        }
-        else
-        {
-          // not on boundary y = y_max -> in the "y-sense" exists a right neighbour
-          if ((i%((N_x1)*(N_y1)))<((N_x1)*N_y) )
-            current_stage_fdm[i] -= coeff[2]*(sol_curr[i+(N_x1)]-sol_curr[i])/(y_coord[i+(N_x1)]-y_coord[i]);
-        }
-        break;
-      case ENO_3:
-        // compute the term A_x
-        coeff[1] = - coeff[1];
-        coeff[2] = - coeff[2];
-        if (coeff[1] <=  0)
-        {
-          // prepare vectors for divided differences
-          // point on left boundary
-          if ( i%(N_x1)==0 )
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+1];
-            val[5] = sol_curr[i+2];
-            coord[0] = 2 * x_coord[i]-x_coord[i+3];
-            coord[1] = 2 * x_coord[i]-x_coord[i+2];
-            coord[2] = 2 * x_coord[i]-x_coord[i+1];
-            coord[3] = x_coord[i];
-            coord[4] = x_coord[i+1];
-            coord[5] = x_coord[i+2];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (i-1)%(N_x1)==0 )
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+1];
-              val[5] = sol_curr[i+2];
-              coord[0] = 2 * x_coord[i-1]-x_coord[i+1];
-              coord[1] = 2 * x_coord[i-1]-x_coord[i];
-              coord[2] = x_coord[i-1];
-              coord[3] = x_coord[i];
-              coord[4] = x_coord[i+1];
-              coord[5] = x_coord[i+2];
-            }
-            else
-            {
-              // next layer on left boundary
-              if ( (i-2)%(N_x1)==0 )
-              {
-                val[0] = val[1] = sol_curr[i-2];
-                val[2] = sol_curr[i-1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+1];
-                val[5] = sol_curr[i+2];
-                coord[0] = 2 * x_coord[i-2]-x_coord[i-1];
-                coord[1] = x_coord[i-2];
-                coord[2] = x_coord[i-1];
-                coord[3] = x_coord[i];
-                coord[4] = x_coord[i+1];
-                coord[5] = x_coord[i+2];
-              }
-              else
-              {
-                // point on right boundary
-                if ( (i+1)%(N_x1)==0 )
-                {
-                  val[0] = sol_curr[i-3];
-                  val[1] = sol_curr[i-2];
-                  val[2] = sol_curr[i-1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = x_coord[i-3];
-                  coord[1] = x_coord[i-2];
-                  coord[2] = x_coord[i-1];
-                  coord[3] = x_coord[i];
-                  coord[4] = 2 *  x_coord[i] - x_coord[i-1];
-                  coord[5] = 2 *  x_coord[i] - x_coord[i-2];
-                }
-                else
-                {
-                  // point next to right boundary
-                  if ( (i+2)%(N_x1)==0 )
-                  {
-                    val[0] = sol_curr[i-3];
-                    val[1] = sol_curr[i-2];
-                    val[2] = sol_curr[i-1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+1];
-                    coord[0] = x_coord[i-3];
-                    coord[1] = x_coord[i-2];
-                    coord[2] = x_coord[i-1];
-                    coord[3] = x_coord[i];
-                    coord[4] = x_coord[i+1];
-                    coord[5] = 2 *  x_coord[i+1] - x_coord[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-3];
-                    val[1] = sol_curr[i-2];
-                    val[2] = sol_curr[i-1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+1];
-                    val[5] = sol_curr[i+2];
-                    coord[0] = x_coord[i-3];
-                    coord[1] = x_coord[i-2];
-                    coord[2] = x_coord[i-1];
-                    coord[3] = x_coord[i];
-                    coord[4] = x_coord[i+1];
-                    coord[5] = x_coord[i+2];
-                    /*sol_help = sol_curr+i-3;
-                                val[0] = *sol_help;
-                                val[1] = *(sol_help+1);
-                                val[2] = *(sol_help+2);
-                                val[3] = *(sol_help+3);
-                                val[4] = *(sol_help+4);
-                                val[5] = *(sol_help+5);
-                                sol_help = x_coord+i-3;
-                                coord[0] = *sol_help;
-                                coord[1] = *(sol_help+1);
-                                coord[2] = *(sol_help+2);
-                    coord[3] = *(sol_help+3);
-                    coord[4] = *(sol_help+4);
-                    coord[5] = *(sol_help+5);*/
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+2,coord+2);
-          d2 = DividedDifferences(2,val+1,coord+1);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              //value = DividedDifferences(1,val+1,coord+1);
-              value =  (val[2]-val[1])/(coord[2]-coord[1]);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              //OutPut("a3a ");
-            }
-            else
-            {
-              //value = DividedDifferences(1,val+2,coord+2);
-              valx = coord[3]-coord[2];
-              value = (val[3]-val[2])/valx;
-              value += d1 * valx;
-              value += d4 * valx*(coord[3]-coord[4]);
-              //OutPut("a2 ");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              //value = DividedDifferences(1,val,coord);
-              value = (val[1]-val[0])/(coord[1]-coord[0]);
-              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
-              valx = coord[3]-coord[0];
-              valy = coord[3]-coord[1];
-              valz = coord[3]-coord[2];
-              //value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
-              //  + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
-              value += d3 * (valy * valz + valx * valz + valx * valy);
-              //OutPut("a4 ");
-            }
-            else
-            {
-              //value = DividedDifferences(1,val+1,coord+1);
-              value = (val[2]-val[1])/(coord[2]-coord[1]);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              //OutPut("a3b ");
-              // OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
-            }
-          }
-        }
-        else
-        {
-          // prepare vectors for divided differences
-          // point on left boundary
-          if ( i%(N_x1)==0 )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+1];
-            val[4] = sol_curr[i+2];
-            val[5] = sol_curr[i+3];
-            coord[0] = 2 * x_coord[i]-x_coord[i+2];
-            coord[1] = 2 * x_coord[i]-x_coord[i+1];
-            coord[2] = x_coord[i];
-            coord[3] = x_coord[i+1];
-            coord[4] = x_coord[i+2];
-            coord[5] = x_coord[i+3];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (i-1)%(N_x1)==0 )
-            {
-              val[0] = val[1] = sol_curr[i-1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+1];
-              val[4] = sol_curr[i+2];
-              val[5] = sol_curr[i+3];
-              coord[0] = 2 * x_coord[i-1]-x_coord[i];
-              coord[1] = x_coord[i-1];
-              coord[2] = x_coord[i];
-              coord[3] = x_coord[i+1];
-              coord[4] = x_coord[i+2];
-              coord[5] = x_coord[i+3];
-            }
-            else
-            {
-              // point on right boundary
-              if ( (i+1)%(N_x1)==0 )
-              {
-                val[0] = sol_curr[i-2];
-                val[1] = sol_curr[i-1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = x_coord[i-2];
-                coord[1] = x_coord[i-1];
-                coord[2] = x_coord[i];
-                coord[3] = 2 *  x_coord[i] - x_coord[i-1];
-                coord[4] = 2 *  x_coord[i] - x_coord[i-2];
-                coord[5] = 2 *  x_coord[i] - x_coord[i-3];
-              }
-              else
-              {
-                // point next to right boundary
-                if ( (i+2)%(N_x1)==0 )
-                {
-                  val[0] = sol_curr[i-2];
-                  val[1] = sol_curr[i-1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+1];
-                  coord[0] = x_coord[i-2];
-                  coord[1] = x_coord[i-1];
-                  coord[2] = x_coord[i];
-                  coord[3] = x_coord[i+1];
-                  coord[4] = 2 *  x_coord[i+1] - x_coord[i];
-                  coord[5] = 2 *  x_coord[i+1] - x_coord[i-1];
-                }
-                else
-                {
-                  // point in next layer to right boundary
-                  if ( (i+3)%(N_x1)==0 )
-                  {
-                    val[0] = sol_curr[i-2];
-                    val[1] = sol_curr[i-1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+1];
-                    val[4] = val[5] = sol_curr[i+2];
-                    coord[0] = x_coord[i-2];
-                    coord[1] = x_coord[i-1];
-                    coord[2] = x_coord[i];
-                    coord[3] = x_coord[i+1];
-                    coord[4] = x_coord[i+2];
-                    coord[5] = 2 *  x_coord[i+2] - x_coord[i+1];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-2];
-                    val[1] = sol_curr[i-1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+1];
-                    val[4] = sol_curr[i+2];
-                    val[5] = sol_curr[i+3];
-                    coord[0] = x_coord[i-2];
-                    coord[1] = x_coord[i-1];
-                    coord[2] = x_coord[i];
-                    coord[3] = x_coord[i+1];
-                    coord[4] = x_coord[i+2];
-                    coord[5] = x_coord[i+3];
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+1,coord+1);
-          d2 = DividedDifferences(2,val+2,coord+2);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val,coord);
-              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
-              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
-              //OutPut("A3 ");
-            }
-            else
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * (coord[2]-coord[1]);
-              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
-              //OutPut("A2a ");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              valx = coord[2]-coord[1];
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * valx;
-              value += d3 * valx*(coord[2]-coord[3]);
-              //OutPut("A2b ");
-            }
-            else
-            {
-              valx = coord[2]-coord[3];
-              value = DividedDifferences(1,val+2,coord+2);
-              value += d2 * valx;
-              value += d4 * valx*(coord[2]-coord[4]);
-              //comparison with backward difference in node i
-              //OutPut("A1b ");
-              //OutPut("A1 " << value <<"  " <<   DividedDifferences(1,val+1,coord+1) << ":");
-            }
-          }
-        }                                         // end coeff[1] <=0
-        //OutPut(value << " ");
-        current_stage_fdm[i] += coeff[1] * value;
-        // compute the term A_y
-        if (coeff[2]  <= 0)
-        {
-          // prepare vectors for divided differences
-          // point on bottom boundary
-          if ( i<=N_x )
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+N_x1];
-            val[5] = sol_curr[i+2 * N_x1];
-            coord[0] = 2 * y_coord[i]-y_coord[i+3*N_x1];
-            coord[1] = 2 * y_coord[i]-y_coord[i+2*N_x1];
-            coord[2] = 2 * y_coord[i]-y_coord[i+N_x1];
-            coord[3] = y_coord[i];
-            coord[4] = y_coord[i+N_x1];
-            coord[5] = y_coord[i+2 * N_x1];
-          }
-          else
-          {
-            // point next to bottom boundary
-            if ( (i>=N_x1)&&(i<2*N_x1) )
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-N_x1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+N_x1];
-              val[5] = sol_curr[i+2*N_x1];
-              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i+N_x1];
-              coord[1] = 2 * y_coord[i-N_x1]-y_coord[i];
-              coord[2] = y_coord[i-N_x1];
-              coord[3] = y_coord[i];
-              coord[4] = y_coord[i+N_x1];
-              coord[5] = y_coord[i+2*N_x1];
-            }
-            else
-            {
-              // next layer on bottom boundary
-              if ( (i>=2*N_x1)&&(i<3*N_x1) )
-              {
-                val[0] = val[1] = sol_curr[i-2*N_x1];
-                val[2] = sol_curr[i-N_x1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+N_x1];
-                val[5] = sol_curr[i+2*N_x1];
-                coord[0] = 2 * y_coord[i-2*N_x1]-y_coord[i-N_x1];
-                coord[1] = y_coord[i-2*N_x1];
-                coord[2] = y_coord[i-N_x1];
-                coord[3] = y_coord[i];
-                coord[4] = y_coord[i+N_x1];
-                coord[5] = y_coord[i+2*N_x1];
-              }
-              else
-              {
-                // point on top boundary
-                if ( i>= N_y*N_x1)
-                {
-                  val[0] = sol_curr[i-3*N_x1];
-                  val[1] = sol_curr[i-2*N_x1];
-                  val[2] = sol_curr[i-N_x1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = y_coord[i-3*N_x1];
-                  coord[1] = y_coord[i-2*N_x1];
-                  coord[2] = y_coord[i-N_x1];
-                  coord[3] = y_coord[i];
-                  coord[4] = 2 *  y_coord[i] - y_coord[i-N_x1];
-                  coord[5] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
-                }
-                else
-                {
-                  // point next to top boundary
-                  if (( i>= (N_y-1)*N_x1)&&(i<N_y*N_x1))
-                  {
-                    val[0] = sol_curr[i-3*N_x1];
-                    val[1] = sol_curr[i-2*N_x1];
-                    val[2] = sol_curr[i-N_x1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+N_x1];
-                    coord[0] = y_coord[i-3*N_x1];
-                    coord[1] = y_coord[i-2*N_x1];
-                    coord[2] = y_coord[i-N_x1];
-                    coord[3] = y_coord[i];
-                    coord[4] = y_coord[i+N_x1];
-                    coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    // if (i==14382)
-                    //  OutPut("herea "<< coeff[2] << endl);
-                    val[0] = sol_curr[i-3*N_x1];
-                    val[1] = sol_curr[i-2*N_x1];
-                    val[2] = sol_curr[i-N_x1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+N_x1];
-                    val[5] = sol_curr[i+2*N_x1];
-                    coord[0] = y_coord[i-3*N_x1];
-                    coord[1] = y_coord[i-2*N_x1];
-                    coord[2] = y_coord[i-N_x1];
-                    coord[3] = y_coord[i];
-                    coord[4] = y_coord[i+N_x1];
-                    coord[5] = y_coord[i+2*N_x1];
-                    // if (i==14382)
-                    //	OutPut("val " << val[0] -1 << endl);
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+2,coord+2);
-          d2 = DividedDifferences(2,val+1,coord+1);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              //OutPut("a3a ");
-              //OutPut("a3 " << value << " ");
-            }
-            else
-            {
-              value = DividedDifferences(1,val+2,coord+2);
-              value += d1 * (coord[3]-coord[2]);
-              value += d4 * (coord[3]-coord[2])*(coord[3]-coord[4]);
-              //OutPut("a2 ");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val,coord);
-              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
-              value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
-                + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
-              // OutPut("a4 ");
-              //OutPut("a4 " << coeff[2]  << "  " << DividedDifferences(2,val+2,coord+2) << "  "
-              // << DividedDifferences(2,val+1,coord+1) << "  " << DividedDifferences(3,val,coord)
-              // << "  " << DividedDifferences(3,val+1,coord+1)
-              //<< endl);
-            }
-            else
-            {
-              // if (i==14382)
-              //  OutPut("case2a "<< d3 << " " << d4 << endl);
-
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              // comparison with backward difference in node i
-              // OutPut("a3b ");
-              //OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
-            }
-          }
-        }
-        else
-        {
-          // prepare vectors for divided differences
-          // point on bottom boundary
-          if ( i<=N_x )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+N_x1];
-            val[4] = sol_curr[i+2*N_x1];
-            val[5] = sol_curr[i+3*N_x1];
-            coord[0] = 2 * y_coord[i]-y_coord[i+2*N_x1];
-            coord[1] = 2 * y_coord[i]-y_coord[i+N_x1];
-            coord[2] = y_coord[i];
-            coord[3] = y_coord[i+N_x1];
-            coord[4] = y_coord[i+2*N_x1];
-            coord[5] = y_coord[i+3*N_x1];
-          }
-          else
-          {
-            // point next to bottom boundary
-            if ( (i>=N_x1)&&(i<2*N_x1) )
-            {
-              val[0] = val[1] = sol_curr[i-N_x1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+N_x1];
-              val[4] = sol_curr[i+2*N_x1];
-              val[5] = sol_curr[i+3*N_x1];
-              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i];
-              coord[1] = y_coord[i-N_x1];
-              coord[2] = y_coord[i];
-              coord[3] = y_coord[i+N_x1];
-              coord[4] = y_coord[i+2*N_x1];
-              coord[5] = y_coord[i+3*N_x1];
-            }
-            else
-            {
-              // point on top boundary
-              if ( i>= N_y*N_x1)
-              {
-                val[0] = sol_curr[i-2*N_x1];
-                val[1] = sol_curr[i-N_x1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = y_coord[i-2*N_x1];
-                coord[1] = y_coord[i-N_x1];
-                coord[2] = y_coord[i];
-                coord[3] = 2 *  y_coord[i] - y_coord[i-N_x1];
-                coord[4] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
-                coord[5] = 2 *  y_coord[i] - y_coord[i-3*N_x1];
-              }
-              else
-              {
-                // point next to top boundary
-                if (( i>= (N_y-1)*N_x1)&&(i<N_y*N_x1))
-                {
-                  val[0] = sol_curr[i-2*N_x1];
-                  val[1] = sol_curr[i-N_x1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+N_x1];
-                  coord[0] = y_coord[i-2*N_x1];
-                  coord[1] = y_coord[i-N_x1];
-                  coord[2] = y_coord[i];
-                  coord[3] = y_coord[i+N_x1];
-                  coord[4] = 2 *  y_coord[i+N_x1] - y_coord[i];
-                  coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i-N_x1];
-                }
-                else
-                {
-                  // point in next layer to top boundary
-                  if (( i>= (N_y-2)*N_x1)&&(i<(N_y-1)*N_x1))
-                  {
-                    val[0] = sol_curr[i-2*N_x1];
-                    val[1] = sol_curr[i-N_x1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+N_x1];
-                    val[4] = val[5] = sol_curr[i+2*N_x1];
-                    coord[0] = y_coord[i-2*N_x1];
-                    coord[1] = y_coord[i-N_x1];
-                    coord[2] = y_coord[i];
-                    coord[3] = y_coord[i+N_x1];
-                    coord[4] = y_coord[i+2*N_x1];
-                    coord[5] = 2 *  y_coord[i+2*N_x1] - y_coord[i+N_x1];
-                  }
-                  // inner point
-                  else
-                  {
-                    // if (i==14382)
-                    //  OutPut("here "<< coeff[2] << endl);
-                    val[0] = sol_curr[i-2*N_x1];
-                    val[1] = sol_curr[i-N_x1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+N_x1];
-                    val[4] = sol_curr[i+2*N_x1];
-                    val[5] = sol_curr[i+3*N_x1];
-                    coord[0] = y_coord[i-2*N_x1];
-                    coord[1] = y_coord[i-N_x1];
-                    coord[2] = y_coord[i];
-                    coord[3] = y_coord[i+N_x1];
-                    coord[4] = y_coord[i+2*N_x1];
-                    coord[5] = y_coord[i+3*N_x1];
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+1,coord+1);
-          d2 = DividedDifferences(2,val+2,coord+2);
-          // if (i==14382)
-          // OutPut("d1 "<< d1 << " d2 " << d2 << endl);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val,coord);
-              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
-              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
-              // OutPut("A3 ");
-            }
-            else
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * (coord[2]-coord[1]);
-              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
-              // OutPut("A2a ");
-              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            // if (i==14382)
-            //OutPut("d3 "<< d3 << " d4 " << d4 << endl);
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * (coord[2]-coord[1]);
-              value += d3 * (coord[2]-coord[1])*(coord[2]-coord[3]);
-              // if (i==14382)
-              //	OutPut("A2b " << value << endl);
-            }
-            else
-            {
-              value = DividedDifferences(1,val+2,coord+2);
-              value += d2 * (coord[2]-coord[3]);
-              value += d4 * (coord[2]-coord[3])*(coord[2]-coord[4]);
-              // comparison with backward difference in node i
-              //if (i==14382)
-              //	OutPut("A1b " <<  value << endl);
-              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
-            }
-          }
-        }                                         // end coeff[2] <=0
-        //OutPut(value << endl);
-        current_stage_fdm[i] += coeff[2] * value;
-        break;
-      case WENO_5:
-        d[0] = 0.3;
-        d[1] = 0.6;
-        d[2] = 0.1;
-        // compute the term A_x
-        coeff[1] = - coeff[1];
-        coeff[2] = - coeff[2];
-        if (coeff[1] <=  0)
-        {
-          // prepare vectors for divided differences
-          // point on left boundary
-          if ( i%(N_x1)==0 )
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+1];
-            val[5] = sol_curr[i+2];
-            coord[0] = 2 * x_coord[i]-x_coord[i+3];
-            coord[1] = 2 * x_coord[i]-x_coord[i+2];
-            coord[2] = 2 * x_coord[i]-x_coord[i+1];
-            coord[3] = x_coord[i];
-            coord[4] = x_coord[i+1];
-            coord[5] = x_coord[i+2];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (i-1)%(N_x1)==0 )
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+1];
-              val[5] = sol_curr[i+2];
-              coord[0] = 2 * x_coord[i-1]-x_coord[i+1];
-              coord[1] = 2 * x_coord[i-1]-x_coord[i];
-              coord[2] = x_coord[i-1];
-              coord[3] = x_coord[i];
-              coord[4] = x_coord[i+1];
-              coord[5] = x_coord[i+2];
-            }
-            else
-            {
-              // next layer on left boundary
-              if ( (i-2)%(N_x1)==0 )
-              {
-                val[0] = val[1] = sol_curr[i-2];
-                val[2] = sol_curr[i-1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+1];
-                val[5] = sol_curr[i+2];
-                coord[0] = 2 * x_coord[i-2]-x_coord[i-1];
-                coord[1] = x_coord[i-2];
-                coord[2] = x_coord[i-1];
-                coord[3] = x_coord[i];
-                coord[4] = x_coord[i+1];
-                coord[5] = x_coord[i+2];
-              }
-              else
-              {
-                // point on right boundary
-                if ( (i+1)%(N_x1)==0 )
-                {
-                  val[0] = sol_curr[i-3];
-                  val[1] = sol_curr[i-2];
-                  val[2] = sol_curr[i-1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = x_coord[i-3];
-                  coord[1] = x_coord[i-2];
-                  coord[2] = x_coord[i-1];
-                  coord[3] = x_coord[i];
-                  coord[4] = 2 *  x_coord[i] - x_coord[i-1];
-                  coord[5] = 2 *  x_coord[i] - x_coord[i-2];
-                }
-                else
-                {
-                  // point next to right boundary
-                  if ( (i+2)%(N_x1)==0 )
-                  {
-                    val[0] = sol_curr[i-3];
-                    val[1] = sol_curr[i-2];
-                    val[2] = sol_curr[i-1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+1];
-                    coord[0] = x_coord[i-3];
-                    coord[1] = x_coord[i-2];
-                    coord[2] = x_coord[i-1];
-                    coord[3] = x_coord[i];
-                    coord[4] = x_coord[i+1];
-                    coord[5] = 2 *  x_coord[i+1] - x_coord[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-3];
-                    val[1] = sol_curr[i-2];
-                    val[2] = sol_curr[i-1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+1];
-                    val[5] = sol_curr[i+2];
-                    coord[0] = x_coord[i-3];
-                    coord[1] = x_coord[i-2];
-                    coord[2] = x_coord[i-1];
-                    coord[3] = x_coord[i];
-                    coord[4] = x_coord[i+1];
-                    coord[5] = x_coord[i+2];
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
-          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
-          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[3] + av[4];
-          valy = 3*av[2] - 4*av[3] + av[4];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[1] - 2*av[2] + av[3];
-          valy = av[1] - av[3];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[0] - 2*av[1] +av[2];
-          valy = av[0] - 4*av[1] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }
-        else                                      // - coeff[1] > 0
-        {
-          // prepare vectors for divided differences
-          // point on left boundary
-          if ( i%(N_x1)==0 )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+1];
-            val[4] = sol_curr[i+2];
-            val[5] = sol_curr[i+3];
-            coord[0] = 2 * x_coord[i]-x_coord[i+2];
-            coord[1] = 2 * x_coord[i]-x_coord[i+1];
-            coord[2] = x_coord[i];
-            coord[3] = x_coord[i+1];
-            coord[4] = x_coord[i+2];
-            coord[5] = x_coord[i+3];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (i-1)%(N_x1)==0 )
-            {
-              val[0] = val[1] = sol_curr[i-1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+1];
-              val[4] = sol_curr[i+2];
-              val[5] = sol_curr[i+3];
-              coord[0] = 2 * x_coord[i-1]-x_coord[i];
-              coord[1] = x_coord[i-1];
-              coord[2] = x_coord[i];
-              coord[3] = x_coord[i+1];
-              coord[4] = x_coord[i+2];
-              coord[5] = x_coord[i+3];
-            }
-            else
-            {
-              // point on right boundary
-              if ( (i+1)%(N_x1)==0 )
-              {
-                val[0] = sol_curr[i-2];
-                val[1] = sol_curr[i-1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = x_coord[i-2];
-                coord[1] = x_coord[i-1];
-                coord[2] = x_coord[i];
-                coord[3] = 2 *  x_coord[i] - x_coord[i-1];
-                coord[4] = 2 *  x_coord[i] - x_coord[i-2];
-                coord[5] = 2 *  x_coord[i] - x_coord[i-3];
-              }
-              else
-              {
-                // point next to right boundary
-                if ( (i+2)%(N_x1)==0 )
-                {
-                  val[0] = sol_curr[i-2];
-                  val[1] = sol_curr[i-1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+1];
-                  coord[0] = x_coord[i-2];
-                  coord[1] = x_coord[i-1];
-                  coord[2] = x_coord[i];
-                  coord[3] = x_coord[i+1];
-                  coord[4] = 2 *  x_coord[i+1] - x_coord[i];
-                  coord[5] = 2 *  x_coord[i+1] - x_coord[i-1];
-                }
-                else
-                {
-                  // point in next layer to right boundary
-                  if ( (i+3)%(N_x1)==0 )
-                  {
-                    val[0] = sol_curr[i-2];
-                    val[1] = sol_curr[i-1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+1];
-                    val[4] = val[5] = sol_curr[i+2];
-                    coord[0] = x_coord[i-2];
-                    coord[1] = x_coord[i-1];
-                    coord[2] = x_coord[i];
-                    coord[3] = x_coord[i+1];
-                    coord[4] = x_coord[i+2];
-                    coord[5] = 2 *  x_coord[i+2] - x_coord[i+1];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-2];
-                    val[1] = sol_curr[i-1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+1];
-                    val[4] = sol_curr[i+2];
-                    val[5] = sol_curr[i+3];
-                    coord[0] = x_coord[i-2];
-                    coord[1] = x_coord[i-1];
-                    coord[2] = x_coord[i];
-                    coord[3] = x_coord[i+1];
-                    coord[4] = x_coord[i+2];
-                    coord[5] = x_coord[i+3];
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
-          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
-          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[1] + av[0];
-          valy = 3*av[2] - 4*av[1] + av[0];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[3] - 2*av[2] + av[1];
-          valy = av[3] - av[1];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[4] - 2*av[3] +av[2];
-          valy = av[4] - 4*av[3] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }                                         // end coeff[1] <=0
-        //OutPut(value << " ");
-        current_stage_fdm[i] += coeff[1] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
-        // compute the term A_y
-        if (coeff[2]  <= 0)
-        {
-          // prepare vectors for divided differences
-          // point on bottom boundary
-          if ( i<=N_x )
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+N_x1];
-            val[5] = sol_curr[i+2 * N_x1];
-            coord[0] = 2 * y_coord[i]-y_coord[i+3*N_x1];
-            coord[1] = 2 * y_coord[i]-y_coord[i+2*N_x1];
-            coord[2] = 2 * y_coord[i]-y_coord[i+N_x1];
-            coord[3] = y_coord[i];
-            coord[4] = y_coord[i+N_x1];
-            coord[5] = y_coord[i+2 * N_x1];
-          }
-          else
-          {
-            // point next to bottom boundary
-            if ( (i>=N_x1)&&(i<2*N_x1) )
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-N_x1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+N_x1];
-              val[5] = sol_curr[i+2*N_x1];
-              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i+N_x1];
-              coord[1] = 2 * y_coord[i-N_x1]-y_coord[i];
-              coord[2] = y_coord[i-N_x1];
-              coord[3] = y_coord[i];
-              coord[4] = y_coord[i+N_x1];
-              coord[5] = y_coord[i+2*N_x1];
-            }
-            else
-            {
-              // next layer on bottom boundary
-              if ( (i>=2*N_x1)&&(i<3*N_x1) )
-              {
-                val[0] = val[1] = sol_curr[i-2*N_x1];
-                val[2] = sol_curr[i-N_x1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+N_x1];
-                val[5] = sol_curr[i+2*N_x1];
-                coord[0] = 2 * y_coord[i-2*N_x1]-y_coord[i-N_x1];
-                coord[1] = y_coord[i-2*N_x1];
-                coord[2] = y_coord[i-N_x1];
-                coord[3] = y_coord[i];
-                coord[4] = y_coord[i+N_x1];
-                coord[5] = y_coord[i+2*N_x1];
-              }
-              else
-              {
-                // point on top boundary
-                if ( i>= N_y*N_x1)
-                {
-                  val[0] = sol_curr[i-3*N_x1];
-                  val[1] = sol_curr[i-2*N_x1];
-                  val[2] = sol_curr[i-N_x1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = y_coord[i-3*N_x1];
-                  coord[1] = y_coord[i-2*N_x1];
-                  coord[2] = y_coord[i-N_x1];
-                  coord[3] = y_coord[i];
-                  coord[4] = 2 *  y_coord[i] - y_coord[i-N_x1];
-                  coord[5] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
-                }
-                else
-                {
-                  // point next to top boundary
-                  if (( i>= (N_y-1)*N_x1)&&(i<N_y*N_x1))
-                  {
-                    val[0] = sol_curr[i-3*N_x1];
-                    val[1] = sol_curr[i-2*N_x1];
-                    val[2] = sol_curr[i-N_x1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+N_x1];
-                    coord[0] = y_coord[i-3*N_x1];
-                    coord[1] = y_coord[i-2*N_x1];
-                    coord[2] = y_coord[i-N_x1];
-                    coord[3] = y_coord[i];
-                    coord[4] = y_coord[i+N_x1];
-                    coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    // if (i==14382)
-                    //  OutPut("herea "<< coeff[2] << endl);
-                    val[0] = sol_curr[i-3*N_x1];
-                    val[1] = sol_curr[i-2*N_x1];
-                    val[2] = sol_curr[i-N_x1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+N_x1];
-                    val[5] = sol_curr[i+2*N_x1];
-                    coord[0] = y_coord[i-3*N_x1];
-                    coord[1] = y_coord[i-2*N_x1];
-                    coord[2] = y_coord[i-N_x1];
-                    coord[3] = y_coord[i];
-                    coord[4] = y_coord[i+N_x1];
-                    coord[5] = y_coord[i+2*N_x1];
-                    // if (i==14382)
-                    //	OutPut("val " << val[0] -1 << endl);
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
-          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
-          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[3] + av[4];
-          valy = 3*av[2] - 4*av[3] + av[4];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[1] - 2*av[2] + av[3];
-          valy = av[1] - av[3];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[0] - 2*av[1] +av[2];
-          valy = av[0] - 4*av[1] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }
-        else
-        {
-          // prepare vectors for divided differences
-          // point on bottom boundary
-          if ( i<=N_x )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+N_x1];
-            val[4] = sol_curr[i+2*N_x1];
-            val[5] = sol_curr[i+3*N_x1];
-            coord[0] = 2 * y_coord[i]-y_coord[i+2*N_x1];
-            coord[1] = 2 * y_coord[i]-y_coord[i+N_x1];
-            coord[2] = y_coord[i];
-            coord[3] = y_coord[i+N_x1];
-            coord[4] = y_coord[i+2*N_x1];
-            coord[5] = y_coord[i+3*N_x1];
-          }
-          else
-          {
-            // point next to bottom boundary
-            if ( (i>=N_x1)&&(i<2*N_x1) )
-            {
-              val[0] = val[1] = sol_curr[i-N_x1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+N_x1];
-              val[4] = sol_curr[i+2*N_x1];
-              val[5] = sol_curr[i+3*N_x1];
-              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i];
-              coord[1] = y_coord[i-N_x1];
-              coord[2] = y_coord[i];
-              coord[3] = y_coord[i+N_x1];
-              coord[4] = y_coord[i+2*N_x1];
-              coord[5] = y_coord[i+3*N_x1];
-            }
-            else
-            {
-              // point on top boundary
-              if ( i>= N_y*N_x1)
-              {
-                val[0] = sol_curr[i-2*N_x1];
-                val[1] = sol_curr[i-N_x1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = y_coord[i-2*N_x1];
-                coord[1] = y_coord[i-N_x1];
-                coord[2] = y_coord[i];
-                coord[3] = 2 *  y_coord[i] - y_coord[i-N_x1];
-                coord[4] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
-                coord[5] = 2 *  y_coord[i] - y_coord[i-3*N_x1];
-              }
-              else
-              {
-                // point next to top boundary
-                if (( i>= (N_y-1)*N_x1)&&(i<N_y*N_x1))
-                {
-                  val[0] = sol_curr[i-2*N_x1];
-                  val[1] = sol_curr[i-N_x1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+N_x1];
-                  coord[0] = y_coord[i-2*N_x1];
-                  coord[1] = y_coord[i-N_x1];
-                  coord[2] = y_coord[i];
-                  coord[3] = y_coord[i+N_x1];
-                  coord[4] = 2 *  y_coord[i+N_x1] - y_coord[i];
-                  coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i-N_x1];
-                }
-                else
-                {
-                  // point in next layer to top boundary
-                  if (( i>= (N_y-2)*N_x1)&&(i<(N_y-1)*N_x1))
-                  {
-                    val[0] = sol_curr[i-2*N_x1];
-                    val[1] = sol_curr[i-N_x1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+N_x1];
-                    val[4] = val[5] = sol_curr[i+2*N_x1];
-                    coord[0] = y_coord[i-2*N_x1];
-                    coord[1] = y_coord[i-N_x1];
-                    coord[2] = y_coord[i];
-                    coord[3] = y_coord[i+N_x1];
-                    coord[4] = y_coord[i+2*N_x1];
-                    coord[5] = 2 *  y_coord[i+2*N_x1] - y_coord[i+N_x1];
-                  }
-                  // inner point
-                  else
-                  {
-                    // if (i==14382)
-                    //  OutPut("here "<< coeff[2] << endl);
-                    val[0] = sol_curr[i-2*N_x1];
-                    val[1] = sol_curr[i-N_x1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+N_x1];
-                    val[4] = sol_curr[i+2*N_x1];
-                    val[5] = sol_curr[i+3*N_x1];
-                    coord[0] = y_coord[i-2*N_x1];
-                    coord[1] = y_coord[i-N_x1];
-                    coord[2] = y_coord[i];
-                    coord[3] = y_coord[i+N_x1];
-                    coord[4] = y_coord[i+2*N_x1];
-                    coord[5] = y_coord[i+3*N_x1];
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
-          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
-          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[1] + av[0];
-          valy = 3*av[2] - 4*av[1] + av[0];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[3] - 2*av[2] + av[1];
-          valy = av[3] - av[1];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[4] - 2*av[3] +av[2];
-          valy = av[4] - 4*av[3] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }                                         // end coeff[2] <=0
-        //OutPut(value << endl);
-        current_stage_fdm[i] += coeff[2] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
-        break;
-    }
-    // set Dirichlet boundary conditions
-    // on bottom
-    if (i<= N_x)
-    {
-      bound_cond(0, x_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-    // inflow from the left x = x_min (left)
-    if ( i%(N_x1)==0 )
-    {
-      bound_cond(3, 1.0-y_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-    // on top
-    if (i> (N_x1)*N_y)
-    {
-      bound_cond(2, 1.0-x_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-    // on the right hand side
-    if ( (i+1)%(N_x1)==0 )
-    {
-      bound_cond(1, y_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-
-  }
-  // reset time
-  TDatabase::TimeDB->CURRENTTIME -= (TDatabase::TimeDB->RK_c[current_stage] - 1)* tau;
-}
-#endif
-
-#ifdef __3D__
-void ComputeStages_FDM3D(int dim, CoeffFct3D *Coeffs, BoundCondFunct3D *bound_cond,
-BoundValueFunct3D *bound_val,
-double *sol, double **stages, int current_stage, int N_x, int N_y, int N_z,
-int *dof_conversion, double *x_coord, double *y_coord, double *z_coord)
-
-{
-  int i, j, N_x1, N_y1,N_z1, N3, N1_[3];;
-  double tau, hx_i, hx_i1, hy_i, hy_i1,hz_i, hz_i1, valx, valy, valz, val[6], coord[6], value;
-  double *sol_curr, coeff_array[20], *coeff, *current_stage_fdm, *sol_help;
-  double d1, d2, d3, d4, uhx[3], omega[3], alpha[3], d[3], beta[3], av[5], c_e = 1e-6;
-  double *coordinates[3];
-  int *offset_ = NULL, *offset1_;
-  BoundCond cond;
-
-  // set time of the stage, in main already new time level
-  tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-  TDatabase::TimeDB->CURRENTTIME += (TDatabase::TimeDB->RK_c[current_stage] - 1)* tau;
-  N_x1 = N_x+1;
-  N_y1 = N_y+1;
-  N_z1 = N_z+1;
-  N3 = (N_x1)*(N_y1)*(N_z1);
-  // allocate arrays
-  sol_curr = stages[5];
-  coeff = coeff_array;
-
-  // compute linear combination of current stages
-  // numeration of dof corresponding to fe space
-  current_stage_fdm = stages[current_stage];
-  memset(current_stage_fdm, 0, N3 * SizeOfDouble);
-
-  // initialize current stage
-  memcpy(sol_curr,sol,N3*SizeOfDouble);
-  // add previous stages
-  for (i=0;i<current_stage;i++)
-    Daxpy(N3, tau*TDatabase::TimeDB->RK_A[current_stage][i], stages[i], sol_curr);
-
-  //N1_[0] = N_x1;
-  //N1_[1] = N_y1;
-  //N1_[2] = N_z1;
-  //coordinates[0] = x_coord;
-  //coordinates[1] = y_coord;
-  //coordinates[2] = z_coord;
-  //InitializeConvectiveTermFDM(3, offset_, offset1_, N1_);
-
-  // discretization of pde with FDM
-  // loop over all nodes of the FDM grid
-  for ( i=0 ; i<N3 ; i++ )
-  {
-    // coefficients of the equation
-    Coeffs(1, &x_coord[i], &y_coord[i], &z_coord[i], NULL, &coeff);
-    // compute the coefficients corresponding to the 3d finite-difference-method (9-point)
-    if (( i%(N_x1)!=0 )&&( (i+1)%(N_x1)!=0 )&&
-      ((i%((N_x1)*(N_y1)))>N_x ) && (((i+N_x1)%((N_x1)*(N_y1)))>N_x) &&
-      (i> N_x1 * N_y1-1) && (i< ((N_x1)*(N_y1)*(N_z))))
-    {
-      // diffusive term wrt x
-      val[0] = sol_curr[i-1];
-      val[1] = sol_curr[i];
-      val[2] = sol_curr[i+1];
-      coord[0] = x_coord[i-1];
-      coord[1] = x_coord[i];
-      coord[2] = x_coord[i+1];
-      valx = 2*DividedDifferences(2, val, coord);
-      // diffusive term wrt y
-      val[0] = sol_curr[i-N_x1];
-      val[2] = sol_curr[i+N_x1];
-      coord[0] = y_coord[i-N_x1];;
-      coord[1] = y_coord[i];
-      coord[2] = y_coord[i+N_x1];
-      valy = 2*DividedDifferences(2, val, coord);
-
-      // diffusive term wrt z
-      val[0] = sol_curr[i-(N_x1)*(N_y1)];
-      val[2] = sol_curr[i+(N_x1)*(N_y1)];
-      coord[0] = z_coord[i-(N_x1)*(N_y1)];
-      coord[1] = z_coord[i];
-      coord[2] = z_coord[i+(N_x1)*(N_y1)];
-      valz = 2*DividedDifferences(2, val, coord);
-
-      // add also reactive term and right hand side
-      current_stage_fdm[i] = coeff[0]*(valx + valy+valz) - coeff[4]*sol_curr[i] + coeff[5];
-    }
-
-    //    ConvectiveTermFDM(3, i,
-    //		      coeff+1, sol_curr, current_stage_fdm, coordinates,
-    //		      offset_, offset1_);
-    //    continue;
-    switch(TDatabase::ParamDB->DISCTYPE)
-    {
-      case GALERKIN:
-        exit(1);
-        break;
-        // simple upwind scheme
-      case UPWIND:
-        // compute the term A_x
-        if (coeff[1] >= 0)
-        {
-          // not on boundary x = x_min -> in the "x-sense" exists a left neighbour
-          if ( i%(N_x1)!=0 )
-            current_stage_fdm[i] -= coeff[1]*(sol_curr[i]-sol_curr[i-1])/(x_coord[i]-x_coord[i-1]);
-        }
-        else
-        {
-          // not on boundary x = x_max -> in the "x-sense" exists a right neighbour
-          if ( (i+1)%(N_x1)!=0 )
-            current_stage_fdm[i] -= coeff[1]*(sol_curr[i+1]-sol_curr[i])/(x_coord[i+1]-x_coord[i]);
-        }
-
-        // compute the term A_y
-        if (coeff[2] >= 0)
-        {
-          // not on boundary y = y_min -> in the "y-sense" exists a left neighbour
-          if ((i%((N_x1)*(N_y1)))>N_x )
-            current_stage_fdm[i] -= coeff[2]*(sol_curr[i]-sol_curr[i-(N_x1)])/(y_coord[i]-y_coord[i-(N_x1)]);
-        }
-        else
-        {
-          // not on boundary y = y_max -> in the "y-sense" exists a right neighbour
-          if (((i+N_x1)%((N_x1)*(N_y1)))>N_x)
-            current_stage_fdm[i] -= coeff[2]*(sol_curr[i+(N_x1)]-sol_curr[i])/(y_coord[i+(N_x1)]-y_coord[i]);
-        }
-        if (coeff[3] >= 0)
-        {
-          // not on boundary z = z_min -> in the "z-sense" exists a left neighbour
-          if (i> N_x1 * N_y)
-            current_stage_fdm[i] -= coeff[3]*(sol_curr[i]-sol_curr[i-(N_x1)*(N_y1)])/(z_coord[i]-z_coord[i-(N_x1)*(N_y1)]);
-        }
-        else
-        {
-          // not on boundary z = z_max -> in the "z-sense" exists a right neighbour
-          if (i< ((N_x1)*(N_y1)*(N_z)))
-            current_stage_fdm[i] -= coeff[3]*(sol_curr[i+(N_x1)*(N_y1)]-sol_curr[i])/(z_coord[i+(N_x1)*(N_y1)]-z_coord[i]);
-        }
-        break;
-      case ENO_3:
-        // compute the term A_x
-        if (coeff[1] >  0)
-        {
-          // prepare vectors for divided differences
-          // point on left boundary
-          if ( i%(N_x1)==0 )
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+1];
-            val[5] = sol_curr[i+2];
-            coord[0] = 2 * x_coord[i]-x_coord[i+3];
-            coord[1] = 2 * x_coord[i]-x_coord[i+2];
-            coord[2] = 2 * x_coord[i]-x_coord[i+1];
-            coord[3] = x_coord[i];
-            coord[4] = x_coord[i+1];
-            coord[5] = x_coord[i+2];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (i-1)%(N_x1)==0 )                //gleich zu Zeile 1317
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+1];
-              val[5] = sol_curr[i+2];
-              coord[0] = 2 * x_coord[i-1]-x_coord[i+1];
-              coord[1] = 2 * x_coord[i-1]-x_coord[i];
-              coord[2] = x_coord[i-1];
-              coord[3] = x_coord[i];
-              coord[4] = x_coord[i+1];
-              coord[5] = x_coord[i+2];
-            }
-            else
-            {
-              // next layer on left boundary
-              if ( (i-2)%(N_x1)==0 )              //gleich zu zeile 1300 (i-2) MUSS IN 2d auch verbessert werden
-              {
-                val[0] = val[1] = sol_curr[i-2];
-                val[2] = sol_curr[i-1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+1];
-                val[5] = sol_curr[i+2];
-                coord[0] = 2 * x_coord[i-2]-x_coord[i-1];
-                coord[1] = x_coord[i-2];
-                coord[2] = x_coord[i-1];
-                coord[3] = x_coord[i];
-                coord[4] = x_coord[i+1];
-                coord[5] = x_coord[i+2];
-              }
-              else
-              {
-                // point on right boundary
-                if ( (i+1)%(N_x1)==0 )
-                {
-                  val[0] = sol_curr[i-3];
-                  val[1] = sol_curr[i-2];
-                  val[2] = sol_curr[i-1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = x_coord[i-3];
-                  coord[1] = x_coord[i-2];
-                  coord[2] = x_coord[i-1];
-                  coord[3] = x_coord[i];
-                  coord[4] = 2 *  x_coord[i] - x_coord[i-1];
-                  coord[5] = 2 *  x_coord[i] - x_coord[i-2];
-                }
-                else
-                {
-                  // point next to right boundary
-                  if ( (i+2)%(N_x1)==0 )
-                  {
-                    val[0] = sol_curr[i-3];
-                    val[1] = sol_curr[i-2];
-                    val[2] = sol_curr[i-1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+1];
-                    coord[0] = x_coord[i-3];
-                    coord[1] = x_coord[i-2];
-                    coord[2] = x_coord[i-1];
-                    coord[3] = x_coord[i];
-                    coord[4] = x_coord[i+1];
-                    coord[5] = 2 *  x_coord[i+1] - x_coord[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-3];
-                    val[1] = sol_curr[i-2];
-                    val[2] = sol_curr[i-1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+1];
-                    val[5] = sol_curr[i+2];
-                    coord[0] = x_coord[i-3];
-                    coord[1] = x_coord[i-2];
-                    coord[2] = x_coord[i-1];
-                    coord[3] = x_coord[i];
-                    coord[4] = x_coord[i+1];
-                    coord[5] = x_coord[i+2];
-                    /*sol_help = sol_curr+i-3;
-                                val[0] = *sol_help;
-                                val[1] = *(sol_help+1);
-                                val[2] = *(sol_help+2);
-                                val[3] = *(sol_help+3);
-                                val[4] = *(sol_help+4);
-                                val[5] = *(sol_help+5);
-                                sol_help = x_coord+i-3;
-                                coord[0] = *sol_help;
-                                coord[1] = *(sol_help+1);
-                                coord[2] = *(sol_help+2);
-                    coord[3] = *(sol_help+3);
-                    coord[4] = *(sol_help+4);
-                    coord[5] = *(sol_help+5);*/
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+2,coord+2);
-          d2 = DividedDifferences(2,val+1,coord+1);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              //value = DividedDifferences(1,val+1,coord+1);
-              value =  (val[2]-val[1])/(coord[2]-coord[1]);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              //OutPut("a3a ");
-            }
-            else
-            {
-              //value = DividedDifferences(1,val+2,coord+2);
-              valx = coord[3]-coord[2];
-              value = (val[3]-val[2])/valx;
-              value += d1 * valx;
-              value += d4 * valx*(coord[3]-coord[4]);
-              //OutPut("a2 ");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              //value = DividedDifferences(1,val,coord);
-              value = (val[1]-val[0])/(coord[1]-coord[0]);
-              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
-              valx = coord[3]-coord[0];
-              valy = coord[3]-coord[1];
-              valz = coord[3]-coord[2];
-              //value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
-              //  + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
-              value += d3 * (valy * valz + valx * valz + valx * valy);
-              //OutPut("a4 ");
-            }
-            else
-            {
-              //value = DividedDifferences(1,val+1,coord+1);
-              value = (val[2]-val[1])/(coord[2]-coord[1]);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              //OutPut("a3b ");
-              // OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
-            }
-          }
-        }
-        else
-        {
-          // prepare vectors for divided differences
-          // point on left boundary
-          if ( i%(N_x1)==0 )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+1];
-            val[4] = sol_curr[i+2];
-            val[5] = sol_curr[i+3];
-            coord[0] = 2 * x_coord[i]-x_coord[i+2];
-            coord[1] = 2 * x_coord[i]-x_coord[i+1];
-            coord[2] = x_coord[i];
-            coord[3] = x_coord[i+1];
-            coord[4] = x_coord[i+2];
-            coord[5] = x_coord[i+3];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (i-1)%(N_x1)==0 )
-            {
-              val[0] = val[1] = sol_curr[i-1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+1];
-              val[4] = sol_curr[i+2];
-              val[5] = sol_curr[i+3];
-              coord[0] = 2 * x_coord[i-1]-x_coord[i];
-              coord[1] = x_coord[i-1];
-              coord[2] = x_coord[i];
-              coord[3] = x_coord[i+1];
-              coord[4] = x_coord[i+2];
-              coord[5] = x_coord[i+3];
-            }
-            else
-            {
-              // point on right boundary
-              if ( (i+1)%(N_x1)==0 )
-              {
-                val[0] = sol_curr[i-2];
-                val[1] = sol_curr[i-1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = x_coord[i-2];
-                coord[1] = x_coord[i-1];
-                coord[2] = x_coord[i];
-                coord[3] = 2 *  x_coord[i] - x_coord[i-1];
-                coord[4] = 2 *  x_coord[i] - x_coord[i-2];
-                coord[5] = 2 *  x_coord[i] - x_coord[i-3];
-              }
-              else
-              {
-                // point next to right boundary
-                if ( (i+2)%(N_x1)==0 )
-                {
-                  val[0] = sol_curr[i-2];
-                  val[1] = sol_curr[i-1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+1];
-                  coord[0] = x_coord[i-2];
-                  coord[1] = x_coord[i-1];
-                  coord[2] = x_coord[i];
-                  coord[3] = x_coord[i+1];
-                  coord[4] = 2 *  x_coord[i+1] - x_coord[i];
-                  coord[5] = 2 *  x_coord[i+1] - x_coord[i-1];
-                }
-                else
-                {
-                  // point in next layer to right boundary
-                  if ( (i+3)%(N_x1)==0 )
-                  {
-                    val[0] = sol_curr[i-2];
-                    val[1] = sol_curr[i-1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+1];
-                    val[4] = val[5] = sol_curr[i+2];
-                    coord[0] = x_coord[i-2];
-                    coord[1] = x_coord[i-1];
-                    coord[2] = x_coord[i];
-                    coord[3] = x_coord[i+1];
-                    coord[4] = x_coord[i+2];
-                    coord[5] = 2 *  x_coord[i+2] - x_coord[i+1];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-2];
-                    val[1] = sol_curr[i-1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+1];
-                    val[4] = sol_curr[i+2];
-                    val[5] = sol_curr[i+3];
-                    coord[0] = x_coord[i-2];
-                    coord[1] = x_coord[i-1];
-                    coord[2] = x_coord[i];
-                    coord[3] = x_coord[i+1];
-                    coord[4] = x_coord[i+2];
-                    coord[5] = x_coord[i+3];
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+1,coord+1);
-          d2 = DividedDifferences(2,val+2,coord+2);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val,coord);
-              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
-              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
-              //OutPut("A3 ");
-            }
-            else
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * (coord[2]-coord[1]);
-              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
-              //OutPut("A2a ");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              valx = coord[2]-coord[1];
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * valx;
-              value += d3 * valx*(coord[2]-coord[3]);
-              //OutPut("A2b ");
-            }
-            else
-            {
-              valx = coord[2]-coord[3];
-              value = DividedDifferences(1,val+2,coord+2);
-              value += d2 * valx;
-              value += d4 * valx*(coord[2]-coord[4]);
-              //comparison with backward difference in node i
-              //OutPut("A1b ");
-              //OutPut("A1 " << value <<"  " <<   DividedDifferences(1,val+1,coord+1) << ":");
-            }
-          }
-        }                                         // end coeff[1] <=0
-        //OutPut(value << " ");
-        current_stage_fdm[i] -= coeff[1] * value;
-        // compute the term A_y
-        if (coeff[2]  > 0)
-        {
-          // prepare vectors for divided differences
-          // point on front boundary
-          if (( i % ((N_x1)*(N_y1)) ) <=N_x)      //richtig
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+N_x1];
-            val[5] = sol_curr[i+2 * N_x1];
-            coord[0] = 2 * y_coord[i]-y_coord[i+3*N_x1];
-            coord[1] = 2 * y_coord[i]-y_coord[i+2*N_x1];
-            coord[2] = 2 * y_coord[i]-y_coord[i+N_x1];
-            coord[3] = y_coord[i];
-            coord[4] = y_coord[i+N_x1];
-            coord[5] = y_coord[i+2 * N_x1];
-            //OutPut("front " << i << " " << y_coord[i] << endl);
-          }
-          else
-          {
-            //OutPut(" a " << i << " " << N_x1 << " " << N_y1 << " " <<  i % ((N_x1)*(N_y1)) << endl);
-            // point next to front boundary
-                                                  //richtig
-            if ( (i-N_x1) % ((N_x1)*(N_y1))  <=N_x)
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-N_x1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+N_x1];
-              val[5] = sol_curr[i+2*N_x1];
-              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i+N_x1];
-              coord[1] = 2 * y_coord[i-N_x1]-y_coord[i];
-              coord[2] = y_coord[i-N_x1];
-              coord[3] = y_coord[i];
-              coord[4] = y_coord[i+N_x1];
-              coord[5] = y_coord[i+2*N_x1];
-              //OutPut("front +1 " << i << " " << y_coord[i] <<endl);
-            }
-            else
-            {
-              // next layer on front boundary
-                                                  //GLEICHe Zeile wie Z 1646 (i-2*N_x1)?
-                                                  //richtig
-              if (  (i-2*N_x1) % ((N_x1)*(N_y1))  <=N_x )
-              {
-                val[0] = val[1] = sol_curr[i-2*N_x1];
-                val[2] = sol_curr[i-N_x1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+N_x1];
-                val[5] = sol_curr[i+2*N_x1];
-                coord[0] = 2 * y_coord[i-2*N_x1]-y_coord[i-N_x1];
-                coord[1] = y_coord[i-2*N_x1];
-                coord[2] = y_coord[i-N_x1];
-                coord[3] = y_coord[i];
-                coord[4] = y_coord[i+N_x1];
-                coord[5] = y_coord[i+2*N_x1];
-                //OutPut("front +2  " << i << " " << y_coord[i] <<endl);
-              }
-              else
-              {
-                // point on back boundary
-                                                  //richtig
-                if ( (i+N_x1) % ((N_x1)*(N_y1))  <=N_x)
-                {
-                  val[0] = sol_curr[i-3*N_x1];
-                  val[1] = sol_curr[i-2*N_x1];
-                  val[2] = sol_curr[i-N_x1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = y_coord[i-3*N_x1];
-                  coord[1] = y_coord[i-2*N_x1];
-                  coord[2] = y_coord[i-N_x1];
-                  coord[3] = y_coord[i];
-                  coord[4] = 2 *  y_coord[i] - y_coord[i-N_x1];
-                  coord[5] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
-                  //OutPut("back  " << i << " " << y_coord[i] <<endl);
-                }
-                else
-                {
-                  // point next to back boundary
-                                                  //richtig
-                  if (( (i+2*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-                  {
-                    val[0] = sol_curr[i-3*N_x1];
-                    val[1] = sol_curr[i-2*N_x1];
-                    val[2] = sol_curr[i-N_x1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+N_x1];
-                    coord[0] = y_coord[i-3*N_x1];
-                    coord[1] = y_coord[i-2*N_x1];
-                    coord[2] = y_coord[i-N_x1];
-                    coord[3] = y_coord[i];
-                    coord[4] = y_coord[i+N_x1];
-                    coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i];
-                    //OutPut("back -1  " << i <<  " " << y_coord[i] << endl);
-                  }
-                  // inner point              richtig
-                  else
-                  {
-                    val[0] = sol_curr[i-3*N_x1];
-                    val[1] = sol_curr[i-2*N_x1];
-                    val[2] = sol_curr[i-N_x1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+N_x1];
-                    val[5] = sol_curr[i+2*N_x1];
-                    coord[0] = y_coord[i-3*N_x1];
-                    coord[1] = y_coord[i-2*N_x1];
-                    coord[2] = y_coord[i-N_x1];
-                    coord[3] = y_coord[i];
-                    coord[4] = y_coord[i+N_x1];
-                    coord[5] = y_coord[i+2*N_x1];
-                    //OutPut("inner  " << i << " " << y_coord[i] << endl);
-                  }                               // inner point
-                }                                 // point next to back boundary
-              }                                   // point on back boundary
-            }                                     // next layer on front boundary
-          }                                       // point next on front boundary
-          // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          /*d1 = DividedDifferences(2,val+2,coord+2);
-          d2 = DividedDifferences(2,val+1,coord+1);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-          value = DividedDifferences(1,val+1,coord+1);
-          value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-          value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-          //OutPut("a3a ");
-          //OutPut("a3 " << value << " ");
-          }
-          else
-          {
-          value = DividedDifferences(1,val+2,coord+2);
-          value += d1 * (coord[3]-coord[2]);
-          //Habe hier nichts verändert von Zeile 1735 bis 1790
-          value += d4 * (coord[3]-coord[2])*(coord[3]-coord[4]);
-          //OutPut("a2 ");
-          }
-          }
-          else
-          {
-          //d3 = DividedDifferences(3,val,coord);
-          //d4 = DividedDifferences(3,val+1,coord+1);
-          DividedDifferences_3_2(val,coord,d);
-          d3 = d[0];
-          d4 = d[1];
-          if   (fabs(d3) < fabs(d4))
-          {
-          value = DividedDifferences(1,val,coord);
-          value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
-          value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
-          + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
-          // OutPut("a4 ");
-          //OutPut("a4 " << coeff[2]  << "  " << DividedDifferences(2,val+2,coord+2) << "  "
-          // << DividedDifferences(2,val+1,coord+1) << "  " << DividedDifferences(3,val,coord)
-          // << "  " << DividedDifferences(3,val+1,coord+1)
-          //<< endl);
-          }
-          else
-          {
-          value = DividedDifferences(1,val+1,coord+1);
-          value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-          value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-          // comparison with backward difference in node i
-          // OutPut("a3b ");
-          //OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
-          }
-          } */
-
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+2,coord+2);
-          d2 = DividedDifferences(2,val+1,coord+1);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              //value = DividedDifferences(1,val+1,coord+1);
-              value =  (val[2]-val[1])/(coord[2]-coord[1]);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              //OutPut("a3a ");
-            }
-            else
-            {
-              //value = DividedDifferences(1,val+2,coord+2);
-              valx = coord[3]-coord[2];
-              value = (val[3]-val[2])/valx;
-              value += d1 * valx;
-              value += d4 * valx*(coord[3]-coord[4]);
-              //OutPut("a2 ");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              //value = DividedDifferences(1,val,coord);
-              value = (val[1]-val[0])/(coord[1]-coord[0]);
-              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
-              valx = coord[3]-coord[0];
-              valy = coord[3]-coord[1];
-              valz = coord[3]-coord[2];
-              //value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
-              //  + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
-              value += d3 * (valy * valz + valx * valz + valx * valy);
-              //OutPut("a4 ");
-            }
-            else
-            {
-              //value = DividedDifferences(1,val+1,coord+1);
-              value = (val[2]-val[1])/(coord[2]-coord[1]);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              //OutPut("a3b ");
-              // OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
-            }
-          }
-        }
-        else
-        {
-          // prepare vectors for divided differences
-          // point on front boundary
-          if (( i % ((N_x1)*(N_y1)) ) <= N_x )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+N_x1];
-            val[4] = sol_curr[i+2*N_x1];
-            val[5] = sol_curr[i+3*N_x1];
-            coord[0] = 2 * y_coord[i]-y_coord[i+2*N_x1];
-            coord[1] = 2 * y_coord[i]-y_coord[i+N_x1];
-            coord[2] = y_coord[i];
-            coord[3] = y_coord[i+N_x1];
-            coord[4] = y_coord[i+2*N_x1];
-            coord[5] = y_coord[i+3*N_x1];
-          }
-          else
-          {
-            // point next to front boundary
-            if (((i-N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-            {
-              val[0] = val[1] = sol_curr[i-N_x1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+N_x1];
-              val[4] = sol_curr[i+2*N_x1];
-              val[5] = sol_curr[i+3*N_x1];
-              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i];
-              coord[1] = y_coord[i-N_x1];
-              coord[2] = y_coord[i];
-              coord[3] = y_coord[i+N_x1];
-              coord[4] = y_coord[i+2*N_x1];
-              coord[5] = y_coord[i+3*N_x1];
-            }
-            else
-            {
-              // point on back boundary
-              if (((i+N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-              {
-                val[0] = sol_curr[i-2*N_x1];
-                val[1] = sol_curr[i-N_x1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = y_coord[i-2*N_x1];
-                coord[1] = y_coord[i-N_x1];
-                coord[2] = y_coord[i];
-                coord[3] = 2 *  y_coord[i] - y_coord[i-N_x1];
-                coord[4] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
-                coord[5] = 2 *  y_coord[i] - y_coord[i-3*N_x1];
-              }
-              else
-              {
-                // point next to back boundary
-                if (((i+2*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-                {
-                  val[0] = sol_curr[i-2*N_x1];
-                  val[1] = sol_curr[i-N_x1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+N_x1];
-                  coord[0] = y_coord[i-2*N_x1];
-                  coord[1] = y_coord[i-N_x1];
-                  coord[2] = y_coord[i];
-                  coord[3] = y_coord[i+N_x1];
-                  coord[4] = 2 *  y_coord[i+N_x1] - y_coord[i];
-                  coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i-N_x1];
-                }
-                else
-                {
-                  // point in next layer to back boundary
-                  if (((i+3*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-                  {
-                    val[0] = sol_curr[i-2*N_x1];
-                    val[1] = sol_curr[i-N_x1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+N_x1];
-                    val[4] = val[5] = sol_curr[i+2*N_x1];
-                    coord[0] = y_coord[i-2*N_x1];
-                    coord[1] = y_coord[i-N_x1];
-                    coord[2] = y_coord[i];
-                    coord[3] = y_coord[i+N_x1];
-                    coord[4] = y_coord[i+2*N_x1];
-                    coord[5] = 2 *  y_coord[i+2*N_x1] - y_coord[i+N_x1];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-2*N_x1];
-                    val[1] = sol_curr[i-N_x1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+N_x1];
-                    val[4] = sol_curr[i+2*N_x1];
-                    val[5] = sol_curr[i+3*N_x1];
-                    coord[0] = y_coord[i-2*N_x1];
-                    coord[1] = y_coord[i-N_x1];
-                    coord[2] = y_coord[i];
-                    coord[3] = y_coord[i+N_x1];
-                    coord[4] = y_coord[i+2*N_x1];
-                    coord[5] = y_coord[i+3*N_x1];
-                  }
-                }
-              }
-            }
-          }
-
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+1,coord+1);
-          d2 = DividedDifferences(2,val+2,coord+2);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val,coord);
-              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
-              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
-              // OutPut("A3 ");
-            }
-            else
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * (coord[2]-coord[1]);
-              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
-              // OutPut("A2a ");
-              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * (coord[2]-coord[1]);
-              value += d3 * (coord[2]-coord[1])*(coord[2]-coord[3]);
-              // OutPut("A2b ");
-            }
-            else
-            {
-              value = DividedDifferences(1,val+2,coord+2);
-              value += d2 * (coord[2]-coord[3]);
-              value += d4 * (coord[2]-coord[3])*(coord[2]-coord[4]);
-              // comparison with backward difference in node i
-              // OutPut("A1b ");
-              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
-            }
-          }
-        }                                         // end coeff[2] <=0
-        //OutPut(value << " " );
-        current_stage_fdm[i] -= coeff[2] * value;
-        //OutPut(i << " " <<  current_stage_fdm[i] << " " << value << endl);
-        // end  prepare vectors for divided///
-        // compute approximation of convective term
-        // compute the term A_z
-        if (coeff[3]  > 0)
-        {
-          // prepare vectors for divided differences
-          // point on bottom boundary
-          if ( i<= (N_x1)*(N_y))
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+(N_x1)*(N_y1)];
-            val[5] = sol_curr[i+2 * (N_x1)*(N_y1)];
-            coord[0] = 2 * z_coord[i]-z_coord[i+3*(N_x1)*(N_y1)];
-            coord[1] = 2 * z_coord[i]-z_coord[i+2*(N_x1)*(N_y1)];
-            coord[2] = 2 * z_coord[i]-z_coord[i+(N_x1)*(N_y1)];
-            coord[3] = z_coord[i];
-            coord[4] = z_coord[i+(N_x1)*(N_y1)];
-            coord[5] = z_coord[i+2 *(N_x1)*(N_y1)];
-          }
-          else
-          {
-            // point next to bottom boundary
-            if ( (i>= (N_x1)*(N_y1)&&(i<2*(N_x1)*(N_y1) )))
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-(N_x1)*(N_y1)];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+(N_x1)*(N_y1)];
-              val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
-              coord[0] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i+(N_x1)*(N_y1)];
-              coord[1] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i];
-              coord[2] = z_coord[i-(N_x1)*(N_y1)];
-              coord[3] = z_coord[i];
-              coord[4] = z_coord[i+(N_x1)*(N_y1)];
-              coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
-            }
-            else
-            {
-              // next layer on bottom boundary
-              if ( (i>=2*(N_x1)*(N_y1)&&(i<3*(N_x1)*(N_y1))))
-              {
-                val[0] = val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
-                val[2] = sol_curr[i-(N_x1)*(N_y1)];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+(N_x1)*(N_y1)];
-                val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
-                coord[0] = 2 * z_coord[i-2*(N_x1)*(N_y1)]-z_coord[i-(N_x1)*(N_y1)];
-                coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
-                coord[2] = z_coord[i-(N_x1)*(N_y1)];
-                coord[3] = z_coord[i];
-                coord[4] = z_coord[i+(N_x1)*(N_y1)];
-                coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
-              }
-              else
-              {
-                // point on top boundary
-                if ( i>=N_z*N_y1*N_x1)
-                {
-                  val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
-                  val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
-                  val[2] = sol_curr[i-(N_x1)*(N_y1)];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
-                  coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
-                  coord[2] = z_coord[i-(N_x1)*(N_y1)];
-                  coord[3] = z_coord[i];
-                  coord[4] = 2 *  z_coord[i] - z_coord[i-(N_x1)*(N_y1)];
-                  coord[5] = 2 *  z_coord[i] - z_coord[i-2*(N_x1)*(N_y1)];
-                }
-                else
-                {
-                  // point next to top boundary
-                  if (( i>= (N_z-1)*N_x1*N_y1)&&(i<N_z*N_x1*N_y1))
-                  {
-                    val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
-                    val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
-                    val[2] = sol_curr[i-(N_x1)*(N_y1)];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+(N_x1)*(N_y1)];
-                    coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
-                    coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
-                    coord[2] = z_coord[i-(N_x1)*(N_y1)];
-                    coord[3] = z_coord[i];
-                    coord[4] = z_coord[i+(N_x1)*(N_y1)];
-                    coord[5] = 2 *  z_coord[i+N_x1*(N_y1)] - z_coord[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
-                    val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
-                    val[2] = sol_curr[i-(N_x1)*(N_y1)];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+(N_x1)*(N_y1)];
-                    val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
-                    coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
-                    coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
-                    coord[2] = z_coord[i-(N_x1)*(N_y1)];
-                    coord[3] = z_coord[i];
-                    coord[4] = z_coord[i+(N_x1)*(N_y1)];
-                    coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+2,coord+2);
-          d2 = DividedDifferences(2,val+1,coord+1);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              //OutPut("a3a ");
-              //OutPut("a3 " << value << " ");
-            }
-            else
-            {
-              value = DividedDifferences(1,val+2,coord+2);
-              value += d1 * (coord[3]-coord[2]);
-              value += d4 * (coord[3]-coord[2])*(coord[3]-coord[4]);
-              //OutPut("a2 ");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val,coord);
-              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
-              value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
-                + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
-              // OutPut("a4 ");
-              //OutPut("a4 " << coeff[2]  << "  " << DividedDifferences(2,val+2,coord+2) << "  "
-              // << DividedDifferences(2,val+1,coord+1) << "  " << DividedDifferences(3,val,coord)
-              // << "  " << DividedDifferences(3,val+1,coord+1)
-              //<< endl);
-            }
-            else
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-              // comparison with backward difference in node i
-              // OutPut("a3b ");
-              //OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
-            }
-          }
-        }
-        else
-        {
-          // prepare vectors for divided differences
-          // point on bottom boundary
-          if ( i<=(N_y)*(N_x1) )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+(N_x1)*(N_y1)];
-            val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
-            val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
-            coord[0] = 2 * z_coord[i]-z_coord[i+2*(N_x1)*(N_y1)];
-            coord[1] = 2 * z_coord[i]-z_coord[i+(N_x1)*(N_y1)];
-            coord[2] = z_coord[i];
-            coord[3] = z_coord[i+(N_x1)*(N_y1)];
-            coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
-            coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
-          }
-          else
-          {
-            // point next to bottom boundary
-            if ( (i>=(N_x1)*(N_y1))&&(i<2*(N_x1)*(N_y1)) )
-            {
-              val[0] = val[1] = sol_curr[i-(N_x1)*(N_y1)];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+(N_x1)*(N_y1)];
-              val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
-              val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
-              coord[0] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i];
-              coord[1] = z_coord[i-(N_x1)*(N_y1)];
-              coord[2] = z_coord[i];
-              coord[3] = z_coord[i+(N_x1)*(N_y1)];
-              coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
-              coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
-            }
-            else
-            {
-              // point on top boundary
-              if ( i>= N_z*N_y1*N_x1)
-              {
-                val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
-                val[1] = sol_curr[i-(N_x1)*(N_y1)];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
-                coord[1] = z_coord[i-(N_x1)*(N_y1)];
-                coord[2] = z_coord[i];
-                coord[3] = 2 *  z_coord[i] - z_coord[i-(N_x1)*(N_y1)];
-                coord[4] = 2 *  z_coord[i] - z_coord[i-2*(N_x1)*(N_y1)];
-                coord[5] = 2 *  z_coord[i] - z_coord[i-3*(N_x1)*(N_y1)];
-              }
-              else
-              {
-                // point next to top boundary
-                if (( i>= (N_z-1)*(N_y1)*N_x1)&&(i<(N_z)*(N_y1)*N_x1))
-                {
-                  val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
-                  val[1] = sol_curr[i-(N_x1)*(N_y1)];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+(N_x1)*(N_y1)];
-                  coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
-                  coord[1] = z_coord[i-(N_x1)*(N_y1)];
-                  coord[2] = z_coord[i];
-                  coord[3] = z_coord[i+(N_x1)*(N_y1)];
-                  coord[4] = 2 *  z_coord[i+(N_x1)*(N_y1)] - z_coord[i];
-                  coord[5] = 2 *  z_coord[i+(N_x1)*(N_y1)] - z_coord[i-(N_x1)*(N_y1)];
-                }
-                else
-                {
-                  // point in next layer to top boundary
-                  if (( i>= (N_z-2)*(N_y1)*(N_x1)&&(i<(N_z-1)*(N_y1)*N_x1)))
-                  {
-                    val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
-                    val[1] = sol_curr[i-(N_x1)*(N_y1)];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+(N_x1)*(N_y1)];
-                    val[4] = val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
-                    coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
-                    coord[1] = z_coord[i-(N_x1)*(N_y1)];
-                    coord[2] = z_coord[i];
-                    coord[3] = z_coord[i+(N_x1)*(N_y1)];
-                    coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
-                    coord[5] = 2 *  z_coord[i+2*(N_x1)*(N_y1)] - z_coord[i+(N_x1)*(N_y1)];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
-                    val[1] = sol_curr[i-(N_x1)*(N_y1)];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+(N_x1)*(N_y1)];
-                    val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
-                    val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
-                    coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
-                    coord[1] = z_coord[i-(N_x1)*(N_y1)];
-                    coord[2] = z_coord[i];
-                    coord[3] = z_coord[i+(N_x1)*(N_y1)];
-                    coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
-                    coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+1,coord+1);
-          d2 = DividedDifferences(2,val+2,coord+2);
-          if (fabs(d1) < fabs(d2))
-          {
-            //d3 = DividedDifferences(3,val,coord);
-            //d4 = DividedDifferences(3,val+1,coord+1);
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val,coord);
-              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
-              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
-              // OutPut("A3 ");
-            }
-            else
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * (coord[2]-coord[1]);
-              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
-              // OutPut("A2a ");
-              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
-            }
-          }
-          else
-          {
-            //d3 = DividedDifferences(3,val+1,coord+1);
-            //d4 = DividedDifferences(3,val+2,coord+2);
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * (coord[2]-coord[1]);
-              value += d3 * (coord[2]-coord[1])*(coord[2]-coord[3]);
-              // OutPut("A2b ");
-            }
-            else
-            {
-              value = DividedDifferences(1,val+2,coord+2);
-              value += d2 * (coord[2]-coord[3]);
-              value += d4 * (coord[2]-coord[3])*(coord[2]-coord[4]);
-              // comparison with backward difference in node i
-              // OutPut("A1b ");
-              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
-            }
-          }
-        }                                         // end coeff[3] <=0
-        //OutPut(value << endl);
-        current_stage_fdm[i] -= coeff[3] * value;
-        break;
-      case WENO_5:
-        d[0] = 0.3;
-        d[1] = 0.6;
-        d[2] = 0.1;
-        // compute the term A_x
-        if (coeff[1] >=  0)
-        {
-          // prepare vectors for divided differences
-          // point on left boundary
-          if ( i%(N_x1)==0 )
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+1];
-            val[5] = sol_curr[i+2];
-            coord[0] = 2 * x_coord[i]-x_coord[i+3];
-            coord[1] = 2 * x_coord[i]-x_coord[i+2];
-            coord[2] = 2 * x_coord[i]-x_coord[i+1];
-            coord[3] = x_coord[i];
-            coord[4] = x_coord[i+1];
-            coord[5] = x_coord[i+2];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (i-1)%(N_x1)==0 )                //gleich zu Zeile 1317
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+1];
-              val[5] = sol_curr[i+2];
-              coord[0] = 2 * x_coord[i-1]-x_coord[i+1];
-              coord[1] = 2 * x_coord[i-1]-x_coord[i];
-              coord[2] = x_coord[i-1];
-              coord[3] = x_coord[i];
-              coord[4] = x_coord[i+1];
-              coord[5] = x_coord[i+2];
-            }
-            else
-            {
-              // next layer on left boundary
-              if ( (i-2)%(N_x1)==0 )              //gleich zu zeile 1300 (i-2) MUSS IN 2d auch verbessert werden
-              {
-                val[0] = val[1] = sol_curr[i-2];
-                val[2] = sol_curr[i-1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+1];
-                val[5] = sol_curr[i+2];
-                coord[0] = 2 * x_coord[i-2]-x_coord[i-1];
-                coord[1] = x_coord[i-2];
-                coord[2] = x_coord[i-1];
-                coord[3] = x_coord[i];
-                coord[4] = x_coord[i+1];
-                coord[5] = x_coord[i+2];
-              }
-              else
-              {
-                // point on right boundary
-                if ( (i+1)%(N_x1)==0 )
-                {
-                  val[0] = sol_curr[i-3];
-                  val[1] = sol_curr[i-2];
-                  val[2] = sol_curr[i-1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = x_coord[i-3];
-                  coord[1] = x_coord[i-2];
-                  coord[2] = x_coord[i-1];
-                  coord[3] = x_coord[i];
-                  coord[4] = 2 *  x_coord[i] - x_coord[i-1];
-                  coord[5] = 2 *  x_coord[i] - x_coord[i-2];
-                }
-                else
-                {
-                  // point next to right boundary
-                  if ( (i+2)%(N_x1)==0 )
-                  {
-                    val[0] = sol_curr[i-3];
-                    val[1] = sol_curr[i-2];
-                    val[2] = sol_curr[i-1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+1];
-                    coord[0] = x_coord[i-3];
-                    coord[1] = x_coord[i-2];
-                    coord[2] = x_coord[i-1];
-                    coord[3] = x_coord[i];
-                    coord[4] = x_coord[i+1];
-                    coord[5] = 2 *  x_coord[i+1] - x_coord[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-3];
-                    val[1] = sol_curr[i-2];
-                    val[2] = sol_curr[i-1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+1];
-                    val[5] = sol_curr[i+2];
-                    coord[0] = x_coord[i-3];
-                    coord[1] = x_coord[i-2];
-                    coord[2] = x_coord[i-1];
-                    coord[3] = x_coord[i];
-                    coord[4] = x_coord[i+1];
-                    coord[5] = x_coord[i+2];
-                    /*sol_help = sol_curr+i-3;
-                                val[0] = *sol_help;
-                                val[1] = *(sol_help+1);
-                                val[2] = *(sol_help+2);
-                                val[3] = *(sol_help+3);
-                                val[4] = *(sol_help+4);
-                                val[5] = *(sol_help+5);
-                                sol_help = x_coord+i-3;
-                                coord[0] = *sol_help;
-                                coord[1] = *(sol_help+1);
-                                coord[2] = *(sol_help+2);
-                    coord[3] = *(sol_help+3);
-                    coord[4] = *(sol_help+4);
-                    coord[5] = *(sol_help+5);*/
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
-          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
-          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[3] + av[4];
-          valy = 3*av[2] - 4*av[3] + av[4];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[1] - 2*av[2] + av[3];
-          valy = av[1] - av[3];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[0] - 2*av[1] +av[2];
-          valy = av[0] - 4*av[1] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }
-        else
-        {
-          // prepare vectors for divided differences
-          // point on left boundary
-          if ( i%(N_x1)==0 )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+1];
-            val[4] = sol_curr[i+2];
-            val[5] = sol_curr[i+3];
-            coord[0] = 2 * x_coord[i]-x_coord[i+2];
-            coord[1] = 2 * x_coord[i]-x_coord[i+1];
-            coord[2] = x_coord[i];
-            coord[3] = x_coord[i+1];
-            coord[4] = x_coord[i+2];
-            coord[5] = x_coord[i+3];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (i-1)%(N_x1)==0 )
-            {
-              val[0] = val[1] = sol_curr[i-1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+1];
-              val[4] = sol_curr[i+2];
-              val[5] = sol_curr[i+3];
-              coord[0] = 2 * x_coord[i-1]-x_coord[i];
-              coord[1] = x_coord[i-1];
-              coord[2] = x_coord[i];
-              coord[3] = x_coord[i+1];
-              coord[4] = x_coord[i+2];
-              coord[5] = x_coord[i+3];
-            }
-            else
-            {
-              // point on right boundary
-              if ( (i+1)%(N_x1)==0 )
-              {
-                val[0] = sol_curr[i-2];
-                val[1] = sol_curr[i-1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = x_coord[i-2];
-                coord[1] = x_coord[i-1];
-                coord[2] = x_coord[i];
-                coord[3] = 2 *  x_coord[i] - x_coord[i-1];
-                coord[4] = 2 *  x_coord[i] - x_coord[i-2];
-                coord[5] = 2 *  x_coord[i] - x_coord[i-3];
-              }
-              else
-              {
-                // point next to right boundary
-                if ( (i+2)%(N_x1)==0 )
-                {
-                  val[0] = sol_curr[i-2];
-                  val[1] = sol_curr[i-1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+1];
-                  coord[0] = x_coord[i-2];
-                  coord[1] = x_coord[i-1];
-                  coord[2] = x_coord[i];
-                  coord[3] = x_coord[i+1];
-                  coord[4] = 2 *  x_coord[i+1] - x_coord[i];
-                  coord[5] = 2 *  x_coord[i+1] - x_coord[i-1];
-                }
-                else
-                {
-                  // point in next layer to right boundary
-                  if ( (i+3)%(N_x1)==0 )
-                  {
-                    val[0] = sol_curr[i-2];
-                    val[1] = sol_curr[i-1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+1];
-                    val[4] = val[5] = sol_curr[i+2];
-                    coord[0] = x_coord[i-2];
-                    coord[1] = x_coord[i-1];
-                    coord[2] = x_coord[i];
-                    coord[3] = x_coord[i+1];
-                    coord[4] = x_coord[i+2];
-                    coord[5] = 2 *  x_coord[i+2] - x_coord[i+1];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-2];
-                    val[1] = sol_curr[i-1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+1];
-                    val[4] = sol_curr[i+2];
-                    val[5] = sol_curr[i+3];
-                    coord[0] = x_coord[i-2];
-                    coord[1] = x_coord[i-1];
-                    coord[2] = x_coord[i];
-                    coord[3] = x_coord[i+1];
-                    coord[4] = x_coord[i+2];
-                    coord[5] = x_coord[i+3];
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
-          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
-          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[1] + av[0];
-          valy = 3*av[2] - 4*av[1] + av[0];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[3] - 2*av[2] + av[1];
-          valy = av[3] - av[1];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[4] - 2*av[3] +av[2];
-          valy = av[4] - 4*av[3] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }                                         // end coeff[1] <=0
-        //OutPut(value << " ");
-        current_stage_fdm[i] -= coeff[1] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
-        // compute the term A_y
-        if (coeff[2]  >= 0)
-        {
-          // prepare vectors for divided differences
-          // point on front boundary
-          if (( i % ((N_x1)*(N_y1)) ) <=N_x)      //richtig
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+N_x1];
-            val[5] = sol_curr[i+2 * N_x1];
-            coord[0] = 2 * y_coord[i]-y_coord[i+3*N_x1];
-            coord[1] = 2 * y_coord[i]-y_coord[i+2*N_x1];
-            coord[2] = 2 * y_coord[i]-y_coord[i+N_x1];
-            coord[3] = y_coord[i];
-            coord[4] = y_coord[i+N_x1];
-            coord[5] = y_coord[i+2 * N_x1];
-            //OutPut("front " << i << " " << y_coord[i] << endl);
-          }
-          else
-          {
-            //OutPut(" a " << i << " " << N_x1 << " " << N_y1 << " " <<  i % ((N_x1)*(N_y1)) << endl);
-            // point next to front boundary
-                                                  //richtig
-            if ( (i-N_x1) % ((N_x1)*(N_y1))  <=N_x)
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-N_x1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+N_x1];
-              val[5] = sol_curr[i+2*N_x1];
-              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i+N_x1];
-              coord[1] = 2 * y_coord[i-N_x1]-y_coord[i];
-              coord[2] = y_coord[i-N_x1];
-              coord[3] = y_coord[i];
-              coord[4] = y_coord[i+N_x1];
-              coord[5] = y_coord[i+2*N_x1];
-              //OutPut("front +1 " << i << " " << y_coord[i] <<endl);
-            }
-            else
-            {
-              // next layer on front boundary
-                                                  //GLEICHe Zeile wie Z 1646 (i-2*N_x1)?
-                                                  //richtig
-              if (  (i-2*N_x1) % ((N_x1)*(N_y1))  <=N_x )
-              {
-                val[0] = val[1] = sol_curr[i-2*N_x1];
-                val[2] = sol_curr[i-N_x1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+N_x1];
-                val[5] = sol_curr[i+2*N_x1];
-                coord[0] = 2 * y_coord[i-2*N_x1]-y_coord[i-N_x1];
-                coord[1] = y_coord[i-2*N_x1];
-                coord[2] = y_coord[i-N_x1];
-                coord[3] = y_coord[i];
-                coord[4] = y_coord[i+N_x1];
-                coord[5] = y_coord[i+2*N_x1];
-                //OutPut("front +2  " << i << " " << y_coord[i] <<endl);
-              }
-              else
-              {
-                // point on back boundary
-                                                  //richtig
-                if ( (i+N_x1) % ((N_x1)*(N_y1))  <=N_x)
-                {
-                  val[0] = sol_curr[i-3*N_x1];
-                  val[1] = sol_curr[i-2*N_x1];
-                  val[2] = sol_curr[i-N_x1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = y_coord[i-3*N_x1];
-                  coord[1] = y_coord[i-2*N_x1];
-                  coord[2] = y_coord[i-N_x1];
-                  coord[3] = y_coord[i];
-                  coord[4] = 2 *  y_coord[i] - y_coord[i-N_x1];
-                  coord[5] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
-                  //OutPut("back  " << i << " " << y_coord[i] <<endl);
-                }
-                else
-                {
-                  // point next to back boundary
-                                                  //richtig
-                  if (( (i+2*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-                  {
-                    val[0] = sol_curr[i-3*N_x1];
-                    val[1] = sol_curr[i-2*N_x1];
-                    val[2] = sol_curr[i-N_x1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+N_x1];
-                    coord[0] = y_coord[i-3*N_x1];
-                    coord[1] = y_coord[i-2*N_x1];
-                    coord[2] = y_coord[i-N_x1];
-                    coord[3] = y_coord[i];
-                    coord[4] = y_coord[i+N_x1];
-                    coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i];
-                    //OutPut("back -1  " << i <<  " " << y_coord[i] << endl);
-                  }
-                  // inner point              richtig
-                  else
-                  {
-                    val[0] = sol_curr[i-3*N_x1];
-                    val[1] = sol_curr[i-2*N_x1];
-                    val[2] = sol_curr[i-N_x1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+N_x1];
-                    val[5] = sol_curr[i+2*N_x1];
-                    coord[0] = y_coord[i-3*N_x1];
-                    coord[1] = y_coord[i-2*N_x1];
-                    coord[2] = y_coord[i-N_x1];
-                    coord[3] = y_coord[i];
-                    coord[4] = y_coord[i+N_x1];
-                    coord[5] = y_coord[i+2*N_x1];
-                    //OutPut("inner  " << i << " " << y_coord[i] << endl);
-                  }                               // inner point
-                }                                 // point next to back boundary
-              }                                   // point on back boundary
-            }                                     // next layer on front boundary
-          }                                       // point next on front boundary
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
-          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
-          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[3] + av[4];
-          valy = 3*av[2] - 4*av[3] + av[4];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[1] - 2*av[2] + av[3];
-          valy = av[1] - av[3];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[0] - 2*av[1] +av[2];
-          valy = av[0] - 4*av[1] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }
-        else
-        {
-          // prepare vectors for divided differences
-          // point on front boundary
-          if (( i % ((N_x1)*(N_y1)) ) <= N_x )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+N_x1];
-            val[4] = sol_curr[i+2*N_x1];
-            val[5] = sol_curr[i+3*N_x1];
-            coord[0] = 2 * y_coord[i]-y_coord[i+2*N_x1];
-            coord[1] = 2 * y_coord[i]-y_coord[i+N_x1];
-            coord[2] = y_coord[i];
-            coord[3] = y_coord[i+N_x1];
-            coord[4] = y_coord[i+2*N_x1];
-            coord[5] = y_coord[i+3*N_x1];
-          }
-          else
-          {
-            // point next to front boundary
-            if (((i-N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-            {
-              val[0] = val[1] = sol_curr[i-N_x1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+N_x1];
-              val[4] = sol_curr[i+2*N_x1];
-              val[5] = sol_curr[i+3*N_x1];
-              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i];
-              coord[1] = y_coord[i-N_x1];
-              coord[2] = y_coord[i];
-              coord[3] = y_coord[i+N_x1];
-              coord[4] = y_coord[i+2*N_x1];
-              coord[5] = y_coord[i+3*N_x1];
-            }
-            else
-            {
-              // point on back boundary
-              if (((i+N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-              {
-                val[0] = sol_curr[i-2*N_x1];
-                val[1] = sol_curr[i-N_x1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = y_coord[i-2*N_x1];
-                coord[1] = y_coord[i-N_x1];
-                coord[2] = y_coord[i];
-                coord[3] = 2 *  y_coord[i] - y_coord[i-N_x1];
-                coord[4] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
-                coord[5] = 2 *  y_coord[i] - y_coord[i-3*N_x1];
-              }
-              else
-              {
-                // point next to back boundary
-                if (((i+2*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-                {
-                  val[0] = sol_curr[i-2*N_x1];
-                  val[1] = sol_curr[i-N_x1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+N_x1];
-                  coord[0] = y_coord[i-2*N_x1];
-                  coord[1] = y_coord[i-N_x1];
-                  coord[2] = y_coord[i];
-                  coord[3] = y_coord[i+N_x1];
-                  coord[4] = 2 *  y_coord[i+N_x1] - y_coord[i];
-                  coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i-N_x1];
-                }
-                else
-                {
-                  // point in next layer to back boundary
-                  if (((i+3*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
-                  {
-                    val[0] = sol_curr[i-2*N_x1];
-                    val[1] = sol_curr[i-N_x1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+N_x1];
-                    val[4] = val[5] = sol_curr[i+2*N_x1];
-                    coord[0] = y_coord[i-2*N_x1];
-                    coord[1] = y_coord[i-N_x1];
-                    coord[2] = y_coord[i];
-                    coord[3] = y_coord[i+N_x1];
-                    coord[4] = y_coord[i+2*N_x1];
-                    coord[5] = 2 *  y_coord[i+2*N_x1] - y_coord[i+N_x1];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-2*N_x1];
-                    val[1] = sol_curr[i-N_x1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+N_x1];
-                    val[4] = sol_curr[i+2*N_x1];
-                    val[5] = sol_curr[i+3*N_x1];
-                    coord[0] = y_coord[i-2*N_x1];
-                    coord[1] = y_coord[i-N_x1];
-                    coord[2] = y_coord[i];
-                    coord[3] = y_coord[i+N_x1];
-                    coord[4] = y_coord[i+2*N_x1];
-                    coord[5] = y_coord[i+3*N_x1];
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
-          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
-          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[1] + av[0];
-          valy = 3*av[2] - 4*av[1] + av[0];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[3] - 2*av[2] + av[1];
-          valy = av[3] - av[1];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[4] - 2*av[3] +av[2];
-          valy = av[4] - 4*av[3] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }                                         // end coeff[2] <=0
-        //OutPut(value << " " );
-        current_stage_fdm[i] -= coeff[2] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
-        //OutPut(i << " " <<  current_stage_fdm[i] << " " << value << endl);
-        // end  prepare vectors for divided///
-        // compute approximation of convective term
-        // compute the term A_z
-        if (coeff[3]  >= 0)
-        {
-          // prepare vectors for divided differences
-          // point on bottom boundary
-          if ( i<= (N_x1)*(N_y))
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[i+(N_x1)*(N_y1)];
-            val[5] = sol_curr[i+2 * (N_x1)*(N_y1)];
-            coord[0] = 2 * z_coord[i]-z_coord[i+3*(N_x1)*(N_y1)];
-            coord[1] = 2 * z_coord[i]-z_coord[i+2*(N_x1)*(N_y1)];
-            coord[2] = 2 * z_coord[i]-z_coord[i+(N_x1)*(N_y1)];
-            coord[3] = z_coord[i];
-            coord[4] = z_coord[i+(N_x1)*(N_y1)];
-            coord[5] = z_coord[i+2 *(N_x1)*(N_y1)];
-          }
-          else
-          {
-            // point next to bottom boundary
-            if ( (i>= (N_x1)*(N_y1)&&(i<2*(N_x1)*(N_y1) )))
-            {
-              val[0] = val[1] = val[2] = sol_curr[i-(N_x1)*(N_y1)];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[i+(N_x1)*(N_y1)];
-              val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
-              coord[0] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i+(N_x1)*(N_y1)];
-              coord[1] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i];
-              coord[2] = z_coord[i-(N_x1)*(N_y1)];
-              coord[3] = z_coord[i];
-              coord[4] = z_coord[i+(N_x1)*(N_y1)];
-              coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
-            }
-            else
-            {
-              // next layer on bottom boundary
-              if ( (i>=2*(N_x1)*(N_y1)&&(i<3*(N_x1)*(N_y1))))
-              {
-                val[0] = val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
-                val[2] = sol_curr[i-(N_x1)*(N_y1)];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[i+(N_x1)*(N_y1)];
-                val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
-                coord[0] = 2 * z_coord[i-2*(N_x1)*(N_y1)]-z_coord[i-(N_x1)*(N_y1)];
-                coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
-                coord[2] = z_coord[i-(N_x1)*(N_y1)];
-                coord[3] = z_coord[i];
-                coord[4] = z_coord[i+(N_x1)*(N_y1)];
-                coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
-              }
-              else
-              {
-                // point on top boundary
-                if ( i>=N_z*N_y1*N_x1)
-                {
-                  val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
-                  val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
-                  val[2] = sol_curr[i-(N_x1)*(N_y1)];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
-                  coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
-                  coord[2] = z_coord[i-(N_x1)*(N_y1)];
-                  coord[3] = z_coord[i];
-                  coord[4] = 2 *  z_coord[i] - z_coord[i-(N_x1)*(N_y1)];
-                  coord[5] = 2 *  z_coord[i] - z_coord[i-2*(N_x1)*(N_y1)];
-                }
-                else
-                {
-                  // point next to top boundary
-                  if (( i>= (N_z-1)*N_x1*N_y1)&&(i<N_z*N_x1*N_y1))
-                  {
-                    val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
-                    val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
-                    val[2] = sol_curr[i-(N_x1)*(N_y1)];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[i+(N_x1)*(N_y1)];
-                    coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
-                    coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
-                    coord[2] = z_coord[i-(N_x1)*(N_y1)];
-                    coord[3] = z_coord[i];
-                    coord[4] = z_coord[i+(N_x1)*(N_y1)];
-                    coord[5] = 2 *  z_coord[i+N_x1*(N_y1)] - z_coord[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
-                    val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
-                    val[2] = sol_curr[i-(N_x1)*(N_y1)];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[i+(N_x1)*(N_y1)];
-                    val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
-                    coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
-                    coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
-                    coord[2] = z_coord[i-(N_x1)*(N_y1)];
-                    coord[3] = z_coord[i];
-                    coord[4] = z_coord[i+(N_x1)*(N_y1)];
-                    coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
-          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
-          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[3] + av[4];
-          valy = 3*av[2] - 4*av[3] + av[4];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[1] - 2*av[2] + av[3];
-          valy = av[1] - av[3];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[0] - 2*av[1] +av[2];
-          valy = av[0] - 4*av[1] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }
-        else
-        {
-          // prepare vectors for divided differences
-          // point on bottom boundary
-          if ( i<=(N_y)*(N_x1) )
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[i+(N_x1)*(N_y1)];
-            val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
-            val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
-            coord[0] = 2 * z_coord[i]-z_coord[i+2*(N_x1)*(N_y1)];
-            coord[1] = 2 * z_coord[i]-z_coord[i+(N_x1)*(N_y1)];
-            coord[2] = z_coord[i];
-            coord[3] = z_coord[i+(N_x1)*(N_y1)];
-            coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
-            coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
-          }
-          else
-          {
-            // point next to bottom boundary
-            if ( (i>=(N_x1)*(N_y1))&&(i<2*(N_x1)*(N_y1)) )
-            {
-              val[0] = val[1] = sol_curr[i-(N_x1)*(N_y1)];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[i+(N_x1)*(N_y1)];
-              val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
-              val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
-              coord[0] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i];
-              coord[1] = z_coord[i-(N_x1)*(N_y1)];
-              coord[2] = z_coord[i];
-              coord[3] = z_coord[i+(N_x1)*(N_y1)];
-              coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
-              coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
-            }
-            else
-            {
-              // point on top boundary
-              if ( i>= N_z*N_y1*N_x1)
-              {
-                val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
-                val[1] = sol_curr[i-(N_x1)*(N_y1)];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
-                coord[1] = z_coord[i-(N_x1)*(N_y1)];
-                coord[2] = z_coord[i];
-                coord[3] = 2 *  z_coord[i] - z_coord[i-(N_x1)*(N_y1)];
-                coord[4] = 2 *  z_coord[i] - z_coord[i-2*(N_x1)*(N_y1)];
-                coord[5] = 2 *  z_coord[i] - z_coord[i-3*(N_x1)*(N_y1)];
-              }
-              else
-              {
-                // point next to top boundary
-                if (( i>= (N_z-1)*(N_y1)*N_x1)&&(i<(N_z)*(N_y1)*N_x1))
-                {
-                  val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
-                  val[1] = sol_curr[i-(N_x1)*(N_y1)];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[i+(N_x1)*(N_y1)];
-                  coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
-                  coord[1] = z_coord[i-(N_x1)*(N_y1)];
-                  coord[2] = z_coord[i];
-                  coord[3] = z_coord[i+(N_x1)*(N_y1)];
-                  coord[4] = 2 *  z_coord[i+(N_x1)*(N_y1)] - z_coord[i];
-                  coord[5] = 2 *  z_coord[i+(N_x1)*(N_y1)] - z_coord[i-(N_x1)*(N_y1)];
-                }
-                else
-                {
-                  // point in next layer to top boundary
-                  if (( i>= (N_z-2)*(N_y1)*(N_x1)&&(i<(N_z-1)*(N_y1)*N_x1)))
-                  {
-                    val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
-                    val[1] = sol_curr[i-(N_x1)*(N_y1)];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+(N_x1)*(N_y1)];
-                    val[4] = val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
-                    coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
-                    coord[1] = z_coord[i-(N_x1)*(N_y1)];
-                    coord[2] = z_coord[i];
-                    coord[3] = z_coord[i+(N_x1)*(N_y1)];
-                    coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
-                    coord[5] = 2 *  z_coord[i+2*(N_x1)*(N_y1)] - z_coord[i+(N_x1)*(N_y1)];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
-                    val[1] = sol_curr[i-(N_x1)*(N_y1)];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[i+(N_x1)*(N_y1)];
-                    val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
-                    val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
-                    coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
-                    coord[1] = z_coord[i-(N_x1)*(N_y1)];
-                    coord[2] = z_coord[i];
-                    coord[3] = z_coord[i+(N_x1)*(N_y1)];
-                    coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
-                    coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
-          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
-          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[1] + av[0];
-          valy = 3*av[2] - 4*av[1] + av[0];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[3] - 2*av[2] + av[1];
-          valy = av[3] - av[1];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[4] - 2*av[3] +av[2];
-          valy = av[4] - 4*av[3] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }                                         // end coeff[3] <=0
-        //OutPut(value << endl);
-        current_stage_fdm[i] -= coeff[3] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
-        break;
-    }
-    // set Dirichlet boundary conditions
-    // inflow from the left x = x_min (left)
-    if ( i%(N_x1)==0 )
-    {
-      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-
-    // on the right hand side
-    if ( (i+1)%(N_x1)==0 )
-    {
-      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-
-    // on front
-    if ((i%((N_x1)*(N_y1)))<N_x1 )
-    {
-      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-
-    // on back
-    if (((i+N_x1)%((N_x1)*(N_y1)))<N_x1)
-    {
-      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-
-    // on bottom
-    if (i< N_x1 * N_y1)
-    {
-      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-
-    // on top
-    if (i>= ((N_x1)*(N_y1)*(N_z)))
-    {
-      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
-      if (cond == DIRICHLET)
-      {
-        current_stage_fdm[i] = 0;
-        continue;
-      }
-    }
-  }
-  // reset time
-  TDatabase::TimeDB->CURRENTTIME -= (TDatabase::TimeDB->RK_c[current_stage] - 1)* tau;
-}
+//#ifdef __3D__
+//void ComputeStages_FDM3D(int dim, CoeffFct3D *Coeffs, BoundCondFunct3D *bound_cond,
+//BoundValueFunct3D *bound_val,
+//double *sol, double **stages, int current_stage, int N_x, int N_y, int N_z,
+//int *dof_conversion, double *x_coord, double *y_coord, double *z_coord)
+//
+//{
+//  int i, j, N_x1, N_y1,N_z1, N3, N1_[3];;
+//  double tau, hx_i, hx_i1, hy_i, hy_i1,hz_i, hz_i1, valx, valy, valz, val[6], coord[6], value;
+//  double *sol_curr, coeff_array[20], *coeff, *current_stage_fdm, *sol_help;
+//  double d1, d2, d3, d4, uhx[3], omega[3], alpha[3], d[3], beta[3], av[5], c_e = 1e-6;
+//  double *coordinates[3];
+//  int *offset_ = NULL, *offset1_;
+//  BoundCond cond;
+//
+//  // set time of the stage, in main already new time level
+//  tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+//  TDatabase::TimeDB->CURRENTTIME += (TDatabase::TimeDB->RK_c[current_stage] - 1)* tau;
+//  N_x1 = N_x+1;
+//  N_y1 = N_y+1;
+//  N_z1 = N_z+1;
+//  N3 = (N_x1)*(N_y1)*(N_z1);
+//  // allocate arrays
+//  sol_curr = stages[5];
+//  coeff = coeff_array;
+//
+//  // compute linear combination of current stages
+//  // numeration of dof corresponding to fe space
+//  current_stage_fdm = stages[current_stage];
+//  memset(current_stage_fdm, 0, N3 * SizeOfDouble);
+//
+//  // initialize current stage
+//  memcpy(sol_curr,sol,N3*SizeOfDouble);
+//  // add previous stages
+//  for (i=0;i<current_stage;i++)
+//    Daxpy(N3, tau*TDatabase::TimeDB->RK_A[current_stage][i], stages[i], sol_curr);
+//
+//  //N1_[0] = N_x1;
+//  //N1_[1] = N_y1;
+//  //N1_[2] = N_z1;
+//  //coordinates[0] = x_coord;
+//  //coordinates[1] = y_coord;
+//  //coordinates[2] = z_coord;
+//  //InitializeConvectiveTermFDM(3, offset_, offset1_, N1_);
+//
+//  // discretization of pde with FDM
+//  // loop over all nodes of the FDM grid
+//  for ( i=0 ; i<N3 ; i++ )
+//  {
+//    // coefficients of the equation
+//    Coeffs(1, &x_coord[i], &y_coord[i], &z_coord[i], NULL, &coeff);
+//    // compute the coefficients corresponding to the 3d finite-difference-method (9-point)
+//    if (( i%(N_x1)!=0 )&&( (i+1)%(N_x1)!=0 )&&
+//      ((i%((N_x1)*(N_y1)))>N_x ) && (((i+N_x1)%((N_x1)*(N_y1)))>N_x) &&
+//      (i> N_x1 * N_y1-1) && (i< ((N_x1)*(N_y1)*(N_z))))
+//    {
+//      // diffusive term wrt x
+//      val[0] = sol_curr[i-1];
+//      val[1] = sol_curr[i];
+//      val[2] = sol_curr[i+1];
+//      coord[0] = x_coord[i-1];
+//      coord[1] = x_coord[i];
+//      coord[2] = x_coord[i+1];
+//      valx = 2*DividedDifferences(2, val, coord);
+//      // diffusive term wrt y
+//      val[0] = sol_curr[i-N_x1];
+//      val[2] = sol_curr[i+N_x1];
+//      coord[0] = y_coord[i-N_x1];;
+//      coord[1] = y_coord[i];
+//      coord[2] = y_coord[i+N_x1];
+//      valy = 2*DividedDifferences(2, val, coord);
+//
+//      // diffusive term wrt z
+//      val[0] = sol_curr[i-(N_x1)*(N_y1)];
+//      val[2] = sol_curr[i+(N_x1)*(N_y1)];
+//      coord[0] = z_coord[i-(N_x1)*(N_y1)];
+//      coord[1] = z_coord[i];
+//      coord[2] = z_coord[i+(N_x1)*(N_y1)];
+//      valz = 2*DividedDifferences(2, val, coord);
+//
+//      // add also reactive term and right hand side
+//      current_stage_fdm[i] = coeff[0]*(valx + valy+valz) - coeff[4]*sol_curr[i] + coeff[5];
+//    }
+//
+//    //    ConvectiveTermFDM(3, i,
+//    //		      coeff+1, sol_curr, current_stage_fdm, coordinates,
+//    //		      offset_, offset1_);
+//    //    continue;
+//    switch(TDatabase::ParamDB->DISCTYPE)
+//    {
+//      case GALERKIN:
+//        exit(1);
+//        break;
+//        // simple upwind scheme
+//      case UPWIND:
+//        // compute the term A_x
+//        if (coeff[1] >= 0)
+//        {
+//          // not on boundary x = x_min -> in the "x-sense" exists a left neighbour
+//          if ( i%(N_x1)!=0 )
+//            current_stage_fdm[i] -= coeff[1]*(sol_curr[i]-sol_curr[i-1])/(x_coord[i]-x_coord[i-1]);
+//        }
+//        else
+//        {
+//          // not on boundary x = x_max -> in the "x-sense" exists a right neighbour
+//          if ( (i+1)%(N_x1)!=0 )
+//            current_stage_fdm[i] -= coeff[1]*(sol_curr[i+1]-sol_curr[i])/(x_coord[i+1]-x_coord[i]);
+//        }
+//
+//        // compute the term A_y
+//        if (coeff[2] >= 0)
+//        {
+//          // not on boundary y = y_min -> in the "y-sense" exists a left neighbour
+//          if ((i%((N_x1)*(N_y1)))>N_x )
+//            current_stage_fdm[i] -= coeff[2]*(sol_curr[i]-sol_curr[i-(N_x1)])/(y_coord[i]-y_coord[i-(N_x1)]);
+//        }
+//        else
+//        {
+//          // not on boundary y = y_max -> in the "y-sense" exists a right neighbour
+//          if (((i+N_x1)%((N_x1)*(N_y1)))>N_x)
+//            current_stage_fdm[i] -= coeff[2]*(sol_curr[i+(N_x1)]-sol_curr[i])/(y_coord[i+(N_x1)]-y_coord[i]);
+//        }
+//        if (coeff[3] >= 0)
+//        {
+//          // not on boundary z = z_min -> in the "z-sense" exists a left neighbour
+//          if (i> N_x1 * N_y)
+//            current_stage_fdm[i] -= coeff[3]*(sol_curr[i]-sol_curr[i-(N_x1)*(N_y1)])/(z_coord[i]-z_coord[i-(N_x1)*(N_y1)]);
+//        }
+//        else
+//        {
+//          // not on boundary z = z_max -> in the "z-sense" exists a right neighbour
+//          if (i< ((N_x1)*(N_y1)*(N_z)))
+//            current_stage_fdm[i] -= coeff[3]*(sol_curr[i+(N_x1)*(N_y1)]-sol_curr[i])/(z_coord[i+(N_x1)*(N_y1)]-z_coord[i]);
+//        }
+//        break;
+//      case ENO_3:
+//        // compute the term A_x
+//        if (coeff[1] >  0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on left boundary
+//          if ( i%(N_x1)==0 )
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+1];
+//            val[5] = sol_curr[i+2];
+//            coord[0] = 2 * x_coord[i]-x_coord[i+3];
+//            coord[1] = 2 * x_coord[i]-x_coord[i+2];
+//            coord[2] = 2 * x_coord[i]-x_coord[i+1];
+//            coord[3] = x_coord[i];
+//            coord[4] = x_coord[i+1];
+//            coord[5] = x_coord[i+2];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (i-1)%(N_x1)==0 )                //gleich zu Zeile 1317
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+1];
+//              val[5] = sol_curr[i+2];
+//              coord[0] = 2 * x_coord[i-1]-x_coord[i+1];
+//              coord[1] = 2 * x_coord[i-1]-x_coord[i];
+//              coord[2] = x_coord[i-1];
+//              coord[3] = x_coord[i];
+//              coord[4] = x_coord[i+1];
+//              coord[5] = x_coord[i+2];
+//            }
+//            else
+//            {
+//              // next layer on left boundary
+//              if ( (i-2)%(N_x1)==0 )              //gleich zu zeile 1300 (i-2) MUSS IN 2d auch verbessert werden
+//              {
+//                val[0] = val[1] = sol_curr[i-2];
+//                val[2] = sol_curr[i-1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+1];
+//                val[5] = sol_curr[i+2];
+//                coord[0] = 2 * x_coord[i-2]-x_coord[i-1];
+//                coord[1] = x_coord[i-2];
+//                coord[2] = x_coord[i-1];
+//                coord[3] = x_coord[i];
+//                coord[4] = x_coord[i+1];
+//                coord[5] = x_coord[i+2];
+//              }
+//              else
+//              {
+//                // point on right boundary
+//                if ( (i+1)%(N_x1)==0 )
+//                {
+//                  val[0] = sol_curr[i-3];
+//                  val[1] = sol_curr[i-2];
+//                  val[2] = sol_curr[i-1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = x_coord[i-3];
+//                  coord[1] = x_coord[i-2];
+//                  coord[2] = x_coord[i-1];
+//                  coord[3] = x_coord[i];
+//                  coord[4] = 2 *  x_coord[i] - x_coord[i-1];
+//                  coord[5] = 2 *  x_coord[i] - x_coord[i-2];
+//                }
+//                else
+//                {
+//                  // point next to right boundary
+//                  if ( (i+2)%(N_x1)==0 )
+//                  {
+//                    val[0] = sol_curr[i-3];
+//                    val[1] = sol_curr[i-2];
+//                    val[2] = sol_curr[i-1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+1];
+//                    coord[0] = x_coord[i-3];
+//                    coord[1] = x_coord[i-2];
+//                    coord[2] = x_coord[i-1];
+//                    coord[3] = x_coord[i];
+//                    coord[4] = x_coord[i+1];
+//                    coord[5] = 2 *  x_coord[i+1] - x_coord[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-3];
+//                    val[1] = sol_curr[i-2];
+//                    val[2] = sol_curr[i-1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+1];
+//                    val[5] = sol_curr[i+2];
+//                    coord[0] = x_coord[i-3];
+//                    coord[1] = x_coord[i-2];
+//                    coord[2] = x_coord[i-1];
+//                    coord[3] = x_coord[i];
+//                    coord[4] = x_coord[i+1];
+//                    coord[5] = x_coord[i+2];
+//                    /*sol_help = sol_curr+i-3;
+//                                val[0] = *sol_help;
+//                                val[1] = *(sol_help+1);
+//                                val[2] = *(sol_help+2);
+//                                val[3] = *(sol_help+3);
+//                                val[4] = *(sol_help+4);
+//                                val[5] = *(sol_help+5);
+//                                sol_help = x_coord+i-3;
+//                                coord[0] = *sol_help;
+//                                coord[1] = *(sol_help+1);
+//                                coord[2] = *(sol_help+2);
+//                    coord[3] = *(sol_help+3);
+//                    coord[4] = *(sol_help+4);
+//                    coord[5] = *(sol_help+5);*/
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+2,coord+2);
+//          d2 = DividedDifferences(2,val+1,coord+1);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              //value = DividedDifferences(1,val+1,coord+1);
+//              value =  (val[2]-val[1])/(coord[2]-coord[1]);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              //OutPut("a3a ");
+//            }
+//            else
+//            {
+//              //value = DividedDifferences(1,val+2,coord+2);
+//              valx = coord[3]-coord[2];
+//              value = (val[3]-val[2])/valx;
+//              value += d1 * valx;
+//              value += d4 * valx*(coord[3]-coord[4]);
+//              //OutPut("a2 ");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              //value = DividedDifferences(1,val,coord);
+//              value = (val[1]-val[0])/(coord[1]-coord[0]);
+//              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
+//              valx = coord[3]-coord[0];
+//              valy = coord[3]-coord[1];
+//              valz = coord[3]-coord[2];
+//              //value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
+//              //  + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
+//              value += d3 * (valy * valz + valx * valz + valx * valy);
+//              //OutPut("a4 ");
+//            }
+//            else
+//            {
+//              //value = DividedDifferences(1,val+1,coord+1);
+//              value = (val[2]-val[1])/(coord[2]-coord[1]);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              //OutPut("a3b ");
+//              // OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
+//            }
+//          }
+//        }
+//        else
+//        {
+//          // prepare vectors for divided differences
+//          // point on left boundary
+//          if ( i%(N_x1)==0 )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+1];
+//            val[4] = sol_curr[i+2];
+//            val[5] = sol_curr[i+3];
+//            coord[0] = 2 * x_coord[i]-x_coord[i+2];
+//            coord[1] = 2 * x_coord[i]-x_coord[i+1];
+//            coord[2] = x_coord[i];
+//            coord[3] = x_coord[i+1];
+//            coord[4] = x_coord[i+2];
+//            coord[5] = x_coord[i+3];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (i-1)%(N_x1)==0 )
+//            {
+//              val[0] = val[1] = sol_curr[i-1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+1];
+//              val[4] = sol_curr[i+2];
+//              val[5] = sol_curr[i+3];
+//              coord[0] = 2 * x_coord[i-1]-x_coord[i];
+//              coord[1] = x_coord[i-1];
+//              coord[2] = x_coord[i];
+//              coord[3] = x_coord[i+1];
+//              coord[4] = x_coord[i+2];
+//              coord[5] = x_coord[i+3];
+//            }
+//            else
+//            {
+//              // point on right boundary
+//              if ( (i+1)%(N_x1)==0 )
+//              {
+//                val[0] = sol_curr[i-2];
+//                val[1] = sol_curr[i-1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = x_coord[i-2];
+//                coord[1] = x_coord[i-1];
+//                coord[2] = x_coord[i];
+//                coord[3] = 2 *  x_coord[i] - x_coord[i-1];
+//                coord[4] = 2 *  x_coord[i] - x_coord[i-2];
+//                coord[5] = 2 *  x_coord[i] - x_coord[i-3];
+//              }
+//              else
+//              {
+//                // point next to right boundary
+//                if ( (i+2)%(N_x1)==0 )
+//                {
+//                  val[0] = sol_curr[i-2];
+//                  val[1] = sol_curr[i-1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+1];
+//                  coord[0] = x_coord[i-2];
+//                  coord[1] = x_coord[i-1];
+//                  coord[2] = x_coord[i];
+//                  coord[3] = x_coord[i+1];
+//                  coord[4] = 2 *  x_coord[i+1] - x_coord[i];
+//                  coord[5] = 2 *  x_coord[i+1] - x_coord[i-1];
+//                }
+//                else
+//                {
+//                  // point in next layer to right boundary
+//                  if ( (i+3)%(N_x1)==0 )
+//                  {
+//                    val[0] = sol_curr[i-2];
+//                    val[1] = sol_curr[i-1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+1];
+//                    val[4] = val[5] = sol_curr[i+2];
+//                    coord[0] = x_coord[i-2];
+//                    coord[1] = x_coord[i-1];
+//                    coord[2] = x_coord[i];
+//                    coord[3] = x_coord[i+1];
+//                    coord[4] = x_coord[i+2];
+//                    coord[5] = 2 *  x_coord[i+2] - x_coord[i+1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-2];
+//                    val[1] = sol_curr[i-1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+1];
+//                    val[4] = sol_curr[i+2];
+//                    val[5] = sol_curr[i+3];
+//                    coord[0] = x_coord[i-2];
+//                    coord[1] = x_coord[i-1];
+//                    coord[2] = x_coord[i];
+//                    coord[3] = x_coord[i+1];
+//                    coord[4] = x_coord[i+2];
+//                    coord[5] = x_coord[i+3];
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+1,coord+1);
+//          d2 = DividedDifferences(2,val+2,coord+2);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val,coord);
+//              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
+//              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
+//              //OutPut("A3 ");
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * (coord[2]-coord[1]);
+//              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
+//              //OutPut("A2a ");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              valx = coord[2]-coord[1];
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * valx;
+//              value += d3 * valx*(coord[2]-coord[3]);
+//              //OutPut("A2b ");
+//            }
+//            else
+//            {
+//              valx = coord[2]-coord[3];
+//              value = DividedDifferences(1,val+2,coord+2);
+//              value += d2 * valx;
+//              value += d4 * valx*(coord[2]-coord[4]);
+//              //comparison with backward difference in node i
+//              //OutPut("A1b ");
+//              //OutPut("A1 " << value <<"  " <<   DividedDifferences(1,val+1,coord+1) << ":");
+//            }
+//          }
+//        }                                         // end coeff[1] <=0
+//        //OutPut(value << " ");
+//        current_stage_fdm[i] -= coeff[1] * value;
+//        // compute the term A_y
+//        if (coeff[2]  > 0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on front boundary
+//          if (( i % ((N_x1)*(N_y1)) ) <=N_x)      //richtig
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+N_x1];
+//            val[5] = sol_curr[i+2 * N_x1];
+//            coord[0] = 2 * y_coord[i]-y_coord[i+3*N_x1];
+//            coord[1] = 2 * y_coord[i]-y_coord[i+2*N_x1];
+//            coord[2] = 2 * y_coord[i]-y_coord[i+N_x1];
+//            coord[3] = y_coord[i];
+//            coord[4] = y_coord[i+N_x1];
+//            coord[5] = y_coord[i+2 * N_x1];
+//            //OutPut("front " << i << " " << y_coord[i] << endl);
+//          }
+//          else
+//          {
+//            //OutPut(" a " << i << " " << N_x1 << " " << N_y1 << " " <<  i % ((N_x1)*(N_y1)) << endl);
+//            // point next to front boundary
+//                                                  //richtig
+//            if ( (i-N_x1) % ((N_x1)*(N_y1))  <=N_x)
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-N_x1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+N_x1];
+//              val[5] = sol_curr[i+2*N_x1];
+//              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i+N_x1];
+//              coord[1] = 2 * y_coord[i-N_x1]-y_coord[i];
+//              coord[2] = y_coord[i-N_x1];
+//              coord[3] = y_coord[i];
+//              coord[4] = y_coord[i+N_x1];
+//              coord[5] = y_coord[i+2*N_x1];
+//              //OutPut("front +1 " << i << " " << y_coord[i] <<endl);
+//            }
+//            else
+//            {
+//              // next layer on front boundary
+//                                                  //GLEICHe Zeile wie Z 1646 (i-2*N_x1)?
+//                                                  //richtig
+//              if (  (i-2*N_x1) % ((N_x1)*(N_y1))  <=N_x )
+//              {
+//                val[0] = val[1] = sol_curr[i-2*N_x1];
+//                val[2] = sol_curr[i-N_x1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+N_x1];
+//                val[5] = sol_curr[i+2*N_x1];
+//                coord[0] = 2 * y_coord[i-2*N_x1]-y_coord[i-N_x1];
+//                coord[1] = y_coord[i-2*N_x1];
+//                coord[2] = y_coord[i-N_x1];
+//                coord[3] = y_coord[i];
+//                coord[4] = y_coord[i+N_x1];
+//                coord[5] = y_coord[i+2*N_x1];
+//                //OutPut("front +2  " << i << " " << y_coord[i] <<endl);
+//              }
+//              else
+//              {
+//                // point on back boundary
+//                                                  //richtig
+//                if ( (i+N_x1) % ((N_x1)*(N_y1))  <=N_x)
+//                {
+//                  val[0] = sol_curr[i-3*N_x1];
+//                  val[1] = sol_curr[i-2*N_x1];
+//                  val[2] = sol_curr[i-N_x1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = y_coord[i-3*N_x1];
+//                  coord[1] = y_coord[i-2*N_x1];
+//                  coord[2] = y_coord[i-N_x1];
+//                  coord[3] = y_coord[i];
+//                  coord[4] = 2 *  y_coord[i] - y_coord[i-N_x1];
+//                  coord[5] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
+//                  //OutPut("back  " << i << " " << y_coord[i] <<endl);
+//                }
+//                else
+//                {
+//                  // point next to back boundary
+//                                                  //richtig
+//                  if (( (i+2*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//                  {
+//                    val[0] = sol_curr[i-3*N_x1];
+//                    val[1] = sol_curr[i-2*N_x1];
+//                    val[2] = sol_curr[i-N_x1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+N_x1];
+//                    coord[0] = y_coord[i-3*N_x1];
+//                    coord[1] = y_coord[i-2*N_x1];
+//                    coord[2] = y_coord[i-N_x1];
+//                    coord[3] = y_coord[i];
+//                    coord[4] = y_coord[i+N_x1];
+//                    coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i];
+//                    //OutPut("back -1  " << i <<  " " << y_coord[i] << endl);
+//                  }
+//                  // inner point              richtig
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-3*N_x1];
+//                    val[1] = sol_curr[i-2*N_x1];
+//                    val[2] = sol_curr[i-N_x1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+N_x1];
+//                    val[5] = sol_curr[i+2*N_x1];
+//                    coord[0] = y_coord[i-3*N_x1];
+//                    coord[1] = y_coord[i-2*N_x1];
+//                    coord[2] = y_coord[i-N_x1];
+//                    coord[3] = y_coord[i];
+//                    coord[4] = y_coord[i+N_x1];
+//                    coord[5] = y_coord[i+2*N_x1];
+//                    //OutPut("inner  " << i << " " << y_coord[i] << endl);
+//                  }                               // inner point
+//                }                                 // point next to back boundary
+//              }                                   // point on back boundary
+//            }                                     // next layer on front boundary
+//          }                                       // point next on front boundary
+//          // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          /*d1 = DividedDifferences(2,val+2,coord+2);
+//          d2 = DividedDifferences(2,val+1,coord+1);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//          value = DividedDifferences(1,val+1,coord+1);
+//          value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//          value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//          //OutPut("a3a ");
+//          //OutPut("a3 " << value << " ");
+//          }
+//          else
+//          {
+//          value = DividedDifferences(1,val+2,coord+2);
+//          value += d1 * (coord[3]-coord[2]);
+//          //Habe hier nichts verändert von Zeile 1735 bis 1790
+//          value += d4 * (coord[3]-coord[2])*(coord[3]-coord[4]);
+//          //OutPut("a2 ");
+//          }
+//          }
+//          else
+//          {
+//          //d3 = DividedDifferences(3,val,coord);
+//          //d4 = DividedDifferences(3,val+1,coord+1);
+//          DividedDifferences_3_2(val,coord,d);
+//          d3 = d[0];
+//          d4 = d[1];
+//          if   (fabs(d3) < fabs(d4))
+//          {
+//          value = DividedDifferences(1,val,coord);
+//          value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
+//          value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
+//          + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
+//          // OutPut("a4 ");
+//          //OutPut("a4 " << coeff[2]  << "  " << DividedDifferences(2,val+2,coord+2) << "  "
+//          // << DividedDifferences(2,val+1,coord+1) << "  " << DividedDifferences(3,val,coord)
+//          // << "  " << DividedDifferences(3,val+1,coord+1)
+//          //<< endl);
+//          }
+//          else
+//          {
+//          value = DividedDifferences(1,val+1,coord+1);
+//          value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//          value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//          // comparison with backward difference in node i
+//          // OutPut("a3b ");
+//          //OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
+//          }
+//          } */
+//
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+2,coord+2);
+//          d2 = DividedDifferences(2,val+1,coord+1);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              //value = DividedDifferences(1,val+1,coord+1);
+//              value =  (val[2]-val[1])/(coord[2]-coord[1]);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              //OutPut("a3a ");
+//            }
+//            else
+//            {
+//              //value = DividedDifferences(1,val+2,coord+2);
+//              valx = coord[3]-coord[2];
+//              value = (val[3]-val[2])/valx;
+//              value += d1 * valx;
+//              value += d4 * valx*(coord[3]-coord[4]);
+//              //OutPut("a2 ");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              //value = DividedDifferences(1,val,coord);
+//              value = (val[1]-val[0])/(coord[1]-coord[0]);
+//              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
+//              valx = coord[3]-coord[0];
+//              valy = coord[3]-coord[1];
+//              valz = coord[3]-coord[2];
+//              //value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
+//              //  + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
+//              value += d3 * (valy * valz + valx * valz + valx * valy);
+//              //OutPut("a4 ");
+//            }
+//            else
+//            {
+//              //value = DividedDifferences(1,val+1,coord+1);
+//              value = (val[2]-val[1])/(coord[2]-coord[1]);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              //OutPut("a3b ");
+//              // OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
+//            }
+//          }
+//        }
+//        else
+//        {
+//          // prepare vectors for divided differences
+//          // point on front boundary
+//          if (( i % ((N_x1)*(N_y1)) ) <= N_x )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+N_x1];
+//            val[4] = sol_curr[i+2*N_x1];
+//            val[5] = sol_curr[i+3*N_x1];
+//            coord[0] = 2 * y_coord[i]-y_coord[i+2*N_x1];
+//            coord[1] = 2 * y_coord[i]-y_coord[i+N_x1];
+//            coord[2] = y_coord[i];
+//            coord[3] = y_coord[i+N_x1];
+//            coord[4] = y_coord[i+2*N_x1];
+//            coord[5] = y_coord[i+3*N_x1];
+//          }
+//          else
+//          {
+//            // point next to front boundary
+//            if (((i-N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//            {
+//              val[0] = val[1] = sol_curr[i-N_x1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+N_x1];
+//              val[4] = sol_curr[i+2*N_x1];
+//              val[5] = sol_curr[i+3*N_x1];
+//              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i];
+//              coord[1] = y_coord[i-N_x1];
+//              coord[2] = y_coord[i];
+//              coord[3] = y_coord[i+N_x1];
+//              coord[4] = y_coord[i+2*N_x1];
+//              coord[5] = y_coord[i+3*N_x1];
+//            }
+//            else
+//            {
+//              // point on back boundary
+//              if (((i+N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//              {
+//                val[0] = sol_curr[i-2*N_x1];
+//                val[1] = sol_curr[i-N_x1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = y_coord[i-2*N_x1];
+//                coord[1] = y_coord[i-N_x1];
+//                coord[2] = y_coord[i];
+//                coord[3] = 2 *  y_coord[i] - y_coord[i-N_x1];
+//                coord[4] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
+//                coord[5] = 2 *  y_coord[i] - y_coord[i-3*N_x1];
+//              }
+//              else
+//              {
+//                // point next to back boundary
+//                if (((i+2*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//                {
+//                  val[0] = sol_curr[i-2*N_x1];
+//                  val[1] = sol_curr[i-N_x1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+N_x1];
+//                  coord[0] = y_coord[i-2*N_x1];
+//                  coord[1] = y_coord[i-N_x1];
+//                  coord[2] = y_coord[i];
+//                  coord[3] = y_coord[i+N_x1];
+//                  coord[4] = 2 *  y_coord[i+N_x1] - y_coord[i];
+//                  coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i-N_x1];
+//                }
+//                else
+//                {
+//                  // point in next layer to back boundary
+//                  if (((i+3*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//                  {
+//                    val[0] = sol_curr[i-2*N_x1];
+//                    val[1] = sol_curr[i-N_x1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+N_x1];
+//                    val[4] = val[5] = sol_curr[i+2*N_x1];
+//                    coord[0] = y_coord[i-2*N_x1];
+//                    coord[1] = y_coord[i-N_x1];
+//                    coord[2] = y_coord[i];
+//                    coord[3] = y_coord[i+N_x1];
+//                    coord[4] = y_coord[i+2*N_x1];
+//                    coord[5] = 2 *  y_coord[i+2*N_x1] - y_coord[i+N_x1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-2*N_x1];
+//                    val[1] = sol_curr[i-N_x1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+N_x1];
+//                    val[4] = sol_curr[i+2*N_x1];
+//                    val[5] = sol_curr[i+3*N_x1];
+//                    coord[0] = y_coord[i-2*N_x1];
+//                    coord[1] = y_coord[i-N_x1];
+//                    coord[2] = y_coord[i];
+//                    coord[3] = y_coord[i+N_x1];
+//                    coord[4] = y_coord[i+2*N_x1];
+//                    coord[5] = y_coord[i+3*N_x1];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+1,coord+1);
+//          d2 = DividedDifferences(2,val+2,coord+2);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val,coord);
+//              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
+//              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
+//              // OutPut("A3 ");
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * (coord[2]-coord[1]);
+//              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
+//              // OutPut("A2a ");
+//              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * (coord[2]-coord[1]);
+//              value += d3 * (coord[2]-coord[1])*(coord[2]-coord[3]);
+//              // OutPut("A2b ");
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+2,coord+2);
+//              value += d2 * (coord[2]-coord[3]);
+//              value += d4 * (coord[2]-coord[3])*(coord[2]-coord[4]);
+//              // comparison with backward difference in node i
+//              // OutPut("A1b ");
+//              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
+//            }
+//          }
+//        }                                         // end coeff[2] <=0
+//        //OutPut(value << " " );
+//        current_stage_fdm[i] -= coeff[2] * value;
+//        //OutPut(i << " " <<  current_stage_fdm[i] << " " << value << endl);
+//        // end  prepare vectors for divided///
+//        // compute approximation of convective term
+//        // compute the term A_z
+//        if (coeff[3]  > 0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on bottom boundary
+//          if ( i<= (N_x1)*(N_y))
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+(N_x1)*(N_y1)];
+//            val[5] = sol_curr[i+2 * (N_x1)*(N_y1)];
+//            coord[0] = 2 * z_coord[i]-z_coord[i+3*(N_x1)*(N_y1)];
+//            coord[1] = 2 * z_coord[i]-z_coord[i+2*(N_x1)*(N_y1)];
+//            coord[2] = 2 * z_coord[i]-z_coord[i+(N_x1)*(N_y1)];
+//            coord[3] = z_coord[i];
+//            coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//            coord[5] = z_coord[i+2 *(N_x1)*(N_y1)];
+//          }
+//          else
+//          {
+//            // point next to bottom boundary
+//            if ( (i>= (N_x1)*(N_y1)&&(i<2*(N_x1)*(N_y1) )))
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+(N_x1)*(N_y1)];
+//              val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
+//              coord[0] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i+(N_x1)*(N_y1)];
+//              coord[1] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i];
+//              coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//              coord[3] = z_coord[i];
+//              coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//              coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
+//            }
+//            else
+//            {
+//              // next layer on bottom boundary
+//              if ( (i>=2*(N_x1)*(N_y1)&&(i<3*(N_x1)*(N_y1))))
+//              {
+//                val[0] = val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+(N_x1)*(N_y1)];
+//                val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
+//                coord[0] = 2 * z_coord[i-2*(N_x1)*(N_y1)]-z_coord[i-(N_x1)*(N_y1)];
+//                coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
+//                coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//                coord[3] = z_coord[i];
+//                coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//                coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
+//              }
+//              else
+//              {
+//                // point on top boundary
+//                if ( i>=N_z*N_y1*N_x1)
+//                {
+//                  val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
+//                  val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                  val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
+//                  coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
+//                  coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//                  coord[3] = z_coord[i];
+//                  coord[4] = 2 *  z_coord[i] - z_coord[i-(N_x1)*(N_y1)];
+//                  coord[5] = 2 *  z_coord[i] - z_coord[i-2*(N_x1)*(N_y1)];
+//                }
+//                else
+//                {
+//                  // point next to top boundary
+//                  if (( i>= (N_z-1)*N_x1*N_y1)&&(i<N_z*N_x1*N_y1))
+//                  {
+//                    val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
+//                    val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                    val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+(N_x1)*(N_y1)];
+//                    coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
+//                    coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
+//                    coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//                    coord[3] = z_coord[i];
+//                    coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//                    coord[5] = 2 *  z_coord[i+N_x1*(N_y1)] - z_coord[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
+//                    val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                    val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+(N_x1)*(N_y1)];
+//                    val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
+//                    coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
+//                    coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
+//                    coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//                    coord[3] = z_coord[i];
+//                    coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//                    coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+2,coord+2);
+//          d2 = DividedDifferences(2,val+1,coord+1);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              //OutPut("a3a ");
+//              //OutPut("a3 " << value << " ");
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+2,coord+2);
+//              value += d1 * (coord[3]-coord[2]);
+//              value += d4 * (coord[3]-coord[2])*(coord[3]-coord[4]);
+//              //OutPut("a2 ");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val,coord);
+//              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
+//              value += d3 * ((coord[3]-coord[1])*(coord[3]-coord[2])
+//                + (coord[3]-coord[0])*(coord[3]-coord[2]) + (coord[3]-coord[0])*(coord[3]-coord[1]));
+//              // OutPut("a4 ");
+//              //OutPut("a4 " << coeff[2]  << "  " << DividedDifferences(2,val+2,coord+2) << "  "
+//              // << DividedDifferences(2,val+1,coord+1) << "  " << DividedDifferences(3,val,coord)
+//              // << "  " << DividedDifferences(3,val+1,coord+1)
+//              //<< endl);
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//              // comparison with backward difference in node i
+//              // OutPut("a3b ");
+//              //OutPut("a3 " << value << "  " << DividedDifferences(1,val+3,coord+3)<<":");
+//            }
+//          }
+//        }
+//        else
+//        {
+//          // prepare vectors for divided differences
+//          // point on bottom boundary
+//          if ( i<=(N_y)*(N_x1) )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+(N_x1)*(N_y1)];
+//            val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
+//            val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
+//            coord[0] = 2 * z_coord[i]-z_coord[i+2*(N_x1)*(N_y1)];
+//            coord[1] = 2 * z_coord[i]-z_coord[i+(N_x1)*(N_y1)];
+//            coord[2] = z_coord[i];
+//            coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//            coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
+//            coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
+//          }
+//          else
+//          {
+//            // point next to bottom boundary
+//            if ( (i>=(N_x1)*(N_y1))&&(i<2*(N_x1)*(N_y1)) )
+//            {
+//              val[0] = val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+(N_x1)*(N_y1)];
+//              val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
+//              val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
+//              coord[0] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i];
+//              coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//              coord[2] = z_coord[i];
+//              coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//              coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
+//              coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
+//            }
+//            else
+//            {
+//              // point on top boundary
+//              if ( i>= N_z*N_y1*N_x1)
+//              {
+//                val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
+//                coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//                coord[2] = z_coord[i];
+//                coord[3] = 2 *  z_coord[i] - z_coord[i-(N_x1)*(N_y1)];
+//                coord[4] = 2 *  z_coord[i] - z_coord[i-2*(N_x1)*(N_y1)];
+//                coord[5] = 2 *  z_coord[i] - z_coord[i-3*(N_x1)*(N_y1)];
+//              }
+//              else
+//              {
+//                // point next to top boundary
+//                if (( i>= (N_z-1)*(N_y1)*N_x1)&&(i<(N_z)*(N_y1)*N_x1))
+//                {
+//                  val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                  val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+(N_x1)*(N_y1)];
+//                  coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
+//                  coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//                  coord[2] = z_coord[i];
+//                  coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//                  coord[4] = 2 *  z_coord[i+(N_x1)*(N_y1)] - z_coord[i];
+//                  coord[5] = 2 *  z_coord[i+(N_x1)*(N_y1)] - z_coord[i-(N_x1)*(N_y1)];
+//                }
+//                else
+//                {
+//                  // point in next layer to top boundary
+//                  if (( i>= (N_z-2)*(N_y1)*(N_x1)&&(i<(N_z-1)*(N_y1)*N_x1)))
+//                  {
+//                    val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                    val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+(N_x1)*(N_y1)];
+//                    val[4] = val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
+//                    coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
+//                    coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//                    coord[2] = z_coord[i];
+//                    coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//                    coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
+//                    coord[5] = 2 *  z_coord[i+2*(N_x1)*(N_y1)] - z_coord[i+(N_x1)*(N_y1)];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                    val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+(N_x1)*(N_y1)];
+//                    val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
+//                    val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
+//                    coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
+//                    coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//                    coord[2] = z_coord[i];
+//                    coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//                    coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
+//                    coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+1,coord+1);
+//          d2 = DividedDifferences(2,val+2,coord+2);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            //d3 = DividedDifferences(3,val,coord);
+//            //d4 = DividedDifferences(3,val+1,coord+1);
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val,coord);
+//              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
+//              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
+//              // OutPut("A3 ");
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * (coord[2]-coord[1]);
+//              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
+//              // OutPut("A2a ");
+//              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
+//            }
+//          }
+//          else
+//          {
+//            //d3 = DividedDifferences(3,val+1,coord+1);
+//            //d4 = DividedDifferences(3,val+2,coord+2);
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * (coord[2]-coord[1]);
+//              value += d3 * (coord[2]-coord[1])*(coord[2]-coord[3]);
+//              // OutPut("A2b ");
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+2,coord+2);
+//              value += d2 * (coord[2]-coord[3]);
+//              value += d4 * (coord[2]-coord[3])*(coord[2]-coord[4]);
+//              // comparison with backward difference in node i
+//              // OutPut("A1b ");
+//              //OutPut("A1 " << value << "  " << DividedDifferences(1,val+1,coord+1)<<":");
+//            }
+//          }
+//        }                                         // end coeff[3] <=0
+//        //OutPut(value << endl);
+//        current_stage_fdm[i] -= coeff[3] * value;
+//        break;
+//      case WENO_5:
+//        d[0] = 0.3;
+//        d[1] = 0.6;
+//        d[2] = 0.1;
+//        // compute the term A_x
+//        if (coeff[1] >=  0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on left boundary
+//          if ( i%(N_x1)==0 )
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+1];
+//            val[5] = sol_curr[i+2];
+//            coord[0] = 2 * x_coord[i]-x_coord[i+3];
+//            coord[1] = 2 * x_coord[i]-x_coord[i+2];
+//            coord[2] = 2 * x_coord[i]-x_coord[i+1];
+//            coord[3] = x_coord[i];
+//            coord[4] = x_coord[i+1];
+//            coord[5] = x_coord[i+2];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (i-1)%(N_x1)==0 )                //gleich zu Zeile 1317
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+1];
+//              val[5] = sol_curr[i+2];
+//              coord[0] = 2 * x_coord[i-1]-x_coord[i+1];
+//              coord[1] = 2 * x_coord[i-1]-x_coord[i];
+//              coord[2] = x_coord[i-1];
+//              coord[3] = x_coord[i];
+//              coord[4] = x_coord[i+1];
+//              coord[5] = x_coord[i+2];
+//            }
+//            else
+//            {
+//              // next layer on left boundary
+//              if ( (i-2)%(N_x1)==0 )              //gleich zu zeile 1300 (i-2) MUSS IN 2d auch verbessert werden
+//              {
+//                val[0] = val[1] = sol_curr[i-2];
+//                val[2] = sol_curr[i-1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+1];
+//                val[5] = sol_curr[i+2];
+//                coord[0] = 2 * x_coord[i-2]-x_coord[i-1];
+//                coord[1] = x_coord[i-2];
+//                coord[2] = x_coord[i-1];
+//                coord[3] = x_coord[i];
+//                coord[4] = x_coord[i+1];
+//                coord[5] = x_coord[i+2];
+//              }
+//              else
+//              {
+//                // point on right boundary
+//                if ( (i+1)%(N_x1)==0 )
+//                {
+//                  val[0] = sol_curr[i-3];
+//                  val[1] = sol_curr[i-2];
+//                  val[2] = sol_curr[i-1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = x_coord[i-3];
+//                  coord[1] = x_coord[i-2];
+//                  coord[2] = x_coord[i-1];
+//                  coord[3] = x_coord[i];
+//                  coord[4] = 2 *  x_coord[i] - x_coord[i-1];
+//                  coord[5] = 2 *  x_coord[i] - x_coord[i-2];
+//                }
+//                else
+//                {
+//                  // point next to right boundary
+//                  if ( (i+2)%(N_x1)==0 )
+//                  {
+//                    val[0] = sol_curr[i-3];
+//                    val[1] = sol_curr[i-2];
+//                    val[2] = sol_curr[i-1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+1];
+//                    coord[0] = x_coord[i-3];
+//                    coord[1] = x_coord[i-2];
+//                    coord[2] = x_coord[i-1];
+//                    coord[3] = x_coord[i];
+//                    coord[4] = x_coord[i+1];
+//                    coord[5] = 2 *  x_coord[i+1] - x_coord[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-3];
+//                    val[1] = sol_curr[i-2];
+//                    val[2] = sol_curr[i-1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+1];
+//                    val[5] = sol_curr[i+2];
+//                    coord[0] = x_coord[i-3];
+//                    coord[1] = x_coord[i-2];
+//                    coord[2] = x_coord[i-1];
+//                    coord[3] = x_coord[i];
+//                    coord[4] = x_coord[i+1];
+//                    coord[5] = x_coord[i+2];
+//                    /*sol_help = sol_curr+i-3;
+//                                val[0] = *sol_help;
+//                                val[1] = *(sol_help+1);
+//                                val[2] = *(sol_help+2);
+//                                val[3] = *(sol_help+3);
+//                                val[4] = *(sol_help+4);
+//                                val[5] = *(sol_help+5);
+//                                sol_help = x_coord+i-3;
+//                                coord[0] = *sol_help;
+//                                coord[1] = *(sol_help+1);
+//                                coord[2] = *(sol_help+2);
+//                    coord[3] = *(sol_help+3);
+//                    coord[4] = *(sol_help+4);
+//                    coord[5] = *(sol_help+5);*/
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
+//          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
+//          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[3] + av[4];
+//          valy = 3*av[2] - 4*av[3] + av[4];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[1] - 2*av[2] + av[3];
+//          valy = av[1] - av[3];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[0] - 2*av[1] +av[2];
+//          valy = av[0] - 4*av[1] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }
+//        else
+//        {
+//          // prepare vectors for divided differences
+//          // point on left boundary
+//          if ( i%(N_x1)==0 )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+1];
+//            val[4] = sol_curr[i+2];
+//            val[5] = sol_curr[i+3];
+//            coord[0] = 2 * x_coord[i]-x_coord[i+2];
+//            coord[1] = 2 * x_coord[i]-x_coord[i+1];
+//            coord[2] = x_coord[i];
+//            coord[3] = x_coord[i+1];
+//            coord[4] = x_coord[i+2];
+//            coord[5] = x_coord[i+3];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (i-1)%(N_x1)==0 )
+//            {
+//              val[0] = val[1] = sol_curr[i-1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+1];
+//              val[4] = sol_curr[i+2];
+//              val[5] = sol_curr[i+3];
+//              coord[0] = 2 * x_coord[i-1]-x_coord[i];
+//              coord[1] = x_coord[i-1];
+//              coord[2] = x_coord[i];
+//              coord[3] = x_coord[i+1];
+//              coord[4] = x_coord[i+2];
+//              coord[5] = x_coord[i+3];
+//            }
+//            else
+//            {
+//              // point on right boundary
+//              if ( (i+1)%(N_x1)==0 )
+//              {
+//                val[0] = sol_curr[i-2];
+//                val[1] = sol_curr[i-1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = x_coord[i-2];
+//                coord[1] = x_coord[i-1];
+//                coord[2] = x_coord[i];
+//                coord[3] = 2 *  x_coord[i] - x_coord[i-1];
+//                coord[4] = 2 *  x_coord[i] - x_coord[i-2];
+//                coord[5] = 2 *  x_coord[i] - x_coord[i-3];
+//              }
+//              else
+//              {
+//                // point next to right boundary
+//                if ( (i+2)%(N_x1)==0 )
+//                {
+//                  val[0] = sol_curr[i-2];
+//                  val[1] = sol_curr[i-1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+1];
+//                  coord[0] = x_coord[i-2];
+//                  coord[1] = x_coord[i-1];
+//                  coord[2] = x_coord[i];
+//                  coord[3] = x_coord[i+1];
+//                  coord[4] = 2 *  x_coord[i+1] - x_coord[i];
+//                  coord[5] = 2 *  x_coord[i+1] - x_coord[i-1];
+//                }
+//                else
+//                {
+//                  // point in next layer to right boundary
+//                  if ( (i+3)%(N_x1)==0 )
+//                  {
+//                    val[0] = sol_curr[i-2];
+//                    val[1] = sol_curr[i-1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+1];
+//                    val[4] = val[5] = sol_curr[i+2];
+//                    coord[0] = x_coord[i-2];
+//                    coord[1] = x_coord[i-1];
+//                    coord[2] = x_coord[i];
+//                    coord[3] = x_coord[i+1];
+//                    coord[4] = x_coord[i+2];
+//                    coord[5] = 2 *  x_coord[i+2] - x_coord[i+1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-2];
+//                    val[1] = sol_curr[i-1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+1];
+//                    val[4] = sol_curr[i+2];
+//                    val[5] = sol_curr[i+3];
+//                    coord[0] = x_coord[i-2];
+//                    coord[1] = x_coord[i-1];
+//                    coord[2] = x_coord[i];
+//                    coord[3] = x_coord[i+1];
+//                    coord[4] = x_coord[i+2];
+//                    coord[5] = x_coord[i+3];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
+//          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
+//          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[1] + av[0];
+//          valy = 3*av[2] - 4*av[1] + av[0];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[3] - 2*av[2] + av[1];
+//          valy = av[3] - av[1];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[4] - 2*av[3] +av[2];
+//          valy = av[4] - 4*av[3] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }                                         // end coeff[1] <=0
+//        //OutPut(value << " ");
+//        current_stage_fdm[i] -= coeff[1] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
+//        // compute the term A_y
+//        if (coeff[2]  >= 0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on front boundary
+//          if (( i % ((N_x1)*(N_y1)) ) <=N_x)      //richtig
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+N_x1];
+//            val[5] = sol_curr[i+2 * N_x1];
+//            coord[0] = 2 * y_coord[i]-y_coord[i+3*N_x1];
+//            coord[1] = 2 * y_coord[i]-y_coord[i+2*N_x1];
+//            coord[2] = 2 * y_coord[i]-y_coord[i+N_x1];
+//            coord[3] = y_coord[i];
+//            coord[4] = y_coord[i+N_x1];
+//            coord[5] = y_coord[i+2 * N_x1];
+//            //OutPut("front " << i << " " << y_coord[i] << endl);
+//          }
+//          else
+//          {
+//            //OutPut(" a " << i << " " << N_x1 << " " << N_y1 << " " <<  i % ((N_x1)*(N_y1)) << endl);
+//            // point next to front boundary
+//                                                  //richtig
+//            if ( (i-N_x1) % ((N_x1)*(N_y1))  <=N_x)
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-N_x1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+N_x1];
+//              val[5] = sol_curr[i+2*N_x1];
+//              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i+N_x1];
+//              coord[1] = 2 * y_coord[i-N_x1]-y_coord[i];
+//              coord[2] = y_coord[i-N_x1];
+//              coord[3] = y_coord[i];
+//              coord[4] = y_coord[i+N_x1];
+//              coord[5] = y_coord[i+2*N_x1];
+//              //OutPut("front +1 " << i << " " << y_coord[i] <<endl);
+//            }
+//            else
+//            {
+//              // next layer on front boundary
+//                                                  //GLEICHe Zeile wie Z 1646 (i-2*N_x1)?
+//                                                  //richtig
+//              if (  (i-2*N_x1) % ((N_x1)*(N_y1))  <=N_x )
+//              {
+//                val[0] = val[1] = sol_curr[i-2*N_x1];
+//                val[2] = sol_curr[i-N_x1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+N_x1];
+//                val[5] = sol_curr[i+2*N_x1];
+//                coord[0] = 2 * y_coord[i-2*N_x1]-y_coord[i-N_x1];
+//                coord[1] = y_coord[i-2*N_x1];
+//                coord[2] = y_coord[i-N_x1];
+//                coord[3] = y_coord[i];
+//                coord[4] = y_coord[i+N_x1];
+//                coord[5] = y_coord[i+2*N_x1];
+//                //OutPut("front +2  " << i << " " << y_coord[i] <<endl);
+//              }
+//              else
+//              {
+//                // point on back boundary
+//                                                  //richtig
+//                if ( (i+N_x1) % ((N_x1)*(N_y1))  <=N_x)
+//                {
+//                  val[0] = sol_curr[i-3*N_x1];
+//                  val[1] = sol_curr[i-2*N_x1];
+//                  val[2] = sol_curr[i-N_x1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = y_coord[i-3*N_x1];
+//                  coord[1] = y_coord[i-2*N_x1];
+//                  coord[2] = y_coord[i-N_x1];
+//                  coord[3] = y_coord[i];
+//                  coord[4] = 2 *  y_coord[i] - y_coord[i-N_x1];
+//                  coord[5] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
+//                  //OutPut("back  " << i << " " << y_coord[i] <<endl);
+//                }
+//                else
+//                {
+//                  // point next to back boundary
+//                                                  //richtig
+//                  if (( (i+2*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//                  {
+//                    val[0] = sol_curr[i-3*N_x1];
+//                    val[1] = sol_curr[i-2*N_x1];
+//                    val[2] = sol_curr[i-N_x1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+N_x1];
+//                    coord[0] = y_coord[i-3*N_x1];
+//                    coord[1] = y_coord[i-2*N_x1];
+//                    coord[2] = y_coord[i-N_x1];
+//                    coord[3] = y_coord[i];
+//                    coord[4] = y_coord[i+N_x1];
+//                    coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i];
+//                    //OutPut("back -1  " << i <<  " " << y_coord[i] << endl);
+//                  }
+//                  // inner point              richtig
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-3*N_x1];
+//                    val[1] = sol_curr[i-2*N_x1];
+//                    val[2] = sol_curr[i-N_x1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+N_x1];
+//                    val[5] = sol_curr[i+2*N_x1];
+//                    coord[0] = y_coord[i-3*N_x1];
+//                    coord[1] = y_coord[i-2*N_x1];
+//                    coord[2] = y_coord[i-N_x1];
+//                    coord[3] = y_coord[i];
+//                    coord[4] = y_coord[i+N_x1];
+//                    coord[5] = y_coord[i+2*N_x1];
+//                    //OutPut("inner  " << i << " " << y_coord[i] << endl);
+//                  }                               // inner point
+//                }                                 // point next to back boundary
+//              }                                   // point on back boundary
+//            }                                     // next layer on front boundary
+//          }                                       // point next on front boundary
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
+//          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
+//          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[3] + av[4];
+//          valy = 3*av[2] - 4*av[3] + av[4];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[1] - 2*av[2] + av[3];
+//          valy = av[1] - av[3];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[0] - 2*av[1] +av[2];
+//          valy = av[0] - 4*av[1] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }
+//        else
+//        {
+//          // prepare vectors for divided differences
+//          // point on front boundary
+//          if (( i % ((N_x1)*(N_y1)) ) <= N_x )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+N_x1];
+//            val[4] = sol_curr[i+2*N_x1];
+//            val[5] = sol_curr[i+3*N_x1];
+//            coord[0] = 2 * y_coord[i]-y_coord[i+2*N_x1];
+//            coord[1] = 2 * y_coord[i]-y_coord[i+N_x1];
+//            coord[2] = y_coord[i];
+//            coord[3] = y_coord[i+N_x1];
+//            coord[4] = y_coord[i+2*N_x1];
+//            coord[5] = y_coord[i+3*N_x1];
+//          }
+//          else
+//          {
+//            // point next to front boundary
+//            if (((i-N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//            {
+//              val[0] = val[1] = sol_curr[i-N_x1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+N_x1];
+//              val[4] = sol_curr[i+2*N_x1];
+//              val[5] = sol_curr[i+3*N_x1];
+//              coord[0] = 2 * y_coord[i-N_x1]-y_coord[i];
+//              coord[1] = y_coord[i-N_x1];
+//              coord[2] = y_coord[i];
+//              coord[3] = y_coord[i+N_x1];
+//              coord[4] = y_coord[i+2*N_x1];
+//              coord[5] = y_coord[i+3*N_x1];
+//            }
+//            else
+//            {
+//              // point on back boundary
+//              if (((i+N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//              {
+//                val[0] = sol_curr[i-2*N_x1];
+//                val[1] = sol_curr[i-N_x1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = y_coord[i-2*N_x1];
+//                coord[1] = y_coord[i-N_x1];
+//                coord[2] = y_coord[i];
+//                coord[3] = 2 *  y_coord[i] - y_coord[i-N_x1];
+//                coord[4] = 2 *  y_coord[i] - y_coord[i-2*N_x1];
+//                coord[5] = 2 *  y_coord[i] - y_coord[i-3*N_x1];
+//              }
+//              else
+//              {
+//                // point next to back boundary
+//                if (((i+2*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//                {
+//                  val[0] = sol_curr[i-2*N_x1];
+//                  val[1] = sol_curr[i-N_x1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+N_x1];
+//                  coord[0] = y_coord[i-2*N_x1];
+//                  coord[1] = y_coord[i-N_x1];
+//                  coord[2] = y_coord[i];
+//                  coord[3] = y_coord[i+N_x1];
+//                  coord[4] = 2 *  y_coord[i+N_x1] - y_coord[i];
+//                  coord[5] = 2 *  y_coord[i+N_x1] - y_coord[i-N_x1];
+//                }
+//                else
+//                {
+//                  // point in next layer to back boundary
+//                  if (((i+3*N_x1) % ((N_x1)*(N_y1)) ) <=N_x)
+//                  {
+//                    val[0] = sol_curr[i-2*N_x1];
+//                    val[1] = sol_curr[i-N_x1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+N_x1];
+//                    val[4] = val[5] = sol_curr[i+2*N_x1];
+//                    coord[0] = y_coord[i-2*N_x1];
+//                    coord[1] = y_coord[i-N_x1];
+//                    coord[2] = y_coord[i];
+//                    coord[3] = y_coord[i+N_x1];
+//                    coord[4] = y_coord[i+2*N_x1];
+//                    coord[5] = 2 *  y_coord[i+2*N_x1] - y_coord[i+N_x1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-2*N_x1];
+//                    val[1] = sol_curr[i-N_x1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+N_x1];
+//                    val[4] = sol_curr[i+2*N_x1];
+//                    val[5] = sol_curr[i+3*N_x1];
+//                    coord[0] = y_coord[i-2*N_x1];
+//                    coord[1] = y_coord[i-N_x1];
+//                    coord[2] = y_coord[i];
+//                    coord[3] = y_coord[i+N_x1];
+//                    coord[4] = y_coord[i+2*N_x1];
+//                    coord[5] = y_coord[i+3*N_x1];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
+//          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
+//          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[1] + av[0];
+//          valy = 3*av[2] - 4*av[1] + av[0];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[3] - 2*av[2] + av[1];
+//          valy = av[3] - av[1];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[4] - 2*av[3] +av[2];
+//          valy = av[4] - 4*av[3] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }                                         // end coeff[2] <=0
+//        //OutPut(value << " " );
+//        current_stage_fdm[i] -= coeff[2] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
+//        //OutPut(i << " " <<  current_stage_fdm[i] << " " << value << endl);
+//        // end  prepare vectors for divided///
+//        // compute approximation of convective term
+//        // compute the term A_z
+//        if (coeff[3]  >= 0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on bottom boundary
+//          if ( i<= (N_x1)*(N_y))
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[i+(N_x1)*(N_y1)];
+//            val[5] = sol_curr[i+2 * (N_x1)*(N_y1)];
+//            coord[0] = 2 * z_coord[i]-z_coord[i+3*(N_x1)*(N_y1)];
+//            coord[1] = 2 * z_coord[i]-z_coord[i+2*(N_x1)*(N_y1)];
+//            coord[2] = 2 * z_coord[i]-z_coord[i+(N_x1)*(N_y1)];
+//            coord[3] = z_coord[i];
+//            coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//            coord[5] = z_coord[i+2 *(N_x1)*(N_y1)];
+//          }
+//          else
+//          {
+//            // point next to bottom boundary
+//            if ( (i>= (N_x1)*(N_y1)&&(i<2*(N_x1)*(N_y1) )))
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[i+(N_x1)*(N_y1)];
+//              val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
+//              coord[0] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i+(N_x1)*(N_y1)];
+//              coord[1] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i];
+//              coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//              coord[3] = z_coord[i];
+//              coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//              coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
+//            }
+//            else
+//            {
+//              // next layer on bottom boundary
+//              if ( (i>=2*(N_x1)*(N_y1)&&(i<3*(N_x1)*(N_y1))))
+//              {
+//                val[0] = val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[i+(N_x1)*(N_y1)];
+//                val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
+//                coord[0] = 2 * z_coord[i-2*(N_x1)*(N_y1)]-z_coord[i-(N_x1)*(N_y1)];
+//                coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
+//                coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//                coord[3] = z_coord[i];
+//                coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//                coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
+//              }
+//              else
+//              {
+//                // point on top boundary
+//                if ( i>=N_z*N_y1*N_x1)
+//                {
+//                  val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
+//                  val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                  val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
+//                  coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
+//                  coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//                  coord[3] = z_coord[i];
+//                  coord[4] = 2 *  z_coord[i] - z_coord[i-(N_x1)*(N_y1)];
+//                  coord[5] = 2 *  z_coord[i] - z_coord[i-2*(N_x1)*(N_y1)];
+//                }
+//                else
+//                {
+//                  // point next to top boundary
+//                  if (( i>= (N_z-1)*N_x1*N_y1)&&(i<N_z*N_x1*N_y1))
+//                  {
+//                    val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
+//                    val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                    val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[i+(N_x1)*(N_y1)];
+//                    coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
+//                    coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
+//                    coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//                    coord[3] = z_coord[i];
+//                    coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//                    coord[5] = 2 *  z_coord[i+N_x1*(N_y1)] - z_coord[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-3*(N_x1)*(N_y1)];
+//                    val[1] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                    val[2] = sol_curr[i-(N_x1)*(N_y1)];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[i+(N_x1)*(N_y1)];
+//                    val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
+//                    coord[0] = z_coord[i-3*(N_x1)*(N_y1)];
+//                    coord[1] = z_coord[i-2*(N_x1)*(N_y1)];
+//                    coord[2] = z_coord[i-(N_x1)*(N_y1)];
+//                    coord[3] = z_coord[i];
+//                    coord[4] = z_coord[i+(N_x1)*(N_y1)];
+//                    coord[5] = z_coord[i+2*(N_x1)*(N_y1)];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
+//          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
+//          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[3] + av[4];
+//          valy = 3*av[2] - 4*av[3] + av[4];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[1] - 2*av[2] + av[3];
+//          valy = av[1] - av[3];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[0] - 2*av[1] +av[2];
+//          valy = av[0] - 4*av[1] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }
+//        else
+//        {
+//          // prepare vectors for divided differences
+//          // point on bottom boundary
+//          if ( i<=(N_y)*(N_x1) )
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[i+(N_x1)*(N_y1)];
+//            val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
+//            val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
+//            coord[0] = 2 * z_coord[i]-z_coord[i+2*(N_x1)*(N_y1)];
+//            coord[1] = 2 * z_coord[i]-z_coord[i+(N_x1)*(N_y1)];
+//            coord[2] = z_coord[i];
+//            coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//            coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
+//            coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
+//          }
+//          else
+//          {
+//            // point next to bottom boundary
+//            if ( (i>=(N_x1)*(N_y1))&&(i<2*(N_x1)*(N_y1)) )
+//            {
+//              val[0] = val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[i+(N_x1)*(N_y1)];
+//              val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
+//              val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
+//              coord[0] = 2 * z_coord[i-(N_x1)*(N_y1)]-z_coord[i];
+//              coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//              coord[2] = z_coord[i];
+//              coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//              coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
+//              coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
+//            }
+//            else
+//            {
+//              // point on top boundary
+//              if ( i>= N_z*N_y1*N_x1)
+//              {
+//                val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
+//                coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//                coord[2] = z_coord[i];
+//                coord[3] = 2 *  z_coord[i] - z_coord[i-(N_x1)*(N_y1)];
+//                coord[4] = 2 *  z_coord[i] - z_coord[i-2*(N_x1)*(N_y1)];
+//                coord[5] = 2 *  z_coord[i] - z_coord[i-3*(N_x1)*(N_y1)];
+//              }
+//              else
+//              {
+//                // point next to top boundary
+//                if (( i>= (N_z-1)*(N_y1)*N_x1)&&(i<(N_z)*(N_y1)*N_x1))
+//                {
+//                  val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                  val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[i+(N_x1)*(N_y1)];
+//                  coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
+//                  coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//                  coord[2] = z_coord[i];
+//                  coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//                  coord[4] = 2 *  z_coord[i+(N_x1)*(N_y1)] - z_coord[i];
+//                  coord[5] = 2 *  z_coord[i+(N_x1)*(N_y1)] - z_coord[i-(N_x1)*(N_y1)];
+//                }
+//                else
+//                {
+//                  // point in next layer to top boundary
+//                  if (( i>= (N_z-2)*(N_y1)*(N_x1)&&(i<(N_z-1)*(N_y1)*N_x1)))
+//                  {
+//                    val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                    val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+(N_x1)*(N_y1)];
+//                    val[4] = val[5] = sol_curr[i+2*(N_x1)*(N_y1)];
+//                    coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
+//                    coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//                    coord[2] = z_coord[i];
+//                    coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//                    coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
+//                    coord[5] = 2 *  z_coord[i+2*(N_x1)*(N_y1)] - z_coord[i+(N_x1)*(N_y1)];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[i-2*(N_x1)*(N_y1)];
+//                    val[1] = sol_curr[i-(N_x1)*(N_y1)];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[i+(N_x1)*(N_y1)];
+//                    val[4] = sol_curr[i+2*(N_x1)*(N_y1)];
+//                    val[5] = sol_curr[i+3*(N_x1)*(N_y1)];
+//                    coord[0] = z_coord[i-2*(N_x1)*(N_y1)];
+//                    coord[1] = z_coord[i-(N_x1)*(N_y1)];
+//                    coord[2] = z_coord[i];
+//                    coord[3] = z_coord[i+(N_x1)*(N_y1)];
+//                    coord[4] = z_coord[i+2*(N_x1)*(N_y1)];
+//                    coord[5] = z_coord[i+3*(N_x1)*(N_y1)];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
+//          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
+//          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[1] + av[0];
+//          valy = 3*av[2] - 4*av[1] + av[0];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[3] - 2*av[2] + av[1];
+//          valy = av[3] - av[1];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[4] - 2*av[3] +av[2];
+//          valy = av[4] - 4*av[3] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }                                         // end coeff[3] <=0
+//        //OutPut(value << endl);
+//        current_stage_fdm[i] -= coeff[3] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
+//        break;
+//    }
+//    // set Dirichlet boundary conditions
+//    // inflow from the left x = x_min (left)
+//    if ( i%(N_x1)==0 )
+//    {
+//      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//
+//    // on the right hand side
+//    if ( (i+1)%(N_x1)==0 )
+//    {
+//      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//
+//    // on front
+//    if ((i%((N_x1)*(N_y1)))<N_x1 )
+//    {
+//      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//
+//    // on back
+//    if (((i+N_x1)%((N_x1)*(N_y1)))<N_x1)
+//    {
+//      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//
+//    // on bottom
+//    if (i< N_x1 * N_y1)
+//    {
+//      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//
+//    // on top
+//    if (i>= ((N_x1)*(N_y1)*(N_z)))
+//    {
+//      bound_cond(x_coord[i], y_coord[i], z_coord[i], cond);
+//      if (cond == DIRICHLET)
+//      {
+//        current_stage_fdm[i] = 0;
+//        continue;
+//      }
+//    }
+//  }
+//  // reset time
+//  TDatabase::TimeDB->CURRENTTIME -= (TDatabase::TimeDB->RK_c[current_stage] - 1)* tau;
+//}
 #endif
 /******************************************************************************/
 // ComputeSolutionInNextTime_FDM2D
@@ -5205,655 +5206,655 @@ void ClearConvectiveTermFDM(int* &offset)
 // output:   current_stage_fdm is updated
 /******************************************************************************/
 
-void ConvectiveTermFDM(int dim, int i,
-double *coeff, double *sol_curr, double *current_stage_fdm,
-double **coordinates, int *offset_, int *offset1_)
-{
-  int j, k, offset, offset1, off1;
-  int offsetp2, offsetm2, offsetp1, offsetm1, offsetp3, offsetm3;
-  double val[6], coord[6], value, valx, valy, valz;
-  double d1, d2, d3, d4, uhx[3], omega[3], alpha[3], d[3], beta[3], av[5], c_e = 1e-6;
-  double *coordinate;
-
-  switch(TDatabase::ParamDB->DISCTYPE)
-  {
-    case GALERKIN:
-      exit(1);
-      break;
-      // simple upwind scheme
-    case UPWIND:
-      // compute the term \partial_k A
-      for (k=0;k<dim;k++)
-      {
-        // the offsets and the coordinates for the k-th coordinate direction
-        offset = offset_[k];
-        offset1 = offset1_[k];
-        coordinate = coordinates[k];
-        // first case
-        if (coeff[k] > 0)
-        {
-          off1 = i-offset;
-          // not on upwind boundary
-          if (!( i%offset1 < offset))
-            current_stage_fdm[i] -= coeff[k]*(sol_curr[i]-sol_curr[off1])/(coordinate[i]-coordinate[off1]);
-        }
-        else
-        {
-          off1 = i+offset;
-          // not on upwind boundary
-          if (!((i+offset )%offset1 < offset ))
-            current_stage_fdm[i] -= coeff[k]*(sol_curr[off1]-sol_curr[i])/(coordinate[off1]-coordinate[i]);
-        }
-      }
-      break;
-    case ENO_3:
-      for (k=0;k<dim;k++)
-      {
-        offset = offset_[k];
-        offset1 = offset1_[k];
-        coordinate = coordinates[k];
-        offsetp1 = i+offset;
-        offsetm1 = i-offset;
-        offsetp2 = i+2*offset;
-        offsetm2 = i-2*offset;
-        offsetp3 = i+3*offset;
-        offsetm3 = i-3*offset;
-        // compute the term \partial_k A
-        if (coeff[k] >  0)
-        {
-          // prepare vectors for divided differences
-          // point on left, front, lower ...  boundary
-          if ( i%offset1 < offset )
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[offsetp1];
-            val[5] = sol_curr[offsetp2];
-            coord[0] = 2 * coordinate[i]-coordinate[offsetp3];
-            coord[1] = 2 * coordinate[i]-coordinate[offsetp2];
-            coord[2] = 2 * coordinate[i]-coordinate[offsetp1];
-            coord[3] = coordinate[i];
-            coord[4] = coordinate[offsetp1];
-            coord[5] = coordinate[offsetp2];
-          }
-          else
-          {
-            // point next to left, front, lower ...  boundary
-            if ( (offsetm1)%offset1 < offset )
-            {
-              val[0] = val[1] = val[2] = sol_curr[offsetm1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[offsetp1];
-              val[5] = sol_curr[offsetp2];
-              coord[0] = 2 * coordinate[offsetm1]-coordinate[offsetp1];
-              coord[1] = 2 * coordinate[offsetm1]-coordinate[i];
-              coord[2] = coordinate[offsetm1];
-              coord[3] = coordinate[i];
-              coord[4] = coordinate[offsetp1];
-              coord[5] = coordinate[offsetp2];
-            }
-            else
-            {
-              // next layer on left, front, lower, ...  boundary
-              if ( (offsetm2)%offset1 < offset )
-              {
-                val[0] = val[1] = sol_curr[offsetm2];
-                val[2] = sol_curr[offsetm1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[offsetp1];
-                val[5] = sol_curr[offsetp2];
-                coord[0] = 2 * coordinate[offsetm2]-coordinate[offsetm1];
-                coord[1] = coordinate[offsetm2];
-                coord[2] = coordinate[offsetm1];
-                coord[3] = coordinate[i];
-                coord[4] = coordinate[offsetp1];
-                coord[5] = coordinate[offsetp2];
-              }
-              else
-              {
-                // point on right, back, upper, ...  boundary
-                if ( (offsetp1)%offset1 < offset )
-                {
-                  val[0] = sol_curr[offsetm3];
-                  val[1] = sol_curr[offsetm2];
-                  val[2] = sol_curr[offsetm1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = coordinate[offsetm3];
-                  coord[1] = coordinate[offsetm2];
-                  coord[2] = coordinate[offsetm1];
-                  coord[3] = coordinate[i];
-                  coord[4] = 2 *  coordinate[i] - coordinate[offsetm1];
-                  coord[5] = 2 *  coordinate[i] - coordinate[offsetm2];
-                }
-                else
-                {
-                  // point next to right, back, upper, ...  boundary
-                  if ( (offsetp2)% offset1 < offset )
-                  {
-                    val[0] = sol_curr[offsetm3];
-                    val[1] = sol_curr[offsetm2];
-                    val[2] = sol_curr[offsetm1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[offsetp1];
-                    coord[0] = coordinate[offsetm3];
-                    coord[1] = coordinate[offsetm2];
-                    coord[2] = coordinate[offsetm1];
-                    coord[3] = coordinate[i];
-                    coord[4] = coordinate[offsetp1];
-                    coord[5] = 2 *  coordinate[offsetp1] - coordinate[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[offsetm3];
-                    val[1] = sol_curr[offsetm2];
-                    val[2] = sol_curr[offsetm1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[offsetp1];
-                    val[5] = sol_curr[offsetp2];
-                    coord[0] = coordinate[offsetm3];
-                    coord[1] = coordinate[offsetm2];
-                    coord[2] = coordinate[offsetm1];
-                    coord[3] = coordinate[i];
-                    coord[4] = coordinate[offsetp1];
-                    coord[5] = coordinate[offsetp2];
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+2,coord+2);
-          d2 = DividedDifferences(2,val+1,coord+1);
-          if (fabs(d1) < fabs(d2))
-          {
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value =  (val[2]-val[1])/(coord[2]-coord[1]);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-            }
-            else
-            {
-              valx = coord[3]-coord[2];
-              value = (val[3]-val[2])/valx;
-              value += d1 * valx;
-              value += d4 * valx*(coord[3]-coord[4]);
-            }
-          }
-          else
-          {
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = (val[1]-val[0])/(coord[1]-coord[0]);
-              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
-              valx = coord[3]-coord[0];
-              valy = coord[3]-coord[1];
-              valz = coord[3]-coord[2];
-              value += d3 * (valy * valz + valx * valz + valx * valy);
-            }
-            else
-            {
-              value = (val[2]-val[1])/(coord[2]-coord[1]);
-              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
-              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
-            }
-          }
-        }
-        else                                      // case coeff[k] <= 0
-        {
-          // prepare vectors for divided differences
-          // point on left, front, lower ... boundary
-          if ( i%offset1 < offset)
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[offsetp1];
-            val[4] = sol_curr[offsetp2];
-            val[5] = sol_curr[offsetp3];
-            coord[0] = 2 * coordinate[i]-coordinate[offsetp2];
-            coord[1] = 2 * coordinate[i]-coordinate[offsetp1];
-            coord[2] = coordinate[i];
-            coord[3] = coordinate[offsetp1];
-            coord[4] = coordinate[offsetp2];
-            coord[5] = coordinate[offsetp3];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (offsetm1)%offset1 < offset )
-            {
-              val[0] = val[1] = sol_curr[offsetm1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[offsetp1];
-              val[4] = sol_curr[offsetp2];
-              val[5] = sol_curr[offsetp3];
-              coord[0] = 2 * coordinate[offsetm1]-coordinate[i];
-              coord[1] = coordinate[offsetm1];
-              coord[2] = coordinate[i];
-              coord[3] = coordinate[offsetp1];
-              coord[4] = coordinate[offsetp2];
-              coord[5] = coordinate[offsetp3];
-            }
-            else
-            {
-              // point on right boundary
-              if ( (offsetp1)%offset1 < offset )
-              {
-                val[0] = sol_curr[offsetm2];
-                val[1] = sol_curr[offsetm1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = coordinate[offsetm2];
-                coord[1] = coordinate[offsetm1];
-                coord[2] = coordinate[i];
-                coord[3] = 2 *  coordinate[i] - coordinate[offsetm1];
-                coord[4] = 2 *  coordinate[i] - coordinate[offsetm2];
-                coord[5] = 2 *  coordinate[i] - coordinate[offsetm3];
-              }
-              else
-              {
-                // point next to right boundary
-                if ( (offsetp2)%offset1 < offset )
-                {
-                  val[0] = sol_curr[offsetm2];
-                  val[1] = sol_curr[offsetm1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[offsetp1];
-                  coord[0] = coordinate[offsetm2];
-                  coord[1] = coordinate[offsetm1];
-                  coord[2] = coordinate[i];
-                  coord[3] = coordinate[offsetp1];
-                  coord[4] = 2 *  coordinate[offsetp1] - coordinate[i];
-                  coord[5] = 2 *  coordinate[offsetp1] - coordinate[offsetm1];
-                }
-                else
-                {
-                  // point in next layer to right boundary
-                  if ( (offsetp3)%offset1 < offset )
-                  {
-                    val[0] = sol_curr[offsetm2];
-                    val[1] = sol_curr[offsetm1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[offsetp1];
-                    val[4] = val[5] = sol_curr[offsetp2];
-                    coord[0] = coordinate[offsetm2];
-                    coord[1] = coordinate[offsetm1];
-                    coord[2] = coordinate[i];
-                    coord[3] = coordinate[offsetp1];
-                    coord[4] = coordinate[offsetp2];
-                    coord[5] = 2 *  coordinate[offsetp2] - coordinate[offsetp1];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[offsetm2];
-                    val[1] = sol_curr[offsetm1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[offsetp1];
-                    val[4] = sol_curr[offsetp2];
-                    val[5] = sol_curr[offsetp3];
-                    coord[0] = coordinate[offsetm2];
-                    coord[1] = coordinate[offsetm1];
-                    coord[2] = coordinate[i];
-                    coord[3] = coordinate[offsetp1];
-                    coord[4] = coordinate[offsetp2];
-                    coord[5] = coordinate[offsetp3];
-                  }
-                }
-              }
-            }
-          }                                       // end  prepare vectors for divided differences
-          // compute approximation of convective term
-          d1 = DividedDifferences(2,val+1,coord+1);
-          d2 = DividedDifferences(2,val+2,coord+2);
-          if (fabs(d1) < fabs(d2))
-          {
-            DividedDifferences_3_2(val,coord,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              value = DividedDifferences(1,val,coord);
-              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
-              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
-            }
-            else
-            {
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * (coord[2]-coord[1]);
-              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
-            }
-          }
-          else
-          {
-            DividedDifferences_3_2(val+1,coord+1,d);
-            d3 = d[0];
-            d4 = d[1];
-            if   (fabs(d3) < fabs(d4))
-            {
-              valx = coord[2]-coord[1];
-              value = DividedDifferences(1,val+1,coord+1);
-              value += d1 * valx;
-              value += d3 * valx*(coord[2]-coord[3]);
-            }
-            else
-            {
-              valx = coord[2]-coord[3];
-              value = DividedDifferences(1,val+2,coord+2);
-              value += d2 * valx;
-              value += d4 * valx*(coord[2]-coord[4]);
-            }
-          }
-        }                                         // end coeff[k] <=0
-        current_stage_fdm[i] -= coeff[k] * value;
-      }                                           // end k
-      break;
-    case WENO_5:
-      d[0] = 0.3;
-      d[1] = 0.6;
-      d[2] = 0.1;
-      for (k=0;k<dim;k++)
-      {
-        offset = offset_[k];
-        offset1 = offset1_[k];
-        coordinate = coordinates[k];
-        offsetp1 = i+offset;
-        offsetm1 = i-offset;
-        offsetp2 = i+2*offset;
-        offsetm2 = i-2*offset;
-        offsetp3 = i+3*offset;
-        offsetm3 = i-3*offset;
-        // compute the term \partial_k A
-        if (coeff[k] >  0)
-        {
-          // prepare vectors for divided differences
-          // point on left, front, lower ...  boundary
-          if ( i%offset1 < offset )
-          {
-            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
-            val[4] = sol_curr[offsetp1];
-            val[5] = sol_curr[offsetp2];
-            coord[0] = 2 * coordinate[i]-coordinate[offsetp3];
-            coord[1] = 2 * coordinate[i]-coordinate[offsetp2];
-            coord[2] = 2 * coordinate[i]-coordinate[offsetp1];
-            coord[3] = coordinate[i];
-            coord[4] = coordinate[offsetp1];
-            coord[5] = coordinate[offsetp2];
-          }
-          else
-          {
-            // point next to left, front, lower ...  boundary
-            if ( (offsetm1)%offset1 < offset )
-            {
-              val[0] = val[1] = val[2] = sol_curr[offsetm1];
-              val[3] = sol_curr[i];
-              val[4] = sol_curr[offsetp1];
-              val[5] = sol_curr[offsetp2];
-              coord[0] = 2 * coordinate[offsetm1]-coordinate[offsetp1];
-              coord[1] = 2 * coordinate[offsetm1]-coordinate[i];
-              coord[2] = coordinate[offsetm1];
-              coord[3] = coordinate[i];
-              coord[4] = coordinate[offsetp1];
-              coord[5] = coordinate[offsetp2];
-            }
-            else
-            {
-              // next layer on left, front, lower, ...  boundary
-              if ( (offsetm2)%offset1 < offset )
-              {
-                val[0] = val[1] = sol_curr[offsetm2];
-                val[2] = sol_curr[offsetm1];
-                val[3] = sol_curr[i];
-                val[4] = sol_curr[offsetp1];
-                val[5] = sol_curr[offsetp2];
-                coord[0] = 2 * coordinate[offsetm2]-coordinate[offsetm1];
-                coord[1] = coordinate[offsetm2];
-                coord[2] = coordinate[offsetm1];
-                coord[3] = coordinate[i];
-                coord[4] = coordinate[offsetp1];
-                coord[5] = coordinate[offsetp2];
-              }
-              else
-              {
-                // point on right, back, upper, ...  boundary
-                if ( (offsetp1)%offset1 < offset )
-                {
-                  val[0] = sol_curr[offsetm3];
-                  val[1] = sol_curr[offsetm2];
-                  val[2] = sol_curr[offsetm1];
-                  val[3] = val[4] = val[5] = sol_curr[i];
-                  coord[0] = coordinate[offsetm3];
-                  coord[1] = coordinate[offsetm2];
-                  coord[2] = coordinate[offsetm1];
-                  coord[3] = coordinate[i];
-                  coord[4] = 2 *  coordinate[i] - coordinate[offsetm1];
-                  coord[5] = 2 *  coordinate[i] - coordinate[offsetm2];
-                }
-                else
-                {
-                  // point next to right, back, upper, ...  boundary
-                  if ( (offsetp2)% offset1 < offset )
-                  {
-                    val[0] = sol_curr[offsetm3];
-                    val[1] = sol_curr[offsetm2];
-                    val[2] = sol_curr[offsetm1];
-                    val[3] = sol_curr[i];
-                    val[4] = val[5] = sol_curr[offsetp1];
-                    coord[0] = coordinate[offsetm3];
-                    coord[1] = coordinate[offsetm2];
-                    coord[2] = coordinate[offsetm1];
-                    coord[3] = coordinate[i];
-                    coord[4] = coordinate[offsetp1];
-                    coord[5] = 2 *  coordinate[offsetp1] - coordinate[i];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[offsetm3];
-                    val[1] = sol_curr[offsetm2];
-                    val[2] = sol_curr[offsetm1];
-                    val[3] = sol_curr[i];
-                    val[4] = sol_curr[offsetp1];
-                    val[5] = sol_curr[offsetp2];
-                    coord[0] = coordinate[offsetm3];
-                    coord[1] = coordinate[offsetm2];
-                    coord[2] = coordinate[offsetm1];
-                    coord[3] = coordinate[i];
-                    coord[4] = coordinate[offsetp1];
-                    coord[5] = coordinate[offsetp2];
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
-          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
-          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[3] + av[4];
-          valy = 3*av[2] - 4*av[3] + av[4];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[1] - 2*av[2] + av[3];
-          valy = av[1] - av[3];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[0] - 2*av[1] +av[2];
-          valy = av[0] - 4*av[1] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }
-        else                                      // case coeff[k] <= 0
-        {
-          // prepare vectors for divided differences
-          // point on left, front, lower ... boundary
-          if ( i%offset1 < offset)
-          {
-            val[0] = val [1] = val[2] = sol_curr[i];
-            val[3] = sol_curr[offsetp1];
-            val[4] = sol_curr[offsetp2];
-            val[5] = sol_curr[offsetp3];
-            coord[0] = 2 * coordinate[i]-coordinate[offsetp2];
-            coord[1] = 2 * coordinate[i]-coordinate[offsetp1];
-            coord[2] = coordinate[i];
-            coord[3] = coordinate[offsetp1];
-            coord[4] = coordinate[offsetp2];
-            coord[5] = coordinate[offsetp3];
-          }
-          else
-          {
-            // point next to left boundary
-            if ( (offsetm1)%offset1 < offset )
-            {
-              val[0] = val[1] = sol_curr[offsetm1];
-              val[2] = sol_curr[i];
-              val[3] = sol_curr[offsetp1];
-              val[4] = sol_curr[offsetp2];
-              val[5] = sol_curr[offsetp3];
-              coord[0] = 2 * coordinate[offsetm1]-coordinate[i];
-              coord[1] = coordinate[offsetm1];
-              coord[2] = coordinate[i];
-              coord[3] = coordinate[offsetp1];
-              coord[4] = coordinate[offsetp2];
-              coord[5] = coordinate[offsetp3];
-            }
-            else
-            {
-              // point on right boundary
-              if ( (offsetp1)%offset1 < offset )
-              {
-                val[0] = sol_curr[offsetm2];
-                val[1] = sol_curr[offsetm1];
-                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
-                coord[0] = coordinate[offsetm2];
-                coord[1] = coordinate[offsetm1];
-                coord[2] = coordinate[i];
-                coord[3] = 2 *  coordinate[i] - coordinate[offsetm1];
-                coord[4] = 2 *  coordinate[i] - coordinate[offsetm2];
-                coord[5] = 2 *  coordinate[i] - coordinate[offsetm3];
-              }
-              else
-              {
-                // point next to right boundary
-                if ( (offsetp2)%offset1 < offset )
-                {
-                  val[0] = sol_curr[offsetm2];
-                  val[1] = sol_curr[offsetm1];
-                  val[2] = sol_curr[i];
-                  val[3] = val[4] = val[5] = sol_curr[offsetp1];
-                  coord[0] = coordinate[offsetm2];
-                  coord[1] = coordinate[offsetm1];
-                  coord[2] = coordinate[i];
-                  coord[3] = coordinate[offsetp1];
-                  coord[4] = 2 *  coordinate[offsetp1] - coordinate[i];
-                  coord[5] = 2 *  coordinate[offsetp1] - coordinate[offsetm1];
-                }
-                else
-                {
-                  // point in next layer to right boundary
-                  if ( (offsetp3)%offset1 < offset )
-                  {
-                    val[0] = sol_curr[offsetm2];
-                    val[1] = sol_curr[offsetm1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[offsetp1];
-                    val[4] = val[5] = sol_curr[offsetp2];
-                    coord[0] = coordinate[offsetm2];
-                    coord[1] = coordinate[offsetm1];
-                    coord[2] = coordinate[i];
-                    coord[3] = coordinate[offsetp1];
-                    coord[4] = coordinate[offsetp2];
-                    coord[5] = 2 *  coordinate[offsetp2] - coordinate[offsetp1];
-                  }
-                  // inner point
-                  else
-                  {
-                    val[0] = sol_curr[offsetm2];
-                    val[1] = sol_curr[offsetm1];
-                    val[2] = sol_curr[i];
-                    val[3] = sol_curr[offsetp1];
-                    val[4] = sol_curr[offsetp2];
-                    val[5] = sol_curr[offsetp3];
-                    coord[0] = coordinate[offsetm2];
-                    coord[1] = coordinate[offsetm1];
-                    coord[2] = coordinate[i];
-                    coord[3] = coordinate[offsetp1];
-                    coord[4] = coordinate[offsetp2];
-                    coord[5] = coordinate[offsetp3];
-                  }
-                }
-              }
-            }
-          }
-          // compute values for WENO scheme
-          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
-          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
-          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
-
-          // compute smooth indicators
-          for (j=0;j<5;j++)
-            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
-          valx = av[2] - 2* av[1] + av[0];
-          valy = 3*av[2] - 4*av[1] + av[0];
-          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[3] - 2*av[2] + av[1];
-          valy = av[3] - av[1];
-          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-          valx = av[4] - 2*av[3] +av[2];
-          valy = av[4] - 4*av[3] +3*av[2];
-          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
-
-          // compute alpha
-          if (TDatabase::ParamDB->WENO_TYPE == 0)
-          {
-            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
-            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
-            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
-          }
-          else
-          {
-            alpha[0] = d[0]/(beta[0] + c_e);
-            alpha[1] = d[1]/(beta[1] + c_e);
-            alpha[2] = d[2]/(beta[2] + c_e);
-          }
-          // compute weights
-          valx = alpha[0] + alpha[1] + alpha[2];
-          omega[0] = alpha[0] / valx;
-          omega[1] = alpha[1] / valx;
-          omega[2] = alpha[2] / valx;
-        }                                         // end coeff[k] <=0
-        current_stage_fdm[i] -= coeff[k] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
-      }                                           // end k
-      break;
-    default:
-      OutPut("Discretization " << TDatabase::ParamDB->DISCTYPE << " not defined for convective term !!!" << endl);
-      exit(1);
-  }
-}
+//void ConvectiveTermFDM(int dim, int i,
+//double *coeff, double *sol_curr, double *current_stage_fdm,
+//double **coordinates, int *offset_, int *offset1_)
+//{
+//  int j, k, offset, offset1, off1;
+//  int offsetp2, offsetm2, offsetp1, offsetm1, offsetp3, offsetm3;
+//  double val[6], coord[6], value, valx, valy, valz;
+//  double d1, d2, d3, d4, uhx[3], omega[3], alpha[3], d[3], beta[3], av[5], c_e = 1e-6;
+//  double *coordinate;
+//
+//  switch(TDatabase::ParamDB->DISCTYPE)
+//  {
+//    case GALERKIN:
+//      exit(1);
+//      break;
+//      // simple upwind scheme
+//    case UPWIND:
+//      // compute the term \partial_k A
+//      for (k=0;k<dim;k++)
+//      {
+//        // the offsets and the coordinates for the k-th coordinate direction
+//        offset = offset_[k];
+//        offset1 = offset1_[k];
+//        coordinate = coordinates[k];
+//        // first case
+//        if (coeff[k] > 0)
+//        {
+//          off1 = i-offset;
+//          // not on upwind boundary
+//          if (!( i%offset1 < offset))
+//            current_stage_fdm[i] -= coeff[k]*(sol_curr[i]-sol_curr[off1])/(coordinate[i]-coordinate[off1]);
+//        }
+//        else
+//        {
+//          off1 = i+offset;
+//          // not on upwind boundary
+//          if (!((i+offset )%offset1 < offset ))
+//            current_stage_fdm[i] -= coeff[k]*(sol_curr[off1]-sol_curr[i])/(coordinate[off1]-coordinate[i]);
+//        }
+//      }
+//      break;
+//    case ENO_3:
+//      for (k=0;k<dim;k++)
+//      {
+//        offset = offset_[k];
+//        offset1 = offset1_[k];
+//        coordinate = coordinates[k];
+//        offsetp1 = i+offset;
+//        offsetm1 = i-offset;
+//        offsetp2 = i+2*offset;
+//        offsetm2 = i-2*offset;
+//        offsetp3 = i+3*offset;
+//        offsetm3 = i-3*offset;
+//        // compute the term \partial_k A
+//        if (coeff[k] >  0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on left, front, lower ...  boundary
+//          if ( i%offset1 < offset )
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[offsetp1];
+//            val[5] = sol_curr[offsetp2];
+//            coord[0] = 2 * coordinate[i]-coordinate[offsetp3];
+//            coord[1] = 2 * coordinate[i]-coordinate[offsetp2];
+//            coord[2] = 2 * coordinate[i]-coordinate[offsetp1];
+//            coord[3] = coordinate[i];
+//            coord[4] = coordinate[offsetp1];
+//            coord[5] = coordinate[offsetp2];
+//          }
+//          else
+//          {
+//            // point next to left, front, lower ...  boundary
+//            if ( (offsetm1)%offset1 < offset )
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[offsetm1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[offsetp1];
+//              val[5] = sol_curr[offsetp2];
+//              coord[0] = 2 * coordinate[offsetm1]-coordinate[offsetp1];
+//              coord[1] = 2 * coordinate[offsetm1]-coordinate[i];
+//              coord[2] = coordinate[offsetm1];
+//              coord[3] = coordinate[i];
+//              coord[4] = coordinate[offsetp1];
+//              coord[5] = coordinate[offsetp2];
+//            }
+//            else
+//            {
+//              // next layer on left, front, lower, ...  boundary
+//              if ( (offsetm2)%offset1 < offset )
+//              {
+//                val[0] = val[1] = sol_curr[offsetm2];
+//                val[2] = sol_curr[offsetm1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[offsetp1];
+//                val[5] = sol_curr[offsetp2];
+//                coord[0] = 2 * coordinate[offsetm2]-coordinate[offsetm1];
+//                coord[1] = coordinate[offsetm2];
+//                coord[2] = coordinate[offsetm1];
+//                coord[3] = coordinate[i];
+//                coord[4] = coordinate[offsetp1];
+//                coord[5] = coordinate[offsetp2];
+//              }
+//              else
+//              {
+//                // point on right, back, upper, ...  boundary
+//                if ( (offsetp1)%offset1 < offset )
+//                {
+//                  val[0] = sol_curr[offsetm3];
+//                  val[1] = sol_curr[offsetm2];
+//                  val[2] = sol_curr[offsetm1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = coordinate[offsetm3];
+//                  coord[1] = coordinate[offsetm2];
+//                  coord[2] = coordinate[offsetm1];
+//                  coord[3] = coordinate[i];
+//                  coord[4] = 2 *  coordinate[i] - coordinate[offsetm1];
+//                  coord[5] = 2 *  coordinate[i] - coordinate[offsetm2];
+//                }
+//                else
+//                {
+//                  // point next to right, back, upper, ...  boundary
+//                  if ( (offsetp2)% offset1 < offset )
+//                  {
+//                    val[0] = sol_curr[offsetm3];
+//                    val[1] = sol_curr[offsetm2];
+//                    val[2] = sol_curr[offsetm1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[offsetp1];
+//                    coord[0] = coordinate[offsetm3];
+//                    coord[1] = coordinate[offsetm2];
+//                    coord[2] = coordinate[offsetm1];
+//                    coord[3] = coordinate[i];
+//                    coord[4] = coordinate[offsetp1];
+//                    coord[5] = 2 *  coordinate[offsetp1] - coordinate[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[offsetm3];
+//                    val[1] = sol_curr[offsetm2];
+//                    val[2] = sol_curr[offsetm1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[offsetp1];
+//                    val[5] = sol_curr[offsetp2];
+//                    coord[0] = coordinate[offsetm3];
+//                    coord[1] = coordinate[offsetm2];
+//                    coord[2] = coordinate[offsetm1];
+//                    coord[3] = coordinate[i];
+//                    coord[4] = coordinate[offsetp1];
+//                    coord[5] = coordinate[offsetp2];
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+2,coord+2);
+//          d2 = DividedDifferences(2,val+1,coord+1);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value =  (val[2]-val[1])/(coord[2]-coord[1]);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d3 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//            }
+//            else
+//            {
+//              valx = coord[3]-coord[2];
+//              value = (val[3]-val[2])/valx;
+//              value += d1 * valx;
+//              value += d4 * valx*(coord[3]-coord[4]);
+//            }
+//          }
+//          else
+//          {
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = (val[1]-val[0])/(coord[1]-coord[0]);
+//              value += DividedDifferences(2,val,coord) * (coord[3]-coord[0] + coord[3]-coord[1]);
+//              valx = coord[3]-coord[0];
+//              valy = coord[3]-coord[1];
+//              valz = coord[3]-coord[2];
+//              value += d3 * (valy * valz + valx * valz + valx * valy);
+//            }
+//            else
+//            {
+//              value = (val[2]-val[1])/(coord[2]-coord[1]);
+//              value += d2 * (coord[3]-coord[1] + coord[3]-coord[2]);
+//              value += d4 * (coord[3]-coord[1])*(coord[3]-coord[2]);
+//            }
+//          }
+//        }
+//        else                                      // case coeff[k] <= 0
+//        {
+//          // prepare vectors for divided differences
+//          // point on left, front, lower ... boundary
+//          if ( i%offset1 < offset)
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[offsetp1];
+//            val[4] = sol_curr[offsetp2];
+//            val[5] = sol_curr[offsetp3];
+//            coord[0] = 2 * coordinate[i]-coordinate[offsetp2];
+//            coord[1] = 2 * coordinate[i]-coordinate[offsetp1];
+//            coord[2] = coordinate[i];
+//            coord[3] = coordinate[offsetp1];
+//            coord[4] = coordinate[offsetp2];
+//            coord[5] = coordinate[offsetp3];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (offsetm1)%offset1 < offset )
+//            {
+//              val[0] = val[1] = sol_curr[offsetm1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[offsetp1];
+//              val[4] = sol_curr[offsetp2];
+//              val[5] = sol_curr[offsetp3];
+//              coord[0] = 2 * coordinate[offsetm1]-coordinate[i];
+//              coord[1] = coordinate[offsetm1];
+//              coord[2] = coordinate[i];
+//              coord[3] = coordinate[offsetp1];
+//              coord[4] = coordinate[offsetp2];
+//              coord[5] = coordinate[offsetp3];
+//            }
+//            else
+//            {
+//              // point on right boundary
+//              if ( (offsetp1)%offset1 < offset )
+//              {
+//                val[0] = sol_curr[offsetm2];
+//                val[1] = sol_curr[offsetm1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = coordinate[offsetm2];
+//                coord[1] = coordinate[offsetm1];
+//                coord[2] = coordinate[i];
+//                coord[3] = 2 *  coordinate[i] - coordinate[offsetm1];
+//                coord[4] = 2 *  coordinate[i] - coordinate[offsetm2];
+//                coord[5] = 2 *  coordinate[i] - coordinate[offsetm3];
+//              }
+//              else
+//              {
+//                // point next to right boundary
+//                if ( (offsetp2)%offset1 < offset )
+//                {
+//                  val[0] = sol_curr[offsetm2];
+//                  val[1] = sol_curr[offsetm1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[offsetp1];
+//                  coord[0] = coordinate[offsetm2];
+//                  coord[1] = coordinate[offsetm1];
+//                  coord[2] = coordinate[i];
+//                  coord[3] = coordinate[offsetp1];
+//                  coord[4] = 2 *  coordinate[offsetp1] - coordinate[i];
+//                  coord[5] = 2 *  coordinate[offsetp1] - coordinate[offsetm1];
+//                }
+//                else
+//                {
+//                  // point in next layer to right boundary
+//                  if ( (offsetp3)%offset1 < offset )
+//                  {
+//                    val[0] = sol_curr[offsetm2];
+//                    val[1] = sol_curr[offsetm1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[offsetp1];
+//                    val[4] = val[5] = sol_curr[offsetp2];
+//                    coord[0] = coordinate[offsetm2];
+//                    coord[1] = coordinate[offsetm1];
+//                    coord[2] = coordinate[i];
+//                    coord[3] = coordinate[offsetp1];
+//                    coord[4] = coordinate[offsetp2];
+//                    coord[5] = 2 *  coordinate[offsetp2] - coordinate[offsetp1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[offsetm2];
+//                    val[1] = sol_curr[offsetm1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[offsetp1];
+//                    val[4] = sol_curr[offsetp2];
+//                    val[5] = sol_curr[offsetp3];
+//                    coord[0] = coordinate[offsetm2];
+//                    coord[1] = coordinate[offsetm1];
+//                    coord[2] = coordinate[i];
+//                    coord[3] = coordinate[offsetp1];
+//                    coord[4] = coordinate[offsetp2];
+//                    coord[5] = coordinate[offsetp3];
+//                  }
+//                }
+//              }
+//            }
+//          }                                       // end  prepare vectors for divided differences
+//          // compute approximation of convective term
+//          d1 = DividedDifferences(2,val+1,coord+1);
+//          d2 = DividedDifferences(2,val+2,coord+2);
+//          if (fabs(d1) < fabs(d2))
+//          {
+//            DividedDifferences_3_2(val,coord,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              value = DividedDifferences(1,val,coord);
+//              value += DividedDifferences(2,val,coord) * (coord[2]-coord[0] + coord[2]-coord[1]);
+//              value += d3 * (coord[2]-coord[0])*(coord[2]-coord[1]);
+//            }
+//            else
+//            {
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * (coord[2]-coord[1]);
+//              value += d4 * (coord[2]-coord[1])*(coord[2]-coord[3]);
+//            }
+//          }
+//          else
+//          {
+//            DividedDifferences_3_2(val+1,coord+1,d);
+//            d3 = d[0];
+//            d4 = d[1];
+//            if   (fabs(d3) < fabs(d4))
+//            {
+//              valx = coord[2]-coord[1];
+//              value = DividedDifferences(1,val+1,coord+1);
+//              value += d1 * valx;
+//              value += d3 * valx*(coord[2]-coord[3]);
+//            }
+//            else
+//            {
+//              valx = coord[2]-coord[3];
+//              value = DividedDifferences(1,val+2,coord+2);
+//              value += d2 * valx;
+//              value += d4 * valx*(coord[2]-coord[4]);
+//            }
+//          }
+//        }                                         // end coeff[k] <=0
+//        current_stage_fdm[i] -= coeff[k] * value;
+//      }                                           // end k
+//      break;
+//    case WENO_5:
+//      d[0] = 0.3;
+//      d[1] = 0.6;
+//      d[2] = 0.1;
+//      for (k=0;k<dim;k++)
+//      {
+//        offset = offset_[k];
+//        offset1 = offset1_[k];
+//        coordinate = coordinates[k];
+//        offsetp1 = i+offset;
+//        offsetm1 = i-offset;
+//        offsetp2 = i+2*offset;
+//        offsetm2 = i-2*offset;
+//        offsetp3 = i+3*offset;
+//        offsetm3 = i-3*offset;
+//        // compute the term \partial_k A
+//        if (coeff[k] >  0)
+//        {
+//          // prepare vectors for divided differences
+//          // point on left, front, lower ...  boundary
+//          if ( i%offset1 < offset )
+//          {
+//            val[0] = val [1] = val[2] = val[3] = sol_curr[i];
+//            val[4] = sol_curr[offsetp1];
+//            val[5] = sol_curr[offsetp2];
+//            coord[0] = 2 * coordinate[i]-coordinate[offsetp3];
+//            coord[1] = 2 * coordinate[i]-coordinate[offsetp2];
+//            coord[2] = 2 * coordinate[i]-coordinate[offsetp1];
+//            coord[3] = coordinate[i];
+//            coord[4] = coordinate[offsetp1];
+//            coord[5] = coordinate[offsetp2];
+//          }
+//          else
+//          {
+//            // point next to left, front, lower ...  boundary
+//            if ( (offsetm1)%offset1 < offset )
+//            {
+//              val[0] = val[1] = val[2] = sol_curr[offsetm1];
+//              val[3] = sol_curr[i];
+//              val[4] = sol_curr[offsetp1];
+//              val[5] = sol_curr[offsetp2];
+//              coord[0] = 2 * coordinate[offsetm1]-coordinate[offsetp1];
+//              coord[1] = 2 * coordinate[offsetm1]-coordinate[i];
+//              coord[2] = coordinate[offsetm1];
+//              coord[3] = coordinate[i];
+//              coord[4] = coordinate[offsetp1];
+//              coord[5] = coordinate[offsetp2];
+//            }
+//            else
+//            {
+//              // next layer on left, front, lower, ...  boundary
+//              if ( (offsetm2)%offset1 < offset )
+//              {
+//                val[0] = val[1] = sol_curr[offsetm2];
+//                val[2] = sol_curr[offsetm1];
+//                val[3] = sol_curr[i];
+//                val[4] = sol_curr[offsetp1];
+//                val[5] = sol_curr[offsetp2];
+//                coord[0] = 2 * coordinate[offsetm2]-coordinate[offsetm1];
+//                coord[1] = coordinate[offsetm2];
+//                coord[2] = coordinate[offsetm1];
+//                coord[3] = coordinate[i];
+//                coord[4] = coordinate[offsetp1];
+//                coord[5] = coordinate[offsetp2];
+//              }
+//              else
+//              {
+//                // point on right, back, upper, ...  boundary
+//                if ( (offsetp1)%offset1 < offset )
+//                {
+//                  val[0] = sol_curr[offsetm3];
+//                  val[1] = sol_curr[offsetm2];
+//                  val[2] = sol_curr[offsetm1];
+//                  val[3] = val[4] = val[5] = sol_curr[i];
+//                  coord[0] = coordinate[offsetm3];
+//                  coord[1] = coordinate[offsetm2];
+//                  coord[2] = coordinate[offsetm1];
+//                  coord[3] = coordinate[i];
+//                  coord[4] = 2 *  coordinate[i] - coordinate[offsetm1];
+//                  coord[5] = 2 *  coordinate[i] - coordinate[offsetm2];
+//                }
+//                else
+//                {
+//                  // point next to right, back, upper, ...  boundary
+//                  if ( (offsetp2)% offset1 < offset )
+//                  {
+//                    val[0] = sol_curr[offsetm3];
+//                    val[1] = sol_curr[offsetm2];
+//                    val[2] = sol_curr[offsetm1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = val[5] = sol_curr[offsetp1];
+//                    coord[0] = coordinate[offsetm3];
+//                    coord[1] = coordinate[offsetm2];
+//                    coord[2] = coordinate[offsetm1];
+//                    coord[3] = coordinate[i];
+//                    coord[4] = coordinate[offsetp1];
+//                    coord[5] = 2 *  coordinate[offsetp1] - coordinate[i];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[offsetm3];
+//                    val[1] = sol_curr[offsetm2];
+//                    val[2] = sol_curr[offsetm1];
+//                    val[3] = sol_curr[i];
+//                    val[4] = sol_curr[offsetp1];
+//                    val[5] = sol_curr[offsetp2];
+//                    coord[0] = coordinate[offsetm3];
+//                    coord[1] = coordinate[offsetm2];
+//                    coord[2] = coordinate[offsetm1];
+//                    coord[3] = coordinate[i];
+//                    coord[4] = coordinate[offsetp1];
+//                    coord[5] = coordinate[offsetp2];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/3.0-val[3]/2.0 + val[4] - val[5]/6.0)/(coord[3]-coord[2]);
+//          uhx[1] = (val[1]/6.0-val[2]+val[3]/2.0 + val[4]/3.0)/(coord[2]-coord[1]);
+//          uhx[2] = (-val[0]/3.0+1.5*val[1]-3*val[2] + 11.0*val[3]/6.0)/(coord[1]-coord[0]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[3] + av[4];
+//          valy = 3*av[2] - 4*av[3] + av[4];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[1] - 2*av[2] + av[3];
+//          valy = av[1] - av[3];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[0] - 2*av[1] +av[2];
+//          valy = av[0] - 4*av[1] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }
+//        else                                      // case coeff[k] <= 0
+//        {
+//          // prepare vectors for divided differences
+//          // point on left, front, lower ... boundary
+//          if ( i%offset1 < offset)
+//          {
+//            val[0] = val [1] = val[2] = sol_curr[i];
+//            val[3] = sol_curr[offsetp1];
+//            val[4] = sol_curr[offsetp2];
+//            val[5] = sol_curr[offsetp3];
+//            coord[0] = 2 * coordinate[i]-coordinate[offsetp2];
+//            coord[1] = 2 * coordinate[i]-coordinate[offsetp1];
+//            coord[2] = coordinate[i];
+//            coord[3] = coordinate[offsetp1];
+//            coord[4] = coordinate[offsetp2];
+//            coord[5] = coordinate[offsetp3];
+//          }
+//          else
+//          {
+//            // point next to left boundary
+//            if ( (offsetm1)%offset1 < offset )
+//            {
+//              val[0] = val[1] = sol_curr[offsetm1];
+//              val[2] = sol_curr[i];
+//              val[3] = sol_curr[offsetp1];
+//              val[4] = sol_curr[offsetp2];
+//              val[5] = sol_curr[offsetp3];
+//              coord[0] = 2 * coordinate[offsetm1]-coordinate[i];
+//              coord[1] = coordinate[offsetm1];
+//              coord[2] = coordinate[i];
+//              coord[3] = coordinate[offsetp1];
+//              coord[4] = coordinate[offsetp2];
+//              coord[5] = coordinate[offsetp3];
+//            }
+//            else
+//            {
+//              // point on right boundary
+//              if ( (offsetp1)%offset1 < offset )
+//              {
+//                val[0] = sol_curr[offsetm2];
+//                val[1] = sol_curr[offsetm1];
+//                val[2] = val[3] = val[4] = val[5] = sol_curr[i];
+//                coord[0] = coordinate[offsetm2];
+//                coord[1] = coordinate[offsetm1];
+//                coord[2] = coordinate[i];
+//                coord[3] = 2 *  coordinate[i] - coordinate[offsetm1];
+//                coord[4] = 2 *  coordinate[i] - coordinate[offsetm2];
+//                coord[5] = 2 *  coordinate[i] - coordinate[offsetm3];
+//              }
+//              else
+//              {
+//                // point next to right boundary
+//                if ( (offsetp2)%offset1 < offset )
+//                {
+//                  val[0] = sol_curr[offsetm2];
+//                  val[1] = sol_curr[offsetm1];
+//                  val[2] = sol_curr[i];
+//                  val[3] = val[4] = val[5] = sol_curr[offsetp1];
+//                  coord[0] = coordinate[offsetm2];
+//                  coord[1] = coordinate[offsetm1];
+//                  coord[2] = coordinate[i];
+//                  coord[3] = coordinate[offsetp1];
+//                  coord[4] = 2 *  coordinate[offsetp1] - coordinate[i];
+//                  coord[5] = 2 *  coordinate[offsetp1] - coordinate[offsetm1];
+//                }
+//                else
+//                {
+//                  // point in next layer to right boundary
+//                  if ( (offsetp3)%offset1 < offset )
+//                  {
+//                    val[0] = sol_curr[offsetm2];
+//                    val[1] = sol_curr[offsetm1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[offsetp1];
+//                    val[4] = val[5] = sol_curr[offsetp2];
+//                    coord[0] = coordinate[offsetm2];
+//                    coord[1] = coordinate[offsetm1];
+//                    coord[2] = coordinate[i];
+//                    coord[3] = coordinate[offsetp1];
+//                    coord[4] = coordinate[offsetp2];
+//                    coord[5] = 2 *  coordinate[offsetp2] - coordinate[offsetp1];
+//                  }
+//                  // inner point
+//                  else
+//                  {
+//                    val[0] = sol_curr[offsetm2];
+//                    val[1] = sol_curr[offsetm1];
+//                    val[2] = sol_curr[i];
+//                    val[3] = sol_curr[offsetp1];
+//                    val[4] = sol_curr[offsetp2];
+//                    val[5] = sol_curr[offsetp3];
+//                    coord[0] = coordinate[offsetm2];
+//                    coord[1] = coordinate[offsetm1];
+//                    coord[2] = coordinate[i];
+//                    coord[3] = coordinate[offsetp1];
+//                    coord[4] = coordinate[offsetp2];
+//                    coord[5] = coordinate[offsetp3];
+//                  }
+//                }
+//              }
+//            }
+//          }
+//          // compute values for WENO scheme
+//          uhx[0] = (-val[2]/2.0+val[1] - val[0]/6.0 - val[3]/3.0)/(-coord[2]+coord[1]);
+//          uhx[1] = (-val[3] +val[2]/2.0+val[1]/3.0 + val[4]/6.0)/(-coord[3]+coord[2]);
+//          uhx[2] = (-val[5]/3.0+1.5*val[4]-3*val[3] + 11.0*val[2]/6.0)/(-coord[4]+coord[3]);
+//
+//          // compute smooth indicators
+//          for (j=0;j<5;j++)
+//            av[j] =  (val[j+1]-val[j])/(coord[j+1]-coord[j]);
+//          valx = av[2] - 2* av[1] + av[0];
+//          valy = 3*av[2] - 4*av[1] + av[0];
+//          beta[0] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[3] - 2*av[2] + av[1];
+//          valy = av[3] - av[1];
+//          beta[1] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//          valx = av[4] - 2*av[3] +av[2];
+//          valy = av[4] - 4*av[3] +3*av[2];
+//          beta[2] = 13.0*valx*valx/12.0 + valy*valy/4.0;
+//
+//          // compute alpha
+//          if (TDatabase::ParamDB->WENO_TYPE == 0)
+//          {
+//            alpha[0] = d[0]/((beta[0] + c_e)*(beta[0] + c_e));
+//            alpha[1] = d[1]/((beta[1] + c_e)*(beta[1] + c_e));
+//            alpha[2] = d[2]/((beta[2] + c_e)*(beta[2] + c_e));
+//          }
+//          else
+//          {
+//            alpha[0] = d[0]/(beta[0] + c_e);
+//            alpha[1] = d[1]/(beta[1] + c_e);
+//            alpha[2] = d[2]/(beta[2] + c_e);
+//          }
+//          // compute weights
+//          valx = alpha[0] + alpha[1] + alpha[2];
+//          omega[0] = alpha[0] / valx;
+//          omega[1] = alpha[1] / valx;
+//          omega[2] = alpha[2] / valx;
+//        }                                         // end coeff[k] <=0
+//        current_stage_fdm[i] -= coeff[k] * (omega[0]*uhx[0] + omega[1]*uhx[1] + omega[2]*uhx[2]);
+//      }                                           // end k
+//      break;
+//    default:
+//      OutPut("Discretization " << TDatabase::ParamDB->DISCTYPE << " not defined for convective term !!!" << endl);
+//      exit(1);
+//  }
+//}
 
 
 #ifdef __3D__

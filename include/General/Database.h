@@ -116,7 +116,6 @@ struct TParaDB
   /** parameters for setting the discretization                         */
   //======================================================================
   // general
-  int DISCTYPE;
   int USE_ISOPARAMETRIC;
   int CELL_MEASURE;
   // parameter for non-conforming elements
@@ -891,7 +890,5 @@ class TDatabase
     static void WriteParamDB(char *ExecutedFile);
 
     static void WriteTimeDB();
-
-    static void CheckParameterConsistencyNSE();
 };
 #endif

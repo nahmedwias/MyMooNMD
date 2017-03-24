@@ -536,9 +536,8 @@ void NSE2D::assemble_nonlinear_term()
             "I don't know how to pass its blocks to Assemble2D.");
     }
     
-    // do upwinding TODO remove dependency of global values
     bool on_finest_grid = &systems.front() == &s;
-    bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
+    bool do_upwinding = (db["space_discretization_type"].is("upwind")
                          || (mdml && !on_finest_grid))
                         && !is_stokes;
 

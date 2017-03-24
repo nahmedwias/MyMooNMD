@@ -9,10 +9,6 @@
 
 #include <Collection.h>
 
-/******************************************************************************/
-// SetParametersCD
-// sets parameters of the data base for the main programs
-void SetParametersCD(int &nonlinear_method);
 
 double Mesh_size_in_convection_direction(double hK, double b1, double b2);
 

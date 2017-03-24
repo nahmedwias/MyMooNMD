@@ -64,6 +64,9 @@ class LocalAssembling2D
     /** @brief The type of problem this assembling objects is made for. */
     const LocalAssembling2D_type type;
     
+    /** an integer to identify the space discretization_type **/
+    int discretization_type;
+
     /** name */
     std::string name;
 
@@ -166,7 +169,7 @@ class LocalAssembling2D
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
-                      CoeffFct2D *coeffs);
+                      CoeffFct2D *coeffs, int disctype = 1);
     
     /** @brief constructor for backward compatibility
      * 
@@ -383,6 +386,9 @@ class LocalAssembling2D
     
     LocalAssembling2D_type get_type() const
     { return type; }
+
+    const int get_disctype() const
+    { return discretization_type; }
 
     /**
      * All methods to follow are setter methods which deal with data members

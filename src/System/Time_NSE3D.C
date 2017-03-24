@@ -766,7 +766,7 @@ void Time_NSE3D::assemble_nonlinear_term()
       case 3:
       case 4:
       case 14:
-        if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY)
+        if(db_["space_discretization_type"].is("smagorinsky"))
         {
           nSquareMatrices = 9;
           blocks = s.matrix_.get_blocks_uniquely({{0,0}, {0,1}, {0,2}, 
