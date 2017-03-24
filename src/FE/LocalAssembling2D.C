@@ -18,6 +18,7 @@
 #include <assemble_routine_tnse2D_supg.h>
 #include <assemble_routine_tnse2D_smagorinsky.h>
 #include <assemble_routine_tnse2D_RVMS.h>
+#include <assemble_routine_tnse2D_PBVMS.h>
 
 #include <MooNMD_Io.h>
 #include <string.h>
@@ -2578,7 +2579,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
 void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
 {
   int nstype = TDatabase::ParamDB->NSTYPE;
-  int disc_type = TDatabase::ParamDB->DISCTYPE;
+//  int disc_type = TDatabase::ParamDB->DISCTYPE;
   // few checks
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
@@ -2960,6 +2961,8 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
         break;
       }
       break;
+   default:
+     ErrThrow("Unknown type", type);
   }
 }
 
@@ -3054,6 +3057,8 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG_Extr(LocalAssembling2D_type 
           break;
       }// switch nstype   
       break;// case TNSE2D_Rhs
+   default:
+     ErrThrow("Unknown type", type);
 //--------------------------
   }
 }
@@ -3163,6 +3168,8 @@ void LocalAssembling2D::set_parameters_for_tnseResidual_vms_Extr(LocalAssembling
           break;
       }// switch nstype   
       break; // case TNSE2D_Rhs
+    default:
+      ErrThrow("Unknown type", type);
   }
 }
 
@@ -3239,11 +3246,90 @@ void LocalAssembling2D::set_parameters_for_Smagorinsky(LocalAssembling2D_type ty
       this->AssembleParam =TimeNSRHS; 
       this->Manipulate = NULL;
       break;
+    default:
+      ErrThrow("Unknown type", type);
   }
 }
 
 void LocalAssembling2D::set_parameters_for_tnse_PB_VMS(LocalAssembling2D_type type)
 {
+  int nstype = TDatabase::ParamDB->NSTYPE;
+   if(nstype !=3 && nstype !=4)
+   {
+     ErrThrow(" PB-VMS is only supported for NSTYE 3 and 4");
+   }
+   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+   {
+     ErrThrow(" PB-VMS in only supported for SC_NONLIN_ITE_TYPE_SADDLE ",
+     "fixed point iteration, i.e., SC_NONLIN_ITE_TYPE_SADDLE = 0");
+   }
+
+   // SET PARAMETERS FOR THE PARAMFCT
+   this->N_Parameters = 9;
+   this->N_ParamFct = 1;
+   this->ParameterFct =  { TimeNSParamsVelo_GradVelo_LargeScale2D };
+   this->N_FEValues = 7;
+   this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1, 2};
+   // u1old, u2old, all derivatives of u1, u2, projection space
+   this->FEValue_MultiIndex = { D00, D00,
+                                D10, D10,
+                                D01, D01,
+                                D00};
+   this->BeginParameter = { 0 };
+
+
+   // SET ASSEMBLE PARAM AND CORRESPONDING PARAMETERS
+   switch(type)
+   {
+   case LocalAssembling2D_type::TNSE2D:
+     switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+     {
+     case 0: // fixed point iteration
+       switch(nstype)
+       {
+       case 3:
+         ErrThrow("NSTYPE 3 is not yet supported for VMS_PROJECTION");
+         break;
+       case 4:
+         this->N_Terms = 5;
+         this->Derivatives = {D10, D01, D00, D00, D00};
+         this->Needs2ndDerivatives = new bool[3];
+         this->Needs2ndDerivatives[0] = false;
+         this->Needs2ndDerivatives[1] = false;
+         this->Needs2ndDerivatives[2] = false;
+         this->FESpaceNumber = { 0, 0, 0, 1, 2 }; // 0: velocity, 1: pressure, 2: projection
+         this->N_Matrices = 14;
+         this->RowSpace    = { 0, 0, 0, 0,  // A-block
+                               0, // Mass
+                               2, // L-matrix (vms)
+                               1, 1, 0, 0, // B-block
+                               0, 0, 2, 2 }; // vms matrices
+         this->ColumnSpace = { 0, 0, 0, 0,
+                               0, // Mass
+                               2, // L-matrix (vms)
+                               0, 0, 1, 1, // B-block
+                               2, 2, 0, 0}; // vms matrices
+         this->N_Rhs = 2;
+         this->RhsSpace = { 0, 0};
+         this->Manipulate = NULL;
+         this->AssembleParam=TimeNSType4VMS_ProjectionDD2D;
+         break;
+       }
+       break; // fixed point iteration
+         case 1: // newton iteration
+           ErrThrow("Set parameters for newton iteration");
+           break; // newton iteration
+     }
+     break; // LocalAssembling3D_type::TNSE3D_LinGAL:
+
+
+
+
+     default :
+       ErrThrow("Unknown type", type);
+       break;
+   }
+
 
 }
 
