@@ -11,7 +11,10 @@ void TimeNSType4VMS_ProjectionDD2D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
 
-
+void TimeNSType3_4NLVMS_ProjectionDD2D(double Mult, double *coeff,
+                double *param, double hK,
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs);
 
 
 #endif /* ASSEMBLE_ROUTINE_TNSE2D_PBVMS_H_ */

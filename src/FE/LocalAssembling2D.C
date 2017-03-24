@@ -3320,17 +3320,65 @@ void LocalAssembling2D::set_parameters_for_tnse_PB_VMS(LocalAssembling2D_type ty
            ErrThrow("Set parameters for newton iteration");
            break; // newton iteration
      }
-     break; // LocalAssembling3D_type::TNSE3D_LinGAL:
+     break; // LocalAssembling2D_type::TNSE2D
+   case LocalAssembling2D_type::TNSE2D_NL:
+     switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+     {
+     case 0:// fixed point iteration
+       switch(nstype)
+       {
+       case 3: case 4:
+         this->N_Terms = 4;
+         this->Derivatives = {D10, D01, D00, D00};
+         this->Needs2ndDerivatives = new bool[2];
+         this->Needs2ndDerivatives[0] = false;
+         this->Needs2ndDerivatives[1] = false;
+         this->FESpaceNumber = { 0, 0, 0, 2 }; // 0: velocity, 2: projection
+         this->N_Matrices = 6;
+         this->RowSpace    = { 0, 0, 0, 0, // A - block
+                               0, 0 }; // vms matrices
+         this->ColumnSpace = { 0, 0, 0, 0,
+                               2, 2 }; // vms matrices
+         this->N_Rhs = 0;
+         this->RhsSpace = { };
 
-
-
-
-     default :
-       ErrThrow("Unknown type", type);
-       break;
+         this->Manipulate = NULL;
+         this->AssembleParam=TimeNSType3_4NLVMS_ProjectionDD2D;
+         break;
+       }
+       break;// fixed point iteration
+     case 1: // newton iteration
+       ErrThrow("Set parameters for newton iteration");
+       break; // newton iteration
+     }
+     break; // LocalAssembling2D_type::TNSE2D_NL:
+   case LocalAssembling2D_type::TNSE2D_Rhs:
+     switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+     {
+     case 0: // fixed point iteration
+       this->N_Terms = 1;
+       this->Derivatives = { D00 };
+       this->Needs2ndDerivatives = new bool[2];
+       this->Needs2ndDerivatives[0] = false;
+       this->Needs2ndDerivatives[1] = false;
+       this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+       this->N_Matrices = 0;
+       this->RowSpace = { };
+       this->ColumnSpace = { };
+       this->N_Rhs = 2 ;
+       this->RhsSpace = {0, 0};
+       this->AssembleParam = TimeNSRHS;
+       this->Manipulate = NULL;
+      break;
+     case 1: // newton iteration
+       ErrThrow("Set parameters for newton iteration");
+       break; // newton iteration
+     }
+     break;
+   default :
+     ErrThrow("Unknown type", type);
+     break;
    }
-
-
 }
 
 
