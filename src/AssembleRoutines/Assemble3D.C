@@ -47,7 +47,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
 {
   double hK;
   int N_AllMatrices = n_sqmatrices+n_matrices;
-  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,ij,N_Vertex;
+  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements;//,ij,N_Vertex;
   int N_Cells, N_Points, N_Parameters, N_, N_Hanging;
   int N_Test, N_Ansatz, N_Joints;
   int *N_BaseFunct =nullptr;
@@ -347,24 +347,26 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
     Parameters->GetParameters(N_Points, cell, i, xi, eta, zeta,
                               X, Y, Z, Param); 
 			      
-    if ((TDatabase::ParamDB->DISCTYPE == SDFEM)
-        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
-        || (TDatabase::ParamDB->CELL_MEASURE == 4)
-        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 105)
-        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 108)
-        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 109))
-    {
-      N_Vertex = cell->GetN_Vertices();
-      for (ij=0;ij<N_Vertex;ij++)
-      {
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
-        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
-        TDatabase::ParamDB->INTERNAL_VERTEX_Z[ij] = cell->GetVertex(ij)->GetZ();
-      }
-      if (N_Vertex==4)
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[4] = -4711;
-      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
-    }
+// this commented part calls the deprecated DISCTYPE global parameter
+// which has been removed from code, and it has to be adapted
+//    if ((TDatabase::ParamDB->DISCTYPE == SDFEM)
+//        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
+//        || (TDatabase::ParamDB->CELL_MEASURE == 4)
+//        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 105)
+//        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 108)
+//        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 109))
+//    {
+//      N_Vertex = cell->GetN_Vertices();
+//      for (ij=0;ij<N_Vertex;ij++)
+//      {
+//        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
+//        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
+//        TDatabase::ParamDB->INTERNAL_VERTEX_Z[ij] = cell->GetVertex(ij)->GetZ();
+//      }
+//      if (N_Vertex==4)
+//        TDatabase::ParamDB->INTERNAL_VERTEX_X[4] = -4711;
+//      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
+//    }
 
     // use DiscreteForm to assemble a few matrices and 
     // right-hand sides at once
@@ -1479,8 +1481,9 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
 	    //OutPut("params " << TDatabase::ParamDB->INTERNAL_LEVEL << endl);
 	    la.GetParameters(N_Points, Coll, cell, i,X, Y, Z, Param);
+	    bool is_sdfem = (la.get_disctype() == SDFEM);
 
-	    if ((TDatabase::ParamDB->DISCTYPE == SDFEM)
+	    if ( is_sdfem
 	        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
 	        || (TDatabase::ParamDB->CELL_MEASURE == 4)
 	        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 105)

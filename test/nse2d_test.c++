@@ -197,12 +197,12 @@ int main(int argc, char* argv[])
 
     db["reynolds_number"] = 1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
-    TDatabase::ParamDB->DISCTYPE=1;
+    db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->NSTYPE = 4;
     TDatabase::ParamDB->LAPLACETYPE = 0;
     
     // possibly parameters in the database
-    Database.CheckParameterConsistencyNSE();
+    db.check_parameters_consistency_NSE();
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();
     for(unsigned int i=0; i < n_ref; i++)
@@ -292,11 +292,11 @@ int main(int argc, char* argv[])
     // parameters used for this test
     db["reynolds_number"] = 1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
-    TDatabase::ParamDB->DISCTYPE=1;
+    db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->LAPLACETYPE = 0;
         
     // possibly parameters in the database
-    Database.CheckParameterConsistencyNSE();
+    db.check_parameters_consistency_NSE();
 
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();

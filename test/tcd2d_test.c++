@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     db["example"] = 0;
     db["reynolds_number"] = 1;
 
-    TDatabase::ParamDB->DISCTYPE=1;
+    db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->ANSATZ_ORDER=1;
     
     TDatabase::TimeDB->STARTTIME=0;

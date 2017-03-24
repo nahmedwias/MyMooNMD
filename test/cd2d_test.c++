@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
     TDomain domain(db);
 
     TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
-    TDatabase::ParamDB->DISCTYPE = 1; //Galerkin Desicreitzation
+    db["space_discretization_type"] = "galerkin"; //Galerkin Desicreitzation
     TDatabase::ParamDB->DELTA0 = 0.3;
     TDatabase::ParamDB->DELTA1 = 0.;
     TDatabase::ParamDB->SDFEM_TYPE = 0;

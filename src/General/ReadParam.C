@@ -253,11 +253,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "DISCTYPE:"))
-    {
-      dat >> TDatabase::ParamDB->DISCTYPE;
-      N_Param++;
-    }
     if (!strcmp(line, "INTL_DISCTYPE:"))
     {
       dat >> TDatabase::ParamDB->INTL_DISCTYPE;

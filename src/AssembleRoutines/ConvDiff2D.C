@@ -445,7 +445,7 @@ void LocalMatrixARhs(double Mult, double *coeff, double *param,
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, h; 
+  double c0, c1, c2, c3, c4;// h;
 
   MatrixA = LocMatrices[0];
   Rhs = LocRhs[0];
@@ -462,12 +462,14 @@ void LocalMatrixARhs(double Mult, double *coeff, double *param,
   c3 = coeff[3]; // c
   c4 = coeff[4]; // f
 
-  if ((TDatabase::ParamDB->DISCTYPE==5)||(TDatabase::ParamDB->DISCTYPE==6)
-      ||(TDatabase::ParamDB->DISCTYPE==7))
-  {
-    h = ComputeAlpha(hK);
-    c0+= h;  
-  }
+// this commented part calls the deprecated "DISCTYPE"
+// please adapt your code if needed
+//  if ((TDatabase::ParamDB->DISCTYPE==5)||(TDatabase::ParamDB->DISCTYPE==6)
+//      ||(TDatabase::ParamDB->DISCTYPE==7))
+//  {
+//    h = ComputeAlpha(hK);
+//    c0+= h;
+//  }
   for(i=0;i<N_;i++)
   {
     MatrixRowA = MatrixA[i];

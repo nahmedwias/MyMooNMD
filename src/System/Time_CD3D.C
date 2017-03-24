@@ -281,11 +281,11 @@ void Time_CD3D::checkParameters()
     }
 
     //make sure that galerkin discretization is used
-    if (TDatabase::ParamDB->DISCTYPE != 1)
+    if (!db["space_discretization_type"].is("galerkin"))
     {//some other disctype than galerkin
-      TDatabase::ParamDB->DISCTYPE = 1;
-      Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
-                    "Correction is enabled.");
+      db["space_discretization_type"] = "galerkin";
+      Output::print("Parameter 'space_discretization_type changed to 'galerkin' "
+          "because Algebraic Flux Correction is enabled.");
     }
 
     // when using afc, create system matrices as if all dofs were active
@@ -327,14 +327,13 @@ void Time_CD3D::assemble()
     TFEFunction3D *feFunction = {&s.feFunction_};
     LocalAssembling3D la(stiffMatrixRhs, &feFunction, example_.get_coeffs());    
     // call assembling routine 
-    switch(TDatabase::ParamDB->DISCTYPE)
+    if(db["space_discretization_type"].is("galerkin"))
     {
-      case GALERKIN:
-	call_assembling_routine(s, la, false);
-	break;
-      case SUPG:
-	call_assembling_routine(s, la, true);
-	break;
+      call_assembling_routine(s, la, false);
+    }
+    else if(db["space_discretization_type"].is("supg"))
+    {
+      call_assembling_routine(s, la, true);
     }
   }
   
