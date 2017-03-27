@@ -51,6 +51,11 @@ list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/TNSE
 list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/Upwind.C") 
 list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/FEFunctionInterpolator.C")
 list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Local_routines/TLinElastic2D_routines.C")
+list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Local_routines/assemble_routine_tnse2D_supg.C") 
+list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Local_routines/assemble_routine_tnse2D_smagorinsky.C") 
+list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Local_routines/assemble_routine_tnse2D_PBVMS.C") 
+list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Local_routines/CommonRoutineTNSE2D.C") 
+list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Local_routines/Variational_MultiScale2D.C")
 
 # Source files only used in 3D
 list(APPEND ASSEMBLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/Assemble3D.C") 

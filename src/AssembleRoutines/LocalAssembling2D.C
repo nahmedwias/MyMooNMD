@@ -1,4 +1,4 @@
-#include "../../include/AssembleRoutines/LocalAssembling2D.h"
+#include <LocalAssembling2D.h>
 
 #include <Database.h>
 #include <MainUtilities.h>    // linfb, ave_l2b_quad_points
@@ -14,6 +14,9 @@
 #include <TNSE2D_ParamRout.h>
 #include <Brinkman2D_Mixed.h> // local assembling routines for 2D Navier-Stokes
 #include <TLinElastic2D_routines.h>
+#include <assemble_routine_tnse2D_supg.h>
+#include <assemble_routine_tnse2D_smagorinsky.h>
+#include <assemble_routine_tnse2D_PBVMS.h>
 
 #include <MooNMD_Io.h>
 #include <string.h>
@@ -408,7 +411,23 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
   /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
   case LocalAssembling2D_type::TNSE2D_Mass:
   /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
-    this->set_parameters_for_tnse(type);
+    switch(TDatabase::ParamDB->DISCTYPE)
+    {
+      case GALERKIN:
+        this->set_parameters_for_tnse(type);
+        break;
+      case SUPG:
+        this->set_parameters_for_tnse_SUPG(type);
+        break;
+      case SMAGORINSKY:
+        this->set_parameters_for_tnse_SMAGORINSKY(type);
+        break;
+      case VMS_PROJECTION:
+        this->set_parameters_for_tnse_PB_VMS(type);
+        break;
+      default:
+        ErrThrow("DISCTYPE is not implemented with TNSE2D.");
+    }
     break;
   ////////////////////////////////////////////////////////////////////////////
     // TLinearElasticity2D problems
@@ -2954,6 +2973,365 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   }
   //=========================================================================
   
+}
+
+//==============================================================================
+void LocalAssembling2D::set_parameters_for_tnse_SUPG(LocalAssembling2D_type type)
+{
+  if(TDatabase::ParamDB->NSTYPE < 4 )
+  {
+    ErrThrow("SUPG method is only supported for NSTYPE 4 and 14 ", TDatabase::ParamDB->NSTYPE);
+  }
+  if(TDatabase::ParamDB->NSTYPE == 4)
+  {
+    this->N_Parameters = 3;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParams2};
+    this->N_FEValues = 3;
+    this->BeginParameter = { 0 };
+    this->FEValue_MultiIndex = { D00, D00, D00 };
+    this->FEValue_FctIndex = { 0, 1, 2 };
+  }
+  if(TDatabase::ParamDB->NSTYPE == 14)
+  {
+    this->N_Parameters = 4;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSType14ParamsSUPG};
+    this->N_FEValues = 4;
+    this->BeginParameter = { 0 };
+    this->FEValue_MultiIndex = { D00, D00, D00, D00 };
+    this->FEValue_FctIndex = { 0, 1, 2, 3 };
+  }
+
+  switch(type)
+  {
+    case TNSE2D:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 8; // Derivatives
+                          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices
+          this->N_Matrices = 9;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2; // f1, f2,
+          this->RhsSpace = { 0, 0 };
+          this->AssembleParam = TimeNSType4SUPG;
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          this->N_Terms = 8; // Derivatives
+                          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices
+          this->N_Matrices = 10;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
+          this->N_Rhs = 3; // f1, f2, f3 (pressure part)
+          this->RhsSpace = { 0, 0, 1 };
+          this->AssembleParam = TimeNSType14SUPG;
+          this->Manipulate = NULL;
+         break;
+      }
+      break;
+    case TNSE2D_NL:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 8; // Derivatives
+                          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices
+          this->N_Matrices = 5;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0,  0, 0};
+          this->ColumnSpace = { 0, 0, 0,  1, 1};
+          this->N_Rhs = 2; // only stabilization terms
+          this->RhsSpace = {0, 0 };
+          this->AssembleParam = TimeNSType4NLSUPG;
+          this->Manipulate = NULL;
+         break;
+        case 14:
+          this->N_Terms = 8; // Derivatives
+                          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices
+          this->N_Matrices = 10;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
+          this->N_Rhs = 3; // only stabilization terms
+          this->RhsSpace = {0, 0, 1 };
+          this->AssembleParam = TimeNSType14NLSUPG;
+          this->Manipulate = NULL;
+          break;
+      }
+      break;
+    case TNSE2D_Rhs:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 3;
+          this->Derivatives = { D10, D01, D00};
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = { };
+          this->ColumnSpace = { };
+          this->N_Rhs = 2 ;
+          this->RhsSpace = {0, 0 };
+          this->AssembleParam =TimeNSType4RHSSUPG;
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          this->N_Terms = 5;
+          this->Derivatives = { D10, D01, D00, D10, D01};
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0, 0, 0, 1, 1 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = {};
+          this->ColumnSpace = { };
+          this->N_Rhs = 3 ;
+          this->RhsSpace = {0, 0, 1};
+          this->AssembleParam =TimeNSType14RHSSUPG;
+          this->Manipulate = NULL;
+        break;
+      }
+      break;
+   default:
+     ErrThrow("Unknown type", type);
+  }
+}
+
+//==============================================================================
+void LocalAssembling2D::set_parameters_for_tnse_SMAGORINSKY(LocalAssembling2D_type tyep)
+{
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  if(nstype < 4)
+    ErrThrow("SMAGORINSKY: ", " only tested for NSTYPE 4");
+
+  this->N_Parameters = 8;
+  this->N_ParamFct = 1;
+  this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+  this->BeginParameter = { 0 };
+  this->N_FEValues = 6;
+  this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+  this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+
+  this->N_Terms = 4;
+  this->Derivatives = { D10, D01, D00, D00};
+  this->FESpaceNumber = { 0, 0, 0, 1};
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+
+  switch(type)
+  {
+    case TNSE2D:
+      switch(nstype){
+        case 1: case 2: case 3: break;
+        case 4:
+          this->N_Matrices = 9;
+          this->RowSpace =    { 0, 0, 0, 0, 0, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2;
+          this->RhsSpace = { 0, 0 };
+          this->AssembleParam = TimeNSType4SmagorinskyDD;
+          this->Manipulate = NULL;
+          break;
+      }// nstype
+      break; // break; TNSE2D
+//--------------
+    case TNSE2D_NL:
+      switch(nstype){
+        case 1: case 2: case 3: break;
+        case 4:
+          this->N_Matrices = 4;
+          this->RowSpace =    { 0, 0, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0};
+          this->N_Rhs = 0;
+          this->RhsSpace = { };
+          this->AssembleParam = TimeNSType3_4NLSmagorinskyDD;
+          this->Manipulate = NULL;
+          break;
+      }
+      break; // break TNSE2D_NL
+//--------------
+    case TNSE2D_Rhs:
+      this->N_Terms = 1;
+      this->Derivatives = { D00 };
+      this->Needs2ndDerivatives = new bool[1];
+      this->Needs2ndDerivatives[0] = false;
+      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 0;
+      this->RowSpace = {};
+      this->ColumnSpace = { };
+      this->N_Rhs = 2 ;
+      this->RhsSpace = {0, 0};
+      this->AssembleParam =TimeNSRHS;
+      this->Manipulate = NULL;
+      break;
+    default:
+      ErrThrow("Unknown type", type);
+  }
+}
+
+//==============================================================================
+void LocalAssembling2D::set_parameters_for_tnse_PB_VMS(LocalAssembling2D_type type)
+{
+  int nstype = TDatabase::ParamDB->NSTYPE;
+   if(nstype !=3 && nstype !=4)
+   {
+     ErrThrow(" PB-VMS is only supported for NSTYE 3 and 4");
+   }
+   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+   {
+     ErrThrow(" PB-VMS in only supported for SC_NONLIN_ITE_TYPE_SADDLE ",
+     "fixed point iteration, i.e., SC_NONLIN_ITE_TYPE_SADDLE = 0");
+   }
+
+   // SET PARAMETERS FOR THE PARAMFCT
+   this->N_Parameters = 9;
+   this->N_ParamFct = 1;
+   this->ParameterFct =  { TimeNSParamsVelo_GradVelo_LargeScale2D };
+   this->N_FEValues = 7;
+   this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1, 2};
+   // u1old, u2old, all derivatives of u1, u2, projection space
+   this->FEValue_MultiIndex = { D00, D00,
+                                D10, D10,
+                                D01, D01,
+                                D00};
+   this->BeginParameter = { 0 };
+
+
+   // SET ASSEMBLE PARAM AND CORRESPONDING PARAMETERS
+   switch(type)
+   {
+   case LocalAssembling2D_type::TNSE2D:
+     switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+     {
+     case 0: // fixed point iteration
+       switch(nstype)
+       {
+       case 3:
+         ErrThrow("NSTYPE 3 is not yet supported for VMS_PROJECTION");
+         break;
+       case 4:
+         this->N_Terms = 5;
+         this->Derivatives = {D10, D01, D00, D00, D00};
+         this->Needs2ndDerivatives = new bool[3];
+         this->Needs2ndDerivatives[0] = false;
+         this->Needs2ndDerivatives[1] = false;
+         this->Needs2ndDerivatives[2] = false;
+         this->FESpaceNumber = { 0, 0, 0, 1, 2 }; // 0: velocity, 1: pressure, 2: projection
+         this->N_Matrices = 14;
+         this->RowSpace    = { 0, 0, 0, 0,  // A-block
+                               0, // Mass
+                               2, // L-matrix (vms)
+                               1, 1, 0, 0, // B-block
+                               0, 0, 2, 2 }; // vms matrices
+         this->ColumnSpace = { 0, 0, 0, 0,
+                               0, // Mass
+                               2, // L-matrix (vms)
+                               0, 0, 1, 1, // B-block
+                               2, 2, 0, 0}; // vms matrices
+         this->N_Rhs = 2;
+         this->RhsSpace = { 0, 0};
+         this->Manipulate = NULL;
+         this->AssembleParam=TimeNSType4VMS_ProjectionDD2D;
+         break;
+       }
+       break; // fixed point iteration
+         case 1: // newton iteration
+           ErrThrow("Set parameters for newton iteration");
+           break; // newton iteration
+     }
+     break; // LocalAssembling2D_type::TNSE2D
+   case LocalAssembling2D_type::TNSE2D_NL:
+     switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+     {
+     case 0:// fixed point iteration
+       switch(nstype)
+       {
+       case 3: case 4:
+         this->N_Terms = 4;
+         this->Derivatives = {D10, D01, D00, D00};
+         this->Needs2ndDerivatives = new bool[2];
+         this->Needs2ndDerivatives[0] = false;
+         this->Needs2ndDerivatives[1] = false;
+         this->FESpaceNumber = { 0, 0, 0, 2 }; // 0: velocity, 2: projection
+         this->N_Matrices = 6;
+         this->RowSpace    = { 0, 0, 0, 0, // A - block
+                               0, 0 }; // vms matrices
+         this->ColumnSpace = { 0, 0, 0, 0,
+                               2, 2 }; // vms matrices
+         this->N_Rhs = 0;
+         this->RhsSpace = { };
+
+         this->Manipulate = NULL;
+         this->AssembleParam=TimeNSType3_4NLVMS_ProjectionDD2D;
+         break;
+       }
+       break;// fixed point iteration
+     case 1: // newton iteration
+       ErrThrow("Set parameters for newton iteration");
+       break; // newton iteration
+     }
+     break; // LocalAssembling2D_type::TNSE2D_NL:
+   case LocalAssembling2D_type::TNSE2D_Rhs:
+     switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+     {
+     case 0: // fixed point iteration
+       this->N_Terms = 1;
+       this->Derivatives = { D00 };
+       this->Needs2ndDerivatives = new bool[2];
+       this->Needs2ndDerivatives[0] = false;
+       this->Needs2ndDerivatives[1] = false;
+       this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+       this->N_Matrices = 0;
+       this->RowSpace = { };
+       this->ColumnSpace = { };
+       this->N_Rhs = 2 ;
+       this->RhsSpace = {0, 0};
+       this->AssembleParam = TimeNSRHS;
+       this->Manipulate = NULL;
+      break;
+     case 1: // newton iteration
+       ErrThrow("Set parameters for newton iteration");
+       break; // newton iteration
+     }
+     break;
+   default :
+     ErrThrow("Unknown type", type);
+     break;
+   }
 }
 
 //==============================================================================
