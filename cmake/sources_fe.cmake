@@ -9,9 +9,7 @@
 include_directories("${CMAKE_SOURCE_DIR}/include/FE"
                     "${CMAKE_SOURCE_DIR}/include/FE1D"
                     "${CMAKE_SOURCE_DIR}/include/FE2D"
-                    "${CMAKE_SOURCE_DIR}/include/FE3D"
-		    "${CMAKE_SOURCE_DIR}/user_projects/include/FE"
-		    "${CMAKE_SOURCE_DIR}/user_projects/include/Local_routines")
+                    "${CMAKE_SOURCE_DIR}/include/FE3D")
 
 # Source files used in 2D and 3D.
 #list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/ADICell.C") 
@@ -60,8 +58,6 @@ list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/FEVectFunct2D.C")
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/PostProcessing2D.C") 
 list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/Superconvergence2D.C")
 
-list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/FEFunctionInterpolator.C")
-list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Local_routines/TLinElastic2D_routines.C")
 
 # Source files only used in 3D
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/Aux2D3D.C") 

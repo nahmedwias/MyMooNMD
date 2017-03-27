@@ -6,7 +6,9 @@
 #
 
 # Include header files. 
-include_directories("${CMAKE_SOURCE_DIR}/include/AssembleRoutines")
+include_directories("${CMAKE_SOURCE_DIR}/include/AssembleRoutines"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/FE"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Local_routines")
 
 # Source files used in 2D and 3D.
 list(APPEND ASSEMBLE_SOURCES "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/AlgebraicFluxCorrection.C") 
@@ -47,6 +49,8 @@ list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/TNSE
 list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/TNSE2D_FixPoRot.C") 
 list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/TNSE2D_FixPo_SSMUM.C") 
 list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/Upwind.C") 
+list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/FE/FEFunctionInterpolator.C")
+list(APPEND ASSEMBLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Local_routines/TLinElastic2D_routines.C")
 
 # Source files only used in 3D
 list(APPEND ASSEMBLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/Assemble3D.C") 
