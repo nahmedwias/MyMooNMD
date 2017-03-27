@@ -457,10 +457,10 @@ void TimeNSType4Smagorinsky(double Mult, double *coeff,
 // ======================================================================
 // Type 4, Smagorinsky, D(u):D(v)
 // ======================================================================
-void TimeNSType4SmagorinskyDD(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
+//void TimeNSType4SmagorinskyDD(double Mult, double *coeff,
+//                double *param, double hK,
+//                double **OrigValues, int *N_BaseFuncts,
+//                double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
 // Type 4, Coletti, (grad u, grad v)
@@ -719,10 +719,10 @@ void TimeNSType3_4NLSmagorinsky(double Mult, double *coeff,
 // Type 3, Standard Smagorinsky, D(u):D(v), only nonlinear diagonal blocks
 // Type 4, Standard Smagorinsky, D(u):D(v), only nonlinear diagonal blocks
 // ======================================================================
-void TimeNSType3_4NLSmagorinskyDD(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
+//void TimeNSType3_4NLSmagorinskyDD(double Mult, double *coeff,
+//                double *param, double hK,
+//                double **OrigValues, int *N_BaseFuncts,
+//                double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
 // Type 3, VMSProjection, D(u):D(v), only nonlinear diagonal blocks
@@ -848,10 +848,10 @@ void TimeNSGL00AuxProblemRHSPaper2(double Mult, double *coeff,
 // ======================================================================
 // right-hand side ONLY, Smagorinsky Explicit
 // ======================================================================
-void TimeNSRHSSmagorinskyExplicit(double Mult, double *coeff,
-               double *param, double hK,
-               double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs);
+//void TimeNSRHSSmagorinskyExplicit(double Mult, double *coeff,
+//               double *param, double hK,
+//               double **OrigValues, int *N_BaseFuncts,
+//               double ***LocMatrices, double **LocRhs);
 
 
 // ======================================================================

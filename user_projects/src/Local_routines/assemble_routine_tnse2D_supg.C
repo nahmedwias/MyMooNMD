@@ -1,4 +1,3 @@
-#include <assemble_routine_tnse2D_supg.h>
 #include <CommonRoutineTNSE2D.h>
 #include <Database.h>
 
@@ -169,7 +168,7 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
   double tau_m =  TDatabase::ParamDB->DELTA0*hK*hK;  
   double tau_c = TDatabase::ParamDB->DELTA1;
   
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row;
   for(int i=0; i<N_U; ++i)
   {
     Matrix11Row = MatrixA11[i];
@@ -560,7 +559,6 @@ void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK,
   double *Orig1 = OrigValues[1]; // u_y
   double *Orig2 = OrigValues[2]; // u
   
-  double c0=coeff[0];
   double c1=coeff[1];
   double c2=coeff[2];
 
@@ -600,8 +598,7 @@ void TimeNSType14RHSSUPG(double Mult, double* coeff, double* param, double hK,
   
   double *Orig3 = OrigValues[3]; // p_x
   double *Orig4 = OrigValues[4]; // p_y
-  
-  double c0=coeff[0];
+
   double c1=coeff[1];
   double c2=coeff[2];
 
@@ -613,7 +610,6 @@ void TimeNSType14RHSSUPG(double Mult, double* coeff, double* param, double hK,
   double stab_param[2];  
   stabilization_parameters_equal_order(Mult, param, coeff, stab_param);
   double tau_m = stab_param[0];
-  double tau_c = stab_param[1];
 
   double test10, test01, test00;  
   int N_U = N_BaseFuncts[0];
@@ -815,7 +811,7 @@ void TimeNSType4NLSUPGExtr(double Mult, double* coeff, double* param, double hK,
   double u2_extr=param[3];
   
   double test10, test01, test00, val;
-  double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
+  double ansatz10, ansatz01, ansatz20, ansatz02;//ansatz00,
   double tau_m = TDatabase::ParamDB->DELTA0*hK*hK;
   double tau_c = TDatabase::ParamDB->DELTA1;
   int n_u = N_BaseFuncts[0];
@@ -832,9 +828,9 @@ void TimeNSType4NLSUPGExtr(double Mult, double* coeff, double* param, double hK,
     {
       ansatz10 = uv_xorig[j];
       ansatz01 = uv_yorig[j];
-      ansatz00 = uv_orig[j];
+//      ansatz00 = uv_orig[j];
       ansatz20 = uxx_orig[j];
-      ansatz20 = uyy_orig[j];
+      ansatz02 = uyy_orig[j];
       
       double ugradu = u1*ansatz10 + u2*ansatz01;
       // viscous and convection term
@@ -882,7 +878,7 @@ void TimeNSType4RHSSUPGExtr(double Mult, double* coeff, double* param, double hK
   int N_P = N_BaseFuncts[1];
   
   // problem coefficients
-  double nu = coeff[0];
+//  double nu = coeff[0];
   double f1 = coeff[1];
   double f2 = coeff[2];
 
@@ -890,18 +886,18 @@ void TimeNSType4RHSSUPGExtr(double Mult, double* coeff, double* param, double hK
   // or the extrapolated solution from previous time step
   // in the case of extrapolations also in the nonlinear 
   // term on the left hand side of NS-equation
-  double u1=param[0];
-  double u2=param[1];
+//  double u1=param[0];
+//  double u2=param[1];
   // solution from the previous time step 
   // this can also be constant or linearly extrapolated
   double u1_extr=param[2];
   double u2_extr=param[3];
   
   double test10, test01, test00;  
-  double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
-  double tau_m, tau_c;
+  double ansatz10, ansatz01, ansatz00;// ansatz20, ansatz02;
+  double tau_m;
   tau_m =  hK*hK*TDatabase::ParamDB->DELTA0;
-  tau_c =  TDatabase::ParamDB->DELTA1;
+//  tau_c =  TDatabase::ParamDB->DELTA1;
   
   double val;
   for(int i=0; i<N_U; ++i)
@@ -1166,8 +1162,8 @@ void TimeNSType14NLSUPGExtr(double Mult, double* coeff, double* param, double hK
   int N_P = N_BaseFuncts[1];
   // problem parameters
   double nu=coeff[0];
-  double f1=coeff[1];
-  double f2=coeff[2];
+//  double f1=coeff[1];
+//  double f2=coeff[2];
   
   // solution from previous iterations
   // or the extrapolated solution from previous time step
@@ -1182,8 +1178,8 @@ void TimeNSType14NLSUPGExtr(double Mult, double* coeff, double* param, double hK
     // the difference of the solution fro previous time steps
   // In the case of BE: u^n-1
   // but in the BDF2: 2 u^n-1 - 1./2 u^n-2
-  double u1_pts = param[4];
-  double u2_pts = param[5];
+//  double u1_pts = param[4];
+//  double u2_pts = param[5];
   
   double test10, test01, test00, val;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
@@ -1324,7 +1320,7 @@ void TimeNSType14RHSSUPGExtr(double Mult, double* coeff, double* param, double h
   double stab_param[2];
   stabilization_parameters_equal_order(Mult, u, coeff, stab_param);
   double tau_m =  stab_param[0];
-  double tau_c =  stab_param[1];
+//  double tau_c =  stab_param[1];
   
   double val;
   for(int i=0; i<N_U; ++i)

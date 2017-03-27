@@ -1,4 +1,4 @@
-#include <assemble_routine_tnse2D_smagorinsky.h>
+
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <CommonRoutineTNSE2D.h>
@@ -19,7 +19,7 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2;
-  double u1, u2, mu, delta;
+  double u1, u2, mu;
 
   MatrixA11 = LocMatrices[0];
   MatrixA12 = LocMatrices[1];
@@ -204,7 +204,7 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i, N_U;
-  double c1, c2, delta;
+  double c1, c2;
 
   double mu;
   double D1u1, D2u1, D1u2, D2u2;

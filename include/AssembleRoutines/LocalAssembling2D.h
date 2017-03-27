@@ -167,9 +167,23 @@ class LocalAssembling2D
     /** This function creates local variables for the SUPG method.
      */
     void set_parameters_for_nseSUPG(LocalAssembling2D_type type);
+
     /** 
      */
     void set_parameters_for_tnse(LocalAssembling2D_type type);
+
+    /**
+     */
+    void set_parameters_for_tnse_SUPG(LocalAssembling2D_type type);
+
+    /**
+     */
+    void set_parameters_for_tnse_SMAGORINSKY(LocalAssembling2D_type type);
+
+    /**
+     */
+    void set_parameters_for_tnse_PB_VMS(LocalAssembling2D_type type);
+
     /** This functions sets all local assembling parameters
      * for time-dependent linear elasticity 2D problems.
      * It is called in the local assembling constructor

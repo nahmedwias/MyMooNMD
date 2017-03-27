@@ -4,8 +4,8 @@
 #include <DirectSolver.h>
 #include <GridTransfer.h>
 #include <FEFunctionInterpolator.h>
-#include "../../include/AssembleRoutines/Assemble2D.h"
-#include "../../include/AssembleRoutines/LocalAssembling2D.h"
+#include <Assemble2D.h>
+#include <LocalAssembling2D.h>
 
 /* *************************************************************************** */
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
