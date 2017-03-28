@@ -151,6 +151,32 @@ class Time_NSE2D
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
 
+    /** Below all the members needed for Projection-Based VMS */
+    /** @brief finite element function for vms projection*/
+    // can we rename it to large scales?? also check BlockVector!! currently just vector
+    std::shared_ptr<TFESpace2D> projection_space_;
+    std::vector<double> vms_small_resolved_scales;
+    std::shared_ptr<TFEVectFunct2D> vms_small_resolved_scales_fefct;
+    // piecewise constant space containing the labels of the local projection space
+    std::shared_ptr<TFESpace2D> label_for_local_projection_space_;
+    std::vector<double> label_for_local_projection;
+    std::shared_ptr<TFEFunction2D> label_for_local_projection_fefct;
+    /** matrices for turbulence model
+     *
+     * (  A11  A12  B1T  G11tilde   G12tilde      0       )   ( u1  )
+     * (  A21  A22  B2T     0       G22tilde   G24tilde   )   ( u2  )
+     * (  B1   B2    0      0          0          0       ) . (  p  )
+     * (  G11   0    0      M          0          0       )   ( g11 )
+     * (  G21  G22   0      0         M/2         0       )   ( g12 )
+     * (   0   G42   0      0          0          M       )   ( g22 )
+     *
+     *  It remains 5 matrices due to the following relations:
+     *  G21 = G42/2 ;  G12tilde = G24tilde/2 ;
+     *  G22 = G11/2 ;  G22tilde = G11tilde/2 ; and the fifth matrix is M
+     *
+     * */
+    std::array<std::shared_ptr<FEMatrix>, int(5)> matrices_for_turb_mod;
+
   public:
 
     /** @brief constructor
