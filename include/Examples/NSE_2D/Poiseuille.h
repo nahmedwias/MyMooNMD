@@ -12,15 +12,14 @@
  */
 
 
-// Two hard coded parameters for the problem TODO Control via input.
-int VELOCITY_CODE = 0;
+int VELOCITY_CODE=0; //can be controlled byu input parameter "velocity_code"
 double u_max[4] = {0.102958, 0.1825, 0.241916, 0.26738}; // maximum inflow velocity (m/s)
 double diffusion = 0.001; // diffusion coefficient - unit of your choice
 
 void ExampleFile()
 {
   Output::print<1>("Example: Poiseuille.h (adapted to ASA crystallizer example)");
-  Output::dash("with velocity_code ", VELOCITY_CODE, " and u_max ", u_max);
+  Output::dash("with velocity_code ", VELOCITY_CODE, " and u_max ", u_max[VELOCITY_CODE]);
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 

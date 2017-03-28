@@ -98,7 +98,9 @@ std::valarray<double> center_point(const TBaseCell& cell)
 int fe_order = 0;
 
 BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
-: db_(db), output_writer_(db_), moment_stats_file_(db_["out_part_moments_file"].get<std::string>()),
+: db_(db), output_writer_(db_),
+  moment_stats_file_(db_["out_part_moments_file"].get<std::string>()),
+  outflow_particles_file_(db_["out_part_lists_file"].get<std::string>()),
   from_brush_grid_(coll),
   from_brush_space_(from_brush_grid_, (char*)"psd-moms", (char*)"psd-moms",
                     DirichletBoundaryConditions, fe_order, nullptr)
@@ -170,10 +172,17 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
   interface_->fetch_moment(1, &pd_moments_values_[1].at(0));
   interface_->fetch_moment(2, &pd_moments_values_[2].at(0));
 
+  //open the file streams
+  if(moment_stats_file_.is_open())
+    moment_stats_file_.close();
+  moment_stats_file_.open(db_["out_part_moments_file"].get<std::string>(), std::ofstream::out);
+  if(outflow_particles_file_.is_open())
+    outflow_particles_file_.close();
+  outflow_particles_file_.open(db_["out_part_lists_file"].get<std::string>(), std::ofstream::out);
+
   // Finally write a nice header into the particle stats file,
   // so that it can be filled with data from now on.
-  interface_->write_header(moment_stats_file_);
-
+  interface_->write_headers(moment_stats_file_, outflow_particles_file_);
 }
 
 BrushWrapper::~BrushWrapper()
@@ -181,6 +190,10 @@ BrushWrapper::~BrushWrapper()
   //FIXME THERE IS A BUG (CONNECTED TO THE MOON-GEOMETRY) WHEN
   // CALLING THE FOLLOWING DESTRUCTOR!!!
   //delete interface_;
+
+  moment_stats_file_.close();
+  outflow_particles_file_.close();
+
   for (auto f : pd_moments_)
   {
     delete f;
@@ -292,6 +305,8 @@ void BrushWrapper::output(double t)
 
   //TODO enable doing this for only certain time steps
   interface_->write_particle_stats(t, moment_stats_file_);
+
+  interface_->write_outlet_particle_list(outflow_particles_file_);
 
 }
 
