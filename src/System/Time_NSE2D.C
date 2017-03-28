@@ -567,87 +567,57 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
   
   for(System_per_grid& s : this->systems)
   {
-    const TFESpace2D *velocity_space = &s.velocity_space;
-    size_t n_fe_spaces = 1;
-    const TFESpace2D *fespmat[1]={velocity_space};
-    
-    size_t n_square_matrices;
-    TSquareMatrix2D* sqMatrices[2]{nullptr};
-    
-    size_t n_rect_matrices = 0;
-    TMatrix2D** rectMatrices=nullptr;
-    
-    std::vector<std::shared_ptr<FEMatrix>> blocks 
-         = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
-    
-    switch(TDatabase::ParamDB->NSTYPE)
+
+    // Prepare FeFunctions and construct LocalAssembling
+    std::vector<TFEFunction2D*> fe_functions;
+    prepare_fefunc_for_localassembling(s,fe_functions);
+    LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions.data(),
+                         this->example.get_coeffs());
+
+    // prepare spaces, matrices and rhs for assembling
+    std::vector<const TFESpace2D*> spaces_mat;
+    std::vector<const TFESpace2D*> spaces_rhs;
+    std::vector<TSquareMatrix2D*> sqMatrices;
+    std::vector<TMatrix2D*> rectMatrices;
+    std::vector<double*> rhs_array;
+    prepare_spaces_and_matrices_for_assemble( s, TNSE2D_NL, spaces_mat,
+                                              spaces_rhs, sqMatrices,
+                                              rectMatrices,rhs_array );
+
+    std::vector<const BoundCondFunct2D*> boundary_conditions(2);
+    boundary_conditions[0] = s.velocity_space.GetBoundCondition();
+    boundary_conditions[1] = boundary_conditions[0];
+
+    std::vector<BoundValueFunct2D*> non_const_bound_values(2);
+    non_const_bound_values[0] = example.get_bd()[0];
+    non_const_bound_values[1] = example.get_bd()[1];
+
+    // assemble all the matrices and right hand side
+    Assemble2D(spaces_mat.size(), spaces_mat.data(),
+               sqMatrices.size(), sqMatrices.data(),
+               rectMatrices.size(), rectMatrices.data(),
+               rhs_array.size(), rhs_array.data(),
+               spaces_rhs.data(), boundary_conditions.data(),
+               non_const_bound_values.data(), la_nonlinear);
+
+    // Update the matrices for Projection-based VMS
+    if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
     {
-      case 1:
-      case 2:
-        n_square_matrices = 1;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        break;
-      case 3:
-      case 4:
-      case 14:
-        n_square_matrices = 2;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        break;
-      default:
-        ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-               " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
+      std::vector<std::shared_ptr<FEMatrix>> blocks
+      = s.matrix.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix2D(matrices_for_turb_mod.at(4));
+      // update stiffness matrix
+      VMS_ProjectionUpdateMatrices2D(blocks, matrices_for_turb_mod);
+      // reset flag for projection-based VMS method such that Smagorinsky LES method
+      // is used on coarser grids
+      TDatabase::ParamDB->DISCTYPE = SMAGORINSKY_COARSE;
     }
+  }// end for system per grid - the last system is the finer one (front)
+  // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
+  if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY_COARSE)
+    TDatabase::ParamDB->DISCTYPE = VMS_PROJECTION;
 
-    // reset matrices to zero
-    for(size_t m=0; m<n_square_matrices; m++)
-      sqMatrices[m]->reset();
-    
-    BoundCondFunct2D * boundary_conditions[1]
-                  = {velocity_space->GetBoundCondition() };
-
-    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-    non_const_bound_values[0] = this->example.get_bd(0);
-    non_const_bound_values[1] = this->example.get_bd(1);
-    non_const_bound_values[2] = this->example.get_bd(2);
-
-    TFEFunction2D *fe_functions[3] = {nullptr, nullptr,&s.p};
-
-    // The assembly with the extrapolated velocity of IMEX_scheme begins
-    // at step 3
-    bool is_imex = this->imex_scheme(0);
-
-    // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
-    if(!is_imex)
-    {
-      fe_functions[0] = s.u.GetComponent(0);
-      fe_functions[1] = s.u.GetComponent(1);
-    }
-    else
-    {
-      // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
-      // Note : in this function, the non active Dofs are taken care of.
-      // Namely, extrapolated_solution takes the nonActive of the current Rhs.
-      this->construct_extrapolated_solution();
-      TFEVectFunct2D extrapolated_velocity_vector(&this->systems.front().velocity_space,
-                                                  (char*)"", (char*)"",
-                                                  extrapolated_solution_.block(0),
-                                                  extrapolated_solution_.length(0), 2);
-
-      // Construct now the corresponding fe_functions for local assembling
-      fe_functions[0] = extrapolated_velocity_vector.GetComponent(0);
-      fe_functions[1] = extrapolated_velocity_vector.GetComponent(1);
-    }
-
-    LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions,
-                                   this->example.get_coeffs());
-
-    Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices,
-               n_rect_matrices, rectMatrices, 0, nullptr, nullptr, 
-               boundary_conditions, non_const_bound_values.data(),
-               la_nonlinear);
-  }
   if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
   {
     if (it_count==0)
@@ -894,6 +864,32 @@ void Time_NSE2D::prepare_fefunc_for_localassembling(Time_NSE2D::System_per_grid&
     fe_functions.resize(4);
     fe_functions[3] = label_for_local_projection_fefct.get();
   }
+
+  // The assembly with the extrapolated velocity of IMEX_scheme begins
+  // at step 3
+  bool is_imex = this->imex_scheme(0);
+
+  // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
+  if(!is_imex)
+  {
+    // do nothing, fe_functions is set as usual
+  }
+  else
+  {
+    // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
+    // Note : in this function, the non active Dofs are taken care of.
+    // Namely, extrapolated_solution takes the nonActive of the current Rhs.
+    this->construct_extrapolated_solution();
+    TFEVectFunct2D extrapolated_velocity_vector(&this->systems.front().velocity_space,
+                                                (char*)"", (char*)"",
+                                                extrapolated_solution_.block(0),
+                                                extrapolated_solution_.length(0), 2);
+
+    // Construct now the corresponding fe_functions for local assembling
+    fe_functions[0] = extrapolated_velocity_vector.GetComponent(0);
+    fe_functions[1] = extrapolated_velocity_vector.GetComponent(1);
+  }
+
 }
 
 /**************************************************************************** */
@@ -902,15 +898,25 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
       std::vector<const TFESpace2D*> &spaces_rhs, std::vector<TSquareMatrix2D*> &sqMatrices,
       std::vector<TMatrix2D*> &rectMatrices, std::vector<double*> &rhs_array)
 {
-  // First, set the spaces
-  spaces.resize(2);
-  spaces_rhs.resize(2);
   const TFESpace2D * velo_space = &s.velocity_space;
   const TFESpace2D * pres_space = &s.pressure_space;
-  spaces[0] = velo_space;
-  spaces[1] = pres_space;
-  spaces_rhs[0] = velo_space;
-  spaces_rhs[1] = velo_space;
+  // First, set the spaces valid for TNSE2D and TNSE2D_NL)
+  if (type == TNSE2D || type == TNSE2D_Rhs)
+  {
+    spaces.resize(2);
+    spaces_rhs.resize(2);
+    spaces[0] = velo_space;
+    spaces[1] = pres_space;
+    spaces_rhs[0] = velo_space;
+    spaces_rhs[1] = velo_space;
+  }
+  else if (type == TNSE2D_NL)
+  {
+    spaces.resize(1);
+    spaces_rhs.resize(0);
+    spaces[0] = velo_space;
+  }
+
 
   // Append correct spaces if "Projection-Based VMS" is used
   if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
@@ -928,8 +934,6 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
 
   std::vector<std::shared_ptr<FEMatrix>> blocks
           = s.matrix.get_blocks_uniquely();
-  std::vector<std::shared_ptr<FEMatrix>> mass_blocks
-       = s.Mass_Matrix.get_blocks_uniquely();
 
   switch(type)
   {
@@ -939,6 +943,9 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
     rhs_array.resize(2);
     rhs_array[0]=s.rhs.block(0);
     rhs_array[1]=s.rhs.block(1);
+
+    std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+         = s.Mass_Matrix.get_blocks_uniquely();
 
     switch(TDatabase::ParamDB->NSTYPE)
     {
@@ -1071,14 +1078,37 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
       // re-initialize RHS if localassemble type is TNSE2D_Rhs
       s.rhs.reset();
       break;
-    } // LocalAssembling3D_type::TNSE3D_Rhs:
+    } // LocalAssembling3D_type::TNSE2D_Rhs:
+    // LocalAssembling3D_type::TNSE2D_NL:
+    case TNSE2D_NL:
+    {
+      std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+           = s.Mass_Matrix.get_blocks_uniquely();
+
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1: case 2:
+          blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
+          sqMatrices.resize(1);
+          sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+          break;
+        case 3: case 4: case 14:
+          blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
+          sqMatrices.resize(2);
+          sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+          sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+          break;
+        default:
+          ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
+                 " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
+      }
+
+    break;
+    } // end Type TNSE2D_NL
     default: // SWITCH over LocalAssembling type
       ErrThrow("This LocalAssembling type is unknown", type);
       break;
   } // END SWITCH LOCALASSEMBLING TYPE
-
-
-
 
 
 
