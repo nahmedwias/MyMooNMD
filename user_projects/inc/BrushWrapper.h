@@ -87,6 +87,7 @@ class BrushWrapper
     PostProcessing2D output_writer_;
 
     std::ofstream moment_stats_file_;
+    std::ofstream outflow_particles_file_;
 
     /// All functions which come from Brush start their life in ParMooN
     /// as 0th order fe functions on the following grid and fe space.
@@ -98,7 +99,7 @@ class BrushWrapper
     std::vector<std::vector<double>> source_and_sink_fcts_values_;
 
     // The function values of the moments which come
-    // from Bruhs are directly written into pd_moments_values_,
+    // from Brush are directly written into pd_moments_values_,
     // i.e. they can be directly used as fe values of 0th order moments.
     // Anything else would require an extrapolation.
     std::vector<TFEFunction2D*> pd_moments_;

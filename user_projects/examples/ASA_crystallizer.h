@@ -236,7 +236,6 @@ void RhsAssemblingFunction_T(
 }
 
 ////A helper function relevant in the coupling of concentration, temperature and psd
-//// TODO Turn this into a function that translates ASA and T into ASASUP (supersaturation)
 //double F_growth(double T, double c, double F)
 //{
 //  //theoretical supersaturation in terms of ASA mole fraction, as given by Eder et al.
