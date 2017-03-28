@@ -434,36 +434,40 @@ void Time_NSE2D::assemble_rhs()
   const double theta4 = TDatabase::TimeDB->THETA4;
   
   System_per_grid& s = this->systems.front();
-  // reset the right hand side
-  s.rhs.reset();
-  // assembling of the right hand side 
-  TFEFunction2D *fe_functions[3] = 
-  { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
   
-  LocalAssembling2D la(TNSE2D_Rhs, fe_functions,
-                           this->example.get_coeffs());
+  // Prepare FeFunctions and construct LocalAssembling
+  std::vector<TFEFunction2D*> fe_functions;
+  prepare_fefunc_for_localassembling(s,fe_functions);
+  LocalAssembling2D la(TNSE2D_Rhs, fe_functions.data(),
+                       this->example.get_coeffs());
   
-  int N_Rhs = 3;
-  const TFESpace2D * v_space = &this->get_velocity_space();
-  const TFESpace2D * p_space = &this->get_pressure_space();
+  // prepare spaces, matrices and rhs for assembling
+  s.rhs.reset(); // NOTE: it seems to be redundant, since it is reset in the following function
+  std::vector<const TFESpace2D*> spaces_mat(2);
+  std::vector<const TFESpace2D*> spaces_rhs(3);
+  std::vector<TSquareMatrix2D*> sqMatrices;
+  std::vector<TMatrix2D*> rectMatrices;
+  std::vector<double*> rhs_array;
+  prepare_spaces_and_matrices_for_assemble( s, TNSE2D_Rhs, spaces_mat,
+                                            spaces_rhs, sqMatrices,
+                                            rectMatrices,rhs_array );
   
-  double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
+  std::vector<const BoundCondFunct2D*> boundary_conditions(3);
+  boundary_conditions[0] = s.velocity_space.GetBoundCondition();
+  boundary_conditions[1] = boundary_conditions[0];
+  boundary_conditions[2] = s.pressure_space.GetBoundCondition();
+
+  std::vector<BoundValueFunct2D*> non_const_bound_values(3);
+  non_const_bound_values[0] = example.get_bd()[0];
+  non_const_bound_values[1] = example.get_bd()[1];
+  non_const_bound_values[2] = example.get_bd()[2];
   
-  const TFESpace2D *fespmat[2] = {v_space, p_space};
-  const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
-  
-  BoundCondFunct2D * boundary_conditions[3] = {
-             v_space->GetBoundCondition(), v_space->GetBoundCondition(), 
-              p_space->GetBoundCondition() };
-  
-   std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-   non_const_bound_values[0] = this->example.get_bd(0);
-   non_const_bound_values[1] = this->example.get_bd(1);
-   non_const_bound_values[2] = this->example.get_bd(2);
-  
-   Assemble2D(1, fespmat, 0, nullptr,
-              0, nullptr, N_Rhs, RHSs, fesprhs,
-              boundary_conditions, non_const_bound_values.data(), la);
+  Assemble2D(spaces_mat.size(), spaces_mat.data(),
+              sqMatrices.size(), sqMatrices.data(),
+              rectMatrices.size(), rectMatrices.data(),
+              rhs_array.size(), rhs_array.data(),
+              spaces_rhs.data(), boundary_conditions.data(),
+              non_const_bound_values.data(), la);
    // copy the non active to the solution vector
    // since the rhs vector will be passed to the solver
    // and is modified with matrix vector multiplication
@@ -900,16 +904,15 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
 {
   // First, set the spaces
   spaces.resize(2);
-  spaces_rhs.resize(3);
+  spaces_rhs.resize(2);
   const TFESpace2D * velo_space = &s.velocity_space;
   const TFESpace2D * pres_space = &s.pressure_space;
   spaces[0] = velo_space;
   spaces[1] = pres_space;
   spaces_rhs[0] = velo_space;
   spaces_rhs[1] = velo_space;
-  spaces_rhs[2] = nullptr;
 
-  // Append correct spaces if "Projectio-Based VMS" is used
+  // Append correct spaces if "Projection-Based VMS" is used
   if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
   {
     spaces.resize(4);
@@ -928,117 +931,156 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
   std::vector<std::shared_ptr<FEMatrix>> mass_blocks
        = s.Mass_Matrix.get_blocks_uniquely();
 
-  // valid for any NSTYPE
-  rhs_array.resize(2);
-  rhs_array[0]=s.rhs.block(0);
-  rhs_array[1]=s.rhs.block(1);
-
-  switch(TDatabase::ParamDB->NSTYPE)
+  switch(type)
   {
-    case 1:
-      if(blocks.size() != 3)
-      {
-        ErrThrow("Wrong blocks.size() ", blocks.size());
-      }
-      sqMatrices.resize(2);
-      sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-      // mass matrix
-      sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-      // rectangular matrices
-      rectMatrices.resize(2);
-      rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
-      rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-      break;
-    case 2:
-      if(blocks.size() != 5)
-      {
-        ErrThrow("Wrong blocks.size() ", blocks.size());
-      }
-      sqMatrices.resize(2);
-      sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-      // mass matrix
-      sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-      // rectangular matrices
-      rectMatrices.resize(4);
-      rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
-      rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
-      rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get()); //than the standing B blocks
-      rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-      break;
-    case 3:
-      if(blocks.size() != 6)
-      {
-        ErrThrow("Wrong blocks.size() ", blocks.size());
-      }
-      sqMatrices.resize(5);
-      sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-      sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-      sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-      sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-      // mass matrices
-      sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-      // rectangular matrices
-      rectMatrices.resize(2);
-      rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //first the lying B blocks
-      rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-      break;
-    case 4:
-      if(blocks.size() != 8)
-      {
-        ErrThrow("Wrong blocks.size() ", blocks.size());
-      }
-      sqMatrices.resize(5);
-      sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-      sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-      sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-      sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-      // mass matrices
-      sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-      // rectangular matrices
-      rectMatrices.resize(4);
-      rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
-      rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-      rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
-      rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+    case TNSE2D:
+    {
+    // valid for any NSTYPE
+    rhs_array.resize(2);
+    rhs_array[0]=s.rhs.block(0);
+    rhs_array[1]=s.rhs.block(1);
 
-      rhs_array.resize(3);
-      rhs_array[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
-      spaces_rhs[2] = pres_space;
+    switch(TDatabase::ParamDB->NSTYPE)
+    {
+      case 1:
+        if(blocks.size() != 3)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        sqMatrices.resize(2);
+        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        // mass matrix
+        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+        // rectangular matrices
+        rectMatrices.resize(2);
+        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
+        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+        break;
+      case 2:
+        if(blocks.size() != 5)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        sqMatrices.resize(2);
+        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        // mass matrix
+        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+        // rectangular matrices
+        rectMatrices.resize(4);
+        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
+        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
+        rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get()); //than the standing B blocks
+        rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+        break;
+      case 3:
+        if(blocks.size() != 6)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        sqMatrices.resize(5);
+        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+        sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+        // mass matrices
+        sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+        // rectangular matrices
+        rectMatrices.resize(2);
+        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //first the lying B blocks
+        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+        break;
+      case 4:
+        if(blocks.size() != 8)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        sqMatrices.resize(5);
+        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+        sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+        // mass matrices
+        sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+        // rectangular matrices
+        rectMatrices.resize(4);
+        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
+        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+        rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
+        rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
 
+        rhs_array.resize(3);
+        rhs_array[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
+        spaces_rhs[2] = pres_space;
+
+        break;
+      case 14:
+        if(blocks.size() != 9)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        sqMatrices.resize(6);
+        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+        sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+        // mass matrices
+        sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+        // C block pressure pressure
+        sqMatrices[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+        // rectangular matrices
+        rectMatrices.resize(4);
+        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
+        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+        rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
+        rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+
+        // Correct RHS in case NSTYPE = 14
+        rhs_array.resize(3);
+        rhs_array[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
+        spaces_rhs.resize(3);
+        spaces_rhs[2] = pres_space;
+
+        break;
+      default:
+        ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
+               " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
+    } // END SWITCH NSTYPE
+    // re-initialize RHS if localassemble type is TNSE2D
+    s.rhs.reset();
+    break;
+    }
+    // 2nd local assembling type: TNSE2D_Rhs
+    case TNSE2D_Rhs:
+    {
+      //no matrices need to be assembled
+      sqMatrices.resize(0);
+      rectMatrices.resize(0);
+      // right hand side
+      rhs_array.resize(2);
+      rhs_array[0]= s.rhs.block(0);
+      rhs_array[1]= s.rhs.block(1);
+
+      // TODO remove the case 4: no need the pressure block
+      if(TDatabase::ParamDB->NSTYPE == 14)
+        {
+          rhs_array.resize(3);
+          rhs_array[2]=s.rhs.block(2);
+          spaces_rhs.resize(3);
+          spaces_rhs[2] = pres_space;
+        }
+      // re-initialize RHS if localassemble type is TNSE2D_Rhs
+      s.rhs.reset();
       break;
-    case 14:
-      if(blocks.size() != 9)
-      {
-        ErrThrow("Wrong blocks.size() ", blocks.size());
-      }
-      sqMatrices.resize(6);
-      sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-      sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-      sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-      sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-      // mass matrices
-      sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-      // C block pressure pressure
-      sqMatrices[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-      // rectangular matrices
-      rectMatrices.resize(4);
-      rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
-      rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-      rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
-      rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-      // Correct RHS in case NSTYPE = 14
-      rhs_array.resize(3);
-      rhs_array[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
-      spaces_rhs[2] = pres_space;
-
+    } // LocalAssembling3D_type::TNSE3D_Rhs:
+    default: // SWITCH over LocalAssembling type
+      ErrThrow("This LocalAssembling type is unknown", type);
       break;
-    default:
-      ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-             " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
-  }
-  // re-initialize RHS
-  s.rhs.reset();
+  } // END SWITCH LOCALASSEMBLING TYPE
+
+
+
+
+
 
   // reset matrices
   for(auto mat : sqMatrices)
