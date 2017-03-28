@@ -133,7 +133,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 
     // projection space
     projection_space_ = std::make_shared<TFESpace2D>(coll,(char*)"L",
-       (char*)"vms projection space", example.get_bc(2),DiscP_PSpace,
+       (char*)"vms projection space", example.get_bc(1),DiscP_PSpace,
        projection_order, nullptr);
 
     int ndofP = projection_space_->GetN_DegreesOfFreedom();
@@ -159,7 +159,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
     // create fefunction for the labels such that they can be passed to the assembling routines
     label_for_local_projection_space_ =
       std::make_shared<TFESpace2D>(coll, (char*)"label_for_local_projection",
-                                   (char*)"label_for_local_projection", example.get_bc(2),
+                                   (char*)"label_for_local_projection", example.get_bc(1),
                                    DiscP_PSpace, 0, nullptr);
     // finite element function for local projection space
     this->label_for_local_projection_fefct =
