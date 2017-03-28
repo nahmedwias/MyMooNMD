@@ -20,6 +20,7 @@
 
 #include <FESpace2D.h>
 #include <Example_TimeNSE2D.h>
+#include <LocalAssembling2D.h>
 
 #include <Multigrid.h>
 #include <Solver.h>
@@ -354,6 +355,25 @@ class Time_NSE2D
     std::vector<double> entries_mu_scalar_field;
 //    TFEFunction2D interpolated_rho_field;
 //    TFEFunction2D interpolated_mu_field;
+
+  private:
+    /* @brief Set the fe_functions to prepare
+     * the local assembling object. It is basically to improve
+     * the readability of the code.   */
+    void prepare_fefunc_for_localassembling(Time_NSE2D::System_per_grid& s,
+                                            std::vector<TFEFunction2D*> &fe_functions);
+
+    /* @brief Set the spaces and matrices to prepare
+     * the call to Assemble. It is basically to improve
+     * the readability of the code.   */
+    void prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per_grid& s,
+                                                  LocalAssembling2D_type type,
+                                                  std::vector<const TFESpace2D*> &spaces,
+                                                  std::vector<const TFESpace2D*> &spaces_rhs,
+                                                  std::vector<TSquareMatrix2D*> &sqMat,
+                                                  std::vector<TMatrix2D*> &rectMat,
+                                                  std::vector<double*> &rhs);
+
 };
 
 #endif // __TIME_NSE2D__
