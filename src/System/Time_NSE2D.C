@@ -117,93 +117,91 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
     ErrThrow("The SUPG method is only implemented for NSTYPE 4 and 14");
   }
 
-  bool usingMultigrid = this->solver.is_using_multigrid();
-  
-  if(!usingMultigrid)
+  // Construct the finest space anyway, egal ob "usingMultigrid"
+  // oder nicht
+  // create the collection of cells from the domain (finest grid)
+  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+  this->systems.emplace_back(example, *coll, velo_pres_order, type);
+
+  /* Projection-Based VMS, only on the finest level */
+  if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
   {
-    // create the collection of cells from the domain (finest grid)
-    TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-    this->systems.emplace_back(example, *coll, velo_pres_order, type);
-    
-    /* Projection-Based VMS, only on the finest level */
-    if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+    // VMS projection order
+    int projection_order = db["vms_projection_space_order"];
+    if (projection_order < 0)
+      projection_order = 0;
+
+    // projection space
+    projection_space_ = std::make_shared<TFESpace2D>(coll,(char*)"L",
+       (char*)"vms projection space", example.get_bc(2),DiscP_PSpace,
+       projection_order, nullptr);
+
+    int ndofP = projection_space_->GetN_DegreesOfFreedom();
+
+    // create vector for vms projection, used if small resolved scales are needed
+    // this is for (g11, g12, g22)
+    this->vms_small_resolved_scales.resize(3*ndofP);
+    // finite element vector function for vms projection
+    this->vms_small_resolved_scales_fefct =
+       std::make_shared<TFEVectFunct2D>(projection_space_.get(), (char*)"v", (char*)"v",
+                                        &vms_small_resolved_scales[0], ndofP, 3);
+
+    // create the label space, used in the adaptive method
+    int n_cells = coll->GetN_Cells();
+    // initialize the piecewise constant vector
+    if(projection_order == 0)
+      this->label_for_local_projection.resize(n_cells, 0);
+    else if(projection_order == 1)
+      this->label_for_local_projection.resize(n_cells, 1);
+    else
+      ErrThrow("local projection space is not defined");
+
+    // create fefunction for the labels such that they can be passed to the assembling routines
+    label_for_local_projection_space_ =
+      std::make_shared<TFESpace2D>(coll, (char*)"label_for_local_projection",
+                                   (char*)"label_for_local_projection", example.get_bc(2),
+                                   DiscP_PSpace, 0, nullptr);
+    // finite element function for local projection space
+    this->label_for_local_projection_fefct =
+      std::make_shared<TFEFunction2D>(label_for_local_projection_space_.get(), (char*)"vms_local_projection_space_fefct",
+                                      (char*)"vms_local_projection_space_fefct", &label_for_local_projection[0],
+                                      n_cells);
+
+
+    // matrices for the vms method needs to assemble only on the
+    // finest grid. On the coarsest grids, the SMAGORINSKY model
+    // is used and for that, matrices are available on all grids:
+    switch(TDatabase::ParamDB->NSTYPE)
     {
-      // VMS projection order
-      int projection_order = db["vms_projection_space_order"];
-      if (projection_order < 0)
-        projection_order = 0;
-
-      // projection space
-      projection_space_ = std::make_shared<TFESpace2D>(coll,(char*)"L",
-         (char*)"vms projection space", example.get_bc(2),DiscP_PSpace,
-         projection_order, nullptr);
-
-      int ndofP = projection_space_->GetN_DegreesOfFreedom();
-
-      // create vector for vms projection, used if small resolved scales are needed
-      // this is for (g11, g12, g22)
-      this->vms_small_resolved_scales.resize(3*ndofP);
-      // finite element vector function for vms projection
-      this->vms_small_resolved_scales_fefct =
-         std::make_shared<TFEVectFunct2D>(projection_space_.get(), (char*)"v", (char*)"v",
-                                          &vms_small_resolved_scales[0], ndofP, 3);
-
-      // create the label space, used in the adaptive method
-      int n_cells = coll->GetN_Cells();
-      // initialize the piecewise constant vector
-      if(projection_order == 0)
-        this->label_for_local_projection.resize(n_cells, 0);
-      else if(projection_order == 1)
-        this->label_for_local_projection.resize(n_cells, 1);
-      else
-        ErrThrow("local projection space is not defined");
-
-      // create fefunction for the labels such that they can be passed to the assembling routines
-      label_for_local_projection_space_ =
-        std::make_shared<TFESpace2D>(coll, (char*)"label_for_local_projection",
-                                     (char*)"label_for_local_projection", example.get_bc(2),
-                                     DiscP_PSpace, 0, nullptr);
-      // finite element function for local projection space
-      this->label_for_local_projection_fefct =
-        std::make_shared<TFEFunction2D>(label_for_local_projection_space_.get(), (char*)"vms_local_projection_space_fefct",
-                                        (char*)"vms_local_projection_space_fefct", &label_for_local_projection[0],
-                                        n_cells);
+      case 1: case 2:
+        ErrThrow("VMS projection cannot be supported for NSTYPE  ",
+                 TDatabase::ParamDB->NSTYPE);
+        break;
+      case 3: case 4: case 14:
+        const TFESpace2D& velocity_space = this->get_velocity_space();
+        // matrices G_tilde
+        matrices_for_turb_mod.at(0) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        matrices_for_turb_mod.at(1) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        // matrices G
+        matrices_for_turb_mod.at(2) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        matrices_for_turb_mod.at(3) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        // mass matrix
+        matrices_for_turb_mod.at(4) = std::make_shared<FEMatrix>(projection_space_.get(), projection_space_.get());
+        break;
+    }
+  }  // end (if VMS_PROJECTION)
 
 
-      // matrices for the vms method needs to assemble only on the
-      // finest grid. On the coarsest grids, the SMAGORINSKY model
-      // is used and for that matrices are available on all grids:
-      switch(TDatabase::ParamDB->NSTYPE)
-      {
-        case 1: case 2:
-          ErrThrow("VMS projection cannot be supported for NSTYPE  ",
-                   TDatabase::ParamDB->NSTYPE);
-          break;
-        case 3: case 4: case 14:
-          const TFESpace2D& velocity_space = this->get_velocity_space();
-          // matrices G_tilde
-          matrices_for_turb_mod.at(0) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
-          matrices_for_turb_mod.at(1) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
-          // matrices G
-          matrices_for_turb_mod.at(2) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
-          matrices_for_turb_mod.at(3) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
-          // mass matrix
-          matrices_for_turb_mod.at(4) = std::make_shared<FEMatrix>(projection_space_.get(), projection_space_.get());
-          break;
-      }
-    }  // end (if VMS_PROJECTION)
-
-
-    TFEFunction2D * u1 = this->systems.front().u.GetComponent(0);
-    TFEFunction2D * u2 = this->systems.front().u.GetComponent(1);
-    
-    u1->Interpolate(example.get_initial_cond(0));
-    u2->Interpolate(example.get_initial_cond(1));
-  }
-  else
+  bool usingMultigrid = this->solver.is_using_multigrid();
+  // Construct the other grids in multigrid case
+  if(usingMultigrid)
   {
     auto multigrid = this->solver.get_multigrid();
     
+    ErrThrow("FATAL ERROR: MULTIGRID IS NOT FINISHED YET! THE COLLECTIONS"
+        "HAS TO BE CHANGED AND THE IF-STATEMENT SHOULD 'POP' THE FINEST"
+        "GRID BECAUSE IT IS ALREADY ASSEMBLED.");
+
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
     size_t n_levels = multigrid->get_n_geometric_levels();
@@ -219,6 +217,14 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
     }
     multigrid->initialize(matrices);
   }
+
+  // Initialize some vectors
+  TFEFunction2D * u1 = this->systems.front().u.GetComponent(0);
+  TFEFunction2D * u2 = this->systems.front().u.GetComponent(1);
+
+  u1->Interpolate(example.get_initial_cond(0));
+  u2->Interpolate(example.get_initial_cond(1));
+
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
   
