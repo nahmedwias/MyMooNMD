@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
     }
 
     // Do the parameter check of the Database.
-    parmoon_db.check_parameters_consistency_NSE();
+    check_parameters_consistency_NSE(parmoon_db);
 
     // Intial refinement and grabbing of grids for multigrid.
 #ifdef _MPI
