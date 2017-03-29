@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
    ********************************************************************/
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
-  Database.CheckParameterConsistencyNSE();
+  check_parameters_consistency_NSE(tnse_db);
   Database.WriteParamDB(argv[0]);
 
   std::list<TCollection* > gridCollections
