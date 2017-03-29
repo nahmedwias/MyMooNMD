@@ -1,6 +1,8 @@
 #include <Example_TimeNSE2D.h>
 #include <Database.h>
 #include <MainUtilities.h>
+#include <FEDatabase2D.h>
+#include <Time_NSE2D.h>
 
 #include <string>
 
@@ -8,13 +10,20 @@ namespace bsp1
 {
  #include "TNSE_2D/Bsp1.h"
 }
+
 namespace lin_space_time
 {
 #include "TNSE_2D/linear_space_time.h"
 }
+
 namespace sincosexp
 {
 #include "TNSE_2D/SinCosExp.h"
+}
+
+namespace flow_around_cylinder_steady_inflow
+{
+#include "flow_around_cylinder_steady_inflow.h"
 }
 
 Example_TimeNSE2D::Example_TimeNSE2D(
@@ -72,6 +81,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       
       lin_space_time::ExampleFile();
       break;
+      
     case 2: // SinCosExp
       /** exact_solution */
       exact_solution.push_back(sincosexp::ExactU1 );
@@ -95,10 +105,36 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       initialCOndtion.push_back(sincosexp::InitialU2);
 
      sincosexp::ExampleFile();
+    
+    case 3:
+      /** exact_solution */
+      exact_solution.push_back( flow_around_cylinder_steady_inflow::ExactU1 );
+      exact_solution.push_back( flow_around_cylinder_steady_inflow::ExactU2 );
+      exact_solution.push_back( flow_around_cylinder_steady_inflow::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( flow_around_cylinder_steady_inflow::BoundCondition );
+      boundary_conditions.push_back( flow_around_cylinder_steady_inflow::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( flow_around_cylinder_steady_inflow::U1BoundValue );
+      boundary_data.push_back( flow_around_cylinder_steady_inflow::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = flow_around_cylinder_steady_inflow::LinCoeffs;
+      
+      initialCOndtion.push_back(flow_around_cylinder_steady_inflow::InitialU1);
+      initialCOndtion.push_back(flow_around_cylinder_steady_inflow::InitialU2);
+      
+      /**post processing - drag and lift calculation and output */
+      post_processing_stat = flow_around_cylinder_steady_inflow::compute_drag_lift_pdiff;
 
+      flow_around_cylinder_steady_inflow::ExampleFile();
       break;
     default:
-      ErrThrow("Unknown Time dependent Example_TimeNSE2D example!");
+      ErrThrow("Unknown time-dependent Example_TimeNSE2D example!");
   }
 }
 
