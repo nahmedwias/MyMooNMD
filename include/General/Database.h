@@ -28,6 +28,9 @@ class TDatabase;
 #include <Constants.h>
 #include <Mapper.h>
 
+// forward declaration
+class ParameterDatabase;
+
 struct TParaDB
 {
   int VERSION;
@@ -116,7 +119,6 @@ struct TParaDB
   /** parameters for setting the discretization                         */
   //======================================================================
   // general
-  int DISCTYPE;
   int USE_ISOPARAMETRIC;
   int CELL_MEASURE;
   // parameter for non-conforming elements
@@ -891,7 +893,16 @@ class TDatabase
     static void WriteParamDB(char *ExecutedFile);
 
     static void WriteTimeDB();
-
-    static void CheckParameterConsistencyNSE();
 };
+
+
+/** TODO: these checks still use intensively the global parameters
+ * and are used in all the NSE programs. Finish to replace
+ * all global dependencies by local ones, and find a relevant place
+ * for these checks in the program. Their declaration and definition
+ * in Database.C and .h are just temporary. */
+void check_parameters_consistency_NSE(ParameterDatabase& db);
+void check_parameters_consistency_CD(ParameterDatabase& db,
+                                     int &nonlinear_method);
+
 #endif

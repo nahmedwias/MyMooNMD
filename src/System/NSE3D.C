@@ -265,9 +265,9 @@ void NSE3D::check_parameters()
   {
     ErrThrow("Every LAPLACETYPE except 0 is untested!");
   }
-  if(TDatabase::ParamDB->DISCTYPE != 1)
+  if(!db["space_discretization_type"].is("galerkin"))
   {
-    ErrThrow("Every DISCTYPE except 1 is untested!");
+    ErrThrow("Every 'space_discretizatin_type' except 'galerkin' is untested!");
   }
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM != 0)
   {
@@ -578,7 +578,7 @@ void NSE3D::assemble_non_linear_term()
   bool mdml =  this->solver.is_using_multigrid() 
             && this->solver.get_multigrid()->is_using_mdml();
   bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
-  if ((mdml && !is_stokes)||(TDatabase::ParamDB->DISCTYPE == UPWIND ))
+  if ((mdml && !is_stokes)|| db["space_discretization_type"].is("upwind"))
   {
     // in case of upwinding we only assemble the linear terms. The nonlinear
     // term is not assembled but replaced by a call to the upwind method.
@@ -636,7 +636,7 @@ void NSE3D::assemble_non_linear_term()
 
     //decide wether to assemble by upwinding or not
     bool finest_grid = (&s == &systems_.at(0));
-    bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND
+    bool do_upwinding = (db["space_discretization_type"].is("upwind")
                         || (mdml && !finest_grid))
                         && !is_stokes;
     
