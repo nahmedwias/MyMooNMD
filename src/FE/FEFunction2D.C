@@ -78,7 +78,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
                               CoeffFct2D *Coeff, 
                               TAuxParam2D *Aux,
                               int n_fespaces, const TFESpace2D **fespaces,
-                              double *errors) const
+                              double *errors, bool is_SDFEM) const
 {
   int i,j,k,l, ij, N_LocalUsedElements;
   int N_Cells, N_Points, N_Parameters, N_, N_Edges;
@@ -231,7 +231,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     if(N_Parameters>0)
       Aux->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param);
 
-    if((TDatabase::ParamDB->DISCTYPE == SDFEM)||
+    if(is_SDFEM ||
        (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
     {
       TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;

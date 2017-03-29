@@ -459,7 +459,7 @@ void NSE2D::assemble_nonlinear_term()
             && this->solver.get_multigrid()->is_using_mdml();
   bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
   
-  if ((mdml && !is_stokes)||(TDatabase::ParamDB->DISCTYPE == UPWIND ))
+  if ((mdml && !is_stokes)|| db["space_discretization_type"].is("upwind"))
   {
     // in case of upwinding we only assemble the linear terms. The nonlinear
     // term is not assembled but replaced by a call to the upwind method.
@@ -536,9 +536,8 @@ void NSE2D::assemble_nonlinear_term()
             "I don't know how to pass its blocks to Assemble2D.");
     }
     
-    // do upwinding TODO remove dependency of global values
     bool on_finest_grid = &systems.front() == &s;
-    bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
+    bool do_upwinding = (db["space_discretization_type"].is("upwind")
                          || (mdml && !on_finest_grid))
                         && !is_stokes;
 
