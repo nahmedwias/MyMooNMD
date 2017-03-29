@@ -106,7 +106,7 @@ void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int max
   Example_NSE3D example_obj(db);
 
   //Perform usual checks on the parameter consistency
-  db.check_parameters_consistency_NSE();
+  check_parameters_consistency_NSE(db);
 
   // Construct the nse3d problem object.
 #ifndef _MPI

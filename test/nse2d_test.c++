@@ -24,6 +24,7 @@
 
 #include <Domain.h>
 #include <Database.h>
+#include <ParameterDatabase.h>
 #include <FEDatabase2D.h>
 #include <NSE2D.h>
 #include <Example_NSE2D.h>
@@ -202,7 +203,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LAPLACETYPE = 0;
     
     // possibly parameters in the database
-    db.check_parameters_consistency_NSE();
+    check_parameters_consistency_NSE(db);
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();
     for(unsigned int i=0; i < n_ref; i++)
@@ -296,7 +297,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LAPLACETYPE = 0;
         
     // possibly parameters in the database
-    db.check_parameters_consistency_NSE();
+    check_parameters_consistency_NSE(db);
 
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();

@@ -5,6 +5,7 @@
 #include <list>
 #include <iostream>
 
+
 /** @brief store a number of Parameter objects
  * 
  * This class stores `Parameter` objects where no two Parameters have the same
@@ -55,16 +56,6 @@ class ParameterDatabase
     /// construct a database filled with parameters for 
     /// mesh generation using TetGen
     static ParameterDatabase default_tetgen_database();
-
-    /// plays the role of the old CheckParameterConsistencyNSE
-    /// but with the new database.The remaining global parameters
-    /// can/must be removed here, progressively.
-    void check_parameters_consistency_NSE();
-
-    /// plays the role of the old SetParametersCD
-    /// but with the new database.The remaining global parameters
-    /// can/must be removed here, progressively.
-    void check_parameters_consistency_CD(int &nonlinear_method);
 
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;

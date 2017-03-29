@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
 
   parmoon_db.write(Output::get_outfile());
-  parmoon_db.check_parameters_consistency_NSE();
+  check_parameters_consistency_NSE(parmoon_db);
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
   

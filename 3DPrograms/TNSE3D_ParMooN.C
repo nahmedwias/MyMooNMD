@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
   Example_TimeNSE3D example(parmoon_db);
 
   // Do the parameter check of the Database.
-  parmoon_db.check_parameters_consistency_NSE();
+  check_parameters_consistency_NSE(parmoon_db);
   // =====================================================================
   // set the database values and generate mesh
   // =====================================================================
