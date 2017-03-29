@@ -8,6 +8,7 @@
 #include <Utilities.h>
 #include <MooNMD_Io.h>
 
+
 #ifdef _MPI
 #include <mpi.h>
 #endif
@@ -807,6 +808,20 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "output you will get. Such output will be written to console and the "
          "'outfile'.", (size_t)1, (size_t)5);
   
+  db.add("space_discretization_type", "galerkin",
+         "Replaces the global parameter DISCTYPE.",
+         {"galerkin",      // = old global DISCTYPE = GALERKIN = 1
+          "supg","sdfem",  // = old global DISCTYPE = SUPG/SDFEM = 2
+          "upwind",        // = old global DISCTYPE = UPWIND = 3
+          "smagorinsky",   // = old global DISCTYPE = SMAGORINSKY = 4
+          "cip",           // = old global DISCTYPE = CIP = 4
+          "dg",           // = old global DISCTYPE = DG  = 5
+          "gls",           // = old global DISCTYPE = GLS = 6
+          "vms_projection",     // = old global DISCTYPE = VMS_PROJECTION = 9
+          "vms_projection_expl",// = old global DISCTYPE = VMS_PROJECTION_EXPL = 10
+          "local_projection",   // = old global DISCTYPE = LOCAL_PROJECTION = 14
+          "local_projection_2_level"}); // = old global DISCTYPE = LOCAL_PROJECTION_2_LEVEL = 15
+
   /** THE PARAMETERS BELOW THIS LINE ARE SPECIFIC TO USER PROJECT MULTIPHASE **/
   db.add("coupling_nse_cd", false,
          "Parameter for multiphase simulation: if it is true, it enables "

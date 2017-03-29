@@ -3,12 +3,13 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <AlgebraicFluxCorrection.h>
+#include <LocalAssembling2D.h>
+#include <Assemble2D.h>
 #include <LocalProjection.h>
+
 #include <FEFunctionInterpolator.h>
-#include "../../include/AssembleRoutines/Assemble2D.h"
-#include "../../include/AssembleRoutines/ConvDiff2D.h"
-#include "../../include/AssembleRoutines/LocalAssembling2D.h"
-#include "../../include/AssembleRoutines/NSE2D_FixPo.h"
+#include <ConvDiff2D.h>
+#include <NSE2D_FixPo.h>
 
 /**************************************************************************** */
 ParameterDatabase get_default_TCD2D_parameters()
@@ -54,7 +55,9 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
   mass_matrix = BlockFEMatrix::CD2D(fe_space);
 }
 
+
 /**************************************************************************** */
+
 void Time_CD2D::System_per_grid::descale_stiff_matrix(double tau, double theta_1)
 {
   if (tau==0 || theta_1 == 0)
@@ -71,6 +74,7 @@ void Time_CD2D::System_per_grid::descale_stiff_matrix(double tau, double theta_1
 }
 
 /**************************************************************************** */
+
 void Time_CD2D::System_per_grid::update_old_Au()
 {
   // the stiffness matrix must have been descaled (pure transport operator)
@@ -205,9 +209,9 @@ void Time_CD2D::set_parameters()
     }
 
     //make sure that galerkin discretization is used
-    if (TDatabase::ParamDB->DISCTYPE != 1)
+    if (!db["space_discretization_type"].is("galerkin"))
     {//some other disctype than galerkin
-//      TDatabase::ParamDB->DISCTYPE = 1;
+//     db["space_discretization_type"].set("galerkin");
       ErrThrow("DISCTYPE must be = 1(GALERKIN) because Algebraic Flux ",
                     "Correction is enabled.");
     }
@@ -235,7 +239,7 @@ void Time_CD2D::assemble_initial_time()
     call_assembling_routine(s, la_a_rhs, la_mass , true,false);
 
     // apply local projection stabilization method on stiffness matrix only!
-    if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION
+    if(db["space_discretization_type"].is("local_projection")
         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
     {
       if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
@@ -274,7 +278,7 @@ void Time_CD2D::assemble()
     LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
                                this->example.get_coeffs());
 
-    if(TDatabase::ParamDB->DISCTYPE == SUPG)
+    if(db["space_discretization_type"].is("supg"))
     {
       // In the SUPG case:
       // M = (u,v) + \tau (u,b.grad v)
@@ -1031,7 +1035,7 @@ void Time_CD2D::assemble_initial_time_with_convection
     call_assembling_routine(s, la_a_rhs, la_mass , true, with_convection_field);
 
     // apply local projection stabilization method on stiffness matrix only!
-    if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION
+    if(db["space_discretization_type"].is("local_projection")
         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
     {
       if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
@@ -1166,7 +1170,7 @@ void Time_CD2D::assemble_with_convection
       //===============================================================END CODE
     }
 
-    if(TDatabase::ParamDB->DISCTYPE == SUPG)
+    if(db["space_discretization_type"].is("supg"))
     {
       // In the SUPG case:
       // M = (u,v) + \tau (u,b.grad v)

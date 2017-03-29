@@ -1,4 +1,4 @@
-#include "../../include/AssembleRoutines/LocalAssembling3D.h"
+#include <LocalAssembling3D.h>
 
 #include <Database.h>
 #include <MainUtilities.h> 
@@ -8,15 +8,15 @@
 #include <string.h>
 
 #include <DiscreteForm3D.h>
-#include "../../include/AssembleRoutines/ConvDiff.h"
-#include "../../include/AssembleRoutines/ConvDiff3D.h"
-#include "../../include/AssembleRoutines/NSE3D_FixPo.h"
-#include "../../include/AssembleRoutines/NSE3D_FixPoSkew.h"
-#include "../../include/AssembleRoutines/NSE3D_Param.h"
-#include "../../include/AssembleRoutines/NSE3D_ParamRout.h"
-#include "../../include/AssembleRoutines/TCD3D.h" // local routines for time convection-diffusion-reaction
-#include "../../include/AssembleRoutines/TNSE3D_FixPo.h"
-#include "../../include/AssembleRoutines/TNSE3D_ParamRout.h"
+#include <ConvDiff.h>
+#include <ConvDiff3D.h>
+#include <NSE3D_FixPo.h>
+#include <NSE3D_FixPoSkew.h>
+#include <NSE3D_Param.h>
+#include <NSE3D_ParamRout.h>
+#include <TCD3D.h> // local routines for time convection-diffusion-reaction
+#include <TNSE3D_FixPo.h>
+#include <TNSE3D_ParamRout.h>
 
 /**
  * TODO There is still a lot of cases where the array "Needs2ndDerivatives" is
@@ -34,12 +34,12 @@
  *         LocalAssembling3D_type. This returns an empty string in case the type
  *         is not known. */
 
-std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type)
+std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type, int disctype)
 {
   switch(type)
   {
     case LocalAssembling3D_type :: CD3D:
-      switch(TDatabase::ParamDB->DISCTYPE)
+      switch(disctype)
       {
         case GALERKIN:
           return std::string("CD3D_Galerkin");
@@ -48,7 +48,7 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type)
       break;
     //////////////////////////////////////////////////
     case LocalAssembling3D_type::TCD3DStiffRhs:
-      switch(TDatabase::ParamDB->DISCTYPE)
+      switch(disctype)
       {
 	case GALERKIN:
 	  return std::string("TCD3D_Stiff_Rhs");	  
@@ -59,7 +59,7 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type)
       }
       break;
     case LocalAssembling3D_type::TCD3D:
-      switch(TDatabase::ParamDB->DISCTYPE)
+      switch(disctype)
       {
 	case GALERKIN:
 	  return std::string("TCD3D_AllGalerkin");
@@ -75,8 +75,10 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type)
 
 LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, 
                                      TFEFunction3D **fefunctions3d,
-                                     CoeffFct3D *coeffs)
- : type(type), name(LocalAssembling3D_type_to_string(type)), Coeffs(coeffs),
+                                     CoeffFct3D *coeffs,
+                                     int disctype)
+ : type(type), discretization_type(disctype),
+   name(LocalAssembling3D_type_to_string(type,disctype)), Coeffs(coeffs),
    FEFunctions3D(fefunctions3d)
 {
 
@@ -98,7 +100,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
     ///////////////////////////////////////////////////////////////////////////
     // CD3D: stationary convection diffusion problems
     case LocalAssembling3D_type::CD3D:
-      switch(TDatabase::ParamDB->DISCTYPE)
+      switch(this->discretization_type)
       {
         case GALERKIN:
           this->N_Terms = 4;
@@ -132,14 +134,14 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->Manipulate = NULL;
           break;
         default:
-          ErrThrow("currently DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
+          ErrThrow("currently DISCTYPE ", this->discretization_type,
                " is not supported by the class CD3D");
-      }// endswitch TDatabase::ParamDB->DISCTYPE
+      }// endswitch this->discretization_type
       break; // break for the type LocalAssembling3D_type::CD3D 
     ///////////////////////////////////////////////////////////////////////////
     // TCD3D: nonstationary convection-diffusion-reaction problems
     case LocalAssembling3D_type::TCD3D:
-      switch(TDatabase::ParamDB->DISCTYPE)
+      switch(this->discretization_type)
       {
 	case GALERKIN:
 	  this->N_Terms = 4;
@@ -172,7 +174,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
       }
       break;
     case LocalAssembling3D_type::TCD3DStiffRhs:      
-      switch(TDatabase::ParamDB->DISCTYPE)
+      switch(this->discretization_type)
       {
 	case GALERKIN:
 	  this->N_Terms = 4;
@@ -217,7 +219,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
     case LocalAssembling3D_type::TNSE3D_LinGAL:
     case LocalAssembling3D_type::TNSE3D_NLGAL:
     case LocalAssembling3D_type::TNSE3D_Rhs:
-      switch(TDatabase::ParamDB->DISCTYPE)
+      switch(this->discretization_type)
       {
         case GALERKIN:
           this->set_parameters_for_tnse(type);
@@ -226,7 +228,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->set_parameters_for_tnse_smagorinsky(type);
           break;
         default:
-          ErrThrow("DISCTYPE", TDatabase::ParamDB->DISCTYPE , "is not supported yet!!");  
+          ErrThrow("DISCTYPE", this->discretization_type , "is not supported yet!!");
       }
       break;
     default:
@@ -552,7 +554,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
   {
     case LocalAssembling3D_type::NSE3D_Linear:
     {
-      switch(TDatabase::ParamDB->DISCTYPE)
+      switch(this->discretization_type)
       {
         case GALERKIN: // GALERKIN 
           switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) // nonlinear iteration type (fixed point or Newton's type)
@@ -785,13 +787,13 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
           }// endswitch of the iteration type (FIXED POINT OR NEWTON'S)
           break;
           default:
-            ErrThrow("currently DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
+            ErrThrow("currently DISCTYPE ", this->discretization_type,
                      " is not supported by the class NSE3D");
       }// endswitch for the DISCTYPE 
       break; // break for the LocalAssembling3D_type NSE3D_Linear
   }
     case LocalAssembling3D_type :: NSE3D_NonLinear:
-      switch(TDatabase::ParamDB->DISCTYPE)
+      switch(this->discretization_type)
       {
         case GALERKIN:
           switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) // nonlinear iteration type (fixed point or Newton's type)
@@ -1017,7 +1019,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
           }// endswitch of the iteration type (FIXED POINT OR NEWTON'S)          
           break; // break for the GALERKIN
           default:
-             ErrThrow("currently DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
+             ErrThrow("currently DISCTYPE ", this->discretization_type,
                      " is not supported by the class NSE3D");
       } // endswitch for the DISCTYPE
       break; // endswitch for the LocalAssembling3D_type NSE3D_NonLinear
