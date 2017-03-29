@@ -762,6 +762,9 @@ void Time_NSE2D::output(int m)
   }
    delete u1;
    delete u2;
+
+  //do postprocessing step depending on what the example implements
+  example.do_post_processing(*this);
   
   if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
   {
