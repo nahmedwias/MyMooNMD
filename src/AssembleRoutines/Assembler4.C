@@ -292,8 +292,9 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
                            N_Points, xi, eta, weights, X, Y, AbsDetjk);
     
     la->compute_parameters(N_Points, this->Coll, cell, i, X, Y);
+    bool is_sdfem =(la->get_disctype() == SDFEM);
     
-    if((TDatabase::ParamDB->DISCTYPE == SDFEM)
+    if( is_sdfem
        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
        || (TDatabase::ParamDB->CELL_MEASURE == 4))
     {

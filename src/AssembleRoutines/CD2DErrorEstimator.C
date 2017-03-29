@@ -466,20 +466,22 @@ double *estimated_global_error)
       }                                           // endfor k
     }                                             // endfor j
     
-    if((TDatabase::ParamDB->DISCTYPE == SDFEM)
-        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
-    {
-      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
-      N_Edges = cell->GetN_Edges();
-      for (int ij=0;ij<N_Edges;ij++)
-      {
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
-        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
-      }
-      if (N_Edges==3)
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
-      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
-    }
+// this commented part calls the deprecated DISCTYPE global parameter
+// which has been removed from code, and it has to be adapted
+//    if((TDatabase::ParamDB->DISCTYPE == SDFEM)
+//        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
+//    {
+//      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
+//      N_Edges = cell->GetN_Edges();
+//      for (int ij=0;ij<N_Edges;ij++)
+//      {
+//        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
+//        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
+//      }
+//      if (N_Edges==3)
+//        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
+//      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
+//    }
 
     // estimate local errors
     EstimateCellError_new(fespace,cell,N_Points, X, Y, AbsDetjk, weights, Derivatives,
@@ -782,7 +784,7 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 
       strong_residual += w*e1*e1;                 // L^2 norm
     }                                             // endfor i
-    double hK_tilde = Mesh_size_in_convection_direction(hK, coeff[1], coeff[2]);
+//    double hK_tilde = Mesh_size_in_convection_direction(hK, coeff[1], coeff[2]);
 
     alpha[0] = hK*hK;                             // weight for H^1 estimator
     alpha[1] = hK*hK*hK*hK;                       // weight for L^2 estimator
@@ -797,29 +799,31 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
     double linfb = fabs(coeff[1]);
     if (fabs(coeff[2]) > linfb)
       linfb = fabs(coeff[2]);
-    if (TDatabase::ParamDB->DISCTYPE == SUPG)
-    {
-      // compute stabilization parameter
-      delta_K = Compute_SDFEM_delta(hK, coeff[0], coeff[1], coeff[2], coeff[3], linfb);
-      if (alpha[4] > 24 * delta_K)
-         alpha[4] =  24 * delta_K;
-      // second contribution
-      alpha[4] +=  24 * delta_K;
-    }
+// this commented part calls the deprecated DISCTYPE global parameter
+// which has been removed from code, and it has to be adapted
+//    if (TDatabase::ParamDB->DISCTYPE == SUPG)
+//    {
+//      // compute stabilization parameter
+//      delta_K = Compute_SDFEM_delta(hK, coeff[0], coeff[1], coeff[2], coeff[3], linfb);
+//      if (alpha[4] > 24 * delta_K)
+//         alpha[4] =  24 * delta_K;
+//      // second contribution
+//      alpha[4] +=  24 * delta_K;
+//    }
     alpha[5] = hK;
-    if(TDatabase::ParamDB->DISCTYPE == SUPG)
-    {
-      alpha[5] = hK*hK/(3*sqrt(10.0)*coeff[0]);
-      if (coeff[3]>0)
-      {
-        if (1.0/coeff[3]<alpha[5])
-          alpha[5] = 1.0/coeff[3];
-      }
-      // compute stabilization parameter
-      if (hK_tilde/(sqrt(2.0)*linfb)<alpha[5])
-        alpha[5] = hK/(sqrt(2.0)*linfb);
-      alpha[5] *= 2*alpha[5];
-    }
+//    if(TDatabase::ParamDB->DISCTYPE == SUPG)
+//    {
+//      alpha[5] = hK*hK/(3*sqrt(10.0)*coeff[0]);
+//      if (coeff[3]>0)
+//      {
+//        if (1.0/coeff[3]<alpha[5])
+//          alpha[5] = 1.0/coeff[3];
+//      }
+//      // compute stabilization parameter
+//      if (hK_tilde/(sqrt(2.0)*linfb)<alpha[5])
+//        alpha[5] = hK/(sqrt(2.0)*linfb);
+//      alpha[5] *= 2*alpha[5];
+//    }
     for (i=1;i<N_estimators;i++)
       estimated_error[i] = alpha[i-1]*strong_residual;
     /*************************************************************************/

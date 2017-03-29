@@ -14,8 +14,8 @@
  * on the default unit cube geometry.
  * We're only testing examples whose analytic solution is in the ansatz space,
  * thus we expect very small errors every time.
- * Fixed are DISCTYPE 1, LAPLACETYPE 0, NSE_NONLINEAR_FORM 0
- * and SC_NONLIN_ITE_TYPE_SADDLE = 0.
+ * Fixed are discretization_type 1 (galerkin), LAPLACETYPE 0,
+ * NSE_NONLINEAR_FORM 0 and SC_NONLIN_ITE_TYPE_SADDLE = 0.
  * Note that for these discretizations it is futile to choose any other NSTYPE
  * than 1 (see e.g. MooNMD documentation p. 35), but we vary them anyway, just
  * for the sake of testing the different types.
@@ -311,7 +311,7 @@ int main(int argc, char* argv[])
          {"Default_UnitCube_Hexa","Default_UnitCube_Tetra"});
   db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 6; // flow problem type
-  TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
+  db["space_discretization_type"] = "galerkin"; //Galerkin discretization, nothing else implemented
   TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
   TDatabase::ParamDB->Par_P3 = 1; // use mesh partitioning with halo cells

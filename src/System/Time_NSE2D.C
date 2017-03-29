@@ -112,7 +112,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
   }
 
   /* Check Type for SUPG  */
-  if((TDatabase::ParamDB->DISCTYPE == SUPG)  &&
+  if( (db["space_discretization_type"].is("supg"))  &&
     (type != Matrix::Type14 && type !=Matrix::Type4))
   {
     ErrThrow("The SUPG method is only implemented for NSTYPE 4 and 14");
@@ -125,7 +125,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
   this->systems.emplace_back(example, *coll, velo_pres_order, type);
 
   /* Projection-Based VMS, only on the finest level */
-  if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+  if(db["space_discretization_type"].is("vms_projection"))
   {
     // VMS projection order
     int projection_order = db["vms_projection_space_order"];
@@ -395,7 +395,7 @@ void Time_NSE2D::assemble_initial_time()
     s.solution.copy_nonactive(s.rhs);
 
     // Update the matrices for Projection-based VMS
-    if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+    if (db["space_discretization_type"].is("vms_projection"))
     {
       std::vector<std::shared_ptr<FEMatrix>> blocks
       = s.matrix.get_blocks_uniquely();
@@ -405,12 +405,12 @@ void Time_NSE2D::assemble_initial_time()
       VMS_ProjectionUpdateMatrices2D(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids
-      TDatabase::ParamDB->DISCTYPE = SMAGORINSKY_COARSE;
+      db["space_discretization_type"].set("smagorinsky_coarse");
     }
   }// end for system per grid - the last system is the finer one (front)
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
-  if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY_COARSE)
-    TDatabase::ParamDB->DISCTYPE = VMS_PROJECTION;
+  if(db["space_discretization_type"].is("smagorinsky_coarse"))
+    db["space_discretization_type"].set("vms_projection");
   
 // this piece of code is just to check A matrix
 //  BlockVector testing1 = this->systems.front().solution;
@@ -601,7 +601,7 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
                non_const_bound_values.data(), la_nonlinear);
 
     // Update the matrices for Projection-based VMS
-    if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+    if (db["space_discretization_type"].is("vms_projection"))
     {
       std::vector<std::shared_ptr<FEMatrix>> blocks
       = s.matrix.get_blocks_uniquely();
@@ -611,12 +611,12 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
       VMS_ProjectionUpdateMatrices2D(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids
-      TDatabase::ParamDB->DISCTYPE = SMAGORINSKY_COARSE;
+      db["space_discretization_type"].set("smagorinsky_coarse");
     }
   }// end for system per grid - the last system is the finer one (front)
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
-  if(TDatabase::ParamDB->DISCTYPE == SMAGORINSKY_COARSE)
-    TDatabase::ParamDB->DISCTYPE = VMS_PROJECTION;
+  if(db["space_discretization_type"].is("smagorinsky_coarse"))
+    db["space_discretization_type"].set("vms_projection");
 
   if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
   {
@@ -859,7 +859,7 @@ void Time_NSE2D::prepare_fefunc_for_localassembling(Time_NSE2D::System_per_grid&
 
   // Append function for the labels of the local projection
   // for the case "Projection-Based VMS"
-  if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+  if(db["space_discretization_type"].is("vms_projection"))
   {
     fe_functions.resize(3);
     fe_functions[2] = label_for_local_projection_fefct.get();
@@ -898,6 +898,15 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
       std::vector<const TFESpace2D*> &spaces_rhs, std::vector<TSquareMatrix2D*> &sqMatrices,
       std::vector<TMatrix2D*> &rectMatrices, std::vector<double*> &rhs_array)
 {
+  // TODO: move this small code and better define disctype in TNSE class
+  int DISCTYPE;
+  if (db["space_discretization_type"].is("galerkin"))
+    DISCTYPE = GALERKIN;
+  else if (db["space_discretization_type"].is("vms_projection"))
+    DISCTYPE = VMS_PROJECTION;
+  else
+    ErrThrow("Unknown space_discretization_type", db["space_discretization_type"]);
+
   const TFESpace2D * velo_space = &s.velocity_space;
   const TFESpace2D * pres_space = &s.pressure_space;
   // First, set the spaces valid for TNSE2D and TNSE2D_NL)
@@ -919,7 +928,7 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
 
 
   // Append correct spaces if "Projection-Based VMS" is used
-  if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+  if(db["space_discretization_type"].is("vms_projection"))
   {
     spaces.resize(4);
     spaces[2] = projection_space_.get();
@@ -1022,7 +1031,7 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
 
         if (TDatabase::ParamDB->NSTYPE == 14)
         {
-          if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+          if (db["space_discretization_type"].is("vms_projection"))
             ErrThrow("PROJECTION_VMS DOESN'T WORK WITH NSTYPE14! ONLY 4!!");
           sqMatrices.resize(6);
           // C block pressure pressure
@@ -1037,7 +1046,7 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
         // additional matrices of the VMS method
         // mass matrix L of projection space
         // Note that VMS_Projection can work only with NSTYPE 4 here
-        if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+        if (db["space_discretization_type"].is("vms_projection"))
         {
           sqMatrices.resize(6);
           sqMatrices[5] = reinterpret_cast<TSquareMatrix2D*>(
@@ -1097,7 +1106,7 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
           sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
           break;
         case 3: case 4: case 14:
-          switch(TDatabase::ParamDB->DISCTYPE)
+          switch(DISCTYPE)
           {
             case GALERKIN:
              blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});

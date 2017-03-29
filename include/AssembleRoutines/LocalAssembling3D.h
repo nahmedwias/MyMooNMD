@@ -58,6 +58,9 @@ class LocalAssembling3D
     /** @brief The type of problem this assembling objects is made for. */
     const LocalAssembling3D_type type;
 
+    /** an integer to identify the space discretization_type **/
+    int discretization_type;
+
     /** name */
     std::string name;
 
@@ -165,7 +168,7 @@ class LocalAssembling3D
      *
      */
     LocalAssembling3D(LocalAssembling3D_type type, TFEFunction3D **fefunctions3d,
-                      CoeffFct3D *coeffs);
+                      CoeffFct3D *coeffs, int disctype = 1);
     
     /** @brief Constructor for backward compatibility
      * 
@@ -252,5 +255,8 @@ class LocalAssembling3D
     /** @return The type of the local assembling object. */
     LocalAssembling3D_type get_type() const
     { return type; }
+
+    const int get_disctype() const
+    { return discretization_type; }
 };
 #endif

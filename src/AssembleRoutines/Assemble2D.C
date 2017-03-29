@@ -63,7 +63,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
   
   double hK;
   int N_AllMatrices = n_sqmatrices+n_matrices;
-  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,jj,ij;
+  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,jj;//,ij;
   int N_Cells, N_Points, N_Parameters, N_, N_Hanging;
   int N_Test, N_Ansatz, N_Joints, N_Edges;
   int *N_BaseFunct;
@@ -323,21 +323,23 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
     
     Parameters->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param);
     
-    if((TDatabase::ParamDB->DISCTYPE == SDFEM)
-      || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
-      || (TDatabase::ParamDB->CELL_MEASURE == 4))
-    {
-      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
-      N_Edges = cell->GetN_Edges();
-      for (ij=0;ij<N_Edges;ij++)
-      {
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
-        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
-      }
-      if (N_Edges==3)
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
-      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
-    }
+// this commented part calls the deprecated DISCTYPE global parameter
+// which has been removed from code, and it has to be adapted
+//    if((TDatabase::ParamDB->DISCTYPE == SDFEM)
+//      || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
+//      || (TDatabase::ParamDB->CELL_MEASURE == 4))
+//    {
+//      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
+//      N_Edges = cell->GetN_Edges();
+//      for (ij=0;ij<N_Edges;ij++)
+//      {
+//        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
+//        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
+//      }
+//      if (N_Edges==3)
+//        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
+//      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
+//    }
 
 #ifdef __3D__
     if(Aux2D3D)
@@ -1233,9 +1235,9 @@ double factor
 {
   double hK;
   int N_AllMatrices = n_sqmatrices+n_matrices;
-  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,ij;
+  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements;//ij;
   int N_Cells, N_Points, N_Parameters, N_, N_Hanging;
-  int N_Test, N_Ansatz, N_Joints, N_Edges;
+  int N_Test, N_Ansatz, N_Joints;//, N_Edges;
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
   const TFESpace2D *fespace;
@@ -1489,20 +1491,22 @@ double factor
 
     Parameters->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param);
 
-    if ((TDatabase::ParamDB->DISCTYPE == SDFEM)||
-      (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
-    {
-      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
-      N_Edges = cell->GetN_Edges();
-      for (ij=0;ij<N_Edges;ij++)
-      {
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
-        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
-      }
-      if (N_Edges==3)
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
-      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
-    }
+// this commented part calls the deprecated DISCTYPE global parameter
+// which has been removed from code, and it has to be adapted
+//    if ((TDatabase::ParamDB->DISCTYPE == SDFEM)||
+//      (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
+//    {
+//      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
+//      N_Edges = cell->GetN_Edges();
+//      for (ij=0;ij<N_Edges;ij++)
+//      {
+//        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
+//        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
+//      }
+//      if (N_Edges==3)
+//        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
+//      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
+//    }
 
     #ifdef __3D__
     if(Aux2D3D)
@@ -8586,9 +8590,9 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     
     //Parameters->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param);
     la.GetParameters(N_Points, Coll, cell, i, X, Y, Param);
+    bool is_sdfem = (la.get_disctype() == SDFEM);
 
-    if((TDatabase::ParamDB->DISCTYPE == SDFEM)
-      || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
+    if( is_sdfem || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
       || (TDatabase::ParamDB->CELL_MEASURE == 4))
     {
       TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;

@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
     db.merge(AlgebraicFluxCorrection::default_afc_database(), true);
     db["algebraic_flux_correction"].set("fem-fct-cn");
 
-    TDatabase::ParamDB->DISCTYPE=1;
+    db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->ANSATZ_ORDER=1;
 
     TDatabase::TimeDB->STARTTIME=0;

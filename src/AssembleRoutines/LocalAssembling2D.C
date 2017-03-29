@@ -32,14 +32,14 @@
  *         LocalAssembling2D_type. This returns an empty string in case the type
  *         is not known. */
 
-std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
+std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int disctype)
 {
     switch(type)
     {
             ///////////////////////////////////////////////////////////////////////////
             // CD2D: stationary convection diffusion problems
         case LocalAssembling2D_type::ConvDiff:
-            switch(TDatabase::ParamDB->DISCTYPE)
+            switch(disctype)
         {
             case GALERKIN:
                 if(TDatabase::ParamDB->Axial3D)
@@ -55,7 +55,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
             ///////////////////////////////////////////////////////////////////////////
             // TCD2D: time dependent convection diffusion problems
         case LocalAssembling2D_type::TCD2D:
-            switch(TDatabase::ParamDB->DISCTYPE)
+            switch(disctype)
         {
             case GALERKIN:
                 return std::string("TCD2D_Stiff_Rhs");
@@ -98,7 +98,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
             ///////////////////////////////////////////////////////////////////////////
             // TNSE2D: nonstationary Navier-Stokes
         case LocalAssembling2D_type::TNSE2D:
-            switch(TDatabase::ParamDB->DISCTYPE)
+            switch(disctype)
         {
             case GALERKIN:
                 return std::string("TNSE2D_Galerkin");
@@ -107,7 +107,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
         }
             break;
         case LocalAssembling2D_type::TNSE2D_NL:
-            switch(TDatabase::ParamDB->DISCTYPE)
+            switch(disctype)
         {
             case GALERKIN:
                 return std::string("TNSE2D_NLGalerkin");
@@ -116,7 +116,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
         }
             break;
         case LocalAssembling2D_type::TNSE2D_Rhs:
-            switch(TDatabase::ParamDB->DISCTYPE)
+            switch(disctype)
         {
             case GALERKIN:
                 return std::string("TNSE2D_Rhs");
@@ -126,7 +126,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
             break;
        	    /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
          case LocalAssembling2D_type::TNSE2D_Mass:
-            switch(TDatabase::ParamDB->DISCTYPE)
+            switch(disctype)
       {
             case GALERKIN:
               return std::string("TNSE2D_Mass");
@@ -151,8 +151,10 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
 
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
                                      TFEFunction2D **fefunctions2d,
-                                     CoeffFct2D *coeffs)
- : type(type), name(LocalAssembling2D_type_to_string(type)), Coeffs(coeffs),
+                                     CoeffFct2D *coeffs,
+                                     int disctype)
+ : type(type), discretization_type(disctype),
+   name(LocalAssembling2D_type_to_string(type, disctype)), Coeffs(coeffs),
    FEFunctions2D(fefunctions2d)
 {
     Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
@@ -178,7 +180,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0 };
             this->N_Rhs = 1;
             this->RhsSpace = { 0 };
-            switch(TDatabase::ParamDB->DISCTYPE)
+            switch(this->discretization_type)
         {
             case GALERKIN:
                 this->N_Terms = 3;
@@ -200,7 +202,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                 this->Needs2ndDerivatives = new bool[1];
                 this->Needs2ndDerivatives[0] = true;
                 this->FESpaceNumber = { 0, 0, 0, 0, 0 };
-                if(TDatabase::ParamDB->DISCTYPE==SUPG)
+                if(this->discretization_type==SUPG)
                     this->AssembleParam = BilinearAssemble_SD;
                 else
                     this->AssembleParam = BilinearAssemble_GLS;
@@ -212,7 +214,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                 
                 break;
             default:
-                ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+                ErrMsg("currently DISCTYPE " << this->discretization_type <<
                        " is not supported by the class CD2D");
                 throw("unsupported DISCTYPE");
         }
@@ -227,7 +229,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->RhsSpace = { 0 };
             this->Manipulate = NULL;
             
-            switch(TDatabase::ParamDB->DISCTYPE)
+            switch(this->discretization_type)
         {
             case GALERKIN:
                 this->N_Terms = 3;
@@ -246,11 +248,11 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                 this->Needs2ndDerivatives[0] = true;
                 this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
                 
-                if(TDatabase::ParamDB->DISCTYPE==SUPG)
+                if(this->discretization_type==SUPG)
                     this->AssembleParam = LocalMatrixARhs_SUPG;
                 else
                 {
-                    ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+                    ErrMsg("currently DISCTYPE " << this->discretization_type <<
                            " is not supported by the class CD2D");
                     throw("unsupported DISCTYPE");
                 }
@@ -265,7 +267,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->RhsSpace = { 0 };
             this->Manipulate = NULL;
             this->Manipulate = NULL;
-            switch(TDatabase::ParamDB->DISCTYPE)
+            switch(this->discretization_type)
         {
             case GALERKIN:
                 this->N_Terms = 1;
@@ -411,7 +413,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
   /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
   case LocalAssembling2D_type::TNSE2D_Mass:
   /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
-    switch(TDatabase::ParamDB->DISCTYPE)
+    switch(this->discretization_type)
     {
       case GALERKIN:
         this->set_parameters_for_tnse(type);
@@ -476,8 +478,8 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
    FEFunctions2D(aux.get_FEFunctions2D()), FEValue_FctIndex(this->N_FEValues,0),
    FEValue_MultiIndex(this->N_FEValues, D00)
 {
-  // copy the array indicating if second derivatives are needed (because the 
-  // destructor deletes this array)
+  // copy the array indicating if second derivatives are needed
+  //  (because the destructor deletes this array)
   this->Needs2ndDerivatives = new bool[this->N_Spaces];
   for(int i = 0; i < this->N_Spaces; ++i)
     this->Needs2ndDerivatives[i] = df.GetNeeds2ndDerivatives()[i];
@@ -2593,7 +2595,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
 void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
 {
   int nstype = TDatabase::ParamDB->NSTYPE;
-  int disc_type = TDatabase::ParamDB->DISCTYPE;
+  int disc_type = this->discretization_type;
   // few checks
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
