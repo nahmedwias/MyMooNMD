@@ -852,17 +852,17 @@ void Time_NSE2D::prepare_fefunc_for_localassembling(Time_NSE2D::System_per_grid&
                                            std::vector<TFEFunction2D*> &fe_functions)
 {
   // Standard FE_Functions for Galerkin TNSE2D
-  fe_functions.resize(3);
+  fe_functions.resize(2);
   fe_functions[0] = s.u.GetComponent(0);
   fe_functions[1] = s.u.GetComponent(1);
-  fe_functions[2] = &s.p;
+//  fe_functions[2] = &s.p;
 
   // Append function for the labels of the local projection
   // for the case "Projection-Based VMS"
   if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
   {
-    fe_functions.resize(4);
-    fe_functions[3] = label_for_local_projection_fefct.get();
+    fe_functions.resize(3);
+    fe_functions[2] = label_for_local_projection_fefct.get();
   }
 
   // The assembly with the extrapolated velocity of IMEX_scheme begins
@@ -872,7 +872,7 @@ void Time_NSE2D::prepare_fefunc_for_localassembling(Time_NSE2D::System_per_grid&
   // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
   if(!is_imex)
   {
-    // do nothing, fe_functions is set as usual
+    // do nothing, fe_functions is already set above
   }
   else
   {
@@ -997,9 +997,14 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
         rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
         break;
       case 4:
-        if(blocks.size() != 8)
+      case 14:
+        if(TDatabase::ParamDB->NSTYPE == 4 && blocks.size() != 8)
         {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
+          ErrThrow("NSTYPE 4: Wrong blocks.size() ", blocks.size());
+        }
+        if(TDatabase::ParamDB->NSTYPE == 14 && blocks.size() != 9)
+        {
+          ErrThrow("NSTYPE 14: Wrong blocks.size() ", blocks.size());
         }
         sqMatrices.resize(5);
         sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
@@ -1015,37 +1020,36 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
         rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
         rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
 
-        rhs_array.resize(3);
-        rhs_array[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
-        spaces_rhs[2] = pres_space;
-
-        break;
-      case 14:
-        if(blocks.size() != 9)
+        if (TDatabase::ParamDB->NSTYPE == 14)
         {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
+          if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+            ErrThrow("PROJECTION_VMS DOESN'T WORK WITH NSTYPE14! ONLY 4!!");
+          sqMatrices.resize(6);
+          // C block pressure pressure
+          sqMatrices[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+          // Correct RHS in case NSTYPE = 14
+          spaces_rhs.resize(3);
+          spaces_rhs[2] = pres_space;
+          rhs_array.resize(3);
+          rhs_array[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
         }
-        sqMatrices.resize(6);
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-        // mass matrices
-        sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        // C block pressure pressure
-        sqMatrices[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-        // rectangular matrices
-        rectMatrices.resize(4);
-        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-        rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
-        rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
 
-        // Correct RHS in case NSTYPE = 14
-        rhs_array.resize(3);
-        rhs_array[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
-        spaces_rhs.resize(3);
-        spaces_rhs[2] = pres_space;
+        // additional matrices of the VMS method
+        // mass matrix L of projection space
+        // Note that VMS_Projection can work only with NSTYPE 4 here
+        if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+        {
+          sqMatrices.resize(6);
+          sqMatrices[5] = reinterpret_cast<TSquareMatrix2D*>(
+                matrices_for_turb_mod.at(4).get());
+          rectMatrices.resize(8);
+          // matrices  \tilde G_11, \tilde G_24
+          rectMatrices[4]=reinterpret_cast<TMatrix2D*>(matrices_for_turb_mod.at(0).get());
+          rectMatrices[5]=reinterpret_cast<TMatrix2D*>(matrices_for_turb_mod.at(1).get());
+          // matrices G_11, G_42
+          rectMatrices[6]=reinterpret_cast<TMatrix2D*>(matrices_for_turb_mod.at(2).get());
+          rectMatrices[7]=reinterpret_cast<TMatrix2D*>(matrices_for_turb_mod.at(3).get());
+        }
 
         break;
       default:
@@ -1093,14 +1097,42 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
           sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
           break;
         case 3: case 4: case 14:
-          blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
-          sqMatrices.resize(2);
-          sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-          sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+          switch(TDatabase::ParamDB->DISCTYPE)
+          {
+            case GALERKIN:
+             blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
+             sqMatrices.resize(2);
+             sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+             sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+             break;
+            case VMS_PROJECTION:
+              if (!TDatabase::ParamDB->NSTYPE==14)
+                ErrThrow("VMS PROJECTION CAN BE USED ONLY WITH NSTYPE 14.");
+
+              // reassemble all the sqmatrices
+              sqMatrices.resize(4);
+              sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+              sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+              sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+              sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+
+              // rectMatrices for VMS projection
+              rectMatrices.resize(2);
+              // matrices  \tilde G_11, \tilde G_24
+              rectMatrices[0]=reinterpret_cast<TMatrix2D*>(matrices_for_turb_mod.at(0).get());
+              rectMatrices[1]=reinterpret_cast<TMatrix2D*>(matrices_for_turb_mod.at(1).get());
+
+              break;
+            default:
+              ErrThrow("");
+              break;
+          }  // end disctype of nstype 3,4,14 of TNSE2D_NL
+
           break;
         default:
           ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                  " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
+          break;
       }
 
     break;
