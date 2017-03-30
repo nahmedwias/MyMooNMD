@@ -8,12 +8,12 @@
 #ifndef INCLUDE_MULTIGRID_VANKASMOOTHERNEW_H_
 #define INCLUDE_MULTIGRID_VANKASMOOTHERNEW_H_
 
-#include <DofBatch.h>
+#include <DofPatch.h>
 #include <Smoother.h>
 
 #include <memory>
 
-enum class VankaType {NODAL, CELL, BATCH, CELL_JACOBI};
+enum class VankaType {NODAL, CELL, PATCH, CELL_JACOBI};
 
 //forward declaration
 class DenseMatrix;
@@ -33,7 +33,7 @@ class TFESpace3D;
  * spaces are the same (e.g. a 1x1 Convection-Difusion-Reaction matrix).
  *
  * There is a variety of different Vanka smoothers available by now. The basic
- * three are nodal, cell and batch vanka. Note that cell vanka works only
+ * three are nodal, cell and patch vanka. Note that cell vanka works only
  * properly for discontinuous pressure approximations in NSE. Nodal Vanka is
  * useless for CDR problems, because there the local systems degenerate to 1x1 size.
  * In SEQ, these three can be used in a "_store" version, too, where the local
@@ -71,7 +71,7 @@ class VankaSmoother : public Smoother
 {
   public:
     /** Default constructor.
-     * @param type The Vanka type to use. Currently nodal, cell and batch
+     * @param type The Vanka type to use. Currently nodal, cell and patch
      * Vanke are available.
      * @param damp_factor The damping factor to use when updating the solution
      * of the global system by the solution of the local system.
@@ -109,7 +109,7 @@ class VankaSmoother : public Smoother
     ~VankaSmoother();
 
   private:
-    /// The type of Vanka smoother (nodal, cell, batch)
+    /// The type of Vanka smoother (nodal, cell, patch)
     VankaType type_;
 
     /// The dimension of the velocity equation (usually 2 or 3).
@@ -128,10 +128,10 @@ class VankaSmoother : public Smoother
 #endif
 
     /// The collection of pressure dofs for the local systems.
-    std::vector<DofBatch> press_dofs_local_;
+    std::vector<DofPatch> press_dofs_local_;
 
     /// The collection of velocity dofs for the local systems.
-    std::vector<DofBatch> velo_dofs_local_;
+    std::vector<DofPatch> velo_dofs_local_;
 
     //Store the matrices which were assembled in order to reuse their LU factorization.
     std::vector<DenseMatrix*> local_systems_;
@@ -150,9 +150,9 @@ class VankaSmoother : public Smoother
 #endif
 
 
-    void set_up_pressure_batches(const TFESpace& pressureSpace);
+    void set_up_pressure_patches(const TFESpace& pressureSpace);
 
-    void set_up_velocity_batches(const TMatrix& pressureVelocityMatrix,
+    void set_up_velocity_patches(const TMatrix& pressureVelocityMatrix,
                                  const TFESpace& velocitySpace);
 
 

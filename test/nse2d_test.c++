@@ -132,7 +132,7 @@ void check(TDomain &domain, ParameterDatabase db,
   if(std::find(disc_p.begin(), disc_p.end(), velocity_order) != disc_p.end())
     db["multigrid_smoother"] = "cell_vanka_store";
   else
-    db["multigrid_smoother"] = "batch_vanka_store";
+    db["multigrid_smoother"] = "patch_vanka_store";
 
   db["multigrid_type"] = "standard";
   db["multigrid_smoother_coarse"] = "direct_solve";
