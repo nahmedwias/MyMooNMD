@@ -277,6 +277,18 @@ void Time_NSE2D::set_parameters()
           << " does not supported");
     throw("TIME_DISC: 0 is not supported");
   }  
+
+  // Set the DISCTYPE into an int
+  if (db["space_discretization_type"].is("galerkin"))
+    this->disctype = GALERKIN;       // = 1
+  else if (db["space_discretization_type"].is("supg")
+      || db["space_discretization_type"].is("sdfem"))
+    this->disctype = SUPG;           // = 2 = SDFEM
+  else if (db["space_discretization_type"].is("smagorinsky"))
+    this->disctype = SMAGORINSKY;    // = 4
+  else if (db["space_discretization_type"].is("vms_projection"))
+    this->disctype = VMS_PROJECTION; // = 9
+
 }
 
 /**************************************************************************** */
@@ -365,11 +377,11 @@ void Time_NSE2D::assemble_initial_time()
     std::vector<TFEFunction2D*> fe_functions;
     prepare_fefunc_for_localassembling(s,fe_functions);
     LocalAssembling2D la(TNSE2D, fe_functions.data(),
-                         this->example.get_coeffs());
+                         this->example.get_coeffs(), this->disctype);
 
     // prepare spaces, matrices and rhs for assembling
-    std::vector<const TFESpace2D*> spaces_mat(2);
-    std::vector<const TFESpace2D*> spaces_rhs(3);
+    std::vector<const TFESpace2D*> spaces_mat;
+    std::vector<const TFESpace2D*> spaces_rhs;
     std::vector<TSquareMatrix2D*> sqMatrices;
     std::vector<TMatrix2D*> rectMatrices;
     std::vector<double*> rhs_array;
@@ -387,6 +399,8 @@ void Time_NSE2D::assemble_initial_time()
     non_const_bound_values[1] = example.get_bd()[1];
     non_const_bound_values[2] = example.get_bd()[2];
 
+    cout << "JE SUIS ICIII" << endl;
+
     // assemble all the matrices and right hand side 
     Assemble2D(spaces_mat.size(), spaces_mat.data(),
                sqMatrices.size(), sqMatrices.data(),
@@ -394,7 +408,7 @@ void Time_NSE2D::assemble_initial_time()
                rhs_array.size(), rhs_array.data(),
                spaces_rhs.data(), boundary_conditions.data(),
                non_const_bound_values.data(), la);
-
+    cout << "J'AI PASSE LE TEST!!!" << endl;
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
 
@@ -409,12 +423,12 @@ void Time_NSE2D::assemble_initial_time()
       VMS_ProjectionUpdateMatrices2D(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids
-      db["space_discretization_type"].set("smagorinsky_coarse");
+//      db["space_discretization_type"].set("smagorinsky_coarse");
     }
   }// end for system per grid - the last system is the finer one (front)
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
-  if(db["space_discretization_type"].is("smagorinsky_coarse"))
-    db["space_discretization_type"].set("vms_projection");
+//  if(db["space_discretization_type"].is("smagorinsky_coarse"))
+//    db["space_discretization_type"].set("vms_projection");
   
 // this piece of code is just to check A matrix
 //  BlockVector testing1 = this->systems.front().solution;
@@ -443,7 +457,7 @@ void Time_NSE2D::assemble_rhs()
   std::vector<TFEFunction2D*> fe_functions;
   prepare_fefunc_for_localassembling(s,fe_functions);
   LocalAssembling2D la(TNSE2D_Rhs, fe_functions.data(),
-                       this->example.get_coeffs());
+                       this->example.get_coeffs(), this->disctype);
   
   // prepare spaces, matrices and rhs for assembling
   s.rhs.reset(); // NOTE: it seems to be redundant, since it is reset in the following function
@@ -576,7 +590,7 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
     std::vector<TFEFunction2D*> fe_functions;
     prepare_fefunc_for_localassembling(s,fe_functions);
     LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions.data(),
-                         this->example.get_coeffs());
+                         this->example.get_coeffs(), this->disctype);
 
     // prepare spaces, matrices and rhs for assembling
     std::vector<const TFESpace2D*> spaces_mat;
@@ -615,12 +629,12 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
       VMS_ProjectionUpdateMatrices2D(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids
-      db["space_discretization_type"].set("smagorinsky_coarse");
+//      db["space_discretization_type"].set("smagorinsky_coarse");
     }
   }// end for system per grid - the last system is the finer one (front)
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
-  if(db["space_discretization_type"].is("smagorinsky_coarse"))
-    db["space_discretization_type"].set("vms_projection");
+//  if(db["space_discretization_type"].is("smagorinsky_coarse"))
+//    db["space_discretization_type"].set("vms_projection");
 
   if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
   {

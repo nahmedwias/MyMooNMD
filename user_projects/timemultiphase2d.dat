@@ -90,7 +90,7 @@ algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 # 1=GALERKIN, 2=SDFEM=SUPG, 3=UPWIND
 # 4=SMAGORINSKY, 6=CLASSICAL_LES, 9=VMSProjection...
 # DISCTYPE:  9 # THIS GLOBAL PARAMETER DOESNT EXIST ANYMORE...NORMALLY
-space_discretization_type: galerkin
+space_discretization_type: vms_projection
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
 

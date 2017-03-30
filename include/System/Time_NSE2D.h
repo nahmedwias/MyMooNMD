@@ -135,6 +135,17 @@ class Time_NSE2D
     /** old time step length used to scale the pressure blocks*/
     double oldtau;
       
+    /** @brief parameter to store the space_discretization_type
+     * used in TNSE2D. It can be used throughout the methods,
+     * especially in the calls to LocalAssembling object.
+     * Its main purpose is to convert the "space_discretization_type"
+     * into an "int", so that it matches the usual DISCTYPE: GALERKIN,
+     * SUPG, SMAGORINSKY, VMS_PROJECTION,...etc
+     * The default is 1 (=GALERKIN) but the real value is set
+     * in the call to set_parameters().
+     */
+    int disctype = 1;
+
     /** @brief set parameters in database
     *
     * This functions checks if the parameters in the database are meaningful
