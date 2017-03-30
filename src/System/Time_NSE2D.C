@@ -2,9 +2,13 @@
 #include <Database.h>
 #include <Assemble2D.h>
 #include <LinAlg.h>
+#include <Upwind.h>
 #include <DirectSolver.h>
 
 #include <GridTransfer.h>
+
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
+
 
 /* *************************************************************************** */
 ParameterDatabase get_default_TNSE2D_parameters()
@@ -134,10 +138,6 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
       // non-conforming(-1). The pressure space is chosen automatically(-4711).
       velocity_pressure_orders = {-1, -4711};
       this->get_velocity_pressure_orders(velocity_pressure_orders);
-      // FIXME CB Picking of levels in mdml case is already correctly
-      // implemented. The upwind-type assembling on coarse levels  is missing.
-      ErrThrow("MDML is not yet implemented for Time_NSE2D.C. "
-          "Use standard multigrid instead!");
     }
     
     // Determine coarser multigrid levels and construct them.
@@ -305,7 +305,6 @@ void Time_NSE2D::assemble_initial_time()
   {
     s.rhs.reset();
 
-
     const TFESpace2D * velo_space = &s.velocity_space;
     const TFESpace2D * pres_space = &s.pressure_space;
 
@@ -464,10 +463,54 @@ void Time_NSE2D::assemble_initial_time()
       }
     }
 
+    // find out if we have to do upwinding
+    bool do_upwinding = false;
+    {
+      bool mdml =  this->solver.is_using_multigrid()
+                  && this->solver.get_multigrid()->is_using_mdml();
+      bool on_finest_grid = &systems.front() == &s;
+      do_upwinding = (db["space_discretization_type"].is("upwind")
+                     || (mdml && !on_finest_grid));
+    }
+
+    if(do_upwinding)  //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+    else
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
     // assemble all the matrices and right hand side 
     Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices, 
                n_rect_matrices, rectMatrices, nRhs, RHSs, fe_rhs, 
                boundary_conditions, non_const_bound_values.data(), la);
+
+    if(do_upwinding)
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+        case 2:
+          // do upwinding with one matrix
+          UpwindForNavierStokes(la.GetCoeffFct(), sqMatrices[0],
+                                la.get_fe_function(0),
+                                la.get_fe_function(1));
+          Output::print<3>("UPWINDING DONE : level ");
+          break;
+
+        case 3:
+        case 4:
+        case 14:
+          // do upwinding with two matrices
+          Output::print<3>("UPWINDING DONE : level ");
+          UpwindForNavierStokes(la.GetCoeffFct(), sqMatrices[0],
+                                la.get_fe_function(0),
+                                la.get_fe_function(1));
+          UpwindForNavierStokes(la.GetCoeffFct(), sqMatrices[1],
+                                la.get_fe_function(0),
+                                la.get_fe_function(1));
+          break;
+      } // endswitch
+    }
+
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
   }
@@ -664,10 +707,53 @@ void Time_NSE2D::assemble_nonlinear_term()
     for(size_t m=0; m<n_square_matrices; m++)
       sqMatrices[m]->reset();
     
+    // find out if we have to do upwinding
+    bool do_upwinding = false;
+    {
+      bool mdml =  this->solver.is_using_multigrid()
+                  && this->solver.get_multigrid()->is_using_mdml();
+      bool on_finest_grid = &systems.front() == &s;
+      do_upwinding = (db["space_discretization_type"].is("upwind")
+                     || (mdml && !on_finest_grid));
+    }
+
+    if(do_upwinding)  //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+    else
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
     Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices,
                n_rect_matrices, rectMatrices, 0, nullptr, nullptr, 
                boundary_conditions, non_const_bound_values.data(),
                la_nonlinear);
+
+    if(do_upwinding)
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+        case 2:
+          // do upwinding with one matrix
+          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sqMatrices[0],
+                                la_nonlinear.get_fe_function(0),
+                                la_nonlinear.get_fe_function(1));
+          Output::print<3>("UPWINDING DONE : level ");
+          break;
+
+        case 3:
+        case 4:
+        case 14:
+          // do upwinding with two matrices
+          Output::print<3>("UPWINDING DONE : level ");
+          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sqMatrices[0],
+                                la_nonlinear.get_fe_function(0),
+                                la_nonlinear.get_fe_function(1));
+          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sqMatrices[1],
+                                la_nonlinear.get_fe_function(0),
+                                la_nonlinear.get_fe_function(1));
+          break;
+      } // endswitch
+    }
 
     //tidy up
     delete fe_functions[0];
@@ -738,11 +824,6 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
 void Time_NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-  
-  if(this->solver.is_using_multigrid())
-  {
-    ErrThrow("multigrid solver is not tested yet")
-  }
   solver.solve(s.matrix,s.rhs, s.solution);
   
   // Important: We have to descale the matrices, since they are scaled
