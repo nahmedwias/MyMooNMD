@@ -146,12 +146,12 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
   if(db["read_initial_solution"].is(true))
   {//initial solution is given
     std::string file = db["initial_solution_file"];
-    Output::info("Reading initial solution from file ", file);
+    Output::info("Initial Solution", "Reading initial solution from file ", file);
     systems.front().solution.read_from_file(file);
   }
   else
   {//interpolate initial condition from the example
-    Output::info("Interpolating initial solution from example.");
+    Output::info("Initial Solution", "Interpolating initial solution from example.");
     TFEFunction2D * u1 = this->systems.front().u.GetComponent(0);
     TFEFunction2D * u2 = this->systems.front().u.GetComponent(1);
     u1->Interpolate(example.get_initial_cond(0));
@@ -807,7 +807,7 @@ void Time_NSE2D::output(int m)
     if(m==0 || m / interval)
     {//write solution to a binary file
       std::string file = db["write_solution_binary_file"];
-      Output::info("Writing current solution to file ", file);
+      Output::info("output", "Writing current solution to file ", file);
       systems.front().solution.write_to_file(file);
     }
   }
