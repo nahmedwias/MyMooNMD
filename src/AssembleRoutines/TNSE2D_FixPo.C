@@ -7,6 +7,7 @@
 #include <Database.h>
 #include <Convolution.h>
 #include <MooNMD_Io.h>
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 
 #include <stdlib.h>
 
@@ -228,7 +229,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz00 = Orig2[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       MatrixRow[j] += Mult * val;
 
       val = ansatz00*test00;
@@ -658,7 +661,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz00 = Orig2[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       MatrixRow[j] += Mult * val;
 
       val = ansatz00*test00;
@@ -1106,7 +1111,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz00 = Orig2[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix11Row[j] += Mult * val;
       Matrix22Row[j] += Mult * val;
 
@@ -1180,7 +1187,8 @@ double ***LocMatrices, double **LocRhs)
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixM11Row;
   double *MatrixRow1, *MatrixRow2;
-  double val, val1;
+  double val;
+  double val1 = 0;
   
   for(int i=0;i<N_U;i++)
   {
@@ -1203,7 +1211,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz01 = Orig1[j];
       ansatz00 = Orig2[j];
       
-      val1 = (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val1 = (u1*ansatz10+u2*ansatz01)*test00;
       val  = c0*(2*test10*ansatz10+test01*ansatz01);
       val += val1;
       Matrix11Row[j] += Mult * val;
@@ -2175,11 +2185,15 @@ double ***LocMatrices, double **LocRhs)
       ansatz00 = Orig2[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix11Row[j] += Mult * val;
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix22Row[j] += Mult * val;
 
       val = Mult*(ansatz00*test00);
@@ -2300,7 +2314,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz00 = Orig2[j];
 
       val  = c0*(2*test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix11Row[j] += Mult * val;
 
       val  = c0*(test01*ansatz10);
@@ -2310,7 +2326,9 @@ double ***LocMatrices, double **LocRhs)
       Matrix21Row[j] += Mult * val;
 
       val  = c0*(test10*ansatz10+2*test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix22Row[j] += Mult * val;
 
       val = Mult*(ansatz00*test00);
@@ -3447,7 +3465,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz01 = Orig1[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
 
       MatrixRow[j] += Mult * val;
     }                            // endfor j
@@ -3610,7 +3630,9 @@ double ***LocMatrices, double **LocRhs)
       ansatz01 = Orig1[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix11Row[j] += Mult * val;
       Matrix22Row[j] += Mult * val;
 
