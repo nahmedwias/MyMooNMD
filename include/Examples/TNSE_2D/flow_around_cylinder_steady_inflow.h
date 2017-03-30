@@ -11,6 +11,10 @@
 #include <FE2D.h>
 #include <FEDesc2D.h>
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 // ========================================================================
 // example file
 // ========================================================================
@@ -151,7 +155,7 @@ void U2BoundValue_diff(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double *coeff;
 
@@ -203,7 +207,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   double *Derivatives[MaxN_BaseFunctions2D];
   MultiIndex2D NeededDerivatives[3] = { D00, D10, D01 };
   TFEFunction2D *vfct;
-  double *v, nu = 1/TDatabase::ParamDB->RE_NR;
+  double *v, nu = DIMENSIONLESS_VISCOSITY;
   double *Der, *aux;
   TJoint *joint;
   TBoundEdge *boundedge;
@@ -415,6 +419,8 @@ void compute_drag_lift_pdiff(Time_NSE2D& time_nse2d)
   TFEFunction2D* u1 = u.GetComponent(0);
   TFEFunction2D* u2 = u.GetComponent(1);
 
+  
+  /// @todo change implementation such that previous velocity can be used for computing drag and lift
   GetCdCl(u1, u2, &p, u1, u2, drag, lift);
   p.FindGradient(0.15, 0.2, dP1);
   p.FindGradient(0.25, 0.2, dP2);
