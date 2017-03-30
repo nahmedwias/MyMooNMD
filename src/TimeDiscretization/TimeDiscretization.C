@@ -39,7 +39,7 @@ ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
 
   db.add("extrapolate_velocity", "constant_extrapolate",
          "This is the extrapolate velcotity parameter"
-         "These values can be used with BDF's schemes or Crank_Nicholson",
+         "These values can be used with BDF's schemes or Crank_Nicolson",
          {"constant_extrapolate", "linear_extrapolate", "quadratic_extrapolate"});
 
   db.add("ansatz_test_extrapolate", "no_extrapolation",
@@ -126,7 +126,14 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
   }
   else if(db["time_discretization"].is("crank_nicolson"))
   {
-    ErrThrow("not yet implemented");
+    // ErrThrow("not yet implemented");
+    rhs[0].scaleActive(0.5*current_time_step_length);
+    rhs[0].addScaledActive(rhs[1], 0.5*current_time_step_length);
+    // mass matrix times old solution goes to right hand side
+    mass_matrix.apply_scaled_add_actives(old_solutions[0], rhs[0], 1.);
+    // 
+    system_matrix.apply_scaled_add_actives(old_solutions[0], rhs[0], 
+                                         -0.5*current_time_step_length);
   }
 }
 
@@ -192,7 +199,7 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
   else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
     factor = current_time_step_length*bdf_coefficients[2];
   else if(db["time_discretization"].is("crank_nicolson"))
-    factor = current_time_step_length*0.5;//this have to be adopted according to the stages
+    factor = current_time_step_length;//this have to be adopted according to the stages
   else
     ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
   
@@ -244,7 +251,7 @@ void TimeDiscretization::scale_nl_b_blocks(BlockFEMatrix& matrix)
   else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
     factor = current_time_step_length*bdf_coefficients[2];
   else if(db["time_discretization"].is("crank_nicolson"))
-    factor = current_time_step_length*0.5;//this have to be adopted according to the stages
+    factor = current_time_step_length;//this have to be adopted according to the stages
   else
     ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
   
@@ -279,6 +286,7 @@ void TimeDiscretization::set_time_disc_parameters()
   // or Crank-Nicolson scheme
   if(db["time_discretization"].is("backward_euler"))
   {
+    this->pre_stage_bdf = false;
     TDatabase::TimeDB->THETA1 = 1.0;
     TDatabase::TimeDB->THETA2 = 0.0;
     TDatabase::TimeDB->THETA3 = 0.0;
@@ -304,6 +312,14 @@ void TimeDiscretization::set_time_disc_parameters()
       Output::print("BDF2 with new parameters : ", bdf_coefficients[0], "  ",
                     bdf_coefficients[1],"  ", bdf_coefficients[2]);
     }
+  }
+  if(db["time_discretization"].is("crank_nicolson"))
+  {
+    this->pre_stage_bdf = false;
+    TDatabase::TimeDB->THETA1 = 0.5;
+    TDatabase::TimeDB->THETA2 = 0.5;
+    TDatabase::TimeDB->THETA3 = 0.5;
+    TDatabase::TimeDB->THETA4 = 0.5;
   }
   // set the global parameters used in the local assembling routines 
   // and at some other places
