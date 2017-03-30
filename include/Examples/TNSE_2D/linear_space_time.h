@@ -14,22 +14,22 @@ double DIMENSIONLESS_VISCOSITY;
 void ExactU1(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
-  values[0] = t*y;
+  values[0] = t*t*t*y;
   values[1] = 0.;
-  values[2] = t;
+  values[2] = t*t*t;
   values[3] = 0.;
-  values[4] = y;
+  values[4] = 3.*t*t*y;
 }
 
 void ExactU2(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = 2.*t*x;
-  values[1] = 2.*t;
+  values[0] = 2.*t*t*t*x;
+  values[1] = 2.*t*t*t;
   values[2] = 0.;
   values[3] = 0.;
-  values[4] = 2.*x;
+  values[4] = 6.*x*t*t;
 }
 
 void ExactP(double x, double y, double *values)
@@ -110,7 +110,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  static double nu = DIMENSIONLESS_VISCOSITY;
+  static double nu = 1.;
   double u1[5], u2[5], p[4];
 
   for(int i=0;i<n_points;i++)
