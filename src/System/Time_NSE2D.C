@@ -642,14 +642,14 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
          &this->defect[2*nuDof]);
   
-  Output::print("nonlinear step  :  " , setw(3), it_counter);
-  Output::print("impulse_residual:  " , setw(3), impulse_residual);
-  Output::print("mass_residual   :  " , setw(3), mass_residual);
-  Output::print("residual        :  " , setw(3), sqrt(residual));
+  Output::print<3>("nonlinear step  :  " , setw(3), it_counter);
+  Output::print<3>("impulse_residual:  " , setw(3), impulse_residual);
+  Output::print<3>("mass_residual   :  " , setw(3), mass_residual);
+  Output::print<3>("residual        :  " , setw(3), sqrt(residual));
   
   if (it_counter>0)
   {
-  Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+  Output::print<3>("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
   }
   
   oldResidual = sqrt(residual);
@@ -667,7 +667,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   if ((((sqrt(residual)<=limit)||(it_counter==Max_It)))
    && (it_counter>=sc_minit))
    {
-     Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
+     Output::print<3>("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
                    " Reduction : ",  sqrt(residual)/initial_residual);
      // descale the matrices, since only the diagonal A block will 
      // be reassembled in the next time step
@@ -825,3 +825,8 @@ std::array< double, int(6) > Time_NSE2D::get_errors()
 }
 
 /**************************************************************************** */
+/** ************************************************************************ */
+double Time_NSE2D::getFullResidual() const
+{
+  return this->oldResidual;
+}
