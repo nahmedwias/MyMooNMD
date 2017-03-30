@@ -108,7 +108,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
-  // set the velocity and preesure spaces
+  // set the velocity and pressure spaces
   // this function returns a pair which consists of 
   // velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);
@@ -180,11 +180,6 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   
   // print out some information  
   this->output_problem_size_info();
-}
-
-/** ************************************************************************ */
-NSE2D::~NSE2D()
-{
 }
 
 /** ************************************************************************ */
@@ -316,6 +311,7 @@ void NSE2D::assemble()
     BoundCondFunct2D * boundary_conditions[3] = {
       v_space->GetBoundCondition(), v_space->GetBoundCondition(),
       p_space->GetBoundCondition() };
+
     std::array<BoundValueFunct2D*, 3> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];
@@ -324,10 +320,10 @@ void NSE2D::assemble()
     //same for all: the local asembling object
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la(NSE2D_Galerkin, fe_functions,
-                     this->example.get_coeffs());
+    LocalAssembling2D la(NSE2D_Galerkin, fe_functions, example.get_coeffs());
 
-    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
+    std::vector<std::shared_ptr<FEMatrix>> blocks =
+        s.matrix.get_blocks_uniquely();
 
     switch(TDatabase::ParamDB->NSTYPE)
     {// switch over known Block Matrix types, treat each one individually,
@@ -434,10 +430,7 @@ void NSE2D::assemble()
 /** ************************************************************************ */
 void NSE2D::assemble_nonlinear_term()
 {
-  // the class LocalAssembling2D which we will need next, requires an array of
-  // pointers to finite element functions, i.e. TFEFunction2D **.
-
-  //Nonlinear assembling requires an approximate velocity solution on every grid!
+ //Nonlinear assembling requires an approximate velocity solution on every grid!
   if(systems.size() > 1)
   {
     for( int block = 0; block < 2 ;++block)
@@ -509,23 +502,12 @@ void NSE2D::assemble_nonlinear_term()
       // TODO remove all reinterpret casts as soon as Assembling process takes only FEMatrices
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
-        n_sq_mat = 1;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        break;
       case 2:
         n_sq_mat = 1;
         sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         break;
       case 3:
-        n_sq_mat = 2;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        break;
       case 4:
-        n_sq_mat = 2;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        break;
       case 14:
         n_sq_mat = 2;
         sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
