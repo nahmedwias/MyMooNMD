@@ -104,6 +104,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
                 return std::string("TNSE2D_Galerkin");
             case SUPG:
                 return std::string("TNSE2D_SUPG");
+            case VMS_PROJECTION:
+                return std::string("TNSE2D_VMSPROJECTION");
         }
             break;
         case LocalAssembling2D_type::TNSE2D_NL:
@@ -113,6 +115,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
                 return std::string("TNSE2D_NLGalerkin");
             case SUPG:
                 return std::string("TNSE2D_NLSUPG");
+            case VMS_PROJECTION:
+                return std::string("TNSE2D_NLVMSPROJECTION");
         }
             break;
         case LocalAssembling2D_type::TNSE2D_Rhs:
@@ -122,6 +126,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
                 return std::string("TNSE2D_Rhs");
             case SUPG:
                 return std::string("TNSE2D_RhsSUPG");
+            case VMS_PROJECTION:
+                return std::string("TNSE2D_RHSVMSPROJECTION");
         }
             break;
        	    /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
@@ -132,6 +138,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
               return std::string("TNSE2D_Mass");
             case SUPG:
               return std::string("");
+            case VMS_PROJECTION:
+                return std::string("TNSE2D_MASSVMSPROJECTION");
       }
             break;
    case LocalAssembling2D_type::TLinElastic2D_WholeSystem:

@@ -399,8 +399,6 @@ void Time_NSE2D::assemble_initial_time()
     non_const_bound_values[1] = example.get_bd()[1];
     non_const_bound_values[2] = example.get_bd()[2];
 
-    cout << "JE SUIS ICIII" << endl;
-
     // assemble all the matrices and right hand side 
     Assemble2D(spaces_mat.size(), spaces_mat.data(),
                sqMatrices.size(), sqMatrices.data(),
@@ -408,7 +406,7 @@ void Time_NSE2D::assemble_initial_time()
                rhs_array.size(), rhs_array.data(),
                spaces_rhs.data(), boundary_conditions.data(),
                non_const_bound_values.data(), la);
-    cout << "J'AI PASSE LE TEST!!!" << endl;
+
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
 
@@ -916,37 +914,19 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
       std::vector<const TFESpace2D*> &spaces_rhs, std::vector<TSquareMatrix2D*> &sqMatrices,
       std::vector<TMatrix2D*> &rectMatrices, std::vector<double*> &rhs_array)
 {
-  // TODO: move this small code and better define disctype in TNSE class
-  int DISCTYPE;
-  if (db["space_discretization_type"].is("galerkin"))
-    DISCTYPE = GALERKIN;
-  else if (db["space_discretization_type"].is("vms_projection"))
-    DISCTYPE = VMS_PROJECTION;
-  else
-    ErrThrow("Unknown space_discretization_type", db["space_discretization_type"]);
-
   const TFESpace2D * velo_space = &s.velocity_space;
   const TFESpace2D * pres_space = &s.pressure_space;
   // First, set the spaces valid for TNSE2D and TNSE2D_NL)
-  if (type == TNSE2D || type == TNSE2D_Rhs)
-  {
-    spaces.resize(2);
-    spaces_rhs.resize(2);
-    spaces[0] = velo_space;
-    spaces[1] = pres_space;
-    spaces_rhs[0] = velo_space;
-    spaces_rhs[1] = velo_space;
-  }
-  else if (type == TNSE2D_NL)
-  {
-    spaces.resize(1);
-    spaces_rhs.resize(0);
-    spaces[0] = velo_space;
-  }
+  spaces.resize(2);
+  spaces_rhs.resize(2);
+  spaces[0] = velo_space;
+  spaces[1] = pres_space;
+  spaces_rhs[0] = velo_space;
+  spaces_rhs[1] = velo_space;
 
 
   // Append correct spaces if "Projection-Based VMS" is used
-  if(db["space_discretization_type"].is("vms_projection"))
+  if(this->disctype == VMS_PROJECTION)
   {
     spaces.resize(4);
     spaces[2] = projection_space_.get();
@@ -1049,7 +1029,7 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
 
         if (TDatabase::ParamDB->NSTYPE == 14)
         {
-          if (db["space_discretization_type"].is("vms_projection"))
+          if (this->disctype == VMS_PROJECTION)
             ErrThrow("PROJECTION_VMS DOESN'T WORK WITH NSTYPE14! ONLY 4!!");
           sqMatrices.resize(6);
           // C block pressure pressure
@@ -1064,7 +1044,7 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
         // additional matrices of the VMS method
         // mass matrix L of projection space
         // Note that VMS_Projection can work only with NSTYPE 4 here
-        if (db["space_discretization_type"].is("vms_projection"))
+        if (this->disctype == VMS_PROJECTION)
         {
           sqMatrices.resize(6);
           sqMatrices[5] = reinterpret_cast<TSquareMatrix2D*>(
@@ -1113,8 +1093,8 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
     // LocalAssembling3D_type::TNSE2D_NL:
     case TNSE2D_NL:
     {
-      std::vector<std::shared_ptr<FEMatrix>> mass_blocks
-           = s.Mass_Matrix.get_blocks_uniquely();
+//      std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+//           = s.Mass_Matrix.get_blocks_uniquely();
 
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -1124,7 +1104,7 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
           sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
           break;
         case 3: case 4: case 14:
-          switch(DISCTYPE)
+          switch(this->disctype)
           {
             case GALERKIN:
              blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
