@@ -842,7 +842,7 @@ void Time_NSE2D::output_problem_size_info() const
   double h_min, h_max;
   TCollection * coll = this->get_velocity_space().GetCollection();
   coll->GetHminHmax(&h_min, &h_max);
-  Output::stat("NSE2D", "Mesh data and problem size");
+  Output::stat("Time_NSE2D", "Mesh data and problem size");
   Output::dash("cells              :  ", setw(10), coll->GetN_Cells());
   Output::dash("h (min, max)       :  ", setw(10), h_min, setw(10), " ", h_max);
   Output::dash("dof velocity       :  ", setw(10), 2*n_u );

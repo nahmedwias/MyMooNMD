@@ -4,15 +4,15 @@
 
 #include <string>
 
-namespace bsp1
+namespace bsp1  // example 0
 {
  #include "TNSE_2D/Bsp1.h"
 }
-namespace lin_space_time
+namespace lin_space_time   // example 1
 {
 #include "TNSE_2D/linear_space_time.h"
 }
-namespace sincosexp
+namespace sincosexp    // example 2
 {
 #include "TNSE_2D/SinCosExp.h"
 }
