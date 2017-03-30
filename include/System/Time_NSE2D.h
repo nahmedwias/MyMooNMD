@@ -283,6 +283,8 @@ class Time_NSE2D
                     : this->systems.front().u.GetComponent(1); }
     const TFEFunction2D & get_pressure() const
     { return this->systems.front().p; }
+    TFEFunction2D & get_pressure()
+    { return this->systems.front().p; }
     const TFESpace2D & get_velocity_space() const
     { return this->systems.front().velocity_space; }
     const TFESpace2D & get_pressure_space() const

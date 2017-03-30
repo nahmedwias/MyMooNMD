@@ -17,6 +17,13 @@ namespace sincosexp    // example 2
 #include "TNSE_2D/SinCosExp.h"
 }
 
+namespace flow_around_cylinder_steady_inflow
+{
+#include "flow_around_cylinder_steady_inflow.h"
+}
+
+
+
 /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
 namespace example10_sincos_tnse2d   //
 {
@@ -147,10 +154,37 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       initialCOndtion.push_back(sincosexp::InitialU2);
 
      sincosexp::ExampleFile();
+     break;
+    case 3:
+      /** exact_solution */
+      exact_solution.push_back( flow_around_cylinder_steady_inflow::ExactU1 );
+      exact_solution.push_back( flow_around_cylinder_steady_inflow::ExactU2 );
+      exact_solution.push_back( flow_around_cylinder_steady_inflow::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( flow_around_cylinder_steady_inflow::BoundCondition );
+      boundary_conditions.push_back( flow_around_cylinder_steady_inflow::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( flow_around_cylinder_steady_inflow::U1BoundValue );
+      boundary_data.push_back( flow_around_cylinder_steady_inflow::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = flow_around_cylinder_steady_inflow::LinCoeffs;
+      
+      initialCOndtion.push_back(flow_around_cylinder_steady_inflow::InitialU1);
+      initialCOndtion.push_back(flow_around_cylinder_steady_inflow::InitialU2);
+      
+      /**post processing - drag and lift calculation and output */
+//      post_processing_stat = flow_around_cylinder_steady_inflow::compute_drag_lift_pdiff;
 
+      flow_around_cylinder_steady_inflow::ExampleFile();
       break;
 
-      /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
+
+    /***** BELOW THIS LINE, EXAMPLES ARE SPECIFIC TO USER PROJECT *****/
     case 10:                // Bsp1 = sincos  = SAME AS IN TNSE2D
       /** exact_solution */
       exact_solution.push_back( example10_sincos_tnse2d::ExactU1 );

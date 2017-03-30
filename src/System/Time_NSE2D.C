@@ -26,6 +26,10 @@ ParameterDatabase get_default_TNSE2D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
+  db.add("read_initial_solution", false, " Choose true if the initial "
+      "solution is given in a binary file. Do not forget to specify "
+      "'initial_solution_file' in that case, too.");
+
   // a default time database
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
   db.merge(time_db,true);
@@ -223,13 +227,21 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
     multigrid->initialize(matrices);
   }
 
-  // Initialize some vectors
-  TFEFunction2D * u1 = this->systems.front().u.GetComponent(0);
-  TFEFunction2D * u2 = this->systems.front().u.GetComponent(1);
-
-  u1->Interpolate(example.get_initial_cond(0));
-  u2->Interpolate(example.get_initial_cond(1));
-
+  // initial solution on finest grid - read-in or interpolation
+  if(db["read_initial_solution"].is(true))
+  {//initial solution is given
+    std::string file = db["initial_solution_file"];
+    Output::info("Reading initial solution from file ", file);
+    systems.front().solution.read_from_file(file);
+  }
+  else
+  {//interpolate initial condition from the example
+    Output::info("Interpolating initial solution from example.");
+    TFEFunction2D * u1 = this->systems.front().u.GetComponent(0);
+    TFEFunction2D * u2 = this->systems.front().u.GetComponent(1);
+    u1->Interpolate(example.get_initial_cond(0));
+    u2->Interpolate(example.get_initial_cond(1));
+  }
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
   
@@ -823,6 +835,9 @@ void Time_NSE2D::output(int m)
   }
    delete u1;
    delete u2;
+
+  //do postprocessing step depending on what the example implements
+  example.do_post_processing(*this);
   
   if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
   {

@@ -8,8 +8,16 @@
 
 #include <Database.h>
 #include <MooNMD_Io.h>
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
+#include <TNSE3D_Routines.h>
 #include <Convolution.h>
 #include "../../include/AssembleRoutines/TNSE3D_Routines.h"
+
+// this file gets only compiled #ifdef __3D__ - this is why it is no problem
+// to define the global variable assemble_nse here AND in NSE2D_FixPo (which
+// gets compiled only #ifdef __2D__)
+Hotfixglobal_AssembleNSE assemble_nse(Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION);
+
 
 // ======================================================================
 // compute parameter for RFB stabilization
@@ -655,7 +663,9 @@ void NSType2Galerkin3D(double Mult, double *coeff,
       
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       
       MatrixRow[j] += Mult * val;
     } // endfor j
@@ -1154,17 +1164,23 @@ void NSType3Galerkin3D(double Mult, double *coeff,
       
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix11Row[j] += Mult * val;
 
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix22Row[j] += Mult * val;
 
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix33Row[j] += Mult * val;
     } // endfor j
   } // endfor i
@@ -1980,17 +1996,23 @@ void NSType4Galerkin3D(double Mult, double *coeff,
       
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix11Row[j] += Mult * val;
 
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix22Row[j] += Mult * val;
 
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix33Row[j] += Mult * val;
     } // endfor j
 
