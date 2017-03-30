@@ -57,6 +57,10 @@ class ParameterDatabase
     /// mesh generation using TetGen
     static ParameterDatabase default_tetgen_database();
 
+    /// @brief construct a database of parameters needed
+    /// in the turbulence models
+    static ParameterDatabase default_turbulence_model_database();
+
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;
     

@@ -30,6 +30,10 @@ ParameterDatabase get_default_TNSE2D_parameters()
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
   db.merge(time_db,true);
 
+  // default databases for turbulence parameters
+  ParameterDatabase turbulence_db = ParameterDatabase::default_turbulence_model_database();
+  db.merge(turbulence_db,true);
+
   return db;
 }
 /* *************************************************************************** */
