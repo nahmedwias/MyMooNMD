@@ -616,6 +616,8 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
                spaces_rhs.data(), boundary_conditions.data(),
                non_const_bound_values.data(), la_nonlinear);
 
+//    sqMatrices.at(0)->write("A11_nonlinear");
+//    sqMatrices.at(0)->Print("A11");
     // Update the matrices for Projection-based VMS
     if (db["space_discretization_type"].is("vms_projection"))
     {
