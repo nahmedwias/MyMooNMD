@@ -1,4 +1,6 @@
 #include <Example_TimeNSE2D.h>
+#include <Time_NSE2D.h>   // necessary for ...
+#include <FEDatabase2D.h> // ...post_processingfunction
 #include <Database.h>
 #include <MainUtilities.h>
 
