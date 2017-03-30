@@ -24,9 +24,15 @@ ParameterDatabase get_default_TNSE2D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
-  db.add("read_initial_solution", false, " Choose true if the initial "
+  db.add("read_initial_solution", false, "Choose true if the initial "
       "solution is given in a binary file. Do not forget to specify "
       "'initial_solution_file' in that case, too.");
+
+  db.add("write_solution_binary", false, "Choose true if the computed solution "
+      " should be written out to a file in a binary format. This is helpful if"
+      " you plan to read it in as initial solution later. Do not forget to specify"
+      " 'write_solution_binary_all_n_steps' for the output interval "
+      " and 'write_solution_binary_file', the file path and name.");
 
   return db;
 }
@@ -721,7 +727,11 @@ void Time_NSE2D::deScaleMatrices()
 /**************************************************************************** */
 void Time_NSE2D::output(int m)
 {
-	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+  // TODO CB: This I find misleading. Why isn't it enough if every part of
+  // the output decides on its own? Remove please!
+ 	bool no_output = !db["output_write_vtk"] &&
+ 	                 !db["output_compute_errors"] &&
+ 	                 !db["write_solution_binary"];
 	if(no_output)
 		return;
 
@@ -789,6 +799,16 @@ void Time_NSE2D::output(int m)
     if(db["output_write_vtk"])
     {
       outputWriter.write(TDatabase::TimeDB->CURRENTTIME);
+    }
+  }
+
+  if(db["write_solution_binary"].is(true))
+  {size_t interval = db["write_solution_binary_all_n_steps"];
+    if(m==0 || m / interval)
+    {//write solution to a binary file
+      std::string file = db["write_solution_binary_file"];
+      Output::info("Writing current solution to file ", file);
+      systems.front().solution.write_to_file(file);
     }
   }
 }

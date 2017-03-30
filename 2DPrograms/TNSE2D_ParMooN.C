@@ -119,6 +119,8 @@ int main(int argc, char* argv[])
        }
        // post processing: error computations
        // and solutions for visualization
+       // FIXME CB: The call to output depends on 'step' but is in the loop
+       // over 'substeps' - shouldn't it be outside of the loop?
        tnse2d.output(step);
      }
    }
