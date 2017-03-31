@@ -40,8 +40,8 @@
 enum LocalAssembling2D_type { ConvDiff,                              
                               TCD2D, // stiffness matrix and rhs
                               TCD2D_Mass,// mass matrix, (+ K matrix in case of SUPG)
-                              NSE2D_Galerkin,
-                              NSE2D_Galerkin_Nonlinear,
+                              NSE2D_All,
+                              NSE2D_NL,
                               NSE2D_SUPG,
                               NSE2D_SUPG_NL,
                               TNSE2D,
@@ -163,9 +163,12 @@ class LocalAssembling2D
     /** This function creates local variables for the SUPG method.
      */
     void set_parameters_for_nseSUPG(LocalAssembling2D_type type);
-    /** 
+    
+    /** @brief parameters which are used only for the Galerkin
+     * discretization: one can include all other forms, for example
+     * the different non-linear forms etc
      */
-    void set_parameters_for_tnse(LocalAssembling2D_type type);
+    void set_parameters_for_tnseGalerkin(LocalAssembling2D_type type);
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,

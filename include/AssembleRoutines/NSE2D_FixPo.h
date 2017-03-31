@@ -27,11 +27,6 @@ void NSParamsVelo(double *in, double *out);
 // ======================================================================
 // Type 1, Standard Galerkin
 // ======================================================================
-void NSType1Galerkin(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
-
 // ======================================================================
 // Type 1, (reduced) SDFEM
 // ======================================================================
@@ -73,14 +68,6 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
-// Type 2, Standard Galerkin
-// ======================================================================
-void NSType2Galerkin(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
 // Type 2, SDFEM
 // ======================================================================
 void NSType2SDFEM(double Mult, double *coeff,
@@ -112,21 +99,6 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
 
-// ======================================================================
-// Type 3, Standard Galerkin, (grad u, grad v)
-// ======================================================================
-void NSType3Galerkin(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 3, Standard Galerkin, D(u):D(v)
-// ======================================================================
-void NSType3GalerkinDD(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
 // for Type 3 is SDFEM not available
@@ -168,22 +140,6 @@ double ***LocMatrices, double **LocRhs);
 // Type 3, Standard Galerkin +div term, (grad u, grad v)
 // ======================================================================
 void NSType3GalerkinDiv(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 4, Standard Galerkin, (grad u, grad v)
-// ======================================================================
-void NSType4Galerkin(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 4, Standard Galerkin, D(u):D(v)
-// ======================================================================
-void NSType4GalerkinDD(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
@@ -237,14 +193,6 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
-// Type 1, Standard Galerkin, only nonlinear part
-// ======================================================================
-void NSType1_2NLGalerkin(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
 // Type 1,(reduced) SDFEM
 // ======================================================================
 void NSType1NLSDFEM(double Mult, double *coeff,
@@ -289,22 +237,6 @@ double ***LocMatrices, double **LocRhs);
 // Type 2, SDFEM
 // ======================================================================
 void NSType2NLSDFEM(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 3, Standard Galerkin, (grad u, grad v)
-// ======================================================================
-void NSType3_4NLGalerkin(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 3, Standard Galerkin, D(u):D(v)
-// ======================================================================
-void NSType3_4NLGalerkinDD(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
