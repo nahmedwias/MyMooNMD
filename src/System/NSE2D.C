@@ -320,7 +320,7 @@ void NSE2D::assemble()
     //same for all: the local asembling object
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la(NSE2D_Galerkin, fe_functions, example.get_coeffs());
+    LocalAssembling2D la(NSE2D_All, fe_functions, example.get_coeffs());
 
     std::vector<std::shared_ptr<FEMatrix>> blocks =
         s.matrix.get_blocks_uniquely();
@@ -489,7 +489,7 @@ void NSE2D::assemble_nonlinear_term()
 
     TFEFunction2D *fe_functions[3] = 
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la_nonlinear(NSE2D_Galerkin_Nonlinear, fe_functions,
+    LocalAssembling2D la_nonlinear(NSE2D_NL, fe_functions,
                                    this->example.get_coeffs());
 
     //fetch us (a) pointer(s) to the diagonal A block(s)

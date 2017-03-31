@@ -24,14 +24,6 @@
 //int TimeNSType1RhsSpace[2] = { 0, 0 };
 
 // ======================================================================
-// Type 1, Standard Galerkin
-// ======================================================================
-void TimeNSType1Galerkin(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
 // for Type 1 is no SDFEM available
 // ======================================================================
 
@@ -95,47 +87,6 @@ void TimeNSType1GroupFEM(double Mult, double *coeff, double *param, double hK,
                          double ***LocMatrices, double **LocRhs);
 
 
-// ======================================================================
-// declaration for all Navier-Stokes problems of type 2
-//      one A block, 
-//      M block from time discretization
-//      B1, B2 (divergence blocks), 
-//      B1T, B2T (gradient blocks)
-// ======================================================================
-
-//int TimeNSType2N_Terms = 4;
-//MultiIndex2D TimeNSType2Derivatives[4] = { D10, D01, D00, D00 };
-//int TimeNSType2SpaceNumbers[4] = { 0, 0, 0, 1 };
-//int TimeNSType2N_Matrices = 6;
-//int TimeNSType2RowSpace[6] = { 0, 0, 1, 1, 0, 0 };
-//int TimeNSType2ColumnSpace[6] = { 0, 0, 0, 0, 1, 1 };
-//int TimeNSType2N_Rhs = 2;
-//int TimeNSType2RhsSpace[2] = { 0, 0 };
-
-// ======================================================================
-// Type 2, Standard Galerkin
-// ======================================================================
-void TimeNSType2Galerkin(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// declaration for all Navier-Stokes problems of type 2 SUPG
-//      one A block, 
-//      M block from time discretization
-//      K block from supg discretization 
-//      B1, B2 (divergence blocks), 
-//      B1T, B2T (gradient blocks)
-// ======================================================================
-//int TimeNSType2N_TermsSUPG = 8;
-//MultiIndex2D TimeNSType2DerivativesSUPG[8] = { D10, D01, D00, D00 };
-//int TimeNSType2SpaceNumbersSUPG[8] = { 0, 0, 0, 1 };
-//int TimeNSType2N_MatricesSUPG = 7;
-//int TimeNSType2RowSpaceSUPG[7] = { 0, 0, 1, 1, 0, 0 };
-//int TimeNSType2ColumnSpaceSUPG[7] = { 0, 0, 0, 0, 1, 1 };
-//int TimeNSType2N_RhsSUPG = 2;
-//int TimeNSType2RhsSpaceSUPG[2] = { 0, 0 };
 
 // ======================================================================
 // Type 2, Standard SUPG
@@ -233,23 +184,6 @@ void TimeNSType2GL00AuxProblem(double Mult, double *coeff,
 //int TimeNSType3ColumnSpace[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 //int TimeNSType3N_Rhs = 2;
 //int TimeNSType3RhsSpace[2] = { 0, 0 };
-
-// ======================================================================
-// Type 3, Standard Galerkin, (grad u, grad v)
-// ======================================================================
-void TimeNSType3Galerkin(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 3, Standard Galerkin, D(u):D(v)
-// ======================================================================
-void TimeNSType3GalerkinDD(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
 // ======================================================================
 // for Type 3 is SDFEM not available
 // ======================================================================
@@ -393,23 +327,6 @@ void TimeNSType3VMSProjectionDD(double Mult, double *coeff,
 //int TimeNSType4N_MatricesConvU = 11;
 //int TimeNSType4RowSpaceConvU[11] = { 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
 //int TimeNSType4ColumnSpaceConvU[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
-
-// ======================================================================
-// Type 4, Standard Galerkin, (grad u, grad v)
-// ======================================================================
-void TimeNSType4Galerkin(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 4, Standard Galerkin, D(u):D(v)
-// ======================================================================
-void TimeNSType4GalerkinDD(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
 // ======================================================================
 // for Type 4 SDFEM is not available
 // ======================================================================
