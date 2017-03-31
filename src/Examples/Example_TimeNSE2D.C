@@ -180,7 +180,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       initialCOndtion.push_back(flow_around_cylinder_steady_inflow::InitialU2);
       
       /**post processing - drag and lift calculation and output */
-//      post_processing_stat = flow_around_cylinder_steady_inflow::compute_drag_lift_pdiff;
+      post_processing_stat = flow_around_cylinder_steady_inflow::compute_drag_lift_pdiff;
 
       flow_around_cylinder_steady_inflow::ExampleFile();
       break;
