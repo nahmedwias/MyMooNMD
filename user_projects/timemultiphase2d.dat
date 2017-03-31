@@ -3,6 +3,9 @@
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
 refinement_n_initial_steps: 6
+space_discretization_type: galerkin { galerkin, vms_projection }
+vms_projection_space_order: 0
+example: 2   [ -1, 100 ]
 
 ENDTIME: 0.05
 TIMESTEPLENGTH: 0.01
@@ -90,7 +93,7 @@ algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 # 1=GALERKIN, 2=SDFEM=SUPG, 3=UPWIND
 # 4=SMAGORINSKY, 6=CLASSICAL_LES, 9=VMSProjection...
 # DISCTYPE:  9 # THIS GLOBAL PARAMETER DOESNT EXIST ANYMORE...NORMALLY
-space_discretization_type: vms_projection
+
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
 TURBULENT_VISCOSITY_CONSTANT: 0.
@@ -141,7 +144,7 @@ solve_cd: false   { true, false }
 ## 42- RAYLEIGHTAYLOR2- in the multiphase program - FOR TCD2D
 ## 50- GasStirringTest- in the multiphase program - FOR TNSE2D
 ## 50- GasStirringTest- in the multiphase program - FOR TCD2D
-example: 2   [ -1, 100 ]
+
 
 ########################## Parameters need to be cleaned
 Par_P0: 0

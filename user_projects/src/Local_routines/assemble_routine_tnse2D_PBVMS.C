@@ -371,9 +371,9 @@ void TimeNSType3_4NLVMS_ProjectionDD2D(double Mult, double *coeff,
 //      val4 = test001*ansatz001;
       val1 += val2+val3;//+val4;
       Matrix11Row[j] += val2+val1;
-      Matrix12Row[j] += test01*ansatz10;
+//      Matrix12Row[j] += test01*ansatz10;
 //      Matrix13Row[j] += test001*ansatz100;
-      Matrix21Row[j] += test10*ansatz01;
+//      Matrix21Row[j] += test10*ansatz01;
       Matrix22Row[j] += val3+val1;
 //      Matrix23Row[j] += test001*ansatz010;
 //      Matrix31Row[j] += test100*ansatz001;
