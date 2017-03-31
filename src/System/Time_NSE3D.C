@@ -37,6 +37,18 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default time database
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
   db.merge(time_db,true);
+ 
+  // Parameters that control read and write of solution as binary.
+  //TODO Move to another default database - they are relevant for other
+  //     system classes, too.
+  db.add("read_initial_solution", false, "Choose true if the initial "
+      "solution is given in a binary file. Do not forget to specify "
+      "'initial_solution_file' in that case, too.");
+  db.add("write_solution_binary", false, "Choose true if the computed solution "
+      " should be written out to a file in a binary format. This is helpful if"
+      " you plan to read it in as initial solution later. Do not forget to specify"
+      " 'write_solution_binary_all_n_steps' for the output interval "
+      " and 'write_solution_binary_file', the file path and name.");
 
   return db;
 }
@@ -915,7 +927,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   System_per_grid& s = this->systems_.front();
   size_t nu=s.solution_.length(0);
   size_t np=s.solution_.length(3);
-  Output::print("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
+  Output::print<5>("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
                 Ddot(3*nu,s.rhs_.get_entries(),s.rhs_.get_entries()) , " "  , 
                 Ddot(np,s.rhs_.get_entries()+3*nu,s.rhs_.get_entries()+3*nu)," ",
                 Ddot(3*nu+np,s.rhs_.get_entries(),s.rhs_.get_entries()));
@@ -1096,9 +1108,11 @@ void Time_NSE3D::output(int m, int &image)
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    bool no_output = !db_["output_write_vtk"] && !db_["output_compute_errors"];
-    if(no_output)
-      return;
+  	bool no_output = !db_["output_write_vtk"] &&
+ 	                 !db_["output_compute_errors"] &&
+ 	                 !db_["write_solution_binary"];
+	if(no_output)
+		return;
 
   System_per_grid& s = this->systems_.front();
   TFEFunction3D* u1 = s.u_.GetComponent(0);
@@ -1244,7 +1258,18 @@ void Time_NSE3D::output(int m, int &image)
 
    // do post-processing step depending on what the example implements, if needed
    example_.do_post_processing(*this);
-
+   
+   if(db_["write_solution_binary"].is(true))
+   { //size_t interval = db_["write_solution_binary_all_n_steps"];
+     size_t interval = TDatabase::TimeDB->STEPS_PER_IMAGE;
+    if(m==0 || m / interval)
+    {//write solution to a binary file
+      //std::string file = db_["write_solution_binary_file"];
+      std::string file = db_["output_basename"];
+      Output::info("output", "Writing current solution to file ", file);
+      systems_.front().solution_.write_to_file(file);
+    }
+  }
 }
 
 /**************************************************************************** */
@@ -1346,3 +1371,5 @@ bool Time_NSE3D::imex_scheme(bool print_info)
   return interruption_condition;
 }
 
+/**************************************************************************** */
+/** ************************************************************************ */
