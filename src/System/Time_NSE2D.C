@@ -743,7 +743,7 @@ void Time_NSE2D::solve()
     ErrThrow("multigrid solver is not tested yet")
   }
   solver.solve(s.matrix,s.rhs, s.solution);
-  
+
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are 
   // reset and assembled again but the A12 and A21 are scaled, so
@@ -1167,12 +1167,21 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
   } // END SWITCH LOCALASSEMBLING TYPE
 
 
-
-  // reset matrices
-  for(auto mat : sqMatrices)
-    mat->reset();
-  for(auto remat : rectMatrices)
-    remat->reset();
+  if (type == TNSE2D_NL && disctype == VMS_PROJECTION)
+  {
+    sqMatrices[0]->reset();
+    sqMatrices[3]->reset();
+    for(auto remat : rectMatrices)
+          remat->reset();
+  }
+  else
+  {
+    // reset matrices
+    for(auto mat : sqMatrices)
+      mat->reset();
+    for(auto remat : rectMatrices)
+      remat->reset();
+  }
 }
 
 
