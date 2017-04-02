@@ -11,13 +11,19 @@
 #include <FE2D.h>
 #include <FEDesc2D.h>
 
+
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless.
+// for the flow_around_cylinder benchmark:
+// nu = 10e-3  (reynolds_number = 1000)
+double DIMENSIONLESS_VISCOSITY;
+
 // ========================================================================
 // example file
 // ========================================================================
-
 void ExampleFile()
 {
-  OutPut("Example: flow_around_cylinder_steady_inflow.h" << endl) ;
+  OutPut("Example: flow_around_cylinder_tnse2d.h" << endl) ;
 }
 
 // ========================================================================
@@ -25,7 +31,7 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
-  values[0] = 6.0*y*(1-y);
+  values[0] = 0;
 }
 
 void InitialU2(double x, double y, double *values)
@@ -70,6 +76,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int bdcomp, double t, BoundCond &cond)
 {
+
   switch(bdcomp)
   {
     case 1:
@@ -92,18 +99,18 @@ void PressureBoundValue(int BdComp, double y, double &value)
   value = 0;
 }
 
-void U1BoundValue(int BdComp, double y, double &value)
+void U1BoundValue(int BdComp, double Param, double &value)
 {
-
+  double t = TDatabase::TimeDB->CURRENTTIME;
   switch(BdComp)
   {
     case 0: value = 0;
             break;
-    case 1: value = 0;					
+    case 1: value = 0;
             break;
     case 2: value = 0;
             break;
-    case 3: value = 6.0*y*(1-y);
+    case 3: value = sin(Pi*t/8)*6*Param*(1-Param);
             break;
     case 4: value=0;
             break;
@@ -151,7 +158,7 @@ void U2BoundValue_diff(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  double eps = DIMENSIONLESS_VISCOSITY; // the kinematic viscosity (1e-3 in the paper cited above)
   int i;
   double *coeff;
 
@@ -204,7 +211,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   double *Derivatives[MaxN_BaseFunctions2D];
   MultiIndex2D NeededDerivatives[3] = { D00, D10, D01 };
   TFEFunction2D *vfct;
-  double *v, nu = 1/TDatabase::ParamDB->RE_NR;
+  double *v, nu = DIMENSIONLESS_VISCOSITY; // the kinematic viscosity (1e-3 in the paper cited above)
   double *Der, *aux;
   TJoint *joint;
   TBoundEdge *boundedge;
