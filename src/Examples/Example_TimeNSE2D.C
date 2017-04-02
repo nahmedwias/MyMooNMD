@@ -181,6 +181,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       
       /**post processing - drag and lift calculation and output */
       post_processing_stat = flow_around_cylinder_steady_inflow::compute_drag_lift_pdiff;
+      flow_around_cylinder_steady_inflow::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       flow_around_cylinder_steady_inflow::ExampleFile();
       break;
