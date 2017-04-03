@@ -27,17 +27,9 @@ ParameterDatabase get_default_TNSE2D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
-  // Parameters that control read and write of solution as binary.
-  //TODO Move to another default database - they are relevant for other
-  //     system classes, too.
-  db.add("read_initial_solution", false, "Choose true if the initial "
-      "solution is given in a binary file. Do not forget to specify "
-      "'initial_solution_file' in that case, too.");
-  db.add("write_solution_binary", false, "Choose true if the computed solution "
-      " should be written out to a file in a binary format. This is helpful if"
-      " you plan to read it in as initial solution later. Do not forget to specify"
-      " 'write_solution_binary_all_n_steps' for the output interval "
-      " and 'write_solution_binary_file', the file path and name.");
+  // a default solution in out database
+  ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
+  db.merge(in_out_db,true);
 
   return db;
 }
@@ -97,7 +89,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
    example(ex), solver(param_db), defect(), oldResidual(0), 
    initial_residual(1e10), errors(10,0.), oldtau(0.0)
 {
-  db.merge(param_db);
+  db.merge(param_db, false);
   this->set_parameters();
   
   std::pair <int,int>
@@ -935,7 +927,7 @@ void Time_NSE2D::output(int m)
 
   if(db["write_solution_binary"].is(true))
   {size_t interval = db["write_solution_binary_all_n_steps"];
-    if(m==0 || m / interval)
+    if(m % interval == 0)
     {//write solution to a binary file
       std::string file = db["write_solution_binary_file"];
       Output::info("output", "Writing current solution to file ", file);

@@ -38,17 +38,9 @@ ParameterDatabase get_default_TNSE3D_parameters()
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
   db.merge(time_db,true);
  
-  // Parameters that control read and write of solution as binary.
-  //TODO Move to another default database - they are relevant for other
-  //     system classes, too.
-  db.add("read_initial_solution", false, "Choose true if the initial "
-      "solution is given in a binary file. Do not forget to specify "
-      "'initial_solution_file' in that case, too.");
-  db.add("write_solution_binary", false, "Choose true if the computed solution "
-      " should be written out to a file in a binary format. This is helpful if"
-      " you plan to read it in as initial solution later. Do not forget to specify"
-      " 'write_solution_binary_all_n_steps' for the output interval "
-      " and 'write_solution_binary_file', the file path and name.");
+  // a default solution in out database
+  ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
+  db.merge(in_out_db,true);
 
   return db;
 }
@@ -1279,12 +1271,10 @@ void Time_NSE3D::output(int m, int &image)
    example_.do_post_processing(*this);
    
    if(db_["write_solution_binary"].is(true))
-   { //size_t interval = db_["write_solution_binary_all_n_steps"];
-     size_t interval = TDatabase::TimeDB->STEPS_PER_IMAGE;
-    if(m==0 || m / interval)
+   { size_t interval = db_["write_solution_binary_all_n_steps"];
+    if(m % interval == 0)
     {//write solution to a binary file
-      //std::string file = db_["write_solution_binary_file"];
-      std::string file = db_["output_basename"];
+      std::string file = db_["write_solution_binary_file"];
       Output::info("output", "Writing current solution to file ", file);
       systems_.front().solution_.write_to_file(file);
     }
