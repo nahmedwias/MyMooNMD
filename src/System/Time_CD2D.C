@@ -437,8 +437,8 @@ void Time_CD2D::output()
 std::array< double, int(3) > Time_CD2D::get_errors() const
 {
   std::array<double, int(3)> error_at_time_points;
-  error_at_time_points.at(0) = sqrt(errors.at(0));
-  error_at_time_points.at(1) = sqrt(errors.at(2));
+  error_at_time_points.at(0) = sqrt(errors.at(0)); // L2t
+  error_at_time_points.at(1) = sqrt(errors.at(2)); // L2t(H1)
   error_at_time_points.at(2) = sqrt(errors.at(4));
   return error_at_time_points;
 

@@ -43,6 +43,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   ###################################################
   ####### Tests for parallel type: SEQUENTIAL #######
   ###################################################
+
+  #VOF2D test
+  add_executable(ParMooN_test_vof2d vof2d_test.c++)
+  target_link_libraries(ParMooN_test_vof2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(vof2d ParMooN_test_vof2d)
+  list(APPEND parmoon_tests ParMooN_test_vof2d)
   
   #parameter database test
   add_executable(ParMooN_test_parameter_database parameter_database_test.c++)
@@ -151,10 +157,10 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   list(APPEND parmoon_tests ParMooN_test_darcy2d)
 
   #brinkman2d test
-  add_executable(ParMooN_test_brinkman2d brinkman2d_test.c++)
-  target_link_libraries(ParMooN_test_brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(brinkman2d ParMooN_test_brinkman2d)
-  list(APPEND parmoon_tests ParMooN_test_brinkman2d)
+  #add_executable(ParMooN_test_brinkman2d brinkman2d_test.c++)
+  #target_link_libraries(ParMooN_test_brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  #add_test(brinkman2d ParMooN_test_brinkman2d)
+  #list(APPEND parmoon_tests ParMooN_test_brinkman2d)
   
   #nse2d test
   add_executable(ParMooN_test_nse2d nse2d_test.c++)

@@ -869,7 +869,7 @@ void Time_NSE2D::output_problem_size_info() const
 }
 
 /**************************************************************************** */
-std::array< double, int(6) > Time_NSE2D::get_errors()
+std::array< double, int(6) > Time_NSE2D::get_errors() const
 {
   std::array<double, int(6)> error_at_time_points;
   error_at_time_points[0] = sqrt(errors[1]); // L2 velocity error

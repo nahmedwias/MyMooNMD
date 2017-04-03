@@ -298,7 +298,7 @@ class Time_NSE2D
     const ParameterDatabase & get_db() const
     { return db; }
     /// @brief return the computed errors at each discre time point
-    std::array<double, int(6)> get_errors();
+    std::array<double, int(6)> get_errors() const;
 
 
 
