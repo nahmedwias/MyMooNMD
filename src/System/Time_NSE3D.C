@@ -37,6 +37,10 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default time database
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
   db.merge(time_db,true);
+ 
+  // a default solution in out database
+  ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
+  db.merge(in_out_db,true);
 
   return db;
 }
@@ -181,16 +185,35 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
     mg->initialize(matrices);
   }
   
+  // initial solution on finest grid - read-in or interpolation
+  if(db_["read_initial_solution"].is(true))
+  {//initial solution is given
+    db_.info();
+    std::string file = db_["initial_solution_file"];
+    Output::info("Initial Solution", "Reading initial solution from file ", file);
+    systems_.front().solution_.read_from_file(file);
+  }
+  else
+  {//interpolate initial condition from the example
+    Output::info("Initial Solution", "Interpolating initial solution from example.");
+    for(System_per_grid& s : this->systems_)
+    {
+      s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
+      s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
+      s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
+    }
+  }
+
   this->output_problem_size_info();
   // initialize the defect of the system. It has the same structure as
   // the rhs (and as the solution)
   this->defect_.copy_structure(this->systems_.front().rhs_);
-  for(System_per_grid& s : this->systems_)
-  {
-    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
-    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
-    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
-  }
+//  for(System_per_grid& s : this->systems_)
+//  {
+//    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
+//    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
+//    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
+//  }
 }
 
 ///**************************************************************************** */
@@ -915,7 +938,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   System_per_grid& s = this->systems_.front();
   size_t nu=s.solution_.length(0);
   size_t np=s.solution_.length(3);
-  Output::print("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
+  Output::print<5>("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
                 Ddot(3*nu,s.rhs_.get_entries(),s.rhs_.get_entries()) , " "  , 
                 Ddot(np,s.rhs_.get_entries()+3*nu,s.rhs_.get_entries()+3*nu)," ",
                 Ddot(3*nu+np,s.rhs_.get_entries(),s.rhs_.get_entries()));
@@ -1096,9 +1119,11 @@ void Time_NSE3D::output(int m, int &image)
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    bool no_output = !db_["output_write_vtk"] && !db_["output_compute_errors"];
-    if(no_output)
-      return;
+  	bool no_output = !db_["output_write_vtk"] &&
+ 	                 !db_["output_compute_errors"] &&
+ 	                 !db_["write_solution_binary"];
+	if(no_output)
+		return;
 
   System_per_grid& s = this->systems_.front();
   TFEFunction3D* u1 = s.u_.GetComponent(0);
@@ -1244,7 +1269,16 @@ void Time_NSE3D::output(int m, int &image)
 
    // do post-processing step depending on what the example implements, if needed
    example_.do_post_processing(*this);
-
+   
+   if(db_["write_solution_binary"].is(true))
+   { size_t interval = db_["write_solution_binary_all_n_steps"];
+    if(m % interval == 0)
+    {//write solution to a binary file
+      std::string file = db_["write_solution_binary_file"];
+      Output::info("output", "Writing current solution to file ", file);
+      systems_.front().solution_.write_to_file(file);
+    }
+  }
 }
 
 /**************************************************************************** */
@@ -1346,3 +1380,5 @@ bool Time_NSE3D::imex_scheme(bool print_info)
   return interruption_condition;
 }
 
+/**************************************************************************** */
+/** ************************************************************************ */
