@@ -103,7 +103,7 @@ void U1BoundValue(double x, double y, double z, double &value)
   double t=TDatabase::TimeDB->CURRENTTIME;
 
   //if( (fabs(x)<1e-6) || (fabs(x-2.5)<1e-6) )
-  if((fabs(x)<1e-10)) //inflow boundary
+  if((fabs(x)<1e-6)) //inflow boundary
   {
     double H = 0.41; //height of the cylinder in m
     double U = 2.25; //peak inflow velocity
