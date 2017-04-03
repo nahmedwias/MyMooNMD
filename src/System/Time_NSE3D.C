@@ -193,16 +193,35 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
     mg->initialize(matrices);
   }
   
+  // initial solution on finest grid - read-in or interpolation
+  if(db_["read_initial_solution"].is(true))
+  {//initial solution is given
+    db_.info();
+    std::string file = db_["initial_solution_file"];
+    Output::info("Initial Solution", "Reading initial solution from file ", file);
+    systems_.front().solution_.read_from_file(file);
+  }
+  else
+  {//interpolate initial condition from the example
+    Output::info("Initial Solution", "Interpolating initial solution from example.");
+    for(System_per_grid& s : this->systems_)
+    {
+      s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
+      s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
+      s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
+    }
+  }
+
   this->output_problem_size_info();
   // initialize the defect of the system. It has the same structure as
   // the rhs (and as the solution)
   this->defect_.copy_structure(this->systems_.front().rhs_);
-  for(System_per_grid& s : this->systems_)
-  {
-    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
-    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
-    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
-  }
+//  for(System_per_grid& s : this->systems_)
+//  {
+//    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
+//    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
+//    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
+//  }
 }
 
 ///**************************************************************************** */
