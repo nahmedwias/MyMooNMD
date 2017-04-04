@@ -238,12 +238,6 @@ class Time_NSE2D
      */
     void assemble_rhs();
     
-    /** @brief Assemble the right hand side only
-     *  @param la: LocalAssembling2D object
-     *  @param rhs: rhs vector to be assembled
-    */
-    void AssembleRhs();
-    
     /** @brief Assemble the system matrix
      * This function will prepare the system which will be 
      * used for solvers
@@ -340,17 +334,6 @@ class Time_NSE2D
      */
     void apply_slip_penetration_bc(bool change_A_offdiagonal_blocks = false,
                                    bool change_B_Mass_blocks = false);
-
-    /** @brief assemble nonlinear term
-     *
-     * The matrix blocks to which the nonlinear term contributes are reset to
-     * zero and then completely reassembled, including the linear and nonlinear
-     * terms. If this->assemble() has been called before, the matrix is now set
-     * up correctly.
-     */
-    void assemble_nonlinear_term_withfields(TFEFunction2D* rho_field=nullptr,
-                                            TFEFunction2D* mu_field=nullptr);
-
 
     void assemble_rhs_withfields(TFEFunction2D* rho_field=nullptr,
                                  TFEFunction2D* mu_field=nullptr);

@@ -144,15 +144,14 @@ int main(int argc, char* argv[])
       {
         vof.tnse2d_.assemble_rhs_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
         vof.tnse2d_.assemble_massmatrix_withfields(&vof.rho_fefunction_);
-        vof.tnse2d_.assemble_nonlinear_term_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
         if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
             vof.tnse2d_.apply_slip_penetration_bc(true,true);
       }
       else
       {
         vof.tnse2d_.assemble_rhs();
-        vof.tnse2d_.assemble_nonlinear_term();
       }
+      vof.tnse2d_.assemble_nonlinear_term();
       vof.tnse2d_.assemble_system();
 
 
@@ -172,13 +171,11 @@ int main(int argc, char* argv[])
 
       if (vof.tnse_variable_fluid_ == true)
       {
-        vof.tnse2d_.assemble_nonlinear_term_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
         if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
           vof.tnse2d_.apply_slip_penetration_bc(false,false);
       }
-      else
-        vof.tnse2d_.assemble_nonlinear_term();
 
+      vof.tnse2d_.assemble_nonlinear_term();
       vof.tnse2d_.assemble_system();
       nse_nl_stopwatch.restart_and_print("solving and reassembling NL iter. "
                                           + std::to_string(k));

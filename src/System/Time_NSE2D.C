@@ -639,6 +639,40 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
     LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions.data(),
                          this->example.get_coeffs(), this->disctype);
 
+    if (this->with_variable_fluid_properties)
+    {
+      la_nonlinear.setBeginParameter({0});
+      la_nonlinear.setFeFunctions2D(fe_functions.data()); //reset - now velo comp included
+      la_nonlinear.setFeValueFctIndex({0,1,2,3});
+      la_nonlinear.setFeValueMultiIndex({D00,D00,D00,D00});
+      la_nonlinear.setN_Parameters(4);
+      la_nonlinear.setN_FeValues(4);
+      la_nonlinear.setN_ParamFct(1);
+      la_nonlinear.setParameterFct_string("TimeNSParamsVelo_dimensional");
+
+      switch(TDatabase::ParamDB->LAPLACETYPE)
+      {
+        case 1:
+          switch(TDatabase::ParamDB->NSTYPE)
+          {
+            case 1:
+              la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");  //this is for dimensional NSE
+              break;
+            case 3:
+            case 4:
+              // Assembling routine for NSType 3 with DD
+              la_nonlinear.setAssembleParam_string("TimeNSType3_4NLGalerkinDD_dimensional");
+              break;
+            default:
+              ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
+                  "When there is Slip BC, use exclusively NSTYPE4.");
+          }
+          break;
+        default:
+          ErrThrow("Assembling with variable fields requires LAPLACETYPE=1, "
+                  "please correct input parameter!");
+      }
+    }
     // prepare spaces, matrices and rhs for assembling
     std::vector<const TFESpace2D*> spaces_mat;
     std::vector<const TFESpace2D*> spaces_rhs;
@@ -937,31 +971,24 @@ void Time_NSE2D::prepare_fefunc_for_localassembling(Time_NSE2D::System_per_grid&
       /* step 1: check if the velocity space and "rho_field->GetSFESpace2d()"
       * are the same. If yes, no interpolation needed
       * otherwise, do the interpolation */
-      int Ndof_rho     = this->rho_fefunct->GetFESpace2D()->GetN_DegreesOfFreedom();
-      int Ndof_velocity= s.u.GetFESpace2D()->GetN_DegreesOfFreedom();
-      if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
-      {
-        Output::info<3>("Time_NSE2D", "The spaces of the velocity field and the "
-                        "scalar field (rho) are the same ==> There will be no interpolation.");
-        Output::print<5>("Degres of freedoms of scalar field rho= " , Ndof_rho);
-        Output::print<5>("Degres of freedoms of velocity   = " , Ndof_velocity);
+//      int Ndof_rho     = this->rho_fefunct->GetFESpace2D()->GetN_DegreesOfFreedom();
+//      int Ndof_velocity= s.u.GetFESpace2D()->GetN_DegreesOfFreedom();
+//      if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
+//      {
+//        Output::info<5>("Time_NSE2D", "The spaces of the velocity field and the "
+//                        "scalar field (rho) are the same ==> There will be no interpolation.");
+//      }
+//      else // spaces are not the same
+//      {
+//        Output::warn<3>("Time_NSE2D", "The spaces of the velocity field and the "
+//                        "scalar field are not the same ==> Adapting the assemble method.");
+//      }
+//      Output::print<5>("Degres of freedoms of scalar field rho= " , Ndof_rho);
+//      Output::print<5>("Degres of freedoms of velocity   = " , Ndof_velocity);
 
-        fe_functions.resize(4);
-        fe_functions[2] = this->rho_fefunct;
-        fe_functions[3] = this->mu_fefunct;
-      }
-      else // spaces are not the same
-      {
-        Output::warn<3>("Time_NSE2D", "The spaces of the velocity field and the "
-                        "scalar field are not the same ==> Adapting the assemble method.");
-        Output::print<3>("Degres of freedoms of scalar field rho= " , Ndof_rho);
-        Output::print<3>("Degres of freedoms of velocity   = " , Ndof_velocity);
-        // this is the same as above, but in the other routines, the spaces
-        // are changed.
-        fe_functions.resize(4);
-        fe_functions[2] = this->rho_fefunct;
-        fe_functions[3] = this->mu_fefunct;
-      }
+      fe_functions.resize(4);
+      fe_functions[2] = this->rho_fefunct;
+      fe_functions[3] = this->mu_fefunct;
     }
   }
 
@@ -1378,215 +1405,6 @@ void Time_NSE2D::apply_slip_penetration_bc(bool change_A_offdiagonal_blocks,
   }
 //  this->systems.front().Mass_Matrix.get_blocks().at(3)->Print("test"); exit(0);
   Output::print<3>("Finished to apply Slip and Penetration BCs.");
-}
-
-/**************************************************************************** */
-void Time_NSE2D::assemble_nonlinear_term_withfields(TFEFunction2D* rho_field,
-                                                    TFEFunction2D* mu_field)
-{
-  //Nonlinear assembling requires an approximate velocity solution on every grid!
-  if(systems.size() > 1)
-  {
-    for( int block = 0; block < 2 ;++block)
-    {
-      std::vector<const TFESpace2D*> spaces;
-      std::vector<double*> u_entries;
-      std::vector<size_t> u_ns_dofs;
-      for(auto &s : systems )
-      {
-        spaces.push_back(&s.velocity_space);
-        u_entries.push_back(s.solution.block(block));
-        u_ns_dofs.push_back(s.solution.length(block));
-      }
-      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
-    }
-  }
-
-  for(System_per_grid& s : this->systems)
-  {
-    const TFESpace2D *velocity_space = &s.velocity_space;
-    size_t n_fe_spaces = 1;
-    const TFESpace2D *fespmat[3]={velocity_space,nullptr,nullptr};
-
-    size_t n_square_matrices;
-    TSquareMatrix2D* sqMatrices[2]{nullptr};
-
-    size_t n_rect_matrices = 0;
-    TMatrix2D** rectMatrices=nullptr;
-
-    BoundCondFunct2D * boundary_conditions[1]
-                                           = {velocity_space->GetBoundCondition() };
-
-    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-    non_const_bound_values[0] = this->example.get_bd(0);
-    non_const_bound_values[1] = this->example.get_bd(1);
-    non_const_bound_values[2] = this->example.get_bd(2);
-
-
-    TFEFunction2D *fe_functions[5] =
-    { nullptr, nullptr, &s.p, nullptr, nullptr };
-
-    // The assembly with the extrapolated velocity of IMEX_scheme begins
-    // at step 3
-    bool is_imex = this->imex_scheme(0);
-
-    // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
-    if(!is_imex)
-    {
-      fe_functions[0] = s.u.GetComponent(0);
-      fe_functions[1] = s.u.GetComponent(1);
-    }
-    else
-    {
-      // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
-      // Note : in this function, the non active Dofs are taken care of.
-      // Namely, extrapolated_solution takes the nonActive of the current Rhs.
-      this->construct_extrapolated_solution();
-      TFEVectFunct2D extrapolated_velocity_vector(&this->systems.front().velocity_space,
-                                                  (char*)"", (char*)"",
-                                                  extrapolated_solution_.block(0),
-                                                  extrapolated_solution_.length(0), 2);
-
-      // Construct now the corresponding fe_functions for local assembling
-      fe_functions[0] = extrapolated_velocity_vector.GetComponent(0);
-      fe_functions[1] = extrapolated_velocity_vector.GetComponent(1);
-    }
-
-    LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions,
-                                   this->example.get_coeffs());
-
-
-    // the following should add fluid property fluids
-    // to obtain a dimensional formulation of NSE
-    if (rho_field != nullptr && mu_field != nullptr)
-    {
-      // HERE IS THE CODE TO SET UP THE RHO AND MU FIELDS FOR LOCAL ASSEMBLING OBJECT
-
-      // we assume rho and mu fields are not too exotic,
-      // and have the same space...
-      int Ndof_rho     = rho_field->GetFESpace2D()->GetN_DegreesOfFreedom();
-      int Ndof_velocity = velocity_space->GetN_DegreesOfFreedom();
-
-      // step 1: check if the velocity space and "rho_field->GetSFESpace2d()"
-      // are the same. If yes, no interpolation needed
-      // otherwise, do the interpolation
-      if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
-      {
-        Output::info<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                        "scalar field (rho) are the same ==> There will be no interpolation.");
-//        Output::print<3>("Degres of freedoms of scalar field rho= " , Ndof_rho);
-//        Output::print<3>("Degres of freedoms of velocity   = " , Ndof_velocity);
-
-        //fill up the new fe function array
-        fe_functions[3] = rho_field;
-        fe_functions[4] = mu_field;
-      }
-      else  // do the interpolation
-      {
-        Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                        "scalar field are not the same ==> Adapting the assemble method");
-
-        fe_functions[3] = rho_field;
-        fe_functions[4] = mu_field;
-        fespmat[1] = rho_field->GetFESpace2D();
-        fespmat[2] = mu_field->GetFESpace2D();
-        n_fe_spaces = 3;
-//        // set up an interpolator object  (ptr will be shared later)
-//        // we interpolate into velo_space
-//        FEFunctionInterpolator interpolator(velocity_space);
-//
-//        // length of the values array of the interpolated rho
-//        // velo must equal length of the velocity components
-//        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
-//
-//        std::vector<double> temporary_rho(length_interpolated, 0.0);
-//        std::vector<double> temporary_mu(length_interpolated, 0.0);
-//
-//        this->entries_rho_scalar_field = temporary_rho;
-//        this->entries_mu_scalar_field = temporary_mu;
-//
-//        TFEFunction2D interpolated_rho_field =
-//            interpolator.interpolate(*rho_field,
-//                                     this->entries_rho_scalar_field);
-//
-//        TFEFunction2D interpolated_mu_field =
-//            interpolator.interpolate(*mu_field,
-//                                     this->entries_mu_scalar_field);
-//
-//        //fill up the new fe function array
-//        fe_functions[3] = &interpolated_rho_field;
-//        fe_functions[4] = &interpolated_mu_field;
-      }
-
-      // step 2 - set all the 'parameter'-related values in la accordingly
-      // set up the input...
-      la_nonlinear.setBeginParameter({0});
-      la_nonlinear.setFeFunctions2D(fe_functions); //reset - now velo comp included
-      la_nonlinear.setFeValueFctIndex({0,1,3,4});
-      la_nonlinear.setFeValueMultiIndex({D00,D00,D00,D00});
-      la_nonlinear.setN_Parameters(4);
-      la_nonlinear.setN_FeValues(4);
-      la_nonlinear.setN_ParamFct(1);
-      la_nonlinear.setParameterFct_string("TimeNSParamsVelo_dimensional");
-
-      switch(TDatabase::ParamDB->LAPLACETYPE)
-      {
-        case 1:
-          switch(TDatabase::ParamDB->NSTYPE)
-          {
-            case 1:
-              la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");  //this is for dimensional NSE
-              break;
-            case 3:
-            case 4:
-              // Assembling routine for NSType 3 with DD
-              la_nonlinear.setAssembleParam_string("TimeNSType3_4NLGalerkinDD_dimensional");
-              break;
-            default:
-              ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
-                  "When there is Slip BC, use exclusively NSTYPE4.");
-          }
-          break;
-        default:
-          ErrThrow("Assembling with variable fields requires LAPLACETYPE=1, "
-                  "please correct input parameter!");
-      }
-      //...this should do the trick
-    }
-
-
-    std::vector<std::shared_ptr<FEMatrix>> blocks
-    = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
-
-    switch(TDatabase::ParamDB->NSTYPE)
-    {
-      case 1:
-      case 2:
-        n_square_matrices = 1;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        break;
-      case 3:
-      case 4:
-      case 14:
-        n_square_matrices = 2;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        break;
-      default:
-        ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-                 " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
-    }
-    // reset matrices to zero
-    for(size_t m=0; m<n_square_matrices; m++)
-      sqMatrices[m]->reset();
-
-    Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices,
-               n_rect_matrices, rectMatrices, 0, nullptr, nullptr,
-               boundary_conditions, non_const_bound_values.data(),
-               la_nonlinear);
-  }
-  Output::print<5>("Assembled the nonlinear matrix only ");
 }
 
 /**************************************************************************** */
