@@ -140,17 +140,14 @@ int main(int argc, char* argv[])
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
       TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
+      vof.tnse2d_.assemble_rhs();
       if (vof.tnse_variable_fluid_ == true)
       {
-        vof.tnse2d_.assemble_rhs_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
         vof.tnse2d_.assemble_massmatrix_withfields(&vof.rho_fefunction_);
         if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
             vof.tnse2d_.apply_slip_penetration_bc(true,true);
       }
-      else
-      {
-        vof.tnse2d_.assemble_rhs();
-      }
+
       vof.tnse2d_.assemble_nonlinear_term();
       vof.tnse2d_.assemble_system();
 
