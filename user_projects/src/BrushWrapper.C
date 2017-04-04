@@ -101,6 +101,7 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
 : db_(db), output_writer_(db_),
   moment_stats_file_(db_["out_part_moments_file"].get<std::string>()),
   outflow_particles_file_(db_["out_part_lists_file"].get<std::string>()),
+  inflow_particles_file_(db_["in_part_lists_file"].get<std::string>()),
   from_brush_grid_(coll),
   from_brush_space_(from_brush_grid_, (char*)"psd-moms", (char*)"psd-moms",
                     DirichletBoundaryConditions, fe_order, nullptr)
@@ -179,10 +180,13 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
   if(outflow_particles_file_.is_open())
     outflow_particles_file_.close();
   outflow_particles_file_.open(db_["out_part_lists_file"].get<std::string>(), std::ofstream::out);
+  if(inflow_particles_file_.is_open())
+    inflow_particles_file_.close();
+  inflow_particles_file_.open(db_["in_part_lists_file"].get<std::string>(), std::ofstream::out);
 
   // Finally write a nice header into the particle stats file,
   // so that it can be filled with data from now on.
-  interface_->write_headers(moment_stats_file_, outflow_particles_file_);
+  interface_->write_headers(moment_stats_file_, outflow_particles_file_, inflow_particles_file_);
 }
 
 BrushWrapper::~BrushWrapper()
@@ -193,6 +197,7 @@ BrushWrapper::~BrushWrapper()
 
   moment_stats_file_.close();
   outflow_particles_file_.close();
+  inflow_particles_file_.close();
 
   for (auto f : pd_moments_)
   {
@@ -303,10 +308,11 @@ void BrushWrapper::output(double t)
 {
   output_writer_.write(t);
 
-  //TODO enable doing this for only certain time steps
   interface_->write_particle_stats(t, moment_stats_file_);
 
   interface_->write_outlet_particle_list(outflow_particles_file_);
+
+  interface_->write_inlet_particle_list(inflow_particles_file_);
 
 }
 
