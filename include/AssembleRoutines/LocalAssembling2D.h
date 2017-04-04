@@ -74,6 +74,9 @@ class LocalAssembling2D
     /** an integer to identify the space discretization_type **/
     int discretization_type;
 
+    /** a bool to check if variable tnse is used **/
+    bool twophase_tnse;
+
     /** name */
     std::string name;
 
@@ -187,6 +190,10 @@ class LocalAssembling2D
      */
     void set_parameters_for_tnse_PB_VMS(LocalAssembling2D_type type);
 
+    /**
+     */
+    void set_parameters_for_tnse_TwoPhase(LocalAssembling2D_type type);
+
     /** This functions sets all local assembling parameters
      * for time-dependent linear elasticity 2D problems.
      * It is called in the local assembling constructor
@@ -198,7 +205,7 @@ class LocalAssembling2D
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
-                      CoeffFct2D *coeffs, int disctype = 1);
+                      CoeffFct2D *coeffs, int disctype = 1, bool variable_tnse = 0);
     
     /** @brief constructor for backward compatibility
      * 

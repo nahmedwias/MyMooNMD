@@ -389,44 +389,8 @@ void Time_NSE2D::assemble_initial_time()
     std::vector<TFEFunction2D*> fe_functions;
     prepare_fefunc_for_localassembling(s,fe_functions);
     LocalAssembling2D la(TNSE2D, fe_functions.data(),
-                         this->example.get_coeffs(), this->disctype);
-
-    if (this->with_variable_fluid_properties)
-    {
-      // step 2 - set all the 'parameter'-related values in la accordingly
-      // set up the input...
-      la.setBeginParameter({0});
-      la.setFeFunctions2D(fe_functions.data()); //reset - now velo comp included
-      la.setFeValueFctIndex({0,1,2,3});
-      la.setFeValueMultiIndex({D00,D00,D00,D00});
-      la.setN_Parameters(4);
-      la.setN_FeValues(4);
-      la.setN_ParamFct(1);
-      la.setParameterFct_string("TimeNSParamsVelo_dimensional");
-
-      switch(TDatabase::ParamDB->LAPLACETYPE)
-      {
-        case 1:
-          switch(TDatabase::ParamDB->NSTYPE)
-          {
-            case 3:
-              // Assembling routine for NSType 3 with DD
-              la.setAssembleParam_string("TimeNSType3GalerkinDD_dimensional");
-              break;
-            case 4:
-              // Assembling routine for NSType 3 with DD
-              la.setAssembleParam_string("TimeNSType4GalerkinDD_dimensional");
-              break;
-            default:
-              ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
-                  "When there is Slip BC, use exclusively NSTYPE4.");
-          }
-          break;
-        default:
-          ErrThrow("Assembling with variable fields require LAPLACETYPE=1, "
-              "please correct input parameter!");
-      }
-    }
+                         this->example.get_coeffs(), this->disctype,
+                         this->with_variable_fluid_properties);
 
     // prepare spaces, matrices and rhs for assembling
     std::vector<const TFESpace2D*> spaces_mat;
@@ -504,25 +468,9 @@ void Time_NSE2D::assemble_rhs()
   std::vector<TFEFunction2D*> fe_functions;
   prepare_fefunc_for_localassembling(s,fe_functions);
   LocalAssembling2D la(TNSE2D_Rhs, fe_functions.data(),
-                       this->example.get_coeffs(), this->disctype);
+                       this->example.get_coeffs(), this->disctype,
+                       this->with_variable_fluid_properties);
   
-  if (this->with_variable_fluid_properties)
-  {
-    // step 2 - set all the 'parameter'-related values in la accordingly
-    // set up the input...
-    la.setBeginParameter({0});
-    la.setFeFunctions2D(fe_functions.data()); //reset - now velo comp included
-    la.setFeValueFctIndex({0,1,2,3});
-    la.setFeValueMultiIndex({D00,D00,D00,D00});
-    la.setN_Parameters(4);
-    la.setN_FeValues(4);
-    la.setN_ParamFct(1);
-    la.setParameterFct_string("TimeNSParamsVelo_dimensional");
-
-    la.setAssembleParam_string("TimeNSRHS_dimensional");  //this is for dimensional NSE
-    //...this should do the trick
-    }
-
   // prepare spaces, matrices and rhs for assembling
   s.rhs.reset(); // NOTE: it seems to be redundant, since it is reset in the following function
   std::vector<const TFESpace2D*> spaces_mat(2);
@@ -654,42 +602,9 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
     std::vector<TFEFunction2D*> fe_functions;
     prepare_fefunc_for_localassembling(s,fe_functions);
     LocalAssembling2D la_nonlinear(TNSE2D_NL, fe_functions.data(),
-                         this->example.get_coeffs(), this->disctype);
+                         this->example.get_coeffs(), this->disctype,
+                         this->with_variable_fluid_properties);
 
-    if (this->with_variable_fluid_properties)
-    {
-      la_nonlinear.setBeginParameter({0});
-      la_nonlinear.setFeFunctions2D(fe_functions.data()); //reset - now velo comp included
-      la_nonlinear.setFeValueFctIndex({0,1,2,3});
-      la_nonlinear.setFeValueMultiIndex({D00,D00,D00,D00});
-      la_nonlinear.setN_Parameters(4);
-      la_nonlinear.setN_FeValues(4);
-      la_nonlinear.setN_ParamFct(1);
-      la_nonlinear.setParameterFct_string("TimeNSParamsVelo_dimensional");
-
-      switch(TDatabase::ParamDB->LAPLACETYPE)
-      {
-        case 1:
-          switch(TDatabase::ParamDB->NSTYPE)
-          {
-            case 1:
-              la_nonlinear.setAssembleParam_string("TimeNSType1_2NLGalerkin_dimensional");  //this is for dimensional NSE
-              break;
-            case 3:
-            case 4:
-              // Assembling routine for NSType 3 with DD
-              la_nonlinear.setAssembleParam_string("TimeNSType3_4NLGalerkinDD_dimensional");
-              break;
-            default:
-              ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
-                  "When there is Slip BC, use exclusively NSTYPE4.");
-          }
-          break;
-        default:
-          ErrThrow("Assembling with variable fields requires LAPLACETYPE=1, "
-                  "please correct input parameter!");
-      }
-    }
     // prepare spaces, matrices and rhs for assembling
     std::vector<const TFESpace2D*> spaces_mat;
     std::vector<const TFESpace2D*> spaces_rhs;
@@ -1353,7 +1268,8 @@ void Time_NSE2D::apply_slip_penetration_bc(bool change_A_offdiagonal_blocks,
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
 
     LocalAssembling2D la(TNSE2D_Rhs, fe_functions,
-                             this->example.get_coeffs());
+                        this->example.get_coeffs(),
+                        this->disctype,this->with_variable_fluid_properties);
 
     fespmat[0] = &s.velocity_space;
     fesprhs[0] = fespmat[0];
@@ -1446,7 +1362,8 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, nullptr };
 
     LocalAssembling2D la_mass(TNSE2D_Mass, fe_functions,
-                                   this->example.get_coeffs());
+                      this->example.get_coeffs(),
+                      this->disctype, this->with_variable_fluid_properties);
 
     // the following should add fluid property fluids
     // to obtain a dimensional formulation of NSE
