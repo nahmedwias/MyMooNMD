@@ -160,8 +160,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
                                      TFEFunction2D **fefunctions2d,
                                      CoeffFct2D *coeffs,
-                                     int disctype)
- : type(type), discretization_type(disctype),
+                                     int disctype, bool variable_tnse)
+ : type(type), discretization_type(disctype), twophase_tnse(variable_tnse),
    name(LocalAssembling2D_type_to_string(type, disctype)), Coeffs(coeffs),
    FEFunctions2D(fefunctions2d)
 {
@@ -421,22 +421,43 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
   /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
   case LocalAssembling2D_type::TNSE2D_Mass:
   /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
-    switch(this->discretization_type)
+    switch(this->twophase_tnse)
     {
-      case GALERKIN:
-        this->set_parameters_for_tnse(type);
+      case 0:
+        switch(this->discretization_type)
+        {
+          case GALERKIN:
+            this->set_parameters_for_tnse(type);
+            break;
+//          case SUPG:
+//            this->set_parameters_for_tnse_SUPG(type);
+//            break;
+//          case SMAGORINSKY:
+//            this->set_parameters_for_tnse_SMAGORINSKY(type);
+//            break;
+          case VMS_PROJECTION:
+            this->set_parameters_for_tnse_PB_VMS(type);
+            break;
+          default:
+            ErrThrow("DISCTYPE is not implemented with TNSE2D.");
+        }
         break;
-      case SUPG:
-        this->set_parameters_for_tnse_SUPG(type);
+      case 1:  // HERE ARE THE ROUTINES USED FOR TWO PHASE FLOW,
+        switch(this->discretization_type)
+        {
+          case GALERKIN:
+            this->set_parameters_for_tnse_TwoPhase(type);
+            break;
+          case VMS_PROJECTION: //add this PBVMS in the TwoPhase method
+//            this->set_parameters_for_tnse_PB_VMS(type);
+            break;
+//          case SMAGORINSKY:
+//             this->set_parameters_for_tnse_SMAGORINSKY(type);
+//             break;
+          default:
+            ErrThrow("DISCTYPE is not implemented with TWO PHASE FLOW.");
+        }
         break;
-      case SMAGORINSKY:
-        this->set_parameters_for_tnse_SMAGORINSKY(type);
-        break;
-      case VMS_PROJECTION:
-        this->set_parameters_for_tnse_PB_VMS(type);
-        break;
-      default:
-        ErrThrow("DISCTYPE is not implemented with TNSE2D.");
     }
     break;
   ////////////////////////////////////////////////////////////////////////////
@@ -2647,6 +2668,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   this->Needs2ndDerivatives[0] = false;
   this->Needs2ndDerivatives[1] = false;
   this->Manipulate = NULL;
+
   
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
   {
@@ -2668,7 +2690,6 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
     this->FEValue_MultiIndex = { D00, D00 };
     this->FEValue_FctIndex = { 0, 1 };    
   }
-  
   
   switch(type)
   {
@@ -2945,44 +2966,10 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
           exit(1);
       }
       break;
-
-
-
-      /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
-        case TNSE2D_Mass:
-          switch(disc_type)
-          {
-            case GALERKIN:
-            case SMAGORINSKY:
-              this->N_Terms = 1;
-              this->Derivatives = { D00 };
-              this->Needs2ndDerivatives = new bool[1];
-              this->Needs2ndDerivatives[0] = false;
-              this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 1;
-              this->RowSpace = { 0 };
-              this->ColumnSpace = { 0 };
-              this->N_Rhs = 0 ;
-              this->RhsSpace = {};
-              this->AssembleParam =TimeNSType1_3_4GalerkinDDMass_dimensional;
-              this->Manipulate = NULL;
-              break;
-            case SUPG:
-              ErrMsg("unknown LocalAssembling2D_type " << type << "  not yet implemented");
-              break;
-            default:
-              ErrMsg("unknown LocalAssembling2D_type " << type << "  " << this->name);
-              exit(1);
-          }
-          break;
-          /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
-
-
     default:
       ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
   }
   //=========================================================================
-  
 }
 
 //==============================================================================
@@ -3342,6 +3329,164 @@ void LocalAssembling2D::set_parameters_for_tnse_PB_VMS(LocalAssembling2D_type ty
      ErrThrow("Unknown type", type);
      break;
    }
+}
+
+//==============================================================================
+void LocalAssembling2D::set_parameters_for_tnse_TwoPhase(LocalAssembling2D_type type)
+{
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  int disc_type = this->discretization_type;
+  // few checks
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
+  {
+    ErrMsg("Newton method is not supported yet");
+    exit(1);
+  }
+
+  // common for all NSTYPE, Discrete forms, etc
+  if(type==TNSE2D)
+  {
+    this->N_Terms = 4;
+    this->Derivatives = { D10, D01, D00, D00 };
+    this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+    this->N_Rhs = 3; // NOTE: check why is this always three??
+    this->RhsSpace = { 0, 0, 0 };
+  }
+  else if(type==TNSE2D_NL)
+  {
+    this->N_Terms = 3;
+    this->Derivatives = { D10, D01, D00 };
+    this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
+    this->N_Rhs = 0;
+    this->RhsSpace = {};
+  }
+
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Manipulate = NULL;
+
+  // *************************************************************
+  // *********************************************************
+  /* PUT HERE INFORMATION ON FE FUNCTIONS USED IN ASSEMBLING  */
+  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+  {
+    this->N_Parameters = 2;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+    this->BeginParameter = { 0 };
+    this->N_FEValues = 6;
+    this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+    this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+  }
+  else if(this->twophase_tnse == 0)
+  {
+    this->N_Parameters = 2;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParams2};
+    this->N_FEValues = 2;
+    this->BeginParameter = { 0 };
+    this->FEValue_MultiIndex = { D00, D00 };
+    this->FEValue_FctIndex = { 0, 1 };
+  }
+  else if (this->twophase_tnse == 1)
+  {
+    this->N_Parameters = 4;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParamsVelo_dimensional};
+    this->N_FEValues = 4;
+    this->BeginParameter = {0};
+    this->FEValue_MultiIndex = { D00, D00, D00, D00};
+    this->FEValue_FctIndex = { 0, 1, 2, 3};
+  }
+  // *********************************************************
+  // ************************************************************
+
+  if (this->twophase_tnse == 0)
+  {
+    ErrThrow("This method can be used only for two phase TNSE assembling.")
+  }
+
+
+  switch(TDatabase::ParamDB->LAPLACETYPE)
+  {
+  case 1:
+  switch(disc_type)
+  {
+    case GALERKIN:
+      switch(type)
+      {
+        case TNSE2D:
+          switch(nstype)
+          {
+          case 3:
+            this->N_Matrices    = 7;
+            this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1 };
+            this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0 };
+            this->AssembleParam = TimeNSType3GalerkinDD_dimensional;
+            break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
+          case 4:
+            this->N_Matrices    = 9;
+            this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
+            this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
+            this->AssembleParam = TimeNSType4GalerkinDD_dimensional;
+            break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
+          default:
+            ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
+                "When there is Slip BC, use exclusively NSTYPE4.");
+          }
+          break;
+        case TNSE2D_NL:
+          switch(nstype)
+          {
+            case 3:
+            case 4:
+              this->N_Matrices    = 2;
+              this->RowSpace      = { 0, 0 };
+              this->ColumnSpace   = { 0, 0 };
+              this->AssembleParam = TimeNSType3_4NLGalerkinDD_dimensional;
+              break;
+          }
+          break;// break; TNSE2D_NL->GALERKIN
+        case TNSE2D_Rhs:
+          this->N_Terms = 1;
+          this->Derivatives = { D00 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = {};
+          this->ColumnSpace = { };
+          this->N_Rhs = 3 ;
+          this->RhsSpace = {0, 0, 0};
+          this->AssembleParam =TimeNSRHS_dimensional;
+          this->Manipulate = NULL;
+          break;
+        case TNSE2D_Mass:
+          this->N_Terms = 1;
+          this->Derivatives = { D00 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 1;
+          this->RowSpace = { 0 };
+          this->ColumnSpace = { 0 };
+          this->N_Rhs = 0 ;
+          this->RhsSpace = {};
+          this->AssembleParam =TimeNSType1_3_4GalerkinDDMass_dimensional;
+          this->Manipulate = NULL;
+          break;
+        default:
+          ErrThrow("unknown LocalAssembling2D_type ", this->name);
+          }
+       break;
+  }  // End of DISCTYPE GALERKIN
+  break;
+  default:
+    ErrThrow("Impossible to use LAPLACETYPE other than 1"
+        " when assembling TNSE for two phase.");
+    break;
+  }
 }
 
 //==============================================================================
