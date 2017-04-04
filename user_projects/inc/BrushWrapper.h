@@ -88,6 +88,7 @@ class BrushWrapper
 
     std::ofstream moment_stats_file_;
     std::ofstream outflow_particles_file_;
+    std::ofstream inflow_particles_file_;
 
     /// All functions which come from Brush start their life in ParMooN
     /// as 0th order fe functions on the following grid and fe space.
