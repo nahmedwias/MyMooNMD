@@ -59,12 +59,14 @@ void compute(ParameterDatabase& db,
              std::array<double, int(6)> errors,
              double tol)
 {
+  db["verbosity"]  = 5;
   ParameterDatabase tnse_db("Navier-Stokes Database");
   ParameterDatabase tcd_db("Convection Diffusion Database");
   tnse_db.merge(db,true);
   tcd_db.merge(db,true);
   tcd_db["problem_type"]     = 2;
   tnse_db["problem_type"]    = 6;
+
   check_parameters_consistency_NSE(tnse_db);
   //  declaration of databases
   TDomain domain(db);
@@ -81,7 +83,7 @@ void compute(ParameterDatabase& db,
   vof.output_initial_info();
 
   TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
-  vof.tnse2d_.assemble_initial_time();                                // assemble linear term
+  vof.tnse2d_.assemble_initial_time();          // assemble linear term
 
   if (!tcd_db["algebraic_flux_correction"].is("none"))
     TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
@@ -118,15 +120,14 @@ void compute(ParameterDatabase& db,
       {
         vof.tnse2d_.assemble_rhs_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
         vof.tnse2d_.assemble_massmatrix_withfields(&vof.rho_fefunction_);
-        vof.tnse2d_.assemble_nonlinear_term_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
         if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
             vof.tnse2d_.apply_slip_penetration_bc(true,true);
       }
       else
       {
         vof.tnse2d_.assemble_rhs();
-        vof.tnse2d_.assemble_nonlinear_term();
       }
+      vof.tnse2d_.assemble_nonlinear_term();
       vof.tnse2d_.assemble_system();
 
     /********************************************************************
@@ -142,12 +143,11 @@ void compute(ParameterDatabase& db,
         continue; // this interrupts the NL-Loop
       if (vof.tnse_variable_fluid_ == true)
       {
-        vof.tnse2d_.assemble_nonlinear_term_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_);
         if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
           vof.tnse2d_.apply_slip_penetration_bc(false,false);
       }
-      else
-        vof.tnse2d_.assemble_nonlinear_term();
+
+      vof.tnse2d_.assemble_nonlinear_term();
       vof.tnse2d_.assemble_system();
      } // end for k, non linear loop
 
@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
   db.merge(AlgebraicFluxCorrection::default_afc_database());
 
   db["output_compute_errors"] = true;
-  db["verbosity"]             = 3;
+  db["verbosity"]             = 5;
   db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 10);;
   db.add("boundary_file", "Default_UnitSquare", "", {"Default_UnitSquare",
                                                      "../../ParMooN/data/mesh/RTInstab_PochetOrig.PRM"});
