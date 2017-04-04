@@ -73,12 +73,18 @@ class Time_NSE2D
       TFEVectFunct2D u;
       /** @brief Finite element function for pressure*/
       TFEFunction2D p;
-      
+
       /** @brief constructor*/
       System_per_grid(const Example_TimeNSE2D& example, TCollection& coll, 
                       std::pair<int,int> order, Time_NSE2D::Matrix type);
     };
     
+    /* FEFunction equal to property fields, construction
+     * based on the above BlockVectors
+     */
+    TFEFunction2D* rho_fefunct = nullptr;
+    TFEFunction2D* mu_fefunct = nullptr;
+
     /** @brief a local parameter database which controls this class
      *
      * The database given to the constructor will be merged into this one. Only
@@ -145,6 +151,13 @@ class Time_NSE2D
      * in the call to set_parameters().
      */
     int disctype = 1;
+
+    /*
+     * @brief this detects if the rho and mu coefficients are given
+     *  as fe_functions in the local assembling objects, instead of
+     *  taking eps=1/reynolds_number from LinCoeffs from example
+     */
+    bool with_variable_fluid_properties = 0;
 
     /** @brief set parameters in database
     *
@@ -309,20 +322,24 @@ class Time_NSE2D
     /** ***************BELOW THIS LINE, USER SPECIFIC CODE ********/
   public:
 
+    /*
+     * @brief this sets the boolean with_variable_fluid_properties
+     */
+    void set_bool_variable_properties(bool rho_mu_variable)
+    { this->with_variable_fluid_properties = rho_mu_variable; }
+
+    /*
+     * @brief this sets the rho and mu fefunctions coming from VOF
+     */
+    void set_rho_mu_fefunct(TFEFunction2D* rho, TFEFunction2D* mu)
+    { this->rho_fefunct = rho; this->mu_fefunct = mu; }
+
     /**@brief this is a call to assemble2Dslipbc(), which sets up
      * everything needed for "Slip with friction, Penetration
      * with resistance" Boundary conditions in RHS and matrices
      */
     void apply_slip_penetration_bc(bool change_A_offdiagonal_blocks = false,
                                    bool change_B_Mass_blocks = false);
-
-    /** @brief assemble matrix,
-     *
-     * This assembles everything which is not related to the nonlinear term.
-     * I.e. it assembles a Stokes matrix.
-     */
-    void assemble_initial_time_withfields(TFEFunction2D* rho_field=nullptr,
-                                          TFEFunction2D* mu_field=nullptr);
 
     /** @brief assemble nonlinear term
      *

@@ -391,6 +391,43 @@ void Time_NSE2D::assemble_initial_time()
     LocalAssembling2D la(TNSE2D, fe_functions.data(),
                          this->example.get_coeffs(), this->disctype);
 
+    if (this->with_variable_fluid_properties)
+    {
+      // step 2 - set all the 'parameter'-related values in la accordingly
+      // set up the input...
+      la.setBeginParameter({0});
+      la.setFeFunctions2D(fe_functions.data()); //reset - now velo comp included
+      la.setFeValueFctIndex({0,1,2,3});
+      la.setFeValueMultiIndex({D00,D00,D00,D00});
+      la.setN_Parameters(4);
+      la.setN_FeValues(4);
+      la.setN_ParamFct(1);
+      la.setParameterFct_string("TimeNSParamsVelo_dimensional");
+
+      switch(TDatabase::ParamDB->LAPLACETYPE)
+      {
+        case 1:
+          switch(TDatabase::ParamDB->NSTYPE)
+          {
+            case 3:
+              // Assembling routine for NSType 3 with DD
+              la.setAssembleParam_string("TimeNSType3GalerkinDD_dimensional");
+              break;
+            case 4:
+              // Assembling routine for NSType 3 with DD
+              la.setAssembleParam_string("TimeNSType4GalerkinDD_dimensional");
+              break;
+            default:
+              ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
+                  "When there is Slip BC, use exclusively NSTYPE4.");
+          }
+          break;
+        default:
+          ErrThrow("Assembling with variable fields require LAPLACETYPE=1, "
+              "please correct input parameter!");
+      }
+    }
+
     // prepare spaces, matrices and rhs for assembling
     std::vector<const TFESpace2D*> spaces_mat;
     std::vector<const TFESpace2D*> spaces_rhs;
@@ -890,6 +927,45 @@ void Time_NSE2D::prepare_fefunc_for_localassembling(Time_NSE2D::System_per_grid&
   fe_functions[1] = s.u.GetComponent(1);
 //  fe_functions[2] = &s.p;
 
+  if (this->with_variable_fluid_properties) //then use rho and mu
+  {
+    if (this->rho_fefunct == nullptr || this->mu_fefunct == nullptr )
+      {ErrThrow("Time_NSE2D : variable fluid properties is activated,"
+          "but the given rho and mu fe functions are nullptr.");}
+    else
+    {
+      /* step 1: check if the velocity space and "rho_field->GetSFESpace2d()"
+      * are the same. If yes, no interpolation needed
+      * otherwise, do the interpolation */
+      int Ndof_rho     = this->rho_fefunct->GetFESpace2D()->GetN_DegreesOfFreedom();
+      int Ndof_velocity= s.u.GetFESpace2D()->GetN_DegreesOfFreedom();
+      if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
+      {
+        Output::info<3>("Time_NSE2D", "The spaces of the velocity field and the "
+                        "scalar field (rho) are the same ==> There will be no interpolation.");
+        Output::print<5>("Degres of freedoms of scalar field rho= " , Ndof_rho);
+        Output::print<5>("Degres of freedoms of velocity   = " , Ndof_velocity);
+
+        fe_functions.resize(4);
+        fe_functions[2] = this->rho_fefunct;
+        fe_functions[3] = this->mu_fefunct;
+      }
+      else // spaces are not the same
+      {
+        Output::warn<3>("Time_NSE2D", "The spaces of the velocity field and the "
+                        "scalar field are not the same ==> Adapting the assemble method.");
+        Output::print<3>("Degres of freedoms of scalar field rho= " , Ndof_rho);
+        Output::print<3>("Degres of freedoms of velocity   = " , Ndof_velocity);
+        // this is the same as above, but in the other routines, the spaces
+        // are changed.
+        fe_functions.resize(4);
+        fe_functions[2] = this->rho_fefunct;
+        fe_functions[3] = this->mu_fefunct;
+      }
+    }
+  }
+
+
   // Append function for the labels of the local projection
   // for the case "Projection-Based VMS"
   if(db["space_discretization_type"].is("vms_projection"))
@@ -941,6 +1017,17 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
   spaces_rhs[0] = velo_space;
   spaces_rhs[1] = velo_space;
 
+  if(this->with_variable_fluid_properties)
+  {
+    if(this->disctype == VMS_PROJECTION)
+    {ErrThrow("VMS PROJECTION WITH DIMENSIONAL TNSE2D IS NOT ACTIVATED!!!");}
+    else
+    {
+      spaces.resize(4);
+      spaces[2] = this->rho_fefunct->GetFESpace2D();
+      spaces[3] = this->mu_fefunct->GetFESpace2D();
+    }
+  }
 
   // Append correct spaces if "Projection-Based VMS" is used
   if(this->disctype == VMS_PROJECTION)
@@ -1291,252 +1378,6 @@ void Time_NSE2D::apply_slip_penetration_bc(bool change_A_offdiagonal_blocks,
   }
 //  this->systems.front().Mass_Matrix.get_blocks().at(3)->Print("test"); exit(0);
   Output::print<3>("Finished to apply Slip and Penetration BCs.");
-}
-
-/**************************************************************************** */
-void Time_NSE2D::assemble_initial_time_withfields(TFEFunction2D* rho_field,
-                     TFEFunction2D* mu_field)
-{
-  for(System_per_grid& s : this->systems)
-  {
-    s.rhs.reset();
-    const TFESpace2D * velo_space = &s.velocity_space;
-    const TFESpace2D * pres_space = &s.pressure_space;
-    // variables which are same for all nstypes
-    size_t n_fe_spaces = 2;
-    const TFESpace2D *fespmat[4] = {velo_space, pres_space,nullptr,nullptr};
-
-    size_t n_square_matrices = 6; //
-    TSquareMatrix2D *sqMatrices[6]{nullptr}; // maximum number of square matrices
-
-    size_t n_rect_matrices = 4; // maximum number of rectangular matrices
-    TMatrix2D *rectMatrices[4]{nullptr}; // maximum number of pointers
-
-    size_t nRhs = 2; //is 3 if NSE type is 4 or 14
-    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; //third place gets only filled
-    const TFESpace2D *fe_rhs[3] = {velo_space, velo_space, nullptr};  // if NSE type is 4 or 14
-
-    BoundCondFunct2D * boundary_conditions[3] = {velo_space->GetBoundCondition(),
-                                                 velo_space->GetBoundCondition(),
-                                                 pres_space->GetBoundCondition()};
-
-    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-    non_const_bound_values[0] = example.get_bd()[0];
-    non_const_bound_values[1] = example.get_bd()[1];
-    non_const_bound_values[2] = example.get_bd()[2];
-
-    TFEFunction2D *fe_functions[5] =
-    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, nullptr, nullptr };
-
-    LocalAssembling2D la(TNSE2D, fe_functions,
-                         this->example.get_coeffs());
-
-    // the following should add fluid property fluids
-    // to obtain a dimensional formulation of NSE
-    if (rho_field != nullptr && mu_field != nullptr)
-    {
-      // HERE IS THE CODE TO SET UP THE RHO AND MU FIELDS FOR LOCAL ASSEMBLING OBJECT
-
-      // we assume rho and mu fields are not too exotic,
-      // and have the same space...
-      int Ndof_rho     = rho_field->GetFESpace2D()->GetN_DegreesOfFreedom();
-      int Ndof_velocity = velo_space->GetN_DegreesOfFreedom();
-
-      // step 1: check if the velocity space and "rho_field->GetSFESpace2d()"
-      // are the same. If yes, no interpolation needed
-      // otherwise, do the interpolation
-      if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
-      {
-        Output::info<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                   "scalar field (rho) are the same ==> There will be no interpolation.");
-//        Output::print<3>("Degres of freedoms of scalar field rho= " , Ndof_rho);
-//        Output::print<3>("Degres of freedoms of velocity   = " , Ndof_velocity);
-
-        //fill up the new fe function array
-        fe_functions[3] = rho_field;
-        fe_functions[4] = mu_field;
-      }
-      else  // do the interpolation
-      {
-        Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                        "scalar field are not the same ==> Adapting the assemble method.");
-
-        fe_functions[3] = rho_field;
-        fe_functions[4] = mu_field;
-        fespmat[2] = rho_field->GetFESpace2D();
-        fespmat[3] = mu_field->GetFESpace2D();
-        n_fe_spaces = 4;
-//        // set up an interpolator object  (ptr will be shared later)
-//        // we interpolate into velo_space
-//        FEFunctionInterpolator interpolator(velo_space);
-//
-//        // length of the values array of the interpolated rho
-//        // velo must equal length of the velocity components
-//        size_t length_interpolated = s.u.GetComponent(0)->GetLength();
-//
-//        std::vector<double> temporary_rho(length_interpolated, 0.0);
-//        std::vector<double> temporary_mu(length_interpolated, 0.0);
-//
-//        this->entries_rho_scalar_field = temporary_rho;
-//        this->entries_mu_scalar_field = temporary_mu;
-//
-//        TFEFunction2D interpolated_rho_field =
-//            interpolator.interpolate(*rho_field,
-//                                     this->entries_rho_scalar_field);
-//
-//        TFEFunction2D interpolated_mu_field =
-//            interpolator.interpolate(*mu_field,
-//                                     this->entries_mu_scalar_field);
-//
-//        //fill up the new fe function array
-//        fe_functions[3] = &interpolated_rho_field;
-//        fe_functions[4] = &interpolated_mu_field;
-      }
-
-      // step 2 - set all the 'parameter'-related values in la accordingly
-      // set up the input...
-      la.setBeginParameter({0});
-      la.setFeFunctions2D(fe_functions); //reset - now velo comp included
-      la.setFeValueFctIndex({0,1,3,4});
-      la.setFeValueMultiIndex({D00,D00,D00,D00});
-      la.setN_Parameters(4);
-      la.setN_FeValues(4);
-      la.setN_ParamFct(1);
-      la.setParameterFct_string("TimeNSParamsVelo_dimensional");
-
-      switch(TDatabase::ParamDB->LAPLACETYPE)
-      {
-        case 1:
-          switch(TDatabase::ParamDB->NSTYPE)
-          {
-            case 3:
-              // Assembling routine for NSType 3 with DD
-              la.setAssembleParam_string("TimeNSType3GalerkinDD_dimensional");
-              break;
-            case 4:
-              // Assembling routine for NSType 3 with DD
-              la.setAssembleParam_string("TimeNSType4GalerkinDD_dimensional");
-              break;
-            default:
-              ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
-                  "When there is Slip BC, use exclusively NSTYPE4.");
-          }
-          break;
-        default:
-          ErrThrow("Assembling with variable fields require LAPLACETYPE=1, "
-              "please correct input parameter!");
-      }
-      //...this should do the trick
-    }
-
-
-    std::vector<std::shared_ptr<FEMatrix>> blocks
-    = s.matrix.get_blocks_uniquely();
-    std::vector<std::shared_ptr<FEMatrix>> mass_blocks
-    = s.Mass_Matrix.get_blocks_uniquely();
-
-    switch(TDatabase::ParamDB->NSTYPE)
-    {
-      case 1:
-        if(blocks.size() != 3)
-        {ErrThrow("Wrong blocks.size() ", blocks.size());}
-        n_square_matrices = 2;
-        sqMatrices[0]   = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sqMatrices[1]   = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        n_rect_matrices = 2;
-        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
-        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-        break;
-      case 2:
-        if(blocks.size() != 5)
-        {ErrThrow("Wrong blocks.size() ", blocks.size());}
-        n_square_matrices = 2;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        n_rect_matrices = 4;
-        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
-        rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get()); //than the standing B blocks
-        rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-        break;
-      case 3:
-        if(blocks.size() != 6)
-        {ErrThrow("Wrong blocks.size() ", blocks.size());}
-        n_square_matrices = 5;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-        sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        // ErrThrow("not tested yet!!!, kindly remove one mass matrix from the LocalAssembling2D routine");
-        n_rect_matrices = 2;
-        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //first the lying B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-        break;
-      case 4:
-        if(blocks.size() != 8)
-        {ErrThrow("Wrong blocks.size() ", blocks.size());}
-        n_square_matrices = 5;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-        sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        n_rect_matrices = 4;
-        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-        rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
-        rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-        RHSs[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
-        fe_rhs[2] = pres_space;
-        nRhs = 3;
-
-        break;
-      case 14:
-        if(blocks.size() != 9)
-        {ErrThrow("Wrong blocks.size() ", blocks.size());}
-        n_square_matrices = 6;
-        sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-        sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        // C block pressure pressure
-        sqMatrices[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-        n_rect_matrices = 4;
-        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-        rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
-        rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-        RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
-        fe_rhs[2]  = pres_space;
-        nRhs = 3;
-
-        break;
-      default:
-        ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-                 " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
-    }
-    // assemble all the matrices and right hand side
-    Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices,
-               n_rect_matrices, rectMatrices, nRhs, RHSs, fe_rhs,
-               boundary_conditions, non_const_bound_values.data(), la);
-    // copy nonactives
-    s.solution.copy_nonactive(s.rhs);
-  }
-
-// this piece of code is just to check A matrix
-//  BlockVector testing1 = this->systems.front().solution;
-//  testing1 = 1;
-//  const BlockVector testing2= testing1;
-//  this->systems.front().matrix.apply(testing2,testing1);
-//  testing1.write("vecteur_test_DIMENSIONAL");
-
-  // copy the current right hand side vector to the old_rhs
-  this->old_rhs = this->systems.front().rhs;
-  this->old_solution = this->systems.front().solution;
 }
 
 /**************************************************************************** */

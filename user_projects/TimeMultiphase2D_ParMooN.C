@@ -84,10 +84,7 @@ int main(int argc, char* argv[])
    * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
    ********************************************************************/
   TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
-  if (vof.tnse_variable_fluid_ == true)
-    vof.tnse2d_.assemble_initial_time_withfields(&vof.rho_fefunction_,&vof.mu_fefunction_); // assemble linear term
-  else
-    vof.tnse2d_.assemble_initial_time();                                // assemble linear term
+  vof.tnse2d_.assemble_initial_time();            // assemble linear term
 
   if (!tcd_db["algebraic_flux_correction"].is("none"))
     TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;

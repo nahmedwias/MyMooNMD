@@ -29,6 +29,8 @@ VOF_TwoPhase2D::VOF_TwoPhase2D(const TDomain& domain,
 {
   /* Initialize unity vector  */
   this->unity_vector_ = 1;
+  this->tnse2d_.set_rho_mu_fefunct(&this->rho_fefunction_,
+                                   &this->mu_fefunction_);
 /* at the end of the constructor, rho and mu are constant equal to phase fraction,
  * whatever the examples and booleans are. The call to "update_field_vectors" will
  * calculate their value, depending on the example number
@@ -97,6 +99,9 @@ void VOF_TwoPhase2D::manage_example_parameters()
           " slip conditions, you must use NSTYPE 4.");
     }
   }
+
+  // Set the boolean of TNSE2D taken from VOF
+  this->tnse2d_.set_bool_variable_properties(this->tnse_variable_fluid_);
 }
 
 /** Update the vectors mu and rho with the phase fraction vector,
@@ -144,6 +149,9 @@ void VOF_TwoPhase2D::update_field_vectors()
       ErrThrow("Unknown example number");
       break;
   }
+  // transfer fe functions to tnse2d after updates
+  this->tnse2d_.set_rho_mu_fefunct(&this->rho_fefunction_,
+                                   &this->mu_fefunction_);
 }
 
 /** Write output of vectors in a file */
