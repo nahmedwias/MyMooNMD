@@ -291,7 +291,9 @@ void BrushWrapper::reset_fluid_phase(
 void BrushWrapper::solve(double t_start, double t_end)
 {
   //now call the solver
-  interface_->run_particle_phase(t_start, t_end);
+  size_t n_steps = db_["n_solves_per_time_step"];
+  int rs = db_["random_seed"];
+  interface_->run_particle_phase(t_start, t_end, n_steps, rs);
 
   // Updating stats and fetching moments is only relevant for
   // visualization and the output!

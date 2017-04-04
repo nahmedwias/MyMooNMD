@@ -112,7 +112,7 @@ void Coupled_Time_CDR_2D::couple_and_solve()
   // A vector keeping track of the residuals before solving
   std::vector<double> resids( nEquations_ , 10e10 );
 
-  for (size_t step = 0 ; true ; ++step){
+  for (size_t step = 1 ; true ; ++step){
 
     //Fill pointers to available solutions into previousSolutions array
     for(size_t i =0;i<nEquations_;++i){
@@ -221,7 +221,7 @@ bool Coupled_Time_CDR_2D::break_iteration(size_t step, std::vector<double> resid
   {
     Output::stat("TCDRE SYSTEM SOLVE", "Target epsilon hit (", epsilon, ")");
     for(size_t p = 0 ; p < nEquations_; ++p)
-      Output::dash("eq ", p ," discrete residual: ", residuals[p]);
+      Output::dash("eq ", p ," discrete residual before solve: ", residuals[p]);
     return true;
   }
 
