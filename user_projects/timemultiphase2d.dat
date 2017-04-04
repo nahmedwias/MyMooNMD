@@ -2,10 +2,10 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 6
-space_discretization_type: galerkin { galerkin, vms_projection }
+refinement_n_initial_steps: 4
+space_discretization_type: smagorinsky { galerkin, smagorinsky, vms_projection }
 vms_projection_space_order: 0
-example: 2   [ -1, 100 ]
+example: 0   [ -1, 100 ]
 
 ENDTIME: 0.05
 TIMESTEPLENGTH: 0.01
@@ -96,7 +96,7 @@ algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
-TURBULENT_VISCOSITY_CONSTANT: 0.
+TURBULENT_VISCOSITY_CONSTANT: 0.0001
 
 # 0:ForEuler # 1:BackEuler # 2:CN # 3:FractStep # 4:IMEX
 TIME_DISC: 2

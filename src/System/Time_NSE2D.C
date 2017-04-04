@@ -1175,6 +1175,13 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
              sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
              sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
              break;
+            case SMAGORINSKY:
+              sqMatrices.resize(4);
+              sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+              sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+              sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+              sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+              break;
             case VMS_PROJECTION:
               if (!TDatabase::ParamDB->NSTYPE==14)
                 ErrThrow("VMS PROJECTION CAN BE USED ONLY WITH NSTYPE 14.");
