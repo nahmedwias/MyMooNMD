@@ -335,9 +335,6 @@ class Time_NSE2D
     void apply_slip_penetration_bc(bool change_A_offdiagonal_blocks = false,
                                    bool change_B_Mass_blocks = false);
 
-    void assemble_rhs_withfields(TFEFunction2D* rho_field=nullptr,
-                                 TFEFunction2D* mu_field=nullptr);
-
     void assemble_massmatrix_withfields(TFEFunction2D* rho_field=nullptr);
 
 // ======================================================================
@@ -362,12 +359,6 @@ class Time_NSE2D
     BlockVector extrapolated_solution_;
 // ======================================================================
 
-  protected: // these members are used when interpolating
-    // rho and mu field into same space as velocity_space
-    std::vector<double> entries_rho_scalar_field;
-    std::vector<double> entries_mu_scalar_field;
-//    TFEFunction2D interpolated_rho_field;
-//    TFEFunction2D interpolated_mu_field;
 
   private:
     /* @brief Set the fe_functions to prepare

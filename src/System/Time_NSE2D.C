@@ -506,6 +506,23 @@ void Time_NSE2D::assemble_rhs()
   LocalAssembling2D la(TNSE2D_Rhs, fe_functions.data(),
                        this->example.get_coeffs(), this->disctype);
   
+  if (this->with_variable_fluid_properties)
+  {
+    // step 2 - set all the 'parameter'-related values in la accordingly
+    // set up the input...
+    la.setBeginParameter({0});
+    la.setFeFunctions2D(fe_functions.data()); //reset - now velo comp included
+    la.setFeValueFctIndex({0,1,2,3});
+    la.setFeValueMultiIndex({D00,D00,D00,D00});
+    la.setN_Parameters(4);
+    la.setN_FeValues(4);
+    la.setN_ParamFct(1);
+    la.setParameterFct_string("TimeNSParamsVelo_dimensional");
+
+    la.setAssembleParam_string("TimeNSRHS_dimensional");  //this is for dimensional NSE
+    //...this should do the trick
+    }
+
   // prepare spaces, matrices and rhs for assembling
   s.rhs.reset(); // NOTE: it seems to be redundant, since it is reset in the following function
   std::vector<const TFESpace2D*> spaces_mat(2);
@@ -1405,191 +1422,6 @@ void Time_NSE2D::apply_slip_penetration_bc(bool change_A_offdiagonal_blocks,
   }
 //  this->systems.front().Mass_Matrix.get_blocks().at(3)->Print("test"); exit(0);
   Output::print<3>("Finished to apply Slip and Penetration BCs.");
-}
-
-/**************************************************************************** */
-void Time_NSE2D::assemble_rhs_withfields(TFEFunction2D* rho_field,
-                                         TFEFunction2D* mu_field)
-{
-  System_per_grid& s = this->systems.front();
-
-  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-  const double theta2 = TDatabase::TimeDB->THETA2;
-  const double theta3 = TDatabase::TimeDB->THETA3;
-  const double theta4 = TDatabase::TimeDB->THETA4;
-
-
-  int N_Rhs = 3;
-  const TFESpace2D * v_space = &this->get_velocity_space();
-  const TFESpace2D * p_space = &this->get_pressure_space();
-
-  double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
-
-  size_t nfespace = 1;
-  const TFESpace2D *fespmat[3] = {v_space, nullptr,nullptr};
-  const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
-
-  BoundCondFunct2D * boundary_conditions[3] = {
-                                               v_space->GetBoundCondition(), v_space->GetBoundCondition(),
-                                               p_space->GetBoundCondition() };
-
-  std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-  non_const_bound_values[0] = this->example.get_bd(0);
-  non_const_bound_values[1] = this->example.get_bd(1);
-  non_const_bound_values[2] = this->example.get_bd(2);
-
-
-  // reset the right hand side
-  s.rhs.reset();
-  // assembling of the right hand side
-  TFEFunction2D *fe_functions[5] =
-  { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, nullptr, nullptr };
-
-  LocalAssembling2D la(TNSE2D_Rhs, fe_functions,
-                       this->example.get_coeffs());
-
-
-  // the following should add fluid property fluids
-  // to obtain a dimensional formulation of NSE
-  if (rho_field != nullptr && mu_field != nullptr)
-  {
-    // HERE IS THE CODE TO SET UP THE RHO AND MU FIELDS FOR LOCAL ASSEMBLING OBJECT
-
-    // we assume rho and mu fields are not too exotic,
-    // and have the same space...
-    int Ndof_rho     = rho_field->GetFESpace2D()->GetN_DegreesOfFreedom();
-    int Ndof_velocity = s.velocity_space.GetN_DegreesOfFreedom();
-
-    // step 1: check if the velocity space and "rho_field->GetSFESpace2d()"
-    // are the same. If yes, no interpolation needed
-    // otherwise, do the interpolation
-    if (Ndof_rho == Ndof_velocity) //this is a simple check condition...
-    {
-      Output::info<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                 "scalar field (rho) are the same ==> There will be no interpolation.");
-//        Output::print<3>("Degres of freedoms of scalar field rho= " , Ndof_rho);
-//        Output::print<3>("Degres of freedoms of velocity   = " , Ndof_velocity);
-
-      //fill up the new fe function array
-      fe_functions[3] = rho_field;
-      fe_functions[4] = mu_field;
-    }
-    else  // do the interpolation
-    {
-      Output::warn<1>("Time_NSE2D", "The spaces of the velocity field and the "
-                      "scalar field are not the same ==> adapting assemble method");
-
-      fe_functions[3] = rho_field;
-      fe_functions[4] = mu_field;
-      nfespace = 3;
-      fespmat[1] = rho_field->GetFESpace2D();
-      fespmat[2] = mu_field->GetFESpace2D();
-//      // set up an interpolator object  (ptr will be shared later)
-//      // we interpolate into velo_space
-//      FEFunctionInterpolator interpolator(velo_space);
-//
-//      // length of the values array of the interpolated rho
-//      // velo must equal length of the velocity components
-//      size_t length_interpolated = s.u.GetComponent(0)->GetLength();
-//
-//      std::vector<double> temporary_rho(length_interpolated, 0.0);
-//      std::vector<double> temporary_mu(length_interpolated, 0.0);
-//
-//      this->entries_rho_scalar_field = temporary_rho;
-//      this->entries_mu_scalar_field = temporary_mu;
-//
-//      TFEFunction2D interpolated_rho_field =
-//          interpolator.interpolate(*rho_field,
-//                                   this->entries_rho_scalar_field);
-//
-//      TFEFunction2D interpolated_mu_field =
-//          interpolator.interpolate(*mu_field,
-//                                   this->entries_mu_scalar_field);
-//
-//      //fill up the new fe function array
-//      fe_functions[3] = &interpolated_rho_field;
-//      fe_functions[4] = &interpolated_mu_field;
-    }
-
-    // step 2 - set all the 'parameter'-related values in la accordingly
-    // set up the input...
-    la.setBeginParameter({0});
-    la.setFeFunctions2D(fe_functions); //reset - now velo comp included
-    la.setFeValueFctIndex({0,1,3,4});
-    la.setFeValueMultiIndex({D00,D00,D00,D00});
-    la.setN_Parameters(4);
-    la.setN_FeValues(4);
-    la.setN_ParamFct(1);
-    la.setParameterFct_string("TimeNSParamsVelo_dimensional");
-
-    la.setAssembleParam_string("TimeNSRHS_dimensional");  //this is for dimensional NSE
-    //...this should do the trick
-  }
-
-  Assemble2D(nfespace, fespmat, 0, nullptr,
-             0, nullptr, N_Rhs, RHSs, fesprhs,
-             boundary_conditions, non_const_bound_values.data(), la);
-
-
-  /* just a temporary vector which is going to be used at the end to
-   * retrieve the nonActive of rhs_. If we dont do it, the nonActive of rhs
-   * will be changed during the following matrix.vector operations and we'll
-   * loose the values of the Dirichlet nodes. */
-  BlockVector temporary = s.rhs;
-
-  // now it is this->systems[i].rhs = f^k
-  // scale by time step length and theta4 (only active dofs)
-  s.rhs.scaleActive(tau*theta4);
-  // add rhs from previous time step
-  if(theta3 != 0)
-  {
-    s.rhs.addScaledActive((this->old_rhs), tau*theta3);
-
-    // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
-    // next we want to set old_rhs to f^k (to be used in the next time step)
-    this->old_rhs.addScaledActive(s.rhs, -1./(tau*theta3));
-    this->old_rhs.scaleActive(-theta3/theta4);
-    this->old_rhs.copy_nonactive(s.rhs);
-  }
-  // FIXME FInd other solution than this submatrix method.
-  // M u^{k-1}
-  s.Mass_Matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, 1.0);
-  // -tau*theta2 * A u^{k-1}
-  double factor = -tau*theta2;
-  s.matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, factor);
-
-  // scale the BT blocks with time step length
-  for(System_per_grid& s : this->systems)
-  {
-    if(tau != oldtau)
-    {
-      // TODO: change the factor to be THETA1*tau;
-      factor = /*TDatabase::TimeDB->THETA1**/tau;
-      if(this->oldtau != 0.0)
-      {
-        factor /= this->oldtau;
-        Output::print<1>("change in tau", this->oldtau, "->", tau);
-      }
-      // scale the BT transposed blocks with the current time step
-      const std::vector<std::vector<size_t>> cell_positions = {{0,2}, {1,2}};
-      s.matrix.scale_blocks(factor, cell_positions);
-      if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
-      {
-        const std::vector<std::vector<size_t>> cell_positions_t = {{2,0}, {2,1}};
-        s.matrix.scale_blocks(factor, cell_positions_t);
-      }
-    }
-  }
-  this->oldtau = tau;
-
-  // retrieve the non active from "temporary" into rhs vector
-  s.rhs.copy_nonactive(temporary);
-
-  // copy the non active to the solution vector
-  s.solution.copy_nonactive(s.rhs);
-
-  Output::print<5>("assembled the system right hand side ");
-
 }
 
 /**************************************************************************** */
