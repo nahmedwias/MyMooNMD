@@ -104,6 +104,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
                 return std::string("TNSE2D_Galerkin");
             case SUPG:
                 return std::string("TNSE2D_SUPG");
+            case SMAGORINSKY:
+                return std::string("TNSE2D_SMAGORINSKY");
             case VMS_PROJECTION:
                 return std::string("TNSE2D_VMSPROJECTION");
         }
@@ -115,6 +117,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
                 return std::string("TNSE2D_NLGalerkin");
             case SUPG:
                 return std::string("TNSE2D_NLSUPG");
+            case SMAGORINSKY:
+                return std::string("TNSE2D_NLSMAGORINSKY");
             case VMS_PROJECTION:
                 return std::string("TNSE2D_NLVMSPROJECTION");
         }
@@ -126,6 +130,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
                 return std::string("TNSE2D_Rhs");
             case SUPG:
                 return std::string("TNSE2D_RhsSUPG");
+            case SMAGORINSKY:
+                return std::string("TNSE2D_RHSSMAGORINSKY");
             case VMS_PROJECTION:
                 return std::string("TNSE2D_RHSVMSPROJECTION");
         }
@@ -138,6 +144,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
               return std::string("TNSE2D_Mass");
             case SUPG:
               return std::string("");
+            case SMAGORINSKY:
+                return std::string("TNSE2D_MASSSMAGORINSKY");
             case VMS_PROJECTION:
                 return std::string("TNSE2D_MASSVMSPROJECTION");
       }
@@ -429,11 +437,11 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
           case GALERKIN:
             this->set_parameters_for_tnse(type);
             break;
+          case SMAGORINSKY:
+            this->set_parameters_for_tnse_SMAGORINSKY(type);
+            break;
 //          case SUPG:
 //            this->set_parameters_for_tnse_SUPG(type);
-//            break;
-//          case SMAGORINSKY:
-//            this->set_parameters_for_tnse_SMAGORINSKY(type);
 //            break;
           case VMS_PROJECTION:
             this->set_parameters_for_tnse_PB_VMS(type);
