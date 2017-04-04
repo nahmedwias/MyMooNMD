@@ -162,15 +162,12 @@ void compute(ParameterDatabase& db,
 //        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
 //        tcd2d.scale_stiffness_matrix();
         vof.phaseconvection2d_.assemble_with_convection(&vof.tnse2d_.get_velocity());
-        vof.phaseconvection2d_.solve();
-        vof.phaseconvection2d_.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
       }
       else  // if we solve TCD2D standard, without any coupling
-      {
-        vof.phaseconvection2d_.assemble();
-        vof.phaseconvection2d_.solve();
-        vof.phaseconvection2d_.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
-      }
+      { vof.phaseconvection2d_.assemble();}
+
+      vof.phaseconvection2d_.solve();
+      vof.phaseconvection2d_.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
     }
       /********************************************************************
        * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
