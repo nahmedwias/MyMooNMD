@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 
   /* SOME OUTPUT AND INFORMATION SET */
   vof.output_initial_info();
-  vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
+//  vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
 
 
 
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
       if (vof.cd2nse_coupling_ == true )
       {
         vof.update_field_vectors();
-        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
+//        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
       }
     }
 

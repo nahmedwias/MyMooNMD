@@ -3233,7 +3233,7 @@ void LocalAssembling2D::set_parameters_for_tnse_SMAGORINSKY(LocalAssembling2D_ty
       if (this->twophase_tnse==0)
         this->AssembleParam =TimeNSRHS;
       if (this->twophase_tnse==1)
-        this->AssembleParam =TimeNSRHS_dimensional;
+        this->AssembleParam =TimeNSRHS_dimensionalSmago;
       this->Manipulate = NULL;
       break;
     case TNSE2D_Mass:
