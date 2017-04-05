@@ -261,7 +261,7 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
-  double c0, c1, c2;
+  double c1, c2; // co;
   double u1, u2, mu, u3, u4;
 
   MatrixA11 = LocMatrices[0];
@@ -285,7 +285,7 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
   Orig2 = OrigValues[2];
   Orig3 = OrigValues[3];
 
-  c0 = coeff[0];
+//  c0 = coeff[0];
   c1 = coeff[1];
   c2 = coeff[2];
 
@@ -389,7 +389,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
-  double c0, viscosity;
+  double viscosity; //co;
   double u1, u2, mu, u3, u4;
   // cout << "Sma" << endl;
   MatrixA11 = LocMatrices[0];
@@ -403,7 +403,7 @@ double ***LocMatrices, double **LocRhs)
   Orig1 = OrigValues[1];         // u_y
   Orig2 = OrigValues[2];         // u
 
-  c0 = coeff[0];                 // nu
+//  c0 = coeff[0];                 // nu
 
   u1 = param[0];    // u1old
   u2 = param[1];    // u2old
