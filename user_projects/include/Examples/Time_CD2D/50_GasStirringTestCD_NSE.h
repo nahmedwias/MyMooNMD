@@ -30,9 +30,9 @@ void Exact(double x, double y, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(int BdComp, double Param, BoundCond &cond)
 {
-  if (BdComp == 1 || BdComp==3)
-    cond = DIRICHLET;
-  else
+//  if (BdComp == 0 || BdComp==2)
+//    cond = DIRICHLET;
+//  else
     cond = NEUMANN;
 }
 
@@ -45,33 +45,33 @@ void BoundValue(int BdComp, double Param, double &value)
 //    value = rho_min;  // this is Dirichlet
 //  else
 
-  if (BdComp == 1 || BdComp==3)
-  {
-    if (t == 0)
-      value = 1;
-    else
-      value = 0;
-  }
-  else
+//  if (BdComp == 0 )//|| BdComp==2)
+//  {
+//    if (t == 0)
+//      value = 1;
+//    else
+//      value = 0;
+//  }
+//  else
     value = 0;
 }
 
 // initial conditon
 void InitialCondition(double x,  double y, double *values)
 {
-//  double x0 = TDatabase::ParamDB->P4; // x position of initial circle
-//  double y0 = TDatabase::ParamDB->P5; // y position of initial circle
-//  double radius = TDatabase::ParamDB->P6; // radius of circle
+  double x0 = TDatabase::ParamDB->P4; // x position of initial circle
+  double y0 = TDatabase::ParamDB->P5; // y position of initial circle
+  double radius = TDatabase::ParamDB->P6; // radius of circle
   if ( y <= 0.7 )
     values[0] = 1; // liquid bath
   else
     values[0] = 0; // gas at the top of liquid
 
 
-//  if ( sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) <= radius )
-//  {
-//    values[0] = 0; // gas circle in the bottom of the liquid
-//  }
+  if ( sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) <= radius )
+  {
+    values[0] = 0; // gas circle in the bottom of the liquid
+  }
 
 //  double A = 1;
 //  double a = 20;
