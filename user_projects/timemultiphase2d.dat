@@ -7,7 +7,7 @@ space_discretization_type: smagorinsky { galerkin, smagorinsky, vms_projection }
 vms_projection_space_order: 0
 example: 10   [ -1, 100 ]
 
-ENDTIME: 0.01
+ENDTIME: 0.05
 TIMESTEPLENGTH: 0.01
 
 fluid_density: 1.   [ 0, 1e6 ]
@@ -96,7 +96,7 @@ algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
-TURBULENT_VISCOSITY_CONSTANT: 0.
+TURBULENT_VISCOSITY_CONSTANT: 0.01
 
 # 0:ForEuler # 1:BackEuler # 2:CN # 3:FractStep # 4:IMEX
 TIME_DISC: 2
@@ -108,7 +108,7 @@ time_discretization: 2	{ 0, 1, 2, 3, 4 }
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
 
-dimensional_nse: true   { true, false }
+dimensional_nse: false   { true, false }
 coupling_nse_cd: false   { true, false }
 coupling_cd_nse: false   { true, false }
 solve_cd: false   { true, false }	
