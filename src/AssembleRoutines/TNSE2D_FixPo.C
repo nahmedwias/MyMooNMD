@@ -6341,6 +6341,22 @@ void TimeNSParamsVelo_dimensional(double *in, double *out)
 //  }
 }
 
+void TimeNSParamsVelo_GradVelo_dimensional(double *in, double *out)
+{
+  out[0] = in[2];   // u1old
+  out[1] = in[3];   // u2old
+
+  out[2] = in[4];   // D1u1
+  out[3] = in[5];   // D1u2
+  out[4] = in[6];   // D2u1
+  out[5] = in[7];   // D2u2
+
+  out[6] = in[8];   // rho_field
+  out[7] = in[9];   // mu_field
+
+}
+
+
 void TimeNSRHS_dimensional(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,

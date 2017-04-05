@@ -49,7 +49,6 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
   u1 = param[0];
   u2 = param[1];
 
-
   mu = turbulentviscosity(hK, &param[2],&param[0],&param[0]);
   mu = mu/2.0;
 
@@ -263,7 +262,7 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2;
-  double u1, u2, mu;
+  double u1, u2, mu, rho, mufield;
 
   MatrixA11 = LocMatrices[0];
   MatrixA12 = LocMatrices[1];
@@ -292,7 +291,8 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 
   u1 = param[0];
   u2 = param[1];
-
+  rho     = param[6];
+  mufield = param[7];
 
   mu = turbulentviscosity(hK, &param[2],&param[0],&param[0]);
   mu = mu/2.0;
@@ -385,7 +385,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
   double c0, viscosity;
-  double u1, u2, mu;
+  double u1, u2, mu, rho, mufield;
   // cout << "Sma" << endl;
   MatrixA11 = LocMatrices[0];
   MatrixA12 = LocMatrices[1];
@@ -402,6 +402,8 @@ double ***LocMatrices, double **LocRhs)
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
+  rho     = param[6];
+  mufield = param[7];
 
   mu = turbulentviscosity(hK, &param[2], &param[0], &param[6]);
   mu = mu/2.0;

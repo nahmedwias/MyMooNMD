@@ -459,9 +459,9 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
           case VMS_PROJECTION: //add this PBVMS in the TwoPhase method
 //            this->set_parameters_for_tnse_PB_VMS(type);
             break;
-//          case SMAGORINSKY:
-//             this->set_parameters_for_tnse_SMAGORINSKY(type);
-//             break;
+          case SMAGORINSKY: // NOTE: SAME ROUTINE AS FOR STANDARD TNSE IS USED!
+             this->set_parameters_for_tnse_SMAGORINSKY(type);
+             break;
           default:
             ErrThrow("DISCTYPE is not implemented with TWO PHASE FLOW.");
         }
@@ -3140,18 +3140,36 @@ void LocalAssembling2D::set_parameters_for_tnse_SMAGORINSKY(LocalAssembling2D_ty
   int nstype = TDatabase::ParamDB->NSTYPE;
   if(nstype < 4)
     ErrThrow("SMAGORINSKY: ", " only tested for NSTYPE 4");
+  if(TDatabase::ParamDB->LAPLACETYPE!=1 && this->twophase_tnse==1)
+  {ErrThrow("Impossible to use LAPLACETYPE other than 1"
+        " when assembling TNSE for two phase."); }
 
-  this->N_Parameters = 8;
-  this->N_ParamFct = 1;
-  this->ParameterFct = {TimeNSParamsVelo_GradVelo};
-  this->BeginParameter = { 0 };
-  this->N_FEValues = 6;
-  this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
-  this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+  // *************************************************************
+  // *********************************************************
+  /* PUT HERE INFORMATION ON FE FUNCTIONS USED IN ASSEMBLING  */
+  if(this->twophase_tnse == 0)
+  {
+    this->N_Parameters = 8; // TODO: why not 6 ????
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+    this->BeginParameter = { 0 };
+    this->N_FEValues = 6;
+    this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+    this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+  }
+  else if (this->twophase_tnse == 1)
+  {
+    this->N_Parameters = 8; // normally it is 8+2, but we take 6+2
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParamsVelo_GradVelo_dimensional};
+    this->BeginParameter = { 0 };
+    this->N_FEValues = 8;
+    this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01, D00, D00 };
+    this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1, 2, 3 };
+  }
+  // *********************************************************
+  // ************************************************************
 
-  this->N_Terms = 4;
-  this->Derivatives = { D10, D01, D00, D00};
-  this->FESpaceNumber = { 0, 0, 0, 1};
   this->Needs2ndDerivatives = new bool[2];
   this->Needs2ndDerivatives = new bool[2];
   this->Needs2ndDerivatives[0] = false;
@@ -3163,12 +3181,18 @@ void LocalAssembling2D::set_parameters_for_tnse_SMAGORINSKY(LocalAssembling2D_ty
       switch(nstype){
         case 1: case 2: case 3: break;
         case 4:
+          this->N_Terms = 4;
+          this->Derivatives = { D10, D01, D00, D00};
+          this->FESpaceNumber = { 0, 0, 0, 1};
           this->N_Matrices = 9;
           this->RowSpace =    { 0, 0, 0, 0, 0, 1, 1, 0, 0};
           this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 1, 1};
           this->N_Rhs = 2;
           this->RhsSpace = { 0, 0 };
-          this->AssembleParam = TimeNSType4SmagorinskyDD;
+          if (this->twophase_tnse==0)
+            this->AssembleParam = TimeNSType4SmagorinskyDD;
+          else if (this->twophase_tnse==1)
+            this->AssembleParam = TimeNSType4SmagorinskyDD_dimensional;
           this->Manipulate = NULL;
           break;
       }// nstype
@@ -3178,12 +3202,18 @@ void LocalAssembling2D::set_parameters_for_tnse_SMAGORINSKY(LocalAssembling2D_ty
       switch(nstype){
         case 1: case 2: case 3: break;
         case 4:
+          this->N_Terms = 4;
+          this->Derivatives = { D10, D01, D00, D00};
+          this->FESpaceNumber = { 0, 0, 0, 1};
           this->N_Matrices = 4;
           this->RowSpace =    { 0, 0, 0, 0};
           this->ColumnSpace = { 0, 0, 0, 0};
           this->N_Rhs = 0;
           this->RhsSpace = { };
-          this->AssembleParam = TimeNSType3_4NLSmagorinskyDD;
+          if (this->twophase_tnse==0)
+            this->AssembleParam = TimeNSType3_4NLSmagorinskyDD;
+          else if (this->twophase_tnse==1)
+            this->AssembleParam = TimeNSType3_4NLSmagorinskyDD_dimensional;
           this->Manipulate = NULL;
           break;
       }
@@ -3200,7 +3230,24 @@ void LocalAssembling2D::set_parameters_for_tnse_SMAGORINSKY(LocalAssembling2D_ty
       this->ColumnSpace = { };
       this->N_Rhs = 2 ;
       this->RhsSpace = {0, 0};
-      this->AssembleParam =TimeNSRHS;
+      if (this->twophase_tnse==0)
+        this->AssembleParam =TimeNSRHS;
+      if (this->twophase_tnse==1)
+        this->AssembleParam =TimeNSRHS_dimensional;
+      this->Manipulate = NULL;
+      break;
+    case TNSE2D_Mass:
+      this->N_Terms = 1;
+      this->Derivatives = { D00 };
+      this->Needs2ndDerivatives = new bool[1];
+      this->Needs2ndDerivatives[0] = false;
+      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 1;
+      this->RowSpace = { 0 };
+      this->ColumnSpace = { 0 };
+      this->N_Rhs = 0 ;
+      this->RhsSpace = {};
+      this->AssembleParam =TimeNSType1_3_4GalerkinDDMass_dimensional;
       this->Manipulate = NULL;
       break;
     default:
@@ -3441,7 +3488,8 @@ void LocalAssembling2D::set_parameters_for_tnse_TwoPhase(LocalAssembling2D_type 
             break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
           default:
             ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."
-                "When there is Slip BC, use exclusively NSTYPE4.");
+                "When there is Slip BC or Smagorinksy"
+                ", use exclusively NSTYPE4.");
           }
           break;
         case TNSE2D_NL:
