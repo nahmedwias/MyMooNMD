@@ -5,6 +5,9 @@
 #include <LinAlg.h>
 #include <Output3D.h>
 #include <DirectSolver.h>
+
+#include <GridTransfer.h>
+
 #include <MainUtilities.h>
 #include <Multigrid.h>
 
@@ -188,7 +191,6 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
   // initial solution on finest grid - read-in or interpolation
   if(db_["read_initial_solution"].is(true))
   {//initial solution is given
-    db_.info();
     std::string file = db_["initial_solution_file"];
     Output::info("Initial Solution", "Reading initial solution from file ", file);
     systems_.front().solution_.read_from_file(file);
@@ -208,24 +210,6 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
   // initialize the defect of the system. It has the same structure as
   // the rhs (and as the solution)
   this->defect_.copy_structure(this->systems_.front().rhs_);
-//  for(System_per_grid& s : this->systems_)
-//  {
-//    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
-//    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
-//    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
-//  }
-}
-
-///**************************************************************************** */
-void Time_NSE3D::interpolate()
-{
-//   TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
-//   TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
-//   TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
-//   
-//   u1->Interpolate(example_.get_initial_cond(0));
-//   u2->Interpolate(example_.get_initial_cond(1));
-//   u3->Interpolate(example_.get_initial_cond(2));  
 }
 
 ///**************************************************************************** */
@@ -359,6 +343,23 @@ void Time_NSE3D::assemble_initial_time()
   std::vector<TSquareMatrix3D*> sqMatrices(nSquareMatrices);
   std::vector<TMatrix3D*>       rectMatrices(nRectMatrices);
   std::vector<double*>          rhsArray(nRhs);
+
+  if(systems_.size() > 1) //using  multigrid
+  {//assembling requires an approximate velocity solution on every grid
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.solution_.block(block));
+        u_ns_dofs.push_back(s.solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
 
   for(System_per_grid& s : this->systems_) // from back to front (coarse to fine)
   {
@@ -554,6 +555,7 @@ void Time_NSE3D::assemble_initial_time()
                nRectMatrices, rectMatrices.data(),
                nRhs, rhsArray.data(), rhsSpaces,
                boundary_conditions, boundary_values.data(), localAssembling);
+
     /** manage dirichlet condition by copying non-actives DoFs
      * from rhs to solution of front grid (=finest grid)
      * Note: this operation can also be done inside the loop, so that
@@ -769,6 +771,23 @@ void Time_NSE3D::assemble_nonlinear_term()
   std::vector<double*>          rhsArray{nullptr};
 
   const TFESpace3D **rhsSpaces{nullptr};
+
+  if(systems_.size() > 1) //using  multigrid
+  {//assembling requires an approximate velocity solution on every grid
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.solution_.block(block));
+        u_ns_dofs.push_back(s.solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
 
   for(System_per_grid& s : this->systems_)
   {
