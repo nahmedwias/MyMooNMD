@@ -6407,6 +6407,8 @@ double ***LocMatrices, double **LocRhs)
   Rxx = param[4];
   Ryy = param[5];
 
+//  cout << /*R << " " << Rx << " " << Ry << */" " << Rxy << " " << Rxx << " " << Ryy << " ";
+
   //Debug code
 //  Output::print("p0=R=", R, " p1=Rx=", Rx, " p2=Ry=", Ry," p3=Rxy=", Rxy,
 //                " p4=Rxx=", Rxx, " p5=Ryy=",Ryy, " p6=", param[6],
@@ -6418,22 +6420,23 @@ double ***LocMatrices, double **LocRhs)
 //                " p9=",param[9]," p10=",param[10]);
 
   /* Curvature kappa of the CSF force */
-//  double kappa;
-//  if ((Rx*Rx+Ry*Ry) == 0)
-//    kappa =0;
-//  else
-//    kappa = -(Rxx*Ry*Ry+Ryy*Rx*Rx-2*Rx*Ry*Rxy)/pow(Rx*Rx+Ry*Ry,3/2);
-//  cout << kappa << " ";
+  double kappa;
+  if ((Rx*Rx+Ry*Ry) <= 1e-14) //if gradient zero, no interface, try also <= 1e-14
+    kappa = 0;
+  else
+    kappa = -(Rxx*Ry*Ry+Ryy*Rx*Rx-2*Rx*Ry*Rxy)/pow(Rx*Rx+Ry*Ry,3/2);
+  cout << kappa << " ";
+
 // surface tension coefficients
-//  double tau = 0.;
-//  double surfacetension = tau*kappa;
+  double tau = 0.;
+  double surfacetension = tau*kappa;
 
   for(i=0;i<N_U;i++)
   {
     test00 = Orig0[i];
 
-    Rhs1[i] += R*Mult*test00*c1;// + surfacetension*Rx*test00;
-    Rhs2[i] += R*Mult*test00*c2;// + surfacetension*Ry*test00;
+    Rhs1[i] += R*Mult*test00*c1 + surfacetension*Rx*test00;
+    Rhs2[i] += R*Mult*test00*c2 + surfacetension*Ry*test00;
     //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }
