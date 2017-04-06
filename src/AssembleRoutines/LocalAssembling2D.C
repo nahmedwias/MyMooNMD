@@ -3458,12 +3458,13 @@ void LocalAssembling2D::set_parameters_for_tnse_TwoPhase(LocalAssembling2D_type 
     }
     else if (type == TNSE2D_Rhs)
     {
-    this->Needs2ndDerivatives[0] = true;
-    this->N_Parameters = 4;
+    this->N_Parameters = 6;
     this->N_ParamFct = 1;
     this->ParameterFct = {TimeNSParamsRhs_dimensional};
     this->N_FEValues = 6;
     this->BeginParameter = {0};
+//    this->FEValue_MultiIndex = { D00, D00, D00, D00, D10, D01 };
+//    this->FEValue_FctIndex = { 0, 1, 2, 3, 2, 2 };
     this->FEValue_MultiIndex = { D00, D10, D01, D11, D20, D02 };
     this->FEValue_FctIndex = { 2, 2, 2, 2, 2, 2 };
     }
@@ -3522,7 +3523,7 @@ void LocalAssembling2D::set_parameters_for_tnse_TwoPhase(LocalAssembling2D_type 
           this->N_Terms = 1;
           this->Derivatives = { D00 };
           this->Needs2ndDerivatives = new bool[1];
-          this->Needs2ndDerivatives[0] = false;
+          this->Needs2ndDerivatives[0] = true; //for ParamFct, see above
           this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
           this->N_Matrices = 0;
           this->RowSpace = {};

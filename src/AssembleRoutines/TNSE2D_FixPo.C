@@ -6368,6 +6368,13 @@ void TimeNSParamsRhs_dimensional(double *in, double *out)
   out[3] = in[5];   // Rxy = Ryx
   out[4] = in[6];   // Rxx
   out[5] = in[7];   // Ryy
+
+//  out[0] = in[2];   // u1old
+//  out[1] = in[3];   // u2old
+//  out[2] = in[4];   // rho_field
+//  out[3] = in[5];   // mu_field
+//  out[4] = in[6];   // Rx
+//  out[5] = in[7];   // Ry
 }
 
 
@@ -6393,7 +6400,6 @@ double ***LocMatrices, double **LocRhs)
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
 
-
   R = param[0];     // rho_field taken as a param from fe_function in local_assembling
   Rx = param[1];
   Ry = param[2];
@@ -6401,26 +6407,33 @@ double ***LocMatrices, double **LocRhs)
   Rxx = param[4];
   Ryy = param[5];
 
+  //Debug code
+//  Output::print("p0=R=", R, " p1=Rx=", Rx, " p2=Ry=", Ry," p3=Rxy=", Rxy,
+//                " p4=Rxx=", Rxx, " p5=Ryy=",Ryy, " p6=", param[6],
+//                " p7=",param[7]," p8=" ,param[8]," p9=",param[9]," p10=",
+//                param[10]);
+//  Output::print("p0=u1=", param[0], " p1=u2=", param[1], " p2=R=", R,
+//                " p3=mu=", param[3]," p4=Rx=", Rx, " p5=Ry=",Ry,
+//                " p6=", param[6]," p7=",param[7]," p8=" ,param[8],
+//                " p9=",param[9]," p10=",param[10]);
+
   /* Curvature kappa of the CSF force */
-  double kappa;
-  if ((Rx*Rx+Ry*Ry) == 0)
-    kappa =0;
-  else
-    kappa = -(Rxx*Ry*Ry+Ryy*Rx*Rx-2*Rx*Ry*Rxy)/pow(Rx*Rx+Ry*Ry,3/2);
-
+//  double kappa;
+//  if ((Rx*Rx+Ry*Ry) == 0)
+//    kappa =0;
+//  else
+//    kappa = -(Rxx*Ry*Ry+Ryy*Rx*Rx-2*Rx*Ry*Rxy)/pow(Rx*Rx+Ry*Ry,3/2);
 //  cout << kappa << " ";
-
-  // surface tension coefficients
-  double tau = 0.001;
-
-  double surfacetension = tau*kappa;
+// surface tension coefficients
+//  double tau = 0.;
+//  double surfacetension = tau*kappa;
 
   for(i=0;i<N_U;i++)
   {
     test00 = Orig0[i];
 
-    Rhs1[i] += R*Mult*test00*c1 + surfacetension*Rx*test00;
-    Rhs2[i] += R*Mult*test00*c2 + surfacetension*Ry*test00;
+    Rhs1[i] += R*Mult*test00*c1;// + surfacetension*Rx*test00;
+    Rhs2[i] += R*Mult*test00*c2;// + surfacetension*Ry*test00;
     //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }
