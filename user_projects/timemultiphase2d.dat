@@ -2,12 +2,12 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 5
+refinement_n_initial_steps: 6
 space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 vms_projection_space_order: 0
 example: 41   [ -1, 100 ]
 
-ENDTIME: 0.01
+ENDTIME: 0.2
 TIMESTEPLENGTH: 0.01
 
 fluid_density: 1000.   [ 0, 1e6 ]

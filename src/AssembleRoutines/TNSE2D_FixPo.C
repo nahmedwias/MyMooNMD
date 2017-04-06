@@ -6428,8 +6428,8 @@ double ***LocMatrices, double **LocRhs)
   cout << kappa << " ";
 
 // surface tension coefficients
-  double tau = 0.;
-  double surfacetension = tau*kappa;
+  double tau = 0.00001;
+  double surfacetension = tau*kappa/R; //divided by average of R in interface
 
   for(i=0;i<N_U;i++)
   {
