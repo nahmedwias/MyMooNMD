@@ -293,6 +293,23 @@ void Time_NSE2D::get_velocity_pressure_orders(std::pair< int, int > &velo_pres_o
 /**************************************************************************** */
 void Time_NSE2D::assemble_initial_time()
 {
+  if(systems.size() > 1) //using  multigrid
+  {//assembling requires an approximate velocity solution on every grid
+    for( int block = 0; block < 2 ;++block)
+    {
+      std::vector<const TFESpace2D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems )
+      {
+        spaces.push_back(&s.velocity_space);
+        u_entries.push_back(s.solution.block(block));
+        u_ns_dofs.push_back(s.solution.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
+
   for(System_per_grid& s : this->systems)
   {
     s.rhs.reset();
@@ -436,23 +453,6 @@ void Time_NSE2D::assemble_initial_time()
       default:
         ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
-    }
-
-    if(systems.size() > 1) //using  multigrid
-    {//assembling requires an approximate velocity solution on every grid
-      for( int block = 0; block < 2 ;++block)
-      {
-        std::vector<const TFESpace2D*> spaces;
-        std::vector<double*> u_entries;
-        std::vector<size_t> u_ns_dofs;
-        for(auto &s : systems )
-        {
-          spaces.push_back(&s.velocity_space);
-          u_entries.push_back(s.solution.block(block));
-          u_ns_dofs.push_back(s.solution.length(block));
-        }
-        GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
-      }
     }
 
     // find out if we have to do upwinding
