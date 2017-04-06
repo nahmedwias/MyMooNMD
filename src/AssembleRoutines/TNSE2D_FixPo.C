@@ -6425,10 +6425,10 @@ double ***LocMatrices, double **LocRhs)
     kappa = 0;
   else
     kappa = -(Rxx*Ry*Ry+Ryy*Rx*Rx-2*Rx*Ry*Rxy)/pow(Rx*Rx+Ry*Ry,3/2);
-  cout << kappa << " ";
+//  cout << kappa << " ";
 
 // surface tension coefficients
-  double tau = 0.00001;
+  double tau = 0.;
   double surfacetension = tau*kappa/R; //divided by average of R in interface
 
   for(i=0;i<N_U;i++)
