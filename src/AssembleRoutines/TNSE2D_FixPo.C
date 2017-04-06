@@ -6356,6 +6356,20 @@ void TimeNSParamsVelo_GradVelo_dimensional(double *in, double *out)
 
 }
 
+// the following function is the ParamFct for RHS_dimensional
+// taking into account the gradient and 2nd derivatives of
+// phase fraction (or density) to be used in the RHS routine to
+// calculate the CSF.
+void TimeNSParamsRhs_dimensional(double *in, double *out)
+{
+  out[0] = in[2];   // rho_denoted as R
+  out[1] = in[3];   // derivative w.r.t. x Rx
+  out[2] = in[4];   // Ry
+  out[3] = in[5];   // Rxy = Ryx
+  out[4] = in[6];   // Rxx
+  out[5] = in[7];   // Ryy
+}
+
 
 void TimeNSRHS_dimensional(double Mult, double *coeff,
 double *param, double hK,
@@ -6366,7 +6380,8 @@ double ***LocMatrices, double **LocRhs)
   double test00;
   double *Orig0;
   int i, N_U;
-  double c1, c2, u3;
+  double c1, c2, R;
+  double Rx, Ry, Rxy, Rxx, Ryy;
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -6379,15 +6394,33 @@ double ***LocMatrices, double **LocRhs)
   c2 = coeff[2];                 // f2
 
 
-  u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
-//  u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+  R = param[0];     // rho_field taken as a param from fe_function in local_assembling
+  Rx = param[1];
+  Ry = param[2];
+  Rxy = param[3];
+  Rxx = param[4];
+  Ryy = param[5];
+
+  /* Curvature kappa of the CSF force */
+  double kappa;
+  if ((Rx*Rx+Ry*Ry) == 0)
+    kappa =0;
+  else
+    kappa = -(Rxx*Ry*Ry+Ryy*Rx*Rx-2*Rx*Ry*Rxy)/pow(Rx*Rx+Ry*Ry,3/2);
+
+//  cout << kappa << " ";
+
+  // surface tension coefficients
+  double tau = 0.001;
+
+  double surfacetension = tau*kappa;
 
   for(i=0;i<N_U;i++)
   {
     test00 = Orig0[i];
 
-    Rhs1[i] += u3*Mult*test00*c1;
-    Rhs2[i] += u3*Mult*test00*c2;
+    Rhs1[i] += R*Mult*test00*c1 + surfacetension*Rx*test00;
+    Rhs2[i] += R*Mult*test00*c2 + surfacetension*Ry*test00;
     //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }
