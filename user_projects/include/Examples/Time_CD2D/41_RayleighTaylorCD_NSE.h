@@ -30,10 +30,18 @@ void Exact(double x, double y, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(int i, double Param, BoundCond &cond)
 {
-  if (i == 0 || i == 2 )
-    cond = DIRICHLET;  // top and bottom
-  else
-    cond = NEUMANN;    // left and right
+  switch(i)
+  {
+    case 0: case 3:
+      cond = DIRICHLET;
+      break;
+    case 1: case 2:
+    case 4: case 5:
+      cond = NEUMANN;
+      break;
+    default:
+      ErrThrow("Error on boundary conditions in Example");
+  }
 }
 
 // value of boundary condition
@@ -41,12 +49,21 @@ void BoundValue(int i, double Param, double &value)
 {
   double rho_min = TDatabase::ParamDB->P7; // this is the density of the bottom fluid
 
-  if (i == 0)
-    value = rho_min;  // bottom
-  else if (i == 2)
-    value = 3*rho_min; // top = heavy fluid with ratio 3
-  else
-    value = 0;
+  switch(i)
+  {
+    case 0:
+      value = rho_min;  // bottom
+      break;
+    case 3:
+      value = 3*rho_min; // top = heavy fluid with ratio 3
+      break;
+    case 1: case 2:
+    case 4: case 5:
+      value = 0;
+      break;
+    default:
+      ErrThrow("Error on boundary conditions in Example");
+  }
 }
 
 // initial conditon

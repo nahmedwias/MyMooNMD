@@ -2,10 +2,10 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 7
-space_discretization_type: smagorinsky { galerkin, smagorinsky, vms_projection }
+refinement_n_initial_steps: 5
+space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 vms_projection_space_order: 0
-example: 50   [ -1, 100 ]
+example: 41   [ -1, 100 ]
 
 ENDTIME: 0.2
 TIMESTEPLENGTH: 0.01
@@ -31,10 +31,10 @@ P8: 0.018  # viscosity 2 - min - gas
 
 
 ########################## Fixed Parameters 
-boundary_file: Default_UnitSquare
-geo_file: UnitSquare   { TwoTriangles, UnitSquare }
-#boundary_file: ../mesh/RTInstab_Fraigneau.PRM
-#geo_file: ../mesh/RTInstab_Fraigneau.GEO
+#boundary_file: Default_UnitSquare
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+boundary_file: ../mesh/RTInstab_Fraigneau.PRM
+geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
 #geo_file: ../mesh/RTInstab_PochetOrig.GEO
 #boundary_file: ../mesh/ladle_2D/00MYLADLE_v3.PRM
@@ -96,7 +96,7 @@ algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
-TURBULENT_VISCOSITY_CONSTANT: 0.01
+TURBULENT_VISCOSITY_CONSTANT: 0.
 
 # 0:ForEuler # 1:BackEuler # 2:CN # 3:FractStep # 4:IMEX
 TIME_DISC: 2
