@@ -67,6 +67,10 @@ namespace example42_rayleightaylor2_nse_cd   // Rayleigh-Taylor instability (Poc
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/42_RayleighTaylor2NSE_CD.h"
 }
+namespace example43_droppressureCSF   // Drop Pressure/equilibrium rod (Brackbill et al 1996)
+{
+#include "../../user_projects/include/Examples/Time_NSE2D/43_DropPressureCSF_NSE_CD.h"
+}
 namespace example50_gasstirring_nse_cd   // 2 way coupling for Gas Stirring test
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/50_GasStirringTestNSE_CD.h"
@@ -479,6 +483,36 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          example42_rayleightaylor2_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
          example42_rayleightaylor2_nse_cd::ExampleFile();
+         break;
+
+       case 43:                // Example 43 = 2-WAY-COUPLING FOR CSF test
+                               // From Brackbill et al 1996
+         /** exact_solution */
+         exact_solution.push_back( example43_droppressureCSF::ExactU1 );
+         exact_solution.push_back( example43_droppressureCSF::ExactU2 );
+         exact_solution.push_back( example43_droppressureCSF::ExactP );
+
+         /** boundary condition */
+         boundary_conditions.push_back( example43_droppressureCSF::BoundCondition );
+         boundary_conditions.push_back( example43_droppressureCSF::BoundCondition );
+         boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+         /** boundary values */
+         boundary_data.push_back( example43_droppressureCSF::U1BoundValue );
+         boundary_data.push_back( example43_droppressureCSF::U2BoundValue );
+         boundary_data.push_back( BoundaryValueHomogenous );
+
+         /** coefficients */
+         problem_coefficients = example43_droppressureCSF::LinCoeffs;
+
+         /** initial condition */
+         initialCOndtion.push_back(example43_droppressureCSF::InitialU1);
+         initialCOndtion.push_back(example43_droppressureCSF::InitialU2);
+         example43_droppressureCSF::REYNOLDS_number = get_nu();
+         example43_droppressureCSF::USER_parameter1 = this->example_database["user_parameter1"];
+         example43_droppressureCSF::USER_parameter2 = this->example_database["user_parameter2"];
+
+         example43_droppressureCSF::ExampleFile();
          break;
 
        case 50:                // Example 50 = 2-WAY-COUPLING FOR Gas Stirring Test

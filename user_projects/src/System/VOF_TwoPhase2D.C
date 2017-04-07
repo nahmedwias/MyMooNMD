@@ -30,7 +30,8 @@ VOF_TwoPhase2D::VOF_TwoPhase2D(const TDomain& domain,
   /* Initialize unity vector  */
   this->unity_vector_ = 1;
   this->tnse2d_.set_rho_mu_fefunct(&this->rho_fefunction_,
-                                   &this->mu_fefunction_);
+                                   &this->mu_fefunction_,
+                                   &this->phaseconvection2d_.get_function());
 /* at the end of the constructor, rho and mu are constant equal to phase fraction,
  * whatever the examples and booleans are. The call to "update_field_vectors" will
  * calculate their value, depending on the example number
@@ -80,7 +81,7 @@ void VOF_TwoPhase2D::manage_example_parameters()
                       ":coupling nse2cd must be false, but the other booleans"
                       " are free to be changed.");
       break;
-    case 40: case 41: case 42: case 50:
+    case 40: case 41: case 42: case 43: case 50:
 //      this->tnse_variable_fluid_ = true;
 //      this->nse2cd_coupling_  = true;
 //      this->cd2nse_coupling_  = true;
@@ -134,6 +135,13 @@ void VOF_TwoPhase2D::update_field_vectors()
       // rayleigh taylor: visco = 1 and rho=phase field
       this->mu_vector_ = this->unity_vector_;
       break;
+    case 43:
+      // drop pressure for CSF test
+      this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
+      this->rho_vector_.scale(this->rhol_-this->rhog_);
+      this->rho_vector_.add_scaled(this->unity_vector_,this->rhog_);
+      this->mu_vector_ = this->unity_vector_;
+      break;
     case 40: case 42: case 50:
       // dambreak and 2-phase flows
       this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
@@ -151,7 +159,8 @@ void VOF_TwoPhase2D::update_field_vectors()
   }
   // transfer fe functions to tnse2d after updates
   this->tnse2d_.set_rho_mu_fefunct(&this->rho_fefunction_,
-                                   &this->mu_fefunction_);
+                                   &this->mu_fefunction_,
+                                   &this->phaseconvection2d_.get_function());
 }
 
 /** Write output of vectors in a file */
