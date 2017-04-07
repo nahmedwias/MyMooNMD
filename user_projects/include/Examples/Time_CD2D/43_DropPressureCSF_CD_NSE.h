@@ -48,13 +48,33 @@ void BoundValue(int i, double Param, double &value)
 // initial conditon
 void InitialCondition(double x,  double y, double *values)
 {
+  double pi = 3.14159265358979;
   double x0 = TDatabase::ParamDB->P4;
   double y0 = TDatabase::ParamDB->P5; // center of unit square=center of drop
   double R = TDatabase::ParamDB->P6; // radius of drop, 2cm
-  if ( (x-x0)*(x-x0)+(y-y0)*(y-y0) <= R*R )
+//  if ( (x-x0)*(x-x0)+(y-y0)*(y-y0) <= R*R )
+//    values[0] = 0;
+//  else
+//    values[0] = 1;
+
+  double phi = R*R - (x-x0)*(x-x0) - (y-y0)*(y-y0); // level set of circle
+  double eps = 0.001;
+  if (phi < -eps)
+    values[0] = 1;
+  else if ( phi > eps)
     values[0] = 0;
   else
-    values[0] = 1;
+    values[0] =0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
+
+
+//    double A = 1;
+//  double a = 20;
+//    double b = 0;
+//  double c = 20;
+//  double x0 = 0.5;
+//  double y0 = 0.7;
+//    values[0]= A*exp(-R*pow(x-x0,2)+2*b*(x-x0)*(y-y0)-R*pow(y-y0,2));
+
 }
 
 void BilinearCoeffs(int n_points, double *X, double *Y,
