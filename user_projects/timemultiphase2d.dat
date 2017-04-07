@@ -34,8 +34,9 @@ P9: 0.02364
 
 ########################## Fixed Parameters 
 boundary_file: Default_UnitSquare
-geo_file: ../mesh/TwoTriangles.GEO
-#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+geo_file: TwoTriangles   { TwoTriangles, UnitSquare }
+#boundary_file: ../mesh/UnitSquare.PRM
+#geo_file: ../mesh/TwoTriangles.GEO
 #boundary_file: ../mesh/RTInstab_Fraigneau.PRM
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
@@ -86,7 +87,7 @@ multigrid_coarse_residual: 0.1   [ 0, 1 ]
 multigrid_coarse_max_n_iterations: 10   [ 1, 100 ]
 multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 
-VELOCITY_SPACE: 12
+VELOCITY_SPACE: 2
 PRESSURE_SPACE: -4711
 ANSATZ_ORDER: 1
 NSTYPE: 4
