@@ -7,7 +7,7 @@ space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 vms_projection_space_order: 0
 example: 43   [ -1, 100 ]
 
-ENDTIME: 0.05
+ENDTIME: 0.1
 TIMESTEPLENGTH: 0.01
 
 fluid_density: 1000.   [ 0, 1e6 ]
@@ -34,7 +34,8 @@ P9: 0.02364
 
 ########################## Fixed Parameters 
 boundary_file: Default_UnitSquare
-geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+geo_file: ../mesh/TwoTriangles.GEO
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #boundary_file: ../mesh/RTInstab_Fraigneau.PRM
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
