@@ -6363,11 +6363,13 @@ void TimeNSParamsVelo_GradVelo_dimensional(double *in, double *out)
 void TimeNSParamsRhs_dimensional(double *in, double *out)
 {
   out[0] = in[2];   // rho_denoted as R
-  out[1] = in[3];   // derivative w.r.t. x Rx
-  out[2] = in[4];   // Ry
-  out[3] = in[5];   // Rxy = Ryx
-  out[4] = in[6];   // Rxx
-  out[5] = in[7];   // Ryy
+
+  // below are derivatives from phase field Phi
+  out[1] = in[3];   // derivative w.r.t. x Phix
+  out[2] = in[4];   // Phi_y
+  out[3] = in[5];   // Phi_xy = Phi_yx
+  out[4] = in[6];   // Phi_xx
+  out[5] = in[7];   // Phi_yy
 
 //  out[0] = in[2];   // u1old
 //  out[1] = in[3];   // u2old
@@ -6388,7 +6390,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0;
   int i, N_U;
   double c1, c2, R;
-  double Rx, Ry, Rxy, Rxx, Ryy;
+  double Phi_x, Phi_y, Phi_xy, Phi_xx, Phi_yy;
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -6401,42 +6403,46 @@ double ***LocMatrices, double **LocRhs)
   c2 = coeff[2];                 // f2
 
   R = param[0];     // rho_field taken as a param from fe_function in local_assembling
-  Rx = param[1];
-  Ry = param[2];
-  Rxy = param[3];
-  Rxx = param[4];
-  Ryy = param[5];
+  Phi_x = param[1];
+  Phi_y = param[2];
+  Phi_xy = param[3];
+  Phi_xx = param[4];
+  Phi_yy = param[5];
 
-//  cout << /*R << " " << Rx << " " << Ry << */" " << Rxy << " " << Rxx << " " << Ryy << " ";
+//  cout << Phi_x << " ";// << Phi_x << " " << Phi_y << */" " << Phi_xy
+  // << " " << Phi_xx << " " << Phi_yy << " ";
 
   //Debug code
-//  Output::print("p0=R=", R, " p1=Rx=", Rx, " p2=Ry=", Ry," p3=Rxy=", Rxy,
-//                " p4=Rxx=", Rxx, " p5=Ryy=",Ryy, " p6=", param[6],
+//  Output::print("p0=R=", R, " p1=Phi_x=", Phi_x, " p2=Phi_y=", Phi_y," p3=Phi_xy=", Phi_xy,
+//                " p4=Phi_xx=", Phi_xx, " p5=Phi_yy=",Phi_yy, " p6=", param[6],
 //                " p7=",param[7]," p8=" ,param[8]," p9=",param[9]," p10=",
 //                param[10]);
 //  Output::print("p0=u1=", param[0], " p1=u2=", param[1], " p2=R=", R,
-//                " p3=mu=", param[3]," p4=Rx=", Rx, " p5=Ry=",Ry,
+//                " p3=mu=", param[3]," p4=Phi_x=", Phi_x, " p5=Phi_y=",Phi_y,
 //                " p6=", param[6]," p7=",param[7]," p8=" ,param[8],
 //                " p9=",param[9]," p10=",param[10]);
 
   /* Curvature kappa of the CSF force */
   double kappa;
-  if ((Rx*Rx+Ry*Ry) <= 1e-14) //if gradient zero, no interface, try also <= 1e-14
+  if ((Phi_x*Phi_x+Phi_y*Phi_y) <= 1e-14) //if gradient zero, no interface, try also <= 1e-14
     kappa = 0;
   else
-    kappa = -(Rxx*Ry*Ry+Ryy*Rx*Rx-2*Rx*Ry*Rxy)/pow(Rx*Rx+Ry*Ry,3/2);
+  {
+    kappa = -(Phi_xx*Phi_y*Phi_y+Phi_yy*Phi_x*Phi_x-2*Phi_x*Phi_y*Phi_xy)
+            /pow(Phi_x*Phi_x+Phi_y*Phi_y,3/2);
+  }
 //  cout << kappa << " ";
 
 // surface tension coefficients
   double tau = 0.;
-  double surfacetension = tau*kappa/R; //divided by average of R in interface
+  double surfacetension = tau*kappa/0.5; //divided by average in interface
 
   for(i=0;i<N_U;i++)
   {
     test00 = Orig0[i];
 
-    Rhs1[i] += R*Mult*test00*c1 + surfacetension*Rx*test00;
-    Rhs2[i] += R*Mult*test00*c2 + surfacetension*Ry*test00;
+    Rhs1[i] += R*Mult*test00*c1 + surfacetension*Phi_x*test00;
+    Rhs2[i] += R*Mult*test00*c2 + surfacetension*Phi_y*test00;
     //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }

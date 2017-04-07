@@ -918,9 +918,10 @@ void Time_NSE2D::prepare_fefunc_for_localassembling(Time_NSE2D::System_per_grid&
 //      Output::print<5>("Degres of freedoms of scalar field rho= " , Ndof_rho);
 //      Output::print<5>("Degres of freedoms of velocity   = " , Ndof_velocity);
 
-      fe_functions.resize(4);
+      fe_functions.resize(5);
       fe_functions[2] = this->rho_fefunct;
       fe_functions[3] = this->mu_fefunct;
+      fe_functions[4] = this->phase_field;
     }
   }
 
