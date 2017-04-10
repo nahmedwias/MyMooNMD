@@ -33,10 +33,10 @@ P8: 1.  # viscosity 2 - min - gas
 P9: 0.02364
 
 ########################## Fixed Parameters 
-boundary_file: ../mesh/UnitSquare.PRM
-geo_file: ../mesh/UnitSquare/UnitSquare_UnstructGrid40.mesh
-#boundary_file: Default_UnitSquare
-#geo_file: TwoTriangles   { TwoTriangles, UnitSquare }
+#boundary_file: ../mesh/UnitSquare.PRM
+#geo_file: ../mesh/UnitSquare/UnitSquare_UnstructGrid40.mesh
+boundary_file: Default_UnitSquare
+geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #boundary_file: ../mesh/RTInstab_Fraigneau.PRM
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
