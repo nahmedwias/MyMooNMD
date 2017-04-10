@@ -2,7 +2,7 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 6
+refinement_n_initial_steps: 0
 space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 vms_projection_space_order: 0
 example: 43   [ -1, 100 ]
@@ -33,8 +33,10 @@ P8: 1.  # viscosity 2 - min - gas
 P9: 0.02364
 
 ########################## Fixed Parameters 
-boundary_file: Default_UnitSquare
-geo_file: TwoTriangles   { TwoTriangles, UnitSquare }
+boundary_file: ../mesh/UnitSquare.PRM
+geo_file: ../mesh/UnitSquare/UnitSquare_UnstructGrid40.mesh
+#boundary_file: Default_UnitSquare
+#geo_file: TwoTriangles   { TwoTriangles, UnitSquare }
 #boundary_file: ../mesh/RTInstab_Fraigneau.PRM
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
