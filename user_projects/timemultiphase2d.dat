@@ -2,13 +2,13 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 0
-space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
+refinement_n_initial_steps: 6
+space_discretization_type: smagorinsky { galerkin, smagorinsky, vms_projection }
 vms_projection_space_order: 0
-example: 43   [ -1, 100 ]
+example: 40   [ -1, 100 ]
 
-ENDTIME: 0.1
-TIMESTEPLENGTH: 0.01
+ENDTIME: 0.2
+TIMESTEPLENGTH: 0.0001
 
 fluid_density: 1000.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
@@ -26,25 +26,25 @@ P5: 0.5 # y0 position
 P6: 0.3  # circle radius
 
 ## Two phase flow
-P7: 500. # density 2 - min - gas
-P8: 1.  # viscosity 2 - min - gas
+P7: 1.2 # density 2 - min - gas
+P8: 0.018  # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
-P9: 0.02364
+P9: 0.
 
 ########################## Fixed Parameters 
 #boundary_file: ../mesh/UnitSquare.PRM
 #geo_file: ../mesh/UnitSquare/UnitSquare_UnstructGrid40.mesh
-boundary_file: Default_UnitSquare
-geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+#boundary_file: Default_UnitSquare
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #boundary_file: ../mesh/RTInstab_Fraigneau.PRM
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
 #geo_file: ../mesh/RTInstab_PochetOrig.GEO
 #boundary_file: ../mesh/ladle_2D/00MYLADLE_v3.PRM
 #geo_file: ../mesh/ladle_2D/00MYLADLE_v3.GEO
-#boundary_file: ../mesh/dambreak.PRM
-#geo_file: ../mesh/dambreak_quad.GEO
+boundary_file: ../mesh/dambreak.PRM
+geo_file: ../mesh/dambreak_quad.GEO
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
@@ -56,7 +56,7 @@ output_compute_errors: true   { true, false }
 output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
-nonlinloop_maxit: 50   [ 0, 1000 ]
+nonlinloop_maxit: 10   [ 0, 1000 ]
 nonlinloop_epsilon: 1e-6   [ 0, 1 ] 
 nonlinloop_damping_factor: 1   [ 0, 1 ]
 nonlinloop_slowfactor: 1   [ 0, 10 ]
@@ -87,12 +87,12 @@ multigrid_coarse_residual: 0.1   [ 0, 1 ]
 multigrid_coarse_max_n_iterations: 10   [ 1, 100 ]
 multigrid_vanka_damp_factor: 0.8   [ 0, 1 ]
 
-VELOCITY_SPACE: 2
+VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
-ANSATZ_ORDER: 2
+ANSATZ_ORDER: 1
 NSTYPE: 4
 LAPLACETYPE: 1
-algebraic_flux_correction: none   { none, default, fem-tvd, fem-fct-cn}
+algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
 # 1=GALERKIN, 2=SDFEM=SUPG, 3=UPWIND
 # 4=SMAGORINSKY, 6=CLASSICAL_LES, 9=VMSProjection...
@@ -100,7 +100,7 @@ algebraic_flux_correction: none   { none, default, fem-tvd, fem-fct-cn}
 
 NSE_NONLINEAR_FORM: 0
 UPWIND_ORDER: 0
-TURBULENT_VISCOSITY_CONSTANT: 0.
+TURBULENT_VISCOSITY_CONSTANT: 0.01
 
 # 0:ForEuler # 1:BackEuler # 2:CN # 3:FractStep # 4:IMEX
 TIME_DISC: 2
