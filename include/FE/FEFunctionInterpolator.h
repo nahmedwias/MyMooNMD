@@ -40,7 +40,7 @@ class FEInterpolationCheatSheet{
     FEInterpolationCheatSheet(
         const TFESpaceXD* old_fe_space, const TFESpaceXD* new_fe_space);
 
-    ContainingCells get_cheats(int new_cell, int new_point) const
+    const ContainingCells& get_cheats(int new_cell, int new_point) const
     {
       return cheat_sheet.at(new_cell).at(new_point);
     }

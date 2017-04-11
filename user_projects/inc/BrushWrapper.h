@@ -74,6 +74,8 @@ class BrushWrapper
     void output(double t);
 
   private:
+    //call this in order to fill the reset_fluid_phase_cheats_ cache
+    void cache_output_point_containing_cells(const TFESpace2D& one_space);
 
     /// The database for control parameters.
     ParameterDatabase db_;
@@ -109,6 +111,15 @@ class BrushWrapper
     /// Those are the points in space at which
     /// Brush expects function values as input.
     std::vector<std::valarray<double>> output_sample_points_;
+
+    /// Resetting the fluid phase in Brush requires point evaluation of fe
+    /// functions (FindGradient). The cells in which to find the respective cells
+    /// are cached here, which saves a lot of runtime.
+    /// reset_fluid_phase_cheats_[p] holds the numbers of all cells that
+    /// contain output point nr p.
+    /// TODO THIS WIL ONLY WORK IF THE GRID IS THEM SAME FOR ALL PARMOON FUNCTIONS!
+    typedef std::vector<int> ContainingCells;
+    std::vector<ContainingCells> reset_fluid_phase_cheats_;
 
 
 };
