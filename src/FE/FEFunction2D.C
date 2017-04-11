@@ -486,8 +486,8 @@ void TFEFunction2D::FindGradient(double x, double y, double *values, std::vector
     for(auto c : containing_cells)
     {
       TBaseCell* cell = Coll->GetCell(c);
-      if(cell->PointInCell(x,y))
-      {
+//      if(cell->PointInCell(x,y))
+//      {
         // cout << "point found" << endl;
         FE_ID = FESpace2D->GetFE2D(c, cell);
         FE_Obj = TFEDatabase2D::GetFE2D(FE_ID);
@@ -543,11 +543,11 @@ void TFEFunction2D::FindGradient(double x, double y, double *values, std::vector
         delete[] uxiref;
         delete[] uetaref;
 
-      }
-      else
-      {
-          ErrThrow("Point (",x,",",y,") not in cell ", c," as cheat says!");
-      }
+//      }
+//      else
+//      {
+//          ErrThrow("Point (",x,",",y,") not in cell ", c," as cheat says!");
+//      }
     }// end loop over containing cells
 
     //now average the summed up values
