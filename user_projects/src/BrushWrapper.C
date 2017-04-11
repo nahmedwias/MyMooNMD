@@ -266,6 +266,12 @@ void BrushWrapper::reset_fluid_phase(
   derived_concentrations[0] = derived_concentration_EtOH;   //TODO do not hard code
   derived_concentrations[1] = derived_concentration_ASASUP; //TODO do not hard code
 
+  // This is a good place to cache containing cells of the output points
+  if(reset_fluid_phase_cheats_.empty())
+  {
+    cache_output_point_containing_cells(*p.GetFESpace2D());
+  }
+
   //loop over all evaluation points (i.e., Brushs cell midpoints)
   for (size_t point = 0 ; point < n_points ; ++point)
   {
@@ -280,7 +286,7 @@ void BrushWrapper::reset_fluid_phase(
     for(size_t i = 0 ; i < dim + 1 + n_specs ; ++i)
     {
       double eval[3]; // will include differentials, thus length is '3')
-      fe_functs[i]->FindGradient(x,y,eval);
+      fe_functs[i]->FindGradient(x, y, eval, reset_fluid_phase_cheats_.at(point));
       data_set[i] = eval[0];
     }
 
@@ -335,4 +341,24 @@ void BrushWrapper::output(double t)
 }
 
 
+void BrushWrapper::cache_output_point_containing_cells(const TFESpace2D& one_space)
+{
 
+  for (auto p : output_sample_points_)
+  {
+    double x = p[0];
+    double y = p[1];
+    std::vector<int> cheat;
+    const TCollection& coll = *one_space.GetCollection();
+    int N_Cells = coll.GetN_Cells();
+    for(int i=0;i<N_Cells;i++)
+    {
+      TBaseCell* cell = coll.GetCell(i);
+      if(cell->PointInCell(x,y))
+      {
+        cheat.push_back(i);
+      }
+    }
+    reset_fluid_phase_cheats_.push_back(cheat);
+  }
+}

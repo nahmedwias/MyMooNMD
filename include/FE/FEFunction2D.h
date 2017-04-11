@@ -94,7 +94,7 @@ class TFEFunction2D
       in all cells of the collection, at the cost of caching the data somewhere
       else in the program.
         */
-    void FindGradient(double x, double y, double *values, std::vector<int> containing_cells = {}) const;
+    void FindGradient(double x, double y, double *values, const std::vector<int>& containing_cells = {}) const;
 
     /** determine the value of function and its first derivatives at
         the given point */

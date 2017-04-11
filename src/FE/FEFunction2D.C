@@ -379,7 +379,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 
 /** determine the value of function and its first derivatives at
     the given point */
-void TFEFunction2D::FindGradient(double x, double y, double *values, std::vector<int> containing_cells) const
+void TFEFunction2D::FindGradient(double x, double y, double *values, const std::vector<int>& containing_cells) const
 {
   double xi, eta;
   TCollection *Coll = FESpace2D->GetCollection();
@@ -485,6 +485,7 @@ void TFEFunction2D::FindGradient(double x, double y, double *values, std::vector
   {
     for(auto c : containing_cells)
     {
+      //Output::print("Cached!", this->GetName());
       TBaseCell* cell = Coll->GetCell(c);
 //      if(cell->PointInCell(x,y))
 //      {
