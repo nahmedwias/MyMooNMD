@@ -107,6 +107,22 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
                     DirichletBoundaryConditions, fe_order, nullptr)
 {
 
+  //FIXME This code is really stupid!
+  if(db_["sweep_file_depends_on_velocity_code"].is(true) && db_.contains("velocity_code"))
+  {
+    size_t parameter_set = db_["velocity_code"];
+    //pick a sweep file according to the requested parameter set
+    db_["sweep_file"].impose(
+        Parameter("sweep_file", db_["sweep_file"].value_as_string()
+                  + ".param_set_"+ std::to_string(parameter_set), ""));
+    Output::info("Sweep File", "Due to choice of parameter set ", parameter_set,
+                 " ('velocity_code'), the sweep file was changed"
+                 " to ", db_["sweep_file"], ".");
+  }
+
+
+
+
   // set up Brushs ParMooN interface
   interface_ = new Brush::InterfacePM(
       db_["geo_file"], db_["third_dim_stretch"],
