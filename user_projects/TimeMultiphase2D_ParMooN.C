@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
       TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
-      vof.tnse2d_.assemble_rhs();
+      vof.tnse2d_.assemble_rhs();exit(0);
       if (vof.tnse_variable_fluid_ == true)
       {
         vof.tnse2d_.assemble_massmatrix_withfields(&vof.rho_fefunction_);

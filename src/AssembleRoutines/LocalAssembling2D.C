@@ -929,6 +929,7 @@ void LocalAssembling2D::GetParameters(int n_points,
     
     orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id, 
                                                          FEValue_MultiIndex[j]);
+    cout << BaseFunct_Id << " ";
     Index[j] = fespace->GetGlobalDOF(cellnum);
   } // endfor j
 
@@ -950,10 +951,17 @@ void LocalAssembling2D::GetParameters(int n_points,
         double  *CurrValues = Values[j];
         double  *CurrOrigValues = orig_values[j][i];
         int *CurrIndex = Index[j];
+        //cout << n << " "; // 3 for tria P1, 4 for quads Q1
         for(int l=0;l<n;l++)
+        {
+//          if (k==5) // only for FeValues = Phi_xy
+//            {cout << CurrOrigValues[l] << " ";} //values of FE_Funct
           s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
+        }
         Temp[k] = s;
       }  // endfor j
+
+//      cout << Temp[5] << " "; // this should be Phi_xy
 
       // loop to calculate all parameters
       for(int j=0; j<N_ParamFct; j++)

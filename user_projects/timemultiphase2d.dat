@@ -7,6 +7,7 @@ space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 TURBULENT_VISCOSITY_CONSTANT: 0.
 vms_projection_space_order: 0
 example: 43   [ -1, 100 ]
+USE_ISOPARAMETRIC: 1
 
 ENDTIME: 0.001
 TIMESTEPLENGTH: 0.001
@@ -37,7 +38,7 @@ P9: 0.0001
 boundary_file: ../mesh/UnitSquare.PRM
 geo_file: ../mesh/circleR3.mesh
 #boundary_file: Default_UnitSquare
-#geo_file: TwoTriangles   { TwoTriangles, UnitSquare }
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #boundary_file: ../mesh/RTInstab_Fraigneau.PRM
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
