@@ -6437,7 +6437,7 @@ double ***LocMatrices, double **LocRhs)
   double tau = TDatabase::ParamDB->P9;
   double surfacetension = tau*kappa; //divided by average in interface
   surfacetension /= (0.5*500); // divided by Phi average and Rho jump
-//  cout << surfacetension << " " ;
+  cout << surfacetension << " " ;
 
   for(i=0;i<N_U;i++)
   {
@@ -6445,7 +6445,7 @@ double ***LocMatrices, double **LocRhs)
 
     Rhs1[i] += R*Mult*test00*c1 + surfacetension*Phi_x*test00;//Phi_x;
     Rhs2[i] += R*Mult*test00*c2 + surfacetension*Phi_y*test00;//Phi_y;
-    //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
+//    cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }
 
