@@ -929,7 +929,7 @@ void LocalAssembling2D::GetParameters(int n_points,
     
     orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id, 
                                                          FEValue_MultiIndex[j]);
-    cout << BaseFunct_Id << " ";
+//    cout << BaseFunct_Id << " ";
     Index[j] = fespace->GetGlobalDOF(cellnum);
   } // endfor j
 

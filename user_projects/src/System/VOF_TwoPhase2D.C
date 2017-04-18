@@ -119,7 +119,7 @@ void VOF_TwoPhase2D::update_field_vectors()
   //At this point, rhol and mul = phase fraction
   switch(example_number_)
   {
-    case 10: case 20:
+    case 10: case 20: case 3:
     case 21: case 22:
       this->rho_vector_ = this->rhol_;
       this->mu_vector_ = this->mul_;

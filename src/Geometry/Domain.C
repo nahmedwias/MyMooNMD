@@ -1002,36 +1002,36 @@ void TDomain::Init(const char *PRM, const char *GEO)
     // error message: .GEO file are no longer supported. They can be used to initialize a domain
     // only if the purpose is to covert the .GEO into a .mesh
 
-    if (!strcmp(db["mesh_file"],"__nofile__"))
-    {
-      Output::print("** **************************************************************** **");
-      Output::print("** ERROR: the (x)GEO files are no longer supported in ParMooN (2D): **");
-      Output::print("** The file format .mesh should be used instead                     **");
-      Output::print("**                                                                  **");
-      Output::print("** If you use a standard geometry input (e.g. UnitSquare.*)         **");
-      Output::print("** you can find the corresponding .mesh in the src/data/ directory. **");
-      Output::print("** Otherwise, you can convert your .GEO file to a .mesh, using the  **");
-      Output::print("** same PRM file for the boundary description, using the geo2mes2d. **");
-      Output::print("**                                                                  **");
-      Output::print("** To do this:                                                      **");
-      Output::print("** (1) compile the conversion progam with 'make geo2mesh2d'         **");
-      Output::print("** (2) create an input.dat with                                     **");
-      Output::print("**     boundary_file: [your PRM file]                               **");
-      Output::print("**     geo_file: [your GEO or xGEO file]                            **");
-      Output::print("**     mesh_file: [the new mesh file]                               **");
-      Output::print("**  (an example of suitable input file is available in src/data/    **");
-      Output::print("** (3) run '[path/]geo2mesh2d input.dat'                            **");
-      Output::print("** (4) replace 'geo_file: [the new mesh file]' in your input file   **");
-      Output::print("**                                                                  **");
-      Output::print("** Note: using .GEO and .PRM files is only allowed with the         **");
-      Output::print("** purpose of converting .GEO -> .mesh                              **");
-      Output::print("** **************************************************************** **");
-      exit(1);
-    }
-    else
-    {
-      Output::print("** Converting .GEO to .mesh **");
-    }
+//    if (!strcmp(db["mesh_file"],"__nofile__"))
+//    {
+//      Output::print("** **************************************************************** **");
+//      Output::print("** ERROR: the (x)GEO files are no longer supported in ParMooN (2D): **");
+//      Output::print("** The file format .mesh should be used instead                     **");
+//      Output::print("**                                                                  **");
+//      Output::print("** If you use a standard geometry input (e.g. UnitSquare.*)         **");
+//      Output::print("** you can find the corresponding .mesh in the src/data/ directory. **");
+//      Output::print("** Otherwise, you can convert your .GEO file to a .mesh, using the  **");
+//      Output::print("** same PRM file for the boundary description, using the geo2mes2d. **");
+//      Output::print("**                                                                  **");
+//      Output::print("** To do this:                                                      **");
+//      Output::print("** (1) compile the conversion progam with 'make geo2mesh2d'         **");
+//      Output::print("** (2) create an input.dat with                                     **");
+//      Output::print("**     boundary_file: [your PRM file]                               **");
+//      Output::print("**     geo_file: [your GEO or xGEO file]                            **");
+//      Output::print("**     mesh_file: [the new mesh file]                               **");
+//      Output::print("**  (an example of suitable input file is available in src/data/    **");
+//      Output::print("** (3) run '[path/]geo2mesh2d input.dat'                            **");
+//      Output::print("** (4) replace 'geo_file: [the new mesh file]' in your input file   **");
+//      Output::print("**                                                                  **");
+//      Output::print("** Note: using .GEO and .PRM files is only allowed with the         **");
+//      Output::print("** purpose of converting .GEO -> .mesh                              **");
+//      Output::print("** **************************************************************** **");
+//      exit(1);
+//    }
+//    else
+//    {
+//      Output::print("** Converting .GEO to .mesh **");
+//    }
 	
     // "GEO" interpreted as file path to GEO-file.
     // check if it actually is an .xGEO-file
