@@ -5,8 +5,9 @@
 #include <LinAlg.h>
 #include <Output3D.h>
 #include <DirectSolver.h>
-
 #include <GridTransfer.h>
+#include <Upwind3D.h>
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 
 #include <MainUtilities.h>
 #include <Multigrid.h>
@@ -544,6 +545,21 @@ void Time_NSE3D::assemble_initial_time()
         s.u_.GetComponent(2),
         &s.p_ };
 
+    // find out if we have to do upwinding
+    bool do_upwinding = false;
+    {
+      bool mdml =  this->solver_.is_using_multigrid()
+                  && this->solver_.get_multigrid()->is_using_mdml();
+      bool on_finest_grid = &systems_.front() == &s;
+      do_upwinding = (db_["space_discretization_type"].is("upwind")
+                     || (mdml && !on_finest_grid));
+    }
+
+    if(do_upwinding)  //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+    else
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
     // local assembling object - used in Assemble3D
     const LocalAssembling3D
               localAssembling(LocalAssembling3D_type::TNSE3D_LinGAL,
@@ -555,6 +571,21 @@ void Time_NSE3D::assemble_initial_time()
                nRectMatrices, rectMatrices.data(),
                nRhs, rhsArray.data(), rhsSpaces,
                boundary_conditions, boundary_values.data(), localAssembling);
+
+    if(do_upwinding)
+    {
+      double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
+      for(auto mat : sqMatrices)
+      {
+        UpwindForNavierStokes3D(mat, fe_functions[0], fe_functions[1],
+                                fe_functions[2], one_over_nu);
+      }
+      Output::print<3>("UPWINDING DONE with ", sqMatrices.size(), " square matrices.");
+    }
+
+    //delete the temporary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete fe_functions[i];
 
     /** manage dirichlet condition by copying non-actives DoFs
      * from rhs to solution of front grid (=finest grid)
@@ -841,9 +872,22 @@ void Time_NSE3D::assemble_nonlinear_term()
 
     // reset matrices to zero
     for(auto mat : sqMatrices)
-    {
       mat->reset();
+
+    // find out if we have to do upwinding
+    bool do_upwinding = false;
+    {
+      bool mdml =  solver_.is_using_multigrid()
+                  && solver_.get_multigrid()->is_using_mdml();
+      bool on_finest_grid = &systems_.front() == &s;
+      do_upwinding = (db_["space_discretization_type"].is("upwind")
+                     || (mdml && !on_finest_grid));
     }
+
+    if(do_upwinding)  //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+    else
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
 
     // Prepare info about boundary condition for assembling routines
     BoundCondFunct3D *boundary_conditions[1] = {spaces[0]->getBoundCondition()};
@@ -894,6 +938,21 @@ void Time_NSE3D::assemble_nonlinear_term()
                nRectMatrices, rectMatrices.data(),
                nRhs, rhsArray.data(), rhsSpaces,
                boundary_conditions, boundary_values.data(), localAssembling);
+    if(do_upwinding)
+    {
+      double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
+      for(auto mat : sqMatrices)
+      {
+        UpwindForNavierStokes3D(mat, fe_functions[0], fe_functions[1],
+                                fe_functions[2], one_over_nu);
+      }
+      Output::print<3>("UPWINDING DONE with ", sqMatrices.size(), " square matrices.");
+    }
+
+    //delete the temporary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete fe_functions[i];
+
   }
 
   Output::info<5>("Assemble non linear terms", "End of the assembling of the nonlinear matrix.");

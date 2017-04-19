@@ -485,14 +485,14 @@ void Time_NSE2D::assemble_initial_time()
           UpwindForNavierStokes(la.GetCoeffFct(), sqMatrices[0],
                                 la.get_fe_function(0),
                                 la.get_fe_function(1));
-          Output::print<3>("UPWINDING DONE : level ");
+          Output::print<3>("UPWINDING DONE");
           break;
 
         case 3:
         case 4:
         case 14:
           // do upwinding with two matrices
-          Output::print<3>("UPWINDING DONE : level ");
+          Output::print<3>("UPWINDING DONE");
           UpwindForNavierStokes(la.GetCoeffFct(), sqMatrices[0],
                                 la.get_fe_function(0),
                                 la.get_fe_function(1));
