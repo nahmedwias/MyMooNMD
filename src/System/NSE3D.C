@@ -668,7 +668,7 @@ void NSE3D::assemble_non_linear_term()
       }
     }
 
-    //delete the temorary feFunctions gained by GetComponent
+    //delete the temporary feFunctions gained by GetComponent
     for(int i = 0; i<3; ++i)
       delete feFunction[i];
 
