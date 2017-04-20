@@ -300,7 +300,7 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 //  cout << c0 << " ";
 
   mu = turbulentviscosity(hK, &param[2],&param[0],&param[0]);
-  mu = mu/2.0; // multiplying here by u3=rho should be correct
+  mu = u3*mu/2.0;  // multiplying here by u3=rho should be correct
 
   for(i=0;i<N_U;i++)
   {
@@ -415,7 +415,7 @@ double ***LocMatrices, double **LocRhs)
 
   mu = turbulentviscosity(hK, &param[2], &param[0], &param[2]);
   mu = mu/2.0;
-  viscosity = mu+u4;
+  viscosity = u3*mu+u4;
 
   for(i=0;i<N_U;i++)
   {
