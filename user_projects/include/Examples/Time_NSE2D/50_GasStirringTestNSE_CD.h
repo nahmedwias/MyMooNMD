@@ -97,10 +97,22 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
+  double x;
+  double first_plug1 = -0.485;
+  double first_plug2 = -0.385;
+  double second_plug1 = -first_plug2; // plugs are symmetric
+  double second_plug2 = -first_plug1;
   switch(BdComp)
   {
     case 0:  // bottom
-      value = 0;
+      x =  -1.329 + Param*(2.658);  // x for bottom part
+      if ( ( x >= first_plug1 && x <= first_plug2 ) ||
+          ( x >= second_plug1 && x <= second_plug2 ) )
+      {
+        value = 1;
+      }
+      else
+        value = 0;
       break;
     case 1: case 2: case 3: // the rest
     case 4: case 5: case 6:

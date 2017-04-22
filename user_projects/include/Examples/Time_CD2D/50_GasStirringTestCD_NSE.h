@@ -50,10 +50,22 @@ void BoundValue(int BdComp, double Param, double &value)
 //  double t = TDatabase::TimeDB->CURRENTTIME;
 //  double rho_min = TDatabase::ParamDB->P7;
 
+  double x;
+  double first_plug1 = -0.485;
+  double first_plug2 = -0.385;
+  double second_plug1 = -first_plug2; // plugs are symmetric
+  double second_plug2 = -first_plug1;
   switch(BdComp)
   {
     case 0:  // bottom
-      value = 1;
+      x =  -1.329 + Param*(2.658);  // x for bottom part
+      if ( ( x >= first_plug1 && x <= first_plug2 ) ||
+          ( x >= second_plug1 && x <= second_plug2 ) )
+      {
+        value = 0;
+      }
+      else
+        value = 1;
       break;
     case 1: case 2: case 3: // the rest
     case 4: case 5: case 6:
@@ -69,21 +81,21 @@ void BoundValue(int BdComp, double Param, double &value)
 // initial conditon
 void InitialCondition(double x,  double y, double *values)
 {
-  double x0 = TDatabase::ParamDB->P4; // x position of initial circle
-  double y0 = TDatabase::ParamDB->P5; // y position of initial circle
-  double radius = TDatabase::ParamDB->P6; // radius of circle
-  if ( y <= 0.7 )
+  if ( y <= 2.5 )
     values[0] = 1; // liquid bath
   else
     values[0] = 0; // gas at the top of liquid
 
-
-  if ( sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) <= radius )
-  {
-    values[0] = 0; // gas circle in the bottom of the liquid
-  }
-
-//  double A = 1;
+//  double x0 = TDatabase::ParamDB->P4; // x position of initial circle
+//  double y0 = TDatabase::ParamDB->P5; // y position of initial circle
+//  double radius = TDatabase::ParamDB->P6; // radius of circle
+//
+//  if ( sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) <= radius )
+//  {
+//    values[0] = 0; // gas circle in the bottom of the liquid
+//  }
+//
+////  double A = 1;
 //  double a = 20;
 //  double b = 0;
 //  double c = 20;
