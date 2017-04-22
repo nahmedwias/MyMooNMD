@@ -63,34 +63,52 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-//  if ( i == 2)  // outflow for the gas from the top
-//    cond = NEUMANN;
-//  else
- if ( i >= 6 && i <= 10)
-   cond = NEUMANN;
- else
-   cond = DIRICHLET;
+  switch(i)
+   {
+     case 0:  // bottom
+       cond = DIRICHLET;
+       break;
+     case 1: case 2: case 3: // the rest
+     case 4: case 5: case 6:
+       cond = DIRICHLET;
+       break;
+     default:
+       ErrThrow("Unknown BdComp in example 50.");
+   }
 
 //  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  value = 0;
+  switch(BdComp)
+  {
+    case 0:  // bottom
+      value = 0;
+      break;
+    case 1: case 2: case 3: // the rest
+    case 4: case 5: case 6:
+      value = 0;
+      break;
+    default:
+      ErrThrow("Unknown BdComp in example 50.");
+  }
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;
-  if (BdComp == 1 || BdComp == 3)
+  switch(BdComp)
   {
-    if (t==0)
+    case 0:  // bottom
       value = 0;
-    else
-      value = 1;
+      break;
+    case 1: case 2: case 3: // the rest
+    case 4: case 5: case 6:
+      value = 0;
+      break;
+    default:
+      ErrThrow("Unknown BdComp in example 50.");
   }
-  else
-    value = 0;
 }
 
 // ========================================================================

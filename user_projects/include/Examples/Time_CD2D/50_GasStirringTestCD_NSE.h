@@ -30,30 +30,40 @@ void Exact(double x, double y, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(int BdComp, double Param, BoundCond &cond)
 {
-//  if (BdComp == 0 || BdComp==2)
-//    cond = DIRICHLET;
-//  else
-    cond = NEUMANN;
+  switch(BdComp)
+  {
+    case 0:  // bottom
+      cond = DIRICHLET;
+      break;
+    case 1: case 2: case 3: // the rest
+    case 4: case 5: case 6:
+      cond = NEUMANN;
+      break;
+    default:
+      ErrThrow("Unknown BdComp in example 50.");
+  }
 }
 
 // value of boundary condition
 void BoundValue(int BdComp, double Param, double &value)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;
+//  double t = TDatabase::TimeDB->CURRENTTIME;
 //  double rho_min = TDatabase::ParamDB->P7;
-//  if (BdComp==1 || BdComp==2)
-//    value = rho_min;  // this is Dirichlet
-//  else
 
-//  if (BdComp == 0 )//|| BdComp==2)
-//  {
-//    if (t == 0)
-//      value = 1;
-//    else
-//      value = 0;
-//  }
-//  else
-    value = 0;
+  switch(BdComp)
+  {
+    case 0:  // bottom
+      value = 1;
+      break;
+    case 1: case 2: case 3: // the rest
+    case 4: case 5: case 6:
+      value = 0;
+      break;
+    default:
+      ErrThrow("Unknown BdComp in example 50.");
+  }
+
+//  value = 0;
 }
 
 // initial conditon
