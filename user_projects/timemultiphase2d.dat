@@ -2,15 +2,15 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 0
-space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
-TURBULENT_VISCOSITY_CONSTANT: 0.
+refinement_n_initial_steps: 6
+space_discretization_type: smagorinsky { galerkin, smagorinsky, vms_projection }
+TURBULENT_VISCOSITY_CONSTANT: 0.05
 vms_projection_space_order: 0
-example: 50   [ -1, 100 ]
+example: 40   [ -1, 100 ]
 USE_ISOPARAMETRIC: 1
 
-ENDTIME: 2.
-TIMESTEPLENGTH: 0.01
+ENDTIME: 0.1
+TIMESTEPLENGTH: 0.0005
 
 fluid_density: 1000.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
@@ -29,7 +29,7 @@ P6: 0.3  # circle radius
 
 ## Two phase flow
 P7: 1.2 # density 2 - min - gas
-P8: 1.  # viscosity 2 - min - gas
+P8: 1.e-3  # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
 P9: 0.
@@ -43,10 +43,10 @@ P9: 0.
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
 #geo_file: ../mesh/RTInstab_PochetOrig.GEO
-boundary_file: ../mesh/ladle_2D/realladle2d_new.PRM
-geo_file: ../mesh/ladle_2D/realladle2d_new.mesh
-#boundary_file: ../mesh/DamBreak/dambreak.PRM
-#geo_file: ../mesh/DamBreak/dambreak_quad.GEO
+#boundary_file: ../mesh/ladle_2D/realladle2d_new.PRM
+#geo_file: ../mesh/ladle_2D/realladle2d_new_trias.mesh
+boundary_file: ../mesh/DamBreak/dambreak.PRM
+geo_file: ../mesh/DamBreak/dambreak_quad.GEO
 #boundary_file: ../mesh/flow_around_cylinder2D.PRM
 #geo_file: ../mesh/flow_around_cylinder_2Dquads.GEO
 
