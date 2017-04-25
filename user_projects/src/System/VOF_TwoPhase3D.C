@@ -1,4 +1,5 @@
 #include <VOF_TwoPhase3D.h>
+#include <Database.h>
 
 #ifdef _MPI
 #include "mpi.h"
@@ -26,105 +27,76 @@ VOF_TwoPhase3D::VOF_TwoPhase3D(const std::list< TCollection* > grid_collections,
 #ifdef _MPI
                      , maxSubDomainPerDof
 #endif
-                    )
-//  /* Properties of liquid phase, eg. rhol=1000 and mul=1.e-3 */
-//  rhol_(param_db_tnse["fluid_density"]),
-//  mul_(param_db_tnse["fluid_dynamic_viscosity"]),
-//  /* List of booleans */
-//  tnse_variable_fluid_(param_db_tnse["dimensional_nse"]),
-//  solve_convection_(param_db_tcd["solve_cd"]),
-//  nse2cd_coupling_(param_db_tcd["coupling_nse_cd"]),
-//  cd2nse_coupling_(param_db_tnse["coupling_cd_nse"]),
-//  /* Copy the block vector structure */
-//  rho_vector_(phaseconvection2d_.get_solution()),
-//  mu_vector_(phaseconvection2d_.get_solution()),
-//  unity_vector_(phaseconvection2d_.get_solution()),
-//  /* Construct FeFunctions */
-//  rho_fefunction_(&this->phaseconvection2d_.get_space(),(char*)"r",(char*)"r",
-//                  rho_vector_.block(0),rho_vector_.length(0)),
-//  mu_fefunction_(&this->phaseconvection2d_.get_space(),(char*)"m",(char*)"m",
-//                  mu_vector_.block(0),mu_vector_.length(0))
+                    ),
+  /* Properties of liquid phase, eg. rhol=1000 and mul=1.e-3 */
+  rhol_(param_db_tnse["fluid_density"]),
+  mul_(param_db_tnse["fluid_dynamic_viscosity"]),
+  /* List of booleans */
+  tnse_variable_fluid_(param_db_tnse["dimensional_nse"]),
+  solve_convection_(param_db_tcd["solve_cd"]),
+  nse2cd_coupling_(param_db_tcd["coupling_nse_cd"]),
+  cd2nse_coupling_(param_db_tnse["coupling_cd_nse"]),
+  /* Copy the block vector structure */
+  rho_vector_(phaseconvection3d_.get_solution()),
+  mu_vector_(phaseconvection3d_.get_solution()),
+  unity_vector_(phaseconvection3d_.get_solution()),
+  /* Construct FeFunctions */
+  rho_fefunction_(&this->phaseconvection3d_.get_space(),(char*)"r",(char*)"r",
+                  rho_vector_.block(0),rho_vector_.length(0)),
+  mu_fefunction_(&this->phaseconvection3d_.get_space(),(char*)"m",(char*)"m",
+                  mu_vector_.block(0),mu_vector_.length(0))
 {
-//  /* Initialize unity vector  */
-//  this->unity_vector_ = 1;
-//  this->tnse2d_.set_rho_mu_fefunct(&this->rho_fefunction_,
-//                                   &this->mu_fefunction_,
-//                                   &this->phaseconvection2d_.get_function());
-///* at the end of the constructor, rho and mu are constant equal to phase fraction,
-// * whatever the examples and booleans are. The call to "update_field_vectors" will
-// * calculate their value, depending on the example number
-// */
+  /* Initialize unity vector  */
+  this->unity_vector_ = 1;
+  this->tnse3d_.set_rho_mu_fefunct(&this->rho_fefunction_,
+                                   &this->mu_fefunction_,
+                                   &this->phaseconvection3d_.get_function());
+/* at the end of the constructor, rho and mu are constant equal to phase fraction,
+ * whatever the examples and booleans are. The call to "update_field_vectors" will
+ * calculate their value, depending on the example number
+ */
 }
 
 
 
-///** Check and set input parameters */
-//void VOF_TwoPhase2D::manage_example_parameters()
-//{
-//  /********************************************************************
-//     * Check example number consistency!
-//     ********************************************************************/
-//  if (example_tnse2d_.get_database()["example"].value_as_string()
-//        != example_tcd2d_.get_database()["example"].value_as_string())
+/** Check and set input parameters */
+void VOF_TwoPhase3D::manage_example_parameters()
+{
+  /********************************************************************
+   * Check example number consistency!
+   ********************************************************************/
+//  if (example_tnse3d_.get_database()["example"].value_as_string()
+//        != example_tcd3d_.get_database()["example"].value_as_string())
 //  {
 //      ErrThrow("The example number of TNSE and TCD should be the same!");
 //  }
 //  else
-//    example_number_ = example_tnse2d_.get_database()["example"];
-//
-//  /********************************************************************
-//   * MANAGE PARAMETERS FOR BENCHMARK PROBLEMS!
-//   ********************************************************************/
-//  switch(example_number_)
-//  {
-//    case 10:
-//      this->nse2cd_coupling_  = false;
-//      this->cd2nse_coupling_  = false;
-//      Output::info<5>("Example " + std::to_string(example_number_) +
-//                      ":the couplings must be deactivated, but you are free "
-//                      "to activate 'tnse_variable_properties' and 'solve tcd'.");
-//      break;
-//    case 20: case 21: case 22:
-//      this->tnse_variable_fluid_ = true;
-//      this->nse2cd_coupling_     = true;
-//      this->cd2nse_coupling_     = false;
-//      this->solve_convection_    = true;
-//      Output::info<5>("Example " + std::to_string(example_number_) +
-//                      ":all booleans must be true but cd2nse_coupling is false.");
-//      break;
-//    case 30: case 31: case 32:
-////      this->tnse_variable_fluid_ = true;
-//      this->nse2cd_coupling_  = false;
-////      this->cd2nse_coupling_  = true;
-////      this->solve_convection_ = true;
-//      Output::info<5>("Example " + std::to_string(example_number_) +
-//                      ":coupling nse2cd must be false, but the other booleans"
-//                      " are free to be changed.");
-//      break;
-//    case 40: case 41: case 42: case 43: case 50:
-////      this->tnse_variable_fluid_ = true;
-////      this->nse2cd_coupling_  = true;
-////      this->cd2nse_coupling_  = true;
-////      this->solve_convection_ = true;
-//      break;
-//  }
-//
-//  if (this->tnse_variable_fluid_) // using variable rho and mu requires
-//  {                               // NSTYPE 3 or 4, LAPLACETYPE 1
-//    if (TDatabase::ParamDB->LAPLACETYPE != 1
-//        || (TDatabase::ParamDB->NSTYPE != 4
-//        &&  TDatabase::ParamDB->NSTYPE != 3))
-//    {
-//      ErrThrow("In order to assemble TNSE2D with variable fluid properties,"
-//          "LAPLACTYPE must be 1 and NSTYPE 3 or 4. If the problem contains"
-//          " slip conditions, you must use NSTYPE 4.");
-//    }
-//  }
-//
-//  // Set the boolean of TNSE2D taken from VOF
-//  this->tnse2d_.set_bool_variable_properties(this->tnse_variable_fluid_);
-//}
-//
+    example_number_ = example_tnse3d_.get_database()["example"];
+
+  /********************************************************************
+   * MANAGE PARAMETERS FOR BENCHMARK PROBLEMS!
+   ********************************************************************/
+  switch(example_number_)
+  {
+
+  }
+
+  if (this->tnse_variable_fluid_) // using variable rho and mu requires
+  {                               // NSTYPE 3 or 4, LAPLACETYPE 1
+    if (TDatabase::ParamDB->LAPLACETYPE != 1
+        || (TDatabase::ParamDB->NSTYPE != 4
+        &&  TDatabase::ParamDB->NSTYPE != 3))
+    {
+      ErrThrow("In order to assemble TNSE3D with variable fluid properties,"
+          "LAPLACTYPE must be 1 and NSTYPE 3 or 4. If the problem contains"
+          " slip conditions, you must use NSTYPE 4.");
+    }
+  }
+
+  // Set the boolean of TNSE2D taken from VOF
+  this->tnse3d_.set_bool_variable_properties(this->tnse_variable_fluid_);
+}
+
 ///** Update the vectors mu and rho with the phase fraction vector,
 // * depending on the example number */
 //void VOF_TwoPhase2D::update_field_vectors()

@@ -118,6 +118,13 @@ class Time_NSE3D
       ~System_per_grid() = default;
     };
 
+    /* FEFunction equal to property fields, construction
+      * based on the above BlockVectors
+      */
+     TFEFunction3D* rho_fefunct = nullptr;
+     TFEFunction3D* mu_fefunct = nullptr;
+     TFEFunction3D* phase_field = nullptr;
+
     /** @brief a local parameter database which controls this class
      *
      * The database given to the constructor will be merged into this one. Only
@@ -176,6 +183,13 @@ class Time_NSE3D
 
     /** @brief old time step length used to scale the pressure blocks */
     double oldtau_;
+
+    /* @brief this detects if the rho and mu coefficients are given
+     *  as fe_functions in the local assembling objects, instead of
+     *  taking eps=1/reynolds_number from LinCoeffs from example
+     */
+    bool with_variable_fluid_properties = 0;
+
 
     /** @brief set the velocity and pressure orders
      *
@@ -375,6 +389,28 @@ class Time_NSE3D
 
     /** @brief return the computed errors (computed in output()) */
     std::array<double, int(6)> get_errors() const;
+
+
+
+
+
+    /** ***************BELOW THIS LINE, USER SPECIFIC CODE ********/
+    public:
+
+    /*
+     * @brief this sets the boolean with_variable_fluid_properties
+     */
+    void set_bool_variable_properties(bool rho_mu_variable)
+    { this->with_variable_fluid_properties = rho_mu_variable; }
+
+    /*
+     * @brief this sets the rho and mu fefunctions coming from VOF
+     */
+    void set_rho_mu_fefunct(TFEFunction3D* rho, TFEFunction3D* mu,
+                            TFEFunction3D* phi)
+    { this->rho_fefunct = rho; this->mu_fefunct = mu;
+      this->phase_field = phi; }
+
 };
 
 

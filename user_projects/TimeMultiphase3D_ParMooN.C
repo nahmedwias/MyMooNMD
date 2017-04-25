@@ -123,14 +123,20 @@ int main(int argc, char* argv[])
   domain.print_info("Multiphase3D domain");      // Output domain info
 
   /********************************************************************
-   * Creating VOF object, which contains both TimeNSE2D and TimeCD2D
+   * Creating VOF object, which contains both TimeNSE3D and TimeCD3D
    ********************************************************************/
-  SetTimeDiscParameters(0);                      // Initialize parameters for time discretization
+  SetTimeDiscParameters(0);     // Initialize parameters for time discretization
 #ifdef _MPI
   VOF_TwoPhase3D vof(gridCollections,tnse_db,tcd_db, maxSubDomainPerDof);
 #else
   VOF_TwoPhase3D vof(gridCollections,tnse_db,tcd_db);
 #endif
+
+  vof.manage_example_parameters();
+
+
+
+
 
   cout << " THIS IS MY FIRST PROGRAM!" << endl;
 
@@ -150,8 +156,7 @@ int main(int argc, char* argv[])
 
 
 
-//  vof.manage_example_parameters();
-//
+
 //  /* This calculates rho and mu vectors depending on example number
 //   * Check that the vectors are as expected using "output_vectors(..)" */
 //  vof.update_field_vectors();
