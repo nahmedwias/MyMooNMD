@@ -133,6 +133,22 @@ int main(int argc, char* argv[])
 #endif
 
   vof.manage_example_parameters();
+  /* This calculates rho and mu vectors depending on example number
+   * Check that the vectors are as expected using "output_vectors(..)" */
+  vof.update_field_vectors(); // should be done by each process
+  /* SOME OUTPUT AND INFORMATION SET */
+  if (my_rank==0)
+  {
+    vof.output_initial_info();
+    vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
+  }
+
+  /********************************************************************
+   * START ASSEMBLING TimeNSE3D WITH GIVEN FIELDS
+   ********************************************************************/
+  TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
+  vof.tnse3d_.assemble_initial_time();      // assemble linear term
+
 
 
 
@@ -157,22 +173,7 @@ int main(int argc, char* argv[])
 
 
 
-//  /* This calculates rho and mu vectors depending on example number
-//   * Check that the vectors are as expected using "output_vectors(..)" */
-//  vof.update_field_vectors();
-//
-//  /* SOME OUTPUT AND INFORMATION SET */
-//  vof.output_initial_info();
-////  vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
-//
-//
-//
-//  /********************************************************************
-//   * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS
-//   ********************************************************************/
-//  TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
-//  vof.tnse2d_.assemble_initial_time();            // assemble linear term
-//
+
 //  if (!tcd_db["algebraic_flux_correction"].is("none"))
 //    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
 //  if (vof.solve_convection_ == true)
