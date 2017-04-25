@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
   if (my_rank==0)
   {
     vof.output_initial_info();
-    vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
+//    vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
   }
 
   /********************************************************************
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
   LoopInfo  loop_info("nonlinear");
   loop_info.print_time_every_step = true;
   loop_info.verbosity_threshold   = 1;            // full verbosity
-  loop_info.print(0, vof.tnse3d_.get_full_residual());
+//  loop_info.print(0, vof.tnse3d_.get_full_residual());
 
   stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
   stopwatch.reset();
@@ -186,63 +186,37 @@ int main(int argc, char* argv[])
 
 
 
+  /********************************************************************
+   * TIME ITERATION LOOP
+   ********************************************************************/
+  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  {
+    step++;
+    vof.tnse3d_.current_step_++;
 
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    for(int j=0; j < n_substeps; ++j)
+    {
+      SetTimeDiscParameters(1);            // setting the time disc parameters
+      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      TDatabase::TimeDB->CURRENTTIME += tau;
+      if (my_rank ==0)
+        Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
-
-
-
-
-  cout << " THIS IS MY FIRST PROGRAM!" << endl;
-
-
-
-
-#ifdef _MPI
-  MPI_Finalize();
-#endif
-  return 0;
-
-
-
-
-
-
-
-
-
-
-
-
-
-//  /********************************************************************
-//   * TIME ITERATION LOOP
-//   ********************************************************************/
-//  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
-//  {
-//    step++;
-//    vof.tnse2d_.current_step_++;
-//
-//    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-//    for(int j=0; j < n_substeps; ++j)
-//    {
-//      SetTimeDiscParameters(1);            // setting the time disc parameters
-//      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-//      TDatabase::TimeDB->CURRENTTIME += tau;
-//      Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-//
-//      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
-//      vof.tnse2d_.assemble_rhs();
-//      if (vof.tnse_variable_fluid_ == true)
-//      {
+      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=0;
+      vof.tnse3d_.assemble_rhs();
+      if (vof.tnse_variable_fluid_ == true)
+      {
+        ErrThrow("NOT IMPLEMENTED YET!");
 //        vof.tnse2d_.assemble_massmatrix_withfields(&vof.rho_fefunction_);
 //        if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
 //            vof.tnse2d_.apply_slip_penetration_bc(true,true);
-//      }
-//
-//      vof.tnse2d_.assemble_nonlinear_term();
-//      vof.tnse2d_.assemble_system();
-//
-//
+      }
+
+      vof.tnse3d_.assemble_nonlinear_term();
+      vof.tnse3d_.assemble_system();
+
+
 //    /********************************************************************
 //     * NON LINEAR LOOP
 //     ********************************************************************/
@@ -317,12 +291,21 @@ int main(int argc, char* argv[])
 //        vof.phaseconvection2d_.output();
 //    }
 ////        vof.tnse2d_.get_solution().write("solution_velocity");
-//    }
-//  } // end for step, time loop
-//
-//  stopwatch.print_total_time("total solving duration: ");
-//  Output::close_file();
-//
-//  return 0;
+    }
+  } // end for step, time loop
+
+  stopwatch.print_total_time("total solving duration: ");
+  // ======================================================================
+  Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
+  Output::print("used time: ", GetTime() - t_start, "s");
+  // ======================================================================
+  Output::close_file();
+
+
+  cout << " THIS IS MY FIRST PROGRAM!" << endl;
+#ifdef _MPI
+  MPI_Finalize();
+#endif
+  return 0;
 }
 // end main
