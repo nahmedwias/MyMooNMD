@@ -276,7 +276,21 @@ int main(int argc, char* argv[])
       else  // if we solve TCD2D standard, without any coupling
       { vof.phaseconvection3d_.assemble();}
 
+      /* this is a quick workaround needed because of the
+       * global parameter INTERNAL_PROJECT_PRESSURE, which disturbs
+       * normal use of Mumps in TCD3D
+       */
+      int ipp_was_1 = 0;
+      if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE==1)
+      {
+        ipp_was_1 = 1;
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=0;
+      }
       vof.phaseconvection3d_.solve();
+      if (ipp_was_1)
+      {
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+      }
       vof.phaseconvection3d_.descale_stiffness(); //needed once per time loop
 
       if (my_rank==0)
