@@ -97,92 +97,58 @@ void VOF_TwoPhase3D::manage_example_parameters()
   this->tnse3d_.set_bool_variable_properties(this->tnse_variable_fluid_);
 }
 
-///** Update the vectors mu and rho with the phase fraction vector,
-// * depending on the example number */
-//void VOF_TwoPhase2D::update_field_vectors()
-//{
-//  // note : the following two lines are redundant in the initial
-//  // time...because already equal in the constructor...
-//  // but necessary to recalculate it before updating..
-//  // it may be not nice to calculate the property fields by
-//  // using only the values at nodes with blockvector...any better way?
-//  this->rho_vector_ = this->phaseconvection2d_.get_solution();
-//  this->mu_vector_ = this->phaseconvection2d_.get_solution();
-//  //At this point, rhol and mul = phase fraction
-//  switch(example_number_)
-//  {
-//    case 10: case 20: case 3:
-//    case 21: case 22:
-//      this->rho_vector_ = this->rhol_;
-//      this->mu_vector_ = this->mul_;
-//      // note that in case of standard tnse2d, these values
-//      // won't be used or read in the tnse2d object
-//      break;
-//    case 30: case 31:
-//    case 32:
-//      // here rho=1 and viscosity = phase field
-//      this->rho_vector_ = this->unity_vector_;
-//      break;
-//    case 41:
-//      // rayleigh taylor: visco = 1 and rho=phase field
-//      this->mu_vector_ = this->unity_vector_;
-//      break;
-//    case 43:
-//      // drop pressure for CSF test
-//      this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
-//      this->rho_vector_.scale(this->rhol_-this->rhog_);
-//      this->rho_vector_.add_scaled(this->unity_vector_,this->rhog_);
-//      this->mu_vector_ = this->unity_vector_;
-//      break;
-//    case 40: case 42: case 50:
-//      // dambreak and 2-phase flows
-//      this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
-//      this->mug_  = TDatabase::ParamDB->P8; // mu of gas  = mu2 =mumin
-////    double density_ratio   = rhol_/rhog_;
-////    double viscosity_ratio = mul_/mug_;
-//      this->rho_vector_.scale(this->rhol_-this->rhog_);
-//      this->rho_vector_.add_scaled(this->unity_vector_,this->rhog_);
-//      this->mu_vector_.scale(this->mul_-this->mug_);
-//      this->mu_vector_.add_scaled(this->unity_vector_,this->mug_);
-//      break;
+/** Update the vectors mu and rho with the phase fraction vector,
+ * depending on the example number */
+void VOF_TwoPhase3D::update_field_vectors()
+{
+  // note : the following two lines are redundant in the initial
+  // time...because already equal in the constructor...
+  // but necessary to recalculate it before updating..
+  // it may be not nice to calculate the property fields by
+  // using only the values at nodes with blockvector...any better way?
+  this->rho_vector_ = this->phaseconvection3d_.get_solution();
+  this->mu_vector_ = this->phaseconvection3d_.get_solution();
+  //At this point, rhol and mul = phase fraction
+  switch(example_number_)
+  {
 //    default:
 //      ErrThrow("Unknown example number");
 //      break;
-//  }
-//  // transfer fe functions to tnse2d after updates
-//  this->tnse2d_.set_rho_mu_fefunct(&this->rho_fefunction_,
-//                                   &this->mu_fefunction_,
-//                                   &this->phaseconvection2d_.get_function());
-//}
-//
-///** Write output of vectors in a file */
-//void VOF_TwoPhase2D::output_vectors(std::string filename_phi,
-//                                    std::string filename_rho,
-//                                    std::string filename_mu)
-//{
-//  this->phaseconvection2d_.get_solution().write(filename_phi);
-//  this->rho_vector_.write(filename_rho);
-//  this->mu_vector_.write(filename_mu);
-//}
-//
-///* Print some info, mostly useful after the constructor */
-//void VOF_TwoPhase2D::output_initial_info()
-//{
-//  Output::print<3>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
-//  Output::print<3>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
-//  Output::print<3>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
-//  Output::print<3>("Convection_example number     ",
-//                   this->example_tcd2d_.get_database()["example"]);
-//  Output::print<3>("Time NSE Example number       ",
-//                   this->example_tnse2d_.get_database()["example"]);
-//  Output::print<3>("Fluid properties are non constant : "
-//      + std::to_string(this->tnse_variable_fluid_));
-//  Output::print<3>("TCD is solved            : " + std::to_string(this->solve_convection_));
-//  Output::print<3>("Coupling NSE >> CD is    : " + std::to_string(this->nse2cd_coupling_));
-//  Output::print<3>("Coupling CD >> NSE is    : " + std::to_string(this->cd2nse_coupling_));
-//  Output::print<3>("The density   of liquid is ", this->rhol_);
-//  Output::print<3>("The viscosity of liquid is ", this->mul_);
-//  Output::print<3>("The density   of gas    is ", this->rhog_);
-//  Output::print<3>("The viscosity of gas    is ", this->mug_);
-//}
-//
+  }
+  // transfer fe functions to tnse2d after updates
+  this->tnse3d_.set_rho_mu_fefunct(&this->rho_fefunction_,
+                                   &this->mu_fefunction_,
+                                   &this->phaseconvection3d_.get_function());
+}
+
+/** Write output of vectors in a file */
+void VOF_TwoPhase3D::output_vectors(std::string filename_phi,
+                                    std::string filename_rho,
+                                    std::string filename_mu)
+{
+  this->phaseconvection3d_.get_solution().write(filename_phi);
+  this->rho_vector_.write(filename_rho);
+  this->mu_vector_.write(filename_mu);
+}
+
+/* Print some info, mostly useful after the constructor */
+void VOF_TwoPhase3D::output_initial_info()
+{
+  Output::print<3>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print<3>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
+  Output::print<3>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
+  Output::print<3>("Convection_example number     ",
+                   this->example_tcd3d_.get_database()["example"]);
+  Output::print<3>("Time NSE Example number       ",
+                   this->example_tnse3d_.get_database()["example"]);
+  Output::print<3>("Fluid properties are non constant : "
+      + std::to_string(this->tnse_variable_fluid_));
+  Output::print<3>("TCD is solved            : " + std::to_string(this->solve_convection_));
+  Output::print<3>("Coupling NSE >> CD is    : " + std::to_string(this->nse2cd_coupling_));
+  Output::print<3>("Coupling CD >> NSE is    : " + std::to_string(this->cd2nse_coupling_));
+  Output::print<3>("The density   of liquid is ", this->rhol_);
+  Output::print<3>("The viscosity of liquid is ", this->mul_);
+  Output::print<3>("The density   of gas    is ", this->rhog_);
+  Output::print<3>("The viscosity of gas    is ", this->mug_);
+}
+

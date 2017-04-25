@@ -106,19 +106,19 @@ class VOF_TwoPhase3D
     */
    void manage_example_parameters();
 
-//   /* Update the BlockVectors rho and mu with the phase fraction
-//    * vector, via the equation: rho = rhol.phi + rhog.(1-phi)
-//    * idem for mu
-//    */
-//   void update_field_vectors();
-//
-//   /* Write the vectors in a file for output */
-//   void output_vectors(std::string filename_phi,
-//                       std::string filename_rho,
-//                       std::string filename_mu);
-//
-//   /* Print some info, mostly useful after the constructor */
-//   void output_initial_info();
+   /* Update the BlockVectors rho and mu with the phase fraction
+    * vector, via the equation: rho = rhol.phi + rhog.(1-phi)
+    * idem for mu
+    */
+   void update_field_vectors();
+
+   /* Write the vectors in a file for output */
+   void output_vectors(std::string filename_phi,
+                       std::string filename_rho,
+                       std::string filename_mu);
+
+   /* Print some info, mostly useful after the constructor */
+   void output_initial_info();
 
 };
 
