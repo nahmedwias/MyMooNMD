@@ -72,13 +72,13 @@ int main(int argc, char* argv[])
   tcd_db.merge(parmoon_db,true);
 
   tcd_db["example"]          = -1;
-  //  tcd_db["problem_type"]     = 2;
-  //  tcd_db["output_basename"]  = "multiphase_tconvection_output";
+  tcd_db["problem_type"]     = 2;
+  tcd_db["output_basename"]  = "multiphase_tconvection_output";
   //  tcd_db["space_discretization_type"] = "galerkin";
-  //
+
   //  tnse_db["example"]         = 18;
-  //  tnse_db["problem_type"]    = 6;
-  //  tnse_db["output_basename"] = "multiphase_tnse_output";
+  tnse_db["problem_type"]    = 6;
+  tnse_db["output_basename"] = "multiphase_tnse_output";
 
 
 #ifdef _MPI
@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
   }
 
   double end_time = TDatabase::TimeDB->ENDTIME;
-  int step = 0;
+  int step = 0, image = 0;
   int n_substeps = GetN_SubSteps();
   vof.tnse3d_.current_step_ = 0;
   TDatabase::TimeDB->CURRENTTIME = 0.0;
@@ -217,80 +217,92 @@ int main(int argc, char* argv[])
       vof.tnse3d_.assemble_system();
 
 
-//    /********************************************************************
-//     * NON LINEAR LOOP
-//     ********************************************************************/
-//      nse_timeit_stopwatch.restart_and_print("preparation of NSE iterations");
-//    for(unsigned int k = 0;; k++)
-//    {
-//      if(vof.tnse2d_.stopIte(k))
-//        break;
-//
-//      vof.tnse2d_.solve();
-//
-//      if(vof.tnse2d_.imex_scheme(1))
-//        continue; // this interrupts the NL-Loop
-//
-//      if (vof.tnse_variable_fluid_ == true)
-//      {
+    /********************************************************************
+     * NON LINEAR LOOP
+     ********************************************************************/
+     nse_timeit_stopwatch.restart_and_print("preparation of NSE iterations");
+    for(unsigned int k = 0;; k++)
+    {
+      vof.tnse3d_.compute_residuals();
+
+      if (my_rank==0) // some outputs
+      {
+        Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
+        Output::print<1>("Residuals :", vof.tnse3d_.get_residuals());
+      }
+
+      if(vof.tnse3d_.stop_it(k))
+        break;
+
+      vof.tnse3d_.solve();
+
+      if(vof.tnse3d_.imex_scheme(1))
+        continue; // this interrupts the NL-Loop
+
+      if (vof.tnse_variable_fluid_ == true)
+      {
+        ErrThrow("Slip BC Not Implemented yet!");
 //        if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
-//          vof.tnse2d_.apply_slip_penetration_bc(false,false);
-//      }
-//
-//      vof.tnse2d_.assemble_nonlinear_term();
-//      vof.tnse2d_.assemble_system();
-//      nse_nl_stopwatch.restart_and_print("solving and reassembling NL iter. "
-//                                          + std::to_string(k));
-//    } // end for k, non linear loop
-//
-//    nse_timeit_stopwatch.restart_and_print("total NSE time iter. "
-//                                  +std::to_string(TDatabase::TimeDB->CURRENTTIME));
-//
-//
-//    /********************************************************************
-//     * SOLVING CD2D WITH NSE2D SOLUTION
-//     ********************************************************************/
-//    if (!tcd_db["algebraic_flux_correction"].is("none"))
-//      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
-//    if (vof.solve_convection_ == true )
-//    {
-//      Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
-//      if (vof.nse2cd_coupling_ == true)
-//      {
-////        tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
-////        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
-////        tcd2d.scale_stiffness_matrix();
+//          vof.tnse3d_.apply_slip_penetration_bc(false,false);
+      }
+
+      vof.tnse3d_.assemble_nonlinear_term();
+      vof.tnse3d_.assemble_system();
+      nse_nl_stopwatch.restart_and_print("solving and reassembling NL iter. "
+                                          + std::to_string(k));
+    } // end for k, non linear loop
+
+    nse_timeit_stopwatch.restart_and_print("total NSE time iter. "
+                                  +std::to_string(TDatabase::TimeDB->CURRENTTIME));
+
+
+    /********************************************************************
+     * SOLVING CD3D WITH NSE3D SOLUTION
+     ********************************************************************/
+    if (!tcd_db["algebraic_flux_correction"].is("none"))
+      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
+    if (vof.solve_convection_ == true )
+    {
+      if (my_rank==0)
+        Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
+      if (vof.nse2cd_coupling_ == true)
+      {
+        ErrThrow("Not implemented yet!");
+//        tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
+//        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
+//        tcd2d.scale_stiffness_matrix();
 //        vof.phaseconvection2d_.assemble_with_convection(&vof.tnse2d_.get_velocity());
-//      }
-//      else  // if we solve TCD2D standard, without any coupling
-//      { vof.phaseconvection2d_.assemble();}
-//
-//      vof.phaseconvection2d_.solve();
-//      vof.phaseconvection2d_.descale_stiffness(tau, TDatabase::TimeDB->THETA1); //needed once per time loop
-//
-//      Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
-//
-//
-//      /********************************************************************
-//       * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
-//       ********************************************************************/
-//      if (vof.cd2nse_coupling_ == true )
-//      {
-//        vof.update_field_vectors();
-////        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
-//      }
-//    }
-//
-//    stopwatch.restart_and_print("total whole iter. " +
-//                                std::to_string(TDatabase::TimeDB->CURRENTTIME));
-//
-//    vof.tnse2d_.output(step);
-//    if(vof.solve_convection_ == true)
-//    {
-//      if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-//        vof.phaseconvection2d_.output();
-//    }
-////        vof.tnse2d_.get_solution().write("solution_velocity");
+      }
+      else  // if we solve TCD2D standard, without any coupling
+      { vof.phaseconvection3d_.assemble();}
+
+      vof.phaseconvection3d_.solve();
+      vof.phaseconvection3d_.descale_stiffness(); //needed once per time loop
+
+      if (my_rank==0)
+        Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
+
+
+      /********************************************************************
+       * UPDATING VELOCITY VECTOR WITH CD3D SOLUTION
+       ********************************************************************/
+      if (vof.cd2nse_coupling_ == true )
+      {
+        vof.update_field_vectors();
+//        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
+      }
+    }
+
+    stopwatch.restart_and_print("total whole iter. " +
+                                std::to_string(TDatabase::TimeDB->CURRENTTIME));
+
+    vof.tnse3d_.output(step,image);
+    if(vof.solve_convection_ == true)
+    {
+      if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
+        vof.phaseconvection3d_.output(step,image);
+    }
+//        vof.tnse3d_.get_solution().write("solution_velocity");
     }
   } // end for step, time loop
 
