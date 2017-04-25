@@ -16,7 +16,7 @@
 #include <ParameterDatabase.h>
 #include <TimeDiscRout.h>
 
-//#include <VOF_TwoPhase2D.h>
+#include <VOF_TwoPhase3D.h>
 
 #include <Output3D.h>
 #include <MeshPartition.h>
@@ -70,12 +70,13 @@ int main(int argc, char* argv[])
   std::ifstream fs(argv[1]); parmoon_db.read(fs);  fs.close();
   tnse_db.merge(parmoon_db,true);
   tcd_db.merge(parmoon_db,true);
-  ////  tcd_db["example"]          = 10;
+
+  tcd_db["example"]          = -1;
   //  tcd_db["problem_type"]     = 2;
   //  tcd_db["output_basename"]  = "multiphase_tconvection_output";
   //  tcd_db["space_discretization_type"] = "galerkin";
   //
-  ////  tnse_db["example"]         = 18;
+  //  tnse_db["example"]         = 18;
   //  tnse_db["problem_type"]    = 6;
   //  tnse_db["output_basename"] = "multiphase_tnse_output";
 
@@ -125,7 +126,11 @@ int main(int argc, char* argv[])
    * Creating VOF object, which contains both TimeNSE2D and TimeCD2D
    ********************************************************************/
   SetTimeDiscParameters(0);                      // Initialize parameters for time discretization
-
+#ifdef _MPI
+  VOF_TwoPhase3D vof(gridCollections,tnse_db,tcd_db, maxSubDomainPerDof);
+#else
+  VOF_TwoPhase3D vof(gridCollections,tnse_db,tcd_db);
+#endif
 
   cout << " THIS IS MY FIRST PROGRAM!" << endl;
 
@@ -144,7 +149,7 @@ int main(int argc, char* argv[])
 
 
 
-//  VOF_TwoPhase2D vof(domain,tnse_db,tcd_db);
+
 //  vof.manage_example_parameters();
 //
 //  /* This calculates rho and mu vectors depending on example number
