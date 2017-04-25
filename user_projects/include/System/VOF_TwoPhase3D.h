@@ -34,40 +34,40 @@ class VOF_TwoPhase3D
     Time_NSE3D tnse3d_;
     Example_TimeCD3D example_tcd3d_;
     Time_CD3D phaseconvection3d_;
-//
-//    /* example number of vof=example of tnse=tcd */
-//    int example_number_;
-//    /* rhol = constant density of liquid phase
-//     * default value is 1 */
-//    double rhol_ = 1;
-//    /* mul = constant dyn. visco of liquid phase
-//     * default value is 1 */
-//    double mul_  = 1;
-//    /* rhog = constant density of gas phase
-//     * default value is 0 */
-//    double rhog_ = 0;
-//    /* mug = constant dyn. visco of gas phase
-//     * default value is 0 */
-//    double mug_  = 0;
-//
-//    /* Boolean parameters which activates and
-//     * controls different features of this class
-//     */
-//    bool tnse_variable_fluid_ = false;
-//    bool solve_convection_    = false;
-//    bool nse2cd_coupling_     = false;
-//    bool cd2nse_coupling_     = false;
-//
-//    /* Vector equal to property fields at the nodes */
-//    BlockVector rho_vector_;
-//    BlockVector mu_vector_;
-//    BlockVector unity_vector_; // same structure and equals to 1
-//
-//    /* FEFunction equal to property fields, construction
-//     * based on the above BlockVectors
-//     */
-//    TFEFunction2D rho_fefunction_;
-//    TFEFunction2D mu_fefunction_;
+
+    /* example number of vof=example of tnse=tcd */
+    int example_number_;
+    /* rhol = constant density of liquid phase
+     * default value is 1 */
+    double rhol_ = 1;
+    /* mul = constant dyn. visco of liquid phase
+     * default value is 1 */
+    double mul_  = 1;
+    /* rhog = constant density of gas phase
+     * default value is 0 */
+    double rhog_ = 0;
+    /* mug = constant dyn. visco of gas phase
+     * default value is 0 */
+    double mug_  = 0;
+
+    /* Boolean parameters which activates and
+     * controls different features of this class
+     */
+    bool tnse_variable_fluid_ = false;
+    bool solve_convection_    = false;
+    bool nse2cd_coupling_     = false;
+    bool cd2nse_coupling_     = false;
+
+    /* Vector equal to property fields at the nodes */
+    BlockVector rho_vector_;
+    BlockVector mu_vector_;
+    BlockVector unity_vector_; // same structure and equals to 1
+
+    /* FEFunction equal to property fields, construction
+     * based on the above BlockVectors
+     */
+    TFEFunction3D rho_fefunction_;
+    TFEFunction3D mu_fefunction_;
 //
   public:
     /** @brief constructor*/
@@ -79,33 +79,33 @@ class VOF_TwoPhase3D
 #endif
                    );
 
-//    /*************************************************************/
-//   /**
-//    * Special member functions mostly deleted
-//    * ...needs to be optimized
-//    */
-//   //! Delete copy constructor.
-//    VOF_TwoPhase2D(const VOF_TwoPhase2D&) = delete;
-//
-//   //! Delete move constructor.
-//    VOF_TwoPhase2D(VOF_TwoPhase2D&&) = delete;
-//
-//   //! Delete copy assignment operator.
-//    VOF_TwoPhase2D& operator=(const VOF_TwoPhase2D&) = delete;
-//
-//   //! Delete move assignment operator.
-//    VOF_TwoPhase2D& operator=(VOF_TwoPhase2D&&) = delete;
-//
-//   //! Default destructor. Most likely causes memory leaks.
-//   ~VOF_TwoPhase2D() = default;
-//
-//   /*************************************************************/
-//
-//   /* Check that the input parameters are consistent,
-//    * and correct/throw errors if not the case
-//    */
-//   void manage_example_parameters();
-//
+    /*************************************************************/
+   /**
+    * Special member functions mostly deleted
+    * ...needs to be optimized
+    */
+   //! Delete copy constructor.
+    VOF_TwoPhase3D(const VOF_TwoPhase3D&) = delete;
+
+   //! Delete move constructor.
+    VOF_TwoPhase3D(VOF_TwoPhase3D&&) = delete;
+
+   //! Delete copy assignment operator.
+    VOF_TwoPhase3D& operator=(const VOF_TwoPhase3D&) = delete;
+
+   //! Delete move assignment operator.
+    VOF_TwoPhase3D& operator=(VOF_TwoPhase3D&&) = delete;
+
+   //! Default destructor. Most likely causes memory leaks.
+   ~VOF_TwoPhase3D() = default;
+
+   /*************************************************************/
+
+   /* Check that the input parameters are consistent,
+    * and correct/throw errors if not the case
+    */
+   void manage_example_parameters();
+
 //   /* Update the BlockVectors rho and mu with the phase fraction
 //    * vector, via the equation: rho = rhol.phi + rhog.(1-phi)
 //    * idem for mu
