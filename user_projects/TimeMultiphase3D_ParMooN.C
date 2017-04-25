@@ -150,6 +150,44 @@ int main(int argc, char* argv[])
   vof.tnse3d_.assemble_initial_time();      // assemble linear term
 
 
+  if (!tcd_db["algebraic_flux_correction"].is("none"))
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
+  if (vof.solve_convection_ == true)
+  {
+    if (vof.nse2cd_coupling_ == true)
+    {
+//      vof.phaseconvection3d_.assemble_initial_time_with_convection(&vof.tnse2d_.get_velocity());
+      ErrThrow("NOT IMPLEMENTED YET!");
+    }
+    else
+      vof.phaseconvection3d_.assemble_initial_time();
+  }
+
+  double end_time = TDatabase::TimeDB->ENDTIME;
+  int step = 0;
+  int n_substeps = GetN_SubSteps();
+  vof.tnse3d_.current_step_ = 0;
+  TDatabase::TimeDB->CURRENTTIME = 0.0;
+
+  /********************************************************************
+   * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
+   ********************************************************************/
+  LoopInfo  loop_info("nonlinear");
+  loop_info.print_time_every_step = true;
+  loop_info.verbosity_threshold   = 1;            // full verbosity
+  loop_info.print(0, vof.tnse3d_.get_full_residual());
+
+  stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
+  stopwatch.reset();
+  stopwatch.start();
+
+  Chrono nse_nl_stopwatch;
+  Chrono nse_timeit_stopwatch;
+
+
+
+
+
 
 
 
@@ -174,43 +212,8 @@ int main(int argc, char* argv[])
 
 
 
-//  if (!tcd_db["algebraic_flux_correction"].is("none"))
-//    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE=1;
-//  if (vof.solve_convection_ == true)
-//  {
-//    if (vof.nse2cd_coupling_ == true)
-//    {
-//      vof.phaseconvection2d_.assemble_initial_time_with_convection(&vof.tnse2d_.get_velocity());
-//    }
-//    else
-//      vof.phaseconvection2d_.assemble_initial_time();
-//  }
-//
-//   double end_time = TDatabase::TimeDB->ENDTIME;
-//   int step = 0;
-//   int n_substeps = GetN_SubSteps();
-//   vof.tnse2d_.current_step_ = 0;
-//
-//  /********************************************************************
-//   * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
-//   ********************************************************************/
-//  LoopInfo  loop_info("nonlinear");
-//  loop_info.print_time_every_step = true;
-//  loop_info.verbosity_threshold   = 1;            // full verbosity
-////  loop_info.print(0, tnse2d.getFullResidual());
-//
-//  stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
-//  stopwatch.reset();
-//  stopwatch.start();
-//
-//  Chrono nse_nl_stopwatch;
-//  Chrono nse_timeit_stopwatch;
-//
-//
-//
-//
-//
-//
+
+
 //  /********************************************************************
 //   * TIME ITERATION LOOP
 //   ********************************************************************/
