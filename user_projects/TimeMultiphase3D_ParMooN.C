@@ -84,15 +84,15 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->Comm = comm;
 #endif
 
-  // =====================================================================
-  // set the database values and generate mesh
-  // =====================================================================
+  /* =====================================================================
+   * set the database values and generate mesh
+   * =====================================================================*/
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1], parmoon_db);      // Initialize geometry
 
-  //  /********************************************************************
-  //   * WRITE PARAMETERS TO OUTFILE
-  //   ********************************************************************/
+  /********************************************************************
+   * WRITE PARAMETERS TO OUTFILE
+   ********************************************************************/
   check_parameters_consistency_NSE(tnse_db);
   Output::setVerbosity(parmoon_db["verbosity"]);
   if(my_rank==0)
@@ -102,6 +102,29 @@ int main(int argc, char* argv[])
     Database.WriteParamDB(argv[0]);
     Database.WriteTimeDB();
   }
+
+  // Initial refinement and grid collection
+#ifdef _MPI
+  int maxSubDomainPerDof = 0;
+#endif
+  std::list<TCollection*> gridCollections
+     = domain.refine_and_get_hierarchy_of_collections(
+       parmoon_db
+#ifdef _MPI
+       , maxSubDomainPerDof
+#endif
+    );
+  TCollection* coll = gridCollections.front();
+  TOutput3D output(0,0,0,0,std::addressof(domain),coll);
+
+  if (my_rank==0)
+    output.WriteVtk("mesh.vtk"); // run SEQ to see the generated mesh
+  domain.print_info("Multiphase3D domain");      // Output domain info
+
+  /********************************************************************
+   * Creating VOF object, which contains both TimeNSE2D and TimeCD2D
+   ********************************************************************/
+  SetTimeDiscParameters(0);                      // Initialize parameters for time discretization
 
 
   cout << " THIS IS MY FIRST PROGRAM!" << endl;
@@ -120,19 +143,7 @@ int main(int argc, char* argv[])
 
 
 
-//
-//  std::list<TCollection* > gridCollections
-//  = domain.refine_and_get_hierarchy_of_collections(parmoon_db);
-//
-//  if(parmoon_db["output_write_ps"]) domain.PS("Domain.ps", It_Finest, 0);
-//
-//  domain.print_info("Multiphase2D domain");      // Output domain info
-//
-//
-//  /********************************************************************
-//   * Creating VOF object, which contains both TimeNSE2D and TimeCD2D
-//   ********************************************************************/
-//  SetTimeDiscParameters(0);                      // Initialize parameters for time discretization
+
 //  VOF_TwoPhase2D vof(domain,tnse_db,tcd_db);
 //  vof.manage_example_parameters();
 //

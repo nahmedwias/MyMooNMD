@@ -423,7 +423,7 @@ int TOutput3D::WriteVtk(const char *name)
   
   dat << std::scientific;
   dat.precision(6);
-  dat << "# vtk DataFile Version 4.2" << endl;
+  dat << "# vtk DataFile Version 4.0" << endl;
   dat << "file created by MooNMD" << endl;
 
 
