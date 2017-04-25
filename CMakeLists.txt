@@ -301,6 +301,16 @@ target_compile_definitions(tnse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(tnse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### Time_MULTIPHASE3D ###
+# Standard executable target.
+add_executable(timemultiphase3d ${PROJECT_SOURCE_DIR}/user_projects/TimeMultiphase3D_ParMooN.C)
+set_target_properties(timemultiphase3d PROPERTIES OUTPUT_NAME parMooN_timemultiphase3d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(timemultiphase3d PUBLIC -D__3D__)
+# Link in the required libraries
+target_link_libraries(timemultiphase3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
+
 ### MESH(3D) ###
 # Standard executable target.
 add_executable(mesh3d ${PROJECT_SOURCE_DIR}/3DPrograms/mesh3d_ParMooN.C)
