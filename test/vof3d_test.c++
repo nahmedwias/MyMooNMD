@@ -81,10 +81,6 @@ void compute(ParameterDatabase& db,
   tcd_db["problem_type"]     = 2;
   tnse_db["problem_type"]    = 6;
 
-
-  tcd_db["example"]  = -1;
-
-
   check_parameters_consistency_NSE(tnse_db);
   //  declaration of databases
   TDomain domain(db);
@@ -235,10 +231,10 @@ void set_errors(int example,
 {
   switch(example)
   {
-    case 1:
-      errors= {0, /*L2(u)*/ 0, /*H1(u)*/
-               0, /*L2(p)*/ 0, /*H1(p)*/
-               0, /*L2t(c)*/ 0  /*L2H1t(c)*/ };
+    case 10:
+      errors= {6.591655328e-05, /*L2(u)*/ 0.002953807564, /*H1(u)*/
+               0.1302756347, /*L2(p)*/ 1.708690829, /*H1(p)*/
+               2.33827e-05, /*L2t(c)*/ 0.000685427  /*L2H1t(c)*/ };
       break;
     default:
       ErrThrow("Unknown example number!");
@@ -279,18 +275,18 @@ int main(int argc, char* argv[])
   std::array<double, int(6)> errors;
   double tol = 1e-7;
   //=======================================================================
-  /* ===== EXAMPLE   =========
+  /* ===== EXAMPLE 10   =========
    *
    *     ================= */
   // ======================================================================
   {
-    db["example"] = 1;
+    db["example"] = 10;
     db["dimensional_nse"] = false;
     db["solve_cd"] = true;
     db["refinement_n_initial_steps"] = 3;
     TDatabase::TimeDB->STARTTIME     = 0.;
-    TDatabase::TimeDB->ENDTIME       = 0.01;
-    TDatabase::TimeDB->TIMESTEPLENGTH= 0.01;
+    TDatabase::TimeDB->ENDTIME       = 0.2;
+    TDatabase::TimeDB->TIMESTEPLENGTH= 0.1;
     db["fluid_density"]           = 1;  // this is then compared to
     db["fluid_dynamic_viscosity"] = 1;    // TNSE2D with Re=200
     db["reynolds_number"]         = 1;
@@ -303,7 +299,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LAPLACETYPE = 0;
     TDatabase::ParamDB->ANSATZ_ORDER= 1;
     db["algebraic_flux_correction"] = "none";
-    set_errors(1,errors);
+    set_errors(10,errors);
     compute(db, errors, tol);
     TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
   }
