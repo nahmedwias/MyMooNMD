@@ -50,6 +50,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(vof2d ParMooN_test_vof2d)
   list(APPEND parmoon_tests ParMooN_test_vof2d)
   
+  #VOF3D test / SEQUENTIAL / SOLVER UMFPACK
+  set(_EXEC_NAME ParMooN_test_vof3d_seq)
+  set(_FILE_NAME vof3d_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #umfpack
+  add_test(NAME vof3d_seq_umfpack COMMAND ParMooN_test_vof3d_seq umfpack)
+    
   #parameter database test
   add_executable(ParMooN_test_parameter_database parameter_database_test.c++)
   target_link_libraries(ParMooN_test_parameter_database parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
@@ -280,6 +287,13 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   ###################################################
   ####### Tests for parallel type: MPI #######
   ###################################################
+  
+  #VOF3D test / MPI / SOLVER MUMPS
+  set(_EXEC_NAME ParMooN_test_vof3d_mpi)
+  set(_FILE_NAME vof3d_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #umfpack
+  add_test(NAME vof3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_vof3d_mpi mumps)
   
   # 1st mumps solver test mpi (run with 2 processes)
   add_executable(ParMooN_test_mumps_1_mpi mumps_test_1.c++)

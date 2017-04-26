@@ -35,7 +35,16 @@ ParameterDatabase Example3D::default_example_database()
           "Diffusion coefficient: a factor in front of the diffusion term.",
           0., 1.);
 
-   
+   /** Paramters to control the example through .dat (avoid recompiling) */
+   db.add("fluid_density", 1.,
+          "This is rho, appearing as a factor in some terms of the dimensional NSE.",
+          0., 1.e6);
+
+   /** Paramters to control the example through .dat (avoid recompiling) */
+   db.add("fluid_dynamic_viscosity", 1.,
+          "This is mu, appearing as a factor in some terms of the dimensional NSE.",
+          0., 1.e6);
+
   return db;
 }
 
