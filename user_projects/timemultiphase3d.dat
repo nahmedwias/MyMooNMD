@@ -46,7 +46,7 @@ nonlinloop_slowfactor: 1   [ 0, 10 ]
 nonlinloop_scale_epsilon_with_size: false   { true, false }
 
 solver_type: direct   { direct, iterative }
-direct_solver_type: mumps   { mumps, pardiso, umfpack }
+direct_solver_type: umfpack   { mumps, pardiso, umfpack }
 iterative_solver_type: fgmres   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
 max_n_iterations: 100   { 0, 1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000 }
 min_n_iterations: 0   { 0, 1, 2, 3, 4, 5, 10 }

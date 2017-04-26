@@ -327,8 +327,6 @@ int main(int argc, char* argv[])
   // ======================================================================
   Output::close_file();
 
-
-  cout << " THIS IS MY FIRST PROGRAM!" << endl;
 #ifdef _MPI
   MPI_Finalize();
 #endif
