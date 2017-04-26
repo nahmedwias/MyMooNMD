@@ -68,8 +68,8 @@ void compute(ParameterDatabase& db,
              double tol)
 {
 #ifdef _MPI
-  int size; //my_rank,
-//  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  int size, my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
@@ -220,8 +220,13 @@ void compute(ParameterDatabase& db,
        vof.tnse3d_.output(step,image);
        vof.phaseconvection3d_.output(step,image);
      }
+#ifdef _MPI
+     if (my_rank==0)
+     {
      if(TDatabase::TimeDB->CURRENTTIME >= end_time - 1e-10)
        check_errors(vof, errors,tol);
+     }
+#endif
    } // end for step, time loop
 }
 
@@ -293,6 +298,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->RE_NR     = 1;
     db["solver_type"]             = "direct";
     db["direct_solver_type"]      = std::string(argv[1]); //umfpack or mumps
+    db["nonlinloop_epsilon"]      = 1.e-7;
     TDatabase::ParamDB->VELOCITY_SPACE = 12;
     TDatabase::ParamDB->PRESSURE_SPACE = -4711;
     TDatabase::ParamDB->NSTYPE = 4;

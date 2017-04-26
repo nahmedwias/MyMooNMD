@@ -293,7 +293,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   set(_FILE_NAME vof3d_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #umfpack
-  add_test(NAME vof3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_vof3d_mpi mumps)
+  add_test(NAME vof3d_mpi_mumps COMMAND mpirun -n 2 ParMooN_test_vof3d_mpi mumps)
   
   # 1st mumps solver test mpi (run with 2 processes)
   add_executable(ParMooN_test_mumps_1_mpi mumps_test_1.c++)
