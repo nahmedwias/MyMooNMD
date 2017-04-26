@@ -2,20 +2,29 @@
 #include <Database.h>
 #include <string.h>
 
-namespace linear_space_time
+namespace linear_space_time  //-2
 {
   #include "TCD_3D/linear_space_time.h"
 }
 
-namespace quad_space_time
+namespace quad_space_time  //-1
 {
 #include "TCD_3D/quadratic_space_time.h"
 }
 
-namespace concentration
+namespace concentration  //0
 {
 #include "TCD_3D/concentrationOfSpecies_3d.h"
 }
+
+
+/********* BELOW THIS LINE, USER-SPECIFIC EXAMPLES *******/
+namespace quadratic   // 10
+{
+#include "Time_CD3D/10_Quadratic_TCD3D.h"
+}
+
+
 
 Example_TimeCD3D::Example_TimeCD3D(
   const ParameterDatabase& user_input_parameter_db)
@@ -58,6 +67,19 @@ Example_TimeCD3D::Example_TimeCD3D(
       concentration::PECLET_NUMBER = this->get_nu();
       ExampleFile();
       break;
+
+    /********* BELOW THIS LINE, USER-SPECIFIC EXAMPLES *******/
+    case 10:        // quadratic space time, like example -1
+    {
+      using namespace quadratic;
+      exact_solution.push_back(quadratic::Exact);
+      boundary_conditions.push_back(quadratic::BoundCondition);
+      boundary_data.push_back(quadratic::BoundValue);
+      problem_coefficients = quadratic::BilinearCoeffs;
+      initialCondtion.push_back(quadratic::InitialCondition);
+      quadratic::ExampleFile();
+      break;
+    }
     default:
       ErrThrow("Unknown Example_TimeCD3D example!");
   }

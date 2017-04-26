@@ -68,11 +68,9 @@ void compute(ParameterDatabase& db,
              double tol)
 {
 #ifdef _MPI
-  int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  int size; //my_rank,
+//  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-#else
-  int my_rank = 0;
 #endif
 
   db["verbosity"]  = 5;
@@ -231,6 +229,7 @@ void compute(ParameterDatabase& db,
    } // end for step, time loop
 }
 
+
 void set_errors(int example,
                 std::array<double, int(6)>& errors)
 {
@@ -258,11 +257,9 @@ int main(int argc, char* argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   TDatabase::ParamDB->Comm = comm;
 
-  int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  int size;//my_rank,
+//  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-#else
-  int my_rank = 0;
 #endif
 
   TFEDatabase3D FEDatabase;

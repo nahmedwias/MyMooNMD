@@ -22,7 +22,9 @@ include_directories("${CMAKE_SOURCE_DIR}/include/Examples"
 		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/CD2D"
 		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/NSE2D"
 		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/Time_NSE2D"
-		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/Time_CD2D")
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/Time_CD2D"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/Time_NSE3D"
+		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/Time_CD3D")
 
 list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/BoundaryCondition.C")
 list(APPEND EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/src/Examples/BoundaryData.C")

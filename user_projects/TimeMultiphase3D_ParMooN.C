@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
   tnse_db.merge(parmoon_db,true);
   tcd_db.merge(parmoon_db,true);
 
-  tcd_db["example"]          = -1;
+//  tcd_db["example"]          = -1;
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
   //  tcd_db["space_discretization_type"] = "galerkin";
