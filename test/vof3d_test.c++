@@ -237,9 +237,9 @@ void set_errors(int example,
   switch(example)
   {
     case 10:
-      errors= {6.591655328e-05, /*L2(u)*/ 0.002953807564, /*H1(u)*/
-               0.1302756347, /*L2(p)*/ 1.708690829, /*H1(p)*/
-               2.33827e-05, /*L2t(c)*/ 0.000685427  /*L2H1t(c)*/ };
+      errors= {0.0001551214835, /*L2(u)*/ 0.004173239659, /*H1(u)*/
+               0.2130611644, /*L2(p)*/ 2.798457879, /*H1(p)*/
+               5.21837e-06, /*L2t(c)*/ 0.000161713  /*L2H1t(c)*/ };
       break;
     default:
       ErrThrow("Unknown example number!");
@@ -278,7 +278,7 @@ int main(int argc, char* argv[])
   db.add("geo_file", "Default_UnitCube_Hexa", "", {"Default_UnitCube_Hexa"});
 
   std::array<double, int(6)> errors;
-  double tol = 1e-7;
+  double tol = 1e-6;
   //=======================================================================
   /* ===== EXAMPLE 10   =========
    *
@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
     db["solve_cd"] = true;
     db["refinement_n_initial_steps"] = 3;
     TDatabase::TimeDB->STARTTIME     = 0.;
-    TDatabase::TimeDB->ENDTIME       = 0.2;
+    TDatabase::TimeDB->ENDTIME       = 0.1;
     TDatabase::TimeDB->TIMESTEPLENGTH= 0.1;
     db["fluid_density"]           = 1;  // this is then compared to
     db["fluid_dynamic_viscosity"] = 1;    // TNSE2D with Re=200
