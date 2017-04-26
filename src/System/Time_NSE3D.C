@@ -337,7 +337,7 @@ void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pr
 void Time_NSE3D::assemble_initial_time()
 {
   size_t nFESpace = 2;         // number of spaces for assembling matrices
-  size_t nSquareMatrices = 10; // maximum number of square matrices (type 14)
+  size_t nSquareMatrices = 11; // maximum number of square matrices (type 14)
   size_t nRectMatrices   = 6;  // maximum number of rectangular matrices (type 14)
   size_t nRhs     = 4;         // maximum number of right hand sides (type 14)
 
@@ -395,6 +395,7 @@ void Time_NSE3D::assemble_initial_time()
         // mass matrix
         sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
 
+
         // rectangular matrices
         nRectMatrices = 3;
         rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(1).get());
@@ -412,6 +413,7 @@ void Time_NSE3D::assemble_initial_time()
         sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
         // mass matrix
         sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+
 
         // rectangular matrices
         nRectMatrices = 6;
@@ -520,9 +522,12 @@ void Time_NSE3D::assemble_initial_time()
         ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
     } // end switch NSType
+    sqMatrices.resize(nSquareMatrices);
+    rectMatrices.resize(nRectMatrices);
 
-    for(unsigned int i=0; i<nSquareMatrices; i++)
-      sqMatrices[i]->reset();
+
+    for(auto mat : sqMatrices)
+      mat->reset();
     for(unsigned int i=0; i<nRectMatrices;i++)
       rectMatrices[i]->reset();
 
@@ -833,7 +838,6 @@ void Time_NSE3D::assemble_nonlinear_term()
       case 2:
         blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
         nSquareMatrices = 1;
-        sqMatrices.resize(nSquareMatrices);
         sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
         break;
       case 3:
@@ -869,6 +873,7 @@ void Time_NSE3D::assemble_nonlinear_term()
         ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
     } // end switch nstypes
+    sqMatrices.resize(nSquareMatrices);
 
     // reset matrices to zero
     for(auto mat : sqMatrices)
