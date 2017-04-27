@@ -1011,6 +1011,8 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
     case TNSE2D:
     {
     // valid for any NSTYPE
+    // re-initialize RHS if localassemble type is TNSE2D
+    s.rhs.reset();
     rhs_array.resize(2);
     rhs_array[0]=s.rhs.block(0);
     rhs_array[1]=s.rhs.block(1);
@@ -1127,8 +1129,6 @@ void Time_NSE2D::prepare_spaces_and_matrices_for_assemble(Time_NSE2D::System_per
         ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
     } // END SWITCH NSTYPE
-    // re-initialize RHS if localassemble type is TNSE2D
-    s.rhs.reset();
     break;
     }
     // 2nd local assembling type: TNSE2D_Rhs
