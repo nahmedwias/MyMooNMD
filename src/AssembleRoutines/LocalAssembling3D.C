@@ -76,8 +76,8 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type, int di
 LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, 
                                      TFEFunction3D **fefunctions3d,
                                      CoeffFct3D *coeffs,
-                                     int disctype)
- : type(type), discretization_type(disctype),
+                                     int disctype, bool variable_tnse)
+ : type(type), discretization_type(disctype), twophase_tnse(variable_tnse),
    name(LocalAssembling3D_type_to_string(type,disctype)), Coeffs(coeffs),
    FEFunctions3D(fefunctions3d)
 {
@@ -219,16 +219,34 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
     case LocalAssembling3D_type::TNSE3D_LinGAL:
     case LocalAssembling3D_type::TNSE3D_NLGAL:
     case LocalAssembling3D_type::TNSE3D_Rhs:
-      switch(this->discretization_type)
+      switch(this->twophase_tnse)
       {
-        case GALERKIN:
-          this->set_parameters_for_tnse(type);
+        case 0:
+          switch(this->discretization_type)
+          {
+            case GALERKIN:
+              this->set_parameters_for_tnse(type);
+              break;
+            case SMAGORINSKY:
+              this->set_parameters_for_tnse_smagorinsky(type);
+              break;
+            default:
+              ErrThrow("DISCTYPE", this->discretization_type , "is not supported yet!!");
+          }
           break;
-        case SMAGORINSKY:
-          this->set_parameters_for_tnse_smagorinsky(type);
+        case 1:
+          switch(this->discretization_type)
+          {
+            case GALERKIN:
+              this->set_parameters_for_tnse(type);
+              break;
+            case SMAGORINSKY:
+              this->set_parameters_for_tnse_smagorinsky(type);
+              break;
+            default:
+              ErrThrow("DISCTYPE", this->discretization_type , "is not supported yet!!");
+          }
           break;
-        default:
-          ErrThrow("DISCTYPE", this->discretization_type , "is not supported yet!!");
       }
       break;
     default:

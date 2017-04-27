@@ -61,6 +61,9 @@ class LocalAssembling3D
     /** an integer to identify the space discretization_type **/
     int discretization_type;
 
+    /** a bool to check if variable tnse is used **/
+    bool twophase_tnse;
+
     /** name */
     std::string name;
 
@@ -80,7 +83,6 @@ class LocalAssembling3D
      */
     std::vector<MultiIndex3D> Derivatives;
 
-    
      /** @brief for each term, there is one FESpace3D asociated with that term */
     std::vector<int> FESpaceNumber;
 
@@ -168,7 +170,7 @@ class LocalAssembling3D
      *
      */
     LocalAssembling3D(LocalAssembling3D_type type, TFEFunction3D **fefunctions3d,
-                      CoeffFct3D *coeffs, int disctype = 1);
+                      CoeffFct3D *coeffs, int disctype = 1, bool variable_tnse = 0);
     
     /** @brief Constructor for backward compatibility
      * 
