@@ -3483,7 +3483,7 @@ void LocalAssembling2D::set_parameters_for_tnse_TwoPhase(LocalAssembling2D_type 
 
   if (this->twophase_tnse == 0)
   {
-    ErrThrow("This method can be used only for two phase TNSE assembling.")
+    ErrThrow("This method can be used only for two phase TNSE assembling.");
   }
 
 
