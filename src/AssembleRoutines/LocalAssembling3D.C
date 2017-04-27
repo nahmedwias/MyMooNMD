@@ -219,6 +219,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
     case LocalAssembling3D_type::TNSE3D_LinGAL:
     case LocalAssembling3D_type::TNSE3D_NLGAL:
     case LocalAssembling3D_type::TNSE3D_Rhs:
+    case LocalAssembling3D_type::TNSE3D_Mass:
       switch(this->twophase_tnse)
       {
         case 0:
@@ -1490,3 +1491,147 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
           ErrThrow("Unknown LocalAssembling3D_type");
   }
 }
+
+
+
+
+//========================================================================
+void LocalAssembling3D::set_parameters_for_tnse_TwoPhase(LocalAssembling3D_type la_type)
+{
+  if (this->twophase_tnse == 0)
+     ErrThrow("This method can be used only for two phase TNSE assembling.");
+  unsigned int nstype       = TDatabase::ParamDB->NSTYPE;
+  unsigned int laplace_type = TDatabase::ParamDB->LAPLACETYPE;
+  if(laplace_type!=1)
+    ErrThrow("This method can be used only if LAPLACE TYPE is 1.");
+  if(laplace_type == 1 && (nstype==1 || nstype==2))
+  {
+    ErrThrow("LAPLACETYPE ", laplace_type, " is supported only for "
+               "NSTYPE 3 and 4, not for NSTYPE 1 and 2.");
+  }
+
+  if(type==LocalAssembling3D_type::TNSE3D_LinGAL)
+  {
+    this->N_Terms = 5;
+    this->Derivatives = {D100, D010, D001, D000, D000};
+    this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+    this->N_Rhs = 4;
+    this->RhsSpace = { 0, 0, 0, 0 };
+  }
+  else if(type==LocalAssembling3D_type::TNSE3D_NLGAL)
+  {
+    this->N_Terms = 4;
+    this->Derivatives = {D100, D010, D001, D000};
+    this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
+    this->N_Rhs = 0;
+    this->RhsSpace = { };
+  }
+
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Manipulate = NULL;
+
+
+  // same for all nstypes;
+  //NOTE: change according to the discretization schemes used
+  // changing needed for turbulent models and for the newton method
+  if (this->twophase_tnse  == 0) // this case is the standard TNSE case
+  {
+    this->N_Parameters = 3;
+    this->N_ParamFct = 1;
+    this->ParameterFct =  { TimeNSParamsVelo3D };
+    this->N_FEValues = 3;
+    this->FEValue_FctIndex = { 0, 1, 2 };
+    this->FEValue_MultiIndex = { D000, D000, D000 };
+    this->BeginParameter = { 0 };
+  }
+  else if (this->twophase_tnse  == 1)
+  {
+    this->N_Parameters = 5;
+    this->N_ParamFct = 1;
+    this->ParameterFct =  { TimeNSParamsVelo3D };
+    this->N_FEValues = 5;
+    this->FEValue_FctIndex = { 0, 1, 2, 3, 4 };
+    this->FEValue_MultiIndex = { D000, D000, D000, D000, D000 };
+    this->BeginParameter = { 0 };
+  }
+
+  switch(la_type)
+  {
+    case LocalAssembling3D_type::TNSE3D_LinGAL:
+    {
+       switch(nstype)
+       {
+         case 3:
+           this->N_Matrices = 13;
+           this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+           this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+           this->AssembleParam = TimeNSType3GalerkinDD3D;
+           break;
+         case 4:
+           this->N_Matrices = 16;
+           this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
+           this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+//           this->N_Rhs = 4;
+//           this->RhsSpace = { 0, 0, 0, 1};
+           this->AssembleParam = TimeNSType4GalerkinDD3D;
+           break;
+         default:
+          ErrThrow("Only NSType 3 or 4 must be used for TNSE3D with variable fields."
+              "When there is Slip BC or Smagorinksy"
+              ", use exclusively NSTYPE4.");
+       }
+    }
+    break;
+    // local assembling of nonlinear term
+    case LocalAssembling3D_type::TNSE3D_NLGAL:
+    {
+       switch(nstype)
+       {
+         case 3:
+         case 4:
+           this->N_Matrices = 3;
+           this->RowSpace    = { 0, 0, 0};
+           this->ColumnSpace = { 0, 0, 0};
+           this->AssembleParam = TimeNSType3_4NLGalerkinDD3D;
+           break;
+         default:
+           ErrThrow("Only NSType 3 or 4 must be used for TNSE3D with variable fields."
+               "When there is Slip BC or Smagorinksy"
+               ", use exclusively NSTYPE4.");
+       }
+    }
+    break;
+    // local assembling of right hand side
+    case LocalAssembling3D_type::TNSE3D_Rhs:
+    {
+       this->N_Terms = 1;
+       this->Derivatives = { D000 };
+       this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+       this->N_Matrices = 0;
+       this->RowSpace = { };
+       this->ColumnSpace = { };
+       this->N_Rhs = 4 ; // TODO The case NSTYPE4 has to be implemented
+       this->RhsSpace = {0, 0, 0, 0};
+       this->AssembleParam =TimeNSRHS3D;
+    }
+    break;
+    case LocalAssembling3D_type::TNSE3D_Mass:
+    {
+       this->N_Terms = 1;
+       this->Derivatives = { D000 };
+       this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+       this->N_Matrices = 1;
+       this->RowSpace = { 0 };
+       this->ColumnSpace = { 0 };
+       this->N_Rhs = 0 ; // TODO The case NSTYPE4 has to be implemented
+       this->RhsSpace = { };
+//       this->AssembleParam =TimeNSRHS3D;
+    }
+    break;
+    default:
+      ErrThrow("Wrong LocalAssembling3D_type for set_parameters_for_tnse.");
+  }
+}
+

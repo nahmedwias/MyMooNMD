@@ -43,6 +43,7 @@ enum class LocalAssembling3D_type { CD3D, /// Stationary convection diffusion re
                                     TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
                                     TNSE3D_NLGAL,    /// Non-linear part of time-dependant NS in 3D
                                     TNSE3D_Rhs,      /// Rhs part of time-dependent NS in 3D
+                                    TNSE3D_Mass,
                                     Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
 
@@ -156,6 +157,12 @@ class LocalAssembling3D
      */
     /// standard case
     void set_parameters_for_tnse(LocalAssembling3D_type type);
+
+    /**
+     */
+    void set_parameters_for_tnse_TwoPhase(LocalAssembling3D_type type);
+
+
     /// SMAGORINSKY model
     void set_parameters_for_tnse_smagorinsky(LocalAssembling3D_type type);
   public:
