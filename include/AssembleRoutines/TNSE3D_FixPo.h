@@ -971,6 +971,36 @@ void TimeNSType3GalerkinJ3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
 
+
+/* *************BELOW THIS LINE USER SPECIFIC CODE **********/
+
+void TimeNSRHS3D_dimensional(double Mult, double *coeff,
+               double *param, double hK,
+               double **OrigValues, int *N_BaseFuncts,
+               double ***LocMatrices, double **LocRhs);
+
+void TimeNSType3_4NLGalerkinDD3D_dimensional(double Mult, double *coeff,
+                double *param, double hK,
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs);
+
+void TimeNSType4GalerkinDD3D_dimensional(double Mult, double *coeff,
+                double *param, double hK,
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs);
+
+void TimeNSType3GalerkinDD3D_dimensional(double Mult, double *coeff,
+                double *param, double hK,
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs);
+
+void TimeNSParamsVelo3D_dimensional(double *in, double *out);
+
+void TimeNSType3_4GalerkinDD3DMass_dimensional(double Mult, double *coeff,
+                double *param, double hK,
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs);
+
 #endif
 
 
