@@ -26,6 +26,7 @@
 #include <Residuals.h>
 #include <FESpace3D.h>
 #include <Example_TimeNSE3D.h>
+#include <LocalAssembling3D.h>
 
 #include <ParameterDatabase.h>
 #include <Solver.h>
@@ -184,12 +185,22 @@ class Time_NSE3D
     /** @brief old time step length used to scale the pressure blocks */
     double oldtau_;
 
+    /** @brief parameter to store the space_discretization_type
+     * used in TNSE3D. It can be used throughout the methods,
+     * especially in the calls to LocalAssembling object.
+     * Its main purpose is to convert the "space_discretization_type"
+     * into an "int", so that it matches the usual DISCTYPE: GALERKIN,
+     * SUPG, SMAGORINSKY, VMS_PROJECTION,...etc
+     * The default is 1 (=GALERKIN) but the real value is set
+     * in the call to check_parameters().
+     */
+    int disctype = 1;
+
     /* @brief this detects if the rho and mu coefficients are given
      *  as fe_functions in the local assembling objects, instead of
      *  taking eps=1/reynolds_number from LinCoeffs from example
      */
     bool with_variable_fluid_properties = 0;
-
 
     /** @brief set the velocity and pressure orders
      *
@@ -347,46 +358,29 @@ class Time_NSE3D
 /* *******************************************************************************/
 
     //// getters
-
-    /// Get the velocity space.
     const TFESpace3D     & get_velocity_space() const
     { return this->systems_.front().velocitySpace_; }
-
-    /// Get the pressure space.
     const TFESpace3D     & get_pressure_space() const
     { return this->systems_.front().pressureSpace_; }
-
     const TFEVectFunct3D& get_velocity() const
     { return this->systems_.front().u_; }
-
     TFEVectFunct3D& get_velocity()
     { return this->systems_.front().u_; }
-
     TFEFunction3D *get_velocity_component(int i);
-
     const TFEFunction3D& get_pressure() const
     { return this->systems_.front().p_; }
-
     TFEFunction3D& get_pressure()
     { return this->systems_.front().p_; }
-
     /// Get number of degrees of freedom.
     const int get_size() const
     { return this->systems_.front().solution_.length(); }
-
-    /// Get the stored database.
     const ParameterDatabase & get_db() const
     { return db_; }
-
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;
-    /// @brief get the current impulse residual (updated in compute_residuals)
     double get_impulse_residual() const;
-    /// @brief get the current mass residual (updated in compute_residuals)
     double get_mass_residual() const;
-    /// @brief get the current residual (updated in compute_residuals)
     double get_full_residual() const;
-
     /** @brief return the computed errors (computed in output()) */
     std::array<double, int(6)> get_errors() const;
 
@@ -410,6 +404,26 @@ class Time_NSE3D
                             TFEFunction3D* phi)
     { this->rho_fefunct = rho; this->mu_fefunct = mu;
       this->phase_field = phi; }
+
+
+    private:
+
+    /* @brief Set the fe_functions to prepare
+     * the local assembling object. It is basically to improve
+     * the readability of the code.   */
+    void prepare_fefunc_for_localassembling(Time_NSE3D::System_per_grid& s,
+                                            std::vector<TFEFunction3D*> &fe_functions);
+
+    /* @brief Set the spaces and matrices to prepare
+     * the call to Assemble. It is basically to improve
+     * the readability of the code.   */
+    void prepare_spaces_and_matrices_for_assemble(Time_NSE3D::System_per_grid& s,
+                                                  LocalAssembling3D_type type,
+                                                  std::vector<const TFESpace3D*> &spaces,
+                                                  std::vector<const TFESpace3D*> &spaces_rhs,
+                                                  std::vector<TSquareMatrix3D*> &sqMat,
+                                                  std::vector<TMatrix3D*> &rectMat,
+                                                  std::vector<double*> &rhs);
 
 };
 
