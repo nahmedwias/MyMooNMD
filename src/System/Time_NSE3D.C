@@ -580,12 +580,26 @@ void Time_NSE3D::assemble_initial_time()
     if(do_upwinding)
     {
       double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
-      for(auto mat : sqMatrices)
+      switch(TDatabase::ParamDB->NSTYPE)
       {
-        UpwindForNavierStokes3D(mat, fe_functions[0], fe_functions[1],
-                                fe_functions[2], one_over_nu);
+        case 1:
+        case 2:
+          UpwindForNavierStokes3D(sqMatrices[0], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          Output::print<3>("UPWINDING DONE with 1 square matrices.");
+        break;
+        case 3:
+        case 4:
+        case 14:
+          UpwindForNavierStokes3D(sqMatrices[0], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          UpwindForNavierStokes3D(sqMatrices[1], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          UpwindForNavierStokes3D(sqMatrices[2], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          Output::print<3>("UPWINDING DONE with 3 square matrices.");
+          break;
       }
-      Output::print<3>("UPWINDING DONE with ", sqMatrices.size(), " square matrices.");
     }
 
     //delete the temporary feFunctions gained by GetComponent
@@ -946,12 +960,26 @@ void Time_NSE3D::assemble_nonlinear_term()
     if(do_upwinding)
     {
       double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
-      for(auto mat : sqMatrices)
+      switch(TDatabase::ParamDB->NSTYPE)
       {
-        UpwindForNavierStokes3D(mat, fe_functions[0], fe_functions[1],
-                                fe_functions[2], one_over_nu);
+        case 1:
+        case 2:
+          UpwindForNavierStokes3D(sqMatrices[0], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          Output::print<3>("UPWINDING DONE with 1 square matrices.");
+        break;
+        case 3:
+        case 4:
+        case 14:
+          UpwindForNavierStokes3D(sqMatrices[0], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          UpwindForNavierStokes3D(sqMatrices[1], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          UpwindForNavierStokes3D(sqMatrices[2], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          Output::print<3>("UPWINDING DONE with 3 square matrices.");
+          break;
       }
-      Output::print<3>("UPWINDING DONE with ", sqMatrices.size(), " square matrices.");
     }
 
     //delete the temporary feFunctions gained by GetComponent
