@@ -118,8 +118,7 @@ void compute(ParameterDatabase& db,
   {
     if (vof.nse2cd_coupling_ == true)
     {
-      //vof.phaseconvection3d_.assemble_initial_time_with_convection(&vof.tnse2d_.get_velocity());
-      ErrThrow("NOT IMPLEMENTED YET!");
+      vof.phaseconvection3d_.assemble_initial_time_with_convection(&vof.tnse3d_.get_velocity());
     }
     else
       vof.phaseconvection3d_.assemble_initial_time();
@@ -197,7 +196,7 @@ void compute(ParameterDatabase& db,
 //        tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
 //        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
 //        tcd2d.scale_stiffness_matrix();
-//        vof.phaseconvection2d_.assemble_with_convection(&vof.tnse2d_.get_velocity());
+        vof.phaseconvection3d_.assemble_with_convection(&vof.tnse3d_.get_velocity());
          }
          else  // if we solve TCD2D standard, without any coupling
          { vof.phaseconvection3d_.assemble();}

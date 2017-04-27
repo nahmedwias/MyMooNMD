@@ -83,7 +83,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
 #endif
   
   // assemble the matrices and right hand side at the start time
-  tcd3d.assemble_initial_time();
+  tcd3d.assemble_initial_time_with_convection();
   
   int step = 0;
   int imag=0;
@@ -98,7 +98,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
     TDatabase::TimeDB->CURRENTTIME += tau;
     
     Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-    tcd3d.assemble();
+    tcd3d.assemble_with_convection();
     tcd3d.solve();
     tcd3d.descale_stiffness();
     

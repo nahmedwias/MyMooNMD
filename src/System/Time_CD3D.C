@@ -6,6 +6,7 @@
 #include <Multigrid.h>
 #include <Output3D.h>
 #include <AlgebraicFluxCorrection.h>
+#include <NSE3D_FixPo.h>
 
 #include <MainUtilities.h>
 
@@ -527,11 +528,20 @@ void Time_CD3D::output(int m, int& image)
 
 //==============================================================================
 void Time_CD3D::call_assembling_routine(Time_CD3D::SystemPerGrid& system, 
-					LocalAssembling3D& la, bool assemble_both)
+					LocalAssembling3D& la, bool assemble_both, bool with_convectionfield)
 {
   int nFESpaces = 1;
-  const TFESpace3D * feSpace = &system.feSpace_;
+  const TFESpace3D * feSpace[4] = {&system.feSpace_,nullptr,nullptr,nullptr};
   
+  // Change the 2 top parameters in case there is a convection field as Parameter
+  if (with_convectionfield)
+  {
+    nFESpaces = 4;
+    feSpace[1] = la.get_fe_function(1)->GetFESpace3D();
+    feSpace[2] = la.get_fe_function(2)->GetFESpace3D();
+    feSpace[3] = la.get_fe_function(3)->GetFESpace3D();
+  }
+
   std::vector<std::shared_ptr<FEMatrix>> stiffBlock = 
                     system.stiffMatrix_.get_blocks_uniquely();
   std::vector<std::shared_ptr<FEMatrix>> massBlock = 
@@ -562,11 +572,11 @@ void Time_CD3D::call_assembling_routine(Time_CD3D::SystemPerGrid& system,
   system.rhs_.reset(); // reset to zeros 
   const TFESpace3D *feSpaceRhs = &system.feSpace_;
   
-  BoundCondFunct3D * boundCond = feSpace->getBoundCondition();
+  BoundCondFunct3D * boundCond = feSpace[0]->getBoundCondition();
   
   BoundValueFunct3D * boundValue[1]{example_.get_bd()[0]};  
   
-  Assemble3D(nFESpaces, &feSpace, nsqMatrices, sqMatrices, 
+  Assemble3D(nFESpaces, feSpace, nsqMatrices, sqMatrices,
 	       nRectMatrices, recMatrices, nRhs, &rhsEntries, &feSpaceRhs, 
 	       &boundCond, boundValue, la);
 }
@@ -678,3 +688,232 @@ void Time_CD3D::do_algebraic_flux_correction()
         "to class Time_CD3D.");
   }
 }
+
+
+/* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+void Time_CD3D::assemble_initial_time_with_convection
+(const TFEVectFunct3D* convection_field)
+{
+  LocalAssembling3D_type allMatrices = LocalAssembling3D_type::TCD3D;
+  for(auto &s : this->systems_)
+  {
+    bool with_convection_field = false;
+
+    TFEFunction3D *feFunction[4] = {&s.feFunction_, nullptr,nullptr,nullptr};
+    LocalAssembling3D la(allMatrices, feFunction, example_.get_coeffs());
+
+
+    if (convection_field)    // assembles initial RHS and Stiffness with convection field
+    {
+      with_convection_field = true;
+
+      // HERE IS THE CODE TO SET UP THE CONVECTION FIELD FOR LOCAL ASSEMBLING OBJECT
+
+      // this awful call is due to the way a TFEVectFunct3D creates new dynamically
+      // allocated TFEFunction3D objects
+      TFEFunction3D* convection_x = convection_field->GetComponent(0);
+      TFEFunction3D* convection_y = convection_field->GetComponent(1);
+      TFEFunction3D* convection_z = convection_field->GetComponent(2);
+
+      // we assume convection x,y,z are in the same space...
+      int Ndof_convection     = convection_x->GetFESpace3D()->GetN_DegreesOfFreedom();
+      int Ndof_thisfefunction = s.feSpace_.GetN_DegreesOfFreedom();
+
+      // step 1: check if the spaces "this->systems.fe_space" and
+      // "convection_field->GetFESpace3D()" are the same.
+      if (Ndof_convection != Ndof_thisfefunction)
+      {
+        Output::info<3>("Time_CD3D", "The spaces of the convection field and the "
+            "scalar field are not the same.");
+      }
+
+      //step 2: fill up the new fe function array
+      feFunction[1] = convection_x;
+      feFunction[2] = convection_y;
+      feFunction[3] = convection_z;
+
+      // step 3 - set all the 'parameter'-related values in la accordingly
+      // set up the input...
+      std::vector<int> beginParameter = {0};
+      std::vector<int> feValueFctIndex = {1,2,3};
+      std::vector<MultiIndex3D> feValueMultiIndex = {D000, D000, D000};
+      int N_parameters = 3; // three parameters...
+      int N_feValues = 3;   //..both of which stem from the evaluation of fe fcts
+      int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+
+      // chose the parameter function ("in-out function") which shears away
+      // the first 3 "in" values (x,y,z) and passes only u_x,u_y,u_z
+      std::vector<ParamFct*> parameterFct = {NSParamsVelo3D};
+
+      // ...and call the corresponding setters
+      la.setBeginParameter(beginParameter);
+      la.setFeFunctions3D(feFunction); //reset - now velo comp included
+      la.setFeValueFctIndex(feValueFctIndex);
+      la.setFeValueMultiIndex(feValueMultiIndex);
+      la.setN_Parameters(N_parameters);
+      la.setN_FeValues(N_feValues);
+      la.setN_ParamFct(N_paramFct);
+      la.setParameterFct(parameterFct);
+      //...this should do the trick
+      //===============================================================END CODE
+    }
+
+    // Assemble stiffness, mass matrices and the rhs. Initially it is independent
+    // that which method is used.
+    call_assembling_routine(s, la, true, with_convection_field);
+
+    // initialize old_Au
+    s.update_old_Au();
+  }
+  SystemPerGrid& s = this->systems_.front();
+  old_rhs = s.rhs_;
+}
+
+
+void Time_CD3D::assemble_with_convection
+(const TFEVectFunct3D* convection_field)
+{
+  // In the case of SUPG: local assemble function itself take care of the
+  // number of matrices. One have to assemble also the weighted mass matrix
+  // which comes from the time discretization of the SUPG method. We have
+  // to assemble the Mass matrix also for each time step due to the convection
+  // field which might also depend on time as well.
+  LocalAssembling3D_type stiffMatrixRhs = LocalAssembling3D_type::TCD3DStiffRhs;
+  for(auto &s : this->systems_)
+  {
+    bool with_convection_field = false;
+    TFEFunction3D *feFunction[4] = {&s.feFunction_,nullptr,nullptr,nullptr};
+    LocalAssembling3D la(stiffMatrixRhs, feFunction, example_.get_coeffs());
+
+    if (convection_field)    // assembles initial RHS and Stiffness with convection field
+    {
+      with_convection_field = true;
+
+      // HERE IS THE CODE TO SET UP THE CONVECTION FIELD FOR LOCAL ASSEMBLING OBJECT
+
+      // this awful call is due to the way a TFEVectFunct3D creates new dynamically
+      // allocated TFEFunction3D objects
+      TFEFunction3D* convection_x = convection_field->GetComponent(0);
+      TFEFunction3D* convection_y = convection_field->GetComponent(1);
+      TFEFunction3D* convection_z = convection_field->GetComponent(2);
+
+      // we assume convection x,y,z are in the same space...
+      int Ndof_convection     = convection_x->GetFESpace3D()->GetN_DegreesOfFreedom();
+      int Ndof_thisfefunction = s.feSpace_.GetN_DegreesOfFreedom();
+
+      // step 1: check if the spaces "this->systems.fe_space" and
+      // "convection_field->GetFESpace3D()" are the same.
+      if (Ndof_convection != Ndof_thisfefunction)
+      {
+        Output::info<3>("Time_CD3D", "The spaces of the convection field and the "
+            "scalar field are not the same.");
+      }
+
+      //step 2: fill up the new fe function array
+      feFunction[1] = convection_x;
+      feFunction[2] = convection_y;
+      feFunction[3] = convection_z;
+
+      // step 3 - set all the 'parameter'-related values in la accordingly
+      // set up the input...
+      std::vector<int> beginParameter = {0};
+      std::vector<int> feValueFctIndex = {1,2,3};
+      std::vector<MultiIndex3D> feValueMultiIndex = {D000, D000, D000};
+      int N_parameters = 3; // three parameters...
+      int N_feValues = 3;   //..both of which stem from the evaluation of fe fcts
+      int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+
+      // chose the parameter function ("in-out function") which shears away
+      // the first 3 "in" values (x,y,z) and passes only u_x,u_y,u_z
+      std::vector<ParamFct*> parameterFct = {NSParamsVelo3D};
+
+      // ...and call the corresponding setters
+      la.setBeginParameter(beginParameter);
+      la.setFeFunctions3D(feFunction); //reset - now velo comp included
+      la.setFeValueFctIndex(feValueFctIndex);
+      la.setFeValueMultiIndex(feValueMultiIndex);
+      la.setN_Parameters(N_parameters);
+      la.setN_FeValues(N_feValues);
+      la.setN_ParamFct(N_paramFct);
+      la.setParameterFct(parameterFct);
+      //...this should do the trick
+      //===============================================================END CODE
+    }
+
+
+
+
+    // call assembling routine
+    if(db["space_discretization_type"].is("galerkin"))
+    {
+      call_assembling_routine(s, la, false, with_convection_field);
+    }
+    else if(db["space_discretization_type"].is("supg"))
+    {
+      call_assembling_routine(s, la, true, with_convection_field);
+    }
+  }
+
+  // here the modifications due to time discretization begin
+  if (!db["algebraic_flux_correction"].is("none") )
+  {
+    do_algebraic_flux_correction();
+    return; // modifications due to time discretization are per-
+            // formed inside the afc scheme, so step out here!
+  }
+
+  // preparing the right hand side
+  double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double theta1 = TDatabase::TimeDB->THETA1;
+  double theta2 = TDatabase::TimeDB->THETA2;
+  double theta3 = TDatabase::TimeDB->THETA3;
+  double theta4 = TDatabase::TimeDB->THETA4;
+
+  SystemPerGrid & s = this->systems_.front();
+
+  if(theta4)
+  {
+    // scale the right hand side by theta4 and tau
+    s.rhs_.scaleActive(tau*theta4);
+    // add rhs from previous time step to the rhs scaled with
+    // time step length
+    if(theta3 != 0)
+      s.rhs_.addScaledActive((this->old_rhs), tau*theta3);
+    // save old rhs for the next time steps
+    if(theta3)
+    {
+      this->old_rhs.addScaledActive(s.rhs_, -1./(tau*theta3));
+      this->old_rhs.scaleActive(-theta3/theta4);
+    }
+  }
+  else
+  {
+    if(TDatabase::TimeDB->TIME_DISC == 0)
+    {
+      ErrThrow("Forward Euler method is not supported. "
+          "Choose TDatabase::TimeDB->TIME_DISC as 1 (bw Euler)"
+          " or 2 (Crank-Nicoloson)");
+    }
+  }
+  // For the SUPG method: Mass Matrix = (u, v + delta * bgrad v)
+  s.massMatrix_.apply_scaled_add_actives(s.solution_, s.rhs_, 1.0);
+  // rhs -= tau*theta2*A_old*uold
+  s.rhs_.addScaledActive(s.old_Au, -tau*theta2);
+
+
+  // copy nonactive to the solution vector
+  s.solution_.copy_nonactive(s.rhs_);
+
+  // preparing the left hand side; stiffness matrix is scaled by
+  // tau * theta1 and adding the mass matrix to it
+  // descaling is necessary only if the coefficients depends on time
+  for(auto &s : this->systems_)
+  {
+    const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
+    s.stiffMatrix_.scale_blocks_actives(tau*theta1, cell_positions);
+
+    const FEMatrix& mass_block = *s.massMatrix_.get_blocks().at(0).get();
+    s.stiffMatrix_.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
+  }
+}
+
