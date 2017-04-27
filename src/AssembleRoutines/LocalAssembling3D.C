@@ -1550,7 +1550,7 @@ void LocalAssembling3D::set_parameters_for_tnse_TwoPhase(LocalAssembling3D_type 
   {
     this->N_Parameters = 5;
     this->N_ParamFct = 1;
-    this->ParameterFct =  { TimeNSParamsVelo3D };
+    this->ParameterFct =  { TimeNSParamsVelo3D_dimensional };
     this->N_FEValues = 5;
     this->FEValue_FctIndex = { 0, 1, 2, 3, 4 };
     this->FEValue_MultiIndex = { D000, D000, D000, D000, D000 };
@@ -1567,7 +1567,7 @@ void LocalAssembling3D::set_parameters_for_tnse_TwoPhase(LocalAssembling3D_type 
            this->N_Matrices = 13;
            this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
            this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-           this->AssembleParam = TimeNSType3GalerkinDD3D;
+           this->AssembleParam = TimeNSType3GalerkinDD3D_dimensional;
            break;
          case 4:
            this->N_Matrices = 16;
@@ -1575,7 +1575,7 @@ void LocalAssembling3D::set_parameters_for_tnse_TwoPhase(LocalAssembling3D_type 
            this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
 //           this->N_Rhs = 4;
 //           this->RhsSpace = { 0, 0, 0, 1};
-           this->AssembleParam = TimeNSType4GalerkinDD3D;
+           this->AssembleParam = TimeNSType4GalerkinDD3D_dimensional;
            break;
          default:
           ErrThrow("Only NSType 3 or 4 must be used for TNSE3D with variable fields."
@@ -1594,7 +1594,7 @@ void LocalAssembling3D::set_parameters_for_tnse_TwoPhase(LocalAssembling3D_type 
            this->N_Matrices = 3;
            this->RowSpace    = { 0, 0, 0};
            this->ColumnSpace = { 0, 0, 0};
-           this->AssembleParam = TimeNSType3_4NLGalerkinDD3D;
+           this->AssembleParam = TimeNSType3_4NLGalerkinDD3D_dimensional;
            break;
          default:
            ErrThrow("Only NSType 3 or 4 must be used for TNSE3D with variable fields."
@@ -1614,7 +1614,7 @@ void LocalAssembling3D::set_parameters_for_tnse_TwoPhase(LocalAssembling3D_type 
        this->ColumnSpace = { };
        this->N_Rhs = 4 ; // TODO The case NSTYPE4 has to be implemented
        this->RhsSpace = {0, 0, 0, 0};
-       this->AssembleParam =TimeNSRHS3D;
+       this->AssembleParam =TimeNSRHS3D_dimensional;
     }
     break;
     case LocalAssembling3D_type::TNSE3D_Mass:
@@ -1627,7 +1627,7 @@ void LocalAssembling3D::set_parameters_for_tnse_TwoPhase(LocalAssembling3D_type 
        this->ColumnSpace = { 0 };
        this->N_Rhs = 0 ; // TODO The case NSTYPE4 has to be implemented
        this->RhsSpace = { };
-//       this->AssembleParam =TimeNSRHS3D;
+       this->AssembleParam =TimeNSType3_4GalerkinDD3DMass_dimensional;
     }
     break;
     default:
