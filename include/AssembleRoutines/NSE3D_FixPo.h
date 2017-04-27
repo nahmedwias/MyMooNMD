@@ -17,6 +17,7 @@
 
 double RFB_Parameter3D(double hK, double eps, double* b);
 
+void NSParamsVelo3D(double *in, double *out);
 
 // ======================================================================
 // Type 1, Standard Galerkin

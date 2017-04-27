@@ -13,6 +13,7 @@
 #ifndef __Time_CD3D__
 #define __Time_CD3D__
 
+#include <FEVectFunct3D.h>
 #include <FEFunction3D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
@@ -295,7 +296,18 @@ class Time_CD3D
      * assembled, if false only stiffness matrix and rhs.
      */
     void call_assembling_routine(Time_CD3D::SystemPerGrid& system,
-                                 LocalAssembling3D& la_stiff, bool assemble_both);
+                                 LocalAssembling3D& la_stiff,
+                                 bool assemble_both, bool with_convectionfield =0);
+
+
+
+    /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+    public:
+      void assemble_initial_time_with_convection
+      (const TFEVectFunct3D* convection_field = nullptr);
+      void assemble_with_convection
+      (const TFEVectFunct3D* convection_field = nullptr);
+
 };
 
 #endif
