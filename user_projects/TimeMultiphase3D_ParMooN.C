@@ -266,13 +266,12 @@ int main(int argc, char* argv[])
         Output::print<1>("<<<<<<<<<<<<<<<<<< NOW SOLVING CONVECTION  >>>>>>>>>>>>>");
       if (vof.nse2cd_coupling_ == true)
       {
-        ErrThrow("Not implemented yet!");
 //        tcd2d.assemble_rhs_vector(&tnse2d.get_velocity()); // once per time step
 //        tcd2d.assemble_stiffness_matrix_alone_with_convection(&tnse2d.get_velocity());
 //        tcd2d.scale_stiffness_matrix();
         vof.phaseconvection3d_.assemble_with_convection(&vof.tnse3d_.get_velocity());
       }
-      else  // if we solve TCD2D standard, without any coupling
+      else  // if we solve TCD3D standard, without any coupling
       { vof.phaseconvection3d_.assemble();}
 
       /* this is a quick workaround needed because of the
@@ -310,6 +309,7 @@ int main(int argc, char* argv[])
                                 std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
     vof.tnse3d_.output(step,image);
+
     if(vof.solve_convection_ == true)
     {
       if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
