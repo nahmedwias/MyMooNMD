@@ -478,10 +478,9 @@ void Time_CD3D::output(int m, int& image)
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
     std::array<double, 5> locError = {};
     const TFESpace3D* space = s.feFunction_.GetFESpace3D();
-    cout << "FINISH!!!" << endl;
-    exit(0);
+
     s.feFunction_.GetErrors(example_.get_exact(0), 4, allDerivatives, 2, 
-                            SDFEMErrors, example_.get_coeffs(), &aux, 1, &space,
+                            L2H1Errors, example_.get_coeffs(), &aux, 1, &space,
                             locError.data());
 
 #ifdef _MPI

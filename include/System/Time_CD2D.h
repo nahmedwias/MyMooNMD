@@ -200,7 +200,7 @@ class Time_CD2D
     void solve();
     
     /// @brief measure errors and write solution
-    void output();
+    void output(const TFEVectFunct2D* convection_field = nullptr);
      // getters and setters
     const Example_TimeCD2D& get_example() const
     { return example; }

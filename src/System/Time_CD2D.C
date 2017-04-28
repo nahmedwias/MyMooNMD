@@ -393,7 +393,7 @@ void Time_CD2D::solve()
 }
 
 /**************************************************************************** */
-void Time_CD2D::output()
+void Time_CD2D::output(const TFEVectFunct2D* convection_field)
 {
   bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
   if(no_output)
@@ -404,13 +404,35 @@ void Time_CD2D::output()
   if(db["output_compute_errors"])
   {
     double loc_e[5];
-    TAuxParam2D aux;
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
     const TFESpace2D* space = fe_function.GetFESpace2D();
-    
-    fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
-                          SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
-                          &space, loc_e);
+
+    if (convection_field == nullptr)
+    {
+      TAuxParam2D empty_aux;//empty constructor per default
+      fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
+                            SDFEMErrors, this->example.get_coeffs(), &empty_aux, 1,
+                            &space, loc_e);
+    }
+    else
+    {
+      // construct appropriate aux, to be used in GetErrors with
+      // coeffs using the convection field
+      TFEFunction2D* convection_x = convection_field->GetComponent(0);
+      TFEFunction2D* convection_y = convection_field->GetComponent(1);
+      TFEFunction2D* fe_funct[2] = {convection_x,convection_y};
+      const TFESpace2D* spaces = fe_funct[0]->GetFESpace2D();
+      int beginParameter[1] = {0};
+      int feValueFctIndex[2] = {0,1};
+      MultiIndex2D feValueMultiIndex[2] = {D00, D00};
+      ParamFct* parameterFct[1] = {NSParamsVelo};
+      TAuxParam2D aux(1,2,1,2, &spaces
+                    ,fe_funct,parameterFct,feValueFctIndex,
+                    feValueMultiIndex, 2, beginParameter);
+      fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
+                            SDFEMErrors, this->example.get_coeffs(), &aux, 1,
+                            &space, loc_e);
+    }
     
     Output::print<1>("time: ", TDatabase::TimeDB->CURRENTTIME);
     Output::print<1>("  L2: ", loc_e[0]);

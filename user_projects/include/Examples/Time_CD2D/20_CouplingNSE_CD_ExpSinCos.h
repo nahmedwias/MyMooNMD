@@ -70,8 +70,8 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
 
     b1 = parameters[i][0]; // convection coefficient v_x
     b2 = parameters[i][1]; // convection coefficient v_y
-
-//    cout << b1 << " " << b2 << " ";
+//    b1=1; b2=-1;
+    std::cout << b1 << " " << b2 << " ";
     coeff[0] = eps;
     coeff[1] = b1;
     coeff[2] = b2;
