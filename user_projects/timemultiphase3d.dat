@@ -9,7 +9,7 @@ vms_projection_space_order: 0
 example: 20   [ -2, 100 ]
 USE_ISOPARAMETRIC: 1
 
-ENDTIME: 0.1
+ENDTIME: 0.5
 TIMESTEPLENGTH: 0.1
 
 fluid_density: 1.   [ 0, 1e6 ]

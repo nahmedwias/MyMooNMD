@@ -426,9 +426,8 @@ void Time_CD2D::output(const TFEVectFunct2D* convection_field)
       int feValueFctIndex[2] = {0,1};
       MultiIndex2D feValueMultiIndex[2] = {D00, D00};
       ParamFct* parameterFct[1] = {NSParamsVelo};
-      TAuxParam2D aux(1,2,1,2, &spaces
-                    ,fe_funct,parameterFct,feValueFctIndex,
-                    feValueMultiIndex, 2, beginParameter);
+      TAuxParam2D aux(1,2,1,2, &spaces, fe_funct, parameterFct,
+                      feValueFctIndex, feValueMultiIndex, 2, beginParameter);
       fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
                             SDFEMErrors, this->example.get_coeffs(), &aux, 1,
                             &space, loc_e);

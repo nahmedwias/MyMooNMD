@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
     if(vof.solve_convection_ == true)
     {
       if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-        vof.phaseconvection3d_.output(step,image);
+        vof.phaseconvection3d_.output(step,image,&vof.tnse3d_.get_velocity());
     }
 //        vof.tnse3d_.get_solution().write("solution_velocity");
     }
