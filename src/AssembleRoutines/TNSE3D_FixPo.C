@@ -9036,23 +9036,165 @@ void TimeNSParamsVelo_GradVelo_LargeScale3D(double *in, double *out)
 
 
 /* *************BELOW THIS LINE USER SPECIFIC CODE **********/
-
-void TimeNSRHS3D_dimensional(double Mult, double *coeff,
-               double *param, double hK,
-               double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs)
-{
-
-}
-
-
-
-void TimeNSType3_4NLGalerkinDD3D_dimensional(double Mult, double *coeff,
+void TimeNSType3GalerkinDD3D_dimensional(double Mult, double *coeff,
                 double *param, double hK,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
+  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
+  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
+  double **MatrixA33;
+  double **MatrixM11, **MatrixM22, **MatrixM33;
+  double **MatrixB1, **MatrixB2,  **MatrixB3;
+  double *Rhs1, *Rhs2, *Rhs3, val, val1;
+  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
+  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
+  double *Matrix33Row;
+  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixRow1, *MatrixRow2, *MatrixRow3;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double test000, test100, test010, test001;
+  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
+  int i,j,N_U, N_P;
+  double c1, c2, c3;//c0,
+  double u1, u2, u3, rho, mu;
 
+  MatrixA11 = LocMatrices[0];
+  MatrixA12 = LocMatrices[1];
+  MatrixA13 = LocMatrices[2];
+  MatrixA21 = LocMatrices[3];
+  MatrixA22 = LocMatrices[4];
+  MatrixA23 = LocMatrices[5];
+  MatrixA31 = LocMatrices[6];
+  MatrixA32 = LocMatrices[7];
+  MatrixA33 = LocMatrices[8];
+  MatrixM11 = LocMatrices[9];
+  MatrixM22 = LocMatrices[10];
+  MatrixM33 = LocMatrices[11];
+  MatrixB1  = LocMatrices[12];
+  MatrixB2  = LocMatrices[13];
+  MatrixB3  = LocMatrices[14];
+
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+  Rhs3 = LocRhs[2];
+
+  N_U = N_BaseFuncts[0];
+  N_P = N_BaseFuncts[1];
+
+  Orig0 = OrigValues[0]; // u_x
+  Orig1 = OrigValues[1]; // u_y
+  Orig2 = OrigValues[2]; // u_y
+  Orig3 = OrigValues[3]; // u
+  Orig4 = OrigValues[4]; // p
+
+//  c0 = coeff[0]; // nu
+  c1 = coeff[1]; // f1
+  c2 = coeff[2]; // f2
+  c3 = coeff[3]; // f3
+
+  u1 = param[0]; // u1old
+  u2 = param[1]; // u2old
+  u3 = param[2]; // u3old
+  rho = param[3];  // rho_field taken from param
+  mu = param[4];  // mu_field taken from param
+
+  for(i=0;i<N_U;i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix12Row = MatrixA12[i];
+    Matrix13Row = MatrixA13[i];
+    Matrix21Row = MatrixA21[i];
+    Matrix22Row = MatrixA22[i];
+    Matrix23Row = MatrixA23[i];
+    Matrix31Row = MatrixA31[i];
+    Matrix32Row = MatrixA32[i];
+    Matrix33Row = MatrixA33[i];
+    MatrixM11Row  = MatrixM11[i];
+    MatrixM22Row  = MatrixM22[i];
+    MatrixM33Row  = MatrixM33[i];
+
+    test100 = Orig0[i];
+    test010 = Orig1[i];
+    test001 = Orig2[i];
+    test000 = Orig3[i];
+
+    Rhs1[i] += rho*Mult*test000*c1;
+    Rhs2[i] += rho*Mult*test000*c2;
+    Rhs3[i] += rho*Mult*test000*c3;
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
+
+      val1 = rho*(u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      val  = mu*(2*test100*ansatz100+test010*ansatz010
+                   +test001*ansatz001);
+      val += val1;
+      Matrix11Row[j] += Mult * val;
+
+      val  = mu*(test010*ansatz100);
+      Matrix12Row[j] += Mult * val;
+
+      val  = mu*(test001*ansatz100);
+      Matrix13Row[j] += Mult * val;
+
+      val  = mu*(test100*ansatz010);
+      Matrix21Row[j] += Mult * val;
+
+      val  = mu*(test100*ansatz100+2*test010*ansatz010
+                   +test001*ansatz001);
+      val += val1;
+      Matrix22Row[j] += Mult * val;
+
+      val  = mu*(test001*ansatz010);
+      Matrix23Row[j] += Mult * val;
+
+      val  = mu*(test100*ansatz001);
+      Matrix31Row[j] += Mult * val;
+
+      val  = mu*(test010*ansatz001);
+      Matrix32Row[j] += Mult * val;
+
+      val  = mu*(test100*ansatz100+test010*ansatz010
+                   +2*test001*ansatz001);
+      val += val1;
+      Matrix33Row[j] += Mult * val;
+
+      val = rho*Mult*(ansatz000*test000);
+      MatrixM11Row[j] += val;
+      MatrixM22Row[j] += val;
+      MatrixM33Row[j] += val;
+    } // endfor j
+  } // endfor i
+
+  for(i=0;i<N_P;i++)
+  {
+    MatrixRow1 = MatrixB1[i];
+    MatrixRow2 = MatrixB2[i];
+    MatrixRow3 = MatrixB3[i];
+
+    test000 = Orig4[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+
+      val = -rho*Mult*test000*ansatz100;
+      MatrixRow1[j] += val;
+
+      val = -rho*Mult*test000*ansatz010;
+      MatrixRow2[j] += val;
+
+      val = -rho*Mult*test000*ansatz001;
+      MatrixRow3[j] += val;
+    } // endfor j
+  } // endfor i
 }
 
 
@@ -9062,24 +9204,289 @@ void TimeNSType4GalerkinDD3D_dimensional(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
+  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
+  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
+  double **MatrixA33;
+  double **MatrixM11;//, **MatrixM22, **MatrixM33;
+  double **MatrixB1, **MatrixB2,  **MatrixB3;
+  double **MatrixB1T, **MatrixB2T,  **MatrixB3T;
+  double *Rhs1, *Rhs2, *Rhs3, val;
+  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
+  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
+  double *Matrix33Row;
+  double *MatrixM11Row;//, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixRow1, *MatrixRow2, *MatrixRow3;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double test000, test100, test010, test001;
+  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
+  int i,j,N_U, N_P;
+  double  c1, c2, c3;// c0,
+  double u1, u2, u3, rho, mu;
 
-}
+  MatrixA11 = LocMatrices[0];
+  MatrixA12 = LocMatrices[1];
+  MatrixA13 = LocMatrices[2];
+  MatrixA21 = LocMatrices[3];
+  MatrixA22 = LocMatrices[4];
+  MatrixA23 = LocMatrices[5];
+  MatrixA31 = LocMatrices[6];
+  MatrixA32 = LocMatrices[7];
+  MatrixA33 = LocMatrices[8];
+  MatrixM11 = LocMatrices[9];
+//  MatrixM22 = LocMatrices[10];
+//  MatrixM33 = LocMatrices[11];
+  MatrixB1  = LocMatrices[10];
+  MatrixB2  = LocMatrices[11];
+  MatrixB3  = LocMatrices[12];
+  MatrixB1T = LocMatrices[13];
+  MatrixB2T = LocMatrices[14];
+  MatrixB3T = LocMatrices[15];
 
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+  Rhs3 = LocRhs[2];
 
+  N_U = N_BaseFuncts[0];
+  N_P = N_BaseFuncts[1];
 
-void TimeNSType3GalerkinDD3D_dimensional(double Mult, double *coeff,
-                double *param, double hK,
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
-{
+  Orig0 = OrigValues[0]; // u_x
+  Orig1 = OrigValues[1]; // u_y
+  Orig2 = OrigValues[2]; // u_y
+  Orig3 = OrigValues[3]; // u
+  Orig4 = OrigValues[4]; // p
 
+//  c0 = coeff[0]; // nu
+  c1 = coeff[1]; // f1
+  c2 = coeff[2]; // f2
+  c3 = coeff[3]; // f3
+
+  u1 = param[0]; // u1old
+  u2 = param[1]; // u2old
+  u3 = param[2]; // u3old
+  rho = param[3]; //rho_field taken as param
+  mu = param[4]; //mu_field taken as param
+
+  for(i=0;i<N_U;i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix12Row = MatrixA12[i];
+    Matrix13Row = MatrixA13[i];
+    Matrix21Row = MatrixA21[i];
+    Matrix22Row = MatrixA22[i];
+    Matrix23Row = MatrixA23[i];
+    Matrix31Row = MatrixA31[i];
+    Matrix32Row = MatrixA32[i];
+    Matrix33Row = MatrixA33[i];
+    MatrixM11Row  = MatrixM11[i];
+//    MatrixM22Row  = MatrixM22[i];
+//    MatrixM33Row  = MatrixM33[i];
+
+    test100 = Orig0[i];
+    test010 = Orig1[i];
+    test001 = Orig2[i];
+    test000 = Orig3[i];
+
+    Rhs1[i] += rho*Mult*test000*c1;
+    Rhs2[i] += rho*Mult*test000*c2;
+    Rhs3[i] += rho*Mult*test000*c3;
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
+
+      val  = mu*(2*test100*ansatz100+test010*ansatz010
+                   +test001*ansatz001);
+      val += rho*(u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      Matrix11Row[j] += Mult * val;
+
+      val  = mu*(test010*ansatz100);
+      Matrix12Row[j] += Mult * val;
+
+      val  = mu*(test001*ansatz100);
+      Matrix13Row[j] += Mult * val;
+
+      val  = mu*(test100*ansatz010);
+      Matrix21Row[j] += Mult * val;
+
+      val  = mu*(test100*ansatz100+2*test010*ansatz010
+                   +test001*ansatz001);
+      val += rho*(u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      Matrix22Row[j] += Mult * val;
+
+      val  = mu*(test001*ansatz010);
+      Matrix23Row[j] += Mult * val;
+
+      val  = mu*(test100*ansatz001);
+      Matrix31Row[j] += Mult * val;
+
+      val  = mu*(test010*ansatz001);
+      Matrix32Row[j] += Mult * val;
+
+      val  = mu*(test100*ansatz100+test010*ansatz010
+                   +2*test001*ansatz001);
+      val += rho*(u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      Matrix33Row[j] += Mult * val;
+
+      val = rho*Mult*(ansatz000*test000);
+      MatrixM11Row[j] += val;
+//      MatrixM22Row[j] += val;
+//      MatrixM33Row[j] += val;
+    } // endfor j
+
+    MatrixRow1 = MatrixB1T[i];
+    MatrixRow2 = MatrixB2T[i];
+    MatrixRow3 = MatrixB3T[i];
+    for(j=0;j<N_P;j++)
+    {
+      ansatz000 = Orig4[j];
+
+      val = -rho*Mult*ansatz000*test100;
+      MatrixRow1[j] += val;
+      val = -rho*Mult*ansatz000*test010;
+      MatrixRow2[j] += val;
+      val = -rho*Mult*ansatz000*test001;
+      MatrixRow3[j] += val;
+    }
+  } // endfor i
+
+  for(i=0;i<N_P;i++)
+  {
+    MatrixRow1 = MatrixB1[i];
+    MatrixRow2 = MatrixB2[i];
+    MatrixRow3 = MatrixB3[i];
+
+    test000 = Orig4[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+
+      val = -rho*Mult*test000*ansatz100;
+      MatrixRow1[j] += val;
+
+      val = -rho*Mult*test000*ansatz010;
+      MatrixRow2[j] += val;
+
+      val = -rho*Mult*test000*ansatz001;
+      MatrixRow3[j] += val;
+    } // endfor j
+  } // endfor i
 }
 
 
 
 void TimeNSParamsVelo3D_dimensional(double *in, double *out)
 {
+  out[0] = in[3]; // u1old
+  out[1] = in[4]; // u2old
+  out[2] = in[5]; // u3old
+  out[3] = in[6]; // rho_field
+  out[4] = in[7]; // mu_field
+}
 
+
+
+void TimeNSRHS3D_dimensional(double Mult, double *coeff,
+               double *param, double hK,
+               double **OrigValues, int *N_BaseFuncts,
+               double ***LocMatrices, double **LocRhs)
+{
+  double *Rhs1, *Rhs2, *Rhs3;
+  double test000;
+  double *Orig0;
+  int i, N_U;
+  double c1, c2, c3;
+  double rho;
+
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+  Rhs3 = LocRhs[2];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0]; // u
+
+  c1 = coeff[1]; // f1
+  c2 = coeff[2]; // f2
+  c3 = coeff[3]; // f3
+
+  rho = param[3];
+
+  for(i=0;i<N_U;i++)
+  {
+    test000 = Orig0[i];
+
+    Rhs1[i] += rho*Mult*test000*c1;
+    Rhs2[i] += rho*Mult*test000*c2;
+    Rhs3[i] += rho*Mult*test000*c3;
+    //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
+  } // endfor i
+}
+
+
+
+void TimeNSType3_4NLGalerkinDD3D_dimensional(double Mult, double *coeff,
+                double *param, double hK,
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11, **MatrixA22, **MatrixA33;
+  double val1;
+  double *Matrix11Row, *Matrix22Row,  *Matrix33Row;
+  double ansatz100, ansatz010, ansatz001;
+  double test000, test100, test010, test001;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j, N_U;
+//  double c0;
+  double u1, u2, u3, rho, mu;
+
+  MatrixA11 = LocMatrices[0];
+  MatrixA22 = LocMatrices[1];
+  MatrixA33 = LocMatrices[2];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0]; // u_x
+  Orig1 = OrigValues[1]; // u_y
+  Orig2 = OrigValues[2]; // u_z
+  Orig3 = OrigValues[3]; // u
+
+//  c0 = Mult*coeff[0]; // nu
+
+  u1 = param[0]; // u1old
+  u2 = param[1]; // u2old
+  u3 = param[2]; // u3old
+  rho = param[3]; // rho_field
+  mu = param[4]; // mu_field
+
+  for(i=0;i<N_U;i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix22Row = MatrixA22[i];
+    Matrix33Row = MatrixA33[i];
+    test100 = Mult*Orig0[i];
+    test010 = Mult*Orig1[i];
+    test001 = Mult*Orig2[i];
+    test000 = Mult*Orig3[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+
+      val1 = rho*(u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      val1 += mu*(test100*ansatz100+test010*ansatz010 +test001*ansatz001);
+      Matrix11Row[j] += mu*test100*ansatz100+val1;
+      Matrix22Row[j] += mu*test010*ansatz010+val1;
+      Matrix33Row[j] += mu*test001*ansatz001+val1;
+    } // endfor j
+  } // endfor i
 }
 
 
@@ -9089,5 +9496,38 @@ void TimeNSType3_4GalerkinDD3DMass_dimensional(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
+  double **MatrixM;
+  double val;
+  double *MatrixMRow;
+  double ansatz000;
+  double test000;
+  double *Orig0;
+  int i,j,N_U;
+  double rho;
 
+  MatrixM = LocMatrices[0];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0]; // u
+
+//  u1 = param[0]; // u1old
+//  u2 = param[1]; // u2old
+//  u3 = param[2]; // u3old
+  rho = param[3]; //rho_field taken as param
+//  mu = param[4]; //mu_field taken as param
+
+  for(i=0;i<N_U;i++)
+  {
+    MatrixMRow  = MatrixM[i];
+    test000 = Orig0[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz000 = Orig0[j];
+
+      val = rho*Mult*(ansatz000*test000);
+      MatrixMRow[j] += val;
+    } // endfor j
+  } // endfor i
 }
