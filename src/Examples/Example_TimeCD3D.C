@@ -23,7 +23,10 @@ namespace quadratic   // 10
 {
 #include "Time_CD3D/10_Quadratic_TCD3D.h"
 }
-
+namespace coupling20   // 20
+{
+#include "Time_CD3D/20_CouplingNSE_CD_Quadratic.h"
+}
 
 
 Example_TimeCD3D::Example_TimeCD3D(
@@ -78,6 +81,17 @@ Example_TimeCD3D::Example_TimeCD3D(
       problem_coefficients = quadratic::BilinearCoeffs;
       initialCondtion.push_back(quadratic::InitialCondition);
       quadratic::ExampleFile();
+      break;
+    }
+    case 20:        // quadratic space time, with TNSE convection field
+    {
+      using namespace coupling20;
+      exact_solution.push_back(coupling20::Exact);
+      boundary_conditions.push_back(coupling20::BoundCondition);
+      boundary_data.push_back(coupling20::BoundValue);
+      problem_coefficients = coupling20::BilinearCoeffs;
+      initialCondtion.push_back(coupling20::InitialCondition);
+      coupling20::ExampleFile();
       break;
     }
     default:
