@@ -137,8 +137,16 @@ void BoundValue_T(int BdComp, double Param, double &value)
   {
     if(VELOCITY_CODE==3)
     {
-      double x = Param*15;
-      value = temperature_bound_cond_exp(x); //TODO Cache this stuff!
+      if(BdComp == bdry_upper)
+      {
+        double x = Param*15;
+        value = temperature_bound_cond_exp(x); //TODO Cache this stuff!
+      }
+      else if(BdComp == bdry_lower)
+      {
+        double x = 15 - Param*15;
+        value = temperature_bound_cond_exp(x); //TODO Cache this stuff!
+      }
     }
     else
       value = surrounding_T; // surrounding temperature
