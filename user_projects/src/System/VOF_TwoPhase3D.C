@@ -86,6 +86,14 @@ void VOF_TwoPhase3D::manage_example_parameters()
       Output::info<5>("Example " + std::to_string(example_number_) +
                       ":all booleans must be false but solve_convection is true.");
       break;
+    case 20:
+//      this->tnse_variable_fluid_ = false;
+//      this->nse2cd_coupling_     = false;
+//      this->cd2nse_coupling_     = false;
+//      this->solve_convection_    = true;
+//      Output::info<5>("Example " + std::to_string(example_number_) +
+//                      ":all booleans must be false but solve_convection is true.");
+      break;
     default:
       ErrThrow("Unknown example number");
       break;
@@ -121,7 +129,7 @@ void VOF_TwoPhase3D::update_field_vectors()
   //At this point, rhol and mul = phase fraction
   switch(example_number_)
   {
-    case 10:
+    case 10: case 20:
       this->rho_vector_ = this->rhol_;
       this->mu_vector_ = this->mul_;
       // note that in case of standard tnse2d, these values
