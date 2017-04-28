@@ -48,6 +48,35 @@ namespace Physics
   double M_ASA = 0.18016; //molar mass of ASA (kg/mol)
 }
 
+//#####
+//## Parameter setup 3 - fastest flow
+//#####
+namespace Temperature
+{
+double T_amb = 297.5;   // ambient temperature (room temperature)
+double T_feed = 313.7;  // feed stream temperature in K
+double r_outer = 0.002; // 2mm
+double r_inner = 0.001;  // 1mm
+
+// calculate suspension heat capacity
+double m_dot_asa = 0.00015;  // kg / s
+double c_p_ASA = 1260;      // J/(kg K)
+double m_dot_EtOH = 0.00035; // kg / s
+double c_p_EtOH = 2400; // J/(kg K)
+double m_tc_t = m_dot_asa * c_p_ASA + m_dot_EtOH * c_p_EtOH;
+
+// calculate total heat transfer coefficient
+double alpha_inner = 306; // W/(m^2 K)
+double alpha_outer =  70; // W/(m^2 K)
+double lambda_tube = 0.3; // W/(m K)
+double k = 1 / (r_outer * ( 1/(r_inner*alpha_inner) + log(r_outer/r_inner)/lambda_tube + 1/(r_outer*alpha_outer)) ) ;
+}
+double temperature_bound_cond_exp( double x )
+{
+    using namespace Temperature;
+    return T_amb + (T_feed-T_amb) * std::exp( -k*2*r_outer*M_PI/(m_tc_t) * x );
+}
+
 //term responsible for the coupling on the right hand side in temperature equation
 double couplingTerm_T( const double* const params ) //must contain all that is necessary: T,c,F (zeroth moment)
 {
@@ -105,8 +134,14 @@ void BoundValue_T(int BdComp, double Param, double &value)
     value = 0;
   }
   else //wall boundary
-  {//TODO this modelling assumption is supposedly really bad.
-    value = surrounding_T; // surrounding temperature
+  {
+    if(VELOCITY_CODE==3)
+    {
+      double x = Param*15;
+      value = temperature_bound_cond_exp(x); //TODO Cache this stuff!
+    }
+    else
+      value = surrounding_T; // surrounding temperature
   }
 }
 
