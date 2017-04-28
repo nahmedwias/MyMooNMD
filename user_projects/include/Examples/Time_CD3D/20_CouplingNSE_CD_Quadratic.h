@@ -55,7 +55,8 @@ void BilinearCoeffs(int n_points, double *X, double *Y, double *Z,
     b1 = parameters[i][0]; // ux
     b2 = parameters[i][1]; // uy
     b3 = parameters[i][2]; // uz
-//    std::cout << "b1=" << b1 << " b2=" << b2 << " b3=" << b3 << " " << std::endl;
+//    b1=4;b2=3;b3=2;
+//    std::cout << b1 << " " << b2 << " " << b3 << " " ;//<< std::endl;
 
     coeff[0] = eps; //diffusion coefficient
     coeff[1] = b1;   //ux

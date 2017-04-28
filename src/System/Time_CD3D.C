@@ -419,7 +419,7 @@ void Time_CD3D::solve()
 }
 
 //==============================================================================
-void Time_CD3D::output(int m, int& image)
+void Time_CD3D::output(int m, int& image, const TFEVectFunct3D* convection_field)
 {
   bool i_am_root = true;
 #ifdef _MPI
@@ -475,13 +475,35 @@ void Time_CD3D::output(int m, int& image)
   if(db["output_compute_errors"])
   {
     MultiIndex3D allDerivatives[4] = { D000, D100, D010, D001 };
-    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
     std::array<double, 5> locError = {};
     const TFESpace3D* space = s.feFunction_.GetFESpace3D();
 
-    s.feFunction_.GetErrors(example_.get_exact(0), 4, allDerivatives, 2, 
+    if (convection_field == nullptr)
+    {
+      TAuxParam3D empty_aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+      s.feFunction_.GetErrors(example_.get_exact(0), 4, allDerivatives, 2,
+                            L2H1Errors, example_.get_coeffs(), &empty_aux, 1, &space,
+                            locError.data());
+    }
+    else
+    {
+      // construct appropriate aux, to be used in GetErrors with
+      // coeffs using the convection field
+      TFEFunction3D* convection_x = convection_field->GetComponent(0);
+      TFEFunction3D* convection_y = convection_field->GetComponent(1);
+      TFEFunction3D* convection_z = convection_field->GetComponent(2);
+      TFEFunction3D* fe_funct[3] = {convection_x,convection_y,convection_z};
+      const TFESpace3D* spaces = fe_funct[0]->GetFESpace3D();
+      int beginParameter[1] = {0};
+      int feValueFctIndex[3] = {0,1,2};
+      MultiIndex3D feValueMultiIndex[3] = {D000, D000, D000};
+      ParamFct* parameterFct[1] = {NSParamsVelo3D};
+      TAuxParam3D aux(1, 3, 1, 3, &spaces, fe_funct, parameterFct,
+                      feValueFctIndex, feValueMultiIndex, 3, beginParameter);
+      s.feFunction_.GetErrors(example_.get_exact(0), 4, allDerivatives, 2,
                             L2H1Errors, example_.get_coeffs(), &aux, 1, &space,
                             locError.data());
+    }
 
 #ifdef _MPI
     /// @todo the GetErrors method in TFEFunction3D should already to the 

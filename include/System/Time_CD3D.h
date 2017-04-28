@@ -224,7 +224,8 @@ class Time_CD3D
     /** @brief measure errors and write solution
      * 
      */
-    void output(int m, int& image);
+    void output(int m, int& image,
+                const TFEVectFunct3D* convection_field = nullptr);
     
     /**
      * @brief Check whether the program will be working with the
