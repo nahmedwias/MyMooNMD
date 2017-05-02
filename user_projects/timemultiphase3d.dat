@@ -6,10 +6,10 @@ refinement_n_initial_steps: 3
 space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 TURBULENT_VISCOSITY_CONSTANT: 0.
 vms_projection_space_order: 0
-example: -1   [ -2, 100 ]
+example: 10   [ -2, 100 ]
 USE_ISOPARAMETRIC: 1
 
-ENDTIME: 0.5
+ENDTIME: 0.1
 TIMESTEPLENGTH: 0.1
 
 fluid_density: 1.   [ 0, 1e6 ]
@@ -46,7 +46,7 @@ nonlinloop_slowfactor: 1   [ 0, 10 ]
 nonlinloop_scale_epsilon_with_size: false   { true, false }
 
 solver_type: direct   { direct, iterative }
-direct_solver_type: mumps   { mumps, pardiso, umfpack }
+direct_solver_type: umfpack   { mumps, pardiso, umfpack }
 iterative_solver_type: fgmres   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
 max_n_iterations: 100   { 0, 1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000 }
 min_n_iterations: 0   { 0, 1, 2, 3, 4, 5, 10 }
@@ -95,22 +95,28 @@ time_discretization: 2	{ 0, 1, 2, 3, 4 }
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
 
-dimensional_nse: false   { true, false }
-coupling_nse_cd: true   { true, false }
+dimensional_nse: true   { true, false }
+coupling_nse_cd: false   { true, false }
 coupling_cd_nse: false   { true, false }
-solve_cd: true   { true, false }	
+solve_cd: false   { true, false }	
 
 ## See the class 'Example' and its derived classes.
-## 0 - bsp1 (sincos)  - in the standard TNSE2D program
-## 1 - lin_space_time - in the standard TNSE2D program
-## -1- linearspacetime- in the standard TCD2D program
-## 0 - expsincos 	  - in the standard TCD2D program
-## 1 - sinsinsin	  - in the standard TCD2D program
-## 2 - sincos		  - in the standard TCD2D program
-## 3 - rotatingbodies - in the standard TCD2D program
+## 0 - lin_space_time - in the standard TNSE3D program
+## 1 - lin_constant   - in the standard TNSE3D program
+## 2 - bsp0           - in the standard TNSE3D program
+## 3 - bsp1           - in the standard TNSE3D program
+## 4 - bsp2           - in the standard TNSE3D program
+## 5 - bsp3           - in the standard TNSE3D program
+## 6 - FlowAroundCyl. - in the standard TNSE3D program
+## -2- linearspacetime- in the standard TCD3D program
+## -1- quadspacetime  - in the standard TCD3D program
 ## ONLY THE EXAMPLES BELOW SHOULD BE USED IN THE MULTIPHASE PROGRAM
-## 10- bsp1 (sincos)  - in the multiphase program - FOR TNSE2D
-## 10- SinCos    	  - in the multiphase program - FOR TCD2D
+## 10- Beltrami		  - in the multiphase program - FOR TNSE3D
+## 10- Quadratic  	  - in the multiphase program - FOR TCD3D
+## 20- CouplingQuadrat- in the multiphase program - FOR TNSE3D
+## 20- CouplingQuadrat- in the multiphase program - FOR TCD3D
+
+
 
 
 

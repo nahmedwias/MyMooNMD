@@ -346,7 +346,8 @@ void Time_NSE3D::assemble_initial_time()
     prepare_fefunc_for_localassembling(s, fe_functions);
     const LocalAssembling3D
              localAssembling(LocalAssembling3D_type::TNSE3D_LinGAL,
-                              fe_functions.data(),this->example_.get_coeffs());
+                              fe_functions.data(),this->example_.get_coeffs(),
+                              this->disctype, this->with_variable_fluid_properties);
 
     // prepare spaces, matrices and rhs for assembling
     std::vector<const TFESpace3D*> spaces_mat;
@@ -445,7 +446,8 @@ void Time_NSE3D::assemble_rhs()
   prepare_fefunc_for_localassembling(s, fe_functions);
   const LocalAssembling3D
            localAssembling(LocalAssembling3D_type::TNSE3D_Rhs,
-                            fe_functions.data(),this->example_.get_coeffs());
+                            fe_functions.data(),this->example_.get_coeffs(),
+                            this->disctype, this->with_variable_fluid_properties);
 
   // prepare spaces, matrices and rhs for assembling
   std::vector<const TFESpace3D*> spaces_mat;
@@ -583,7 +585,8 @@ void Time_NSE3D::assemble_nonlinear_term()
     prepare_fefunc_for_localassembling(s, fe_functions);
     const LocalAssembling3D
              localAssembling(LocalAssembling3D_type::TNSE3D_NLGAL,
-                              fe_functions.data(),this->example_.get_coeffs());
+                              fe_functions.data(),this->example_.get_coeffs(),
+                              this->disctype, this->with_variable_fluid_properties);
 
     // prepare spaces, matrices and rhs for assembling
     std::vector<const TFESpace3D*> spaces_mat;
@@ -1414,6 +1417,19 @@ void Time_NSE3D::prepare_spaces_and_matrices_for_assemble(Time_NSE3D::System_per
       }
       break;  // END LocalAssembleType TNSE3D_NLGAL
     }
+    case LocalAssembling3D_type::TNSE3D_Mass:
+    {
+      std::vector<std::shared_ptr<FEMatrix>> mass_blocks
+               = s.massMatrix_.get_blocks_uniquely();
+      sqMatrices.resize(1);
+      sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+
+      spaces.resize(2);
+      spaces[0] = velo_space;
+      spaces[1] = this->rho_fefunct->GetFESpace3D();
+
+      break;
+    }         // END LocalAssembletype TNSE3D_Mass
     default: // SWITCH over LocalAssembling type
       ErrThrow("This LocalAssembling type is unknown");
       break;
@@ -1426,7 +1442,52 @@ void Time_NSE3D::prepare_spaces_and_matrices_for_assemble(Time_NSE3D::System_per
     remat->reset();
 }
 
+/**************************************************************************** */
+void Time_NSE3D::assemble_massmatrix_withfields()
+{
+  for(System_per_grid& s : this->systems_)
+  {
+    // Prepare FeFunctions and construct LocalAssembling object
+    std::vector<TFEFunction3D*> fe_functions;
+    prepare_fefunc_for_localassembling(s, fe_functions);
+    const LocalAssembling3D
+             localAssembling(LocalAssembling3D_type::TNSE3D_Mass,
+                              fe_functions.data(),this->example_.get_coeffs(),
+                              this->disctype, this->with_variable_fluid_properties);
 
+    // prepare spaces, matrices and rhs for assembling
+    std::vector<const TFESpace3D*> spaces_mat;
+    std::vector<const TFESpace3D*> spaces_rhs;
+    std::vector<TSquareMatrix3D*> sqMatrices;
+    std::vector<TMatrix3D*> rectMatrices;
+    std::vector<double*> rhs_array;
+    prepare_spaces_and_matrices_for_assemble(s,LocalAssembling3D_type::TNSE3D_Mass,
+                                             spaces_mat, spaces_rhs,sqMatrices,
+                                             rectMatrices,rhs_array);
+
+    // Boundary conditions and value
+    std::vector<const BoundCondFunct3D*> boundary_conditions(1);
+    boundary_conditions[0] = s.velocitySpace_.getBoundCondition();
+  //    boundary_conditions[1] = s.velocitySpace_.getBoundCondition();
+  //    boundary_conditions[2] = s.velocitySpace_.getBoundCondition();
+  //    boundary_conditions[3] = s.pressureSpace_.getBoundCondition();
+
+    std::vector<BoundValueFunct3D*> boundary_values(3);
+    boundary_values[0] = example_.get_bd(0);
+    boundary_values[1] = example_.get_bd(1);
+    boundary_values[2] = example_.get_bd(2);
+  //    boundary_values[3] = example_.get_bd(3);
+
+    Assemble3D(spaces_mat.size(), spaces_mat.data(),
+               sqMatrices.size(), sqMatrices.data(),
+               rectMatrices.size(), rectMatrices.data(),
+               rhs_array.size(), rhs_array.data(), spaces_rhs.data(),
+               boundary_conditions.data(), boundary_values.data(),
+               localAssembling);
+  }
+
+  Output::info<5>("Assemble mass matrix", "End of the assembling of the mass matrix.");
+}
 
 
 
