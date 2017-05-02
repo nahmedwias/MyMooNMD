@@ -48,7 +48,10 @@ namespace nse_dambreak3D_40  // 40
 {
 #include "Time_NSE3D/40_DamBreak3D_TNSE.h"
 }
-
+namespace gasstirring3D_tnse_50  // 50
+{
+#include "Time_NSE3D/50_GasStirring_TNSE.h"
+}
 
 //=========================================================
 Example_TimeNSE3D::Example_TimeNSE3D(
@@ -412,6 +415,41 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       nse_dambreak3D_40::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       nse_dambreak3D_40::ExampleFile();
+      break;
+    }
+    case 50:  // Coupling NSE_CD for GasStirring 3D
+    {
+      using namespace gasstirring3D_tnse_50;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** initial conditions */
+      initialCondtion.push_back( InitialU1 );
+      initialCondtion.push_back( InitialU2 );
+      initialCondtion.push_back( InitialU3 );
+
+      /** some variables to change values in the example */
+      gasstirring3D_tnse_50::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      gasstirring3D_tnse_50::ExampleFile();
       break;
     }
     default:

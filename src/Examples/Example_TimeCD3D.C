@@ -31,6 +31,10 @@ namespace dambreak3D_40   // 40
 {
 #include "Time_CD3D/40_DamBreak3D_TCD.h"
 }
+namespace gasstirring3D_tcd_50   // 50
+{
+#include "Time_CD3D/50_GasStirring_TCD.h"
+}
 
 
 Example_TimeCD3D::Example_TimeCD3D(
@@ -107,6 +111,17 @@ Example_TimeCD3D::Example_TimeCD3D(
       problem_coefficients = dambreak3D_40::BilinearCoeffs;
       initialCondtion.push_back(dambreak3D_40::InitialCondition);
       dambreak3D_40::ExampleFile();
+      break;
+    }
+    case 50:        // GasStirring3D with TNSE convection field
+    {
+      using namespace gasstirring3D_tcd_50;
+      exact_solution.push_back(gasstirring3D_tcd_50::Exact);
+      boundary_conditions.push_back(gasstirring3D_tcd_50::BoundCondition);
+      boundary_data.push_back(gasstirring3D_tcd_50::BoundValue);
+      problem_coefficients = gasstirring3D_tcd_50::BilinearCoeffs;
+      initialCondtion.push_back(gasstirring3D_tcd_50::InitialCondition);
+      gasstirring3D_tcd_50::ExampleFile();
       break;
     }
     default:
