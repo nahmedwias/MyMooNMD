@@ -27,6 +27,10 @@ namespace coupling20   // 20
 {
 #include "Time_CD3D/20_CouplingNSE_CD_Quadratic.h"
 }
+namespace dambreak3D_40   // 40
+{
+#include "Time_CD3D/40_DamBreak3D_TCD.h"
+}
 
 
 Example_TimeCD3D::Example_TimeCD3D(
@@ -92,6 +96,17 @@ Example_TimeCD3D::Example_TimeCD3D(
       problem_coefficients = coupling20::BilinearCoeffs;
       initialCondtion.push_back(coupling20::InitialCondition);
       coupling20::ExampleFile();
+      break;
+    }
+    case 40:        // DamBreak3D with TNSE convection field
+    {
+      using namespace dambreak3D_40;
+      exact_solution.push_back(dambreak3D_40::Exact);
+      boundary_conditions.push_back(dambreak3D_40::BoundCondition);
+      boundary_data.push_back(dambreak3D_40::BoundValue);
+      problem_coefficients = dambreak3D_40::BilinearCoeffs;
+      initialCondtion.push_back(dambreak3D_40::InitialCondition);
+      dambreak3D_40::ExampleFile();
       break;
     }
     default:

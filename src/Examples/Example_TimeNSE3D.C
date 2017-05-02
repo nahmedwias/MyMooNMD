@@ -44,7 +44,10 @@ namespace coupling_nse_cd20  // 20
 {
 #include "Time_NSE3D/20_CouplingNSE_CD.h"
 }
-
+namespace nse_dambreak3D_40  // 40
+{
+#include "Time_NSE3D/40_DamBreak3D_TNSE.h"
+}
 
 
 //=========================================================
@@ -373,6 +376,42 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       //  coupling_nse_cd20::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ExampleFile();
+      break;
+    }
+
+    case 40:  // Coupling NSE_CD for DamBreak 3D
+    {
+      using namespace nse_dambreak3D_40;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** initial conditions */
+      initialCondtion.push_back( InitialU1 );
+      initialCondtion.push_back( InitialU2 );
+      initialCondtion.push_back( InitialU3 );
+
+      /** some variables to change values in the example */
+      nse_dambreak3D_40::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      nse_dambreak3D_40::ExampleFile();
       break;
     }
     default:
