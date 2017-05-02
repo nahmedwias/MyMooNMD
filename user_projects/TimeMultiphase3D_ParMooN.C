@@ -300,8 +300,10 @@ int main(int argc, char* argv[])
        ********************************************************************/
       if (vof.cd2nse_coupling_ == true )
       {
+        std::string time = std::to_string(TDatabase::TimeDB->CURRENTTIME);
         vof.update_field_vectors();
-        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
+        vof.output_vectors("vector_phi_"+time,"vector_rho_"+time,
+                           "vector_mu_"+time);
       }
     }
 

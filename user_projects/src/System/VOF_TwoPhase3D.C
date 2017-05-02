@@ -79,10 +79,10 @@ void VOF_TwoPhase3D::manage_example_parameters()
   switch(example_number_)
   {
     case 10:
-//      this->tnse_variable_fluid_ = false;
+      this->tnse_variable_fluid_ = false;
       this->nse2cd_coupling_     = false;
       this->cd2nse_coupling_     = false;
-//      this->solve_convection_    = true;
+      this->solve_convection_    = true;
       Output::info<5>("Example " + std::to_string(example_number_) +
                       ":all booleans must be false but solve_convection is true.");
       break;
@@ -90,6 +90,14 @@ void VOF_TwoPhase3D::manage_example_parameters()
       this->tnse_variable_fluid_ = false;
       this->nse2cd_coupling_     = true;
       this->cd2nse_coupling_     = false;
+      this->solve_convection_    = true;
+      Output::info<5>("Example " + std::to_string(example_number_) +
+                      ":all booleans must be false but solve_convection is true.");
+      break;
+    case 40:
+      this->tnse_variable_fluid_ = true;
+      this->nse2cd_coupling_     = true;
+      this->cd2nse_coupling_     = true;
       this->solve_convection_    = true;
       Output::info<5>("Example " + std::to_string(example_number_) +
                       ":all booleans must be false but solve_convection is true.");
@@ -134,6 +142,14 @@ void VOF_TwoPhase3D::update_field_vectors()
       this->mu_vector_ = this->mul_;
       // note that in case of standard tnse2d, these values
       // won't be used or read in the tnse2d object
+      break;
+    case 40:  //dambreak3D
+      this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
+      this->mug_  = TDatabase::ParamDB->P8; // mu of gas  = mu2 =mumin
+      this->rho_vector_.scale(this->rhol_-this->rhog_);
+      this->rho_vector_.add_scaled(this->unity_vector_,this->rhog_);
+      this->mu_vector_.scale(this->mul_-this->mug_);
+      this->mu_vector_.add_scaled(this->unity_vector_,this->mug_);
       break;
     default:
       ErrThrow("Unknown example number");
