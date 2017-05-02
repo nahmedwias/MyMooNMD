@@ -14,11 +14,11 @@ TIMESTEPLENGTH: 0.1
 
 fluid_density: 100.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
-reynolds_number: 100.   [ 0, 1e6 ]
-RE_NR:	100.
+reynolds_number: 10.   [ 0, 1e6 ]
+RE_NR:	10.
 
 ## Two phase flow
-P7: 1. # density 2 - min - gas
+P7: 5. # density 2 - min - gas
 P8: 1.  # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
@@ -75,7 +75,7 @@ PRESSURE_SPACE: -4711
 ANSATZ_ORDER: 1
 NSTYPE: 4
 LAPLACETYPE: 1
-algebraic_flux_correction: none   { none, default, fem-tvd, fem-fct-cn}
+algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
 # 1=GALERKIN, 2=SDFEM=SUPG, 3=UPWIND
 # 4=SMAGORINSKY, 6=CLASSICAL_LES, 9=VMSProjection...
