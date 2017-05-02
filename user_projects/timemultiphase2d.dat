@@ -6,16 +6,16 @@ refinement_n_initial_steps: 5
 space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 TURBULENT_VISCOSITY_CONSTANT: 0.
 vms_projection_space_order: 0
-example: 20   [ -1, 100 ]
+example: 40   [ -1, 100 ]
 USE_ISOPARAMETRIC: 1
 
-ENDTIME: 0.1
+ENDTIME: 3.
 TIMESTEPLENGTH: 0.1
 
-fluid_density: 1.   [ 0, 1e6 ]
+fluid_density: 100.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
-reynolds_number: 1.   [ 0, 1e6 ]
-RE_NR:	1.
+reynolds_number: 100.   [ 0, 1e6 ]
+RE_NR:	100.
 
 ## Beltrami/variable viscosity example 
 P1: 1  
@@ -28,8 +28,8 @@ P5: 0.5 # y0 position
 P6: 0.3  # circle radius
 
 ## Two phase flow
-P7: 1.2 # density 2 - min - gas
-P8: 1.e-3  # viscosity 2 - min - gas
+P7: 50. # density 2 - min - gas
+P8: 0.1 # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
 P9: 0.
@@ -37,16 +37,16 @@ P9: 0.
 ########################## Fixed Parameters 
 #boundary_file: ../mesh/UnitSquare.PRM
 #geo_file: ../mesh/circleR3.mesh
-boundary_file: Default_UnitSquare
-geo_file: UnitSquare   { TwoTriangles, UnitSquare }
+#boundary_file: Default_UnitSquare
+#geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 #boundary_file: ../mesh/RTInstab_Fraigneau.PRM
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
 #geo_file: ../mesh/RTInstab_PochetOrig.GEO
 #boundary_file: ../mesh/ladle_2D/realladle2d_new.PRM
 #geo_file: ../mesh/ladle_2D/realladle2d_new_trias.mesh
-#boundary_file: ../mesh/DamBreak/dambreak.PRM
-#geo_file: ../mesh/DamBreak/dambreak_quad.GEO
+boundary_file: ../mesh/DamBreak/dambreak.PRM
+geo_file: ../mesh/DamBreak/dambreak_quad.GEO
 #boundary_file: ../mesh/flow_around_cylinder2D.PRM
 #geo_file: ../mesh/flow_around_cylinder_2Dquads.GEO
 
@@ -97,7 +97,7 @@ PRESSURE_SPACE: -4711
 ANSATZ_ORDER: 1
 NSTYPE: 4
 LAPLACETYPE: 1
-algebraic_flux_correction: none   { none, default, fem-tvd, fem-fct-cn}
+algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
 # 1=GALERKIN, 2=SDFEM=SUPG, 3=UPWIND
 # 4=SMAGORINSKY, 6=CLASSICAL_LES, 9=VMSProjection...
@@ -117,9 +117,9 @@ time_discretization: 2	{ 0, 1, 2, 3, 4 }
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
 
-dimensional_nse: false   { true, false }
+dimensional_nse: true   { true, false }
 coupling_nse_cd: true   { true, false }
-coupling_cd_nse: false   { true, false }
+coupling_cd_nse: true   { true, false }
 solve_cd: true   { true, false }	
 
 ## See the class 'Example' and its derived classes.

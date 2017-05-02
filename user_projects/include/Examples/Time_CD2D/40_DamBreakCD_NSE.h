@@ -56,6 +56,10 @@ void InitialCondition(double x,  double y, double *values)
 //  if ( x <= columnsize && y <= columnsize)
 //  double density_ratio = TDatabase::ParamDB->P7;
 //  double rho_min = TDatabase::ParamDB->P7; // this is the density of the bottom fluid
+
+//  double phi = (1/0.05715)*(0.05715*0.05715-x*x) - y;
+//  if (phi >=0)
+
   if ( x <= 0.05715 && y <= 0.05715)
     values[0] = 1;//density_ratio*rho_min;
   else
@@ -100,9 +104,5 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
 // exact solution
 void Initial(double x, double y, double *values)
 {
-  if ( x <= 0.3 && y <= 0.7)
-    values[0] = 1;
-  else
-    values[0] =0;
 }
 
