@@ -239,7 +239,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           switch(this->discretization_type)
           {
             case GALERKIN:
-              this->set_parameters_for_tnse(type);
+              this->set_parameters_for_tnse_TwoPhase(type);
               break;
             case SMAGORINSKY:
               this->set_parameters_for_tnse_smagorinsky(type);

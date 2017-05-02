@@ -405,6 +405,11 @@ class Time_NSE3D
     { this->rho_fefunct = rho; this->mu_fefunct = mu;
       this->phase_field = phi; }
 
+    /*
+     * @brief this method assembles only mass matrix, needed when rho
+     * changes in each time step (VOF model)
+     */
+    void assemble_massmatrix_withfields();
 
     private:
 

@@ -1445,7 +1445,7 @@ void Time_NSE2D::assemble_massmatrix_withfields(TFEFunction2D* rho_field)
             case 3:
             case 4:
               // the following line is normally done in the above la_mass constructor
-              //la_mass.setAssembleParam_string("TimeNSType1_3_4GalerkinDDMass_dimensional");
+//              la_mass.setAssembleParam_string("TimeNSType1_3_4GalerkinDDMass_dimensional");
               break;
             default:
               ErrThrow("Only NSType 3 or 4 must be used for TNSE2D with variable fields."

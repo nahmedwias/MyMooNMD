@@ -206,8 +206,7 @@ int main(int argc, char* argv[])
       vof.tnse3d_.assemble_rhs();
       if (vof.tnse_variable_fluid_ == true)
       {
-        ErrThrow("NOT IMPLEMENTED YET!");
-//        vof.tnse2d_.assemble_massmatrix_withfields(&vof.rho_fefunction_);
+        vof.tnse3d_.assemble_massmatrix_withfields();
 //        if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
 //            vof.tnse2d_.apply_slip_penetration_bc(true,true);
       }
@@ -240,9 +239,10 @@ int main(int argc, char* argv[])
 
       if (vof.tnse_variable_fluid_ == true)
       {
-        ErrThrow("Slip BC Not Implemented yet!");
-//        if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
+        if( TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1 )
+        {ErrThrow("Slip BC Not Implemented yet!");
 //          vof.tnse3d_.apply_slip_penetration_bc(false,false);
+        }
       }
 
       vof.tnse3d_.assemble_nonlinear_term();
