@@ -101,14 +101,14 @@ void VOF_TwoPhase3D::manage_example_parameters()
 
   if (this->tnse_variable_fluid_) // using variable rho and mu requires
   {                               // NSTYPE 3 or 4, LAPLACETYPE 1
-//    if (TDatabase::ParamDB->LAPLACETYPE != 1
-//        || (TDatabase::ParamDB->NSTYPE != 4
-//        &&  TDatabase::ParamDB->NSTYPE != 3))
-//    {
-//      ErrThrow("In order to assemble TNSE3D with variable fluid properties,"
-//          "LAPLACTYPE must be 1 and NSTYPE 3 or 4. If the problem contains"
-//          " slip conditions, you must use NSTYPE 4.");
-//    }
+    if (TDatabase::ParamDB->LAPLACETYPE != 1
+        || (TDatabase::ParamDB->NSTYPE != 4
+        &&  TDatabase::ParamDB->NSTYPE != 3))
+    {
+      ErrThrow("In order to assemble TNSE3D with variable fluid properties,"
+          "LAPLACTYPE must be 1 and NSTYPE 3 or 4. If the problem contains"
+          " slip conditions, you must use NSTYPE 4.");
+    }
   }
 
   // Set the boolean of TNSE2D taken from VOF

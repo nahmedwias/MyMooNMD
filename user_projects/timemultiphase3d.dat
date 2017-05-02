@@ -9,7 +9,7 @@ vms_projection_space_order: 0
 example: 10   [ -2, 100 ]
 USE_ISOPARAMETRIC: 1
 
-ENDTIME: 0.1
+ENDTIME: 0.2
 TIMESTEPLENGTH: 0.1
 
 fluid_density: 1.   [ 0, 1e6 ]
@@ -74,7 +74,7 @@ VELOCITY_SPACE: 12
 PRESSURE_SPACE: -4711
 ANSATZ_ORDER: 1
 NSTYPE: 4
-LAPLACETYPE: 0
+LAPLACETYPE: 1
 algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
 
 # 1=GALERKIN, 2=SDFEM=SUPG, 3=UPWIND
@@ -95,7 +95,7 @@ time_discretization: 2	{ 0, 1, 2, 3, 4 }
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
 
-dimensional_nse: true   { true, false }
+dimensional_nse: false   { true, false }
 coupling_nse_cd: false   { true, false }
 coupling_cd_nse: false   { true, false }
 solve_cd: false   { true, false }	
