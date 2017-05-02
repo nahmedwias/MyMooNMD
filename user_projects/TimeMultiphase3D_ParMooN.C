@@ -168,6 +168,7 @@ int main(int argc, char* argv[])
   vof.tnse3d_.current_step_ = 0;
   TDatabase::TimeDB->CURRENTTIME = 0.0;
 
+
   /********************************************************************
    * SOME OUTPUT AND INFORMATION SET FOR THE LOOP
    ********************************************************************/
@@ -175,6 +176,10 @@ int main(int argc, char* argv[])
   loop_info.print_time_every_step = true;
   loop_info.verbosity_threshold   = 1;            // full verbosity
 //  loop_info.print(0, vof.tnse3d_.get_full_residual());
+
+  vof.tnse3d_.output(step,image);
+  vof.phaseconvection3d_.output(step,image,&vof.tnse3d_.get_velocity());
+
 
   stopwatch.print_total_time("setting up spaces, matrices, linear assemble");
   stopwatch.reset();

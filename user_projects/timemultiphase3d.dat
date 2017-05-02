@@ -6,28 +6,32 @@ refinement_n_initial_steps: 3
 space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 TURBULENT_VISCOSITY_CONSTANT: 0.
 vms_projection_space_order: 0
-example: 40   [ -2, 100 ]
+example: 50   [ -2, 100 ]
 USE_ISOPARAMETRIC: 1
 
-ENDTIME: 0.5
+ENDTIME: 0.1
 TIMESTEPLENGTH: 0.1
 
 fluid_density: 100.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
-reynolds_number: 10.   [ 0, 1e6 ]
-RE_NR:	10.
+reynolds_number: 100.   [ 0, 1e6 ]
+RE_NR:	100.
 
 ## Two phase flow
-P7: 5. # density 2 - min - gas
+P7: 1. # density 2 - min - gas
 P8: 1.  # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
 P9: 0.
 
 ########################## Fixed Parameters 
-boundary_file: Default_UnitCube
-geo_file: Default_UnitCube_Hexa   { Default_UnitCube_Hexa, Default_UnitCube_Tetra }
-
+#boundary_file: Default_UnitCube
+#geo_file: Default_UnitCube_Hexa   { Default_UnitCube_Hexa, Default_UnitCube_Tetra }
+boundary_file: ../mesh/ladle_3D/Circle2.PRM
+#geo_file: ../mesh/ladle_3D/circle_ladle.GEO
+geo_file: ../mesh/ladle_3D/Circle2.GEO
+N_CELL_LAYERS: 1
+DRIFT_Z: 3.
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
@@ -75,7 +79,7 @@ PRESSURE_SPACE: -4711
 ANSATZ_ORDER: 1
 NSTYPE: 4
 LAPLACETYPE: 1
-algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
+algebraic_flux_correction: none   { none, default, fem-tvd, fem-fct-cn}
 
 # 1=GALERKIN, 2=SDFEM=SUPG, 3=UPWIND
 # 4=SMAGORINSKY, 6=CLASSICAL_LES, 9=VMSProjection...
@@ -115,9 +119,10 @@ solve_cd: true   { true, false }
 ## 10- Quadratic  	  - in the multiphase program - FOR TCD3D
 ## 20- CouplingQuadrat- in the multiphase program - FOR TNSE3D
 ## 20- CouplingQuadrat- in the multiphase program - FOR TCD3D
-
-
-
+## 40- DamBreak		  - in the multiphase program - FOR TNSE3D
+## 40- DamBreak		  - in the multiphase program - FOR TCD3D
+## 50- GasStirringCyl.- in the multiphase program - FOR TNSE3D
+## 50- GasStirringCyl.- in the multiphase program - FOR TCD3D
 
 
 ########################## Parameters need to be cleaned
