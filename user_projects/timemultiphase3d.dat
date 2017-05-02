@@ -12,10 +12,10 @@ USE_ISOPARAMETRIC: 1
 ENDTIME: 0.2
 TIMESTEPLENGTH: 0.1
 
-fluid_density: 1.   [ 0, 1e6 ]
-fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
-reynolds_number: 1.   [ 0, 1e6 ]
-RE_NR:	1.
+fluid_density: 2.   [ 0, 1e6 ]
+fluid_dynamic_viscosity: 0.0075471698   [ 0, 1e6 ]
+reynolds_number: 265.   [ 0, 1e6 ]
+RE_NR:	265.
 
 ## Two phase flow
 P7: 1. # density 2 - min - gas
@@ -95,7 +95,7 @@ time_discretization: 2	{ 0, 1, 2, 3, 4 }
 diffusion_coefficient: 1.   [ 0, 1e6 ]
 PE_NR:	1.
 
-dimensional_nse: false   { true, false }
+dimensional_nse: true   { true, false }
 coupling_nse_cd: false   { true, false }
 coupling_cd_nse: false   { true, false }
 solve_cd: false   { true, false }	
