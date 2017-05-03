@@ -75,6 +75,7 @@ int main(int argc, char* argv[])
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
   //  tcd_db["space_discretization_type"] = "galerkin";
+  tcd_db["solver_type"]        = "direct";  // umfpack or mumps for TCD3D
 
   //  tnse_db["example"]         = 18;
   tnse_db["problem_type"]    = 6;
