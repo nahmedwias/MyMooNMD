@@ -11,19 +11,20 @@
 #include <FE2D.h>
 #include <FEDesc2D.h>
 
-
 // This is also called nu, or eps, it is equal
-// to 1/Reynolds_number and is dimensionless.
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 // for the flow_around_cylinder benchmark:
 // nu = 10e-3  (reynolds_number = 1000)
-double DIMENSIONLESS_VISCOSITY;
 
 // ========================================================================
 // example file
 // ========================================================================
+
 void ExampleFile()
 {
-  OutPut("Example: flow_around_cylinder_tnse2d.h" << endl) ;
+  OutPut("Example: flow_around_cylinder_steady_inflow.h" << endl) ;
 }
 
 // ========================================================================
@@ -76,7 +77,6 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int bdcomp, double t, BoundCond &cond)
 {
-
   switch(bdcomp)
   {
     case 1:
@@ -106,7 +106,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   {
     case 0: value = 0;
             break;
-    case 1: value = 0;
+    case 1: value = 0;					
             break;
     case 2: value = 0;
             break;
@@ -177,7 +177,7 @@ void LinCoeffs(int n_points, double *x, double *y,
 /** calculate characteristic values
  * CdCl = Coefficient drag Coefficient lift  */
 void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
-             TFEFunction2D *pfct,
+             TFEFunction2D *pfct, 
 	     TFEFunction2D *u1oldfct, TFEFunction2D *u2oldfct,
              double &cd, double &cl)
 {
@@ -227,7 +227,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
     OutPut("time step to small " << endl);
     exit(4711);
   }
-
+  
   u1 = u1fct->GetValues();
   u2 = u2fct->GetValues();
   u1old = u1oldfct->GetValues();
@@ -260,7 +260,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
 // ########################################################################
   Coll = USpace->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
-
+ 
   for(i=0;i<N_Cells;i++)
   {
     cell = Coll->GetCell(i);
@@ -269,27 +269,27 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
     {
       joint=cell->GetJoint(j);
       if ((joint->GetType() == BoundaryEdge)||
-          (joint->GetType() == IsoBoundEdge)) // boundary edge
+          (joint->GetType() == IsoBoundEdge)) // boundary edge 
       {
-
-        boundedge=(TBoundEdge *)joint;
+        
+        boundedge=(TBoundEdge *)joint;  
         BoundComp=boundedge->GetBoundComp();  // get boundary component
-        comp=BoundComp->GetID();              // boundary id
-        if (comp==4)
+        comp=BoundComp->GetID();              // boundary id 
+        if (comp==4) 
           {
             FEEle = USpace->GetFE2D(i,cell);   // finite element of cell
-            eleCell =  TFEDatabase2D::GetFE2D(FEEle);
+            eleCell =  TFEDatabase2D::GetFE2D(FEEle); 
             FEDesc = eleCell->GetFEDesc2D();   // fe descriptor
             N_DOF_Circ = FEDesc->GetN_JointDOF(); // # local dofs on joints
             DOF_Circ = FEDesc->GetJointDOF(j); // local dofs on joint j
             DOF = UGlobalNumbers + UBeginIndex[i]; // pointer to global dofs
-            for (k=0;k<N_DOF_Circ;k++)         // set fe on circle to 1
+            for (k=0;k<N_DOF_Circ;k++)         // set fe on circle to 1 
               v[DOF[DOF_Circ[k]]] = 1;
           }
-      }
+      }      
     }
   }
-
+  
   cd = 0;
   cl = 0;
 
@@ -316,7 +316,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
                          cell, SecondDer,
                          N_Points, xi, eta, weights, X, Y, AbsDetjk);
 
-    // calculate all needed values of p
+    // calculate all needed values of p 
     CurrentElement = LocalUsedElements[1];
     BaseFunct = BaseFuncts[CurrentElement];
     N_ = N_BaseFunct[CurrentElement];
@@ -337,7 +337,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
       Derivatives[j][0] = value;
     }
 
-    // calculate all needed values of u1, u2
+    // calculate all needed values of u1, u2 
     CurrentElement = LocalUsedElements[0];
     BaseFunct = BaseFuncts[CurrentElement];
     N_ = N_BaseFunct[CurrentElement];
@@ -381,7 +381,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
 	      value5 += FEFunctValues5[l] * Orig[l];
 	    } // endfor l
 	  Derivatives[j][k+10] = value4;
-	  Derivatives[j][k+11] = value5;
+	  Derivatives[j][k+11] = value5;  
 	} // end if
       } // endfor j
     } // endfor k
@@ -423,6 +423,8 @@ void compute_drag_lift_pdiff(Time_NSE2D& time_nse2d)
   TFEFunction2D* u1 = u.GetComponent(0);
   TFEFunction2D* u2 = u.GetComponent(1);
 
+  
+  /// @todo change implementation such that previous velocity can be used for computing drag and lift
   GetCdCl(u1, u2, &p, u1, u2, drag, lift);
   p.FindGradient(0.15, 0.2, dP1);
   p.FindGradient(0.25, 0.2, dP2);

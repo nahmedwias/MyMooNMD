@@ -49,10 +49,17 @@ class ParameterDatabase
     /// @brief construct a database which holds all those parameters
     /// that are typically needed in the output methods of the system
     /// classes
-    /// TODO The more of these default databases I add here, the more I am convinced:
-    /// they are a symptom for classes which we ought to have but don't.
+    /// TODO CB The more of these default databases I add here, the more I am
+    /// convinced: they are a symptom for classes which we ought to have but don't.
     static ParameterDatabase default_output_database();
     
+    /// A database to control a feature that is typically used in time dependent
+    /// problems. A solution can be read from a binary file and used as initial
+    /// solution and the computed solution can be written to a binary file at
+    /// regular intervals. TODO CB Build in the parameters needed to control
+    /// the same feature in MPI.
+    static ParameterDatabase default_solution_in_out_database();
+
     /// construct a database filled with parameters for 
     /// mesh generation using TetGen
     static ParameterDatabase default_tetgen_database();

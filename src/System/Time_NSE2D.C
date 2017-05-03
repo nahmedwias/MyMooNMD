@@ -1,10 +1,16 @@
 #include <Time_NSE2D.h>
 #include <Database.h>
-#include <LinAlg.h>
-#include <DirectSolver.h>
-#include <GridTransfer.h>
-#include <FEFunctionInterpolator.h>
 #include <Assemble2D.h>
+#include <LinAlg.h>
+#include <Upwind.h>
+#include <DirectSolver.h>
+
+#include <GridTransfer.h>
+
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
+
+
+#include <FEFunctionInterpolator.h>
 #include <LocalAssembling2D.h>
 #include <Variational_MultiScale2D.h>
 
@@ -26,9 +32,9 @@ ParameterDatabase get_default_TNSE2D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
-  db.add("read_initial_solution", false, " Choose true if the initial "
-      "solution is given in a binary file. Do not forget to specify "
-      "'initial_solution_file' in that case, too.");
+  // a default solution in out database
+  ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
+  db.merge(in_out_db,true);
 
   // a default time database
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
@@ -99,13 +105,18 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
    example(ex), solver(param_db), defect(), oldResidual(0), 
    initial_residual(1e10), errors(10,0.), oldtau(0.0)
 {
-  db.merge(param_db);
+  db.merge(param_db, false);
   this->set_parameters();
   
-  std::pair <int,int> velo_pres_order(TDatabase::ParamDB->VELOCITY_SPACE, 
-                               TDatabase::ParamDB->PRESSURE_SPACE);
+  std::pair <int,int>
+      velo_pres_order(TDatabase::ParamDB->VELOCITY_SPACE, 
+                      TDatabase::ParamDB->PRESSURE_SPACE);
+  // set the velocity and pressure spaces
+  // this function returns a pair which consists of
+  // velocity and pressure order
   this->get_velocity_pressure_orders(velo_pres_order);
-  
+
+  // determine NSE TYPE from Database TODO change that handling!
   Time_NSE2D::Matrix type;
   switch(TDatabase::ParamDB->NSTYPE)
   {
@@ -116,7 +127,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
     case 14: type = Matrix::Type14; break;
     default:
       ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-               " That NSE Block Matrix Type is unknown to class NSE2D.");
+               " That NSE Block Matrix Type is unknown to class Time_NSE2D.");
   }
 
   /* Check Type for SUPG  */
@@ -205,43 +216,64 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
   // Construct the other grids in multigrid case
   if(usingMultigrid)
   {
-    auto multigrid = this->solver.get_multigrid();
+    // Construct multigrid object
+    auto mg = solver.get_multigrid();
+    bool mdml = mg->is_using_mdml();
+    if(mdml)
+    {
+      // change the discretization on the coarse grids to lowest order
+      // non-conforming(-1). The pressure space is chosen automatically(-4711).
+      velo_pres_order = {-1, -4711};
+      this->get_velocity_pressure_orders(velo_pres_order);
+    }
     
-    ErrThrow("FATAL ERROR: MULTIGRID IS NOT FINISHED YET! THE COLLECTIONS"
-        "HAS TO BE CHANGED AND THE IF-STATEMENT SHOULD 'POP' THE FINEST"
-        "GRID BECAUSE IT IS ALREADY ASSEMBLED.");
+    // Determine coarser multigrid levels and construct them.
+    int second_grid;
+    int coarsest_grid = domain.get_ref_level() - mg->get_n_geometric_levels() + 1;
+    if(mdml)
+      //the finest grid is taken a second time in mdml
+      second_grid = domain.get_ref_level();
+    else
+      second_grid = domain.get_ref_level() - 1;
 
+    if(coarsest_grid < 0 )
+    {
+      ErrThrow("The domain has not been refined often enough to do multigrid "
+          "on ", mg->get_n_geometric_levels(), " geometric levels (",
+          mg->get_n_algebraic_levels()," algebraic levels). There are"
+          " only ", domain.get_ref_level() + 1, " geometric grid levels.");
+    }
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
-    size_t n_levels = multigrid->get_n_geometric_levels();
-    int finest = domain.get_ref_level();
-    int coarsest = finest - n_levels + 1;
-    for (int grid_no = finest; grid_no >= coarsest; --grid_no)
+    // matrix on finest grid is already constructed
+    matrices.push_back(&systems.back().matrix);
+    for(int grid_no = second_grid; grid_no >= coarsest_grid; --grid_no)
     {
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
-      systems.emplace_back(example, *coll, velo_pres_order,
-                            type);
-      //prepare input argument for multigrid object
+      systems.emplace_back(example, *coll, velo_pres_order,type);
+      // prepare input argument for multigrid object
       matrices.push_front(&systems.back().matrix);
     }
-    multigrid->initialize(matrices);
+    // initialize the multigrid object with all the matrices on all levels
+    mg->initialize(matrices);
   }
 
   // initial solution on finest grid - read-in or interpolation
   if(db["read_initial_solution"].is(true))
   {//initial solution is given
     std::string file = db["initial_solution_file"];
-    Output::info("Reading initial solution from file ", file);
+    Output::info("Initial Solution", "Reading initial solution from file ", file);
     systems.front().solution.read_from_file(file);
   }
   else
   {//interpolate initial condition from the example
-    Output::info("Interpolating initial solution from example.");
+    Output::info("Initial Solution", "Interpolating initial solution from example.");
     TFEFunction2D * u1 = this->systems.front().u.GetComponent(0);
     TFEFunction2D * u2 = this->systems.front().u.GetComponent(1);
     u1->Interpolate(example.get_initial_cond(0));
     u2->Interpolate(example.get_initial_cond(1));
   }
+
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
   
@@ -286,7 +318,7 @@ void Time_NSE2D::set_parameters()
   if(TDatabase::TimeDB->TIME_DISC == 0)
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 
-          << " does not supported");
+          << " is not supported");
     throw("TIME_DISC: 0 is not supported");
   }  
 
@@ -383,6 +415,23 @@ void Time_NSE2D::get_velocity_pressure_orders(std::pair< int, int > &velo_pres_o
 /**************************************************************************** */
 void Time_NSE2D::assemble_initial_time()
 {
+  if(systems.size() > 1) //using  multigrid
+  {//assembling requires an approximate velocity solution on every grid
+    for( int block = 0; block < 2 ;++block)
+    {
+      std::vector<const TFESpace2D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems )
+      {
+        spaces.push_back(&s.velocity_space);
+        u_entries.push_back(s.solution.block(block));
+        u_ns_dofs.push_back(s.solution.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
+
   for(System_per_grid& s : this->systems)
   {
     // Prepare FeFunctions and construct LocalAssembling
@@ -412,6 +461,23 @@ void Time_NSE2D::assemble_initial_time()
     non_const_bound_values[1] = example.get_bd()[1];
     non_const_bound_values[2] = example.get_bd()[2];
 
+    // find out if we have to do upwinding
+    bool do_upwinding = false;
+    {
+      bool mdml =  this->solver.is_using_multigrid()
+                  && this->solver.get_multigrid()->is_using_mdml();
+      bool on_finest_grid = &systems.front() == &s;
+      do_upwinding = (db["space_discretization_type"].is("upwind")
+                     || (mdml && !on_finest_grid));
+    }
+
+    if(do_upwinding)  //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+    else
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
+
+
     // assemble all the matrices and right hand side 
     Assemble2D(spaces_mat.size(), spaces_mat.data(),
                sqMatrices.size(), sqMatrices.data(),
@@ -419,6 +485,36 @@ void Time_NSE2D::assemble_initial_time()
                rhs_array.size(), rhs_array.data(),
                spaces_rhs.data(), boundary_conditions.data(),
                non_const_bound_values.data(), la);
+
+    if(do_upwinding)
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+        case 2:
+          // do upwinding with one matrix
+          UpwindForNavierStokes(la.GetCoeffFct(), sqMatrices[0],
+                                la.get_fe_function(0),
+                                la.get_fe_function(1));
+          Output::print<3>("UPWINDING DONE");
+          break;
+
+        case 3:
+        case 4:
+        case 14:
+          // do upwinding with two matrices
+          Output::print<3>("UPWINDING DONE");
+          UpwindForNavierStokes(la.GetCoeffFct(), sqMatrices[0],
+                                la.get_fe_function(0),
+                                la.get_fe_function(1));
+          UpwindForNavierStokes(la.GetCoeffFct(), sqMatrices[1],
+                                la.get_fe_function(0),
+                                la.get_fe_function(1));
+          break;
+      } // endswitch
+    }
+
+
 
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
@@ -492,6 +588,7 @@ void Time_NSE2D::assemble_rhs()
   non_const_bound_values[1] = example.get_bd()[1];
   non_const_bound_values[2] = example.get_bd()[2];
   
+
   Assemble2D(spaces_mat.size(), spaces_mat.data(),
               sqMatrices.size(), sqMatrices.data(),
               rectMatrices.size(), rectMatrices.data(),
@@ -577,9 +674,8 @@ void Time_NSE2D::assemble_system()
 /**************************************************************************** */
 void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
 {
-  //Nonlinear assembling requires an approximate velocity solution on every grid!
-  if(systems.size() > 1)
-  {
+  if(systems.size() > 1) //using  multigrid
+  {//assembling requires an approximate velocity solution on every grid
     for( int block = 0; block < 2 ;++block)
     {
       std::vector<const TFESpace2D*> spaces;
@@ -623,6 +719,22 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];
 
+
+    // find out if we have to do upwinding
+    bool do_upwinding = false;
+    {
+      bool mdml =  this->solver.is_using_multigrid()
+                  && this->solver.get_multigrid()->is_using_mdml();
+      bool on_finest_grid = &systems.front() == &s;
+      do_upwinding = (db["space_discretization_type"].is("upwind")
+                     || (mdml && !on_finest_grid));
+    }
+
+    if(do_upwinding)  //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+    else
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
     // assemble all the matrices and right hand side
     Assemble2D(spaces_mat.size(), spaces_mat.data(),
                sqMatrices.size(), sqMatrices.data(),
@@ -630,6 +742,36 @@ void Time_NSE2D::assemble_nonlinear_term(unsigned int it_count)
                rhs_array.size(), rhs_array.data(),
                spaces_rhs.data(), boundary_conditions.data(),
                non_const_bound_values.data(), la_nonlinear);
+
+    if(do_upwinding)
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+        case 2:
+          // do upwinding with one matrix
+          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sqMatrices[0],
+                                la_nonlinear.get_fe_function(0),
+                                la_nonlinear.get_fe_function(1));
+          Output::print<3>("UPWINDING DONE : level ");
+          break;
+
+        case 3:
+        case 4:
+        case 14:
+          // do upwinding with two matrices
+          Output::print<3>("UPWINDING DONE : level ");
+          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sqMatrices[0],
+                                la_nonlinear.get_fe_function(0),
+                                la_nonlinear.get_fe_function(1));
+          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sqMatrices[1],
+                                la_nonlinear.get_fe_function(0),
+                                la_nonlinear.get_fe_function(1));
+          break;
+      } // endswitch
+    }
+
+
 
 //    sqMatrices.at(0)->write("A11_nonlinear");
 //    sqMatrices.at(0)->Print("A11");
@@ -740,13 +882,8 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
 void Time_NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-  
-  if(this->solver.is_using_multigrid())
-  {
-    ErrThrow("multigrid solver is not tested yet")
-  }
   solver.solve(s.matrix,s.rhs, s.solution);
-
+  
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are 
   // reset and assembled again but the A12 and A21 are scaled, so
@@ -779,7 +916,11 @@ void Time_NSE2D::deScaleMatrices()
 /**************************************************************************** */
 void Time_NSE2D::output(int m)
 {
-	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+  // TODO CB: This I find misleading. Why isn't it enough if every part of
+  // the output decides on its own? Remove please!
+ 	bool no_output = !db["output_write_vtk"] &&
+ 	                 !db["output_compute_errors"] &&
+ 	                 !db["write_solution_binary"];
 	if(no_output)
 		return;
 
@@ -849,8 +990,17 @@ void Time_NSE2D::output(int m)
       outputWriter.write(TDatabase::TimeDB->CURRENTTIME);
     }
   }
-}
 
+  if(db["write_solution_binary"].is(true))
+  {size_t interval = db["write_solution_binary_all_n_steps"];
+    if(m % interval == 0)
+    {//write solution to a binary file
+      std::string file = db["write_solution_binary_file"];
+      Output::info("output", "Writing current solution to file ", file);
+      systems.front().solution.write_to_file(file);
+    }
+  }
+}
 /**************************************************************************** */
 void Time_NSE2D::output_problem_size_info() const
 {
@@ -882,6 +1032,15 @@ std::array< double, int(6) > Time_NSE2D::get_errors() const
   
   return error_at_time_points;
 }
+
+/**************************************************************************** */
+/** ************************************************************************ */
+double Time_NSE2D::getFullResidual() const
+{
+  return this->oldResidual;
+}
+
+
 
 /**************************************************************************** */
 void Time_NSE2D::prepare_fefunc_for_localassembling(Time_NSE2D::System_per_grid& s,

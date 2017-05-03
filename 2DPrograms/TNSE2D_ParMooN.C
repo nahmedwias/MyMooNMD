@@ -4,6 +4,7 @@
 #include <Example_TimeNSE2D.h>
 #include <Time_NSE2D.h>
 #include <TimeDiscRout.h>
+#include <LoopInfo.h>
 
 using namespace std;
 
@@ -52,10 +53,15 @@ int main(int argc, char* argv[])
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary 
   tnse2d.assemble_initial_time();
-
+  
+  LoopInfo loop_info_time("time loop");
+  loop_info_time.print_time_every_step = true;
+  loop_info_time.verbosity_threshold = 1; // full verbosity
+ 
   double end_time = TDatabase::TimeDB->ENDTIME; 
   int step = 0;
   int n_substeps = GetN_SubSteps();
+  int linear_iterations = 0;
     
   // ======================================================================
   // time iteration
@@ -89,10 +95,22 @@ int main(int argc, char* argv[])
        // and solvers
        tnse2d.assemble_system();
        // nonlinear iteration
+       LoopInfo loop_info("nonlinear");
+       loop_info.print_time_every_step = true;
+       loop_info.verbosity_threshold = 1; // full verbosity
        for(unsigned int k=0;; k++)
        {
          if(tnse2d.stopIte(k))
-           break;
+         {
+           loop_info.finish(k, tnse2d.getFullResidual());
+	   linear_iterations+=k;
+	   /// @todo provide all parts of the residual 
+	   /// @todo loop_info restricted to the solver only
+           loop_info_time.print(linear_iterations, tnse2d.getFullResidual());
+	   break;
+         }
+         else
+           loop_info.print(k, tnse2d.getFullResidual());
          tnse2d.solve();
          // assemble the nonlinear matrices 
          tnse2d.assemble_nonlinear_term();
@@ -101,9 +119,13 @@ int main(int argc, char* argv[])
        }
        // post processing: error computations
        // and solutions for visualization
+       // FIXME CB: The call to output depends on 'step' but is in the loop
+       // over 'substeps' - shouldn't it be outside of the loop?
        tnse2d.output(step);
      }
    }
+   
+  loop_info_time.finish(linear_iterations, tnse2d.getFullResidual());
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
   Output::print("used time: ", GetTime() - t_start, "s");

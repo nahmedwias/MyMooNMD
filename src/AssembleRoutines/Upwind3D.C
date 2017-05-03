@@ -56,7 +56,7 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
                              )
 {
   double RE=one_over_nu;
-  double UPWIND_ORDER=upwind_order;
+  int UPWIND_ORDER=upwind_order;
   double UPWIND_FLUX_DAMP=upwind_flux_damp;
   int  UPW_APPL = upwind_application;
   TBaseCell *cell;
