@@ -63,7 +63,35 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  cond = DIRICHLET;
+//  switch(i)
+//  {
+//    case 0: case 1: case 2: case 3:
+//    case 4: case 5: case 6: case 7:
+//    case 8: case 9:
+//      cond = DIRICHLET;
+//      break;
+//    default:
+//      ErrThrow("Unknown BdPart");
+//  }
+
+  switch(i)
+   {
+     case 4: case 5: case 6: case 7:
+     case 8:
+       cond = DIRICHLET;
+       break;
+     case 0: case 1: case 2: case 3:
+     case 9:
+       cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
+       TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+       TDatabase::ParamDB->FRICTION_TYPE = 1;
+       TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
+       TDatabase::ParamDB->PENETRATION_POWER= -2;
+       break;
+     default:
+       ErrThrow("Unknown BdPart");
+   }
+
 //  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 

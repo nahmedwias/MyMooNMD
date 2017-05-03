@@ -39,6 +39,8 @@ int main(int argc, char* argv[])
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
   tcd_db["space_discretization_type"] = "galerkin";
+  tcd_db["solver_type"]        = "direct";  // we always use umfpack ...
+  tcd_db["direct_solver_type"] = "umfpack"; // ...for TCD2D in VOF
 
 //  tnse_db["example"]         = 18;
   tnse_db["problem_type"]    = 6;
@@ -123,6 +125,7 @@ int main(int argc, char* argv[])
 
 
 //  vof.phaseconvection2d_.output(&vof.tnse2d_.get_velocity()); // this initializes errors
+  vof.phaseconvection2d_.output();
 
   /********************************************************************
    * TIME ITERATION LOOP
