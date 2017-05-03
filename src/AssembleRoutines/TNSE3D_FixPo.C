@@ -7,6 +7,8 @@
 #include <Database.h>
 #include <Convolution.h>
 #include <MooNMD_Io.h>
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
+
 #include <stdlib.h>
 #include <MainUtilities.h>
 
@@ -690,7 +692,10 @@ void TimeNSType1Galerkin3D(double Mult, double *coeff,
        
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       MatrixRow[j] += Mult * val;
 
       val = ansatz000*test000;
@@ -1140,7 +1145,10 @@ void TimeNSType2Galerkin3D(double Mult, double *coeff,
       
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       MatrixRow[j] += Mult * val;
 
       val = ansatz000*test000;
@@ -1662,7 +1670,10 @@ void TimeNSType3Galerkin3D(double Mult, double *coeff,
       
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       val *= Mult;
       Matrix11Row[j] += val;
       Matrix22Row[j] += val;
@@ -1798,7 +1809,10 @@ void TimeNSType3GalerkinDD3D(double Mult, double *coeff,
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
       
-      val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       val  = c0*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001);
       val += val1;
@@ -2846,7 +2860,10 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
       
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       Matrix11Row[j] += Mult * val;
       Matrix22Row[j] += Mult * val;
       Matrix33Row[j] += Mult * val;
@@ -3002,7 +3019,10 @@ void TimeNSType4GalerkinDD3D(double Mult, double *coeff,
       
       val  = c0*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       Matrix11Row[j] += Mult * val;
 
       val  = c0*(test010*ansatz100);
@@ -3016,7 +3036,10 @@ void TimeNSType4GalerkinDD3D(double Mult, double *coeff,
 
       val  = c0*(test100*ansatz100+2*test010*ansatz010
                    +test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       Matrix22Row[j] += Mult * val;
 
       val  = c0*(test001*ansatz010);
@@ -3030,7 +3053,10 @@ void TimeNSType4GalerkinDD3D(double Mult, double *coeff,
 
       val  = c0*(test100*ansatz100+test010*ansatz010
                    +2*test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       Matrix33Row[j] += Mult * val;
 
       val = Mult*(ansatz000*test000);
@@ -4889,7 +4915,10 @@ void TimeNSType1_2NLGalerkin3D(double Mult, double *coeff,
       
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       MatrixRow[j] += Mult * val;
     } // endfor j
   } // endfor i
@@ -5072,7 +5101,10 @@ void TimeNSType3_4NLGalerkin3D(double Mult, double *coeff,
       
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
       val *= Mult;
       Matrix11Row[j] += val;
       Matrix22Row[j] += val;

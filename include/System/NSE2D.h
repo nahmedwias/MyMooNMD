@@ -184,9 +184,6 @@ class NSE2D
     NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
           const Example_NSE2D _example, unsigned int reference_id = -4711);
     
-    /** @brief standard destructor */
-    ~NSE2D();
-    
     /** @brief assemble matrix, 
      * 
      * This assembles everything which is not related to the nonlinear term.

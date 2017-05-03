@@ -29,6 +29,7 @@
 
 #include <ParameterDatabase.h>
 #include <PostProcessing2D.h>
+#include <Residuals.h>
 
 #include <vector>
 #include <deque>
@@ -305,6 +306,13 @@ class Time_NSE2D
     { return example; }
     const ParameterDatabase & get_db() const
     { return db; }
+
+    /// @brief get the current residual
+    /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
+    /// called from NSE2D::stopIt
+    double getFullResidual() const;
+    /// @brief return the computed errors
+    /// @details updated in NSE2D::stopIt
     /// @brief return the computed errors at each discre time point
     std::array<double, int(6)> get_errors() const;
 

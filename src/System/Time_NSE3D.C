@@ -5,6 +5,10 @@
 #include <LinAlg.h>
 #include <Output3D.h>
 #include <DirectSolver.h>
+#include <GridTransfer.h>
+#include <Upwind3D.h>
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
+
 #include <MainUtilities.h>
 #include <Multigrid.h>
 
@@ -37,6 +41,10 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default time database
   ParameterDatabase time_db = ParameterDatabase::default_time_database();
   db.merge(time_db,true);
+ 
+  // a default solution in out database
+  ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
+  db.merge(in_out_db,true);
 
   return db;
 }
@@ -181,28 +189,28 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
     mg->initialize(matrices);
   }
   
+  // initial solution on finest grid - read-in or interpolation
+  if(db_["read_initial_solution"].is(true))
+  {//initial solution is given
+    std::string file = db_["initial_solution_file"];
+    Output::info("Initial Solution", "Reading initial solution from file ", file);
+    systems_.front().solution_.read_from_file(file);
+  }
+  else
+  {//interpolate initial condition from the example
+    Output::info("Initial Solution", "Interpolating initial solution from example.");
+    for(System_per_grid& s : this->systems_)
+    {
+      s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
+      s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
+      s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
+    }
+  }
+
   this->output_problem_size_info();
   // initialize the defect of the system. It has the same structure as
   // the rhs (and as the solution)
   this->defect_.copy_structure(this->systems_.front().rhs_);
-  for(System_per_grid& s : this->systems_)
-  {
-    s.u_.GetComponent(0)->Interpolate(example_.get_initial_cond(0));
-    s.u_.GetComponent(1)->Interpolate(example_.get_initial_cond(1));
-    s.u_.GetComponent(2)->Interpolate(example_.get_initial_cond(2));
-  }
-}
-
-///**************************************************************************** */
-void Time_NSE3D::interpolate()
-{
-//   TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
-//   TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
-//   TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
-//   
-//   u1->Interpolate(example_.get_initial_cond(0));
-//   u2->Interpolate(example_.get_initial_cond(1));
-//   u3->Interpolate(example_.get_initial_cond(2));  
 }
 
 ///**************************************************************************** */
@@ -339,6 +347,23 @@ void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pr
 /**************************************************************************** */
 void Time_NSE3D::assemble_initial_time()
 {
+  if(systems_.size() > 1) //using  multigrid
+  {//assembling requires an approximate velocity solution on every grid
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.solution_.block(block));
+        u_ns_dofs.push_back(s.solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
+
   for(System_per_grid& s : this->systems_) // from back to front (coarse to fine)
   {
     // Prepare FeFunctions and construct LocalAssembling object
@@ -372,6 +397,29 @@ void Time_NSE3D::assemble_initial_time()
     boundary_values[2] = example_.get_bd(2);
     boundary_values[3] = example_.get_bd(3);
 
+
+
+
+
+
+
+
+
+    // find out if we have to do upwinding
+    bool do_upwinding = false;
+    {
+      bool mdml =  this->solver_.is_using_multigrid()
+                  && this->solver_.get_multigrid()->is_using_mdml();
+      bool on_finest_grid = &systems_.front() == &s;
+      do_upwinding = (db_["space_discretization_type"].is("upwind")
+                     || (mdml && !on_finest_grid));
+    }
+
+    if(do_upwinding)  //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+    else
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
     // assemble all the matrices and right hand side
     Assemble3D(spaces_mat.size(), spaces_mat.data(),
                sqMatrices.size(), sqMatrices.data(),
@@ -379,6 +427,36 @@ void Time_NSE3D::assemble_initial_time()
                rhs_array.size(), rhs_array.data(), spaces_rhs.data(),
                boundary_conditions.data(), boundary_values.data(),
                localAssembling);
+
+
+    if(do_upwinding)
+    {
+      double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+        case 2:
+          UpwindForNavierStokes3D(sqMatrices[0], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          Output::print<3>("UPWINDING DONE with 1 square matrices.");
+        break;
+        case 3:
+        case 4:
+        case 14:
+          UpwindForNavierStokes3D(sqMatrices[0], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          UpwindForNavierStokes3D(sqMatrices[1], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          UpwindForNavierStokes3D(sqMatrices[2], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          Output::print<3>("UPWINDING DONE with 3 square matrices.");
+          break;
+      }
+    }
+
+    //delete the temporary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete fe_functions[i];
 
     /** manage dirichlet condition by copying non-actives DoFs
      * from rhs to solution of front grid (=finest grid)
@@ -578,6 +656,23 @@ void Time_NSE3D::assemble_rhs()
 /**************************************************************************** */
 void Time_NSE3D::assemble_nonlinear_term()
 {
+  if(systems_.size() > 1) //using  multigrid
+  {//assembling requires an approximate velocity solution on every grid
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.solution_.block(block));
+        u_ns_dofs.push_back(s.solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
+
   for(System_per_grid& s : this->systems_)
   {
     // Prepare FeFunctions and construct LocalAssembling object
@@ -610,6 +705,22 @@ void Time_NSE3D::assemble_nonlinear_term()
     boundary_values[1] = example_.get_bd(1);
     boundary_values[2] = example_.get_bd(2);
 //    boundary_values[3] = example_.get_bd(3);
+    // find out if we have to do upwinding
+    bool do_upwinding = false;
+    {
+      bool mdml =  solver_.is_using_multigrid()
+                  && solver_.get_multigrid()->is_using_mdml();
+      bool on_finest_grid = &systems_.front() == &s;
+      do_upwinding = (db_["space_discretization_type"].is("upwind")
+                     || (mdml && !on_finest_grid));
+    }
+
+    if(do_upwinding)  //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+    else
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
+
 
     Assemble3D(spaces_mat.size(), spaces_mat.data(),
                sqMatrices.size(), sqMatrices.data(),
@@ -617,6 +728,38 @@ void Time_NSE3D::assemble_nonlinear_term()
                rhs_array.size(), rhs_array.data(), spaces_rhs.data(),
                boundary_conditions.data(), boundary_values.data(),
                localAssembling);
+
+
+    if(do_upwinding)
+    {
+      double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+        case 2:
+          UpwindForNavierStokes3D(sqMatrices[0], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          Output::print<3>("UPWINDING DONE with 1 square matrices.");
+        break;
+        case 3:
+        case 4:
+        case 14:
+          UpwindForNavierStokes3D(sqMatrices[0], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          UpwindForNavierStokes3D(sqMatrices[1], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          UpwindForNavierStokes3D(sqMatrices[2], fe_functions[0], fe_functions[1],
+                                  fe_functions[2], one_over_nu);
+          Output::print<3>("UPWINDING DONE with 3 square matrices.");
+          break;
+      }
+    }
+
+    //delete the temporary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete fe_functions[i];
+
+
   }
 
   Output::info<5>("Assemble non linear terms", "End of the assembling of the nonlinear matrix.");
@@ -680,7 +823,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   System_per_grid& s = this->systems_.front();
   size_t nu=s.solution_.length(0);
   size_t np=s.solution_.length(3);
-  Output::print("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
+  Output::print<5>("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
                 Ddot(3*nu,s.rhs_.get_entries(),s.rhs_.get_entries()) , " "  , 
                 Ddot(np,s.rhs_.get_entries()+3*nu,s.rhs_.get_entries()+3*nu)," ",
                 Ddot(3*nu+np,s.rhs_.get_entries(),s.rhs_.get_entries()));
@@ -861,9 +1004,11 @@ void Time_NSE3D::output(int m, int &image)
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    bool no_output = !db_["output_write_vtk"] && !db_["output_compute_errors"];
-    if(no_output)
-      return;
+  	bool no_output = !db_["output_write_vtk"] &&
+ 	                 !db_["output_compute_errors"] &&
+ 	                 !db_["write_solution_binary"];
+	if(no_output)
+		return;
 
   System_per_grid& s = this->systems_.front();
   TFEFunction3D* u1 = s.u_.GetComponent(0);
@@ -1010,6 +1155,15 @@ void Time_NSE3D::output(int m, int &image)
    // do post-processing step depending on what the example implements, if needed
    example_.do_post_processing(*this);
 
+   if(db_["write_solution_binary"].is(true))
+   { size_t interval = db_["write_solution_binary_all_n_steps"];
+    if(m % interval == 0)
+    {//write solution to a binary file
+      std::string file = db_["write_solution_binary_file"];
+      Output::info("output", "Writing current solution to file ", file);
+      systems_.front().solution_.write_to_file(file);
+    }
+  }
 }
 
 /**************************************************************************** */

@@ -1,31 +1,32 @@
 #include <LocalAssembling2D.h>
 
 #include <Database.h>
-#include <MainUtilities.h>    // linfb, ave_l2b_quad_points
+#include <MainUtilities.h> // linfb, ave_l2b_quad_points
 #include <FEDatabase2D.h>
 #include <FEFunction2D.h>
+#include <MooNMD_Io.h>
+#include <string.h>
+#include <DiscreteForm2D.h>     // to be removed
+#include <Brinkman2D_Mixed.h>   // local assembling routines for 2D Brinkman
 #include <ConvDiff.h>
-#include <Darcy2DMixed.h>     // local assembling routines for 2D Darcy problems
-#include <NSE2D_FixPoSkew.h>  // local assembling routines for 2D Navier-Stokes
-#include <NSE2D_FixPoRot.h>   // local assembling routines for 2D Navier-Stokes
+#include <ConvDiff2D.h>         // local assembling routines for 2D convection-diffusion
+#include <Darcy2DMixed.h>       // local assembling routines for 2D Darcy problems
 #include <NSE2D_EquOrd_FixPo.h> // local assembling routines for equal order elements
+#include <NSE2D_FixPo.h>	// local assembling routines for 2D Navier-Stokes
+#include <NSE2D_FixPoRot.h>     // local assembling routines for 2D Navier-Stokes
+#include <NSE2D_FixPoSkew.h>    // local assembling routines for 2D Navier-Stokes
 #include <NSE2D_Newton.h>
+#include <TNSE2D_FixPo.h>       // local assembling routines for 2D Time dependent Navier-Stokes
 #include <TNSE2D_FixPoRot.h>
 #include <TNSE2D_ParamRout.h>
-#include <Brinkman2D_Mixed.h> // local assembling routines for 2D Navier-Stokes
+
+#include "TNSE2DGalerkin.h"
+#include "NSE2DGalerkin.h"
+
 #include <TLinElastic2D_routines.h>
 #include <assemble_routine_tnse2D_supg.h>
 #include <assemble_routine_tnse2D_smagorinsky.h>
 #include <assemble_routine_tnse2D_PBVMS.h>
-
-#include <MooNMD_Io.h>
-#include <string.h>
-
-#include <DiscreteForm2D.h> // to be removed
-#include <ConvDiff2D.h>       // local assembling routines for 2D convection-diffusion
-#include <NSE2D_FixPo.h>      // local assembling routines for 2D Navier-Stokes
-#include <TNSE2D_FixPo.h>     // local assembling routines for 2D Time dependent Navier-Stokes
-
 
 //==============================================================================
 /** @brief a helper function returning a string with the name of the
@@ -66,10 +67,10 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
             return std::string("TCD2D_Mass");
             ///////////////////////////////////////////////////////////////////////////
             // NSE2D: stationary Navier-Stokes problems
-        case NSE2D_Galerkin:
-            return std::string("NSE2D_Galerkin");
-        case NSE2D_Galerkin_Nonlinear:
-            return std::string("NSE2D_Galerkin_Nonlinear");
+        case NSE2D_All:
+            return std::string("NSE2D_All");
+        case NSE2D_NL:
+            return std::string("NSE2D_NL");
             ///////////////////////////////////////////////////////////////////////////
         case NSE2D_SUPG:
             return std::string("NSE2D_SUPG");
@@ -101,7 +102,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
             switch(disctype)
         {
             case GALERKIN:
-                return std::string("TNSE2D_Galerkin");
+                return std::string("TNSE2D");
             case SUPG:
                 return std::string("TNSE2D_SUPG");
             case SMAGORINSKY:
@@ -165,6 +166,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
   return std::string();
 }
 
+//==============================================================================
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
                                      TFEFunction2D **fefunctions2d,
                                      CoeffFct2D *coeffs,
@@ -331,101 +333,101 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->Needs2ndDerivatives[0] = false;
             this->Needs2ndDerivatives[1] = false;
             this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-        this->N_Matrices = 9;
-        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        this->N_Rhs = 3;
-        this->RhsSpace = { 0, 0, 1 };
-        this->AssembleParam = BrinkmanType1bGalerkin;
-        this->Manipulate = NULL;
-        break;
-        
-    case LocalAssembling2D_type::Brinkman2D_Galerkin2:
-        //Matrix Type 14
-        this->N_Terms = 6;                                      // = #(Derivatives)
-        this->Derivatives = { D10, D01, D00, D00, D10, D01};    // u_x, u_y, u, p, p_x, p_y
-        this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
-        this->Needs2ndDerivatives[0] = false;
-        this->Needs2ndDerivatives[1] = false;
-        this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };             // 0: velocity space, 1: pressure space
-        this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
-        // in the lower right corner
-        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        this->N_Rhs = 3;                                        // f1, f2, g
-        this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
-        this->AssembleParam = BrinkmanType2Galerkin;
-        this->Manipulate = NULL;
+            this->N_Matrices = 9;
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;
+            this->RhsSpace = { 0, 0, 1 };
+            this->AssembleParam = BrinkmanType1bGalerkin;
+            this->Manipulate = NULL;
         break;
 
-    case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab:
-        //Matrix Type 14
-        this->N_Terms = 6;                                      // = #(Derivatives)
-        this->Derivatives = { D10, D01, D00, D00, D10, D01};    // u_x, u_y, u, p, p_x, p_y
-        this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
-        this->Needs2ndDerivatives[0] = false;
-        this->Needs2ndDerivatives[1] = false;
-        this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };             // 0: velocity space, 1: pressure space
-        this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
-        // in the lower right corner
-        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        this->N_Rhs = 3;                                        // f1, f2, g
-        this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
-        this->AssembleParam = BrinkmanType1GalerkinResidualStab;
-        this->Manipulate = NULL;
+        case LocalAssembling2D_type::Brinkman2D_Galerkin2:
+            //Matrix Type 14
+            this->N_Terms = 6;                                      // = #(Derivatives)
+            this->Derivatives = { D10, D01, D00, D00, D10, D01};    // u_x, u_y, u, p, p_x, p_y
+            this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
+            this->Needs2ndDerivatives[0] = false;
+            this->Needs2ndDerivatives[1] = false;
+            this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };             // 0: velocity space, 1: pressure space
+            this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
+            // in the lower right corner
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;                                        // f1, f2, g
+            this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
+            this->AssembleParam = BrinkmanType2Galerkin;
+            this->Manipulate = NULL;
         break;
 
-    case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab2:
-        //Matrix Type 14
-        this->N_Terms = 8;                                      // = #(Derivatives)
-        this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};    // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
-        this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
-        this->Needs2ndDerivatives[0] = true;
-        this->Needs2ndDerivatives[1] = true;
-        this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };             // 0: velocity space, 1: pressure space
-        this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
-        // in the lower right corner
-        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        this->N_Rhs = 3;                                        // f1, f2, g
-        this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
-        this->AssembleParam = BrinkmanType1GalerkinResidualStab2;
-        this->Manipulate = NULL;
+        case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab:
+            //Matrix Type 14
+            this->N_Terms = 6;                                      // = #(Derivatives)
+            this->Derivatives = { D10, D01, D00, D00, D10, D01};    // u_x, u_y, u, p, p_x, p_y
+            this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
+            this->Needs2ndDerivatives[0] = false;
+            this->Needs2ndDerivatives[1] = false;
+            this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };             // 0: velocity space, 1: pressure space
+            this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
+            // in the lower right corner
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;                                        // f1, f2, g
+            this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
+            this->AssembleParam = BrinkmanType1GalerkinResidualStab;
+            this->Manipulate = NULL;
+        break;
+
+        case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab2:
+            //Matrix Type 14
+            this->N_Terms = 8;                                      // = #(Derivatives)
+            this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};    // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+            this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
+            this->Needs2ndDerivatives[0] = true;
+            this->Needs2ndDerivatives[1] = true;
+            this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };             // 0: velocity space, 1: pressure space
+            this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
+            // in the lower right corner
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;                                        // f1, f2, g
+            this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
+            this->AssembleParam = BrinkmanType1GalerkinResidualStab2;
+            this->Manipulate = NULL;
         break;
         
         ///////////////////////////////////////////////////////////////////////////
         // NSE2D: stationary Navier-Stokes problems problem
-            case NSE2D_Galerkin:
-            case NSE2D_Galerkin_Nonlinear:
+        case NSE2D_All:
+        case NSE2D_NL:
             this->set_parameters_for_nseGalerkin(type);
-            break;
-  ///////////////////////////////////////////////////////////////////////////
-  case NSE2D_SUPG:
-  case NSE2D_SUPG_NL:
-    this->set_parameters_for_nseSUPG(type);
-    break;
-  ///////////////////////////////////////////////////////////////////////////
-  case Darcy2D_Galerkin:
-    this->N_Terms = 6;
-    this->Derivatives = { D00, D00, D10, D01, D10, D01 };
-    this->Needs2ndDerivatives = new bool[2];
-    this->Needs2ndDerivatives[0] = false;
-    this->Needs2ndDerivatives[1] = false;
-    this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
-    this->N_Matrices = 4;
-    this->RowSpace = {0, 1, 0, 1};
-    this->ColumnSpace = { 0, 1, 1, 0};
-    this->N_Rhs = 2;
-    this->RhsSpace = { 0, 1 };
-    this->AssembleParam = BilinearAssembleDarcyGalerkin; 
-    this->Manipulate = NULL;
-    break;
-  ////////////////////////////////////////////////////////////////////////////
-    // TNSE2D: nonstationary Navier-Stokes problems
-  case LocalAssembling2D_type::TNSE2D:
-  case LocalAssembling2D_type::TNSE2D_NL:   
-  case LocalAssembling2D_type::TNSE2D_Rhs:
+        break;
+        ///////////////////////////////////////////////////////////////////////////
+        case NSE2D_SUPG:
+        case NSE2D_SUPG_NL:
+            this->set_parameters_for_nseSUPG(type);
+        break;
+            ///////////////////////////////////////////////////////////////////////////
+        case Darcy2D_Galerkin:
+            this->N_Terms = 6;
+            this->Derivatives = { D00, D00, D10, D01, D10, D01 };
+            this->Needs2ndDerivatives = new bool[2];
+            this->Needs2ndDerivatives[0] = false;
+            this->Needs2ndDerivatives[1] = false;
+            this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
+            this->N_Matrices = 4;
+            this->RowSpace = {0, 1, 0, 1};
+            this->ColumnSpace = { 0, 1, 1, 0};
+            this->N_Rhs = 2;
+            this->RhsSpace = { 0, 1 };
+            this->AssembleParam = BilinearAssembleDarcyGalerkin;
+            this->Manipulate = NULL;
+        break;
+        ////////////////////////////////////////////////////////////////////////////
+        // TNSE2D: nonstationary Navier-Stokes problems
+        case LocalAssembling2D_type::TNSE2D:
+        case LocalAssembling2D_type::TNSE2D_NL:
+        case LocalAssembling2D_type::TNSE2D_Rhs:
   /***** BELOW THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
   case LocalAssembling2D_type::TNSE2D_Mass:
   /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
@@ -435,7 +437,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
         switch(this->discretization_type)
         {
           case GALERKIN:
-            this->set_parameters_for_tnse(type);
+            this->set_parameters_for_tnseGalerkin(type);
             break;
           case SMAGORINSKY:
             this->set_parameters_for_tnse_SMAGORINSKY(type);
@@ -498,6 +500,8 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
   parameter_functions_values.resize(0);
 }
 
+
+//==============================================================================
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                                      const TAuxParam2D& aux,
                                      const TDiscreteForm2D& df)
@@ -566,6 +570,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
 
 }
 
+//==============================================================================
 /*! @brief Customized constructor. */
 LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 		std::vector<MultiIndex2D> myDerivatives, std::vector<int> myFESpaceNumber,
@@ -646,6 +651,7 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 
 }
 
+//==============================================================================
 LocalAssembling2D::~LocalAssembling2D()
 {
   delete [] AllOrigValues;
@@ -1078,1157 +1084,125 @@ void LocalAssembling2D::compute_parameters(int n_points,
 //==================================================================================
 void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type type)
 {
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
+  {
+    ErrMsg("Newton method is not supported yet");
+    exit(1);
+  }
+  if(TDatabase::ParamDB->LAPLACETYPE == 1)
+  {
+    if((nstype==1) || nstype==2)
+    {
+      ErrMsg("LAPLACETYPE is only supported for NSTYPE 3, and 4");
+      exit(1);
+    }
+  }
+  
+  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM>0)
+  {
+    ErrMsg("Skew symmetric case is not implemented for all NSTYPE");
+    exit(1);
+  }
+  // common for all NSTYPE, Discrete forms, etc
+  if(type==NSE2D_All)
+  {
+    this->N_Terms = 4;
+    this->Derivatives = { D10, D01, D00, D00 };  
+    this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure    
+    this->N_Rhs = 2; // NOTE: check why is this always three??
+    this->RhsSpace = { 0, 0 };
+  }
+  else if(type==NSE2D_NL)
+  {
+    this->N_Terms = 3;
+    this->Derivatives = { D10, D01, D00 };    
+    this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure        
+    this->N_Rhs = 0;
+    this->RhsSpace = {};
+  }
+  
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Manipulate = NULL;
+  
+  this->N_Parameters = 2;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { NSParamsVelo };
+  this->N_FEValues = 2;
+  this->FEValue_FctIndex = { 0, 1 };
+  this->FEValue_MultiIndex = { D00, D00 };
+  this->BeginParameter = { 0 };
+  
   switch(type)
   {
-    case NSE2D_Galerkin:
-    {
-      switch(TDatabase::ParamDB->NSTYPE)
+    case NSE2D_All:
+      switch(nstype)
       {
-        case 1: // NSE2D_Galerkin, NSTYPE=1,
-        {
-          if(TDatabase::ParamDB->LAPLACETYPE != 0)
-          {
-            ErrMsg("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-            exit(1);
-          }
-          switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-          {
-            case 0: // NSE2D_Galerkin, NSTYPE=1, NSE_NONLINEAR_FORM=0
-            {
-              this->N_Terms = 4;
-              this->Derivatives = { D10, D01, D00, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 3;
-              this->RowSpace = { 0, 1, 1 };
-              this->ColumnSpace = { 0, 0, 0 };
-              this->N_Rhs = 2;
-              this->RhsSpace = { 0, 0 };
-              this->AssembleParam = NSType1Galerkin;
-              this->Manipulate = NULL;
-
-              this->N_Parameters = 2;
-              this->N_ParamFct = 1;
-              this->ParameterFct =  { NSParamsVelo };
-              this->N_FEValues = 2;
-              this->FEValue_FctIndex = { 0, 1 };
-              this->FEValue_MultiIndex = { D00, D00 };
-              this->BeginParameter = { 0 };
-              break;
-            } // end case NSE_NONLINEAR_FORM=0
-            case 1: // NSE2D_Galerkin, NSTYPE=1, NSE_NONLINEAR_FORM=1
-            {
-              this->N_Terms = 4;
-              this->Derivatives = { D10, D01, D00, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 3;
-              this->RowSpace = { 0, 1, 1 };
-              this->ColumnSpace = { 0, 0, 0 };
-              this->N_Rhs = 2;
-              this->RhsSpace = { 0, 0 };
-              this->AssembleParam = NSType1GalerkinSkew; 
-              this->Manipulate = NULL;
-              
-              this->N_Parameters = 2;
-              this->N_ParamFct = 1;
-              this->ParameterFct =  { NSParamsVelo };
-              this->N_FEValues = 2;
-              this->FEValue_FctIndex = { 0, 1 };
-              this->FEValue_MultiIndex = { D00, D00 };
-              this->BeginParameter = { 0 };
-              break;
-            } // end case NSE_NONLINEAR_FORM=1
-            case 2:
-            {
-              ErrMsg("Using the rotational form (NSE_NONLINEAR_FORM: 2) is not "
-                     << "possible with NSTYPE: 1. Choose NSTYPE: 3, 4 or 14");
-              exit(1);
-            }
-            default:
-              ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
-              exit(1);
-          } // end switch NSE_NONLINEAR_FORM
-          break;
-        } // end case NSTYPE=1
-        case 2: // NSE2D_Galerkin, NSTYPE=2,
-        {
-          if(TDatabase::ParamDB->LAPLACETYPE != 0)
-          {
-            ErrMsg("LAPLACETYPE must be set to 0 in case of NSTYPE 2");
-            exit(1);
-          }
-          switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-          {
-            case 0: // NSE2D_Galerkin, NSTYPE=2, NSE_NONLINEAR_FORM=0
-            {
-              this->N_Terms = 4;
-              this->Derivatives = { D10, D01, D00, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 5;
-              this->RowSpace = { 0, 1, 1, 0, 0 };
-              this->ColumnSpace = { 0, 0, 0, 1, 1 };
-              this->N_Rhs = 2;
-              this->RhsSpace = { 0, 0 };
-              this->AssembleParam = NSType2Galerkin; 
-              this->Manipulate = NULL;
-              
-              this->N_Parameters = 2;
-              this->N_ParamFct = 1;
-              this->ParameterFct =  { NSParamsVelo };
-              this->N_FEValues = 2;
-              this->FEValue_FctIndex = { 0, 1 };
-              this->FEValue_MultiIndex = { D00, D00 };
-              this->BeginParameter = { 0 };
-              break;
-            } // end case NSE_NONLINEAR_FORM=0
-            case 1: // NSE2D_Galerkin, NSTYPE=2, NSE_NONLINEAR_FORM=1
-            {
-              this->N_Terms = 4;
-              this->Derivatives = { D10, D01, D00, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 5;
-              this->RowSpace = { 0, 1, 1, 0, 0 };
-              this->ColumnSpace = { 0, 0, 0, 1, 1 };
-              this->N_Rhs = 2;
-              this->RhsSpace = { 0, 0 };
-              this->AssembleParam = NSType2GalerkinSkew; 
-              this->Manipulate = NULL;
-              
-              this->N_Parameters = 2;
-              this->N_ParamFct = 1;
-              this->ParameterFct =  { NSParamsVelo };
-              this->N_FEValues = 2;
-              this->FEValue_FctIndex = { 0, 1 };
-              this->FEValue_MultiIndex = { D00, D00 };
-              this->BeginParameter = { 0 };
-              break;
-            } // end case NSE_NONLINEAR_FORM=1
-            case 2:
-            {
-              ErrMsg("Using the rotational form (NSE_NONLINEAR_FORM: 2) is not "
-                     << "possible with NSTYPE: 2. Choose NSTYPE: 3, 4 or 14");
-              exit(1);
-            }
-            default:
-              ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
-              exit(1);
-          } // end switch NSE_NONLINEAR_FORM
-          break;
-        } // end case NSTYPE=2
-        case 3: // NSE2D_Galerkin, NSTYPE=3,
-        {
-          switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-          {
-            case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0, 
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 6;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
-                  this->AssembleParam = NSType3Galerkin; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 6;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
-                  this->AssembleParam = NSType3GalerkinDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=0
-            case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1, 
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 6;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
-                  this->AssembleParam = NSType3GalerkinSkew; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 6;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
-                  this->AssembleParam = NSType3GalerkinSkewDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=1
-            case 2: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2,
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 6;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
-                  this->AssembleParam = NSType3GalerkinRot; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 6;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
-                  this->AssembleParam = NSType3GalerkinRotDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=2
-            default:
-              ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
-              exit(1);
-          } // end switch NSE_NONLINEAR_FORM
-          break;
-        } // end case NSTYPE=3
-        case 4: // NSE2D_Galerkin, NSTYPE=4,
-        case 14: // NSE2D_Galerkin, NSTYPE=14,
-        {
-          switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-          {
-            case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0, 
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 8;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                  if(TDatabase::ParamDB->NSTYPE == 14)
-                  {
-                    this->N_Matrices = 9;
-                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-                  }
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 1 };
-                  this->AssembleParam = NSType4Galerkin; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 8;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                  if(TDatabase::ParamDB->NSTYPE == 14)
-                  {
-                    this->N_Matrices = 9;
-                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-                  }
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 1 };
-                  this->AssembleParam = NSType4GalerkinDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=0
-            case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1, 
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 8;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                  if(TDatabase::ParamDB->NSTYPE == 14)
-                  {
-                    this->N_Matrices = 9;
-                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-                  }
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 1 };
-                  this->AssembleParam = NSType4GalerkinSkew; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 8;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                  if(TDatabase::ParamDB->NSTYPE == 14)
-                  {
-                    this->N_Matrices = 9;
-                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-                  }
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 1 };
-                  this->AssembleParam = NSType4GalerkinSkewDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=1
-            case 2: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2,
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 8;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                  if(TDatabase::ParamDB->NSTYPE == 14)
-                  {
-                    this->N_Matrices = 9;
-                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-                  }
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 1 };
-                  this->AssembleParam = NSType4GalerkinRot; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 4;
-                  this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 8;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                  if(TDatabase::ParamDB->NSTYPE == 14)
-                  {
-                    this->N_Matrices = 9;
-                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-                  }
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 1 };
-                  this->AssembleParam = NSType4GalerkinRotDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=2
-            default:
-              ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
-              exit(1);
-          } // end switch NSE_NONLINEAR_FORM
-          break;
-        } // end case NSTYPE=(1)4
-        default:
-          ErrMsg("unknown NSTYPE " << TDatabase::ParamDB->NSTYPE);
-          exit(1);
-      } // end switch NSTYPE
-      break;
-    } // end case LocalAssembling2D_type=NSE2D_Galerkin
-    case NSE2D_Galerkin_Nonlinear:
-    {
-      switch(TDatabase::ParamDB->NSTYPE)
+        case 1:
+          this->N_Matrices = 3;
+          this->RowSpace = { 0, 1, 1 };
+          this->ColumnSpace = { 0, 0, 0 };
+          this->AssembleParam = NSType1Galerkin;
+          break; // nstype 1
+        case 2:
+          this->N_Matrices = 5;
+          this->RowSpace = { 0, 1, 1, 0, 0 };
+          this->ColumnSpace = { 0, 0, 0, 1, 1 };
+          this->AssembleParam = NSType2Galerkin;
+          break; // nstype 2
+        case 3:
+          this->N_Matrices = 6;
+          this->RowSpace = { 0, 0, 0, 0, 1, 1 };
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0 };
+          if(TDatabase::ParamDB->LAPLACETYPE==0)
+            this->AssembleParam = NSType3Galerkin; 
+          else
+            this->AssembleParam = NSType3GalerkinDD; 
+          break; // nstype 3
+        case 4:
+          this->N_Matrices = 8;
+          this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
+          this->N_Rhs = 3;
+          this->RhsSpace = { 0, 0, 1 };
+          if(TDatabase::ParamDB->LAPLACETYPE==0)
+            this->AssembleParam = NSType4Galerkin; 
+          else
+            this->AssembleParam = NSType4GalerkinDD; 
+          break; // nstype 4
+      }
+      break; // NSE2D_ALL
+    //========================================
+    case NSE2D_NL:
+      switch(nstype)
       {
-        case 1: // NSE2D_Galerkin, NSTYPE=1,
-        {
-          if(TDatabase::ParamDB->LAPLACETYPE != 0)
-          {
-            ErrMsg("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-            exit(1);
-          }
-          switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-          {
-            case 0: // NSE2D_Galerkin, NSTYPE=1, NSE_NONLINEAR_FORM=0
-            {
-              this->N_Terms = 3;
-              this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 1;
-              this->RowSpace = { 0 };
-              this->ColumnSpace = { 0 };
-              this->N_Rhs = 0;
-              this->RhsSpace = {};
-              this->AssembleParam = NSType1_2NLGalerkin; 
-              this->Manipulate = NULL;
-              
-              this->N_Parameters = 2;
-              this->N_ParamFct = 1;
-              this->ParameterFct =  { NSParamsVelo };
-              this->N_FEValues = 2;
-              this->FEValue_FctIndex = { 0, 1 };
-              this->FEValue_MultiIndex = { D00, D00 };
-              this->BeginParameter = { 0 };
-              break;
-            } // end case NSE_NONLINEAR_FORM=0
-            case 1: // NSE2D_Galerkin, NSTYPE=1, NSE_NONLINEAR_FORM=1
-            {
-              this->N_Terms = 3;
-              this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 1;
-              this->RowSpace = { 0 };
-              this->ColumnSpace = { 0 };
-              this->N_Rhs = 0;
-              this->RhsSpace = {};
-              this->AssembleParam = NSType1_2NLGalerkinSkew; 
-              this->Manipulate = NULL;
-              
-              this->N_Parameters = 2;
-              this->N_ParamFct = 1;
-              this->ParameterFct =  { NSParamsVelo };
-              this->N_FEValues = 2;
-              this->FEValue_FctIndex = { 0, 1 };
-              this->FEValue_MultiIndex = { D00, D00 };
-              this->BeginParameter = { 0 };
-              break;
-            } // end case NSE_NONLINEAR_FORM=1
-            case 2:
-            {
-              ErrMsg("Using the rotational form (NSE_NONLINEAR_FORM: 2) is not "
-                     << "possible with NSTYPE: 1. Choose NSTYPE: 3, 4 or 14");
-              exit(1);
-            }
-            default:
-              ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
-              exit(1);
-          } // end switch NSE_NONLINEAR_FORM
-          break;
-        } // end case NSTYPE=1
-        case 2: // NSE2D_Galerkin, NSTYPE=2,
-        {
-          if(TDatabase::ParamDB->LAPLACETYPE != 0)
-          {
-            ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 2");
-          }
-          switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-          {
-            case 0: // NSE2D_Galerkin, NSTYPE=2, NSE_NONLINEAR_FORM=0
-            {
-              this->N_Terms = 3;
-              this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 1;
-              this->RowSpace = { 0 };
-              this->ColumnSpace = { 0 };
-              this->N_Rhs = 0;
-              this->RhsSpace = {};
-              this->AssembleParam = NSType1_2NLGalerkin; 
-              this->Manipulate = NULL;
-              
-              this->N_Parameters = 2;
-              this->N_ParamFct = 1;
-              this->ParameterFct =  { NSParamsVelo };
-              this->N_FEValues = 2;
-              this->FEValue_FctIndex = { 0, 1 };
-              this->FEValue_MultiIndex = { D00, D00 };
-              this->BeginParameter = { 0 };
-              break;
-            } // end case NSE_NONLINEAR_FORM=0
-            case 1: // NSE2D_Galerkin, NSTYPE=2, NSE_NONLINEAR_FORM=1
-            {
-              this->N_Terms = 3;
-              this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 1;
-              this->RowSpace = { 0 };
-              this->ColumnSpace = { 0 };
-              this->N_Rhs = 0;
-              this->RhsSpace = {};
-              this->AssembleParam = NSType1_2NLGalerkinSkew; 
-              this->Manipulate = NULL;
-              
-              this->N_Parameters = 2;
-              this->N_ParamFct = 1;
-              this->ParameterFct =  { NSParamsVelo };
-              this->N_FEValues = 2;
-              this->FEValue_FctIndex = { 0, 1 };
-              this->FEValue_MultiIndex = { D00, D00 };
-              this->BeginParameter = { 0 };
-              break;
-            } // end case NSE_NONLINEAR_FORM=1
-            case 2:
-            {
-              ErrMsg("Using the rotational form (NSE_NONLINEAR_FORM: 2) is not "
-                     << "possible with NSTYPE: 2. Choose NSTYPE: 3, 4 or 14");
-              exit(1);
-            }
-            default:
-              ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
-              exit(1);
-          } // end switch NSE_NONLINEAR_FORM
-          break;
-        } // end case NSTYPE=2
-        case 3: // NSE2D_Galerkin, NSTYPE=3,
-        {
-          switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-          {
-            case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0, 
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 2;
-                  this->RowSpace = { 0, 0 };
-                  this->ColumnSpace = { 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkin; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 2;
-                  this->RowSpace = { 0, 0 };
-                  this->ColumnSpace = { 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=0
-            case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1, 
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 2;
-                  this->RowSpace = { 0, 0 };
-                  this->ColumnSpace = { 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinSkew; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 2;
-                  this->RowSpace = { 0, 0 };
-                  this->ColumnSpace = { 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinSkewDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=1
-            case 2: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2,
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 4;
-                  this->RowSpace = { 0, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinRot; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 4;
-                  this->RowSpace = { 0, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinRotDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=2
-            default:
-              ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
-              exit(1);
-          } // end switch NSE_NONLINEAR_FORM
-          break;
-        } // end case NSTYPE=3
-        case 4: // NSE2D_Galerkin, NSTYPE=4,
-        case 14: // NSE2D_Galerkin, NSTYPE=14,
-        {
-          switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-          {
-            case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0, 
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 2;
-                  this->RowSpace = { 0, 0 };
-                  this->ColumnSpace = { 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkin; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 2;
-                  this->RowSpace = { 0, 0 };
-                  this->ColumnSpace = { 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=0
-            case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1, 
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 2;
-                  this->RowSpace = { 0, 0 };
-                  this->ColumnSpace = { 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinSkew; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 2;
-                  this->RowSpace = { 0, 0 };
-                  this->ColumnSpace = { 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinSkewDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=1
-            case 2: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2
-            {
-              switch(TDatabase::ParamDB->LAPLACETYPE)
-              {
-                case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2,
-                        // LAPLACETYPE=0
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 4;
-                  this->RowSpace = { 0, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinRot; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=0
-                case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2
-                        // LAPLACETYPE=1
-                {
-                  this->N_Terms = 3;
-                  this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 4;
-                  this->RowSpace = { 0, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  this->AssembleParam = NSType3_4NLGalerkinRotDD; 
-                  this->Manipulate = NULL;
-                  
-                  this->N_Parameters = 2;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo };
-                  this->N_FEValues = 2;
-                  this->FEValue_FctIndex = { 0, 1 };
-                  this->FEValue_MultiIndex = { D00, D00 };
-                  this->BeginParameter = { 0 };
-                  break;
-                } // end case LAPLACETYPE=1
-                default:
-                  ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
-                  exit(1);
-              } // end switch LAPLACETYPE
-              break;
-            } // end case NSE_NONLINEAR_FORM=2
-            default:
-              ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
-              exit(1);
-          } // end switch NSE_NONLINEAR_FORM
-          break;
-        } // end case NSTYPE=(1)4
-        default:
-          ErrMsg("unknown NSTYPE " << TDatabase::ParamDB->NSTYPE);
-          exit(1);
-      } // end switch NSTYPE
-      break;
-    } // end case LocalAssembling2D_type=NSE2D_Galerkin_Nonlinear
+        case 1:
+        case 2:
+          this->N_Matrices = 1;
+          this->RowSpace = { 0 };
+          this->ColumnSpace = { 0 };
+          this->AssembleParam = NSType1_2NLGalerkin; 
+         break; // nstype 1, 2
+        case 3:
+        case 4:
+          this->N_Matrices = 2;
+          this->RowSpace = { 0, 0 };
+          this->ColumnSpace = { 0, 0 };          
+          if(TDatabase::ParamDB->LAPLACETYPE==0)
+            this->AssembleParam = NSType3_4NLGalerkin; 
+          else
+            this->AssembleParam = NSType3_4NLGalerkinDD;   
+         break; // nstype 3, 4
+      }
+      break; // NSE2D_NL
+    //========================================
     default:
       ErrMsg("unknown LocalAssembling2D_type " << type << "  " << this->name);
       exit(1);
-  } // end switch LocalAssembling2D_type
+  }
+
 }
 
 //==============================================================================
@@ -2636,11 +1610,10 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
   }
 }
 
-//==============================================================================
-void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
+//=========================================================================
+void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type type)
 {
   int nstype = TDatabase::ParamDB->NSTYPE;
-  int disc_type = this->discretization_type;
   // few checks
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
@@ -2656,7 +1629,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
     }
   }
   
-  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
+  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM>0)
   {
     ErrMsg("Skew symmetric case is not implemented for all NSTYPE");
     exit(1);
@@ -2684,308 +1657,95 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   this->Needs2ndDerivatives[0] = false;
   this->Needs2ndDerivatives[1] = false;
   this->Manipulate = NULL;
-
   
-  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
-  {
-    this->N_Parameters = 2;
-    this->N_ParamFct = 1;
-    this->ParameterFct = {TimeNSParamsVelo_GradVelo};
-    this->BeginParameter = { 0 };
-    this->N_FEValues = 6;
-    this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
-    this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
-  }
-  else
-  {
-    this->N_Parameters = 2;
-    this->N_ParamFct = 1;
-    this->ParameterFct = {TimeNSParams2};
-    this->N_FEValues = 2;
-    this->BeginParameter = { 0 };
-    this->FEValue_MultiIndex = { D00, D00 };
-    this->FEValue_FctIndex = { 0, 1 };    
-  }
+
+  this->N_Parameters = 2;
+  this->N_ParamFct = 1;
+  this->ParameterFct = {TimeNSParams2};
+  this->N_FEValues = 2;
+  this->BeginParameter = { 0 };
+  this->FEValue_MultiIndex = { D00, D00 };
+  this->FEValue_FctIndex = { 0, 1 };    
   
   switch(type)
   {
     case TNSE2D:
-      switch(disc_type) // discrete forms
+      switch(nstype)
       {
-        case GALERKIN:
-          switch(nstype)
-          {
-            case 1:
-              this->N_Matrices    = 4;
-              this->RowSpace      = { 0, 0, 1, 1 };
-              this->ColumnSpace   = { 0, 0, 0, 0 };
-              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-              {                
-                case 0:
-                  this->AssembleParam = TimeNSType1Galerkin;
-                  break;
-                case 3:
-                  this->AssembleParam = TimeNSType1GalerkinDiv;
-                  break;
-              }
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
-            case 2:
-              this->N_Matrices    = 6;
-              this->RowSpace      = { 0, 0, 1, 1, 0, 0 };
-              this->ColumnSpace   = { 0, 0, 0, 0, 1, 1 };
-              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-              {
-                case 0:                  
-                  this->AssembleParam = TimeNSType2Galerkin;
-                  break;
-                case 3:
-                  this->AssembleParam = TimeNSType2GalerkinDiv;
-                  break;                  
-              }
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
-            case 3:
-              this->N_Matrices    = 7;
-              this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1 };
-              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0 };
-              if(TDatabase::ParamDB->LAPLACETYPE == 0)
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:                  
-                    this->AssembleParam = TimeNSType3Galerkin;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType3GalerkinRot;
-                    break;                  
-                }
-              }
-              else
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:                  
-                    this->AssembleParam = TimeNSType3GalerkinDD;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType3GalerkinRotDD;
-                    break;                  
-                }
-              }
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
-            case 4:
-              this->N_Matrices    = 9;
-              this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
-              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
-              if(TDatabase::ParamDB->LAPLACETYPE == 0)
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:
-                    this->AssembleParam = TimeNSType4Galerkin;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType4GalerkinRot;
-                    break;                  
-                }
-              }
-              else
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:
-                    this->AssembleParam = TimeNSType4GalerkinDD;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType4GalerkinRotDD;
-                    break;                  
-                }
-              }
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
-            case 14: 
-              this->N_Matrices    = 10;
-              this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0, 1 };
-              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-              {
-                case 0:                  
-                  // this->AssembleParam = 
-                  break;
-                case 2:
-                  // this->AssembleParam =
-                  break;                  
-              }
-              break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
-          }
-          break; // break within type TNSE2D->DISCTYPE
-        case SUPG:
-          // TODO: implement SUPG method
-          ErrThrow("SUPG method is not supported yet");
-          
-          switch(nstype)
-          {
-            case 1:
-              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-              {
-                case 0:
-                  break;
-                case 3:
-                  break;                  
-              }
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
-            case 2:
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
-            case 3:
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
-            case 4:
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
-            case 14: 
-              break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
-          }
-          break;
-        case SMAGORINSKY:  // basically, the same as Galerkin but with added turbulent viscosity
-		  switch(nstype)   // only with NSTYPE 1 at the moment
-		  {
-		    case 1:
-		      this->N_Matrices		= 4;
-		      this->RowSpace		= { 0, 0, 1, 1 };
-		      this->ColumnSpace		= { 0, 0, 0, 0 };
-		      switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)  // only NLFORM 0 at the moment
-		      {
-		        case 0:
-		          this->AssembleParam = TimeNSType1Smagorinsky;
-		    	  break;
-		      }
-		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
-		    case 2:
-		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
-		    case 3:
-		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
-		    case 4:
-		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
-		    case 14:
-		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 14
-		  }
-      }
-      break;// break; for the TNSE2D type
+        case 1:
+          this->N_Matrices    = 4;
+          this->RowSpace      = { 0, 0, 1, 1 };
+          this->ColumnSpace   = { 0, 0, 0, 0 };
+          this->AssembleParam = TimeNSType1Galerkin;
+          break; // nstype 1
+        case 2:
+          this->N_Matrices    = 6;
+          this->RowSpace      = { 0, 0, 1, 1, 0, 0 };
+          this->ColumnSpace   = { 0, 0, 0, 0, 1, 1 };
+          this->AssembleParam = TimeNSType2Galerkin;
+          break; // nstype 2
+        case 3:
+          this->N_Matrices    = 7;
+          this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1 };
+          this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0 };
+          if(TDatabase::ParamDB->LAPLACETYPE == 0)
+            this->AssembleParam = TimeNSType3Galerkin;
+          else
+            this->AssembleParam = TimeNSType3GalerkinDD;
+          break; // nstype 3
+        case 4:
+          this->N_Matrices    = 9;
+          this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
+          this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
+          if(TDatabase::ParamDB->LAPLACETYPE == 0)
+            this->AssembleParam = TimeNSType4Galerkin;
+          else
+            this->AssembleParam = TimeNSType4GalerkinDD;
+          break; // nstype 4
+      }// switch nstype
+      break;// case TNSE2D 
+    //==============================
     case TNSE2D_NL:
-      switch(disc_type)
+      switch(nstype)
       {
-        case GALERKIN:
-          switch(nstype)
-          {
-            case 1:
-            case 2:
-              this->N_Matrices    = 1;
-              this->RowSpace      = { 0 };
-              this->ColumnSpace   = { 0 };
-              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-              {
-                case 0:
-                  this->AssembleParam = TimeNSType1_2NLGalerkin;
-                  break;
-                case 3:
-                  this->AssembleParam = TimeNSType1_2NLGalerkinDiv;
-                  break;
-              }              
-              break;
-            case 3:
-            case 4:
-              this->N_Matrices    = 2;
-              this->RowSpace      = { 0, 0 };
-              this->ColumnSpace   = { 0, 0 };
-              if(TDatabase::ParamDB->LAPLACETYPE==0)
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:
-                   this->AssembleParam = TimeNSType3_4NLGalerkin;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType3_4NLGalerkinRot;
-                    break;
-                }
-              }
-              else
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:
-                    this->AssembleParam = TimeNSType3_4NLGalerkinDD;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType3_4NLGalerkinRotDD;
-                    break;
-                }
-              }
-              break;
-          }
-          break;// break; TNSE2D_NL->GALERKIN
-          
-        case SUPG:
-          switch(nstype)
-          {
-            case 1:
-            case 2:
-              break;
-            case 3:
-            case 4:
-              break;
-          }
-          break;// break; TNSE2D_NL->SUPG
-        case SMAGORINSKY:  // basically the same as Galerkin but with added turbulent viscosity
-          switch(nstype)   // only with NSTYPE 1 at the moment
-          {
-            case 1:
-          	  this->N_Matrices	= 1;
-          	  this->RowSpace	= { 0 };
-          	  this->ColumnSpace	= { 0 };
-          	  switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)  // only NLFORM 0 at the moment
-          	  {
-          	    case 0:
-          		  this->AssembleParam = TimeNSType1_2NLSmagorinsky;
-          		  break;
-          	  }
-          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
-          	case 2:
-          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
-          	case 3:
-          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
-          	case 4:
-          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
-          }
-          break; // TNSE2D_NL->SMAGORINSKY
-      }// case: TNSE2D_NL: endswitch(disc_type): 
-      break;
+        case 1:
+        case 2:
+          this->N_Matrices    = 1;
+          this->RowSpace      = { 0 };
+          this->ColumnSpace   = { 0 };
+          this->AssembleParam = TimeNSType1_2NLGalerkin;
+          break; // nstype 1, 2
+        case 3:
+        case 4:
+          this->N_Matrices    = 2;
+          this->RowSpace      = { 0, 0 };
+          this->ColumnSpace   = { 0, 0 };
+          if(TDatabase::ParamDB->LAPLACETYPE==0)
+            this->AssembleParam = TimeNSType3_4NLGalerkin;
+          else
+            this->AssembleParam = TimeNSType3_4NLGalerkinDD;
+          break; // nstype 3, 4
+      }// switch nstype
+      break; // case TNSE2D_NL
+    //==============================
     case TNSE2D_Rhs:
-      switch(disc_type)
-      {
-        case GALERKIN:
-        case SMAGORINSKY:
-          this->N_Terms = 1;
-          this->Derivatives = { D00 };
-          this->Needs2ndDerivatives = new bool[1];
-          this->Needs2ndDerivatives[0] = false;
-          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
-          this->N_Matrices = 0;
-          this->RowSpace = {};
-          this->ColumnSpace = { };
-          this->N_Rhs = 3 ;
-          this->RhsSpace = {0, 0, 0};
-          this->AssembleParam =TimeNSRHS; 
-          this->Manipulate = NULL;
-          break;
-        case SUPG:
-          ErrMsg("unknown LocalAssembling2D_type " << type << "  not yet implemented");
-          break;
-        default:
-          ErrMsg("unknown LocalAssembling2D_type " << type << "  " << this->name);
-          exit(1);
-      }
-      break;
+      this->N_Terms = 1;
+      this->Derivatives = { D00 };
+      this->Needs2ndDerivatives = new bool[1];
+      this->Needs2ndDerivatives[0] = false;
+      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 0;
+      this->RowSpace = {};
+      this->ColumnSpace = { };
+      this->N_Rhs = 3;
+      this->RhsSpace = {0, 0, 0};
+      this->AssembleParam =TimeNSRHS; 
+      this->Manipulate = NULL;
+      break; // case TNSE2D_Rhs
+   //==============================
     default:
       ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
   }
-  //=========================================================================
 }
 
 //==============================================================================

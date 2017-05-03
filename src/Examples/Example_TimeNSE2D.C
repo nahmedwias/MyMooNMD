@@ -183,6 +183,9 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       initialCOndtion.push_back(flow_around_cylinder_steady_inflow::InitialU1);
       initialCOndtion.push_back(flow_around_cylinder_steady_inflow::InitialU2);
       
+      // Set dimensionless viscosity
+      flow_around_cylinder_steady_inflow::DIMENSIONLESS_VISCOSITY = get_nu();
+
       /**post processing - drag and lift calculation and output */
       post_processing_stat = flow_around_cylinder_steady_inflow::compute_drag_lift_pdiff;
       flow_around_cylinder_steady_inflow::DIMENSIONLESS_VISCOSITY = this->get_nu();
