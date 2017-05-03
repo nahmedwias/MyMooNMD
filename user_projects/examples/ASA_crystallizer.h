@@ -54,16 +54,16 @@ namespace Physics
 namespace Temperature
 {
 double T_amb = 297.5;   // ambient temperature (room temperature)
-double T_feed = 313.7;  // feed stream temperature in K
+double T_feed[4] = {307.6 , 312.9 , 313.1 , 313.7};  // feed stream temperature in K
 double r_outer = 0.002; // 2mm
 double r_inner = 0.001;  // 1mm
 
 // calculate suspension heat capacity
-double m_dot_asa = 0.00015;  // kg / s
+double m_dot_asa [4] ={0.000065, 0.0001, 0.00013, 0.00015};  // kg / s
 double c_p_ASA = 1260;      // J/(kg K)
-double m_dot_EtOH = 0.00035; // kg / s
+double m_dot_EtOH [4] = { 0.00015, 0.00024, 0.00031, 0.00035}; // kg / s
 double c_p_EtOH = 2400; // J/(kg K)
-double m_tc_t = m_dot_asa * c_p_ASA + m_dot_EtOH * c_p_EtOH;
+double m_tc_t = m_dot_asa[VELOCITY_CODE] * c_p_ASA + m_dot_EtOH[VELOCITY_CODE] * c_p_EtOH;
 
 // calculate total heat transfer coefficient
 double alpha_inner = 306; // W/(m^2 K)
@@ -74,7 +74,7 @@ double k = 1 / (r_outer * ( 1/(r_inner*alpha_inner) + log(r_outer/r_inner)/lambd
 double temperature_bound_cond_exp( double x )
 {
     using namespace Temperature;
-    return T_amb + (T_feed-T_amb) * std::exp( -k*2*r_outer*M_PI/(m_tc_t) * x );
+    return T_amb + (T_feed[VELOCITY_CODE]-T_amb) * std::exp( -k*2*r_outer*M_PI/(m_tc_t) * x );
 }
 
 //term responsible for the coupling on the right hand side in temperature equation
@@ -135,8 +135,6 @@ void BoundValue_T(int BdComp, double Param, double &value)
   }
   else //wall boundary
   {
-    if(VELOCITY_CODE==3)
-    {
       if(BdComp == bdry_upper)
       {
         double x = Param*15;
@@ -147,9 +145,6 @@ void BoundValue_T(int BdComp, double Param, double &value)
         double x = 15 - Param*15;
         value = temperature_bound_cond_exp(x); //TODO Cache this stuff!
       }
-    }
-    else
-      value = surrounding_T; // surrounding temperature
   }
 }
 
