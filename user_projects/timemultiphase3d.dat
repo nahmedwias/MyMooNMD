@@ -9,7 +9,7 @@ vms_projection_space_order: 0
 example: 40   [ -2, 100 ]
 USE_ISOPARAMETRIC: 1
 
-ENDTIME: 0.1
+ENDTIME: 0.5
 TIMESTEPLENGTH: 0.1
 
 fluid_density: 100.   [ 0, 1e6 ]
@@ -43,8 +43,8 @@ output_compute_errors: true   { true, false }
 output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
-nonlinloop_maxit: 20   [ 0, 1000 ]
-nonlinloop_epsilon: 1e-7   [ 0, 1 ] 
+nonlinloop_maxit: 10   [ 0, 1000 ]
+nonlinloop_epsilon: 1e-5   [ 0, 1 ] 
 nonlinloop_damping_factor: 1   [ 0, 1 ]
 nonlinloop_slowfactor: 1   [ 0, 10 ]
 nonlinloop_scale_epsilon_with_size: false   { true, false }
