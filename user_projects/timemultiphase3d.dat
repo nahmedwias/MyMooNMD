@@ -2,14 +2,14 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 4
+refinement_n_initial_steps: 3
 space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 TURBULENT_VISCOSITY_CONSTANT: 0.
 vms_projection_space_order: 0
-example: 40   [ -2, 100 ]
+example: -1   [ -2, 100 ]
 USE_ISOPARAMETRIC: 1
 
-ENDTIME: 2.
+ENDTIME: 0.01
 TIMESTEPLENGTH: 0.01
 
 fluid_density: 100.   [ 0, 1e6 ]
@@ -43,14 +43,14 @@ output_compute_errors: true   { true, false }
 output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
-nonlinloop_maxit: 20   [ 0, 1000 ]
+nonlinloop_maxit: 1   [ 0, 1000 ]
 nonlinloop_epsilon: 1e-5   [ 0, 1 ] 
 nonlinloop_damping_factor: 1   [ 0, 1 ]
 nonlinloop_slowfactor: 1   [ 0, 10 ]
 nonlinloop_scale_epsilon_with_size: false   { true, false }
 
-solver_type: iterative   { direct, iterative }
-direct_solver_type: umfpack   { mumps, pardiso, umfpack }
+solver_type: direct   { direct, iterative }
+direct_solver_type: mumps   { mumps, pardiso, umfpack }
 iterative_solver_type: fgmres   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
 max_n_iterations: 100   { 0, 1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000 }
 min_n_iterations: 1   { 0, 1, 2, 3, 4, 5, 10 }
@@ -79,7 +79,7 @@ PRESSURE_SPACE: -4711
 ANSATZ_ORDER: 1
 NSTYPE: 4
 LAPLACETYPE: 1
-algebraic_flux_correction: fem-fct-cn   { none, default, fem-tvd, fem-fct-cn}
+algebraic_flux_correction: none   { none, default, fem-tvd, fem-fct-cn}
 
 # 1=GALERKIN, 2=SDFEM=SUPG, 3=UPWIND
 # 4=SMAGORINSKY, 6=CLASSICAL_LES, 9=VMSProjection...
