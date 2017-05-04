@@ -62,9 +62,11 @@ void ExactP(double x, double y,  double z, double *values)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
   // coordinates of the plugs p1 and p2
-  double p1x = -0.566,  p1y = +0.5;
-  double p2x = -0.468,  p2y = -0.27;
-  double p_radius = 0.1;
+  //  double p1x = -0.566,  p1y = +0.5;
+  //  double p2x = -0.468,  p2y = -0.27;
+    double p1x = 0,  p1y = 0;
+    double p2x = 0,  p2y = 0;
+  double p_radius = 0.5;
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
   double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
@@ -94,11 +96,18 @@ void U2BoundValue(double x, double y, double z, double &value)
 void U3BoundValue(double x, double y, double z, double &value)
 {
   // coordinates of the plugs p1 and p2
-  double p1x = -0.566,  p1y = +0.5;
-  double p2x = -0.468,  p2y = -0.27;
-  double p_radius = 0.1;
+  //  double p1x = -0.566,  p1y = +0.5;
+  //  double p2x = -0.468,  p2y = -0.27;
+    double p1x = 0,  p1y = 0;
+    double p2x = 0,  p2y = 0;
+  double p_radius = 0.5;
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
   double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
+
+//  double t = TDatabase::TimeDB->CURRENTTIME;
+//  bool start = 0;
+//  if (t > 0)
+//    start = 1;
 
   if ( (z == 0) && (in_plug1 >=0 || in_plug2 >= 0) )
     value = 0.01; //gas inflow
