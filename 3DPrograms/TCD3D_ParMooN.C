@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
   timer_solve.print_total_time("accumulated solver time");
   
   if(i_am_root)
-    Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
+    Output::print("<<<<< ParMooN Finished: TCD3D Main Program >>>>>");
 
   timer.print_total_time("TCD3D_ParMooN program");
   Output::close_file();
