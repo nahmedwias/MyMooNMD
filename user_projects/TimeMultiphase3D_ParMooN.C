@@ -76,8 +76,11 @@ int main(int argc, char* argv[])
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
   //  tcd_db["space_discretization_type"] = "galerkin";
   tcd_db["solver_type"]        = "direct";  // umfpack or mumps for TCD3D
+  Output::warn<1>("Warning, solver_type has been hard-coded to direct for TCD3D.");
 
   //  tnse_db["example"]         = 18;
+  tnse_db["space_discretization_type"] = "galerkin";
+  Output::warn<1>("Warning, disctype has been hard-coded to GALERKIN for TNSE3D.");
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
 
@@ -141,7 +144,7 @@ int main(int argc, char* argv[])
   if (my_rank==0)
   {
     vof.output_initial_info();
-    vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
+//    vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
   }
 
   /********************************************************************
@@ -306,10 +309,10 @@ int main(int argc, char* argv[])
        ********************************************************************/
       if (vof.cd2nse_coupling_ == true )
       {
-        std::string time = std::to_string(TDatabase::TimeDB->CURRENTTIME);
+//        std::string time = std::to_string(TDatabase::TimeDB->CURRENTTIME);
         vof.update_field_vectors();
-        vof.output_vectors("vector_phi_"+time,"vector_rho_"+time,
-                           "vector_mu_"+time);
+//        vof.output_vectors("vector_phi_"+time,"vector_rho_"+time,
+//                           "vector_mu_"+time);
       }
     }
 

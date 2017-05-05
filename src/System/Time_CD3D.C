@@ -735,7 +735,8 @@ void Time_CD3D::assemble_initial_time_with_convection
     bool with_convection_field = false;
 
     TFEFunction3D *feFunction[4] = {&s.feFunction_, nullptr,nullptr,nullptr};
-    LocalAssembling3D la(allMatrices, feFunction, example_.get_coeffs());
+    LocalAssembling3D la(allMatrices, feFunction, example_.get_coeffs(),
+                         this->disctype);
 
 
     if (convection_field)    // assembles initial RHS and Stiffness with convection field
@@ -818,7 +819,8 @@ void Time_CD3D::assemble_with_convection
   {
     bool with_convection_field = false;
     TFEFunction3D *feFunction[4] = {&s.feFunction_,nullptr,nullptr,nullptr};
-    LocalAssembling3D la(stiffMatrixRhs, feFunction, example_.get_coeffs());
+    LocalAssembling3D la(stiffMatrixRhs, feFunction, example_.get_coeffs(),
+                         this->disctype);
 
     if (convection_field)    // assembles initial RHS and Stiffness with convection field
     {

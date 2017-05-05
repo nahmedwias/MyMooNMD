@@ -3,10 +3,10 @@
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
 refinement_n_initial_steps: 3
-space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
+space_discretization_type: supg { galerkin, supg, smagorinsky, vms_projection }
 TURBULENT_VISCOSITY_CONSTANT: 0.
 vms_projection_space_order: 0
-example: -1   [ -2, 100 ]
+example: 40   [ -2, 100 ]
 USE_ISOPARAMETRIC: 1
 
 ENDTIME: 0.01
@@ -35,7 +35,7 @@ DRIFT_Z: 0.
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
-verbosity: 5   [ 1, 5 ]
+verbosity: 4   [ 1, 5 ]
 
 output_write_vtk: true   { true, false }
 output_write_ps: true   { true, false }
@@ -43,14 +43,14 @@ output_compute_errors: true   { true, false }
 output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
-nonlinloop_maxit: 1   [ 0, 1000 ]
+nonlinloop_maxit: 20   [ 0, 1000 ]
 nonlinloop_epsilon: 1e-5   [ 0, 1 ] 
 nonlinloop_damping_factor: 1   [ 0, 1 ]
 nonlinloop_slowfactor: 1   [ 0, 10 ]
 nonlinloop_scale_epsilon_with_size: false   { true, false }
 
 solver_type: direct   { direct, iterative }
-direct_solver_type: mumps   { mumps, pardiso, umfpack }
+direct_solver_type: umfpack   { mumps, pardiso, umfpack }
 iterative_solver_type: fgmres   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
 max_n_iterations: 100   { 0, 1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000 }
 min_n_iterations: 1   { 0, 1, 2, 3, 4, 5, 10 }
