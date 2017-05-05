@@ -76,11 +76,11 @@ int main(int argc, char* argv[])
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
   //  tcd_db["space_discretization_type"] = "galerkin";
   tcd_db["solver_type"]        = "direct";  // umfpack or mumps for TCD3D
-  Output::warn<1>("Warning, solver_type has been hard-coded to direct for TCD3D.");
+//  Output::warn<1>("Warning, solver_type has been hard-coded to direct for TCD3D.");
 
   //  tnse_db["example"]         = 18;
   tnse_db["space_discretization_type"] = "galerkin";
-  Output::warn<1>("Warning, disctype has been hard-coded to GALERKIN for TNSE3D.");
+//  Output::warn<1>("Warning, disctype has been hard-coded to GALERKIN for TNSE3D.");
   tnse_db["problem_type"]    = 6;
   tnse_db["output_basename"] = "multiphase_tnse_output";
 
