@@ -89,7 +89,7 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
   solver(param_db), systems_(), example_(_example), errors_({})
 {
   this->db.merge(param_db,false); // update this database with given values
-  this->checkParameters();
+  this->check_and_set_parameters();
   
   bool usingMultigrid = this->solver.is_using_multigrid();
   if(!usingMultigrid)
@@ -230,7 +230,7 @@ void Time_CD3D::SystemPerGrid::update_old_Au()
 }
 
 //==============================================================================
-void Time_CD3D::checkParameters()
+void Time_CD3D::check_and_set_parameters()
 {
   //set problem_type to Time_CD if not yet set
   if(!db["problem_type"].is(2))
@@ -292,6 +292,16 @@ void Time_CD3D::checkParameters()
     // when using afc, create system matrices as if all dofs were active
     TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1; //FIXME THIS IS DANGEROUS, does not go well with BlockFEMatrix!
   }
+
+  // Read space discretization type from database and
+  // set this->disctype accordingly.
+  if (db["space_discretization_type"].is("galerkin"))
+    this->disctype = GALERKIN;      // = 1
+  else if (db["space_discretization_type"].is("supg"))
+    this->disctype = SUPG;          // = 2
+  else
+    ErrThrow("Unknown space discretization type for TCD3D!");
+
 }
 
 //==============================================================================
@@ -301,7 +311,8 @@ void Time_CD3D::assemble_initial_time()
   for(auto &s : this->systems_)
   {
     TFEFunction3D *feFunction = {&s.feFunction_};
-    LocalAssembling3D la(allMatrices, &feFunction, example_.get_coeffs());
+    LocalAssembling3D la(allMatrices, &feFunction, example_.get_coeffs(),
+                         this->disctype);
     // Assemble stiffness, mass matrices and the rhs. Initially it is independent
     // that which method is used. 
     // 
@@ -326,7 +337,8 @@ void Time_CD3D::assemble()
   for(auto &s : this->systems_)
   {
     TFEFunction3D *feFunction = {&s.feFunction_};
-    LocalAssembling3D la(stiffMatrixRhs, &feFunction, example_.get_coeffs());    
+    LocalAssembling3D la(stiffMatrixRhs, &feFunction, example_.get_coeffs(),
+                         this->disctype);
     // call assembling routine 
     if(db["space_discretization_type"].is("galerkin"))
     {
