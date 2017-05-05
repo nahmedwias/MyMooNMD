@@ -8,7 +8,7 @@
 double p1x = 0,  p1y = 0;
 double p2x = 0,  p2y = 0;
 double p_radius = 0.2;
-double height = 2.5;
+double height = 0.1;
 
 
 void ExampleFile()

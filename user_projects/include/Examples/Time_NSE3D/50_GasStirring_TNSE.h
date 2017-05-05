@@ -10,7 +10,8 @@ double DIMENSIONLESS_VISCOSITY;
 double p1x = 0,  p1y = 0;
 double p2x = 0,  p2y = 0;
 double p_radius = 0.2;
-double height = 2.5;
+double height = 0.1;
+double free_zone = 0.;
 double inflow_velocity = 0.1;
 
 void ExampleFile()
@@ -71,10 +72,11 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
   double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
+  double total_height = height + free_zone; // = geometry height
 
   if ( (z == 0) && (in_plug1 >=0 || in_plug2 >= 0) )
     cond = DIRICHLET; //gas inflow
-  else if (z == 3)
+  else if (z == total_height)
     cond = NEUMANN;  // outflow for the gas
   else
     cond = DIRICHLET;
