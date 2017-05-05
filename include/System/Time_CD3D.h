@@ -128,17 +128,6 @@ class Time_CD3D
     
     /** @brief Definition of the used example */
     const Example_TimeCD3D example_;
-
-    /** @brief set parameters in database
-     * 
-     * This functions checks if the parameters in the database are meaningful 
-     * and resets them otherwise. The hope is that after calling this function
-     * this class is fully functional. 
-     * 
-     * If some parameters are set to unsupported values, an error occurs and 
-     * throws an exception.
-     */
-    void set_parameters();
     
     /** @brief old right hand side vectior 
      * this will be used to save the right hand side from the 
@@ -152,6 +141,19 @@ class Time_CD3D
 
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
+
+    /** @brief an internal integer to store the discretization type.
+     * This integer corresponds to the old DISCTYPE, but it is taken
+     * from the database of this class, and is not a global parameter
+     * anymore. It is more convenient than using the long syntax
+     * db["space_discretization_type"].is("blablabla"), and it is
+     * used when calling the local assembling objects.
+     * Setting this parameter is done in the method CheckParameters
+     * which has now been renamed check_and_set_parameters.
+     * This disctype is necessary to use correctly different disctype,
+     * e.g. supg.
+     */
+    int disctype;
 
   public:
     /** @brief The standard constructor, can be used for multigrid and non-multigrid.
@@ -241,7 +243,7 @@ class Time_CD3D
      * intended to be, someday. Eventually this method and the like
      * will be moved to TDatabase.
      */
-    void checkParameters();
+    void check_and_set_parameters();
     
      // getters and setters
     const Example_TimeCD3D& get_example() const
