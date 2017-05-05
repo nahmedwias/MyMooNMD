@@ -1,6 +1,16 @@
 // ==========================================================================
 // instationary problem
 // ==========================================================================
+
+// coordinates of the plugs p1 and p2
+//  double p1x = -0.566,  p1y = +0.5;
+//  double p2x = -0.468,  p2y = -0.27;
+double p1x = 0,  p1y = 0;
+double p2x = 0,  p2y = 0;
+double p_radius = 0.1;
+double height = 2.5;
+
+
 void ExampleFile()
 {
   Output::print<1>("Example: 50_GasStirring_TCD.h\n");
@@ -15,12 +25,6 @@ void Exact(double x, double y, double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  // coordinates of the plugs p1 and p2
-//  double p1x = -0.566,  p1y = +0.5;
-//  double p2x = -0.468,  p2y = -0.27;
-  double p1x = 0,  p1y = 0;
-  double p2x = 0,  p2y = 0;
-  double p_radius = 0.5;
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
   double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
@@ -33,12 +37,6 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 // value of boundary condition
 void BoundValue(double x, double y, double z, double &value)
 {
-  // coordinates of the plugs p1 and p2
-  //  double p1x = -0.566,  p1y = +0.5;
-  //  double p2x = -0.468,  p2y = -0.27;
-    double p1x = 0,  p1y = 0;
-    double p2x = 0,  p2y = 0;
-  double p_radius = 0.5;
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
   double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
@@ -51,16 +49,10 @@ void BoundValue(double x, double y, double z, double &value)
 // initial conditon
 void InitialCondition(double x, double y, double z, double *values)
 {
-  // coordinates of the plugs p1 and p2
-  //  double p1x = -0.566,  p1y = +0.5;
-  //  double p2x = -0.468,  p2y = -0.27;
-    double p1x = 0,  p1y = 0;
-    double p2x = 0,  p2y = 0;
-  double p_radius = 0.5;
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
   double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
-  if ( z <= 2.5)
+  if ( z <= height)
     values[0] = 1; // liquid
   else
     values[0] = 0; // gas

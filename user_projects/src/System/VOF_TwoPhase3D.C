@@ -84,7 +84,7 @@ void VOF_TwoPhase3D::manage_example_parameters()
       this->cd2nse_coupling_     = false;
       this->solve_convection_    = true;
       Output::info<5>("Example " + std::to_string(example_number_) +
-                      ":all booleans must be false but solve_convection is true.");
+                      ": all booleans must be false except solve_convection.");
       break;
     case 20:
       this->tnse_variable_fluid_ = false;
@@ -92,7 +92,7 @@ void VOF_TwoPhase3D::manage_example_parameters()
       this->cd2nse_coupling_     = false;
       this->solve_convection_    = true;
       Output::info<5>("Example " + std::to_string(example_number_) +
-                      ":all booleans must be false but solve_convection is true.");
+                      ": only nse->cd coupling and solve_cd are true .");
       break;
     case 40: case 50:
       this->tnse_variable_fluid_ = true;
@@ -100,7 +100,7 @@ void VOF_TwoPhase3D::manage_example_parameters()
       this->cd2nse_coupling_     = true;
       this->solve_convection_    = true;
       Output::info<5>("Example " + std::to_string(example_number_) +
-                      ":all booleans must be false but solve_convection is true.");
+                      ": all booleans must be true.");
       break;
     default:
       ErrThrow("Unknown example number");
