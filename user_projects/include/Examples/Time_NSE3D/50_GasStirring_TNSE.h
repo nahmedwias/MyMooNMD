@@ -9,9 +9,9 @@ double DIMENSIONLESS_VISCOSITY;
 //  double p2x = -0.468,  p2y = -0.27;
 double p1x = 0,  p1y = 0;
 double p2x = 0,  p2y = 0;
-double p_radius = 0.2;
-double height = 0.1;
-double free_zone = 0.;
+double p_radius = 0.05;
+double height = 0.4;
+double free_zone = 0.2; // check that DRIFT_Z=height+free_zones
 double inflow_velocity = 0.1;
 
 void ExampleFile()
@@ -34,7 +34,15 @@ void InitialU2(double x, double y, double z, double *values)
 
 void InitialU3(double x, double y, double z, double *values)
 {
-  values[0] = 0;
+  double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
+  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
+
+  if (z != 0)
+    values[0] = 0;
+  else  if ( (z == 0) && (in_plug1 >=0 || in_plug2 >= 0) )
+    values[0] = inflow_velocity; //gas inflow
+  else
+    values[0] = 0;
 }
 
 void InitialP(double x, double y, double z, double *values)
