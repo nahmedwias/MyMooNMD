@@ -32,8 +32,8 @@ boundary_file: ../mesh/ladle_3D/Circle_r03.PRM
 #geo_file: ../mesh/ladle_3D/circle_ladle.GEO
 #geo_file: ../mesh/ladle_3D/Circle2.GEO
 #geo_file: ../mesh/ladle_3D/circle_368quads.mesh
-geo_file: ../mesh/ladle_3D/circle_368quads_r005.mesh
-N_CELL_LAYERS: 35.
+geo_file: ../mesh/ladle_3D/circle_574quads_r005.mesh
+N_CELL_LAYERS: 8
 DRIFT_Z: 0.6
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 

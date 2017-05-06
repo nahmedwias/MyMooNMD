@@ -35,12 +35,10 @@ void InitialU2(double x, double y, double z, double *values)
 void InitialU3(double x, double y, double z, double *values)
 {
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
-  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
+//  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
-  if (z != 0)
-    values[0] = 0;
-  else  if ( (z == 0) && (in_plug1 >=0 || in_plug2 >= 0) )
-    values[0] = inflow_velocity; //gas inflow
+  if ( (z == 0) && (in_plug1 >= 0 ))// || in_plug2 >= 0) )
+    values[0] = 0; //gas inflow
   else
     values[0] = 0;
 }
@@ -79,13 +77,13 @@ void ExactP(double x, double y,  double z, double *values)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
-  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
+//  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
   double total_height = height + free_zone; // = geometry height
 
-  if ( (z == 0) && (in_plug1 >=0 || in_plug2 >= 0) )
+  if ( (z == 0) && (in_plug1 >= 0) )// || in_plug2 > 0) )
     cond = DIRICHLET; //gas inflow
   else if (z == total_height)
-    cond = NEUMANN;  // outflow for the gas
+    cond = NEUMANN;  // outflow for the gas, in 2d it is Dirichlet ... weird
   else
     cond = DIRICHLET;
 
@@ -108,15 +106,15 @@ void U2BoundValue(double x, double y, double z, double &value)
 void U3BoundValue(double x, double y, double z, double &value)
 {
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
-  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
+//  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
 //  double t = TDatabase::TimeDB->CURRENTTIME;
 //  bool start = 0;
 //  if (t > 0)
 //    start = 1;
 
-  if ( (z == 0) && (in_plug1 >=0 || in_plug2 >= 0) )
-    value = inflow_velocity; //gas inflow
+  if ( (z == 0) && (in_plug1 >= 0))// || in_plug2 > 0) )
+    value = 0; //gas inflow
   else
     value = 0;
 }

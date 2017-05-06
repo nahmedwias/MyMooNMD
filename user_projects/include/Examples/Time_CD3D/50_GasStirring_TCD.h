@@ -25,10 +25,7 @@ void Exact(double x, double y, double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
-  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
-
-  if ( (z == 0) && (in_plug1 >=0 || in_plug2 >= 0) )
+  if (z == 0)
     cond = DIRICHLET;
   else
     cond = NEUMANN;
@@ -38,10 +35,15 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 void BoundValue(double x, double y, double z, double &value)
 {
   double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
-  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
+//  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
-  if ( (z == 0) && (in_plug1 >=0 || in_plug2 >= 0) )
-    value = 0; // gas injection = DIRICHLET
+  if (z == 0)
+  {
+    if (in_plug1 >= 0)// || in_plug2 >= 0)
+      value = 0; // gas injection = DIRICHLET
+    else
+      value = 1; // Dirichlet, liquid
+  }
   else
     value = 0;
 }
@@ -49,16 +51,27 @@ void BoundValue(double x, double y, double z, double &value)
 // initial conditon
 void InitialCondition(double x, double y, double z, double *values)
 {
-  double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
-  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
+//  double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
+//  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
-  if ( z <= height)
+  if ( z <= height )// && z > 0)
+  {
     values[0] = 1; // liquid
+  }
+//  else if (z == 0)
+//  {
+//    if (in_plug1 >= 0)// || in_plug2 >= 0)
+//      values[0] = 0; // gas injection = DIRICHLET
+//    else
+//      values[0] = 1; // Dirichlet, liquid
+//  }
   else
+  {
     values[0] = 0; // gas
+  }
 
-  if ( (z == 0) && (in_plug1 >=0 || in_plug2 >= 0) )
-    values[0] = 0; // gas injection = DIRICHLET
+//  if ( (z == 0) && (in_plug1 >0 || in_plug2 > 0) )
+//    values[0] = 0; // gas injection = DIRICHLET
 
 }
 
@@ -82,7 +95,7 @@ void BilinearCoeffs(int n_points, double *X, double *Y, double *Z,
     coeff[0] = 0; //diffusion coefficient
     coeff[1] = b1;   //ux
     coeff[2] = b2;   //uy
-    coeff[3] = b3;   //uy
+    coeff[3] = b3;   //uz
     coeff[4] = 0;   //reaction coefficient
 
     coeff[5] = 0;
