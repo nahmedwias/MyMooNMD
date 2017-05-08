@@ -1,5 +1,5 @@
 /**
- * @brief A test program for a time dependent CD2D problem
+ * @brief A test program for a time dependent CD3D problem
  * algorithm "linear Crank-Nicolson FEM-FCT" as implemented
  * in the namespace AlgebraicFluxCorrection.
  * Uses LeVeque's rotating bodies example.
@@ -13,6 +13,13 @@
 #include <FEDatabase3D.h>
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
+
+#ifdef _MPI
+#include <mpi.h>
+#include <MeshPartition.h>
+double bound = 0;
+double timeC = 0;
+#endif
 
 // Those are L2, H1 and L^inf the norms of the target solution in space,
 // at the given times. The test must reproduce these in order to pass.
@@ -70,6 +77,11 @@ void check_solution_norms(Time_CD3D &tcd, int m)
  //test crank-nicolson linear fem-fct scheme
 int main(int argc, char* argv[])
 {
+#ifdef _MPI
+  MPI_Init(&argc, &argv);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  TDatabase::ParamDB->Comm = comm;
+#endif
   {
     TDatabase Database;
     TFEDatabase3D FEDatabase;
@@ -103,13 +115,24 @@ int main(int argc, char* argv[])
 //    db["output_vtk_directory"].set("VTK");
 
     TDomain domain(db);
+#ifdef _MPI
+  int maxSubDomainPerDof = 0;
+#endif
     std::list<TCollection* > gridCollections
-      = domain.refine_and_get_hierarchy_of_collections(db);
+      = domain.refine_and_get_hierarchy_of_collections( db
+#ifdef _MPI
+    , maxSubDomainPerDof
+#endif
+          );
 
     // example object
     Example_TimeCD3D example_obj(db);
     // tcd3d system object
+#ifdef _MPI
+    Time_CD3D tcd(gridCollections, db, example_obj, maxSubDomainPerDof);
+#else
     Time_CD3D tcd(gridCollections, db, example_obj);
+#endif
 
 
     tcd.assemble_initial_time();
@@ -139,6 +162,9 @@ int main(int argc, char* argv[])
     }
 
   }
+#ifdef _MPI
+  MPI_Finalize();
+#endif
 }
 
 
