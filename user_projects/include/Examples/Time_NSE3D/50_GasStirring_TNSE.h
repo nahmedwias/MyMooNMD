@@ -83,7 +83,7 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
   if ( (z == 0) && (in_plug1 >= 0) )// || in_plug2 > 0) )
     cond = DIRICHLET; //gas inflow
   else if (z == total_height)
-    cond = NEUMANN;  // outflow for the gas, in 2d it is Dirichlet ... weird
+    cond = DIRICHLET;  // outflow for the gas, in 2d it is Dirichlet ... weird
   else
     cond = DIRICHLET;
 
