@@ -105,7 +105,9 @@ void NSType1Galerkin3D(double Mult, double *coeff,
      
       val  = c0*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      //HOTFIX: Check the documentation!
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+        val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
 
       MatrixRow[j] += Mult * val;
     } // endfor j

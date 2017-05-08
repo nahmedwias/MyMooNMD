@@ -362,7 +362,7 @@ void Time_NSE3D::assemble_initial_time()
     }
   }
 
-  for(System_per_grid& s : this->systems_) // from back to front (coarse to fine)
+  for(System_per_grid& s : this->systems_)
   {
     const TFESpace3D *v_space = &s.velocitySpace_;
     const TFESpace3D *p_space = &s.pressureSpace_;
