@@ -327,6 +327,13 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   add_test(NAME tcd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_tcd3d_solver_mpi 
            multigrid)
   
+  #tcd3d algebraic flux correction tests with MPI
+  set(_EXEC_NAME ParMooN_test_tcd3d_femfct_mpi)
+  set(_FILE_NAME tcd3d_femfct_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  # only tested with Mumps so far
+  add_test(NAME tcd3d_femfct_mpi COMMAND mpirun -n 3 ParMooN_test_tcd3d_femfct_mpi)
+  
   #nse3d solver tests
   set(_EXEC_NAME ParMooN_test_nse3d_solver_mpi)
   set(_FILE_NAME nse3d_solvers_test.c++)
