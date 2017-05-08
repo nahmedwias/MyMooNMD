@@ -199,6 +199,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(NAME tcd3d_seq_mg COMMAND ParMooN_test_tcd3d_solver_seq multigrid)
   # petsc
   add_test(NAME tcd3d_seq_petsc COMMAND ParMooN_test_tcd3d_solver_seq petsc)
+  
+  #tcd3d algebraic flux correction tests
+  set(_EXEC_NAME ParMooN_test_tcd3d_femfct_seq)
+  set(_FILE_NAME tcd3d_femfct_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  add_test(NAME tcd3d_femfct_seq COMMAND ParMooN_test_tcd3d_femfct_seq)
 
   #nse3d solver tests
   set(_EXEC_NAME ParMooN_test_nse3d_solver_seq)
