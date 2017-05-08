@@ -38,7 +38,7 @@ void InitialU3(double x, double y, double z, double *values)
 //  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
   if ( (z == 0) && (in_plug1 >= 0 ))// || in_plug2 >= 0) )
-    values[0] = 0; //gas inflow
+    values[0] = 0/*inflow_velocity*/; //gas inflow
   else
     values[0] = 0;
 }
@@ -83,7 +83,7 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
   if ( (z == 0) && (in_plug1 >= 0) )// || in_plug2 > 0) )
     cond = DIRICHLET; //gas inflow
   else if (z == total_height)
-    cond = DIRICHLET;  // outflow for the gas, in 2d it is Dirichlet ... weird
+    cond = NEUMANN;  // outflow for the gas, in 2d it is Dirichlet ... weird
   else
     cond = DIRICHLET;
 
@@ -114,7 +114,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 //    start = 1;
 
   if ( (z == 0) && (in_plug1 >= 0))// || in_plug2 > 0) )
-    value = 0; //gas inflow
+    value = 0/*inflow_velocity*/; //gas inflow
   else
     value = 0;
 }
