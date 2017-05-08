@@ -95,10 +95,10 @@ void VOF_TwoPhase3D::manage_example_parameters()
                       ": only nse->cd coupling and solve_cd are true .");
       break;
     case 40: case 50:
-      this->tnse_variable_fluid_ = true;
-      this->nse2cd_coupling_     = true;
-      this->cd2nse_coupling_     = true;
-      this->solve_convection_    = true;
+//      this->tnse_variable_fluid_ = true;
+//      this->nse2cd_coupling_     = true;
+//      this->cd2nse_coupling_     = true;
+//      this->solve_convection_    = true;
       Output::info<5>("Example " + std::to_string(example_number_) +
                       ": all booleans must be true.");
       break;
@@ -137,13 +137,13 @@ void VOF_TwoPhase3D::update_field_vectors()
   //At this point, rhol and mul = phase fraction
   switch(example_number_)
   {
-    case 10: case 20:
+    case 10: case 20: case 50:
       this->rho_vector_ = this->rhol_;
       this->mu_vector_ = this->mul_;
       // note that in case of standard tnse2d, these values
       // won't be used or read in the tnse2d object
       break;
-    case 40: case 50: //dambreak3D and GasStirring
+    case 40: //case 50: //dambreak3D and GasStirring
       this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
       this->mug_  = TDatabase::ParamDB->P8; // mu of gas  = mu2 =mumin
       this->rho_vector_.scale(this->rhol_-this->rhog_);
