@@ -9,7 +9,7 @@ double p1x = 0,  p1y = 0;
 double p2x = 0,  p2y = 0;
 double p_radius = 0.05;
 double height = 0.4;
-double free_zone = 0.2; // check that DRIFT_Z=height+free_zones
+//double free_zone = 0.2; // check that DRIFT_Z=height+free_zones
 
 void ExampleFile()
 {
@@ -25,8 +25,8 @@ void Exact(double x, double y, double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  double total_height = height + free_zone;
-  if (z == 0 || z == total_height)
+//  double total_height = height + free_zone;
+  if (z == 0 )// || z == total_height)
     cond = DIRICHLET;
   else
     cond = NEUMANN;
@@ -35,14 +35,14 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 // value of boundary condition
 void BoundValue(double x, double y, double z, double &value)
 {
-//  double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
+  double in_plug1 = p_radius*p_radius-(x-p1x)*(x-p1x)-(y-p1y)*(y-p1y);
 //  double in_plug2 = p_radius*p_radius-(x-p2x)*(x-p2x)-(y-p2y)*(y-p2y);
 
   if (z == 0)
   {
-//    if (in_plug1 >= 0)// || in_plug2 >= 0)
-//      value = 0; // gas injection = DIRICHLET
-//    else
+    if (in_plug1 >= 0)// || in_plug2 >= 0)
+      value = 0; // gas injection = DIRICHLET
+    else
       value = 1; // Dirichlet, liquid
   }
   else
