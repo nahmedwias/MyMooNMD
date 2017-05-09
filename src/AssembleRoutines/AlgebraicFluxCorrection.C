@@ -13,6 +13,12 @@
 #include <string.h>
 #include <MooNMD_Io.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
+
 //! Anonymous namespace for helper methods which do not have to be assessed
 //! from the outside.
 namespace {
@@ -61,7 +67,7 @@ void check_cfl_condition(double mass_diag_entry,
  * (and defaults to that value).
  */
 void fem_fct_compute_system_matrix(
-    TMatrix& system_matrix,
+    FEMatrix& system_matrix,
     const std::vector<double>& lumped_mass_matrix,
     double tau, double theta1 = 0.5, double theta2 = 0.5)
 {
@@ -126,14 +132,16 @@ void fem_fct_compute_system_matrix(
 /*!
  * Compute the artificial diffusion matrix to a given stiffness matrix.
  *
- * @param[in,out] A The stiffness matrix which needs additional
+ * @param[in] A The stiffness matrix which needs additional
  * diffusion. Must be square.
  * @param[out] matrix_D A vector to write the entries
- * of D, the artificial diffusion matrix to. (Consider TMatrix
- * with same TStructure as A!)
+ * of D, the artificial diffusion matrix to. Must contain only 0.
+ * MPI: D will leave this method with matrix-consistency level 0, meaning that
+ * only its master rows will be correct. Everything else is left at 0.
+ *
  */
 void compute_artificial_diffusion_matrix(
-        const TMatrix& A, std::vector<double>& matrix_D)
+        const FEMatrix& A, std::vector<double>& matrix_D)
     {
         // catch non-square matrix
         if (!A.is_square() )
@@ -148,12 +156,25 @@ void compute_artificial_diffusion_matrix(
         const int* RowPtr = A.GetRowPtr();
         const double* Entries = A.GetEntries();
 
-        //reset matrix_D to 0
-        std::fill(matrix_D.begin(), matrix_D.end(), 0);
+#ifdef _MPI
+        const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
+        const int* masters = comm.GetMaster();
+        int size, rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
 
         // loop over all rows
         for(int i=0;i<nDof;i++)
         {
+#ifdef _MPI
+          // do this only for master rows - they couple only to other masters,
+          // slaves and halo1 d.o.f., therefore one can be sure, that if A_ij
+          // is on this rank, so is the transposed entry, A_ji
+          if(masters[i] != rank)
+            continue;
+#endif
+
           // i-th row of sqmatrix
           int j0 = RowPtr[i];
           int j1 = RowPtr[i+1];
@@ -162,9 +183,6 @@ void compute_artificial_diffusion_matrix(
           {
             // column
             int index = ColInd[j];
-            // only the active part of the matrix
-            //if (index>=N_U)
-            //    continue;
             // only off-diagonals
             if (index!=i)
             {
@@ -190,6 +208,11 @@ void compute_artificial_diffusion_matrix(
         // loop over all rows
         for(int i=0;i<nDof;i++)
         {
+#ifdef _MPI
+          // do this only for master rows
+          if(masters[i] != rank)
+            continue;
+#endif
           // i-th row of sqmatrix
           int j0 = RowPtr[i];
           int j1 = RowPtr[i+1];
@@ -215,7 +238,7 @@ void compute_artificial_diffusion_matrix(
  *  of the lumped mass matrix. Must be of according length.
  */
 void lump_mass_matrix_to_vector(
-    const TMatrix& M, std::vector<double>& lump_mass)
+    const FEMatrix& M, std::vector<double>& lump_mass)
 {
   // catch non-square matrix
   if (!M.is_square() )
@@ -233,8 +256,21 @@ void lump_mass_matrix_to_vector(
   const double * Entries = M.GetEntries();
   int rows = M.GetN_Rows();
 
+#ifdef _MPI
+        const TParFECommunicator3D& comm = M.GetFESpace3D()->get_communicator();
+        const int* masters = comm.GetMaster();
+        int size, rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
   for (int i=0; i<rows; i++)
   {
+#ifdef _MPI
+    //skip the non-masters in MPI case
+    if(masters[i] != rank)
+      continue;
+#endif
     lump_mass[i]=0.0;
     int j0 = RowPtr[i];
     int j1 = RowPtr[i+1];
@@ -296,7 +332,7 @@ double MinMod(double a, double b)
  */
 void ZalesaksFluxLimiter(
     std::vector<double>& alphas,
-    const TMatrix& mass_matrix,
+    const FEMatrix& mass_matrix,
     const std::vector<double>& lumped_mass,
     const std::vector<double>& raw_fluxes,
     const std::vector<double>& sol_approx,
@@ -469,7 +505,7 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
 
 
 void AlgebraicFluxCorrection::fem_tvd_algorithm(
-    TMatrix& system_matrix,
+    FEMatrix& system_matrix,
     const std::vector<double>& sol,
     std::vector<double>& rhs,
     //this argument is used in outcommented code block only
@@ -706,13 +742,14 @@ void AlgebraicFluxCorrection::fem_tvd_algorithm(
 }
 
 void AlgebraicFluxCorrection::crank_nicolson_fct(
-       const TMatrix& M_C, TMatrix& K,
+       const FEMatrix& M_C, FEMatrix& K,
        const std::vector<double>& oldsol,
        std::vector<double>& rhs, std::vector<double>& rhs_old,
        double delta_t,
        const std::vector<int>& neum_to_diri,
        AlgebraicFluxCorrection::Prelimiter prelim
-       ){
+       )
+{
 
   //make sure Crank-Nicolson is used
   if( TDatabase::TimeDB->TIME_DISC != 2 )
@@ -745,11 +782,13 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   double* Entries = K.GetEntries();
   int N_Entries = K.GetN_Entries();
 
-  //STEP 0.1: Compute artificial diffusion matrix D and add to K, K := K + D=L.
+  //STEP 0.1: Compute artificial diffusion matrix D and add to K, K := K + D ("L").
   std::vector<double> matrix_D_Entries(N_Entries, 0.0);
   compute_artificial_diffusion_matrix(K, matrix_D_Entries);
 
   Daxpy(N_Entries, 1.0, &matrix_D_Entries[0], Entries);
+
+  //MPI: Matrix K is in Level-0-consistency now.
 
   //STEP 0.2: Lump mass matrix.
   std::vector<double> lump_mass (nDofs, 0.0);
@@ -769,7 +808,12 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
 
   // step-by-step build up u_interm...
   // ...first L u_{k-1}
+#ifdef _MPI
+  //make sure that oldsol is in level 2 consistency
+  //TODO GO ONE HERE
+#endif
   K.multiply(&oldsol[0], &u_interm[0]);
+
 
   // ...then M_L^(-1)(f_{k-1} - L u_{k-1})
   for(int i=0;i<nDofs;i++)
