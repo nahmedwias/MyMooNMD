@@ -90,6 +90,14 @@ void fem_fct_compute_system_matrix(
     ErrThrow("Lumped mass matrix vector does not fit the stiffness matrix!");
   }
 
+#ifdef _MPI
+  const TParFECommunicator3D& comm = system_matrix.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int size, rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
   // get pointers to columns, rows and entries of system_matrix
   const int* ColInd = system_matrix.GetKCol();
   const int* RowPtr = system_matrix.GetRowPtr();
@@ -97,6 +105,11 @@ void fem_fct_compute_system_matrix(
 
   for(int i=0;i<nDof;i++)
   {
+#ifdef _MPI
+    // do this only for master rows
+    if(masters[i] != rank)
+      continue;
+#endif
     // i-th row of sqmatrix
     int j0 = RowPtr[i];
     int j1 = RowPtr[i+1];
@@ -809,6 +822,14 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
     ErrThrow("M_C and K dimension mismatch!")
   }
 
+#ifdef _MPI
+  const TParFECommunicator3D& comm = K.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int size, rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
   int nDofs = K.GetN_Rows();
 
   // get pointers to columns, rows and entries of matrix M_C
@@ -849,16 +870,20 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
 
   // step-by-step build up u_interm...
   // ...first L u_{k-1}
-#ifdef _MPI
-  //make sure that oldsol is in level 2 consistency
-  //TODO GO ONE HERE
-#endif
+  // MPI: oldsol is normally given in Level2-Consistency,
+  // when this method is called
   K.multiply(&oldsol[0], &u_interm[0]);
 
 
   // ...then M_L^(-1)(f_{k-1} - L u_{k-1})
   for(int i=0;i<nDofs;i++)
   {
+#ifdef _MPI
+    // do this only for master rows
+    // u_interm gets Level-0-consistency now
+    if(masters[i] != rank)
+      continue;
+#endif
     u_interm[i] = (rhs_old[i] - u_interm[i])/lump_mass[i];
   }
 
@@ -884,12 +909,23 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
     u_dot_interm[i] = 2*(u_interm[i] - oldsol[i])/delta_t;
   }
   //intermediate solution is complete
+  // MPI: u_interm and u_dot_interm are both in Level-0-consistency
+  // and should get level 2 for the next loop
+#ifdef _MPI
+  comm.consistency_update(u_interm.data(),2);
+  comm.consistency_update(u_dot_interm.data(),2);
+#endif
 
   //STEP 2: compute raw antidiffusive fluxes * delta_t, and apply pre-limiting,
   // if required to do so (Kuzmin 2009 S.9 (36) )
   std::vector<double> raw_fluxes(N_Entries, 0.0);
   for(int i=0;i<nDofs;i++)
   {
+#ifdef _MPI
+    // do this only for master rows
+    if(masters[i] != rank)
+      continue;
+#endif
     // i-th row of mass matrix
     int j0 = RowPtr_M[i];
     int j1 = RowPtr_M[i+1];
@@ -936,6 +972,11 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   // STEP 4: Calculate the new right hand side and system matrix.
     for(int i=0;i<nDofs;i++)
     {
+#ifdef _MPI
+    // do this only for master rows
+    if(masters[i] != rank)
+      continue;
+#endif
       double corrected_flux = 0.0;
       int j0 = RowPtr[i];
       int j1 = RowPtr[i+1];

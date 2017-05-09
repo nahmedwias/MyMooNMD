@@ -636,6 +636,13 @@ void Time_CD3D::do_algebraic_flux_correction()
     const FEMatrix& mass = *s.massMatrix_.get_blocks().at(0).get(); // mass
     FEMatrix& stiff = *s.stiffMatrix_.get_blocks_uniquely().at(0).get(); //stiffness
     //vector entry arrays
+#ifdef _MPI
+    const TParFECommunicator3D& comm = s.feSpace_.get_communicator();
+    // solEntries is needed in consistency 2 for afc.
+    // this is done here on the solution blockvector, because
+    // solEntries is given as a const and can't be updated
+    comm.consistency_update(s.solution_.block(0),2);
+#endif
     const std::vector<double>& solEntries = s.solution_.get_entries_vector();
     std::vector<double>& rhsEntries = s.rhs_.get_entries_vector();
     std::vector<double>& oldRhsEntries = old_rhs.get_entries_vector();
