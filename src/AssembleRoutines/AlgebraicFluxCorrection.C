@@ -9,6 +9,7 @@
 #include <IsoBoundEdge.h>
 #include <BoundComp.h>
 
+#include <algorithm>
 #include <stdlib.h>
 #include <string.h>
 #include <MooNMD_Io.h>
@@ -318,13 +319,23 @@ double MinMod(double a, double b)
  *
  * @param[out] alphas The flux correction factors, row by row (sorted like
  * the entries array of the mass_matrix!).
+ * MPI: alphas will be ROWWISE LEVEL-0-CONSISTENT IN MPI on output
+ *
  * @param[in] mass_matrix The complete mass matrix.
+ * MPI: mass_matrix MUST BE ROWWISE LEVEL-0-CONSISTENT IN MPI.
+ *
  * @param[in] lumped_mass The row-wise lumped mass matrix as vector
  * of its diagonal values.
+ * MPI: lumped_mass MUST BE ROWWISE LEVEL-0-CONSISTENT IN MPI.
+ *
  * @param[in] raw_fluxes The raw fluxes, sorted like alphas. Must have been
  * multiplied with current timesteplength!
+ * MPI: raw_fluxes MUST BE ROWWISE LEVEL-0-CONSISTENT IN MPI
+ *
  * @param[in] sol_approx The approximate solution used to calculate
  * the flux correction.
+ * MPI: sol_approx MUST BE LEVEL-2-CONSISTENT IN MPI.
+ *
  * @param[in] neum_to_diri See FEM-FCT, same story.
  * @note I'm pretty sure we can get rid of the whole "neum_to_diri"
  * thing when passing an FEMatrix here which got assembled with Neumann
@@ -339,6 +350,14 @@ void ZalesaksFluxLimiter(
     const std::vector<int>& neum_to_diri
 )
 {
+
+#ifdef _MPI
+        const TParFECommunicator3D& comm = mass_matrix.GetFESpace3D()->get_communicator();
+        const int* masters = comm.GetMaster();
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
   //check if all dimensions fit
   if (!mass_matrix.is_square() )
   {
@@ -382,13 +401,22 @@ void ZalesaksFluxLimiter(
   std::vector<double> P_minus (nDofs, 0.0);
   std::vector<double> Q_plus (nDofs, 0.0);
   std::vector<double> Q_minus (nDofs, 0.0);
+
   std::vector<double> R_plus (nDofs, 0.0);
   std::vector<double> R_minus (nDofs, 0.0);
 
-  // 3.1  Compute Ps and Qs (negative/positive diffusive/antidiffusive fluxes),
-  //    where the Qs are "distances to local extrema of the auxiliary solution"
+  // Compute Ps and Qs (negative/positive diffusive/antidiffusive fluxes),
+  // where the Qs are "distances to local extrema of the auxiliary solution"
+  // MPI: Needs raw_fluxes matrix rowwise level-0-consistent and
+  //      sol_approx in level-2-consistency
   for(int i=0;i<nDofs;i++)
   {
+#ifdef _MPI
+    //skip the non-master rows in MPI case
+    if(masters[i] != rank)
+      continue;
+#endif
+
     // i-th row of mass matrix
     int j0 = RowPtr_M[i];
     int j1 = RowPtr_M[i+1];
@@ -414,31 +442,35 @@ void ZalesaksFluxLimiter(
     } // end loop j
   }
 
-  // 3.2  Compute Rs (nodal correction factors)
+  // Compute R_plus and R_minus (nodal correction factors)
+  // MPI: Needs lumped_mass, Q_plus, Q_minus, P_plus, P_minus in Level 0 consistency
   for(int i=0;i<nDofs;i++)
   {
+
+#ifdef _MPI
+    //skip the non-master rows in MPI case
+    if(masters[i] != rank)
+      continue;
+#endif
+
+    //determine R_plus
     if(fabs(P_plus[i]) == 0.0)
       R_plus[i] = 1.0;
     else
     {
       //OutPut(Q_plus[i] << " "  << P_plus[i] << " " << lump_mass[i] << " ");
-      double help = (lumped_mass[i] * Q_plus[i])/P_plus[i];
-      if(help < 1.0)
-        R_plus[i] = help;
-      else
-        R_plus[i] = 1.0;
+      R_plus[i] = std::min(1.0 , (lumped_mass[i] * Q_plus[i])/P_plus[i] );
     }
+
+    //determine R_minus
     if(fabs(P_minus[i]) == 0.0)
       R_minus[i] = 1.0;
     else
     {
       //OutPut(Q_minus[i] << " "  << P_minus[i] << " " << lump_mass[i] << " ");
-      double help = (lumped_mass[i] * Q_minus[i])/P_minus[i];
-      if(help < 1.0)
-        R_minus[i] = help;
-      else
-        R_minus[i] = 1.0;
+      R_minus[i] = std::min(1.0, (lumped_mass[i] * Q_minus[i])/P_minus[i]);
     }
+
   }
 
   // treat Dirichlet nodes (e.g. Kuzmin & Moeller 2005 S. 27)
@@ -450,9 +482,23 @@ void ZalesaksFluxLimiter(
     R_minus[i] = 1;
   }
 
-  // 3.3 Compute alphas (final correction factors)
-  for(int i=0;i<nDofs;i++)
+#ifdef _MPI
+  // put R_plus and R_minus into level 2 consistency
+  comm.consistency_update(R_plus.data(), 2);
+  comm.consistency_update(R_minus.data(), 2);
+#endif
+
+  // Compute alphas (final correction factors)
+  // MPI: needs R_plus and R_minus in level 2 consistency
+  for( int i=0 ; i<nDofs ; i++ )
   {
+
+#ifdef _MPI
+    //skip the non-master rows in MPI case
+    if(masters[i] != rank)
+      continue;
+#endif
+
     // i-th row of sqmatrix
     int j0 = RowPtr_M[i];
     int j1 = RowPtr_M[i+1];
@@ -462,17 +508,12 @@ void ZalesaksFluxLimiter(
       int index = ColInd_M[j];
       if(raw_fluxes[j] > 0.0)
       {
-        //Initialisation
-        alphas[j] = R_plus[i];
-        if(alphas[j] > R_minus[index])
-          alphas[j] = R_minus[index];
+        alphas[j] = std::min(R_plus[i], R_minus[index]);
       }
       if(raw_fluxes[j]<=0.0)
       {
         //initialisation
-        alphas[j] = R_minus[i];
-        if(alphas[j] > R_plus[index])
-          alphas[j] = R_plus[index];
+        alphas[j] = std::min(R_minus[i], R_plus[index]);
       }
       // clipping, see Kuzmin (2009), end of Section 5
       //if ((fabs(Q_plus[i])< eps)&&(fabs(Q_minus[i])< eps))
@@ -480,7 +521,7 @@ void ZalesaksFluxLimiter(
     }                                             //end loop j
   }
 
-  //end Zalesak!
+  // MPI: At output, correction factors alpha_ij are rowwise level-0-consistent
 }
 
 }
