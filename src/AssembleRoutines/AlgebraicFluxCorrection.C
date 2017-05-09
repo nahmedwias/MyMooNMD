@@ -173,13 +173,12 @@ void compute_artificial_diffusion_matrix(
 #ifdef _MPI
         const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
         const int* masters = comm.GetMaster();
-        int size, rank;
+        int rank;
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-        // loop over all rows
-        for(int i=0;i<nDof;i++)
+        // compute off-diagonal entries of the matrix D
+        for(int i=0;i<nDof;i++) //row loop
         {
 #ifdef _MPI
           // do this only for master rows - they couple only to other masters,
@@ -188,59 +187,49 @@ void compute_artificial_diffusion_matrix(
           if(masters[i] != rank)
             continue;
 #endif
-
-          // i-th row of sqmatrix
-          int j0 = RowPtr[i];
-          int j1 = RowPtr[i+1];
-          // compute first the matrix D
-          for(int j=j0;j<j1;j++)
+          for(int l=RowPtr[i];l<RowPtr[i+1];l++)
           {
             // column
-            int index = ColInd[j];
+            int j = ColInd[l];
+            double k_ij = 0;
+            double k_ji = 0;
             // only off-diagonals
-            if (index!=i)
+            if (j!=i)
             {
-              if (Entries[j] > 0)
-                matrix_D[j] = -Entries[j];
+              k_ij = Entries[l];
               // now check the transposed entry
-              int j2 = RowPtr[index];
-              int j3 = RowPtr[index+1];
-              for (int jj=j2;jj<j3;jj++)
+              for (int ll=RowPtr[j];ll<RowPtr[j+1];ll++)
               {
-                if (ColInd[jj]==i)
+                if (ColInd[ll]==i)
                 {
-                  if (-Entries[jj]<matrix_D[j])
-                    matrix_D[j] = -Entries[jj];
+                  k_ji = Entries[ll];
                   break;
                 }
               }
+              matrix_D[l] = std::min({-k_ij , 0.0 , -k_ji});
             }
           }
         }
 
-        // compute diagonal entry of D
-        // loop over all rows
-        for(int i=0;i<nDof;i++)
+        // compute diagonal entries of the matrix D
+        for(int i=0;i<nDof;i++)//row loop
         {
 #ifdef _MPI
           // do this only for master rows
           if(masters[i] != rank)
             continue;
 #endif
-          // i-th row of sqmatrix
-          int j0 = RowPtr[i];
-          int j1 = RowPtr[i+1];
           double val = 0.0;
           // add all entries of i-th row
-          int jj = -1;
-          for(int j=j0;j<j1;j++)
+          int ll = -1;
+          for(int l=RowPtr[i];l<RowPtr[i+1];l++)
           {
-            val +=  matrix_D[j];
-            int index = ColInd[j];
-            if (index==i)
-              jj = j; //Hold the place of the diagonal entry in the entries array.
+            val +=  matrix_D[l];
+            int j = ColInd[l];
+            if (j==i) //diagonal found
+              ll = l; //Hold the place of the diagonal entry in the entries array.
           }
-          matrix_D[jj] = -val;
+          matrix_D[ll] = -val;
         }
     }
 /**
