@@ -142,6 +142,102 @@ void fem_fct_compute_system_matrix(
   }
 }
 
+//CB DEBUG
+std::vector<double> get_matrix_column(const FEMatrix& A, int j)
+{
+  std::vector<double> col(A.GetN_Rows(), 0.0);
+  for(int i =0; i < A.GetN_Rows();++i)
+  {
+    for(int l = A.GetRowPtr()[i]; l < A.GetRowPtr()[i+1] ; ++l)
+    {
+      if(A.GetKCol()[l] == j)
+      {
+        col.at(i) = A.GetEntries()[l];
+      }
+    }
+  }
+  return col;
+}
+
+//END DEBUG
+
+//CB DEBUG
+#ifdef _MPI
+void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_ps)
+{
+
+  const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  int nDof = A.GetN_Rows();
+
+  const char* markers = comm.get_dof_markers();
+  //SENDER
+  if(rank == sending_ps)
+  {
+    int n_vecs_send = comm.GetN_Master();
+    MPI_Send(&n_vecs_send, 1, MPI_INT, receiving_ps, 5, MPI_COMM_WORLD);
+    for(int s = 0; s < nDof; ++s)
+    {
+      if(masters[s] == rank) //master row found, ping it
+      {
+        Output::suppressAll();
+        comm.dof_ping(sending_ps, s);
+        Output::setVerbosity(1);
+        int dof_remote;
+        MPI_Recv(&dof_remote, 1, MPI_INT, receiving_ps, 10, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        if(dof_remote != -1)
+        {//ping was received, now set up the matrix row
+          Output::print("Local (0) master ", s ," is remote (1) dof no ", dof_remote);
+          Output::print("Sending matrix column ",s," for double checking.");
+
+          std::vector<double> col_master = get_matrix_column(A, s);
+          std::vector<double> col_master_cpy = col_master;
+          comm.consistency_update(col_master.data(), 2); //CONSIST UPDATE
+          //now check the differences between updated and original column
+          for(int i = 0 ; i < col_master.size(); ++i)
+          {
+            if(col_master[i] != col_master_cpy[i])
+            {
+              char type_col = markers[s];
+              char type_row = markers[i];
+              Output::print("DIFF! Master col ", s, " of type ",
+                            type_col ,", local row ", i, " of type ", type_row);
+            }
+
+          }
+
+        }
+      }
+    }
+  }
+  //RECEIVER
+  else if (rank == receiving_ps)
+  {
+    int n_vecs_recv;
+    MPI_Recv(&n_vecs_recv, 1, MPI_INT, sending_ps, 5, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    Output::print("Ps ", receiving_ps ," will receive ",n_vecs_recv, " vectors.");
+    for(int r = 0; r< n_vecs_recv; ++r)
+    {
+      int dof_local = comm.dof_ping(sending_ps, -1);
+      MPI_Send(&dof_local, 1, MPI_INT, sending_ps, 10, MPI_COMM_WORLD);
+      if(dof_local != -1)
+      {
+        std::vector<double> col_slave = get_matrix_column(A, dof_local);
+        std::vector<double> col_slave_cpy = col_slave;
+        comm.consistency_update(col_slave.data(), 2); //CONSIST UPDATE
+      }
+
+    }
+  }
+}
+
+#endif
+
+//END DEBUG
+
 
 /*!
  * Compute the artificial diffusion matrix to a given stiffness matrix.
@@ -176,6 +272,15 @@ void compute_artificial_diffusion_matrix(
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
+
+  //CB DEBUG - Compare matrix entries across processors
+#ifdef _MPI
+  check_column_consistency(A, 0, 1);
+  check_column_consistency(A, 1, 0);
+  MPI_Finalize();
+  exit(-1);
+#endif
+  //END DEBUG
 
   // compute off-diagonal entries of the matrix D
   for(int i=0;i<nDof;i++) //row loop
@@ -836,6 +941,27 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   //STEP 0.1: Compute artificial diffusion matrix D and add to K, K := K + D ("L").
   std::vector<double> matrix_D_Entries(N_Entries, 0.0);
   compute_artificial_diffusion_matrix(K, matrix_D_Entries);
+
+  //CB DEBUG
+  //print diagonals of D
+  int n_nonzeros=0;
+  for(int i=0; i< nDofs ; ++i)
+  {
+    for(int l =RowPtr[i]; l<RowPtr[i+1]; ++l)
+    {
+      int j = ColInd[l];
+      if( i == j )
+      {
+        if(matrix_D_Entries[j] != 0.0)
+          ++n_nonzeros;
+        //Output::dash(matrix_D_Entries[j]);
+      }
+    }
+  }
+  Output::print("n_nonzeros on diagonal of D: ", n_nonzeros);
+  exit(-1);
+
+  //END DEBUG
 
   Daxpy(N_Entries, 1.0, &matrix_D_Entries[0], Entries);
 

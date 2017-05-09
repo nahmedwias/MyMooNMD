@@ -183,6 +183,7 @@ void Time_CD3D::output_problem_size_info() const
     Output::stat("Time_CD3D", "information on the fe space");
     size_t sum_cells_total = 0;
     size_t sum_dof_total = 0;
+    //FIXME CB: This information output is incorrect!
     for(int i =0; i < size ;++i)
     {
       Output::dash("Process ", i, "\t n_own_cells ", n_own_cells[i], 
@@ -653,6 +654,10 @@ void Time_CD3D::do_algebraic_flux_correction()
     int nDiri = feSpace.GetN_Dirichlet();
     std::vector<int> neumToDiri(nDiri, 0);
     std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
+
+    //CB DEBUG
+    neumToDiri = {};
+    //END DEBUG
 
     //determine prelimiter from Database
     AlgebraicFluxCorrection::Prelimiter prelim;
