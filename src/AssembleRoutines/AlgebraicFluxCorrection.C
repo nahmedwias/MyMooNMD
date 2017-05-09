@@ -155,83 +155,83 @@ void fem_fct_compute_system_matrix(
  *
  */
 void compute_artificial_diffusion_matrix(
-        const FEMatrix& A, std::vector<double>& matrix_D)
+    const FEMatrix& A, std::vector<double>& matrix_D)
+{
+  // catch non-square matrix
+  if (!A.is_square() )
+  {
+    ErrThrow("Matrix must be square!");
+  }
+  // store number of dofs
+  int nDof = A.GetN_Rows();
+
+  // get pointers to columns, rows and entries of matrix A
+  const int* ColInd = A.GetKCol();
+  const int* RowPtr = A.GetRowPtr();
+  const double* Entries = A.GetEntries();
+
+#ifdef _MPI
+  const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  // compute off-diagonal entries of the matrix D
+  for(int i=0;i<nDof;i++) //row loop
+  {
+#ifdef _MPI
+    // do this only for master rows - they couple only to other masters,
+    // slaves and halo1 d.o.f., therefore one can be sure, that if A_ij
+    // is on this rank, so is the transposed entry, A_ji
+    if(masters[i] != rank)
+      continue;
+#endif
+    for(int l=RowPtr[i];l<RowPtr[i+1];l++)
     {
-        // catch non-square matrix
-        if (!A.is_square() )
+      int j = ColInd[l]; //column index
+      double k_ij = 0;
+      double k_ji = 0;
+      if (j!=i)
+      {// consider only off-diagonals
+        k_ij = Entries[l];
+        // now get the transposed entry
+        for (int ll=RowPtr[j];ll<RowPtr[j+1];ll++)
         {
-          ErrThrow("Matrix must be square!");
-        }
-        // store number of dofs
-        int nDof = A.GetN_Rows();
-
-        // get pointers to columns, rows and entries of matrix A
-        const int* ColInd = A.GetKCol();
-        const int* RowPtr = A.GetRowPtr();
-        const double* Entries = A.GetEntries();
-
-#ifdef _MPI
-        const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
-        const int* masters = comm.GetMaster();
-        int rank;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-
-        // compute off-diagonal entries of the matrix D
-        for(int i=0;i<nDof;i++) //row loop
-        {
-#ifdef _MPI
-          // do this only for master rows - they couple only to other masters,
-          // slaves and halo1 d.o.f., therefore one can be sure, that if A_ij
-          // is on this rank, so is the transposed entry, A_ji
-          if(masters[i] != rank)
-            continue;
-#endif
-          for(int l=RowPtr[i];l<RowPtr[i+1];l++)
+          if (ColInd[ll]==i)
           {
-            // column
-            int j = ColInd[l];
-            double k_ij = 0;
-            double k_ji = 0;
-            // only off-diagonals
-            if (j!=i)
-            {
-              k_ij = Entries[l];
-              // now check the transposed entry
-              for (int ll=RowPtr[j];ll<RowPtr[j+1];ll++)
-              {
-                if (ColInd[ll]==i)
-                {
-                  k_ji = Entries[ll];
-                  break;
-                }
-              }
-              matrix_D[l] = std::min({-k_ij , 0.0 , -k_ji});
-            }
+            k_ji = Entries[ll];
+            break;
           }
         }
-
-        // compute diagonal entries of the matrix D
-        for(int i=0;i<nDof;i++)//row loop
-        {
-#ifdef _MPI
-          // do this only for master rows
-          if(masters[i] != rank)
-            continue;
-#endif
-          double val = 0.0;
-          // add all entries of i-th row
-          int ll = -1;
-          for(int l=RowPtr[i];l<RowPtr[i+1];l++)
-          {
-            val +=  matrix_D[l];
-            int j = ColInd[l];
-            if (j==i) //diagonal found
-              ll = l; //Hold the place of the diagonal entry in the entries array.
-          }
-          matrix_D[ll] = -val;
-        }
+        //determine entry D_ij
+        matrix_D[l] = std::min({-k_ij , 0.0 , -k_ji});
+      }
     }
+  }
+
+  // compute diagonal entries of the matrix D
+  for(int i=0;i<nDof;i++)//row loop
+  {
+#ifdef _MPI
+    // do this only for master rows
+    if(masters[i] != rank)
+      continue;
+#endif
+    double val = 0.0;
+    // add all entries of i-th row
+    int ll = -1;
+    for(int l=RowPtr[i];l<RowPtr[i+1];l++)
+    {
+      val +=  matrix_D[l];
+      int j = ColInd[l];
+      if (j==i) //diagonal found
+        ll = l; //place of the diagonal entry in the matrix_D entries array
+    }
+    matrix_D[ll] = -val;
+  }
+}
+
 /**
  * @brief Lump a mass matrix row wise.
  *
