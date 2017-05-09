@@ -37,22 +37,56 @@ std::vector<std::vector<double>> target_norms =
   {0.07923718531, 1.181488119, 0.9965685447}   //t=1
 };
 
+// These are target norms if NO flux correction scheme (or, indeed, any
+// stabilization) is used. They can be used for debugging purposes, i.e.,
+// comparison of MPI and SEQ runs.
+std::vector<std::vector<double>> target_norms_none =
+{
+  {0.003943723865, 0.123457981, 0.1406667838},  //t=0.1
+  {0.009479834582, 0.2386029396, 0.2887335298}, //t=0.2
+  {0.01663589269, 0.3759851755, 0.436005843},   //t=0.3
+  {0.02483201597, 0.5325839514, 0.5740274437},  //t=0.4
+  {0.03351455826, 0.6991219501, 0.6972416763},  //t=0.5
+  {0.04229832163, 0.868334923, 0.8028065696},   //t=0.6
+  {0.05090244664, 1.034659303, 0.8887627679},   //t=0.7
+  {0.05907653406, 1.193122896, 0.9668985986},   //t=0.8
+  {0.06658406325, 1.339123213, 1.036639097},    //t=0.9
+  {0.0732177335, 1.468659596, 1.080128}         //t=1
+};
+
+
 void check_solution_norms(Time_CD3D &tcd, int m)
 {
 
-  MultiIndex3D allDerivatives[4] = { D000, D100, D010, D001 };
-  TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
-  std::array<double, 5> locError = {};
-  const TFESpace3D* space = tcd.get_function().GetFESpace3D();
-
-  tcd.get_function().GetErrors(tcd.get_example().get_exact(0), 4, allDerivatives, 2,
-                          L2H1Errors, tcd.get_example().get_coeffs(), &aux, 1, &space,
-                          locError.data());
-
   if(m%10 == 0)
   {
-    //Output::print("Norms in step ", m); //This is how the reference values were produced.
-    //Output::dash(std::setprecision(10), locError[0], ", ", locError[1], ", ", locError[2]);
+    MultiIndex3D allDerivatives[4] = { D000, D100, D010, D001 };
+    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+    std::array<double, 5> locError = {};
+    const TFESpace3D* space = tcd.get_function().GetFESpace3D();
+
+    tcd.get_function().GetErrors(tcd.get_example().get_exact(0), 4, allDerivatives, 2,
+                            L2H1Errors, tcd.get_example().get_coeffs(), &aux, 1, &space,
+                            locError.data());
+
+  #ifdef _MPI
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    std::vector<double> errorsReduced(4);
+    MPI_Reduce(locError.data(), errorsReduced.data(), 2, MPI_DOUBLE, MPI_SUM, 0,
+               MPI_COMM_WORLD);
+    MPI_Reduce(&locError[2], &errorsReduced[2], 1, MPI_DOUBLE, MPI_MAX, 0,
+               MPI_COMM_WORLD);
+    if(rank == 0)
+    {//this is only performed on root - just root willl have the correct values
+      locError[0] = sqrt(errorsReduced[0]);
+      locError[1] = sqrt(errorsReduced[1]);
+      locError[2] = errorsReduced[2];
+  #endif // _MPI
+
+    Output::print("Norms in step ", m); //This is how the reference values were produced.
+    Output::dash(std::setprecision(10), locError[0], ", ", locError[1], ", ", locError[2]);
 
     int control_step = m/10 - 1;
     double tol = 1e-9;
@@ -68,8 +102,11 @@ void check_solution_norms(Time_CD3D &tcd, int m)
     if( fabs(locError[2]  - target_norms[control_step][2]) > tol )
       ErrThrow("L^inf norm at timestep ", TDatabase::TimeDB->CURRENTTIME,  " is not correct, ",
                locError[2], " != ", target_norms[control_step][2]);
-
     Output::print("Solution norms checked succesfully.");
+
+#ifdef _MPI
+    }//end if rank == 0
+#endif
   }
 }
 
@@ -77,13 +114,16 @@ void check_solution_norms(Time_CD3D &tcd, int m)
  //test crank-nicolson linear fem-fct scheme
 int main(int argc, char* argv[])
 {
+
+  TDatabase Database;
+  int rank = 0;
 #ifdef _MPI
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
   TDatabase::ParamDB->Comm = comm;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
   {
-    TDatabase Database;
     TFEDatabase3D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example3D::default_example_database());
@@ -108,6 +148,7 @@ int main(int argc, char* argv[])
            {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
     TDatabase::ParamDB->DRIFT_Z = 1;
     db.add("refinement_n_initial_steps",(size_t) 4,"",(size_t) 0, (size_t) 5);
+
     db.add("solver_type", "direct", "", {"direct"});
 
 //    db["output_write_vtk"] = true;
@@ -150,14 +191,12 @@ int main(int argc, char* argv[])
 
       double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
-
-      Output::print<1>("\nCURRENT TIME: ",
-           TDatabase::TimeDB->CURRENTTIME);
+      if(rank == 0)
+        Output::print<1>("CURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
       tcd.assemble();
       tcd.solve();
 
       //tcd.output(step,imag);
-
       check_solution_norms(tcd, step);
     }
 
@@ -166,6 +205,3 @@ int main(int argc, char* argv[])
   MPI_Finalize();
 #endif
 }
-
-
-
