@@ -258,13 +258,14 @@ void Time_CD3D::check_and_set_parameters()
   {//some kind of afc enabled
 
     if(solver.is_using_multigrid())
-      ErrThrow("Multgrid and FEM-FCT are not yet enabled in Time_CD2D"); //TODO
+      ErrThrow("Multgrid and FEM-FCT are not yet enabled in Time_CD3D"); //TODO
 
     if(!db["algebraic_flux_correction"].is("fem-fct-cn"))
     {
       db["algebraic_flux_correction"].set("fem-fct-cn");
-      Output::print("Only kind of algebraic flux correction"
-          " for TCD problems is Crank-Nicolson FEM-FCT (fem-fct-cn).");
+      Output::print("Parameter 'algebraic_flux_correction' changed to 'fem-fct-cn', ",
+                    "which is the only implemented kind of algebraic "
+                    "flux correction for TCD problems.");
     }
 
     if(TDatabase::TimeDB->TIME_DISC !=2)
@@ -284,7 +285,7 @@ void Time_CD3D::check_and_set_parameters()
     if (!db["space_discretization_type"].is("galerkin"))
     {//some other disctype than galerkin
       db["space_discretization_type"] = "galerkin";
-      Output::print("Parameter 'space_discretization_type changed to 'galerkin' "
+      Output::print("Parameter 'space_discretization_type' changed to 'galerkin' "
           "because Algebraic Flux Correction is enabled.");
     }
 
@@ -686,7 +687,7 @@ void Time_CD3D::do_algebraic_flux_correction()
   }
   else
   {
-    ErrThrow("The chosen algebraic flux correction scheme is unknown "
-        "to class Time_CD3D.");
+    ErrThrow("The chosen algebraic flux correction scheme ",
+             db["algebraic_flux_correction"]," is unknown to class Time_CD3D.");
   }
 }
