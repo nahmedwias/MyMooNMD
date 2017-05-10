@@ -142,8 +142,18 @@ void fem_fct_compute_system_matrix(
   }
 }
 
-//CB DEBUG
-std::vector<double> get_matrix_column(const FEMatrix& A, int j)
+//CB DEBUG - HERE COMES A LOT OF INTERESTING DEBUG CODE!
+
+/** This method will return a column of a CSR matrix as a vector.
+ *@param[in] A The matrix.
+ *@param[in] j The column index. It might be -1, which will happen when the dof
+ *             is not known locally. Then this will return a vector conatining
+ *             only zeroes, which is consistent behaviour.
+ *
+ *@return A matrix column as an std::vector<double>.
+ */
+
+std::vector<double> get_matrix_column(const TMatrix& A, int j)
 {
   std::vector<double> col(A.GetN_Rows(), 0.0);
   for(int i =0; i < A.GetN_Rows();++i)
@@ -159,8 +169,12 @@ std::vector<double> get_matrix_column(const FEMatrix& A, int j)
   return col;
 }
 
-//CB DEBUG
-std::vector<double> get_matrix_row(const FEMatrix& A, int i)
+/** This method will return a roe of a CSR matrix as a vector.
+ *@param[in] A The matrix.
+ *@param[in] i The row index.
+ *@return A matrix row as an std::vector.
+ */
+std::vector<double> get_matrix_row(const TMatrix& A, int i)
 {
   std::vector<double> row(A.GetN_Columns() , 0.0);
     for(int l = A.GetRowPtr()[i]; l < A.GetRowPtr()[i+1] ; ++l)
@@ -170,11 +184,22 @@ std::vector<double> get_matrix_row(const FEMatrix& A, int i)
     }
   return row;
 }
-//END DEBUG
 
-//CB DEBUG
 #ifdef _MPI
-void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_ps)
+/**
+ * This method can be used to check a matrix A in distributed storage.
+ * A certain process ('sending_ps') will extract one master column after the other
+ * from A, and ask all other processes for a consistency update of that vector.
+ *
+ * After that it will compare the updated column with the original one and inform
+ * the programmer via Output::print on any differences.
+ * It is then in the responsibility of the programmer to interpret the output.
+ *
+ * @param[in] A The matrix to check.
+ * @param[in] sending_ps The process which checks its master columns.
+ * @param[in] cons_level The consistency level to be updated to.
+ */
+void check_column_consistency(const FEMatrix& A, int sending_ps, int cons_level)
 {
 
   const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
@@ -186,11 +211,12 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_p
 
   const char* markers = comm.get_dof_markers();
 
-  //SENDER
+  //SENDER process executes the following code.
   if(rank == sending_ps)
   {
+    Output::info("CHECK", "Checking master columns of process ", sending_ps, " on consistency level ", cons_level);
     int n_vecs_send = comm.GetN_Master();
-    MPI_Send(&n_vecs_send, 1, MPI_INT, receiving_ps, 5, MPI_COMM_WORLD);
+    MPI_Bcast(&n_vecs_send, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
     for(int s = 0; s < nDof; ++s)
     {
       if(masters[s] == rank) //master col found, ping it
@@ -198,16 +224,17 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_p
         Output::suppressAll();
         comm.dof_ping(sending_ps, s);
         Output::setVerbosity(1);
-        int dof_remote;
-        MPI_Recv(&dof_remote, 1, MPI_INT, receiving_ps, 10, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        int dummy_sb = -1;
+        int dof_remote = -1;
+        MPI_Allreduce(&dummy_sb, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
         if(dof_remote != -1)
-        {//ping was received, now set up the matrix row
-          Output::print("Local master ", s ," is remote dof no ", dof_remote);
-          Output::print("Sending matrix column ",s," for double checking.");
+        {//ping was received on at least one other ps, now set up the matrix row
+          //Output::print("Local master ", s ," is remote dof no ", dof_remote);
+          //Output::print("Sending matrix column ",s," for double checking.");
 
           std::vector<double> col_master = get_matrix_column(A, s);
           std::vector<double> col_master_cpy = col_master;
-          comm.consistency_update(col_master.data(), 2); //CONSIST UPDATE
+          comm.consistency_update(col_master.data(), cons_level); //CONSIST UPDATE
           //now check the differences between updated and original column
           for(int i = 0 ; i < col_master.size(); ++i)
           {
@@ -215,8 +242,7 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_p
             {
               char type_col = markers[s];
               char type_row = markers[i];
-              Output::print("DIFF! Master col ", s, " of type ",
-                            type_col ,", local row ", i, " of type ", type_row);
+              Output::print("Local entry (", s, "[", type_col ,"] , ", i, "[", type_row,"]) was changed by an update.");
             }
 
           }
@@ -224,37 +250,40 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_p
         }
       }
     }
+    Output::print("Test on process ", rank, " complete.");
   }
-  //RECEIVER
-  else if (rank == receiving_ps)
+  //RECEIVER processes execute the following code.
+  else
   {
     int n_vecs_recv;
-    MPI_Recv(&n_vecs_recv, 1, MPI_INT, sending_ps, 5, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    Output::print("Ps ", receiving_ps ," will receive ",n_vecs_recv, " vectors.");
+    MPI_Bcast(&n_vecs_recv, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
     for(int r = 0; r< n_vecs_recv; ++r)
     {
       int dof_local = comm.dof_ping(sending_ps, -1);
-      MPI_Send(&dof_local, 1, MPI_INT, sending_ps, 10, MPI_COMM_WORLD);
-      if(dof_local != -1)
+      int dof_remote = -1;
+      MPI_Allreduce(&dof_local, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+      if(dof_remote != -1)
       {
         std::vector<double> col_slave = get_matrix_column(A, dof_local);
-        std::vector<double> col_slave_cpy = col_slave;
-        comm.consistency_update(col_slave.data(), 2); //CONSIST UPDATE
+        comm.consistency_update(col_slave.data(), cons_level); //CONSIST UPDATE
       }
-
     }
   }
 }
 
-#endif
-
-//END DEBUG
-
-//CB DEBUG
-#ifdef _MPI
-// This method will actually give information about the  consistency of the
-// columns of the receiving process.
-//TODO Can easily be extended to multiple processes
+/**
+ * This method can be used to check a matrix A in distributed storage.
+ * A certain process ('sending_ps') will extract one master row after the other
+ * from A, and ask all other processes for a consistency update of that vector.
+ *
+ * After that it will compare the updated row with the original one and inform
+ * the programmer via Output::print on any differences.
+ * It is then in the responsibility of the programmer to interpret the output.
+ *
+ * @param[in] A The matrix to check.
+ * @param[in] sending_ps The process which checks its master row.
+ * @param[in] cons_level The consistency level to be updated to.
+ */
 void check_row_consistency(const FEMatrix& A, int sending_ps, int receiving_ps)
 {
 
@@ -288,8 +317,9 @@ void check_row_consistency(const FEMatrix& A, int sending_ps, int receiving_ps)
 
           std::vector<double> row_master = get_matrix_row(A, s);
           std::vector<double> row_master_cpy = row_master;
-          comm.consistency_update(row_master.data(), 2); //CONSIST UPDATE
-          //now check the differences between updated and original column
+          comm.consistency_update(row_master.data(), 2);
+          // CONSIST UPDATE
+          // now check the differences between updated and original column
           for(int i = 0 ; i < row_master.size(); ++i)
           {
             if(row_master[i] != row_master_cpy[i])
@@ -367,10 +397,12 @@ void compute_artificial_diffusion_matrix(
 
   //CB DEBUG - Compare matrix entries across processors
 #ifdef _MPI
-  //check_column_consistency(A, 0, 1);
-  //check_column_consistency(A, 1, 0);
-  check_row_consistency(A, 0, 1);
-  check_row_consistency(A, 1, 0);
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  for(int ps = 0;ps<size;++ps)
+    check_column_consistency(A, ps, 2);
+  //check_row_consistency(A, 0, 1);
+  //check_row_consistency(A, 1, 0);
   MPI_Finalize();
   exit(-1);
 #endif
