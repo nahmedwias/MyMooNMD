@@ -63,6 +63,37 @@ void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
                                            double **OrigValues, int *N_BaseFuncts,
                                            double ***LocMatrices, double **LocRhs);
 
+// ======================================================================
+// Type 1.2, Standard Galerkin for Scaled Brinkman in [p div v] formulation with stabilization (PSPG) for P2/P2
+// ======================================================================
+/** @brief brinkman weak formulation
+ t^2 (gradu,gradv)-(p,div v)+(u,v)=(f,v)
+ (q, div u)=(g,q)
+ PSPGStab \frac{h_k^2}{t^2+h_k^2}(-t^2 \Delta u + \nabla p + u,-t^2 \Delta v + \nabla q + v ) = PSPGStab \frac{h_k^2}{t^2+h_k^2} (f,-t^2 \Delta v + \nabla q + v )
+ */
+void Brinkman3DType1GalerkinResidualStabP2(double Mult, double *coeff,
+                                           double *param, double hK,
+                                           double **OrigValues, int *N_BaseFuncts,
+                                           double ***LocMatrices, double **LocRhs);
+
+
+
+
+
+
+
+
+void ResidualStabP2_for_Brinkman3DType1Galerkin(double Mult, double *coeff,
+                                                double *param, double hK,
+                                                double **OrigValues, int *N_BaseFuncts,
+                                                double ***LocMatrices, double **LocRhs);
+
+
+
+void GradDivStab_for_Brinkman3DType1Galerkin(double Mult, double *coeff,
+                                             double *param, double hK,
+                                             double **OrigValues, int *N_BaseFuncts,
+                                             double ***LocMatrices, double **LocRhs);
 
 
 //// ======================================================================

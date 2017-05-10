@@ -30,8 +30,8 @@ void Brinkman3DType1Galerkin(double Mult, double *coeff,
                              double **OrigValues, int *N_BaseFuncts,
                              double ***LocMatrices, double **LocRhs)
 {
-    double ansatz000, ansatz100, ansatz010, ansatz001;    // ansatz functions
-    double test000, test100, test010, test001;          // test functions
+    double ansatz000, ansatz100, ansatz010, ansatz001;      // ansatz functions
+    double test000, test100, test010, test001;              // test functions
     
     double **MatrixA11 = LocMatrices[0];
     //double **MatrixA12 = LocMatrices[1];
@@ -53,7 +53,7 @@ void Brinkman3DType1Galerkin(double Mult, double *coeff,
     double * Rhs_u1 = LocRhs[0];            // f_u1
     double * Rhs_u2 = LocRhs[1];            // f_u2
     double * Rhs_u3 = LocRhs[2];            // f_u3
-    //double * Rhs_p = LocRhs[3];          // g_q
+    //double * Rhs_p = LocRhs[3];           // g_q
     
     int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space
     int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
@@ -71,7 +71,7 @@ void Brinkman3DType1Galerkin(double Mult, double *coeff,
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
     double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
-    //double c4 = coeff[4];              // f4 (the rhs of incompressibility constraint)
+    //double c4 = coeff[4];                 // f4 (the rhs of incompressibility constraint)
     double nu = coeff[5];                   // viscosity
     double nu_eff = coeff[6];               // effective viscosity
     double K = coeff[7];                    // permeability
@@ -84,7 +84,7 @@ void Brinkman3DType1Galerkin(double Mult, double *coeff,
         test100 = Orig0[i]; //v_x
         test010 = Orig1[i]; //v_y
         test001 = Orig2[i]; //v_z
-        test000 = Orig3[i]; //v
+        test000 = Orig3[i]; //q
         
         Rhs_u1[i] += Mult*test000*c1;
         Rhs_u2[i] += Mult*test000*c2;
@@ -96,7 +96,7 @@ void Brinkman3DType1Galerkin(double Mult, double *coeff,
             double ansatz100 = Orig0[j]; //u_x
             double ansatz010 = Orig1[j]; //u_y
             double ansatz001 = Orig2[j]; //u_z
-            double ansatz000 = Orig3[j]; //u
+            double ansatz000 = Orig3[j]; //p
             
             val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010+ test001 * ansatz001);        // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_y+ v_z*u_z)
             val += (nu/K) * (ansatz000 * test000);                            // nu/K*(u,v)
@@ -124,8 +124,8 @@ void Brinkman3DType1Galerkin(double Mult, double *coeff,
             val = -Mult * ansatz000 * test001;                      // -(p,div v)=-p*v_z
             MatrixB3T[i][j] += val;
         }
-    }
-    // endfor i
+    }// endfor i
+    
     
     for(int i=0;i<N_P;i++)
     {
@@ -181,7 +181,7 @@ void Brinkman3DType2Galerkin(double Mult, double *coeff,
     double * Rhs_u1 = LocRhs[0];            // f_u1
     double * Rhs_u2 = LocRhs[1];            // f_u2
     double * Rhs_u3 = LocRhs[2];            // f_u3
-    //double * Rhs_p = LocRhs[3];          // g_q
+    //double * Rhs_p = LocRhs[3];           // g_q
     
     int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space
     int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
@@ -284,14 +284,14 @@ void Brinkman3DType2Galerkin(double Mult, double *coeff,
 // assume Delta u = Delta v = 0
 // according to Hannukainen: Computations with Finite element methods for the Brinkman Problem (2011)
 // ======================================================================
-
+// For NSTYPE: 14
 void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
                                        double *param, double hK,
                                        double **OrigValues, int *N_BaseFuncts,
                                        double ***LocMatrices, double **LocRhs)
 {
-    double ansatz000, ansatz100, ansatz010, ansatz001;    // ansatz functions
-    double test000, test100, test010, test001;          // test functions
+    double ansatz000, ansatz100, ansatz010, ansatz001;      // ansatz functions
+    double test000, test100, test010, test001;              // test functions
     
     double **MatrixA11 = LocMatrices[0];
     //double **MatrixA12 = LocMatrices[1];
@@ -313,7 +313,7 @@ void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
     double * Rhs_u1 = LocRhs[0];            // f_u1
     double * Rhs_u2 = LocRhs[1];            // f_u2
     double * Rhs_u3 = LocRhs[2];            // f_u3
-    double * Rhs_p = LocRhs[3];          // g_q
+    double * Rhs_p = LocRhs[3];             // g_q
     
     int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space
     int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
@@ -327,21 +327,21 @@ void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
     double *Orig4 = OrigValues[4];          // p
     double *Orig5 = OrigValues[5];          // p_x
     double *Orig6 = OrigValues[6];          // p_y
-        double *Orig7 = OrigValues[7];          // p_z
+    double *Orig7 = OrigValues[7];          // p_z
     
     // values defined in the example
     //double c0 = coeff[0];                 // nu bzw eps (viscosity)
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
-    //double c4 = coeff[4];              // f4 (the rhs of incompressibility constraint)
+    double c3 = coeff[3];                   // f3
+    //double c4 = coeff[4];                 // g (the rhs of incompressibility constraint)
     double nu = coeff[5];                   // viscosity
     double nu_eff = coeff[6];               // effective viscosity
     double K = coeff[7];                    // permeability
     double alpha = coeff[8];
     double t = fabs(sqrt((nu_eff/nu) * K));
-    double PSPGStab = -alpha * (K/nu) * (hK*hK)/(t*t+hK*hK); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
-    
+    /////double PSPGStab = -alpha * (K/nu) * (hK*hK)/(t*t+hK*hK); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
+    double PSPGStab = -alpha * (hK*hK)/(t*t+hK*hK); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
     double val;
     
     for(int i=0;i<N_U;i++)
@@ -351,12 +351,12 @@ void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
         test001 = Orig2[i];
         test000 = Orig3[i];
         
-        Rhs_u1[i] += Mult * test000*c1;                                    // (f,v)
-        Rhs_u2[i] += Mult * test000*c2;
-        Rhs_u3[i] += Mult * test000*c3;   // (f,v)
-        Rhs_u1[i] += Mult * PSPGStab * (nu/K) * test000 * c1;               // stabilization: (nu/K)*(f,v)
-        Rhs_u2[i] += Mult * PSPGStab * (nu/K) * test000 * c2;               // stabilization: (nu/K)*(f,v)
-        Rhs_u3[i] += Mult * PSPGStab * (nu/K) * test000 * c3;               // stabilization: (nu/K)*(f,v)
+        Rhs_u1[i] += Mult * test000*c1;                                         // (f1,v)
+        Rhs_u2[i] += Mult * test000*c2;                                         // (f2,v)
+        Rhs_u3[i] += Mult * test000*c3;                                         // (f3,v)
+        Rhs_u1[i] += Mult * PSPGStab  * (nu/K) * test000 * c1;                  // stabilization: (nu/K)*(f1,v)
+        Rhs_u2[i] += Mult * PSPGStab  * (nu/K) * test000 * c2;                  // stabilization: (nu/K)*(f2,v)
+        Rhs_u3[i] += Mult * PSPGStab  * (nu/K) * test000 * c3;                  // stabilization: (nu/K)*(f3,v)
         
         for(int j=0;j<N_U;j++)
         {
@@ -365,21 +365,20 @@ void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
             ansatz001 = Orig2[j];
             ansatz000 = Orig3[j];
             
-            val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010 + test001 * ansatz001);                // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
-            val += (nu/K) * (ansatz000 * test000);                                    // nu/K *(u,v)
-            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                // stabilization: (nu/K)^2*(u,v)
+            val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010 + test001 * ansatz001);      // nu_eff * (grad u,grad v) = nu_eff * (v_x*u_x + v_y*u_y + v_z*u_z)
+            val += (nu/K) * (ansatz000 * test000);                                                  // nu/K * (u,v)
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                              // stabilization: (nu/K)^2 * (u,v)
             MatrixA11[i][j] += Mult * val;
             
-            val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010 + test001 * ansatz001);                // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
-            val += (nu/K) * (ansatz000 * test000);                                    // nu/K *(u,v)
-            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                // stabilization: (nu/K)^2*(u,v)
+            val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010 + test001 * ansatz001);      // nu_eff * (grad u,grad v) = nu_eff * (v_x*u_x + v_y*u_y + v_z*u_z)
+            val += (nu/K) * (ansatz000 * test000);                                                  // nu/K * (u,v)
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                              // stabilization: (nu/K)^2 * (u,v)
             MatrixA22[i][j] += Mult * val;
             
-            val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010 + test001 * ansatz001);                // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
-            val += (nu/K) * (ansatz000 * test000);                                    // nu/K *(u,v)
-            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                // stabilization: (nu/K)^2*(u,v)
+            val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010 + test001 * ansatz001);                  // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
+            val += (nu/K) * (ansatz000 * test000);                                                              // nu/K *(u,v)
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                                          // stabilization: (nu/K)^2*(u,v)
             MatrixA33[i][j] += Mult * val;
-
         }
         
         
@@ -390,16 +389,20 @@ void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
             ansatz010 = Orig6[j];
             ansatz001 = Orig7[j];
             
-            val  = -ansatz000 * test100;                                     // -(p,div v)=-p*v_x
-            val += PSPGStab * (nu/K) * (ansatz100 * test000);                    // stabilization: nu/K * (grad p,v)
+            val  = -ansatz000 * test100;                                    // -(p,div v) --> -p*v_x
+            val += PSPGStab * (nu/K) * (ansatz100 * test000);               // stabilization: nu/K * (grad p,v) --> nu/K * p_x*v
+            //val += PSPGStab * (nu/K) * (ansatz000 * test100);             // stabilization: nu/K * (p,div v) --> nu/K * p*v_x
+
             MatrixB1T[i][j] += Mult * val;
             
-            val = -ansatz000*test010;                                     // -(p,div v)=-p*v_y
-            val+= PSPGStab*(nu/K)*(ansatz010*test000);                    // stabilization: nu/K * (grad p,v)
+            val  = -ansatz000 * test010;                                     // -(p,div v) --> -p*v_y
+            val += PSPGStab * (nu/K) * (ansatz010 * test000);                // stabilization: nu/K * (grad p,v) --> nu/K * p_y*v
+            //val+= PSPGStab * (nu/K) * (ansatz000 * test010);              // stabilization: nu/K * (p,div v) --> nu/K * p*v_y
             MatrixB2T[i][j] += Mult * val;
         
-            val = -ansatz000*test001;                                     // -(p,div v)=-p*v_y
-            val+= PSPGStab*(nu/K)*(ansatz001*test000);                    // stabilization: nu/K * (grad p,v)
+            val  = -ansatz000 * test001;                                     // -(p,div v) --> -p*v_y
+            val += PSPGStab * (nu/K) * (ansatz001 * test000);                // stabilization: nu/K * (grad p,v)  --> nu/K * p_z*v
+            //val+= PSPGStab * (ansatz000 * test001);                       // stabilization: nu/K * (p,div v)  --> nu/K * p*v_z
             MatrixB3T[i][j] += Mult * val;
         }
     }
@@ -409,11 +412,11 @@ void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
         test000 = Orig4[i];
         test100 = Orig5[i];
         test010 = Orig6[i];
-       test001 = Orig7[i];
+        test001 = Orig7[i];
         
-        Rhs_p[i] += Mult * PSPGStab * test100*c1;                    // stabilization: (f,grad q)
-        Rhs_p[i] += Mult * PSPGStab * test010*c2;                    // stabilization: (f,grad q)
-        Rhs_p[i] += Mult * PSPGStab * test001*c3;                    // stabilization: (f,grad q)
+        Rhs_p[i] += Mult * PSPGStab * test100*c1;                    // stabilization: (f,grad q) --> (f1,q_x)
+        Rhs_p[i] += Mult * PSPGStab * test010*c2;                    // stabilization: (f,grad q) --> (f2,q_y)
+        Rhs_p[i] += Mult * PSPGStab * test001*c3;                    // stabilization: (f,grad q) --> (f3,q_z)
 
         
         for(int j=0;j<N_U;j++)
@@ -423,16 +426,16 @@ void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
             ansatz001 = Orig2[j];
             ansatz000 = Orig3[j];
             
-            val  = -test000 * ansatz100;                                          // -(q,div u)=-q*u_x       WARUM MINUS??????
-            val += PSPGStab * (nu/K) * (test100 * ansatz000);                     // stabilization: nu/K * (u,grad q)
+            val  = -test000 * ansatz100;                                          // -(q,div u) = -q*u_x       WARUM MINUS??????
+            val += PSPGStab * (nu/K) * (test100 * ansatz000);                     // stabilization: nu/K * (u,grad q) --> nu/K * q_x*u_x
             MatrixB1[i][j] += Mult * val;
             
-            val  = -test000 * ansatz010;                                          // -(q,div u)=-q*u_y             WARUM MINUS????
-            val += PSPGStab * (nu/K) * (test010 * ansatz000);                     // stabilization: nu/K * (u,grad q)
+            val  = -test000 * ansatz010;                                          // -(q,div u) = -q*u_y             WARUM MINUS????
+            val += PSPGStab * (nu/K) * (test010 * ansatz000);                     // stabilization: nu/K * (u,grad q) --> nu/K * q_y*u_y
             MatrixB2[i][j] += Mult * val;
         
-            val  = -test000 * ansatz001;                                          // -(q,div u)=-q*u_y             WARUM MINUS????
-            val += PSPGStab * (nu/K) * (test001 * ansatz000);                     // stabilization: nu/K * (u,grad q)
+            val  = -test000 * ansatz001;                                          // -(q,div u) = -q*u_z             WARUM MINUS????
+            val += PSPGStab * (nu/K) * (test001 * ansatz000);                     // stabilization: nu/K * (u,grad q) --> nu/K * q_z*u_z
             MatrixB3[i][j] += Mult * val;
         }
         
@@ -456,615 +459,427 @@ void Brinkman3DType1GalerkinResidualStabP1(double Mult, double *coeff,
 
 
 
+// ======================================================================
+// Brinkman Problem with PSPG Stabilization P2/P2
+// according to Hannukainen: Computations with Finite element methods for the Brinkman Problem (2011)
+// ======================================================================
+// For NSTYPE: 14
+// Bem.: A_ij contains integrands build by u_j and v_i, i=1,2,3
+//       B_i^T contains integrands build by p and v_i, i=1,2,3
+//       B_i contains integrands build by u_i and q, i=1,2,3
+//       C contains integrands build by p and q!
+
+void Brinkman3DType1GalerkinResidualStabP2(double Mult, double *coeff,
+                                           double *param, double hK,
+                                           double **OrigValues, int *N_BaseFuncts,
+                                           double ***LocMatrices, double **LocRhs)
+{
+    double ansatz000, ansatz100, ansatz010, ansatz001, ansatz200, ansatz020, ansatz002;     // ansatz functions
+    double test000, test100, test010, test001, test200, test020, test002;                   // test functions
+    
+    double **MatrixA11 = LocMatrices[0];
+    //double **MatrixA12 = LocMatrices[1];
+    //double **MatrixA13 = LocMatrices[2];
+    //double **MatrixA21 = LocMatrices[3];
+    double **MatrixA22 = LocMatrices[4];
+    //double **MatrixA23 = LocMatrices[5];
+    //double **MatrixA31 = LocMatrices[6];
+    //double **MatrixA32 = LocMatrices[7];
+    double **MatrixA33 = LocMatrices[8];
+    double **MatrixC = LocMatrices[9];
+    double **MatrixB1  = LocMatrices[10];
+    double **MatrixB2  = LocMatrices[11];
+    double **MatrixB3  = LocMatrices[12];
+    double **MatrixB1T  = LocMatrices[13];
+    double **MatrixB2T  = LocMatrices[14];
+    double **MatrixB3T  = LocMatrices[15];
+    
+    double * Rhs_u1 = LocRhs[0];            // f_u1
+    double * Rhs_u2 = LocRhs[1];            // f_u2
+    double * Rhs_u3 = LocRhs[2];            // f_u3
+    double * Rhs_p = LocRhs[3];             // g_q
+    
+    int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space
+    int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
+    
+    // values of fe functions at quadrature points: Origvalues = f(uk,vk) (Gauß-quadrature: \int f(u,v) = sum wk * f(uk,vk) at Gauß points)
+    // Mult is the quadrature weight (wk)
+    double *Orig0 = OrigValues[0];          // u_x
+    double *Orig1 = OrigValues[1];          // u_y
+    double *Orig2 = OrigValues[2];          // u_z
+    double *Orig3 = OrigValues[3];          // u
+    double *Orig4 = OrigValues[4];          // p
+    double *Orig5 = OrigValues[5];          // p_x
+    double *Orig6 = OrigValues[6];          // p_y
+    double *Orig7 = OrigValues[7];          // p_z
+    double *Orig8 = OrigValues[8];          // u_xx
+    double *Orig9 = OrigValues[9];          // u_yy
+    double *Orig10 = OrigValues[10];        // u_zz
+    
+    
+    // values defined in the example
+    // double c0 = coeff[0];                 // nu bzw eps (viscosity)
+    double c1 = coeff[1];                   // f1
+    double c2 = coeff[2];                   // f2
+    double c3 = coeff[3];                   // f3
+    // double c4 = coeff[4];                 // g (the rhs of incompressibility constraint)
+    double nu = coeff[5];                   // viscosity
+    double nu_eff = coeff[6];               // effective viscosity
+    double K = coeff[7];                    // permeability
+    double alpha = coeff[9];
+    double t = fabs(sqrt((nu_eff/nu) * K));
+    /////double PSPGStab = -alpha * (K/nu) * (hK*hK)/(t*t+hK*hK); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
+    double PSPGStab = -alpha * (hK*hK)/(t*t+hK*hK); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
+    double val;
+    
+    for(int i=0;i<N_U;i++)
+    {
+        test100 = Orig0[i];     // v_x
+        test010 = Orig1[i];     // v_y
+        test001 = Orig2[i];     // v_z
+        test000 = Orig3[i];     // v
+        test200 = Orig8[i];     // v_xx
+        test020 = Orig9[i];     // v_yy
+        test002 = Orig10[i];    // v_zz
+        
+        Rhs_u1[i] += Mult * test000*c1;                                                 // (f1,v)
+        Rhs_u2[i] += Mult * test000*c2;                                                 // (f2,v)
+        Rhs_u3[i] += Mult * test000*c3;   // (f,v)                                      // (f3,v)
+        Rhs_u1[i] += Mult * PSPGStab  * (nu/K) * test000 * c1;                          // stabilization P1/P1: (nu/K)*(f1,v)
+        Rhs_u2[i] += Mult * PSPGStab  * (nu/K) * test000 * c2;                          // stabilization P1/P1: (nu/K)*(f2,v)
+        Rhs_u3[i] += Mult * PSPGStab  * (nu/K) * test000 * c3;                          // stabilization P1/P1: (nu/K)*(f3,v)
+        Rhs_u1[i] -= Mult * PSPGStab  * nu_eff * (test200+test020+test002) * c1;               // stabilization P2/P2: nueff * (f1,Delta v)
+        Rhs_u2[i] -= Mult * PSPGStab  * nu_eff * (test200+test020+test002) * c2;               // stabilization P2/P2: nueff *(f2,Delta v)
+        Rhs_u3[i] -= Mult * PSPGStab  * nu_eff * (test200+test020+test002) * c3;               // stabilization P2/P2: nueff *(f3,Delta v)
+
+        
+        for(int j=0;j<N_U;j++)
+        {
+            ansatz100 = Orig0[j];   // u_x
+            ansatz010 = Orig1[j];   // u_y
+            ansatz001 = Orig2[j];   // u_z
+            ansatz000 = Orig3[j];   // u
+            ansatz200 = Orig8[j];   // u_xx
+            ansatz020 = Orig9[j];   // u_yy
+            ansatz002 = Orig10[j];  // u_zz
+            
+            val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010 + test001 * ansatz001);      // nu_eff * (grad u,grad v) = nu_eff * (v_x*u_x + v_y*u_y + v_z*u_z)
+            val += (nu/K) * (ansatz000 * test000);                                                  // nu/K * (u,v)
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                              // stabilization P1/P1: (nu/K)^2 * (u,v)
+            val += PSPGStab * nu_eff * nu_eff * (ansatz200+ansatz020+ansatz002)*(test200+test020+test002);   // stabilization P2/P2: nu_eff^2* (u_xx+u_yy+u_zz)*(v_xx+v_yy+v_zz)
+            val -= PSPGStab * nu_eff * (nu/K) * (ansatz200+ansatz020+ansatz002)*test000;            // stabilization P2/P2: nu_eff* (nu/K) * (u_xx+u_yy+u_zz)*(v)
+            val -= PSPGStab * nu_eff * (nu/K) * ansatz000 * (test200+test020+test002);                       // stabilization P2/P2: nu_eff* (nu/K) * (u)*(v_xx+v_yy+v_zz)
+            MatrixA11[i][j] += Mult * val;
+            
+            val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010 + test001 * ansatz001);      // nu_eff * (grad u,grad v) = nu_eff * (v_x*u_x + v_y*u_y + v_z*u_z)
+            val += (nu/K) * (ansatz000 * test000);                                                  // nu/K * (u,v)
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                              // stabilization P1/P1: (nu/K)^2 * (u,v)
+            val += PSPGStab * nu_eff * nu_eff * (ansatz200+ansatz020+ansatz002)*(test200+test020+test002);    // stabilization P2/P2: nu_eff^2 *(u_xx+u_yy+u_zz)*(v_xx+v_yy+v_zz)
+            val -= PSPGStab * nu_eff * (nu/K) * (ansatz200+ansatz020+ansatz002)*test000;            // stabilization P2/P2: nu_eff* (nu/K) * (u_xx+u_yy+u_zz)*(v)
+            val -= PSPGStab * nu_eff * (nu/K) * ansatz000 * (test200+test020+test002);                       // stabilization P2/P2: nu_eff* (nu/K) * (u)*(v_xx+v_yy+v_zz)
+            MatrixA22[i][j] += Mult * val;
+            
+            val  = nu_eff * (test100 * ansatz100 + test010 * ansatz010 + test001 * ansatz001);      // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
+            val += (nu/K) * (ansatz000 * test000);                                                  // nu/K *(u,v)
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                              // stabilization P1/P1: (nu/K)^2*(u,v)
+            val += PSPGStab * nu_eff * nu_eff * (ansatz200+ansatz020+ansatz002)*(test200+test020+test002);    // stabilization P2/P2: nu_eff^2* (u_xx+u_yy+u_zz)*(v_xx+v_yy+v_zz)
+            val -= PSPGStab * nu_eff * (nu/K) * (ansatz200+ansatz020+ansatz002)*test000;            // stabilization P2/P2: nu_eff* (nu/K) * (u_xx+u_yy+u_zz)*(v)
+            val -= PSPGStab * nu_eff * (nu/K) * ansatz000 * (test200+test020+test002);                       // stabilization P2/P2: nu_eff* (nu/K) * (u)*(v_xx+v_yy+v_zz)
+            MatrixA33[i][j] += Mult * val;
+        }
+        
+        
+        for(int j=0;j<N_P;j++)
+        {
+            ansatz000 = Orig4[j];
+            ansatz100 = Orig5[j];
+            ansatz010 = Orig6[j];
+            ansatz001 = Orig7[j];
+            
+            val  = -ansatz000 * test100;                                                // -(p,div v) --> -p*v_x
+            val += PSPGStab * (nu/K) * (ansatz100 * test000);                           // stabilization P1/P1: nu/K * (grad p,v) --> nu/K * p_x*v
+            //val += PSPGStab * (nu/K) * (ansatz000 * test100);                         // stabilization P1/P1: nu/K * (p,div v) --> nu/K * p*v_x
+            val -= PSPGStab * nu_eff * ansatz100 * (test200+test020+test002);           // stabilization P2/P2: nu_eff* p_x* Delta v
+            MatrixB1T[i][j] += Mult * val;
+            
+            val  = -ansatz000 * test010;                                                 // -(p,div v) --> -p*v_y
+            val += PSPGStab * (nu/K) * (ansatz010 * test000);                            // stabilization P1/P1: nu/K * (grad p,v) --> nu/K * p_y*v
+            //val+= PSPGStab * (nu/K) * (ansatz000 * test010);                          // stabilization P1/P1: nu/K * (p,div v) --> nu/K * p*v_y
+            val -= PSPGStab * nu_eff * ansatz010 * (test200+test020+test002);           // stabilization P2/P2: nu_eff* p_x* Delta v
+            MatrixB2T[i][j] += Mult * val;
+            
+            val  = -ansatz000 * test001;                                                 // -(p,div v) --> -p*v_y
+            val += PSPGStab * (nu/K) * (ansatz001 * test000);                                     // stabilization P1/P1: nu/K * (grad p,v)  --> nu/K * p_z*v
+            //val+= PSPGStab * (nu/K) * (ansatz000 * test001);                                   // stabilization P1/P1: nu/K * (p,div v)  --> nu/K * p*v_z
+            val -= PSPGStab * nu_eff * ansatz001 * (test200+test020+test002);           // stabilization P2/P2: nu_eff* p_x* Delta v
+            MatrixB3T[i][j] += Mult * val;
+        }
+    }
+    
+    for(int i=0;i<N_P;i++)
+    {
+        test000 = Orig4[i];
+        test100 = Orig5[i];
+        test010 = Orig6[i];
+        test001 = Orig7[i];
+        
+        Rhs_p[i] += Mult * PSPGStab * test100 * c1;                    // stabilization: (f,grad q) --> (f1,q_x)
+        Rhs_p[i] += Mult * PSPGStab * test010 * c2;                    // stabilization: (f,grad q) --> (f2,q_y)
+        Rhs_p[i] += Mult * PSPGStab * test001 * c3;                    // stabilization: (f,grad q) --> (f3,q_z)
+        
+        
+        for(int j=0;j<N_U;j++)
+        {
+            ansatz100 = Orig0[j];
+            ansatz010 = Orig1[j];
+            ansatz001 = Orig2[j];
+            ansatz000 = Orig3[j];
+            ansatz200 = Orig8[j];
+            ansatz020 = Orig9[j];
+            ansatz002 = Orig10[j];
+            
+            val  = -test000 * ansatz100;                                                    // -(q,div u) = -q*u_x       WARUM MINUS??????
+            val += PSPGStab * (nu/K) * (test100 * ansatz000);                               // stabilization P1/P1: nu/K * (u,grad q) --> nu/K * q_x*u_x
+            val -= PSPGStab * nu_eff * test100 * (ansatz200+ansatz020+ansatz002);           // stabilization P2/P2: nu_eff* q_x* Delta u
+            MatrixB1[i][j] += Mult * val;
+            
+            val  = -test000 * ansatz010;                                                    // -(q,div u) = -q*u_y             WARUM MINUS????
+            val += PSPGStab * (nu/K) * (test010 * ansatz000);                               // stabilization P1/P1: nu/K * (u,grad q) --> nu/K * q_y*u_y
+            val -= PSPGStab * nu_eff * test010 * (ansatz200+ansatz020+ansatz002);           // stabilization P2/P2: nu_eff* q_x* Delta u
+            MatrixB2[i][j] += Mult * val;
+            
+            val  = -test000 * ansatz001;                                                    // -(q,div u) = -q*u_z             WARUM MINUS????
+            val += PSPGStab * (nu/K) * (test001 * ansatz000);                               // stabilization P1/P1: nu/K * (u,grad q) --> nu/K * q_z*u_z
+            val -= PSPGStab * nu_eff * test001 * (ansatz200+ansatz020+ansatz002);           // stabilization P2/P2: nu_eff* q_x* Delta u
+            MatrixB3[i][j] += Mult * val;
+        }
+        
+        //for Matrix C: loop over N_P here
+        for(int j=0;j<N_P;j++)
+        {
+            ansatz000 = Orig4[j];
+            ansatz100 = Orig5[j];
+            ansatz010 = Orig6[j];
+            ansatz001 = Orig7[j];
+            
+            val = PSPGStab * (ansatz100 * test100 + ansatz010 * test010+ ansatz001 * test001);               // stabilization: (grad p,grad q)
+            MatrixC[i][j] += Mult * val;
+        }
+    }
+}
 
 
+// ======================================================================
+// PSPG Stabilization (P2/P2) for Brinkman Problem
+// according to Hannukainen: Computations with Finite element methods for the Brinkman Problem (2011)
+// ======================================================================
+// For NSTYPE: 14
+// Bem.: A_ij contains integrands build by u_j and v_i, i=1,2,3
+//       B_i^T contains integrands build by p and v_i, i=1,2,3
+//       B_i contains integrands build by u_i and q, i=1,2,3
+//       C contains integrands build by p and q!
+
+void ResidualStabP2_for_Brinkman3DType1Galerkin(double Mult, double *coeff,
+                                           double *param, double hK,
+                                           double **OrigValues, int *N_BaseFuncts,
+                                           double ***LocMatrices, double **LocRhs)
+{
+    double ansatz000, ansatz100, ansatz010, ansatz001, ansatz200, ansatz020, ansatz002;     // ansatz functions
+    double test000, test100, test010, test001, test200, test020, test002;                   // test functions
+    
+    double **MatrixA11 = LocMatrices[0];
+    //double **MatrixA12 = LocMatrices[1];
+    //double **MatrixA13 = LocMatrices[2];
+    //double **MatrixA21 = LocMatrices[3];
+    double **MatrixA22 = LocMatrices[4];
+    //double **MatrixA23 = LocMatrices[5];
+    //double **MatrixA31 = LocMatrices[6];
+    //double **MatrixA32 = LocMatrices[7];
+    double **MatrixA33 = LocMatrices[8];
+    double **MatrixC = LocMatrices[9];
+    double **MatrixB1  = LocMatrices[10];
+    double **MatrixB2  = LocMatrices[11];
+    double **MatrixB3  = LocMatrices[12];
+    double **MatrixB1T  = LocMatrices[13];
+    double **MatrixB2T  = LocMatrices[14];
+    double **MatrixB3T  = LocMatrices[15];
+    
+    double * Rhs_u1 = LocRhs[0];            // f_u1
+    double * Rhs_u2 = LocRhs[1];            // f_u2
+    double * Rhs_u3 = LocRhs[2];            // f_u3
+    double * Rhs_p = LocRhs[3];             // g_q
+    
+    int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space
+    int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
+    
+    // values of fe functions at quadrature points: Origvalues = f(uk,vk) (Gauß-quadrature: \int f(u,v) = sum wk * f(uk,vk) at Gauß points)
+    // Mult is the quadrature weight (wk)
+    double *Orig0 = OrigValues[0];          // u_x
+    double *Orig1 = OrigValues[1];          // u_y
+    double *Orig2 = OrigValues[2];          // u_z
+    double *Orig3 = OrigValues[3];          // u
+    double *Orig4 = OrigValues[4];          // p
+    double *Orig5 = OrigValues[5];          // p_x
+    double *Orig6 = OrigValues[6];          // p_y
+    double *Orig7 = OrigValues[7];          // p_z
+    double *Orig8 = OrigValues[8];          // u_xx
+    double *Orig9 = OrigValues[9];          // u_yy
+    double *Orig10 = OrigValues[10];        // u_zz
+    
+    
+    // values defined in the example
+    // double c0 = coeff[0];                 // nu bzw eps (viscosity)
+    double c1 = coeff[1];                   // f1
+    double c2 = coeff[2];                   // f2
+    double c3 = coeff[3];                   // f3
+    // double c4 = coeff[4];                 // g (the rhs of incompressibility constraint)
+    double nu = coeff[5];                   // viscosity
+    double nu_eff = coeff[6];               // effective viscosity
+    double K = coeff[7];                    // permeability
+    double alpha = coeff[9];
+    double t = fabs(sqrt((nu_eff/nu) * K));
+    /////double PSPGStab = -alpha * (K/nu) * (hK*hK)/(t*t+hK*hK); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
+    double PSPGStab = -alpha * (hK*hK)/(t*t+hK*hK); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
+    double val;
+    
+    for(int i=0;i<N_U;i++)
+    {
+        test100 = Orig0[i];     // v_x
+        test010 = Orig1[i];     // v_y
+        test001 = Orig2[i];     // v_z
+        test000 = Orig3[i];     // v
+        test200 = Orig8[i];     // v_xx
+        test020 = Orig9[i];     // v_yy
+        test002 = Orig10[i];    // v_zz
+        
+
+        Rhs_u1[i] += Mult * PSPGStab  * (nu/K) * test000 * c1;                          // stabilization P1/P1: (nu/K)*(f1,v)
+        Rhs_u2[i] += Mult * PSPGStab  * (nu/K) * test000 * c2;                          // stabilization P1/P1: (nu/K)*(f2,v)
+        Rhs_u3[i] += Mult * PSPGStab  * (nu/K) * test000 * c3;                          // stabilization P1/P1: (nu/K)*(f3,v)
+        Rhs_u1[i] -= Mult * PSPGStab  * nu_eff * (test200+test020+test002) * c1;               // stabilization P2/P2: nueff * (f1,Delta v)
+        Rhs_u2[i] -= Mult * PSPGStab  * nu_eff * (test200+test020+test002) * c2;               // stabilization P2/P2: nueff *(f2,Delta v)
+        Rhs_u3[i] -= Mult * PSPGStab  * nu_eff * (test200+test020+test002) * c3;               // stabilization P2/P2: nueff *(f3,Delta v)
+        
+        
+        for(int j=0;j<N_U;j++)
+        {
+            ansatz100 = Orig0[j];   // u_x
+            ansatz010 = Orig1[j];   // u_y
+            ansatz001 = Orig2[j];   // u_z
+            ansatz000 = Orig3[j];   // u
+            ansatz200 = Orig8[j];   // u_xx
+            ansatz020 = Orig9[j];   // u_yy
+            ansatz002 = Orig10[j];  // u_zz
+            
+
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                              // stabilization P1/P1: (nu/K)^2 * (u,v)
+            val += PSPGStab * nu_eff * nu_eff * (ansatz200+ansatz020+ansatz002)*(test200+test020+test002);   // stabilization P2/P2: nu_eff^2* (u_xx+u_yy+u_zz)*(v_xx+v_yy+v_zz)
+            val -= PSPGStab * nu_eff * (nu/K) * (ansatz200+ansatz020+ansatz002)*test000;            // stabilization P2/P2: nu_eff* (nu/K) * (u_xx+u_yy+u_zz)*(v)
+            val -= PSPGStab * nu_eff * (nu/K) * ansatz000 * (test200+test020+test002);                       // stabilization P2/P2: nu_eff* (nu/K) * (u)*(v_xx+v_yy+v_zz)
+            MatrixA11[i][j] += Mult * val;
+
+            
+
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                              // stabilization P1/P1: (nu/K)^2 * (u,v)
+            val += PSPGStab * nu_eff * nu_eff * (ansatz200+ansatz020+ansatz002)*(test200+test020+test002);    // stabilization P2/P2: nu_eff^2 *(u_xx+u_yy+u_zz)*(v_xx+v_yy+v_zz)
+            val -= PSPGStab * nu_eff * (nu/K) * (ansatz200+ansatz020+ansatz002)*test000;            // stabilization P2/P2: nu_eff* (nu/K) * (u_xx+u_yy+u_zz)*(v)
+            val -= PSPGStab * nu_eff * (nu/K) * ansatz000 * (test200+test020+test002);                       // stabilization P2/P2: nu_eff* (nu/K) * (u)*(v_xx+v_yy+v_zz)
+            MatrixA22[i][j] += Mult * val;
+            
+       
+            val += PSPGStab * (nu/K) * (nu/K) * (ansatz000 * test000);                              // stabilization P1/P1: (nu/K)^2*(u,v)
+            val += PSPGStab * nu_eff * nu_eff * (ansatz200+ansatz020+ansatz002)*(test200+test020+test002);    // stabilization P2/P2: nu_eff^2* (u_xx+u_yy+u_zz)*(v_xx+v_yy+v_zz)
+            val -= PSPGStab * nu_eff * (nu/K) * (ansatz200+ansatz020+ansatz002)*test000;            // stabilization P2/P2: nu_eff* (nu/K) * (u_xx+u_yy+u_zz)*(v)
+            val -= PSPGStab * nu_eff * (nu/K) * ansatz000 * (test200+test020+test002);                       // stabilization P2/P2: nu_eff* (nu/K) * (u)*(v_xx+v_yy+v_zz)
+            MatrixA33[i][j] += Mult * val;
+        }
+        
+        
+        for(int j=0;j<N_P;j++)
+        {
+            ansatz000 = Orig4[j];
+            ansatz100 = Orig5[j];
+            ansatz010 = Orig6[j];
+            ansatz001 = Orig7[j];
+            
+            val = PSPGStab * (nu/K) * (ansatz100 * test000);                           // stabilization P1/P1: nu/K * (grad p,v) --> nu/K * p_x*v
+            //val += PSPGStab * (nu/K) * (ansatz000 * test100);                         // stabilization P1/P1: nu/K * (p,div v) --> nu/K * p*v_x
+            val -= PSPGStab * nu_eff * ansatz100 * (test200+test020+test002);           // stabilization P2/P2: nu_eff* p_x* Delta v
+            MatrixB1T[i][j] += Mult * val;
+            
+
+            val = PSPGStab * (nu/K) * (ansatz010 * test000);                            // stabilization P1/P1: nu/K * (grad p,v) --> nu/K * p_y*v
+            //val+= PSPGStab * (nu/K) * (ansatz000 * test010);                          // stabilization P1/P1: nu/K * (p,div v) --> nu/K * p*v_y
+            val -= PSPGStab * nu_eff * ansatz010 * (test200+test020+test002);           // stabilization P2/P2: nu_eff* p_x* Delta v
+            MatrixB2T[i][j] += Mult * val;
+            
+
+            val = PSPGStab * (nu/K) * (ansatz001 * test000);                                     // stabilization P1/P1: nu/K * (grad p,v)  --> nu/K * p_z*v
+            //val+= PSPGStab * (nu/K) * (ansatz000 * test001);                                   // stabilization P1/P1: nu/K * (p,div v)  --> nu/K * p*v_z
+            val -= PSPGStab * nu_eff * ansatz001 * (test200+test020+test002);           // stabilization P2/P2: nu_eff* p_x* Delta v
+            MatrixB3T[i][j] += Mult * val;
+        }
+    }
+    
+    for(int i=0;i<N_P;i++)
+    {
+        test000 = Orig4[i];
+        test100 = Orig5[i];
+        test010 = Orig6[i];
+        test001 = Orig7[i];
+        
+        Rhs_p[i] = Mult * PSPGStab * test100*c1;                    // stabilization: (f,grad q) --> (f1,q_x)
+        Rhs_p[i] += Mult * PSPGStab * test010*c2;                    // stabilization: (f,grad q) --> (f2,q_y)
+        Rhs_p[i] += Mult * PSPGStab * test001*c3;                    // stabilization: (f,grad q) --> (f3,q_z)
+        
+        
+        for(int j=0;j<N_U;j++)
+        {
+            ansatz100 = Orig0[j];
+            ansatz010 = Orig1[j];
+            ansatz001 = Orig2[j];
+            ansatz000 = Orig3[j];
+            ansatz200 = Orig8[j];
+            ansatz020 = Orig9[j];
+            ansatz002 = Orig10[j];
+            
+
+            val = PSPGStab * (nu/K) * (test100 * ansatz000);                               // stabilization P1/P1: nu/K * (u,grad q) --> nu/K * q_x*u_x
+            val -= PSPGStab * nu_eff * test100 * (ansatz200+ansatz020+ansatz002);           // stabilization P2/P2: nu_eff* q_x* Delta u
+            MatrixB1[i][j] += Mult * val;
+            
+
+            val = PSPGStab * (nu/K) * (test010 * ansatz000);                               // stabilization P1/P1: nu/K * (u,grad q) --> nu/K * q_y*u_y
+            val -= PSPGStab * nu_eff * test010 * (ansatz200+ansatz020+ansatz002);           // stabilization P2/P2: nu_eff* q_x* Delta u
+            MatrixB2[i][j] += Mult * val;
+            
+            val = PSPGStab * (nu/K) * (test001 * ansatz000);                               // stabilization P1/P1: nu/K * (u,grad q) --> nu/K * q_z*u_z
+            val -= PSPGStab * nu_eff * test001 * (ansatz200+ansatz020+ansatz002);           // stabilization P2/P2: nu_eff* q_x* Delta u
+            MatrixB3[i][j] += Mult * val;
+        }
+        
+        //for Matrix C: loop over N_P here
+        for(int j=0;j<N_P;j++)
+        {
+            ansatz000 = Orig4[j];
+            ansatz100 = Orig5[j];
+            ansatz010 = Orig6[j];
+            ansatz001 = Orig7[j];
+            
+            val = PSPGStab * (ansatz100 * test100 + ansatz010 * test010+ ansatz001 * test001);               // stabilization: (grad p,grad q)
+            MatrixC[i][j] += Mult * val;
+        }
+    }
+}
 
 
-//// ======================================================================
-//// Type 2, Standard Galerkin for Brinkman in [u gradq] formulation (macht nicht wirklich Sinn!!!!!!)
-//// ======================================================================
-//void BrinkmanType2Galerkin(double Mult, double *coeff,
-//                           double *param, double hK,
-//                           double **OrigValues, int *N_BaseFuncts,
-//                           double ***LocMatrices, double **LocRhs)
-//{
-//    double **MatrixA11 = LocMatrices[0];
-//    //double **MatrixA12 = LocMatrices[1];
-//    //double **MatrixA21 = LocMatrices[2];
-//    double **MatrixA22 = LocMatrices[3];
-//    ////int offset = TDatabase::ParamDB->NSTYPE == 14 ? 1 : 0;
-//    //double ** MatrixC = LocMatrices[4];
-//    int offset = 1;
-//    double **MatrixB1 = LocMatrices[4+offset];
-//    double **MatrixB2 = LocMatrices[5+offset];
-//    double **MatrixB1T = LocMatrices[6+offset];
-//    double **MatrixB2T = LocMatrices[7+offset];
-//    
-//    double *Rhs1 = LocRhs[0];                       // f1
-//    double *Rhs2 = LocRhs[1];                       // f2
-//    // double *Rhs_p = LocRhs[2];                   // g_q
-//    
-//    int N_U = N_BaseFuncts[0];
-//    int N_P = N_BaseFuncts[1];
-//    
-//    double *Orig0 = OrigValues[0];         // u_x
-//    double *Orig1 = OrigValues[1];         // u_y
-//    double *Orig2 = OrigValues[2];         // u
-//    //double *Orig3 = OrigValues[3];         // p
-//    double *Orig4 = OrigValues[4];         // p_x   MUSS NOCH DEFINIERT WERDEN !!!...eventuell
-//    double *Orig5 = OrigValues[5];         // p_y   MUSS NOCH DEFINIERT WERDEN!!!...eventuell
-//    
-//    //double c0 = coeff[0];                   // nu
-//    double c1 = coeff[1];                   // f1
-//    double c2 = coeff[2];                   // f2
-//    //double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
-//    double nu = coeff[4];                   // viscosity
-//    double nu_eff = coeff[5];               // effective viscosity
-//    double K = coeff[6];                    // permeability
-//    
-//    double val;
-//    double ansatz00, ansatz10, ansatz01;
-//    double test00, test10, test01;
-//    
-//    for(int i=0;i<N_U;i++)
-//    {
-//        double *Matrix11Row = MatrixA11[i];
-//        // double *Matrix12Row = MatrixA12[i];
-//        // double *Matrix21Row = MatrixA21[i];
-//        double *Matrix22Row = MatrixA22[i];
-//        
-//        test10 = Orig0[i];
-//        test01 = Orig1[i];
-//        test00 = Orig2[i];
-//        
-//        Rhs1[i] += Mult*test00*c1;
-//        Rhs2[i] += Mult*test00*c2;
-//        
-//        for(int j=0;j<N_U;j++)
-//        {
-//            ansatz10 = Orig0[j];
-//            ansatz01 = Orig1[j];
-//            ansatz00 = Orig2[j];
-//            
-//            val  = nu_eff*(test10*ansatz10+test01*ansatz01);
-//            val += (nu/K)* (ansatz00*test00);
-//            Matrix11Row[j] += Mult * val;
-//            
-//            // val  = 0;
-//            // Matrix12Row[j] += Mult * val;
-//            
-//            // val  = 0;
-//            // Matrix21Row[j] += Mult * val;
-//            
-//            val  = nu_eff*(test10*ansatz10+test01*ansatz01);
-//            val += (nu/K) *(ansatz00*test00);
-//            Matrix22Row[j] += Mult * val;
-//        }
-//        
-//        double *MatrixRow1 = MatrixB1T[i];
-//        double *MatrixRow2 = MatrixB2T[i];
-//        
-//        for(int j=0;j<N_P;j++)
-//        {
-//            ansatz10 = Orig4[j];
-//            ansatz01 = Orig5[j];
-//            
-//            val = Mult*ansatz10*test00;        // p_x*v
-//            MatrixRow1[j] += val;
-//            
-//            val = Mult*ansatz01*test00;        // p_y*v
-//            MatrixRow2[j] += val;
-//        }
-//    }
-//    
-//    for(int i=0;i<N_P;i++)
-//    {
-//        double *MatrixRow1 = MatrixB1[i];
-//        double *MatrixRow2 = MatrixB2[i];
-//        
-//        test10 = Orig4[i];
-//        test01 = Orig5[i];
-//        
-//        for(int j=0;j<N_U;j++)
-//        {
-//            ansatz00 = Orig2[j];
-//            
-//            val = -Mult*ansatz00*test10;
-//            MatrixRow1[j] += val;
-//            
-//            val = -Mult*ansatz00*test01;
-//            MatrixRow2[j] += val;
-//        }
-//    }
-//}
-//
-//
-//// ======================================================================
-//// Brinkman Problem with PSPG Stabilization (for P2/P2)
-//// takes into account Delta u and Delta v
-//// according to Hannukainen:Computations with finite element methods for the Brinkman Problem (2011)
-//// ======================================================================
-//
-//void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
-//                                        double *param, double hK,
-//                                        double **OrigValues, int *N_BaseFuncts,
-//                                        double ***LocMatrices, double **LocRhs)
-//{
-//    double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;    // ansatz functions
-//    double test00, test10, test01, test20, test02;              // test functions
-//    
-//    double ** MatrixA11 = LocMatrices[0];
-//    double ** MatrixA12 = LocMatrices[1];                       // stabilization P2/P2
-//    double ** MatrixA21 = LocMatrices[2];                       // stabilization P2/P2
-//    double ** MatrixA22 = LocMatrices[3];
-//    double ** MatrixC   = LocMatrices[4];                       // stabilization P1/P1
-//    double ** MatrixB1  = LocMatrices[5];
-//    double ** MatrixB2  = LocMatrices[6];
-//    double ** MatrixB1T = LocMatrices[7];
-//    double ** MatrixB2T = LocMatrices[8];
-//    
-//    double * Rhs_u1 = LocRhs[0];            // f_u1         (rhs tested with v1)
-//    double * Rhs_u2 = LocRhs[1];            // f_u2         (rhs tested with v2)
-//    double * Rhs_p  = LocRhs[2];            // g_q resp. f_q  (rhs tested with q)
-//    
-//    int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space (both for u1 and u2)
-//    int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
-//    
-//    // values of fe functions at quadrature points: Origvalues = f(uk,vk) (Gauß-quadrature: \int f(u,v) = sum wk * f(uk,vk) at Gauß points)
-//    // Mult is the quadrature weight (wk)
-//    double *Orig0 = OrigValues[0];          // u_x
-//    double *Orig1 = OrigValues[1];          // u_y
-//    double *Orig2 = OrigValues[2];          // u
-//    double *Orig3 = OrigValues[3];          // p
-//    double *Orig4 = OrigValues[4];          // p_x
-//    double *Orig5 = OrigValues[5];          // p_y
-//    double *Orig6 = OrigValues[6];          // u_xx
-//    double *Orig7 = OrigValues[7];          // u_yy
-//    
-//    // values defined in the example
-//    //double c0 = coeff[0];                               // t^2= eps(:=1/Re) ; Re can be set in brinkman2d.dat
-//    double c1 = coeff[1];                               // f1
-//    double c2 = coeff[2];                               // f2
-//    //double c3 = coeff[3];                               // f3 (the rhs of incompressibility constraint)
-//    double nu = coeff[4];                               // viscosity
-//    double nu_eff = coeff[5];                           // effective viscosity
-//    double K = coeff[6];                                // permeability
-//    double t = fabs(sqrt((nu_eff/nu)*K));
-//    double alpha =coeff[8];                             // PSPG Stabilization Parameter
-//    double PSPGStab = -alpha * (nu/K)* (hK*hK)/(t*t+hK*hK);     //stabilization = (hK*hK)/(c0*c0+hK*hK)
-//    
-//    double val;
-//    for(int i=0;i<N_U;i++)
-//    {
-//        test10 = Orig0[i];          // v_x
-//        test01 = Orig1[i];          // v_y
-//        test00 = Orig2[i];          // v
-//        test20 = Orig6[i];          // v_xx
-//        test02 = Orig7[i];          // v_yy
-//        
-//        Rhs_u1[i] += Mult * test00 * c1;                                            // (f,v)
-//        Rhs_u2[i] += Mult * test00 * c2;                                            // (f,v)
-//        Rhs_u1[i] += Mult * PSPGStab * nu/K * test00 * c1;                          // stabilization P1/P1: nu/K * (f,v)
-//        Rhs_u2[i] += Mult * PSPGStab * nu/K * test00 * c2;                          // stabilization P1/P1: nu/K * (f,v)
-//        Rhs_u1[i] += -Mult* PSPGStab * nu_eff * c1 * (test20 + test02);             // stabilization P2/P2: -nu_eff * (f, Delta v)
-//        Rhs_u2[i] += -Mult* PSPGStab * nu_eff * c2 * (test20 + test02);             // stabilization P2/P2: -nu_eff * (f, Delta v)
-//        
-//        for(int j=0;j<N_U;j++)
-//        {
-//            ansatz10 = Orig0[j];    // u_x
-//            ansatz01 = Orig1[j];    // u_y
-//            ansatz00 = Orig2[j];    // u
-//            ansatz20 = Orig6[j];    // u_xx
-//            ansatz02 = Orig7[j];    // u_yy
-//            
-//            val  = nu_eff * (test10 * ansatz10 + test01 * ansatz01);                                // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
-//            val += (nu/K) * (ansatz00 * test00);                                                    // nu/K * (u,v)
-//            val += PSPGStab * (nu/K) * (nu/K) * (ansatz00 * test00);                                // stabilization P1/P1: (nu/K)^2*(u,v)
-//            val += PSPGStab * nu_eff * nu_eff * ((ansatz20 + ansatz02) * (test20 + test02));        // stabilization P2/P2: (nu_eff)^2* (Delta u,Delta v)
-//            MatrixA11[i][j] += Mult * val;
-//            
-//            // val  = 0;
-//            // Matrix12Row[j] += Mult * val;
-//            
-//            val  = -PSPGStab * (nu_eff * nu)/K * (ansatz20 + ansatz02) * test00;                // stabilization P2/P2: -(nu_eff*nu)/K * (Delta u,v)
-//            val += -PSPGStab * (nu_eff * nu)/K * (test20 + test02) * ansatz00;                  // stabilization P2/P2: -(nu_eff*nu)/K * (Delta v,u)
-//            MatrixA12[i][j] += Mult * val;
-//            
-//            // val  = 0;
-//            // Matrix21Row[j] += Mult * val;
-//            
-//            val  = -PSPGStab * (nu_eff * nu)/K * (ansatz20 + ansatz02) * test00;                   // stabilization P2/P2: -(nu_eff*nu)/K * (Delta u,v)
-//            val += -PSPGStab * (nu_eff * nu)/K  * (test20 + test02) * ansatz00;                    // stabilization P2/P2: -(nu_eff*nu)/K * (Delta v,u)
-//            MatrixA21[i][j] += Mult * val;
-//            
-//            val  = nu_eff * (test10 * ansatz10 + test01 * ansatz01);                                // nu_eff*(grad u,grad v)=nu_eff*(v_x*u_x + v_y*u_x)
-//            val += (nu/K) * ansatz00 * test00;                                                      // nu/K * (u , v)
-//            val += PSPGStab * (nu/K) * (nu/K) * (ansatz00 * test00);                                // stabilization P1/P1: stabilization P1/P1: (nu/K)^2*(u,v)
-//            val += PSPGStab * nu_eff * nu_eff * ((ansatz20 + ansatz02) * (test20 + test02));        // stabilization P2/P2: (nu_eff)^2* (Delta u,Delta v)
-//            MatrixA22[i][j] += Mult * val;
-//        }
-//        
-//        for(int j=0;j<N_P;j++)
-//        {
-//            ansatz00 = Orig3[j];        // p
-//            ansatz10 = Orig4[j];        // p_x
-//            ansatz01 = Orig5[j];        // p_y
-//            
-//            val  = -ansatz00 * test10;                                                          // -(p,div v)=-p*v_x
-//            val += PSPGStab * nu/K * (ansatz10 * test00);                                       // stabilization P1/P1: nu/K * (v, grad p)
-//            val += -PSPGStab * nu_eff * (test20 + test02) * ansatz10;                           // stabilization P2/P2: -nu_eff * (Delta v, grad p)
-//            MatrixB1T[i][j] += Mult * val;
-//            
-//            val  = -ansatz00 * test01;                                                          // -(p,div v)=-p*v_y
-//            val += PSPGStab * nu/K * (ansatz01 * test00);                                       // stabilization P1/P1: nu/K * (v, grad p)
-//            val += -PSPGStab * nu_eff * (test20 + test02) * ansatz01;                           // stabilization P2/P2: -nu_eff * (Delta v, grad p)
-//            MatrixB2T[i][j] += Mult * val;
-//        }
-//    }
-//    
-//    for(int i=0;i<N_P;i++)
-//    {
-//        test00 = Orig3[i];          // q
-//        test10 = Orig4[i];          // q_x
-//        test01 = Orig5[i];          // q_y
-//        test20 = Orig6[i];
-//        test20 = Orig7[i];
-//        
-//        Rhs_p[i] += Mult * PSPGStab * test10 * c1;                                           // stabilization P1/P1: (f,grad q)
-//        Rhs_p[i] += Mult * PSPGStab * test01 * c2;                                           // stabilization P1/P1: (f,grad q)
-//        
-//        
-//        
-//        for(int j=0;j<N_U;j++)
-//        {
-//            ansatz00 = Orig2[j];        // u
-//            ansatz10 = Orig0[j];        // u_x
-//            ansatz01 = Orig1[j];        // u_y
-//            ansatz20 = Orig6[j];        // u_xx
-//            ansatz02 = Orig7[j];        // u_yy
-//            
-//            val  = -test00 * ansatz10;                                                      // -(q,div u)=-q*u_x     WARUM MINUS? (MASS CONSERVATION)
-//            val += PSPGStab * nu/K * (ansatz00 * test10);                                   // stabilization P1/P1: nu/K * (u,grad q)
-//            val += -PSPGStab * nu_eff *  (ansatz20 + ansatz02) * test10;                    // stabilization P2/P2: -nu_eff * (Delta u,grad q)
-//            MatrixB1[i][j] += Mult * val;
-//            
-//            val  = -test00 * ansatz01;                                                      // -(q,div u)=-q*u_y     WARUM MINUS? (MASS CONSERVATION)
-//            val += PSPGStab * nu/K * (ansatz00 * test01);                                   // stabilization P1/P1: nu/K * (u,grad q)
-//            val += -PSPGStab * nu_eff * (ansatz20 + ansatz02) * test01;                     // stabilization P2/P2: -nu_eff * (Delta u,grad q)
-//            MatrixB2[i][j] += Mult * val; 
-//        }
-//        
-//        // for MatrixC: loop over N_P here
-//        // (grad p, grad q)
-//        
-//        for(int j=0;j<N_P;j++)
-//        {
-//            ansatz00 = Orig3[j];            // p
-//            ansatz10 = Orig4[j];            // p_x
-//            ansatz01 = Orig5[j];            // p_y
-//            
-//            val = PSPGStab * (ansatz10 * test10 + ansatz01 * test01);                           // stabilization P1/P1: (grad p,grad q)
-//            MatrixC[i][j] += Mult * val;
-//        }
-//    }
-//}
-//
-//
-////formulations with t^2=c0
-//
-//// ======================================================================
-//// Brinkman Problem with PSPG Stabilization (only P1/P1)
-//// assume Delta u = Delta v = 0
-//// according to Hannukainen: Computations with Finite element methods for the Brinkman Problem (2011)
-//// ======================================================================
-////
-////void BrinkmanType1GalerkinResidualStab(double Mult, double *coeff,
-////                                       double *param, double hK,
-////                                       double **OrigValues, int *N_BaseFuncts,
-////                                       double ***LocMatrices, double **LocRhs)
-////{
-////    double ansatz00, ansatz10, ansatz01;    // ansatz functions
-////    double test00, test10, test01;          // test functions
-////    
-////    double ** MatrixA11 = LocMatrices[0];
-////    //double ** MatrixA12 = LocMatrices[1];
-////    //double ** MatrixA21 = LocMatrices[2];
-////    double ** MatrixA22 = LocMatrices[3];
-////    double ** MatrixC = LocMatrices[4];     //stabilization
-////    double ** MatrixB1 = LocMatrices[5];
-////    double ** MatrixB2 = LocMatrices[6];
-////    double ** MatrixB1T = LocMatrices[7];
-////    double ** MatrixB2T = LocMatrices[8];
-////    
-////    double * Rhs_u1 = LocRhs[0];            // f_u1
-////    double * Rhs_u2 = LocRhs[1];            // f_u2
-////    double * Rhs_p = LocRhs[2];             // g_q bzw f_q
-////    
-////    int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space
-////    int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
-////    
-////    // values of fe functions at quadrature points: Origvalues = f(uk,vk) (Gauß-quadrature: \int f(u,v) = sum wk * f(uk,vk) at Gauß points)
-////    // Mult is the quadrature weight (wk)
-////    double *Orig0 = OrigValues[0];          // u_x
-////    double *Orig1 = OrigValues[1];          // u_y
-////    double *Orig2 = OrigValues[2];          // u
-////    double *Orig3 = OrigValues[3];          // p
-////    double *Orig4 = OrigValues[4];          // p_x
-////    double *Orig5 = OrigValues[5];          // p_y
-////    
-////    // values defined in the example
-////    double c0 = coeff[0];                   // t^2
-////    double c1 = coeff[1];                   // f1
-////    double c2 = coeff[2];                   // f2
-////    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
-////    double nu = coeff[4];                   //viscosity
-////    double nu_eff = coeff[5];               // effective viscosity
-////    double K = coeff[6];                    // permeability
-////    double alpha = coeff[7];
-////    double t = fabs(sqrt((nu_eff/nu)*K));
-////    double PSPGStab = alpha*(hK*hK)/(t+hK*hK); //stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
-////    
-////    
-////    double val;
-////    for(int i=0;i<N_U;i++)
-////    {
-////        test10 = Orig0[i];
-////        test01 = Orig1[i];
-////        test00 = Orig2[i];
-////        
-////        Rhs_u1[i] += Mult*test00*c1;
-////        Rhs_u2[i] += Mult*test00*c2;
-////        Rhs_u1[i] += Mult* PSPGStab * test00 * c1;
-////        Rhs_u2[i] += Mult* PSPGStab * test00 * c2;
-////        
-////        for(int j=0;j<N_U;j++)
-////        {
-////            ansatz10 = Orig0[j];
-////            ansatz01 = Orig1[j];
-////            ansatz00 = Orig2[j];
-////            
-////            val  = c0*(test10*ansatz10+test01*ansatz01);        // t^2*(v_x*u_x + v_y*u_x)
-////            val += (ansatz00*test00);                           // (u * v)
-////            val += PSPGStab*(ansatz00*test00);                  // stabilization
-////            MatrixA11[i][j] += Mult * val;
-////            
-////            // val  = 0;
-////            // Matrix12Row[j] += Mult * val;
-////            
-////            // val  = 0;
-////            // Matrix21Row[j] += Mult * val;
-////            
-////            val  = c0*(test10*ansatz10+test01*ansatz01);        // t^2*(v_x*u_x + v_y*u_x)
-////            val += (ansatz00*test00);                           // (u * v)
-////            val += PSPGStab*(ansatz00*test00);                  // stabilization
-////            MatrixA22[i][j] += Mult * val;
-////        }                            // endfor j
-////        
-////        for(int j=0;j<N_P;j++)
-////        {
-////            ansatz00 = Orig3[j];
-////            ansatz10 = Orig4[j];
-////            ansatz01 = Orig5[j];
-////            
-////            val = -ansatz00*test10;                             // -Mult* p*v_x
-////            val-= PSPGStab*(ansatz00*test10);                   // stabilization
-////            
-////            MatrixB1T[i][j] += Mult * val;
-////            
-////            val = -ansatz00*test01;                             // -Mult*p*v_y
-////            val-= PSPGStab*(ansatz00*test01);                   // stabilization
-////            
-////            MatrixB2T[i][j] += Mult * val;
-////        }
-////    }                              // endfor i
-////    
-////    for(int i=0;i<N_P;i++)
-////    {
-////        test00 = Orig3[i];
-////        test10 = Orig4[i];
-////        test01 = Orig5[i];
-////        
-////        Rhs_p[i] += Mult*PSPGStab*test10*c1;                    // stabilization
-////        Rhs_p[i] += Mult*PSPGStab*test01*c2;                    // stabilization
-////        
-////        for(int j=0;j<N_U;j++)
-////        {
-////            ansatz00 = Orig2[j];
-////            ansatz10 = Orig0[j];
-////            ansatz01 = Orig1[j];
-////            
-////            val = test00*ansatz10;                              // -Mult*q*u_x
-////            val-= PSPGStab * (test00*ansatz10);                 // stabilization
-////            MatrixB1[i][j] += Mult * val;
-////            
-////            val = test00*ansatz01;                              // -Mult*q*u_y
-////            val-= PSPGStab * (test00*ansatz01);                 // stabilization
-////            MatrixB2[i][j] += Mult * val;
-////        }                            // endfor j
-////        
-////        //for MatrixC: loop over N_P here
-////        
-////        for(int j=0;j<N_P;j++)
-////        {
-////            ansatz00 = Orig3[j];
-////            ansatz10 = Orig4[j];
-////            ansatz01 = Orig5[j];
-////            
-////            val = PSPGStab*(ansatz10*test10);               // stabilization
-////            MatrixC[i][j] += Mult * val;
-////            
-////            val= PSPGStab *(ansatz01*test01);               // stabilization
-////            MatrixC[i][j] += Mult * val;
-////        }
-////    }
-////}
-////
-////// ======================================================================
-////// Brinkman Problem with PSPG Stabilization (for P2/P2)
-////// takes into account Delta u and Delta v
-////// according to Hannukainen:Computations with finite element methods for the Brinkman Problem (2011)
-////// ======================================================================
-////
-////void BrinkmanType1GalerkinResidualStab2(double Mult, double *coeff,
-////                                        double *param, double hK,
-////                                        double **OrigValues, int *N_BaseFuncts,
-////                                        double ***LocMatrices, double **LocRhs)
-////{
-////    double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;    // ansatz functions
-////    double test00, test10, test01, test20, test02;              // test functions
-////    
-////    double ** MatrixA11 = LocMatrices[0];
-////    double ** MatrixA12 = LocMatrices[1];                       // stabilization P2/P2
-////    double ** MatrixA21 = LocMatrices[2];                       // stabilization P2/P2
-////    double ** MatrixA22 = LocMatrices[3];
-////    double ** MatrixC   = LocMatrices[4];                       //stabilization P1/P1
-////    double ** MatrixB1  = LocMatrices[5];
-////    double ** MatrixB2  = LocMatrices[6];
-////    double ** MatrixB1T = LocMatrices[7];
-////    double ** MatrixB2T = LocMatrices[8];
-////    
-////    double * Rhs_u1 = LocRhs[0];            // f_u1         (rhs tested with v1)
-////    double * Rhs_u2 = LocRhs[1];            // f_u2         (rhs tested with v2)
-////    double * Rhs_p  = LocRhs[2];            // g_q resp. f_q  (rhs tested with q)
-////    
-////    int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space (both for u1 and u2)
-////    int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
-////    
-////    // values of fe functions at quadrature points: Origvalues = f(uk,vk) (Gauß-quadrature: \int f(u,v) = sum wk * f(uk,vk) at Gauß points)
-////    // Mult is the quadrature weight (wk)
-////    double *Orig0 = OrigValues[0];          // u_x
-////    double *Orig1 = OrigValues[1];          // u_y
-////    double *Orig2 = OrigValues[2];          // u
-////    double *Orig3 = OrigValues[3];          // p
-////    double *Orig4 = OrigValues[4];          // p_x
-////    double *Orig5 = OrigValues[5];          // p_y
-////    double *Orig6 = OrigValues[6];          // u_xx
-////    double *Orig7 = OrigValues[7];          // u_yy
-////    
-////    // values defined in the example
-////    double c0 = coeff[0];                           // t^2= eps(:=1/Re) ; Re can be set in brinkman2d.dat
-////    double c1 = coeff[1];                           // f1
-////    double c2 = coeff[2];                           // f2
-////    double c3 = coeff[3];                           // f3 (the rhs of incompressibility constraint)
-////    double nu = coeff[4];
-////    double nu_eff = coeff[5];
-////    double K = coeff[6];                          // viscosity/permeability
-////    double alpha =coeff[7];                       // PSPG Stabilization Parameter
-////    double PSPGStab = -alpha*(hK*hK)/(c0*c0+hK*hK); //stabilization = (hK*hK)/(c0*c0+hK*hK)
-////    
-////    double val;
-////    for(int i=0;i<N_U;i++)
-////    {
-////        test10 = Orig0[i];
-////        test01 = Orig1[i];
-////        test00 = Orig2[i];
-////        test20 = Orig6[i];
-////        test02 = Orig7[i];
-////        
-////        Rhs_u1[i] += Mult*test00*c1;
-////        Rhs_u2[i] += Mult*test00*c2;
-////        Rhs_u1[i] += Mult* PSPGStab * test00 * c1;              // stabilization P1/P1
-////        Rhs_u2[i] += Mult* PSPGStab * test00 * c2;              // stabilization P1/P1
-////        Rhs_u1[i] += -Mult*PSPGStab*c0*c1*(test20+test02);      // stabilization P2/P2
-////        Rhs_u2[i] += -Mult*PSPGStab*c0*c2*(test20+test02);      // stabilization P2/P2
-////        
-////        for(int j=0;j<N_U;j++)
-////        {
-////            ansatz10 = Orig0[j];
-////            ansatz01 = Orig1[j];
-////            ansatz00 = Orig2[j];
-////            ansatz20 = Orig6[j];
-////            ansatz02 = Orig7[j];
-////            
-////            val  = c0*(test10*ansatz10+test01*ansatz01);                            // t^2*(v_x*u_x + v_y*u_x)
-////            val += (ansatz00*test00);                                               // (u * v)
-////            val += PSPGStab * (ansatz00*test00);                                    // stabilization P1/P1
-////            val += PSPGStab * c0 * c0 * ((ansatz20+ansatz02)*(test20+test02));      // stabilization P2/P2
-////            MatrixA11[i][j] += Mult * val;
-////            
-////            // val  = 0;
-////            // Matrix12Row[j] += Mult * val;
-////            
-////            val  = -PSPGStab * c0 * (ansatz20+ansatz02) * test00;                  // stabilization P2/P2
-////            val += -PSPGStab * c0 * (test20+test02) * ansatz00;                    // stabilization P2/P2
-////            MatrixA12[i][j] += Mult * val;                                         // stabilization P2/P2
-////            
-////            // val  = 0;
-////            // Matrix21Row[j] += Mult * val;
-////            
-////            val  = -PSPGStab * c0 * (ansatz20+ansatz02) * test00;                   // stabilization P2/P2
-////            val += -PSPGStab * c0 * (test20+test02) * ansatz00;                     // stabilization P2/P2
-////            MatrixA21[i][j] += Mult * val;                                          // stabilization P2/P2
-////            
-////            val  = c0*(test10*ansatz10+test01*ansatz01);                            // t^2*(v_x*u_x + v_y*u_x)
-////            val += ansatz00*test00;                                                 // (u * v)
-////            val += PSPGStab*(ansatz00*test00);                                      // stabilization P1/P1
-////            val += PSPGStab * c0*c0* ((ansatz20+ansatz02)*(test20+test02));         // stabilization P2/P2
-////            MatrixA22[i][j] += Mult * val;
-////        }                            // endfor j
-////        
-////        for(int j=0;j<N_P;j++)
-////        {
-////            ansatz00 = Orig3[j];
-////            ansatz10 = Orig4[j];
-////            ansatz01 = Orig5[j];
-////            
-////            val = -ansatz00*test10;                                                 // -Mult* p*v_x
-////            val+= PSPGStab*(ansatz10*test00);                                       // stabilization P1/P1
-////            val+= -PSPGStab * c0 * (test20+test02) * ansatz10;                      // stabilization P2/P2
-////            MatrixB1T[i][j] += Mult * val;
-////            
-////            val = -ansatz00*test01;                                                 // -Mult*p*v_y
-////            val+= PSPGStab*(ansatz01*test00);                                       // stabilization P1/P1
-////            val+= -PSPGStab * c0 * (test20+test02) * ansatz01;                      // stabilization P2/P2
-////            MatrixB2T[i][j] += Mult * val;
-////        }
-////    }                              // endfor i
-////    
-////    for(int i=0;i<N_P;i++)
-////    {
-////        test00 = Orig3[i];
-////        test10 = Orig4[i];
-////        test01 = Orig5[i];
-////        test20 = Orig6[i];
-////        test20 = Orig7[i];
-////        
-////        Rhs_p[i] += Mult*PSPGStab*test10*c1;                                        // stabilization P1/P1
-////        Rhs_p[i] += Mult*PSPGStab*test01*c2;                                        // stabilization P1/P1
-////        
-////        for(int j=0;j<N_U;j++)
-////        {
-////            ansatz00 = Orig2[j];
-////            ansatz10 = Orig0[j];
-////            ansatz01 = Orig1[j];
-////            ansatz20 = Orig6[j];
-////            ansatz02 = Orig7[j];
-////            
-////            val = -test00*ansatz10;                                                 // -Mult*q*u_x
-////            val+= PSPGStab * (ansatz00*test10);                                     // stabilization P1/P1
-////            val+= -PSPGStab * c0 * (ansatz20+ansatz02)*test10;                      // stabilization P2/P2
-////            MatrixB1[i][j] += Mult * val;
-////            
-////            val = -test00*ansatz01;                                                 // -Mult*q*u_y
-////            val+= PSPGStab * (ansatz00*test01);                                     // stabilization P1/P1
-////            val+= -PSPGStab * c0 * (ansatz20+ansatz02)*test01;                      // stabilization P2/P2
-////            MatrixB2[i][j] += Mult * val;
-////        }                            // endfor j
-////        
-////        // for MatrixC: loop over N_P here
-////        // (grad p, grad q)
-////        
-////        for(int j=0;j<N_P;j++)
-////        {
-////            ansatz00 = Orig3[j];
-////            ansatz10 = Orig4[j];
-////            ansatz01 = Orig5[j];
-////            
-////            val = PSPGStab*(ansatz10*test10);                                       // stabilization P1/P1
-////            MatrixC[i][j] += Mult * val;
-////            
-////            val= PSPGStab *(ansatz01*test01);                                       // stabilization P1/P1
-////            MatrixC[i][j] += Mult * val;
-////        }
-////    }
-////}
+// ======================================================================
+// Brinkman Problem with GradDiv Stabilization
+// ======================================================================
+// For NSTYPE: 14
+void GradDivStab_for_Brinkman3DType1Galerkin(double Mult, double *coeff,
+                                             double *param, double hK,
+                                             double **OrigValues, int *N_BaseFuncts,
+                                             double ***LocMatrices, double **LocRhs)
+{
+}

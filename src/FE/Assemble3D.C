@@ -1508,7 +1508,9 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 						 Param, AuxArray,
 						 cell,
 						 N_AllMatrices, n_rhs,
-						 LocMatrices, LocRhs);
+						 LocMatrices, LocRhs, 1.);
+        
+
    
 	    //OutPut("local form done " << i << endl);
 	    time1 = GetTime();
@@ -1764,7 +1766,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
                the markers prescribed in the input file
                @attention this part is still on-going work
                **/
-              TBoundFace *boundface = (TBoundFace *)joint;
+              /*TBoundFace *boundface = (TBoundFace *)joint;
               int face_marker = boundface->GetBoundComp()->get_physical_id();
               for (int ibd=0; ibd< TDatabase::ParamDB->n_neumann_boundary; ibd++)
               {
@@ -1778,7 +1780,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
                       Cond0 = NEUMANN;
               }
               
-              
+              */
 	          switch(Cond0)
 	          {
 	            case DIRICHLET:
@@ -2039,7 +2041,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	            fespace->GetDOFPosition(dof, xf, yf, zf);
 	            BoundaryCondition(xf, yf, zf, Cond0);
 
-	            if(Cond0==DIRICHLET) // nothing to do for nin-Dirichlet
+	            if(Cond0==DIRICHLET) // nothing to do for non-Dirichlet
 	             {
 	             BoundaryValue(xf, yf, zf, t0);
 	             RHS[dof] = t0;

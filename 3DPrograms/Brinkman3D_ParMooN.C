@@ -31,6 +31,7 @@ int main(int argc, char* argv[])
     TFEDatabase3D FEDatabase;
     
     ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+    // read in the data from the input file (argv[1]) (here: brinkman3d.dat)
     std::ifstream fs(argv[1]);
     parmoon_db.read(fs);
     fs.close();
@@ -41,7 +42,7 @@ int main(int argc, char* argv[])
     // Produce an outfile "... .out", this is where all output is written to (addionally to console)
     Output::set_outfile(parmoon_db["outfile"]);
     
-    // Write all Parameters to the outfile (not to console) for later reference
+    // Write all parameters to the outfile (not to console) for later reference
     parmoon_db.write(Output::get_outfile());
     Database.WriteParamDB(argv[0]);
     
@@ -55,7 +56,7 @@ int main(int argc, char* argv[])
         }
     //}
         
-        // Write grid into an Postscript file
+        // Write grid into a Postscript file
         if(parmoon_db["output_write_ps"])
             domain.PS("Domain.ps", It_Finest, 0);
         
