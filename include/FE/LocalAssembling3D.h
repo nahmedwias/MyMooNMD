@@ -36,7 +36,11 @@
  * So far there is three built-in types in 3D and one custom type.
  */
 enum class LocalAssembling3D_type {
-    Brinkman3D_Galerkin1,
+    Brinkman3D_Galerkin1,//Brinkman3D_Galerkin2
+    Brinkman3D_Galerkin1ResidualStabP1,//Brinkman3D_Galerkin1ResidualStabP2,
+    Brinkman3D_Galerkin1ResidualStabP2,
+    ResidualStabP2_for_Brinkman3D_Galerkin1,
+    GradDivStab_for_Brinkman3D_Galerkin1,
     CD3D, /// Stationary convection diffusion reaction in 3D
     TCD3D, // mass matrix (+ matrix comming from time discretization SUPG case)
     TCD3DStiffRhs, // stiffness matrix and right hand side
@@ -57,7 +61,7 @@ class TDiscreteForm3D;
 class LocalAssembling3D
 {
   protected:
-    /** @brief The type of problem this assembling objects is made for. */
+    /** @brief The type of problem, this assembling object is made for. */
     const LocalAssembling3D_type type;
 
     /** name */

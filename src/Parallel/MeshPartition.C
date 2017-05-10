@@ -1211,6 +1211,8 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
    /** STEP 6 : TO FIND MAXIMUM CELLS PER VERTEX */
   /** *********************************************/ 
   
+    
+    
   PointNeighb = new int[N_RootVertices];
   memset(PointNeighb, 0, N_RootVertices*SizeOfInt);
   

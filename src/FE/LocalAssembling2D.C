@@ -86,6 +86,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
             
         case Brinkman2D_Galerkin1ResidualStabP2:
             return std::string("Brinkman2D_Galerkin1ResidualStabP2");
+            
             ///////////////////////////////////////////////////////////////////////////
             // TNSE2D: nonstationary Navier-Stokes
         case LocalAssembling2D_type::TNSE2D:
