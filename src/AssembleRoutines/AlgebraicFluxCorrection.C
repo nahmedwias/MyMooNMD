@@ -242,7 +242,7 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int cons_level)
             {
               char type_col = markers[s];
               char type_row = markers[i];
-              Output::print("Local entry (", s, "[", type_col ,"] , ", i, "[", type_row,"]) was changed by an update.");
+              Output::print("Local entry (", i, "[", type_row ,"] , ", s, "[", type_col,"]) was changed by an update.");
             }
 
           }
