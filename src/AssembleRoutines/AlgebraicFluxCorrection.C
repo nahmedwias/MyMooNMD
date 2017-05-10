@@ -159,6 +159,17 @@ std::vector<double> get_matrix_column(const FEMatrix& A, int j)
   return col;
 }
 
+//CB DEBUG
+std::vector<double> get_matrix_row(const FEMatrix& A, int i)
+{
+  std::vector<double> row(A.GetN_Columns() , 0.0);
+    for(int l = A.GetRowPtr()[i]; l < A.GetRowPtr()[i+1] ; ++l)
+    {
+      int j = A.GetKCol()[l];
+      row.at(j) = A.GetEntries()[l];
+    }
+  return row;
+}
 //END DEBUG
 
 //CB DEBUG
@@ -174,6 +185,7 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_p
   int nDof = A.GetN_Rows();
 
   const char* markers = comm.get_dof_markers();
+
   //SENDER
   if(rank == sending_ps)
   {
@@ -181,7 +193,7 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_p
     MPI_Send(&n_vecs_send, 1, MPI_INT, receiving_ps, 5, MPI_COMM_WORLD);
     for(int s = 0; s < nDof; ++s)
     {
-      if(masters[s] == rank) //master row found, ping it
+      if(masters[s] == rank) //master col found, ping it
       {
         Output::suppressAll();
         comm.dof_ping(sending_ps, s);
@@ -190,7 +202,7 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_p
         MPI_Recv(&dof_remote, 1, MPI_INT, receiving_ps, 10, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         if(dof_remote != -1)
         {//ping was received, now set up the matrix row
-          Output::print("Local (0) master ", s ," is remote (1) dof no ", dof_remote);
+          Output::print("Local master ", s ," is remote dof no ", dof_remote);
           Output::print("Sending matrix column ",s," for double checking.");
 
           std::vector<double> col_master = get_matrix_column(A, s);
@@ -238,6 +250,86 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int receiving_p
 
 //END DEBUG
 
+//CB DEBUG
+#ifdef _MPI
+// This method will actually give information about the  consistency of the
+// columns of the receiving process.
+//TODO Can easily be extended to multiple processes
+void check_row_consistency(const FEMatrix& A, int sending_ps, int receiving_ps)
+{
+
+  const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  int nDof = A.GetN_Rows();
+
+  const char* markers = comm.get_dof_markers();
+
+  //SENDER - wants its rows checked for level 2 consistency
+  if(rank == sending_ps)
+  {
+    int n_vecs_send = comm.GetN_Master();
+    MPI_Send(&n_vecs_send, 1, MPI_INT, receiving_ps, 5, MPI_COMM_WORLD);
+    for(int s = 0; s < nDof; ++s)
+    {
+      if(masters[s] == rank) //master row found, ping it
+      {
+        Output::suppressAll();
+        comm.dof_ping(sending_ps, s);
+        Output::setVerbosity(1);
+        int dof_remote;
+        MPI_Recv(&dof_remote, 1, MPI_INT, receiving_ps, 10, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        if(dof_remote != -1)
+        {//ping was received, now set up the matrix row
+          Output::print("Local master ", s ," is remote dof no ", dof_remote);
+          Output::print("Sending matrix row ",s," for double checking.");
+
+          std::vector<double> row_master = get_matrix_row(A, s);
+          std::vector<double> row_master_cpy = row_master;
+          comm.consistency_update(row_master.data(), 2); //CONSIST UPDATE
+          //now check the differences between updated and original column
+          for(int i = 0 ; i < row_master.size(); ++i)
+          {
+            if(row_master[i] != row_master_cpy[i])
+            {
+              char type_row = markers[s];
+              char type_col = markers[i];
+              Output::print("DIFF! Master row ", s, " of type ",
+                            type_row ,", local col ", i, " of type ", type_col);
+            }
+
+          }
+
+        }
+      }
+    }
+  }
+  //RECEIVER
+  else if (rank == receiving_ps)
+  {
+    int n_vecs_recv;
+    MPI_Recv(&n_vecs_recv, 1, MPI_INT, sending_ps, 5, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    Output::print("Ps ", receiving_ps ," will receive ",n_vecs_recv, " vectors.");
+    for(int r = 0; r< n_vecs_recv; ++r)
+    {
+      int dof_local = comm.dof_ping(sending_ps, -1);
+      MPI_Send(&dof_local, 1, MPI_INT, sending_ps, 10, MPI_COMM_WORLD);
+      if(dof_local != -1)
+      {
+        std::vector<double> row_slave = get_matrix_row(A, dof_local);
+        comm.consistency_update(row_slave.data(), 2); //CONSIST UPDATE
+      }
+
+    }
+  }
+}
+
+#endif
+
+//END DEBUG
+
 
 /*!
  * Compute the artificial diffusion matrix to a given stiffness matrix.
@@ -275,8 +367,10 @@ void compute_artificial_diffusion_matrix(
 
   //CB DEBUG - Compare matrix entries across processors
 #ifdef _MPI
-  check_column_consistency(A, 0, 1);
-  check_column_consistency(A, 1, 0);
+  //check_column_consistency(A, 0, 1);
+  //check_column_consistency(A, 1, 0);
+  check_row_consistency(A, 0, 1);
+  check_row_consistency(A, 1, 0);
   MPI_Finalize();
   exit(-1);
 #endif
