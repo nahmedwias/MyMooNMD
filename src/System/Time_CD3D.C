@@ -188,13 +188,13 @@ void Time_CD3D::output_problem_size_info() const
     {
       Output::dash("Process ", i, "\t n_own_cells ", n_own_cells[i], 
                    "\t n_halo_cells ", n_halo_cells[i], 
-                   "\t h_min/h_max ", hMin, "/", hMax,
-                   "\t n_master_dof ", n_local_master_dof);
+                   "\t n_master_dof ", n_masters[i]);
       sum_cells_total += n_own_cells[i];
-      sum_dof_total += n_local_master_dof;
+      sum_dof_total += n_masters[i];
     }
     Output::dash("Total number of cells:              ", sum_cells_total);
     Output::dash("Total number of degrees of freedom: ", sum_dof_total);
+    Output::dash("Global hMin/hMax: ", hMin, "/", hMax);
   }
 #endif
 }
