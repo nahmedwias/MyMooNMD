@@ -191,9 +191,6 @@ void update_column_consistency(FEMatrix& B, int sending_ps, int cons_level)
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank == sending_ps)
-    Output::print("####################### LAUNCHING COLUMN CONSISTENCY UPDATE ############");
-
   int nDof = B.GetN_Rows();
 
   const char* markers = comm.get_dof_markers();
@@ -201,12 +198,12 @@ void update_column_consistency(FEMatrix& B, int sending_ps, int cons_level)
   //SENDER process executes the following code.
   if(rank == sending_ps)
   {
-    Output::info("MPI UPDATE", "Updating master columns of process ", sending_ps, " on consistency level ", cons_level);
-    int n_vecs_send = comm.GetN_Master();
+    int n_vecs_send = comm.get_n_interface_master();
     MPI_Bcast(&n_vecs_send, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
+    Output::info("MPI UPDATE", n_vecs_send, " interface master columns receive update.");
     for(int s = 0; s < nDof; ++s)
     {
-      if(masters[s] == rank) //master col found, ping it
+      if(masters[s] == rank && markers[s] == 'm') //interface master col found, ping it
       {
         Output::suppressAll();
         comm.dof_ping(sending_ps, s);
@@ -217,21 +214,8 @@ void update_column_consistency(FEMatrix& B, int sending_ps, int cons_level)
         if(dof_remote != -1)
         {//ping was received on at least one other ps, now set up the matrix row
           std::vector<double> col_master = get_matrix_column(B, s);
-          std::vector<double> col_master_cpy = col_master;
           comm.consistency_update(col_master.data(), cons_level); //CONSIST UPDATE
-          //now check the differences between updated and original column
-          bool diff = false;
-          for(int i = 0 ; i < col_master.size(); ++i)
-          {
-            if(col_master[i] != col_master_cpy[i])
-            {
-              diff = true;
-              break;
-              //Output::print("Local entry (", i, "[", type_row ,"] , ", s, "[", type_col,"]) was changed by an update.");
-            }
-          }
-          if(diff)
-           set_matrix_column(B,s,col_master);
+          set_matrix_column(B,s,col_master);
 
         }
       }
