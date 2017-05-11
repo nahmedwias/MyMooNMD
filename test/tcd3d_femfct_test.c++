@@ -151,8 +151,12 @@ int main(int argc, char* argv[])
     //CB DEBUG
     db["refinement_n_initial_steps"].set(4);
     //END DEBUG
-
-    db.add("solver_type", "iterative", "", {"direct", "iterative"});
+    db.merge(Solver<>::default_solver_database(), true);
+    db["solver_type"] = "iterative";
+    db["iterative_solver_type"] = "fgmres";
+    db["preconditioner"] = "jacobi";
+    db["residual_tolerance"] = 1.0e-13;
+    db["residual_reduction"] =  0.0;
 
     TDomain domain(db);
 #ifdef _MPI
