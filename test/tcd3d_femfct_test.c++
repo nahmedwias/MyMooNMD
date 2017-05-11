@@ -148,12 +148,11 @@ int main(int argc, char* argv[])
            {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
     TDatabase::ParamDB->DRIFT_Z = 1;
     db.add("refinement_n_initial_steps",(size_t) 4,"",(size_t) 0, (size_t) 5);
+    //CB DEBUG
+    db["refinement_n_initial_steps"].set(4);
+    //END DEBUG
 
-    db.add("solver_type", "direct", "", {"direct"});
-
-//    db["output_write_vtk"] = true;
-//    db["output_vtk_directory"].set_range(std::set<std::string>({std::string("."),std::string("VTK")}));
-//    db["output_vtk_directory"].set("VTK");
+    db.add("solver_type", "iterative", "", {"direct", "iterative"});
 
     TDomain domain(db);
 #ifdef _MPI
