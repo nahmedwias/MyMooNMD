@@ -655,10 +655,6 @@ void Time_CD3D::do_algebraic_flux_correction()
     std::vector<int> neumToDiri(nDiri, 0);
     std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
 
-    //CB DEBUG
-    neumToDiri = {};
-    //END DEBUG
-
     //determine prelimiter from Database
     AlgebraicFluxCorrection::Prelimiter prelim;
     switch((int) db["afc_prelimiter"])
@@ -693,9 +689,7 @@ void Time_CD3D::do_algebraic_flux_correction()
         prelim );
 
     //...and finally correct the entries in the Dirichlet rows
-    //CB DEBUG - the following must be commented back in!
-    //AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
-    //END DEBUG
+    AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
     //...and in the right hand side, too
     s.rhs_.copy_nonactive(old_rhs);
   }
