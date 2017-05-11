@@ -693,7 +693,9 @@ void Time_CD3D::do_algebraic_flux_correction()
         prelim );
 
     //...and finally correct the entries in the Dirichlet rows
-    AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
+    //CB DEBUG - the following must be commented back in!
+    //AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
+    //END DEBUG
     //...and in the right hand side, too
     s.rhs_.copy_nonactive(old_rhs);
   }
