@@ -692,6 +692,13 @@ void Time_CD3D::do_algebraic_flux_correction()
     AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
     //...and in the right hand side, too
     s.rhs_.copy_nonactive(old_rhs);
+
+#ifdef _MPI
+    // this update is necessary here, because copy_nonactive()
+    // can disturb the consistency of a vector,
+    // see Time_NSE3D::assemble_rhs() for more details
+    comm.consistency_update(s.rhs_.block(0),2);
+#endif
   }
   else
   {
