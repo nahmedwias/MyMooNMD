@@ -650,11 +650,9 @@ class TDomain
       , int& maxSubDomainPerDof
   #endif
       );
-  //Code von Marvin eingefuegt
 
-  const ParameterDatabase& get_database() const;
-
-  //Ende Marvin
+  /// Get a const reference to the database of this domain object.
+  const ParameterDatabase& get_database() const {return this->db;};
 
 };
 

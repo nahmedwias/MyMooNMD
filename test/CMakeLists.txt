@@ -304,7 +304,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   
   # domain partitioning read-in and write-out test
   register_executable(ParMooN_test_domain_partitioning_read_write domain_partitioning_read_write_test.c++)
-  add_test(NAME partition_read_write COMMAND mpirun -n 4 ParMooN_test_domain_partitioning_read_write)
+  add_test(NAME partition_read_write COMMAND ${PETSC_MPIEXEC} -n 4 ParMooN_test_domain_partitioning_read_write)
   
   #cd3d solver tests
   set(_EXEC_NAME ParMooN_test_cd3d_solver_mpi)
@@ -357,12 +357,11 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   #mumps
   add_test(NAME tnse3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_tnse3d_mpi mumps)
   
-  #read_write_fe_function_mpi tests
+  #read_write_fe_function_mpi test
   set(_EXEC_NAME ParMooN_test_read_write_fe_function_mpi)
   set(_FILE_NAME read_write_fe_function_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
-  #mumps
-  add_test(NAME read_write_fe_function_mpi_mumps COMMAND mpirun -n 2 ParMooN_test_read_write_fe_function_mpi mumps)
+  add_test(NAME read_write_fe_function_mpi COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_read_write_fe_function_mpi)
 
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
 	
