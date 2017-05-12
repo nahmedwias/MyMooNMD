@@ -77,6 +77,10 @@ class Multigrid
     /// @details This returns the number of geometric levels.
     size_t get_n_geometric_levels() const { return db["multigrid_n_levels"]; };
 
+    /// @brief return the number of multigrid levels.
+    /// @details This returns the number of algebraic levels.
+    size_t get_n_algebraic_levels() const { return n_algebraic_levels_; };
+
     /// Set the right hand side on the finest grid. It must of course fit the
     /// matrix stored on the finest grid.
     /// When right hand side and (initial) solution are set on the finest grid,

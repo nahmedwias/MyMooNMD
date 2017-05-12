@@ -13,6 +13,7 @@
 #include <Chrono.h>
 #include <TetGenMeshLoader.h>
 #include <Output3D.h>
+#include <LoopInfo.h>
 
 #include <sys/stat.h>
 
@@ -71,8 +72,8 @@ int main(int argc, char* argv[])
   // Choose and construct example.
   Example_TimeNSE3D example(parmoon_db);
 
-  // Do the old parameter check of the Database.
-  Database.CheckParameterConsistencyNSE();
+  // Do the parameter check of the Database.
+  check_parameters_consistency_NSE(parmoon_db);
   // =====================================================================
   // set the database values and generate mesh
   // =====================================================================
@@ -131,6 +132,11 @@ int main(int argc, char* argv[])
   int n_substeps = GetN_SubSteps();
 
   int image = 0;
+  
+  LoopInfo loop_info_time("time loop");
+  loop_info_time.print_time_every_step = true;
+  loop_info_time.verbosity_threshold = 1; // full verbosity
+  int linear_iterations = 0; 
 
   timer.restart_and_print("setting up spaces, matrices and initial assembling");
   TDatabase::TimeDB->CURRENTTIME = 0.0;  
@@ -174,7 +180,11 @@ int main(int argc, char* argv[])
       
       timer_timeit.restart_and_print("preparation of nonlinear iteration");
 
-      for(unsigned int k=0; ; k++)
+      // nonlinear iteration
+     LoopInfo loop_info("nonlinear");
+     loop_info.print_time_every_step = true;
+     loop_info.verbosity_threshold = 1; // full verbosity
+     for(unsigned int k=0; ; k++)
       {
         tnse3d.compute_residuals();
 
@@ -186,8 +196,17 @@ int main(int argc, char* argv[])
 
         // checking residuals and stop conditions
         if(tnse3d.stop_it(k))
-          break;
-
+        {
+           loop_info.finish(k, tnse3d.get_full_residual());
+	   linear_iterations+=k;
+	   /// @todo provide all parts of the residual 
+	   /// @todo loop_info restricted to the solver only
+           loop_info_time.print(linear_iterations, tnse3d.get_full_residual());
+	   break;
+         }
+         else
+           loop_info.print(k, tnse3d.get_full_residual());
+ 
         tnse3d.solve();
 
         if(tnse3d.imex_scheme(1))
@@ -211,6 +230,7 @@ int main(int argc, char* argv[])
         "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
     } // end of subtime loop
   } // end of time loop
+  loop_info_time.finish(linear_iterations, tnse3d.get_full_residual());
 
   timer.print_total_time("whole solving procedure ");
 

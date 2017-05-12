@@ -262,7 +262,31 @@ class BlockVector
      * @brief Print some information without explicitly printing values
      */
     void info();
-    
+
+    /**
+     * @brief write the entire BlockVector to a stream
+     *
+     * The stream will start with a line containing only one number, indicating
+     * the length of the vector. The following lines are just written and are
+     * then not human readable.
+     *
+     * A stream created with this method can be read into a BlockVector using
+     * BlockVector::read_from_stream(std::istream);
+     */
+    void write_to_stream(std::ostream& os) const;
+
+    /**
+     * @brief read data into this BlockVector from a stream
+     *
+     * The stream has to start with a line containing only one number, indicating
+     * the length of the vector. The following lines are just read in and are
+     * not human readable.
+     *
+     * A file created with BlockVector::write_fo_strean(std::ostream) can be
+     * read using this method.
+     */
+    void read_from_stream(std::istream& is);
+
     /** 
      * @brief write the entire BlockVector to a file
      * 
@@ -273,7 +297,7 @@ class BlockVector
      * A file created with this method can be read into a BlockVector using 
      * BlockVector::read_from_file(std::string);
      */
-    void write_fo_file(std::string filename);
+    void write_to_file(std::string filename) const;
     
     /** 
      * @brief read data into this BlockVector from a file

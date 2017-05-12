@@ -21,6 +21,10 @@ ParameterDatabase get_default_CD2D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
+  // a default afc database
+  ParameterDatabase afc_db = AlgebraicFluxCorrection::default_afc_database();
+  db.merge(afc_db, true);
+
   return db;
 }
 /** ************************************************************************ */
@@ -170,24 +174,24 @@ void CD2D::set_parameters()
     }
   }
   //////////////// Algebraic flux correction ////////////
-  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 1)
+  if(!db["algebraic_flux_correction"].is("none"))
   {//some kind of afc enabled
+    if(!db["algebraic_flux_correction"].is("fem-tvd"))
+    {
+      db["algebraic_flux_correction"].set("fem-tvd");
+      Output::print("Only kind of algebraic flux correction"
+          " for CD problems is FEM-TVD (fem-tvd).");
+    }
     //make sure that galerkin discretization is used
-    if (TDatabase::ParamDB->DISCTYPE !=	1)
+    if (!db["space_discretization_type"].is("galerkin"))
     {//some other disctype than galerkin
-      TDatabase::ParamDB->DISCTYPE = 1;
-      Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
-                    "Correction is enabled.");
+      db["space_discretization_type"] = "galerkin";
+      Output::warn<1>("Parameter 'space_discretization_type' changed to 'galerkin' "
+          "because Algebraic Flux Correction is enabled.");
     }
     // when using afc, create system matrices as if all dofs were active
     TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
   }
-  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION > 1)
-  {
-    ErrThrow("For CD2D only algebraic flux correction of FEM-TVD is implemented"
-        "(ALGEBRAIC_FLUX_CORRECTION: 1).")
-  }
-
 }
 
 /** ************************************************************************ */
@@ -226,7 +230,7 @@ void CD2D::assemble()
                  &fe_space, &boundary_conditions, non_const_bound_value, la);
 
       // apply local projection stabilization method
-      if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION
+      if(db["space_discretization_type"].is("local_projection")
          && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
       {
         if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
@@ -252,7 +256,7 @@ void CD2D::assemble()
   }
 
   // when using afc, do it now
-  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 1)
+  if(!db["algebraic_flux_correction"].is("none"))
   {
     do_algebraic_flux_correction();
   }
@@ -336,40 +340,38 @@ void CD2D::do_algebraic_flux_correction()
   for(auto & s : this->systems) // do it on all levels.
   {
     //determine which kind of afc to use
-    switch (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+    if(db["algebraic_flux_correction"].is("default") ||
+        db["algebraic_flux_correction"].is("fem-tvd"))
     {
-      case 1: //FEM-TVD
-      {
-        //get pointers/references to the relevant objects
-        TFESpace2D& feSpace = s.fe_space;
-        FEMatrix& one_block = *s.matrix.get_blocks_uniquely().at(0).get();
-        const std::vector<double>& solEntries = s.solution.get_entries_vector();
-        std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
+      //get pointers/references to the relevant objects
+      TFESpace2D& feSpace = s.fe_space;
+      FEMatrix& one_block = *s.matrix.get_blocks_uniquely().at(0).get();
+      const std::vector<double>& solEntries = s.solution.get_entries_vector();
+      std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
 
-        // fill a vector "neumannToDirichlet" with those rows that got
-        // internally treated as Neumann although they are Dirichlet
-        int firstDiriDof = feSpace.GetActiveBound();
-        int nDiri = feSpace.GetN_Dirichlet();
+      // fill a vector "neumannToDirichlet" with those rows that got
+      // internally treated as Neumann although they are Dirichlet
+      int firstDiriDof = feSpace.GetActiveBound();
+      int nDiri = feSpace.GetN_Dirichlet();
 
-        std::vector<int> neumToDiri(nDiri, 0);
-        std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
+      std::vector<int> neumToDiri(nDiri, 0);
+      std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
 
-        // apply FEM-TVD
-        AlgebraicFluxCorrection::fem_tvd_algorithm(
-            one_block,
-            solEntries,rhsEntries,
-            neumToDiri);
+      // apply FEM-TVD
+      AlgebraicFluxCorrection::fem_tvd_algorithm(
+          one_block,
+          solEntries,rhsEntries,
+          neumToDiri);
 
-        //...and finally correct the entries in the Dirchlet rows
-        AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
-        //...and in the right hand side, too, assum correct in solution vector
-        s.rhs.copy_nonactive(s.solution);
-        break;
-      }
-      default:
-      {
-        ErrThrow("The chosen ALGEBRAIC_FLUX_CORRECTION scheme is unknown to class CD2D.");
-      }
+      //...and finally correct the entries in the Dirchlet rows
+      AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
+      //...and in the right hand side, too, assum correct in solution vector
+      s.rhs.copy_nonactive(s.solution);
+    }
+    else
+    {
+      ErrThrow("The chosen algebraic flux correction scheme is unknown "
+          "to class CD2D.");
     }
   }
 }

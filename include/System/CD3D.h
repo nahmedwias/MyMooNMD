@@ -179,9 +179,9 @@ class CD3D
     
     /** @brief Assemble the system matrix resp. matrices in multigrid case.
      * 
-     * Depending on 'TDatabase::ParamDB->DISCTYPE' different (local) assembling
-     * routines are supposed to be used - so far only standard Galerkin ("1") is
-     * supported.
+     * Depending on 'this->db["space_discretization_type]' different (local)
+     * assembling routines are supposed to be used - so far only standard
+     * "galerkin" ("1") is supported.
      */
     void assemble();
     

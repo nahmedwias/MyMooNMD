@@ -135,6 +135,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__${_ARCH}__   -D__PRIVATE__")
 
 # If we want global compile flags to reach the subdirectories, we have to 
 # run the following includes AFTER setting global flags.
+include(cmake/sources_assembleroutines.cmake)
+include(cmake/sources_assembleroutinessaddle.cmake)
 include(cmake/sources_examples.cmake)
 include(cmake/sources_fe.cmake)
 include(cmake/sources_general.cmake)

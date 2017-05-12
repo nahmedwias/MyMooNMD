@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
 
-    TDatabase::ParamDB->DISCTYPE=1;
+    db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5;
     
     TDatabase::TimeDB->STARTTIME=0;
