@@ -1536,7 +1536,10 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	      ActiveBound = fespace->GetActiveBound();
 	      DirichletBound = fespace->GetHangingBound();
 	      DOF = GlobalNumbers[j] + BeginIndex[j][i];
-
+	      if (TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
+	      {
+	        ActiveBound = DirichletBound = sqmatrices[j]->GetN_Rows();
+	      }
 	      // add local matrix to global
 	      for(m=0;m<N_;m++)
 	      {
