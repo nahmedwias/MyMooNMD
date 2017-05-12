@@ -75,8 +75,14 @@ int main(int argc, char* argv[])
   tcd_db["problem_type"]     = 2;
   tcd_db["output_basename"]  = "multiphase_tconvection_output";
   //  tcd_db["space_discretization_type"] = "galerkin";
-  tcd_db["solver_type"]        = "direct";  // umfpack or mumps for TCD3D
+//  tcd_db["solver_type"]        = "direct";  // umfpack or mumps for TCD3D
 //  Output::warn<1>("Warning, solver_type has been hard-coded to direct for TCD3D.");
+  tcd_db["solver_type"] = "iterative";
+  tcd_db["iterative_solver_type"] = "fgmres";
+  tcd_db["preconditioner"] = "jacobi";
+  tcd_db["residual_tolerance"] = 1.0e-13;
+  tcd_db["residual_reduction"] =  0.0;
+
 
   //  tnse_db["example"]         = 18;
   tnse_db["space_discretization_type"] = "galerkin";
