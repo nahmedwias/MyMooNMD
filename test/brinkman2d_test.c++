@@ -165,7 +165,7 @@ void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
     //------------------------------------------------------------------------------------------------------------
     db["example"] = 2; // Poiseuille_Hannukainen with inscribed sphere
     Output::print("\nStarting with P2/P1 on quads with visc_eff=1, visc=1, perm=1 for example ",db["example"] );
-    reference_errors = {{0.094501334268564,1.2200819222258,8.9575878583122,32.442781399324}};
+    reference_errors = {{0.81900218507518,11.068008588367,81.992399830346, 294.15272705334}};
     
     check_brinkman2d(domain, db, 2,1, reference_errors);
     db["example"] = 0; // Poiseuille
@@ -181,7 +181,7 @@ void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
     //------------------------------------------------------------------------------------------------------------
     db["example"] = 4; // sincos2
     Output::print("\nStarting with P2/P1 on quads with visc_eff=1, visc=1, perm=1 for example ",db["example"]);
-    reference_errors = {{1.4228987330444,10.513375915835, 12.734621500535, 85.258423292316}};
+    reference_errors = {{0.0466869785743,1.2606661474721, 0.15644878749027,2.5764786606906}};
     
     check_brinkman2d(domain, db, 2,1, reference_errors);
     db["example"] = 0; // Poiseuille
@@ -309,7 +309,7 @@ void tests_on_quads_Nitsche(unsigned int nRefinements, ParameterDatabase& db)
     TDatabase::ParamDB->PERMEABILITY=1;
     db["example"] = 1; // Poiseuille_Hannukainen
     Output::print("\nstarting with Nitsche (parameter 1000) on P2/P1 on quads with Neumann and visc_eff=0.001, visc=10, perm= 1");
-    reference_errors = {{ 0.89129631559785,4.821553845982,0.5,7.4513009195699e-16}};
+    reference_errors = {{ 0.19394824424421,3.8205668689833,0.5,1.0532389294782e-15}};
     check_brinkman2d(domain, db, 2,1, reference_errors);
     
     db["example"] = 0; // Poiseuille
@@ -326,7 +326,7 @@ void tests_on_quads_Nitsche(unsigned int nRefinements, ParameterDatabase& db)
     TDatabase::ParamDB->PERMEABILITY=1;
     db["example"] = 1; // Poiseuille_Hannukainen
     Output::print("\nstarting with Nitsche (parameter 1000) on P2/P2 on quads with Neumann and visc_eff=0.001, visc=10, perm= 1");
-    reference_errors = {{ 0.89129631559785,4.821553845982, 0.50408661422354,2.342959540112}};
+    reference_errors = {{0.19394824424421,3.8205668689833,2.8822850639982,87.950352486737}};
     check_brinkman2d(domain, db, 2,2, reference_errors);
     
     db["example"] = 0; // Poiseuille
@@ -345,11 +345,11 @@ void tests_on_quads_Nitsche(unsigned int nRefinements, ParameterDatabase& db)
     TDatabase::ParamDB->equal_order_stab_weight_P1P1=0.4;
     db["example"] = 1; // Poiseuille_Hannukainen
     Output::print("\nstarting with Nitsche (parameter 1000) on P1/P1 on quads with Stab (parameter=0.4), Neumann and visc_eff=0.001, visc=10, perm= 1 ");
-    reference_errors = {{0.90295941738137,2.1622048531632, 0.50378342568305,0.55512036706005}};
+    reference_errors = {{0.3582641143964,3.3275876201918,0.5119324115733,1.2550049173583}};
     check_brinkman2d(domain, db, 1,1, reference_errors);
     
     db["example"] = 0; // Poiseuille
-   db["P1P1_stab"]=false;
+    db["P1P1_stab"]=false;
     
     //--------------------------------------------------------------------------------------------------------------------
     TDatabase::ParamDB->n_nitsche_boundary=2;
@@ -365,7 +365,7 @@ void tests_on_quads_Nitsche(unsigned int nRefinements, ParameterDatabase& db)
     TDatabase::ParamDB->equal_order_stab_weight_P2P2=0.4;
     db["example"] = 1; // Poiseuille_Hannukainen
     Output::print("\nstarting with Nitsche (parameter 1000) on P2/P2 on quads with Stab (parameter=0.4), Neumann and visc_eff=0.001, visc=10, perm= 1");
-    reference_errors = {{0.95894542662398, 10.718540461577, 0.52113216529381, 3.0875564733177}};
+    reference_errors = {{2.7665723232465,38.383469514259,3.8290546915193,26.920248715798}};
     check_brinkman2d(domain, db, 2,2, reference_errors);
     
     db["example"] = 0; // Poiseuille

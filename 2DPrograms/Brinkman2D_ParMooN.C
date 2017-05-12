@@ -54,12 +54,12 @@ int main(int argc, char* argv[])
   for(size_t i=0; i< n_ref; i++)
   {
       Domain.RegRefineAll();
-  }
+      Output::print("Level:", i+1);
+  //}
   
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
-    
   Example_Brinkman2D example(parmoon_db);
 
   //=========================================================================
@@ -74,7 +74,8 @@ int main(int argc, char* argv[])
   brinkman2d.output();
 
   //=========================================================================
-
+  }
+    
   Output::close_file();
     return 0;
          // }

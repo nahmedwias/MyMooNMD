@@ -53,6 +53,7 @@
 #define __PETSCSOLVER__
 
 #include <petscksp.h> // defines type 'Mat' below and much more
+#include <petscpc.h> // defines type 'Mat' below and much more
 #include <ParameterDatabase.h>
 #include <vector>
 #include <memory>

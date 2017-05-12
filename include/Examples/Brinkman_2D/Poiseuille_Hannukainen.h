@@ -1,4 +1,5 @@
-// Brinkman problem, Poiseuille-Problem from Hannukainen
+// Brinkman problem, Poiseuille-Problem from the Paper:
+// COMPUTATIONS WITH FINITE ELEMENT METHODS FOR THE BRINKMAN PROBLEM; Hannulainen, Juntunen, Stenberg ; 2009
 
 
 void ExampleFile()
@@ -10,8 +11,7 @@ void ExampleFile()
  t^2=K*(nu_eff/nu)
  u(x,y) = [(1+exp(1/t)-exp((1-y)/t) - exp(y/t)) / (1+exp(1/t)  ,  0], for t>0
  u(x,y) = [1  ,  0], for t=1
- p(x,y) = (nu/K)*(-x+1/2)
- (Note that f and g vanish)
+ p(x,y) = -x+1/2
  */
 
 // ========================================================================
@@ -75,6 +75,15 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 {
     cond = DIRICHLET; // default
 
+    if (TDatabase::ParamDB->n_neumann_boundary==0)
+    {
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+    }
+    else
+    {
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+    }
+    
     for (int j=0; j<TDatabase::ParamDB->n_neumann_boundary; j++)
     {
         if (i==TDatabase::ParamDB->neumann_boundary_id[j])
@@ -89,18 +98,9 @@ void BoundCondition(int i, double Param, BoundCond &cond)
         if (i==TDatabase::ParamDB->nitsche_boundary_id[j])
         {
             // Todo
-            //cond = DIRICHLET_WEAK;
+            cond = DIRICHLET_WEAK;
             return;
         }
-    }
-    
-    if (TDatabase::ParamDB->n_neumann_boundary==0)
-    {
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
-    }
-    else
-    {
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
     }
 }
 
@@ -142,7 +142,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
             break;
         case 2: value=0;
             break;
-        case 3: value= (1+exp(1/t)-exp((Param)/t) - exp((1-Param)/t)) / (1+exp(1/t)); //value=(1+exp(1/t)-exp((1-Param)/t) - exp(Param/t)) / ((nu/K)*(1+exp(1/t)));
+        case 3: value= (1+exp(1/t)-exp((Param)/t) - exp((1-Param)/t)) / (1+exp(1/t));
             break;
             default: cout << "No boundary component with this number." << endl;
             break;
@@ -162,11 +162,6 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
-//    static double eps = 1./TDatabase::ParamDB->RE_NR;
-//    static double nu     = TDatabase::ParamDB->VISCOSITY;
-//    static double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-//    static double K      = TDatabase::ParamDB->PERMEABILITY;
-    
     double *coeff;
     
     for(int i=0;i<n_points;i++)
@@ -174,12 +169,12 @@ void LinCoeffs(int n_points, double *x, double *y,
         coeff = coeffs[i];
         
         coeff[0] = 1./TDatabase::ParamDB->RE_NR;
-        coeff[1] = 0;////(nu/K)-1;                                       // f1 (rhs of Brinkman problem for u1)
-        coeff[2] = 0;                                       // f2 (rhs of Brinkman problem for u2)
-        coeff[3] = 0;                                       // g (divergence term=u1_x+u2_y)
         coeff[4]=TDatabase::ParamDB->VISCOSITY;
         coeff[5]=TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
         coeff[6]=TDatabase::ParamDB->PERMEABILITY;
+        coeff[1] = (coeff[4]/coeff[6])-1;                             // f1 (rhs of Brinkman problem for u1)
+        coeff[2] = 0;                                               // f2 (rhs of Brinkman problem for u2)
+        coeff[3] = 0;                                               // g (divergence term=u1_x+u2_y)
         coeff[7]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
         coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
     }

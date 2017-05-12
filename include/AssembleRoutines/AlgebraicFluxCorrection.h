@@ -70,7 +70,7 @@ ParameterDatabase default_afc_database();
  * of the algorithm is used (nonsymmetric application of flux correction)
  */
 void fem_tvd_algorithm(
-    TMatrix& system_matrix,
+    FEMatrix& system_matrix,
     const std::vector<double>& sol,
     std::vector<double>& rhs,
     const std::vector<int>& neum_to_diri,
@@ -113,7 +113,7 @@ void fem_tvd_algorithm(
  * @param[in] prelim Which prelimiter to use, if at all.
  */
 void crank_nicolson_fct(
-    const TMatrix& mass, TMatrix& stiff,
+    const FEMatrix& mass, FEMatrix& stiff,
     const std::vector<double>& oldsol,
     std::vector<double>& rhs, std::vector<double>& rhs_old,
     double delta_t,

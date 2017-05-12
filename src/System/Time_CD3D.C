@@ -184,17 +184,18 @@ void Time_CD3D::output_problem_size_info() const
     Output::stat("Time_CD3D", "information on the fe space");
     size_t sum_cells_total = 0;
     size_t sum_dof_total = 0;
+    //FIXME CB: This information output is incorrect!
     for(int i =0; i < size ;++i)
     {
       Output::dash("Process ", i, "\t n_own_cells ", n_own_cells[i], 
                    "\t n_halo_cells ", n_halo_cells[i], 
-                   "\t h_min/h_max ", hMin, "/", hMax,
-                   "\t n_master_dof ", n_local_master_dof);
+                   "\t n_master_dof ", n_masters[i]);
       sum_cells_total += n_own_cells[i];
-      sum_dof_total += n_local_master_dof;
+      sum_dof_total += n_masters[i];
     }
     Output::dash("Total number of cells:              ", sum_cells_total);
     Output::dash("Total number of degrees of freedom: ", sum_dof_total);
+    Output::dash("Global hMin/hMax: ", hMin, "/", hMax);
   }
 #endif
 }
@@ -259,13 +260,14 @@ void Time_CD3D::check_and_set_parameters()
   {//some kind of afc enabled
 
     if(solver.is_using_multigrid())
-      ErrThrow("Multgrid and FEM-FCT are not yet enabled in Time_CD2D"); //TODO
+      ErrThrow("Multgrid and FEM-FCT are not yet enabled in Time_CD3D"); //TODO
 
     if(!db["algebraic_flux_correction"].is("fem-fct-cn"))
     {
       db["algebraic_flux_correction"].set("fem-fct-cn");
-      Output::print("Only kind of algebraic flux correction"
-          " for TCD problems is Crank-Nicolson FEM-FCT (fem-fct-cn).");
+      Output::print("Parameter 'algebraic_flux_correction' changed to 'fem-fct-cn', ",
+                    "which is the only implemented kind of algebraic "
+                    "flux correction for TCD problems.");
     }
 
     if(TDatabase::TimeDB->TIME_DISC !=2)
@@ -285,7 +287,7 @@ void Time_CD3D::check_and_set_parameters()
     if (!db["space_discretization_type"].is("galerkin"))
     {//some other disctype than galerkin
       db["space_discretization_type"] = "galerkin";
-      Output::print("Parameter 'space_discretization_type changed to 'galerkin' "
+      Output::print("Parameter 'space_discretization_type' changed to 'galerkin' "
           "because Algebraic Flux Correction is enabled.");
     }
 
@@ -668,6 +670,13 @@ void Time_CD3D::do_algebraic_flux_correction()
     const FEMatrix& mass = *s.massMatrix_.get_blocks().at(0).get(); // mass
     FEMatrix& stiff = *s.stiffMatrix_.get_blocks_uniquely().at(0).get(); //stiffness
     //vector entry arrays
+#ifdef _MPI
+    const TParFECommunicator3D& comm = s.feSpace_.get_communicator();
+    // solEntries is needed in consistency 2 for afc.
+    // this is done here on the solution blockvector, because
+    // solEntries is given as a const and can't be updated
+    comm.consistency_update(s.solution_.block(0),2);
+#endif
     const std::vector<double>& solEntries = s.solution_.get_entries_vector();
     std::vector<double>& rhsEntries = s.rhs_.get_entries_vector();
     std::vector<double>& oldRhsEntries = old_rhs.get_entries_vector();
@@ -716,11 +725,18 @@ void Time_CD3D::do_algebraic_flux_correction()
     AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
     //...and in the right hand side, too
     s.rhs_.copy_nonactive(old_rhs);
+
+#ifdef _MPI
+    // this update is necessary here, because copy_nonactive()
+    // can disturb the consistency of a vector,
+    // see Time_NSE3D::assemble_rhs() for more details
+    comm.consistency_update(s.rhs_.block(0),2);
+#endif
   }
   else
   {
-    ErrThrow("The chosen algebraic flux correction scheme is unknown "
-        "to class Time_CD3D.");
+    ErrThrow("The chosen algebraic flux correction scheme ",
+             db["algebraic_flux_correction"]," is unknown to class Time_CD3D.");
   }
 }
 

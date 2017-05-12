@@ -31,20 +31,6 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
 
 
 // ======================================================================
-// Type 1b, Standard Galerkin for Scaled Brinkman in [p div v] formulation
-// ======================================================================
-/** @brief brinkman weak formulation
- t^2(gradu,gradv)-(p,div v)+(u,v)=(f,v)
- (div u, q)=(g,q)
- */
-void BrinkmanType1bGalerkin(double Mult, double *coeff,
-                            double *param, double hK,
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs);
-
-
-
-// ======================================================================
 // // Type 2, Standard Galerkin for Brinkman in [u gradp] formulation (macht nicht wirklich Sinn!!!!!!)
 // ======================================================================
 /** @brief brinkman weak formulation
@@ -67,7 +53,7 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
  PSPGStab \frac{h_k^2}{t^2+h_k^2}(-t^2 \Delta u + \nabla p + u,-t^2 \Delta v + \nabla q + v ) = PSPGStab \frac{h_k^2}{t^2+h_k^2} (f,-t^2 \Delta v + \nabla q + v )
  */
 // for P1/P1 Delta u=0
-void BrinkmanType1GalerkinResidualStab(double Mult, double *coeff,
+void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
                                        double *param, double hK,
                                        double **OrigValues, int *N_BaseFuncts,
                                        double ***LocMatrices, double **LocRhs);
@@ -82,7 +68,7 @@ void BrinkmanType1GalerkinResidualStab(double Mult, double *coeff,
  (q, div u)=(g,q)
  PSPGStab \frac{h_k^2}{t^2+h_k^2}(-t^2 \Delta u + \nabla p + u,-t^2 \Delta v + \nabla q + v ) = PSPGStab \frac{h_k^2}{t^2+h_k^2} (f,-t^2 \Delta v + \nabla q + v )
  */
-void BrinkmanType1GalerkinResidualStab2(double Mult, double *coeff,
+void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
                                         double *param, double hK,
                                         double **OrigValues, int *N_BaseFuncts,
                                         double ***LocMatrices, double **LocRhs);

@@ -35,16 +35,20 @@
  *
  * So far there is three built-in types in 3D and one custom type.
  */
-enum class LocalAssembling3D_type { CD3D, /// Stationary convection diffusion reaction in 3D
-				    TCD3D, // mass matrix (+ matrix comming from time discretization SUPG case)
-                                    TCD3DStiffRhs, // stiffness matrix and right hand side
-                                    NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
-                                    NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
-                                    TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
-                                    TNSE3D_NLGAL,    /// Non-linear part of time-dependant NS in 3D
-                                    TNSE3D_Rhs,      /// Rhs part of time-dependent NS in 3D
-                                    TNSE3D_Mass,
-                                    Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
+enum class LocalAssembling3D_type {
+    Brinkman3D_Galerkin,
+    ResidualStabPkPk_for_Brinkman3D_Galerkin1,
+    GradDivStab_for_Brinkman3D_Galerkin1,
+    CD3D, /// Stationary convection diffusion reaction in 3D
+    TCD3D, // mass matrix (+ matrix comming from time discretization SUPG case)
+    TCD3DStiffRhs, // stiffness matrix and right hand side
+    NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
+    NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
+    TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
+    TNSE3D_NLGAL,    /// Non-linear part of time-dependant NS in 3D
+    TNSE3D_Rhs,      /// Rhs part of time-dependent NS in 3D
+    TNSE3D_Mass,
+    Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
 
 //Forward declarations

@@ -364,7 +364,7 @@ void Time_NSE3D::assemble_initial_time()
     }
   }
 
-  for(System_per_grid& s : this->systems_) // from back to front (coarse to fine)
+  for(System_per_grid& s : this->systems_)
   {
     // Prepare FeFunctions and construct LocalAssembling object
     std::vector<TFEFunction3D*> fe_functions;

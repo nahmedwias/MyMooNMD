@@ -349,7 +349,8 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
 #endif
   };
   (void)compute_residual; // silence the unused variable warning when not used
-  //compute_residual();
+ 
+ // compute_residual();
 
   if(this->linear_operator == nullptr)
     ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
@@ -371,7 +372,7 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
   {
     ErrThrow("unknown solver type ", db["solver_type"]);
   }
-  //compute_residual();
+  compute_residual();
 }
 
 /* ************************************************************************** */

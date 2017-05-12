@@ -199,10 +199,10 @@ void Brinkman2D::assemble()
         LocalAssembling2D_type type;
         
         if (db["P2P2_stab"].is(true))
-        {type=Brinkman2D_Galerkin1ResidualStab2;
+        {type=Brinkman2D_Galerkin1ResidualStabP2;
         Output::print<>("P2P2 Stabilization");}
         else if (db["P1P1_stab"].is(true))
-        {type=Brinkman2D_Galerkin1ResidualStab;
+        {type=Brinkman2D_Galerkin1ResidualStabP1;
             Output::print<>("P1P1 Stabilization");}
         else
         {type=Brinkman2D_Galerkin1;}
@@ -263,8 +263,8 @@ void Brinkman2D::assemble()
 		       spaces_for_matrix,spaces_for_rhs,
 		       example,la_list);
 
-        //--------------------------------------------------------------------------------------------------
-        // Weakly Imposing Boundary Conditions - Boundary Integrals
+//===========================================================================//
+// Weakly Imposing Boundary Conditions - Boundary Integrals
         
         BoundaryAssembling2D bi;
         
@@ -279,7 +279,7 @@ void Brinkman2D::assemble()
         
         for (int k=0;k<TDatabase::ParamDB->n_g_v_boundary;k++)
         {
-            bi.rhs_g_v(s.rhs,
+            bi.rhs_uD_v(s.rhs,
                        v_space,
                        this->example.get_bd(0),                                 // access to U1BoundValue in the current example
                        this->example.get_bd(1),                                 // access to U2BoundValue in the current example
@@ -293,7 +293,7 @@ void Brinkman2D::assemble()
         
         for (int k=0;k<TDatabase::ParamDB->n_unvn_boundary;k++)
         {
-            bi.matrix_v_n_v_n(s.matrix,
+            bi.matrix_u_n_v_n(s.matrix,
                               v_space,
                               TDatabase::ParamDB->unvn_boundary_id[k],          // boundary component
                               TDatabase::ParamDB->unvn_boundary_value[k]);      // mult
@@ -301,7 +301,7 @@ void Brinkman2D::assemble()
         
         for (int k=0;k<TDatabase::ParamDB->n_gradunv_boundary;k++)
         {
-            bi.matrix_gradv_n_v(s.matrix,
+            bi.matrix_gradu_n_v(s.matrix,
                                 v_space,
                                 TDatabase::ParamDB->gradunv_boundary_id[k],     // boundary component
                                 TDatabase::ParamDB->gradunv_boundary_value[k]); // mult
@@ -326,7 +326,9 @@ void Brinkman2D::assemble()
                             TDatabase::ParamDB->p_v_n_boundary_value[k]);       // mult
         }
         
-        // Nitsche combination - weak Dirichlet
+        
+//===========================================================================//
+// Nitsche Combination - Weak Dirichlet Boundary Conditions
         for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
         {
             double K = TDatabase::ParamDB->PERMEABILITY;
@@ -334,31 +336,62 @@ void Brinkman2D::assemble()
             double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
             double t = fabs(sqrt((nu_eff/nu)*K));
             
-            bi.matrix_gradv_n_v(s.matrix,
+
+            
+            bi.matrix_gradu_n_v(s.matrix,
                                 v_space,
                                 TDatabase::ParamDB->nitsche_boundary_id[k],     // boundary component
                                 -TDatabase::ParamDB->EFFECTIVE_VISCOSITY);      // mult
+            
+            bi.matrix_gradv_n_u(s.matrix,
+                                v_space,
+                                TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
+                                -TDatabase::ParamDB->s1*TDatabase::ParamDB->EFFECTIVE_VISCOSITY);                   // mult
+            
+            bi.rhs_gradv_n_uD(s.rhs,
+                              v_space,
+                              this->example.get_bd(0),                                 // access to U1BoundValue in the example,
+                              this->example.get_bd(1),                                 // access to U2BoundValue in the example,
+                              TDatabase::ParamDB->nitsche_boundary_id[k],    // boundary component
+                              -TDatabase::ParamDB->s1*TDatabase::ParamDB->EFFECTIVE_VISCOSITY                 // mult
+                              );
+            
             
             bi.matrix_p_v_n(s.matrix,
                             v_space,
                             p_space,
                             TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
-                            1.);                                                 // mult
+                            1.);                                                // mult
+            
+            bi.matrix_q_u_n(s.matrix,
+                            v_space,
+                            p_space,
+                            TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
+                            1.*TDatabase::ParamDB->s2);
+            
+            bi.rhs_q_uD_n(s.rhs,
+                          p_space,
+                          this->example.get_bd(0),                                 // access to U1BoundValue in the example,
+                          this->example.get_bd(1),                                 // access to U2BoundValue in the example,
+                          TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
+                          1.*TDatabase::ParamDB->s2);
+
             
             bi.matrix_u_v(s.matrix,
                           v_space,
                           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
-                          t*TDatabase::ParamDB->nitsche_penalty[k],               // mult
+                          t*TDatabase::ParamDB->nitsche_penalty[k],             // mult
                           true);                                                // rescale local integral by edge values
             
-            bi.rhs_g_v(s.rhs,
+            bi.rhs_uD_v(s.rhs,
                        v_space,
                        this->example.get_bd(0),                                 // access to U1BoundValue in the example,
                        this->example.get_bd(1),                                 // access to U2BoundValue in the example,
                        TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
-                       t*TDatabase::ParamDB->nitsche_penalty[k],                  // mult
+                       t*TDatabase::ParamDB->nitsche_penalty[k],                // mult
                        true);                                                   // rescale local integral by edge values
         }
+
         
         //--------------------------------------------------------------------------------------------------
         
@@ -532,6 +565,8 @@ void Brinkman2D::output(int i)
         errors.at(3) = err[1];
         Output::print<1>("L2(p)     : ", setprecision(14), errors[2]);
         Output::print<1>("H1-semi(p): ", setprecision(14),  errors[3]);
+        
+        Output::print<1>( setprecision(5),  "$",errors[0], "$ & $", errors[1], "$ & $", errors[2], "$ & $", errors[3], "$");
         
         
     } // if(TDatabase::ParamDB->MEASURE_ERRORS)

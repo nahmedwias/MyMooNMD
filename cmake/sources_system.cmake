@@ -25,6 +25,7 @@ list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/CD3D.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/NSE3D.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/Time_CD3D.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/Time_NSE3D.C")
+list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/Brinkman3D.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/user_projects/src/System/VOF_TwoPhase3D.C")
 
 # Source files to be added to both 2D and 3D library

@@ -17,6 +17,7 @@ include_directories("${CMAKE_SOURCE_DIR}/include/Examples"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TCD_3D"
                     "${CMAKE_SOURCE_DIR}/include/Examples/TNSE_2D"
 		    "${CMAKE_SOURCE_DIR}/include/Examples/Brinkman_2D"
+		    "${CMAKE_SOURCE_DIR}/include/Examples/Brinkman_3D"
 		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples"
 		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/Time_LinElastic2D"
 		    "${CMAKE_SOURCE_DIR}/user_projects/include/Examples/CD2D"
@@ -57,7 +58,7 @@ list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_CD3D.
 list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_TimeCD3D.C")
 list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_NSE3D.C")
 list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_TimeNSE3D.C")
-
+list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Examples/Example_Brinkman3D.C")
 
 list(APPEND PARMOON_SOURCES_2D ${EXAMPLE_SOURCES_2D} ${EXAMPLE_SOURCES})
 list(APPEND PARMOON_SOURCES_3D ${EXAMPLE_SOURCES_3D} ${EXAMPLE_SOURCES})

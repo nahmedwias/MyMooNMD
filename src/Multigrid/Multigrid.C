@@ -146,6 +146,8 @@ void Multigrid::set_finest_sol(const BlockVector& bv)
 
 void Multigrid::set_finest_rhs(const BlockVector& bv)
 {
+    Output::print("HIER", bv.length());
+    
   levels_.back().rhs_ = bv;
 }
 

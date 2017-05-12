@@ -9,9 +9,16 @@
 #include <IsoBoundEdge.h>
 #include <BoundComp.h>
 
+#include <algorithm>
 #include <stdlib.h>
 #include <string.h>
 #include <MooNMD_Io.h>
+
+#ifdef _MPI
+#include <mpi.h>
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
 
 //! Anonymous namespace for helper methods which do not have to be assessed
 //! from the outside.
@@ -57,11 +64,11 @@ void check_cfl_condition(double mass_diag_entry,
  * @param[in] tau The current time step length.
  * @param theta1 The impliciteness parameter. Must be 0.5 so far
  * (and defaults to that value).
- *  * @param theta2 The expliciteness parameter. Must be 0.5 so far
+ * @param theta2 The expliciteness parameter. Must be 0.5 so far
  * (and defaults to that value).
  */
 void fem_fct_compute_system_matrix(
-    TMatrix& system_matrix,
+    FEMatrix& system_matrix,
     const std::vector<double>& lumped_mass_matrix,
     double tau, double theta1 = 0.5, double theta2 = 0.5)
 {
@@ -83,6 +90,14 @@ void fem_fct_compute_system_matrix(
     ErrThrow("Lumped mass matrix vector does not fit the stiffness matrix!");
   }
 
+#ifdef _MPI
+  const TParFECommunicator3D& comm = system_matrix.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int size, rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
   // get pointers to columns, rows and entries of system_matrix
   const int* ColInd = system_matrix.GetKCol();
   const int* RowPtr = system_matrix.GetRowPtr();
@@ -90,6 +105,11 @@ void fem_fct_compute_system_matrix(
 
   for(int i=0;i<nDof;i++)
   {
+#ifdef _MPI
+    // do this only for master rows
+    if(masters[i] != rank)
+      continue;
+#endif
     // i-th row of sqmatrix
     int j0 = RowPtr[i];
     int j1 = RowPtr[i+1];
@@ -122,90 +142,299 @@ void fem_fct_compute_system_matrix(
   }
 }
 
+//CB DEBUG - HERE COMES A LOT OF INTERESTING DEBUG CODE!
+
+/** This method will return a column of a CSR matrix as a vector.
+ *@param[in] A The matrix.
+ *@param[in] j The column index. It might be -1, which will happen when the dof
+ *             is not known locally. Then this will return a vector conatining
+ *             only zeroes, which is consistent behaviour.
+ *
+ *@return A matrix column as an std::vector<double>.
+ */
+
+std::vector<double> get_matrix_column(const TMatrix& A, int j)
+{
+  std::vector<double> col(A.GetN_Rows(), 0.0);
+  for(int i =0; i < A.GetN_Rows();++i)
+  {
+    for(int l = A.GetRowPtr()[i]; l < A.GetRowPtr()[i+1] ; ++l)
+    {
+      if(A.GetKCol()[l] == j)
+      {
+        col.at(i) = A.GetEntries()[l];
+      }
+    }
+  }
+  return col;
+}
+
+void set_matrix_column(FEMatrix& B, int j, std::vector<double> col)
+{
+  for(int i =0; i < B.GetN_Rows();++i)
+  {
+    for(int l = B.GetRowPtr()[i]; l < B.GetRowPtr()[i+1] ; ++l)
+    {
+      if(B.GetKCol()[l] == j)
+      {
+        B.set(i,j,col.at(i));
+      }
+    }
+  }
+}
+
+#ifdef _MPI
+void update_column_consistency(FEMatrix& B, int sending_ps, int cons_level)
+{
+  const TParFECommunicator3D& comm = B.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  int nDof = B.GetN_Rows();
+
+  const char* markers = comm.get_dof_markers();
+
+  //SENDER process executes the following code.
+  if(rank == sending_ps)
+  {
+    int n_vecs_send = comm.get_n_interface_master();
+    MPI_Bcast(&n_vecs_send, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
+    Output::info("MPI UPDATE", n_vecs_send, " interface master columns receive update.");
+    for(int s = 0; s < nDof; ++s)
+    {
+      if(masters[s] == rank && markers[s] == 'm') //interface master col found, ping it
+      {
+        Output::suppressAll();
+        comm.dof_ping(sending_ps, s);
+        Output::setVerbosity(1);
+        int dummy_sb = -1;
+        int dof_remote = -1;
+        MPI_Allreduce(&dummy_sb, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        if(dof_remote != -1)
+        {//ping was received on at least one other ps, now set up the matrix row
+          std::vector<double> col_master = get_matrix_column(B, s);
+          comm.consistency_update(col_master.data(), cons_level); //CONSIST UPDATE
+          set_matrix_column(B,s,col_master);
+
+        }
+      }
+    }
+  }
+  //RECEIVER processes execute the following code.
+  else
+  {
+    int n_vecs_recv;
+    MPI_Bcast(&n_vecs_recv, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
+    for(int r = 0; r< n_vecs_recv; ++r)
+    {
+      int dof_local = comm.dof_ping(sending_ps, -1);
+      int dof_remote = -1;
+      MPI_Allreduce(&dof_local, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+      if(dof_remote != -1)
+      {
+        std::vector<double> col_slave = get_matrix_column(B, dof_local);
+        comm.consistency_update(col_slave.data(), cons_level); //CONSIST UPDATE
+      }
+    }
+  }
+}
+
+#endif
+
+
+/** This method will return a row of a CSR matrix as a vector.
+ *@param[in] A The matrix.
+ *@param[in] i The row index.
+ *@return A matrix row as an std::vector.
+ */
+std::vector<double> get_matrix_row(const TMatrix& A, int i)
+{
+  std::vector<double> row(A.GetN_Columns() , 0.0);
+    for(int l = A.GetRowPtr()[i]; l < A.GetRowPtr()[i+1] ; ++l)
+    {
+      int j = A.GetKCol()[l];
+      row.at(j) = A.GetEntries()[l];
+    }
+  return row;
+}
+
+#ifdef _MPI
+/**
+ * This method can be used to check a matrix A in distributed storage.
+ * A certain process ('sending_ps') will extract one master column after the other
+ * from A, and ask all other processes for a consistency update of that vector.
+ *
+ * After that it will compare the updated column with the original one and inform
+ * the programmer via Output::print on any differences.
+ * It is then in the responsibility of the programmer to interpret the output.
+ *
+ * @param[in] A The matrix to check.
+ * @param[in] sending_ps The process which checks its master columns.
+ * @param[in] cons_level The consistency level to be updated to.
+ */
+void check_column_consistency(const FEMatrix& A, int sending_ps, int cons_level)
+{
+
+  const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  int nDof = A.GetN_Rows();
+
+  const char* markers = comm.get_dof_markers();
+
+  //SENDER process executes the following code.
+  if(rank == sending_ps)
+  {
+    Output::info("CHECK", "Checking master columns of process ", sending_ps, " on consistency level ", cons_level);
+    int n_vecs_send = comm.GetN_Master();
+    MPI_Bcast(&n_vecs_send, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
+    for(int s = 0; s < nDof; ++s)
+    {
+      if(masters[s] == rank) //master col found, ping it
+      {
+        Output::suppressAll();
+        comm.dof_ping(sending_ps, s);
+        Output::setVerbosity(1);
+        int dummy_sb = -1;
+        int dof_remote = -1;
+        MPI_Allreduce(&dummy_sb, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        if(dof_remote != -1)
+        {//ping was received on at least one other ps, now set up the matrix row
+          std::vector<double> col_master = get_matrix_column(A, s);
+          std::vector<double> col_master_cpy = col_master;
+          comm.consistency_update(col_master.data(), cons_level); //CONSIST UPDATE
+          //now check the differences between updated and original column
+          for(int i = 0 ; i < col_master.size(); ++i)
+          {
+            if(col_master[i] != col_master_cpy[i])
+            {
+              char type_col = markers[s];
+              char type_row = markers[i];
+              Output::print("Local entry (", i, "[", type_row ,"] , ", s, "[", type_col,"]) was changed by an update.");
+            }
+
+          }
+
+        }
+      }
+    }
+    Output::print("Test on process ", rank, " complete.");
+  }
+  //RECEIVER processes execute the following code.
+  else
+  {
+    int n_vecs_recv;
+    MPI_Bcast(&n_vecs_recv, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
+    for(int r = 0; r< n_vecs_recv; ++r)
+    {
+      int dof_local = comm.dof_ping(sending_ps, -1);
+      int dof_remote = -1;
+      MPI_Allreduce(&dof_local, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+      if(dof_remote != -1)
+      {
+        std::vector<double> col_slave = get_matrix_column(A, dof_local);
+        comm.consistency_update(col_slave.data(), cons_level); //CONSIST UPDATE
+      }
+    }
+  }
+}
+#endif
+
+//END DEBUG
+
 
 /*!
  * Compute the artificial diffusion matrix to a given stiffness matrix.
  *
- * @param[in,out] A The stiffness matrix which needs additional
+ * @param[in] A The stiffness matrix which needs additional
  * diffusion. Must be square.
  * @param[out] matrix_D A vector to write the entries
- * of D, the artificial diffusion matrix to. (Consider TMatrix
- * with same TStructure as A!)
+ * of D, the artificial diffusion matrix to. Must contain only 0.
+ * MPI: D will leave this method with matrix-consistency level 0, meaning that
+ * only its master rows will be correct. Everything else is left at 0.
+ *
  */
 void compute_artificial_diffusion_matrix(
-        const TMatrix& A, std::vector<double>& matrix_D)
+    const FEMatrix& A, std::vector<double>& matrix_D)
+{
+  // catch non-square matrix
+  if (!A.is_square() )
+  {
+    ErrThrow("Matrix must be square!");
+  }
+  // store number of dofs
+  int nDof = A.GetN_Rows();
+
+#ifdef _MPI
+  const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  // get pointers to columns, rows and entries of matrix A
+  const int* ColInd = A.GetKCol();
+  const int* RowPtr = A.GetRowPtr();
+  const double* Entries = A.GetEntries();
+
+  // compute off-diagonal entries of the matrix D
+  for(int i=0;i<nDof;i++) //row loop
+  {
+#ifdef _MPI
+    // do this only for master rows - they couple only to other masters,
+    // slaves and halo1 d.o.f., therefore one can be sure, that if A_ij
+    // is on this rank, so is the transposed entry, A_ji
+    if(masters[i] != rank)
+      continue;
+#endif
+    for(int l=RowPtr[i];l<RowPtr[i+1];l++)
     {
-        // catch non-square matrix
-        if (!A.is_square() )
+      int j = ColInd[l]; //column index
+      double k_ij = 0;
+      double k_ji = 0;
+      if (j!=i)
+      {// consider only off-diagonals
+        k_ij = Entries[l];
+        // now get the transposed entry
+        for (int ll=RowPtr[j];ll<RowPtr[j+1];ll++)
         {
-          ErrThrow("Matrix must be square!");
-        }
-        // store number of dofs
-        int nDof = A.GetN_Rows();
-
-        // get pointers to columns, rows and entries of matrix A
-        const int* ColInd = A.GetKCol();
-        const int* RowPtr = A.GetRowPtr();
-        const double* Entries = A.GetEntries();
-
-        //reset matrix_D to 0
-        std::fill(matrix_D.begin(), matrix_D.end(), 0);
-
-        // loop over all rows
-        for(int i=0;i<nDof;i++)
-        {
-          // i-th row of sqmatrix
-          int j0 = RowPtr[i];
-          int j1 = RowPtr[i+1];
-          // compute first the matrix D
-          for(int j=j0;j<j1;j++)
+          if (ColInd[ll]==i)
           {
-            // column
-            int index = ColInd[j];
-            // only the active part of the matrix
-            //if (index>=N_U)
-            //    continue;
-            // only off-diagonals
-            if (index!=i)
-            {
-              if (Entries[j] > 0)
-                matrix_D[j] = -Entries[j];
-              // now check the transposed entry
-              int j2 = RowPtr[index];
-              int j3 = RowPtr[index+1];
-              for (int jj=j2;jj<j3;jj++)
-              {
-                if (ColInd[jj]==i)
-                {
-                  if (-Entries[jj]<matrix_D[j])
-                    matrix_D[j] = -Entries[jj];
-                  break;
-                }
-              }
-            }
+            k_ji = Entries[ll];
+            break;
           }
         }
-
-        // compute diagonal entry of D
-        // loop over all rows
-        for(int i=0;i<nDof;i++)
-        {
-          // i-th row of sqmatrix
-          int j0 = RowPtr[i];
-          int j1 = RowPtr[i+1];
-          double val = 0.0;
-          // add all entries of i-th row
-          int jj = -1;
-          for(int j=j0;j<j1;j++)
-          {
-            val +=  matrix_D[j];
-            int index = ColInd[j];
-            if (index==i)
-              jj = j; //Hold the place of the diagonal entry in the entries array.
-          }
-          matrix_D[jj] = -val;
-        }
+        //determine entry D_ij
+        matrix_D[l] = std::min({-k_ij , 0.0 , -k_ji});
+      }
     }
+  }
+
+  // compute diagonal entries of the matrix D
+  for(int i=0;i<nDof;i++)//row loop
+  {
+#ifdef _MPI
+    // do this only for master rows
+    if(masters[i] != rank)
+      continue;
+#endif
+    double val = 0.0;
+    // add all entries of i-th row
+    int ll = -1;
+    for(int l=RowPtr[i];l<RowPtr[i+1];l++)
+    {
+      val +=  matrix_D[l];
+      int j = ColInd[l];
+      if (j==i) //diagonal found
+        ll = l; //place of the diagonal entry in the matrix_D entries array
+    }
+    matrix_D[ll] = -val;
+  }
+}
+
 /**
  * @brief Lump a mass matrix row wise.
  *
@@ -215,7 +444,7 @@ void compute_artificial_diffusion_matrix(
  *  of the lumped mass matrix. Must be of according length.
  */
 void lump_mass_matrix_to_vector(
-    const TMatrix& M, std::vector<double>& lump_mass)
+    const FEMatrix& M, std::vector<double>& lump_mass)
 {
   // catch non-square matrix
   if (!M.is_square() )
@@ -233,8 +462,21 @@ void lump_mass_matrix_to_vector(
   const double * Entries = M.GetEntries();
   int rows = M.GetN_Rows();
 
+#ifdef _MPI
+        const TParFECommunicator3D& comm = M.GetFESpace3D()->get_communicator();
+        const int* masters = comm.GetMaster();
+        int size, rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
   for (int i=0; i<rows; i++)
   {
+#ifdef _MPI
+    //skip the non-masters in MPI case
+    if(masters[i] != rank)
+      continue;
+#endif
     lump_mass[i]=0.0;
     int j0 = RowPtr[i];
     int j1 = RowPtr[i+1];
@@ -282,13 +524,23 @@ double MinMod(double a, double b)
  *
  * @param[out] alphas The flux correction factors, row by row (sorted like
  * the entries array of the mass_matrix!).
+ * MPI: alphas will be ROWWISE LEVEL-0-CONSISTENT IN MPI on output
+ *
  * @param[in] mass_matrix The complete mass matrix.
+ * MPI: mass_matrix MUST BE ROWWISE LEVEL-0-CONSISTENT IN MPI.
+ *
  * @param[in] lumped_mass The row-wise lumped mass matrix as vector
  * of its diagonal values.
+ * MPI: lumped_mass MUST BE ROWWISE LEVEL-0-CONSISTENT IN MPI.
+ *
  * @param[in] raw_fluxes The raw fluxes, sorted like alphas. Must have been
  * multiplied with current timesteplength!
+ * MPI: raw_fluxes MUST BE ROWWISE LEVEL-0-CONSISTENT IN MPI
+ *
  * @param[in] sol_approx The approximate solution used to calculate
  * the flux correction.
+ * MPI: sol_approx MUST BE LEVEL-2-CONSISTENT IN MPI.
+ *
  * @param[in] neum_to_diri See FEM-FCT, same story.
  * @note I'm pretty sure we can get rid of the whole "neum_to_diri"
  * thing when passing an FEMatrix here which got assembled with Neumann
@@ -296,13 +548,21 @@ double MinMod(double a, double b)
  */
 void ZalesaksFluxLimiter(
     std::vector<double>& alphas,
-    const TMatrix& mass_matrix,
+    const FEMatrix& mass_matrix,
     const std::vector<double>& lumped_mass,
     const std::vector<double>& raw_fluxes,
     const std::vector<double>& sol_approx,
     const std::vector<int>& neum_to_diri
 )
 {
+
+#ifdef _MPI
+        const TParFECommunicator3D& comm = mass_matrix.GetFESpace3D()->get_communicator();
+        const int* masters = comm.GetMaster();
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
   //check if all dimensions fit
   if (!mass_matrix.is_square() )
   {
@@ -346,13 +606,22 @@ void ZalesaksFluxLimiter(
   std::vector<double> P_minus (nDofs, 0.0);
   std::vector<double> Q_plus (nDofs, 0.0);
   std::vector<double> Q_minus (nDofs, 0.0);
+
   std::vector<double> R_plus (nDofs, 0.0);
   std::vector<double> R_minus (nDofs, 0.0);
 
-  // 3.1  Compute Ps and Qs (negative/positive diffusive/antidiffusive fluxes),
-  //    where the Qs are "distances to local extrema of the auxiliary solution"
+  // Compute Ps and Qs (negative/positive diffusive/antidiffusive fluxes),
+  // where the Qs are "distances to local extrema of the auxiliary solution"
+  // MPI: Needs raw_fluxes matrix rowwise level-0-consistent and
+  //      sol_approx in level-2-consistency
   for(int i=0;i<nDofs;i++)
   {
+#ifdef _MPI
+    //skip the non-master rows in MPI case
+    if(masters[i] != rank)
+      continue;
+#endif
+
     // i-th row of mass matrix
     int j0 = RowPtr_M[i];
     int j1 = RowPtr_M[i+1];
@@ -378,31 +647,35 @@ void ZalesaksFluxLimiter(
     } // end loop j
   }
 
-  // 3.2  Compute Rs (nodal correction factors)
+  // Compute R_plus and R_minus (nodal correction factors)
+  // MPI: Needs lumped_mass, Q_plus, Q_minus, P_plus, P_minus in Level 0 consistency
   for(int i=0;i<nDofs;i++)
   {
+
+#ifdef _MPI
+    //skip the non-master rows in MPI case
+    if(masters[i] != rank)
+      continue;
+#endif
+
+    //determine R_plus
     if(fabs(P_plus[i]) == 0.0)
       R_plus[i] = 1.0;
     else
     {
       //OutPut(Q_plus[i] << " "  << P_plus[i] << " " << lump_mass[i] << " ");
-      double help = (lumped_mass[i] * Q_plus[i])/P_plus[i];
-      if(help < 1.0)
-        R_plus[i] = help;
-      else
-        R_plus[i] = 1.0;
+      R_plus[i] = std::min(1.0 , (lumped_mass[i] * Q_plus[i])/P_plus[i] );
     }
+
+    //determine R_minus
     if(fabs(P_minus[i]) == 0.0)
       R_minus[i] = 1.0;
     else
     {
       //OutPut(Q_minus[i] << " "  << P_minus[i] << " " << lump_mass[i] << " ");
-      double help = (lumped_mass[i] * Q_minus[i])/P_minus[i];
-      if(help < 1.0)
-        R_minus[i] = help;
-      else
-        R_minus[i] = 1.0;
+      R_minus[i] = std::min(1.0, (lumped_mass[i] * Q_minus[i])/P_minus[i]);
     }
+
   }
 
   // treat Dirichlet nodes (e.g. Kuzmin & Moeller 2005 S. 27)
@@ -414,9 +687,23 @@ void ZalesaksFluxLimiter(
     R_minus[i] = 1;
   }
 
-  // 3.3 Compute alphas (final correction factors)
-  for(int i=0;i<nDofs;i++)
+#ifdef _MPI
+  // put R_plus and R_minus into level 2 consistency
+  comm.consistency_update(R_plus.data(), 2);
+  comm.consistency_update(R_minus.data(), 2);
+#endif
+
+  // Compute alphas (final correction factors)
+  // MPI: needs R_plus and R_minus in level 2 consistency
+  for( int i=0 ; i<nDofs ; i++ )
   {
+
+#ifdef _MPI
+    //skip the non-master rows in MPI case
+    if(masters[i] != rank)
+      continue;
+#endif
+
     // i-th row of sqmatrix
     int j0 = RowPtr_M[i];
     int j1 = RowPtr_M[i+1];
@@ -426,17 +713,12 @@ void ZalesaksFluxLimiter(
       int index = ColInd_M[j];
       if(raw_fluxes[j] > 0.0)
       {
-        //Initialisation
-        alphas[j] = R_plus[i];
-        if(alphas[j] > R_minus[index])
-          alphas[j] = R_minus[index];
+        alphas[j] = std::min(R_plus[i], R_minus[index]);
       }
       if(raw_fluxes[j]<=0.0)
       {
         //initialisation
-        alphas[j] = R_minus[i];
-        if(alphas[j] > R_plus[index])
-          alphas[j] = R_plus[index];
+        alphas[j] = std::min(R_minus[i], R_plus[index]);
       }
       // clipping, see Kuzmin (2009), end of Section 5
       //if ((fabs(Q_plus[i])< eps)&&(fabs(Q_minus[i])< eps))
@@ -444,7 +726,7 @@ void ZalesaksFluxLimiter(
     }                                             //end loop j
   }
 
-  //end Zalesak!
+  // MPI: At output, correction factors alpha_ij are rowwise level-0-consistent
 }
 
 }
@@ -469,7 +751,7 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
 
 
 void AlgebraicFluxCorrection::fem_tvd_algorithm(
-    TMatrix& system_matrix,
+    FEMatrix& system_matrix,
     const std::vector<double>& sol,
     std::vector<double>& rhs,
     //this argument is used in outcommented code block only
@@ -706,13 +988,14 @@ void AlgebraicFluxCorrection::fem_tvd_algorithm(
 }
 
 void AlgebraicFluxCorrection::crank_nicolson_fct(
-       const TMatrix& M_C, TMatrix& K,
+       const FEMatrix& M_C, FEMatrix& K,
        const std::vector<double>& oldsol,
        std::vector<double>& rhs, std::vector<double>& rhs_old,
        double delta_t,
        const std::vector<int>& neum_to_diri,
        AlgebraicFluxCorrection::Prelimiter prelim
-       ){
+       )
+{
 
   //make sure Crank-Nicolson is used
   if( TDatabase::TimeDB->TIME_DISC != 2 )
@@ -731,6 +1014,14 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
     ErrThrow("M_C and K dimension mismatch!")
   }
 
+#ifdef _MPI
+  const TParFECommunicator3D& comm = K.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int size, rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
   int nDofs = K.GetN_Rows();
 
   // get pointers to columns, rows and entries of matrix M_C
@@ -745,11 +1036,26 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   double* Entries = K.GetEntries();
   int N_Entries = K.GetN_Entries();
 
-  //STEP 0.1: Compute artificial diffusion matrix D and add to K, K := K + D=L.
+
+//#ifdef _MPI
+//  // the stiffness matrix need have its columns updated, so that all
+//  // master cols are level-2-consistent
+//  MPI_Comm_size(MPI_COMM_WORLD, &size);
+//  for(int ps = 0;ps<size;++ps)
+//  {
+//    update_column_consistency(K, ps, 2);
+//  }
+//#endif
+
+
+
+  //STEP 0.1: Compute artificial diffusion matrix D and add to K, K := K + D ("L").
   std::vector<double> matrix_D_Entries(N_Entries, 0.0);
   compute_artificial_diffusion_matrix(K, matrix_D_Entries);
 
   Daxpy(N_Entries, 1.0, &matrix_D_Entries[0], Entries);
+
+  //MPI: Matrix K is in Level-0-consistency now.
 
   //STEP 0.2: Lump mass matrix.
   std::vector<double> lump_mass (nDofs, 0.0);
@@ -769,11 +1075,20 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
 
   // step-by-step build up u_interm...
   // ...first L u_{k-1}
+  // MPI: oldsol is normally given in Level2-Consistency,
+  // when this method is called
   K.multiply(&oldsol[0], &u_interm[0]);
+
 
   // ...then M_L^(-1)(f_{k-1} - L u_{k-1})
   for(int i=0;i<nDofs;i++)
   {
+#ifdef _MPI
+    // do this only for master rows
+    // u_interm gets Level-0-consistency now
+    if(masters[i] != rank)
+      continue;
+#endif
     u_interm[i] = (rhs_old[i] - u_interm[i])/lump_mass[i];
   }
 
@@ -800,11 +1115,23 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   }
   //intermediate solution is complete
 
+  // MPI: u_interm and u_dot_interm are both in Level-0-consistency
+  // and should get level 2 for the next loop
+#ifdef _MPI
+  comm.consistency_update(u_interm.data(),2);
+  comm.consistency_update(u_dot_interm.data(),2);
+#endif
+
   //STEP 2: compute raw antidiffusive fluxes * delta_t, and apply pre-limiting,
   // if required to do so (Kuzmin 2009 S.9 (36) )
   std::vector<double> raw_fluxes(N_Entries, 0.0);
   for(int i=0;i<nDofs;i++)
   {
+#ifdef _MPI
+    // do this only for master rows
+    if(masters[i] != rank)
+      continue;
+#endif
     // i-th row of mass matrix
     int j0 = RowPtr_M[i];
     int j1 = RowPtr_M[i+1];
@@ -851,6 +1178,11 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   // STEP 4: Calculate the new right hand side and system matrix.
     for(int i=0;i<nDofs;i++)
     {
+#ifdef _MPI
+    // do this only for master rows
+    if(masters[i] != rank)
+      continue;
+#endif
       double corrected_flux = 0.0;
       int j0 = RowPtr[i];
       int j1 = RowPtr[i+1];

@@ -399,9 +399,9 @@ void TDatabase::SetDefaultParameters()
   ParamDB->EFFECTIVE_VISCOSITY = 1;
   ParamDB->PERMEABILITY = 1;
     
-  ParamDB->equal_order_stab_weight_P1P1= 0;
-  ParamDB->equal_order_stab_weight_P2P2= 0;
-    
+  ParamDB->equal_order_stab_weight_PkPk= 0;
+      ParamDB->equal_order_stab_weight_P1P1= 0;// wird noch in Brinkman2d benutzt --> ändern
+      ParamDB->equal_order_stab_weight_P2P2= 0;// wird noch in Brinkman2d benutzt --> ändern
     
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
@@ -594,14 +594,15 @@ void TDatabase::SetDefaultParameters()
   ParamDB-> n_p_v_n_boundary = 0.;
   ParamDB-> p_v_n_boundary_id.clear();
   ParamDB-> p_v_n_boundary_value.clear();
+
     
-  //Nitsche Combi - weak Dirichlet
+  // Nitsche Combination - Weak Dirichlet Boundary Conditions 
   ParamDB-> n_nitsche_boundary = 0.;
   ParamDB-> nitsche_boundary_id.clear();
   ParamDB-> nitsche_penalty.clear();
-    
-    
-    
+  ParamDB-> s1 = 0;
+  ParamDB-> s2 = 0;
+
   
   ParamDB->TETGEN_QUALITY = 0.0;
   ParamDB->TETGEN_VOLUMEN = 0.0;
@@ -1093,9 +1094,9 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("Viscosity:", ParamDB->VISCOSITY);
   printToFile("PERMEABILITY:", ParamDB->PERMEABILITY);
     
-  printToFile("equal_order_stab_weight_P1P1:", ParamDB->equal_order_stab_weight_P1P1);
-  printToFile("equal_order_stab_weight_P2P2:", ParamDB->equal_order_stab_weight_P2P2);
+  printToFile("equal_order_stab_weight_PkPk:", ParamDB->equal_order_stab_weight_PkPk); // wird noch in Brinkman2d benutzt --> ändern
 
+    
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);
   printToFile("ROSSBY_NR: ", ParamDB->ROSSBY_NR);

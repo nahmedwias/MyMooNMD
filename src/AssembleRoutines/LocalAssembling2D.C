@@ -84,18 +84,15 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
             // Brinkman2D: Brinkman problems
         case Brinkman2D_Galerkin1:
             return std::string("Brinkman2D_Galerkin1");
-            
-        case Brinkman2D_Galerkin1b:
-            return std::string("Brinkman2D_Galerkin1b");
-            
+             
         case Brinkman2D_Galerkin2:
             return std::string("Brinkman2D_Galerkin2");
             
-        case Brinkman2D_Galerkin1ResidualStab:
-            return std::string("Brinkman2D_Galerkin1ResidualStab");
+        case Brinkman2D_Galerkin1ResidualStabP1:
+            return std::string("Brinkman2D_Galerkin1ResidualStabP1");
             
-        case Brinkman2D_Galerkin1ResidualStab2:
-            return std::string("Brinkman2D_Galerkin1ResidualStab2");
+        case Brinkman2D_Galerkin1ResidualStabP2:
+            return std::string("Brinkman2D_Galerkin1ResidualStabP2");
             ///////////////////////////////////////////////////////////////////////////
             // TNSE2D: nonstationary Navier-Stokes
         case LocalAssembling2D_type::TNSE2D:
@@ -315,7 +312,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->Needs2ndDerivatives = new bool[2];
             this->Needs2ndDerivatives[0] = false;
             this->Needs2ndDerivatives[1] = false;
-            this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+            this->FESpaceNumber = { 0, 0, 0, 1 };
             this->N_Matrices = 9;
             this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
             this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
@@ -325,23 +322,6 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->Manipulate = NULL;
             break;
             
-        case LocalAssembling2D_type::Brinkman2D_Galerkin1b:
-            //Matrix Type 14
-            this->N_Terms = 4;
-            this->Derivatives = { D10, D01, D00, D00 };
-            this->Needs2ndDerivatives = new bool[2];
-            this->Needs2ndDerivatives[0] = false;
-            this->Needs2ndDerivatives[1] = false;
-            this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-            this->N_Matrices = 9;
-            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-            this->N_Rhs = 3;
-            this->RhsSpace = { 0, 0, 1 };
-            this->AssembleParam = BrinkmanType1bGalerkin;
-            this->Manipulate = NULL;
-        break;
-
         case LocalAssembling2D_type::Brinkman2D_Galerkin2:
             //Matrix Type 14
             this->N_Terms = 6;                                      // = #(Derivatives)
@@ -360,7 +340,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->Manipulate = NULL;
         break;
 
-        case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab:
+        case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStabP1:
             //Matrix Type 14
             this->N_Terms = 6;                                      // = #(Derivatives)
             this->Derivatives = { D10, D01, D00, D00, D10, D01};    // u_x, u_y, u, p, p_x, p_y
@@ -374,11 +354,11 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
             this->N_Rhs = 3;                                        // f1, f2, g
             this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
-            this->AssembleParam = BrinkmanType1GalerkinResidualStab;
+            this->AssembleParam = BrinkmanType1GalerkinResidualStabP1;
             this->Manipulate = NULL;
         break;
 
-        case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStab2:
+        case LocalAssembling2D_type::Brinkman2D_Galerkin1ResidualStabP2:
             //Matrix Type 14
             this->N_Terms = 8;                                      // = #(Derivatives)
             this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};    // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
@@ -392,7 +372,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
             this->N_Rhs = 3;                                        // f1, f2, g
             this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
-            this->AssembleParam = BrinkmanType1GalerkinResidualStab2;
+            this->AssembleParam = BrinkmanType1GalerkinResidualStabP2;
             this->Manipulate = NULL;
         break;
         

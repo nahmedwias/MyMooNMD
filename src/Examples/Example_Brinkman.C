@@ -5,7 +5,7 @@
 Example Example::Brinkman(const ParameterDatabase& param_db)
 {
   int example = param_db["example"];
-  double reynolds = param_db["reynolds_number"];
+  double reynolds_number = param_db["reynolds_number"];
   /// @todo include Brinkman parameters into database and use them here
   double viscosity = 1.; // param_db["viscosity"];
   double effective_viscosity = 1.; // param_db["effective_viscosity"];
@@ -33,7 +33,7 @@ Example Example::Brinkman(const ParameterDatabase& param_db)
     case 0: // Poisseuille flow
     {
       if(!two_d)
-        ErrThrow("Poisseuille flow example in 3D not yet implemented");
+        ErrThrow("Poiseuille flow example in 3D not yet implemented");
       // this example has all Dirichlet boundary, therefore we need to project
       // the pressure
       TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
@@ -53,11 +53,11 @@ Example Example::Brinkman(const ParameterDatabase& param_db)
       // exact solution, second velocity component (all zero)
       exact.push_back(AnalyticalFunction(0.0));
       // exact solution, pressure component
-      auto pr = [reynolds](const Point& point, FunctionEvaluation& v)
+      auto pr = [reynolds_number](const Point& point, FunctionEvaluation& v)
       {
         const double x = point.x();
-        v.set(8 * reynolds * (0.5 - x), 0, MultiIndex::D00);
-        v.set(-8 * reynolds, 0, MultiIndex::D10);
+        v.set(8 * reynolds_number * (0.5 - x), 0, MultiIndex::D00);
+        v.set(-8 * reynolds_number, 0, MultiIndex::D10);
         v.set(0., 0, MultiIndex::D01);
         v.set(0., 0, MultiIndex::D20);
         v.set(0., 0, MultiIndex::D11);
@@ -77,10 +77,10 @@ Example Example::Brinkman(const ParameterDatabase& param_db)
       bd.push_back(BoundaryData(0.0));
       bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
-      f = [reynolds, viscosity, effective_viscosity, permeability](
+      f = [reynolds_number, viscosity, effective_viscosity, permeability](
           const Point& point, double, std::vector<double>& coeffs)
       {
-        coeffs[0] = 1. / reynolds; // reynolds number
+        coeffs[0] = 1. / reynolds_number; // reynolds number
         coeffs[1] = 0.;            // right hand side, first component
         coeffs[2] = 0.;            // right hand side, second component
         coeffs[3] = 0.;            // divergence
@@ -111,7 +111,7 @@ Example Example::Brinkman(const ParameterDatabase& param_db)
   PDECoefficients coeffs(f, Problem_type::NavierStokes, false, false);
 
   Output::info<2>("Example", "using the Navier--Stokes example: ", name);
-  Output::dash<2>("The Reynolds number is ", reynolds);
+  Output::dash<2>("The Reynolds number is ", reynolds_number);
   return Example(std::move(bc), std::move(bd), std::move(coeffs),
                  std::move(exact));
 }

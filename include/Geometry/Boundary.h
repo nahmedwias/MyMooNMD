@@ -21,7 +21,7 @@
 
 enum boundaryType {line, circle};
 
-
+///@brief a (temporary) object to improve the boundary implementation  (Alfonso)
 struct BoundaryComponent
 {
   boundaryType type;
