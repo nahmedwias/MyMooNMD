@@ -1536,7 +1536,10 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	      ActiveBound = fespace->GetActiveBound();
 	      DirichletBound = fespace->GetHangingBound();
 	      DOF = GlobalNumbers[j] + BeginIndex[j][i];
-
+	      if (TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
+	      {
+	        ActiveBound = DirichletBound = sqmatrices[j]->GetN_Rows();
+	      }
 	      // add local matrix to global
 	      for(m=0;m<N_;m++)
 	      {
@@ -1758,6 +1761,27 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 					   }*/
 		  // the face gets the b.c. which is valid at its center
 	          BoundaryCondition(xf, yf, zf, Cond0);
+
+            /**
+             @brief change the Cond0 to NEUMANN according to
+             the markers prescribed in the input file
+             @attention this part is still on-going work
+             **/
+            /*TBoundFace *boundface = (TBoundFace *)joint;
+            int face_marker = boundface->GetBoundComp()->get_physical_id();
+            for (int ibd=0; ibd< TDatabase::ParamDB->n_neumann_boundary; ibd++)
+            {
+                if (face_marker==TDatabase::ParamDB->neumann_boundary_id[ibd])
+                    Cond0 = NEUMANN;
+            }
+
+            for (int ibd=0; ibd< TDatabase::ParamDB->n_nitsche_boundary; ibd++)
+            {
+                if (face_marker==TDatabase::ParamDB->nitsche_boundary_id[ibd])
+                    Cond0 = NEUMANN;
+            }
+
+            */
 
 	          switch(Cond0)
 	          {
@@ -2019,7 +2043,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	            fespace->GetDOFPosition(dof, xf, yf, zf);
 	            BoundaryCondition(xf, yf, zf, Cond0);
 
-	            if(Cond0==DIRICHLET) // nothing to do for nin-Dirichlet
+	            if(Cond0==DIRICHLET) // nothing to do for non-Dirichlet
 	             {
 	             BoundaryValue(xf, yf, zf, t0);
 	             RHS[dof] = t0;

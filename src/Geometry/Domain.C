@@ -4031,13 +4031,12 @@ void TDomain::buildBoundary(Mesh& m)
   {
     m.boundaryFacesMarker.resize(n_trifaces);
   }
-  
   for(int i=0;i<n_trifaces;++i)
   {
     if(m.faceToTetra[i][0] == -1 || m.faceToTetra[i][1] == -1)
     {
       // the face is on the boundary
-      meshBoundComps.at(counter) = new TBdPlane(counter);
+      meshBoundComps.at(counter) = new TBdPlane(counter,m.triangle[i].reference);
 
       double p[3], a[3], b[3], n[3];
       ///@attention the lists of nodes starts from 1 (not from 0)
@@ -4076,13 +4075,13 @@ void TDomain::buildBoundary(Mesh& m)
       ((TBdPlane*) meshBoundComps[counter])->SetParams(p[0], p[1], p[2],
                                                        a[0], a[1], a[2],
                                                        n[0], n[1], n[2]);
-      ++counter;
       
+      ++counter;
       // the id of the boundary face is taken as the attribute of the triangle
       // note: later, trifacemarkerlist=0 is used to identify inner faces (see below)
       m.boundaryFacesMarker[i] = counter;
       Output::print<4>("TDomain::buildBoundary() Triangle ",i,
-		       " boundayMarker = ",m.boundaryFacesMarker[i],
+		       " boundaryMarker = ",m.boundaryFacesMarker[i],
 		       " attribute = ",m.triangle[i].reference);
     }
     else // not a boundary face
@@ -4309,8 +4308,9 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
   this->N_BoundComps = tgml.nBoundaryComponents;
   meshBoundComps.resize(this->N_BoundComps); 
   Output::print("TDomain::buildBoundary() - N_BoundComps: ", this->N_BoundComps);
+  Output::print("here");
   this->BdParts[0] = new TBoundPart(this->N_BoundComps);
-  
+  Output::print("here");
   // StartBdCompID[i] gives the iindex of the element in BdParts
   // where the BdComp i starts. The last element is equal to to N_BoundParts
   this->StartBdCompID = new int [this->N_BoundParts+1];
@@ -4378,7 +4378,7 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
                                                        a[0], a[1], a[2],
                                                        n[0], n[1], n[2]);
       ++counter;
-      
+      Output::print(" counter:",counter);
       // the id of the boundary face is taken as the attribute of the triangle
       // note: later, trifacemarkerlist=0 is used to identify inner faces (see below)
       tgml.meshTetGenOut.trifacemarkerlist[i] = counter;

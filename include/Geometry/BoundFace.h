@@ -57,11 +57,16 @@ class TBoundFace : public TJoint
     void GetTSofXYZ(double X, double Y, double Z, double &T, double &S)
     { this->BoundComp->GetTSofXYZ(X, Y, Z, T, S); }
     
-
+    void get_normal_vector(double x, double y, double z,
+			   double& nx, double& ny, double &nz)
+    { this->BoundComp->get_normal_vector(x,y,z,nx,ny,nz);}
+    
     /** return both parameters arrays */
     void GetParameters(double *param1, double *param2);
 
     void SetParameters(double *param1, double *param2);
+
+    double Get_h(int cell_measure);
 };
 
 #endif

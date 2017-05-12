@@ -1,13 +1,14 @@
-// Brinkman problem with sine and cosine functions
+// Brinkman problem with sine2-sine2-velocity from Jarle Sogn resp. Mardal, Thai, Winther
 // exact solution:
-// u(x,y) = (sin(Pi*x) , -Pi*y*cos(Pi*x)) = (u1,u2)
-// p(x,y) = sin(Pi*x)*cos(Pi*y)
+// u(x,y) = grad x (sin^2(Pi*x)*sin^2(Pi*y)) = (u1,u2)
+//        = (-d/dy (sin^2(Pi*x)*sin^2(Pi*y)) ,  d/dx (sin^2(Pi*x)*sin^2(Pi*y)))
+// p(x,y) = -sin(2*Pi*x)
 
 
 void ExampleFile()
 {
   TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = OSEEN_PROBLEM;
-  Output::print<1>("Example: SinCos.h with INTERNAL_PROBLEM_IDENTITY with inscribed physical region", 
+  Output::print<1>("Example: Sin2Sin2.h with INTERNAL_PROBLEM_IDENTITY ",
                    TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY);
 }
 
@@ -16,26 +17,31 @@ void ExampleFile()
 // ========================================================================
 void ExactU1(double x, double y, double *values)
 {
-    values[0] = sin(Pi*x);          //u1
-    values[1] = Pi*cos(Pi*x);       //u1_x
-    values[2] = 0;                  //u1_y
-    values[3] = -Pi*Pi*sin(Pi*x);   //Delta u1=u1_xx+u1_yy
+    values[0] = -2*Pi*cos(Pi*y)*sin(Pi*y)*sin(Pi*x)*sin(Pi*x);                   //u1
+    values[1] = -4*Pi*Pi*cos(Pi*x)*sin(Pi*x)*cos(Pi*y)*sin(Pi*y);                  //u1_x
+    values[2] = -2*Pi*Pi*cos(Pi*y)*cos(Pi*y)*sin(Pi*x)*sin(Pi*x)
+                  +2*Pi*Pi*sin(Pi*y)*sin(Pi*y)*sin(Pi*x)*sin(Pi*x);             //u1_y
+    values[3] = 8*Pi*Pi*Pi*cos(Pi*y)*sin(Pi*y)*sin(Pi*x)*sin(Pi*x)
+                + ( 4*Pi*Pi*Pi*sin(Pi*x)*sin(Pi*x)*cos(Pi*y)*sin(Pi*y)
+                   -4*Pi*Pi*Pi*cos(Pi*x)*cos(Pi*x)*cos(Pi*y)*sin(Pi*y) ) ;      //Delta u1=u1_xx + u1_yy
 }
 
 void ExactU2(double x, double y, double *values)
 {
-    values[0] = -Pi*y*cos(Pi*x);        //u2
-    values[1] = Pi*Pi*y*sin(Pi*x);      //u2_x
-    values[2] = -Pi*cos(Pi*x);          //u2_y
-    values[3] = Pi*Pi*Pi*y*cos(Pi*x);   //Delta u2=u2_xx + u2_yy
+    values[0] = 2*Pi*cos(Pi*x)*sin(Pi*x)*sin(Pi*y)*sin(Pi*y);               //u2
+    values[1] = 2*Pi*Pi*cos(Pi*x)*cos(Pi*x)*sin(Pi*y)*sin(Pi*y)
+                -2*Pi*Pi*sin(Pi*x)*sin(Pi*x)*sin(Pi*y)*sin(Pi*y);           //u2_x
+    values[2] = 4*Pi*Pi*cos(Pi*y)*sin(Pi*y)*cos(Pi*x)*sin(Pi*x);            //u2_y
+    values[3] = -8*Pi*Pi*Pi*cos(Pi*x)*sin(Pi*x)*sin(Pi*y)*sin(Pi*y)
+                +   4*Pi*Pi*Pi*cos(Pi*y)*cos(Pi*y)*cos(Pi*x)*sin(Pi*x)-4*Pi*Pi*Pi*sin(Pi*y)*sin(Pi*y)*cos(Pi*x)*sin(Pi*x);   //Delta u2=u2_xx + u2_yy
 }
 
 void ExactP(double x, double y, double *values)
 {
-  values[0] = sin(Pi*x)*cos(Pi*y);      //p
-  values[1] = Pi*cos(Pi*x)*cos(Pi*y);   //p_x
-  values[2] = -Pi*sin(Pi*x)*sin(Pi*y);  //p_y
-  values[3] = -Pi*Pi*sin(Pi*x)*cos(Pi*y)-Pi*Pi*sin(Pi*x)*cos(Pi*y);     //Delta p=p_xx+p_yy
+  values[0] = -sin(2*Pi*x);                     //p
+  values[1] = -2*Pi*cos(2*Pi*x);                //p_x
+  values[2] = 0;                                //p_y
+  values[3] = 4*Pi*Pi*sin(2*Pi*x)   +    0;     //Delta p=p_xx+p_yy
 }
 
 
@@ -103,11 +109,11 @@ void U1BoundValue(int BdComp, double Param, double &value)
     // loop to impose (strong or weak) Dirichlet
     switch(BdComp)
     {
-        case 0: value=sin(Pi*Param);
+        case 0: value= 0;
             break;
-        case 1: value=0;
+        case 1: value= 0;
             break;
-        case 2: value=sin(Pi*(1-Param));
+        case 2: value= 0;
             break;
         case 3: value= 0;
             break;
@@ -147,20 +153,19 @@ void U2BoundValue(int BdComp, double Param, double &value)
     // loop to impose (strong or weak) Dirichlet
     switch(BdComp)
     {
-        case 0: value=0;
+        case 0: value= 0;
             break;
-        case 1: value=Pi*Param;
+        case 1: value= 0;
             break;
-        case 2: value=-Pi*cos(Pi*(1-Param));
+        case 2: value= 0;
             break;
-        case 3: value= -Pi*(1-Param);
+        case 3: value= 0;
             break;
         default: cout << "No boundary component with this number." << endl;
             break;
     }
 
 }
-
 
 
 
@@ -265,24 +270,33 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  double val1[4];
-  double val2[4];
-  double val3[4];
+    double val1[4];
+    double val2[4];
+    double val3[4];
     
-  for(int i = 0; i < n_points; i++)
-  {
-    coeffs[i][0] = 1./TDatabase::ParamDB->RE_NR;
-    coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
-    coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;  
-    coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+    for(int i = 0; i < n_points; i++)
+    {
+        coeffs[i][0] = 1./TDatabase::ParamDB->RE_NR;
+        coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
+        
+        // effective viscosity unsteady
+        if(X[i]>0.5)
+        {
+            coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+        }
+        else {
+            coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY *10;
+        }
+        
+        coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+        
+        ExactU1(X[i], Y[i], val1);
+        ExactU2(X[i], Y[i], val2);
+        ExactP(X[i], Y[i], val3);
+        
+        coeffs[i][1] = -coeffs[i][5]*val1[3] + val3[1] + (coeffs[i][4]/coeffs[i][6])*val1[0];  // f1
+        coeffs[i][2] = -coeffs[i][5]*val2[3] + val3[2] + (coeffs[i][4]/coeffs[i][6])*val2[0];  // f2
+        coeffs[i][3] = val1[1] + val2[2];                           // g (divergence)
+    }
     
-    ExactU1(X[i], Y[i], val1);
-    ExactU2(X[i], Y[i], val2);
-    ExactP(X[i], Y[i], val3);
-    
-    coeffs[i][1] = -coeffs[i][5]*val1[3] + val3[1] + (coeffs[i][4]/coeffs[i][6])*val1[0];   // f1
-    coeffs[i][2] = -coeffs[i][5]*val2[3] + val3[2] + (coeffs[i][4]/coeffs[i][6])*val2[0];   // f2
-    coeffs[i][3] = val1[1] + val2[2];                                                       // g (divergence)
-  }
-  
 }

@@ -56,10 +56,9 @@ enum LocalAssembling2D_type { ConvDiff,
                               /***** ABOVE THIS LINE, CODE IS SPECIFIC TO USER PROJECT ******/
                               Darcy2D_Galerkin,
                               Brinkman2D_Galerkin1,
-                              Brinkman2D_Galerkin1b,
                               Brinkman2D_Galerkin2,
-                              Brinkman2D_Galerkin1ResidualStab,
-                              Brinkman2D_Galerkin1ResidualStab2,
+                              Brinkman2D_Galerkin1ResidualStabP1,
+                              Brinkman2D_Galerkin1ResidualStabP2,
                               Custom /// Customized local assembling object. To be used with non-standard problems.
 };
 

@@ -33,6 +33,10 @@ namespace flow_around_cylinder_stat
 {
 #include "NSE_3D/FlowAroundCylinder_stat.h"
 }
+namespace poiseuille// 5
+{
+#include "NSE_3D/Poiseuille.h"
+}
 
 //test examples
 namespace test_u_0_p_0 //-1
@@ -51,6 +55,7 @@ namespace test_u_3_p_2 //-4
 {
 #include "NSE_3D/test_u_3_p_2.h"
 }
+
 
 //========================================
 
@@ -209,6 +214,35 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       ExampleFile();
       break;
     }
+      case 5:
+      {
+          /** exact_solution */
+          exact_solution.push_back( poiseuille::ExactU1 );
+          exact_solution.push_back( poiseuille::ExactU2 );
+          exact_solution.push_back( poiseuille::ExactU3 );
+          exact_solution.push_back( poiseuille::ExactP );
+          
+          /* boundary condition */
+          boundary_conditions.push_back( poiseuille::BoundCondition );
+          boundary_conditions.push_back( poiseuille::BoundCondition );
+          boundary_conditions.push_back( poiseuille::BoundCondition );
+          boundary_conditions.push_back( BoundConditionNoBoundCondition );
+          
+          /* boundary values */
+          boundary_data.push_back( poiseuille::U1BoundValue );
+          boundary_data.push_back( poiseuille::U2BoundValue );
+          boundary_data.push_back( poiseuille::U3BoundValue );
+          boundary_data.push_back( BoundaryValueHomogenous );
+          
+          /* coefficients */
+          problem_coefficients = poiseuille::LinCoeffs;
+          
+          /** some variables to change values in the example */
+          poiseuille::DIMENSIONLESS_VISCOSITY = this->get_nu();
+          
+          poiseuille::ExampleFile();
+          break;
+      }
     case -1:
     {
       using namespace test_u_0_p_0;

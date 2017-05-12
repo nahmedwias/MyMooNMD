@@ -39,10 +39,10 @@ int main(int argc, char* argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
 
   TDomain domain(argv[1], parmoon_db);
-  Output::print(" ... writing 3d mesh ... ");
 
-  TCollection *coll = domain.GetCollection(It_Finest, 0);
-  coll->writeMesh("test.mesh");
+  //Output::print(" ... writing 3d mesh ... ");
+  //TCollection *coll = domain.GetCollection(It_Finest, 0);
+  //coll->writeMesh("test.mesh");
   
 
   

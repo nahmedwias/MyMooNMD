@@ -157,6 +157,10 @@ class TParFECommunicator3D
     int GetN_Master() const
     { return Mapper->GetN_Master();}
     
+    /// Returns the number of interface master d.o.f. on this process
+    int get_n_interface_master() const
+    { return Mapper->GetN_InterfaceM();}
+
     /// Return a pointer to the fe space this communicator belongs to.
     const TFESpace3D* get_fe_space() const
     {
