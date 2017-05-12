@@ -1037,15 +1037,15 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   int N_Entries = K.GetN_Entries();
 
 
-#ifdef _MPI
-  // the stiffness matrix need have its columns updated, so that all
-  // master cols are level-2-consistent
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  for(int ps = 0;ps<size;++ps)
-  {
-    update_column_consistency(K, ps, 2);
-  }
-#endif
+//#ifdef _MPI
+//  // the stiffness matrix need have its columns updated, so that all
+//  // master cols are level-2-consistent
+//  MPI_Comm_size(MPI_COMM_WORLD, &size);
+//  for(int ps = 0;ps<size;++ps)
+//  {
+//    update_column_consistency(K, ps, 2);
+//  }
+//#endif
 
 
 
