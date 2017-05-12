@@ -58,20 +58,14 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type)
             break;
             ///////////////////////////////////////////////////////////////////////////
             // Brinkman3D: Brinkman problems
-        case LocalAssembling3D_type::Brinkman3D_Galerkin1:
-            return std::string("Brinkman3D_Galerkin1");
+        case LocalAssembling3D_type::Brinkman3D_Galerkin:
+            return std::string("Brinkman3D_Galerkin");
             break;
-        case LocalAssembling3D_type::Brinkman3D_Galerkin1ResidualStabP1:
-            return std::string("Brinkman3D_Galerkin1ResidualStabP1");
-            break;
-        case LocalAssembling3D_type::Brinkman3D_Galerkin1ResidualStabP2:
-            return std::string("Brinkman3D_Galerkin1ResidualStabP2");
-            break;
-        case LocalAssembling3D_type::ResidualStabP2_for_Brinkman3D_Galerkin1:
-            return std::string("ResidualStabP2_for_Brinkman3D_Galerkin1");
+        case LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1:
+            return std::string("ResidualStabPkPk_for_Brinkman3D_Galerkin1");
             break;
         case LocalAssembling3D_type::GradDivStab_for_Brinkman3D_Galerkin1:
-            return std::string("ResidualStab_for_Brinkman3D_Galerkin1");
+            return std::string("GradDivStab_for_Brinkman3D_Galerkin1");
             break;
         default:
             return std::string();
@@ -103,7 +97,7 @@ FEFunctions3D(fefunctions3d)
     {
     ///////////////////////////////////////////////////////////////////////////
         // Brinkman3D: problems and Brinkman problem
-        case LocalAssembling3D_type::Brinkman3D_Galerkin1:
+        case LocalAssembling3D_type::Brinkman3D_Galerkin:
             switch(TDatabase::ParamDB->NSTYPE)
         {
             case 4:
@@ -143,30 +137,7 @@ FEFunctions3D(fefunctions3d)
         }
             break;
             
-        case LocalAssembling3D_type::Brinkman3D_Galerkin1ResidualStabP1:
-            switch(TDatabase::ParamDB->NSTYPE)
-        {
-            case 14:
-                //Matrix Type 14
-                this->N_Terms = 8;                                                          // = #(Derivatives)
-                this->Derivatives = { D100, D010, D001, D000, D000, D100, D010, D001};      // u_x, u_y, u, p, p_x, p_y
-                this->Needs2ndDerivatives = new bool[2];                                    // usually 2nd derivatives are not needed
-                this->Needs2ndDerivatives[0] = false;
-                this->Needs2ndDerivatives[1] = false;
-                this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1 };                           // 0: velocity space, 1: pressure space
-                this->N_Matrices = 16;                                                      // here some stabilization is allowed in the matrix C
-                // in the lower right corner
-                this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};      //u: A11,A12,A13,A21,A22,A23,A31,A32,A33,C,B1T,B2T,B3T,B1,B2,B3 (here the lying B-Blocks come first)
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1};      //p; (here the standing B-Blocks come first)
-                this->N_Rhs = 4;                                                            // f1, f2, g
-                this->RhsSpace = { 0, 0, 0, 1 };                                            // corresp. to velocity testspace = 0 / pressure = 1
-                this->AssembleParam = Brinkman3DType1GalerkinResidualStabP1;
-                this->Manipulate = NULL;
-                break;
-        }
-            break;
-          
-        case LocalAssembling3D_type::Brinkman3D_Galerkin1ResidualStabP2:
+        case LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1:
             switch(TDatabase::ParamDB->NSTYPE)
         {
             case 14:
@@ -183,31 +154,7 @@ FEFunctions3D(fefunctions3d)
                 this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1};                          //p; (here the standing B-Blocks come first)
                 this->N_Rhs = 4;                                                                                // f1, f2, g
                 this->RhsSpace = { 0, 0, 0, 1 };                                                                // corresp. to velocity testspace = 0 / pressure = 1
-                this->AssembleParam = Brinkman3DType1GalerkinResidualStabP2;
-                this->Manipulate = NULL;
-                break;
-        }
-            break;
-
-            
-        case LocalAssembling3D_type::ResidualStabP2_for_Brinkman3D_Galerkin1:
-            switch(TDatabase::ParamDB->NSTYPE)
-        {
-            case 14:
-                //Matrix Type 14
-                this->N_Terms = 11;                                                                             // = #(Derivatives)
-                this->Derivatives = { D100, D010, D001, D000, D000, D100, D010, D001, D200, D020, D002};        // u_x, u_y, u_z, u, p, p_x, p_y, p_z, u_xx, u_yy, u_zz
-                this->Needs2ndDerivatives = new bool[2];                                                        // usually 2nd derivatives are not needed
-                this->Needs2ndDerivatives[0] = true;
-                this->Needs2ndDerivatives[1] = true;
-                this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 };                                      // 0: velocity space, 1: pressure space
-                this->N_Matrices = 16;                                                                          // here some stabilization is allowed in the matrix C
-                // in the lower right corner
-                this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};                          //u: A11,A12,A13,A21,A22,A23,A31,A32,A33,C,B1T,B2T,B3T,B1,B2,B3 (here the lying B-Blocks come first)
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1};                          //p; (here the standing B-Blocks come first)
-                this->N_Rhs = 4;                                                                                // f1, f2, g
-                this->RhsSpace = { 0, 0, 0, 1 };                                                                // corresp. to velocity testspace = 0 / pressure = 1
-                this->AssembleParam = ResidualStabP2_for_Brinkman3DType1Galerkin;
+                this->AssembleParam = ResidualStabPkPk_for_Brinkman3DType1Galerkin;
                 this->Manipulate = NULL;
                 break;
         }
