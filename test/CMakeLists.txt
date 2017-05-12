@@ -276,13 +276,6 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   add_test(NAME mumps_1_mpi COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_mumps_1_mpi )
   list(APPEND parmoon_tests ParMooN_test_mumps_1_mpi)
   
-
-  ## 1st mumps solver test mpi (run with 2 processes)
-  #add_executable(ParMooN_test_mumps_1_mpi mumps_test_1.c++)
-  #target_link_libraries(ParMooN_test_mumps_1_mpi ${_EXTERN_LIBRARIES})
-  #add_test(NAME mumps_1_mpi COMMAND mpirun -n 2 ParMooN_test_mumps_1_mpi )
-  #list(APPEND parmoon_tests ParMooN_test_mumps_1_mpi)
-  
   # 2nd mumps solver test mpi (run with 4 processes)
   add_executable(ParMooN_test_mumps_2_mpi mumps_test_2.c++)
   target_link_libraries(ParMooN_test_mumps_2_mpi ${_EXTERN_LIBRARIES})
