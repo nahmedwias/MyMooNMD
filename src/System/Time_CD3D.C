@@ -95,10 +95,10 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
   if(!usingMultigrid)
   {
     // check at least if the collections list contains exactly one collection
-    if(collections.size() != 1)
-    {
-      ErrThrow("Non-multigrid: expected exactly one collection");
-    }
+//    if(collections.size() != 1)
+//    {
+//      ErrThrow("Non-multigrid: expected exactly one collection");
+//    }
     // the given collection for particular cell
     TCollection& cellCollection = *collections.front();
 #ifdef _MPI

@@ -2,7 +2,7 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 0
+refinement_n_initial_steps: 3
 space_discretization_type: galerkin { galerkin, supg, smagorinsky, vms_projection }
 TURBULENT_VISCOSITY_CONSTANT: 0.
 vms_projection_space_order: 0
@@ -27,14 +27,14 @@ P9: 0.
 ########################## Fixed Parameters 
 #boundary_file: Default_UnitCube
 #geo_file: Default_UnitCube_Hexa   { Default_UnitCube_Hexa, Default_UnitCube_Tetra }
-#boundary_file: ../mesh/ladle_3D/Circle2.PRM
-boundary_file: ../mesh/ladle_3D/Circle_r03.PRM
+boundary_file: ../mesh/ladle_3D/Circle2.PRM
+#boundary_file: ../mesh/ladle_3D/Circle_r03.PRM
 #geo_file: ../mesh/ladle_3D/circle_ladle.GEO
-#geo_file: ../mesh/ladle_3D/Circle2.GEO
+geo_file: ../mesh/ladle_3D/Circle2.GEO
 #geo_file: ../mesh/ladle_3D/circle_368quads.mesh
-geo_file: ../mesh/ladle_3D/circle_574quads_r005.mesh
-N_CELL_LAYERS: 8
-DRIFT_Z: 0.6
+#geo_file: ../mesh/ladle_3D/circle_574quads_r005.mesh
+N_CELL_LAYERS: 2
+DRIFT_Z: 2.5
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
@@ -53,7 +53,7 @@ nonlinloop_slowfactor: 1   [ 0, 10 ]
 nonlinloop_scale_epsilon_with_size: false   { true, false }
 
 solver_type: iterative   { direct, iterative }
-direct_solver_type: umfpack   { mumps, pardiso, umfpack }
+direct_solver_type: mumps   { mumps, pardiso, umfpack }
 iterative_solver_type: fgmres   { bi_cgstab, cg, cgs, fgmres, jacobi, left_gmres, richardson, right_gmres, sor, ssor }
 max_n_iterations: 100   { 0, 1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000 }
 min_n_iterations: 1   { 0, 1, 2, 3, 4, 5, 10 }
@@ -61,15 +61,15 @@ residual_tolerance: 8.0e-9   [ 0, 100 ]
 residual_reduction: 0.1   [ 0, 1 ]
 gmres_restart: 20   [ 1, 1000 ]
 
-preconditioner: least_squares_commutator   { least_squares_commutator, least_squares_commutator_boundary, multigrid, no_preconditioner, semi_implicit_method_for_pressure_linked_equations }
+preconditioner: multigrid   { least_squares_commutator, jacobi, least_squares_commutator_boundary, multigrid, no_preconditioner, semi_implicit_method_for_pressure_linked_equations }
 multigrid_type: standard {standard, mdml}.
 saddle_point_preconditioner_direct_velocity_solve: false   { true, false }
 damping_factor: 0.8   [ 0, 1 ] 
 multigrid_n_levels: 2   [ 0, 5 ]
 damping_factor_finest_grid: 0.8   [ 0, 1 ]
-multigrid_cycle_type: F   { F, V, W }
-multigrid_smoother: nodal_vanka   { batch_vanka, cell_vanka, no_smoother, nodal_vanka, cell_vanka_jacobi }
-multigrid_smoother_coarse: direct_solve   { batch_vanka, cell_vanka, direct_solve, no_smoother, nodal_vanka, cell_vanka_jacobi }
+multigrid_cycle_type: V   { F, V, W }
+multigrid_smoother: cell_vanka   { batch_vanka, cell_vanka, no_smoother, nodal_vanka, cell_vanka_jacobi }
+multigrid_smoother_coarse: cell_vanka   { batch_vanka, cell_vanka, direct_solve, no_smoother, nodal_vanka, cell_vanka_jacobi }
 multigrid_correction_damp_factor: 0.8   [ 0, 1 ]
 multigrid_n_pre_smooth: 2   [ 1, 10 ]
 multigrid_n_post_smooth: 2   [ 1, 10 ]
