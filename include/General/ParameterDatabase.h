@@ -186,7 +186,7 @@ class ParameterDatabase
     /// or consist of anything but a colon (':'). If you want to document the
     /// Parameters in your input stream, but don't want that to be read, use 
     /// two '#' instead of just one. This is how the default documentation in
-    /// ParMooN can be kept inside the Parameter objects.the set of all parameters stored in this parameter database
+    /// ParMooN can be kept inside the Parameter objects.
     ///
     /// If the input stream `is` is read until the end (this happens if there is
     /// no second name found), the `operator bool()` on `is` will return false.

@@ -4,13 +4,23 @@
  *  Created on: Mar 13, 2017
  *      Author: rominger
  */
+#ifdef _MPI
 
-#include <Read_write_metis.h>
+#include <Domain.h>
+#include <MeshPartitionInOut.h>
+#include <MooNMD_Io.h>
 
-void ReadWriteMetis::readFile (TDomain *Domain,int size, int N_Cells, idx_t *Cell_Rank)
+#include "mpi.h"
+
+
+
+void MeshPartitionInOut::read_file (const TDomain& Domain,int size,
+                                    int N_Cells, idx_t *Cell_Rank)
 {
-	Domain->get_database()["read_metis"].info();
-    std::string file_name = Domain->get_database()["read_metis_file"];
+    std::string file_name = Domain.get_database()["read_metis_file"];
+
+    Output::info("PARTITIONING", "Reading mesh partition information "
+         "from file ",file_name);
 
 	  std::ifstream ifs; //Deklarieren von ifs zum Oeffnen der Textdatei
 	  ifs.open(file_name); //Textdatei wird geoeffnet
@@ -22,7 +32,11 @@ void ReadWriteMetis::readFile (TDomain *Domain,int size, int N_Cells, idx_t *Cel
 		      {
 		    	  if(l==0)//we expect this line to hold "ParMooN Mesh Partition File"
 		    	  {
-		    		  if (line!="ParMooN Mesh Partition File"){throw std::runtime_error("The first line of the written-file does not match.");}
+		    		  if (line!="ParMooN Mesh Partition File")
+		    		  {
+		    		    throw std::runtime_error("The first line of the "
+		    		        "written-file does not match.");
+		    		  }
 		    		  ++l;
 		    		  continue;
 		    	  }
@@ -42,7 +56,9 @@ void ReadWriteMetis::readFile (TDomain *Domain,int size, int N_Cells, idx_t *Cel
 		    			  total_partition_number=std::stoi(number_partition);
 		    			  if (total_partition_number != size)
 		    			  {
-		    				  throw std::runtime_error("The total number of partitions of the written file does not match the total number of partitions that is used");
+		    				  throw std::runtime_error("The total number of partitions of "
+		    				      "the written file does not match the total number of "
+		    				      "partitions that is used");
 		    			  }
 		    		  }
 		    		  catch (std::exception& e)
@@ -55,7 +71,9 @@ void ReadWriteMetis::readFile (TDomain *Domain,int size, int N_Cells, idx_t *Cel
 		    			  total_number_of_cells=std::stoi(number_cells);
 		    			  if (total_number_of_cells!=N_Cells)
 		    			  {
-		    				  throw std::runtime_error("The total number of cells of the written file does not match the total number of cells that are used.");
+		    				  throw std::runtime_error("The total number of cells of the "
+		    				      "written file does not match the total number of "
+		    				      "cells that are used.");
 		    			  }
 		    		  }
 		    		  catch (std::exception& e)
@@ -84,7 +102,8 @@ void ReadWriteMetis::readFile (TDomain *Domain,int size, int N_Cells, idx_t *Cel
 		    		  		  Rank_Number=std::stoi(Rank);
 		    		  		  if (Rank_Number >= size)
 		    		  		  {
-		    		  			  ErrThrow("****************************************The input file contains a rank greater than mpi_size.");
+		    		  			  ErrThrow("****************************************"
+		    		  			      "The input file contains a rank greater than mpi_size.");
 		    		  		  }
 		    		  	  }
 		    		  	  catch (std::exception& e)
@@ -98,7 +117,10 @@ void ReadWriteMetis::readFile (TDomain *Domain,int size, int N_Cells, idx_t *Cel
 		    		  		  Cellnumber=std::stoi(Cell);
 		    		  		  if (Cellnumber>=N_Cells)
 		    		  		  {
-		    		  			ErrThrow("****************************************The input file contains a cell number greater than the maximal cell number. Additionally the cell number does not match to the used line number l-2.");
+		    		  		    ErrThrow("****************************************"
+		    		  			    "The input file contains a cell number greater than the "
+		    		  			    "maximal cell number. Additionally the cell number does "
+		    		  			    "not match to the used line number l-2.");
 		    		  		  }
 		    		  	  }
 		    		  	  catch (std::exception& e)
@@ -108,13 +130,21 @@ void ReadWriteMetis::readFile (TDomain *Domain,int size, int N_Cells, idx_t *Cel
 		    		  	  Cell_Rank[l-2]=Rank_Number;
 		    			 //cout<<"The "<<l-2<<" entry of the CellRank is: "<< Cell_Rank[l-2]<<endl;
 
-		    			  if (l>N_Cells+1){ErrThrow("****************************************The file has more lines than it should.");}
+		    			  if (l>N_Cells+1)
+		    			  {
+		    			    ErrThrow("****************************************"
+		    			      "The file has more lines than it should.");
+		    			  }
 		    			  ++l;
 		    		  }
 		    	  }
 
 		      }
-		      if (l-2!=N_Cells){ErrThrow("****************************************The file has less lines than it should.");}
+		      if (l-2!=N_Cells)
+		      {
+		        ErrThrow("****************************************"
+		            "The file has less lines than it should.");
+		      }
 	      }
 	  else
 	  {
@@ -122,15 +152,23 @@ void ReadWriteMetis::readFile (TDomain *Domain,int size, int N_Cells, idx_t *Cel
 	  }
 
 }
-void ReadWriteMetis::writeFile(TDomain *Domain,int size, int N_Cells, idx_t *Cell_Rank)
+void MeshPartitionInOut::write_file(const TDomain& Domain, int size,
+                                    int N_Cells, idx_t *Cell_Rank)
 {
-	  std::string file_name = Domain->get_database()["write_metis_file"];
+	  std::string file_name = Domain.get_database()["write_metis_file"];
+
+    Output::info("MeshPartitionInOut", "Writing mesh partition information "
+        "to file ",file_name);
+
 	  std::ofstream ofs (file_name); //Create write-txt-file
 	  ofs << "ParMooN Mesh Partition File\n" << "N_Cells: "<< N_Cells << " ,N_Processors: " << size <<"\n";
 
 	  for(int i =0; i < N_Cells ; i++) // Loop cell entries of cell rank
 	  {
-	  ofs <<"Cell "<< i<< " ,Rank "<< Cell_Rank[i] <<endl; //Write entries of each Cell of Cell_Rank in seperate line in txt-file
+	    //Write entries of each Cell of Cell_Rank in seperate line in txt-file
+	    ofs <<"Cell "<< i<< " ,Rank "<< Cell_Rank[i] <<endl;
 	  }
 	  ofs.close(); //closes write in file
 	}
+
+#endif

@@ -92,25 +92,22 @@ ParameterDatabase get_default_domain_parameters()
          "This files describes the computational mesh. Typically this files"
          " has the extension 'mesh, 'smesh', 'node' or 'poly'. "
          " currently only the smesh files are supported");
-//Start Marvin
-#ifdef __3D__
-   db.add("read_metis", false , "read metis");
 
-   db.add("read_metis_file", std::string("mesh_file.txt"), "The Mesh-file will be read here.");
+#ifdef _MPI
+   db.add("read_metis", false , "If true, the domain decomposition will be "
+       "done as specified in the file given in the parameter 'read_metis_file'.");
 
-   db.add("write_metis", false , "write metis");
+   db.add("read_metis_file", std::string("mesh_file.txt"), "Read the domain "
+          "decomposition from this file, if 'read_metis' is true.");
 
-   db.add("write_metis_file", std::string("mesh_file.txt"), "The 'Mesh-file' will be written here.");
+   db.add("write_metis", false , "If true, the domain decomposition will be "
+       "written to a text file given in the parameter 'write_metis_file'.");
 
+   db.add("write_metis_file", std::string("mesh_file.txt"), "Write the domain "
+       "decomposition to this file, if 'write_metis' is true.");
+#endif
 
-
-
-   // todo Marvin
-   // add parameters: read_metis(type bool), read_metis_file(type std::string)
-   //                 write_metis(type bool), write_metis_file(type std::string)
-#endif // __3D__
   return db;
-  //End Marvin
 }
 
 // Constructor
@@ -3897,10 +3894,8 @@ void determine_n_refinement_steps_multigrid(
 #endif
   }
 }
-const ParameterDatabase& TDomain::get_database() const
-{
-  return this->db;
-}
+
+
 std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
     const ParameterDatabase& parmoon_db
 #ifdef _MPI
@@ -3942,21 +3937,6 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   // 2nd step: Call the mesh partitioning.
 
   int maxCellsPerVertex;
-
-  // todo Marvin
-  // the function "Partition_Mesh3D" needs the relevant parameters
-  // (read_metis, ...) in order to know whether it should read and/or
-  // write the mesh partition from an external source. You best do this
-  // by implementing a new method in Domain.C, which returns a constant reference
-  // to the database object ("const ParameterDatabase& TDomain::get_database() const;").
-  // Then the function Partition_Mesh3D can ask the TDomain for its database
-  // and look up the relevant parameters therein.
-
-
-  //Start Marvin
-  //Implement/define New method
-  this->db["read_metis"].info();
-  //End Marvin
 
   //do the actual partitioning, and examine the return value
   if ( Partition_Mesh3D(MPI_COMM_WORLD, this, maxCellsPerVertex) == 1)
