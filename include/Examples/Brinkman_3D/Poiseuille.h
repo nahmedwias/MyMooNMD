@@ -180,8 +180,8 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
         //coeff[3] = -coeff[6]*(-4)- DP/Length +(coeff[5]/coeff[7])*(1-(Y[i]*Y[i]+X[i]*X[i])); // 0; // f3
         coeff[3] = 0;//-coeff[6]*(-4)- DP/3 +(coeff[5]/coeff[7])*(1-(Y[i]*Y[i]+X[i]*X[i])); // 0; // f3
         coeff[4] = 0; // g
-        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
-        coeff[9]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+        coeff[9]=TDatabase::ParamDB->equal_order_stab_weight_PkPk;
     }
  
 }

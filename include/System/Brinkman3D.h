@@ -201,8 +201,8 @@ public:
     Brinkman3D(const TDomain& domain,
                const ParameterDatabase& param_db,
                const Example_Brinkman3D& example,
-               int reference_id = -4711,
-               int maxSubDomainPerDof);
+               int maxSubDomainPerDof,
+               int reference_id = -4711);
 #else
     Brinkman3D(const TDomain& domain,
                const ParameterDatabase& param_db,

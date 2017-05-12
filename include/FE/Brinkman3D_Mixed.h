@@ -83,7 +83,7 @@ void Brinkman3DType1GalerkinResidualStabP2(double Mult, double *coeff,
 
 
 
-void ResidualStabP2_for_Brinkman3DType1Galerkin(double Mult, double *coeff,
+void ResidualStabPkPk_for_Brinkman3DType1Galerkin(double Mult, double *coeff,
                                                 double *param, double hK,
                                                 double **OrigValues, int *N_BaseFuncts,
                                                 double ***LocMatrices, double **LocRhs);

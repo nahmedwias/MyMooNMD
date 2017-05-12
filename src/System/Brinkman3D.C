@@ -29,15 +29,7 @@ ParameterDatabase get_default_Brinkman3D_parameters()
     ParameterDatabase out_db = ParameterDatabase::default_output_database();
     db.merge(out_db, true);
     
-    db.add("P1P1_stab", false,
-           "Use an assembling routine corresponding to a residual-based "
-           "equal-order stabilization for the Brinkman problem."
-           "This only works in two space "
-           "dimensions and is meaningfull for the finite elemnt space P1/P1 only."
-           "Usually this is used in the main program.",
-           {true,false});
-    
-    db.add("P2P2_stab", false,
+    db.add("Pk/Pk_stab", false,
            "Use an assembling routine corresponding to a residual-based "
            "equal-order stabilization for the Brinkman problem."
            "This only works in two space "
@@ -45,7 +37,7 @@ ParameterDatabase get_default_Brinkman3D_parameters()
            "Usually this is used in the main program.",
            {true,false});
     
-        db.add("equal_order_stab_weight_P1P1", 0,
+        db.add("equal_order_stab_weight_Pk/Pk", 0,
                "Use an assembling routine corresponding to a residual-based "
                "equal-order stabilization for the Brinkman problem."
                "This only works in two space "
@@ -61,10 +53,11 @@ ParameterDatabase get_default_Brinkman3D_parameters()
 Brinkman3D::System_per_grid::System_per_grid (const Example_Brinkman3D& example,
                                               TCollection& coll,
                                               std::pair<int,int> velocity_pressure_orders,
-                                              Brinkman3D::Matrix type)
+                                              Brinkman3D::Matrix type
 #ifdef _MPI
 , int maxSubDomainPerDof
 #endif
+)
 : velocity_space(&coll, (char*)"u", (char*)"Brinkman3D velocity", example.get_bc(0), //bd cond at 0 is x velo bc
                  velocity_pressure_orders.first),
 pressure_space(&coll, (char*)"p", (char*)"Brinkman3D pressure", example.get_bc(3), //bd condition at 3 is pressure bc
@@ -339,21 +332,6 @@ void Brinkman3D::assemble()
         
         size_t N_FESpaces = 2; // spaces used for assembling matrices
         
-        
-        
-//                if (db["P2P2_stab"].is(true))
-//                {type=Brinkman3D_Galerkin1ResidualStabP2;
-//                Output::print<>("P2P2 Stabilization");}
-//                else
-//                    if (db["P1P1_stab"].is(true))
-//                { type = Brinkman3D_Galerkin1ResidualStabP1;
-//                    Output::print<>("P1P1 Stabilization");}
-//                else
-//                { type = Brinkman3D_Galerkin1;}
-//        
-//                LocalAssembling3D la(type, fe_functions,
-//                                     this->example.get_coeffs());
-        
         std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
         
         size_t n_sq_mat,n_rect_mat,N_Rhs;
@@ -452,36 +430,13 @@ void Brinkman3D::assemble()
         
         
         LocalAssembling3D_type type;
-//        if (db["P1P1_stab"].is(true))
-//        {
-//            if (TDatabase::ParamDB->NSTYPE == 14)
-//            {
-//                type = LocalAssembling3D_type::Brinkman3D_Galerkin1ResidualStabP1;
-//                Output::print<>("P1P1 Stabilization");
-//            }
-//            else
-//                ErrThrow("WARNING: Matrix is not initialized in the right format. For stabilized P1/P1, NSTYPE 14 should be chosen - the matrix block C is needed.");
-//        }
-//        else if (db["P2P2_stab"].is(true))
-//        {
-//            if (TDatabase::ParamDB->NSTYPE == 14)
-//            {
-//                type = LocalAssembling3D_type::Brinkman3D_Galerkin1ResidualStabP2;
-//                Output::print<>("P2P2 Stabilization");
-//            }
-//            else
-//                ErrThrow("WARNING: Matrix is not initialized in the right format. For stabilized P2/P2, NSTYPE 14 should be chosen - the matrix block C is needed.");
-//        }
-//        else
-//        {
-        
         
         if (TDatabase::ParamDB->NSTYPE != 14 && TDatabase::ParamDB->NSTYPE !=4)
         {
             ErrThrow("WARNING: Matrix is not initialized in the right format. For standard Galerkin applied to the Brinkman problem, NSTYPE 4 or NSTYPE 14 has to be chosen.");
         }
         else
-            type = LocalAssembling3D_type::Brinkman3D_Galerkin1;
+            type = LocalAssembling3D_type::Brinkman3D_Galerkin;
         //        }
         
         // local assembling object
@@ -507,40 +462,46 @@ void Brinkman3D::assemble()
         rect_matrices[4]->write("b2t.out");
         rect_matrices[5]->write("b3t.out");
         
-        //%%%% Test anfang
-        if (db["P2P2_stab"].is(true))
+//----- Stabilizations
+        if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE==TDatabase::ParamDB->PRESSURE_SPACE)
         {
             if (TDatabase::ParamDB->NSTYPE == 14)
-            { type = LocalAssembling3D_type::ResidualStabP2_for_Brinkman3D_Galerkin1;
-                Output::print<>("P2P2 Stabilization");
+            { type = LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1;
+                if (TDatabase::ParamDB->VELOCITY_SPACE==1)
+                    Output::print<>("P1/P1 Stabilization");
+                else if (TDatabase::ParamDB->VELOCITY_SPACE==2)
+                    Output::print<>("P2/P2 Stabilization");
+                else ErrThrow("WARNING: You have switched on Pk/Pk-stabilization, but therefore velocity space order and pressure space order should be either 1 or 2.");
+                
+                // local assembling object
+                const LocalAssembling3D la2(type,
+                                            feFunction.data(),
+                                            example.get_coeffs());
+                
+                // assemble now the matrices and right hand side
+                Assemble3D(N_FESpaces, fespmat,
+                           n_sq_mat, sq_matrices,
+                           n_rect_mat, rect_matrices,
+                           N_Rhs, RHSs.data(), fesprhs,
+                           boundary_conditions,  non_const_bound_values.data(), la2);
+                
+                sq_matrices[0]->write("a11stab.out");
+                sq_matrices[4]->write("a22stab.out");
+                sq_matrices[8]->write("a33stab.out");
+                
+                rect_matrices[0]->write("b1stab.out");
+                rect_matrices[1]->write("b2stab.out");
+                rect_matrices[2]->write("b3stab.out");
+                rect_matrices[3]->write("b1tstab.out");
+                rect_matrices[4]->write("b2tstab.out");
+                rect_matrices[5]->write("b3tstab.out");
             }
-            else
-                ErrThrow("WARNING: Matrix is not initialized in the right format. For stabilized P2/P2, NSTYPE 14 should be chosen - the matrix block C is needed.");
+            else ErrThrow("WARNING: You have switched on Pk/Pk-stabilization, but therefore NSTYPE 14 has to be chosen - the matrix block C is needed.");
         }
+        else if(db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE != TDatabase::ParamDB->PRESSURE_SPACE)
+            ErrThrow("WARNING: You have switched on Pk/Pk-stabilization, but therefore velocity space order and pressure space order should be equal.");
         
-        // local assembling object
-        const LocalAssembling3D la2(type,
-                                   feFunction.data(),
-                                   example.get_coeffs());
-        // assemble now the matrices and right hand side
-        Assemble3D(N_FESpaces, fespmat,
-                   n_sq_mat, sq_matrices,
-                   n_rect_mat, rect_matrices,
-                   N_Rhs, RHSs.data(), fesprhs,
-                   boundary_conditions,  non_const_bound_values.data(), la2);
-        
-        sq_matrices[0]->write("a11stab.out");
-        sq_matrices[4]->write("a22stab.out");
-        sq_matrices[8]->write("a33stab.out");
-        
-        rect_matrices[0]->write("b1stab.out");
-        rect_matrices[1]->write("b2stab.out");
-        rect_matrices[2]->write("b3stab.out");
-        rect_matrices[3]->write("b1tstab.out");
-        rect_matrices[4]->write("b2tstab.out");
-        rect_matrices[5]->write("b3tstab.out");
-        
-        //%%%%%%%% Test ende
+//-------
         
         //delete the temorary feFunctions gained by GetComponent
         for(int i = 0; i<3; ++i)
@@ -564,10 +525,10 @@ void Brinkman3D::assemble()
         double *u2 = this->systems.front().solution.block(1);
         double *u3 = this->systems.front().solution.block(2);
         double *p  = this->systems.front().solution.block(3);
-        this->systems.front().velocitySpace.get_communicator().consistency_update(u1, 3);
-        this->systems.front().velocitySpace.get_communicator().consistency_update(u2, 3);
-        this->systems.front().velocitySpace.get_communicator().consistency_update(u3, 3);
-        this->systems.front().pressureSpace.get_communicator().consistency_update(p, 3);
+        this->systems.front().velocity_space.get_communicator().consistency_update(u1, 3);
+        this->systems.front().velocity_space.get_communicator().consistency_update(u2, 3);
+        this->systems.front().velocity_space.get_communicator().consistency_update(u3, 3);
+        this->systems.front().pressure_space.get_communicator().consistency_update(p, 3);
 #endif
         
         
@@ -767,10 +728,10 @@ void Brinkman3D::solve()
     if(this->solver.get_db()["solver_type"].is("direct"))
     {
         //set up a MUMPS wrapper
-        MumpsWrapper mumps_wrapper(s.matrix_);
+        MumpsWrapper mumps_wrapper(s.matrix);
         
         //kick off the solving process
-        mumps_wrapper.solve(s.rhs_, s.solution_);
+        mumps_wrapper.solve(s.rhs, s.solution);
     }
     else
         this->solver.solve(s.matrix, s.rhs, s.solution); // same as sequential
