@@ -175,9 +175,9 @@ class Darcy2D
     
     /** @brief assemble matrix, 
      * 
-     * depending on 'TDatabase::ParamDB->DISCTYPE' different (local) assembling 
-     * routines are used. Also in case of multigrid the matrices on all grids are
-     * assembled.
+     * depending on 'this->db["space_discretization_type]' different (local)
+     * assembling routines are used. Also in case of multigrid the matrices
+     * on all grids are assembled.
      */
     void assemble();
     

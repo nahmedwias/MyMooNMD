@@ -222,9 +222,6 @@ class Time_NSE3D
     int current_step_;
 
 // ======================================================================
-    /** @brief This function interpolates the initial solution. */
-    void interpolate();
-
     /** @brief check parameters in database
     *
     * This functions checks if the parameters in the database are meaningful.

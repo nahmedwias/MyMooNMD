@@ -74,8 +74,8 @@ int main(int argc, char* argv[])
       Database.WriteParamDB(argv[0]);
     }
 
-    // Do the old parameter check of the Database.
-    Database.CheckParameterConsistencyNSE();
+    // Do the parameter check of the Database.
+    check_parameters_consistency_NSE(parmoon_db);
 
     // Intial refinement and grabbing of grids for multigrid.
 #ifdef _MPI

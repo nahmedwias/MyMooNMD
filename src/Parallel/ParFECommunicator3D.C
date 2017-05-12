@@ -30,8 +30,6 @@
 #define HALOCELL 0
 #define NONHALO  1
 
-extern double timeC;
-
 TParFECommunicator3D::TParFECommunicator3D(TParFEMapper3D *mapper)
 {
   Mapper = mapper;
@@ -313,9 +311,6 @@ void TParFECommunicator3D::update_from_additive_to_consistent_storage(
 
 void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
 {
-
-  double t1,t2;
-  t1=MPI_Wtime();
   
   int i,j,k,rank,size;
 //  MPI_Status status;
@@ -395,8 +390,6 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
     }
   }
   
-  t2=MPI_Wtime(); 
-  timeC+=(t2-t1);
 }
 
 int TParFECommunicator3D::dof_ping(size_t process, size_t dof) const
@@ -535,8 +528,6 @@ int TParFECommunicator3D::dof_ping(size_t process, size_t dof) const
 void TParFECommunicator3D::CommUpdateMS(double *sol) const
 {
   int i,j,k;
-  double t1,t2;
-  t1=MPI_Wtime();
 
   for(i=0;i<N_SendDofMS;i++)
   {
@@ -558,15 +549,11 @@ void TParFECommunicator3D::CommUpdateMS(double *sol) const
     }
   }
 
-  t2=MPI_Wtime();
-  timeC+=(t2-t1);
 }
 
 void TParFECommunicator3D::CommUpdateH1(double *sol) const
 {
   int i,j,k;
-  double t1,t2;
-  t1=MPI_Wtime();
 
   for(i=0;i<N_SendDofH1;i++)
   {
@@ -590,16 +577,11 @@ void TParFECommunicator3D::CommUpdateH1(double *sol) const
       sol[DofRecvH1[i]+j*N_Dof] = Recv_InfoH1[k];
     }
   }
-
-  t2=MPI_Wtime();
-  timeC+=(t2-t1);
 }
 
 void TParFECommunicator3D::CommUpdateH2(double *sol) const
 {
   int i,j,k;
-  double t1,t2;
-  t1=MPI_Wtime();
 
   for(i=0;i<N_SendDofH2;i++)
   {
@@ -620,9 +602,6 @@ void TParFECommunicator3D::CommUpdateH2(double *sol) const
       sol[DofRecvH2[i]+j*N_Dof] = Recv_InfoH2[k];
     }
   }
-
-  t2=MPI_Wtime();
-  timeC+=(t2-t1);
 }
 
 

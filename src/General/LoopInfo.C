@@ -9,7 +9,8 @@
 
 LoopInfo::LoopInfo(std::string name)
  : name(name), initial_residual(std::numeric_limits<double>::max()),
-   old_residual(std::numeric_limits<double>::max()), timer()
+   old_residual(std::numeric_limits<double>::max()), timer(),
+   n_previous_iterations(0)
 {
 
 }
@@ -76,6 +77,7 @@ void LoopInfo::print(unsigned int loop_index, double current_residual)
 
 void LoopInfo::finish(unsigned int loop_index, double current_residual)
 {
+  this->n_previous_iterations += loop_index;
 #ifdef _MPI
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -100,6 +102,10 @@ void LoopInfo::finish(unsigned int loop_index, double current_residual)
       << timer.elapsed_time()
       << "  t[s]/step: " << setprecision(4) << setw(9)
       << this->timer.elapsed_time()/loop_index;
+  }
+  if(loop_index != this->n_previous_iterations)
+  {
+    s << "  total iterations: " << setw(3) <<this-> n_previous_iterations;
   }
   if(my_rank == 0)
     Output::print<1>(s.str());
