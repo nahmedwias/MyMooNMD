@@ -493,6 +493,50 @@ void TDomain::UnitSquare()
 
 }
 
+void TDomain::DrivenCavitySquareQuads()
+{
+  TVertex *v[4];
+  TBoundEdge *b[4];
+
+  v[0] = new TVertex(-1.0, -1.0);
+  v[1] = new TVertex(1.0, -1.0);
+  v[2] = new TVertex(1.0, 1.0);
+  v[3] = new TVertex(-1.0, 1.0);
+
+  b[0] = new TBoundEdge(BdParts[0]->GetBdComp(0), 0.0, 1.0);
+  b[1] = new TBoundEdge(BdParts[0]->GetBdComp(1), 0.0, 1.0);
+  b[2] = new TBoundEdge(BdParts[0]->GetBdComp(2), 0.0, 1.0);
+  b[3] = new TBoundEdge(BdParts[0]->GetBdComp(3), 0.0, 1.0);
+
+  CellTree = new TBaseCell*[1];
+  N_InitVCells = 1;
+  N_RootCells = 1;
+
+  SetBoundBox(1, 1);
+
+  TDatabase::IteratorDB[It_EQ]->SetParam(this);
+  TDatabase::IteratorDB[It_LE]->SetParam(this);
+  TDatabase::IteratorDB[It_Finest]->SetParam(this);
+  TDatabase::IteratorDB[It_Between]->SetParam(this);
+  TDatabase::IteratorDB[It_OCAF]->SetParam(this);
+
+  CellTree[0] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      QuadReg], RefLevel);
+
+  CellTree[0]->SetClipBoard(Refinement);
+
+  CellTree[0]->SetVertex(0, v[0]);
+  CellTree[0]->SetVertex(1, v[1]);
+  CellTree[0]->SetVertex(2, v[2]);
+  CellTree[0]->SetVertex(3, v[3]);
+
+  CellTree[0]->SetJoint(0, b[0]);
+  CellTree[0]->SetJoint(1, b[1]);
+  CellTree[0]->SetJoint(2, b[2]);
+  CellTree[0]->SetJoint(3, b[3]);
+
+}
+
 void TDomain::UnitSquareRef()
 {
   TVertex *v[4];
@@ -1603,6 +1647,41 @@ void TDomain::initializeDefaultUnitSquareBdry()
   bdryStream << "-1.000000E+0000    0.000000E+0000 \n";
   bdryStream << "0.000000E+0000    1.000000E+0000 \n";
   bdryStream << "0.000000E+0000   -1.000000E+0000 \n";
+
+  //call the readin method
+  int flag; //(used in 3D only, but expected in 2D, too)
+  ReadBdParam( bdryStream, flag );
+
+}
+
+void TDomain::initializeDrivenCavitySquareBdry()
+{
+  OutPut("Loading default domain description: DrivenCavitySquare." << endl);
+
+  //create an i/o string stream
+  std::stringstream bdryStream;
+
+  //...and fill it with input in .PRM-format
+  bdryStream << "NBCT \n";
+  bdryStream << "  1 \n";
+  bdryStream << "IBCT \n";
+  bdryStream << "1 \n";
+  bdryStream << "NCOMP \n";
+  bdryStream << "4 \n";
+  bdryStream << "ITYP NSPLINE NPAR \n";
+  bdryStream << "1     1     2 \n";
+  bdryStream << "1     1     2 \n";
+  bdryStream << "1     1     2 \n";
+  bdryStream << "1     1     2 \n";
+  bdryStream << "PARAMETERS \n";
+  bdryStream << "-1.000000E+0000    -1.000000E+0000 \n";
+  bdryStream << "2.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    -1.000000E+0000 \n";
+  bdryStream << " 0.000000E+0000    2.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    1.000000E+0000 \n";
+  bdryStream << "-2.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "-1.000000E+0000    1.000000E+0000 \n";
+  bdryStream << "0.000000E+0000   -2.000000E+0000 \n";
 
   //call the readin method
   int flag; //(used in 3D only, but expected in 2D, too)

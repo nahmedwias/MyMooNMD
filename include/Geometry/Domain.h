@@ -484,6 +484,7 @@ class TDomain
       void TestShishkin();
       void TriangleShishkin();
       void UnitSquare();
+      void DrivenCavitySquareQuads();
       void UnitSquareRef();
       void TwoTriangles();
       void TwoTrianglesRef();
@@ -512,6 +513,10 @@ class TDomain
        * independent of the path from working directory to "data" directory.
        */
       void initializeDefaultUnitSquareBdry();
+
+      /** Boundary for a square stretching between (-1,-1) and (1,1),
+       *  as needed for the driven cavity example.*/
+      void initializeDrivenCavitySquareBdry();
 
     #else
       void TestGrid3D();
