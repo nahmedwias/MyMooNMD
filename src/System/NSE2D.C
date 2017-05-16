@@ -592,7 +592,11 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
   double normOfResidual = this->getFullResidual();
   // store initial residual, so later we can print the overall reduction
   if(iteration_counter == 0)
+  {
     initial_residual = normOfResidual;
+    initial_rhs_norm = this->systems.front().rhs.norm();
+    Output::print("Initial rhs norm ", initial_rhs_norm);
+  }
   // the residual from 10 iterations ago
   double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
@@ -610,6 +614,10 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
   }
+  //check residual relative to initial right hand side
+  if(db["nonlinloop_residual_relative_to_rhs"])
+    limit *= initial_rhs_norm;
+
 
   // check if the iteration has converged, or reached the maximum number of
   // iterations or if convergence is too slow. Then return true otherwise false

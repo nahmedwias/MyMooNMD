@@ -896,6 +896,12 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
          "with the square root of the problem size.",
          {true,false});
 
+  db.add("nonlinloop_residual_relative_to_rhs", false,
+         "If true, not the pure residual is compared to nonlinloop_epsilon ,"
+         "but the residual is divided by the norm of the initial right hand "
+         "side vector. Note that this is not yet enabled in each problem class, "
+         "you must check that, if you plan to use it.", {true, false});
+
   return db;
 }
 
