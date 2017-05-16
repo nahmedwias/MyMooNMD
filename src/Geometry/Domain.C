@@ -942,6 +942,11 @@ void TDomain::Init(const char *PRM, const char *GEO)
   {//catch the only implemented default case - boundary of the unit square
     initializeDefaultUnitSquareBdry();
   }
+  //start with treatment of the boundary description
+  else if (!strcmp(PRM, "DrivenCavitySquare"))
+  {//catch the only implemented default case - boundary of the unit square
+    initializeDrivenCavitySquareBdry();
+  }
   else
   {
     // non-default: read in from file
@@ -976,6 +981,10 @@ void TDomain::Init(const char *PRM, const char *GEO)
   else if (!strcmp(GEO, "UnitSquare"))
   {
     UnitSquare();
+  }
+  else if (!strcmp(GEO, "DrivenCavitySquareQuads"))
+  {
+    DrivenCavitySquareQuads();
   }
   else if (!strcmp(GEO, "UnitSquareRef"))
   {
