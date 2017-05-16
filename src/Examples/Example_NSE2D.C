@@ -74,6 +74,9 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       /** coefficients */
       problem_coefficients = driven_cavity::LinCoeffs;
       
+      // Set dimensionless viscosity
+      driven_cavity::DIMENSIONLESS_VISCOSITY = get_nu();
+
       driven_cavity::ExampleFile();
       break;
     case 2:
