@@ -337,14 +337,14 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
     V r(rhs);
     linear_operator->apply_scaled_add(solution, r, -1.);
 #ifndef _MPI
-    Output::info<1>("Iterative solver", "Absolute residual in Solver class, ",
+    Output::info<4>("Iterative solver", "Absolute residual in Solver class, ",
                     setprecision(16), r.norm());
 #elif _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     double norm = r.norm_global(comms);
     if(my_rank == 0)
-      Output::info<1>("Iterative solver", "Absolute residual in Solver class, ",
+      Output::info<4>("Iterative solver", "Absolute residual in Solver class, ",
                       setprecision(16), norm);
 #endif
   };
@@ -397,6 +397,15 @@ bool Solver<L, V>::is_using_multigrid() const
 {
   return db["solver_type"].is("iterative") 
       && db["preconditioner"].is("multigrid");
+}
+
+template <class L, class V>
+const LoopInfo& Solver<L, V>::get_solver_loop_info() const
+{
+    if(!iterative_method)
+      throw std::runtime_error("Non-iterative solver, this holds no loop info object!");
+
+    return iterative_method->get_loop_info();
 }
 
 /* ************************************************************************** */

@@ -35,6 +35,8 @@ public:
   /// @brief return the residual from the previous iteration. This can be used
   /// to check for divergence.
   double get_previous_residual() const;
+  /// Return the number of iterations done so far.
+  unsigned int get_n_previous_iterations() const;
   
 private:
   /// @brief string to be preceded during output

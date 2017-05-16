@@ -176,6 +176,10 @@ class IterativeMethod
     double get_residual_tolerance() const
     { return residual_tolerance; };
     
+    /** Get a const reference to the stored loop info object, so that its
+     * information can be processed elsewhere.*/
+    const LoopInfo& get_loop_info() const {return loop_info;};
+
     /// @brief set all parameters related to stopping criteria
     void set_stopping_parameters(unsigned int max_it, unsigned int min_it,
                                  double tolerance, double reduction,
