@@ -161,6 +161,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(nse2d ParMooN_test_nse2d)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
+  
+  #lsc / (bc-lsc!) test
+  add_executable(ParMooN_test_lsc lsc_test.c++)
+  target_link_libraries(ParMooN_test_lsc parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(lsc2d ParMooN_test_lsc)
+  list(APPEND parmoon_tests ParMooN_test_lsc)
    
   #tnse2d test (direct solver)
   add_executable(ParMooN_test_tnse2d tnse2d_test.c++)
