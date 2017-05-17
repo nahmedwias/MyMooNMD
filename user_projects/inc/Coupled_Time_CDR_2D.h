@@ -71,6 +71,9 @@ class Coupled_Time_CDR_2D {
     /**
      * Assembling functions for the case of coupling with a velocity field
      * (and other functions, e.g. a particle size distribution from a PBE).
+     *
+     * @param[in] velocity_field The fluid velocity responsible for the
+     * advective transport.
      */
     void assemble_initial_time(const TFEVectFunct2D* velocity_field);
 

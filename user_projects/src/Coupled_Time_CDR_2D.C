@@ -160,8 +160,6 @@ void Coupled_Time_CDR_2D::assemble_initial_time(
 {
   for (auto tcd : cdProblems_)
   {
-    //TODO
-    Output::warn("assemble_initial_time", "Still disregarding population_balance input.");
     tcd->assemble_initial_time(velocity_field);
   }
 }
