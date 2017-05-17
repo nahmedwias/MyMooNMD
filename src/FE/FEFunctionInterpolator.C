@@ -33,21 +33,18 @@
 FEInterpolationCheatSheet::FEInterpolationCheatSheet(
         const TFESpaceXD* old_fe_space, const TFESpaceXD* new_fe_space)
 {
+#ifdef __2D__
   size_t n_cells_new_space = new_fe_space->GetN_Cells();
   cheat_sheet= std::vector<std::vector<ContainingCells>>(n_cells_new_space);
 
   for(size_t c_new = 0; c_new < n_cells_new_space;++c_new)
   {
     TBaseCell* cell = new_fe_space->GetCollection()->GetCell(c_new);
-#ifdef __2D__
     FE2D FEId = new_fe_space->GetFE2D(c_new, cell);
     TFE2D* Element = TFEDatabase2D::GetFE2D(FEId);
     TNodalFunctional2D* nf = Element->GetNodalFunctional2D();
     double* xi; //positions of the dof in the ref element
     double* eta;
-#elif __3D__
-    ErrThrow("Not yet implemented in 3D!");
-#endif
     int n_points;
     nf->GetPointsForAll(n_points, xi, eta); //now we found out the number of nf points
 
@@ -131,21 +128,15 @@ FEInterpolationCheatSheet::FEInterpolationCheatSheet(
       }
     }
   }
+#elif __3D__
+    ErrThrow("FEInterpolationCheatSheet is not yet implemented in 3D!");
+#endif
 }
 
-FEFunctionInterpolator::FEFunctionInterpolator(
-    const TFESpace* into_space)
+FEFunctionInterpolator::FEFunctionInterpolator(const TFESpace* into_space)
 {
   // try to downcast the input pointer to figure out the dimension of the space
   // (a nice alternative would be a virtual get_dimension() method in TFESpace
-  //
-  // TODO: syntax for shared pointers would be
-  //  if(std::dynamic_pointer_cast<TFESpace1D>(fe_space))
-  //  {
-  //    dimension_ = 3;
-  //  }
-  //
-  //
   if(dynamic_cast<const TFESpace1D*>(into_space))
   {
     dimension_ = 1;
@@ -180,7 +171,7 @@ void FEFunctionInterpolator::check() const
 }
 
 /** ************************************************************************ */
-
+#ifdef __2D__
 TFEFunction2D FEFunctionInterpolator::interpolate(
     const TFEFunction2D& original_funct,
     std::vector<double>& values_memory,
@@ -230,7 +221,7 @@ TFEFunction2D FEFunctionInterpolator::interpolate(
 
   return interpolation;
 }
-
+#endif
 // ////////////////////// //    private method(s)   // ////////////////////// //
 
 void FEFunctionInterpolator::check_for_shearing() const

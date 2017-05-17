@@ -26,11 +26,13 @@
 
 // Experimental Macro to avoid double code.
 #ifdef __2D__
+class TFESpace2D;
 #define TFESpaceXD TFESpace2D
 #elif __3D__
+class TFESpace3D;
 #define TFESpaceXD TFESpace3D
 #endif
-/// TODO Comment!
+
 class FEInterpolationCheatSheet{
 
   public:
@@ -105,10 +107,12 @@ class FEFunctionInterpolator{
      * @return A reference to a newly constructed fe function which interpolates
      * original_function on the stored fe space.
      */
+#ifdef __2D__
     TFEFunction2D interpolate(
         const TFEFunction2D& original_funct,
         std::vector<double>& values_memory,
         bool use_cheat_sheet) const;
+#endif
 
     //TFEFunction3D& interpolate(
     //  const TFEFunction3D& original_funct,
