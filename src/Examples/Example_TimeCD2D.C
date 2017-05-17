@@ -48,7 +48,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = linear_space_time::BilinearCoeffs;
       
       /** Initial condition*/
-     initialCOndtion.push_back(linear_space_time::InitialCondition);
+     initialCondition.push_back(linear_space_time::InitialCondition);
      linear_space_time::ExampleFile();
 
      this->timeDependentRhs = linear_space_time::rhs_depends_on_time;
@@ -68,7 +68,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = exp_sin_cos::BilinearCoeffs;
       
       /** Initial condition*/
-     initialCOndtion.push_back(exp_sin_cos::InitialCondition);
+      initialCondition.push_back(exp_sin_cos::InitialCondition);
      exp_sin_cos::ExampleFile();
      
      this->timeDependentRhs = exp_sin_cos::rhs_depends_on_time;
@@ -87,7 +87,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = sin_sin_sin::BilinearCoeffs;
       
       /** Initial condition*/
-      initialCOndtion.push_back(sin_sin_sin::InitialCondition);
+      initialCondition.push_back(sin_sin_sin::InitialCondition);
       sin_sin_sin::ExampleFile();
       
       this->timeDependentRhs = sin_sin_sin::rhs_depends_on_time;
@@ -107,7 +107,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = sin_cos::BilinearCoeffs;
       
       /** Initial condition*/
-      initialCOndtion.push_back(sin_cos::InitialCondition);
+      initialCondition.push_back(sin_cos::InitialCondition);
       sin_cos::ExampleFile();      
       break;
     case 3:
@@ -124,7 +124,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = rotating_bodies_1::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(rotating_bodies_1::InitialCondition);
+      initialCondition.push_back(rotating_bodies_1::InitialCondition);
 
       // Print some example specific information.
       rotating_bodies_1::ExampleFile();

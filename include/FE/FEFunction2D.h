@@ -20,8 +20,8 @@
 
 class TFEFunction2D;
 class TAuxParam2D;
+class FEInterpolationCheatSheet;
 #include <FESpace2D.h>
-//#include <AuxParam2D.h>
 
 /** a function from a finite element space */
 class TFEFunction2D
@@ -44,9 +44,8 @@ class TFEFunction2D
 
   public:
     /** constructor with vector initialization */
-    TFEFunction2D(const TFESpace2D *fespace2D, char *name, char *description,
+    TFEFunction2D(const TFESpace2D *fespace2D, const char *name, const char *description,
                   double *values, int length);
-
     /** return name */
     char *GetName() const
     { return Name; }
@@ -89,8 +88,13 @@ class TFEFunction2D
                   double * const errors) const;
     
     /** determine the value of function and its first derivatives at
-        the given point */
-    void FindGradient(double x, double y, double *values) const;
+        the given point
+      @param containing_cells An array holding all cells in which the point (x,y)
+      is contained. It defaults to {}. Gives the option to avoid searching for (x,y)
+      in all cells of the collection, at the cost of caching the data somewhere
+      else in the program.
+        */
+    void FindGradient(double x, double y, double *values, const std::vector<int>& containing_cells = {}) const;
 
     /** determine the value of function and its first derivatives at
         the given point */
@@ -109,7 +113,8 @@ class TFEFunction2D
     * Note that this is rather slow, because no further information is 
     * required. The function 'OldFeFunction' could even live on a larger domain.
     */
-    void Interpolate(TFEFunction2D *F);
+    void Interpolate(const TFEFunction2D *F,
+                     const FEInterpolationCheatSheet* cheat_sheet = nullptr);
     
     /**
      * @brief project this functions into the space L20 (having zero mean value)
