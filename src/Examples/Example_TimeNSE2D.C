@@ -101,8 +101,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       /** coefficients */
       problem_coefficients =sincosexp::LinCoeffs;
 
-      initialCOndtion.push_back(sincosexp::InitialU1);
-      initialCOndtion.push_back(sincosexp::InitialU2);
+      initialCondition.push_back(sincosexp::InitialU1);
+      initialCondition.push_back(sincosexp::InitialU2);
 
      sincosexp::ExampleFile();
     
@@ -125,8 +125,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       /** coefficients */
       problem_coefficients = flow_around_cylinder_steady_inflow::LinCoeffs;
       
-      initialCOndtion.push_back(flow_around_cylinder_steady_inflow::InitialU1);
-      initialCOndtion.push_back(flow_around_cylinder_steady_inflow::InitialU2);
+      initialCondition.push_back(flow_around_cylinder_steady_inflow::InitialU1);
+      initialCondition.push_back(flow_around_cylinder_steady_inflow::InitialU2);
       
       // Set dimensionless viscosity
       flow_around_cylinder_steady_inflow::DIMENSIONLESS_VISCOSITY = get_nu();

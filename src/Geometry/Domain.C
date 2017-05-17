@@ -1252,13 +1252,13 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
       // note: this is the same as the above 2D code
       
       // read mesh
-      Mesh m(MESHFILE);
+      ParM::Mesh m(MESHFILE);
       m.setBoundary(PRM);
       unsigned int numberOfElements = m.triangle.size() + m.quad.size();
       unsigned int maxNVertexPerElem = 3;
       // make the ParMooN-grid
       if (m.quad.size()) {
-	maxNVertexPerElem = 4;
+         maxNVertexPerElem = 4;
       }
       if (numberOfElements==0) {
 	Output::print(" ** Error(Domain::Init) the mesh has no elements");
