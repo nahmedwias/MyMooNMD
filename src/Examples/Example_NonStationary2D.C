@@ -2,7 +2,7 @@
 
 Example_NonStationary2D::Example_NonStationary2D(const ParameterDatabase & db) 
  : Example2D(db), timeDependentRhs(true), 
-   timeDependentCoeffs(true), initialCOndtion()
+   timeDependentCoeffs(true), initialCondition()
 {
 }
 
@@ -13,7 +13,7 @@ Example_NonStationary2D::Example_NonStationary2D(std::vector <DoubleFunct2D*> ex
  :Example2D(exact, bc, bd, coeffs)
  , timeDependentRhs(timedependentrhs) 
  , timeDependentCoeffs(timedependentcoeffs)
- , initialCOndtion(init_cond)
+ , initialCondition(init_cond)
 {
   
 }
