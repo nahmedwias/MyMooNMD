@@ -687,9 +687,30 @@ void Time_CD2D::modify_and_call_assembling_routine(
     // chose the parameter function ("in-out function") which shears away
     // the first to "in" values (x,y) and passes u_x, u_y and f
     parameterFct = {ThreeFEParametersFunction};
+
+    //THIS IS DOUBLE CODE, but this stuff must be performed before
+    // interpolated_sources_and_sinks and entries_source_and_sinks
+    // go out of scope...
+    // ...and call the corresponding setters
+    la_stiff.setBeginParameter(beginParameter);
+    la_stiff.setFeFunctions2D(fe_funct); //reset - now velo comp included
+    la_stiff.setFeValueFctIndex(feValueFctIndex);
+    la_stiff.setFeValueMultiIndex(feValueMultiIndex);
+    la_stiff.setN_Parameters(N_parameters);
+    la_stiff.setN_FeValues(N_feValues);
+    la_stiff.setN_ParamFct(N_paramFct);
+    la_stiff.setParameterFct(parameterFct);
+    //...I expect that to do the trick.
+
+    // step 4 - the assembling must be done before the velo functions
+    // run out of scope
+    call_assembling_routine(s, la_stiff, la_mass , assemble_both);
+
+    delete velo_x; // call to GetComponent dynamically created fe functs
+    delete velo_y;
   }
-
-
+  else
+  {
 
   // ...and call the corresponding setters
   la_stiff.setBeginParameter(beginParameter);
@@ -708,4 +729,5 @@ void Time_CD2D::modify_and_call_assembling_routine(
 
   delete velo_x; // call to GetComponent dynamically created fe functs
   delete velo_y;
+  }
 }
