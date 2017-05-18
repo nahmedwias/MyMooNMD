@@ -18,6 +18,12 @@
 #ifndef USER_PROJECTS_EXAMPLES_ASA_CRYSTALLIZER_H_
 #define USER_PROJECTS_EXAMPLES_ASA_CRYSTALLIZER_H_
 
+#include "vector"
+#include "functional"
+#include "string"
+
+#include <parmoon_source_and_sink_terms.h>
+
 // some integer constants used to identify boundary parts
 int bdry_inflow = 3;
 int bdry_upper = 0;
@@ -27,6 +33,8 @@ int bdry_lower = 2;
 // hard coded parameter sets for four different inflow velocities
 //  - can be controlled via input database
 int VELOCITY_CODE = 0;
+
+double tube_length = 15; //length of the tube in m - must be in accordance to the geometry!
 
 double inflow_T[4] = {307.6, 312.9, 313.1, 313.7}; //unit is K
 double inflow_c = 2005; // unit is mol/m^3
@@ -137,13 +145,13 @@ void BoundValue_T(int BdComp, double Param, double &value)
   {
       if(BdComp == bdry_upper)
       {
-        double x = Param*15;
-        value = temperature_bound_cond_exp(x); //TODO Cache this stuff!
+        double x = Param*tube_length;
+        value = temperature_bound_cond_exp(x);
       }
       else if(BdComp == bdry_lower)
       {
-        double x = 15 - Param*15;
-        value = temperature_bound_cond_exp(x); //TODO Cache this stuff!
+        double x = tube_length - Param*tube_length;
+        value = temperature_bound_cond_exp(x);
       }
   }
 }
@@ -273,29 +281,73 @@ void RhsAssemblingFunction_T(
   }
 }
 
-////A helper function relevant in the coupling of concentration, temperature and psd
-//double F_growth(double T, double c, double F)
-//{
-//  //theoretical supersaturation in terms of ASA mole fraction, as given by Eder et al.
-//  double chi_sat = pow(10, 27.769 - (2500.906/T) - 8.323 * log10(T));
-//
-//  //now this has to be transformed to supersaturation in
-//  // terms of molar concentration, which is a bit cumbersome
-//  double M_S = chi_sat*Physics::M_ASA + (1-chi_sat)*Physics::M_Ethanol; //molar mass of solution
-//  double w_Ethanol = 1 - chi_sat*(Physics::M_ASA/M_S); //Ethanol mass fraction
-//  double rho_S = Physics::rho_E / w_Ethanol; //density of solution calculated under "ideal solution" asumption
-//
-//  //now here comes supersaturation in terms of molar concentration
-//  double c_sat = chi_sat * rho_S / M_S;
-//
-//  // calculate the actual growth coefficient
-//  double k_g = 1.2e-5; //some coefficient, chosen as in Carina's diss
-//  double g = 1; //some exponent, chosen as in Carina's diss
-//  double G = c > c_sat ? k_g * ( (c - c_sat) / c_sat) : 0; //^g - do this only if g is not 1!
-//
-//  double F_growth = - G * F;
-//
-//  return F_growth;
-//}
+/* ****************************************************************************
+ * This is example information which is of relevance to the Brush Wrapper that
+ * must be used for this example.
+ * ****************************************************************************/
+
+/* SOURCE AND SINK information: information needed to control Brush to ParMooN*/
+
+std::vector<Exmpl::SourceAndSinkTerms> source_and_sink_fct_requests =
+  { Exmpl::SourceAndSinkTerms::ASACrystEnergyRelease,
+    Exmpl::SourceAndSinkTerms::ASACrystConcConsumption };
+std::vector<std::string> source_and_sink_term_names = {"T_sources", "c_ASA_sinks" };
+
+/* PARAMETER information: information needed to control from ParMooN to Brush*/
+size_t parameter_spatial_dimension = 2;
+size_t parameter_n_specs_primary = 2; //temperature and dissolved ASA concentration
+size_t parameter_n_specs_derived = 2; //EtOH and ASASUP
+
+std::vector<std::string> parameter_term_names = {"ux","uy","p","T","ASA","CH3CH2OH","ASASUP"};
+
+// With given vaues ux, uy, p, T and ASA conc in a certain point,
+// will evaluate the molar concentration of EtOH, which is a derived quantity.
+double derived_concentration_EtOH(const std::vector<double>& data)
+{
+  if (data.size() != 7)
+    throw std::runtime_error("derived_concentration_EtOH: expected 7 data points."
+        " ux, uy, p, T, ASA, 0(CH3CH2OH) , 0(ASASUP)");
+
+  return 1; // TODO The concentration of EtOH is not needed in Brush,
+            // yet it would be nice to have a correct value there.
+}
+
+// With given values ux, uy, p, T and ASA conc in a certain point,
+// will evaluate the supersaturation concentration of ASA, which is a
+// derived quantity.
+// Temperature must be in K and ASA concentration in mol/m^3. Output
+// will also be in mol/m^3.
+double derived_concentration_ASASUP(const std::vector<double>& data)
+{
+  if (data.size() != 7)
+    throw std::runtime_error("derived_concentration_EtOH: expected 7 data points."
+        " ux, uy, p, T, ASA, CH3CH2OH , 0(ASASUP)");
+
+    double T = data[3];     // grab temperature
+    double c_asa = data[4]; // grab ASA concentration
+
+    //theoretical supersaturation in terms of ASA mole fraction, as given by Eder et al.
+    double chi_sat = pow(10, 27.769 - (2500.906/T) - 8.323 * log10(T));
+
+    //now this has to be transformed to supersaturation in
+    // terms of molar concentration, which is a bit cumbersome
+    double M_S = chi_sat*Physics::M_ASA + (1-chi_sat)*Physics::M_Ethanol; //molar mass of solution
+    double w_Ethanol = 1 - chi_sat*(Physics::M_ASA/M_S); //Ethanol mass fraction
+
+    // ideal solution assumption(though questionable)
+    double rho_S = Physics::rho_E / w_Ethanol; //density of solution calculated under "ideal solution" asumption
+
+    //now here comes supersaturation in terms of molar concentration
+    double c_sat = chi_sat * rho_S / M_S;
+    double c_supsat = std::max(0.0, c_asa - c_sat);
+
+//    if (c_supsat > 0)
+//      Output::print("c_asa: ", c_asa, ", c_sat: ", c_sat , ", supsat: ", c_supsat, " mol/m^3");
+
+    return c_supsat;
+}
+
+std::vector<std::function<double(const std::vector<double>&)>> parameter_specs_derived_fcts =
+{ derived_concentration_EtOH, derived_concentration_ASASUP};
 
 #endif /* USER_PROJECTS_EXAMPLES_ASA_CRYSTALLIZER_H_ */
