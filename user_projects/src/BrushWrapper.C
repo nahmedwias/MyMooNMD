@@ -10,11 +10,13 @@
 #include <parmoon_interface.h>
 #include <parmoon_data.h>
 
-#include <ASA_crystallizer.h> //TODO This should be handled at runtime instead!
-
 #include <algorithm>
 
-// TODO Before we think about proper boundary conditions we go for Dirichlet zero.
+namespace ASA_crystallizer
+{
+  #include <ASA_crystallizer.h>
+}
+
 void DirichletBoundaryConditions(int BdComp, double t, BoundCond &cond)
 {
       cond = DIRICHLET;
@@ -22,55 +24,6 @@ void DirichletBoundaryConditions(int BdComp, double t, BoundCond &cond)
 void ZeroBoundaryValues(int BdComp, double Param, double &value)
 {
       value = 0;
-}
-
-//TODO Use an std::function instead
-typedef double my_funct_type (const std::vector<double>&);
-
-// With given values ux, uy, p, T and ASA conc in a certain point,
-// will evaluate the molar concentration of EtOH, which is a derived quantity.
-//TODO Move to an example!
-double derived_concentration_EtOH(const std::vector<double>& data)
-{
-  if (data.size() != 7)
-    throw std::runtime_error("derived_concentration_EtOH: expected 7 data points."
-        " ux, uy, p, T, ASA, 0(CH3CH2OH) , 0(ASASUP)");
-
-  return 1; //TODO CODE!
-}
-//TODO Move to an example!
-// With given values ux, uy, p, T and ASA conc in a certain point,
-// will evaluate the supersaturation concentration of ASA, which is a
-// derived quantity.
-// Temperature must be in K and ASA concentration in mol/m^3. Output
-// will also be in mol/m^3.
-double derived_concentration_ASASUP(const std::vector<double>& data)
-{
-  if (data.size() != 7)
-    throw std::runtime_error("derived_concentration_EtOH: expected 7 data points."
-        " ux, uy, p, T, ASA, CH3CH2OH , 0(ASASUP)");
-
-    double T = data[3];     // grab temperature
-    double c_asa = data[4]; // grab ASA concentration
-
-    //theoretical supersaturation in terms of ASA mole fraction, as given by Eder et al.
-    double chi_sat = pow(10, 27.769 - (2500.906/T) - 8.323 * log10(T));
-
-    //now this has to be transformed to supersaturation in
-    // terms of molar concentration, which is a bit cumbersome
-    double M_S = chi_sat*Physics::M_ASA + (1-chi_sat)*Physics::M_Ethanol; //molar mass of solution
-    double w_Ethanol = 1 - chi_sat*(Physics::M_ASA/M_S); //Ethanol mass fraction
-    //TODO ideal solution assumption is questionable here!
-    double rho_S = Physics::rho_E / w_Ethanol; //density of solution calculated under "ideal solution" asumption
-
-    //now here comes supersaturation in terms of molar concentration
-    double c_sat = chi_sat * rho_S / M_S;
-    double c_supsat = std::max(0.0, c_asa - c_sat);
-
-//    if (c_supsat > 0)
-//      Output::print("c_asa: ", c_asa, ", c_sat: ", c_sat , ", supsat: ", c_supsat, " mol/m^3");
-
-    return c_supsat;
 }
 
 //Get the barycenter of a ParMooN grid cell.
@@ -94,34 +47,58 @@ std::valarray<double> center_point(const TBaseCell& cell)
   return p;
 }
 
+void BrushWrapper::pick_example(int exmpl_code)
+{
+  switch(exmpl_code)
+  {
+    case 0:
+    {
+      using namespace ASA_crystallizer;
+      //parameters information ('to Brush')
+      parameter_spatial_dimension_ = parameter_spatial_dimension;
+      parameter_n_specs_primary_ = parameter_n_specs_primary;
+      parameter_n_specs_derived_ = parameter_n_specs_derived;
+      parameter_function_names_ = parameter_term_names;
+      parameter_specs_derived_fcts_ = parameter_specs_derived_fcts;
+      //source and sink information ('from Brush')
+      source_and_sink_function_names_ = source_and_sink_term_names;
+      source_and_sink_requests_ = source_and_sink_fct_requests;
+
+      // this stuff must be done for the Eder example, which has 4 different
+      // parameter sets. It is not nice, but it does the trick.
+      if(db_["sweep_file_depends_on_velocity_code"].is(true) && db_.contains("velocity_code"))
+      {
+        size_t parameter_set = db_["velocity_code"];
+        //pick a sweep file according to the requested parameter set
+        db_["sweep_file"].impose(
+            Parameter("sweep_file", db_["sweep_file"].value_as_string()
+                      + ".param_set_"+ std::to_string(parameter_set), ""));
+        Output::info("Sweep File", "Due to choice of parameter set ", parameter_set,
+                     " ('velocity_code'), the sweep file was changed"
+                     " to ", db_["sweep_file"], ".");
+      }
+
+      break;
+    }
+    default:
+      ErrThrow("Not implemented: example ", exmpl_code);
+  }
+}
+
 // use 0-order elements, because that is the 'language' Brush speaks
 int fe_order = 0;
-
 BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
-: db_(db), output_writer_(db_),
+: db_(db),
+  from_brush_grid_(coll),
+  from_brush_space_(from_brush_grid_, (char*)"psd-moms", (char*)"psd-moms",
+                    DirichletBoundaryConditions, fe_order, nullptr),
   moment_stats_file_(db_["out_part_moments_file"].get<std::string>()),
   outflow_particles_file_(db_["out_part_lists_file"].get<std::string>()),
   inflow_particles_file_(db_["in_part_lists_file"].get<std::string>()),
-  from_brush_grid_(coll),
-  from_brush_space_(from_brush_grid_, (char*)"psd-moms", (char*)"psd-moms",
-                    DirichletBoundaryConditions, fe_order, nullptr)
+  output_writer_(db_)
 {
-
-  //FIXME This code is really stupid!
-  if(db_["sweep_file_depends_on_velocity_code"].is(true) && db_.contains("velocity_code"))
-  {
-    size_t parameter_set = db_["velocity_code"];
-    //pick a sweep file according to the requested parameter set
-    db_["sweep_file"].impose(
-        Parameter("sweep_file", db_["sweep_file"].value_as_string()
-                  + ".param_set_"+ std::to_string(parameter_set), ""));
-    Output::info("Sweep File", "Due to choice of parameter set ", parameter_set,
-                 " ('velocity_code'), the sweep file was changed"
-                 " to ", db_["sweep_file"], ".");
-  }
-
-
-
+  // get and store example specific information
+  pick_example(db_["example"]);
 
   // set up Brushs ParMooN interface
   interface_ = new Brush::InterfacePM(
@@ -135,7 +112,7 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
   interface_->set_initial_particles(db_["init_partsol_file"]);
 
   // get those points where Brush expects values from ParMooN
-  output_sample_points_ = interface_->get_cell_centers();
+  parameter_sample_points_ = interface_->get_cell_centers();
 
   // Set up and initialize FE functions which receive their data from Brush
   int fe_length = from_brush_space_.GetN_DegreesOfFreedom();
@@ -152,18 +129,16 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
   interface_->set_output_sample_points(parmoon_cell_centers); //set ParMooN points in Brush
 
   // *** The source-and-sink functions contain the back-coupling from Brush to ParMooN
-  int n_terms = 2; //TODO Do not hard code!
-
-  source_and_sink_requests_= { Exmpl::SourceAndSinkTerms::ASACrystEnergyRelease,
-                               Exmpl::SourceAndSinkTerms::ASACrystConcConsumption }; //TODO Do not hard code!
-
-  source_and_sink_fcts_values_ = std::vector<std::vector<double>>(n_terms, dummy_fe_values);
-
-  source_and_sink_fcts_.resize(n_terms);
-  source_and_sink_fcts_.at(0) = new TFEFunction2D(&from_brush_space_,
-        (char*)"T_sources", (char*)"", &source_and_sink_fcts_values_[0].at(0), fe_length); //TODO don't hard code!
-  source_and_sink_fcts_.at(1) = new TFEFunction2D(&from_brush_space_,
-        (char*)"c_ASA_sinks", (char*)"", &source_and_sink_fcts_values_[1].at(0), fe_length); //TODO don't hard code!
+  int n_s_and_s_terms = source_and_sink_function_names_.size();
+  source_and_sink_fcts_values_ =
+      std::vector<std::vector<double>>(n_s_and_s_terms, dummy_fe_values);
+  source_and_sink_fcts_.resize(n_s_and_s_terms);
+  for(int s=0; s < n_s_and_s_terms; ++s)
+  {
+    source_and_sink_fcts_.at(s) =
+        new TFEFunction2D(&from_brush_space_, (char*) &source_and_sink_function_names_.at(s),
+                          (char*) " ", &source_and_sink_fcts_values_[s].at(0), fe_length);
+  }
 
   // *** The moments functions are only used for output and visualization.
   pd_moments_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
@@ -243,28 +218,30 @@ void BrushWrapper::reset_fluid_phase(
     std::vector<const TFEFunction2D*> species
     )
 {
-  size_t n_points = output_sample_points_.size();
-  //TODO "decoder-vektor" koennte im Beispiel gespeichert sein
-  Brush::DataPM pm_data({"ux","uy","p","T","ASA","CH3CH2OH","ASASUP"}, n_points);
+  //check input
+  if(species.size() != parameter_n_specs_primary_)
+   ErrThrow("Incorrect number of species fe functions given.");
+  if(u.GetN_Components() != (int) this->parameter_spatial_dimension_)
+    ErrThrow("Incorrect number of velocity components given.");
+
+  size_t n_points = parameter_sample_points_.size();
+
+  Brush::DataPM pm_data(parameter_function_names_, n_points);
 
   //For the velocity we need two xtra fe functions
   TFEFunction2D* u0_fe = u.GetComponent(0);
   TFEFunction2D* u1_fe = u.GetComponent(1);
 
   //prepare a vector of pointers to FEFunctions
-  size_t dim = 2;
-  size_t n_specs = species.size();
-  size_t n_specs_derived = 2; //TODO EtOH and ASASUP - but do not hard code!
+  size_t dim = parameter_spatial_dimension_;
+  size_t n_specs_primary = parameter_n_specs_primary_;
+  size_t n_specs_derived = parameter_n_specs_derived_;
 
-  std::vector<const TFEFunction2D*> fe_functs(dim + 1 + n_specs);
+  std::vector<const TFEFunction2D*> fe_functs(dim + 1 + n_specs_primary);
   fe_functs[0] = u0_fe;
   fe_functs[1] = u1_fe;
   fe_functs[2] = &p;
   std::copy( species.begin() , species.end(), &fe_functs[3]);
-
-  std::vector<my_funct_type*> derived_concentrations(n_specs_derived);
-  derived_concentrations[0] = derived_concentration_EtOH;   //TODO do not hard code
-  derived_concentrations[1] = derived_concentration_ASASUP; //TODO do not hard code
 
   // This is a good place to cache containing cells of the output points
   if(reset_fluid_phase_cheats_.empty())
@@ -276,24 +253,24 @@ void BrushWrapper::reset_fluid_phase(
   for (size_t point = 0 ; point < n_points ; ++point)
   {
     //x and y value of the current output sample point
-    double x = output_sample_points_[point][0];
-    double y = output_sample_points_[point][1];
+    double x = parameter_sample_points_[point][0];
+    double y = parameter_sample_points_[point][1];
 
-    size_t data_set_size = dim + 1 + n_specs + n_specs_derived;
+    size_t data_set_size = dim + 1 + n_specs_primary + n_specs_derived;
     std::vector<double> data_set(data_set_size , 0.0);
 
     // point evaluations of all fe functions
-    for(size_t i = 0 ; i < dim + 1 + n_specs ; ++i)
+    for(size_t i = 0 ; i < dim + 1 + n_specs_primary ; ++i)
     {
       double eval[3]; // will include differentials, thus length is '3')
       fe_functs[i]->FindGradient(x, y, eval, reset_fluid_phase_cheats_.at(point));
       data_set[i] = eval[0];
     }
-
-    for(size_t i = dim + 1 + n_specs; i < data_set_size; ++i)
+    // computation for all derived species concentrations
+    for(size_t i = dim + 1 + n_specs_primary; i < data_set_size; ++i)
     {
-      size_t index = i - (dim + 1 + n_specs);
-      double f = derived_concentrations[index](data_set);
+      size_t index = i - (dim + 1 + n_specs_primary);
+      double f = parameter_specs_derived_fcts_[index](data_set);
       data_set[i] = f;
     }
 
@@ -314,12 +291,15 @@ void BrushWrapper::solve(double t_start, double t_end)
 {
   //now call the solver
   size_t n_steps = db_["n_solves_per_time_step"];
+
   int rs = db_["random_seed"];
+  //db_["random_seed"] = rs + 1; //count up the rng for use in the next step
+
   interface_->run_particle_phase(t_start, t_end, n_steps, rs);
 
   // Updating stats and fetching moments is only relevant for
-  // visualization and the output!
-  // TODO Get this (Brush to ParMooN) right after ParMooN to Brush
+  // visualization and the output
+  // TODO Make this runtime-controllable.
   interface_->update_stats();
   interface_->fetch_moment(0, &pd_moments_values_[0].at(0));
   interface_->fetch_moment(1, &pd_moments_values_[1].at(0));
@@ -344,7 +324,7 @@ void BrushWrapper::output(double t)
 void BrushWrapper::cache_output_point_containing_cells(const TFESpace2D& one_space)
 {
 
-  for (auto p : output_sample_points_)
+  for (auto p : parameter_sample_points_)
   {
     double x = p[0];
     double y = p[1];

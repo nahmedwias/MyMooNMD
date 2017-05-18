@@ -665,8 +665,8 @@ void Time_CD2D::modify_and_call_assembling_routine(
     {// set up interpolator object, if not done yet
       s.brush_interpolator_ = std::make_shared<FEFunctionInterpolator>(into_space);
     }
-    // length of the values array of the interpolated velo must equal length of the
-    // concentration fe function
+    // length of the values array of the interpolated function must equal the
+    // length of the concentration fe function
     size_t length_interpolated = s.fe_function.GetLength();
 
     // interpolate sources and sinks

@@ -13,9 +13,6 @@
  *    - the module for coupled Time_CD2D equations (couple temperature and one species)
  *    - the Brush interface module for stochastic calculation of the particles
  *
- * Tasks:
- *  - interface Brush
- *
  * @author Clemens Bartsch
  * @date April 22, 2016
  */
@@ -25,9 +22,8 @@
 #include <FEDatabase2D.h>
 #include <TimeDiscRout.h>
 
-//for the time nse 2d flow object
-#include <Time_NSE2D.h>
-#include <NSE2D.h> //for stationary flow
+//for stationary flow
+#include <NSE2D.h>
 #include <Example_NSE2D.h>
 
 //for the time cd2d object
@@ -40,16 +36,16 @@
 
 int main(int argc, char* argv[])
 {
-  //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
-  // read all input parameters into four different databases
+  // four different databases
   ParameterDatabase general_database("General Database");
   ParameterDatabase flow_database("Flow Database");
   ParameterDatabase conc_database("Conc Database");
   ParameterDatabase particle_database("Particle Database");
 
+  // read in the databases one by one
   std::ifstream fs(argv[1]);
   general_database.read(fs);
   flow_database.read(fs);
@@ -57,6 +53,7 @@ int main(int argc, char* argv[])
   particle_database.read(fs);
   fs.close();
 
+  // put some needed parameters into the respective DBs
   flow_database.merge(general_database, true);
   conc_database.merge(general_database, true);
   particle_database.add(Parameter(general_database["velocity_code"]));
@@ -85,17 +82,10 @@ int main(int argc, char* argv[])
   for(size_t i=0; i<n_ref; i++)
     domain.RegRefineAll();
 
-  // PART 2: SET UP SPECIFIC PROBLEM OBJECTS ///////////////////////////////////
-
-  //set global parameters which are to be used for NSE construction here...
-  TDatabase::ParamDB->VELOCITY_SPACE = 2;
-  TDatabase::ParamDB->PRESSURE_SPACE = -4711;
-
+  // PART: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
+  Output::info("PROGRAM PART", "Precomputing velocity.");
   Example_NSE2D example_flow(flow_database);
   NSE2D flow_object(domain, flow_database, example_flow);
-
-  // PART 3: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
-  Output::info("PROGRAM PART", "Precomputing velocity.");
   flow_object.assemble();
   flow_object.stopIt(0);
 
@@ -114,11 +104,9 @@ int main(int argc, char* argv[])
   flow_object.output();
 
 
-  // PART 4: SET UP PARTICLE- AND CDRE OBJECT //////////////////////////////////
+  // PART: SET UP PARTICLE- AND CDRE OBJECT //////////////////////////////////
   Output::info("PROGRAM PART", "Constructing particles- and cdre object.");
 
-  //set global parameters which are to be used for Time_CD2D construction here...
-  TDatabase::ParamDB->ANSATZ_ORDER = 1;
   Example_TimeCoupledCDR2D example_conc(conc_database);
   Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
 
@@ -126,7 +114,8 @@ int main(int argc, char* argv[])
   TCollection* coll = domain.GetCollection(It_Finest, 0); //take finest grid collection for now
   BrushWrapper part_object(coll, particle_database);
 
-  // PART 5: SET UP INITIAL STATES /////////////////////////////////////////////
+
+  // PARTS: SET UP INITIAL STATES /////////////////////////////////////////////
   Output::info("PROGRAM PART", "Setting up initial states.");
 
   //get the velocity field of the precomputed velo object
@@ -142,12 +131,11 @@ int main(int argc, char* argv[])
   part_object.reset_fluid_phase(velo_field, pressure, fcts);
   part_object.output(TDatabase::TimeDB->CURRENTTIME);
 
-  // PART 6: SOLVE THE SYSTEM IN A TIME LOOP ///////////////////////////////////
+  // PART: SOLVE THE SYSTEM IN A TIME LOOP ///////////////////////////////////
   Output::info("PROGRAM PART", "Solving the coupled system.");
 
   double end_time = TDatabase::TimeDB->ENDTIME;
   int step = 0;
-  int n_substeps = GetN_SubSteps();
 
   int output_steps_parts = particle_database["output_all_k_steps"];
   int output_steps_concs = conc_database["output_all_k_steps"];
@@ -158,26 +146,22 @@ int main(int argc, char* argv[])
     step++;
 
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-    for(int j=0; j < n_substeps; ++j)
-    {
-      SetTimeDiscParameters(1);
 
-      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-      TDatabase::TimeDB->CURRENTTIME += tau;
+    SetTimeDiscParameters(1);
 
-      Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+    TDatabase::TimeDB->CURRENTTIME += tau;
 
-      //TODO Enable to solve in a loop.
+    Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
-      //update and solve particles
-      std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
-      part_object.reset_fluid_phase(velo_field, pressure, fcts);
-      part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + tau);
+    //update and solve particles
+    std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
+    part_object.reset_fluid_phase(velo_field, pressure, fcts);
+    part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + tau);
 
-      //solve cdr system
-      conc_object.assemble_uncoupled_part(&velo_field, part_object.sources_and_sinks());
-      conc_object.couple_and_solve();
-    }
+    //solve cdr system
+    conc_object.assemble_uncoupled_part(&velo_field, part_object.sources_and_sinks());
+    conc_object.couple_and_solve();
 
     if(step %  output_steps_parts == 0)
       part_object.output(TDatabase::TimeDB->CURRENTTIME);
