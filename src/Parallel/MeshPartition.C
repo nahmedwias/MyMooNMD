@@ -32,7 +32,6 @@
 #include <Quadrangle.h>
 #include <MacroCell.h>
 #include <Edge.h>
-
 #ifdef __2D__
   #include <FEDatabase2D.h>
 #endif
@@ -43,6 +42,7 @@ extern "C"
   #include <metis.h>
   #include <parmetis.h>
 }
+#include <MeshPartitionInOut.h>
 #endif
 
 
@@ -343,6 +343,17 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   nn =  (idx_t)N_RootVertices;
   nparts = (idx_t)size;
   
+
+  // Decide whether Metis should be called or the
+  // information read in from a given text file.
+  bool read_metis = Domain->get_database()["read_metis"];
+  bool write_metis = Domain->get_database()["write_metis"];
+  if(read_metis)
+  {
+    MeshPartitionInOut::read_file(*Domain, size,  N_Cells, Cell_Rank);
+  }
+  else
+  {
   t1 = MPI_Wtime();
    if(type == 0)
     {
@@ -354,13 +365,19 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
                        &nparts, NULL, options, &edgecut, Cell_Rank, Vert_Rank);
     }
    else
-    {
+   {
      cout<<" Error METIS_PartMesh implemented for Par_P2 = 0 or 1 !!" <<endl;
      MPI_Abort(comm, 0);
-    }
+   }
+   std:: cout << Cell_Rank;
+   t2 = MPI_Wtime();
+   OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
+  }
 
-  t2 = MPI_Wtime();
-  OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
+  if(write_metis)
+  {
+    MeshPartitionInOut::write_file(*Domain,size, N_Cells, Cell_Rank);
+  }
 
 
   /** *********************************************/

@@ -93,9 +93,22 @@ ParameterDatabase get_default_domain_parameters()
          " has the extension 'mesh, 'smesh', 'node' or 'poly'. "
          " currently only the smesh files are supported");
 
+#ifdef _MPI
+   db.add("read_metis", false , "If true, the domain decomposition will be "
+       "done as specified in the file given in the parameter 'read_metis_file'.");
+
+   db.add("read_metis_file", std::string("mesh_file.txt"), "Read the domain "
+          "decomposition from this file, if 'read_metis' is true.");
+
+   db.add("write_metis", false , "If true, the domain decomposition will be "
+       "written to a text file given in the parameter 'write_metis_file'.");
+
+   db.add("write_metis_file", std::string("mesh_file.txt"), "Write the domain "
+       "decomposition to this file, if 'write_metis' is true.");
+#endif
+
   return db;
 }
-
 
 // Constructor
 TDomain::TDomain(const ParameterDatabase& param_db) :
@@ -929,6 +942,11 @@ void TDomain::Init(const char *PRM, const char *GEO)
   {//catch the only implemented default case - boundary of the unit square
     initializeDefaultUnitSquareBdry();
   }
+  //start with treatment of the boundary description
+  else if (!strcmp(PRM, "DrivenCavitySquare"))
+  {//catch the only implemented default case - boundary of the unit square
+    initializeDrivenCavitySquareBdry();
+  }
   else
   {
     // non-default: read in from file
@@ -963,6 +981,10 @@ void TDomain::Init(const char *PRM, const char *GEO)
   else if (!strcmp(GEO, "UnitSquare"))
   {
     UnitSquare();
+  }
+  else if (!strcmp(GEO, "DrivenCavitySquareQuads"))
+  {
+    DrivenCavitySquareQuads();
   }
   else if (!strcmp(GEO, "UnitSquareRef"))
   {
@@ -3882,6 +3904,7 @@ void determine_n_refinement_steps_multigrid(
   }
 }
 
+
 std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
     const ParameterDatabase& parmoon_db
 #ifdef _MPI
@@ -3923,6 +3946,7 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   // 2nd step: Call the mesh partitioning.
 
   int maxCellsPerVertex;
+
   //do the actual partitioning, and examine the return value
   if ( Partition_Mesh3D(MPI_COMM_WORLD, this, maxCellsPerVertex) == 1)
   {
