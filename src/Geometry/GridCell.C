@@ -1009,40 +1009,53 @@ int TGridCell::LineMidT(int J_i, int SJ_j, double &T_0, double &T_1)
 
 bool TGridCell::PointInCell(double X, double Y)
 {
+  //Output::print("PIC called: ", X, " ", Y);
   int i, j, N_ = RefDesc->GetN_OrigEdges();
   bool test = TRUE;
   double NX, NY, DX, DY;
-//   double len;
+  double len;
 
+  // if euclidean distance to a vertex is below vert_tol,
+  // the point (X,Y) is regarded as being equal to the vertex
+  double vert_tol = 1e-4;
 
   for (i=0;i<N_;i++)
   {
     j = (i + 1) % N_;
 
+    // current vertex stored as (DX,DY)
     DX = Vertices[i]->GetX();
     DY = Vertices[i]->GetY();
+    //Output::print("vert ",i," ", DX, " ", DY);
 
+    // set (NX,NY) as outward pointing normal
     NX = DY - Vertices[j]->GetY();
     NY = Vertices[j]->GetX() - DX;
+    //normalize it
+    len = sqrt(NX*NX+NY*NY);
+    NX /= len;
+    NY /= len;
 
-//     len = sqrt(NX*NX+NY*NY);
-//     NX /= len;
-//     NY /= len;
 
+    // (DX,DY) set to the vector from current vertex to (X,Y)
     DX = X - DX;
     DY = Y - DY;
-
-    // check if given point is identical to vertex
-    if(DX*DX + DY*DY < 1e-10)
+    // check if given point is 'identical' to vertex,
+    // by computing its eucledian distance to (X,Y)
+    if(DX*DX + DY*DY < vert_tol * vert_tol)
     {
       return true;
     }
 
-//     len = sqrt(DX*DX+DY*DY);
-//     DX /= len;
-//     DY /= len;
+    //normalize the distance vector
+     len = sqrt(DX*DX+DY*DY);
+     DX /= len;
+     DY /= len;
 
-    test = (bool) (test && ((NX * DX + NY * DY) > -1e-10));
+     // compute the scalar product of edge normal and distance vector
+     // if it is negative, the indcluded angle is greater than 90 deg,
+     // and if that is the case for all edges, the point lies in the cell
+     test = (bool) (test && ((NX * DX + NY * DY) < 0));
   }
 
   return test;
