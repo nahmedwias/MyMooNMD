@@ -100,13 +100,51 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
   // get and store example specific information
   pick_example(db_["example"]);
 
+  //write the brush grid, so that it can be read by Brush
+  coll->writeMesh("brush_mesh.mesh", 2);
+
   // set up Brushs ParMooN interface
   interface_ = new Brush::InterfacePM(
-      db_["geo_file"], db_["third_dim_stretch"],
+      "brush_mesh.mesh", db_["third_dim_stretch"],
       db_["sweep_file"], " ",
       db_["therm_file"], db_["chem_file"],
       db_["max_sp_per_cell"], db_["max_m0_per_cell"]
   );
+
+  // check whether the numbering of cells is same in Brush and ParMooN
+  std::vector<std::valarray<double>> centers = interface_->get_cell_centers();
+  for(int brush_cell = 0 ; brush_cell < centers.size()  ; ++brush_cell)
+  {
+    std::valarray<double> point = centers.at(brush_cell);
+    double x = point[0];
+    double y = point[1];
+    //Output::print("Remote cell ", brush_cell, " midpoint (", point[0],",",point[1],")");
+    std::vector<int> found_in;
+    for(int loc_cell = 0 ; loc_cell < coll->GetN_Cells() ;++loc_cell)
+    {
+      TBaseCell* cell = coll->GetCell(loc_cell);
+
+      if( cell->PointInCell(x,y) )
+      {
+        found_in.push_back(loc_cell);
+        //Output::print("Midpoint of remote cell ", brush_cell, " found in local cell ", loc_cell );
+      }
+    }
+    //check the vector found_in - point found in and only found in the right local cell?
+    if(found_in.size() == 0)
+      ErrThrow("Did not find mid point of Brush cell ", brush_cell, "in any local cell.");
+    if(found_in.size() > 1)
+      ErrThrow("Found mid point of Brush cell ", brush_cell, " in ",
+               found_in.size(), " local cells , which is too much." );
+    if(found_in.at(0) != brush_cell)
+      ErrThrow("Found mid point of Brush cell ", brush_cell, " in "
+               "local cell ", found_in.at(0), " which is unexpected.");
+    // if these checks passed, everything is fine.
+  }
+
+  //CB DEBUG
+  exit(-1);
+  //END DEBUG
 
   // load the initial particle solution
   interface_->set_initial_particles(db_["init_partsol_file"]);
