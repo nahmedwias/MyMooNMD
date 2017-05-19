@@ -770,7 +770,7 @@ int TCollection::getIndexInCollection(TBaseCell *cell)
    (2) In two dimensions, mixed meshes (triangles+quadrilaterals) are supported
    (3) In 3D, we only write boundary faces and volume elements
 */
-int TCollection::writeMesh(const char *meshFileName)
+int TCollection::writeMesh(const char *meshFileName, int dimension)
 {
   int dim = 3;
 #ifdef __2D__
@@ -795,8 +795,8 @@ int TCollection::writeMesh(const char *meshFileName)
   // header of .mesh file
   MESHfile.open(meshFileName);
   MESHfile << "MeshVersionFormatted 1" << endl;
-  MESHfile << endl;
-  MESHfile << "Dimension 3" << endl; //note: dim always 3 (for visualization)
+  MESHfile << "Dimension" << endl;
+  MESHfile << dimension << endl;
   MESHfile << endl;
   MESHfile << "Vertices" << endl;
   unsigned int nPoints = NodesReferences.size();
@@ -805,7 +805,7 @@ int TCollection::writeMesh(const char *meshFileName)
     for (int j=0; j<dim; j++) {
      MESHfile << NodesCoords[i*dim+j] << "  ";
     }
-    if (dim==2) {
+    if (dim==2 && dimension == 3) {
       MESHfile << "0.0000  " ;
     }
     MESHfile << NodesReferences[i] << endl;
