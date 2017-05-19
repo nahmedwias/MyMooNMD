@@ -129,6 +129,10 @@ class NSE2D
      *         be stopped as soon as a desired reduction is achieved
      */
     double initial_residual;
+
+    // Store the initial rhs norm, so that the nonlinear iteration can be
+    // stopped relative to the initial right hand side.
+    double initial_rhs_norm;
     
     /** @brief Errors to be accesed from outside the class
      * The array is filled during the function call NSE2D::output()
@@ -159,7 +163,7 @@ class NSE2D
     
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
-    
+
   public:
     
     /** @brief constructor 
@@ -230,7 +234,7 @@ class NSE2D
      * @param i suffix for output file name, -1 means no suffix
      */
     void output(int i = -1);
-    
+
     // getters and setters
     const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
@@ -260,6 +264,8 @@ class NSE2D
     { return this->systems.front().solution; }
     BlockVector & get_solution()
     { return this->systems.front().solution; }
+    const LoopInfo& get_it_solver_info()
+    {return solver.get_solver_loop_info();}
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
     const Example_NSE2D & get_example() const

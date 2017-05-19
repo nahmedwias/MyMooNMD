@@ -134,7 +134,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   # read/write fe function
   add_executable(ParMooN_test_read_write_fe_function read_write_fe_function_test.c++)
   target_link_libraries(ParMooN_test_read_write_fe_function
-                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
                         ${_EXTERN_LIBRARIES})
   add_test(read_write_fe_function ParMooN_test_read_write_fe_function)
   list(APPEND parmoon_tests ParMooN_test_read_write_fe_function)
@@ -174,6 +174,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(nse2d ParMooN_test_nse2d)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
+  
+  #lsc / (bc-lsc!) test
+  add_executable(ParMooN_test_lsc lsc_test.c++)
+  target_link_libraries(ParMooN_test_lsc parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(lsc2d ParMooN_test_lsc)
+  list(APPEND parmoon_tests ParMooN_test_lsc)
    
   #tnse2d test (direct solver)
   add_executable(ParMooN_test_tnse2d tnse2d_test.c++)
@@ -319,6 +325,10 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   add_test(NAME mumps_wrapper COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_mumps_wrapper )
   list(APPEND parmoon_tests ParMooN_test_mumps_wrapper)
   
+  # domain partitioning read-in and write-out test
+  register_executable(ParMooN_test_domain_partitioning_read_write domain_partitioning_read_write_test.c++)
+  add_test(NAME partition_read_write COMMAND ${PETSC_MPIEXEC} -n 4 ParMooN_test_domain_partitioning_read_write)
+  
   #cd3d solver tests
   set(_EXEC_NAME ParMooN_test_cd3d_solver_mpi)
   set(_FILE_NAME cd3d_solvers_test.c++)
@@ -369,6 +379,12 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
   add_test(NAME tnse3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_tnse3d_mpi mumps)
+  
+  #read_write_fe_function_mpi test
+  set(_EXEC_NAME ParMooN_test_read_write_fe_function_mpi)
+  set(_FILE_NAME read_write_fe_function_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  add_test(NAME read_write_fe_function_mpi COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_read_write_fe_function_mpi)
 
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
 	

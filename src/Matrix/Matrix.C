@@ -212,6 +212,57 @@ double& TMatrix::get(int i,int j)
            ") in the sparsity structure");
 }
 
+
+std::vector<double> TMatrix::get_matrix_column(size_t j) const
+{
+  if((int) j > this->GetN_Columns())
+    ErrThrow("Requested column number greater than number of columns.");
+
+  std::vector<double> col(GetN_Rows(), 0.0);
+  for(int i =0; i < GetN_Rows();++i)
+  {
+    for(int l = GetRowPtr()[i]; l < GetRowPtr()[i+1] ; ++l)
+    {
+      if(GetKCol()[l] == (int) j)
+      {
+        col.at(i) = GetEntries()[l];
+      }
+    }
+  }
+  return col;
+}
+
+std::vector<double> TMatrix::get_matrix_row(size_t i) const
+{
+  if((int) i > this->GetN_Rows())
+    ErrThrow("Requested row number greater than number of rows.");
+
+  std::vector<double> row(GetN_Columns() , 0.0);
+    for(int l = GetRowPtr()[i]; l < GetRowPtr()[i+1] ; ++l)
+    {
+      int j = GetKCol()[l];
+      row.at(j) = GetEntries()[l];
+    }
+  return row;
+}
+
+void TMatrix::set_matrix_column(size_t j, std::vector<double> col)
+{
+  if((int) col.size() != GetN_Rows())
+    ErrThrow("Wrong number of entries in the given matrix column!");
+
+  for(int i =0; i < GetN_Rows();++i)
+  {
+    for(int l = GetRowPtr()[i]; l < GetRowPtr()[i+1] ; ++l)
+    {
+      if(GetKCol()[l] == (int) j)
+      {
+        set(i,j,col.at(i));
+      }
+    }
+  }
+}
+
 double & TMatrix::operator()(const int i, const int j)
 {
   return this->get(i, j);

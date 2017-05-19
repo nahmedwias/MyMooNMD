@@ -12,6 +12,7 @@ class DirectSolver;
 template <class Vector> class Preconditioner;
 class Multigrid;
 class PETScSolver;
+class LoopInfo;
 
 /** @brief Solve a linear system
  * 
@@ -88,6 +89,10 @@ class Solver
     std::shared_ptr<const Multigrid> get_multigrid() const;
     /// @brief return the multigrid object, throws if not using multigrid
     std::shared_ptr<Multigrid> get_multigrid();
+
+    /// @brief If this is an iterative solver, return a const reference to
+    ///        its loop info object. Otherwise throw.
+    const LoopInfo& get_solver_loop_info() const;
 
     /// @brief return a default solver parameter database
     ///
