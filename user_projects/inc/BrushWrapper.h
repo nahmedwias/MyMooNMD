@@ -148,7 +148,39 @@ class BrushWrapper
     std::vector<TFEFunction2D*> pd_moments_;
     std::vector<std::vector<double>> pd_moments_values_;
 
+    //just gathering some ideas:
 
+    TCollection* brush_grid; // a) the "same" grid as that one used in Brush (but as a ParMooN geometry, not a MooN geometry)
+                             // b) should come from the same domain as does the parmoon_grid
+      // TFESpace2D brush_grid_space_; //a Q0 or P0 space
+      //functions living on brush_grid:
+      //std::vector<const TFEFunction2D*> brush_grid_source_and_sink_fcts_;
+      //std::vector<std::vector<double>> brush_grid_source_and_sink_fcts_values_;
+    //std::vector<const TFEFunction2D*> brush_grid_parameter_fcts_;
+    //std::vector<std::vector<double>> brush_grid_parameter_fcts_fcts_values_;
+      //std::vector<TFEFunction2D*> brush_grid_pd_moments_;
+      //std::vector<std::vector<double>> brush_grid_pd_moments_values_;
+
+    TCollection* parmoon_grid; //the same grid as that one used for the other ParMooN functions
+      // TFESpace2D parmoon_grid_space //a copy of the space on which the ParMooN functions (concs) live
+      // std::vector<const TFEFunction2D*> parmoon_grid_source_and_sink_fcts_;
+      // std::vector<std::vector<double>> parmoon_grid_source_and_sink_fcts_values_;
+
+    // Was passieren soll ist: das brush_grid kommuniziert direkt mit Brush, das
+    // parmoon_grid direkt mit ParMooN.
+    // Also: Die Funktion "reset_fluid_phase"
+    //        - prueft, ob die eingehenden Funktionen alle auf parmoon_grid leben
+    //        - transferiert die eingehenden Daten auf das Brush-Gitter (brush_grid_parameter_fcts_)
+    //          (punktweise wie gehabt oder mittels Multigrid-Gridtransfer)
+    //        - uebergibt die Daten vom Brush-Gitter 1:1 (wenn die Zellennummerierung gleich ist...)
+    //          an Brush, welches sie dann in die Zellen schreibt
+    //
+    //      Die Funktion "sources_and_sinks"
+    //        - holt die Daten aus den Ensembles von Brush und stellt sie als Funktionen
+    //          auf dem Brush Grid dar ("brush_grid_source_and_sink_fcts_")
+    //        - transferiert diese Funktionen auf das ParMooN-Gitter (parmoon_grid_source_and_sink_fcts_)
+    //        - gibt Referenzen auf diese Funktionen zurueck, welche dann von allen
+    //          weiteren beteiligten Programmteilen ohne Interpolation genutzt werden kann
 
 
 };

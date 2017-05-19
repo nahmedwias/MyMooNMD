@@ -114,7 +114,6 @@ int main(int argc, char* argv[])
   TCollection* coll = domain.GetCollection(It_Finest, 0); //take finest grid collection for now
   BrushWrapper part_object(coll, particle_database);
 
-
   // PARTS: SET UP INITIAL STATES /////////////////////////////////////////////
   Output::info("PROGRAM PART", "Setting up initial states.");
 
