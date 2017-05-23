@@ -59,9 +59,6 @@ class FEInterpolationCheatSheet{
 
   private:
     /// This is the data.
-    /// FIXME This should be changed in such a way as that it can hold
-    /// multiple cells per interpolation point - the following calls which use
-    /// a cheat sheet must then be changed accordingly.
     std::vector<std::vector<ContainingCells>> cheat_sheet;
 };
 #undef TFESpaceXD
@@ -122,27 +119,7 @@ class FEFunctionInterpolator{
     //! Will throw an error if something is wrong.
     void check() const;
 
-
-    /**
-     * As for special member functions, since the class stores nothing than
-     * a shared pointer we think for the moment, that the default ones
-     * are created by all compilers and suffice.
-     */
-
-    //! Default copy constructor.
-    FEFunctionInterpolator(const FEFunctionInterpolator&) = default;
-
-    //! DelDefaultete move constructor.
-    FEFunctionInterpolator(FEFunctionInterpolator&&) = default;
-
-    //! Default copy assignment operator.
-    FEFunctionInterpolator& operator=(const FEFunctionInterpolator&) = default;
-
-    //! Default move assignment operator.
-    FEFunctionInterpolator& operator=(FEFunctionInterpolator&&) = default;
-
-    //! Default destructor.
-    ~FEFunctionInterpolator() = default;
+    const TFESpace* get_from_space(){return from_space_;};
 
   private:
     /**
@@ -161,6 +138,7 @@ class FEFunctionInterpolator{
 
 
     mutable std::shared_ptr<FEInterpolationCheatSheet> cheat_sheet_;
+    mutable const TFESpace* from_space_; //to check which space the interpolation cheat_sheet belongs to
 
     /**
      * Use this as a developmental tool to see, if we can maintain the 1D/2D/3D
