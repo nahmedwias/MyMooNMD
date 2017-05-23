@@ -205,10 +205,11 @@ TFEFunction2D FEFunctionInterpolator::interpolate(
       // the space this thing should interpolate from did change. One could think
       // about printing a warning and resetting the cheat_sheet instead of
       // ending the program here
-      Output::print("Caught an exception calling interpolation.Interpolate(&original_funct, cheat_sheet_.get())");
+      Output::print("Caught an exception calling interpolation. Interpolate(&original_funct, cheat_sheet_.get())");
       Output::print(e.what());
       exit(-1);
     }
+    from_space_ = original_funct.GetFESpace2D();
   }
   else
   {
@@ -216,8 +217,6 @@ TFEFunction2D FEFunctionInterpolator::interpolate(
     // - TODO that code should be moved here entirely in time
     interpolation.Interpolate(&original_funct);
   }
-
-
 
   return interpolation;
 }
