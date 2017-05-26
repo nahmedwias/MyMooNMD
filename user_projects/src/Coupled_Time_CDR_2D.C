@@ -166,7 +166,7 @@ void Coupled_Time_CDR_2D::assemble_initial_time(
 
 void Coupled_Time_CDR_2D::assemble_uncoupled_part(
     const TFEVectFunct2D* velocity_field,
-    std::vector<const TFEFunction2D*> sources_and_sinks
+    std::vector<TFEFunction2D*> sources_and_sinks
     )
 {
   if(sources_and_sinks.size() != nEquations_)
@@ -179,7 +179,15 @@ void Coupled_Time_CDR_2D::assemble_uncoupled_part(
   }
 }
 
-std::vector<const TFEFunction2D*> Coupled_Time_CDR_2D::get_fe_functions() const
+std::vector<TFEFunction2D*> Coupled_Time_CDR_2D::get_fe_functions()
+{
+   std::vector<TFEFunction2D*> fe_fcts;
+   for(auto eq : this->cdProblems_)
+     fe_fcts.push_back(&eq->get_function());
+   return fe_fcts;
+}
+
+std::vector<const TFEFunction2D*> Coupled_Time_CDR_2D::get_const_fe_functions() const
 {
    std::vector<const TFEFunction2D*> fe_fcts;
    for(auto eq : this->cdProblems_)

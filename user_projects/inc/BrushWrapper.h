@@ -5,11 +5,14 @@
  * ParMooN. Especially it is able to transform the output of Brush into
  * ParMooN style FEFunctions, so that they can be, e.g., visualized with Paraview
  * and used in the assembling of other systems.
+ *
+ * TODO When debugging is complete, disable fetch_moments - this might speed things up somewhat.
  */
 #ifndef USER_PROJECTS_INC_BRUSHWRAPPER_H_
 #define USER_PROJECTS_INC_BRUSHWRAPPER_H_
 
 #include <Domain.h>
+#include <GridTransferTool.h>
 #include <ParameterDatabase.h>
 #include <PostProcessing2D.h>
 #ifdef __2D__
@@ -41,7 +44,9 @@ class BrushWrapper
   public:
 
     /// Constructor taking a TCollection and a database.
-    BrushWrapper(TCollection* coll, const ParameterDatabase& db);
+    BrushWrapper(TCollection* brush_grid,
+                 TCollection* parmoon_grid,
+                 const ParameterDatabase& db);
 
     /// Destructor.
     ~BrushWrapper();
@@ -50,7 +55,7 @@ class BrushWrapper
 
     /// Let Brush compute the source and sink terms which will
     /// be added to the right hand side of the CDR equations.
-    std::vector<const TFEFunction2D*> sources_and_sinks();
+    std::vector<TFEFunction2D*> sources_and_sinks();
 
     /**
      * Reset the fluid phase data in Brush, i.e., velocity, pressure, temperature
@@ -64,7 +69,7 @@ class BrushWrapper
     void reset_fluid_phase(
         const TFEVectFunct2D& u,
         const TFEFunction2D& p,
-        std::vector<const TFEFunction2D*> species);
+        std::vector<TFEFunction2D*> species);
 
     /// Run the particle solver.
     void solve(double t_start, double t_end);
@@ -80,107 +85,79 @@ class BrushWrapper
     //
     void pick_example(int exmpl_code);
 
-    //call this in order to fill the reset_fluid_phase_cheats_ cache
-    void cache_output_point_containing_cells(const TFESpace2D& one_space);
-
-    /// The database for control parameters.
-    ParameterDatabase db_;
-
     /// The ParMooN interface of Brush which is wrapped up by 'this'.
     /// TODO Ownership for the object is taken, but there is some trouble with the
     /// destructor.
     Brush::InterfacePM* interface_;
 
-    /* ****** CONTROL STRUCTURE FOR PARAMETERS THAT GO TO BRUSH*/
-    /// Spatial dimension - must equal number of velocity components.
-    size_t parameter_spatial_dimension_;
-    /// Number of primary species that go to Brush as parameters.
-    /// ('primary': the species is represented as an fe function in ParMooN)
-    size_t parameter_n_specs_primary_;
-    /// Number of derived species that go to Brush as parameters.
-    /// ('derived': the species is computed from primary species in ParMooN)
-    size_t parameter_n_specs_derived_;
+    /// The database for control parameters.
+    ParameterDatabase db_;
+
+    // BRUSH FE OBJECTS
+    //grid
+    TCollection* brush_grid_;
+    //fe space (Q0 or P0)
+    TFESpace2D br_grid_space_;
+    //fe functions for source and sink data (as returned from Brush)
+    std::vector<TFEFunction2D*> br_grid_source_fcts_;
+    std::vector<std::vector<double>> br_grid_source_fcts_values_;
+    //fe functions for parameter data (as handed over to Brush)
+    std::vector<TFEFunction2D*> br_grid_param_fcts_;
+    std::vector<std::vector<double>> br_grid_param_fcts_values_;
+    //fe functions for moments of the psd data (as returned from Brush) (used for output only)
+    std::vector<TFEFunction2D*> br_grid_psdmom_fcts_;
+    std::vector<std::vector<double>> br_grid_psdmom_fcts_values_;
+
+    // PARMOON FE OBJECTS
+    //grid
+    TCollection* parmoon_grid_;
+    //fe space on parmoon_grid_, for return values to parmoon
+    TFESpace2D pm_grid_space_;
+    //fe functions for source and sink data (as handed over to other ParMooN parts)
+    std::vector<TFEFunction2D*> pm_grid_source_fcts_;
+    std::vector<std::vector<double>> pm_grid_source_fcts_values_;
+
+
+
+    // OBJECTS FOR TRANSFERRING DATA BETWEEN BOTH 'WORLDS'
+    GridTransferTool pm_to_brush_tool_;
+    GridTransferTool brush_to_pm_tool_;
+
+
+    // CONTROL STRUCTURE FOR PARAMETERS THAT GO TO BRUSH
     /// The vector of the names of the parameters. Must be of size
     /// parameter_spatial_dimension_ + 1 + parameter_n_specs_primary_ +
     /// parameter_n_specs_derived_. Where "+1" is for the fluid pressure.
     std::vector<std::string> parameter_function_names_;
+    /// Number of primary species that go to Brush as parameters.
+    /// ('primary': the species is represented as an fe function in ParMooN)
+    size_t parameter_n_specs_primary_;
+    /// Spatial dimension - must equal number of velocity components.
+     size_t parameter_spatial_dimension_;
+    /// Number of derived species that go to Brush as parameters.
+    /// ('derived': the species is computed from primary species in ParMooN)
+    size_t parameter_n_specs_derived_;
     /// The real valued functions which compute the derived parameters from
     /// the primary parameters. One for each derived parameter.
     std::vector<std::function<double(const std::vector<double>&)>>
         parameter_specs_derived_fcts_;
 
-    /// Those are the points in space at which
-    /// Brush expects function values as input.
-    std::vector<std::valarray<double>> parameter_sample_points_;
 
-    /// Resetting the fluid phase in Brush requires point evaluation of fe
-    /// functions (FindGradient). The cells in which to find the respective cells
-    /// are cached here, which saves a lot of runtime.
-    /// reset_fluid_phase_cheats_[p] holds the numbers of all cells that
-    /// contain output point nr p.
-    /// Note: THIS WIL ONLY WORK IF THE GRID IS THE SAME FOR ALL PARMOON FUNCTIONS!
-    typedef std::vector<int> ContainingCells;
-    std::vector<ContainingCells> reset_fluid_phase_cheats_;
-
-    /* ****** CONTROL AND DATA STRUCTURE FOR SOURCES AND SINKS (COME FROM BRUSH)*/
-    /// The following members bundle all that must be known for a representation
-    /// of Brush's return values in ParMooN.
-    /// All functions which come from Brush start their life in ParMooN
-    /// as 0th order fe functions on the following grid and fe space.
-    TCollection* from_brush_grid_; //NO OWNERSHIP TAKEN.
-    TFESpace2D from_brush_space_;
-    std::vector<const TFEFunction2D*> source_and_sink_fcts_;
-    std::vector<std::vector<double>> source_and_sink_fcts_values_;
+    // CONTROL STRUCTURE FOR SOURCES AND SINKS THAT COME FROM BRUSH
     // the following two informations come from the example
     std::vector<std::string> source_and_sink_function_names_;
     std::vector<Exmpl::SourceAndSinkTerms> source_and_sink_requests_;
 
-    /* ****** PROGRAM OUTPUT OBJECTS */
-    // (their sole purpose is post-processing.)
 
-    // Files into which Brush writes its output. TODO Can't they be handled in Brush?
+    // OBJECTS FOR PROGRAM OUTPUT (their sole purpose is post-processing.)
+    // Files into which Brush writes its output.
     std::ofstream moment_stats_file_;
     std::ofstream outflow_particles_file_;
     std::ofstream inflow_particles_file_;
     // Moments of the PSD which can be calculated by Brush. Used only for visual-
     // ization with paraview, which is performed by the output_writer_.
     PostProcessing2D output_writer_;
-    std::vector<TFEFunction2D*> pd_moments_;
-    std::vector<std::vector<double>> pd_moments_values_;
 
-    //just gathering some ideas:
-
-    TCollection* brush_grid; // a) the "same" grid as that one used in Brush (but as a ParMooN geometry, not a MooN geometry)
-                             // b) should come from the same domain as does the parmoon_grid
-      // TFESpace2D brush_grid_space_; //a Q0 or P0 space
-      //functions living on brush_grid:
-      //std::vector<const TFEFunction2D*> brush_grid_source_and_sink_fcts_;
-      //std::vector<std::vector<double>> brush_grid_source_and_sink_fcts_values_;
-    //std::vector<const TFEFunction2D*> brush_grid_parameter_fcts_;
-    //std::vector<std::vector<double>> brush_grid_parameter_fcts_fcts_values_;
-      //std::vector<TFEFunction2D*> brush_grid_pd_moments_;
-      //std::vector<std::vector<double>> brush_grid_pd_moments_values_;
-
-    TCollection* parmoon_grid; //the same grid as that one used for the other ParMooN functions
-      // TFESpace2D parmoon_grid_space //a copy of the space on which the ParMooN functions (concs) live
-      // std::vector<const TFEFunction2D*> parmoon_grid_source_and_sink_fcts_;
-      // std::vector<std::vector<double>> parmoon_grid_source_and_sink_fcts_values_;
-
-    // Was passieren soll ist: das brush_grid kommuniziert direkt mit Brush, das
-    // parmoon_grid direkt mit ParMooN.
-    // Also: Die Funktion "reset_fluid_phase"
-    //        - prueft, ob die eingehenden Funktionen alle auf parmoon_grid leben
-    //        - transferiert die eingehenden Daten auf das Brush-Gitter (brush_grid_parameter_fcts_)
-    //          (punktweise wie gehabt oder mittels Multigrid-Gridtransfer)
-    //        - uebergibt die Daten vom Brush-Gitter 1:1 (wenn die Zellennummerierung gleich ist...)
-    //          an Brush, welches sie dann in die Zellen schreibt
-    //
-    //      Die Funktion "sources_and_sinks"
-    //        - holt die Daten aus den Ensembles von Brush und stellt sie als Funktionen
-    //          auf dem Brush Grid dar ("brush_grid_source_and_sink_fcts_")
-    //        - transferiert diese Funktionen auf das ParMooN-Gitter (parmoon_grid_source_and_sink_fcts_)
-    //        - gibt Referenzen auf diese Funktionen zurueck, welche dann von allen
-    //          weiteren beteiligten Programmteilen ohne Interpolation genutzt werden kann
 
 
 };

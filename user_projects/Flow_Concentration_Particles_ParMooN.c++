@@ -79,8 +79,15 @@ int main(int argc, char* argv[])
   //===========================================================================
   // do initial refinements of the domain
   size_t n_ref = domain.get_n_initial_refinement_steps();
+  TCollection* brush_grid;
   for(size_t i=0; i<n_ref; i++)
+  {
+    if(i == n_ref - 1)
+    {
+      brush_grid = domain.GetCollection(It_Finest, 0); //brush collection: one level less
+    }
     domain.RegRefineAll();
+  }
 
   // PART: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
   Output::info("PROGRAM PART", "Precomputing velocity.");
@@ -111,8 +118,7 @@ int main(int argc, char* argv[])
   Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
 
   // the particles object which wraps up Brush
-  TCollection* coll = domain.GetCollection(It_Finest, 0); //take finest grid collection for now
-  BrushWrapper part_object(coll, particle_database);
+  BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
 
   // PARTS: SET UP INITIAL STATES /////////////////////////////////////////////
   Output::info("PROGRAM PART", "Setting up initial states.");
@@ -126,7 +132,7 @@ int main(int argc, char* argv[])
   conc_object.output();
 
   //set fluid phase in the particle object
-  std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
+  std::vector<TFEFunction2D*> fcts = conc_object.get_fe_functions();
   part_object.reset_fluid_phase(velo_field, pressure, fcts);
   part_object.output(TDatabase::TimeDB->CURRENTTIME);
 
@@ -154,7 +160,7 @@ int main(int argc, char* argv[])
     Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
     //update and solve particles
-    std::vector<const TFEFunction2D*> fcts = conc_object.get_fe_functions();
+    std::vector<TFEFunction2D*> fcts = conc_object.get_fe_functions();
     part_object.reset_fluid_phase(velo_field, pressure, fcts);
     part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + tau);
 
@@ -172,7 +178,8 @@ int main(int argc, char* argv[])
 
   Output::close_file();
 
-  delete coll; //the collection which was required for the particle object
+  //clean up the collections required for the particle object
+  delete brush_grid;
 
   return 0;
 }

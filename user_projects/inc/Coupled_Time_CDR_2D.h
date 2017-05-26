@@ -80,12 +80,13 @@ class Coupled_Time_CDR_2D {
     /// We assume that the "uncoupled" (CD) parts do only depend on the velocity
     /// field, but neither on each other nor on other FE functions .
     void assemble_uncoupled_part(const TFEVectFunct2D* velocity_field,
-                                 std::vector<const TFEFunction2D*> sources_and_sinks);
+                                 std::vector<TFEFunction2D*> sources_and_sinks);
 
     /**
      * Return the current solution fe functions of the equations.
      */
-    std::vector<const TFEFunction2D*> get_fe_functions() const;
+    std::vector<TFEFunction2D*> get_fe_functions();
+    std::vector<const TFEFunction2D*> get_const_fe_functions() const;
 
     /**
      * Produce some output.
