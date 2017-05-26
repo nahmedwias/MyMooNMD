@@ -55,9 +55,6 @@ class Time_CD2D
       /** @brief Finite element function */
       TFEFunction2D fe_function;
 
-      //Store interpolators which are reused in all time steps.
-      std::shared_ptr<FEFunctionInterpolator> brush_interpolator_;
-
       /** @brief constructor*/
       System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
 
@@ -200,7 +197,7 @@ class Time_CD2D
      * advective term.
      */
     void assemble(const TFEVectFunct2D* velocity_field = nullptr,
-                  const TFEFunction2D* sources_and_sinks = nullptr);
+                  TFEFunction2D* sources_and_sinks = nullptr);
     
     /**
      * Descales the stiffness matrices from the modifications due to time
@@ -316,7 +313,7 @@ class Time_CD2D
         LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
         bool assemble_both,
         const TFEVectFunct2D* velocity_field,
-        const TFEFunction2D* sources_and_sinks = nullptr);
+        TFEFunction2D* sources_and_sinks = nullptr);
 
 };
 

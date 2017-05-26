@@ -210,8 +210,10 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             case GALERKIN:
                 this->N_Terms = 3;
                 this->Derivatives = { D10, D01, D00 };
-                this->Needs2ndDerivatives = new bool[1];
+                this->Needs2ndDerivatives = new bool[3];//CB: better safe than sorry, this gave a valgrind error in my branch
                 this->Needs2ndDerivatives[0] = false;
+                this->Needs2ndDerivatives[1] = false;
+                this->Needs2ndDerivatives[2] = false;
                 this->FESpaceNumber = { 0, 0, 0 };
                 
                 this->AssembleParam = LocalMatrixARhs;
@@ -829,8 +831,14 @@ void LocalAssembling2D::GetParameters(int n_points,
 
     N_BaseFunct[j]=TFEDatabase2D::GetBaseFunct2D(BaseFunct_Id)->GetDimension();
     
+//    //CB DEBUG
+//      Output::print("j: ", j," BaseFunct_Id: ", BaseFunct_Id, " FEValue_MultiIndex[j]: ", FEValue_MultiIndex[j]);
+//    //END DEBUG
     orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id, 
                                                          FEValue_MultiIndex[j]);
+//    //CB DEBUG
+//    Output::print(orig_values[j]);
+//    //END DEBUG
     Index[j] = fespace->GetGlobalDOF(cellnum);
   } // endfor j
 

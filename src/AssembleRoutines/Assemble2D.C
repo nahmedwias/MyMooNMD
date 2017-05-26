@@ -9484,7 +9484,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   // ########################################################################
   // loop over all cells
   // ########################################################################
-  TCollection *Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
+  // all spaces use same Coll  FIXME Yet this is never checked, plus the collection might be equal but not the same!
+  TCollection *Coll = fespaces[0]->GetCollection();
   int N_Cells = Coll->GetN_Cells();
   for(int i=0;i<N_Cells;i++) // set the cell indices
   {

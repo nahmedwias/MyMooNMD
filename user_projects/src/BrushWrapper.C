@@ -26,26 +26,7 @@ void ZeroBoundaryValues(int BdComp, double Param, double &value)
       value = 0;
 }
 
-//Get the barycenter of a ParMooN grid cell.
-std::valarray<double> center_point(const TBaseCell& cell)
-{
-#ifdef __3D__
-  ErrThrow("Does center point calculation work in 3D?");
-#endif
-  std::valarray<double> p(0.0,3);
 
-  unsigned int n_verts = cell.GetN_Vertices();
-  for(unsigned int v = 0; v < n_verts; v++)
-  {
-    cell.GetVertex(v)->GetX();
-    p[0] += cell.GetVertex(v)->GetX();
-    p[1] += cell.GetVertex(v)->GetY();
-  }
-  p[0] /= n_verts;
-  p[1] /= n_verts;
-
-  return p;
-}
 
 void BrushWrapper::pick_example(int exmpl_code)
 {
@@ -85,23 +66,51 @@ void BrushWrapper::pick_example(int exmpl_code)
   }
 }
 
-// use 0-order elements, because that is the 'language' Brush speaks
-int fe_order = 0;
-BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
-: db_(db),
-  from_brush_grid_(coll),
-  from_brush_space_(from_brush_grid_, (char*)"psd-moms", (char*)"psd-moms",
-                    DirichletBoundaryConditions, fe_order, nullptr),
+/**
+ *
+ * brush_grid is the grid where the brush simulation should run on it should
+ * (but need not) stand in a refinement relation to the grid of the parmoon space
+ *
+ * parmoon_space is the space of the transported species which is used in parmoon
+ * it gets re-constructed for this wrapper, because there is currently no copy
+ * constructor in the fespace - THIS MEANS THAT ALL RELEVANT GLOBAL PARAMETERS
+ * MUST NOT CHANGE
+ *
+ */
+BrushWrapper::BrushWrapper(TCollection* brush_grid,
+                           TCollection* parmoon_grid,
+                           const ParameterDatabase& db)
+: //database
+  db_(db),
+  //brush fe
+  brush_grid_(brush_grid),
+  br_grid_space_(brush_grid_, (char*)"brush-space", (char*)"Space for the "
+      "direct representation of Brush's 0 order fe functions in ParMooN.",
+       DirichletBoundaryConditions, 0, nullptr),
+  //parmoon fe
+  parmoon_grid_(parmoon_grid),
+  pm_grid_space_(parmoon_grid_,(char*)"parmoon-space", (char*)"Space for the "
+                 "ParMooN-representation of the functions which Brush returns",
+                 DirichletBoundaryConditions , 0,
+                 nullptr),
+  //grid trafo and control
+  pm_to_brush_tool_(&br_grid_space_, GridTransferType::MidPointEvaluation),
+  brush_to_pm_tool_(&pm_grid_space_, GridTransferType::MidPointEvaluation),
+  parameter_n_specs_primary_(0),   // gets reset by pick_example
+  parameter_spatial_dimension_(0), // gets reset by pick_example
+  parameter_n_specs_derived_(0),   // gets reset by pick_example
+  //output files and vtk object
   moment_stats_file_(db_["out_part_moments_file"].get<std::string>()),
   outflow_particles_file_(db_["out_part_lists_file"].get<std::string>()),
   inflow_particles_file_(db_["in_part_lists_file"].get<std::string>()),
   output_writer_(db_)
 {
+
   // get and store example specific information
   pick_example(db_["example"]);
 
-  //write the brush grid, so that it can be read by Brush
-  coll->writeMesh("brush_mesh.mesh", 2);
+  //write the brush grid to a file, which can be read by Brush
+  brush_grid_->writeMesh("brush_mesh.mesh", 2);
 
   // set up Brushs ParMooN interface
   interface_ = new Brush::InterfacePM(
@@ -111,18 +120,18 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
       db_["max_sp_per_cell"], db_["max_m0_per_cell"]
   );
 
-  // check whether the numbering of cells is same in Brush and ParMooN
+  // check if the numbering of cells in the brush grid is the same in Brush and ParMooN
   std::vector<std::valarray<double>> centers = interface_->get_cell_centers();
-  for(int brush_cell = 0 ; brush_cell < centers.size()  ; ++brush_cell)
+  for(size_t brush_cell = 0 ; brush_cell < centers.size()  ; ++brush_cell)
   {
     std::valarray<double> point = centers.at(brush_cell);
     double x = point[0];
     double y = point[1];
     //Output::print("Remote cell ", brush_cell, " midpoint (", point[0],",",point[1],")");
     std::vector<int> found_in;
-    for(int loc_cell = 0 ; loc_cell < coll->GetN_Cells() ;++loc_cell)
+    for(int loc_cell = 0 ; loc_cell < brush_grid_->GetN_Cells() ;++loc_cell)
     {
-      TBaseCell* cell = coll->GetCell(loc_cell);
+      TBaseCell* cell = brush_grid_->GetCell(loc_cell);
 
       if( cell->PointInCell(x,y) )
       {
@@ -136,71 +145,80 @@ BrushWrapper::BrushWrapper(TCollection* coll, const ParameterDatabase& db)
     if(found_in.size() > 1)
       ErrThrow("Found mid point of Brush cell ", brush_cell, " in ",
                found_in.size(), " local cells , which is too much." );
-    if(found_in.at(0) != brush_cell)
+    if(found_in.at(0) != (int) brush_cell)
       ErrThrow("Found mid point of Brush cell ", brush_cell, " in "
                "local cell ", found_in.at(0), " which is unexpected.");
     // if these checks passed, everything is fine.
   }
 
-  //CB DEBUG
-  exit(-1);
-  //END DEBUG
-
   // load the initial particle solution
   interface_->set_initial_particles(db_["init_partsol_file"]);
 
-  // get those points where Brush expects values from ParMooN
-  parameter_sample_points_ = interface_->get_cell_centers();
-
-  // Set up and initialize FE functions which receive their data from Brush
-  int fe_length = from_brush_space_.GetN_DegreesOfFreedom();
-  std::vector<double> dummy_fe_values(fe_length, 0.0);
-
-  // tell the interface which sample points parMooN is interested in
-  // (for a start: the cell centers of all cells)
-  int n_cells = coll->GetN_Cells();
-  std::vector<std::valarray<double>> parmoon_cell_centers(n_cells,{0,0,0}); //z value will stay 0 in 2D
-  for(int c = 0; c < n_cells; ++c)
-  {
-    parmoon_cell_centers[c] = center_point(*coll->GetCell(c));
-  }
-  interface_->set_output_sample_points(parmoon_cell_centers); //set ParMooN points in Brush
-
   // *** The source-and-sink functions contain the back-coupling from Brush to ParMooN
-  int n_s_and_s_terms = source_and_sink_function_names_.size();
-  source_and_sink_fcts_values_ =
+  int n_s_and_s_terms = source_and_sink_function_names_.size(); //their number
+  //...here their ParMooN-form gets initialized
+  int pm_space_fe_length = pm_grid_space_.GetN_DegreesOfFreedom();
+  std::vector<double> dummy_fe_values(pm_space_fe_length, 0.0);
+  pm_grid_source_fcts_values_ =
       std::vector<std::vector<double>>(n_s_and_s_terms, dummy_fe_values);
-  source_and_sink_fcts_.resize(n_s_and_s_terms);
+  pm_grid_source_fcts_.resize(n_s_and_s_terms);
   for(int s=0; s < n_s_and_s_terms; ++s)
   {
-    source_and_sink_fcts_.at(s) =
-        new TFEFunction2D(&from_brush_space_, (char*) &source_and_sink_function_names_.at(s),
-                          (char*) " ", &source_and_sink_fcts_values_[s].at(0), fe_length);
+    pm_grid_source_fcts_.at(s) =
+        new TFEFunction2D(&pm_grid_space_,source_and_sink_function_names_[s].c_str(),
+                          (char*) "Brush function transferred to ParMooN grid.",
+                          &pm_grid_source_fcts_values_[s].at(0), pm_space_fe_length);
+  }
+  //...and here is their Brush-form
+  int br_space_fe_length = br_grid_space_.GetN_DegreesOfFreedom();
+  dummy_fe_values.resize(br_space_fe_length, 0.0);
+  br_grid_source_fcts_values_ =
+      std::vector<std::vector<double>>(n_s_and_s_terms, dummy_fe_values);
+  br_grid_source_fcts_.resize(n_s_and_s_terms);
+  for(int s=0; s < n_s_and_s_terms; ++s)
+  {
+    br_grid_source_fcts_.at(s) =
+        new TFEFunction2D(&br_grid_space_, (char*) &source_and_sink_function_names_.at(s),
+                          (char*) "Brush function representation on Brush grid.",
+                          &br_grid_source_fcts_values_[s].at(0), br_space_fe_length);
   }
 
-  // *** The moments functions are only used for output and visualization.
-  pd_moments_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
+  // *** The parameter functions contain the fluid information that will be given to Brush.
+  int n_param_fcts = parameter_spatial_dimension_ + 1 + parameter_n_specs_primary_; // +1 is for the pressure
+  br_grid_param_fcts_values_ =
+      std::vector<std::vector<double>>(n_param_fcts, dummy_fe_values);
+  br_grid_param_fcts_.resize(n_param_fcts);
+  for(int p = 0; p < n_param_fcts; ++p)
+  {
+    br_grid_param_fcts_.at(p) =
+        new TFEFunction2D(&br_grid_space_, (char*) &parameter_function_names_.at(p),
+                          (char*) "ParMooN function representation on Brush grid.",
+                          &br_grid_param_fcts_values_[p].at(0), br_space_fe_length);
+  }
 
-  pd_moments_.resize(3);
-  pd_moments_.at(0) = new TFEFunction2D(&from_brush_space_,
-        (char*)"pd-m0", (char*)"", &pd_moments_values_[0].at(0), fe_length);
-  pd_moments_.at(1) = new TFEFunction2D(&from_brush_space_,
-        (char*)"pd-m1", (char*)"", &pd_moments_values_[1].at(0), fe_length);
-  pd_moments_.at(2) = new TFEFunction2D(&from_brush_space_,
-        (char*)"pd-m2", (char*)"", &pd_moments_values_[2].at(0), fe_length);
+  // *** The moments functions on the brush grid are only used for output and visualization.
+  br_grid_psdmom_fcts_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
+
+  br_grid_psdmom_fcts_.resize(3);
+  br_grid_psdmom_fcts_.at(0) = new TFEFunction2D(&br_grid_space_,
+        (char*)"pd-m0", (char*)"", &br_grid_psdmom_fcts_values_[0].at(0), br_space_fe_length);
+  br_grid_psdmom_fcts_.at(1) = new TFEFunction2D(&br_grid_space_,
+        (char*)"pd-m1", (char*)"", &br_grid_psdmom_fcts_values_[1].at(0), br_space_fe_length);
+  br_grid_psdmom_fcts_.at(2) = new TFEFunction2D(&br_grid_space_,
+        (char*)"pd-m2", (char*)"", &br_grid_psdmom_fcts_values_[2].at(0), br_space_fe_length);
 
   //add the moments functions to the output writer
-  output_writer_.add_fe_function(pd_moments_[0]);
-  output_writer_.add_fe_function(pd_moments_[1]);
-  output_writer_.add_fe_function(pd_moments_[2]);
+  output_writer_.add_fe_function(br_grid_psdmom_fcts_[0]);
+  output_writer_.add_fe_function(br_grid_psdmom_fcts_[1]);
+  output_writer_.add_fe_function(br_grid_psdmom_fcts_[2]);
 
   //force an update of all ensemble stats
   interface_->update_stats();
 
   // store moments m0, m1 and m2.
-  interface_->fetch_moment(0, &pd_moments_values_[0].at(0));
-  interface_->fetch_moment(1, &pd_moments_values_[1].at(0));
-  interface_->fetch_moment(2, &pd_moments_values_[2].at(0));
+  interface_->fetch_moment(0, &br_grid_psdmom_fcts_values_[0].at(0));
+  interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
+  interface_->fetch_moment(2, &br_grid_psdmom_fcts_values_[2].at(0));
 
   //open the file streams
   if(moment_stats_file_.is_open())
@@ -228,43 +246,62 @@ BrushWrapper::~BrushWrapper()
   outflow_particles_file_.close();
   inflow_particles_file_.close();
 
-  for (auto f : pd_moments_)
-  {
+  for (auto f : br_grid_source_fcts_)
     delete f;
-  }
-  for (auto f : source_and_sink_fcts_)
-  {
+
+  for (auto f : br_grid_param_fcts_)
     delete f;
-  }
+
+  for (auto f : br_grid_psdmom_fcts_)
+    delete f;
+
+  for (auto f : pm_grid_source_fcts_)
+    delete f;
+
 }
 
-std::vector<const TFEFunction2D*> BrushWrapper::sources_and_sinks()
+std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
 {
 
-  // Let the interface recalculate the function values.
+  // The sources and sinks from Brush are picked and stored as function values
+  // on the Brush grid.
+  // In order for this to work, two class invariants must be fulfilled:
+  //  1) Brush grid and the cells in Brush must be in the same order
+  //  2) The Brush grid source function must be of order 0
+  //TODO Does this work as expected? Coefficient value translates directly into function value?
   interface_->fetch_sources_and_sinks(
       source_and_sink_requests_,
-      source_and_sink_fcts_values_
+      br_grid_source_fcts_values_
         );
 
-  return source_and_sink_fcts_;
+  int n_source_fcts = source_and_sink_function_names_.size();
+  for(int f = 0 ; f < n_source_fcts ; ++f)
+  {
+    brush_to_pm_tool_.transfer(*br_grid_source_fcts_.at(f),
+                               *pm_grid_source_fcts_.at(f),
+                               pm_grid_source_fcts_values_.at(f));
+  }
+
+ return pm_grid_source_fcts_;
 }
 
 void BrushWrapper::reset_fluid_phase(
     const TFEVectFunct2D& u,
     const TFEFunction2D& p,
-    std::vector<const TFEFunction2D*> species
+    std::vector<TFEFunction2D*> species
     )
 {
+  //TODO All the incoming data must be transferred to the br_grid_space_,
+  //     this data will then be communicated to Brush.
   //check input
   if(species.size() != parameter_n_specs_primary_)
    ErrThrow("Incorrect number of species fe functions given.");
   if(u.GetN_Components() != (int) this->parameter_spatial_dimension_)
     ErrThrow("Incorrect number of velocity components given.");
 
-  size_t n_points = parameter_sample_points_.size();
+  size_t n_data_sets = brush_grid_->GetN_Cells();
 
-  Brush::DataPM pm_data(parameter_function_names_, n_points);
+  Brush::DataPM pm_data(parameter_function_names_, n_data_sets);
 
   //For the velocity we need two xtra fe functions
   TFEFunction2D* u0_fe = u.GetComponent(0);
@@ -275,24 +312,22 @@ void BrushWrapper::reset_fluid_phase(
   size_t n_specs_primary = parameter_n_specs_primary_;
   size_t n_specs_derived = parameter_n_specs_derived_;
 
-  std::vector<const TFEFunction2D*> fe_functs(dim + 1 + n_specs_primary);
-  fe_functs[0] = u0_fe;
-  fe_functs[1] = u1_fe;
-  fe_functs[2] = &p;
-  std::copy( species.begin() , species.end(), &fe_functs[3]);
+  std::vector<const TFEFunction2D*> fe_fcts_original(dim + 1 + n_specs_primary);
+  fe_fcts_original[0] = u0_fe;
+  fe_fcts_original[1] = u1_fe;
+  fe_fcts_original[2] = &p;
+  std::copy( species.begin() , species.end(), &fe_fcts_original[3]);
 
-  // This is a good place to cache containing cells of the output points
-  if(reset_fluid_phase_cheats_.empty())
+  // transfer all 'original' (ParMooN) functions to the Brush grid
+  for(size_t f = 0; f<fe_fcts_original.size() ;++f)
   {
-    cache_output_point_containing_cells(*p.GetFESpace2D());
+    pm_to_brush_tool_.transfer(
+        *fe_fcts_original[f],*br_grid_param_fcts_[f], br_grid_param_fcts_values_[f]);
   }
 
   //loop over all evaluation points (i.e., Brushs cell midpoints)
-  for (size_t point = 0 ; point < n_points ; ++point)
+  for (size_t d = 0 ; d < n_data_sets ; ++d)
   {
-    //x and y value of the current output sample point
-    double x = parameter_sample_points_[point][0];
-    double y = parameter_sample_points_[point][1];
 
     size_t data_set_size = dim + 1 + n_specs_primary + n_specs_derived;
     std::vector<double> data_set(data_set_size , 0.0);
@@ -300,9 +335,7 @@ void BrushWrapper::reset_fluid_phase(
     // point evaluations of all fe functions
     for(size_t i = 0 ; i < dim + 1 + n_specs_primary ; ++i)
     {
-      double eval[3]; // will include differentials, thus length is '3')
-      fe_functs[i]->FindGradient(x, y, eval, reset_fluid_phase_cheats_.at(point));
-      data_set[i] = eval[0];
+      data_set[i] = br_grid_param_fcts_values_[i][d];
     }
     // computation for all derived species concentrations
     for(size_t i = dim + 1 + n_specs_primary; i < data_set_size; ++i)
@@ -339,9 +372,9 @@ void BrushWrapper::solve(double t_start, double t_end)
   // visualization and the output
   // TODO Make this runtime-controllable.
   interface_->update_stats();
-  interface_->fetch_moment(0, &pd_moments_values_[0].at(0));
-  interface_->fetch_moment(1, &pd_moments_values_[1].at(0));
-  interface_->fetch_moment(2, &pd_moments_values_[2].at(0));
+  interface_->fetch_moment(0, &br_grid_psdmom_fcts_values_[0].at(0));
+  interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
+  interface_->fetch_moment(2, &br_grid_psdmom_fcts_values_[2].at(0));
 
 }
 
@@ -356,27 +389,4 @@ void BrushWrapper::output(double t)
 
   interface_->write_inlet_particle_list(inflow_particles_file_);
 
-}
-
-
-void BrushWrapper::cache_output_point_containing_cells(const TFESpace2D& one_space)
-{
-
-  for (auto p : parameter_sample_points_)
-  {
-    double x = p[0];
-    double y = p[1];
-    std::vector<int> cheat;
-    const TCollection& coll = *one_space.GetCollection();
-    int N_Cells = coll.GetN_Cells();
-    for(int i=0;i<N_Cells;i++)
-    {
-      TBaseCell* cell = coll.GetCell(i);
-      if(cell->PointInCell(x,y))
-      {
-        cheat.push_back(i);
-      }
-    }
-    reset_fluid_phase_cheats_.push_back(cheat);
-  }
 }

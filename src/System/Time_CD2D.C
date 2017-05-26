@@ -282,7 +282,7 @@ void Time_CD2D::assemble_initial_time(const TFEVectFunct2D* velocity_field)
 /**************************************************************************** */
 void Time_CD2D::assemble(
     const TFEVectFunct2D* velocity_field,
-    const TFEFunction2D* sources_and_sinks)
+    TFEFunction2D* sources_and_sinks)
 {
 
   LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;  
@@ -576,8 +576,26 @@ void Time_CD2D::call_assembling_routine(
 
   // Assemble mass matrix, stiffness matrix and rhs
   //...variables which are the same for both
-  const TFESpace2D * fe_space = &s.fe_space;
-  BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
+  std::vector<const TFESpace2D* > fe_spaces = {&s.fe_space};
+  int n_fe_spaces = 1;
+  if(la_stiff.GetN_Parameters() == 4)
+  {// this is an awful hack - yet it is my only sign, that
+   // modify_and_call-assembling_routine was called WITHOUT source-and-sink term
+    n_fe_spaces = 2;
+    fe_spaces = {&s.fe_space, la_stiff.get_fe_function(1)->GetFESpace2D()};
+  }
+  else if(la_stiff.GetN_Parameters() == 5)
+  {// this is an awful hack - yet it is my sign, that
+   // modify_and_call-assembling_routine was called WITH source-and-sink term
+    n_fe_spaces = 3;
+    fe_spaces = {&s.fe_space,
+                 la_stiff.get_fe_function(1)->GetFESpace2D(),
+                 la_stiff.get_fe_function(3)->GetFESpace2D()};
+  }
+
+  // I checked: we need as many boundary_conditions as we have right hand sides (1),
+  // those are the boundary conditions of the 0th fe space (the ansatz space)
+  BoundCondFunct2D * boundary_conditions = fe_spaces[0]->GetBoundCondition();
   int N_Matrices = 1;
   double * rhs_entries = s.rhs.get_entries();
 
@@ -593,17 +611,20 @@ void Time_CD2D::call_assembling_routine(
   // reset right hand side and matrix to zero
   s.rhs.reset();
   stiff_block[0]->reset();
-  Assemble2D(1, &fe_space, N_Matrices, stiff_block, 0, NULL, 1, &rhs_entries,
-             &fe_space, &boundary_conditions, non_const_bound_value, la_stiff);
+  Assemble2D(n_fe_spaces, &fe_spaces.at(0), N_Matrices, stiff_block, 0, NULL, 1, &rhs_entries,
+             &fe_spaces.at(0), &boundary_conditions, non_const_bound_value, la_stiff);
 
   // If assemble_both is true, we also (re)assemble the mass matrix.
   if (assemble_both)
   {
+    fe_spaces = {&s.fe_space};
+    n_fe_spaces = 1;
+
     std::vector<std::shared_ptr<FEMatrix>> mass_blocks = s.mass_matrix.get_blocks_uniquely();
     TSquareMatrix2D * mass_block[1]{reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get())};
 
     mass_block[0]->reset();
-    Assemble2D(1, &fe_space, N_Matrices, mass_block, 0, NULL, 0, NULL,
+    Assemble2D(n_fe_spaces, &fe_spaces.at(0), N_Matrices, mass_block, 0, NULL, 0, NULL,
                NULL, &boundary_conditions, non_const_bound_value, la_mass);
   }
 }
@@ -628,8 +649,11 @@ void Time_CD2D::modify_and_call_assembling_routine(
     LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
     bool assemble_both,
     const TFEVectFunct2D* velocity_field,
-    const TFEFunction2D* sources_and_sinks)
+    TFEFunction2D* sources_and_sinks)
 {
+
+  // NOTE: velocity_field must be defined on the right grid
+  // - but currently there is no way to check that...
 
   // this awful call is due to the way a TFEVectFunct2D creates new dynamically
   // allocated TFEFunction2D objects
@@ -660,21 +684,10 @@ void Time_CD2D::modify_and_call_assembling_routine(
 
   if(sources_and_sinks) // rhs source and sink terms are given
   {
-    const TFESpace2D* into_space = &s.fe_space;
-    if(!s.brush_interpolator_)
-    {// set up interpolator object, if not done yet
-      s.brush_interpolator_ = std::make_shared<FEFunctionInterpolator>(into_space);
-    }
-    // length of the values array of the interpolated function must equal the
-    // length of the concentration fe function
-    size_t length_interpolated = s.fe_function.GetLength();
+    // NOTE: sources and sinks must be defined on the right grid
+    // - but currently there is no way to check that...
 
-    // interpolate sources and sinks
-    std::vector<double> entries_source_and_sinks(length_interpolated, 0.0);
-    TFEFunction2D interpolated_sources_and_sinks =
-        s.brush_interpolator_->interpolate(*sources_and_sinks, entries_source_and_sinks,true);
-    //TODO Is this interpolation actually necessary?
-    fe_funct[3] = &interpolated_sources_and_sinks;
+    fe_funct[3] = sources_and_sinks;
 
     feValueFctIndex = {1,2,3}; // to produce first fe value use fe function 1,
                                                 // for second fe value use function 2,
