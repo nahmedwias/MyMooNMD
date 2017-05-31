@@ -9450,7 +9450,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
   if(N_Parameters)
   {
-    double *aux = new double [MaxN_QuadPoints_2D*N_Parameters];
+    double *aux = new double [MaxN_QuadPoints_2D*N_Parameters]();
     for(int j=0;j<MaxN_QuadPoints_2D;j++)
     {
       delete[] Param[j]; //clear away the default initialized array
