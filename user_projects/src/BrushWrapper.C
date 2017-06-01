@@ -196,29 +196,29 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
                           &br_grid_param_fcts_values_[p].at(0), br_space_fe_length);
   }
 
-  // *** The moments functions on the brush grid are only used for output and visualization.
-  br_grid_psdmom_fcts_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
+  if(db_["output_write_vtk"].is(true))
+  {
+	  // *** The moments functions on the brush grid are only used for output and visualization.
+	  br_grid_psdmom_fcts_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
 
-  br_grid_psdmom_fcts_.resize(3);
-  br_grid_psdmom_fcts_.at(0) = new TFEFunction2D(&br_grid_space_,
-        (char*)"pd-m0", (char*)"", &br_grid_psdmom_fcts_values_[0].at(0), br_space_fe_length);
-  br_grid_psdmom_fcts_.at(1) = new TFEFunction2D(&br_grid_space_,
-        (char*)"pd-m1", (char*)"", &br_grid_psdmom_fcts_values_[1].at(0), br_space_fe_length);
-  br_grid_psdmom_fcts_.at(2) = new TFEFunction2D(&br_grid_space_,
-        (char*)"pd-m2", (char*)"", &br_grid_psdmom_fcts_values_[2].at(0), br_space_fe_length);
+	  br_grid_psdmom_fcts_.resize(3);
+	  br_grid_psdmom_fcts_.at(0) = new TFEFunction2D(&br_grid_space_,
+	        (char*)"pd-m0", (char*)"", &br_grid_psdmom_fcts_values_[0].at(0), br_space_fe_length);
+	  br_grid_psdmom_fcts_.at(1) = new TFEFunction2D(&br_grid_space_,
+	        (char*)"pd-m1", (char*)"", &br_grid_psdmom_fcts_values_[1].at(0), br_space_fe_length);
+	  br_grid_psdmom_fcts_.at(2) = new TFEFunction2D(&br_grid_space_,
+	        (char*)"pd-m2", (char*)"", &br_grid_psdmom_fcts_values_[2].at(0), br_space_fe_length);
 
-  //add the moments functions to the output writer
-  output_writer_.add_fe_function(br_grid_psdmom_fcts_[0]);
-  output_writer_.add_fe_function(br_grid_psdmom_fcts_[1]);
-  output_writer_.add_fe_function(br_grid_psdmom_fcts_[2]);
-
-  //force an update of all ensemble stats
-  interface_->update_stats();
-
-  // store moments m0, m1 and m2.
-  interface_->fetch_moment(0, &br_grid_psdmom_fcts_values_[0].at(0));
-  interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
-  interface_->fetch_moment(2, &br_grid_psdmom_fcts_values_[2].at(0));
+	  //add the moments functions to the output writer
+	  output_writer_.add_fe_function(br_grid_psdmom_fcts_[0]);
+	  output_writer_.add_fe_function(br_grid_psdmom_fcts_[1]);
+	  output_writer_.add_fe_function(br_grid_psdmom_fcts_[2]);
+	  // store moments m0, m1 and m2.
+	  interface_->update_stats();
+	  interface_->fetch_moment(0, &br_grid_psdmom_fcts_values_[0].at(0));
+	  interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
+	  interface_->fetch_moment(2, &br_grid_psdmom_fcts_values_[2].at(0));
+  }
 
   //open the file streams
   if(moment_stats_file_.is_open())
@@ -253,7 +253,10 @@ BrushWrapper::~BrushWrapper()
     delete f;
 
   for (auto f : br_grid_psdmom_fcts_)
-    delete f;
+  {
+	  if(f != NULL)
+		  delete f;
+  }
 
   for (auto f : pm_grid_source_fcts_)
     delete f;
@@ -291,8 +294,6 @@ void BrushWrapper::reset_fluid_phase(
     std::vector<TFEFunction2D*> species
     )
 {
-  //TODO All the incoming data must be transferred to the br_grid_space_,
-  //     this data will then be communicated to Brush.
   //check input
   if(species.size() != parameter_n_specs_primary_)
    ErrThrow("Incorrect number of species fe functions given.");
@@ -364,24 +365,25 @@ void BrushWrapper::solve(double t_start, double t_end)
   size_t n_steps = db_["n_solves_per_time_step"];
 
   int rs = db_["random_seed"];
-  //db_["random_seed"] = rs + 1; //count up the rng for use in the next step
+  db_["random_seed"] = rs + 1; //count up the rng for use in the next step
 
   interface_->run_particle_phase(t_start, t_end, n_steps, rs);
-
-  // Updating stats and fetching moments is only relevant for
-  // visualization and the output
-  // TODO Make this runtime-controllable.
-  interface_->update_stats();
-  interface_->fetch_moment(0, &br_grid_psdmom_fcts_values_[0].at(0));
-  interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
-  interface_->fetch_moment(2, &br_grid_psdmom_fcts_values_[2].at(0));
 
 }
 
 
 void BrushWrapper::output(double t)
 {
-  output_writer_.write(t);
+	// Updating stats and fetching moments is only relevant for
+	// visualization and the output
+	if(db_["output_write_vtk"].is(true))
+	{
+		interface_->update_stats();
+		interface_->fetch_moment(0, &br_grid_psdmom_fcts_values_[0].at(0));
+		interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
+		interface_->fetch_moment(2, &br_grid_psdmom_fcts_values_[2].at(0));
+		output_writer_.write(t);
+	}
 
   interface_->write_particle_stats(t, moment_stats_file_);
 
