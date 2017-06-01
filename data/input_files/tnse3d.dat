@@ -125,7 +125,7 @@ residual_tolerance: 1.0e-11
 preconditioner: least_squares_commutator
 
 nonlinloop_epsilon: 1.0e-10
-
+nonlinloop_damping_factor: 1   [ 0, 1 ]
 nonlinloop_maxit: 10
 
 Par_P0: 0
