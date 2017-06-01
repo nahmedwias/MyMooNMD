@@ -1,7 +1,9 @@
 #include <FEFunction2D.h>
 #include <FEFunctionInterpolator.h>
 #include <FESpace2D.h>
+#include <GridTransfer.h>
 #include <GridTransferTool.h>
+
 
 
 
@@ -32,23 +34,18 @@ GridTransferTool::GridTransferTool(
         GridTransferType type) :
         to_space_(to_space), type_(type)
 {
-  if (type == GridTransferType::MultiGrid)
-  {
-    //TODO
-    ErrThrow("Multigrid type grid transfer is to be implemented");
-  }
 }
 
 void GridTransferTool::transfer(
     const TFEFunction2D& input_fct, TFEFunction2D& output_fct,
     std::vector<double>& output_fct_values) const
 {
+  //check input
+  if(output_fct.GetFESpace2D() != this->to_space_)
+    ErrThrow("Space of output fe function and stored fe space do not agree.");
+
   if(type_ == GridTransferType::MidPointEvaluation)
   {
-    //check input
-    if(output_fct.GetFESpace2D() != this->to_space_)
-      ErrThrow("Space of output fe function and stored fe space do not agree.");
-
     // find out whether there was a call with this space before
    std::shared_ptr<FEFunctionInterpolator> intpol;
    for(auto it : interpolators_)
@@ -71,8 +68,27 @@ void GridTransferTool::transfer(
   }
   else if (type_ == GridTransferType::MultiGrid)
   {
-    //TODO
-    ErrThrow("Multigrid type grid transfer is to be implemented");
+	  // find out if we have to prolongate or restrict (primitive)
+	  bool restriction = true;
+	  if(input_fct.GetFESpace2D()->GetN_Cells() < output_fct.GetFESpace2D()->GetN_Cells())
+	  {//output space is finer - use a prolongation
+		  restriction = false;
+	  }
+
+	  if(restriction)
+	  {//input is fine, output is coarse
+		  GridTransfer::RestrictFunction(
+				  *to_space_, *input_fct.GetFESpace2D(),
+				    &output_fct_values.at(0), output_fct_values.size(),
+					input_fct.GetValues(), input_fct.GetLength());
+	  }
+	  else
+	  {//prolongation: input is coarse, output is fine
+		  GridTransfer::Prolongate(
+		      *input_fct.GetFESpace2D() , *to_space_,
+			  input_fct.GetValues(), input_fct.GetLength(),
+			  &output_fct_values.at(0), output_fct_values.size());
+	  }
   }
 }
 
