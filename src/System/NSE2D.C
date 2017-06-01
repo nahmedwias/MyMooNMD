@@ -676,7 +676,7 @@ void NSE2D::solve()
   if(damping != 1.0)
   {
     s.solution.scale(damping);
-    s.solution.add_scaled(*old_solution, damping);
+    s.solution.add_scaled(*old_solution, 1-damping);
   }
   // project pressure if necessary
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
