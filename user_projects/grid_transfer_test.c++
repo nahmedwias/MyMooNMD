@@ -15,6 +15,9 @@
  * 'original space' is a fine grid Q0, too, and the exact function is not a
  * polynomial of order leq 1. Why there is a difference in those cases is clear
  * to me - what is puzzling me, is: why is there no difference in the other cases??
+ * ANSWER: It is about the cell mid point here. A "correct" Q0 grid transfer operation
+ * needs a "correct" value at each cell mid point. This one is lost, when the analytical
+ * solution is discretized with Q1. (or something like this...)
  */
 
 #include <Database.h>
@@ -185,30 +188,3 @@ int main(int argc, char **argv)
     for(size_t bc = 0; bc < bound_conds.size() ;++bc)
       delete original_fe_spaces[ans][bc];
 }
-
-//db["output_basename"].set_range(std::set<std::string>({"parmoon","reference-solutions","original-fcts","interpolated-fcts","diff-to-ref"}));
-//
-//db["output_basename"]="reference-solutions";
-//PostProcessing2D reference_writer(db);
-//reference_writer.add_fe_function(&reference_1);
-//reference_writer.write();
-//
-//db["output_basename"]="interpolated-fcts";
-//PostProcessing2D interpol_writer(db);
-//interpol_writer.add_fe_function(&into_function);
-//
-//db["output_basename"]="diff-to-ref";
-//PostProcessing2D diff_writer(db);
-//diff_writer.add_fe_function(&into_function);
-//
-//db["output_basename"]="original-fcts";
-//PostProcessing2D original_writer(db);
-//original_writer.add_fe_function(&original_function);
-//original_writer.write((int)(3*ans+bc));
-//
-//interpol_writer.write((int)(3*ans+bc));
-//for(int i =0;i<into_vals.size();++i)
-//{
-//  into_vals.at(i)-=reference_1_vals.at(i);
-//}
-//diff_writer.write((int)(3*ans+bc));
