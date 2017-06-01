@@ -22,6 +22,11 @@ enum class GridTransferType{ MultiGrid, MidPointEvaluation};
  * between different grids. This calls for a derivation hierarchy, but this is
  * too much work at this early stage. Instead, two different types of transfer
  * are crammed into one class.
+ *
+ * If the type MultiGrid is used, the used grids must be in parent-child relation,
+ * with a maximum distance of 1 refinement level.
+ * No check of this is performed and it holds: garbage in, garbage out.
+ * Sorry for that.
  */
 class GridTransferTool
 {
@@ -35,8 +40,8 @@ class GridTransferTool
 
   private:
 
-    /// The grids between which this tool maps. Should,
-    /// of course, be shared or weak pointers instead.
+    /// The grid to which this tool maps. Should,
+    /// of course, be a shared or weak pointer instead.
     const TFESpace2D* to_space_;
 
     /// The transfer type.
