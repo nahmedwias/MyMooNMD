@@ -815,7 +815,7 @@ void NSE3D::solve()
   if(damping != 1.0)
   {
     s.solution_.scale(damping);
-    s.solution_.add_scaled(*old_solution, damping);
+    s.solution_.add_scaled(*old_solution, 1-damping);
   }
 
   // project pressure if necessary
