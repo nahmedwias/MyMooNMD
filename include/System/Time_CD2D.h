@@ -278,8 +278,6 @@ class Time_CD2D
     void assemble_with_convection
     (const TFEVectFunct2D* convection_field = nullptr);
 
-    void correct_phase_fraction();
-
   protected:
     std::vector<double> entries_velo_x;
     std::vector<double> entries_velo_y;
