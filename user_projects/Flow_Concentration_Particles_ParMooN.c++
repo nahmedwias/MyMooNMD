@@ -33,6 +33,9 @@
 //for the particles object
 #include <BrushWrapper.h>
 
+//Timer fun
+#include <Chrono.h>
+
 
 int main(int argc, char* argv[])
 {
@@ -59,6 +62,7 @@ int main(int argc, char* argv[])
   particle_database.add(Parameter(general_database["velocity_code"]));
 
   Output::print(">>>>>>", "Starting ParMooN Program: Flow, Concentration, Particles (2D).");
+  Chrono total_chrono;
 
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(argv[1], general_database);
@@ -88,6 +92,7 @@ int main(int argc, char* argv[])
     }
     domain.RegRefineAll();
   }
+  //brush_grid = domain.GetCollection(It_Finest, 0);
 
   // PART: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
   Output::info("PROGRAM PART", "Precomputing velocity.");
@@ -173,6 +178,8 @@ int main(int argc, char* argv[])
     if(step % output_steps_concs == 0)
       conc_object.output();
   }
+
+  total_chrono.print_total_time("The whole shebang took: ");
 
   Output::print(">>>>>> Program completed <<<<<<");
 
