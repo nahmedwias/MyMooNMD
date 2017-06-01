@@ -209,6 +209,7 @@ int main(int argc, char* argv[])
 
       Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
 
+      vof.phaseconvection2d_.correct_phase_fraction();
 
       /********************************************************************
        * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
