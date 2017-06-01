@@ -75,7 +75,6 @@ void BrushWrapper::pick_example(int exmpl_code)
  * it gets re-constructed for this wrapper, because there is currently no copy
  * constructor in the fespace - THIS MEANS THAT ALL RELEVANT GLOBAL PARAMETERS
  * MUST NOT CHANGE
- *
  */
 BrushWrapper::BrushWrapper(TCollection* brush_grid,
                            TCollection* parmoon_grid,
@@ -94,8 +93,10 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
                  DirichletBoundaryConditions , 0,
                  nullptr),
   //grid trafo and control
-  pm_to_brush_tool_(&br_grid_space_, GridTransferType::MidPointEvaluation),
-  brush_to_pm_tool_(&pm_grid_space_, GridTransferType::MidPointEvaluation),
+  //pm_to_brush_tool_(&br_grid_space_, GridTransferType::MidPointEvaluation),
+  //brush_to_pm_tool_(&pm_grid_space_, GridTransferType::MidPointEvaluation),
+  pm_to_brush_tool_(&br_grid_space_, GridTransferType::MultiGrid),
+  brush_to_pm_tool_(&pm_grid_space_, GridTransferType::MultiGrid),
   parameter_n_specs_primary_(0),   // gets reset by pick_example
   parameter_spatial_dimension_(0), // gets reset by pick_example
   parameter_n_specs_derived_(0),   // gets reset by pick_example
