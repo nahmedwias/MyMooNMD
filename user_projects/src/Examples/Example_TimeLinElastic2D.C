@@ -28,10 +28,10 @@ Example_TimeLinElastic2D::Example_TimeLinElastic2D(
         exact_solution.push_back( test_tlinelastic::ExactU2 );
 
         /** initial condition */
-        initialCOndtion.push_back(test_tlinelastic::InitialU1);
-        initialCOndtion.push_back(test_tlinelastic::InitialU2);
-        initialCOndtion.push_back(test_tlinelastic::InitialV1);
-        initialCOndtion.push_back(test_tlinelastic::InitialV2);
+        initialCondition.push_back(test_tlinelastic::InitialU1);
+        initialCondition.push_back(test_tlinelastic::InitialU2);
+        initialCondition.push_back(test_tlinelastic::InitialV1);
+        initialCondition.push_back(test_tlinelastic::InitialV2);
 
         /** boundary condition */
         boundary_conditions.push_back( test_tlinelastic::BoundCondition );
