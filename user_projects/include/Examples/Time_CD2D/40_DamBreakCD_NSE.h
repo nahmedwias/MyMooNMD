@@ -60,16 +60,61 @@ void InitialCondition(double x,  double y, double *values)
 //  double phi = (1/0.05715)*(0.05715*0.05715-x*x) - y;
 //  if (phi >=0)
 
-  if ( x <= 0.05715 && y <= 0.05715)
-    values[0] = 1;//density_ratio*rho_min;
+  double dam_height = 0.05715;
+  double dam_width  = 0.05715;
+
+  /* Code for the sharp dam */
+  if ( x <= dam_width && y <= dam_height)
+    values[0] = 1;
   else
-    values[0] = 0;//rho_min;
+    values[0] = 0;
+
+  /* Code for a smoother dam column */
+//  // note that when height=width, the corner is a circle
+//  // otherwise, one would need an ellipse
+//  double corner_radius = 0.03;
+//  double x0 = dam_width - corner_radius;
+//  double y0 = dam_height - corner_radius;
+//
+//  if (x <= dam_width)
+//  {
+//    if (y <= y0)
+//    {
+//      values[0] = 1;
+//    }
+//    else if (y <= dam_height) // y is between y0 and height
+//    {
+//      if (x <= x0)
+//      {
+//        values[0] = 1;
+//      }
+//      else // x should now be between x0 and width
+//      {
+//        if (corner_radius*corner_radius - (x-x0)*(x-x0) - (y-y0)*(y-y0) >= 0)
+//          values[0] = 1;
+//        else
+//          values[0] = 0;
+//      }
+//    }
+//    else  // y should now be > height
+//      values[0] = 0;
+//  }
+//  else
+//    values[0] = 0;
+
+
+  /* Code for a quarter of circle dam */
+//  if ( x*x + y*y - dam_height*dam_height <= 0)
+//    values[0]=1;
+//  else
+//    values[0]=0;
+
 //  double A = 1;
 //  double a = 20;
 //  double b = 0;
 //  double c = 20;
-//  double x0 = 0.5;
-//  double y0 = 0.7;
+//  double x0 = 0.05;
+//  double y0 = 0.07;
 //  values[0]= A*exp(-a*pow(x-x0,2)+2*b*(x-x0)*(y-y0)-c*pow(y-y0,2));
 }
 
