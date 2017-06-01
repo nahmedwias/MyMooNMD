@@ -12,7 +12,7 @@ USE_ISOPARAMETRIC: 1
 ENDTIME: 0.2
 TIMESTEPLENGTH: 0.0005
 
-STEPS_PER_IMAGE: 10
+STEPS_PER_IMAGE: 5
 
 fluid_density: 1000.   [ 0, 1e6 ]
 fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
