@@ -215,8 +215,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = example10_sincos_tnse2d::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(example10_sincos_tnse2d::InitialU1);
-      initialCOndtion.push_back(example10_sincos_tnse2d::InitialU2);
+      initialCondition.push_back(example10_sincos_tnse2d::InitialU1);
+      initialCondition.push_back(example10_sincos_tnse2d::InitialU2);
       example10_sincos_tnse2d::REYNOLDS_number = get_nu();
       example10_sincos_tnse2d::USER_parameter1 = this->example_database["user_parameter1"];
       example10_sincos_tnse2d::USER_parameter2 = this->example_database["user_parameter2"];
@@ -244,8 +244,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = example20_coupling_nse_cd::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(example20_coupling_nse_cd::InitialU1);
-      initialCOndtion.push_back(example20_coupling_nse_cd::InitialU2);
+      initialCondition.push_back(example20_coupling_nse_cd::InitialU1);
+      initialCondition.push_back(example20_coupling_nse_cd::InitialU2);
       example20_coupling_nse_cd::REYNOLDS_number = get_nu();
       example20_coupling_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
       example20_coupling_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
@@ -273,8 +273,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = example21_coupling_nse_cd::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(example21_coupling_nse_cd::InitialU1);
-      initialCOndtion.push_back(example21_coupling_nse_cd::InitialU2);
+      initialCondition.push_back(example21_coupling_nse_cd::InitialU1);
+      initialCondition.push_back(example21_coupling_nse_cd::InitialU2);
       example21_coupling_nse_cd::REYNOLDS_number = get_nu();
       example21_coupling_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
       example21_coupling_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
@@ -302,8 +302,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = example22_semicircle_nse_cd::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(example22_semicircle_nse_cd::InitialU1);
-      initialCOndtion.push_back(example22_semicircle_nse_cd::InitialU2);
+      initialCondition.push_back(example22_semicircle_nse_cd::InitialU1);
+      initialCondition.push_back(example22_semicircle_nse_cd::InitialU2);
       example22_semicircle_nse_cd::REYNOLDS_number = get_nu();
       example22_semicircle_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
       example22_semicircle_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
@@ -331,8 +331,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = example30_poiseuille_variablevisco::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(example30_poiseuille_variablevisco::InitialU1);
-      initialCOndtion.push_back(example30_poiseuille_variablevisco::InitialU2);
+      initialCondition.push_back(example30_poiseuille_variablevisco::InitialU1);
+      initialCondition.push_back(example30_poiseuille_variablevisco::InitialU2);
       example30_poiseuille_variablevisco::REYNOLDS_number = get_nu();
       example30_poiseuille_variablevisco::USER_parameter1 = this->example_database["user_parameter1"];
       example30_poiseuille_variablevisco::USER_parameter2 = this->example_database["user_parameter2"];
@@ -361,8 +361,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = example31_poiseuille_variablevisco::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(example31_poiseuille_variablevisco::InitialU1);
-      initialCOndtion.push_back(example31_poiseuille_variablevisco::InitialU2);
+      initialCondition.push_back(example31_poiseuille_variablevisco::InitialU1);
+      initialCondition.push_back(example31_poiseuille_variablevisco::InitialU2);
       example31_poiseuille_variablevisco::REYNOLDS_number = get_nu();
       example31_poiseuille_variablevisco::USER_parameter1 = this->example_database["user_parameter1"];
       example31_poiseuille_variablevisco::USER_parameter2 = this->example_database["user_parameter2"];
@@ -390,8 +390,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       problem_coefficients = example32_SinCosExp::LinCoeffs;
 
       /** initial condition */
-      initialCOndtion.push_back(example32_SinCosExp::InitialU1);
-      initialCOndtion.push_back(example32_SinCosExp::InitialU2);
+      initialCondition.push_back(example32_SinCosExp::InitialU1);
+      initialCondition.push_back(example32_SinCosExp::InitialU2);
 //      example32_SinCosExp::REYNOLDS_number = get_nu();
 //      example32_SinCosExp::USER_parameter1 = this->example_database["user_parameter1"];
 //      example32_SinCosExp::USER_parameter2 = this->example_database["user_parameter2"];
@@ -420,8 +420,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          problem_coefficients = example40_dambreak_nse_cd::LinCoeffs;
 
          /** initial condition */
-         initialCOndtion.push_back(example40_dambreak_nse_cd::InitialU1);
-         initialCOndtion.push_back(example40_dambreak_nse_cd::InitialU2);
+         initialCondition.push_back(example40_dambreak_nse_cd::InitialU1);
+         initialCondition.push_back(example40_dambreak_nse_cd::InitialU2);
          example40_dambreak_nse_cd::REYNOLDS_number = get_nu();
          example40_dambreak_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
          example40_dambreak_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
@@ -449,8 +449,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          problem_coefficients = example41_rayleightaylor_nse_cd::LinCoeffs;
 
          /** initial condition */
-         initialCOndtion.push_back(example41_rayleightaylor_nse_cd::InitialU1);
-         initialCOndtion.push_back(example41_rayleightaylor_nse_cd::InitialU2);
+         initialCondition.push_back(example41_rayleightaylor_nse_cd::InitialU1);
+         initialCondition.push_back(example41_rayleightaylor_nse_cd::InitialU2);
          example41_rayleightaylor_nse_cd::REYNOLDS_number = get_nu();
          example41_rayleightaylor_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
          example41_rayleightaylor_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
@@ -479,8 +479,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          problem_coefficients = example42_rayleightaylor2_nse_cd::LinCoeffs;
 
          /** initial condition */
-         initialCOndtion.push_back(example42_rayleightaylor2_nse_cd::InitialU1);
-         initialCOndtion.push_back(example42_rayleightaylor2_nse_cd::InitialU2);
+         initialCondition.push_back(example42_rayleightaylor2_nse_cd::InitialU1);
+         initialCondition.push_back(example42_rayleightaylor2_nse_cd::InitialU2);
          example42_rayleightaylor2_nse_cd::REYNOLDS_number = get_nu();
          example42_rayleightaylor2_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
          example42_rayleightaylor2_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
@@ -509,8 +509,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          problem_coefficients = example43_droppressureCSF::LinCoeffs;
 
          /** initial condition */
-         initialCOndtion.push_back(example43_droppressureCSF::InitialU1);
-         initialCOndtion.push_back(example43_droppressureCSF::InitialU2);
+         initialCondition.push_back(example43_droppressureCSF::InitialU1);
+         initialCondition.push_back(example43_droppressureCSF::InitialU2);
          example43_droppressureCSF::REYNOLDS_number = get_nu();
          example43_droppressureCSF::USER_parameter1 = this->example_database["user_parameter1"];
          example43_droppressureCSF::USER_parameter2 = this->example_database["user_parameter2"];
@@ -538,8 +538,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          problem_coefficients = example50_gasstirring_nse_cd::LinCoeffs;
 
          /** initial condition */
-         initialCOndtion.push_back(example50_gasstirring_nse_cd::InitialU1);
-         initialCOndtion.push_back(example50_gasstirring_nse_cd::InitialU2);
+         initialCondition.push_back(example50_gasstirring_nse_cd::InitialU1);
+         initialCondition.push_back(example50_gasstirring_nse_cd::InitialU2);
          example50_gasstirring_nse_cd::REYNOLDS_number = get_nu();
          example50_gasstirring_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
          example50_gasstirring_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];

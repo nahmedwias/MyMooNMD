@@ -201,7 +201,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example10_sincos_tcd2d::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example10_sincos_tcd2d::InitialCondition);
+      initialCondition.push_back(example10_sincos_tcd2d::InitialCondition);
       example10_sincos_tcd2d::ExampleFile();
 
       this->timeDependentRhs = example10_sincos_tcd2d::rhs_depends_on_time;
@@ -221,7 +221,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example20_coupling_expsincos::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example20_coupling_expsincos::InitialCondition);
+      initialCondition.push_back(example20_coupling_expsincos::InitialCondition);
       example20_coupling_expsincos::ExampleFile();
 
       this->timeDependentRhs = example20_coupling_expsincos::rhs_depends_on_time;
@@ -241,7 +241,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example21_coupling_sinsinsin::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example21_coupling_sinsinsin::InitialCondition);
+      initialCondition.push_back(example21_coupling_sinsinsin::InitialCondition);
       example21_coupling_sinsinsin::ExampleFile();
 
       this->timeDependentRhs = example21_coupling_sinsinsin::rhs_depends_on_time;
@@ -261,7 +261,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example22_coupling_semicircle::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example22_coupling_semicircle::InitialCondition);
+      initialCondition.push_back(example22_coupling_semicircle::InitialCondition);
       example22_coupling_semicircle::ExampleFile();
 
       this->timeDependentRhs = example22_coupling_semicircle::rhs_depends_on_time;
@@ -281,7 +281,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example30_linear_variablevisco::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example30_linear_variablevisco::InitialCondition);
+      initialCondition.push_back(example30_linear_variablevisco::InitialCondition);
       example30_linear_variablevisco::ExampleFile();
 
       this->timeDependentRhs = example30_linear_variablevisco::rhs_depends_on_time;
@@ -301,7 +301,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example31_expon_variablevisco::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example31_expon_variablevisco::InitialCondition);
+      initialCondition.push_back(example31_expon_variablevisco::InitialCondition);
       example31_expon_variablevisco::ExampleFile();
 
       this->timeDependentRhs = example31_expon_variablevisco::rhs_depends_on_time;
@@ -321,7 +321,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example32_variablevisco_beltrami::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example32_variablevisco_beltrami::InitialCondition);
+      initialCondition.push_back(example32_variablevisco_beltrami::InitialCondition);
       example32_variablevisco_beltrami::ExampleFile();
 
       this->timeDependentRhs = example32_variablevisco_beltrami::rhs_depends_on_time;
@@ -341,7 +341,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example40_dambreak_cd_nse::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example40_dambreak_cd_nse::InitialCondition);
+      initialCondition.push_back(example40_dambreak_cd_nse::InitialCondition);
       example40_dambreak_cd_nse::ExampleFile();
 
       this->timeDependentRhs = example40_dambreak_cd_nse::rhs_depends_on_time;
@@ -362,7 +362,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example41_rayleightaylor_cd_nse::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example41_rayleightaylor_cd_nse::InitialCondition);
+      initialCondition.push_back(example41_rayleightaylor_cd_nse::InitialCondition);
       example41_rayleightaylor_cd_nse::ExampleFile();
 
       this->timeDependentRhs = example41_rayleightaylor_cd_nse::rhs_depends_on_time;
@@ -382,7 +382,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example42_rayleightaylor2_cd_nse::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example42_rayleightaylor2_cd_nse::InitialCondition);
+      initialCondition.push_back(example42_rayleightaylor2_cd_nse::InitialCondition);
       example42_rayleightaylor2_cd_nse::ExampleFile();
 
       this->timeDependentRhs = example42_rayleightaylor2_cd_nse::rhs_depends_on_time;
@@ -403,7 +403,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example43_droppressurecsf_cd_nse::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example43_droppressurecsf_cd_nse::InitialCondition);
+      initialCondition.push_back(example43_droppressurecsf_cd_nse::InitialCondition);
       example43_droppressurecsf_cd_nse::ExampleFile();
 
       this->timeDependentRhs = example43_droppressurecsf_cd_nse::rhs_depends_on_time;
@@ -422,7 +422,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = example50_gasstirring_cd_nse::BilinearCoeffs;
 
       /** Initial condition*/
-      initialCOndtion.push_back(example50_gasstirring_cd_nse::InitialCondition);
+      initialCondition.push_back(example50_gasstirring_cd_nse::InitialCondition);
       example50_gasstirring_cd_nse::ExampleFile();
 
       this->timeDependentRhs = example50_gasstirring_cd_nse::rhs_depends_on_time;
