@@ -80,19 +80,26 @@ int main(int argc, char* argv[])
    * build-in function. The GEOFILE describes the boundary of the domain. */
   domain.InitFromMesh(general_database["boundary_file"], general_database["mesh_file"]);
 
+  std::string brush_grid_control = particle_database["brush_grid_control"];
+
   //===========================================================================
   // do initial refinements of the domain
   size_t n_ref = domain.get_n_initial_refinement_steps();
   TCollection* brush_grid;
   for(size_t i=0; i<n_ref; i++)
   {
-    if(i == n_ref - 1)
+    if(brush_grid_control == "coarser" && i == n_ref - 1)
     {
+      Output::info("GRID", "Picking one level coarser grid for Brush.");
       brush_grid = domain.GetCollection(It_Finest, 0); //brush collection: one level less
     }
     domain.RegRefineAll();
   }
-  //brush_grid = domain.GetCollection(It_Finest, 0);
+  if(brush_grid_control == "same")
+  {
+   Output::info("GRID", "Picking same grid for Brush.");
+   brush_grid = domain.GetCollection(It_Finest, 0);
+  }
 
   // PART: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
   Output::info("PROGRAM PART", "Precomputing velocity.");
@@ -122,6 +129,12 @@ int main(int argc, char* argv[])
   Example_TimeCoupledCDR2D example_conc(conc_database);
   Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
 
+  if(brush_grid_control == "finer")
+  {//one additional refinement for Brush
+	  domain.RegRefineAll();
+	  Output::info("GRID", "Picking one level finer grid for Brush.");
+	  brush_grid = domain.GetCollection(It_Finest, 0);
+  }
   // the particles object which wraps up Brush
   BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
 
