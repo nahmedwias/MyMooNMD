@@ -135,6 +135,15 @@ int main(int argc, char* argv[])
     step++;
     vof.tnse2d_.current_step_++;
 
+//    if (TDatabase::TimeDB->CURRENTTIME >= 0.1885)
+//    {
+//      if (TDatabase::TimeDB->CURRENTTIME < 0.18931)
+//        TDatabase::TimeDB->TIMESTEPLENGTH = 0.000005;
+//      else
+//        TDatabase::TimeDB->TIMESTEPLENGTH = 0.0000005;
+//    }
+
+
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j=0; j < n_substeps; ++j)
     {
