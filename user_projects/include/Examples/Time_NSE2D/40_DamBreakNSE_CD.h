@@ -78,8 +78,8 @@ void BoundCondition(int i, double t, BoundCond &cond)
    {
      case 5: case 6: case 7:
      case 8:
-       cond = NEUMANN; //DIRICHLET;
-       break;
+//       cond = DIRICHLET; //NEUMANN;
+//       break;
      case 0: case 1: case 2: case 3:
      case 9: case 4:
        cond = SLIP_FRICTION_PENETRATION_RESISTANCE;

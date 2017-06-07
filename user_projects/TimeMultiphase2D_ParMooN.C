@@ -121,8 +121,10 @@ int main(int argc, char* argv[])
   Chrono nse_timeit_stopwatch;
 
 
-
-
+  /* These parameters control "adaptive" time stepping  */
+  Output::print<1>("Minimum time step is: ",TDatabase::TimeDB->MIN_TIMESTEPLENGTH);
+  Output::print<1>("Maximum time step is: ",TDatabase::TimeDB->MAX_TIMESTEPLENGTH);
+  TDatabase::TimeDB->T0 = 0;
 
 //  vof.phaseconvection2d_.output(&vof.tnse2d_.get_velocity()); // this initializes errors
   vof.phaseconvection2d_.output();
@@ -135,7 +137,34 @@ int main(int argc, char* argv[])
     step++;
     vof.tnse2d_.current_step_++;
 
-//    if (TDatabase::TimeDB->CURRENTTIME >= 0.1885)
+    /* This piece of code controls "adaptive" time stepping  */
+    if (!TDatabase::TimeDB->T0)
+    {
+      Output::print<1>("FLAG FOR CFL WARNING: ",TDatabase::TimeDB->T0);
+      if (TDatabase::TimeDB->TIMESTEPLENGTH*1.1 < TDatabase::TimeDB->MAX_TIMESTEPLENGTH)
+      {
+        TDatabase::TimeDB->TIMESTEPLENGTH *= 1.1;
+        Output::print<1>("CHANGE OF /_\\t: ",TDatabase::TimeDB->TIMESTEPLENGTH);
+      }
+      else
+      {
+        TDatabase::TimeDB->TIMESTEPLENGTH = TDatabase::TimeDB->MAX_TIMESTEPLENGTH;
+        Output::print<1>("NO CHANGE OF /_\\t: ",TDatabase::TimeDB->TIMESTEPLENGTH);
+      }
+    }
+    else // if the flag = 1, e.g. cfl warning threw at least once in last step
+    {
+      Output::print<1>("FLAG FOR CFL WARNING: ",TDatabase::TimeDB->T0);
+      if (TDatabase::TimeDB->TIMESTEPLENGTH*0.5 > TDatabase::TimeDB->MIN_TIMESTEPLENGTH)
+        TDatabase::TimeDB->TIMESTEPLENGTH *= 0.5;
+      else
+        TDatabase::TimeDB->TIMESTEPLENGTH = TDatabase::TimeDB->MIN_TIMESTEPLENGTH;
+      Output::print<1>("CHANGE OF /_\\t: ",TDatabase::TimeDB->TIMESTEPLENGTH);
+      TDatabase::TimeDB->T0 = 0; // reset flag
+    }
+
+
+//    if (TDatabase::TimeDB->CURRENTTIME >= 0.148)
 //    {
 //      if (TDatabase::TimeDB->CURRENTTIME < 0.18931)
 //        TDatabase::TimeDB->TIMESTEPLENGTH = 0.000005;

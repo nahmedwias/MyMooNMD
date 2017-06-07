@@ -43,6 +43,8 @@ void check_cfl_condition(double mass_diag_entry,
       Output::print("WARNING in FEM-FCT system matrix: ",
                     mass_diag_entry, " cfl violated: cfl ",
                     cfl, " delta t: ", tau);
+
+      TDatabase::TimeDB->T0 = 1; // flag for cfl-warning
     }
   }
 }
