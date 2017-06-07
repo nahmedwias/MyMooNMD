@@ -3,21 +3,23 @@
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
 refinement_n_initial_steps: 4
-space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
-TURBULENT_VISCOSITY_CONSTANT: 0.
+space_discretization_type: smagorinsky { galerkin, smagorinsky, vms_projection }
+TURBULENT_VISCOSITY_CONSTANT: 0.001
 vms_projection_space_order: 0
 example: 40   [ -1, 100 ]
 USE_ISOPARAMETRIC: 1
 
 ENDTIME: 0.2
 TIMESTEPLENGTH: 0.0005
+MIN_TIMESTEPLENGTH: 5E-8;
+MAX_TIMESTEPLENGTH: 0.0005;
 
 STEPS_PER_IMAGE: 5
 
 fluid_density: 1000.   [ 0, 1e6 ]
-fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
-reynolds_number: 1000.   [ 0, 1e6 ]
-RE_NR:	1000.
+fluid_dynamic_viscosity: 0.5   [ 0, 1e6 ]
+reynolds_number: 2000.   [ 0, 1e6 ]
+RE_NR:	2000.
 
 ## Beltrami/variable viscosity example 
 P1: 1  
@@ -26,12 +28,12 @@ P3: 1
 
 ## Position of bubble
 P4: 0.5	 # x0 position
-P5: 0.5 # y0 position
+P5: 0.5  # y0 position
 P6: 0.3  # circle radius
 
 ## Two phase flow
 P7: 1. # density 2 - min - gas
-P8: 0.5 # viscosity 2 - min - gas
+P8: 0.1 # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
 P9: 0.
@@ -63,7 +65,7 @@ output_compute_errors: true   { true, false }
 output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
-nonlinloop_maxit: 7   [ 0, 1000 ]
+nonlinloop_maxit: 10   [ 0, 1000 ]
 nonlinloop_epsilon: 1e-6   [ 0, 1 ]
 # Important: damping can lead to significantly higher computational time
 # for safety, use 1 
@@ -83,7 +85,7 @@ gmres_restart: 20   [ 1, 1000 ]
 preconditioner: no_preconditioner   { least_squares_commutator, least_squares_commutator_boundary, multigrid, no_preconditioner, semi_implicit_method_for_pressure_linked_equations }
 multigrid_type: standard {standard, mdml}.
 saddle_point_preconditioner_direct_velocity_solve: true   { true, false }
-damping_factor: 1   [ 0, 1 ] 
+damping_factor: 1.   [ 0, 1 ] 
 multigrid_n_levels: 0   [ 0, 5 ]
 damping_factor_finest_grid: 0.8   [ 0, 1 ]
 multigrid_cycle_type: V   { F, V, W }
