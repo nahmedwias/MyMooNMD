@@ -107,30 +107,14 @@ void BoundCondition(int i, double t, BoundCond &cond)
 //       break;
 //     /**  END CODE FOR GEOMETRY DAMBREAK_HIGH **/
 
-//    /** those lines are for the standard geometry dambreak
-//     * */
-//     case 5: case 6: case 7:
-//     case 8:
-////     cond = DIRICHLET; //NEUMANN;
-////       break;
-//     case 0: case 1: case 2: case 3:
-//     case 9: case 4:
-//       cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
-//       TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
-//       TDatabase::ParamDB->FRICTION_TYPE = 1;
-//       TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
-//       TDatabase::ParamDB->PENETRATION_POWER= -2;
-//       break;
-//    /**  END CODE FOR GEOMETRY STANDARD DAMBREAK **/
-
-    /** those lines are for the geometry dambreak OPENFOAM
+    /** those lines are for the standard geometry dambreak
      * */
-     case 6:
-     cond = NEUMANN;
-       break;
-     case 0: case 1: case 2:
-     case 3: case 4: case 5:
-     case 7:
+     case 5: case 6: case 7:
+     case 8:
+//     cond = DIRICHLET; //NEUMANN;
+//       break;
+     case 0: case 1: case 2: case 3:
+     case 9: case 4:
        cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
        TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
        TDatabase::ParamDB->FRICTION_TYPE = 1;
@@ -138,6 +122,22 @@ void BoundCondition(int i, double t, BoundCond &cond)
        TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
        TDatabase::ParamDB->PENETRATION_POWER= -2;
        break;
+    /**  END CODE FOR GEOMETRY STANDARD DAMBREAK **/
+
+//    /** those lines are for the geometry dambreak OPENFOAM
+//     * */
+//     case 6:
+//     cond = NEUMANN;
+//       break;
+//     case 0: case 1: case 2:
+//     case 3: case 4: case 5:
+//     case 7:
+//       cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
+//       TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+//       TDatabase::ParamDB->FRICTION_TYPE = 1;
+//       TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
+//       TDatabase::ParamDB->PENETRATION_POWER= -2;
+//       break;
 //    /**  END CODE FOR GEOMETRY DAMBREAK OPENFOAM **/
 
      default:

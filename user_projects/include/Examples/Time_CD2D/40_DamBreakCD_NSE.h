@@ -49,22 +49,22 @@ void BoundValue(int BdComp, double Param, double &value)
 // initial conditon
 void InitialCondition(double x,  double y, double *values)
 {
-//  double dam_height = 0.05715;
-//  double dam_width  = 0.05715;
-  double dam_height_openfoam = 0.292;
-  double dam_width_openfoam  = 0.1461;
+  double dam_height = 0.05715;
+  double dam_width  = 0.05715;
+//  double dam_height_openfoam = 0.292;
+//  double dam_width_openfoam  = 0.1461;
 
   /* Code for the sharp dam OPENFOAM example */
-  if ( x <= dam_width_openfoam && y <= dam_height_openfoam)
-    values[0] = 1;
-  else
-    values[0] = 0;
-
-  /* Code for the sharp dam */
-//  if ( x <= dam_width && y <= dam_height)
+//  if ( x <= dam_width_openfoam && y <= dam_height_openfoam)
 //    values[0] = 1;
 //  else
 //    values[0] = 0;
+
+  /* Code for the sharp dam */
+  if ( x <= dam_width && y <= dam_height)
+    values[0] = 1;
+  else
+    values[0] = 0;
 
   /* Code for a smoother dam column */
 //  // note that when height=width, the corner is a circle
