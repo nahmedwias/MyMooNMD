@@ -2,7 +2,7 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 0
+refinement_n_initial_steps: 4
 space_discretization_type: smagorinsky { galerkin, smagorinsky, vms_projection }
 TURBULENT_VISCOSITY_CONSTANT: 0.001
 vms_projection_space_order: 0
@@ -10,7 +10,7 @@ example: 40   [ -1, 100 ]
 USE_ISOPARAMETRIC: 1
 
 ENDTIME: 0.2
-TIMESTEPLENGTH: 0.005
+TIMESTEPLENGTH: 0.0005
 MIN_TIMESTEPLENGTH: 5E-8;
 MAX_TIMESTEPLENGTH: 0.0005;
 
@@ -49,8 +49,8 @@ P9: 0.
 #geo_file: ../mesh/RTInstab_PochetOrig.GEO
 #boundary_file: ../mesh/ladle_2D/realladle2d_new.PRM
 #geo_file: ../mesh/ladle_2D/realladle2d_new_trias.mesh
-boundary_file: ../mesh/DamBreak/dambreak_openfoam.PRM
-geo_file: ../mesh/DamBreak/dambreak_openfoam.mesh
+boundary_file: ../mesh/DamBreak/dambreak.PRM
+geo_file: ../mesh/DamBreak/dambreak_quad.GEO
 #boundary_file: ../mesh/flow_around_cylinder2D.PRM
 #geo_file: ../mesh/flow_around_cylinder_2Dquads.GEO
 
