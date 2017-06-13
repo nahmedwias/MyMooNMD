@@ -15,7 +15,7 @@ class FEFunctionInterpolator;
 class TCollection;
 class TFEFunction2D;
 
-enum class GridTransferType{ MultiGrid, MidPointEvaluation};
+enum class GridTransferType{ MultiGrid, Interpolation};
 
 /**
  * A tool which wraps up several different approaches to transfer fe functions

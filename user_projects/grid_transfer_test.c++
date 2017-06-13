@@ -136,7 +136,7 @@ int main(int argc, char **argv)
 
   // Set up the grid transfer tool, a reference solution and
   // function and values into which to write the interpolation.
-  GridTransferTool trafo(target_space, GridTransferType::MidPointEvaluation);
+  GridTransferTool trafo(target_space, GridTransferType::Interpolation);
 
   std::vector<double> reference_1_vals(target_space->GetN_DegreesOfFreedom());
   TFEFunction2D reference_1(target_space, "coarse-grid-reference-1",
