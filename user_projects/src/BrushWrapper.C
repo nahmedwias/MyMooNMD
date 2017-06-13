@@ -93,8 +93,8 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
                  DirichletBoundaryConditions , 0,
                  nullptr),
   //grid trafo and control
-  //pm_to_brush_tool_(&br_grid_space_, GridTransferType::MidPointEvaluation),
-  //brush_to_pm_tool_(&pm_grid_space_, GridTransferType::MidPointEvaluation),
+  //pm_to_brush_tool_(&br_grid_space_, GridTransferType::Interpolation),
+  //brush_to_pm_tool_(&pm_grid_space_, GridTransferType::Interpolation),
   pm_to_brush_tool_(&br_grid_space_, GridTransferType::MultiGrid),
   brush_to_pm_tool_(&pm_grid_space_, GridTransferType::MultiGrid),
   parameter_n_specs_primary_(0),   // gets reset by pick_example
