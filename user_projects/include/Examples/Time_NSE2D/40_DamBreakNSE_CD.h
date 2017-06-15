@@ -80,19 +80,23 @@ void BoundCondition(int i, double t, BoundCond &cond)
      case 8:
 //       cond = DIRICHLET; //NEUMANN;
 //       break;
-     case 0: case 1: case 2: case 3:
+     case 0: case 1: case 3: 
      case 9: case 4:
        cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
        TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
        TDatabase::ParamDB->FRICTION_TYPE = 1;
+       TDatabase::ParamDB->FRICTION_CONSTANT = 0.0;
        TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
        TDatabase::ParamDB->PENETRATION_POWER= -2;
        break;
+     case 2:
+         cond = NEUMANN;
+	 break;
      default:
        ErrThrow("Unknown BdPart");
    }
-
-//  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+   
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=0;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
@@ -115,7 +119,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
   int i;
   double *coeff;
 //  double  x, y;
-
+//  OutPut("nu" << nu <<  " ");
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
@@ -123,7 +127,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
 //    y = Y[i];
 //    double rho = parameters[i][2];
 //    double mu  = parameters[i][3];
-
+//    OutPut("mu " << mu);
     coeff[0] = nu;
 
 /*

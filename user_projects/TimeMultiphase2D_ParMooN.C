@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
   /* This calculates rho and mu vectors depending on example number
    * Check that the vectors are as expected using "output_vectors(..)" */
   vof.update_field_vectors();
-
+ 
   /* SOME OUTPUT AND INFORMATION SET */
   vof.output_initial_info();
 //  vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
