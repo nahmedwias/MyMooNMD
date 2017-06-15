@@ -154,14 +154,14 @@ double ***LocMatrices, double **LocRhs)
   Orig2 = OrigValues[2];         // u
 
   c0 = coeff[0];                 // nu
-
+  OutPut("c0nl" << c0); 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
 
   mu = turbulentviscosity(hK, &param[2], &param[0], &param[6]);
   mu = mu/2.0;
   viscosity = mu+c0;
-
+  
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -297,10 +297,11 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 
 //  u3=1; u4=c0;
 //  cout << u3 << " " << u4 << " ";
-//  cout << c0 << " ";
+ // Output::print(u3," ",u4);
 
   mu = turbulentviscosity(hK, &param[2],&param[0],&param[0]);
   mu = u3*mu/2.0;  // multiplying here by u3=rho should be correct
+  //mu = mu/2.0;  // multiplying here by u3=rho should be correct
 
   for(i=0;i<N_U;i++)
   {
@@ -347,10 +348,10 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
     {
       ansatz00 = Orig3[j];
 
-      val = -u3*Mult*ansatz00*test10;
+      val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
 
-      val = -u3*Mult*ansatz00*test01;
+      val = -Mult*ansatz00*test01;
       MatrixRow2[j] += val;
     }
   }                              // endfor i
@@ -367,10 +368,10 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val = -u3*Mult*test00*ansatz10;
+      val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
 
-      val = -u3*Mult*test00*ansatz01;
+      val = -Mult*test00*ansatz01;
       MatrixRow2[j] += val;
     }                            // endfor j
 
@@ -412,11 +413,15 @@ double ***LocMatrices, double **LocRhs)
 
 //  cout << "u3=rho=" << u3 << " u4=mu=" << u4 << " ";
 //  u3=1; u4=c0;
+//  Output::print(u3," ",u4);
 
   mu = turbulentviscosity(hK, &param[2], &param[0], &param[2]);
-  mu = mu/2.0;
-  viscosity = u3*mu+u4;
-
+  mu = u3*mu/2.0;
+  //mu = mu/2.0;
+  //Output::print(u4," ",mu);
+  //viscosity = u3*mu+u4;
+  viscosity =mu+u4;
+  
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -473,6 +478,7 @@ double ***LocMatrices, double **LocRhs)
 
   u3 = param[6];       // rho_field taken as a param from fe_function in local_assembling
 //  u4 = param[7];       // mu_field taken as a param from fe_function in local_assembling
+ //    Output::print(u3);
 
   for(i=0;i<N_U;i++)
   {
