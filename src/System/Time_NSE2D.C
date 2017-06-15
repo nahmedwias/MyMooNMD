@@ -826,15 +826,28 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
          &this->defect[2*nuDof]);
   
-  Output::print("nonlinear step  :  " , setw(3), it_counter);
-  Output::print("impulse_residual:  " , setw(3), impulse_residual);
-  Output::print("mass_residual   :  " , setw(3), mass_residual);
-  Output::print("residual        :  " , setw(3), sqrt(residual));
+  Output::print<3>("nonlinear step  :  " , setw(3), it_counter);
+  Output::print<3>("impulse_residual:  " , setw(3), impulse_residual);
+  Output::print<3>("mass_residual   :  " , setw(3), mass_residual);
+  Output::print<3>("residual        :  " , setw(3), sqrt(residual));
   
+    if (it_counter>0)
+  {
+  Output::print<3>("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+  }
+
   if (it_counter>0)
   {
-  Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+  Output::print("nonlinear step  :  " , setw(3), it_counter," " , setw(3), impulse_residual,
+		" " , setw(3),  mass_residual, " ", setw(3),  sqrt(residual), " ",
+		setw(3), sqrt(residual)/oldResidual) ;
   }
+  else
+  {
+  Output::print("nonlinear step  :  " , setw(3), it_counter," " , setw(3), impulse_residual,
+		" " ,  setw(3),mass_residual, " ",  setw(3), sqrt(residual));
+  }
+    
   
   oldResidual = sqrt(residual);
   if(it_counter == 0)
