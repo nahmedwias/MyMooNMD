@@ -44,7 +44,7 @@ void GridTransferTool::transfer(
   if(output_fct.GetFESpace2D() != this->to_space_)
     ErrThrow("Space of output fe function and stored fe space do not agree.");
 
-  if(type_ == GridTransferType::MidPointEvaluation)
+  if(type_ == GridTransferType::Interpolation)
   {
     // find out whether there was a call with this space before
    std::shared_ptr<FEFunctionInterpolator> intpol;
