@@ -176,21 +176,21 @@ void VOF_TwoPhase2D::output_vectors(std::string filename_phi,
 /* Print some info, mostly useful after the constructor */
 void VOF_TwoPhase2D::output_initial_info()
 {
-  Output::print<3>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
-  Output::print<3>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
-  Output::print<3>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
-  Output::print<3>("Convection_example number     ",
+  Output::print<2>("The velocity space is ", TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print<2>("The pressure space is ", TDatabase::ParamDB->PRESSURE_SPACE);
+  Output::print<2>("The ansatz   space is ", TDatabase::ParamDB->ANSATZ_ORDER);
+  Output::print<2>("Convection_example number     ",
                    this->example_tcd2d_.get_database()["example"]);
-  Output::print<3>("Time NSE Example number       ",
+  Output::print<2>("Time NSE Example number       ",
                    this->example_tnse2d_.get_database()["example"]);
-  Output::print<3>("Fluid properties are non constant : "
+  Output::print<2>("Fluid properties are non constant : "
       + std::to_string(this->tnse_variable_fluid_));
-  Output::print<3>("TCD is solved            : " + std::to_string(this->solve_convection_));
-  Output::print<3>("Coupling NSE >> CD is    : " + std::to_string(this->nse2cd_coupling_));
-  Output::print<3>("Coupling CD >> NSE is    : " + std::to_string(this->cd2nse_coupling_));
-  Output::print<3>("The density   of liquid is ", this->rhol_);
-  Output::print<3>("The viscosity of liquid is ", this->mul_);
-  Output::print<3>("The density   of gas    is ", this->rhog_);
-  Output::print<3>("The viscosity of gas    is ", this->mug_);
+  Output::print<2>("TCD is solved            : " + std::to_string(this->solve_convection_));
+  Output::print<2>("Coupling NSE >> CD is    : " + std::to_string(this->nse2cd_coupling_));
+  Output::print<2>("Coupling CD >> NSE is    : " + std::to_string(this->cd2nse_coupling_));
+  Output::print<2>("The density   of liquid is ", this->rhol_);
+  Output::print<2>("The viscosity of liquid is ", this->mul_);
+  Output::print<2>("The density   of gas    is ", this->rhog_);
+  Output::print<2>("The viscosity of gas    is ", this->mug_);
 }
 
