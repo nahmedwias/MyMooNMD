@@ -42,6 +42,7 @@ list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Coupled
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Coupled_Time_CDR_2D.C")
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Example_CoupledCDR2D.C")
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Example_TimeCoupledCDR2D.C")
+list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/NSE2D_axisymmetric.C")
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/GridTransferTool.C")
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/ReactionCoupling.C")
 
