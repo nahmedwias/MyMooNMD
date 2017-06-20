@@ -26,6 +26,10 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
+namespace poiseuille_axialsymmetric
+{
+  #include "NSE_2D/PoiseuilleAxialSymmetric.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -34,6 +38,35 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
   int example_code = this->example_database["example"];
   switch( example_code )
   {
+  case -1:
+    /** In this ParMooN branch, the Poiseuille-Flow example is adapted
+     *  to the Khinast crystallizer example. There are four different
+     *  inflow velocities, and which of them is applied is controlled by
+     *  "velocity code" (0: lowest, 3: highest velocity)
+     */
+    poiseuille::VELOCITY_CODE = user_input_parameter_db["velocity_code"];
+
+    /** exact_solution */
+    exact_solution.push_back( poiseuille_axialsymmetric::ExactUZ );
+    exact_solution.push_back( poiseuille_axialsymmetric::ExactUR );
+    exact_solution.push_back( poiseuille_axialsymmetric::ExactP );
+
+    /** boundary condition */
+    boundary_conditions.push_back( poiseuille_axialsymmetric::boundary_conditions_axial );
+    boundary_conditions.push_back( poiseuille_axialsymmetric::boundary_conditions_radial );
+    boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+    /** boundary values */
+    boundary_data.push_back( poiseuille_axialsymmetric::UZBoundValue );
+    boundary_data.push_back( poiseuille_axialsymmetric::URBoundValue );
+    boundary_data.push_back( BoundaryValueHomogenous );
+
+    /** coefficients */
+    problem_coefficients = poiseuille_axialsymmetric::LinCoeffs;
+
+    poiseuille_axialsymmetric::ExampleFile();
+    break;
+
     case 0:
       /** In this ParMooN branch, the Poiseuille-Flow example is adapted
        *  to the Khinast crystallizer example. There are four different
@@ -62,6 +95,7 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       
       poiseuille::ExampleFile();
       break;
+
     case 1:
       /** exact_solution */
       exact_solution.push_back( driven_cavity::ExactU1 );
