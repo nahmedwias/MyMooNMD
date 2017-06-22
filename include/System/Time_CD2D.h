@@ -145,6 +145,10 @@ class Time_CD2D
     /// @brief class for handling (time dependent) output 
     PostProcessing2D timeDependentOutput;
     
+    /// @brief A flag to be set if this thing is used for an axisymmetric 2D problem.
+    /// Must come from the example.
+    bool axisymmetric_;
+
   public:
     /** @brief constructor
      * This constructor calls the other constructor creating an Example_CD2D
@@ -179,7 +183,9 @@ class Time_CD2D
      * even be the right thing to check).
      *
      */
-    void assemble_initial_time(const TFEVectFunct2D* velocity_field = nullptr);
+    void assemble_initial_time(
+    		TFEFunction2D* velo1 = nullptr,
+			TFEFunction2D* velo2 = nullptr);
     
     /** @brief assemble the matrices
      * this function will assemble the stiffness matrix and rhs
@@ -196,8 +202,10 @@ class Time_CD2D
      * velocity field, which is to be used as coefficient function in the
      * advective term.
      */
-    void assemble(const TFEVectFunct2D* velocity_field = nullptr,
-                  TFEFunction2D* sources_and_sinks = nullptr);
+    void assemble(
+    		TFEFunction2D* velo1 = nullptr,
+			TFEFunction2D* velo2 = nullptr,
+            TFEFunction2D* sources_and_sinks = nullptr);
     
     /**
      * Descales the stiffness matrices from the modifications due to time
@@ -312,7 +320,8 @@ class Time_CD2D
         System_per_grid& s,
         LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
         bool assemble_both,
-        const TFEVectFunct2D* velocity_field,
+		TFEFunction2D* velo1 = nullptr,
+		TFEFunction2D* velo2 = nullptr,
         TFEFunction2D* sources_and_sinks = nullptr);
 
 };

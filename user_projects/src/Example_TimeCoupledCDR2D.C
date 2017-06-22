@@ -9,6 +9,7 @@
 #include <MainUtilities.h>
 #include <Database.h>
 
+#include <algorithm>
 #include <cmath>
 
 
@@ -18,9 +19,16 @@ namespace test_time
 #include "Test_Time.h"
 }
 
+#include <parmoon_source_and_sink_terms.h>
+
 namespace asa_crystallizer
 {
 #include "ASA_crystallizer.h"
+}
+
+namespace axisymmetric_asa_crystallizer
+{
+#include "Axisymmetric_ASA_Crystallizer.h"
 }
 
 /// Zero function R^2 -> R, f must have 4 double allocated.
@@ -81,6 +89,48 @@ Example_TimeCoupledCDR2D::Example_TimeCoupledCDR2D(const ParameterDatabase & db)
     case 1: // Example 1 for PhD Thesis Clemens: Eder et al. (2010)
     {
       using namespace asa_crystallizer;
+
+      VELOCITY_CODE = db["velocity_code"];
+
+      /** Unknwon exact solutions, put to zero. */
+      exact_solution.push_back( zero_function_2D );
+      exact_solution.push_back( zero_function_2D );
+
+      /** Boundary conditions.*/
+      boundary_conditions.push_back( BoundCond_T );
+      boundary_conditions.push_back( BoundCond_C_ASA );
+
+      /** Boundary values */
+      boundary_data.push_back( BoundValue_T );
+      boundary_data.push_back( BoundValue_C_ASA );
+
+      /** coefficient functions */
+      bilinCoeffs_.push_back(Coefficients_T);
+      bilinCoeffs_.push_back(Coefficients_C_ASA);
+
+      /** Assembling functions */
+      rhsAssemblingFunctions_.push_back(RhsAssemblingFunction_T);
+      rhsAssemblingFunctions_.push_back(RhsAssemblingFunction_C_ASA);
+
+      /** parameter function - twice the same*/
+      parameterFunctions_.push_back(ParameterFunction);
+      parameterFunctions_.push_back(ParameterFunction);
+
+      /** initial conditions */
+      initialCondition.push_back(InitialCondition_T);
+      initialCondition.push_back(InitialCondition_C_ASA);
+
+      /** number of equations */
+      nEquations_ = 2;
+
+      ExampleFile();
+      break;
+    }
+    case 2: // Axisymmetric formulation of Example 1 for PhD Thesis Clemens: Eder et al. (2010)
+    {
+      using namespace axisymmetric_asa_crystallizer;
+
+      axisymmetric_ = true;
 
       VELOCITY_CODE = db["velocity_code"];
 
@@ -181,8 +231,9 @@ void Example_TimeCoupledCDR2D::generateDecoupledExamples() {
     decoupledExamples_.push_back(
         Example_TimeCD2D(exact_coupled, bc_coupled, bd_coupled,
                      bilinCoeffs_.at(n), true, true, init_cond ));
-    // TODO Think whether "true, true" is always correct here,
-    // or not better the example should be asked!
+    if(is_axisymmetric())
+    	decoupledExamples_.back().set_axisymmetric(true);
+
   }
 }
 

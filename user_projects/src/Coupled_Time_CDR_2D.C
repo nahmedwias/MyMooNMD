@@ -156,16 +156,16 @@ void Coupled_Time_CDR_2D::couple_and_solve()
 }
 
 void Coupled_Time_CDR_2D::assemble_initial_time(
-    const TFEVectFunct2D* velocity_field)
+    TFEFunction2D* velo1, TFEFunction2D* velo2)
 {
   for (auto tcd : cdProblems_)
   {
-    tcd->assemble_initial_time(velocity_field);
+    tcd->assemble_initial_time(velo1, velo2);
   }
 }
 
 void Coupled_Time_CDR_2D::assemble_uncoupled_part(
-    const TFEVectFunct2D* velocity_field,
+		TFEFunction2D* velo1, TFEFunction2D* velo2,
     std::vector<TFEFunction2D*> sources_and_sinks
     )
 {
@@ -174,7 +174,7 @@ void Coupled_Time_CDR_2D::assemble_uncoupled_part(
   int index=0;
   for (auto tcd : cdProblems_)
   {
-    tcd->assemble(velocity_field, sources_and_sinks.at(index));
+    tcd->assemble(velo1, velo2, sources_and_sinks.at(index));
     ++index;
   }
 }

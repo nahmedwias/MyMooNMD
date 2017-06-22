@@ -44,6 +44,11 @@ class Example2D
      * default ParMooN parameters).
      */
     ParameterDatabase example_database;
+
+    /// This parameters stores whether the example is to be interpreted as
+    /// a 2D representation of an axisymmetric 3D problem. Per default, this
+    /// is initialized as "false", only several examples set it to "true".
+    bool axisymmetric_;
   
   public:
     /** @brief initialize your own example
@@ -63,24 +68,6 @@ class Example2D
     std::vector <BoundValueFunct2D*> boundary_data;
     /* functions representing the coefficients of the pde */
     CoeffFct2D *problem_coefficients;
-    //void *example_info();
-
-    //Declaration of special member functions - rule of zero
-
-    //! Default copy constructor. Performs deep copy.
-    Example2D(const Example2D&) = default;
-
-    //! Default move constructor.
-    Example2D(Example2D&&) = default;
-
-    //! Default copy assignment operator. Performs deep copy.
-    Example2D& operator=(const Example2D&) = default;
-
-    //! Default move assignment operator
-    Example2D& operator=(Example2D&&) = default;
-
-    //! Default destructor.
-    virtual ~Example2D() = default;
 
     // Initialize example database, called with the constructor
     static ParameterDatabase default_example_database();
@@ -109,6 +96,10 @@ class Example2D
 
     const ParameterDatabase & get_database() const
     { return example_database; }
+
+    bool is_axisymmetric() const {return axisymmetric_;};
+
+    void set_axisymmetric(bool value){axisymmetric_ = value;};
 };
 
 #endif // __EXAMPLE2D__

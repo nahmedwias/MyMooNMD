@@ -75,11 +75,11 @@ class Coupled_Time_CDR_2D {
      * @param[in] velocity_field The fluid velocity responsible for the
      * advective transport.
      */
-    void assemble_initial_time(const TFEVectFunct2D* velocity_field);
+    void assemble_initial_time(TFEFunction2D* velo1, TFEFunction2D* velo2);
 
     /// We assume that the "uncoupled" (CD) parts do only depend on the velocity
     /// field, but neither on each other nor on other FE functions .
-    void assemble_uncoupled_part(const TFEVectFunct2D* velocity_field,
+    void assemble_uncoupled_part(TFEFunction2D* velo1, TFEFunction2D* velo2,
                                  std::vector<TFEFunction2D*> sources_and_sinks);
 
     /**

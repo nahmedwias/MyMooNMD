@@ -188,9 +188,9 @@ class NSE2D_axisymmetric
     { return systems.front().rhs; }
 
     const TFEFunction2D & get_axial_velocity() const
-    { return systems.front().u_r; }
+    { return systems.front().u_z; }
     TFEFunction2D & get_axial_velocity()
-    { return systems.front().u_r; }
+    { return systems.front().u_z; }
 
     const TFEFunction2D & get_radial_velocity() const
     { return systems.front().u_r; }
