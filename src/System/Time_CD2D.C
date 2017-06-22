@@ -40,22 +40,21 @@ ParameterDatabase get_default_TCD2D_parameters()
 /**************************************************************************** */
 Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
                                             TCollection& coll)
-: fe_space(&coll, (char*)"space", (char*)"time_cd2d space", example.get_bc(0),
+: fe_space(&coll, "time_cd2d space", "time_cd2d space", example.get_bc(0),
            TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
            // TODO CB: Building the matrix here and rebuilding later is due to the
-           // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
-           // which do neither provide default constructors nor working copy assignments.)
+           // highly non-functional class TFEFunction2D, which does
+           // neither provide default constructors nor working copy assignments
            stiff_matrix({&fe_space}),
            mass_matrix({&fe_space}),
-           rhs(this->stiff_matrix, true),
-           solution(this->stiff_matrix, false),
-           old_Au(this->stiff_matrix, true),
-           fe_function(&this->fe_space, (char*)"c", (char*)"c",
-                       this->solution.get_entries(), this->solution.length())
+           rhs(stiff_matrix, true),
+           solution(stiff_matrix, false),
+           old_Au(stiff_matrix, true),
+           fe_function(&fe_space, "c", "a function subject to a time-dependent convection-diffusion equation",
+                       solution.get_entries(), solution.length())
 {
   stiff_matrix = BlockFEMatrix::CD2D(fe_space);
   mass_matrix = BlockFEMatrix::CD2D(fe_space);
-  //leave the interpolators as is
 }
 
 
@@ -96,22 +95,22 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		const Example_TimeCD2D& ex, int reference_id)
  : db(get_default_TCD2D_parameters()), solver(param_db), systems(), example(ex),
-   errors(5, 0.0), timeDependentOutput(param_db)
+   errors(5, 0.0), timeDependentOutput(param_db), axisymmetric_(ex.is_axisymmetric())
 {
   db.merge(param_db, false);
-  this->set_parameters();
+  set_parameters();
   // this is the L^inf(L^2(Omega)) error, initialize with some large number
   errors[4] = 1.e10; 
   
-  bool usingMultigrid = this->solver.is_using_multigrid();
+  bool usingMultigrid = solver.is_using_multigrid();
   if(!usingMultigrid)
   {
     // create the collection of cells from the domain (finest grid)
     TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
     // create finite element space and function, a matrix, rhs, and solution
-    this->systems.emplace_back(this->example, *coll);
+    systems.emplace_back(example, *coll);
     
-    TFESpace2D& space = this->systems.front().fe_space;
+    TFESpace2D& space = systems.front().fe_space;
     double hmin, hmax;
     coll->GetHminHmax(&hmin, &hmax);
     Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
@@ -120,17 +119,17 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
     Output::print<1>("active dof : ", setw(12), space.GetN_ActiveDegrees());
     
     // old right hand side
-    old_rhs.copy_structure(this->systems[0].rhs);
+    old_rhs.copy_structure(systems[0].rhs);
     
     // interpolate the initial data
-    TFEFunction2D & fe_function = this->systems.front().fe_function;
+    TFEFunction2D & fe_function = systems.front().fe_function;
     fe_function.Interpolate(example.get_initial_cond(0));
     // add the fe function to the output object. 
     timeDependentOutput.add_fe_function(&fe_function);
   }
   else
   {
-    auto multigrid = this->solver.get_multigrid();
+    auto multigrid = solver.get_multigrid();
     if(multigrid->is_using_mdml())
       ErrThrow("mdml for TCD2D not yet implemented");
     
@@ -219,12 +218,12 @@ void Time_CD2D::set_parameters()
     }
 
     // when using afc, create system matrices as if all dofs were active
-    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1; //FIXME THIS IS DANGEROUS, does not go well with BlockFEMatrix!
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
   }
 }
 
 /**************************************************************************** */
-void Time_CD2D::assemble_initial_time(const TFEVectFunct2D* velocity_field)
+void Time_CD2D::assemble_initial_time(TFEFunction2D* velo1, TFEFunction2D* velo2)
 {
 
   // chose the types for the local assembling objects
@@ -242,10 +241,10 @@ void Time_CD2D::assemble_initial_time(const TFEVectFunct2D* velocity_field)
     LocalAssembling2D la_a_rhs(stiff_rhs, fe_funct,
                                this->example.get_coeffs());
 
-    if (velocity_field)
+    if (velo1 && velo2)
     { // modify the local assembling object for the stiffness matrix,
       // should a velocity field be given
-      modify_and_call_assembling_routine(s, la_a_rhs, la_mass , true, velocity_field);
+      modify_and_call_assembling_routine(s, la_a_rhs, la_mass , true, velo1, velo2);
     }
     else
     {//no modifications necessary
@@ -256,6 +255,9 @@ void Time_CD2D::assemble_initial_time(const TFEVectFunct2D* velocity_field)
     if(db["space_discretization_type"].is("local_projection")
         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
     {
+  	  if(axisymmetric_)
+  		  ErrThrow("local_projection is untested for axisymmetric problems");
+
       if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
       {
         //fetch stiffness matrix as block
@@ -281,7 +283,7 @@ void Time_CD2D::assemble_initial_time(const TFEVectFunct2D* velocity_field)
 
 /**************************************************************************** */
 void Time_CD2D::assemble(
-    const TFEVectFunct2D* velocity_field,
+	TFEFunction2D* velo1, TFEFunction2D* velo2,
     TFEFunction2D* sources_and_sinks)
 {
 
@@ -297,7 +299,7 @@ void Time_CD2D::assemble(
 
     if(db["space_discretization_type"].is("supg"))
     {
-      Output::warn("SUPG IS UNCHECKED IN THIS BRANCH (COUPLED CDR)!");
+      ErrThrow("SUPG IS UNCHECKED IN THIS BRANCH (COUPLED CDR) AND NOT ADAPTED TO AXISYMMETRIC!");
       // In the SUPG case:
       // M = (u,v) + \tau (u,b.grad v)
       LocalAssembling2D_type mass_supg = LocalAssembling2D_type::TCD2D_Mass;;
@@ -305,10 +307,10 @@ void Time_CD2D::assemble(
       LocalAssembling2D la_m_supg(mass_supg, &pointer_to_function,
                                this->example.get_coeffs());
 
-      if(velocity_field && sources_and_sinks)
+      if(velo1 && velo2 && sources_and_sinks)
       {//use both
         modify_and_call_assembling_routine(s, la_a_rhs, la_m_supg ,
-                                           true, velocity_field, sources_and_sinks);
+                                           true, velo1, velo2, sources_and_sinks);
       }
       else
       {//or none
@@ -318,10 +320,10 @@ void Time_CD2D::assemble(
     }
     else //non SUPG
     {//call assembling, ignoring mass matrix part (third argument is not relevant)
-      if(velocity_field && sources_and_sinks)
+      if(velo1 && velo2 && sources_and_sinks)
       {//use both
         modify_and_call_assembling_routine(s, la_a_rhs, la_a_rhs ,
-                                           false, velocity_field, sources_and_sinks);
+                                           false, velo1, velo2, sources_and_sinks);
       }
       else
       {//or none: nothing external given, no modifications necessary
@@ -578,13 +580,13 @@ void Time_CD2D::call_assembling_routine(
   //...variables which are the same for both
   std::vector<const TFESpace2D* > fe_spaces = {&s.fe_space};
   int n_fe_spaces = 1;
-  if(la_stiff.GetN_Parameters() == 4)
+  if((!axisymmetric_ && la_stiff.GetN_Parameters() == 2) || (axisymmetric_ && la_stiff.GetN_Parameters() == 3))
   {// this is an awful hack - yet it is my only sign, that
    // modify_and_call-assembling_routine was called WITHOUT source-and-sink term
     n_fe_spaces = 2;
     fe_spaces = {&s.fe_space, la_stiff.get_fe_function(1)->GetFESpace2D()};
   }
-  else if(la_stiff.GetN_Parameters() == 5)
+  else if((!axisymmetric_ && la_stiff.GetN_Parameters() == 3) || (axisymmetric_ && la_stiff.GetN_Parameters() == 4))
   {// this is an awful hack - yet it is my sign, that
    // modify_and_call-assembling_routine was called WITH source-and-sink term
     n_fe_spaces = 3;
@@ -630,57 +632,175 @@ void Time_CD2D::call_assembling_routine(
 }
 
 // Used as a "ParamFunction" (a MooNMD specific oddity
-// of the assembling process) in the following. Shears away the first two parameters
-// which are usually spatial x and y and passes on the three next paramters
+// of the assembling process) in the following.
+// ...shears away the first two parameters (x,y) and passes on the two next parameters
+void TwoFEParametersFunction(double *in, double *out)
+{
+  out[0] = in[2];
+  out[1] = in[3];
+}
+// ...shears away the first two parameters (x,y) and passes on the three next parameters
 void ThreeFEParametersFunction(double *in, double *out)
 {
   out[0] = in[2];
   out[1] = in[3];
   out[2] = in[4];
 }
-void TwoFEParametersFunction(double *in, double *out)
+void AxisymmetricTwoFEParametersFunction(double *in, double *out)
 {
-  out[0] = in[2];
-  out[1] = in[3];
+	out[0] = in[1];
+	out[1] = in[2];
+	out[2] = in[3];
 }
+void AxisymmetricThreeFEParametersFunction(double *in, double *out)
+{
+	out[0] = in[1];
+	out[1] = in[2];
+	out[2] = in[3];
+	out[3] = in[4];
+}
+void RadiusOnlyParametersFunction(double *in, double *out)
+{
+	out[0] = in[1];
+}
+
+void AxisymmetricLocalMatrixM(double Mult, double *coeff, double *param,
+                           double hK,
+                           double **OrigValues, int *N_BaseFuncts,
+                           double ***LocMatrices, double **LocRhs)
+{
+  double **Matrix, *MatrixRow;
+  double ansatz00;
+  double test00;
+  double *Orig0;
+  int i,j, N_;
+  double r;
+
+  r = param[0]; //y=r coordinate
+
+  Matrix = LocMatrices[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+
+  for(i=0;i<N_;i++)
+  {
+    MatrixRow = Matrix[i];
+    test00 = Orig0[i];
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz00 = Orig0[j];
+
+      MatrixRow[j] += r * Mult*ansatz00*test00;
+    } // endfor j
+  } // endfor i
+}
+
+void AxisymmetricLocalMatrixARhs(double Mult, double *coeff, double *param,
+                            double hK,
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA, *Rhs, val, *MatrixRowA;
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j, N_;
+  double r, eps, uz, ur, reac, f;// h;
+
+  MatrixA = LocMatrices[0];
+  Rhs = LocRhs[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+  Orig1 = OrigValues[1];
+  Orig2 = OrigValues[2];
+
+  eps = coeff[0]; // eps
+  uz = coeff[1]; // uz
+  ur = coeff[2]; // ur
+  reac = coeff[3]; // reaction coefficient
+  f = coeff[4]; // f
+  r  = coeff[5]; // y=r coordinate
+
+  for(i=0;i<N_;i++)
+  {
+    MatrixRowA = MatrixA[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    Rhs[i] += Mult*test00*f*r;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val = r * eps*(test10*ansatz10+test01*ansatz01);
+      val += r * (uz*ansatz10+ur*ansatz01)*test00;
+      val += r * reac*ansatz00*test00;
+
+      MatrixRowA[j] += Mult * val;
+
+    } // endfor j
+  } // endfor i
+}
+
 
 void Time_CD2D::modify_and_call_assembling_routine(
     System_per_grid& s,
     LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
     bool assemble_both,
-    const TFEVectFunct2D* velocity_field,
+	TFEFunction2D* velo1, TFEFunction2D* velo2,
     TFEFunction2D* sources_and_sinks)
 {
 
   // NOTE: velocity_field must be defined on the right grid
   // - but currently there is no way to check that...
 
-  // this awful call is due to the way a TFEVectFunct2D creates new dynamically
-  // allocated TFEFunction2D objects
-  TFEFunction2D* velo_x = velocity_field->GetComponent(0);
-  TFEFunction2D* velo_y = velocity_field->GetComponent(1);
-
-  // step 3 - set all the 'parameter'-related values in la_a_rhs accordingly
 
   // set up the input...
   std::vector<int> beginParameter = {0};
 
   TFEFunction2D* fe_funct[4]; //fill up the new fe function array (4th entry is optional, see below)
   fe_funct[0] = &s.fe_function;
-  fe_funct[1] = velo_x;
-  fe_funct[2] = velo_y;
+  fe_funct[1] = velo1;
+  fe_funct[2] = velo2;
 
   std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
                                              // for second fe value use function 2
   std::vector<MultiIndex2D> feValueMultiIndex = {D00, D00}; // to produce first fe value use 0th derivative,
                                                             // for second fe value as well
-  int N_parameters = 4; // four parameters (first two are x and y)...
-  int N_feValues = 2;   //..two of which stem from the evaluation of fe fcts
+  int N_parameters = 2; // two parameters (AFTER application of parameterFct...)
+  int N_feValues = 2;   //..both of them stem from the evaluation of fe fcts
   int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
 
   // chose the parameter function ("in-out function") which shears away
   // the first to "in" values (x,y) and passes only u_x and u_y
   std::vector<ParamFct*> parameterFct = {TwoFEParametersFunction};
+
+  if(axisymmetric_)
+  {//parameter handling is different, y=r has to be passed on
+	  N_parameters = 3;
+	  parameterFct = {AxisymmetricTwoFEParametersFunction};
+	  //this is Galerkin assembling for axisymmetric problem
+	  la_stiff.setAssembleFctParam2D(AxisymmetricLocalMatrixARhs);
+	  if(la_mass.get_type() == LocalAssembling2D_type::TCD2D_Mass) //yes, it's an actual mass matrix assembling method
+	  {
+		  la_mass.setAssembleFctParam2D(AxisymmetricLocalMatrixM);
+		  la_mass.setBeginParameter({0});
+		  la_mass.setN_Parameters(1);
+		  la_mass.setN_FeValues(0);
+		  la_mass.setN_ParamFct(1);
+		  std::vector<ParamFct*> parameterFct = {RadiusOnlyParametersFunction};
+		  la_mass.setParameterFct(parameterFct);
+	  }
+  }
 
   if(sources_and_sinks) // rhs source and sink terms are given
   {
@@ -694,12 +814,18 @@ void Time_CD2D::modify_and_call_assembling_routine(
                                                 // for third fe value use function 3
     feValueMultiIndex = {D00,D00,D00}; // to produce first fe value use 0th derivative,
                                                               // for second and third fe value as well
-    N_parameters = 5; // five parameters (first two are x and y!)...
-    N_feValues = 3;   //..three of which stem from the evaluation of fe fcts
+    N_parameters = 3; // three parameters (AFTER application of parameterFct...)
+    N_feValues = 3;   // ...all three of them stem from the evaluation of fe fcts
     N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
     // chose the parameter function ("in-out function") which shears away
     // the first to "in" values (x,y) and passes u_x, u_y and f
     parameterFct = {ThreeFEParametersFunction};
+
+    if(axisymmetric_)
+    {//parameter handling is different, y=r has to be passed on
+  	  N_parameters = 4;
+  	  parameterFct = {AxisymmetricThreeFEParametersFunction};
+    }
 
     //THIS IS DOUBLE CODE, but this stuff must be performed before
     // interpolated_sources_and_sinks and entries_source_and_sinks
@@ -718,9 +844,6 @@ void Time_CD2D::modify_and_call_assembling_routine(
     // step 4 - the assembling must be done before the velo functions
     // run out of scope
     call_assembling_routine(s, la_stiff, la_mass , assemble_both);
-
-    delete velo_x; // call to GetComponent dynamically created fe functs
-    delete velo_y;
   }
   else
   {
@@ -739,8 +862,5 @@ void Time_CD2D::modify_and_call_assembling_routine(
   // step 4 - the assembling must be done before the velo functions
   // run out of scope
   call_assembling_routine(s, la_stiff, la_mass , assemble_both);
-
-  delete velo_x; // call to GetComponent dynamically created fe functs
-  delete velo_y;
   }
 }

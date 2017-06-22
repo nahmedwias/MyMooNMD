@@ -40,10 +40,17 @@ ParameterDatabase get_default_NSE2D_axisymmetric_parameters()
   return db;
 }
 
-void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
-                          double *param, double hK,
-                          double **OrigValues, int *N_BaseFuncts,
-                          double ***LocMatrices, double **LocRhs);
+void AxialSymmetricNSE2D_AssembleFunction(
+		double Mult, double *coeff,
+		double *param, double hK,
+		double **OrigValues, int *N_BaseFuncts,
+		double ***LocMatrices, double **LocRhs);
+
+void AxialSymmetricNSE2D_OnlyNonLinear_AssembleFunction(
+		double Mult, double *coeff,
+		double *param, double hK,
+		double **OrigValues, int *N_BaseFuncts,
+		double ***LocMatrices, double **LocRhs);
 
 void AxialSymmetricNSE2D_ParamFunction(double *in, double *out);
 
@@ -381,7 +388,10 @@ void NSE2D_axisymmetric::assemble_linear_terms()
 
   }
 }
-//
+
+// TODO This contains nonlinear assembling. I should only reactivate it, when
+// I have a 'benchmark' to compute. For my current project, a Hagen--Poiseuille
+// type Stokes flow is 'sophisticated' enough.
 ///** ************************************************************************ */
 //void NSE2D_axisymmetric::assemble_nonlinear_term()
 //{
@@ -537,7 +547,7 @@ void NSE2D_axisymmetric::assemble_linear_terms()
 //
 //
 //}
-//
+
 /** ************************************************************************ */
 bool NSE2D_axisymmetric::stop_iteration(unsigned int iteration_counter)
 {
@@ -757,6 +767,10 @@ void AxialSymmetricNSE2D_ParamFunction(double *in, double *out)
   out[2] = in[3]; // u2old
 }
 
+//Assemble an axisymmetric NSE2D problem in 'standard' formulation.
+//See how the LocalAssembling object in the assemble_linear_term
+// routine is initialized to be in accordance with this thing (and the
+// above ParamFct2D). One will notice that there is a correspondence.
 void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
                           double *param, double hK,
                           double **OrigValues, int *N_BaseFuncts,
@@ -795,9 +809,9 @@ void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
   double f1 = coeff[1];
   double f2 = coeff[2];
 
-  double r = fabs(param[0]); // the radius (param[0] must be y coordinate)
-  double uz_old = param[1]; // u1old
-  double ur_old = param[2]; // u2old
+  double r = fabs(param[0]);//the radius (param[0] must be the y coordinate)
+  double uz_old = param[1];
+  double ur_old = param[2];
 
 
   int sign = 1;
@@ -863,7 +877,7 @@ void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
 
       //HOTFIX: Check the documentation!
       if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-        val += r*(ur_old*ansatz10+uz_old*ansatz01)*test00;
+        val += r*(uz_old*ansatz10+ur_old*ansatz01)*test00;
 
       MatrixA22Row[j] += Mult * val;
 
@@ -912,175 +926,7 @@ void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
   } // endfor i
 }
 
-//void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
-//                          double *param, double hK,
-//                          double **OrigValues, int *N_BaseFuncts,
-//                          double ***LocMatrices, double **LocRhs)
-//{
-//  double val;
-//  double ansatz00, ansatz10, ansatz01;
-//  double test00, test10, test01;
-//
-//  double ** MatrixA11 = LocMatrices[0]; 	//square matrices
-//  double ** MatrixA22 = LocMatrices[1];
-//  double ** MatrixA12 = LocMatrices[2]; //rect matrices
-//  double ** MatrixA21 = LocMatrices[3];
-//  double ** MatrixB1 = LocMatrices[4];
-//  double ** MatrixB2 = LocMatrices[5];
-//  double ** MatrixB1T = LocMatrices[6];
-//  double ** MatrixB2T = LocMatrices[7];
-//
-//  double* Rhs1 = LocRhs[0];
-//  double* Rhs2 = LocRhs[1];
-//  //no pressure rhs;
-//
-//  int N_UR = N_BaseFuncts[0];
-//  int N_UZ = N_BaseFuncts[1];
-//  int N_P  = N_BaseFuncts[2];
-//
-//  double* ur   = OrigValues[0];
-//  double* ur_r = OrigValues[1];
-//  double* ur_z = OrigValues[2];
-//  double* uz   = OrigValues[3];
-//  double* uz_r = OrigValues[4];
-//  double* uz_z = OrigValues[5];
-//  double* p    = OrigValues[6];
-//
-//  double nu = coeff[0];
-//  double f1 = coeff[1];
-//  double f2 = coeff[2];
-//  double r = fabs(param[0]); // the radius (param[0] must be y coordinate)
-////  double ur_old = param[1]; // u1old
-////  double uz_old = param[2]; // u2old
-//
-//  //go through the first block row (test space is space of ur)
-//  for(int i=0;i<N_UR;i++)
-//  {
-//    double* MatrixA11Row = MatrixA11[i];
-//
-//    test00 = ur[i];
-//    test10 = ur_r[i];
-//    test01 = ur_z[i];
-//
-//    Rhs1[i] += Mult*test00*f1*r;
-//
-//    for(int j=0;j<N_UR;j++)
-//    {
-//      ansatz00 = ur[j];
-//      ansatz10 = ur_r[j];
-//      ansatz01 = ur_z[j];
-//
-//      val  = nu * (ansatz10*test10*r + (ansatz00*test00) / r + 0.5 * ansatz01*test01*r);
-//
-////      //HOTFIX: Check the documentation!
-////      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-////        val += r*(ur_old*ansatz10+uz_old*ansatz01)*test00;
-//
-//      MatrixA11Row[j] += Mult * val;
-//    } // endfor j
-//
-//    double* MatrixA12Row = MatrixA12[i];
-//    for(int j=0;j<N_UZ;j++)
-//    {
-//        ansatz00 = uz[j];
-//        ansatz10 = uz_r[j];
-//        ansatz01 = uz_z[j];
-//
-//        val = nu*(0.5*ansatz10*test01*r);
-//
-//        MatrixA12Row[j] += Mult*val;
-//    }
-//
-//    double* MatrixB1TRow = MatrixB1T[i];
-//    for(int j=0;j<N_P;j++)
-//    {
-//      ansatz00 = p[j];
-//
-//      val = ansatz00*test10*r + test00;
-//      MatrixB1TRow[j] += - Mult * val;
-//
-//    }
-//  } // endfor i
-//
-//  //go through the second block row (test space is space of uz)
-//  for(int i=0;i<N_UZ;i++)
-//  {
-//
-//    test00 = uz[i];
-//    test10 = uz_r[i];
-//    test01 = uz_z[i];
-//
-//    Rhs2[i] += Mult*test00*f2*r;
-//
-//    double* MatrixA21Row = MatrixA21[i];
-//    for(int j=0;j<N_UR;j++)
-//    {
-//        ansatz00 = ur[j];
-//        ansatz10 = ur_r[j];
-//        ansatz01 = ur_z[j];
-//
-//        val = nu*(0.5*ansatz01*test10*r);
-//
-//        MatrixA21Row[j] += Mult*val;
-//    }
-//
-//    double* MatrixA22Row = MatrixA22[i];
-//    for(int j=0;j<N_UZ;j++)
-//    {
-//      ansatz00 = uz[j];
-//      ansatz10 = uz_r[j];
-//      ansatz01 = uz_z[j];
-//
-//      val = nu*(0.5*ansatz10*test10*r+ansatz01*test01*r);
-//
-////      //HOTFIX: Check the documentation!
-////      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-////        val += r*(ur_old*ansatz10+uz_old*ansatz01)*test00;
-//
-//      MatrixA22Row[j] += Mult * val;
-//
-//    } // endfor j
-//
-//    double* MatrixB2TRow = MatrixB2T[i];
-//    for(int j=0;j<N_P;j++)
-//    {
-//      ansatz00 = p[j];
-//
-//      val = ansatz00*test01*r;
-//      MatrixB2TRow[j] += - Mult*val;
-//    }
-//  } // endfor i
-//
-//  //go through third block row, where the test space is the pressure space
-//  for(int i=0;i<N_P;i++)
-//  {
-//    test00 = p[i];
-//
-//    //fill B1 (ansatz space is velocity r space)
-//    double* MatrixB1Row = MatrixB1[i];
-//    for(int j=0;j<N_UR;j++)
-//    {
-//      ansatz00 = ur[j];
-//      ansatz10 = ur_r[j];
-//
-//      val = test00*ansatz10*r + ansatz00;
-//      MatrixB1Row[j] += -Mult * val;
-//
-//    } // endfor j
-//
-//    //fill B2 (ansatz space is velocity z space)
-//    double* MatrixB2Row = MatrixB2[i];
-//    for(int j=0;j<N_UZ;j++)
-//    {
-//      ansatz01 = uz_z[j];
-//
-//      val = test00*ansatz01*r;
-//      MatrixB2Row[j] += -Mult * val;
-//    } // endfor j
-//  } // endfor i
-//}
-
-void NSType3_4NLGalerkinAxialSymm3D(double Mult, double *coeff,
+void AxialSymmetricNSE2D_OnlyNonLinear_AssembleFunction(double Mult, double *coeff,
                 double *param, double hK,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
@@ -1128,7 +974,6 @@ void NSType3_4NLGalerkinAxialSymm3D(double Mult, double *coeff,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j]*sign;
-//      ansatz00 = Orig2[j];
 
       val  = c0*r*(test10*ansatz10+test01*ansatz01);
       val += r*(u1*ansatz10+u2*ansatz01)*test00;
@@ -1136,10 +981,10 @@ void NSType3_4NLGalerkinAxialSymm3D(double Mult, double *coeff,
 
        val  = c0*(r*(test10*ansatz10+test01*ansatz01)
 		 -(ansatz10+ansatz01)*test00);
-                  //+ansatz00*test01+ansatz01*test00+ansatz00*test00/r);
-		  // old +ansatz00*test01-ansatz10*test00);
+
        val += r*(u1*ansatz10+u2*ansatz01)*test00;
        Matrix22Row[j] += Mult * val;
     } // endfor j
   } // endfor i
 }
+

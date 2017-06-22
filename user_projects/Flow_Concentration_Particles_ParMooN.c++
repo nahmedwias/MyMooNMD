@@ -105,92 +105,100 @@ int main(int argc, char* argv[])
   Output::info("PROGRAM PART", "Precomputing velocity.");
   Example_NSE2D example_flow(flow_database);
   NSE2D_axisymmetric flow_object({domain.GetCollection(It_Finest, 0)}, flow_database, example_flow);
+
   flow_object.assemble_linear_terms();
   flow_object.stop_iteration(0);
-
-  // nonlinear loop
-  // in function 'stopIt' termination condition is checked
-  for(unsigned int k = 1;; k++)
-  {
-    flow_object.solve();
-
-    //flow_object.assemble_nonlinear_term();
-
-    if(flow_object.stop_iteration(k))
-      break;
-  } // end for k
-//
+  //STOKES CASE
+  flow_object.solve();
   flow_object.output();
+
+//  //NAVIER--STOKES CASE
+//  // nonlinear loop
+//  // in function 'stopIt' termination condition is checked
+//  for(unsigned int k = 1;; k++)
+//  {
+//    flow_object.solve();
 //
+//    //flow_object.assemble_nonlinear_term();
 //
-//  // PART: SET UP PARTICLE- AND CDRE OBJECT //////////////////////////////////
-//  Output::info("PROGRAM PART", "Constructing particles- and cdre object.");
+//    if(flow_object.stop_iteration(k))
+//      break;
+//  } // end for k
 //
-//  Example_TimeCoupledCDR2D example_conc(conc_database);
-//  Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
-//
-//  if(brush_grid_control == "finer")
-//  {//one additional refinement for Brush
-//	  domain.RegRefineAll();
-//	  Output::info("GRID", "Picking one level finer grid for Brush.");
-//	  brush_grid = domain.GetCollection(It_Finest, 0);
-//  }
-//  // the particles object which wraps up Brush
-//  BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
-//
-//  // PARTS: SET UP INITIAL STATES /////////////////////////////////////////////
-//  Output::info("PROGRAM PART", "Setting up initial states.");
-//
-//  //get the velocity field of the precomputed velo object
-//  const TFEVectFunct2D& velo_field = flow_object.get_velocity();
-//  const TFEFunction2D& pressure = flow_object.get_pressure();
-//
-//  // concentrations: assemble matrices and right hand side at start time
-//  conc_object.assemble_initial_time(&velo_field);
-//  conc_object.output();
-//
-//  //set fluid phase in the particle object
-//  std::vector<TFEFunction2D*> fcts = conc_object.get_fe_functions();
+//  flow_object.output();
+
+
+
+  // PART: SET UP PARTICLE- AND CDRE OBJECT //////////////////////////////////
+  Output::info("PROGRAM PART", "Constructing particles- and cdre object.");
+
+  Example_TimeCoupledCDR2D example_conc(conc_database);
+  Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
+
+  if(brush_grid_control == "finer")
+  {//one additional refinement for Brush
+	  domain.RegRefineAll();
+	  Output::info("GRID", "Picking one level finer grid for Brush.");
+	  brush_grid = domain.GetCollection(It_Finest, 0);
+  }
+  // the particles object which wraps up Brush
+  BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
+
+  // PARTS: SET UP INITIAL STATES /////////////////////////////////////////////
+  Output::info("PROGRAM PART", "Setting up initial states.");
+
+  //get the velocity field of the precomputed velo object
+  TFEFunction2D& uz = flow_object.get_axial_velocity();
+  TFEFunction2D& ur = flow_object.get_radial_velocity();
+
+  const TFEFunction2D& pressure = flow_object.get_pressure();
+
+  // concentrations: assemble matrices and right hand side at start time
+  conc_object.assemble_initial_time(&uz, &ur);
+  conc_object.output();
+
+  //set fluid phase in the particle object
+  std::vector<TFEFunction2D*> fcts = conc_object.get_fe_functions();
 //  part_object.reset_fluid_phase(velo_field, pressure, fcts);
 //  part_object.output(TDatabase::TimeDB->CURRENTTIME);
-//
-//  // PART: SOLVE THE SYSTEM IN A TIME LOOP ///////////////////////////////////
-//  Output::info("PROGRAM PART", "Solving the coupled system.");
-//
-//  double end_time = TDatabase::TimeDB->ENDTIME;
-//  int step = 0;
-//
-//  int output_steps_parts = particle_database["output_all_k_steps"];
-//  int output_steps_concs = conc_database["output_all_k_steps"];
-//
-//  // time iteration
-//  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
-//  {
-//    step++;
-//
-//    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-//
-//    SetTimeDiscParameters(1);
-//
-//    double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-//    TDatabase::TimeDB->CURRENTTIME += tau;
-//
-//    Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-//
-//    //update and solve particles
-//    std::vector<TFEFunction2D*> fcts = conc_object.get_fe_functions();
+
+  // PART: SOLVE THE SYSTEM IN A TIME LOOP ///////////////////////////////////
+  Output::info("PROGRAM PART", "Solving the coupled system.");
+
+  double end_time = TDatabase::TimeDB->ENDTIME;
+  int step = 0;
+
+  int output_steps_parts = particle_database["output_all_k_steps"];
+  int output_steps_concs = conc_database["output_all_k_steps"];
+
+  // time iteration
+  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  {
+    step++;
+
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+
+    SetTimeDiscParameters(1);
+
+    double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+    TDatabase::TimeDB->CURRENTTIME += tau;
+
+    Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+
+    //update and solve particles
+    std::vector<TFEFunction2D*> fcts = conc_object.get_fe_functions();
 //    part_object.reset_fluid_phase(velo_field, pressure, fcts);
 //    part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + tau);
-//
-//    //solve cdr system
-//    conc_object.assemble_uncoupled_part(&velo_field, part_object.sources_and_sinks());
-//    conc_object.couple_and_solve();
-//
+
+    //solve cdr system
+    conc_object.assemble_uncoupled_part(&uz, &ur, part_object.sources_and_sinks());
+    conc_object.couple_and_solve();
+
 //    if(step %  output_steps_parts == 0)
 //      part_object.output(TDatabase::TimeDB->CURRENTTIME);
-//    if(step % output_steps_concs == 0)
-//      conc_object.output();
-//  }
+    if(step % output_steps_concs == 0)
+      conc_object.output();
+  }
 
   total_chrono.print_total_time("The whole shebang took: ");
 

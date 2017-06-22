@@ -45,6 +45,7 @@ Example2D::Example2D(const ParameterDatabase & db)
    boundary_conditions(), boundary_data(), problem_coefficients(NULL)
 {
   this->example_database.merge(db, false);
+  axisymmetric_=false;
 }
 
 Example2D::Example2D(std::vector <DoubleFunct2D*> exact,

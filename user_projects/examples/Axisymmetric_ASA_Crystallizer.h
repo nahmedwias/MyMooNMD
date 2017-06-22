@@ -1,5 +1,8 @@
+#ifndef USER_PROJECTS_EXAMPLES_AXISYMMETRIC_ASA_CRYSTALLIZER_H_
+#define USER_PROJECTS_EXAMPLES_AXISYMMETRIC_ASA_CRYSTALLIZER_H_
+
 /**
- * ASA_crystallizer.h
+ * Axisymmetric_ASA_Crystallizer.h
  *
  * A ParMooN example to be used with the Example_TimeCoupledCDR2D class.
  * Simulation of a coninuously operated ASA flow crystallizer, as reported
@@ -11,22 +14,22 @@
  * Contains a coupling of temperature, ASA concentration and crystal population
  * balance, all subject to a flow in a long, thin tube.
  *
- * @date 2016/06/08
+ * This is the axisymmetric version of the very example.
+ *
+ * @date 2017/06/21
  * @author Clemens Bartsch
  */
-
-#ifndef USER_PROJECTS_EXAMPLES_ASA_CRYSTALLIZER_H_
-#define USER_PROJECTS_EXAMPLES_ASA_CRYSTALLIZER_H_
 
 #include "vector"
 #include "functional"
 #include "string"
 
 // some integer constants used to identify boundary parts
-int bdry_inflow = 3;
-int bdry_upper = 0;
+int bdry_wall = 0;
 int bdry_outflow = 1;
-int bdry_lower = 2;
+int bdry_rotational = 2;
+int bdry_inflow = 3;
+
 
 // hard coded parameter sets for four different inflow velocities
 //  - can be controlled via input database
@@ -54,9 +57,6 @@ namespace Physics
   double M_ASA = 0.18016; //molar mass of ASA (kg/mol)
 }
 
-//#####
-//## Parameter setup 3 - fastest flow
-//#####
 namespace Temperature
 {
 double T_amb = 297.5;   // ambient temperature (room temperature)
@@ -77,57 +77,43 @@ double alpha_outer =  70; // W/(m^2 K)
 double lambda_tube = 0.3; // W/(m K)
 double k = 1 / (r_outer * ( 1/(r_inner*alpha_inner) + log(r_outer/r_inner)/lambda_tube + 1/(r_outer*alpha_outer)) ) ;
 }
+
 double temperature_bound_cond_exp( double x )
 {
     using namespace Temperature;
     return T_amb + (T_feed[VELOCITY_CODE]-T_amb) * std::exp( -k*2*r_outer*M_PI/(m_tc_t) * x );
 }
 
-//term responsible for the coupling on the right hand side in temperature equation
-double couplingTerm_T( const double* const params ) //must contain all that is necessary: T,c,F (zeroth moment)
+double couplingTerm_T( const double* const params )
 {
-//  //term responsible for the coupling on the right hand side in temperature equation
-//  double T = params[0];
-//  double c = params[1];
-//  double F = params[2]; //parameter functions takes care of that
-//
-//  double constant = Physics::delta_h_cryst / (Physics::rho_E * Physics::C_E);
-//
-//  return constant * F_growth(T,c,F); //watch out! sign differs from the way the equation was scetched
-  return 0; // no more coupling - the coupling terms will be reactivated
-            // if there is an actual reaction taking place in the fluid
+  return 0;   // currently there is no direct reaction between fluid quantities -
+  	  	  	  // they are only couled via growth, i.e. Brush takes care of it
 }
 
-double couplingTerm_C_ASA( const double* const params ) //must contain all that is necessary: T,c,F (zeroth moment)
+double couplingTerm_C_ASA( const double* const params )
 {
-//  double T = params[0];
-//  double c = params[1];
-//  double F = params[2]; //parameter functions takes care of that
-//
-//  double constant = 1 / Physics::M_ASA;
-//
-//  return - constant * F_growth(T,c,F); //watch out! sign differs from the way the equation was scetched
-  return 0; // no more coupling - the coupling terms will be reactivated
-            // if there is an actual reaction taking place in the fluid
+  return 0; // currently there is no direct reaction between fluid quantities -
+  	  	  	// they are only couled via growth, i.e. Brush takes care of it
 }
 
 
 //Just print some informations on the example.
 void ExampleFile()
 {
-  Output::info("Example", "This is the ASA crystallizer coupling example, "
-      "it is work in progress.");
+  Output::info("Example", "ASA crystallizer coupling example in axisymmetric formulation.");
 }
 
 // ///////////// Temperature uncoupled part ///////////// //
 void BoundCond_T(int BdComp, double t, BoundCond &cond)
 {
-  if(BdComp == bdry_inflow)
-    cond = DIRICHLET;
-  else if(BdComp == bdry_outflow)
-    cond = NEUMANN;
-  else //lower and upper boundary
-    cond = DIRICHLET;
+	  if(BdComp == bdry_inflow)
+	    cond = DIRICHLET;
+	  else if(BdComp == bdry_outflow)
+	    cond = NEUMANN;
+	  else if(BdComp == bdry_wall) //wall boundary
+	    cond = DIRICHLET;
+	  else if(BdComp == bdry_rotational) //the spurious boundary, Neumann bdry (see theoretical work Ganesan & Tobiska 2008)
+	    cond = NEUMANN;
 }
 
 void BoundValue_T(int BdComp, double Param, double &value)
@@ -135,23 +121,18 @@ void BoundValue_T(int BdComp, double Param, double &value)
   if(BdComp == bdry_inflow){
     value = inflow_T[VELOCITY_CODE]; //constant, depends on parameter set
   }
-   else if(BdComp == bdry_outflow)
+  else if(BdComp == bdry_outflow)
   {
     value = 0;
   }
-  else //wall boundary
+  else if(BdComp == bdry_wall)//wall boundary
   {
-      if(BdComp == bdry_upper)
-      {
-        double x = Param*tube_length;
-        value = temperature_bound_cond_exp(x);
-      }
-      else if(BdComp == bdry_lower)
-      {
-        double x = tube_length - Param*tube_length;
-        value = temperature_bound_cond_exp(x);
-      }
+    double x = Param*tube_length;
+    value = temperature_bound_cond_exp(x);
   }
+  else if(BdComp == bdry_rotational)
+	  value = 0;
+
 }
 
 void Coefficients_T(int n_points, double *x, double *y,
@@ -160,17 +141,19 @@ void Coefficients_T(int n_points, double *x, double *y,
   for(int i = 0; i < n_points; i++)
   {
     coeffs[i][0] = Physics::lambda / (Physics::rho_E * Physics::C_E); //diffusion coefficient
-    coeffs[i][1] = parameters[i][0];//convection in x direction
-    coeffs[i][2] = parameters[i][1];//convection in y direction
+    coeffs[i][1] = parameters[i][1];//convection in z direction
+    coeffs[i][2] = parameters[i][2];//convection in r direction
     coeffs[i][3] = 0; //no reaction.
 
-    coeffs[i][4] = parameters[i][2]; //rhs, interpolated sources and sinks from Brush
+    coeffs[i][4] = parameters[i][3]; //rhs, interpolated sources and sinks from Brush
+
+    coeffs[i][5] = parameters[i][0]; //y=r coordinate
   }
 }
 
 void InitialCondition_T(double x,  double y, double *values)
 {
-  values[0] = surrounding_T; //TODO must be replaced by precomputed steady-state temp field
+  values[0] = surrounding_T;
 }
 
 // /////////// ASA Concentration uncoupled part /////////// //
@@ -180,8 +163,8 @@ void BoundCond_C_ASA(int BdComp, double t, BoundCond &cond)
     cond = DIRICHLET;
   else if ( BdComp == bdry_outflow )
     cond = NEUMANN;
-  else //wall boundary
-    cond = NEUMANN; //impermeability
+  else //wall boundary and rotational (spurious) boundary
+    cond = NEUMANN; //impermeability/natural condition
 }
 
 void BoundValue_C_ASA(int BdComp, double Param, double &value)
@@ -195,8 +178,8 @@ void BoundValue_C_ASA(int BdComp, double Param, double &value)
   }
   else if ( BdComp == bdry_outflow )
     value = 0;
-  else //wall boundary
-    value = 0; //impermeability
+  else //wall boundary and rotational (spurious) boundary
+    value = 0; //impermeability/natural condition
 }
 
 void Coefficients_C_ASA(int n_points, double *x, double *y,
@@ -205,29 +188,32 @@ void Coefficients_C_ASA(int n_points, double *x, double *y,
   for(int i = 0; i < n_points; i++)
   {
     coeffs[i][0] = Physics::D; //diffusion coefficient
-    coeffs[i][1] =  parameters[i][0];//convection in x direction
-    coeffs[i][2] =  parameters[i][1];//convection in y direction
+    coeffs[i][1] =  parameters[i][1];//convection in z direction
+    coeffs[i][2] =  parameters[i][2];//convection in r direction
     coeffs[i][3] = 0; //no reaction.
 
-    coeffs[i][4] = parameters[i][2]; //rhs, interpolated sources and sinks from Brush
+    coeffs[i][4] = parameters[i][3]; //rhs, interpolated sources and sinks from Brush
+
+    coeffs[i][5] = parameters[i][0]; //y=r coordinate
   }
 }
 
 void InitialCondition_C_ASA(double x,  double y, double *values)
 {
-  values[0] = 0;
+  values[0] = 0; //initially, there is a total absence of ASA concentration
 }
 
 /****************************************************************************************
  * ParameterFunction and AssemblingFunctions used in the "Linearized Decoupled" strategy.
  ****************************************************************************************/
-
+// FIXME All the following are not actually needed here and just used as dummies,
+// since there is no direct reactive coupling in this example.
 void ParameterFunction(double* in, double* out){
-  // Just skip the first two entries - this is where TAuxParam2D->GetParameters() places the x and y value,
-  // and pass on as many values as nCoupled_ + number of further_functions.
-  // - for this example that would be 2 + 1 = 3.
-  for (size_t i = 0; i<3 ; ++i){
-    out[i] = in [i+2];
+  // Pass on as many values as 1 + nCoupled_ + number of further_functions.
+  // - for this example that would be 1 + 2 + 1 = 4.
+  // The first entry is the y coordinate (=r), needed in axisymmetric case due to integral trafo.
+  for (size_t i = 0; i<4 ; ++i){
+    out[i] = in [i+1];
   }
 }
 
@@ -296,21 +282,21 @@ size_t parameter_spatial_dimension = 2;
 size_t parameter_n_specs_primary = 2; //temperature and dissolved ASA concentration
 size_t parameter_n_specs_derived = 2; //EtOH and ASASUP
 
-std::vector<std::string> parameter_term_names = {"ux","uy","p","T","ASA","CH3CH2OH","ASASUP"};
+std::vector<std::string> parameter_term_names = {"uz","ur","p","T","ASA","CH3CH2OH","ASASUP"};
 
-// With given vaues ux, uy, p, T and ASA conc in a certain point,
+// With given vaues uz, ur, p, T and ASA conc in a certain point,
 // will evaluate the molar concentration of EtOH, which is a derived quantity.
 double derived_concentration_EtOH(const std::vector<double>& data)
 {
   if (data.size() != 7)
     throw std::runtime_error("derived_concentration_EtOH: expected 7 data points."
-        " ux, uy, p, T, ASA, 0(CH3CH2OH) , 0(ASASUP)");
+        " ur, uz, p, T, ASA, 0(CH3CH2OH) , 0(ASASUP)");
 
   return 1; // TODO The concentration of EtOH is not needed in Brush,
             // yet it would be nice to have a correct value there.
 }
 
-// With given values ux, uy, p, T and ASA conc in a certain point,
+// With given values uz, ur, p, T and ASA conc in a certain point,
 // will evaluate the supersaturation concentration of ASA, which is a
 // derived quantity.
 // Temperature must be in K and ASA concentration in mol/m^3. Output
@@ -319,7 +305,7 @@ double derived_concentration_ASASUP(const std::vector<double>& data)
 {
   if (data.size() != 7)
     throw std::runtime_error("derived_concentration_EtOH: expected 7 data points."
-        " ux, uy, p, T, ASA, CH3CH2OH , 0(ASASUP)");
+        " uz, ur, p, T, ASA, CH3CH2OH , 0(ASASUP)");
 
     double T = data[3];     // grab temperature
     double c_asa = data[4]; // grab ASA concentration
@@ -348,4 +334,4 @@ double derived_concentration_ASASUP(const std::vector<double>& data)
 std::vector<std::function<double(const std::vector<double>&)>> parameter_specs_derived_fcts =
 { derived_concentration_EtOH, derived_concentration_ASASUP};
 
-#endif /* USER_PROJECTS_EXAMPLES_ASA_CRYSTALLIZER_H_ */
+#endif /* USER_PROJECTS_EXAMPLES_AXISYMMETRIC_ASA_CRYSTALLIZER_H_ */

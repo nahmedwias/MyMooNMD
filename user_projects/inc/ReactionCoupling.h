@@ -38,10 +38,12 @@ class ReactionCoupling {
      *	@param[in] paramFunction A parameter function ("in-out function").
      *	@param[in] nCoupled
      *	@param[in] rhsFESpace The FE space used for the right hand side.
+     *	@param[in] axisymmetric Set it to true if this thing is used for an axisymmetric 2D formulation.
      */
     ReactionCoupling(CoupledCDR_2D::SolvingStrategy strategy,
                      AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
-                     size_t nCoupled, const TFESpace2D&  rhsFESpace);
+                     size_t nCoupled, const TFESpace2D&  rhsFESpace,
+					 bool axisymmetric = false);
 
     /** @brief Assembles the right hand side for the linearized_decoupled strategy.
      * @param latestSolutions The TFEFunctions pointer Array to be handed to the aux Object.
@@ -49,27 +51,7 @@ class ReactionCoupling {
     void assembleLinearDecoupled(
         TFEFunction2D** latestSolutions);
 
-
-    //Declaration of special member functions - rule of zero
-
-    //! Default copy constructor. Performs deep copy.
-    ReactionCoupling(const ReactionCoupling&) = default;
-
-    //! Default move constructor.
-    ReactionCoupling(ReactionCoupling&&) = default;
-
-    //! Default copy assignment operator. Performs deep copy.
-    ReactionCoupling& operator=(const ReactionCoupling&) = default;
-
-    //! Default move assignment operator
-    ReactionCoupling& operator=(ReactionCoupling&&) = default;
-
-    //! Default destructor.
-    ~ReactionCoupling() = default;
-
-
     //Getter methods.
-
     const TFESpace2D& getFeSpace() const {
       return feSpace_;
     }
@@ -113,6 +95,8 @@ class ReactionCoupling {
 
     //! The part of the right hand side vector which is due to coupling.
     BlockVector rightHandSide_;
+
+    bool axisymmetric_;
 
   private:
     //! @brief Boundary Condition Function and Values ensuring 0 dirichlet bdry conditions.

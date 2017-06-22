@@ -17,11 +17,17 @@
 #include <Assemble2D.h>
 
 //Constructor.
-ReactionCoupling::ReactionCoupling(CoupledCDR_2D::SolvingStrategy strategy, AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
-		size_t nCoupled, const TFESpace2D& rhsFESpace) :
+ReactionCoupling::ReactionCoupling(
+		CoupledCDR_2D::SolvingStrategy strategy,
+		AssembleFctParam2D* rhsAssemblingFct,
+		ParamFct* paramFunction,
+		size_t nCoupled,
+		const TFESpace2D& rhsFESpace,
+		bool axisymmetric) :
 		nCoupled_(nCoupled), rhsAssemblingFct_(rhsAssemblingFct),
-		paramFunction_(paramFunction), feSpace_(rhsFESpace), rightHandSide_(feSpace_.GetN_DegreesOfFreedom())
-
+		paramFunction_(paramFunction), feSpace_(rhsFESpace),
+		rightHandSide_(feSpace_.GetN_DegreesOfFreedom()),
+		axisymmetric_(axisymmetric)
 		{
 			switch (strategy) {
 			case CoupledCDR_2D::SolvingStrategy::linear_decoupled:{
@@ -31,8 +37,6 @@ ReactionCoupling::ReactionCoupling(CoupledCDR_2D::SolvingStrategy strategy, Asse
 				ErrMsg("Unknown or unimplemented solving strategy!");
 			  break;
 			}
-
-
 		}
 
 // Assembling routine for the "linearized_decoupled" solution strategy.
@@ -47,28 +51,30 @@ void ReactionCoupling::assembleLinearDecoupled(
 
 
 	// ****** Start constructing the LocalAssembling2D object ******
-	int myN_Terms = 1; //only 1 term to assemble
-	std::vector<int> myFESpaceNumber({0}); //for this term space "0" is used
-	std::vector<MultiIndex2D> myDerivatives({D00}); //No derivatives of the ansatz functions used.
-	std::vector<int> myRowSpace; //No matrices assembled here.
-	std::vector<int> myColumnSpace; //No matrices assembled here.
+	int myN_Terms = 1; //only 1 evaluated fe function is used ("c", 0th derivative)
+	std::vector<int> myFESpaceNumber({0}); //for this evaluated fe function the space "0" is used
+	std::vector<MultiIndex2D> myDerivatives({D00}); //of the evaluated fe function 0th derivative is needed.
+	std::vector<int> myRowSpace; //empty - no matrices assembled here.
+	std::vector<int> myColumnSpace; //empty - no matrices assembled here.
 	std::vector<int> myRhsSpace({0}); //just one right hand side is assembled
 
-	CoeffFct2D* myCoeffs = nullptr; // The unused coefficient function
+	CoeffFct2D* myCoeffs = nullptr; // We need no coefficient function here, it's all in the rhsAssemblingFct_
 	AssembleFctParam2D* myAssembleParam = rhsAssemblingFct_; // The assembling function
 
 	ManipulateFct2D* myManipulate = nullptr; //nobody uses the manipulate function
-	int myN_Matrices = 0; //this is of almost no importance anyway
-	int myN_Rhs = 1; //this is of almost no importance anyway
+	int myN_Matrices = 0;   //no matrices assembled
+	int myN_Rhs = 1; 		//1 right hand side vector gets assembled
 
 	int myN_ParamFct = 1; //use only one parameter function
 	std::vector<ParamFct*> myParameterFct({paramFunction_}); //The static parameter function.
 	std::vector<int> myBeginParameter({0}); //The 1 parameter function begins working at 0.
 	int myN_Parameters = n_incoming_functions; //the number of parameters
+	if(axisymmetric_)
+		myN_Parameters += 1; // in axisymmetric case there is one extra parameter: the radius 'r' (= y value)
 	TFEFunction2D **myFEFunctions2D = incoming_functions; //The FE functions to be evaluated are the latest solutions
-	int myN_FEValues = n_incoming_functions; //here all parameters are FE values, and their number equals n_incoming_functions
+	int myN_FEValues = n_incoming_functions; //n_incoming_functions of the parameters stem from the evaluation of fe functions
 	std::vector<int> myFEValue_FctIndex(myN_FEValues);
-	for (int i =0; i < myN_FEValues;++i) myFEValue_FctIndex[i]=i; //each FE_Value[i] comes from FE_Function[i]
+	for (int i =0; i < myN_FEValues;++i) myFEValue_FctIndex[i]=i; //for each 'i', FE_Value[i] comes from FE_Function[i]
 	std::vector<MultiIndex2D> myFEValue_MultiIndex(myN_FEValues);
 	for (int i =0; i < myN_FEValues;++i) myFEValue_MultiIndex[i]=D00;  //which is to say, from its "underived" version
 
@@ -90,6 +96,7 @@ void ReactionCoupling::assembleLinearDecoupled(
 	//The rhs has to be wrapped up as a double**
 	double* rhsWrap[1] = {rightHandSide_.get_entries()};
 	//Wrap up the zero dirichlet bdry condition and values used for the coupled part.
+	//TODO Shouldn't we rather take the bdry of the feSpace_?
 	BoundCondFunct2D* bdryCondPtrArray[1] = {&DirichletBoundCondition};
 	BoundValueFunct2D* bdryDataPtrArray[1] = {&ZeroBoundValue};
 
@@ -98,10 +105,10 @@ void ReactionCoupling::assembleLinearDecoupled(
 			1, //Only one fe space involved.
 			feSpaceWrap, //The 1 fe space used is stored in rhs vector..
 			0, NULL, 0, NULL, //No assembling of matrices (neither rectangular nor square)
-			1, // Only one part of the rhs gets assembled here.
+			1, // Only one rhs vector gets assembled here.
 			rhsWrap, //This is where to write the assembled values.
-			feSpaceWrap, // There is only one fe space to use as rhs space. NOTE: What exactly is the difference to the 2nd argument?
-			bdryCondPtrArray, // The Dirichlet bdry conditions
-			bdryDataPtrArray, // The Dirichlet bdry values (0)
+			feSpaceWrap, // There is only one fe space to use as rhs space
+			bdryCondPtrArray, // The bdry conditions
+			bdryDataPtrArray, // The bdry values (0)
 			localAssembler); //The local assembling object.
 }
