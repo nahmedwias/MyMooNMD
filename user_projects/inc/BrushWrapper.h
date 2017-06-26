@@ -46,7 +46,8 @@ class BrushWrapper
     /// Constructor taking a TCollection and a database.
     BrushWrapper(TCollection* brush_grid,
                  TCollection* parmoon_grid,
-                 const ParameterDatabase& db);
+                 const ParameterDatabase& db,
+				 bool axisymmetric = false);
 
     /// Destructor.
     ~BrushWrapper();
@@ -60,14 +61,16 @@ class BrushWrapper
     /**
      * Reset the fluid phase data in Brush, i.e., velocity, pressure, temperature
      * and all species concentrations.
-     * @param[in] u The fluid velocity (all components).
+     * @param[in] u1 The fluid velocity (first component)
+     * @param[in] u2 The fluid velocity (second component)
      * @param[in] p The pressure.
      * @param[in] species All transported species, the first of which
      *            is supposed to be temperature. The following must be in that
      *            order in which Brush expects them.
      */
     void reset_fluid_phase(
-        const TFEVectFunct2D& u,
+        const TFEFunction2D& u1,
+    	const TFEFunction2D& u2,
         const TFEFunction2D& p,
         std::vector<TFEFunction2D*> species);
 
@@ -157,8 +160,6 @@ class BrushWrapper
     // Moments of the PSD which can be calculated by Brush. Used only for visual-
     // ization with paraview, which is performed by the output_writer_.
     PostProcessing2D output_writer_;
-
-
 
 };
 

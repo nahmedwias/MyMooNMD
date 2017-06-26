@@ -837,7 +837,7 @@ void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
       ansatz10 = uz_z[j];
       ansatz01 = uz_r[j]*sign;
 
-      val  = nu*r*(test10*ansatz10+test01*ansatz01);
+      val  = nu*(test10*ansatz10+test01*ansatz01) * r;
 
       //HOTFIX: Check the documentation!
       if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
@@ -872,8 +872,7 @@ void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
       ansatz10 = ur_z[j];
       ansatz01 = ur_r[j]*sign;
 
-      val  = nu*(r*(test10*ansatz10+test01*ansatz01)
-		 -(ansatz10+ansatz01)*test00);
+      val  = nu*((test10*ansatz10+test01*ansatz01)*r + ansatz00 * test00);
 
       //HOTFIX: Check the documentation!
       if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)

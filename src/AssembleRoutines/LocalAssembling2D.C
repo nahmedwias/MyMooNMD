@@ -131,7 +131,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                                      int disctype)
  : type(type), discretization_type(disctype),
    name(LocalAssembling2D_type_to_string(type, disctype)), Coeffs(coeffs),
-   FEFunctions2D(fefunctions2d)
+   FEFunctions2D(fefunctions2d), N_Spaces(0)
 {
     Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
     
@@ -403,7 +403,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                                      const TAuxParam2D& aux,
                                      const TDiscreteForm2D& df)
- : type(type),
+ : type(type), discretization_type(),
    name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
@@ -559,13 +559,13 @@ LocalAssembling2D::~LocalAssembling2D()
 
 //==============================================================================
 void LocalAssembling2D::GetLocalForms(int N_Points,
-				      double *weights, 
+				      	  	  	  	  double *weights,
                                       double *AbsDetjk,
-				      double *X, double *Y,
+									  double *X, double *Y,
                                       int *N_BaseFuncts,
                                       BaseFunct2D *BaseFuncts,
                                       double **Parameters,
-				      double **AuxArray,
+									  double **AuxArray,
                                       TBaseCell *Cell, int N_Matrices,
                                       int N_Rhs,
                                       double ***LocMatrix, double **LocRhs,
@@ -737,6 +737,11 @@ void LocalAssembling2D::get_local_forms(int N_Points,
     // coefficient_values[i][19] is set by hand
     coefficient_values[i][19] = AbsDetjk[i];
     
+    // FIXME CB I want this removed. Here it seems, as if in the axisymmetric case
+    // the radius 'r', which is either 'x' or 'y' depending on the rotation,
+    // gets passed on as coeff[20] - it would be better if a) always 'y' was the
+    // rotational axis (as is the case in NSE2D) and b) y gets passed as a param,
+    // not as a coefficient.
     if(TDatabase::ParamDB->Axial3DAxis == 1)
       coefficient_values[i][20] = Y[i]; // r in axial3D (X: symmetric) problems (Sashikumaar Ganesan)
     else
@@ -831,14 +836,8 @@ void LocalAssembling2D::GetParameters(int n_points,
 
     N_BaseFunct[j]=TFEDatabase2D::GetBaseFunct2D(BaseFunct_Id)->GetDimension();
     
-//    //CB DEBUG
-//      Output::print("j: ", j," BaseFunct_Id: ", BaseFunct_Id, " FEValue_MultiIndex[j]: ", FEValue_MultiIndex[j]);
-//    //END DEBUG
     orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id, 
                                                          FEValue_MultiIndex[j]);
-//    //CB DEBUG
-//    Output::print(orig_values[j]);
-//    //END DEBUG
     Index[j] = fespace->GetGlobalDOF(cellnum);
   } // endfor j
 

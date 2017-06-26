@@ -9580,7 +9580,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       FE2D CurrentElement = fespace->GetFE2D(i, cell);
       int N_ = N_BaseFunct[CurrentElement];
 
-      double **Matrix = LocMatrices[j];
+      double **LocalMatrix = LocMatrices[j];
 //      double *Entries = sqmatrices[j]->GetEntries();
 //      const int *RowPtr = sqmatrices[j]->GetRowPtr();
 //      const int *ColInd = sqmatrices[j]->GetKCol();
@@ -9653,7 +9653,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       // get quadrature point on the boundary
       for(l=0;l<N_;l++)
       {
-      MatrixRow = Matrix[l];
+      MatrixRow = LocalMatrix[l];
       s = JointValue[l];
       // multiply value with weights from quadrature formula
       // and determinant from integral transformation to the
@@ -9677,7 +9677,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       for(int m=0;m<N_;m++)
       {
         int l=DOF[m];
-        double *MatrixRow = Matrix[m];
+        double *LocalMatrixRow = LocalMatrix[m];
         if(l < ActiveBound)
         {
           for(int k=0;k<N_;k++)
@@ -9687,7 +9687,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
             // local test function and k-th local ansatz function. That means it
             // corresponds to the l=DOF[m]-th global test function and the 
             // DOF[k]-th global ansatz function
-             sqmatrices[j]->add(l, DOF[k], MatrixRow[k]);
+             sqmatrices[j]->add(l, DOF[k], LocalMatrixRow[k]);
           }
         }                                         // endif l
         else
@@ -9703,7 +9703,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
               {
                 if(DOF[k] == HangingColInd[n])
                 {
-                  CurrentHangingEntries[n] += MatrixRow[k];
+                  CurrentHangingEntries[n] += LocalMatrixRow[k];
                   break;
                 }                                 // endif
               }                                   // endfor k
@@ -9716,7 +9716,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
         		// and add the calculated values to the square matrix
         		  for(int k=0;k<N_;k++)
         		  {
-        			  sqmatrices[j]->add(l, DOF[k], MatrixRow[k]);
+        			  sqmatrices[j]->add(l, DOF[k], LocalMatrixRow[k]);
         		  }
         	  } else {
         		  //Dirichlet standard treatment
@@ -9743,7 +9743,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       int N_Test = N_BaseFunct[TestElement];
       int N_Ansatz = N_BaseFunct[AnsatzElement];
 
-      double **Matrix = Matrices+(j+n_sqmatrices)*MaxN_BaseFunctions2D;
+      double **LocalMatrix = LocMatrices[j+n_sqmatrices];//Matrices+(j+n_sqmatrices)*MaxN_BaseFunctions2D;
 
       double *Entries = matrices[j]->GetEntries();
       const int *RowPtr = matrices[j]->GetRowPtr();
@@ -9764,7 +9764,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       for(int m=0;m<N_Test;m++)
       {
         int l=TestDOF[m];
-        double *MatrixRow = Matrix[m];
+        double *LocalMatrixRow = LocalMatrix[m];
         // cout << "DOF: " << l << endl;
         if(l < ActiveBound ||  l>=DirichletBound)
         {
@@ -9776,7 +9776,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
               if(AnsatzDOF[k] == ColInd[n])
               {
                 // cout << m << "   " << k << endl << n << endl;
-                Entries[n] += MatrixRow[k];
+                Entries[n] += LocalMatrixRow[k];
                 break;
               }                                   // endif
             }                                     // endfor k
@@ -9795,7 +9795,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
               // cout << "AnsatzDOF: " << AnsatzDOF[k] << endl;
               if(AnsatzDOF[k] == HangingColInd[n])
               {
-                CurrentHangingEntries[n] += MatrixRow[k];
+                CurrentHangingEntries[n] += LocalMatrixRow[k];
                 break;
               }                                   // endif
             }                                     // endfor k

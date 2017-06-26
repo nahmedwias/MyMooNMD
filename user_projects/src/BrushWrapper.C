@@ -78,7 +78,8 @@ void BrushWrapper::pick_example(int exmpl_code)
  */
 BrushWrapper::BrushWrapper(TCollection* brush_grid,
                            TCollection* parmoon_grid,
-                           const ParameterDatabase& db)
+                           const ParameterDatabase& db,
+						   bool axisymmetric)
 : //database
   db_(db),
   //brush fe
@@ -118,7 +119,8 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
       "brush_mesh.mesh", db_["third_dim_stretch"],
       db_["sweep_file"], " ",
       db_["therm_file"], db_["chem_file"],
-      db_["max_sp_per_cell"], db_["max_m0_per_cell"]
+      db_["max_sp_per_cell"], db_["max_m0_per_cell"],
+	  axisymmetric
   );
 
   // check if the numbering of cells in the brush grid is the same in Brush and ParMooN
@@ -272,7 +274,6 @@ std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
   // In order for this to work, two class invariants must be fulfilled:
   //  1) Brush grid and the cells in Brush must be in the same order
   //  2) The Brush grid source function must be of order 0
-  //TODO Does this work as expected? Coefficient value translates directly into function value?
   interface_->fetch_sources_and_sinks(
       source_and_sink_requests_,
       br_grid_source_fcts_values_
@@ -290,24 +291,19 @@ std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
 }
 
 void BrushWrapper::reset_fluid_phase(
-    const TFEVectFunct2D& u,
-    const TFEFunction2D& p,
-    std::vector<TFEFunction2D*> species
-    )
+		const TFEFunction2D& u1,
+		const TFEFunction2D& u2,
+		const TFEFunction2D& p,
+		std::vector<TFEFunction2D*> species
+)
 {
   //check input
   if(species.size() != parameter_n_specs_primary_)
    ErrThrow("Incorrect number of species fe functions given.");
-  if(u.GetN_Components() != (int) this->parameter_spatial_dimension_)
-    ErrThrow("Incorrect number of velocity components given.");
 
   size_t n_data_sets = brush_grid_->GetN_Cells();
 
   Brush::DataPM pm_data(parameter_function_names_, n_data_sets);
-
-  //For the velocity we need two xtra fe functions
-  TFEFunction2D* u0_fe = u.GetComponent(0);
-  TFEFunction2D* u1_fe = u.GetComponent(1);
 
   //prepare a vector of pointers to FEFunctions
   size_t dim = parameter_spatial_dimension_;
@@ -315,8 +311,8 @@ void BrushWrapper::reset_fluid_phase(
   size_t n_specs_derived = parameter_n_specs_derived_;
 
   std::vector<const TFEFunction2D*> fe_fcts_original(dim + 1 + n_specs_primary);
-  fe_fcts_original[0] = u0_fe;
-  fe_fcts_original[1] = u1_fe;
+  fe_fcts_original[0] = &u1;
+  fe_fcts_original[1] = &u2;
   fe_fcts_original[2] = &p;
   std::copy( species.begin() , species.end(), &fe_fcts_original[3]);
 
@@ -350,9 +346,6 @@ void BrushWrapper::reset_fluid_phase(
     //now the data set is finished and can be put to the data vector
     pm_data.add_data_set(data_set);
   }
-
-  delete u0_fe;
-  delete u1_fe;
 
   //give the data to Brush
   interface_->reset_fluid_phase(pm_data);

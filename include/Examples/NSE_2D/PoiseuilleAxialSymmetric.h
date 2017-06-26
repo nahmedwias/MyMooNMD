@@ -11,6 +11,10 @@
  *
  */
 
+const int axis = 2;
+const int out = 1;
+const int wall = 0;
+const int in = 3;
 
 int VELOCITY_CODE=0; //can be controlled by input parameter "velocity_code"
 double u_max[4] = {0.102958, 0.1825, 0.241916, 0.26738}; // maximum inflow velocity (m/s)
@@ -57,13 +61,13 @@ void boundary_conditions_axial(int BdComp, double t, BoundCond &cond)
 {
   switch(BdComp)
   {
-    case 0: cond = DIRICHLET;
+    case wall: cond = DIRICHLET;
             break;
-    case 1: cond = NEUMANN;
+    case out: cond = NEUMANN;
             break;
-    case 2: cond = NEUMANN;
+    case axis: cond = NEUMANN;
             break;
-    case 3: cond = DIRICHLET;
+    case in: cond = DIRICHLET;
             break;
     default: cout << "wrong boundary part number" << endl;
             break;
@@ -74,13 +78,13 @@ void boundary_conditions_radial(int BdComp, double t, BoundCond &cond)
 {
   switch(BdComp)
   {
-    case 0: cond = DIRICHLET; //y=R_max (wall boundary)
+    case wall: cond = DIRICHLET; //y=R_max (wall boundary)
             break;
-    case 1: cond = NEUMANN;   //outflow
+    case out: cond = NEUMANN;   //outflow
             break;
-    case 2: cond = DIRICHLET; //y=0 (spurios boundary)
+    case axis: cond = DIRICHLET; //y=0 (spurios boundary)
             break;
-    case 3: cond = DIRICHLET; //inflow
+    case in: cond = DIRICHLET; //inflow
             break;
     default: cout << "wrong boundary part number" << endl;
             break;
@@ -94,13 +98,13 @@ void UZBoundValue(int BdComp, double Param, double &value)
 
   switch(BdComp)
   {
-    case 0: value=0;
+    case wall: value=0;
             break;
-    case 1: value=0;
+    case out: value=0;
             break;
-    case 2: value=0;
+    case axis: value=0;
             break;
-    case 3: value = u * (4 * 0.5 * (1 - Param) *(1- 0.5 * (1 - Param)));
+    case in: value = u * (4 * 0.5 * (1 - Param) *(1- 0.5 * (1 - Param)));
             break;
     default: cout << "wrong boundary part number" << endl;
             break;
@@ -112,13 +116,13 @@ void URBoundValue(int BdComp, double Param, double &value)
 
   switch(BdComp)
   {
-    case 0: value = 0;
+    case wall: value = 0;
             break;
-    case 1: value = 0;
+    case out: value = 0;
             break;
-    case 2: value = 0;
+    case axis: value = 0;
             break;
-    case 3: value = 0;
+    case in: value = 0;
             break;
     default: cout << "wrong boundary part number" << endl;
             break;
