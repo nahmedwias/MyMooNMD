@@ -197,21 +197,16 @@ class LocalAssembling2D
      *
      * //FROM HERE IT IS MEMBERS OF DEPRECATED TDiscreteForm2D.
      *
-     * @param myN_Terms Number of terms to be assembled totally. Determines the size of AllOrigValues and OrigValues and should
-     * 					equal the size of "myDerivatives" and "myFESpaceNumber".
+     * @param myN_Terms The name "N_Terms" is rubbish, should rather be "N_FEEvaluations" or something along
+     * these lines. It determines the size of AllOrigValues and OrigValues and should equal the size of
+     * "myDerivatives" and "myFESpaceNumber". Those encode a requirement to Assemble2D, which derivatives of which
+     * Ansatz and Testfunctions must be evaluated. Consider the following example:
+     * TODO write down an example - N_Terms = 4, {D00, D10, D01, D00, D10, D01} {0,0,0,1,2,2 } or something like that.
      *
-     * @param myDerivatives Stores which derivative of the ansatz functions is to be used in which term.
-     * 						e.g. myDerivatives[0] = D10 - In the first term the first order x derivative
-     * 						 of the ansatz function is to be used
-     * 						Corresponds to the "Derivatives" of deprecated TDiscreteForm2D.
      *
-     * @param myFESpaceNumber Determines which FE space from ? is to be used for the ansatz (?) function in which term.
-     * 						  e.g. myFESpaceNumber[0] = 1 - Use fe space "1" (from where?) for the ansatz function in the first term.
-     * 						  Corresponds to the "FESpaceNumber" of deprecated TDiscreteForm2D.
-     * 						  NOTE: myFESpaceNumber[0] = 1 means: for first term, use " BaseFuncts[1]" from  "BaseFunct2D *BaseFuncts",
-     * 						  which is handed as a parameter to LocalAssembling2D::GetLocalForms(...) by the assembling routine.
-     * 						  TO DETERMINE THIS CORRECTLY REQUIRES KNOWLEDGE ABOUT THE BASEFUNCTIONS KNOWN IN THE ASSEMBLING ROUTINE -
-     * 						  THOSE ARE TAKEN CELLWISE FROM THE SPACES GIVEN TO ASSEMBLE2D AS 2ND ARGUMENT!
+     * @param myDerivatives TODO new comment
+     *
+     * @param myFESpaceNumber TODO new comment
      *
      * @param myRowSpace 	Stores which is the space used for the rows of matrix i.
      * 						e.g. myRowSpace[0]=1 - matrix 0 uses the space "1" (see above) as row (ansatz?) space
@@ -435,6 +430,11 @@ class LocalAssembling2D
     void setParameterFct(const std::vector<ParamFct*>& parameterFct)
     {
       ParameterFct = parameterFct;
+    }
+
+    void setAssembleFctParam2D(AssembleFctParam2D* newAssembleParam)
+    {
+    	AssembleParam = newAssembleParam;
     }
 };
 

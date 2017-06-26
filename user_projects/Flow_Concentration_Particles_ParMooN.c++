@@ -39,6 +39,9 @@
 
 int main(int argc, char* argv[])
 {
+
+  bool axisymmetric = true;
+
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
@@ -142,7 +145,7 @@ int main(int argc, char* argv[])
 	  brush_grid = domain.GetCollection(It_Finest, 0);
   }
   // the particles object which wraps up Brush
-  BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
+  BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database, axisymmetric);
 
   // PARTS: SET UP INITIAL STATES /////////////////////////////////////////////
   Output::info("PROGRAM PART", "Setting up initial states.");
@@ -159,8 +162,8 @@ int main(int argc, char* argv[])
 
   //set fluid phase in the particle object
   std::vector<TFEFunction2D*> fcts = conc_object.get_fe_functions();
-//  part_object.reset_fluid_phase(velo_field, pressure, fcts);
-//  part_object.output(TDatabase::TimeDB->CURRENTTIME);
+  part_object.reset_fluid_phase(uz,ur, pressure, fcts);
+  part_object.output(TDatabase::TimeDB->CURRENTTIME);
 
   // PART: SOLVE THE SYSTEM IN A TIME LOOP ///////////////////////////////////
   Output::info("PROGRAM PART", "Solving the coupled system.");
@@ -187,15 +190,15 @@ int main(int argc, char* argv[])
 
     //update and solve particles
     std::vector<TFEFunction2D*> fcts = conc_object.get_fe_functions();
-//    part_object.reset_fluid_phase(velo_field, pressure, fcts);
-//    part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + tau);
+    part_object.reset_fluid_phase(uz,ur, pressure, fcts);
+    part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + tau);
 
     //solve cdr system
     conc_object.assemble_uncoupled_part(&uz, &ur, part_object.sources_and_sinks());
     conc_object.couple_and_solve();
 
-//    if(step %  output_steps_parts == 0)
-//      part_object.output(TDatabase::TimeDB->CURRENTTIME);
+    if(step %  output_steps_parts == 0)
+      part_object.output(TDatabase::TimeDB->CURRENTTIME);
     if(step % output_steps_concs == 0)
       conc_object.output();
   }

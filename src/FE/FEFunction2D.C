@@ -2097,6 +2097,8 @@ void  TFEFunction2D::CorrectMass(double OldMass)
 
 
 /** Retun the mass, domain volume and mean values of the function - added by Sashi*/
+// FIXME CB: This function depends invisibly, i.e., via old global data base,
+// on the axisymmetry of the problem. This should be localised and made visible instead!
 void  TFEFunction2D::GetMassAndMean(double *OutVal)
 {
   int i,j,k,l, polydegree, N_QFPoints, ORDER;
