@@ -44,7 +44,7 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
      *  inflow velocities, and which of them is applied is controlled by
      *  "velocity code" (0: lowest, 3: highest velocity)
      */
-    poiseuille::VELOCITY_CODE = user_input_parameter_db["velocity_code"];
+	poiseuille_axialsymmetric::VELOCITY_CODE = user_input_parameter_db["velocity_code"];
 
     /** exact_solution */
     exact_solution.push_back( poiseuille_axialsymmetric::ExactUZ );
