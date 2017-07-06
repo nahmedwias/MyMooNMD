@@ -17,6 +17,12 @@ namespace ASA_crystallizer
   #include <ASA_crystallizer.h>
 }
 
+namespace Axisymmetric_ASA_crystallizer
+{
+  #include <Axisymmetric_ASA_Crystallizer.h>
+}
+
+
 void DirichletBoundaryConditions(int BdComp, double t, BoundCond &cond)
 {
       cond = DIRICHLET;
@@ -33,7 +39,36 @@ void BrushWrapper::pick_example(int exmpl_code)
   switch(exmpl_code)
   {
     case 0:
-    {
+    {//Axisymmetric ASA crystallizer
+      using namespace Axisymmetric_ASA_crystallizer;
+      //parameters information ('to Brush')
+      parameter_spatial_dimension_ = parameter_spatial_dimension;
+      parameter_n_specs_primary_ = parameter_n_specs_primary;
+      parameter_n_specs_derived_ = parameter_n_specs_derived;
+      parameter_function_names_ = parameter_term_names;
+      parameter_specs_derived_fcts_ = parameter_specs_derived_fcts;
+      //source and sink information ('from Brush')
+      source_and_sink_function_names_ = source_and_sink_term_names;
+      source_and_sink_requests_ = source_and_sink_fct_requests;
+
+      // this stuff must be done for the Eder example, which has 4 different
+      // parameter sets. It is not nice, but it does the trick.
+      if(db_["sweep_file_depends_on_velocity_code"].is(true) && db_.contains("velocity_code"))
+      {
+        size_t parameter_set = db_["velocity_code"];
+        //pick a sweep file according to the requested parameter set
+        db_["sweep_file"].impose(
+            Parameter("sweep_file", db_["sweep_file"].value_as_string()
+                      + ".param_set_"+ std::to_string(parameter_set), ""));
+        Output::info("Sweep File", "Due to choice of parameter set ", parameter_set,
+                     " ('velocity_code'), the sweep file was changed"
+                     " to ", db_["sweep_file"], ".");
+      }
+
+      break;
+    }
+    case 1:
+    {//non-axisymmetric (==false) ASA crystallizer
       using namespace ASA_crystallizer;
       //parameters information ('to Brush')
       parameter_spatial_dimension_ = parameter_spatial_dimension;
