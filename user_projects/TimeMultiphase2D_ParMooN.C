@@ -247,13 +247,15 @@ int main(int argc, char* argv[])
 
       Output::print<1>("<<<<<<<<<<<<<<<<<< END SOLVING CONVECTION >>>>>>>>>>>>>>");
 
+//      vof.phaseconvection2d_.correct_phase_fraction();
+
       /********************************************************************
        * UPDATING VELOCITY VECTOR WITH CD2D SOLUTION
        ********************************************************************/
       if (vof.cd2nse_coupling_ == true )
       {
         vof.update_field_vectors();
-//        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
+        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
       }
     }
 

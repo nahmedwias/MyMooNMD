@@ -1269,3 +1269,23 @@ void Time_CD2D::assemble_with_convection
   //this->systems[0].rhs.copy_nonactive(this->systems[0].solution);
   systems[0].solution.copy_nonactive(systems[0].rhs);
 }
+
+
+void Time_CD2D::correct_phase_fraction()
+{
+  double l = this->systems.front().solution.length();
+  double epsilon = 0.05;
+  double sharpness = 1000;
+  double val;
+  double pi = 3.14159265358979;
+
+  for (int k=0; k<l; k++)
+  {
+    val = this->systems.front().solution.at(k);
+    if ( val > epsilon && val < 1-epsilon)
+    {
+      this->systems.front().solution.at(k)=(1/pi)*atan(sharpness*(val-0.5))*0.5;
+    }
+  }
+}
+
