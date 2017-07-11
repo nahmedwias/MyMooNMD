@@ -154,7 +154,7 @@ double ***LocMatrices, double **LocRhs)
   Orig2 = OrigValues[2];         // u
 
   c0 = coeff[0];                 // nu
-  OutPut("c0nl" << c0); 
+//  OutPut("c0nl" << c0);
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
 
@@ -301,7 +301,6 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 
   mu = turbulentviscosity(hK, &param[2],&param[0],&param[0]);
   mu = u3*mu/2.0;  // multiplying here by u3=rho should be correct
-  //mu = mu/2.0;  // multiplying here by u3=rho should be correct
 
   for(i=0;i<N_U;i++)
   {
@@ -348,10 +347,10 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
     {
       ansatz00 = Orig3[j];
 
-      val = -Mult*ansatz00*test10;
+      val = -u3*Mult*ansatz00*test10;
       MatrixRow1[j] += val;
 
-      val = -Mult*ansatz00*test01;
+      val = -u3*Mult*ansatz00*test01;
       MatrixRow2[j] += val;
     }
   }                              // endfor i
@@ -368,10 +367,10 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val = -Mult*test00*ansatz10;
+      val = -u3*Mult*test00*ansatz10;
       MatrixRow1[j] += val;
 
-      val = -Mult*test00*ansatz01;
+      val = -u3*Mult*test00*ansatz01;
       MatrixRow2[j] += val;
     }                            // endfor j
 
