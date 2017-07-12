@@ -233,7 +233,7 @@ void GridTransfer::Prolongate(
     FineFunction[i] /= aux[i];
   }
 
-  delete[] aux;
+//  delete[] aux;
 }
 
 

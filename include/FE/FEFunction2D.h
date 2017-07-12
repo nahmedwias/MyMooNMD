@@ -221,5 +221,22 @@ class TFEFunction2D
    /** destructor */
    ~TFEFunction2D();
 
+   /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+
+  public:
+
+   /** Computes the gradient of a FEFunction with respect to x or y
+    *  and stores the result in a FEFunction.
+    *
+    *  This is a copy-paste of the method "Interpolate" with 2 changes:
+    *  1) it can compute (an interpolation of) the input FEFunction, or its gradient
+    *  w.r.t. x and y components, depending on the second argument "component":
+    *  component = 0 -> D00, component = 1 -> D10, component = 2 -> D01.
+    *  2) it uses FindGradientLocal instead of FindGradient
+    *
+    */
+   void compute_gradient(const TFEFunction2D *F, int component = 0);
+
+
 };
 #endif
