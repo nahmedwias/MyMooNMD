@@ -1546,7 +1546,7 @@ void TFEFunction2D::Interpolate(const TFEFunction2D *OldFeFunction)
     for(j=0;j<N_Points;j++)
     {
       OldFeFunction->FindGradient(X[j], Y[j], values);
-      PointValues[j] = values[0]; 
+      PointValues[j] = values[0];
     }
 
     nf->GetAllFunctionals(Coll, (TGridCell *)cell, PointValues,
@@ -2290,5 +2290,157 @@ void TFEFunction2D::computeNodeValues(std::vector<double>& solutionAtNode) const
 }
 
 
+
+/* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+/* **************************************************************/
+
+
+/** interpolate the old mesh fe function values to the new fe function */
+void TFEFunction2D::compute_gradient(const TFEFunction2D *OldFeFunction, int component)
+{
+  if (component > 2)
+    ErrThrow("TFEFunction2D: component should be 0, 1 or 2!");
+
+  int i,j, N_Cells, N_Edges = 0;
+  int N_DOFs, N_LocalDOFs;
+  int *BeginIndex, *GlobalNumbers;
+  int N_Points, *DOF;
+  int *IntIndex;
+
+  double *xi, *eta;
+  double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
+  double AbsDetjk[MaxN_PointsForNodal2D];
+  double PointValues[MaxN_PointsForNodal2D];
+  double FunctionalValues[MaxN_PointsForNodal2D];
+  double values[4];
+
+  TBaseCell *cell;
+  TCollection *Coll;
+  FE2D FEId;
+  TFE2D *Element;
+  TNodalFunctional2D *nf;
+  bool IsIsoparametric;
+  TJoint *joint;
+  JointType jointtype;
+  BoundTypes bdtype;
+  BF2DRefElements RefElement;
+  RefTrans2D RefTrans, *RefTransArray;
+
+  // begin code
+
+  Coll = FESpace2D->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+  BeginIndex = FESpace2D->GetBeginIndex();
+  GlobalNumbers = FESpace2D->GetGlobalNumbers();
+  N_DOFs = FESpace2D->GetN_DegreesOfFreedom();
+
+
+  IntIndex = new int[N_DOFs];
+  memset(IntIndex, 0, SizeOfInt*N_DOFs);
+
+  memset(Values, 0, SizeOfDouble*N_DOFs);
+  RefTransArray = TFEDatabase2D::GetRefTrans2D_IDFromFE2D();
+
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    FEId = FESpace2D->GetFE2D(i, cell);
+    Element = TFEDatabase2D::GetFE2D(FEId);
+    nf = Element->GetNodalFunctional2D();
+    nf->GetPointsForAll(N_Points, xi, eta);
+    N_LocalDOFs = Element->GetN_DOF();
+
+    RefElement = Element->GetBaseFunct2D()->GetRefElement();
+    switch(RefElement)
+    {
+      case BFUnitSquare:
+        N_Edges = 4;
+        break;
+
+      case BFUnitTriangle:
+        N_Edges = 3;
+        break;
+    }
+
+    RefTrans = RefTransArray[FEId];
+
+    IsIsoparametric = false;
+    if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
+    {
+      for(j=0;j<N_Edges;j++)
+      {
+        joint = cell->GetJoint(j);
+        jointtype = joint->GetType();
+        if(jointtype == BoundaryEdge)
+        {
+          bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
+          if(bdtype != Line)
+            IsIsoparametric = true;
+        }
+        if(jointtype == InterfaceJoint)
+        {
+          bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
+          if(bdtype != Line)
+            IsIsoparametric = true;
+        }
+        if(jointtype == IsoInterfaceJoint ||
+          jointtype == IsoBoundEdge)
+          IsIsoparametric = true;
+      }
+    }                                             // endif
+
+    if(IsIsoparametric)
+    {
+      switch(RefElement)
+      {
+        case BFUnitSquare:
+          RefTrans = QuadIsoparametric;
+          break;
+
+        case BFUnitTriangle:
+          RefTrans = TriaIsoparametric;
+          break;
+      }
+    }                                             // endif IsIsoparametric
+
+    TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
+    TFEDatabase2D::GetOrigFromRef(RefTrans, N_Points, xi, eta, X, Y, AbsDetjk);
+
+    for(j=0;j<N_Points;j++)
+    {
+//      OldFeFunction->FindGradient(X[j], Y[j], values);
+//      OldFeFunction->FindValueLocal(cell,i,X[j], Y[j], values);
+      OldFeFunction->FindGradientLocal(cell,i,X[j], Y[j], values);
+      PointValues[j] = values[component];
+    }
+
+    nf->GetAllFunctionals(Coll, (TGridCell *)cell, PointValues,
+                          FunctionalValues);
+
+    DOF = GlobalNumbers+BeginIndex[i];
+
+    for(j=0;j<N_LocalDOFs;j++)
+     {
+      Values[DOF[j]] += FunctionalValues[j];
+      IntIndex[DOF[j]] ++;
+     }
+  } //for(i=0;i<N_
+
+
+  for(i=0;i<N_DOFs;i++)
+   {
+    if(IntIndex[i])
+     { Values[i] /=(double)IntIndex[i];}
+    else
+    {
+      OutPut(" Error in interpolateion value not interpolated : " <<    i  << endl);
+      exit(1);
+    }
+   }
+
+
+   delete [] IntIndex;
+
+}
 
 

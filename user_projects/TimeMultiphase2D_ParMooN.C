@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   vof.output_initial_info();
 //  vof.output_vectors("vector_phi_init","vector_rho_init","vector_mu_init");
 
-
+vof.phaseconvection2d_.smooth_gradient_phi();
 
   /********************************************************************
    * START ASSEMBLING TimeNSE2D WITH GIVEN FIELDS

@@ -280,6 +280,8 @@ class Time_CD2D
 
     void correct_phase_fraction();
 
+    void smooth_gradient_phi();
+
   protected:
     std::vector<double> entries_velo_x;
     std::vector<double> entries_velo_y;
