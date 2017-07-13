@@ -336,9 +336,9 @@ class Time_NSE2D
      * @brief this sets the rho and mu fefunctions coming from VOF
      */
     void set_rho_mu_fefunct(TFEFunction2D* rho, TFEFunction2D* mu,
-                            TFEFunction2D* phi)
+                            TFEFunction2D* phi, TFEVectFunct2D* gradient)
     { this->rho_fefunct = rho; this->mu_fefunct = mu;
-      this->phase_field = phi; }
+      this->phase_field = phi; this->gradient_phi = gradient;}
 
     /**@brief this is a call to assemble2Dslipbc(), which sets up
      * everything needed for "Slip with friction, Penetration
