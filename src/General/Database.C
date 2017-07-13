@@ -401,8 +401,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->PERMEABILITY = 1;
     
   ParamDB->equal_order_stab_weight_PkPk= 0;
-      ParamDB->equal_order_stab_weight_P1P1= 0;// wird noch in Brinkman2d benutzt --> ändern
-      ParamDB->equal_order_stab_weight_P2P2= 0;// wird noch in Brinkman2d benutzt --> ändern
+  ParamDB->PkPk_stab= false;
     
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;

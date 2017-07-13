@@ -114,7 +114,8 @@ public:
     void matrix_gradu_n_v(BlockFEMatrix &M,
                           const TFESpace2D *U_Space,
                           std::vector<TBoundEdge*> &edge,
-                          double mult);
+                          double mult,
+                          int boundary_component_id);
     
     
     /** @brief assemble integral (\nabla v \cdot n, u)_{L^2([boundary_component_id])}
@@ -195,6 +196,7 @@ public:
      @param[in] given_boundary_data: the boundary velocity (as a finite element function)
      */
     void rhs_q_uD_n(BlockVector &rhs,
+                   const TFESpace2D *U_Space,
                    const TFESpace2D *P_Space,
                    BoundValueFunct2D *given_boundary_data1,
                    BoundValueFunct2D *given_boundary_data2,
@@ -202,6 +204,7 @@ public:
                    double mult
                    ) ;
     void rhs_q_uD_n(BlockVector &rhs,
+                   const TFESpace2D *U_Space,
                    const TFESpace2D *P_Space,
                    BoundValueFunct2D *given_boundary_data1,
                    BoundValueFunct2D *given_boundary_data2,

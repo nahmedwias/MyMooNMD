@@ -84,6 +84,7 @@ int main(int argc, char **argv)
 
   // create second vector, read into it
   BlockVector v2(fe_space.GetN_DegreesOfFreedom());
+    ////// Output::print(v2);
   v2.read_from_stream(out_in_stream);
 
   // substract first vector (difference should be zero now)

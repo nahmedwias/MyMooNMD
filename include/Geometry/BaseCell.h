@@ -103,7 +103,6 @@ class TBaseCell
   /**  @brief an integer for storing the local cell number (2Phase flows) **/
     int LocalCellNo;   
     
-
   public:
     // Constructor
     TBaseCell(TRefDesc *refdesc);
@@ -380,8 +379,18 @@ class TBaseCell
     /** @brief get normal orientation w.r.t cell at i-th joint */
     int GetNormalOrientation(int i) const
     { return normalOrientation[i]; }
+    
+    //LB ====================================================
+    /** @brief test if current cell is a boundary cell on BoundComp id (optional) */
+    bool IsBoundaryCell( int BoundComp_id = -4711) const;
 
-       
+    
+//    bool Get_IsBoundaryCellOnBoundComp()
+//    {
+//        return IsBoundaryCellOnBoundComp;
+//    }
+    //LB ====================================================
+    
 #ifdef  _MPI
 
     /**  @brief set value in ClipBoard */

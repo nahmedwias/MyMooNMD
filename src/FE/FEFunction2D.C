@@ -40,6 +40,8 @@
 #include <sys/types.h>
 #include <algorithm>
 
+#include <BaseCell.h>
+
 void OnlyDirichlet(int i, double t, BoundCond &cond)
 {
 	cond = DIRICHLET;
@@ -78,7 +80,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
                               CoeffFct2D *Coeff, 
                               TAuxParam2D *Aux,
                               int n_fespaces, const TFESpace2D **fespaces,
-                              double *errors, bool is_SDFEM) const
+                              double *errors, bool is_SDFEM, std::function<bool(const TBaseCell*, int)>funct) const
 {
   int i,j,k,l, ij, N_LocalUsedElements;
   int N_Cells, N_Points, N_Parameters, N_, N_Edges;
@@ -164,6 +166,18 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
   for(i=0;i<N_Cells;i++)
   {
     cell = Coll->GetCell(i);
+
+      //LB ============================================================
+//      cell->GetToKnow_IsBoundaryCellOnBoundComp(cell,-4711);
+//      cell->Get_IsBoundaryCellOnBoundComp();
+ 
+      //Output::print("IsBoundaryCell ", funct(cell, -4711));
+      if ( funct(cell,-4711) )
+          continue;
+      
+      //else
+      //Output::print("This is an inner cell");
+      //LB ============================================================
 
 #ifdef _MPI
     int ID, rank;
@@ -337,6 +351,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
         errors[N_Errors-1] = LocError[N_Errors-1];
     }
 #endif
+
   } // endfor i, loop over cells
 
 
@@ -372,9 +387,11 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
   delete [] ExactVal[0];
   delete [] Derivatives[0];
   delete [] Param[0];
+
 }                                                 // TFEFunction2D::GetErrors
 
 
+//==========================================================================
 
 /** determine the value of function and its first derivatives at
     the given point */

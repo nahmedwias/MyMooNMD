@@ -8,8 +8,11 @@
 #include <stdlib.h>
 
 #include <BoundComp3D.h>
+#include <BoundEdge.h>
 #include <BoundFace.h>
 #include <Edge.h>
+
+
 
 
 // Constructor
@@ -193,7 +196,43 @@ void TBaseCell::SetNormalOrientation()
   }
 }
 
-
+//LB ====================================================
+bool TBaseCell::IsBoundaryCell( int BoundComp_id ) const
+{ Output::print("HHHAALLLLLOOOOO ");
+    int num_inner_joints = 0;
+    for(int j = 0;  j < this->GetN_Joints(); j++)
+    {   Output::print("HHHAALLLLLOOOOO ");
+        Output::print("this->GetN_Joints() ", this->GetN_Joints());
+        const TJoint *joint = this->GetJoint(j);
+        if( joint->InnerJoint())
+        {
+            num_inner_joints=num_inner_joints+1;
+            continue;
+        }
+        else if(!(joint->InnerJoint()) && BoundComp_id == -4711)
+            {  Output::print("HHHAALLLLLOOOOO ");
+                return true;  
+            }
+        else if(!(joint->InnerJoint()) && BoundComp_id != -4711)
+            {
+#ifdef __2D__
+                const TBoundEdge *boundedge = (const TBoundEdge *)joint;
+                TBoundComp *BoundComp = boundedge->GetBoundComp();
+#elif __3D__
+                const TBoundFace *boundface = (const TBoundFace *)joint;
+                TBoundComp *BoundComp = boundface->GetBoundComp();
+#endif //__3D__
+                if (BoundComp->GetID() == BoundComp_id)
+                {
+                    return true;
+                }
+            }
+        if(this->GetN_Joints()-1  == num_inner_joints )
+            return false;
+    }
+    
+}
+//LB ====================================================
 
 // Methods
 #ifdef  _MPI
