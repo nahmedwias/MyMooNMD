@@ -50,7 +50,11 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
            solution(this->stiff_matrix, false),
            old_Au(this->stiff_matrix, true),
            fe_function(&this->fe_space, (char*)"c", (char*)"c",
-                       this->solution.get_entries(), this->solution.length())
+                       this->solution.get_entries(), this->solution.length()),
+           gradient_of_solution({this->solution.length(),this->solution.length()}),
+           gradient_fefunction(&this->fe_space, (char*) "gradPhi", (char*) "gradPhi",
+                               this->gradient_of_solution.block(0),
+                               this->gradient_of_solution.length(0), 2)
 {
   stiff_matrix = BlockFEMatrix::CD2D(fe_space);
   mass_matrix = BlockFEMatrix::CD2D(fe_space);
@@ -1293,7 +1297,7 @@ void Time_CD2D::correct_phase_fraction()
 void Time_CD2D::smooth_gradient_phi()
 {
   System_per_grid& s = this->systems.front();
-  s.solution.write("phi_werte");
+//  s.solution.write("phi_werte");
   TFEFunction2D * pointer_to_Phifunction = &s.fe_function;
 
   //  interpolate Grad Phi, which is P0, to our fe space (the one of phi), which is P1
@@ -1304,7 +1308,7 @@ void Time_CD2D::smooth_gradient_phi()
   // ...GOING TO Interpolation space P0
   const TFESpace2D space_P0(phi_space_P1.GetCollection(),(char*)"space",
                             (char*)"p0 space", example.get_bc(0),
-                            0, nullptr);
+                            TDatabase::ParamDB->ANSATZ_ORDER-1, nullptr);
   size_t n_dofs_P0 = space_P0.GetN_DegreesOfFreedom();
 
   std::vector<double> interp_funct_valuesx(n_dofs_P0,0);
@@ -1341,48 +1345,72 @@ void Time_CD2D::smooth_gradient_phi()
                            interp_funct_valuesy.data(), n_dofs_P0,
                            prolongated_funct_y.data(), n_dofs_P1);
 
-  TFEFunction2D prolongated_gradphi_x(
-      &phi_space_P1, (char*) "prolongated", (char*) "prolongated", prolongated_funct_x.data(), n_dofs_P1);
-  TFEFunction2D prolongated_gradphi_y(
-      &phi_space_P1, (char*) "prolongated", (char*) "prolongated", prolongated_funct_y.data(), n_dofs_P1);
+  // Filling a single double* vector for both x and y together
+  std::vector<double> grad_phi_values(2*n_dofs_P1,0);
+  for (unsigned int i=0; i < 2*n_dofs_P1; i++)
+  {
+    if (i < n_dofs_P1)
+      grad_phi_values.at(i) = prolongated_funct_x.at(i);
+    else
+      grad_phi_values.at(i) = prolongated_funct_y.at(i-n_dofs_P1);
+  }
 
+  s.gradient_of_solution = grad_phi_values.data();
 
-  // THIS IS A TEST TO OBTAIN SECOND DERIVATIVE OUT OF GRAD_PHI
-  std::vector<double> interp_funct_values3(n_dofs_P0,0);
-  TFEFunction2D interpolated_gradphi_xx(
-      &space_P0, (char*) "interpolated", (char*) "interpolated", interp_funct_values3.data(), n_dofs_P0);
-  interpolated_gradphi_xx.compute_gradient(&prolongated_gradphi_x,1);
+//  Output::print<1>("Length of double* grad_phi_values ", grad_phi_values.size());
+//  Output::print<1>("Length of BlockVector gradient_of_solution ", s.gradient_of_solution.length());
+//  s.gradient_fefunction.GetComponent(0)->WriteSol(".","gradPhi_beforeX");
+//  s.gradient_fefunction.GetComponent(1)->WriteSol(".","gradPhi_beforeY");
 
-  std::vector<double> interp_funct_values4(n_dofs_P0,0);
-  TFEFunction2D interpolated_gradphi_yy(
-      &space_P0, (char*) "interpolated", (char*) "interpolated", interp_funct_values4.data(), n_dofs_P0);
-  interpolated_gradphi_yy.compute_gradient(&prolongated_gradphi_y,2);
+//  // Checking with FEVectFunct constructed within this function
+//  // Definition of a FEVectFunct = GradPhi
+//  TFEVectFunct2D Grad_Phi(&phi_space_P1, (char*) "gradPhi", (char*) "gradPhi", grad_phi_values.data(), n_dofs_P1, 2);
+//  Grad_Phi.GetComponent(0)->WriteSol(".","Reference_GradPhiX");
+//  Grad_Phi.GetComponent(1)->WriteSol(".","Reference_GradPhiY");
+//  s.gradient_fefunction.GetComponent(0)->WriteSol(".","gradPhi_afterX");
+//  s.gradient_fefunction.GetComponent(1)->WriteSol(".","gradPhi_afterY");
 
-  // Displaying the values of all the FEFunctions
-   double* phi_werte = pointer_to_Phifunction->GetValues();
-   double* grad_phixP0_werte = interpolated_gradphi_x.GetValues();
-   double* grad_phixP1prolongated_werte = prolongated_gradphi_x.GetValues();
-   double* grad_phiyP0_werte = interpolated_gradphi_y.GetValues();
-   double* grad_phiyP1prolongated_werte = prolongated_gradphi_y.GetValues();
-   double* phixx_werte = interpolated_gradphi_xx.GetValues();
-   double* phiyy_werte = interpolated_gradphi_yy.GetValues();
-   Output::print<1>("LEFT LEFT COLUMN LENGTH:",   pointer_to_Phifunction->GetLength());
-   Output::print<1>("LEFT COLUMN LENGTH:", interpolated_gradphi_x.GetLength());
-   Output::print<1>("MIDDLE COLUMN LENGTH:", prolongated_gradphi_x.GetLength());
-   Output::print<1>("RIGHT COLUMN LENGTH:",  interpolated_gradphi_y.GetLength());
-   Output::print<1>("RIGHT RIGHT COLUMN LENGTH:",  prolongated_gradphi_y.GetLength());
-   Output::print<1>("BEFORE LAST COLUMN LENGTH:",  interpolated_gradphi_xx.GetLength());
-   Output::print<1>("LAST COLUMN LENGTH:",  interpolated_gradphi_yy.GetLength());
-   for (int i=0; i<pointer_to_Phifunction->GetLength();i++)
-   {
-     Output::print<1>(phi_werte[i], "     ", grad_phixP0_werte[i], "     ", grad_phixP1prolongated_werte[i]
-                      , "     ", grad_phiyP0_werte[i], "     ", grad_phiyP1prolongated_werte[i], "     ", phixx_werte[i],
-                      "     ", phiyy_werte[i]);
-   }
+//  // Definition of 2 FEFunctions for x and y of P1 grad phi, e.g. after prolongation
+//  TFEFunction2D prolongated_gradphi_x(
+//      &phi_space_P1, (char*) "prolongated", (char*) "prolongated", prolongated_funct_x.data(), n_dofs_P1);
+//  TFEFunction2D prolongated_gradphi_y(
+//      &phi_space_P1, (char*) "prolongated", (char*) "prolongated", prolongated_funct_y.data(), n_dofs_P1);
 
+//  // THIS IS A TEST TO OBTAIN SECOND DERIVATIVE OUT OF GRAD_PHI
+//  std::vector<double> interp_funct_values3(n_dofs_P0,0);
+//  TFEFunction2D interpolated_gradphi_xx(
+//      &space_P0, (char*) "interpolated", (char*) "interpolated", interp_funct_values3.data(), n_dofs_P0);
+//  interpolated_gradphi_xx.compute_gradient(&prolongated_gradphi_x,1);
+//
+//  std::vector<double> interp_funct_values4(n_dofs_P0,0);
+//  TFEFunction2D interpolated_gradphi_yy(
+//      &space_P0, (char*) "interpolated", (char*) "interpolated", interp_funct_values4.data(), n_dofs_P0);
+//  interpolated_gradphi_yy.compute_gradient(&prolongated_gradphi_y,2);
 
+//  // Displaying the values of all the FEFunctions
+//  double* phi_werte = pointer_to_Phifunction->GetValues();
+//  double* grad_phixP0_werte = interpolated_gradphi_x.GetValues();
+//  double* grad_phixP1prolongated_werte = prolongated_gradphi_x.GetValues();
+//  double* grad_phiyP0_werte = interpolated_gradphi_y.GetValues();
+//  double* grad_phiyP1prolongated_werte = prolongated_gradphi_y.GetValues();
+//  double* phixx_werte = interpolated_gradphi_xx.GetValues();
+//  double* phiyy_werte = interpolated_gradphi_yy.GetValues();
+//  Output::print<1>("LEFT LEFT COLUMN LENGTH:",   pointer_to_Phifunction->GetLength());
+//  Output::print<1>("LEFT COLUMN LENGTH:", interpolated_gradphi_x.GetLength());
+//  Output::print<1>("MIDDLE COLUMN LENGTH:", prolongated_gradphi_x.GetLength());
+//  Output::print<1>("RIGHT COLUMN LENGTH:",  interpolated_gradphi_y.GetLength());
+//  Output::print<1>("RIGHT RIGHT COLUMN LENGTH:",  prolongated_gradphi_y.GetLength());
+//  Output::print<1>("BEFORE LAST COLUMN LENGTH:",  interpolated_gradphi_xx.GetLength());
+//  Output::print<1>("LAST COLUMN LENGTH:",  interpolated_gradphi_yy.GetLength());
+//  for (int i=0; i<pointer_to_Phifunction->GetLength();i++)
+//  {
+//    Output::print<1>(phi_werte[i], "     ", grad_phixP0_werte[i], "     ", grad_phixP1prolongated_werte[i]
+//                                                                                                        , "     ", grad_phiyP0_werte[i], "     ", grad_phiyP1prolongated_werte[i], "     ", phixx_werte[i],
+//                                                                                                        "     ", phiyy_werte[i]);
+//  }
+//  Grad_Phi.GetComponent(0)->WriteSol(".","component0");
+//  Grad_Phi.GetComponent(1)->WriteSol(".","component1");
 
-//   interpolated_gradphi_x.WriteSol(".","test");
 
   Output::print<1>("END OF METHOD!");
   exit(-1);

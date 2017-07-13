@@ -53,6 +53,14 @@ class Time_CD2D
       /** @brief Finite element function */
       TFEFunction2D fe_function;
 
+      /* *********** BELOW THIS LINE USER SPECIFIC CODE **************/
+      /** @brief gradient of solution stored in a BlockVector */
+      BlockVector gradient_of_solution;
+      /** @brief gradient of solution stored in a FEVectFunct */
+      TFEVectFunct2D gradient_fefunction;
+
+      /* *********** END OF USER SPECIFIC CODE **************/
+
       /** @brief constructor*/
       System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
 
