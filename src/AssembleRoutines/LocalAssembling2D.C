@@ -2213,9 +2213,15 @@ void LocalAssembling2D::set_parameters_for_tnse_TwoPhase(LocalAssembling2D_type 
     this->BeginParameter = {0};
 //    this->FEValue_MultiIndex = { D00, D00, D00, D00, D10, D01 };
 //    this->FEValue_FctIndex = { 0, 1, 2, 3, 2, 2 };
+    /* THIS PART USES DIRECTLY PHI FOR COMPUTATION OF CSF */
     this->FEValue_MultiIndex = { D00, D10, D01, D11, D20, D02 };
     this->FEValue_FctIndex = { 2, 4, 4, 4, 4, 4 };
     // 2 is rho, 4 is phi from which we need derivatives for CSF
+//    /* THIS PART USES GRAD PHI FOR COMPUTATION OF CSF */
+//    this->FEValue_MultiIndex = { D00, D00, D00, D01, D10, D01 };
+//    this->FEValue_FctIndex = { 2, 5, 6, 5, 5, 6 };
+//    // 2 is rho, 5 is grad_phix, 6 is grad_phiy, note that
+//    // crossed derivative has two choices: 5 D01 or 6 D10
     }
   }
   // *********************************************************
