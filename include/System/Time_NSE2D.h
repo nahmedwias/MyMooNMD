@@ -80,12 +80,13 @@ class Time_NSE2D
                       std::pair<int,int> order, Time_NSE2D::Matrix type);
     };
     
-    /* FEFunction equal to property fields, construction
-     * based on the above BlockVectors
+    /* FEFunction equal to property fields
      */
     TFEFunction2D* rho_fefunct = nullptr;
     TFEFunction2D* mu_fefunct = nullptr;
     TFEFunction2D* phase_field = nullptr;
+    TFEVectFunct2D* gradient_phi = nullptr;
+
 
     /** @brief a local parameter database which controls this class
      *

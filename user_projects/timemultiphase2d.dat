@@ -57,7 +57,7 @@ geo_file: UnitSquare   { TwoTriangles, UnitSquare }
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
 problem_type: 6   [ 0, 6 ]
-verbosity: 5   [ 1, 5 ]
+verbosity: 2   [ 1, 5 ]
 
 output_write_vtk: true   { true, false }
 output_write_ps: false   { true, false }

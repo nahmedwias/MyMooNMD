@@ -1380,12 +1380,12 @@ void Time_CD2D::smooth_gradient_phi()
 //  std::vector<double> interp_funct_values3(n_dofs_P0,0);
 //  TFEFunction2D interpolated_gradphi_xx(
 //      &space_P0, (char*) "interpolated", (char*) "interpolated", interp_funct_values3.data(), n_dofs_P0);
-//  interpolated_gradphi_xx.compute_gradient(&prolongated_gradphi_x,1);
+//  interpolated_gradphi_xx.compute_gradient(s.gradient_fefunction.GetComponent(0),1);
 //
 //  std::vector<double> interp_funct_values4(n_dofs_P0,0);
 //  TFEFunction2D interpolated_gradphi_yy(
 //      &space_P0, (char*) "interpolated", (char*) "interpolated", interp_funct_values4.data(), n_dofs_P0);
-//  interpolated_gradphi_yy.compute_gradient(&prolongated_gradphi_y,2);
+//  interpolated_gradphi_yy.compute_gradient(s.gradient_fefunction.GetComponent(1),2);
 
 //  // Displaying the values of all the FEFunctions
 //  double* phi_werte = pointer_to_Phifunction->GetValues();
@@ -1404,15 +1404,15 @@ void Time_CD2D::smooth_gradient_phi()
 //  Output::print<1>("LAST COLUMN LENGTH:",  interpolated_gradphi_yy.GetLength());
 //  for (int i=0; i<pointer_to_Phifunction->GetLength();i++)
 //  {
-//    Output::print<1>(phi_werte[i], "     ", grad_phixP0_werte[i], "     ", grad_phixP1prolongated_werte[i]
-//                                                                                                        , "     ", grad_phiyP0_werte[i], "     ", grad_phiyP1prolongated_werte[i], "     ", phixx_werte[i],
-//                                                                                                        "     ", phiyy_werte[i]);
+//    Output::print<1>(/*phi_werte[i], "     ", grad_phixP0_werte[i], "     ", grad_phixP1prolongated_werte[i]
+//                      , "     ", grad_phiyP0_werte[i], "     ", grad_phiyP1prolongated_werte[i], "     ", */
+//        phixx_werte[i], "     ", phiyy_werte[i]);
 //  }
 //  Grad_Phi.GetComponent(0)->WriteSol(".","component0");
 //  Grad_Phi.GetComponent(1)->WriteSol(".","component1");
 
 
   Output::print<1>("END OF METHOD!");
-  exit(-1);
+//  exit(-1);
 }
 
