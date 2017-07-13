@@ -203,8 +203,8 @@ Then I click "Finish" and Eclipse takes over. Great, I can start working!
  option as follows:
  \image html Xcode4.png
  At "Run --> Info" the "Executable" should be chosen, e.g., "parMooN_brinkman2d_SEQUENTIAL".
- At "Run --> Arguments" one has to add the input file, e.g. brinkman2d.dat, as "Argument Passed On Launch"
- "Executable" should be chosen, e.g., "parMooN_brinkman2d_SEQUENTIAL".
+ At "Run --> Arguments" one has to add the input file, e.g. brinkman2d.dat.
+ As "Argument Passed On Launch", "Executable" should be chosen, e.g., "parMooN_brinkman2d_SEQUENTIAL".
  Make sure that at "Run --> Options" the "Working Directory" is "costum" and the path is the right one,
  e.g., /Users/blank/ParMooN/Tests/Brinkman2D.
 

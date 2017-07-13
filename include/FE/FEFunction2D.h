@@ -79,8 +79,10 @@ class TFEFunction2D
                    int N_Errors, ErrorMethod2D *ErrorMeth, 
                    CoeffFct2D *Coeff, TAuxParam2D *Aux,
                    int n_fespaces, const TFESpace2D **fespaces,
-                   double *errors, bool is_SDFEM = 0) const;
-
+                   double *errors, bool is_SDFEM = 0,
+                   std::function<bool(const TBaseCell*, int)>funct = [](const TBaseCell*, int){return false;}) const;
+    
+    
     /** @brief use this for vector valued basis functions (Raviart-Thomas (RT)
      *         or Brezzi-Douglas-Marini (BDM) elements) */
     void  GetErrorsForVectorValuedFunction(

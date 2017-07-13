@@ -268,6 +268,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             
         case LocalAssembling2D_type::Brinkman2D_Galerkin1:
             //Matrix Type 14
+           
             this->N_Terms = 4;
             this->Derivatives = { D10, D01, D00, D00 };
             this->Needs2ndDerivatives = new bool[2];

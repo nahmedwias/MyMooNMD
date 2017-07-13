@@ -2,7 +2,7 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <MooNMD_Io.h>
-
+#include <Database.h>
 #ifdef _MPI
 #include <mpi.h>
 #include <ParFECommunicator3D.h>
@@ -470,8 +470,11 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
   if(matrix.get_n_total_rows() != matrix.get_n_total_columns())
     ErrThrow("PETScSolver: non-square matrix ", matrix.get_n_total_rows(),
              ",", matrix.get_n_total_columns());
+    Output::print("n_total_rows= ", matrix.get_n_total_rows());
   size_t n_block_rows = matrix.get_n_cell_rows();
+    Output::print("n_block_rows= ", n_block_rows);
   size_t n_block_cols = matrix.get_n_cell_columns();
+    Output::print("n_block_cols= ", n_block_cols);
 
   // indicate if matrix is stored as a transposed, this is set when calling
   // matrix.get_block(...)
@@ -518,11 +521,75 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
 
   bool single_block = (n_block_rows*n_block_cols == 1);
   if(use_direct_petsc || single_block)
-  {
+    {
     // the nested petsc matrix type will not work, so we write a single big 
     // petsc matrix. This is similar to calling matrix.get_combined_matrix
     create_one_big_petsc_matrix(matrix, this->petsc_mat);
-  }
+    }
+    
+    //////unten neu
+//  else if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE==1)
+//  {    Output::print("INTERNAL_PROJECT_PRESSURE ", TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE);
+//        // the nested petsc matrix type will not work, so we write a single big
+//       // petsc matrix. This is similar to calling matrix.get_combined_matrix
+//        create_one_big_petsc_matrix(matrix, this->petsc_mat);
+//   // IS *is;
+//   // MatFindZeroDiagonals(this->petsc_mat, *is);
+//   //   Output::print("IS: ", is);
+//   //   Output::print("IS: ", *is);
+//      
+//      // todo: all diagonal entries have to be defined for petsc, i.e., also zeros.
+//    MatZeroEntries(this->petsc_mat);
+//      }
+//    
+//  else if (saddlepoint_problem && !single_block && TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE==1)
+//  {
+//        Output::print("PETScSolver class saddlepoint_problem with pure Dirichlet data");
+//        // reserve space for enough sub matrices for PETSc. You have to have a
+//        // two-by-two block system in a saddle point problem.
+//        // It is assumed here, that the pressure block is last, i.e., has the row
+//        // and colums index `n_block_rows-1` and `n_block_cols-1` respectively.
+//        size_t last_block_row = n_block_rows-1;
+//      Output::print("last_block_row= ", last_block_row);
+//        size_t last_block_col = n_block_cols-1;
+//      Output::print("last_block_col= ", last_block_col);
+//        sub_petsc_mats.resize(2 * 2);
+//        
+//        // velocity-velocity coupling:
+//        create_sub_matrix(matrix, {0,0}, {last_block_row-1, last_block_col-1},
+//                          sub_petsc_mats[0]);
+//        // velocity-pressure coupling:
+//        create_sub_matrix(matrix, {0,last_block_col}, {last_block_row-1, last_block_col},
+//                          sub_petsc_mats[1]);
+//        // pressure-velocity coupling:
+//        create_sub_matrix(matrix, {last_block_row, 0}, {last_block_row, last_block_col-1},
+//                          sub_petsc_mats[2]);
+//        // pressure-pressure coupling (should be a zero matrix)
+//        create_sub_matrix(matrix, {last_block_row, last_block_col},
+//                          {last_block_row, last_block_col},
+//                          sub_petsc_mats.at(3));
+//        
+//        // currently the last block should be all zero, we check this here
+//        PetscReal norm = 0.0;
+//        MatNorm(sub_petsc_mats.at(3), NORM_FROBENIUS, &norm);
+//        if(norm != 0.0)
+//        {
+//            // We are here usually in case of an all-Dirichlet Navier-Stokes problem,
+//            // where the pressure-pressure block is modified in one row. usually in
+//            // saddle point problems this is zero. This is what PETSc expects.
+//            // The problem is that PETSc can not automatically identify the correct
+//            // blocks if they are not the ones given as submatrices. We would have to
+//            // somehow define index sets for PETSc. I don't know how to do that.
+//            ErrThrow("Currently one can use PETSc for a saddle point problem only if "
+//                     "the lower right block is zero. Here it has norm ", norm);
+//        }
+//        
+//        // This is the PETSc way of having a BlockMatrix, direct solvers wont work
+//        MatCreateNest(PETSC_COMM_WORLD, 2, NULL, 2, NULL, &sub_petsc_mats[0],
+//                      &petsc_mat);
+//    }
+    
+    /////////oben neu
   else if(saddlepoint_problem && !single_block)
   {
     Output::print("PETScSolver class saddlepoint_problem");
@@ -581,12 +648,13 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
   // the values in the parameter "petsc_arguments".
   KSPSetFromOptions(ksp);
   PCSetFromOptions(pc);
-  
-  KSPSetUp(ksp);
+    Output::print("OOOOKKKKKKOOOOKKKKKK1");
+    KSPSetUp(ksp);;
   // some PETSc information about the solver
   /// @todo nicer output for the PETSc solver
   if(Output::getVerbosity() > 3)
     KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+    Output::print("OOOOKKKKKKOOOOKKKKKK2");
 }
 
 /* ************************************************************************** */
@@ -654,7 +722,6 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   /// MatGetSize() does not work for MatNest mat type, which is used for
   /// saddle point problems.
   Output::info<5>("PETScSolver::solve");
-
   size_t n_local = solution.length();
   if(n_local != rhs.length())
   {
@@ -675,8 +742,10 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   }
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    
     Output::print("<<HAAALLLOOOOO my_rank");
     Output::print(my_rank);
+    
   auto block_local2global = local_to_global_block(comms_);
   auto block_masters = get_block_masters(comms_);
   if(block_local2global.size() != n_local)

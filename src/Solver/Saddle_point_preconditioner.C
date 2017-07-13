@@ -30,7 +30,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   Output::print<3>("constructing a Saddle_point_preconditioner");
   if(lsc_strategy > 0)
   {
-    Output::warn<2>("Saddle_point_preconditioner"," solving systems within LSC "
+    Output::warn<2>("Saddle_point_preconditioner"," Note that solving systems within LSC "
                     "using some iterative routine requires a flexible solver.");
   }
   bool pressure_correction_in_matrix = this->M->pressure_correction_enabled();

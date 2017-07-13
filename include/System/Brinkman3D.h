@@ -184,11 +184,13 @@ public:
     Brinkman3D(std::list<TCollection* > collections,
                const ParameterDatabase& param_db,
                const Example_Brinkman3D& example,
-               int maxSubDomainPerDof);
+               int maxSubDomainPerDof,
+               int reference_id = -4711);
 #else
     Brinkman3D(std::list<TCollection* > collections,
                const ParameterDatabase& param_db,
-               const Example_Brinkman3D& example);
+               const Example_Brinkman3D& example,
+               int reference_id = -4711);
 #endif
     
     

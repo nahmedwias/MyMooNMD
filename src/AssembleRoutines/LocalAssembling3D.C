@@ -601,9 +601,10 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
     BaseFunct_Id = TFEDatabase3D::GetFE3D(FE_Id)->GetBaseFunct3D_ID();
 
     N_BaseFunct[j]=TFEDatabase3D::GetBaseFunct3D(BaseFunct_Id)->GetDimension();
+
     orig_values[j] = TFEDatabase3D::GetOrigElementValues
                       (BaseFunct_Id, FEValue_MultiIndex[j]);
-
+ 
     GlobalNumbers = fespace->GetGlobalNumbers();
     BeginIndex = fespace->GetBeginIndex();
     Index[j] = GlobalNumbers + BeginIndex[cellnum];
@@ -619,7 +620,7 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
     Temp[0] = x[i];
     Temp[1] = y[i];
     Temp[2] = z[i];
-
+      
     // loop to calculate all FE values
     for(int k=3,j=0;j<N_FEValues;j++,k++)
     {
@@ -632,19 +633,20 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
         s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
       Temp[k] = s;
     }  // endfor j
-
+      
     // loop to calculate all parameters
     for(int j=0;j<N_ParamFct;j++)
     {
       currparam = param + BeginParameter[j];
-      
+        
       /// change for twophase
       currparam[0] = cell->GetPhase_ID();
-      
+        
       ParameterFct[j](Temp, currparam);
+     
     } // endfor j
   } // endfor i
-  
+
   delete [] N_BaseFunct;
   delete [] Values;
   delete [] orig_values;

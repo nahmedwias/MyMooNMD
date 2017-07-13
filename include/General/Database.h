@@ -304,8 +304,7 @@ struct TParaDB
   /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
   //======================================================================
     double equal_order_stab_weight_PkPk;
-    double equal_order_stab_weight_P1P1; // wird noch in Brinkman2d benutzt --> ändern
-    double equal_order_stab_weight_P2P2; // wird noch in Brinkman2d benutzt --> ändern
+    bool PkPk_stab;
     
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */

@@ -4027,7 +4027,7 @@ void TDomain::buildBoundary(Mesh& m)
   // the number of boundary components is computed from the adjacency of
   // tetgen mesh. See TTetGenMeshLoaden::CreateAdjacency()
   this->N_BoundComps = m.n_boundary_faces;
-  meshBoundComps.resize(this->N_BoundComps); 
+  meshBoundComps.resize(this->N_BoundComps);
   Output::print("TDomain::buildBoundary() - N_BoundComps: ", this->N_BoundComps);
   this->BdParts[0] = new TBoundPart(this->N_BoundComps);
   
@@ -4117,8 +4117,6 @@ void TDomain::buildBoundary(Mesh& m)
   // initialize ParMooN BdParts and the BdComp
   for(int i=0; i<this->N_BoundComps; i++)
     this->BdParts[0]->SetBdComp(i, meshBoundComps[i]);
-  
-
 }
 
 

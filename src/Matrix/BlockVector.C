@@ -607,6 +607,8 @@ void BlockVector::read_from_stream(std::istream& is)
   std::getline(is, line);
   std::istringstream parser( std::string( line.begin(), line.end() ) );
   parser >> length_read >> std::ws;
+        Output::print(parser.get());
+        Output::print(EOF);
   if(!parser || parser.get() != EOF)
   {
     ErrThrow("formatting error, the first line in the file should contain ",

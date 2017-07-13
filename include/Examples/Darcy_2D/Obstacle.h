@@ -123,7 +123,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
   // 7 - continuous change in permeability in form of a hump
   int obstacle = TDatabase::ParamDB->P0;
   // inside the obstacle the porousity sigma is multiplied by factor
-  double factor = 10;
+  double factor = 0.00000001;
 
   for(int i = 0; i < n_points; i++)
   {

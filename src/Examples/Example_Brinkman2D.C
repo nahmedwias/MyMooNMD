@@ -18,6 +18,7 @@ namespace Poiseuille_Hannukainen
 {
 #include "Brinkman_2D/Poiseuille_Hannukainen.h"
 }
+
 namespace Poiseuille_Hannukainen_with_inscribed_physical_sphere
 {
 #include "Brinkman_2D/Poiseuille_Hannukainen_with_inscribed_physical_sphere.h"
@@ -27,6 +28,7 @@ namespace sine_cosine
 {
 #include "Brinkman_2D/SinCos.h"
 }
+
 namespace sine2_sine2
 {
 #include "Brinkman_2D/Sin2Sin2.h"
@@ -40,6 +42,12 @@ namespace sine2_sine2
 //{
 //#include "Brinkman_2D/flow_around_cylinder.h"
 //}
+
+namespace poiseuille_channel
+{
+#include "Brinkman_2D/Poiseuille_Channel_1x2.h"
+}
+
 
 
 
@@ -158,7 +166,7 @@ Example_Brinkman2D::Example_Brinkman2D(
             /** coefficients */
             problem_coefficients = sine2_sine2::LinCoeffs;
             
-            sine_cosine::ExampleFile();
+            sine2_sine2::ExampleFile();
             break;
             
             //        case 3:
@@ -203,6 +211,28 @@ Example_Brinkman2D::Example_Brinkman2D(
             //            
             //            flow_around_cylinder::ExampleFile();
             //            break;
+        case 7:
+            /** exact_solution */
+            exact_solution.push_back( poiseuille_channel::ExactU1 );
+            exact_solution.push_back( poiseuille_channel::ExactU2 );
+            exact_solution.push_back( poiseuille_channel::ExactP );
+            
+            /** boundary condition */
+            boundary_conditions.push_back( poiseuille_channel::BoundCondition );
+            boundary_conditions.push_back( poiseuille_channel::BoundCondition );
+            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+            
+            /** boundary values */
+            boundary_data.push_back( poiseuille_channel::U1BoundValue );
+            boundary_data.push_back( poiseuille_channel::U2BoundValue );
+            boundary_data.push_back( BoundaryValueHomogenous );
+            
+            /** coefficients */
+            problem_coefficients = poiseuille_channel::LinCoeffs;
+            
+            poiseuille_channel::ExampleFile();
+            break;
+
             
         default:
             ErrThrow("Unknown Brinkman example!");

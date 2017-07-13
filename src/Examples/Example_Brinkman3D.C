@@ -34,7 +34,6 @@ namespace poiseuille //0
 
 
 
-
 Example_Brinkman3D::Example_Brinkman3D(
   const ParameterDatabase& user_input_parameter_db) 
  : Example3D(user_input_parameter_db)
