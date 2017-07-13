@@ -31,7 +31,8 @@ VOF_TwoPhase2D::VOF_TwoPhase2D(const TDomain& domain,
   this->unity_vector_ = 1;
   this->tnse2d_.set_rho_mu_fefunct(&this->rho_fefunction_,
                                    &this->mu_fefunction_,
-                                   &this->phaseconvection2d_.get_function());
+                                   &this->phaseconvection2d_.get_function(),
+                                   &this->phaseconvection2d_.get_gradient_of_function());
 /* at the end of the constructor, rho and mu are constant equal to phase fraction,
  * whatever the examples and booleans are. The call to "update_field_vectors" will
  * calculate their value, depending on the example number
@@ -160,7 +161,8 @@ void VOF_TwoPhase2D::update_field_vectors()
   // transfer fe functions to tnse2d after updates
   this->tnse2d_.set_rho_mu_fefunct(&this->rho_fefunction_,
                                    &this->mu_fefunction_,
-                                   &this->phaseconvection2d_.get_function());
+                                   &this->phaseconvection2d_.get_function(),
+                                   &this->phaseconvection2d_.get_gradient_of_function());
 }
 
 /** Write output of vectors in a file */

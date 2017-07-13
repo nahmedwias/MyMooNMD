@@ -290,6 +290,12 @@ class Time_CD2D
 
     void smooth_gradient_phi();
 
+    const TFEVectFunct2D & get_gradient_of_function() const
+    { return this->systems.front().gradient_fefunction; }
+    TFEVectFunct2D & get_gradient_of_function()
+    { return this->systems.front().gradient_fefunction; }
+
+
   protected:
     std::vector<double> entries_velo_x;
     std::vector<double> entries_velo_y;
