@@ -48,36 +48,36 @@ void BoundValue(int i, double Param, double &value)
 // initial conditon
 void InitialCondition(double x,  double y, double *values)
 {
-//  double pi = 3.14159265358979;
-//  double x0 = TDatabase::ParamDB->P4;
-//  double y0 = TDatabase::ParamDB->P5; // center of unit square=center of drop
-//  double R = TDatabase::ParamDB->P6; // radius of drop, 2cm
-////  if ( (x-x0)*(x-x0)+(y-y0)*(y-y0) <= R*R )
-////    values[0] = 0;
-////  else
-////    values[0] = 1;
-//
-//  double phi = R*R - (x-x0)*(x-x0) - (y-y0)*(y-y0); // level set of circle
-////  double a=0.2; double b=0.1;
-////  double phi = 1-((x-x0)*(x-x0)/(a*a))-((y-y0)*(y-y0)/(b*b)); // level set of ellipse
-//  double eps = 0.001;
-//  if (phi < -eps)
-//    values[0] = 1;
-//  else if ( phi > eps)
+  double pi = 3.14159265358979;
+  double x0 = TDatabase::ParamDB->P4;
+  double y0 = TDatabase::ParamDB->P5; // center of unit square=center of drop
+  double R = TDatabase::ParamDB->P6; // radius of drop, 2cm
+//  if ( (x-x0)*(x-x0)+(y-y0)*(y-y0) <= R*R )
 //    values[0] = 0;
 //  else
-//    values[0] =0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
+//    values[0] = 1;
 
-  /* BELOW, SQUARE FOR NON-EQUILIBRIUM ROD */
-  if (x <= 0.75 && x >= 0.25)
-  {
-    if (y <= 0.75 && y >= 0.25)
-      values[0] = 0;
-    else
-      values[0] = 1;
-  }
-  else
+  double phi = R*R - (x-x0)*(x-x0) - (y-y0)*(y-y0); // level set of circle
+//  double a=0.2; double b=0.1;
+//  double phi = 1-((x-x0)*(x-x0)/(a*a))-((y-y0)*(y-y0)/(b*b)); // level set of ellipse
+  double eps = 0.0;
+  if (phi < -eps)
     values[0] = 1;
+  else if ( phi > eps)
+    values[0] = 0;
+  else
+    values[0] =0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
+
+//  /* BELOW, SQUARE FOR NON-EQUILIBRIUM ROD */
+//  if (x <= 0.75 && x >= 0.25)
+//  {
+//    if (y <= 0.75 && y >= 0.25)
+//      values[0] = 0;
+//    else
+//      values[0] = 1;
+//  }
+//  else
+//    values[0] = 1;
 
 }
 
