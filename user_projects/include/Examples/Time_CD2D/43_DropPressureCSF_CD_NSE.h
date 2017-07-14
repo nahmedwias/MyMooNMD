@@ -69,9 +69,9 @@ void InitialCondition(double x,  double y, double *values)
     values[0] =0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
 
 //  /* BELOW, SQUARE FOR NON-EQUILIBRIUM ROD */
-//  if (x <= 0.75 && x >= 0.25)
+//  if (x <= 0.045 && x >= 0.015)
 //  {
-//    if (y <= 0.75 && y >= 0.25)
+//    if (y <= 0.045 && y >= 0.015)
 //      values[0] = 0;
 //    else
 //      values[0] = 1;
