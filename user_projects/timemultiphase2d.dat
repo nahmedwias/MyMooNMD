@@ -2,14 +2,14 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 7
+refinement_n_initial_steps: 6
 space_discretization_type: galerkin { galerkin, smagorinsky, vms_projection }
 TURBULENT_VISCOSITY_CONSTANT: 0.
 vms_projection_space_order: 0
 example: 43   [ -1, 100 ]
 USE_ISOPARAMETRIC: 1
 
-ENDTIME: 0.3
+ENDTIME: 0.018
 TIMESTEPLENGTH: 0.00005
 MIN_TIMESTEPLENGTH: 0.00005
 MAX_TIMESTEPLENGTH: 0.00005
@@ -36,7 +36,7 @@ P7: 500. # density 2 - min - gas
 P8: 1. # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
-P9: 0.02361
+P9: 0.011805
 
 ########################## Fixed Parameters 
 #boundary_file: ../mesh/UnitSquare.PRM
