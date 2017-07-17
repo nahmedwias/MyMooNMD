@@ -5823,7 +5823,7 @@ double ***LocMatrices, double **LocRhs)
 // surface tension coefficients
   double tau = TDatabase::ParamDB->P9;
   double surfacetension = tau*kappa; //divided by average in interface
-  surfacetension /= (750*1000*6.3449045); // divided by Phi average and Rho jump
+  surfacetension /= (750*1000*3.35); // divided by Phi average and Rho jump
 //  cout << surfacetension << " " ;
 //  cout << Phi_xx << " " << Phi_yy << " ";
 //  cout << Phi_xy << " ";
