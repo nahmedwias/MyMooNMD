@@ -38,15 +38,17 @@ int VELOCITY_CODE = 0;
 double tube_length = 1; //length of the tube in m - must be in accordance to the geometry!
 
 double inflow_T[4] = {307.6, 312.9, 313.1, 313.7}; //unit is K
-double inflow_c = 2005; // unit is mol/m^3
+double inflow_c = 1511.11; // unit is mol/m^3
 double surrounding_T = 297.5;
 
 // physical parameters
 namespace Physics
 {
-  double lambda = 0.1676; // W/(m * K), thermal conductivity (of Ethanol)
-  double C_E = 2441.3; // J/(kg * K), specific heat capacity (of Ethanol)
-  double rho_E = 790; // kg/m^3, density (of Ethanol)
+  double lambda_E = 0.1676; 	// W/(m * K), thermal conductivity (of Ethanol)
+  double C_E = 2441.3; 		// J/(kg * K), specific heat capacity (of Ethanol)
+  double rho_E = 790; 		// kg/m^3, density (of Ethanol)
+  double rho_ASA = 1350; 	// kg/m^3, density (of ASA)
+  double rho_susp = 916.76; // kg/m^3, the assumed density of the suspension (see my modelling tables)
   double delta_h_cryst = 1.6541e5; //fusion enthalpy [J/kg]
   // should be diffusion coefficient of ASA in ethanol, is actually some
   // diffusion of some kind of ASA in NaOH reported in
@@ -65,9 +67,9 @@ double r_outer = 0.002; // 2mm
 double r_inner = 0.001;  // 1mm
 
 // calculate suspension heat capacity
-double m_dot_asa [4] ={0.000065, 0.0001, 0.00013, 0.00015};  // kg / s
+double m_dot_asa [4] ={0.000058, 0.000088, 0.000116, 0.000128};  // kg / s
 double c_p_ASA = 1260;      // J/(kg K)
-double m_dot_EtOH [4] = { 0.00015, 0.00024, 0.00031, 0.00035}; // kg / s
+double m_dot_EtOH [4] = { 0.000116, 0.000175, 0.000232, 0.000257}; // kg / s
 double c_p_EtOH = 2400; // J/(kg K)
 double m_tc_t = m_dot_asa[VELOCITY_CODE] * c_p_ASA + m_dot_EtOH[VELOCITY_CODE] * c_p_EtOH;
 
@@ -140,9 +142,9 @@ void Coefficients_T(int n_points, double *x, double *y,
 {
   for(int i = 0; i < n_points; i++)
   {
-    coeffs[i][0] = Physics::lambda / (Physics::rho_E * Physics::C_E); //diffusion coefficient
-    coeffs[i][1] = parameters[i][1];//convection in z direction
-    coeffs[i][2] = parameters[i][2];//convection in r direction
+    coeffs[i][0] = Physics::lambda_E / (Physics::rho_susp * Physics::C_E); //heat diffusion coefficient
+    coeffs[i][1] = parameters[i][1]; //convection in z direction
+    coeffs[i][2] = parameters[i][2]; //convection in r direction
     coeffs[i][3] = 0; //no reaction.
 
     coeffs[i][4] = parameters[i][3]; //rhs, interpolated sources and sinks from Brush
@@ -315,14 +317,19 @@ double derived_concentration_ASASUP(const std::vector<double>& data)
 
     //now this has to be transformed to supersaturation in
     // terms of molar concentration, which is a bit cumbersome
-    double M_S = chi_sat*Physics::M_ASA + (1-chi_sat)*Physics::M_Ethanol; //molar mass of solution
-    double w_Ethanol = 1 - chi_sat*(Physics::M_ASA/M_S); //Ethanol mass fraction
 
-    // ideal solution assumption(though questionable)
-    double rho_S = Physics::rho_E / w_Ethanol; //density of solution calculated under "ideal solution" asumption
+    //molar mass of saturated solution
+    double M_solsat = chi_sat*Physics::M_ASA + (1-chi_sat)*Physics::M_Ethanol;
+
+    // Var I: constant density assumption, here applied to the saturated solution
+    double rho_solsat = Physics::rho_susp;
+    // Var II: would be ideal mixture assumption - but means that the calculation
+    // of the supersaturation is the only place (besides to the computation of initial values)
+    // where we do not assume constant density.
+    // ... TODO
 
     //now here comes supersaturation in terms of molar concentration
-    double c_sat = chi_sat * rho_S / M_S;
+    double c_sat = chi_sat * rho_solsat / M_solsat;
     double c_supsat = std::max(0.0, c_asa - c_sat);
 
 //    if (c_supsat > 0)
