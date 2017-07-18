@@ -348,8 +348,9 @@ void BrushWrapper::reset_fluid_phase(
   std::vector<const TFEFunction2D*> fe_fcts_original(dim + 1 + n_specs_primary);
   fe_fcts_original[0] = &u1;
   fe_fcts_original[1] = &u2;
-  fe_fcts_original[2] = &p;
-  std::copy( species.begin() , species.end(), &fe_fcts_original[3]);
+  //if(dim==3) fe_fcts_original[2] = &u3; //in 3D case...
+  fe_fcts_original[dim] = &p;
+  std::copy( species.begin() , species.end(), &fe_fcts_original[dim + 1]);
 
   // transfer all 'original' (ParMooN) functions to the Brush grid
   for(size_t f = 0; f<fe_fcts_original.size() ;++f)
