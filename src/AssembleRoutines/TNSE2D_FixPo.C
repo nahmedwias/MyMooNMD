@@ -5816,14 +5816,15 @@ double ***LocMatrices, double **LocRhs)
   else
   {
     kappa = -(Phi_xx*Phi_y*Phi_y+Phi_yy*Phi_x*Phi_x-2*Phi_x*Phi_y*Phi_xy)
-            /pow(Phi_x*Phi_x+Phi_y*Phi_y,3/2);
+            /pow(Phi_x*Phi_x+Phi_y*Phi_y,1.5);
   }
-//  cout << kappa << " ";
+//  Output::print<1>("Kappa ", kappa);
 
 // surface tension coefficients
   double tau = TDatabase::ParamDB->P9;
   double surfacetension = tau*kappa; //divided by average in interface
-  surfacetension /= (750*1000*3.35); // divided by Phi average and Rho jump
+  double constant = TDatabase::ParamDB->P10;
+  surfacetension /= constant; // divided by Phi average and Rho jump
 //  cout << surfacetension << " " ;
 //  cout << Phi_xx << " " << Phi_yy << " ";
 //  cout << Phi_xy << " ";

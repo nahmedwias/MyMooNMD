@@ -67,7 +67,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  cond = DIRICHLET;
+  cond = NEUMANN;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
