@@ -1289,7 +1289,7 @@ void Time_CD2D::correct_phase_fraction()
     val = this->systems.front().solution.at(k);
     if ( val > epsilon && val < 1-epsilon)
     {
-      this->systems.front().solution.at(k)=(1/pi)*atan(sharpness*(val-0.5))*0.5;
+      this->systems.front().solution.at(k)=(1/pi)*atan(sharpness*(val-0.5))+0.5;
     }
   }
 }

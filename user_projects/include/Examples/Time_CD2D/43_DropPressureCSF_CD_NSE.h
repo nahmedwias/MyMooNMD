@@ -36,13 +36,14 @@ void Exact(double x, double y, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(int i, double Param, BoundCond &cond)
 {
-  cond = DIRICHLET;
+  cond = NEUMANN;
 }
 
 // value of boundary condition
 void BoundValue(int i, double Param, double &value)
 {
-  value = 1; //background liquid everywhere, drop in the middle
+//  value = 1; //background liquid everywhere, drop in the middle
+  value = 0;
 }
 
 // initial conditon
