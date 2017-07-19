@@ -5833,8 +5833,8 @@ double ***LocMatrices, double **LocRhs)
   {
     test00 = Orig0[i];
 
-    Rhs1[i] += R*Mult*test00*c1 + surfacetension*Phi_x*test00/1;//Phi_x;
-    Rhs2[i] += R*Mult*test00*c2 + surfacetension*Phi_y*test00/1;//Phi_y;
+    Rhs1[i] += R*Mult*test00*c1 + surfacetension*Phi_x*test00;//Phi_x;
+    Rhs2[i] += R*Mult*test00*c2 + surfacetension*Phi_y*test00;//Phi_y;
 //    cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }

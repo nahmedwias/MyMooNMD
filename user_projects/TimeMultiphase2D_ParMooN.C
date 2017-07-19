@@ -74,6 +74,7 @@ int main(int argc, char* argv[])
 
   /* This calculates rho and mu vectors depending on example number
    * Check that the vectors are as expected using "output_vectors(..)" */
+//  vof.phaseconvection2d_.correct_phase_fraction();
   vof.phaseconvection2d_.smooth_gradient_phi();
   vof.update_field_vectors();
  
@@ -253,9 +254,10 @@ int main(int argc, char* argv[])
        ********************************************************************/
       if (vof.cd2nse_coupling_ == true )
       {
+//        vof.phaseconvection2d_.correct_phase_fraction();
         vof.phaseconvection2d_.smooth_gradient_phi();
         vof.update_field_vectors();
-        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
+//        vof.output_vectors("vector_phi_updated","vector_rho_updated","vector_mu_updated");
       }
     }
 

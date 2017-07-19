@@ -985,7 +985,7 @@ void Time_CD2D::assemble_initial_time_with_convection
       // otherwise, do the interpolation
       if (Ndof_convection == Ndof_thisfefunction) //this is a simple check condition...
       {
-        Output::info<1>("Time_CD2D", "The spaces of the convection field and the "
+        Output::info<3>("Time_CD2D", "The spaces of the convection field and the "
             "scalar field are the same ==> There will be no interpolation.");
 //        Output::print<3>("Degres of freedoms of scalar field = " , Ndof_thisfefunction);
 //        Output::print<3>("Degres of freedoms of velo x compo = " , Ndof_convection);
@@ -997,7 +997,7 @@ void Time_CD2D::assemble_initial_time_with_convection
       }
       else  // do the interpolation
       {
-        Output::warn<1>("Time_CD2D", "The spaces of the convection field and the "
+        Output::warn<3>("Time_CD2D", "The spaces of the convection field and the "
             "scalar field are not the same ==> adapting assemble method");
         fe_funct[1] = convection_x;
         fe_funct[2] = convection_y;
@@ -1123,7 +1123,7 @@ void Time_CD2D::assemble_with_convection
       // otherwise, do the interpolation
       if (Ndof_convection == Ndof_thisfefunction) //this is a simple check condition...
       {
-        Output::info<1>("Time_CD2D", "The spaces of the convection field and the "
+        Output::info<3>("Time_CD2D", "The spaces of the convection field and the "
             "scalar field are the same ==> There will be no interpolation.");
 //        Output::print<3>("Degres of freedoms of scalar field = " , Ndof_thisfefunction);
 //        Output::print<3>("Degres of freedoms of velo x compo = " , Ndof_convection);
@@ -1135,7 +1135,7 @@ void Time_CD2D::assemble_with_convection
       }
       else  // do the interpolation
       {
-        Output::warn<1>("Time_CD2D", "The spaces of the convection field and the "
+        Output::warn<3>("Time_CD2D", "The spaces of the convection field and the "
             "scalar field are not the same ==> adapting assemble method");
 
         fe_funct[1] = convection_x;
@@ -1412,7 +1412,7 @@ void Time_CD2D::smooth_gradient_phi()
 //  Grad_Phi.GetComponent(1)->WriteSol(".","component1");
 
 
-  Output::print<1>("END OF METHOD!");
+//  Output::print<1>("END OF METHOD!");
 //  exit(-1);
 }
 
