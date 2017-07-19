@@ -10,14 +10,14 @@ example: 43   [ -1, 100 ]
 USE_ISOPARAMETRIC: 1
 
 ENDTIME: 0.09
-TIMESTEPLENGTH: 0.0005
-MIN_TIMESTEPLENGTH: 0.0005
-MAX_TIMESTEPLENGTH: 0.0005
+TIMESTEPLENGTH: 0.0001
+MIN_TIMESTEPLENGTH: 0.0001
+MAX_TIMESTEPLENGTH: 0.0001
 
 STEPS_PER_IMAGE: 1
 
 fluid_density: 1000.   [ 0, 1e6 ]
-fluid_dynamic_viscosity: 1.e-4   [ 0, 1e6 ]
+fluid_dynamic_viscosity: 1.   [ 0, 1e6 ]
 reynolds_number: 1000.   [ 0, 1e6 ]
 RE_NR:	1000.
 
@@ -33,11 +33,11 @@ P6: 0.02  # circle radius
 
 ## Two phase flow
 P7: 500. # density 2 - min - gas
-P8: 1.e-4 # viscosity 2 - min - gas
+P8: 1. # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
 P9: 0.02361
-P10: 43000
+P10: 41000
 
 ########################## Fixed Parameters 
 #boundary_file: ../mesh/UnitSquare.PRM
@@ -69,6 +69,7 @@ output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
 nonlinloop_maxit: 10   [ 0, 1000 ]
+nonlinloop_minit: 0   [ 0, 1000 ]
 nonlinloop_epsilon: 1e-6   [ 0, 1 ]
 # Important: damping can lead to significantly higher computational time
 # for safety, use 1 
