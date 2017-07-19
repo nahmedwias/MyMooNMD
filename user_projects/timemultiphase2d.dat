@@ -37,7 +37,7 @@ P8: 1. # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
 P9: 0.02361
-P10: 41000
+P10: 1
 
 ########################## Fixed Parameters 
 #boundary_file: ../mesh/UnitSquare.PRM
@@ -70,7 +70,7 @@ output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tn
 
 nonlinloop_maxit: 10   [ 0, 1000 ]
 nonlinloop_minit: 0   [ 0, 1000 ]
-nonlinloop_epsilon: 1e-6   [ 0, 1 ]
+nonlinloop_epsilon: 1e-10   [ 0, 1 ]
 # Important: damping can lead to significantly higher computational time
 # for safety, use 1 
 nonlinloop_damping_factor: 1.   [ 0, 1 ]
