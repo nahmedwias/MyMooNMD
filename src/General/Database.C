@@ -949,7 +949,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->P7 = 0.;
   ParamDB->P8 = 0.;
   ParamDB->P9 = 0.;
-  ParamDB->P10 = 0.;
+  ParamDB->P10 = 1.;
   ParamDB->P11 = 0.;
   ParamDB->P12 = 0.;
   ParamDB->P13 = 0.;

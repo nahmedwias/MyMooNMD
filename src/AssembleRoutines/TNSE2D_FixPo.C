@@ -5722,6 +5722,14 @@ void TimeNSParamsVelo_dimensional(double *in, double *out)
   out[1] = in[3];   // u2old
   out[2] = in[4];   // rho_field
   out[3] = in[5];   // mu_field
+
+  // below are derivatives from phase field Phi
+  out[4] = in[6];   // derivative w.r.t. x Phix
+  out[5] = in[7];   // Phi_y
+  out[6] = in[8];   // Phi_xy = Phi_yx
+  out[7] = in[9];   // Phi_xx
+  out[8] = in[10];   // Phi_yy
+
 //  for (int i=0; i<7;i++)
 //  {
 //    cout << "in i = " << i << " " << in[i] << endl;
@@ -5818,16 +5826,19 @@ double ***LocMatrices, double **LocRhs)
     kappa = -(Phi_xx*Phi_y*Phi_y+Phi_yy*Phi_x*Phi_x-2*Phi_x*Phi_y*Phi_xy)
             /pow(Phi_x*Phi_x+Phi_y*Phi_y,1.5);
   }
-//  Output::print<1>("Kappa ", kappa);
 
 // surface tension coefficients
   double tau = TDatabase::ParamDB->P9;
   double surfacetension = tau*kappa; //divided by average in interface
   double constant = TDatabase::ParamDB->P10;
+  if ( constant == 0)
+    ErrThrow("ERROR: Parameter P10 is used for surface tension and should not be 0!");
   surfacetension /= constant; // divided by Phi average and Rho jump
 //  cout << surfacetension << " " ;
 //  cout << Phi_xx << " " << Phi_yy << " ";
 //  cout << Phi_xy << " ";
+
+
 
   for(i=0;i<N_U;i++)
   {
@@ -5836,7 +5847,11 @@ double ***LocMatrices, double **LocRhs)
     Rhs1[i] += R*Mult*test00*c1 + Mult*surfacetension*Phi_x*test00;
     Rhs2[i] += R*Mult*test00*c2 + Mult*surfacetension*Phi_y*test00;
 //    cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
-  }                              // endfor i
+//    Output::print<1>("Kappa ", kappa, " Tau ", tau, " S ", surfacetension
+//                     , " Phi_x ", Phi_x, " Phi_y ", Phi_y,
+//                     " Rhs1[i] ", Rhs1[i], " Rhs2[i] ", Rhs2[i]);
+
+  } // endfor i
 }
 
 
@@ -5993,6 +6008,28 @@ double ***LocMatrices, double **LocRhs)
   double u2 = param[1];                 // u2old
   double u3 = param[2];                 // rho_field taken as a param from fe_function in local_assembling
   double u4 = param[3];                 // mu_field taken as a param from fe_function in local_assembling
+  double Phi_x = param[4];              // grad components of phase field phi
+  double Phi_y = param[5];              // grad components of phase field phi
+  double Phi_xy = param[6];             // grad components of phase field phi
+  double Phi_xx = param[7];             // grad components of phase field phi
+  double Phi_yy = param[8];             // grad components of phase field phi
+
+  /* Curvature kappa of the CSF force */
+  double kappa;
+  if ((Phi_x*Phi_x+Phi_y*Phi_y) <= 1e-14) //if gradient zero, no interface, try also <= 1e-14
+    kappa = 0;
+  else
+  {
+    kappa = -(Phi_xx*Phi_y*Phi_y+Phi_yy*Phi_x*Phi_x-2*Phi_x*Phi_y*Phi_xy)
+            /pow(Phi_x*Phi_x+Phi_y*Phi_y,1.5);
+  }
+  // surface tension coefficients
+  double tau = TDatabase::ParamDB->P9;
+  double constant = TDatabase::ParamDB->P10;
+  if ( constant == 0)
+    ErrThrow("ERROR: Parameter P10 is used for surface tension and should not be 0!");
+  double surfacetension = tau*kappa/constant;
+
 
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -6014,8 +6051,8 @@ double ***LocMatrices, double **LocRhs)
     test01 = Orig1[i];
     test00 = Orig2[i];
 
-    Rhs1[i] += u3*Mult*test00*c1;
-    Rhs2[i] += u3*Mult*test00*c2;
+    Rhs1[i] += u3*Mult*test00*c1+Mult*surfacetension*Phi_x*test00;
+    Rhs2[i] += u3*Mult*test00*c2+Mult*surfacetension*Phi_y*test00;
 
     for(int j=0;j<N_U;j++)
     {

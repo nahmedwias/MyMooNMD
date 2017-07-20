@@ -2196,13 +2196,13 @@ void LocalAssembling2D::set_parameters_for_tnse_TwoPhase(LocalAssembling2D_type 
   {
     if (type != TNSE2D_Rhs)
     {
-    this->N_Parameters = 4;
+    this->N_Parameters = 9;
     this->N_ParamFct = 1;
     this->ParameterFct = {TimeNSParamsVelo_dimensional};
-    this->N_FEValues = 4;
+    this->N_FEValues = 9;
     this->BeginParameter = {0};
-    this->FEValue_MultiIndex = { D00, D00, D00, D00};
-    this->FEValue_FctIndex = { 0, 1, 2, 3};
+    this->FEValue_MultiIndex = { D00, D00, D00, D00, D00, D00, D01, D10, D01};
+    this->FEValue_FctIndex = { 0, 1, 2, 3, 5, 6, 5, 5, 6 };
     }
     else if (type == TNSE2D_Rhs)
     {

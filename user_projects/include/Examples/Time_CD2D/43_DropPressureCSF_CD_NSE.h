@@ -36,14 +36,13 @@ void Exact(double x, double y, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(int i, double Param, BoundCond &cond)
 {
-  cond = NEUMANN;
+  cond = DIRICHLET;
 }
 
 // value of boundary condition
 void BoundValue(int i, double Param, double &value)
 {
-//  value = 1; //background liquid everywhere, drop in the middle
-  value = 0;
+  value = 1; //background liquid everywhere, drop in the middle
 }
 
 // initial conditon
@@ -61,7 +60,7 @@ void InitialCondition(double x,  double y, double *values)
   double phi = R*R - (x-x0)*(x-x0) - (y-y0)*(y-y0); // level set of circle
 //  double a=0.2; double b=0.1;
 //  double phi = 1-((x-x0)*(x-x0)/(a*a))-((y-y0)*(y-y0)/(b*b)); // level set of ellipse
-  double eps = 0.0;
+  double eps = 0.0001;
   if (phi < -eps)
     values[0] = 1;
   else if ( phi > eps)
