@@ -5804,9 +5804,6 @@ double ***LocMatrices, double **LocRhs)
   Phi_xx = param[4];
   Phi_yy = param[5];
 
-//  cout << Phi_x << " ";// << Phi_x << " " << Phi_y << */" " << Phi_xy
-  // << " " << Phi_xx << " " << Phi_yy << " ";
-
   //Debug code
 //  Output::print("p0=R=", R, " p1=Phi_x=", Phi_x, " p2=Phi_y=", Phi_y," p3=Phi_xy=", Phi_xy,
 //                " p4=Phi_xx=", Phi_xx, " p5=Phi_yy=",Phi_yy, " p6=", param[6],
@@ -5827,27 +5824,20 @@ double ***LocMatrices, double **LocRhs)
             /pow(Phi_x*Phi_x+Phi_y*Phi_y,1.5);
   }
 
-// surface tension coefficients
+  // surface tension coefficients
   double tau = TDatabase::ParamDB->P9;
-  double surfacetension = tau*kappa; //divided by average in interface
   double constant = TDatabase::ParamDB->P10;
   if ( constant == 0)
     ErrThrow("ERROR: Parameter P10 is used for surface tension and should not be 0!");
-  surfacetension /= constant; // divided by Phi average and Rho jump
-//  cout << surfacetension << " " ;
-//  cout << Phi_xx << " " << Phi_yy << " ";
-//  cout << Phi_xy << " ";
-
-
+  double surfacetension = tau*kappa/constant;
 
   for(i=0;i<N_U;i++)
   {
     test00 = Orig0[i];
 
-    Rhs1[i] += R*Mult*test00*c1 + Mult*surfacetension*Phi_x*test00;
-    Rhs2[i] += R*Mult*test00*c2 + Mult*surfacetension*Phi_y*test00;
-//    cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
-//    Output::print<1>("Kappa ", kappa, " Tau ", tau, " S ", surfacetension
+    Rhs1[i] += Mult*(R*test00*c1 + surfacetension*Phi_x*test00);
+    Rhs2[i] += Mult*(R*test00*c2 + surfacetension*Phi_y*test00);
+//    Output::print<1>("Kappa ", kappa);// " Tau ", tau, " S ", surfacetension
 //                     , " Phi_x ", Phi_x, " Phi_y ", Phi_y,
 //                     " Rhs1[i] ", Rhs1[i], " Rhs2[i] ", Rhs2[i]);
 
