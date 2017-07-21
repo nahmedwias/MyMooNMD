@@ -6075,10 +6075,10 @@ double ***LocMatrices, double **LocRhs)
     {
       ansatz00 = Orig3[j];
 
-      val = -u3*Mult*ansatz00*test10;
+      val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
 
-      val = -u3*Mult*ansatz00*test01;
+      val = -Mult*ansatz00*test01;
       MatrixRow2[j] += val;
     }
   }                              // endfor i
@@ -6095,10 +6095,10 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val = -u3*Mult*test00*ansatz10;
+      val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
 
-      val = -u3*Mult*test00*ansatz01;
+      val = -Mult*test00*ansatz01;
       MatrixRow2[j] += val;
     }                            // endfor j
 
