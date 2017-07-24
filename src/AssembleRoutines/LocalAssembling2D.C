@@ -1907,13 +1907,13 @@ void LocalAssembling2D::set_parameters_for_tnse_SMAGORINSKY(LocalAssembling2D_ty
   }
   else if (this->twophase_tnse == 1)
   {
-    this->N_Parameters = 8; // normally it is 8+2, but we take 6+2
+    this->N_Parameters = 13;
     this->N_ParamFct = 1;
     this->ParameterFct = {TimeNSParamsVelo_GradVelo_dimensional};
     this->BeginParameter = { 0 };
-    this->N_FEValues = 8;
-    this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01, D00, D00 };
-    this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1, 2, 3 };
+    this->N_FEValues = 13;
+    this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01, D00, D00, D00, D00, D01, D10, D01 };
+    this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1, 2, 3, 5, 6, 5, 5, 6 };
   }
   // *********************************************************
   // ************************************************************

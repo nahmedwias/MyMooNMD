@@ -294,6 +294,28 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
   u3 = param[6];    // rho_field taken as a param from fe_function in local_assemblin
   u4 = param[7];    // mu_field taken as a param from fe_function in local_assembling
 
+  double Phi_x  = param[8];
+  double Phi_y  = param[9];
+  double Phi_xy = param[10];
+  double Phi_xx = param[11];
+  double Phi_yy = param[12];
+
+  /* Curvature kappa of the CSF force */
+  double kappa;
+  if ((Phi_x*Phi_x+Phi_y*Phi_y) <= 1e-14) //if gradient zero, no interface, try also <= 1e-14
+    kappa = 0;
+  else
+  {
+    kappa = -(Phi_xx*Phi_y*Phi_y+Phi_yy*Phi_x*Phi_x-2*Phi_x*Phi_y*Phi_xy)
+            /pow(Phi_x*Phi_x+Phi_y*Phi_y,1.5);
+  }
+
+  // surface tension coefficients
+  double tau = TDatabase::ParamDB->P9;
+  double constant = TDatabase::ParamDB->P10;
+  if ( constant == 0)
+    ErrThrow("ERROR: Parameter P10 is used for surface tension and should not be 0!");
+  double surfacetension = tau*kappa/constant;
 
 //  u3=1; u4=c0;
 //  cout << u3 << " " << u4 << " ";
@@ -314,8 +336,8 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
     test01 = Orig1[i];
     test00 = Orig2[i];
 
-    Rhs1[i] += u3*Mult*test00*c1;
-    Rhs2[i] += u3*Mult*test00*c2;
+    Rhs1[i] += u3*Mult*test00*c1 + Mult*surfacetension*Phi_x*test00;
+    Rhs2[i] += u3*Mult*test00*c2 + Mult*surfacetension*Phi_y*test00;
 
     for(j=0;j<N_U;j++)
     {
@@ -347,10 +369,10 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
     {
       ansatz00 = Orig3[j];
 
-      val = -u3*Mult*ansatz00*test10;
+      val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
 
-      val = -u3*Mult*ansatz00*test01;
+      val = -Mult*ansatz00*test01;
       MatrixRow2[j] += val;
     }
   }                              // endfor i
@@ -367,10 +389,10 @@ double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val = -u3*Mult*test00*ansatz10;
+      val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
 
-      val = -u3*Mult*test00*ansatz01;
+      val = -Mult*test00*ansatz01;
       MatrixRow2[j] += val;
     }                            // endfor j
 
@@ -479,11 +501,34 @@ double ***LocMatrices, double **LocRhs)
 //  u4 = param[7];       // mu_field taken as a param from fe_function in local_assembling
  //    Output::print(u3);
 
+  double Phi_x  = param[8];
+  double Phi_y  = param[9];
+  double Phi_xy = param[10];
+  double Phi_xx = param[11];
+  double Phi_yy = param[12];
+
+  /* Curvature kappa of the CSF force */
+  double kappa;
+  if ((Phi_x*Phi_x+Phi_y*Phi_y) <= 1e-14) //if gradient zero, no interface, try also <= 1e-14
+    kappa = 0;
+  else
+  {
+    kappa = -(Phi_xx*Phi_y*Phi_y+Phi_yy*Phi_x*Phi_x-2*Phi_x*Phi_y*Phi_xy)
+            /pow(Phi_x*Phi_x+Phi_y*Phi_y,1.5);
+  }
+
+  // surface tension coefficients
+  double tau = TDatabase::ParamDB->P9;
+  double constant = TDatabase::ParamDB->P10;
+  if ( constant == 0)
+    ErrThrow("ERROR: Parameter P10 is used for surface tension and should not be 0!");
+  double surfacetension = tau*kappa/constant;
+
   for(i=0;i<N_U;i++)
   {
     test00 = Orig0[i];
-    Rhs1[i] += u3*Mult*test00*c1;
-    Rhs2[i] += u3*Mult*test00*c2;
+    Rhs1[i] += u3*Mult*test00*c1 + Mult*surfacetension*Phi_x*test00;
+    Rhs2[i] += u3*Mult*test00*c2 + Mult*surfacetension*Phi_y*test00;
     //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }
