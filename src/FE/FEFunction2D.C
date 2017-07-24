@@ -2045,7 +2045,7 @@ void TFEFunction2D::SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
 
 
 /** correct the sol to the Old_Mass (remessing, temp, surfact, psd, etc) - added by sashi */
-void  TFEFunction2D::CorrectMass(double OldMass)
+void  TFEFunction2D::CorrectMass(double OldMass, bool is_axisymmetric, char symmetry_axis)
 {
   int i;
   
@@ -2075,12 +2075,12 @@ void  TFEFunction2D::CorrectMass(double OldMass)
      
     // calculate the weitgted volume, if w=1, this step is not needed, but sol may take negative
     memcpy(Values, w, Length*SizeOfDouble);   
-    this->GetMassAndMean(params); 
+    this->GetMassAndMean(params, is_axisymmetric, symmetry_axis);
     WeightedVol = params[0];
     
     // copy back the orig values to fefunction
     memcpy(Values, OrigSol, Length*SizeOfDouble);   
-    this->GetMassAndMean(params);
+    this->GetMassAndMean(params, is_axisymmetric, symmetry_axis);
     MeanDiff = (OldMass - params[0])/WeightedVol;
       
 
@@ -2097,9 +2097,7 @@ void  TFEFunction2D::CorrectMass(double OldMass)
 
 
 /** Retun the mass, domain volume and mean values of the function - added by Sashi*/
-// FIXME CB: This function depends invisibly, i.e., via old global data base,
-// on the axisymmetry of the problem. This should be localised and made visible instead!
-void  TFEFunction2D::GetMassAndMean(double *OutVal)
+void  TFEFunction2D::GetMassAndMean(double *OutVal, bool is_axisymmetric, char symmetry_axis) const
 {
   int i,j,k,l, polydegree, N_QFPoints, ORDER;
   int N_Cells, N_Joints;
@@ -2186,7 +2184,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case TriaAffin:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(9);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TTriaAffin *)F_K)->SetCell(cell);
 //         locvol = ((TTriaAffin *)rt)->GetVolume();
@@ -2197,7 +2195,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case TriaIsoparametric:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(9);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TTriaIsoparametric *)F_K)->SetApproximationOrder(ORDER);
         ((TTriaIsoparametric *)F_K)->SetQuadFormula(QuadFormula);
@@ -2210,7 +2208,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case QuadAffin:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(3*polydegree);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TQuadAffin *)F_K)->SetCell(cell);
 //         locvol = ((TQuadAffin *)rt)->GetVolume();
@@ -2221,7 +2219,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case QuadBilinear:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(3*polydegree);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TTriaIsoparametric *)F_K)->SetApproximationOrder(polydegree);
         ((TQuadBilinear *)F_K)->SetCell(cell);
@@ -2232,7 +2230,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case QuadIsoparametric:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(3*polydegree);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TQuadIsoparametric *)F_K)->SetApproximationOrder(polydegree);
         ((TQuadIsoparametric *)F_K)->SetQuadFormula(QuadFormula);
@@ -2252,44 +2250,47 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
      {
       bf->GetDerivatives(D00, xi[k], eta[k], values[k]);
       
-      if(TDatabase::ParamDB->Axial3D)
-       {
-        if(TDatabase::ParamDB->Axial3DAxis==1)
-         {
-          r_axial = Y[k];  //   (X: symmetric  problems   
-         }
-        else
-         {
-          r_axial = X[k];  // Y: symmetric problems     
-         }   
+      if(is_axisymmetric)
+      {
+    	  if(symmetry_axis=='x')
+    	  {
+    		  r_axial = Y[k];  //   X: symmetric  problems
+    	  }
+    	  else if (symmetry_axis=='y')
+    	  {
+    		  r_axial = X[k];  // Y: symmetric problems
+    	  }
+    	  else
+    	  {
+    		  ErrThrow("Hey, the symmetry_axis must be either the x-axis ('x') or "
+    				  "the y-axis ('y')!");
+    	  }
 
-      if(r_axial<=0)
-       {
-        cout <<"X[k] negative in GetMassAndMean, change Quad rule " <<  r_axial <<endl;
-//         exit(0);
-       }
-       
-       r_axial = fabs(r_axial);      
-       }
+    	  if(r_axial<=0)
+    	  {
+    		  ErrThrow("X[k] is negative in function GetMassAndMean, change Quad rule!");
+    	  }
+    	  r_axial = fabs(r_axial);
+      }
       else
       {
-       r_axial = 1.;
+    	  r_axial = 1.;
       }
 
       Mult = r_axial*weights[k]*AbsDetjk[k];
       val = 0.;
       for(l=0;l<N_BF;l++)
-       {
-        j = DOF[l];
-        val += Values[j]*values[k][l];
-       }
+      {
+    	  j = DOF[l];
+    	  val += Values[j]*values[k][l];
+      }
 
-     mass += val*Mult;
-     volume += Mult;
+      mass += val*Mult;
+      volume += Mult;
     } //  for(k=0;k<N_QFPoints;      
    } // for(i=0;i<N_Cells
   
-   if(TDatabase::ParamDB->Axial3D)  
+   if(is_axisymmetric)
     {
      OutVal[0] = 2.*Pi*mass;
      OutVal[1] = 2.*Pi*volume;
