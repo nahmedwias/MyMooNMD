@@ -169,10 +169,17 @@ class TFEFunction2D
    
 
    /** sol will be correct to conserve the Old_Mass (remessing, temp, surfact, psd, etc) - added by sashi */   
-   void CorrectMass(double OldMass);
+   void CorrectMass(double OldMass, bool is_axisymmetric, char symmetry_axis);
 
-   /** Retun the mass, domain volume and mean values of the function - added by sashi */
-   void GetMassAndMean(double *OutVal);
+   /** Retun the mass, domain volume and mean values of the function - added by sashi
+    * The out-parameter "OutVal" is filled as follows
+    * 	out[0] - total "mass" of the function (the integral \int_\Omega c dx )
+    * 	out[1] - total volume of the domain \Omega
+    * 	out[2] - the quotient out[0]/out[1], i.e. the average "mass" concentration.
+    */
+   void GetMassAndMean(double *OutVal,
+		   	   	   	   bool is_axisymmetric = false,
+					   char symmetry_axis='x') const;
 
     /**
      * @brief return the values of FE function on mesh nodes 
