@@ -5749,6 +5749,13 @@ void TimeNSParamsVelo_GradVelo_dimensional(double *in, double *out)
   out[6] = in[8];   // rho_field
   out[7] = in[9];   // mu_field
 
+  // below are derivatives from phase field Phi
+  out[8] = in[10];   // derivative w.r.t. x Phix
+  out[9] = in[11];   // Phi_y
+  out[10] = in[12];   // Phi_xy = Phi_yx
+  out[11] = in[13];   // Phi_xx
+  out[12] = in[14];   // Phi_yy
+
 }
 
 // the following function is the ParamFct for RHS_dimensional
