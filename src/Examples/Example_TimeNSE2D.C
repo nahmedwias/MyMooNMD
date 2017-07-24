@@ -515,6 +515,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          example43_droppressureCSF::USER_parameter1 = this->example_database["user_parameter1"];
          example43_droppressureCSF::USER_parameter2 = this->example_database["user_parameter2"];
 
+         post_processing_stat = example43_droppressureCSF::compute_pressure_drop;
+
          example43_droppressureCSF::ExampleFile();
          break;
 
