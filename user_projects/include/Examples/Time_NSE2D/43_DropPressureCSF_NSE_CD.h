@@ -113,3 +113,51 @@ void LinCoeffs(int n_points, double *X, double *Y,
     coeff[3] = 0;
   }
 }
+
+
+void compute_pressure_drop(Time_NSE2D& time_nse2d)
+{
+  const TFESpace2D *PSpace;
+  TFEFunction2D& pfct(time_nse2d.get_pressure());
+  PSpace = pfct.GetFESpace2D();
+//  TBaseCell *cell;
+//  TCollection *Coll;
+//  Coll = PSpace->GetCollection();
+
+  int N_DOFS = pfct.GetLength();
+  double x, y;
+  double pmin = 0., pmax = 0.;
+  int n_dofs_in = 0, n_dofs_out = 0;
+  double x0 = TDatabase::ParamDB->P4;
+  double y0 = TDatabase::ParamDB->P5; // center of unit square=center of drop
+  double R = TDatabase::ParamDB->P6; // radius of drop, 2cm
+  double epsilon = 0.0001;
+  double val[4];
+
+  for(int i=0; i<N_DOFS;i++)
+  {
+    PSpace->GetDOFPosition(i,x,y);
+    if ( (x-x0)*(x-x0)+(y-y0)*(y-y0)-R*R <= - epsilon )
+    {
+      pfct.FindGradient(x,y,val);
+      pmax += val[0];
+//      Output::print<1>("dof i = ", i, " x = ", x, " y = ", y, " pmax = ", val[0]);
+      n_dofs_in++;
+    }
+    else if ( (x-x0)*(x-x0)+(y-y0)*(y-y0)-R*R >= epsilon )
+    {
+      pfct.FindGradient(x,y,val);
+      pmin += val[0];
+//      Output::print<1>("dof i = ", i, " x = ", x, " y = ", y, " pmin = ", val[0]);
+      n_dofs_out++;
+    }
+  }
+
+  pmax /= n_dofs_in;
+  pmin /= n_dofs_out;
+
+  Output::print<1>("######## Pin = ", pmax);
+  Output::print<1>("######## Pout = ", pmin);
+  Output::print<1>("######## Delta P = ", pmax - pmin);
+  Output::print<1>("######## Relative error = ", ((pmax-pmin)-1.1805)*100/1.1805, "%");
+}

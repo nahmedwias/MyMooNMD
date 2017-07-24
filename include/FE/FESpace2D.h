@@ -124,7 +124,7 @@ class TFESpace2D : public TFESpace
     const TFE2D& get_fe(unsigned int cell_number) const;
 
     /** return position of one given DOF */
-    void GetDOFPosition(int dof, double &x, double &y);
+    void GetDOFPosition(int dof, double &x, double &y) const;
 
     /** return position of all dofs */
     void GetDOFPosition(double *x, double *y);
