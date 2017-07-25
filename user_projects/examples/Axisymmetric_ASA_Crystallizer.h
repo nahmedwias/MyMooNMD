@@ -35,7 +35,7 @@ int bdry_inflow = 3;
 //  - can be controlled via input database
 int VELOCITY_CODE = 0;
 
-double tube_length = 1; //length of the tube in m - must be in accordance to the geometry!
+double tube_length = 15; //length of the tube in m - must be in accordance to the geometry!
 
 double inflow_T[4] = {307.6, 312.9, 313.1, 313.7}; //unit is K
 double inflow_c = 1511.11; // unit is mol/m^3
