@@ -22,6 +22,10 @@ namespace Axisymmetric_ASA_crystallizer
   #include <Axisymmetric_ASA_Crystallizer.h>
 }
 
+//CB DEBUG
+#include "fstream"
+#include "cmath"
+//END DEBUG
 
 void DirichletBoundaryConditions(int BdComp, double t, BoundCond &cond)
 {
@@ -234,19 +238,19 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
                           &br_grid_param_fcts_values_[p].at(0), br_space_fe_length);
   }
 
+  // *** The moments functions on the brush grid are only used for output and visualization.
+  br_grid_psdmom_fcts_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
+
+  br_grid_psdmom_fcts_.resize(3);
+  br_grid_psdmom_fcts_.at(0) = new TFEFunction2D(&br_grid_space_,
+        (char*)"pd-m0", (char*)"", &br_grid_psdmom_fcts_values_[0].at(0), br_space_fe_length);
+  br_grid_psdmom_fcts_.at(1) = new TFEFunction2D(&br_grid_space_,
+        (char*)"pd-m1", (char*)"", &br_grid_psdmom_fcts_values_[1].at(0), br_space_fe_length);
+  br_grid_psdmom_fcts_.at(2) = new TFEFunction2D(&br_grid_space_,
+        (char*)"pd-m2", (char*)"", &br_grid_psdmom_fcts_values_[2].at(0), br_space_fe_length);
+
   if(db_["output_write_vtk"].is(true))
   {
-	  // *** The moments functions on the brush grid are only used for output and visualization.
-	  br_grid_psdmom_fcts_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
-
-	  br_grid_psdmom_fcts_.resize(3);
-	  br_grid_psdmom_fcts_.at(0) = new TFEFunction2D(&br_grid_space_,
-	        (char*)"pd-m0", (char*)"", &br_grid_psdmom_fcts_values_[0].at(0), br_space_fe_length);
-	  br_grid_psdmom_fcts_.at(1) = new TFEFunction2D(&br_grid_space_,
-	        (char*)"pd-m1", (char*)"", &br_grid_psdmom_fcts_values_[1].at(0), br_space_fe_length);
-	  br_grid_psdmom_fcts_.at(2) = new TFEFunction2D(&br_grid_space_,
-	        (char*)"pd-m2", (char*)"", &br_grid_psdmom_fcts_values_[2].at(0), br_space_fe_length);
-
 	  //add the moments functions to the output writer
 	  output_writer_.add_fe_function(br_grid_psdmom_fcts_[0]);
 	  output_writer_.add_fe_function(br_grid_psdmom_fcts_[1]);
@@ -272,6 +276,19 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   // Finally write a nice header into the particle stats file,
   // so that it can be filled with data from now on.
   interface_->write_headers(moment_stats_file_, outflow_particles_file_, inflow_particles_file_);
+
+  //CB DEBUG
+  remove("mass_balance.csv"); //file from old run, clean away
+  std::ofstream myfile;
+  myfile.open ("mass_balance.csv",std::ios_base::app);
+  myfile << "t" << ",";
+  myfile << "cell #" << ",";
+  myfile << "z" << ",";
+  myfile << "r" << ",";
+  myfile << "ASA crys [kg/m^3]" << ",";
+  myfile << "ASA diss [kg/m^3]" << "\n";
+  myfile.close();
+  //END DEBUG
 }
 
 BrushWrapper::~BrushWrapper()
@@ -322,8 +339,43 @@ std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
                                pm_grid_source_fcts_values_.at(f));
   }
 
+//  //CB DEBUG
+//  double out [3] = {0,0,0};
+//  double diff=0;
+//  br_grid_source_fcts_[1]->GetMassAndMean(out, true, 'x');
+//  Output::print("Sinks on Brush grid: ", out[0], " ", out[1], " ", out[2]);
+//  diff = out[2];
+//  pm_grid_source_fcts_[1]->GetMassAndMean(out, true, 'x');
+//  Output::print("Sinks on ParMooN grid: ", out[0], " ", out[1], " ", out[2]);
+//  diff -= out[2];
+//  //END DEBUG
+
+
+
  return pm_grid_source_fcts_;
 }
+
+//CB DEBUG
+std::valarray<double> center_point_calc(const TBaseCell& cell)
+{
+#ifdef __3D__
+  ErrThrow("Does center point calculation work in 3D?");
+#endif
+  std::valarray<double> p(0.0,3);
+
+  unsigned int n_verts = cell.GetN_Vertices();
+  for(unsigned int v = 0; v < n_verts; v++)
+  {
+    cell.GetVertex(v)->GetX();
+    p[0] += cell.GetVertex(v)->GetX();
+    p[1] += cell.GetVertex(v)->GetY();
+  }
+  p[0] /= n_verts;
+  p[1] /= n_verts;
+
+  return p;
+}
+//END DEBUG
 
 void BrushWrapper::reset_fluid_phase(
 		const TFEFunction2D& u1,
@@ -359,6 +411,14 @@ void BrushWrapper::reset_fluid_phase(
         *fe_fcts_original[f],*br_grid_param_fcts_[f], br_grid_param_fcts_values_[f]);
   }
 
+//  //CB DEBUG
+//  double out [3] = {0,0,0};
+//  fe_fcts_original[4]->GetMassAndMean(out, true, 'x');
+//  Output::print("Values on ParMooN grid: ", out[0], " ", out[1], " ", out[2]);
+//  br_grid_param_fcts_[4]->GetMassAndMean(out, true, 'x');
+//  Output::print("Values on Brush grid: ", out[0], " ", out[1], " ", out[2]);
+//  //END DEBUG
+
   //loop over all evaluation points (i.e., Brushs cell midpoints)
   for (size_t d = 0 ; d < n_data_sets ; ++d)
   {
@@ -386,6 +446,39 @@ void BrushWrapper::reset_fluid_phase(
   //give the data to Brush
   interface_->reset_fluid_phase(pm_data);
 
+  //CB DEBUG
+  double del = fabs(TDatabase::TimeDB->CURRENTTIME - std::round(TDatabase::TimeDB->CURRENTTIME));
+  if(del < 1e-3)
+  {
+  interface_->update_stats();
+  interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
+  std::ofstream myfile;
+  myfile.open ("mass_balance.csv",std::ios_base::app);
+
+  for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
+  {
+
+	  auto cntr = center_point_calc(*brush_grid_->GetCell(c));
+	  myfile << TDatabase::TimeDB->CURRENTTIME << ",";
+	  myfile << c << ",";
+	  myfile << cntr[0] << ",";
+	  myfile << cntr[1] << ",";
+	  //Brush ASA values
+	  auto bgn_ind= br_grid_space_.GetBeginIndex();
+	  auto dofs = br_grid_space_.GetGlobalNumbers();
+	  auto dof = dofs[bgn_ind[c]];
+	  myfile << br_grid_psdmom_fcts_values_[1].at(dof) << ",";
+	  //ParMooN ASA values
+	  bgn_ind= species[1]->GetFESpace2D()->GetBeginIndex();
+	  dofs = species[1]->GetFESpace2D()->GetGlobalNumbers();
+	  dof = dofs[bgn_ind[c]];
+	  double val_in_kg = species[1]->GetValues()[dof] * 0.18016;
+	  myfile << val_in_kg << "\n";
+  }
+  myfile.close();
+  }
+  //END DEBUG
+
 }
 
 
@@ -400,6 +493,7 @@ void BrushWrapper::solve(double t_start, double t_end)
   interface_->run_particle_phase(t_start, t_end, n_steps, rs);
 
 }
+
 
 
 void BrushWrapper::output(double t)
