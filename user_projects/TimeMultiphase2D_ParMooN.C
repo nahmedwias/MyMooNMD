@@ -126,8 +126,8 @@ int main(int argc, char* argv[])
   Output::print<1>("Maximum time step is: ",TDatabase::TimeDB->MAX_TIMESTEPLENGTH);
   TDatabase::TimeDB->T0 = 0;
 
-//  vof.phaseconvection2d_.output(&vof.tnse2d_.get_velocity()); // this initializes errors
-  vof.phaseconvection2d_.output();
+  vof.phaseconvection2d_.output(&vof.tnse2d_.get_velocity()); // this initializes errors
+//  vof.phaseconvection2d_.output();
 
   /********************************************************************
    * TIME ITERATION LOOP

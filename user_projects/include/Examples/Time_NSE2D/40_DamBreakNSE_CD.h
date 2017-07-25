@@ -76,21 +76,21 @@ void BoundCondition(int i, double t, BoundCond &cond)
 
   switch(i)
    {
-//    /** those lines are for the geometry dambreak_VERYhigh, with
-//     * Neumann condition at the top
-//     */
-//    case 2:
-//      cond = NEUMANN;
-//      break;
-//    case 0: case 1: case 3:
-//      cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
-//      TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
-//      TDatabase::ParamDB->FRICTION_TYPE = 1;
-//      TDatabase::ParamDB->FRICTION_CONSTANT = 0.0;
-//      TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
-//      TDatabase::ParamDB->PENETRATION_POWER= -2;
-//      break;
-//      /**  END CODE FOR GEOMETRY DAMBREAK_VERYHIGH **/
+    /** those lines are for the geometry dambreak_VERYhigh, with
+     * Neumann condition at the top
+     */
+    case 2:
+      cond = NEUMANN;
+      break;
+    case 0: case 1: case 3:
+      cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
+      TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+      TDatabase::ParamDB->FRICTION_TYPE = 1;
+      TDatabase::ParamDB->FRICTION_CONSTANT = 0.0;
+      TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
+      TDatabase::ParamDB->PENETRATION_POWER= -2;
+      break;
+      /**  END CODE FOR GEOMETRY DAMBREAK_VERYHIGH **/
 
 //    /** those lines are for the geometry dambreak_high, with
 //      * Neumann condition at the top
@@ -110,20 +110,20 @@ void BoundCondition(int i, double t, BoundCond &cond)
 
     /** those lines are for the standard geometry dambreak
      * */
-     case 5: case 6: case 7:
-     case 8:
-//     cond = DIRICHLET; //NEUMANN;
+//     case 5: case 6: case 7:
+//     case 8:
+//     cond = NEUMANN;
 //       break;
-     case 0: case 1: case 2: case 3:
-     case 9: case 4:
-       cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
-       TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
-       TDatabase::ParamDB->FRICTION_TYPE = 1;
-       TDatabase::ParamDB->FRICTION_CONSTANT = 0.0;
-       TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
-       TDatabase::ParamDB->PENETRATION_POWER= -2;
-       break;
-    /**  END CODE FOR GEOMETRY STANDARD DAMBREAK **/
+//     case 0: case 1: case 2: case 3:
+//     case 9: case 4:
+//       cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
+//       TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+//       TDatabase::ParamDB->FRICTION_TYPE = 1;
+//       TDatabase::ParamDB->FRICTION_CONSTANT = 0.0;
+//       TDatabase::ParamDB->PENETRATION_CONSTANT = 1.e12;
+//       TDatabase::ParamDB->PENETRATION_POWER= -2;
+//       break;
+//    /**  END CODE FOR GEOMETRY STANDARD DAMBREAK **/
 
 //    /** those lines are for the geometry dambreak OPENFOAM
 //     * */

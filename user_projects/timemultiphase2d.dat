@@ -135,6 +135,7 @@ solve_cd: true   { true, false }
 ## See the class 'Example' and its derived classes.
 ## 0 - bsp1 (sincos)  - in the standard TNSE2D program
 ## 1 - lin_space_time - in the standard TNSE2D program
+## 2 - sincosexp	  - in the standard TNSE2D program
 ## -1- linearspacetime- in the standard TCD2D program
 ## 0 - expsincos 	  - in the standard TCD2D program
 ## 1 - sinsinsin	  - in the standard TCD2D program

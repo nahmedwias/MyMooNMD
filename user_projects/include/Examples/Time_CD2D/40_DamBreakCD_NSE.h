@@ -62,11 +62,25 @@ void InitialCondition(double x,  double y, double *values)
 //  else
 //    values[0] = 0;
 
-//  /* Code for the sharp dam */
-  if ( x <= dam_width && y <= dam_height)
-    values[0] = 1;
-  else
-    values[0] = 0;
+  /* Code for the sharp dam */
+//  if ( x <= dam_width && y <= dam_height)
+//    values[0] = 1;
+//  else
+//    values[0] = 0;
+
+  /* Code for the sharp dam - variant */
+//  double pi = 3.14159265358979;
+//  double max = fabs(x) > fabs(y) ? fabs(x) : fabs(y);
+//  double phi = max - dam_height;
+//  double eps = 0.02;
+//  double regularized_phi = 0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
+//  if ( phi < - eps)
+//    values[0] = 1;
+//  else if ( phi > eps)
+//    values[0] = 0;
+//  else
+//    values[0] = regularized_phi;
+
 
   /* Code for the sharp dam AUSTRALIA PAPER - FLUENT */
 //  if ( x <= dam_width_australia && y <= dam_height_australia)
@@ -108,10 +122,16 @@ void InitialCondition(double x,  double y, double *values)
 //    values[0] = 0;
 
   /* Code for a quarter of circle dam */
-//  if ( x*x + y*y - dam_height*dam_height <= 0)
-//    values[0]=1;
-//  else
-//    values[0]=0;
+  double pi = 3.14159265358979;
+  double phi = (x-4*dam_width)*(x-4*dam_width) + y*y - dam_height*dam_height;
+  double eps = 0.001;
+  double regularized_phi = 0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
+  if ( phi < - eps)
+    values[0] = 1;
+  else if ( phi > eps)
+    values[0] = 0;
+  else
+    values[0] = regularized_phi;
 }
 
 void BilinearCoeffs(int n_points, double *X, double *Y,
