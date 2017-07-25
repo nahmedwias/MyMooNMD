@@ -66,6 +66,7 @@ void compute(ParameterDatabase& db,
   tcd_db.merge(db,true);
   tcd_db["problem_type"]     = 2;
   tnse_db["problem_type"]    = 6;
+  double factor_rho = tnse_db["fluid_density"];
 
   check_parameters_consistency_NSE(tnse_db);
   //  declaration of databases
@@ -99,6 +100,8 @@ void compute(ParameterDatabase& db,
    int step = 0;
    int n_substeps = GetN_SubSteps();
    vof.tnse2d_.current_step_ = 0;
+
+   vof.phaseconvection2d_.output(&vof.tnse2d_.get_velocity());
 
   /********************************************************************
    * TIME ITERATION LOOP
@@ -175,8 +178,10 @@ void compute(ParameterDatabase& db,
       if (vof.cd2nse_coupling_ == true )
         vof.update_field_vectors();
     }
+    if(TDatabase::TimeDB->CURRENTTIME >= end_time - 1e-10)
+      vof.tnse2d_.multiply_pressure(1./factor_rho);
     vof.tnse2d_.output(step);
-    vof.phaseconvection2d_.output();
+    vof.phaseconvection2d_.output(&vof.tnse2d_.get_velocity());
     if(TDatabase::TimeDB->CURRENTTIME >= end_time - 1e-10)
       check_errors(vof, errors,tol);
   } // end for step, time loop
@@ -192,20 +197,20 @@ void set_errors(int example,
                0.003852625123, /*L2(p)*/ 0.01793605573, /*H1(p)*/
                8.45657e-08, /*L2t(c)*/ 5.00189e-06  /*L2H1t(c)*/ };
       break;
-    case 20:  // TODO: the case 20 has to be debugged
-      errors= {2.179086354e-06, /*L2(u)*/ 0.0002257627577, /*H1(u)*/
-               0.003852625123, /*L2(p)*/ 0.01793605573, /*H1(p)*/
-               8.45657e-08, /*L2t(c)*/ 5.00189e-06  /*L2H1t(c)*/ };
+    case 20:
+      errors= {0, /*L2(u)*/ 0, /*H1(u)*/
+               0, /*L2(p)*/ 0, /*H1(p)*/
+               0.00225648, /*L2t(c)*/ 0.120876  /*L2H1t(c)*/ };
       break;
     case 32:
       errors= {0.2604532338, /*L2(u)*/ 4.576438279, /*H1(u)*/
                1.511430802, /*L2(p)*/ 21.5888442, /*H1(p)*/
-               0.00272719, /*L2t(c)*/ 4.32481  /*L2H1t(c)*/ };
+               0.00296955, /*L2t(c)*/ 4.78138  /*L2H1t(c)*/ };
       break;
     case 42:
-      errors= {0.07022243989, /*L2(u)*/ 2.280610654, /*H1(u)*/
-               17.10410817, /*L2(p)*/ 14.23273126, /*H1(p)*/
-               0.211403, /*L2t(c)*/ 0.564915  /*L2H1t(c)*/ };
+      errors= {0.08041091692, /*L2(u)*/ 4.161283896, /*H1(u)*/
+               11.31668447, /*L2(p)*/ 9.734727677, /*H1(p)*/
+               0.233726, /*L2t(c)*/ 0.625498  /*L2H1t(c)*/ };
       break;
   }
 }
@@ -224,6 +229,7 @@ int main(int argc, char* argv[])
   db.merge(Example2D::default_example_database());
   db.merge(AlgebraicFluxCorrection::default_afc_database());
 
+  Output::set_outfile(db["outfile"]);
   db["output_compute_errors"] = true;
   db["verbosity"]             = 5;
   db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 10);;
@@ -234,11 +240,11 @@ int main(int argc, char* argv[])
                                         "../../ParMooN/data/mesh/RTInstab_PochetOrig.GEO"});
 
   std::array<double, int(6)> errors;
-  double tol = 1e-7;
+  double tol;
   //=======================================================================
   /* ===== EXAMPLE 10 - TNSE2D with rho!=1 and TCD2D, no coupling =========
    * TNSE2D is compared with ex. 0 of TNSE2D main program, with Re_nr=200
-   * TCD2D is compared with ex. 0 of TCD2D main program   ================= */
+   * TCD2D is compared with ex. 2 of TCD2D main program   ================= */
   // ======================================================================
   {
     db["example"] = 10;
@@ -261,44 +267,51 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->ANSATZ_ORDER= 1;
     db["algebraic_flux_correction"] = "none";
     set_errors(10,errors);
+    tol = 1e-7;
     compute(db, errors, tol);
     TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
   }
 
-  // this example 20 has some discrepancies, but it comes from
-  // the error calculation...needs to be debugged
-//  //=======================================================================
-//  /* ===== EXAMPLE 20 - Coupling TNSE2D > TCD2D ===========================
-//   * TNSE2D solves a given constant velocity field which is used in TCD2D =
-//   * TCD2D is compared with TCD2D main program and example 0 ============== */
-//  // ======================================================================
-//  {
-//    db["example"] = 20;
-//    db["refinement_n_initial_steps"] = 4;
-//    TDatabase::TimeDB->STARTTIME     = 0.;
-//    TDatabase::TimeDB->CURRENTTIME   = 0.;
-//    TDatabase::TimeDB->ENDTIME       = 0.05;
-//    TDatabase::TimeDB->TIMESTEPLENGTH= 0.01;
-//    db["fluid_density"]           = 1;  // this is then compared to
-//    db["fluid_dynamic_viscosity"] = 1;    // TNSE2D with Re=200
-//    db["reynolds_number"]         = 1;
-//    TDatabase::ParamDB->RE_NR     = 1;
-//    db["solver_type"]             = "direct";
-//    db["direct_solver_type"]      = "umfpack";
-//    TDatabase::ParamDB->VELOCITY_SPACE = 12;
-//    TDatabase::ParamDB->PRESSURE_SPACE = -4711;
-//    TDatabase::ParamDB->NSTYPE = 4;
-//    TDatabase::ParamDB->LAPLACETYPE = 1;
-//    TDatabase::ParamDB->ANSATZ_ORDER= 1;
-//    db["algebraic_flux_correction"] = "fem-fct-cn";
-//    set_errors(20,errors);
-//    compute(db, errors, tol);
-//  }
+  //=======================================================================
+  /* ===== EXAMPLE 20 - Coupling TNSE2D > TCD2D ===========================
+   * TNSE2D solves a given constant velocity field which is used in TCD2D =
+   * TCD2D is compared with TCD2D main program and example 0 ============== */
+  // ======================================================================
+  {
+    db["example"] = 20;
+    db["dimensional_nse"] = true;
+    db["coupling_nse_cd"] = true;
+    db["coupling_cd_nse"] = false;
+    db["solve_cd"] = true;
+    db["refinement_n_initial_steps"] = 4;
+    TDatabase::TimeDB->STARTTIME     = 0.;
+    TDatabase::TimeDB->CURRENTTIME   = 0.;
+    TDatabase::TimeDB->ENDTIME       = 0.05;
+    TDatabase::TimeDB->TIMESTEPLENGTH= 0.01;
+    db["fluid_density"]           = 1.;
+    db["fluid_dynamic_viscosity"] = 1.;
+    db["reynolds_number"]         = 1.;
+    TDatabase::ParamDB->RE_NR     = 1.;
+    db["solver_type"]             = "direct";
+    db["direct_solver_type"]      = "umfpack";
+    TDatabase::ParamDB->VELOCITY_SPACE = 12;
+    TDatabase::ParamDB->PRESSURE_SPACE = -4711;
+    TDatabase::ParamDB->NSTYPE = 4;
+    TDatabase::ParamDB->LAPLACETYPE = 1;
+    TDatabase::ParamDB->ANSATZ_ORDER= 1;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_maxit"] = 10;
+    db["nonlinloop_minit"] = 0;
+    db["algebraic_flux_correction"] = "fem-fct-cn";
+    set_errors(20,errors);
+    tol = 1e-6;
+    compute(db, errors, tol);
+  }
 
   //=======================================================================
   /* ===== EXAMPLE 32 - Coupling TCD2D > TNSE2D ===========================
    * TCD2D solves a given constant phase field which is used in TNSE2D ====
-   * TNSE2D is compared with TNSE2D main program and example 2 ============ */
+   * TNSE2D is compared with TNSE2D main program and example 32 ============ */
   // ======================================================================
   {
     db["example"] = 32;
@@ -368,7 +381,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->ANSATZ_ORDER= 1;
     db["algebraic_flux_correction"] = "fem-fct-cn";
     set_errors(42,errors);
-    tol = 1e-4;
+    tol = 1e-6;
     compute(db, errors, tol);
     TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 0;
   }

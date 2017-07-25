@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   // assemble matrices and right hand side at start time  
   tcd.assemble_initial_time();
   // ======================================================================
-  
+  SetTimeDiscParameters(0);
   double end_time = TDatabase::TimeDB->ENDTIME; 
   int step = 0;
   int n_substeps = GetN_SubSteps();

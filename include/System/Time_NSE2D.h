@@ -349,6 +349,16 @@ class Time_NSE2D
 
     void assemble_massmatrix_withfields(TFEFunction2D* rho_field=nullptr);
 
+    /* @brief this allows multiplication of pressure fefunction from anywhere
+     * in the program! ATTENTION, CAN BE DANGEROUS!
+     * Its purpose is to obtain a corrected pressure P/rho, when solving
+     * two phase flows, where only P is calculated.
+     * It is mainly use in the test file, where pressure is compared with
+     * standard NSE's pressure (e.g. pressure/rho)
+     */
+    void multiply_pressure(double factor_one_over_rho)
+    { this->systems.front().p *= factor_one_over_rho; }
+
 // ======================================================================
     // The following members are used for IMEX
 /** @brief This returns the number of the current time step.
