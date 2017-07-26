@@ -760,9 +760,8 @@ void Time_CD2D::modify_and_call_assembling_routine(
     TFEFunction2D* sources_and_sinks)
 {
 
-  // NOTE: velocity_field must be defined on the right grid
+  // NOTE: velo1, velo2 and sources_and_sinks must be defined on the right grid
   // - but currently there is no way to check that...
-
 
   // set up the input...
   std::vector<int> beginParameter = {0};
@@ -810,10 +809,11 @@ void Time_CD2D::modify_and_call_assembling_routine(
     fe_funct[3] = sources_and_sinks;
 
     feValueFctIndex = {1,2,3}; // to produce first fe value use fe function 1,
-                                                // for second fe value use function 2,
-                                                // for third fe value use function 3
+                               // for second fe value use function 2,
+                               // for third fe value use function 3
+
     feValueMultiIndex = {D00,D00,D00}; // to produce first fe value use 0th derivative,
-                                                              // for second and third fe value as well
+                                       // for second and third fe value as well
     N_parameters = 3; // three parameters (AFTER application of parameterFct...)
     N_feValues = 3;   // ...all three of them stem from the evaluation of fe fcts
     N_paramFct = 1;   // dealing with them is performed by 1 ParamFct

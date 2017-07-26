@@ -602,6 +602,20 @@ void LocalAssembling2D::GetLocalForms(int N_Points,
     if(Coeffs)
         Coeffs(N_Points, X, Y, Parameters, AuxArray);
     
+//    //CB DEBUG
+//    if(name==std::string("TCD2D_Stiff_Rhs"))
+//    {
+//    	for(int i =0; i<N_Points;++i)
+//    	{
+//    		if(fabs(AuxArray[i][4]) > 1e-20 && AuxArray[i][4] < 0) //something's going on (sink)!
+//    		{
+//    			Output::print("non-zero in cell ", Cell->GetCellIndex(), ": ", AuxArray[i][4]);
+//    			break;
+//    		}
+//    	}
+//    }
+//    //END DEBUG
+
     if(Manipulate)
         Manipulate(N_Points, AuxArray, Parameters, Cell);
     
