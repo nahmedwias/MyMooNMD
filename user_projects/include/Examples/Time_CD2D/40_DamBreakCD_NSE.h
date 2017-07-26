@@ -31,19 +31,18 @@ void Exact(double x, double y, double *values)
 void BoundCondition(int BdComp, double Param, BoundCond &cond)
 {
 //  if (BdComp == 1 || BdComp==2)
-//    cond = DIRICHLET;
+    cond = DIRICHLET;
 //  else
-    cond = NEUMANN;
+//    cond = NEUMANN;
 }
 
 // value of boundary condition
 void BoundValue(int BdComp, double Param, double &value)
 {
-//  double rho_min = TDatabase::ParamDB->P7;
-//  if (BdComp==1 || BdComp==2)
-//    value = rho_min;  // this is Dirichlet
-//  else
-    value =0;
+  if (BdComp==1 || BdComp==2)
+    value = 0;
+  else
+    value = 0;
 }
 
 // initial conditon

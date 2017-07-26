@@ -80,8 +80,8 @@ void BoundCondition(int i, double t, BoundCond &cond)
      * Neumann condition at the top
      */
     case 2:
-      cond = NEUMANN;
-      break;
+//      cond = NEUMANN;
+//      break;
     case 0: case 1: case 3:
       cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
       TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
@@ -165,6 +165,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
   static double nu = REYNOLDS_number;
+  double t = TDatabase::TimeDB->CURRENTTIME;
   int i;
   double *coeff;
 //  double  x, y;
@@ -187,7 +188,10 @@ void LinCoeffs(int n_points, double *X, double *Y,
 
     // Navier-Stokes
     coeff[1] = 0;     // f1
-    coeff[2] = -10;     // f2
+    if (t < 0.005)
+     coeff[2] = 0;     // f2
+    else
+     coeff[2] = -10;     // f2
     coeff[3] = 0;
   }
 }

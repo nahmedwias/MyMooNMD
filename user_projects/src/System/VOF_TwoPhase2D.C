@@ -136,14 +136,7 @@ void VOF_TwoPhase2D::update_field_vectors()
       // rayleigh taylor: visco = 1 and rho=phase field
       this->mu_vector_ = this->unity_vector_;
       break;
-    case 43:
-      // drop pressure for CSF test
-      this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
-      this->rho_vector_.scale(this->rhol_-this->rhog_);
-      this->rho_vector_.add_scaled(this->unity_vector_,this->rhog_);
-      this->mu_vector_ = this->unity_vector_;
-      break;
-    case 40: case 42: case 50:
+    case 40: case 42:  case 43: case 50:
       // dambreak and 2-phase flows
       this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
       this->mug_  = TDatabase::ParamDB->P8; // mu of gas  = mu2 =mumin
