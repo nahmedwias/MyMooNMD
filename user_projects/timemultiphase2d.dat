@@ -2,11 +2,11 @@
 
 ########################## Main Parameters changing 
 outfile: multiphase_output.out
-refinement_n_initial_steps: 6
+refinement_n_initial_steps: 5
 space_discretization_type: smagorinsky { galerkin, smagorinsky, vms_projection }
-TURBULENT_VISCOSITY_CONSTANT: 0.2
+TURBULENT_VISCOSITY_CONSTANT: 0.
 vms_projection_space_order: 0
-example: 43   [ -1, 100 ]
+example: 44   [ -1, 100 ]
 USE_ISOPARAMETRIC: 1
 
 ENDTIME: 2.
@@ -14,15 +14,15 @@ TIMESTEPLENGTH: 0.001
 MIN_TIMESTEPLENGTH: 0.001
 MAX_TIMESTEPLENGTH: 0.001
 
-STEPS_PER_IMAGE: 2
+STEPS_PER_IMAGE: 1
 
 fluid_density: 1000.   [ 0, 1e6 ]
-fluid_dynamic_viscosity: 1.e-3   [ 0, 1e6 ]
-reynolds_number: 1.e-6   [ 0, 1e6 ]
-RE_NR:	1.e-6
+fluid_dynamic_viscosity: 2.e-3   [ 0, 1e6 ]
+reynolds_number: 5.e5   [ 0, 1e6 ]
+RE_NR:	5.e5
 
 ## Beltrami/variable viscosity example 
-P1: 1  
+P1: 0.04 
 P2: 10	 
 P3: 1
 
@@ -33,10 +33,10 @@ P6: 0.005  # circle radius
 
 ## Two phase flow
 P7: 1.2 # density 2 - min - gas
-P8: 1.8e-5 # viscosity 2 - min - gas
+P8: 3.6e-5 # viscosity 2 - min - gas
 
 ## Surface tension force tau (N/m)
-P9: 0.02361
+P9: 0.06
 P10: 1
 
 ########################## Fixed Parameters 
@@ -44,8 +44,8 @@ P10: 1
 #geo_file: ../mesh/circleR3.mesh
 #boundary_file: Default_UnitSquare
 #geo_file: UnitSquare   { TwoTriangles, UnitSquare }
-boundary_file: ../mesh/Brackbills_Benchmark_Rod/small_square.PRM
-geo_file: ../mesh/Brackbills_Benchmark_Rod/small_square.GEO
+#boundary_file: ../mesh/Brackbills_Benchmark_Rod/small_square.PRM
+#geo_file: ../mesh/Brackbills_Benchmark_Rod/small_square.GEO
 #boundary_file: ../mesh/RTInstab_Fraigneau.PRM
 #geo_file: ../mesh/RTInstab_Fraigneau.GEO
 #boundary_file: ../mesh/RTInstab_PochetOrig.PRM
@@ -56,6 +56,8 @@ geo_file: ../mesh/Brackbills_Benchmark_Rod/small_square.GEO
 #geo_file: ../mesh/DamBreak/dambreak_veryhigh_quad.GEO
 #boundary_file: ../mesh/flow_around_cylinder2D.PRM
 #geo_file: ../mesh/flow_around_cylinder_2Dquads.GEO
+boundary_file: ../mesh/solitary_wave/solitarywave.PRM
+geo_file: ../mesh/solitary_wave/solitarywave_quad.GEO
 
 
 # 1:CD # 2:TCD # 3:Stokes # 4:TStokes # 5:NSE # 6:TNSE # 
@@ -68,9 +70,9 @@ output_compute_errors: true   { true, false }
 output_vtk_directory: .
 output_basename: multiphase_output {multiphase_tconvection_output, multiphase_tnse_output, multiphase_output }
 
-nonlinloop_maxit: 50   [ 0, 1000 ]
+nonlinloop_maxit: 4  [ 0, 1000 ]
 nonlinloop_minit: 0   [ 0, 1000 ]
-nonlinloop_epsilon: 1e-10   [ 0, 1 ]
+nonlinloop_epsilon: 1e-4   [ 0, 1 ]
 # Important: damping can lead to significantly higher computational time
 # for safety, use 1 
 nonlinloop_damping_factor: 1.   [ 0, 1 ]
@@ -164,6 +166,8 @@ solve_cd: true   { true, false }
 ## 42- RAYLEIGHTAYLOR2- in the multiphase program - FOR TCD2D
 ## 43- DropPressureCSF- in the multiphase program - FOR TNSE2D
 ## 43- DropPressureCSF- in the multiphase program - FOR TCD2D
+## 44- Solitary Wave  - in the multiphase program - FOR TNSE2D
+## 44- Solitary Wave  - in the multiphase program - FOR TCD2D
 ## 50- GasStirringTest- in the multiphase program - FOR TNSE2D
 ## 50- GasStirringTest- in the multiphase program - FOR TCD2D
 

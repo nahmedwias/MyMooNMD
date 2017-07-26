@@ -71,6 +71,10 @@ namespace example43_droppressureCSF   // Drop Pressure/equilibrium rod (Brackbil
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/43_DropPressureCSF_NSE_CD.h"
 }
+namespace example44_SolitaryWave   // Solitary Wave (Yue et al 2003)
+{
+#include "../../user_projects/include/Examples/Time_NSE2D/44_SolitaryWave_NSE_CD.h"
+}
 namespace example50_gasstirring_nse_cd   // 2 way coupling for Gas Stirring test
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/50_GasStirringTestNSE_CD.h"
@@ -518,6 +522,38 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          post_processing_stat = example43_droppressureCSF::compute_pressure_drop;
 
          example43_droppressureCSF::ExampleFile();
+         break;
+
+       case 44:                // Example 44 = 2-WAY-COUPLING FOR Solitary Wave
+                               // From Yue et al 2003
+         /** exact_solution */
+         exact_solution.push_back( example44_SolitaryWave::ExactU1 );
+         exact_solution.push_back( example44_SolitaryWave::ExactU2 );
+         exact_solution.push_back( example44_SolitaryWave::ExactP );
+
+         /** boundary condition */
+         boundary_conditions.push_back( example44_SolitaryWave::BoundCondition );
+         boundary_conditions.push_back( example44_SolitaryWave::BoundCondition );
+         boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+         /** boundary values */
+         boundary_data.push_back( example44_SolitaryWave::U1BoundValue );
+         boundary_data.push_back( example44_SolitaryWave::U2BoundValue );
+         boundary_data.push_back( BoundaryValueHomogenous );
+
+         /** coefficients */
+         problem_coefficients = example44_SolitaryWave::LinCoeffs;
+
+         /** initial condition */
+         initialCondition.push_back(example44_SolitaryWave::InitialU1);
+         initialCondition.push_back(example44_SolitaryWave::InitialU2);
+         example44_SolitaryWave::REYNOLDS_number = get_nu();
+         example44_SolitaryWave::USER_parameter1 = this->example_database["user_parameter1"];
+         example44_SolitaryWave::USER_parameter2 = this->example_database["user_parameter2"];
+
+//         post_processing_stat = example44_SolitaryWave::;
+
+         example44_SolitaryWave::ExampleFile();
          break;
 
        case 50:                // Example 50 = 2-WAY-COUPLING FOR Gas Stirring Test
