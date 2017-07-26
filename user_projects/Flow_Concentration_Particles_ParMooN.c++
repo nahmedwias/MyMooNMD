@@ -36,6 +36,13 @@
 //Timer fun
 #include <Chrono.h>
 
+//CB DEBUG
+#include <GridTransferTool.h>
+void DirichletBoundaryConditions_TEST(int BdComp, double t, BoundCond &cond)
+{
+      cond = DIRICHLET;
+}
+//END DEBUG
 
 int main(int argc, char* argv[])
 {
@@ -115,6 +122,19 @@ int main(int argc, char* argv[])
   flow_object.solve();
   flow_object.output();
 
+  TFESpace2D new_space(brush_grid,(char*)"new_space", (char*)"Space to "
+                 "project the velocity on.",
+                 DirichletBoundaryConditions_TEST, 0,
+                 nullptr);
+  GridTransferTool to_new_space_tool(&new_space, GridTransferType::MultiGrid);
+  std::vector<double> new_function_vals(new_space.GetN_DegreesOfFreedom(), 0.0);
+  TFEFunction2D new_function(&new_space,(char*)"new_function",
+                    (char*) "Velocity projected to Q0.",
+                    &new_function_vals.at(0), new_function_vals.size());
+
+  to_new_space_tool.transfer(flow_object.get_axial_velocity(), new_function, new_function_vals);
+
+
 //  //NAVIER--STOKES CASE
 //  // nonlinear loop
 //  // in function 'stopIt' termination condition is checked
@@ -151,7 +171,8 @@ int main(int argc, char* argv[])
   Output::info("PROGRAM PART", "Setting up initial states.");
 
   //get the velocity field of the precomputed velo object
-  TFEFunction2D& uz = flow_object.get_axial_velocity();
+  //TFEFunction2D& uz = flow_object.get_axial_velocity();
+  TFEFunction2D& uz = new_function;
   TFEFunction2D& ur = flow_object.get_radial_velocity();
 
   const TFEFunction2D& pressure = flow_object.get_pressure();
