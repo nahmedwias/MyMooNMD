@@ -318,6 +318,8 @@ BrushWrapper::~BrushWrapper()
 
 }
 
+std::valarray<double> center_point_calc(const TBaseCell& cell);
+
 std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
 {
 
@@ -338,6 +340,7 @@ std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
                                *pm_grid_source_fcts_.at(f),
                                pm_grid_source_fcts_values_.at(f));
   }
+
 
 //  //CB DEBUG
 //  double out [3] = {0,0,0};
@@ -469,10 +472,10 @@ void BrushWrapper::reset_fluid_phase(
 	  auto dof = dofs[bgn_ind[c]];
 	  myfile << br_grid_psdmom_fcts_values_[1].at(dof) << ",";
 	  //ParMooN ASA values
-	  bgn_ind= species[1]->GetFESpace2D()->GetBeginIndex();
-	  dofs = species[1]->GetFESpace2D()->GetGlobalNumbers();
+	  bgn_ind= br_grid_param_fcts_[4]->GetFESpace2D()->GetBeginIndex();
+	  dofs = br_grid_param_fcts_[4]->GetFESpace2D()->GetGlobalNumbers();
 	  dof = dofs[bgn_ind[c]];
-	  double val_in_kg = species[1]->GetValues()[dof] * 0.18016;
+	  double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * 0.18016;
 	  myfile << val_in_kg << "\n";
   }
   myfile.close();
