@@ -108,8 +108,8 @@ void BoundCondition(int i, double t, BoundCond &cond)
 //       break;
 //     /**  END CODE FOR GEOMETRY DAMBREAK_HIGH **/
 
-    /** those lines are for the standard geometry dambreak
-     * */
+//    /** those lines are for the standard geometry dambreak
+//     * */
 //     case 5: case 6: case 7:
 //     case 8:
 //     cond = NEUMANN;

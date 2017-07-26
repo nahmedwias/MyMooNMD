@@ -56,19 +56,19 @@ void InitialCondition(double x,  double y, double *values)
 //  double dam_height_openfoam = 0.292;
 //  double dam_width_openfoam  = 0.1461;
 
-  /* Code for the sharp dam OPENFOAM example */
+//  /* Code for the sharp dam OPENFOAM example */
 //  if ( x <= dam_width_openfoam && y <= dam_height_openfoam)
 //    values[0] = 1;
 //  else
 //    values[0] = 0;
 
   /* Code for the sharp dam */
-//  if ( x <= dam_width && y <= dam_height)
-//    values[0] = 1;
-//  else
-//    values[0] = 0;
+  if ( x <= dam_width && y <= dam_height)
+    values[0] = 1;
+  else
+    values[0] = 0;
 
-  /* Code for the sharp dam - variant */
+//  /* Code for the sharp dam - variant */
 //  double pi = 3.14159265358979;
 //  double max = fabs(x) > fabs(y) ? fabs(x) : fabs(y);
 //  double phi = max - dam_height;
@@ -82,13 +82,13 @@ void InitialCondition(double x,  double y, double *values)
 //    values[0] = regularized_phi;
 
 
-  /* Code for the sharp dam AUSTRALIA PAPER - FLUENT */
+//  /* Code for the sharp dam AUSTRALIA PAPER - FLUENT */
 //  if ( x <= dam_width_australia && y <= dam_height_australia)
 //    values[0] = 1;
 //  else
 //    values[0] = 0;
 
-  /* Code for a smoother dam column */
+//  /* Code for a smoother dam column */
 //  // note that when height=width, the corner is a circle
 //  // otherwise, one would need an ellipse
 //  double corner_radius = 0.03;
@@ -121,17 +121,17 @@ void InitialCondition(double x,  double y, double *values)
 //  else
 //    values[0] = 0;
 
-  /* Code for a quarter of circle dam */
-  double pi = 3.14159265358979;
-  double phi = (x-4*dam_width)*(x-4*dam_width) + y*y - dam_height*dam_height;
-  double eps = 0.001;
-  double regularized_phi = 0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
-  if ( phi < - eps)
-    values[0] = 1;
-  else if ( phi > eps)
-    values[0] = 0;
-  else
-    values[0] = regularized_phi;
+//  /* Code for a quarter of circle dam */
+//  double pi = 3.14159265358979;
+//  double phi = (x)*(x) + y*y - dam_height*dam_height;
+//  double eps = 0.001;
+//  double regularized_phi = 0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
+//  if ( phi < - eps)
+//    values[0] = 1;
+//  else if ( phi > eps)
+//    values[0] = 0;
+//  else
+//    values[0] = regularized_phi;
 }
 
 void BilinearCoeffs(int n_points, double *X, double *Y,
