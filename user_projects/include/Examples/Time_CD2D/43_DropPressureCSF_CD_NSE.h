@@ -60,7 +60,7 @@ void InitialCondition(double x,  double y, double *values)
   double phi = R*R - (x-x0)*(x-x0) - (y-y0)*(y-y0); // level set of circle
 //  double a=0.2; double b=0.1;
 //  double phi = 1-((x-x0)*(x-x0)/(a*a))-((y-y0)*(y-y0)/(b*b)); // level set of ellipse
-  double eps = 1.e-4;
+  double eps = 1.e-5;
   if (phi < -eps)
     values[0] = 1;
   else if ( phi > eps)
