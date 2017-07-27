@@ -343,11 +343,10 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   nn =  (idx_t)N_RootVertices;
   nparts = (idx_t)size;
   
-
-  // Decide whether Metis should be called or the
-  // information read in from a given text file.
   bool read_metis = Domain->get_database()["read_metis"];
   bool write_metis = Domain->get_database()["write_metis"];
+  // if 'read_metis' is true, than a file is read which contains the 
+  // partitioning of the cells on the processors
   if(read_metis)
   {
     MeshPartitionInOut::read_file(*Domain, size,  N_Cells, Cell_Rank);
@@ -373,12 +372,11 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    t2 = MPI_Wtime();
    OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
   }
-
+  //if 'wrtie_metis' is true, than a file is created which contains the partitioning of the cells on the processors.
   if(write_metis)
   {
     MeshPartitionInOut::write_file(*Domain,size, N_Cells, Cell_Rank);
   }
-
 
   /** *********************************************/
   /** STEP 6 : TO FIND MAXIMUM CELLS PER VERTEX */
