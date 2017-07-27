@@ -454,6 +454,9 @@ void Time_CD2D::output(const TFEVectFunct2D* convection_field)
     Output::print<1>("  Linfty(0,T;L2) ", errors[4]);
   }
 
+  //do postprocessing step depending on what the example implements
+  example.do_post_processing(*this);
+
   // write output
   timeDependentOutput.write(TDatabase::TimeDB->CURRENTTIME);
 

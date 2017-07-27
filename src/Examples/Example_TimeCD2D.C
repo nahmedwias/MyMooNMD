@@ -1,4 +1,6 @@
 #include <Example_TimeCD2D.h>
+#include <Time_CD2D.h>   // necessary for ...
+#include <FEDatabase2D.h> // ...post_processingfunction
 #include <Database.h>
 #include <FEFunction2D.h>
 
@@ -78,6 +80,10 @@ namespace example44_solitarywave_cd_nse   // example 44 (Yue et al 2003)
 namespace example50_gasstirring_cd_nse   // example 50
 {
 #include "../../user_projects/include/Examples/Time_CD2D/50_GasStirringTestCD_NSE.h"
+}
+namespace example51_mazumdarguthrie_cd_nse   // example 51
+{
+#include "../../user_projects/include/Examples/Time_CD2D/51_MazumdarGuthrieCD_NSE.h"
 }
 // ********* END OF USER PROJECT CODE
 
@@ -348,6 +354,8 @@ Example_TimeCD2D::Example_TimeCD2D(
       initialCondition.push_back(example40_dambreak_cd_nse::InitialCondition);
       example40_dambreak_cd_nse::ExampleFile();
 
+      post_processing_stat = example40_dambreak_cd_nse::dambreak_postprocess;
+
       this->timeDependentRhs = example40_dambreak_cd_nse::rhs_depends_on_time;
       this->timeDependentCoeffs=example40_dambreak_cd_nse::coefficients_depend_on_time;
       break;
@@ -454,8 +462,25 @@ Example_TimeCD2D::Example_TimeCD2D(
       break;
 
 
+    case 51:                // Example 51: Mazumdar and Guthrie for Gas Stirring Test
+      /**Exact solution"**/
+      exact_solution.push_back(example51_mazumdarguthrie_cd_nse::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( example51_mazumdarguthrie_cd_nse::BoundCondition );
 
+      /** boundary values */
+      boundary_data.push_back( example51_mazumdarguthrie_cd_nse::BoundValue );
 
+      /** coefficients */
+      problem_coefficients = example51_mazumdarguthrie_cd_nse::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCondition.push_back(example51_mazumdarguthrie_cd_nse::InitialCondition);
+      example51_mazumdarguthrie_cd_nse::ExampleFile();
+
+      this->timeDependentRhs = example51_mazumdarguthrie_cd_nse::rhs_depends_on_time;
+      this->timeDependentCoeffs=example51_mazumdarguthrie_cd_nse::coefficients_depend_on_time;
+      break;
 
 
     default:
