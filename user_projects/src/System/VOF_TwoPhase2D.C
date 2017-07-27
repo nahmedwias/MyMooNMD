@@ -82,7 +82,8 @@ void VOF_TwoPhase2D::manage_example_parameters()
                       ":coupling nse2cd must be false, but the other booleans"
                       " are free to be changed.");
       break;
-    case 40: case 41: case 42: case 43: case 44: case 50:
+    case 40: case 41: case 42: case 43:
+    case 44: case 50: case 51:
 //      this->tnse_variable_fluid_ = true;
 //      this->nse2cd_coupling_  = true;
 //      this->cd2nse_coupling_  = true;
@@ -137,6 +138,7 @@ void VOF_TwoPhase2D::update_field_vectors()
       this->mu_vector_ = this->unity_vector_;
       break;
     case 40: case 42: case 43:  case 44: case 50:
+    case 51:
       // dambreak and 2-phase flows
       this->rhog_ = TDatabase::ParamDB->P7; // rho of gas = rho2=rhomin
       this->mug_  = TDatabase::ParamDB->P8; // mu of gas  = mu2 =mumin

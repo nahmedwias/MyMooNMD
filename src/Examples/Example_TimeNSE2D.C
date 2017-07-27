@@ -79,7 +79,10 @@ namespace example50_gasstirring_nse_cd   // 2 way coupling for Gas Stirring test
 {
 #include "../../user_projects/include/Examples/Time_NSE2D/50_GasStirringTestNSE_CD.h"
 }
-
+namespace example51_mazumdarguthrieApproach_nse_cd   // Mazumdar Guthrie approach
+{
+#include "../../user_projects/include/Examples/Time_NSE2D/51_MazumdarGuthrieNSE_CD.h"
+}
 
 // ********* END OF USER PROJECT CODE
 
@@ -431,6 +434,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          example40_dambreak_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
 
          example40_dambreak_nse_cd::ExampleFile();
+//         post_processing_stat = example40_dambreak_nse_cd::dambreak_postprocess;
          break;
 
        case 41:                // Example 41 = 2-WAY-COUPLING FOR RAYLEIGH TAYLOR INSTABILITY
@@ -585,6 +589,34 @@ Example_TimeNSE2D::Example_TimeNSE2D(
          example50_gasstirring_nse_cd::ExampleFile();
          break;
 
+       case 51:                // Example 51 = Mazumdar and Guthrie Approach
+         /** exact_solution */
+         exact_solution.push_back( example51_mazumdarguthrieApproach_nse_cd::ExactU1 );
+         exact_solution.push_back( example51_mazumdarguthrieApproach_nse_cd::ExactU2 );
+         exact_solution.push_back( example51_mazumdarguthrieApproach_nse_cd::ExactP );
+
+         /** boundary condition */
+         boundary_conditions.push_back( example51_mazumdarguthrieApproach_nse_cd::BoundCondition );
+         boundary_conditions.push_back( example51_mazumdarguthrieApproach_nse_cd::BoundCondition );
+         boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+         /** boundary values */
+         boundary_data.push_back( example51_mazumdarguthrieApproach_nse_cd::U1BoundValue );
+         boundary_data.push_back( example51_mazumdarguthrieApproach_nse_cd::U2BoundValue );
+         boundary_data.push_back( BoundaryValueHomogenous );
+
+         /** coefficients */
+         problem_coefficients = example51_mazumdarguthrieApproach_nse_cd::LinCoeffs;
+
+         /** initial condition */
+         initialCondition.push_back(example51_mazumdarguthrieApproach_nse_cd::InitialU1);
+         initialCondition.push_back(example51_mazumdarguthrieApproach_nse_cd::InitialU2);
+         example51_mazumdarguthrieApproach_nse_cd::REYNOLDS_number = get_nu();
+         example51_mazumdarguthrieApproach_nse_cd::USER_parameter1 = this->example_database["user_parameter1"];
+         example51_mazumdarguthrieApproach_nse_cd::USER_parameter2 = this->example_database["user_parameter2"];
+
+         example51_mazumdarguthrieApproach_nse_cd::ExampleFile();
+         break;
 
     default:
       ErrThrow("Unknown Time dependent Example_TimeNSE2D example!");

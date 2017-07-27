@@ -31,7 +31,7 @@ void Exact(double x, double y, double *values)
 void BoundCondition(int BdComp, double Param, BoundCond &cond)
 {
 //  if (BdComp == 1 || BdComp==2)
-    cond = DIRICHLET;
+    cond = NEUMANN;
 //  else
 //    cond = NEUMANN;
 }
@@ -61,11 +61,11 @@ void InitialCondition(double x,  double y, double *values)
 //  else
 //    values[0] = 0;
 
-  /* Code for the sharp dam */
-  if ( x <= dam_width && y <= dam_height)
-    values[0] = 1;
-  else
-    values[0] = 0;
+//  /* Code for the sharp dam */
+//  if ( x <= dam_width && y <= dam_height)
+//    values[0] = 1;
+//  else
+//    values[0] = 0;
 
 //  /* Code for the sharp dam - variant */
 //  double pi = 3.14159265358979;
@@ -120,17 +120,17 @@ void InitialCondition(double x,  double y, double *values)
 //  else
 //    values[0] = 0;
 
-//  /* Code for a quarter of circle dam */
-//  double pi = 3.14159265358979;
-//  double phi = (x)*(x) + y*y - dam_height*dam_height;
-//  double eps = 0.001;
-//  double regularized_phi = 0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
-//  if ( phi < - eps)
-//    values[0] = 1;
-//  else if ( phi > eps)
-//    values[0] = 0;
-//  else
-//    values[0] = regularized_phi;
+  /* Code for a quarter of circle dam */
+  double pi = 3.14159265358979;
+  double phi = (x)*(x) + y*y - dam_height*dam_height;
+  double eps = 0.001;
+  double regularized_phi = 0.5*(1 - (phi/eps) - (1/pi)*sin(phi*pi/eps));
+  if ( phi < - eps)
+    values[0] = 1;
+  else if ( phi > eps)
+    values[0] = 0;
+  else
+    values[0] = regularized_phi;
 }
 
 void BilinearCoeffs(int n_points, double *X, double *Y,
@@ -165,4 +165,59 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
 void Initial(double x, double y, double *values)
 {
 }
+
+void dambreak_postprocess(Time_CD2D& time_cd2d)
+{
+  const TFESpace2D *Space;
+  TFEFunction2D& fct(time_cd2d.get_function());
+  Space = fct.GetFESpace2D();
+//  TBaseCell *cell;
+//  TCollection *Coll;
+//  Coll = Space->GetCollection();
+
+  int N_DOFS = fct.GetLength();
+  double x, y;
+
+  int n_dofs_interface = 0;
+  double epsilon = 1.e-1;
+
+  double val[4];
+
+  for(int i=0; i<N_DOFS;i++)
+  {
+    Space->GetDOFPosition(i,x,y);
+    fct.FindGradient(x,y,val);
+
+    if (val[0] > epsilon && val[0] < 1-epsilon)
+    {
+      Output::print<1>("DOF ", i, " c = ", val[0], " (x,y) = (", x, ", ", y, ")" );
+      n_dofs_interface++;
+    }
+  }
+  Output::print<1>("Number of dofs on interface = ", n_dofs_interface);
+
+//    if ( (x-x0)*(x-x0)+(y-y0)*(y-y0)-R*R <= - epsilon )
+//    {
+//      pfct.FindGradient(x,y,val);
+//      pmax += val[0];
+////      Output::print<1>("dof i = ", i, " x = ", x, " y = ", y, " pmax = ", val[0]);
+//      n_dofs_in++;
+//    }
+//    else if ( (x-x0)*(x-x0)+(y-y0)*(y-y0)-R*R >= epsilon )
+//    {
+//      pfct.FindGradient(x,y,val);
+//      pmin += val[0];
+////      Output::print<1>("dof i = ", i, " x = ", x, " y = ", y, " pmin = ", val[0]);
+//      n_dofs_out++;
+//    }
+//  pmax /= n_dofs_in;
+//  pmin /= n_dofs_out;
+//
+//  Output::print<1>("######## Pin = ", pmax);
+//  Output::print<1>("######## Pout = ", pmin);
+//  Output::print<1>("######## Delta P = ", pmax - pmin);
+//  Output::print<1>("######## Relative error = ", ((pmax-pmin)-1.1805)*100/1.1805, "%");
+}
+
+
 
