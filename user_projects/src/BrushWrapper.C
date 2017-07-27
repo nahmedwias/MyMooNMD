@@ -286,7 +286,8 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   myfile << "z" << ",";
   myfile << "r" << ",";
   myfile << "ASA crys [kg/m^3]" << ",";
-  myfile << "ASA diss [kg/m^3]" << "\n";
+  myfile << "ASA diss [kg/m^3]" << ",";
+  myfile << "velo [m/s] " << "\n";
   myfile.close();
   //END DEBUG
 }
@@ -476,7 +477,13 @@ void BrushWrapper::reset_fluid_phase(
 	  dofs = br_grid_param_fcts_[4]->GetFESpace2D()->GetGlobalNumbers();
 	  dof = dofs[bgn_ind[c]];
 	  double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * 0.18016;
-	  myfile << val_in_kg << "\n";
+	  myfile << val_in_kg << ",";
+	  //velocity (x direction) in the current ambient
+	  bgn_ind= br_grid_param_fcts_[0]->GetFESpace2D()->GetBeginIndex();
+	  dofs = br_grid_param_fcts_[0]->GetFESpace2D()->GetGlobalNumbers();
+	  dof = dofs[bgn_ind[c]];
+	  double velo = br_grid_param_fcts_[0]->GetValues()[dof];
+	  myfile << velo << "\n";
   }
   myfile.close();
   }
