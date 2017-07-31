@@ -153,12 +153,17 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   //write the brush grid to a file, which can be read by Brush
   brush_grid_->writeMesh("brush_mesh.mesh", 2);
 
+  double third_dim_stretch = 0;
+  if(db_.contains("third_dim_stretch"))
+	  third_dim_stretch=db_["third_dim_stretch"];
+
   // set up Brushs ParMooN interface
   interface_ = new Brush::InterfacePM(
-      "brush_mesh.mesh", db_["third_dim_stretch"],
+      "brush_mesh.mesh", third_dim_stretch,
       db_["sweep_file"], " ",
       db_["therm_file"], db_["chem_file"],
-      db_["max_sp_per_cell"], db_["max_m0_per_cell"],
+      db_["coagulation_parameter"],
+	  db_["max_sp_per_cell"], db_["max_m0_per_cell"],
 	  axisymmetric
   );
 
@@ -342,20 +347,6 @@ std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
                                pm_grid_source_fcts_values_.at(f));
   }
 
-
-//  //CB DEBUG
-//  double out [3] = {0,0,0};
-//  double diff=0;
-//  br_grid_source_fcts_[1]->GetMassAndMean(out, true, 'x');
-//  Output::print("Sinks on Brush grid: ", out[0], " ", out[1], " ", out[2]);
-//  diff = out[2];
-//  pm_grid_source_fcts_[1]->GetMassAndMean(out, true, 'x');
-//  Output::print("Sinks on ParMooN grid: ", out[0], " ", out[1], " ", out[2]);
-//  diff -= out[2];
-//  //END DEBUG
-
-
-
  return pm_grid_source_fcts_;
 }
 
@@ -414,14 +405,6 @@ void BrushWrapper::reset_fluid_phase(
     pm_to_brush_tool_.transfer(
         *fe_fcts_original[f],*br_grid_param_fcts_[f], br_grid_param_fcts_values_[f]);
   }
-
-//  //CB DEBUG
-//  double out [3] = {0,0,0};
-//  fe_fcts_original[4]->GetMassAndMean(out, true, 'x');
-//  Output::print("Values on ParMooN grid: ", out[0], " ", out[1], " ", out[2]);
-//  br_grid_param_fcts_[4]->GetMassAndMean(out, true, 'x');
-//  Output::print("Values on Brush grid: ", out[0], " ", out[1], " ", out[2]);
-//  //END DEBUG
 
   //loop over all evaluation points (i.e., Brushs cell midpoints)
   for (size_t d = 0 ; d < n_data_sets ; ++d)
