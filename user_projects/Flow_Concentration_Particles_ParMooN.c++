@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
   // put some needed parameters into the respective DBs
   flow_database.merge(general_database, true);
   conc_database.merge(general_database, true);
-  particle_database.add(Parameter(general_database["velocity_code"]));
+  particle_database.merge(general_database, true);
 
   Output::print(">>>>>>", "Starting ParMooN Program: Flow, Concentration, Particles (2D).");
   Chrono total_chrono;

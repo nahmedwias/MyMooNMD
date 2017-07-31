@@ -80,13 +80,13 @@ ParameterDatabase get_default_domain_parameters()
         {"Default_UnitSquare", "Default_UnitCube"}
        );
    
-   db.add("geo_file", "Default_UnitSquare",
-        "This files describes the computational mesh. You probably want to "
-        "adjust this to be the path to some file which typically has the "
-        "extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM "
-        "files.",
-        {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
-         "Default_UnitCube_Tetra","Default_UnitSquare"});
+   //db.add("geo_file", "Default_UnitSquare",
+   //     "This files describes the computational mesh. You probably want to "
+   //     "adjust this to be the path to some file which typically has the "
+   //     "extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM "
+   //     "files.",
+   //     {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa",
+   //      "Default_UnitCube_Tetra","Default_UnitSquare"});
    
    db.add("mesh_tetgen_file", std::string("Wuerfel"),
          "This files describes the computational mesh. Typically this files"
@@ -118,7 +118,7 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
   Output::print<4>("domain is initialized");
   db.merge(param_db, false);
   
-  std::string geoname = db["geo_file"];
+  std::string geoname = db["mesh_file"];
   std::string boundname = db["boundary_file"];
   std::string smesh = db["mesh_tetgen_file"];
   
@@ -177,7 +177,7 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
   /** set variables' value in TDatabase using ParamFile */
   this->ReadParam(ParamFile);
   
-  std::string geoname = db["geo_file"];
+  std::string geoname = db["mesh_file"];
   std::string boundname = db["boundary_file"];
   std::string smesh = db["mesh_tetgen_file"];
   
@@ -3434,6 +3434,7 @@ int TDomain::RefineallxDirection()
 
 bool TDomain::isExtendedGEO(const char* GEO)
   {
+	  Output::print(GEO[0],GEO[1],GEO[2],GEO[3],GEO[4]);
       bool isXgeo{false};
       // check if input file is an extended geo file (.xGEO)
       int nn=0;
@@ -3441,6 +3442,9 @@ bool TDomain::isExtendedGEO(const char* GEO)
       {
         ++nn;
       }
+      if(GEO[nn-4] == 'm' && GEO[nn-3] == 'e' && GEO[nn-2] == 's' && GEO[nn-1] != 'h')
+    	  //it's a .mesh file!
+    	  return false;
 
       //check if we found the correct place in the char arary
       if(GEO[nn-3] != 'G' || GEO[nn-2] != 'E' || GEO[nn-1] != 'O')

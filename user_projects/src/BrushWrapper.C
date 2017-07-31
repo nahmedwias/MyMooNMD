@@ -151,7 +151,12 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   pick_example(db_["example"]);
 
   //write the brush grid to a file, which can be read by Brush
-  brush_grid_->writeMesh("brush_mesh.mesh", 2);
+  std::string out_dir(db_["output_vtk_directory"].value_as_string());
+  std::size_t pos = out_dir.find("VTK");// Lil hack - the directory above 'VTK',
+  out_dir = out_dir.substr(0,pos); 		// ...should be the general output directory.
+  std::string brush_mesh_file(out_dir);
+  brush_mesh_file.append("/brush_mesh.mesh");
+  brush_grid_->writeMesh(brush_mesh_file.c_str(), 2);
 
   double third_dim_stretch = 0;
   if(db_.contains("third_dim_stretch"))
@@ -159,7 +164,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
 
   // set up Brushs ParMooN interface
   interface_ = new Brush::InterfacePM(
-      "brush_mesh.mesh", third_dim_stretch,
+		  brush_mesh_file, third_dim_stretch,
       db_["sweep_file"], " ",
       db_["therm_file"], db_["chem_file"],
       db_["coagulation_parameter"],
@@ -283,9 +288,10 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   interface_->write_headers(moment_stats_file_, outflow_particles_file_, inflow_particles_file_);
 
   //CB DEBUG
-  remove("mass_balance.csv"); //file from old run, clean away
+  std::string mass_bal_file = out_dir + "mass_balance.csv";
+  remove(mass_bal_file.c_str()); //file from old run, clean away
   std::ofstream myfile;
-  myfile.open ("mass_balance.csv",std::ios_base::app);
+  myfile.open (mass_bal_file.c_str(),std::ios_base::app);
   myfile << "t" << ",";
   myfile << "cell #" << ",";
   myfile << "z" << ",";
@@ -440,7 +446,11 @@ void BrushWrapper::reset_fluid_phase(
   interface_->update_stats();
   interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
   std::ofstream myfile;
-  myfile.open ("mass_balance.csv",std::ios_base::app);
+  std::string out_dir(db_["output_vtk_directory"].value_as_string());
+  std::size_t pos = out_dir.find("VTK");// Lil hack - the directory above 'VTK',
+  out_dir = out_dir.substr(0,pos); 		// ...should be the general output directory.
+  std::string mass_bal_file = out_dir + "mass_balance.csv";
+  myfile.open (mass_bal_file.c_str(),std::ios_base::app);
 
   for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
   {
