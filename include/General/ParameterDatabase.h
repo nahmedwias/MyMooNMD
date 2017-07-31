@@ -33,7 +33,7 @@ class ParameterDatabase
     
     /// @brief construct a database filled with parameters of general interest
     ///
-    /// These parameters include "outfile", "boundary_file", "geo_file", 
+    /// These parameters include "outfile", "boundary_file", "mesh_file",
     /// "problem_type", "base_name", ...
     static ParameterDatabase parmoon_default_database();
     
