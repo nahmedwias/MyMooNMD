@@ -556,9 +556,12 @@ void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
     double K = coeff[6];                    // permeability
     double alpha = coeff[7];                // equal_order_stab_weight
     double t = fabs(sqrt((nu_eff/nu) * K));
-    double PSPGStab = + alpha * (K/nu) * (hK*hK)/(c0+(hK*hK)); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
-    
-    
+    double PSPGStab =  alpha * (K/nu) * (hK*hK)/(c0+(hK*hK)); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
+    //double PSPGStab = alpha * (hK*hK)/(c0+(hK*hK)); // Without Sigma^{-1} as it is in Hannukainen and Sogn   
+    //double PSPGStab =  alpha  * (hK*hK)/(c0); // stabilization acccording to Franca and Hughes (basically for stokes) but with t
+    //double PSPGStab =  alpha  * (hK*hK)/(nu_eff); // stabilization acccording to Franca and Hughes (basically for stokes) with mueff
+
+
     double val;
     for(int i=0;i<N_U;i++)
     {
@@ -625,11 +628,11 @@ void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
             ansatz10 = Orig0[j];
             ansatz01 = Orig1[j];
             
-            val  = test00 * ansatz10;                                          // -(q,div u)=-q*u_x
+            val  = test00 * ansatz10;                                          // (q,div u) = q*u_x
             val += PSPGStab * nu/K * (test10 * ansatz00);                     // stabilization: (u,grad q)
             MatrixB1[i][j] += Mult * val;
             
-            val  = test00 * ansatz01;                                          // -(q,div u)=-q*u_y
+            val  = test00 * ansatz01;                                          // (q,div u) = q*u_y
             val += PSPGStab * nu/K * (test01 * ansatz00);                     // stabilization: (sigma u,grad q)
             MatrixB2[i][j] += Mult * val;
         }
@@ -1138,3 +1141,85 @@ void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
     //        }
     //    }
     //}
+
+// ======================================================================
+// Type 3, Grad-Div-Stabilization
+// ======================================================================
+void BrinkmanGradDivStab(double Mult, double *coeff,
+                         double *param, double hK,
+                         double **OrigValues, int *N_BaseFuncts,
+                         double ***LocMatrices, double **LocRhs)
+{
+    double ansatz10, ansatz01;    // ansatz functions
+    double test10, test01;          // test functions
+    
+    double ** MatrixA11 = LocMatrices[0];
+    double ** MatrixA12 = LocMatrices[1];
+    double ** MatrixA21 = LocMatrices[2];
+    double ** MatrixA22 = LocMatrices[3];
+    //double ** MatrixC = LocMatrices[4];
+    //double ** MatrixB1 = LocMatrices[5];
+    //double ** MatrixB2 = LocMatrices[6];
+    //double ** MatrixB1T = LocMatrices[7];
+    //double ** MatrixB2T = LocMatrices[8];
+    
+    double * Rhs_u1 = LocRhs[0];            // f_u1
+    double * Rhs_u2 = LocRhs[1];            // f_u2
+    // double * Rhs_p = LocRhs[2];          // g_q
+    
+    int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space
+    //int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
+    
+   
+    // values of fe functions at quadrature points: Origvalues = f(uk,vk) (Gauß-quadrature: \int f(u,v) = sum wk * f(uk,vk) at Gauß points)
+    // Mult is the quadrature weight (wk)
+    double *Orig0 = OrigValues[0];          // u_x
+    double *Orig1 = OrigValues[1];          // u_y
+    //double *Orig2 = OrigValues[2];          // u
+    //double *Orig3 = OrigValues[3];          // p
+    
+    // values defined in the example
+    // double c0 = coeff[0];                   // t^2
+    double c1 = coeff[1];                   // f1
+    double c2 = coeff[2];                   // f2
+    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    double nu = coeff[4];                   // viscosity
+    double nu_eff = coeff[5];               // effective viscosity
+    double K = coeff[6];                    // permeability
+    double L0 = 1.;
+    //double grad_div_stab_weight = coeff[8]; // without considering the units
+    double grad_div_stab_weight = coeff[8] * (nu/K) * L0 * L0; // units are fine
+    //double grad_div_stab_weight = coeff[8] * nu_eff;  // units are fine
+    double val;
+
+    for(int i = 0; i < N_U; i++)
+      {
+        test10 = Orig0[i];
+        test01 = Orig1[i];
+       
+        Rhs_u1[i] += Mult * grad_div_stab_weight * c3 * test10; //(g,div v) = g (dv_1/dx_1 + ...)
+        Rhs_u2[i] += Mult * grad_div_stab_weight * c3 * test01; //(g,div v) = g(... + dv_2/dx_2)
+        
+        for(int j = 0; j < N_U; j++)
+        {
+            double ansatz10 = Orig0[j]; // ansatz functions
+            double ansatz01 = Orig1[j];
+           
+            val = test10 * ansatz10;        // (div u,div v) = (dv_1/dx_1 * du_1/dx_1 + ... + ...)
+            MatrixA11[i][j] += Mult * grad_div_stab_weight * val;
+           
+            val = ansatz01 * test10;                                // ... = du_2/dx_2 * dv_1/dx_1
+            MatrixA12[i][j] += Mult * grad_div_stab_weight * val;
+
+            val = test01 * ansatz01;        // (div u,div v) = (du_2/dx_2 * dv_2/dx_2 + ... + ...)
+            MatrixA22[i][j] += Mult * grad_div_stab_weight * val;
+            
+            val = ansatz10 * test01;                                // ... = du_1/dx_1 * dv_2/dx_2
+            MatrixA21[i][j] += Mult * grad_div_stab_weight * val;
+         }// endfor j
+     }// endfor i
+}
+
+
+
+

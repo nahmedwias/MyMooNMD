@@ -108,7 +108,7 @@ void Assembler4::init(BlockFEMatrix &M,
     
     this->n_rhs_blocks = ferhs.size();
     rhs_blocks.resize(n_rhs_blocks);
-    for (size_t k=0; k<n_rhs_blocks;k++)
+    for (size_t k = 0; k < n_rhs_blocks; k++)
     {
       rhs_blocks[k] = rhs.block(k);
     }
@@ -131,7 +131,7 @@ void Assembler4::init(BlockFEMatrix &M,
         this->hangingEntries[i+this->n_square_matrices].resize(j);
     }
     this->hangingRhs.resize(rhs_blocks.size());
-    for(int i=0;i<this->n_rhs_blocks;i++)
+    for(size_t i = 0; i < this->n_rhs_blocks; i++)
     {
         int j = ferhs[i]->GetN_Hanging();
         this->hangingRhs[i].resize(j);
@@ -147,7 +147,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
                             std::vector<const TFESpace2D*>& fespaces,
                             std::vector<const TFESpace2D*>& ferhs,
                             const Example2D& example,
-			    std::vector< LocalAssembling2D* > la_list,
+			    std::vector< std::shared_ptr< LocalAssembling2D> > la_list,
                             int AssemblePhaseID)
 {
 #ifdef __3D__
@@ -165,7 +165,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
     {
         LocRhs = new double* [n_rhs_blocks];
         righthand = new double [n_rhs_blocks* maximum_number_base_function];
-        for(int i=0;i<n_rhs_blocks;i++)
+        for(size_t i = 0; i < n_rhs_blocks; i++)
             LocRhs[i] = righthand+i* maximum_number_base_function;
     }                                               // endif n_rhs_blocks
     
@@ -204,22 +204,24 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
         if ((AssemblePhaseID >= 0) &&
             (AssemblePhaseID != cell->GetPhase_ID()) )
             continue;
-	//assemble the selected local form on the i-th cell
+         for(size_t num_localAss = 0; num_localAss < la_list.size(); num_localAss++ )
+         { 
+         //assemble the selected local form on the i-th cell
         this->assemble_local_system(fespaces,
-                                    i,LocMatrices, LocRhs,la_list[0]);
-	// add local/cellwise matrices to global matrices
+                                    i,LocMatrices, LocRhs,la_list[num_localAss]);
+  
+   // add local/cellwise matrices to global matrices
 	//(ansatz == test: Aii, C; ansatz != test: A12,A12,B1,...)
-
 	this->add_local_to_global_matrix(i, LocMatrices, Matrices);
 	
-	
-        // add local/cellwise right-hand sides to global right-hand sides
+     // add local/cellwise right-hand sides to global right-hand sides
 	this->add_local_to_global_rhs(i,ferhs,LocRhs,example);
 	
 
-	// boundary condition part
+   // boundary condition part
 	this->impose_boundary_conditions(i,ferhs,example);
 	
+    }
     }
     
     // --------------------------------------------------------------------
@@ -254,7 +256,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
 //================================================================================
 void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces,
                                        int i,double ***LocMatrices,double **LocRhs,
-				        LocalAssembling2D* la)
+				        std::shared_ptr<LocalAssembling2D> la)
 {
     BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
     int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
@@ -973,7 +975,7 @@ void Assembler4::handle_hanging_nodes(std::vector<const TFESpace2D*>& ferhs)
         }                                             // endfor i
     }                                               // endfor j
     
-    for(int j=0;j<n_rhs_blocks;j++)
+    for(size_t j = 0; j < n_rhs_blocks; j++)
     {
         const TFESpace2D *fespace = ferhs[j];
         THangingNode **HangingNodes = fespace->GetHangingNodes();

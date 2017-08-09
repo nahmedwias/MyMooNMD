@@ -216,10 +216,10 @@ bool TBaseCell::IsBoundaryCell( int BoundComp_id ) const
         else if(!(joint->InnerJoint()) && BoundComp_id != -4711)
             {
 #ifdef __2D__
-                const TBoundEdge *boundedge = (const TBoundEdge *)joint;
+               const TBoundEdge *boundedge = (const TBoundEdge *)joint;
                 TBoundComp *BoundComp = boundedge->GetBoundComp();
 #elif __3D__
-                const TBoundFace *boundface = (const TBoundFace *)joint;
+               const TBoundFace *boundface = (const TBoundFace *)joint;
                 TBoundComp *BoundComp = boundface->GetBoundComp();
 #endif //__3D__
                 if (BoundComp->GetID() == BoundComp_id)
@@ -230,7 +230,7 @@ bool TBaseCell::IsBoundaryCell( int BoundComp_id ) const
         if(this->GetN_Joints()-1  == num_inner_joints )
             return false;
     }
-    
+return false;   
 }
 //LB ====================================================
 

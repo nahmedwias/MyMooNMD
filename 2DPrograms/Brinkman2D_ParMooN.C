@@ -100,12 +100,12 @@ int main(int argc, char* argv[])
     //      Output::print("equal_order_stab_weight_PkPk: ",TDatabase::ParamDB->equal_order_stab_weight_PkPk);
     //------------------------------------
 //-----------WITH REFINEMENT
-  for(int i=0; i< n_ref; i++)
+  for(size_t i=0; i < n_ref; i++)
   {
       Domain.RegRefineAll();
-  } //end for(int i=0; i< n_ref; i++), Compute on highest level only
-//      Output::print("========================================================================================================");
-//      Output::print("Level: ", i+1);
+//  } //end for(int i=0; i< n_ref; i++), Compute on highest level only
+      Output::print("========================================================================================================");
+      Output::print("Level: ", i+1);
   
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 
       
       
-  //} //end for(int i=0; i< n_ref; i++), Compute on all levels
+  } //end for(int i=0; i< n_ref; i++), Compute on all levels
         
     
   Output::close_file();

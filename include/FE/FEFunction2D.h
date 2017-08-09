@@ -17,6 +17,8 @@
 
 #include <stdlib.h>
 #include <vector>
+#include <functional>
+
 
 class TFEFunction2D;
 class TAuxParam2D;

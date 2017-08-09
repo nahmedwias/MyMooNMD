@@ -309,7 +309,12 @@ int TDomain::ReadParam(char *ParamFile)
 //          N_Param++;
 //      }
       
-      
+      if (!strcmp(line, "grad_div_stab_weight:"))
+      {
+          dat >> TDatabase::ParamDB->grad_div_stab_weight;
+          N_Param++;
+      }
+
     if (!strcmp(line, "USE_ISOPARAMETRIC:"))
     {
       dat >> TDatabase::ParamDB->USE_ISOPARAMETRIC;

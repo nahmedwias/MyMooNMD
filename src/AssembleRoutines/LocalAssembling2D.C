@@ -87,6 +87,10 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
             
         case Brinkman2D_Galerkin1ResidualStabP2:
             return std::string("Brinkman2D_Galerkin1ResidualStabP2");
+        
+        case Brinkman2D_GradDivStabilization:
+            return std::string("Brinkman2D_GradDivStabilization");
+
             ///////////////////////////////////////////////////////////////////////////
             // TNSE2D: nonstationary Navier-Stokes
         case LocalAssembling2D_type::TNSE2D:
@@ -337,7 +341,26 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->AssembleParam = BrinkmanType1GalerkinResidualStabP2;
             this->Manipulate = NULL;
             break;
-            
+
+        case LocalAssembling2D_type::Brinkman2D_GradDivStabilization:
+            this->N_Terms = 2;                                                  // = #(Derivatives)
+            this->Derivatives = { D10, D01 };                                   // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+            this->Needs2ndDerivatives = new bool[2];                            // usually 2nd derivatives are not needed
+            this->Needs2ndDerivatives[0] = false;
+            this->Needs2ndDerivatives[1] = false;
+            this->FESpaceNumber = { 0, 0 };                                     // 0: velocity space, 1: pressure space
+            this->N_Matrices = 9;                                               // here some stabilization is allowed in the matrix C
+            // in the lower right corner
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;                                                    // f1, f2, g
+            this->RhsSpace = { 0, 0, 1 };                                       // corresp. to velocity testspace = 0 / pressure = 1
+            this->AssembleParam = BrinkmanGradDivStab;
+            this->Manipulate = NULL;
+            break;
+        
+
+
             ///////////////////////////////////////////////////////////////////////////
             // NSE2D: stationary Navier-Stokes problems problem
         case NSE2D_All:
@@ -669,15 +692,15 @@ void LocalAssembling2D::get_local_forms(int N_Points,
     Parameters[i] = new double[this->parameter_functions_values[i].size()];
   }
 
-  
-  // allocate the memory for matrices
-  for(int i=0; i<N_Matrices; ++i)
+    // allocate the memory for matrices
+  for(int i = 0; i < N_Matrices; i++)
   {
-    // CurrenMatrix: a pointer to i-th local matrix
+   // CurrenMatrix: a pointer to i-th local matrix
     double **CurrentMatrix = LocMatrix[i];
-    int N_Rows = N_BaseFuncts[RowSpace[i]];
-    int N_Columns = N_BaseFuncts[ColumnSpace[i]];
-    for(int j=0;j<N_Rows;j++)
+     
+      int N_Rows = N_BaseFuncts[RowSpace[i]];
+   int N_Columns = N_BaseFuncts[ColumnSpace[i]];
+   for(int j=0;j<N_Rows;j++)
     {
       // allocate the memory of the Row pointer
       double *MatrixRow = CurrentMatrix[j];
@@ -686,7 +709,7 @@ void LocalAssembling2D::get_local_forms(int N_Points,
   } // endfor i
 
   // allocate mmemory for rhs
-  for(int i=0; i<N_Rhs; ++i)
+  for(int i=0; i<N_Rhs; i++)
   {
     int N_Rows = N_BaseFuncts[RhsSpace[i]];
     memset(LocRhs[i], 0, SizeOfDouble*N_Rows);

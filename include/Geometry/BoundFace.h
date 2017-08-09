@@ -46,7 +46,7 @@ class TBoundFace : public TJoint
     { return false; }
 
     /** return boundary component */
-    TBoundComp3D *GetBoundComp()
+    TBoundComp3D *GetBoundComp() const
     { return BoundComp; }
     
     /// @brief return the coordinates of a point from its parametrization
