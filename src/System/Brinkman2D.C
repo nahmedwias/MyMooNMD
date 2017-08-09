@@ -7,6 +7,7 @@
 #include <BoundaryAssembling2D.h>
 #include <Database.h>
 #include <ParameterDatabase.h>
+#include <memory>
 
 ParameterDatabase get_default_Brinkman2D_parameters()
 {
@@ -25,6 +26,13 @@ ParameterDatabase get_default_Brinkman2D_parameters()
            "Usually this is used in the main program.",
            {true,false});
     
+     db.add("GradDiv_stab", false,
+           "Use an assembling routine corresponding to a residual-based "
+           "equal-order stabilization for the Brinkman problem."
+           "This only works in two space "
+           "dimensions and is meaningfull for the finite elemnt space P1/P1 only."
+           "Usually this is used in the main program.",
+           {true,false});
     
 //    db.add("s1", 0.0,
 //           "Use an assembling routine corresponding to a residual-based "
@@ -193,6 +201,15 @@ void Brinkman2D::set_parameters()
 /** ************************************************************************ */
 void Brinkman2D::assemble()
 {
+
+//Valgrind test start
+//std::vector<int> testvector(5,1);
+//Output::print("testvector.size()", testvector.size());
+//Output::print("testvector[4]", testvector[4]);
+//Output::print("testvector[7]", testvector[7]);
+//Output::print("testvector.at(4)", testvector.at(4));
+//Output::print("testvector.at(7)", testvector.at(7));
+//Valgrind test end
     for(System_per_grid& s : this->systems)
     {
         s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
@@ -227,24 +244,22 @@ void Brinkman2D::assemble()
 //        {type=Brinkman2D_Galerkin1ResidualStabP2;
 //        Output::print<>("P2P2 Stabilization");}
 //        else
-        if (db["PkPk_stab"].is(true))
+       if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE == 1)
         {
-            type=Brinkman2D_Galerkin1ResidualStabP1;
-            Output::print<>("PkPk Stabilization");
+            type = Brinkman2D_Galerkin1ResidualStabP1;
+            Output::print<>("P1P1-GLS-Stabilization was applied");
         }
-        else
+        else if(db["PkPk_stab"].is(false))
         {
-            type=Brinkman2D_Galerkin1;
+            type = Brinkman2D_Galerkin1;
         }
-        
 
-        LocalAssembling2D la(type, fe_functions,
-                             this->example.get_coeffs());
+        std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, fe_functions,
+                             this->example.get_coeffs()));
         
-        std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
-        
-        // Note: We use only Type 14 for Brinkman (for now)
         //--------------------------------------------------------------------------------------------------
+        //std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
+        // Note: We use only Type 14 for Brinkman (for now)
         // call the assemble method with the information that has been patched together
         // //old Assemble2D.C function
 //        size_t n_sq_mat = 5;
@@ -274,12 +289,19 @@ void Brinkman2D::assemble()
         //--------------------------------------------------------------------------------------------------
 
 	// use a list of LocalAssembling2D
-	std::vector< LocalAssembling2D* > la_list;
-	la_list.push_back(&la);
-        
+	std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
+	la_list.push_back(la);
+   if (db["GradDiv_stab"].is(true))
+   {
+      Output::print("Grad-Div Stabilization was applied");
+      type = Brinkman2D_GradDivStabilization;
+      std::shared_ptr <LocalAssembling2D> la_graddiv(new LocalAssembling2D(type, fe_functions,
+                        this->example.get_coeffs()));
+      la_list.push_back(la_graddiv);
+   }
 
-	
-	// Brinkmann-specific choices
+
+   	// Brinkmann-specific choices
         std::vector<const TFESpace2D*> spaces_for_matrix;
         spaces_for_matrix.resize(2);
         spaces_for_matrix[0] = v_space;
@@ -383,10 +405,10 @@ void Brinkman2D::assemble()
                                  " with Nitsche parameter: ", TDatabase::ParamDB->nitsche_penalty[k], " .");
             }
             
-            double K = TDatabase::ParamDB->PERMEABILITY;
-            double nu = TDatabase::ParamDB->VISCOSITY;
+            //double K = TDatabase::ParamDB->PERMEABILITY;
+            //double nu = TDatabase::ParamDB->VISCOSITY;
             double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-            double t = fabs(sqrt((nu_eff/nu)*K));
+            //double t = fabs(sqrt((nu_eff/nu)*K));
             
             //LB DEbug start
             
@@ -546,13 +568,14 @@ void Brinkman2D::computeNormsOfResiduals()
 void Brinkman2D::solve()
 {
     System_per_grid& s = this->systems.front();
-    
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.matrix,
-			       DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs, s.solution);
-    
-    //Output::print("coefficients of solution for basis", s.solution);
+   this->solver.solve(s.matrix, s.rhs, s.solution);
+
+   // /// @todo consider storing an object of DirectSolver in this class
+   //DirectSolver direct_solver(s.matrix,
+	//		       DirectSolver::DirectSolverTypes::umfpack);
+   // direct_solver.solve(s.rhs, s.solution);
+   // 
+   // //Output::print("coefficients of solution for basis", s.solution);
     
     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
       s.p.project_into_L20();

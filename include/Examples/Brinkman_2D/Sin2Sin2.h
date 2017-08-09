@@ -277,19 +277,19 @@ void LinCoeffs(int n_points, double *X, double *Y,
     
     for(int i = 0; i < n_points; i++)
     {
-        coeffs[i][0] = (TDatabase::ParamDB->EFFECTIVE_VISCOSITY/ TDatabase::ParamDB->VISCOSITY)*TDatabase::ParamDB->PERMEABILITY;//t^2   //1./TDatabase::ParamDB->RE_NR;
-        coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
-        coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-        coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
-        
         ExactU1(X[i], Y[i], val_u1);
         ExactU2(X[i], Y[i], val_u2);
         ExactP(X[i], Y[i], val_p);
         
+        coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
+        coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+        coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+         
+        coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
         coeffs[i][1] = -coeffs[i][5]*val_u1[3] + val_p[1] + (coeffs[i][4]/coeffs[i][6])*val_u1[0];//-coeffs[i][5]*val1[3] + val3[1] + (coeffs[i][4]/coeffs[i][6])*val1[0];  //0;// f1
         coeffs[i][2] = -coeffs[i][5]*val_u2[3] + val_p[2] + (coeffs[i][4]/coeffs[i][6])*val_u2[0];//-coeffs[i][5]*val2[3] + val3[2] + (coeffs[i][4]/coeffs[i][6])*val2[0];//0;//  // f2
         coeffs[i][3] = 0;// val_u1[1] + val_u2[2];  //                        // g (divergence)
         coeffs[i][7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
-    }
-    
+        coeffs[i][8] = TDatabase::ParamDB->grad_div_stab_weight;
+       }
 }

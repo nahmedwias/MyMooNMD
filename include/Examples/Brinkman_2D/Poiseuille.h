@@ -154,7 +154,8 @@ void LinCoeffs(int n_points, double *x, double *y,
         coeff[2] = 0;                                                           // f2 (rhs of Brinkman problem for u2)
         coeff[3] = 0;                                                           // g (divergence term=u1_x+u2_y)
         coeff[7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
-    }
+        coeff[8] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+   }
 }
 
 
