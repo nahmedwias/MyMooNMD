@@ -111,6 +111,25 @@ public:
                     std::vector<TBoundEdge*> &edge,
                     double mult,
                     bool rescale_by_h);
+
+    /** @brief integral |u.n|_(u, v)_{[boundary_component_id]}
+     @param[in] boundary_component_id: the boundary component to integrate on
+     @param[in] mult: given multiplicative factor
+     @param[in] rescale_by_h: true: divide by length of the edges
+     false: do not divide by length of the edges
+     */
+    void matrix_u_v_backflow_stab(BlockFEMatrix &M,
+                    const TFESpace2D *U_Space,
+                    int boundary_component_id,
+                    double mult,
+                    bool rescale_by_h
+                    );
+    
+    void matrix_u_v_backflow_stab(BlockFEMatrix &M,
+                    const TFESpace2D *U_Space,
+                    std::vector<TBoundEdge*> &edge,
+                    double mult,
+                    bool rescale_by_h);
     
     /** @brief assemble integral (p, v \cdot n)_{[boundary_component_id]} into the matrix
      @param[in] boundary_component_id: the boundary component to integrate on

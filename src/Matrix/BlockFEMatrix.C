@@ -1632,7 +1632,7 @@ void BlockFEMatrix::add_blockfe_matrix(const BlockFEMatrix& Matrix, double facto
         if(Matrix.cell_grid_[br][bc].color_ == c)
         {
           matrix_to_add = dynamic_cast<FEMatrix*>(Matrix.cell_grid_[br][bc].block_.get());          
-          blocks_to_add_to.push_back({br,bc});
+          blocks_to_add_to.push_back({static_cast<unsigned long>(br),static_cast<unsigned long>(bc)});
           is_transposed.push_back(Matrix.cell_grid_[br][bc].is_transposed_);
         }
       }

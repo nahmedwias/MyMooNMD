@@ -3,7 +3,7 @@
 #include <Assemble2D.h>
 #include <LinAlg.h>
 #include <DirectSolver.h>
-
+#include <BoundaryAssembling2D.h>
 #include <GridTransfer.h>
 #include <Domain.h>
 
@@ -402,9 +402,11 @@ void Time_NSE2D::assemble_system()
     // note: declaring the auxiliary cell_positions is needed by the compiler
     // to sort out the overriding of the function scale_blocks_actives(...,...)
     s.matrix.scale_blocks_actives(factor, cell_positions);
-    if(TDatabase::ParamDB->NSTYPE == 14)
-      s.matrix.scale_blocks_actives(factor, {{2,2}});
-
+    if(TDatabase::ParamDB->NSTYPE == 14) {
+      const std::vector<std::vector<size_t>>
+	cell_positions_2_2 = {{2,2}};
+      s.matrix.scale_blocks_actives(factor, cell_positions_2_2);
+    }
     const FEMatrix& mass = *s.Mass_Matrix.get_blocks().at(0).get();
     s.matrix.add_matrix_actives(mass, 1.0, {{0,0}, {1,1}}, {false, false});
   }
@@ -552,7 +554,9 @@ void Time_NSE2D::deScaleMatrices()
     
     if(TDatabase::ParamDB->NSTYPE == 14)
     {
-      s.matrix.scale_blocks(1./factor, {{2,2}});
+      const std::vector<std::vector<size_t>>
+	cell_positions_2_2 = {{2,2}};
+      s.matrix.scale_blocks(1./factor, cell_positions_2_2);
     }
   }
 }
@@ -681,10 +685,10 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
   set_matrices_rhs(s, type, sqMatrices, rectMatrices, rhs_array);
   // boundary conditions and boundary values array
   // boundary conditions:
-  std::vector<const BoundCondFunct2D*> bc(3);
-  bc[0]=s.velocity_space.GetBoundCondition();
-  bc[1]=bc[0];
-  bc[2]=s.pressure_space.GetBoundCondition();
+  BoundCondFunct2D* bc[3] = {
+    s.velocity_space.GetBoundCondition(),
+    s.velocity_space.GetBoundCondition(),
+    s.pressure_space.GetBoundCondition()};
   
   // boundary values:
   std::vector<BoundValueFunct2D*>bv(3);
@@ -701,7 +705,24 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
                sqMatrices.size(), sqMatrices.data(), 
                rectMatrices.size(), rectMatrices.data(), 
                rhs_array.size(), rhs_array.data(), spaces_rhs.data(), 
-               bc.data(), bv.data(), la);
+               bc, bv.data(), la);
+
+  // add boundary integrals to stabilize backflow at open boundaries
+  ///@todo this should be controlled by input parameters
+  bool add_backflow_stab = false;
+  if (add_backflow_stab) {
+    BoundaryAssembling2D boundary_integral;
+    int neumann_boundary_component = 17;
+    double beta_backflow_stab = 0.4;
+    bool rescale_by_edge_length = false;
+    const TFESpace2D * v_space = &s.velocity_space;
+    boundary_integral.matrix_u_v_backflow_stab(s.matrix,
+					       v_space,
+					       neumann_boundary_component,   
+					       beta_backflow_stab,    
+					       rescale_by_edge_length);     
+  }
+  
 }
 
 /**************************************************************************** */
@@ -1023,26 +1044,40 @@ void Time_NSE2D::perform_bdf1_first()
     this->assemble_system();
   }
   output(1);
+
+  // declare the cell_position vectors
+  // Mac compiler cannot distinguish between the
+  // two variants of BlockFEMatrix::scale_blocks
+  const std::vector<std::vector<size_t>>
+    cell_positions_0_2_1_2 = {{0,2},{1,2}};
+  const std::vector<std::vector<size_t>>
+    cell_positions_2_0_2_1 = {{2,0},{2,1}};
+  
   // descale the B and BT blocks:: these needs 
   // to be scaled with the correct scales for 
   // the BDF2 method
+  
+  
   for(System_per_grid& s : this->systems)
   {
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    s.matrix.scale_blocks(1./tau, {{0,2}, {1,2}});
+     
+     
+     s.matrix.scale_blocks(1./tau, cell_positions_0_2_1_2);
     if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
     {
-      s.matrix.scale_blocks(1./tau, {{2,0}, {2,1}});
+      
+      s.matrix.scale_blocks(1./tau, cell_positions_2_0_2_1);
     }
   }
   // scale the B and BT blocks with the factor=2./3.*tau
   for(System_per_grid& s : this->systems)
   {
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    s.matrix.scale_blocks(2./3. * tau, {{0,2}, {1,2}});
+    s.matrix.scale_blocks(2./3. * tau, cell_positions_0_2_1_2);
     if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
     {
-      s.matrix.scale_blocks(2./3. * tau, {{2,0}, {2,1}});
+      s.matrix.scale_blocks(2./3. * tau, cell_positions_2_0_2_1);
     }
   }
   // set the time disc back to BDF2 for the computation of the next
@@ -1089,6 +1124,14 @@ void Time_NSE2D::bdf_assemble_rhs()
 /**************************************************************************** */
 void Time_NSE2D::assemble_rhs_supg()
 {
+  // declare the cell_position vectors
+  // Mac compiler cannot distinguish between the
+  // two variants of BlockFEMatrix::scale_blocks
+  const std::vector<std::vector<size_t>>
+       cell_positions_0_2_1_2 = {{0,2},{1,2}};
+  const std::vector<std::vector<size_t>>
+    cell_positions_2_0_2_1 = {{2,0},{2,1}};
+  
   // cout<<TDatabase::TimeDB->THETA1<<endl;
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
   if((TDatabase::TimeDB->TIME_DISC==1) || (current_step_ == 1))
@@ -1102,9 +1145,9 @@ void Time_NSE2D::assemble_rhs_supg()
     // reassembled during nonlinear iteration
     for(System_per_grid& s : this->systems)
     {
-      s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, {{0,2}, {1,2}});
+      s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, cell_positions_0_2_1_2);
       if(TDatabase::ParamDB->NSTYPE==14)
-        s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, {{2,0}, {2,1}});
+        s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, cell_positions_2_0_2_1);
     }      
     s.rhs.copy_nonactive(s.solution);
   }
@@ -1113,9 +1156,9 @@ void Time_NSE2D::assemble_rhs_supg()
     bdf_assemble_rhs();
     for(System_per_grid& s : this->systems)
     {
-      s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, {{0,2}, {1,2}});
+      s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, cell_positions_0_2_1_2);
       if(TDatabase::ParamDB->NSTYPE==14)
-        s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, {{2,0}, {2,1}});
+        s.matrix.scale_blocks(TDatabase::TimeDB->THETA1*tau, cell_positions_2_0_2_1);
     }
   }
 }
@@ -1161,10 +1204,16 @@ void Time_NSE2D::modify_slip_bc(bool BT_Mass)
       mass_blocks = s.MatrixK.get_blocks_uniquely();
     }
     
-    std::vector<const BoundCondFunct2D*> bc(3);
+    /*std::vector<const BoundCondFunct2D*> bc(3);
     bc[0]=s.velocity_space.GetBoundCondition();
     bc[1]=bc[0];
     bc[2]=s.pressure_space.GetBoundCondition();
+    */
+    BoundCondFunct2D* bc[3] = {
+    s.velocity_space.GetBoundCondition(),
+    s.velocity_space.GetBoundCondition(),
+    s.pressure_space.GetBoundCondition()};
+    
     // boundary values:
     std::vector<BoundValueFunct2D*>bv(3);
     bv[0]=example.get_bd(0);
@@ -1201,7 +1250,7 @@ void Time_NSE2D::modify_slip_bc(bool BT_Mass)
      Assemble2DSlipBC(spaces_mat.size(), spaces_mat.data(), 
                    sqMat.size(), sqMat.data(), reMat.size(), reMat.data(), 
                    rhs_array.size(), rhs_array.data(), rhs_space.data(), 
-                   bc.data(), bv.data(), s.u.GetComponent(0), s.u.GetComponent(1));
+                   bc, bv.data(), s.u.GetComponent(0), s.u.GetComponent(1));
   }
 
 }

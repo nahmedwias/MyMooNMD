@@ -206,9 +206,15 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
   if(current_step_==1 && scale_dscale.compare("scale")==0)
   {
     if(n_scale_block==5)
-      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}, {2,2}});
+    {
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
+      matrix.scale_blocks(factor, cells);
+    }
     else
-      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}});
+    {
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+      matrix.scale_blocks(factor, cells);
+    }
   }
   // in the case of bdf2, we need to descale the b-blocks because of the scaling
   // argument, then rescale in the next lines
@@ -216,28 +222,48 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
     && scale_dscale.compare("descale")==0)
   {
     if(n_scale_block==5)
-      matrix.scale_blocks(1./factor, {{0,2},{1,2},{2,0},{2,1}, {2,2}});
+    {
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
+      matrix.scale_blocks(1./factor, cells);
+    }
     else
-      matrix.scale_blocks(1./factor, {{0,2},{1,2},{2,0},{2,1}});
+    {
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+      matrix.scale_blocks(1./factor, cells);
+    }
   }
   // rescale the blocks with bdf bdf_coefficients
   if(db["time_discretization"].is("bdf_two") && current_step_ == 2 
     && scale_dscale.compare("scale")==0)
   {
     if(n_scale_block==5)
-      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}, {2,2}});
+    {
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}, {2,2}};
+      matrix.scale_blocks(factor, cells);
+    }
     else
-      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}});
+    {
+      const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+      matrix.scale_blocks(factor, cells);
+    }
   }
   // scaling of the blocks for the Residual Based VMS method
   if(b_bt_linear_nl.compare("solution_dependent") == 0)
   {
     if((db["time_discretization"].is("backward_euler") && current_step_ >= 2) ||
     (db["time_discretization"].is("bdf_two") && current_step_ >= 3) )
-    if(n_scale_block==5)
-      matrix.scale_blocks(factor, {{0,2},{1,2}, {2,2}});
-    else
-      matrix.scale_blocks(factor, {{0,2},{1,2},{2,0},{2,1}});
+    {
+      if(n_scale_block==5)
+	{
+	  const std::vector<std::vector<size_t>> cells = {{0,2},{1,2}, {2,2}};
+	  matrix.scale_blocks(factor, cells );
+	}
+      else
+	{
+	  const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+	  matrix.scale_blocks(factor, cells);
+	}
+    }
   }
 }
 
