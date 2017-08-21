@@ -14,6 +14,7 @@
  */
 
 #include <FEDatabase2D.h>
+#include <FEFunction2D.h>
 #include <TriaAffin.h>
 #include <QuadAffin.h>
 #include <BoundaryAssembling2D.h>
@@ -799,16 +800,15 @@ void BoundaryAssembling2D::get_original_values(FE2D FEId, int joint_id,
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
-                                      const TFESpace2D *U_Space,
-                                      int boundary_component_id,
-                                      double mult,
-                                      bool rescale_by_h
-                                      )
+						    const TFESpace2D *U_Space,
+						    std::vector< TFEFunction2D* >& u_conv,
+						    int boundary_component_id,
+						    double mult)
 {
     std::vector<TBoundEdge*> boundaryEdgeList;
     TCollection *coll= U_Space->GetCollection();
     coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
-    matrix_u_v(M,U_Space,boundaryEdgeList,mult,rescale_by_h);
+    matrix_u_v_backflow_stab(M,U_Space,u_conv,boundaryEdgeList,mult);
 }
 
 /**
@@ -818,10 +818,10 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
  * for A11, A12, A21, A22
  **/
 void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
-                                      const TFESpace2D *U_Space,
-                                      std::vector<TBoundEdge*> &boundaryEdgeList,
-                                      double mult,
-                                      bool rescale_by_h)
+						    const TFESpace2D *U_Space,
+						    std::vector< TFEFunction2D* >& u_conv,
+						    std::vector<TBoundEdge*> &boundaryEdgeList,
+						    double beta)
 {
     int *BeginIndex = U_Space->GetBeginIndex();
     int *GlobalNumbers = U_Space->GetGlobalNumbers();
@@ -849,8 +849,6 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
         std::vector<double> quadWeights,quadPoints;
         get_quadrature_formula_data(quadPoints,quadWeights);
         
-        //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
-        
         // compute values of all basis functions at all quadrature points
         std::vector< std::vector<double> > uorig,uxorig,uyorig;
         get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig);
@@ -864,30 +862,32 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
         boundedge->get_normal(nx, ny);
         
         // quadrature
-        for(unsigned int k=0;k<quadPoints.size();k++)
+        for(unsigned int k=0; k<quadPoints.size(); k++)
         {
             ///@attention in 1D the reference joint is [-1,1] => length = 2
             double reference_joint_length = 2;
-            
             // mapping from local(cell) DOF to global DOF
             int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
-            
-            // rescale local integral (Nitsche)
-            double scale_factor;
-            if (rescale_by_h)
-            {
-                scale_factor = (mult*quadWeights[k]*(joint_length/reference_joint_length)) /joint_length;
-            }
-            else
-            {
-                scale_factor = mult*quadWeights[k]*(joint_length/reference_joint_length);
-            }
-            
+            double scale_factor = quadWeights[k]*(joint_length/reference_joint_length);
+
+	    ///@todo add absneg_u_n = absneg(|uconv.n|) to each gauss_point
+	    double absneg_u_n = 0.;
+	    double x_middle = (x0 + x1)/2.;
+	    double y_middle = (y0 + y1)/2.;
+	    double *ux_values,*uy_values;
+	    u_conv[0]->FindGradient(x_middle,y_middle,ux_values);
+	    u_conv[1]->FindGradient(x_middle,y_middle,uy_values);
+	    if ( (ux_values[0]*nx + uy_values[0]*ny)<0 )
+	    {
+	      absneg_u_n = 1.;
+	    }
+	    scale_factor = beta/2.0*absneg_u_n*scale_factor;
+
+	    
             // loop on test functions
             for(unsigned int l1=0;l1< uorig[k].size();l1++)
             {
                 int test_DOF = DOF[l1];
-                
                 // if the DOF is Dirichlet, continue
                 if(test_DOF >= ActiveBound)
                     continue;
@@ -901,13 +901,10 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
                     int ansatz_DOF = DOF[l2];
                     double ux = uorig[k][l2];
                     double uy = ux; // x and y component have the same FE space
-                    
-                    // (see the note about blocks at the beginning of the function)
                     blocks[0]->add(test_DOF, ansatz_DOF, scale_factor*vx*ux ); // A11
-                    //blocks[1]->add(test_DOF, ansatz_DOF, scale_factor*(vx*nx)*uyy ); // A12
-                    //blocks[3]->add(test_DOF, ansatz_DOF, scale_factor*(vx*ny)*uxx ); // A21
                     blocks[4]->add(test_DOF, ansatz_DOF, scale_factor*vy*uy ); // A22
                 }
+		
             } //for(l=0;l<N_BaseFunct;l++)
         }
     } // endif
