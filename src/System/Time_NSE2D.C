@@ -714,13 +714,17 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
     BoundaryAssembling2D boundary_integral;
     int neumann_boundary_component = 17;
     double beta_backflow_stab = 0.4;
-    bool rescale_by_edge_length = false;
     const TFESpace2D * v_space = &s.velocity_space;
+    std::vector< TFEFunction2D* > u_conv;
+    u_conv.resize(2);
+    u_conv[0] = s.u.GetComponent(0);
+    u_conv[1] = s.u.GetComponent(1);
+    
     boundary_integral.matrix_u_v_backflow_stab(s.matrix,
 					       v_space,
+					       u_conv,
 					       neumann_boundary_component,   
-					       beta_backflow_stab,    
-					       rescale_by_edge_length);     
+					       beta_backflow_stab);     
   }
   
 }

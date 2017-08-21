@@ -673,7 +673,7 @@ void Time_NSE2D_BDF::call_assembling_routine(Time_NSE2D_BDF::System_per_grid& s,
   // boundary conditions:
   /*std::vector<const BoundCondFunct2D*> bc(3);
   bc[0]=s.velocity_space.GetBoundCondition();
-  bc[1]=bc[0];
+  bc[1]=bc[0]; 
   bc[2]=s.pressure_space.GetBoundCondition();
   */
   BoundCondFunct2D* bc[3] = {
