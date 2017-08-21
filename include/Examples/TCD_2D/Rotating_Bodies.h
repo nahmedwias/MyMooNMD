@@ -372,9 +372,9 @@ double **parameters, double **coeffs)
 //} // UltraLocalProjection_TCD
 //
 //void ComputeDataForEvaluationOfSolution(TFESpace2D *ConcentrationSpaces, TFEFunction2D *SolArray,
-//					int N_Unknowns, double *sol, double *lump_mass, double *errors)
+//					int N_Unknowns, double *sol, double *lump_mass, double *errors, bool is_localprojection)
 //{
-//    if ((TDatabase::ParamDB->DISCTYPE != LOCAL_PROJECTION)&&(TDatabase::ParamDB->INTERNAL_FACE_INTEGRALS!=2))
+//    if (!is_localprojection &&(TDatabase::ParamDB->INTERNAL_FACE_INTEGRALS!=2))
 //    {
 //      //ComputeDiscreteErrors(ConcentrationSpaces, SolArray,
 //      //		      sol, errors, lump_mass);
@@ -386,7 +386,7 @@ double **parameters, double **coeffs)
 //  }
 //  else
 //  {
-//      if (TDatabase::ParamDB->DISCTYPE == LOCAL_PROJECTION)
+//      if (is_localprojection)
 //      {
 //        UltraLocalError_TCD(SolArray, errors+5, lump_mass);
 //	OutPut(TDatabase::TimeDB->CURRENTTIME <<  " min: " << errors[7] << " max: " << errors[8]

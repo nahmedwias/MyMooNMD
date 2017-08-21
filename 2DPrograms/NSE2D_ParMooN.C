@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
   
   // possibly change parameters in the database, if they are not meaningful now
-  Database.CheckParameterConsistencyNSE();
+  check_parameters_consistency_NSE(parmoon_db);
   // write all Parameters to the OUTFILE (not to console) for later reference
   parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);

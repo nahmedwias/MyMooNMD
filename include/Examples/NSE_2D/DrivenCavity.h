@@ -3,6 +3,9 @@
 // u(x,y) = unknown
 // p(x,y) = unknown
 
+//WIll be manipulated by the example class.
+double DIMENSIONLESS_VISCOSITY = 10;
+
 void ExampleFile()
 {
   Output::print<1>("Example: DrivenCavity.h");
@@ -75,7 +78,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double *coeff;
 

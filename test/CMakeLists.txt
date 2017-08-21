@@ -121,7 +121,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   # read/write fe function
   add_executable(ParMooN_test_read_write_fe_function read_write_fe_function_test.c++)
   target_link_libraries(ParMooN_test_read_write_fe_function
-                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
                         ${_EXTERN_LIBRARIES})
   add_test(read_write_fe_function ParMooN_test_read_write_fe_function)
   list(APPEND parmoon_tests ParMooN_test_read_write_fe_function)
@@ -161,6 +161,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(nse2d ParMooN_test_nse2d)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
+  
+  #lsc / (bc-lsc!) test
+  add_executable(ParMooN_test_lsc lsc_test.c++)
+  target_link_libraries(ParMooN_test_lsc parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(lsc2d ParMooN_test_lsc)
+  list(APPEND parmoon_tests ParMooN_test_lsc)
    
   #tnse2d test (direct solver)
   add_executable(ParMooN_test_tnse2d tnse2d_test.c++)
@@ -199,6 +205,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(NAME tcd3d_seq_mg COMMAND ParMooN_test_tcd3d_solver_seq multigrid)
   # petsc
   add_test(NAME tcd3d_seq_petsc COMMAND ParMooN_test_tcd3d_solver_seq petsc)
+  
+  #tcd3d algebraic flux correction tests
+  set(_EXEC_NAME ParMooN_test_tcd3d_femfct_seq)
+  set(_FILE_NAME tcd3d_femfct_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  add_test(NAME tcd3d_femfct_seq COMMAND ParMooN_test_tcd3d_femfct_seq)
 
   #nse3d solver tests
   set(_EXEC_NAME ParMooN_test_nse3d_solver_seq)
@@ -275,37 +287,44 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   ####### Tests for parallel type: MPI #######
   ###################################################
   
+
+
+
   # 1st mumps solver test mpi (run with 2 processes)
   add_executable(ParMooN_test_mumps_1_mpi mumps_test_1.c++)
   target_link_libraries(ParMooN_test_mumps_1_mpi ${_EXTERN_LIBRARIES})
-  add_test(NAME mumps_1_mpi COMMAND mpirun -n 2 ParMooN_test_mumps_1_mpi )
+  add_test(NAME mumps_1_mpi COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_mumps_1_mpi )
   list(APPEND parmoon_tests ParMooN_test_mumps_1_mpi)
   
   # 2nd mumps solver test mpi (run with 4 processes)
   add_executable(ParMooN_test_mumps_2_mpi mumps_test_2.c++)
   target_link_libraries(ParMooN_test_mumps_2_mpi ${_EXTERN_LIBRARIES})
-  add_test(NAME mumps_2_mpi COMMAND mpirun -n 4 ParMooN_test_mumps_2_mpi )
+  add_test(NAME mumps_2_mpi COMMAND ${PETSC_MPIEXEC} -n 4 ParMooN_test_mumps_2_mpi )
   list(APPEND parmoon_tests ParMooN_test_mumps_2_mpi)
   
   # mumps wrapper test mpi (run with 2 processes)
   add_executable(ParMooN_test_mumps_wrapper mumps_wrapper_test.c++)
   target_link_libraries(ParMooN_test_mumps_wrapper parmoon_3d_MPI ${_EXTERN_LIBRARIES})
-  add_test(NAME mumps_wrapper COMMAND mpirun -n 2 ParMooN_test_mumps_wrapper )
+  add_test(NAME mumps_wrapper COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_mumps_wrapper )
   list(APPEND parmoon_tests ParMooN_test_mumps_wrapper)
+  
+  # domain partitioning read-in and write-out test
+  register_executable(ParMooN_test_domain_partitioning_read_write domain_partitioning_read_write_test.c++)
+  add_test(NAME partition_read_write COMMAND ${PETSC_MPIEXEC} -n 4 ParMooN_test_domain_partitioning_read_write)
   
   #cd3d solver tests
   set(_EXEC_NAME ParMooN_test_cd3d_solver_mpi)
   set(_FILE_NAME cd3d_solvers_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   # mumps
-  add_test(NAME cd3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi mumps)
+  add_test(NAME cd3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_cd3d_solver_mpi mumps)
   #jacobi
-  add_test(NAME cd3d_mpi_jacobi COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi jacobi)
+  add_test(NAME cd3d_mpi_jacobi COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_cd3d_solver_mpi jacobi)
   # using defualt petsc solver
-  add_test(NAME cd3d_mpi_petsc COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi 
+  add_test(NAME cd3d_mpi_petsc COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_cd3d_solver_mpi 
            petsc)
   # mg with iterative solver fgmres and smoother SOR
-  add_test(NAME cd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi 
+  add_test(NAME cd3d_mpi_mg COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_cd3d_solver_mpi 
            multigrid)
   
   #tcd3d solver tests 
@@ -313,29 +332,42 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   set(_FILE_NAME tcd3d_solvers_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   # mumps
-  add_test(NAME tcd3d_mpi_mumps COMMAND mpirun -n 3 
+  add_test(NAME tcd3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 3 
            ParMooN_test_tcd3d_solver_mpi mumps)
-  add_test(NAME tcd3d_mpi_jacobi COMMAND mpirun -n 3 
+  add_test(NAME tcd3d_mpi_jacobi COMMAND ${PETSC_MPIEXEC} -n 3 
            ParMooN_test_tcd3d_solver_mpi jacobi)
   # mg with iterative solver fgmres and smoother SOR
-  add_test(NAME tcd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_tcd3d_solver_mpi 
+  add_test(NAME tcd3d_mpi_mg COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_tcd3d_solver_mpi 
            multigrid)
+  
+  #tcd3d algebraic flux correction tests with MPI
+  set(_EXEC_NAME ParMooN_test_tcd3d_femfct_mpi)
+  set(_FILE_NAME tcd3d_femfct_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  # only tested with Mumps so far
+  add_test(NAME tcd3d_femfct_mpi COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_tcd3d_femfct_mpi)
   
   #nse3d solver tests
   set(_EXEC_NAME ParMooN_test_nse3d_solver_mpi)
   set(_FILE_NAME nse3d_solvers_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
-  add_test(NAME nse3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_nse3d_solver_mpi mumps)
+  add_test(NAME nse3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_nse3d_solver_mpi mumps)
   #multigrid with cell_vanka_jacobi smoother (works in SEQ and MPI), with iterative solver fgmres
-  add_test(NAME nse3d_mpi_cell_vanka_jac COMMAND mpirun -n 3 ParMooN_test_nse3d_solver_mpi cell_vanka_jacobi)
+  add_test(NAME nse3d_mpi_cell_vanka_jac COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_nse3d_solver_mpi cell_vanka_jacobi)
   
   #tnse3d tests
   set(_EXEC_NAME ParMooN_test_tnse3d_mpi)
   set(_FILE_NAME tnse3d_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
-  add_test(NAME tnse3d_mpi_mumps COMMAND mpirun -n 2 ParMooN_test_tnse3d_mpi mumps)
+  add_test(NAME tnse3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_tnse3d_mpi mumps)
+  
+  #read_write_fe_function_mpi test
+  set(_EXEC_NAME ParMooN_test_read_write_fe_function_mpi)
+  set(_FILE_NAME read_write_fe_function_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  add_test(NAME read_write_fe_function_mpi COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_read_write_fe_function_mpi)
 
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
 	

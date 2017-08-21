@@ -77,10 +77,10 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
       smoother_ = std::make_shared<VankaSmoother>(VankaType::CELL, damp);
       break;
     }
-    case SmootherCode::BATCH_VANKA:
+    case SmootherCode::PATCH_VANKA:
     {
       double damp = db["multigrid_vanka_damp_factor"];
-      smoother_ = std::make_shared<VankaSmoother>(VankaType::BATCH, damp);
+      smoother_ = std::make_shared<VankaSmoother>(VankaType::PATCH, damp);
       break;
     }
     case SmootherCode::CELL_VANKA_JACOBI:
@@ -102,10 +102,10 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
       smoother_ = std::make_shared<VankaSmoother>(VankaType::CELL, damp, true);
       break;
     }
-    case SmootherCode::BATCH_VANKA_STORE:
+    case SmootherCode::PATCH_VANKA_STORE:
     {
       double damp = db["multigrid_vanka_damp_factor"];
-      smoother_ = std::make_shared<VankaSmoother>(VankaType::BATCH, damp, true);
+      smoother_ = std::make_shared<VankaSmoother>(VankaType::PATCH, damp, true);
       break;
     }
     default:

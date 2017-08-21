@@ -229,6 +229,29 @@ class TMatrix
     /// @brief  get a value at selected entry (you may change that value)
     double& get(int i,int j);
     
+    /** This method will return a column of this CSR matrix as a vector.
+     *@param[in] j The column index.
+     *@return A matrix column as an std::vector<double>.
+     */
+    std::vector<double> get_matrix_column(size_t j) const;
+
+    /** This method will return a row of a CSR matrix as a vector.
+     *@param[in] i The row index.
+     *@return A matrix row as an std::vector.
+     */
+    std::vector<double> get_matrix_row(size_t i) const;
+
+    /**
+     *
+     * This method will replace a column of this matrix by the given vector.
+     * The program will quit if the vector dfoes not fit the sparsity structure
+     * of the matrix or if the given column index is out of range.
+     *
+     *@param[in] j The column index.
+     *@return A matrix column as an std::vector<double>.
+     */
+    void set_matrix_column(size_t j, std::vector<double> col);
+
     /// @brief reset the entries, the given vector must be of the same size
     void setEntries(std::vector<double> entries);
     

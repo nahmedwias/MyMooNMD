@@ -341,6 +341,17 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
     const BlockFEMatrix& bmatrix
 )
 {
+
+  // TODO This method should also react to the parameter
+  // INTERNAL_FULL_MATRIX_STRUCTURE, which is important for algebraic flux
+  // correction schemes of fem-fct and fem-tvd type. Because this is not
+  // implemented yet, the MUMPS solver is currently not applicable for problems
+  // that were stabilized with AFC.
+  if(TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
+    ErrThrow("MumpsWrapper cannot deal with INTERNAL_FULL_MATRIX_STRUCTURE "
+        "(a parameter enabled, e.g., when FEM-FCT is used) yet. Use an iterative "
+        "solver instead.")
+
   // no input checks - assume that this method is only called from
   // the constructor, which already performed checks
   int mpi_rank, mpi_size;
@@ -525,6 +536,7 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   {
     pressure_row_correction(comms_);
   }
+
 }
 
 void MumpsWrapper::pressure_row_correction(

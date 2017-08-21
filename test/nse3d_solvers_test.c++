@@ -14,8 +14,8 @@
  * on the default unit cube geometry.
  * We're only testing examples whose analytic solution is in the ansatz space,
  * thus we expect very small errors every time.
- * Fixed are DISCTYPE 1, LAPLACETYPE 0, NSE_NONLINEAR_FORM 0
- * and SC_NONLIN_ITE_TYPE_SADDLE = 0.
+ * Fixed are discretization_type 1 (galerkin), LAPLACETYPE 0,
+ * NSE_NONLINEAR_FORM 0 and SC_NONLIN_ITE_TYPE_SADDLE = 0.
  * Note that for these discretizations it is futile to choose any other NSTYPE
  * than 1 (see e.g. MooNMD documentation p. 35), but we vary them anyway, just
  * for the sake of testing the different types.
@@ -106,7 +106,7 @@ void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int max
   Example_NSE3D example_obj(db);
 
   //Perform usual checks on the parameter consistency
-  TDatabase::CheckParameterConsistencyNSE(); //old check
+  check_parameters_consistency_NSE(db);
 
   // Construct the nse3d problem object.
 #ifndef _MPI
@@ -161,7 +161,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     // New multigrid parameters
     db["multigrid_n_levels"] = 2;
     db["multigrid_cycle_type"] = "V";
-    db["multigrid_smoother"] = "batch_vanka_store";
+    db["multigrid_smoother"] = "patch_vanka_store";
     db["multigrid_smoother_coarse"] = "nodal_vanka_store";
     db["multigrid_correction_damp_factor"] = 1.0;
     db["multigrid_n_pre_smooth"] = 1;
@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
 
   TDatabase::ParamDB->DRIFT_Z = 1;
 
-  TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
+  db["space_discretization_type"] = "galerkin"; //Galerkin discretization, nothing else implemented
   TDatabase::ParamDB->LAPLACETYPE = 0;
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;
   TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;

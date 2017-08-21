@@ -24,6 +24,7 @@
 
 #include <Domain.h>
 #include <Database.h>
+#include <ParameterDatabase.h>
 #include <FEDatabase2D.h>
 #include <NSE2D.h>
 #include <Example_NSE2D.h>
@@ -131,7 +132,7 @@ void check(TDomain &domain, ParameterDatabase db,
   if(std::find(disc_p.begin(), disc_p.end(), velocity_order) != disc_p.end())
     db["multigrid_smoother"] = "cell_vanka_store";
   else
-    db["multigrid_smoother"] = "batch_vanka_store";
+    db["multigrid_smoother"] = "patch_vanka_store";
 
   db["multigrid_type"] = "standard";
   db["multigrid_smoother_coarse"] = "direct_solve";
@@ -197,12 +198,12 @@ int main(int argc, char* argv[])
 
     db["reynolds_number"] = 1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
-    TDatabase::ParamDB->DISCTYPE=1;
+    db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->NSTYPE = 4;
     TDatabase::ParamDB->LAPLACETYPE = 0;
     
     // possibly parameters in the database
-    Database.CheckParameterConsistencyNSE();
+    check_parameters_consistency_NSE(db);
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();
     for(unsigned int i=0; i < n_ref; i++)
@@ -292,11 +293,11 @@ int main(int argc, char* argv[])
     // parameters used for this test
     db["reynolds_number"] = 1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
-    TDatabase::ParamDB->DISCTYPE=1;
+    db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->LAPLACETYPE = 0;
         
     // possibly parameters in the database
-    Database.CheckParameterConsistencyNSE();
+    check_parameters_consistency_NSE(db);
 
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();

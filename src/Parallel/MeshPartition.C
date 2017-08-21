@@ -32,7 +32,6 @@
 #include <Quadrangle.h>
 #include <MacroCell.h>
 #include <Edge.h>
-
 #ifdef __2D__
   #include <FEDatabase2D.h>
 #endif
@@ -43,6 +42,7 @@ extern "C"
   #include <metis.h>
   #include <parmetis.h>
 }
+#include <MeshPartitionInOut.h>
 #endif
 
 
@@ -343,6 +343,16 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   nn =  (idx_t)N_RootVertices;
   nparts = (idx_t)size;
   
+  bool read_metis = Domain->get_database()["read_metis"];
+  bool write_metis = Domain->get_database()["write_metis"];
+  // if 'read_metis' is true, than a file is read which contains the 
+  // partitioning of the cells on the processors
+  if(read_metis)
+  {
+    MeshPartitionInOut::read_file(*Domain, size,  N_Cells, Cell_Rank);
+  }
+  else
+  {
   t1 = MPI_Wtime();
    if(type == 0)
     {
@@ -354,14 +364,19 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
                        &nparts, NULL, options, &edgecut, Cell_Rank, Vert_Rank);
     }
    else
-    {
+   {
      cout<<" Error METIS_PartMesh implemented for Par_P2 = 0 or 1 !!" <<endl;
      MPI_Abort(comm, 0);
-    }
-
-  t2 = MPI_Wtime();
-  OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
-
+   }
+   std:: cout << Cell_Rank;
+   t2 = MPI_Wtime();
+   OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
+  }
+  //if 'wrtie_metis' is true, than a file is created which contains the partitioning of the cells on the processors.
+  if(write_metis)
+  {
+    MeshPartitionInOut::write_file(*Domain,size, N_Cells, Cell_Rank);
+  }
 
   /** *********************************************/
   /** STEP 6 : TO FIND MAXIMUM CELLS PER VERTEX */
@@ -1211,6 +1226,8 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
    /** STEP 6 : TO FIND MAXIMUM CELLS PER VERTEX */
   /** *********************************************/ 
   
+    
+    
   PointNeighb = new int[N_RootVertices];
   memset(PointNeighb, 0, N_RootVertices*SizeOfInt);
   

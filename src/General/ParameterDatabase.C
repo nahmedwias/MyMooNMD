@@ -8,6 +8,7 @@
 #include <Utilities.h>
 #include <MooNMD_Io.h>
 
+
 #ifdef _MPI
 #include <mpi.h>
 #endif
@@ -807,6 +808,20 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "output you will get. Such output will be written to console and the "
          "'outfile'.", (size_t)1, (size_t)5);
   
+  db.add("space_discretization_type", "galerkin",
+         "Replaces the global parameter DISCTYPE.",
+         {"galerkin",      // = old global DISCTYPE = GALERKIN = 1
+          "supg","sdfem",  // = old global DISCTYPE = SUPG/SDFEM = 2
+          "upwind",        // = old global DISCTYPE = UPWIND = 3
+          "smagorinsky",   // = old global DISCTYPE = SMAGORINSKY = 4
+          "cip",           // = old global DISCTYPE = CIP = 4
+          "dg",           // = old global DISCTYPE = DG  = 5
+          "gls",           // = old global DISCTYPE = GLS = 6
+          "vms_projection",     // = old global DISCTYPE = VMS_PROJECTION = 9
+          "vms_projection_expl",// = old global DISCTYPE = VMS_PROJECTION_EXPL = 10
+          "local_projection",   // = old global DISCTYPE = LOCAL_PROJECTION = 14
+          "local_projection_2_level"}); // = old global DISCTYPE = LOCAL_PROJECTION_2_LEVEL = 15
+
   return db;
 }
 
@@ -881,6 +896,12 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
          "with the square root of the problem size.",
          {true,false});
 
+  db.add("nonlinloop_residual_relative_to_rhs", false,
+         "If true, not the pure residual is compared to nonlinloop_epsilon ,"
+         "but the residual is divided by the norm of the initial right hand "
+         "side vector. Note that this is not yet enabled in each problem class, "
+         "you must check that, if you plan to use it.", {true, false});
+
   return db;
 }
 
@@ -921,6 +942,43 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	  return db;
 }
 
+ParameterDatabase ParameterDatabase::default_solution_in_out_database()
+{
+  ParameterDatabase db("default ParMooN solution in-out database");
+
+  // to read or not to read
+  db.add("read_initial_solution", false, "Choose true if the initial "
+      "solution is given in a binary file. Do not forget to specify "
+      "'initial_solution_file' in that case, too.", {true, false});
+
+  // from which file to read
+  db.add("initial_solution_file", "my_solution_in.txt", "If 'read_initial_solution' is "
+      "set to 'true', this parameter determines from which binary file to read "
+      "the initial solution. That file should be prodcued by a former run of the"
+      "same program, using the same finite element space.");
+
+  // to write or not to write
+  db.add("write_solution_binary", false, "Choose true if the computed solution "
+      " should be written out to a file in a binary format. This is helpful if"
+      " you plan to read it in as initial solution later. Do not forget to specify"
+      " 'write_solution_binary_all_n_steps' for the output interval "
+      " and 'write_solution_binary_file', the file path and name.", {true,false});
+
+  // write all n steps
+  db.add("write_solution_binary_all_n_steps",(size_t) 1, "Determine at which interval a "
+      "backup solution should be written to the file 'write_solution_binary_file'. "
+      "The number refers to the number of timesteps, i.e., at a constant time "
+      "step length of 0.01s and this paramter set to 10, the current solution "
+      "will be written into the file each 0.1s.", (size_t) 1, size_t (1000000));
+
+  // into which file to write
+  db.add("write_solution_binary_file", "my_solution_out.txt", "If "
+      "'write_solution_binary' is set to 'true', this parameter sets the name"
+      " (and path) of the file to write the solution into. Note that this file"
+      " will be overwritten again and again.");
+  return db;
+}
+
 ParameterDatabase ParameterDatabase::default_tetgen_database()
 {
   ParameterDatabase db("default ParMooN mesh generation using TetGen "
@@ -946,3 +1004,4 @@ ParameterDatabase ParameterDatabase::default_tetgen_database()
          (size_t) 0, (size_t) 1);
   return db;
 }
+
