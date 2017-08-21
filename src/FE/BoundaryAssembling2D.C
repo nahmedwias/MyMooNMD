@@ -875,22 +875,27 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
 	    double x_middle = (x0 + x1)/2.;
 	    double y_middle = (y0 + y1)/2.;
 	    double *ux_values,*uy_values;
-	    u_conv[0]->FindGradient(x_middle,y_middle,ux_values);
-	    u_conv[1]->FindGradient(x_middle,y_middle,uy_values);
+	    //u_conv[0]->FindGradient(x_middle,y_middle,ux_values);
+	    //u_conv[1]->FindGradient(x_middle,y_middle,uy_values);
+	    /*
 	    if ( (ux_values[0]*nx + uy_values[0]*ny)<0 )
 	    {
 	      absneg_u_n = 1.;
+	      Output::print(" u(",x_middle,",",y_middle,") = ",
+			    ux_values[0],",",uy_values[0]);
 	    }
+	    delete ux_values,uy_values;
+	    */
 	    scale_factor = beta/2.0*absneg_u_n*scale_factor;
 
 	    
             // loop on test functions
             for(unsigned int l1=0;l1< uorig[k].size();l1++)
-            {
+	      {
                 int test_DOF = DOF[l1];
                 // if the DOF is Dirichlet, continue
                 if(test_DOF >= ActiveBound)
-                    continue;
+		  continue;
                 
                 double vx = uorig[k][l1];
                 double vy = vx; // x and y component have the same FE space
@@ -905,7 +910,8 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
                     blocks[4]->add(test_DOF, ansatz_DOF, scale_factor*vy*uy ); // A22
                 }
 		
-            } //for(l=0;l<N_BaseFunct;l++)
-        }
-    } // endif
+	      } //for(l=0;l<N_BaseFunct;l++)
+	    
+	}
+    } 
 }

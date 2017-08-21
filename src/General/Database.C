@@ -569,6 +569,12 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
 
 
+  // number of boundary components where backflow stabilization should be applied
+  ParamDB->n_stab_backflow_boundary = 0;
+  // ids
+  ParamDB->stab_backflow_boundary_id.clear();
+  // stabilization parameter
+  ParamDB->stab_backflow_boundary_beta.clear();
     
   /** parameters for weakly imposing boundary/interface conditions */
   ParamDB->n_neumann_boundary = 0.;

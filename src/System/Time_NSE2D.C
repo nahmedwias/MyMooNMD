@@ -706,14 +706,17 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
                rectMatrices.size(), rectMatrices.data(), 
                rhs_array.size(), rhs_array.data(), spaces_rhs.data(), 
                bc, bv.data(), la);
-
+  
   // add boundary integrals to stabilize backflow at open boundaries
   ///@todo this should be controlled by input parameters
-  bool add_backflow_stab = false;
-  if (add_backflow_stab) {
+  for (int k=0;k<TDatabase::ParamDB->n_stab_backflow_boundary;k++)
+  {
+    Output::print(" Backflow stab on boundary ",
+		  TDatabase::ParamDB->stab_backflow_boundary_id[k],
+		  " beta = ", TDatabase::ParamDB->stab_backflow_boundary_beta[k]);
     BoundaryAssembling2D boundary_integral;
-    int neumann_boundary_component = 17;
-    double beta_backflow_stab = 0.4;
+    int neumann_boundary_component = TDatabase::ParamDB->stab_backflow_boundary_id[k];
+    double beta_backflow_stab = TDatabase::ParamDB->stab_backflow_boundary_beta[k];
     const TFESpace2D * v_space = &s.velocity_space;
     std::vector< TFEFunction2D* > u_conv;
     u_conv.resize(2);
