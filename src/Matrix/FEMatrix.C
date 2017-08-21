@@ -219,3 +219,152 @@ const TFESpace3D *FEMatrix::GetFESpace3D() const
 }
 #endif // 3D
 
+#ifdef _MPI
+
+#include "mpi.h"
+#include <ParFECommunicator3D.h>
+
+/* ************************************************************************ */
+// The following are two functions which were used for debug reasons. They do
+// not belong to the class FEMatrix.
+// Yet they should not be lost entirely, so they were 'parked' here.
+
+/**
+ * This method can be used to check a matrix A in distributed storage.
+ * A certain process ('sending_ps') will extract one master column after the other
+ * from A, and ask all other processes for a consistency update of that vector.
+ *
+ * After that it will compare the updated column with the original one and inform
+ * the programmer via Output::print on any differences.
+ * It is then in the responsibility of the programmer to interpret the output.
+ *
+ * @param[in] A The matrix to check.
+ * @param[in] sending_ps The process which checks its master columns.
+ * @param[in] cons_level The consistency level to be updated to.
+ */
+void check_column_consistency(const FEMatrix& A, int sending_ps, int cons_level)
+{
+
+  const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  int nDof = A.GetN_Rows();
+
+  const char* markers = comm.get_dof_markers();
+
+  //SENDER process executes the following code.
+  if(rank == sending_ps)
+  {
+    Output::info("CHECK", "Checking master columns of process ", sending_ps, " on consistency level ", cons_level);
+    int n_vecs_send = comm.GetN_Master();
+    MPI_Bcast(&n_vecs_send, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
+    for(int s = 0; s < nDof; ++s)
+    {
+      if(masters[s] == rank) //master col found, ping it
+      {
+        Output::suppressAll();
+        comm.dof_ping(sending_ps, s);
+        Output::setVerbosity(1);
+        int dummy_sb = -1;
+        int dof_remote = -1;
+        MPI_Allreduce(&dummy_sb, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        if(dof_remote != -1)
+        {//ping was received on at least one other ps, now set up the matrix row
+          std::vector<double> col_master = A.get_matrix_column(s);
+          std::vector<double> col_master_cpy = col_master;
+          comm.consistency_update(col_master.data(), cons_level); //CONSIST UPDATE
+          //now check the differences between updated and original column
+          for(int i = 0 ; i < col_master.size(); ++i)
+          {
+            if(col_master[i] != col_master_cpy[i])
+            {
+              char type_col = markers[s];
+              char type_row = markers[i];
+              Output::print("Local entry (", i, "[", type_row ,"] , ", s, "[", type_col,"]) was changed by an update.");
+            }
+
+          }
+
+        }
+      }
+    }
+    Output::print("Test on process ", rank, " complete.");
+  }
+  //RECEIVER processes execute the following code.
+  else
+  {
+    int n_vecs_recv;
+    MPI_Bcast(&n_vecs_recv, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
+    for(int r = 0; r< n_vecs_recv; ++r)
+    {
+      int dof_local = comm.dof_ping(sending_ps, -1);
+      int dof_remote = -1;
+      MPI_Allreduce(&dof_local, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+      if(dof_remote != -1)
+      {
+        std::vector<double> col_slave = A.get_matrix_column(dof_local);
+        comm.consistency_update(col_slave.data(), cons_level); //CONSIST UPDATE
+      }
+    }
+  }
+}
+
+// Restores consistency of master columns.
+void update_column_consistency(FEMatrix& B, int sending_ps, int cons_level)
+{
+  const TParFECommunicator3D& comm = B.GetFESpace3D()->get_communicator();
+  const int* masters = comm.GetMaster();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  int nDof = B.GetN_Rows();
+
+  const char* markers = comm.get_dof_markers();
+
+  //SENDER process executes the following code.
+  if(rank == sending_ps)
+  {
+    int n_vecs_send = comm.get_n_interface_master();
+    MPI_Bcast(&n_vecs_send, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
+    Output::info("MPI UPDATE", n_vecs_send, " interface master columns receive update.");
+    for(int s = 0; s < nDof; ++s)
+    {
+      if(masters[s] == rank && markers[s] == 'm') //interface master col found, ping it
+      {
+        Output::suppressAll();
+        comm.dof_ping(sending_ps, s);
+        Output::setVerbosity(1);
+        int dummy_sb = -1;
+        int dof_remote = -1;
+        MPI_Allreduce(&dummy_sb, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        if(dof_remote != -1)
+        {//ping was received on at least one other ps, now set up the matrix row
+          std::vector<double> col_master = B.get_matrix_column(s);
+          comm.consistency_update(col_master.data(), cons_level); //CONSIST UPDATE
+          B.set_matrix_column(s,col_master);
+
+        }
+      }
+    }
+  }
+  //RECEIVER processes execute the following code.
+  else
+  {
+    int n_vecs_recv;
+    MPI_Bcast(&n_vecs_recv, 1, MPI_INT, sending_ps, MPI_COMM_WORLD);
+    for(int r = 0; r< n_vecs_recv; ++r)
+    {
+      int dof_local = comm.dof_ping(sending_ps, -1);
+      int dof_remote = -1;
+      MPI_Allreduce(&dof_local, &dof_remote, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+      if(dof_remote != -1)
+      {
+        std::vector<double> col_slave = B.get_matrix_column(dof_local);
+        comm.consistency_update(col_slave.data(), cons_level); //CONSIST UPDATE
+      }
+    }
+  }
+}
+#endif //_MPI

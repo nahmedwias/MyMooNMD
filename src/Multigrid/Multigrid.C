@@ -30,16 +30,16 @@ SmootherCode string_to_smoother_code(std::string code)
     return SmootherCode::NODAL_VANKA;
   else if(code == std::string("cell_vanka"))
     return SmootherCode::CELL_VANKA;
-  else if(code == std::string("batch_vanka"))
-    return SmootherCode::BATCH_VANKA;
+  else if(code == std::string("patch_vanka"))
+    return SmootherCode::PATCH_VANKA;
   else if(code == std::string("cell_vanka_jacobi"))
     return SmootherCode::CELL_VANKA_JACOBI;
   else if(code == std::string("nodal_vanka_store"))
     return SmootherCode::NODAL_VANKA_STORE;
   else if(code == std::string("cell_vanka_store"))
     return SmootherCode::CELL_VANKA_STORE;
-  else if(code == std::string("batch_vanka_store"))
-    return SmootherCode::BATCH_VANKA_STORE;
+  else if(code == std::string("patch_vanka_store"))
+    return SmootherCode::PATCH_VANKA_STORE;
   else
   {
     Output::warn("SmootherCode", "The string ", code,
@@ -74,7 +74,7 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
   
   size_t n_geo_levels = this->get_n_geometric_levels();
 
-  //Determine the number of algebraci levels (depth of space hierarchy)
+  //Determine the number of algebraic levels (depth of space hierarchy)
   if(type_ == MultigridType::MDML)
     n_algebraic_levels_ = n_geo_levels + 1;
   else
@@ -108,12 +108,9 @@ void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
   // Create the levels and collect them in a list
   if(matrices.size() != n_algebraic_levels_)
   {
-    Output::warn<2>("Multigrid::initialize", "the number of multigrid levels "
+    ErrThrow("Multigrid::initialize", " The number of algebraic multigrid levels "
                     "was set to ", n_algebraic_levels_, ", but there are ",
-                    matrices.size(), " matrices given. I will assume ", 
-                    matrices.size(), " multigrid levels from now on.");
-
-    n_algebraic_levels_ = matrices.size();
+                    matrices.size(), " matrices given. Please check your program!");
   }
   auto coarsest = matrices.front();
   for(auto mat : matrices)
@@ -149,6 +146,8 @@ void Multigrid::set_finest_sol(const BlockVector& bv)
 
 void Multigrid::set_finest_rhs(const BlockVector& bv)
 {
+    Output::print("HIER", bv.length());
+    
   levels_.back().rhs_ = bv;
 }
 
@@ -160,11 +159,10 @@ const BlockVector& Multigrid::get_finest_sol()
 void Multigrid::cycle()
 {
   Output::info<4>("Multigrid", "Starting multigrid cycle of type ", (int) control_.get_type());
-
   size_t n_steps = control_.get_n_steps();
   size_t finest = levels_.size() - 1;
 
-//  //Start with 0 solution TODO enable other start solution!
+  //Start with 0 solution TODO enable other start solution!
   levels_.at(finest).solution_ = 0.0;
   //...but copy non-actives
   levels_.at(finest).solution_.copy_nonactive(levels_.at(finest).rhs_);
@@ -205,10 +203,17 @@ int Multigrid::cycle_step(size_t step, size_t level)
   size_t coarsest = 0;
   if(level == coarsest)
   {//we're on coarsest level
-    if (my_rank == 0)
-      Output::info<4>("COARSE SOLVE", "Level ", level);
     double res = 1e10;
-
+    if ((my_rank == 0) && (Output::getVerbosity()>=4))
+    {
+      Output::info<4>("COARSE SOLVE", "Level ", level);
+      levels_.at(level).calculate_defect();
+      res = levels_.at(level).residual_;
+      Output::info<4>("COARSE GRID bef.", "Level ", level, " res: ", res);
+    }
+    else
+      levels_.at(level).calculate_defect();
+    
     //start coarse grid time measurement
     coarse_grid_timer.start();
 
@@ -218,7 +223,7 @@ int Multigrid::cycle_step(size_t step, size_t level)
       levels_.at(coarsest).calculate_defect();
       res = levels_.at(coarsest).residual_;
       if (my_rank == 0)
-        Output::dash<4>("Coarse Grid Iteration ", i, " res: ", res);
+        Output::dash<4>("Coarse Grid Iteration ", i+1, " res: ", res);
     }
 
     //stop coarse grid time measurement
@@ -235,20 +240,47 @@ int Multigrid::cycle_step(size_t step, size_t level)
 
     if(coming_from_below)
     {
-      if (my_rank == 0)
-        Output::info<4>("POST SMOOTH", "Level ", level);
+      // compute and print more information, for debugging
+      if ((my_rank == 0) && (Output::getVerbosity()>=4))
+      {   
+	double res;
+	levels_.at(level).calculate_defect();
+	res = levels_.at(level).residual_;
+        Output::info<4>("POST SMOOTH bef.", "Level ", level, " res: ", res);
+      }
       for(size_t i = 0; i < n_post_smooths_; ++i)
         levels_.at(level).apply_smoother(); //post smoothing
+      // compute and print more information, for debugging
+      if ((my_rank == 0) && (Output::getVerbosity()>=4))
+      {   
+	double res;	
+	levels_.at(level).calculate_defect();
+	res = levels_.at(level).residual_;
+        Output::info<4>("POST SMOOTH done", "Level ", level, " res: ", res);
+      }
     }
     if(going_down)
     {
-      if (my_rank == 0)
-        Output::info<4>("PRE SMOOTH", "Level ", level);
+      // compute and print more information, for debugging
+      if ((my_rank == 0) && (Output::getVerbosity()>=4))
+      {
+        double res;
+	levels_.at(level).calculate_defect();
+	res = levels_.at(level).residual_;
+        Output::info<4>("PRE SMOOTH bef.", "Level ", level, " res: ", res);
+      }
       for(size_t i = 0; i < n_pre_smooths_; ++i)
         levels_.at(level).apply_smoother(); //pre smoothing
       levels_.at(level).calculate_defect(); //defect calculation
       set_solution_in_coarser_grid_to_zero(level); //set start iterate on coarser level to 0
       update_rhs_in_coarser_grid(level);
+      // compute and print more information, for debugging
+      if ((my_rank == 0) && (Output::getVerbosity()>=4))
+      {
+        double res;
+	res = levels_.at(level).residual_;
+        Output::info<4>("PRE SMOOTH done", "Level ", level, " res: ", res);
+      }
       return level - 1;
     }
     else if(going_up)
@@ -406,18 +438,18 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "care, that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
          {"jacobi", "sor",
-          "nodal_vanka", "cell_vanka", "batch_vanka",
+          "nodal_vanka", "cell_vanka", "patch_vanka",
           "cell_vanka_jacobi",
-          "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
+          "nodal_vanka_store", "cell_vanka_store", "patch_vanka_store", "no_smoother"});
 
   db.add("multigrid_smoother_coarse", "direct_solve",
          "The smoother to use on the coarsest level. You should take care, "
          "that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
          {"direct_solve", "jacobi", "sor",
-          "nodal_vanka", "cell_vanka", "batch_vanka",
+          "nodal_vanka", "cell_vanka", "patch_vanka",
           "cell_vanka_jacobi",
-          "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
+          "nodal_vanka_store", "cell_vanka_store", "patch_vanka_store", "no_smoother"});
 
   db.add("multigrid_correction_damp_factor", 1.0,
          "The damping factor which is used when applying the coarse grid "

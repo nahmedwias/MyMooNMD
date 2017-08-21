@@ -17,6 +17,8 @@
 #include <Constants.h>
 #include <Mapper.h>
 #include <Line.h>
+#include <ParameterDatabase.h>
+#include <MainUtilities.h>
 // more explicit path due to name conflict with the 'triangle' library on mac
 #include <../Geometry/Triangle.h> 
 #include <Quadrangle.h>
@@ -382,10 +384,9 @@ void TDatabase::SetDefaultParameters()
   ParamDB->FRACTION_OF_ERROR = 0.25;
   ParamDB->CONVERT_QUAD_TO_TRI = 0;
   ParamDB->N_CELL_LAYERS = 1;
-  
-  ParamDB->DISCTYPE = 1;
+
   ParamDB->INTL_DISCTYPE = 1;
-  ParamDB->UPWIND_ORDER = 1;
+  ParamDB->UPWIND_ORDER = 0;
   ParamDB->UPWIND_FLUX_DAMP = 1;
   ParamDB->UPWIND_APPLICATION = 0;
   ParamDB->SHISHKIN_MESH = 0;
@@ -399,9 +400,9 @@ void TDatabase::SetDefaultParameters()
   ParamDB->EFFECTIVE_VISCOSITY = 1;
   ParamDB->PERMEABILITY = 1;
     
-  ParamDB->equal_order_stab_weight_P1P1= 0;
-  ParamDB->equal_order_stab_weight_P2P2= 0;
-    
+  ParamDB->equal_order_stab_weight_PkPk= 0;
+      ParamDB->equal_order_stab_weight_P1P1= 0;// wird noch in Brinkman2d benutzt --> ändern
+      ParamDB->equal_order_stab_weight_P2P2= 0;// wird noch in Brinkman2d benutzt --> ändern
     
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
@@ -1069,7 +1070,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("FRACTION_OF_ERROR: ", ParamDB->FRACTION_OF_ERROR);
   printToFile("CONVERT_QUAD_TO_TRI: ", ParamDB->CONVERT_QUAD_TO_TRI);
   
-  printToFile("DISCTYPE: ", ParamDB->DISCTYPE);
   printToFile("INTL_DISCTYPE: ", ParamDB->INTL_DISCTYPE);
   printToFile("UPWIND_ORDER: ", ParamDB->UPWIND_ORDER);
   printToFile("UPWIND_FLUX_DAMP: ", ParamDB->UPWIND_FLUX_DAMP);
@@ -1095,9 +1095,9 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("Viscosity:", ParamDB->VISCOSITY);
   printToFile("PERMEABILITY:", ParamDB->PERMEABILITY);
     
-  printToFile("equal_order_stab_weight_P1P1:", ParamDB->equal_order_stab_weight_P1P1);
-  printToFile("equal_order_stab_weight_P2P2:", ParamDB->equal_order_stab_weight_P2P2);
+  printToFile("equal_order_stab_weight_PkPk:", ParamDB->equal_order_stab_weight_PkPk); // wird noch in Brinkman2d benutzt --> ändern
 
+    
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);
   printToFile("ROSSBY_NR: ", ParamDB->ROSSBY_NR);
@@ -1440,217 +1440,6 @@ void TDatabase::WriteTimeDB()
 //  printToFile("neumann_boundary_value: ", ParamDB->neumann_boundary_value);
 }
 
-void TDatabase::CheckParameterConsistencyNSE()
-{
-#ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-#else
-  int my_rank = 0;
-#endif
-
-  // Newton method
-  if ((ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)&&(ParamDB->NSTYPE<=2))
-  {
-    ParamDB->NSTYPE+=2;
-    if(my_rank==0)
-      Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE,
-                  " because of SC_NONLIN_ITE_TYPE_SADDLE  = ",
-                  ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
-  }
-
-
-  if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==1))
-  {
-      //ParamDB->NSTYPE = 2;
-      //Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 2 because of SDFEM discretization ");
-	  if(my_rank==0)
-        Output::info("NSE Parameter Consistency","NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!");
-  }
-
-  if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==3))
-  {
-    ParamDB->NSTYPE = 4;
-    if(my_rank==0)
-      Output::info("NSE Parameter Consistency","NSTYPE changed from 3 to 4 because of SDFEM discretization ");
-  }
-
-  if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==1))
-  {
-    ParamDB->NSTYPE = 3 ;
-    if(my_rank==0)
-      Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
-  }
-
-  if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==2))
-  {
-    ParamDB->NSTYPE = 4 ;
-    if(my_rank==0)
-      Output::info("NSE Parameter Consistency","NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
-  }
-
-  // equal order
-  if (ParamDB->NSTYPE == 14)
-  {
-    if (!(ParamDB->DISCTYPE == SDFEM))
-    {
-      ParamDB->DISCTYPE = SDFEM;
-      if(my_rank==0)
-        Output::info("NSE Parameter Consistency","DISCTYPE changed to SDFEM !!!");
-    }
-/*
-      if (ParamDB->SC_SMOOTHER_SADDLE<3)
-      {
-	  ParamDB->SC_SMOOTHER_SADDLE+=2;
-	  OutPut("SC_SMOOTHER_SADDLE changed to " << ParamDB->SC_SMOOTHER_SADDLE);
-	  OutPut(" because of continuous pressure"<< endl);
-      }
-      if (ParamDB->SC_COARSE_SMOOTHER_SADDLE<3)
-      {
-	  ParamDB->SC_COARSE_SMOOTHER_SADDLE+=2;
-	  OutPut("SC_COARSE_SMOOTHER_SADDLE changed to " << ParamDB->SC_COARSE_SMOOTHER_SADDLE);
-	  OutPut(" because of continuous pressure"<< endl);
-      }
-*/
-  }
-  
-  // rotational form
-  if (ParamDB->NSE_NONLINEAR_FORM==2||(ParamDB->NSE_NONLINEAR_FORM==4))
-  {
-    if (ParamDB->NSTYPE<=2)
-    {
-      ParamDB->NSTYPE+=2;
-      if(my_rank==0)
-      {
-        Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE);
-        Output::info("NSE Parameter Consistency"," because of NSE_NONLINEAR_FORM = ", ParamDB->NSE_NONLINEAR_FORM);
-      }
-    }
-      // change DISCTYPE for internal reasons
-    if (ParamDB->DISCTYPE == 1)
-    {
-      ParamDB->DISCTYPE = 4;
-      TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE = 0;
-      if(my_rank==0)
-        Output::info("NSE Parameter Consistency","DISCTYPE changed to 4 for internal reasons, turbulent viscosity is switched off.");
-    }
-  }
-
-  if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE==5)
-  {
-    if (!((TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)||
-          (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION_EXPL)))
-    {
-      if(my_rank==0)
-      {
-        Output::info("NSE Parameter Consistency","TURBULENT_VISCOSITY_TYPE = 5 only defined for projection-based VMS methods");
-        Output::info("NSE Parameter Consistency","Set different TURBULENT_VISCOSITY_TYPE !!!");
-        ErrThrow("BOOM!");
-      }
-    }
-  }
-
-  // LOCAL_PROJECTION
-  if (ParamDB->DISCTYPE == LOCAL_PROJECTION)
-  {
-    if (ParamDB->LP_FULL_GRADIENT)
-    {
-      if (ParamDB->LP_STREAMLINE)
-      {
-        ParamDB->LP_STREAMLINE = 0;
-        if(my_rank==0)
-        Output::info("NSE Parameter Consistency","LP_STREAMLINE changed to ", ParamDB->LP_STREAMLINE,
-                      " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
-      }
-
-      if (ParamDB->LP_DIVERGENCE)
-      {
-        ParamDB->LP_DIVERGENCE = 0;
-        if(my_rank==0)
-        Output::info("NSE Parameter Consistency","LP_DIVERGENCE changed to ", ParamDB->LP_DIVERGENCE,
-                      " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
-      }
-    } // end LP_FULL_GRADIENT
-
-    if (ParamDB->LP_DIVERGENCE)
-    {
-      if (ParamDB->NSTYPE<=2)
-      {
-        ParamDB->NSTYPE+=2;
-        if(my_rank==0)
-        Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE,
-                      " LP_DIVERGENCE = ", ParamDB->LP_DIVERGENCE);
-      }
-    }
-
-    if(ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE == -123)
-      ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE = ParamDB->LP_ORDER_DIFFERENCE;
-
-    if(ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE == -123)
-      ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE = ParamDB->LP_ORDER_DIFFERENCE;
-
-    if(ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE == -123)
-      ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE = ParamDB->LP_ORDER_DIFFERENCE;
-
-    if(ParamDB->LP_PRESSURE_ORDER_DIFFERENCE == -123)
-      ParamDB->LP_PRESSURE_ORDER_DIFFERENCE = ParamDB->LP_ORDER_DIFFERENCE;
-
-  } // end DISCTYPE == LOCAL_PROJECTION
-  else
-  {
-    // switch off all local projection terms
-    ParamDB->LP_FULL_GRADIENT = 0;
-    ParamDB->LP_FULL_GRADIENT_COEFF = 0;
-    ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
-
-    ParamDB->LP_STREAMLINE = 0;
-    ParamDB->LP_STREAMLINE_COEFF = 0;
-    ParamDB->LP_STREAMLINE_EXPONENT = 1;
-
-    ParamDB->LP_DIVERGENCE = 0;
-    ParamDB->LP_DIVERGENCE_COEFF = 0;
-    ParamDB->LP_DIVERGENCE_EXPONENT = 1;
-
-    ParamDB->LP_PRESSURE = 0;
-    ParamDB->LP_PRESSURE_COEFF = 0;
-    ParamDB->LP_PRESSURE_EXPONENT = 1;
-
-    ParamDB->LP_ORDER_DIFFERENCE = 1;
-    ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE = 1;
-    ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE = 1;
-    ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE = 1;
-    ParamDB->LP_PRESSURE_ORDER_DIFFERENCE = 1;
-  }
-  
-  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == STOKES)  
-    TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = 1;
-  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
-  {
-    TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = 1;
-    switch (TDatabase::ParamDB->NSTYPE)
-    {
-      case 1: 
-    	  if(my_rank==0)
-            Output::info("NSE Parameter Consistency","Galerkin discretization for Oseen because of NSTYPE ",
-                      TDatabase::ParamDB->NSTYPE);
-        TDatabase::ParamDB->DISCTYPE =  1;
-        break;
-      case 14:
-    	if(my_rank==0)
-          Output::info("NSE Parameter Consistency","SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE ",
-                      TDatabase::ParamDB->NSTYPE);
-        TDatabase::ParamDB->DISCTYPE =  2;
-        break;
-      default:
-    	if(my_rank==0)
-          Output::info("NSE Parameter Consistency","No method for Oseen implemented for NSTYPE ",
-                      TDatabase::ParamDB->NSTYPE);
-        exit(4711);
-    }
-  }
-
-} // end CheckParameterConsistencyNSE
-
 TDatabase::~TDatabase()
 {
   // allocate databases
@@ -1828,3 +1617,432 @@ TParaDB::~TParaDB()
   delete [] PODFILE;
   Output::print<4>("deleted parameter database");
 }
+
+
+/* ************************************************************************** */
+/// plays the role of the old CheckParameterConsistencyNSE
+/// but with the new database.The remaining global parameters
+/// can/must be removed here, progressively.
+void check_parameters_consistency_NSE(ParameterDatabase& db)
+{
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+
+  // Newton method
+  if ((TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)&&(TDatabase::ParamDB->NSTYPE<=2))
+  {
+    TDatabase::ParamDB->NSTYPE+=2;
+    if(my_rank==0)
+      Output::info("NSE Parameter Consistency","NSTYPE changed to ", TDatabase::ParamDB->NSTYPE,
+                  " because of SC_NONLIN_ITE_TYPE_SADDLE  = ",
+                  TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
+  }
+
+
+  if (db["space_discretization_type"].is("sdfem") && (TDatabase::ParamDB->NSTYPE==1))
+  {
+      //TDatabase::ParamDB->NSTYPE = 2;
+      //Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 2 because of SDFEM discretization ");
+    if(my_rank==0)
+        Output::info("NSE Parameter Consistency","NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!");
+  }
+
+  if ((db["space_discretization_type"].is("sdfem")) && (TDatabase::ParamDB->NSTYPE==3))
+  {
+    TDatabase::ParamDB->NSTYPE = 4;
+    if(my_rank==0)
+      Output::warn<1>("NSE Parameter Consistency","NSTYPE changed from 3 to 4 because of SDFEM discretization ");
+  }
+
+  if ((TDatabase::ParamDB->LAPLACETYPE == 1) && (TDatabase::ParamDB->NSTYPE ==1))
+  {
+    TDatabase::ParamDB->NSTYPE = 3 ;
+    if(my_rank==0)
+      Output::warn<1>("NSE Parameter Consistency","NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
+  }
+
+  if ((TDatabase::ParamDB->LAPLACETYPE == 1) && (TDatabase::ParamDB->NSTYPE ==2))
+  {
+    TDatabase::ParamDB->NSTYPE = 4 ;
+    if(my_rank==0)
+      Output::warn<1>("NSE Parameter Consistency","NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
+  }
+
+  // equal order
+  if (TDatabase::ParamDB->NSTYPE == 14)
+  {
+    if (!(db["space_discretization_type"].is("sdfem")))
+    {
+      db["space_discretization_type"].set("sdfem");
+      if(my_rank==0)
+      {
+        Output::warn<1>("NSE Parameter Consistency","discretization_type changed to SDFEM "
+            "because NSTYPE 14!!!");
+      }
+    }
+/*
+      if (TDatabase::ParamDB->SC_SMOOTHER_SADDLE<3)
+      {
+    TDatabase::ParamDB->SC_SMOOTHER_SADDLE+=2;
+    OutPut("SC_SMOOTHER_SADDLE changed to " << TDatabase::ParamDB->SC_SMOOTHER_SADDLE);
+    OutPut(" because of continuous pressure"<< endl);
+      }
+      if (TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE<3)
+      {
+    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE+=2;
+    OutPut("SC_COARSE_SMOOTHER_SADDLE changed to " << TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE);
+    OutPut(" because of continuous pressure"<< endl);
+      }
+*/
+  }
+
+  // rotational form
+  if (TDatabase::ParamDB->NSE_NONLINEAR_FORM==2||(TDatabase::ParamDB->NSE_NONLINEAR_FORM==4))
+  {
+    if (TDatabase::ParamDB->NSTYPE<=2)
+    {
+      TDatabase::ParamDB->NSTYPE+=2;
+      if(my_rank==0)
+      {
+        Output::warn<1>("NSE Parameter Consistency","NSTYPE changed to ", TDatabase::ParamDB->NSTYPE);
+        Output::warn<1>("NSE Parameter Consistency"," because of NSE_NONLINEAR_FORM = ", TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+      }
+    }
+      // change 'db["discretization_type]" for internal reasons
+    if ( db["space_discretization_type"].is("galerkin") )
+    {
+      db["space_discretization_type"].set("smagorinsky");
+      TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE = 0;
+      if(my_rank==0)
+        Output::warn<1>("NSE Parameter Consistency","discretization_type changed to 'smagorinsky' (4)"
+            " for internal reasons, turbulent viscosity is switched off.");
+    }
+  }
+
+  if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE==5)
+  {
+    if (!(db["space_discretization_type"].is("vms_projection")||
+        db["space_discretization_type"].is("vms_projection_expl")))
+    {
+      if(my_rank==0)
+      {
+        Output::warn<1>("NSE Parameter Consistency","TURBULENT_VISCOSITY_TYPE = 5 only defined for projection-based VMS methods");
+        Output::warn<1>("NSE Parameter Consistency","Set different TURBULENT_VISCOSITY_TYPE !!!");
+        ErrThrow("BOOM!");
+      }
+    }
+  }
+
+  // LOCAL_PROJECTION
+  if (db["space_discretization_type"].is("local_projection"))
+  {
+    if (TDatabase::ParamDB->LP_FULL_GRADIENT)
+    {
+      if (TDatabase::ParamDB->LP_STREAMLINE)
+      {
+        TDatabase::ParamDB->LP_STREAMLINE = 0;
+        if(my_rank==0)
+        Output::warn<1>("NSE Parameter Consistency","LP_STREAMLINE changed to ", TDatabase::ParamDB->LP_STREAMLINE,
+                      " due to LP_FULL_GRADIENT = ", TDatabase::ParamDB->LP_FULL_GRADIENT);
+      }
+
+      if (TDatabase::ParamDB->LP_DIVERGENCE)
+      {
+        TDatabase::ParamDB->LP_DIVERGENCE = 0;
+        if(my_rank==0)
+        Output::warn<1>("NSE Parameter Consistency","LP_DIVERGENCE changed to ", TDatabase::ParamDB->LP_DIVERGENCE,
+                      " due to LP_FULL_GRADIENT = ", TDatabase::ParamDB->LP_FULL_GRADIENT);
+      }
+    } // end LP_FULL_GRADIENT
+
+    if (TDatabase::ParamDB->LP_DIVERGENCE)
+    {
+      if (TDatabase::ParamDB->NSTYPE<=2)
+      {
+        TDatabase::ParamDB->NSTYPE+=2;
+        if(my_rank==0)
+        Output::warn<1>("NSE Parameter Consistency","NSTYPE changed to ", TDatabase::ParamDB->NSTYPE,
+                      " LP_DIVERGENCE = ", TDatabase::ParamDB->LP_DIVERGENCE);
+      }
+    }
+
+    if(TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE == -123)
+      TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE = TDatabase::ParamDB->LP_ORDER_DIFFERENCE;
+
+    if(TDatabase::ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE == -123)
+      TDatabase::ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE = TDatabase::ParamDB->LP_ORDER_DIFFERENCE;
+
+    if(TDatabase::ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE == -123)
+      TDatabase::ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE = TDatabase::ParamDB->LP_ORDER_DIFFERENCE;
+
+    if(TDatabase::ParamDB->LP_PRESSURE_ORDER_DIFFERENCE == -123)
+      TDatabase::ParamDB->LP_PRESSURE_ORDER_DIFFERENCE = TDatabase::ParamDB->LP_ORDER_DIFFERENCE;
+
+  } // end "discretization_type" = "LOCAL_PROJECTION"
+  else
+  {
+    // switch off all local projection terms
+    TDatabase::ParamDB->LP_FULL_GRADIENT = 0;
+    TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF = 0;
+    TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
+
+    TDatabase::ParamDB->LP_STREAMLINE = 0;
+    TDatabase::ParamDB->LP_STREAMLINE_COEFF = 0;
+    TDatabase::ParamDB->LP_STREAMLINE_EXPONENT = 1;
+
+    TDatabase::ParamDB->LP_DIVERGENCE = 0;
+    TDatabase::ParamDB->LP_DIVERGENCE_COEFF = 0;
+    TDatabase::ParamDB->LP_DIVERGENCE_EXPONENT = 1;
+
+    TDatabase::ParamDB->LP_PRESSURE = 0;
+    TDatabase::ParamDB->LP_PRESSURE_COEFF = 0;
+    TDatabase::ParamDB->LP_PRESSURE_EXPONENT = 1;
+
+    TDatabase::ParamDB->LP_ORDER_DIFFERENCE = 1;
+    TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE = 1;
+    TDatabase::ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE = 1;
+    TDatabase::ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE = 1;
+    TDatabase::ParamDB->LP_PRESSURE_ORDER_DIFFERENCE = 1;
+  }
+
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == STOKES)
+    TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = 1;
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
+  {
+    TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = 1;
+    switch (TDatabase::ParamDB->NSTYPE)
+    {
+      case 1:
+        if(my_rank==0)
+            Output::warn<1>("NSE Parameter Consistency","Galerkin discretization for Oseen because of NSTYPE ",
+                      TDatabase::ParamDB->NSTYPE);
+        db["space_discretization_type"].set("galerkin"); // DISCTYPE = 1
+        break;
+      case 14:
+      if(my_rank==0)
+          Output::warn<1>("NSE Parameter Consistency","SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE ",
+                      TDatabase::ParamDB->NSTYPE);
+        db["space_discretization_type"].set("supg"); // DISCTYPE = 2
+        break;
+      default:
+      if(my_rank==0)
+          Output::warn<1>("NSE Parameter Consistency","No method for Oseen implemented for NSTYPE ",
+                      TDatabase::ParamDB->NSTYPE);
+        exit(4711);
+    }
+  }
+}
+
+/* ************************************************************************** */
+/// plays the role of the old SetParametersCD
+/// but with the new database.The remaining global parameters
+/// can/must be removed here, progressively.
+void check_parameters_consistency_CD(ParameterDatabase& db, int &nonlinear_method)
+{
+  if (TDatabase::ParamDB->SOLD_PARAMETER_TYPE== KLR02_3)
+    TDatabase::ParamDB->SOLD_S = 0;
+  if (TDatabase::ParamDB->SOLD_PARAMETER_TYPE== LP96)
+  {
+    OutPut("SOLD_PARAMETER_TYPE == LP96 should be used with higher quadrature rule,"<<endl);
+    OutPut("since right hand side is in general not linear !!!"<<endl);
+  }
+
+  if (!db["space_discretization_type"].is("local_projection") &&
+      !db["space_discretization_type"].is("local_projection_2_level"))
+  {
+    // switch off all local projection terms
+    TDatabase::ParamDB->LP_FULL_GRADIENT = 0;
+    TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF = 0;
+    TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
+
+    TDatabase::ParamDB->LP_STREAMLINE = 0;
+    TDatabase::ParamDB->LP_STREAMLINE_COEFF = 0;
+    TDatabase::ParamDB->LP_STREAMLINE_EXPONENT = 1;
+  }
+  else
+  {
+    if (db["space_discretization_type"].is("local_projection"))
+    {
+      // check spaces and change if necessary
+      switch(TDatabase::ParamDB->ANSATZ_ORDER)
+      {
+        case 1:
+          TDatabase::ParamDB->ANSATZ_ORDER = 100;
+          OutPut("ANSATZ_ORDER changed to " << TDatabase::ParamDB->ANSATZ_ORDER << endl);
+          break;
+        case 2:
+          TDatabase::ParamDB->ANSATZ_ORDER = 201;
+          OutPut("ANSATZ_ORDER changed to " << TDatabase::ParamDB->ANSATZ_ORDER << endl);
+          break;
+        case 3:
+          TDatabase::ParamDB->ANSATZ_ORDER = 302;
+          OutPut("ANSATZ_ORDER changed to " << TDatabase::ParamDB->ANSATZ_ORDER << endl);
+          break;
+        case 4:
+          TDatabase::ParamDB->ANSATZ_ORDER = 403;
+          OutPut("ANSATZ_ORDER changed to " << TDatabase::ParamDB->ANSATZ_ORDER << endl);
+          break;
+        case 5:
+          TDatabase::ParamDB->ANSATZ_ORDER = 504;
+          OutPut("ANSATZ_ORDER changed to " << TDatabase::ParamDB->ANSATZ_ORDER << endl);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  if(TDatabase::ParamDB->LP_FULL_GRADIENT)
+  {
+    if(TDatabase::ParamDB->LP_STREAMLINE)
+    {
+      TDatabase::ParamDB->LP_STREAMLINE = 0;
+      TDatabase::ParamDB->LP_STREAMLINE_COEFF = 0;
+      TDatabase::ParamDB->LP_STREAMLINE_EXPONENT = 1;
+      OutPut("local projection stabilisation in streamline direction ");
+      OutPut("is switched off due to stabilisation of full gradient." << endl);
+    }
+  }
+
+  if(TDatabase::ParamDB->LP_STREAMLINE)
+  {
+    if(TDatabase::ParamDB->LP_FULL_GRADIENT)
+    {
+      TDatabase::ParamDB->LP_FULL_GRADIENT = 0;
+      TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF = 0;
+      TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
+      OutPut("local projection stabilisation for gradient ");
+      OutPut("is switched off due to stabilisation of streamline direction." << endl);
+    }
+  }
+
+  if (TDatabase::ParamDB->LP_STREAMLINE && TDatabase::ParamDB->LP_CROSSWIND)
+    nonlinear_method = 1;
+
+  if(TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE == -123)
+    TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE = TDatabase::ParamDB->LP_ORDER_DIFFERENCE;
+
+  if(TDatabase::ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE == -123)
+    TDatabase::ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE = TDatabase::ParamDB->LP_ORDER_DIFFERENCE;
+
+  // has to be changed for all discretizations
+  // otherwise access to not allocated array in error computation
+  if ((TDatabase::ParamDB->SDFEM_TYPE == 100)&&(!TDatabase::ParamDB->SOLVE_ADJOINT_PROBLEM))
+  {
+    TDatabase::ParamDB->SDFEM_TYPE = 2;
+    OutPut("Changed Database::ParamDB->SDFEM_TYPE to " << TDatabase::ParamDB->SDFEM_TYPE
+      << " since no adjoint problem is solved !!! "<<endl);
+  }
+  if ((TDatabase::ParamDB->SDFEM_TYPE != 100)&&(TDatabase::ParamDB->SOLVE_ADJOINT_PROBLEM)&&
+      (db["space_discretization_type"].is("sdfem")))
+  {
+    TDatabase::ParamDB->SDFEM_TYPE = 100;
+    OutPut("Changed Database::ParamDB->SDFEM_TYPE to " << TDatabase::ParamDB->SDFEM_TYPE
+      << " since adjoint problem is solved !!! "<<endl);
+  }
+
+  // SUPG, GLS
+  // there is only one minor difference in method, treat them otherwise the same
+  if (db["space_discretization_type"].is("gls"))
+  {
+    db["space_discretization_type"].set("supg");
+    TDatabase::ParamDB->INTERNAL_DISC_FLAG = 1;
+  }
+  if ((db["space_discretization_type"].is("sdfem"))
+      &&(TDatabase::ParamDB->SOLD_TYPE==0))
+  {
+    // this excludes some not wished side effects
+    TDatabase::ParamDB->SOLD_PARAMETER_TYPE = 0;
+  }
+  if ((TDatabase::ParamDB->SOLVE_ADJOINT_PROBLEM)&&(TDatabase::ParamDB->SOLD_ADJOINT))
+    TDatabase::ParamDB->SOLD_PARAMETER_TYPE = 100;
+
+  if  ((db["space_discretization_type"].is("sdfem"))
+      &&(TDatabase::ParamDB->SOLD_PARAMETER_TYPE == FEM_TVD))
+  {
+    TDatabase::ParamDB->SDFEM_TYPE = 0;
+    TDatabase::ParamDB->DELTA0 =  TDatabase::ParamDB->DELTA1 = 0;
+    OutPut("FEM-TVD: switched stabilization off!" << endl);
+  }
+
+  if ((db["space_discretization_type"].is("sdfem"))
+      &&(TDatabase::ParamDB->SOLD_TYPE))
+    nonlinear_method = 1;
+  if ((db["space_discretization_type"].is("sdfem"))
+      &&((TDatabase::ParamDB->SDFEM_TYPE==2)
+    || (TDatabase::ParamDB->SDFEM_TYPE==100)))
+    SetPolynomialDegree();
+
+  if ((db["space_discretization_type"].is("sdfem"))
+      &&(TDatabase::ParamDB->SDFEM_TYPE==2))
+  {
+    if (TDatabase::ParamDB->CELL_MEASURE != 4)
+    {
+      TDatabase::ParamDB->CELL_MEASURE = 4;
+      OutPut("CELL_MEASURE changed to " << TDatabase::ParamDB->CELL_MEASURE << endl);
+    }
+    if (TDatabase::ParamDB->DELTA0 != 1.0)
+    {
+      TDatabase::ParamDB->DELTA0 = 1.0;
+      OutPut("DELTA0 changed to " << TDatabase::ParamDB->DELTA0 << endl);
+    }
+  }
+
+  if (db["space_discretization_type"].is("cip"))
+  {
+    TDatabase::ParamDB->INTERNAL_FACE_INTEGRALS = 1;
+    if (TDatabase::ParamDB->CIP_TYPE < 10)
+    {
+      db["space_discretization_type"].set("galerkin");
+      TDatabase::ParamDB->SOLD_PARAMETER_TYPE = 0;
+    }
+    else
+    {
+      // add SOLD term to CIP discretization
+      nonlinear_method = 1;
+      TDatabase::ParamDB->CIP_TYPE -=10;
+      db["space_discretization_type"].set("supg");
+      if (TDatabase::ParamDB->SOLD_TYPE == 0)
+        TDatabase::ParamDB->SOLD_TYPE = 2;
+      // switch off SUPG part
+      TDatabase::ParamDB->SDFEM_TYPE = 0;
+      TDatabase::ParamDB->DELTA0 = 0.0;
+      TDatabase::ParamDB->DELTA1 = 0.0;
+      //  TDatabase::ParamDB->SOLD_PARAMETER_TYPE = BE05_1;
+      //  TDatabase::ParamDB->SOLD_TYPE = 0;
+    }
+  }
+
+  if (db["space_discretization_type"].is("dg"))
+  {
+    db["space_discretization_type"].set("galerkin");
+    TDatabase::ParamDB->INTERNAL_FACE_INTEGRALS = 2;
+    if ( TDatabase::ParamDB->ANSATZ_ORDER < 10)
+      TDatabase::ParamDB->ANSATZ_ORDER = -TDatabase::ParamDB->ANSATZ_ORDER-10;
+    else
+      // P elements on quads
+      TDatabase::ParamDB->ANSATZ_ORDER = -10*TDatabase::ParamDB->ANSATZ_ORDER;
+    if (TDatabase::ParamDB->ESTIMATE_ERRORS)
+    {
+      TDatabase::ParamDB->ESTIMATE_ERRORS = 0;
+      OutPut("Error estimation does not work for DG !!!"<< endl);
+    }
+  }
+  if  (!db["space_discretization_type"].is("sdfem"))
+  {
+    TDatabase::ParamDB->SOLD_TYPE = 0;
+    TDatabase::ParamDB->SOLD_PARAMETER_TYPE =0;
+  }
+  if (db["space_discretization_type"].is("local_projection_2_level"))
+  {
+    nonlinear_method = 1;
+    TDatabase::ParamDB->SOLD_PARAMETER_TYPE = 0;
+  }
+}
+
+
+

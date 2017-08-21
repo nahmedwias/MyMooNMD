@@ -26,6 +26,10 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
+namespace cow_house
+{
+  #include "NSE_2D/CowHouse.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -74,6 +78,9 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       /** coefficients */
       problem_coefficients = driven_cavity::LinCoeffs;
       
+      // Set dimensionless viscosity
+      driven_cavity::DIMENSIONLESS_VISCOSITY = get_nu();
+
       driven_cavity::ExampleFile();
       break;
     case 2:
@@ -124,6 +131,33 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
 
       flow_around_cylinder::ExampleFile();
       break;
+
+  case 4:
+      /** exact_solution */
+      exact_solution.push_back( cow_house::ExactU1 );
+      exact_solution.push_back( cow_house::ExactU2 );
+      exact_solution.push_back( cow_house::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( cow_house::BoundCondition );
+      boundary_conditions.push_back( cow_house::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( cow_house::U1BoundValue );
+      boundary_data.push_back( cow_house::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = cow_house::LinCoeffs;
+      
+      // Set dimensionless viscosity
+      cow_house::DIMENSIONLESS_VISCOSITY = get_nu();
+
+      
+      cow_house::ExampleFile();
+      break;
+      
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }

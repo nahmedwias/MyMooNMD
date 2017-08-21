@@ -95,6 +95,10 @@ class IterativeMethod
                          * this->loop_info.get_initial_residual();
       bool enough_iterations = 
         current_iterate > this->min_n_iterations || this->min_n_iterations == 0;
+        /// @todo the stagnation factor is current set to 1e10
+	/// one should think about whether this criterion makes sense for 
+	/// gmres-type methods and how to check it. Note that an increase of 
+	/// the residual might occur after a restart (if the matrix is ill-conditioned).
       bool stagnation = 
         (current_residual > 
           this->stagnation_factor*this->loop_info.get_previous_residual());
@@ -120,9 +124,11 @@ class IterativeMethod
       {
         if(my_rank == 0)
         Output::warn("IterativeMethod", "iteration diverged: ", 
-                     std::setprecision(12), 
+                     std::setprecision(12), this->divergence_factor, 
                      this->loop_info.get_initial_residual(), " -> ",
                      current_residual, ", at iteration ", current_iterate);
+	// stop execution of the coe 
+	ErrThrow("execution of the code stopped");
       }
       if(converged)
         this->loop_info.finish(current_iterate, current_residual);
@@ -137,7 +143,7 @@ class IterativeMethod
     IterativeMethod(std::shared_ptr<Preconditioner<Vector>> prec,
                     std::string name = "")
       : prec(prec), name(name), residual_tolerance(1.e-8),
-        residual_reduction(0.), divergence_factor(1.5), stagnation_factor(1.01),
+        residual_reduction(0.), divergence_factor(1.e10), stagnation_factor(1.e10),
         max_n_iterations(100), min_n_iterations(0), restart(10), damping(1.0),
         loop_info(name)
     {
@@ -170,6 +176,10 @@ class IterativeMethod
     double get_residual_tolerance() const
     { return residual_tolerance; };
     
+    /** Get a const reference to the stored loop info object, so that its
+     * information can be processed elsewhere.*/
+    const LoopInfo& get_loop_info() const {return loop_info;};
+
     /// @brief set all parameters related to stopping criteria
     void set_stopping_parameters(unsigned int max_it, unsigned int min_it,
                                  double tolerance, double reduction,

@@ -143,8 +143,8 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
         coeff[2] = -2*coeff[6] + -2 + (coeff[5]/coeff[7])*(x*x+2*x*z+13); // f2
         coeff[3] = -10*coeff[6] + 7 + (coeff[5]/coeff[7])*(-2*x*z+5*y*y); // f3
         coeff[4] = 0; // g
-        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
-        coeff[9]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+        coeff[9]=TDatabase::ParamDB->equal_order_stab_weight_PkPk;
         
     }
   }
@@ -165,8 +165,8 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
         coeff[2] = -2*coeff[6] + -2 + (coeff[5]/coeff[7])*(x*x+2*x*z+13); // f2
         coeff[3] = -10*coeff[6] + 7 + (coeff[5]/coeff[7])*(-2*x*z+5*y*y); // f3
         coeff[4] = 0; // g
-        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
-        coeff[9]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+        coeff[9]=TDatabase::ParamDB->equal_order_stab_weight_PkPk;
     }
   }
     

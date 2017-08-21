@@ -2,8 +2,10 @@
 // Poiseuille (exact solution in P2/P1)
 // 
 // u(x,y,z) = ( 0, 0 , 1-(x^2+y^2))^T=(u1,u2,u3)^T
-// p(x,y,z) = z-8
+// p(x,y,z) = -DP/Length*(z-zInlet)+DP/2;
 
+// This example is adapted to the geometry cylinder_short_18Ktetra.mesh
+// The pressure solution is set according to the Hagen-Poiseuille law (https://en.wikipedia.org/wiki/Hagen–Poiseuille_equation): DP= (8*mu*L)/(r^2) * v
 
 void ExampleFile()
 {
@@ -20,16 +22,16 @@ void ExactU1(double x, double y,  double z, double *values)
     values[1] = 0;           // u1_x
     values[2] = 0;           // u1_y
     values[3] = 0;           // u1_z
-    values[4] = 0;           // Delta u1
+    values[4] = 0;           // Delta u1=u1_xx+u1_yy+u1_zz
 }
 
 void ExactU2(double x, double y,  double z, double *values)
 {
-  values[0] = 0;            // u2
-  values[1] = 0;            // u2_x
-  values[2] = 0;            // u2_y
-  values[3] = 0;            // u2_z
-  values[4] = 0;            // Delta u2=u2_xx+u2_yy+u2_zz
+    values[0] = 0;            // u2
+    values[1] = 0;            // u2_x
+    values[2] = 0;            // u2_y
+    values[3] = 0;            // u2_z
+    values[4] = 0;            // Delta u2=u2_xx+u2_yy+u2_zz
 }
 
 void ExactU3(double x, double y,  double z, double *values)
@@ -44,48 +46,78 @@ void ExactU3(double x, double y,  double z, double *values)
 
 void ExactP(double x, double y,  double z, double *values)
 {
-  double Length = 3.;
-  double Radius = 1.;
-  double Umax = 1.;
-  double DP = 4*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
-  double Pinlet = DP/2;
-  double Poutlet = -DP/2;
-  double zInlet = 1.;
-  values[0] = -DP/Length*(z-zInlet)+DP/2;
-  values[1] = 0;
-  values[2] = 0;
-  values[3] = -DP/Length;
-  values[4] = 0;
+    double Length = 1.;
+    double Radius = 1.;
+    double Umax = 1.;
+    double DP = 4*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
+    //  double DP = 8*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
+    double Pinlet = DP/2;
+    double Poutlet = -DP/2;
+    double zInlet = 1.;
+    values[0] = -DP/Length*(z-zInlet)+DP/2;
+    //  values[0] = -DP/3*z+5*DP/6;
+    values[1] = 0;
+    values[2] = 0;
+    values[3] = -DP/Length;
+    values[4] = 0;
 }
 
-// kind of boundary condition (for FE space needed)
+// kind of boundary condition (for FE space needed);
+// To all nodes (x,y,z) a bound condition has to be assigned to (Usually DIRICHLET or NEUMANN),
+// The condition "DIRICHLET" assures the uniqueness of the pressure in case of Dirichlet b.c.
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  double zBottom = 1.;
-  double zTop = 4.;
+    double zBottom = 0.;
+    double zTop = 1.;
   
-  // first case: 2 Neumann boundaries  (label 1 and 2), one Nitsche (label 3)
-  if ((TDatabase::ParamDB->n_neumann_boundary + TDatabase::ParamDB->n_nitsche_boundary)==3 ) {
-    cond = NEUMANN;
-  } else {
-    // second case: all Dirichlet
-    cond = DIRICHLET; 
-    if (TDatabase::ParamDB->n_neumann_boundary==0) {
-      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average = 0 (for uniqueness)
-      return;
-    } else {
-      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
-
-      // third case:  2 Neumann boundaries (label 1 and 2), Dirichlet on label 3
-      
-      if (z==zBottom || z==zTop) {
-	cond = NEUMANN;
-	return;
-      }
+    cond = DIRICHLET;
+    if (TDatabase::ParamDB->n_neumann_boundary==0)
+    {
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+        return;
+        // If n_neumann_boundary==1 this means in this example that we set Neumann bc. on top of the cylinder
+    } else if (TDatabase::ParamDB->n_neumann_boundary==1){
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+        if (z==zTop) {
+            cond = NEUMANN;
+            return;
+        }
+        // If n_neumann_boundary==2 this means in this example that we set Neumann bc. on top and at the bottom of the cylinder
+    } else if (TDatabase::ParamDB->n_neumann_boundary==2){
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+        if (z==zBottom || z==zTop) {
+            cond = NEUMANN;
+            return;
+        }
     }
     
-  }
     
+    
+//  // first case: 2 Neumann boundaries  (label 1 and 2), one Nitsche (label 3)
+//  if ((TDatabase::ParamDB->n_neumann_boundary + TDatabase::ParamDB->n_nitsche_boundary)==3 ) {
+//    cond = NEUMANN;
+//  } else {
+//    // second case: all Dirichlet
+//    cond = DIRICHLET; 
+//    if (TDatabase::ParamDB->n_neumann_boundary==0) {
+//      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average = 0 (for uniqueness)
+//      return;
+//    } else {
+//      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+//
+//      // third case:  2 Neumann boundaries (label 1 and 2), Dirichlet on label 3
+//      
+//        
+//        if (z==zTop) {
+//            cond = NEUMANN;
+//            return;
+//        }
+//  //    if (z==zBottom || z==zTop) {
+//  //        cond = NEUMANN;
+//   //       return;
+//    //  }
+//    }
+//  }
 }
 
 
@@ -104,11 +136,21 @@ void U2BoundValue(double x, double y, double z, double &value)
 // value of boundary condition
 void U3BoundValue(double x, double y, double z, double &value)
 {
+    double zBottom = 0.;
+    
     if (TDatabase::ParamDB->n_neumann_boundary==0 && TDatabase::ParamDB->n_nitsche_boundary==0)
-        value = 1-(x*x+y*y);//3*(1-(y*y+x*x));
+        value = 1-(x*x+y*y);
+    
+    else if (TDatabase::ParamDB->n_neumann_boundary==1)
+    {
+        if (z==zBottom) {
+            value = 1-(x*x+y*y);
+        }
+        else
+            value = 0.;
+    }
     else
         value = 0.;
-
 }
 
 // ========================================================================
@@ -118,21 +160,28 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
     double *coeff;
+    double Length = 1;
+    double Radius = 1.;
+    double Umax = 1.;
+    double DP = 4*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
+    //  double DP = 8*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
+
     
     for(int i=0;i<n_points;i++)
     {
         coeff = coeffs[i];
-        
+        // Note: Setting f3=0, and PERMEABILITY=100000 gives the Stokes case. Here Delta u and nabla p balance each other for the functions chosen in the example;
         //coeff[0] = eps;
         coeff[5]= TDatabase::ParamDB->VISCOSITY;//0.;
         coeff[6]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
         coeff[7]= TDatabase::ParamDB->PERMEABILITY;
         coeff[1] = 0;//coeff[6]*(-12)+(-1)+(coeff[5]/coeff[7])*(3*(1-(Y[i]*Y[i]+Z[i]*Z[i]))); // f1
         coeff[2] = 0; // f2
-        coeff[3] = 0;//-coeff[6]*(-4)+(4)+(coeff[5]/coeff[7])*(1-(Y[i]*Y[i]+X[i]*X[i])); // 0; // f3
+        //coeff[3] = -coeff[6]*(-4)- DP/Length +(coeff[5]/coeff[7])*(1-(Y[i]*Y[i]+X[i]*X[i])); // 0; // f3
+        coeff[3] = 0;//-coeff[6]*(-4)- DP/3 +(coeff[5]/coeff[7])*(1-(Y[i]*Y[i]+X[i]*X[i])); // 0; // f3
         coeff[4] = 0; // g
-        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
-        coeff[9]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+        coeff[9]=TDatabase::ParamDB->equal_order_stab_weight_PkPk;
     }
  
 }

@@ -59,7 +59,7 @@ void VankaSmoother::update(const BlockFEMatrix& matrix)
           " This matrix does not fulfil that requirement! ", i);
     }
   }
-  //Find out if spaces changed, and if so: reassort dof batches
+  //Find out if spaces changed, and if so: reassort dof patches
   //pressure (when pressure space has changed)
   // @todo TODO the following two "if" dont check correctly if the spaces changed
   // in comparison to the previous one. This needs to be corrected to make a safer
@@ -71,7 +71,7 @@ void VankaSmoother::update(const BlockFEMatrix& matrix)
     //TODO Check that cell vanka and continuous space are not used together!
     // Trouble is: Space does not know whether it holds discontinuous elements.
     pressure_space_ = last_space;
-    set_up_pressure_batches(*pressure_space_);
+    set_up_pressure_patches(*pressure_space_);
   }
   //velocity ( when either space changed)
   if(first_space != velocity_space_ || last_space != pressure_space_)
@@ -83,7 +83,7 @@ void VankaSmoother::update(const BlockFEMatrix& matrix)
     if(is_transposed)
       ErrThrow("Oy vey! That coupling block is transposed, "
           "that's not what I expected.")
-    set_up_velocity_batches(*coupling_block.get(), *velocity_space_);
+    set_up_velocity_patches(*coupling_block.get(), *velocity_space_);
   }
 
   //Reset the stored global matrix on which all the work is done
@@ -136,8 +136,8 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
   // Loop over all local systems and do all the work
   for(size_t i = 0; i < press_dofs_local_.size() ; ++i)
   {
-    const DofBatch& velo_dofs = velo_dofs_local_.at(i);
-    const DofBatch& press_dofs = press_dofs_local_.at(i);
+    const DofPatch& velo_dofs = velo_dofs_local_.at(i);
+    const DofPatch& press_dofs = press_dofs_local_.at(i);
     size_t n_velo_dofs_local = velo_dofs.getSize();
     size_t n_press_dofs_local = press_dofs.getSize();
 
@@ -295,59 +295,59 @@ void VankaSmoother::smooth(const BlockVector& rhs, BlockVector& solution )
  *
  * @param pressureSpacePtr A pointer to the pressure space the dofs refer to.
  *
- * This method determines the size, the setup and the order of the pressure dof batches.
+ * This method determines the size, the setup and the order of the pressure dof patches.
  * Playing with it renders different Vanka smoothers!
  */
-void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
+void VankaSmoother::set_up_pressure_patches(const TFESpace& pressureSpace){
 
   switch (type_) {
     case VankaType::NODAL:
     { // pressure node oriented Vanka
-      //There are as many batches as nodes in this case.
-      int nBatches = pressureSpace.GetN_DegreesOfFreedom();
+      //There are as many patches as nodes in this case.
+      int nPatches = pressureSpace.GetN_DegreesOfFreedom();
       //Loop over cells.
-      for (int i=0;i<nBatches;i++){
-        //To every node belongs a pressure batch. Create that batch here.
-        DofBatch currentPressureBatch{};
-        currentPressureBatch.addDof(i);
-        //Make the pressure batch nice and clean and copy it into the list.
-        currentPressureBatch.tidyUp();
-        press_dofs_local_.push_back(currentPressureBatch);
+      for (int i=0;i<nPatches;i++){
+        //To every node belongs a pressure patch. Create that patch here.
+        DofPatch currentPressurePatch{};
+        currentPressurePatch.addDof(i);
+        //Make the pressure patch nice and clean and copy it into the list.
+        currentPressurePatch.tidyUp();
+        press_dofs_local_.push_back(currentPressurePatch);
       }
       //End loop over cells
     } break;
 
     case VankaType::CELL:
     case VankaType::CELL_JACOBI:
-    case VankaType::BATCH:
-    { //cell, cell_jacobi and batch oriented Vanka treat the pressure dofs the same.
+    case VankaType::PATCH:
+    { //cell, cell_jacobi and patch oriented Vanka treat the pressure dofs the same.
 
-      //There are as many batches as cells in this case.
-      int nBatches = pressureSpace.GetN_Cells();
+      //There are as many patches as cells in this case.
+      int nPatches = pressureSpace.GetN_Cells();
 
       // Store a pointer to the array of globl dofs and the array of begin indices (for each cell).
       int* allDofArray = pressureSpace.GetGlobalNumbers();
       int* beginIndexArray = pressureSpace.GetBeginIndex();
 
       //Loop over cells.
-      for (int i=0;i<nBatches;i++){
+      for (int i=0;i<nPatches;i++){
 #ifdef _MPI
         // In MPI case choose only own cells to form local systems.
         if(pressureSpace.GetCollection()->GetCell(i)->IsHaloCell())
           continue;
 #endif
-        //To every cell belongs a pressure batch. Create that batch here.
-        DofBatch currentPressureBatch{};
+        //To every cell belongs a pressure patch. Create that patch here.
+        DofPatch currentPressurePatch{};
         //Loop over cell dofs.
         for (int j=beginIndexArray[i];j<beginIndexArray[i+1];j++){
-          //Put the current dof into current pressure batch
-          currentPressureBatch.addDof(allDofArray[j]);
+          //Put the current dof into current pressure patch
+          currentPressurePatch.addDof(allDofArray[j]);
         }
         // End loop over cell dofs.
 
-        //Make the pressure batch nice and clean and copy it into the list.
-        currentPressureBatch.tidyUp();
-        press_dofs_local_.push_back(currentPressureBatch);
+        //Make the pressure patch nice and clean and copy it into the list.
+        currentPressurePatch.tidyUp();
+        press_dofs_local_.push_back(currentPressurePatch);
       }
       //End loop over cells
     }
@@ -369,72 +369,72 @@ void VankaSmoother::set_up_pressure_batches(const TFESpace& pressureSpace){
  *
  * Look for non-zero entries in the matrix pressureVelocityMatrix.
  * To each row (crsp. pressure dof) put the columns (crsp. velo dofs)
- * into the corresponding velocity dof batch.
+ * into the corresponding velocity dof patch.
  *
  * This method is the same for all nodal vankas.
  */
-void VankaSmoother::set_up_velocity_batches(const TMatrix& pressureVelocityMatrix,
+void VankaSmoother::set_up_velocity_patches(const TMatrix& pressureVelocityMatrix,
                                             const TFESpace& velocitySpace){
   switch (type_) {
     case VankaType::NODAL:
-    case VankaType::BATCH: //nodal and cellbatch Vanka treat assorting of velocity batches the same.
+    case VankaType::PATCH: //nodal and cellpatch Vanka treat assorting of velocity patches the same.
     {
       // Hold pointers for lookup in the coupling matrix.
       const int* columnsPointer = pressureVelocityMatrix.GetStructure().GetKCol();
       const int* rowPointer = pressureVelocityMatrix.GetStructure().GetRowPtr();
 
-      // Loop over pressure batches.
-      for(auto pBatchesIterator : press_dofs_local_){
-        // Construct the new corresponding velocity batch.
-        DofBatch currentVeloBatch{};
-        //Loop over pressure dofs in current pressure batch
-        for (auto pDof : pBatchesIterator){
+      // Loop over pressure patches.
+      for(auto pPatchesIterator : press_dofs_local_){
+        // Construct the new corresponding velocity patch.
+        DofPatch currentVeloPatch{};
+        //Loop over pressure dofs in current pressure patch
+        for (auto pDof : pPatchesIterator){
           //Loop over all the places in columnsPointer, where entries are connected to row pDof.
           for (int i = rowPointer[pDof]; i != rowPointer[pDof+1]; i++){
             //Every column index that appears in the sparsity structure
             //is a velo dof connected to the pressure dof.
-            currentVeloBatch.addDof(columnsPointer[i]);
+            currentVeloPatch.addDof(columnsPointer[i]);
           }
 
         }
-        //End loop over pressure dofs in current pressure batch.
+        //End loop over pressure dofs in current pressure patch.
 
-        //Make the velocity batch nice and clean and add a copy to the list.
-        currentVeloBatch.tidyUp();
-        velo_dofs_local_.push_back(currentVeloBatch);
+        //Make the velocity patch nice and clean and add a copy to the list.
+        currentVeloPatch.tidyUp();
+        velo_dofs_local_.push_back(currentVeloPatch);
       }
-      // End loop over pressure batches
+      // End loop over pressure patches
       break;
     }
     case VankaType::CELL:
     case VankaType::CELL_JACOBI:
-    { //for cell vanka gather all velo dofs in one cell into one batch
-      //There are as many batches as cells in this case.
-      int nBatches = velocitySpace.GetN_Cells();
+    { //for cell vanka gather all velo dofs in one cell into one patch
+      //There are as many patches as cells in this case.
+      int nPatches = velocitySpace.GetN_Cells();
 
       // Store a pointer to the array of globl dofs and the array of begin indices (for each cell).
       int* allDofArray = velocitySpace.GetGlobalNumbers();
       int* beginIndexArray = velocitySpace.GetBeginIndex();
 
       //Loop over cells.
-      for (int i=0;i<nBatches;i++){
+      for (int i=0;i<nPatches;i++){
 #ifdef _MPI
         // In MPI case choose only own cells to form local systems.
         if(velocitySpace.GetCollection()->GetCell(i)->IsHaloCell())
             continue;
 #endif
-        //To every cell belongs a pressure batch. Create that batch here.
-        DofBatch currentVeloBatch{};
+        //To every cell belongs a pressure patch. Create that patch here.
+        DofPatch currentVeloPatch{};
         //Loop over cell dofs.
         for (int j=beginIndexArray[i];j<beginIndexArray[i+1];j++){
-          //Put the current dof into current pressure batch
-          currentVeloBatch.addDof(allDofArray[j]);
+          //Put the current dof into current pressure patch
+          currentVeloPatch.addDof(allDofArray[j]);
         }
         // End loop over cell dofs.
 
-        //Make the pressure batch nice and clean and copy it into the list.
-        currentVeloBatch.tidyUp();
-        velo_dofs_local_.push_back(currentVeloBatch);
+        //Make the pressure patch nice and clean and copy it into the list.
+        currentVeloPatch.tidyUp();
+        velo_dofs_local_.push_back(currentVeloPatch);
       }
       //End loop over cells
 

@@ -93,9 +93,20 @@ ParameterDatabase get_default_domain_parameters()
          " has the extension 'mesh, 'smesh', 'node' or 'poly'. "
          " currently only the smesh files are supported");
 
+   db.add("read_metis", false , "This Boolean will state if you read a file "
+          "which contains the partition of the cells on the processors.");
+
+   db.add("read_metis_file", std::string("mesh_partitioning_file.txt"), "The Mesh-file will be read here.");
+
+   db.add("write_metis", false , "This Boolean will state if you write out "
+          "which cell belongs to which processor into a file (see parameter"
+          "'write_metis_file'.");
+
+   db.add("write_metis_file", std::string("mesh_partitioning_file.txt"), 
+          "The partitioning of the mesh will be written here.");
+
   return db;
 }
-
 
 // Constructor
 TDomain::TDomain(const ParameterDatabase& param_db) :
@@ -929,6 +940,11 @@ void TDomain::Init(const char *PRM, const char *GEO)
   {//catch the only implemented default case - boundary of the unit square
     initializeDefaultUnitSquareBdry();
   }
+  //start with treatment of the boundary description
+  else if (!strcmp(PRM, "DrivenCavitySquare"))
+  {//catch the only implemented default case - boundary of the unit square
+    initializeDrivenCavitySquareBdry();
+  }
   else
   {
     // non-default: read in from file
@@ -963,6 +979,10 @@ void TDomain::Init(const char *PRM, const char *GEO)
   else if (!strcmp(GEO, "UnitSquare"))
   {
     UnitSquare();
+  }
+  else if (!strcmp(GEO, "DrivenCavitySquareQuads"))
+  {
+    DrivenCavitySquareQuads();
   }
   else if (!strcmp(GEO, "UnitSquareRef"))
   {
@@ -3923,6 +3943,7 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   // 2nd step: Call the mesh partitioning.
 
   int maxCellsPerVertex;
+
   //do the actual partitioning, and examine the return value
   if ( Partition_Mesh3D(MPI_COMM_WORLD, this, maxCellsPerVertex) == 1)
   {
@@ -4308,9 +4329,8 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
   this->N_BoundComps = tgml.nBoundaryComponents;
   meshBoundComps.resize(this->N_BoundComps); 
   Output::print("TDomain::buildBoundary() - N_BoundComps: ", this->N_BoundComps);
-  Output::print("here");
   this->BdParts[0] = new TBoundPart(this->N_BoundComps);
-  Output::print("here");
+  
   // StartBdCompID[i] gives the iindex of the element in BdParts
   // where the BdComp i starts. The last element is equal to to N_BoundParts
   this->StartBdCompID = new int [this->N_BoundParts+1];
@@ -4378,7 +4398,7 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
                                                        a[0], a[1], a[2],
                                                        n[0], n[1], n[2]);
       ++counter;
-      Output::print(" counter:",counter);
+      
       // the id of the boundary face is taken as the attribute of the triangle
       // note: later, trifacemarkerlist=0 is used to identify inner faces (see below)
       tgml.meshTetGenOut.trifacemarkerlist[i] = counter;

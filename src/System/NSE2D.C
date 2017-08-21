@@ -5,7 +5,9 @@
 #include <Upwind.h>
 #include <GridTransfer.h>
 #include <Multigrid.h>
-#include<Assemble2D.h>
+#include <Assemble2D.h>
+
+#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 
 ParameterDatabase get_default_NSE2D_parameters()
 {
@@ -106,7 +108,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
-  // set the velocity and preesure spaces
+  // set the velocity and pressure spaces
   // this function returns a pair which consists of 
   // velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);
@@ -133,8 +135,8 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   if(usingMultigrid)
   {
     // Construct multigrid object
-    auto mg_ = this->solver.get_multigrid();
-    bool mdml = mg_->is_using_mdml();
+    auto mg = solver.get_multigrid();
+    bool mdml = mg->is_using_mdml();
     if(mdml)
     {
       // change the discretization on the coarse grids to lowest order 
@@ -143,34 +145,26 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       this->get_velocity_pressure_orders(velocity_pressure_orders);
     }
 
-    // number of multigrid levels
-    size_t n_multigrid_levels = mg_->get_n_geometric_levels();
-    // index of finest grid
-    int finest = domain.get_ref_level(); // -> there are finest+1 grids
-    // index of the coarsest grid used in this multigrid environment
-    int coarsest = finest - n_multigrid_levels + 1;
+    //determine multigrid levels
+    int second_grid;
+    int coarsest_grid = domain.get_ref_level() - mg->get_n_geometric_levels() + 1;
     if(mdml)
-    {
-      coarsest++;
-    }
+      second_grid = domain.get_ref_level(); //the finest grid is taken a second time in mdml
     else
+      second_grid = domain.get_ref_level() - 1;
+
+    if(coarsest_grid < 0 )
     {
-      // only for mdml there is another matrix on the finest grid, otherwise
-      // the next system to be created is on the next coarser grid
-      finest--;
+      ErrThrow("The domain has not been refined often enough to do multigrid "
+          "on ", mg->get_n_geometric_levels(), " geometric levels (",
+          mg->get_n_algebraic_levels()," algebraic levels). There are"
+          " only ", domain.get_ref_level() + 1, " geometric grid levels.");
     }
-    if(coarsest < 0 )
-    {
-      ErrThrow("the domain has not been refined often enough to do multigrid "
-               "on ", n_multigrid_levels, " levels. There are only ",
-               domain.get_ref_level() + 1, " grid levels.");
-    }
-    
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
     // matrix on finest grid is already constructed
     matrices.push_back(&systems.back().matrix);
-    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
+    for(int grid_no = second_grid; grid_no >= coarsest_grid; --grid_no)
     {
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
       systems.emplace_back(example, *coll, velocity_pressure_orders, type);
@@ -178,7 +172,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       matrices.push_front(&systems.back().matrix);
     }
     // initialize the multigrid object with all the matrices on all levels
-    mg_->initialize(matrices);
+    mg->initialize(matrices);
   }
   
   outputWriter.add_fe_vector_function(&this->get_velocity());
@@ -186,11 +180,6 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   
   // print out some information  
   this->output_problem_size_info();
-}
-
-/** ************************************************************************ */
-NSE2D::~NSE2D()
-{
 }
 
 /** ************************************************************************ */
@@ -322,6 +311,7 @@ void NSE2D::assemble()
     BoundCondFunct2D * boundary_conditions[3] = {
       v_space->GetBoundCondition(), v_space->GetBoundCondition(),
       p_space->GetBoundCondition() };
+
     std::array<BoundValueFunct2D*, 3> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];
@@ -330,10 +320,10 @@ void NSE2D::assemble()
     //same for all: the local asembling object
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la(NSE2D_Galerkin, fe_functions,
-                     this->example.get_coeffs());
+    LocalAssembling2D la(NSE2D_All, fe_functions, example.get_coeffs());
 
-    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
+    std::vector<std::shared_ptr<FEMatrix>> blocks =
+        s.matrix.get_blocks_uniquely();
 
     switch(TDatabase::ParamDB->NSTYPE)
     {// switch over known Block Matrix types, treat each one individually,
@@ -417,6 +407,9 @@ void NSE2D::assemble()
             "I don't know how to pass its blocks to Assemble2D.");
     }
 
+    //HOTFIX: Check the documentation!
+    assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+
     // call the assemble method with the information that has been patched together
     Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
@@ -437,10 +430,7 @@ void NSE2D::assemble()
 /** ************************************************************************ */
 void NSE2D::assemble_nonlinear_term()
 {
-  // the class LocalAssembling2D which we will need next, requires an array of
-  // pointers to finite element functions, i.e. TFEFunction2D **.
-
-  //Nonlinear assembling requires an approximate velocity solution on every grid!
+ //Nonlinear assembling requires an approximate velocity solution on every grid!
   if(systems.size() > 1)
   {
     for( int block = 0; block < 2 ;++block)
@@ -462,7 +452,7 @@ void NSE2D::assemble_nonlinear_term()
             && this->solver.get_multigrid()->is_using_mdml();
   bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
   
-  if(mdml && !is_stokes)
+  if ((mdml && !is_stokes)|| db["space_discretization_type"].is("upwind"))
   {
     // in case of upwinding we only assemble the linear terms. The nonlinear
     // term is not assembled but replaced by a call to the upwind method.
@@ -499,7 +489,7 @@ void NSE2D::assemble_nonlinear_term()
 
     TFEFunction2D *fe_functions[3] = 
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la_nonlinear(NSE2D_Galerkin_Nonlinear, fe_functions,
+    LocalAssembling2D la_nonlinear(NSE2D_NL, fe_functions,
                                    this->example.get_coeffs());
 
     //fetch us (a) pointer(s) to the diagonal A block(s)
@@ -512,23 +502,12 @@ void NSE2D::assemble_nonlinear_term()
       // TODO remove all reinterpret casts as soon as Assembling process takes only FEMatrices
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
-        n_sq_mat = 1;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        break;
       case 2:
         n_sq_mat = 1;
         sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         break;
       case 3:
-        n_sq_mat = 2;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        break;
       case 4:
-        n_sq_mat = 2;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        break;
       case 14:
         n_sq_mat = 2;
         sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
@@ -539,9 +518,8 @@ void NSE2D::assemble_nonlinear_term()
             "I don't know how to pass its blocks to Assemble2D.");
     }
     
-    // do upwinding TODO remove dependency of global values
     bool on_finest_grid = &systems.front() == &s;
-    bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
+    bool do_upwinding = (db["space_discretization_type"].is("upwind")
                          || (mdml && !on_finest_grid))
                         && !is_stokes;
 
@@ -553,6 +531,10 @@ void NSE2D::assemble_nonlinear_term()
         //reset the matrices, linear part is assembled anew
         sq_mat[i]->reset();
       }
+
+      //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
+
       //do the actual assembling
       Assemble2D(n_fe_spaces, fe_spaces, n_sq_mat, sq_mat, n_rect_mat, rect_mat,
                  n_rhs, rhs, fe_rhs, boundary_conditions,
@@ -610,7 +592,11 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
   double normOfResidual = this->getFullResidual();
   // store initial residual, so later we can print the overall reduction
   if(iteration_counter == 0)
+  {
     initial_residual = normOfResidual;
+    initial_rhs_norm = this->systems.front().rhs.norm();
+    Output::print("Initial rhs norm ", initial_rhs_norm);
+  }
   // the residual from 10 iterations ago
   double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
@@ -628,6 +614,10 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
   }
+  //check residual relative to initial right hand side
+  if(db["nonlinloop_residual_relative_to_rhs"])
+    limit *= initial_rhs_norm;
+
 
   // check if the iteration has converged, or reached the maximum number of
   // iterations or if convergence is too slow. Then return true otherwise false
@@ -679,17 +669,17 @@ void NSE2D::solve()
   std::shared_ptr<BlockVector> old_solution(nullptr);
   if(damping != 1.0)
     old_solution = std::make_shared<BlockVector>(s.solution);
-  
+  // solve linear problem 
   solver.solve(s.matrix,s.rhs, s.solution);
-
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-    s.p.project_into_L20();
-  
+  // apply damping if prescribed
   if(damping != 1.0)
   {
     s.solution.scale(damping);
-    s.solution.add_scaled(*old_solution, damping);
+    s.solution.add_scaled(*old_solution, 1-damping);
   }
+  // project pressure if necessary
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    s.p.project_into_L20();
 }
 
 /** ************************************************************************ */

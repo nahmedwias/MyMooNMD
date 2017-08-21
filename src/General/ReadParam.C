@@ -253,11 +253,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "DISCTYPE:"))
-    {
-      dat >> TDatabase::ParamDB->DISCTYPE;
-      N_Param++;
-    }
     if (!strcmp(line, "INTL_DISCTYPE:"))
     {
       dat >> TDatabase::ParamDB->INTL_DISCTYPE;
@@ -303,15 +298,9 @@ int TDomain::ReadParam(char *ParamFile)
           N_Param++;
       }
       
-      if (!strcmp(line, "equal_order_stab_weight_P1P1:"))
+      if (!strcmp(line, "equal_order_stab_weight_PkPk:"))
       {
-          dat >> TDatabase::ParamDB->equal_order_stab_weight_P1P1;
-          N_Param++;
-      }
-      
-      if (!strcmp(line, "equal_order_stab_weight_P2P2:"))
-      {
-          dat >> TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+          dat >> TDatabase::ParamDB->equal_order_stab_weight_PkPk;
           N_Param++;
       }
       
