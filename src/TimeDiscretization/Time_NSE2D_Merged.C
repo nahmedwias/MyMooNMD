@@ -767,11 +767,16 @@ void Time_NSE2D_Merged::call_assembling_routine(Time_NSE2D_Merged::System_per_gr
   set_matrices_rhs(s, type, sqMatrices, rectMatrices, rhs_array);
   // boundary conditions and boundary values array
   // boundary conditions:
-  std::vector<const BoundCondFunct2D*> bc(3);
+  /*std::vector<const BoundCondFunct2D*> bc(3);
   bc[0]=s.velocity_space.GetBoundCondition();
   bc[1]=bc[0];
   bc[2]=s.pressure_space.GetBoundCondition();
-
+  */
+  BoundCondFunct2D* bc[3] = {
+    s.velocity_space.GetBoundCondition(),
+    s.velocity_space.GetBoundCondition(),
+    s.pressure_space.GetBoundCondition()};
+  
   // boundary values:
   std::vector<BoundValueFunct2D*>bv(3);
   bv[0]=example.get_bd(0);
@@ -792,7 +797,7 @@ void Time_NSE2D_Merged::call_assembling_routine(Time_NSE2D_Merged::System_per_gr
                sqMatrices.size(), sqMatrices.data(),
                rectMatrices.size(), rectMatrices.data(),
                rhs_array.size(), rhs_array.data(), spaces_rhs.data(),
-               bc.data(), bv.data(), la, temp);
+               bc, bv.data(), la, temp);
   // we are assembling only one mass matrix M11, but in general we need the
   // diagonal block M22 to be the same
   // For SUPG method, mass matrix is non-linear and will be changed during 
@@ -1292,10 +1297,14 @@ void Time_NSE2D_Merged::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
     mass_blocks = s.mass_matrix.get_blocks_uniquely(true);
     // s.mass_matrix.print_coloring_pattern("M", true);exit(0);
     //cout<<mass_blocks.size()<<endl;exit(0);
-    std::vector<const BoundCondFunct2D*> bc(3);
+    /*std::vector<const BoundCondFunct2D*> bc(3);
     bc[0]=s.velocity_space.GetBoundCondition();
     bc[1]=bc[0];
-    bc[2]=s.pressure_space.GetBoundCondition();
+    bc[2]=s.pressure_space.GetBoundCondition();*/
+    BoundCondFunct2D* bc[3] = {
+    s.velocity_space.GetBoundCondition(),
+    s.velocity_space.GetBoundCondition(),
+    s.pressure_space.GetBoundCondition()};
     // boundary values:
     std::vector<BoundValueFunct2D*>bv(3);
     bv[0]=example.get_bd(0);
@@ -1337,7 +1346,7 @@ void Time_NSE2D_Merged::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
     Assemble2DSlipBC(spaces_mat.size(), spaces_mat.data(),
                    sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
                    rhs_array.size(), rhs_array.data(), rhs_space.data(),
-                   bc.data(), bv.data(), s.u.GetComponent(0), s.u.GetComponent(1));
+                   bc, bv.data(), s.u.GetComponent(0), s.u.GetComponent(1));
 
   }
 

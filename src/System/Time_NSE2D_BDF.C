@@ -437,11 +437,17 @@ void Time_NSE2D_BDF::assemble_rhs(bool rhs_assemble)
       // b-blocks, so the scaling with the factor times step length
       // is important
       double t1 = TDatabase::TimeDB->THETA1;
-      s.matrix.scale_blocks_actives(tau*t1, {{0,2}, {1,2}, {2,0}, {2,1}});
+      const std::vector<std::vector<size_t>>
+	cell_positions = {{0,2}, {1,2}, {2,0}, {2,1}};
+      s.matrix.scale_blocks_actives(tau*t1, cell_positions);
       // TODO: C-block depends on solution because of the stabilization parameter
       // check and re-assemble again
       if(TDatabase::ParamDB->NSTYPE == 14)/// && current_step_ ==1)
-        s.matrix.scale_blocks_actives(tau*t1, {{2,2}});
+	{
+	  const std::vector<std::vector<size_t>>
+	    cell_positions_2_2 = {{2,2}};
+	  s.matrix.scale_blocks_actives(tau*t1, cell_positions_2_2);
+	}
     }
   }
   // copy back the dirichlet dof's from solution to rhs
@@ -486,8 +492,10 @@ void Time_NSE2D_BDF::assemble_nonlinear_term()
   {
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
     double t1 = TDatabase::TimeDB->THETA1;
+    const std::vector<std::vector<size_t>>
+	cell_positions = {{2,0}, {2,1}};
     for(System_per_grid& s : this->systems)
-      s.matrix.scale_blocks_actives(tau*t1, {{2,0}, {2,1}});
+      s.matrix.scale_blocks_actives(tau*t1,cell_positions );
   }
 }
 
@@ -663,11 +671,15 @@ void Time_NSE2D_BDF::call_assembling_routine(Time_NSE2D_BDF::System_per_grid& s,
   set_matrices_rhs(s, type, sqMatrices, rectMatrices, rhs_array);
   // boundary conditions and boundary values array
   // boundary conditions:
-  std::vector<const BoundCondFunct2D*> bc(3);
+  /*std::vector<const BoundCondFunct2D*> bc(3);
   bc[0]=s.velocity_space.GetBoundCondition();
   bc[1]=bc[0];
   bc[2]=s.pressure_space.GetBoundCondition();
-  
+  */
+  BoundCondFunct2D* bc[3] = {
+    s.velocity_space.GetBoundCondition(),
+    s.velocity_space.GetBoundCondition(),
+    s.pressure_space.GetBoundCondition()};
   // boundary values:
   std::vector<BoundValueFunct2D*>bv(3);
   bv[0]=example.get_bd(0);
@@ -683,7 +695,7 @@ void Time_NSE2D_BDF::call_assembling_routine(Time_NSE2D_BDF::System_per_grid& s,
                sqMatrices.size(), sqMatrices.data(), 
                rectMatrices.size(), rectMatrices.data(), 
                rhs_array.size(), rhs_array.data(), spaces_rhs.data(), 
-               bc.data(), bv.data(), la);
+               bc, bv.data(), la);
 }
 
 void Time_NSE2D_BDF::set_arrays(Time_NSE2D_BDF::System_per_grid& s, std::vector<const TFESpace2D*> &spaces, 
@@ -1323,10 +1335,15 @@ void Time_NSE2D_BDF::modify_slip_bc(bool BT_Mass)
       mass_blocks = s.MatrixK.get_blocks_uniquely();
     }
     
-    std::vector<const BoundCondFunct2D*> bc(3);
+    /*std::vector<const BoundCondFunct2D*> bc(3);
     bc[0]=s.velocity_space.GetBoundCondition();
     bc[1]=bc[0];
     bc[2]=s.pressure_space.GetBoundCondition();
+    */
+    BoundCondFunct2D* bc[3] = {
+    s.velocity_space.GetBoundCondition(),
+    s.velocity_space.GetBoundCondition(),
+    s.pressure_space.GetBoundCondition()};
     // boundary values:
     std::vector<BoundValueFunct2D*>bv(3);
     bv[0]=example.get_bd(0);
@@ -1363,7 +1380,7 @@ void Time_NSE2D_BDF::modify_slip_bc(bool BT_Mass)
      Assemble2DSlipBC(spaces_mat.size(), spaces_mat.data(), 
                    sqMat.size(), sqMat.data(), reMat.size(), reMat.data(), 
                    rhs_array.size(), rhs_array.data(), rhs_space.data(), 
-                   bc.data(), bv.data(), s.u.GetComponent(0), s.u.GetComponent(1));
+                   bc, bv.data(), s.u.GetComponent(0), s.u.GetComponent(1));
   }
 
 }

@@ -892,7 +892,7 @@ void TimeNSType4NLSUPGExtr(double Mult, double* coeff, double* param, double hK,
       ansatz01 = uv_yorig[j];
       ansatz00 = uv_orig[j];
       ansatz20 = uxx_orig[j];
-      ansatz20 = uyy_orig[j];
+      ansatz02 = uyy_orig[j];
       
       double ugradu = u1*ansatz10 + u2*ansatz01;
       // viscous and convection term
