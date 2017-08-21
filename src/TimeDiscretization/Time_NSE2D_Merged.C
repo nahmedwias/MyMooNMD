@@ -4,7 +4,7 @@
 #include <LinAlg.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
-
+#include <BoundaryAssembling2D.h>
 #include <GridTransfer.h>
 #include <Domain.h>
 #include <LocalProjection.h>
@@ -792,12 +792,35 @@ void Time_NSE2D_Merged::call_assembling_routine(Time_NSE2D_Merged::System_per_gr
     temp = stab_param.data();
   else
     temp = nullptr;
-  // assemble all the matrices and right hand side
+  // assemble all the matrices and ru_coight hand side
   Assemble2D(spaces_mat.size(), spaces_mat.data(),
                sqMatrices.size(), sqMatrices.data(),
                rectMatrices.size(), rectMatrices.data(),
                rhs_array.size(), rhs_array.data(), spaces_rhs.data(),
                bc, bv.data(), la, temp);
+
+  // add boundary integrals to stabilize backflow at open boundaries
+  const TFESpace2D * v_space = &s.velocity_space;
+  std::vector< TFEFunction2D* > u_conv;
+  u_conv.resize(2);
+  u_conv[0] = s.u.GetComponent(0);
+  u_conv[1] = s.u.GetComponent(1);
+  for (int k=0;k<TDatabase::ParamDB->n_stab_backflow_boundary;k++)
+  {
+    Output::print(" Backflow stab on boundary ",
+    		  TDatabase::ParamDB->stab_backflow_boundary_id[k],
+    		  " beta = ", TDatabase::ParamDB->stab_backflow_boundary_beta[k]);
+    BoundaryAssembling2D boundary_integral;
+    int neumann_boundary_component = TDatabase::ParamDB->stab_backflow_boundary_id[k];
+    double beta_backflow_stab = TDatabase::ParamDB->stab_backflow_boundary_beta[k];
+    boundary_integral.matrix_u_v_backflow_stab(s.matrix,
+				 v_space,
+				 u_conv,
+				 neumann_boundary_component,   
+				 beta_backflow_stab);     
+    
+  }
+  
   // we are assembling only one mass matrix M11, but in general we need the
   // diagonal block M22 to be the same
   // For SUPG method, mass matrix is non-linear and will be changed during 
