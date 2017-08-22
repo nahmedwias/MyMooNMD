@@ -874,18 +874,19 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
 	    double absneg_u_n = 0.;
 	    double x_middle = (x0 + x1)/2.;
 	    double y_middle = (y0 + y1)/2.;
-	    double *ux_values,*uy_values;
-	    //u_conv[0]->FindGradient(x_middle,y_middle,ux_values);
-	    //u_conv[1]->FindGradient(x_middle,y_middle,uy_values);
-	    /*
+	    double ux_values[3],uy_values[3];
+	    u_conv[0]->FindGradient(x_middle,y_middle,ux_values);
+	    u_conv[1]->FindGradient(x_middle,y_middle,uy_values);
+	    
 	    if ( (ux_values[0]*nx + uy_values[0]*ny)<0 )
 	    {
 	      absneg_u_n = 1.;
 	      Output::print(" u(",x_middle,",",y_middle,") = ",
-			    ux_values[0],",",uy_values[0]);
+			    ux_values[0],",",uy_values[0],
+			    ", normal = ",nx, "," , ny);
 	    }
-	    delete ux_values,uy_values;
-	    */
+	    //delete ux_values,uy_values;
+	    
 	    scale_factor = beta/2.0*absneg_u_n*scale_factor;
 
 	    
