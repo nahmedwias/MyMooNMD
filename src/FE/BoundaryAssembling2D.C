@@ -881,9 +881,10 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
 	    if ( (ux_values[0]*nx + uy_values[0]*ny)<0 )
 	    {
 	      absneg_u_n = 1.;
-	      Output::print(" u(",x_middle,",",y_middle,") = ",
+	      /*Output::print(" u(",x_middle,",",y_middle,") = ",
 			    ux_values[0],",",uy_values[0],
 			    ", normal = ",nx, "," , ny);
+	      */
 	    }
 	    //delete ux_values,uy_values;
 	    
@@ -916,3 +917,14 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
 	}
     } 
 }
+
+
+/*
+tgtDer(u) = ( (-N.y)*dx(u) + N.x*dy(u) ) 
+
+block [0,0]
+tgtDer(ux)*tgtDer(vx)
+
+block[3,3]
+tgtDer(uy)*tgtDer(vy)
+ */
