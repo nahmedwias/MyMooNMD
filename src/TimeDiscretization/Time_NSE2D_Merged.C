@@ -244,7 +244,13 @@ void Time_NSE2D_Merged::set_parameters()
   }
   if(db["disctype"].is("supg"))
   {
-    TDatabase::ParamDB->DISCTYPE = 2;
+    if(db["extrapolate_velocity"].is("constant_extrapolate") 
+      || db["extrapolate_velocity"].is("linear_extrapolate") )
+    {
+      TDatabase::ParamDB->DISCTYPE = -2;
+    }
+    else
+      TDatabase::ParamDB->DISCTYPE = 2;
     /// set scaling factor for B, BT's block
     // depends on how to deal the nonlinearity in the 
     // test function: fully implicit case
@@ -1035,21 +1041,42 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
           
           if(db["disctype"].is("supg"))
           {
-            sqMat.resize(6);
-            sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-            // pressure-pressure block
-            sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-            // rectangular matrices
-            reMat.resize(4);
-            reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
-            reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-            reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-            reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-            rhs_array.resize(3);
-            rhs_array[0] = s.rhs.block(0);
-            rhs_array[1] = s.rhs.block(1);
-            rhs_array[2] = s.rhs.block(2);
-            s.rhs.reset();
+            if(db["extrapolate_velocity"].is("constant_extrapolate")
+              || db["extrapolate_velocity"].is("linear_extrapolate") )
+            {
+              sqMat.resize(6);
+              sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+              sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+              sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+              sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+              
+              sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+              sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+              
+              reMat.resize(4);
+              reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
+              reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+              reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
+              reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+            }
+            else
+            {
+              sqMat.resize(6);
+              sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+              // pressure-pressure block
+              sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+              // rectangular matrices
+              reMat.resize(4);
+              reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
+              reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+              reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+              reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+              rhs_array.resize(3);
+              rhs_array[0] = s.rhs.block(0);
+              rhs_array[1] = s.rhs.block(1);
+              rhs_array[2] = s.rhs.block(2);
+              s.rhs.reset();
+            }
           }
           if(db["disctype"].is("residual_based_vms"))
           {
@@ -1152,6 +1179,22 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       functions.resize(4);
       functions[2] = s.u_m1.GetComponent(0);
       functions[3] = s.u_m1.GetComponent(1);
+      
+      if(db["extrapolate_velocity"].is("constant_extrapolate")
+        || db["extrapolate_velocity"].is("linear_extrapolate")
+      )
+      {
+        s.extrapolate_sol.reset();
+        s.extrapolate_sol = s.solution_m1;
+        
+        functions.resize(6);
+        functions[4] = s.extrapolate_u.GetComponent(0);
+        functions[5] = s.extrapolate_u.GetComponent(1);
+      }
+      else
+      {
+        Output::print<5>("Fully nonlinear version of SUPG method");
+      }
     }
     if(db["time_discretization"].is("bdf_two") && !(time_stepping_scheme.pre_stage_bdf))
     {
@@ -1169,6 +1212,31 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       functions.resize(4);
       functions[2] = s.comb_old_u.GetComponent(0);
       functions[3] = s.comb_old_u.GetComponent(1);
+      
+      if(db["extrapolate_velocity"].is("constant_extrapolate"))
+      {
+        s.extrapolate_sol.reset();
+        s.extrapolate_sol = s.solution_m1;
+        
+        functions.resize(6);
+        functions[4] = s.extrapolate_u.GetComponent(0);
+        functions[5] = s.extrapolate_u.GetComponent(1);
+      }
+      else if(db["extrapolate_velocity"].is("linear_extrapolate"))
+      {
+        s.extrapolate_sol.reset();
+        s.extrapolate_sol = s.solution_m1;
+        s.extrapolate_sol.scale(2.);
+        s.extrapolate_sol.add_scaled(s.solution_m2, -0.1);
+       
+        functions.resize(6);
+        functions[4] = s.extrapolate_u.GetComponent(0);
+        functions[5] = s.extrapolate_u.GetComponent(1);
+      }
+      else
+      {
+        Output::print<5>("Fully nonlinear version of SUPG method");
+      }
     }
   }
   // finite element functions for the residual-based VMS method. In 

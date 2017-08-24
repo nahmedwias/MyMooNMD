@@ -1060,28 +1060,28 @@ void TimeNSType14SUPGExtr(double Mult, double* coeff, double* param, double hK,
   double f2=coeff[2];
   
   // solution from previous iterations
-  // or the extrapolated solution from previous time step
-  // in the case of extrapolations also in the nonlinear 
-  // term on the left hand side of NS-equation
   double u1=param[0];
   double u2=param[1];
-  // solution from the previous time step 
-  // this can also be constant or linearly extrapolated
-  double u1_extr=param[2];
-  double u2_extr=param[3];
-  
-  // the difference of the solution fro previous time steps
+  // the difference of the solution from previous time steps
+  // this is needed for the right-hand side, the term which 
+  // comes from the pressure-stabilization. 
   // In the case of BE: u^n-1
   // but in the BDF2: 2 u^n-1 - 1./2 u^n-2
-  double u1_pts = param[4];
-  double u2_pts = param[5];
+  // ...
+  double u1_pts=param[2];
+  double u2_pts=param[3];
+  
+  // solution from the previous time step 
+  // this can also be constant or linearly extrapolated
+  double u1sigma = param[4];
+  double u2sigma = param[5];
   
   double test10, test01, test00, val;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
 
   // stabilization parameters
   double u[2];
-  u[0]=u1_extr; u[1]=u2_extr;
+  u[0]=u1sigma; u[1]=u2sigma;
   double stab_param[2];
   stabilization_parameters_equal_order(Mult, u, coeff, stab_param);
   double tau_m =  stab_param[0];
@@ -1092,12 +1092,12 @@ void TimeNSType14SUPGExtr(double Mult, double* coeff, double* param, double hK,
     test10 = uv_xorig[i];
     test01 = uv_yorig[i];
     test00 = uv_orig[i];
-    
-    double tau_m_uptsgradv = tau_m * (u1_extr*test10+u2_extr*test01);
+    // tau_m * u^sigma
+    double tau_usigma = tau_m * (u1sigma*test10+u2sigma*test01);
     // right hand side 
     // standard terms 
-    rhs1[i] += Mult*(test00+tau_m_uptsgradv)*f1;
-    rhs2[i] += Mult*(test00+tau_m_uptsgradv)*f2;
+    rhs1[i] += Mult*(test00+tau_usigma)*f1;
+    rhs2[i] += Mult*(test00+tau_usigma)*f2;
     // velocity-velocity blocks
     for(int j=0; j<N_U; ++j)
     {
@@ -1108,12 +1108,12 @@ void TimeNSType14SUPGExtr(double Mult, double* coeff, double* param, double hK,
       ansatz20 = uxx_orig[j];
       ansatz02 = uyy_orig[j];
       
-      double ugradu = u1*ansatz10 + u2*ansatz01;
+      double usigmagradu = u1sigma*ansatz10 + u2sigma*ansatz01;
       // viscous and convection term
       val = nu*(test10*ansatz10 + test01*ansatz01)
-            + ugradu * test00; 
+            + usigmagradu * test00; 
       // supg contribution
-      val += (-nu*(ansatz20 + ansatz02) + ugradu) * tau_m_uptsgradv;
+      val += (-nu*(ansatz20 + ansatz02) + usigmagradu) * tau_usigma;
       // grad-div contribution
       val += tau_c*test10*ansatz10;
       sqMatrixA11[i][j] += Mult * val;
@@ -1126,15 +1126,15 @@ void TimeNSType14SUPGExtr(double Mult, double* coeff, double* param, double hK,
       
       // viscous term 
       val = nu*(test10*ansatz10 + test01*ansatz01)
-            + ugradu * test00; 
+            + usigmagradu * test00; 
       // supg contribution
-      val += (-nu*(ansatz20 + ansatz02) + ugradu) * tau_m_uptsgradv;
+      val += (-nu*(ansatz20 + ansatz02) + usigmagradu) * tau_usigma;
       // grad-div contribution
       val += tau_c*test01*ansatz01;
       sqMatrixA22[i][j] += Mult * val;
       
       // mass matrix 
-      val = ansatz00 * (test00 + tau_m_uptsgradv);
+      val = ansatz00 * (test00 + tau_usigma);
       sqMatrixM[i][j] += Mult * val; 
     }
     
@@ -1146,11 +1146,11 @@ void TimeNSType14SUPGExtr(double Mult, double* coeff, double* param, double hK,
       ansatz01 = pq_yorig[j];
       
       val = -ansatz00*test10;
-      val += ansatz10 * tau_m_uptsgradv;
+      val += ansatz10 * tau_usigma;
       reMatrixB1T[i][j] += Mult * val;
       
       val = -ansatz00*test01;
-      val += ansatz01*tau_m_uptsgradv;
+      val += ansatz01*tau_usigma;
       reMatrixB2T[i][j] += Mult * val;
     }
   }
@@ -1174,17 +1174,19 @@ void TimeNSType14SUPGExtr(double Mult, double* coeff, double* param, double hK,
       ansatz00 = uv_orig[j];
       ansatz20 = uxx_orig[j];
       ansatz02 = uyy_orig[j];
+      
+      double usigmagradu = u1sigma*ansatz10 + u2sigma*ansatz01;
 
       // divergence constraint
       val = -test00*ansatz10;
       // supg terms 
       val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
-                       + (u1*ansatz10+u2*ansatz01) ) * test10;
+                       + usigmagradu ) * test10;
       reMatrixB1[i][j] -= Mult * val;
       
       val = -test00*ansatz01;
       val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
-                       + (u1*ansatz10+u2*ansatz01) ) * test01;                       
+                       + usigmagradu ) * test01;                       
       reMatrixB2[i][j] -= Mult * val;
     }
     
@@ -1204,11 +1206,19 @@ void TimeNSType14NLSUPGExtr(double Mult, double* coeff, double* param, double hK
   double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs)
 {
   double **sqMatrixA11 = LocMatrices[0];
-  double **sqMatrixA22 = LocMatrices[1];
+  double **sqMatrixA12 = LocMatrices[1];
+  double **sqMatrixA21 = LocMatrices[2];
+  double **sqMatrixA22 = LocMatrices[3];
+  // weighted mass matrix
+  double **sqMatrixM = LocMatrices[4];
+  // pressure-pressure block
+  double **sqMatrixC = LocMatrices[5];
   
-  double **reMatrixB1 = LocMatrices[2];
-  double **reMatrixB2 = LocMatrices[3];
-  
+  double **reMatrixB1 = LocMatrices[6];
+  double **reMatrixB2 = LocMatrices[7];
+  double **reMatrixB1T= LocMatrices[8];
+  double **reMatrixB2T= LocMatrices[9];
+      
   double *uv_xorig = OrigValues[0];
   double *uv_yorig = OrigValues[1];
   double *uv_orig = OrigValues[2]; 
@@ -1224,31 +1234,30 @@ void TimeNSType14NLSUPGExtr(double Mult, double* coeff, double* param, double hK
   int N_P = N_BaseFuncts[1];
   // problem parameters
   double nu=coeff[0];
-  double f1=coeff[1];
-  double f2=coeff[2];
   
   // solution from previous iterations
-  // or the extrapolated solution from previous time step
-  // in the case of extrapolations also in the nonlinear 
-  // term on the left hand side of NS-equation
   double u1=param[0];
   double u2=param[1];
-  // solution from the previous time step 
-  // this can also be constant or linearly extrapolated
-  double u1_extr=param[2];
-  double u2_extr=param[3];
-    // the difference of the solution fro previous time steps
+  // the difference of the solution from previous time steps
+  // this is needed for the right-hand side, the term which 
+  // comes from the pressure-stabilization. 
   // In the case of BE: u^n-1
   // but in the BDF2: 2 u^n-1 - 1./2 u^n-2
-  double u1_pts = param[4];
-  double u2_pts = param[5];
+  // ...
+  double u1_pts=param[2];
+  double u2_pts=param[3];
+  
+  // solution from the previous time step 
+  // this can also be constant or linearly extrapolated
+  double u1sigma = param[4];
+  double u2sigma = param[5];
   
   double test10, test01, test00, val;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
 
   // stabilization parameters
   double u[2];
-  u[0]=u1_extr; u[1]=u2_extr;
+  u[0]=u1sigma; u[1]=u2sigma;
   double stab_param[2];
   stabilization_parameters_equal_order(Mult, u, coeff, stab_param);
   double tau_m =  stab_param[0];
@@ -1259,8 +1268,9 @@ void TimeNSType14NLSUPGExtr(double Mult, double* coeff, double* param, double hK
     test10 = uv_xorig[i];
     test01 = uv_yorig[i];
     test00 = uv_orig[i];
+    // tau_m * u^sigma
+    double tau_usigma = tau_m * (u1sigma*test10+u2sigma*test01);
     
-    double tau_m_uptsgradv = tau_m * (u1_extr*test10+u2_extr*test01);
     // velocity-velocity blocks
     for(int j=0; j<N_U; ++j)
     {
@@ -1271,139 +1281,33 @@ void TimeNSType14NLSUPGExtr(double Mult, double* coeff, double* param, double hK
       ansatz20 = uxx_orig[j];
       ansatz02 = uyy_orig[j];
       
-      double ugradu = u1*ansatz10 + u2*ansatz01;
+      double usigmagradu = u1sigma*ansatz10 + u2sigma*ansatz01;
       // viscous and convection term
       val = nu*(test10*ansatz10 + test01*ansatz01)
-            + ugradu * test00; 
+            + usigmagradu * test00; 
       // supg contribution
-      val += (-nu*(ansatz20 + ansatz02) + ugradu) * tau_m_uptsgradv;
+      val += (-nu*(ansatz20 + ansatz02) + usigmagradu) * tau_usigma;
       // grad-div contribution
       val += tau_c*test10*ansatz10;
       sqMatrixA11[i][j] += Mult * val;
       
+      val = tau_c * test10*ansatz01;
+      sqMatrixA12[i][j] += Mult * val; 
+      
+      val = tau_c * test01*ansatz10;
+      sqMatrixA21[i][j] += Mult * val; 
+      
       // viscous term 
       val = nu*(test10*ansatz10 + test01*ansatz01)
-            + ugradu * test00; 
+            + usigmagradu * test00; 
       // supg contribution
-      val += (-nu*(ansatz20 + ansatz02) + ugradu) * tau_m_uptsgradv;
+      val += (-nu*(ansatz20 + ansatz02) + usigmagradu) * tau_usigma;
       // grad-div contribution
       val += tau_c*test01*ansatz01;
       sqMatrixA22[i][j] += Mult * val;
-    }
-  }
-  double dt=TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double t1 = TDatabase::TimeDB->THETA1;
-  // velocity(ansatz) pressure (test) blocks
-  for(int i=0; i<N_P; ++i)
-  {
-    // pressure test
-    test00 = pq_orig[i];
-    test10 = pq_xorig[i];
-    test01 = pq_yorig[i];
-    
-    for(int j=0;j<N_U;j++)
-    {
-      ansatz10 = uv_xorig[j];
-      ansatz01 = uv_yorig[j];
-      ansatz00 = uv_orig[j];
-      ansatz20 = uxx_orig[j];
-      ansatz02 = uyy_orig[j];
-
-      // divergence constraint
-      val = -test00*ansatz10;
-      // supg terms 
-      val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
-                       + (u1*ansatz10+u2*ansatz01) ) * test10;
-      reMatrixB1[i][j] -= Mult * val;
       
-      val = -test00*ansatz01;
-      val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
-                       + (u1*ansatz10+u2*ansatz01) ) * test01;                       
-      reMatrixB2[i][j] -= Mult * val;
-    }
-  }
-}
-//================================================================================
-void TimeNSType14RHSSUPGExtr(double Mult, double* coeff, double* param, double hK, 
-      double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs)
-{
-  double **sqMatrixM = LocMatrices[0];
-  double **sqMatrixC = LocMatrices[1];
-  double **reMatrixB1 = LocMatrices[2];
-  double **reMatrixB2 = LocMatrices[3];
-  double **reMatrixB1T= LocMatrices[4];
-  double **reMatrixB2T= LocMatrices[5];
-
-  double *rhs1 = LocRhs[0];
-  double *rhs2 = LocRhs[1];
-  double *rhs3 = LocRhs[2];
-  
-  double *uv_xorig = OrigValues[0]; 
-  double *uv_yorig = OrigValues[1]; 
-  double *uv_orig = OrigValues[2]; 
-  
-  double *pq_orig = OrigValues[3]; 
-  double *pq_xorig = OrigValues[4];
-  double *pq_yorig = OrigValues[5];
-  
-  double *uxx_orig = OrigValues[6];
-  double *uyy_orig = OrigValues[7];
-  
-  int N_U = N_BaseFuncts[0];
-  int N_P = N_BaseFuncts[1];
-  
-  // problem coefficients
-  double nu = coeff[0];
-  double f1 = coeff[1];
-  double f2 = coeff[2];
-
-  // solution from previous iterations
-  // or the extrapolated solution from previous time step
-  // in the case of extrapolations also in the nonlinear 
-  // term on the left hand side of NS-equation
-  double u1=param[0];
-  double u2=param[1];
-  // solution from the previous time step 
-  // this can also be constant or linearly extrapolated
-  double u1_extr=param[2];
-  double u2_extr=param[3];
-  // the difference of the solution fro previous time steps
-  // In the case of BE: u^n-1
-  // but in the BDF2: 2 u^n-1 - 1./2 u^n-2
-  double u1_pts = param[4];
-  double u2_pts = param[5];
-  
-  double test10, test01, test00;  
-  double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
-  
-  // stabilization parameters
-  double u[2];
-  u[0]=u1_extr; u[1]=u2_extr;
-  double stab_param[2];
-  stabilization_parameters_equal_order(Mult, u, coeff, stab_param);
-  double tau_m =  stab_param[0];
-  double tau_c =  stab_param[1];
-  
-  double val;
-  for(int i=0; i<N_U; ++i)
-  {
-    test10 = uv_xorig[i];
-    test01 = uv_yorig[i];
-    test00 = uv_orig[i];
-    
-    double tau_m_uptsgradv = tau_m * (u1_extr*test10+u2_extr*test01);
-    // right hand side 
-    // standard terms 
-    rhs1[i] += Mult*(test00+tau_m_uptsgradv)*f1;
-    rhs2[i] += Mult*(test00+tau_m_uptsgradv)*f2;
-    // velocity-velocity blocks
-    for(int j=0; j<N_U; ++j)
-    {
-      ansatz10 = uv_xorig[j];
-      ansatz01 = uv_yorig[j];
-      ansatz00 = uv_orig[j];      
       // mass matrix 
-      val = ansatz00 * (test00 + tau_m_uptsgradv);
+      val = ansatz00 * (test00 + tau_usigma);
       sqMatrixM[i][j] += Mult * val; 
     }
     
@@ -1415,11 +1319,11 @@ void TimeNSType14RHSSUPGExtr(double Mult, double* coeff, double* param, double h
       ansatz01 = pq_yorig[j];
       
       val = -ansatz00*test10;
-      val += ansatz10 * tau_m_uptsgradv;
+      val += ansatz10 * tau_usigma;
       reMatrixB1T[i][j] += Mult * val;
       
       val = -ansatz00*test01;
-      val += ansatz01*tau_m_uptsgradv;
+      val += ansatz01*tau_usigma;
       reMatrixB2T[i][j] += Mult * val;
     }
   }
@@ -1433,30 +1337,30 @@ void TimeNSType14RHSSUPGExtr(double Mult, double* coeff, double* param, double h
     test10 = pq_xorig[i];
     test01 = pq_yorig[i];
     
-    // u*_combined_old_time = (2 * u_{n-1} - 0.5 * u_{n-2} ) / dt
-    rhs3[i] += Mult*tau_m*((u1_pts/dt + f1 )*test10 + 
-                           (u2_pts/dt + f2 )*test01);
-    for(int j=0;j<N_U;j++)
+   for(int j=0;j<N_U;j++)
     {
       ansatz10 = uv_xorig[j];
       ansatz01 = uv_yorig[j];
       ansatz00 = uv_orig[j];
       ansatz20 = uxx_orig[j];
       ansatz02 = uyy_orig[j];
+      
+      double usigmagradu = u1sigma*ansatz10 + u2sigma*ansatz01;
 
       // divergence constraint
       val = -test00*ansatz10;
       // supg terms 
       val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
-                       + (u1*ansatz10+u2*ansatz01) ) * test10;
+                       + usigmagradu ) * test10;
       reMatrixB1[i][j] -= Mult * val;
       
       val = -test00*ansatz01;
       val -=  tau_m * (ansatz00/(t1*dt) - nu*(ansatz20+ansatz02) 
-                       + (u1*ansatz10+u2*ansatz01) ) * test01;                       
+                       + usigmagradu ) * test01;                       
       reMatrixB2[i][j] -= Mult * val;
     }
     
+    // pressure-pressure block
     for(int j=0; j<N_P; ++j)
     {
       ansatz10=pq_xorig[j];
@@ -1465,6 +1369,80 @@ void TimeNSType14RHSSUPGExtr(double Mult, double* coeff, double* param, double h
       double val = tau_m * (ansatz10*test10+ansatz01*test01);
       sqMatrixC[i][j] += Mult * val;
     }
+  }
+}
+//================================================================================
+void TimeNSType14RHSSUPGExtr(double Mult, double* coeff, double* param, double hK, 
+      double** OrigValues, int* N_BaseFuncts, double*** LocMatrices, double** LocRhs)
+{  
+  double *rhs1 = LocRhs[0];
+  double *rhs2 = LocRhs[1];
+  double *rhs3 = LocRhs[2];
+  
+  double *uv_xorig = OrigValues[0]; 
+  double *uv_yorig = OrigValues[1]; 
+  double *uv_orig = OrigValues[2]; 
+  
+  double *pq_orig = OrigValues[3]; 
+  double *pq_xorig = OrigValues[4];
+  double *pq_yorig = OrigValues[5];
+  
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+  
+  // problem coefficients
+  double f1 = coeff[1];
+  double f2 = coeff[2];
+
+  // solution from previous iterations
+  // double u1=param[0];
+  // double u2=param[1];
+  // the difference of the solution from previous time steps
+  // this is needed for the right-hand side, the term which 
+  // comes from the pressure-stabilization. 
+  // In the case of BE: u^n-1
+  // but in the BDF2: 2 u^n-1 - 1./2 u^n-2
+  // ...
+  double u1_pts=param[2];
+  double u2_pts=param[3];
+  
+  // solution from the previous time step 
+  // this can also be constant or linearly extrapolated
+  double u1sigma = param[4];
+  double u2sigma = param[5];
+  
+  double test10, test01, test00;  
+  // stabilization parameters
+  double u[2];
+  u[0]=u1sigma; u[1]=u2sigma;
+  double stab_param[2];
+  stabilization_parameters_equal_order(Mult, u, coeff, stab_param);
+  double tau_m =  stab_param[0];
+  
+  for(int i=0; i<N_U; ++i)
+  {
+    test10 = uv_xorig[i];
+    test01 = uv_yorig[i];
+    test00 = uv_orig[i];
+    
+    double tau_usigma = tau_m * (u1sigma*test10+u2sigma*test01);
+    // right hand side 
+    // standard terms 
+    rhs1[i] += Mult*(test00+tau_usigma)*f1;
+    rhs2[i] += Mult*(test00+tau_usigma)*f2;        
+  }
+  
+  double dt=TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;  
+  for(int i=0; i<N_P; ++i)
+  {
+    // pressure test
+    test00 = pq_orig[i];
+    test10 = pq_xorig[i];
+    test01 = pq_yorig[i];
+    
+    // u*_combined_old_time = (2 * u_{n-1} - 0.5 * u_{n-2} ) / dt
+    rhs3[i] += Mult*tau_m*((u1_pts/dt + f1 )*test10 + 
+                           (u2_pts/dt + f2 )*test01);    
   }
 }
 
