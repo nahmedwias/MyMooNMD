@@ -2963,8 +2963,8 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
 void LocalAssembling2D::set_parameters_for_tnseSUPG_Extr(LocalAssembling2D_type type)
 {
   if(TDatabase::ParamDB->NSTYPE < 4)
-    ErrThrow("Residual Based VMS method is only supported for NSTYPE 4 and 14 ");
-  
+    ErrThrow("SUPG method is only supported for NSTYPE 4 and 14 ");
+
   this->N_Parameters = 8;
   this->N_ParamFct = 1;
   this->ParameterFct = {TimeNSType4SUPGExtrParam};
@@ -3018,9 +3018,9 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG_Extr(LocalAssembling2D_type 
           this->Manipulate = NULL;
           break; // NSTYPE 4
         case 14: 
-          this->N_Matrices = 4;
-          this->RowSpace =    { 0, 0, 0, 0};
-          this->ColumnSpace = { 0, 0, 1, 1};
+          this->N_Matrices = 10;
+          this->RowSpace =    { 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
           this->N_Rhs = 0; 
           this->RhsSpace = { };
           this->AssembleParam = TimeNSType14NLSUPGExtr;
@@ -3039,11 +3039,12 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG_Extr(LocalAssembling2D_type 
           this->RhsSpace = { 0, 0 };
           this->AssembleParam = TimeNSType4RHSSUPGExtr;
           this->Manipulate = NULL;
+          ErrThrow("not tested yet");
           break;
         case 14:
-          this->N_Matrices = 6;
-          this->RowSpace =    { 0, 1, 1, 1, 0, 0};
-          this->ColumnSpace = { 0, 1, 0, 0, 1, 1};
+          this->N_Matrices = 0;
+          this->RowSpace =    {};
+          this->ColumnSpace = {};
           this->N_Rhs = 3; 
           this->RhsSpace = { 0, 0, 1 };
           this->AssembleParam = TimeNSType14RHSSUPGExtr;
