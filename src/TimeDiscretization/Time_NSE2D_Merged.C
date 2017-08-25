@@ -285,7 +285,13 @@ void Time_NSE2D_Merged::set_parameters()
 
   // the only case where one have to re-assemble the right hand side
   if(db["disctype"].is("supg"))
-    is_rhs_and_mass_matrix_nonlinear = true;
+  {
+    if(!db["extrapolate_velocity"].is("constant_extrapolate")
+        && !db["extrapolate_velocity"].is("linear_extrapolate")  )
+    {       
+       is_rhs_and_mass_matrix_nonlinear = true;
+    }
+  }
   compute_param = false;
 }
 
@@ -1227,7 +1233,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
         s.extrapolate_sol.reset();
         s.extrapolate_sol = s.solution_m1;
         s.extrapolate_sol.scale(2.);
-        s.extrapolate_sol.add_scaled(s.solution_m2, -0.1);
+        s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
        
         functions.resize(6);
         functions[4] = s.extrapolate_u.GetComponent(0);

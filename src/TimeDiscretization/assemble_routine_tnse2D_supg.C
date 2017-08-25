@@ -1060,8 +1060,8 @@ void TimeNSType14SUPGExtr(double Mult, double* coeff, double* param, double hK,
   double f2=coeff[2];
   
   // solution from previous iterations
-  double u1=param[0];
-  double u2=param[1];
+  // double u1=param[0];
+  // double u2=param[1];
   // the difference of the solution from previous time steps
   // this is needed for the right-hand side, the term which 
   // comes from the pressure-stabilization. 
@@ -1236,8 +1236,8 @@ void TimeNSType14NLSUPGExtr(double Mult, double* coeff, double* param, double hK
   double nu=coeff[0];
   
   // solution from previous iterations
-  double u1=param[0];
-  double u2=param[1];
+  // double u1=param[0];
+  // double u2=param[1];
   // the difference of the solution from previous time steps
   // this is needed for the right-hand side, the term which 
   // comes from the pressure-stabilization. 
