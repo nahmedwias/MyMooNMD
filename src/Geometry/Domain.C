@@ -56,7 +56,7 @@ extern "C"
                    struct triangulateio *);
 }
 
-ParameterDatabase get_default_domain_parameters()
+ParameterDatabase TDomain::default_domain_parameters()
 {
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
@@ -110,7 +110,7 @@ ParameterDatabase get_default_domain_parameters()
 
 // Constructor
 TDomain::TDomain(const ParameterDatabase& param_db) :
-  Interfaces(nullptr),db(get_default_domain_parameters())
+  Interfaces(nullptr),db(default_domain_parameters())
 {
   RefLevel = 0;
   Output::print<4>("domain is initialized");
@@ -164,7 +164,7 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
 //TODO This domain constructor, which is also responsible for read-in of the
 // old database, is to be reomved soon.
 TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
-  Interfaces(nullptr),db(get_default_domain_parameters())
+  Interfaces(nullptr),db(default_domain_parameters())
 {
   RefLevel = 0;
   
@@ -1148,14 +1148,13 @@ void TDomain::Init(const char *PRM, const char *GEO)
 void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 {
 #ifdef __2D__
-  Output::print("TDomain:: InitFromMesh using ", PRM, " and ", MESHFILE);
+  Output::print<3>("TDomain:: InitFromMesh using ", PRM, " and ", MESHFILE);
   //make an input file string from the file "PRM"
   std::ifstream bdryStream(PRM);
   if (!bdryStream)
-    {
-      Output::print(" ** Error(TDomain::Init) cannot open PRM file ", PRM);
-      exit(-1);
-    }
+  {
+    ErrThrow(" ** Error(TDomain::Init) cannot open PRM file ", PRM);
+  }
   //do the actual read in
   int Flag;
   ReadBdParam(bdryStream, Flag);
@@ -1172,8 +1171,7 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
     maxNVertexPerElem = 4;
   }
   if (numberOfElements==0) {
-    Output::print(" ** Error(Domain::Init) the mesh has no elements");
-    exit(-1);
+    ErrThrow(" ** Error(Domain::Init) the mesh has no elements");
   }
 
   // vertices data
