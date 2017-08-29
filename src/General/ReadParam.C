@@ -47,10 +47,8 @@ int TDomain::ReadParam(char *ParamFile)
   // if the max_line_length is too short, the program simply hangs
   size_t max_line_length = 1000;
   char line[max_line_length], *aux_char;
-  int N_Param = 0, flag[7];
+  int N_Param = 0;
   std::ifstream dat(ParamFile);
-
-  memset(flag,0,7*SizeOfInt);
 
   if (!dat)
   {
