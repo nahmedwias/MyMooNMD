@@ -141,6 +141,8 @@ class TDomain
     /** @brief destructor */
     ~TDomain();
     
+    static ParameterDatabase default_domain_parameters();
+    
     // Methods
     /** @brief Read in initial mesh from ".GEO" file.
      *
