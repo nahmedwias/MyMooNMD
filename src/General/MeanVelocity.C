@@ -184,4 +184,118 @@ void MeanVelocity::compute_mean_velocity(const Time_NSE2D_Merged& tnse2d)
   }
 }
 
+
+void MeanVelocity::compute_mean_velocity_on_points(const Time_NSE2D_Merged& tnse2d,
+  const std::vector<double>& vec, const std::vector<TBaseCell *> cells)
+{
+  const TFEFunction2D *u1 = tnse2d.get_velocity().GetComponent(0);
+  const TFEFunction2D *u2 = tnse2d.get_velocity().GetComponent(1);
+  
+  std::vector<double> meanu(vec.size()/2,0);
+  std::vector<double> meanv(vec.size()/2,0);
+  double temp[3];
+  
+  TCollection *coll = tnse2d.get_velocity_space().GetCollection();
+  for(size_t i=0; i<cells.size(); ++i)
+  {
+    TBaseCell *c = cells.at(i);
+    double x = vec.at(2*i);
+    double y = vec.at(2*i+1);
+    u1->FindGradientLocal(c, coll->GetIndex(c), x, y, temp);
+    meanu.at(i) = temp[0];
+    
+    u2->FindGradientLocal(c, coll->GetIndex(c), x, y, temp);
+    meanv.at(i) = temp[0];   
+  }
+  
+  // computation of temporal mean 
+  double tau=TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double ct = TDatabase::TimeDB->CURRENTTIME;
+  double tstart = TDatabase::TimeDB->T0;
+  
+  
+  if(temporal_mean_u1.empty())
+  {
+    temporal_mean_u1.resize(meanu.size(), 0.);
+    temporal_mean_u2.resize(meanv.size(), 0.);
+    R11.resize(meanu.size(), 0.);
+    R22.resize(meanv.size(), 0.);
+  }
+  
+  
+  double factor;
+  if(ct >= tstart)
+    factor= tau/(ct - tstart + tau);
+  else
+    factor = tau/(ct+tau);
+  
+  if(ct >= tstart)
+  {
+    for(size_t i=0; i<meanu.size(); i++)
+    {
+      temporal_mean_u1.at(i) = temporal_mean_u1.at(i)
+        + factor*(meanu.at(i) - temporal_mean_u1.at(i));    
+    }
+    for(size_t i=0; i<meanv.size(); ++i)
+    {
+      temporal_mean_u2.at(i) = temporal_mean_u2.at(i)
+        + factor*(meanv.at(i) - temporal_mean_u2.at(i));
+    }
+  }
+  else
+  {
+    for(size_t i=0; i<meanu.size(); i++)
+    {
+      temporal_mean_u1.at(i) = temporal_mean_u1.at(i)
+        + factor*(meanu.at(i) - temporal_mean_u1.at(i));    
+    }
+  }
+  
+  std::vector<double> u1u1(meanu.size(),0.);
+  
+  for(size_t i=0; i<meanu.size(); ++i)
+    u1u1[i] += meanu[i]*meanu[i];
+  
+  std::vector<double> u2u2(meanv.size(),0.);
+  for(size_t i=0; i<meanu.size(); ++i)
+    u2u2[i] += meanv[i]*meanv[i];
+  
+  //3. compute the Reynold stress 
+  for(size_t i=0; i<u1u1.size(); ++i)
+    R11.at(i) = R11.at(i) + factor*(u1u1.at(i) - R11.at(i));
+  //3. compute the Reynold stress 
+  for(size_t i=0; i<u2u2.size(); ++i)
+    R22.at(i) = R22.at(i) + factor*(u2u2.at(i) - R22.at(i));
+  
+  std::vector<double> rms_u1(R11.size(),0), rms_u2(R22.size(),0.);
+  // now compute the rms velocities
+  for(size_t i=0; i<R11.size(); ++i)
+    rms_u1.at(i) = R11[i] - pow(temporal_mean_u1.at(i), 2);
+  
+  for(size_t i=0; i<R22.size(); ++i)
+    rms_u2.at(i) = R22[i] - pow(temporal_mean_u2.at(i), 2);
+  
+  if(ct>=tstart)
+  {
+    double rms_u, rms_v;
+    for(size_t i=0; i<meanu.size(); ++i)
+    {
+      rms_u = sqrt(fabs(rms_u1.at(i)));
+      
+      Output::print("t ", std::scientific, ct," y ", setw(8), vec.at(2*i+1), 
+                    " mu ", setw(8), temporal_mean_u1.at(i), 
+                    " rms_u ", setw(8), rms_u, 
+                    " R11 ", setw(8), R11.at(i));
+    }
+    Output::print("");
+    for(size_t i=0; i<meanv.size(); ++i)
+    {
+      rms_v = sqrt(fabs(rms_u2.at(i)));
+      Output::print("t ", std::scientific, ct," x ", setw(8), vec.at(2*i), 
+                    " mv ", setw(8), temporal_mean_u2.at(i), 
+                    " rms_v ", setw(8), rms_v, 
+                    " R22 ", setw(8), R22.at(i) );
+    }
+  }  
+}
 #endif
