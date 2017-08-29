@@ -51,11 +51,45 @@ int main(int argc, char* argv[])
   Example_TimeNSE2D example( parmoon_db );
   // create an object of Time_NSE2D class
   Time_NSE2D_Merged tnse2d(Domain, parmoon_db, example);
+  
+  // fill the array with right x and y coordinates from the file
+  std::vector<double> xy_coords;
+  // cells where the corrdinates belongs to
+  std::vector<TBaseCell *> cells;
+    
+  
+  if(parmoon_db["example"].is(7))
+  {
+    std::ifstream f("/Home/flow/ahmed/tests_parMooN/house_2d/all_data.txt");
+    std::string line;
+    double x, y, u, v, rmsu, rmsv;
+    while ((f>> x>> y >> u >>  v >> rmsu >> rmsv) )
+    {      
+      xy_coords.push_back(x);
+      xy_coords.push_back(y);
+      
+      TCollection *coll = Domain.GetCollection(It_Finest, 0, -4711);
+      int n_cells = coll->GetN_Cells();
+      
+      for(int i=0; i<n_cells; i++)
+      {
+        TBaseCell *c = coll->GetCell(i);
+        
+        if(c->PointInCell(x,y))
+        {
+          cells.push_back(c);
+        }
+      }
+    }
+    f.close();    
+  }
+  cout <<"n_cells "<< cells.size()<<endl;
+  
   if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4))
   {
     MeanVelocity::fill_arrays(tnse2d);
-  }
-
+  }  
+  
   tnse2d.time_stepping_scheme.current_step_ = 0;
   tnse2d.time_stepping_scheme.set_time_disc_parameters();
   
@@ -85,10 +119,12 @@ int main(int argc, char* argv[])
       tnse2d.solve();
     }
     tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
-    if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4))
+    if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4) )      
     {
       MeanVelocity::compute_mean_velocity(tnse2d);
     }
+    if(parmoon_db["example"].is(7) )
+      MeanVelocity::compute_mean_velocity_on_points(tnse2d, xy_coords, cells);
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
