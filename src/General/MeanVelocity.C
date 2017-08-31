@@ -298,4 +298,43 @@ void MeanVelocity::compute_mean_velocity_on_points(const Time_NSE2D_Merged& tnse
     }
   }  
 }
+void MeanVelocity::compute_velocity_on_points(const Time_NSE2D_Merged& tnse2d,
+  const std::vector<double>& vec_x_y, const std::vector<TBaseCell *> cells)
+{
+  const TFEFunction2D *u1 = tnse2d.get_velocity().GetComponent(0);
+  const TFEFunction2D *u2 = tnse2d.get_velocity().GetComponent(1);
+  
+  std::vector<double> u1_at_xy(vec_x_y.size()/2,0);
+  std::vector<double> u2_at_xy(vec_x_y.size()/2,0);
+  
+  TCollection *coll = tnse2d.get_velocity_space().GetCollection();
+
+  std::ostringstream velfilename;
+  double ct = TDatabase::TimeDB->CURRENTTIME;
+  velfilename << "velocities." << ct << ".txt";
+  std::ofstream velfile;
+  velfile.open(velfilename.str().c_str());
+  for(size_t i=0; i<cells.size(); ++i)
+  {
+    double temp[3];
+    TBaseCell *c = cells.at(i);
+    double x = vec_x_y.at(2*i);
+    double y = vec_x_y.at(2*i+1);
+    u1->FindGradientLocal(c, coll->GetIndex(c), x, y, temp);
+    u1_at_xy.at(i) = temp[0];  
+    u2->FindGradientLocal(c, coll->GetIndex(c), x, y, temp);
+    u2_at_xy.at(i) = temp[0];
+    /*Output::print("VELOCITIES: t ", std::scientific, ct,
+		  " x ", setw(8), vec_x_y.at(2*i), 
+		  " y ", setw(8), vec_x_y.at(2*i+1), 
+		  " u(x,y) ",setw(8), u_at_xy.at(i),
+		  " v(x,y) ",setw(8), v_at_xy.at(i));*/
+    velfile << vec_x_y.at(2*i) << " "
+	    << vec_x_y.at(2*i+1) << " "
+	    << u1_at_xy.at(i) << " "
+	    << u2_at_xy.at(i) << endl;
+    
+  }
+  velfile.close();
+}
 #endif

@@ -61,6 +61,7 @@ int main(int argc, char* argv[])
   if(parmoon_db["example"].is(7))
   {
     std::ifstream f("/Home/flow/ahmed/tests_parMooN/house_2d/all_data.txt");
+    //std::ifstream f("/Users/caiazzo/work/src/ParMooN/tests/TNSE2D/COW_HOUSE/all_data.txt");
     std::string line;
     double x, y, u, v, rmsu, rmsv;
     while ((f>> x>> y >> u >>  v >> rmsu >> rmsv) )
@@ -78,6 +79,7 @@ int main(int argc, char* argv[])
         if(c->PointInCell(x,y))
         {
           cells.push_back(c);
+	  //Output::print(" point: ",x," ",y);
         }
       }
     }
@@ -119,12 +121,13 @@ int main(int argc, char* argv[])
       tnse2d.solve();
     }
     tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
+
     if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4) )      
     {
       MeanVelocity::compute_mean_velocity(tnse2d);
     }
-    if(parmoon_db["example"].is(7) )
-      MeanVelocity::compute_mean_velocity_on_points(tnse2d, xy_coords, cells);
+    if(parmoon_db["example"].is(7) ) 
+      MeanVelocity::compute_velocity_on_points(tnse2d, xy_coords, cells);
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
