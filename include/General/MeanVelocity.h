@@ -26,6 +26,8 @@ namespace MeanVelocity
   void  compute_mean_velocity(const Time_NSE2D_Merged& tnse2d);
   void  compute_mean_velocity_on_points(const Time_NSE2D_Merged& tnse2d, const std::vector<double>& vec,
                                         const std::vector<TBaseCell *> cells);
+  void  compute_velocity_on_points(const Time_NSE2D_Merged& tnse2d, const std::vector<double>& vec,
+                                        const std::vector<TBaseCell *> cells);
 #endif
 };
 
