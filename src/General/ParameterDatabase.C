@@ -1034,7 +1034,7 @@ ParameterDatabase ParameterDatabase::default_space_disc_database()
   db.add("disctype", "galerkin",
          "Determine the space discretization: currently supported are",
          {"galerkin", "supg", "local_projection", "vms_projection", 
-           "residual_based_vms", "grad_div", "smagorinsky"});
+           "residual_based_vms", "grad_div", "smagorinsky, smagorinsky_coarse"});
   
   db.add("delta0", 0.25, 
          "This is the stabilization parameter used for the supg-pspg method",

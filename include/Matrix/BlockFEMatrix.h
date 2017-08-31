@@ -377,6 +377,9 @@ class BlockFEMatrix : public BlockMatrix
      * 3D NSE time dependent problems
      */
     static BlockFEMatrix Mass_NSE3D(const TFESpace3D& velocity);
+    
+    static BlockFEMatrix Mass_Matrix_NSE3D(const TFESpace3D& velocity, 
+                              const TFESpace3D& pressure);
 
 #endif
 

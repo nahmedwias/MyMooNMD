@@ -2,6 +2,7 @@
 #define MEANVELOCITY_H
 
 #include <vector>
+#include <string.h>
 
 #ifdef __2D__
 
