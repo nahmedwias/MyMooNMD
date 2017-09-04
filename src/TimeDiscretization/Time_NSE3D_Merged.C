@@ -790,14 +790,95 @@ void Time_NSE3D_Merged::prepare_matrices_rhs(Time_NSE3D_Merged::System_per_grid&
     {
       switch(ns_type)
       {
-        case 1: 
+        case 1: case 2:
+          blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1},{2,2}});
+          sqMatrices.resize(1);
+          sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
           break;
-        case 2:
+        case 3: case 4: 
+            sqMatrices.resize(3);
+            blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1},{2,2}});
+            sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+            sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+            sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+            if(db_["disctype"].is("smagorinsky") 
+                || db_["disctype"].is("smagorinsky_coarse")
+                || db_["disctype"].is("vms_projection") )
+            {
+              sqMatrices.resize(9);
+              sqMatrices[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+              sqMatrices[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+              sqMatrices[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+              sqMatrices[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+              sqMatrices[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+              sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+              if(db_["disctype"].is("vms_projection"))
+              {
+                rectMatrices.resize(3);
+                rectMatrices[0]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
+                rectMatrices[1]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
+                rectMatrices[2]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
+              }
+            }
+            if(db_["disctype"].is("supg"))
+            {
+              // mass matrix is nonlinear
+              sqMatrices.resize(4);
+              sqMatrices[3] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+              rectMatrices.resize(3);
+              rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks
+              rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+              rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+              // right-hand side only for the full nonlinear part
+              if(!db_["extrapolate_velocity"].is("constant_extrapolate") && !db_["extrapolate_velocity"].is("linear_extrapolate"))
+              {
+                rhs_array.resize(3);
+                rhs_array[0]=s.rhs.block(0);
+                rhs_array[1]=s.rhs.block(1);
+                rhs_array[2]=s.rhs.block(2);              
+              }
+            }
           break;
-        case 3:
-          break;
-        case 4: case 14:
-          break;
+        case 14:
+            if(!db_["disctype"].is("supg") && !db_["disctype"].is("residual_based_vms"))
+            {
+              ErrThrow("NSTYPE 14 only supports SUPG or RBVMS");
+            }
+            // all A blocks, all B blocks, and the mass matrix needs to be
+            // re-assembled during nonlinear loop
+            sqMatrices.resize(11);
+            sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+            sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+            sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+            sqMatrices[3]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+            sqMatrices[4]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+            sqMatrices[5]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+            sqMatrices[6]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+            sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+            sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+            // mass matrix 
+            sqMatrices[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+            // C-block
+            sqMatrices[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(15).get());
+            
+            rectMatrices.resize(6);
+            rectMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); // standing B blocks
+            rectMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
+            rectMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
+            rectMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks
+            rectMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+            rectMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+            // right hand side only needs to be re-assembled if the fully nonlinear 
+            // version has been considered
+            if(!db_["extrapolate_velocity"].is("constant_extrapolate") && !db_["extrapolate_velocity"].is("linear_extrapolate"))
+            {
+              rhs_array.resize(4);
+              rhs_array[0]=s.rhs.block(0);
+              rhs_array[1]=s.rhs.block(1);
+              rhs_array[2]=s.rhs.block(2);
+              rhs_array[3]=s.rhs.block(3);
+            }
+            break;
       }// swith over different nstypes
     }// case LocalAssembling3D_type::TNSE3D_NLGAL:
     break;
@@ -806,6 +887,12 @@ void Time_NSE3D_Merged::prepare_matrices_rhs(Time_NSE3D_Merged::System_per_grid&
     }// case LocalAssembling3D_type::TNSE3D_Rhs:
     break;
   }
+  // reset matrices and right hand sides 
+  s.rhs.reset();
+  for(auto mat : sqMatrices)
+    mat->reset();
+  for(auto remat : rectMatrices)
+    remat->reset();
 }
 
 
