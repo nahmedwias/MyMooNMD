@@ -325,10 +325,11 @@ void MeanVelocity::compute_velocity_on_points(const Time_NSE2D_Merged& tnse2d,
     u2->FindGradientLocal(c, coll->GetIndex(c), x, y, temp);
     u2_at_xy.at(i) = temp[0];
     /*Output::print("VELOCITIES: t ", std::scientific, ct,
-		  " x ", setw(8), vec_x_y.at(2*i), 
-		  " y ", setw(8), vec_x_y.at(2*i+1), 
-		  " u(x,y) ",setw(8), u_at_xy.at(i),
-		  " v(x,y) ",setw(8), v_at_xy.at(i));*/
+      " x ", setw(8), vec_x_y.at(2*i), 
+      " y ", setw(8), vec_x_y.at(2*i+1), 
+      " u(x,y) ",setw(8), u_at_xy.at(i),
+      " v(x,y) ",setw(8), v_at_xy.at(i));*/
+    
     velfile << vec_x_y.at(2*i) << " "
 	    << vec_x_y.at(2*i+1) << " "
 	    << u1_at_xy.at(i) << " "
