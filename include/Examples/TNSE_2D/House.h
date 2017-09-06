@@ -74,40 +74,47 @@ void U1BoundValue(int BdComp, double Param, double &value)
   Z_0 = 0.07; //m
   Z_R = 10; //m
   HEIGHT = 100; //m
-  
+
+  // extrapolation constants
+  double A1,B1,C1;
+  A1 = 1.1;
+  B1 = 2.0;
+  C1 = 0.66;
+    
   // top open boundary
   if(BdComp == 18)
   {
-    value = U_REF/log(Z_R/Z_0)*log(HEIGHT/Z_0);
+    //value = U_REF/log(Z_R/Z_0)*log(HEIGHT/Z_0);
     // interpolate experimental data (50m downstream)
-    // value = ...TODO...;
+    value = A1*log(B1*HEIGHT) + C1;
+    
   }
   else if(BdComp == 19) // inflow boundary
   {   
     double y = HEIGHT*(1-Param);
-    if (y<=Z_0) {
+    /*if (y<=Z_0) {
       value = 0;
     } else {
       value = U_REF/log(Z_R/Z_0)*log(y/Z_0);
-    }
-    /*
+      }*/
+    
     // interpolate experimental data (50m downstream)
     std::vector<double> yval(15),uval(15);
-    yval[0] = 0.; uval[0] = 0.;
-    yval[1] = 1.; uval[1] = 3.17;
-    yval[2] = 2.; uval[2] = 3.41;
-    yval[3] = 3.; uval[3] = 3.59;
-    yval[4] = 4.; uval[4] = 3.78;
-    yval[5] = 5.; uval[5] = 3.91;
-    yval[6] = 7.5; uval[6] = 4.18;
-    yval[7] = 10.; uval[7] = 4.35;
-    yval[8] = 12.5; uval[8] = 4.54;
-    yval[9] = 15.; uval[9] = 4.61;
-    yval[10] = 20.; uval[10] = 4.8;
+    yval[0] = 0.; uval[0] = 0.;     
+    yval[1] = 1.; uval[1] = 3.52;
+    yval[2] = 2.; uval[2] = 3.77;
+    yval[3] = 3.; uval[3] = 3.94;
+    yval[4] = 4.; uval[4] = 4.01;
+    yval[5] = 5.; uval[5] = 4.10;
+    yval[6] = 7.5; uval[6] = 4.24;
+    yval[7] = 10.; uval[7] = 4.41;
+    yval[8] = 12.5; uval[8] = 4.55;
+    yval[9] = 15.; uval[9] = 4.67;
+    yval[10] = 20.; uval[10] = 4.82;
     yval[11] = 30.; uval[11] = 5.18;
-    yval[12] = 40.; uval[12] = 5.41;
-    yval[13] = 50.; uval[13] = 5.75;
-    yval[14] = 60.; uval[14] = 6.04;
+    yval[12] = 40.; uval[12] = 5.46;
+    yval[13] = 50.; uval[13] = 5.71;
+    yval[14] = 60.; uval[14] = 5.96;
     int i_range = -1;
     for (unsigned int i=0; i<14; i++)
     {
@@ -119,11 +126,11 @@ void U1BoundValue(int BdComp, double Param, double &value)
       value = uval[i_range] +
 	(uval[i_range+1]-uval[i_range])*
 	(y - yval[i_range])/(yval[i_range+1] - yval[i_range]);
-    } else {
-      Output::print(" ** ERROR: point at the inflow now found ** ");
-      exit(1);
+    } else { // point between 60 and 100
+      value = A1*log(B1*y) + C1;
+      
     }
-    */
+    
     
   }
   else // no-slip

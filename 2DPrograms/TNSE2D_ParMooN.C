@@ -60,18 +60,17 @@ int main(int argc, char* argv[])
   
   if(parmoon_db["example"].is(7))
   {
-    std::ifstream f("/Home/flow/ahmed/tests_parMooN/house_2d/all_data.txt");
-    //std::ifstream f("/Users/caiazzo/work/src/ParMooN/tests/TNSE2D/COW_HOUSE/all_data.txt");
+    //std::ifstream f("/Home/flow/ahmed/tests_parMooN/house_2d/all_data.txt");
+    std::ifstream f("/Users/caiazzo/work/src/ParMooN/tests/TNSE2D/COW_HOUSE/all_data.txt");
     std::string line;
     double x, y, u, v, rmsu, rmsv;
+
     while ((f>> x>> y >> u >>  v >> rmsu >> rmsv) )
-    {      
-      xy_coords.push_back(x);
-      xy_coords.push_back(y);
+    {
       
       TCollection *coll = Domain.GetCollection(It_Finest, 0, -4711);
       int n_cells = coll->GetN_Cells();
-      
+      int cell_found = -1;
       for(int i=0; i<n_cells; i++)
       {
         TBaseCell *c = coll->GetCell(i);
@@ -79,9 +78,17 @@ int main(int argc, char* argv[])
         if(c->PointInCell(x,y))
         {
           cells.push_back(c);
+	  cell_found = 1;
+	  xy_coords.push_back(x);
+	  xy_coords.push_back(y);
+
 	  //Output::print(" point: ",x," ",y);
         }
+	
       }
+      if (cell_found==-1) {
+	  Output::print(" *** point: ",x," ",y, " no cell found ***");
+	}
     }
     f.close();    
   }
