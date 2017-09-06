@@ -32,7 +32,7 @@
   #include <Aux2D3D.h>
 #endif
 
-
+#ifdef __2D__
 void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
                 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                 int n_matrices, TMatrix2D **matrices,
@@ -1213,7 +1213,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
   */
 }                                                 // end of Assemble
 
-
+#endif
 ////////////////////////////////////////////////////////////////////////
 //
 // Assembling of matrices multiplied by a factor
@@ -9326,7 +9326,7 @@ TAuxParam2D *Parameters)
 
 
 // HIER /////////////////////////////////////////////////////////////////////////////////////////////////////
-
+#ifdef __2D__
 void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
                 TSquareMatrix2D** sqmatrices, int n_matrices,
                 TMatrix2D** matrices, int n_rhs, double** rhs,
@@ -10371,7 +10371,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 }                                                 // end of Assemble
 
 
-
+#endif
 
 
 
