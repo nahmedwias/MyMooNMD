@@ -177,9 +177,16 @@ void Multigrid::cycle()
 
 void Multigrid::update()
 {
+  auto coarsest = levels_.front();
   for( auto lvl : levels_)
   {
+	if(&lvl == &coarsest) //measure time spent on coarsest grid
+		coarse_grid_timer.start();
+
     lvl.update_smoother();
+
+	if(&lvl == &coarsest) //stop measure time spent on coarsest grid
+		coarse_grid_timer.stop();
   }
 }
 
