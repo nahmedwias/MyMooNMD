@@ -18,8 +18,8 @@
 class TInnerInterfaceJoint : public TJointEqN
 {
   protected:
-    /** during refinement the two children are marked in the following list */
-    TInnerInterfaceJoint *children[2];
+    /** during refinement the two (in 2D) or four (in 3D) children are marked in the following list */
+    TInnerInterfaceJoint *children[4];
     
     /** x coordinate of the begin of line */
     double Xstart;
@@ -29,6 +29,19 @@ class TInnerInterfaceJoint : public TJointEqN
     double delX;
     /** y progress of line */
     double delY;
+
+    /** dimension of the interface */
+    int dim;
+    
+    //only in 3D
+    //x-, y- and z- component of the n_vert vertices
+    unsigned int N_vert;
+    double *X, *Y, *Z;
+    //local face number of the face in neighboring cell
+    //since the local face number can be different depending on the neighboring cell
+    //always use the same Cell_Id, e.g. for Stokes-Darcy, always the Stokes or the Darcy cell
+    //which cell is used can be found in GetInnerInterfaceJoints in auxiliaryFunctions.C
+    int local_face;
 
 
  public:
@@ -63,18 +76,48 @@ class TInnerInterfaceJoint : public TJointEqN
   void SetParams (double xstart, double ystart, double delx, double dely);
   void GetParams (double &xstart, double &ystart, double &delx, double &dely) const;
   
+  /**
+   * WARNING points must be ordered such that point i and point i-1 and i+1
+   * are an edge of the face
+   */
+  void SetParams (double *x, double *y, double *z, int n_vert);
+
+  int GetN_Vertices() const {return N_vert;}
+
+  void GetParams (double *x, double *y, double *z) const;
+
+  void SetLocalface(int l_face) {local_face = l_face;}
+
+  int GetLocalface() const  {return local_face;}
+  
   /** Compute the length of this edge */
   double GetLength() const;
+  
+  /** Compute the area of this face
+   *  Warning: order of points must be clockwise or counter clockwise*/
+  double GetArea() const;
   
   /** the unit normal of this edge */
   void GetNormal(double &nx, double &ny) const;
   
+  /** the unit normal of this face */
+  void GetNormal(double &nx, double &ny, double &nz) const;
+
   /** the unit tangential of this edge */
   void GetTangent(double &tx, double &ty) const;
+  
+  /** the unit tangentials of this face */
+  void GetTangent(double &tx, double &ty, double &tz,
+                  double &tx2, double &ty2, double &tz2) const;
   
   /** set/get the index of this joint in given neighbor */
   int GetIndexInNeighbor(TBaseCell const * const neigh) const;
   void SetIndexInNeighbor(TBaseCell *neigh, int index);
+  
+  /**
+   * Prints all infos for debugging/testing
+   */
+  void PrintInfo() const;
   
     // Destructor
   virtual ~TInnerInterfaceJoint(){};
