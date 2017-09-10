@@ -25,10 +25,13 @@ namespace MeanVelocity
 #ifdef __2D__  
   void fill_arrays(const Time_NSE2D_Merged& tnse2d );
   void  compute_mean_velocity(const Time_NSE2D_Merged& tnse2d);
-  void  compute_mean_velocity_on_points(const Time_NSE2D_Merged& tnse2d, const std::vector<double>& vec,
+  void  compute_mean_velocity_on_points(const Time_NSE2D_Merged& tnse2d,
+					const std::vector<double>& vec,
                                         const std::vector<TBaseCell *> cells);
-  void  compute_velocity_on_points(const Time_NSE2D_Merged& tnse2d, const std::vector<double>& vec,
-                                        const std::vector<TBaseCell *> cells);
+  void  compute_velocity_on_points(const Time_NSE2D_Merged& tnse2d,
+				   const std::vector<double>& vec,
+				   const std::vector<TBaseCell *> cells,
+				   std::string name);
 #endif
 };
 

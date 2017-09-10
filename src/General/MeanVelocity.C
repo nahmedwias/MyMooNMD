@@ -299,7 +299,9 @@ void MeanVelocity::compute_mean_velocity_on_points(const Time_NSE2D_Merged& tnse
   }  
 }
 void MeanVelocity::compute_velocity_on_points(const Time_NSE2D_Merged& tnse2d,
-  const std::vector<double>& vec_x_y, const std::vector<TBaseCell *> cells)
+					      const std::vector<double>& vec_x_y,
+					      const std::vector<TBaseCell *> cells,
+					      std::string basename)
 {
   const TFEFunction2D *u1 = tnse2d.get_velocity().GetComponent(0);
   const TFEFunction2D *u2 = tnse2d.get_velocity().GetComponent(1);
@@ -311,7 +313,8 @@ void MeanVelocity::compute_velocity_on_points(const Time_NSE2D_Merged& tnse2d,
 
   std::ostringstream velfilename;
   double ct = TDatabase::TimeDB->CURRENTTIME;
-  velfilename << "velocities." << ct << ".txt";
+  //velfilename << "velocities." << ct << ".txt";
+  velfilename << basename << ct << ".txt";
   std::ofstream velfile;
   velfile.open(velfilename.str().c_str());
   for(size_t i=0; i<cells.size(); ++i)
