@@ -60,8 +60,9 @@ int main(int argc, char* argv[])
   
   if(parmoon_db["example"].is(7))
   {
-    std::ifstream f("/Home/flow/ahmed/tests_parMooN/house_2d/all_data.txt");
+    //std::ifstream f("/Home/flow/ahmed/tests_parMooN/house_2d/all_data.txt");
     //std::ifstream f("/Users/caiazzo/work/src/ParMooN/tests/TNSE2D/COW_HOUSE/all_data.txt");
+    std::ifstream f("all_data.txt");
     std::string line;
     double x, y, u, v, rmsu, rmsv;
 
@@ -90,10 +91,17 @@ int main(int argc, char* argv[])
 	  Output::print(" *** point: ",x," ",y, " no cell found ***");
 	}
     }
-    f.close();    
+    f.close();
+    if (cells.size() == 0)
+    {
+      Output::print(" *** WARNING: no cell found. Check the input file... ***");
+      Output::print(" *** Note: the file all_data.txt shall be in the     ***");
+      Output::print(" *** directory where the program is started.         ***");
+    }
   }
-  cout <<"n_cells "<< cells.size()<<endl;
   
+  cout <<"n_cells "<< cells.size()<<endl;
+ 
   if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4))
   {
     MeanVelocity::fill_arrays(tnse2d);
@@ -134,7 +142,14 @@ int main(int argc, char* argv[])
       MeanVelocity::compute_mean_velocity(tnse2d);
     }
     if(parmoon_db["example"].is(7) ) 
-      MeanVelocity::compute_velocity_on_points(tnse2d, xy_coords, cells);
+    {
+      std::string velFileName;
+      velFileName = parmoon_db["output_vtk_directory"].get<std::string>() +
+	"/velocityOut/" +
+	parmoon_db["output_basename"].get<std::string>() + "_velocities.";
+      //Output::print(" Velocities will be written on ", velFileName);
+      MeanVelocity::compute_velocity_on_points(tnse2d, xy_coords, cells,velFileName);
+    }
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
