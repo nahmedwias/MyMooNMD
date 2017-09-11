@@ -648,13 +648,11 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
   // the values in the parameter "petsc_arguments".
   KSPSetFromOptions(ksp);
   PCSetFromOptions(pc);
-    Output::print("OOOOKKKKKKOOOOKKKKKK1");
-    KSPSetUp(ksp);;
+  KSPSetUp(ksp);;
   // some PETSc information about the solver
   /// @todo nicer output for the PETSc solver
   if(Output::getVerbosity() > 3)
     KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
-    Output::print("OOOOKKKKKKOOOOKKKKKK2");
 }
 
 /* ************************************************************************** */
