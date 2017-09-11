@@ -179,10 +179,10 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
     double *Orig3 = OrigValues[3];          // p
     
     // values defined in the example
-    double c0 = coeff[0];                   // t^2
+    //double c0 = coeff[0];                   // t^2
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    //double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
     double nu = coeff[4];                   // viscosity
     double nu_eff = coeff[5];               // effective viscosity
     double K = coeff[6];                    // permeability
@@ -550,12 +550,12 @@ void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
     double c0 = coeff[0];                   // t^2
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    //double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
     double nu = coeff[4];                   // viscosity
     double nu_eff = coeff[5];               // effective viscosity
     double K = coeff[6];                    // permeability
     double alpha = coeff[7];                // equal_order_stab_weight
-    double t = fabs(sqrt((nu_eff/nu) * K));
+    //double t = fabs(sqrt((nu_eff/nu) * K));
     double PSPGStab =  alpha * (K/nu) * (hK*hK)/(c0+(hK*hK)); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
     //double PSPGStab = alpha * (hK*hK)/(c0+(hK*hK)); // Without Sigma^{-1} as it is in Hannukainen and Sogn   
     //double PSPGStab =  alpha  * (hK*hK)/(c0); // stabilization acccording to Franca and Hughes (basically for stokes) but with t
@@ -1150,7 +1150,7 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
                          double **OrigValues, int *N_BaseFuncts,
                          double ***LocMatrices, double **LocRhs)
 {
-    double ansatz10, ansatz01;    // ansatz functions
+    //double ansatz10, ansatz01;    // ansatz functions
     double test10, test01;          // test functions
     
     double ** MatrixA11 = LocMatrices[0];
@@ -1180,11 +1180,11 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
     
     // values defined in the example
     // double c0 = coeff[0];                   // t^2
-    double c1 = coeff[1];                   // f1
-    double c2 = coeff[2];                   // f2
+    //double c1 = coeff[1];                   // f1
+    //double c2 = coeff[2];                   // f2
     double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
     double nu = coeff[4];                   // viscosity
-    double nu_eff = coeff[5];               // effective viscosity
+    //double nu_eff = coeff[5];               // effective viscosity
     double K = coeff[6];                    // permeability
     double L0 = 1.;
     //double grad_div_stab_weight = coeff[8]; // without considering the units

@@ -1072,7 +1072,7 @@ void IntoL20Vector2D(double *v, int Length, int order)
       for(i=0;i<Length;i+=10)
         v[i] -= s;
 
-        break;
+      break;
 
     case -14:
       s=0;
@@ -1085,7 +1085,7 @@ void IntoL20Vector2D(double *v, int Length, int order)
       for(i=0;i<Length;i+=15)
         v[i] -= s;
 
-        break;
+      break;
 
     case 201:
       break;
