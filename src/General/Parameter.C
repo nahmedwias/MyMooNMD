@@ -668,52 +668,83 @@ template<> void Parameter::get_range(std::set<std::string>& range) const
 }
 
 /* ************************************************************************** */
-template<> void Parameter::set(bool new_value)
+template<> void Parameter::set(bool new_value, bool check_range)
 {
   if(!check_type<bool>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != bool");
   // check if new_value is in the specified parameter range
-  if(!not_bool_value_allowed && new_value != this->bool_value)
+  if(check_range && !not_bool_value_allowed && new_value != this->bool_value)
     ErrThrow("new parameter value out of range, Parameter ", this->name);
   
   this->change_count++;
+  if(!this->not_bool_value_allowed && new_value != this->bool_value)
+  {
+    // previously only either 'true' or 'false' was allowed, the 'new_value' is
+    // the other, so the new range is {true,false}.
+    this->not_bool_value_allowed = true;
+  }
   this->bool_value = new_value;
 }
-template<> void Parameter::set(size_t new_value)
+template<> void Parameter::set(size_t new_value, bool check_range)
 {
   if(!check_type<size_t>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != size_t");
-  // check if new_value is in the specified parameter range
-  if(  !this->range_is_an_interval 
-    && !check_value_in_range(new_value, this->unsigned_range))
+  if(check_range)
   {
-    ErrThrow("new parameter value out of range, Parameter ", this->name);
+    // check if new_value is in the specified parameter range
+    if(  !this->range_is_an_interval 
+      && !check_value_in_range(new_value, this->unsigned_range))
+    {
+      ErrThrow("new parameter value out of range, Parameter ", this->name);
+    }
+    else if( this->range_is_an_interval 
+          && (new_value < unsigned_min || new_value > unsigned_max))
+    {
+      ErrThrow("new parameter value out of range, Parameter ", this->name,
+               "The range is the interval ", this->range_as_string());
+    }
   }
-  else if( this->range_is_an_interval 
-        && (new_value < unsigned_min || new_value > unsigned_max))
+  else
   {
-    ErrThrow("new parameter value out of range, Parameter ", this->name,
-             "The range is the interval ", this->range_as_string());
+    if(this->range_is_an_interval)
+    {
+      unsigned_min = std::min(unsigned_min, new_value);
+      unsigned_max = std::max(unsigned_max, new_value);
+    }
+    else
+    {
+      unsigned_range.insert(new_value);
+    }
   }
   
   this->change_count++;
   this->unsigned_value = new_value;
 }
-template<> void Parameter::set(double new_value)
+template<> void Parameter::set(double new_value, bool check_range)
 {
   if(!check_type<double>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != double");
-  // check if new_value is in the specified parameter range
-  if(new_value < this->double_min || new_value > this->double_max)
-    ErrThrow("new parameter value out of range, Parameter ", this->name);
+  if(check_range)
+  {
+    // check if new_value is in the specified parameter range
+    if(new_value < this->double_min || new_value > this->double_max)
+      ErrThrow("new parameter value out of range, Parameter ", this->name,
+               ". The range is ", this->range_as_string(), 
+               ", the new value is ", new_value);
+  }
+  else
+  {
+    double_min = std::min(double_min, new_value);
+    double_max = std::max(double_max, new_value);
+  }
   
   this->change_count++;
   this->double_value = new_value;
 }
-template<> void Parameter::set(int new_value)
+template<> void Parameter::set(int new_value, bool check_range)
 {
   if(!check_type<int>(this->type) && !check_type<size_t>(this->type)
      && !check_type<double>(this->type))
@@ -725,46 +756,68 @@ template<> void Parameter::set(int new_value)
       ErrThrow("Parameter ", this->name, " has the wrong type: ",
                type_as_string(this->type), " != int");
     // setting a positive integer to a size_t parameter
-    this->set<size_t>(new_value);
+    this->set<size_t>(new_value, check_range);
     return;
   }
   if(check_type<double>(this->type))
   {
-    this->set<double>(new_value);
+    this->set<double>(new_value, check_range);
     return;
   }
-  // check if new_value is in the specified parameter range
-  if(  !this->range_is_an_interval 
-    && !check_value_in_range(new_value, this->int_range))
+  if(check_range)
   {
-    ErrThrow("new parameter value out of range, Parameter ", this->name);
+    // check if new_value is in the specified parameter range
+    if(  !this->range_is_an_interval 
+      && !check_value_in_range(new_value, this->int_range))
+    {
+      ErrThrow("new parameter value out of range, Parameter ", this->name);
+    }
+    else if( this->range_is_an_interval 
+          && (new_value < int_min || new_value > int_max))
+    {
+      ErrThrow("new parameter value out of range, Parameter ", this->name,
+               "The range is the interval ", this->range_as_string());
+    }
   }
-  else if( this->range_is_an_interval 
-        && (new_value < int_min || new_value > int_max))
+  else
   {
-    ErrThrow("new parameter value out of range, Parameter ", this->name,
-             "The range is the interval ", this->range_as_string());
+    if(this->range_is_an_interval)
+    {
+      int_min = std::min(int_min, new_value);
+      int_max = std::max(int_max, new_value);
+    }
+    else
+    {
+      int_range.insert(new_value);
+    }
   }
   
   this->change_count++;
   this->int_value = new_value;
 }
-template<> void Parameter::set(std::string new_value)
+template<> void Parameter::set(std::string new_value, bool check_range)
 {
   if(!check_type<std::string>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != std::string");
   
-  // check if new_value is in the specified parameter range
-  if(!check_value_in_range(new_value, this->string_range))
-    ErrThrow("new parameter value out of range, Parameter ", this->name);
+  if(check_range)
+  {
+    // check if new_value is in the specified parameter range
+    if(!check_value_in_range(new_value, this->string_range))
+      ErrThrow("new parameter value out of range, Parameter ", this->name);
+  }
+  else
+  {
+    string_range.insert(new_value);
+  }
   
   this->change_count++;
   this->string_value = new_value;
 }
-template<> void Parameter::set(const char* new_value)
+template<> void Parameter::set(const char* new_value, bool check_range)
 {
-  this->set<std::string>(std::string(new_value));
+  this->set<std::string>(std::string(new_value), check_range);
 }
 
 /* ************************************************************************** */

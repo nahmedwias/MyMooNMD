@@ -56,7 +56,7 @@ extern "C"
                    struct triangulateio *);
 }
 
-ParameterDatabase get_default_domain_parameters()
+ParameterDatabase TDomain::default_domain_parameters()
 {
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
@@ -93,26 +93,24 @@ ParameterDatabase get_default_domain_parameters()
          " has the extension 'mesh, 'smesh', 'node' or 'poly'. "
          " currently only the smesh files are supported");
 
-#ifdef _MPI
-   db.add("read_metis", false , "If true, the domain decomposition will be "
-       "done as specified in the file given in the parameter 'read_metis_file'.");
+   db.add("read_metis", false , "This Boolean will state if you read a file "
+          "which contains the partition of the cells on the processors.");
 
-   db.add("read_metis_file", std::string("mesh_file.txt"), "Read the domain "
-          "decomposition from this file, if 'read_metis' is true.");
+   db.add("read_metis_file", std::string("mesh_partitioning_file.txt"), "The Mesh-file will be read here.");
 
-   db.add("write_metis", false , "If true, the domain decomposition will be "
-       "written to a text file given in the parameter 'write_metis_file'.");
+   db.add("write_metis", false , "This Boolean will state if you write out "
+          "which cell belongs to which processor into a file (see parameter"
+          "'write_metis_file'.");
 
-   db.add("write_metis_file", std::string("mesh_file.txt"), "Write the domain "
-       "decomposition to this file, if 'write_metis' is true.");
-#endif
+   db.add("write_metis_file", std::string("mesh_partitioning_file.txt"), 
+          "The partitioning of the mesh will be written here.");
 
   return db;
 }
 
 // Constructor
 TDomain::TDomain(const ParameterDatabase& param_db) :
-  Interfaces(nullptr),db(get_default_domain_parameters())
+  Interfaces(nullptr),db(default_domain_parameters())
 {
   RefLevel = 0;
   Output::print<4>("domain is initialized");
@@ -166,7 +164,7 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
 //TODO This domain constructor, which is also responsible for read-in of the
 // old database, is to be reomved soon.
 TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
-  Interfaces(nullptr),db(get_default_domain_parameters())
+  Interfaces(nullptr),db(default_domain_parameters())
 {
   RefLevel = 0;
   
@@ -1150,14 +1148,13 @@ void TDomain::Init(const char *PRM, const char *GEO)
 void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 {
 #ifdef __2D__
-  Output::print("TDomain:: InitFromMesh using ", PRM, " and ", MESHFILE);
+  Output::print<3>("TDomain:: InitFromMesh using ", PRM, " and ", MESHFILE);
   //make an input file string from the file "PRM"
   std::ifstream bdryStream(PRM);
   if (!bdryStream)
-    {
-      Output::print(" ** Error(TDomain::Init) cannot open PRM file ", PRM);
-      exit(-1);
-    }
+  {
+    ErrThrow(" ** Error(TDomain::Init) cannot open PRM file ", PRM);
+  }
   //do the actual read in
   int Flag;
   ReadBdParam(bdryStream, Flag);
@@ -1174,8 +1171,7 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
     maxNVertexPerElem = 4;
   }
   if (numberOfElements==0) {
-    Output::print(" ** Error(Domain::Init) the mesh has no elements");
-    exit(-1);
+    ErrThrow(" ** Error(Domain::Init) the mesh has no elements");
   }
 
   // vertices data
@@ -3904,7 +3900,6 @@ void determine_n_refinement_steps_multigrid(
   }
 }
 
-
 std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
     const ParameterDatabase& parmoon_db
 #ifdef _MPI
@@ -4330,9 +4325,8 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
   this->N_BoundComps = tgml.nBoundaryComponents;
   meshBoundComps.resize(this->N_BoundComps); 
   Output::print("TDomain::buildBoundary() - N_BoundComps: ", this->N_BoundComps);
-  Output::print("here");
   this->BdParts[0] = new TBoundPart(this->N_BoundComps);
-  Output::print("here");
+  
   // StartBdCompID[i] gives the iindex of the element in BdParts
   // where the BdComp i starts. The last element is equal to to N_BoundParts
   this->StartBdCompID = new int [this->N_BoundParts+1];
@@ -4400,7 +4394,7 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
                                                        a[0], a[1], a[2],
                                                        n[0], n[1], n[2]);
       ++counter;
-      Output::print(" counter:",counter);
+      
       // the id of the boundary face is taken as the attribute of the triangle
       // note: later, trifacemarkerlist=0 is used to identify inner faces (see below)
       tgml.meshTetGenOut.trifacemarkerlist[i] = counter;

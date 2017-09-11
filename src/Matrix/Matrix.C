@@ -368,6 +368,9 @@ TMatrix & TMatrix::operator+=(const TMatrix* A)
 {
   if(this->GetStructure() != A->GetStructure()) // compare objects
   {
+    this->GetStructure().info();
+    A->GetStructure().info();
+    Output::print("diff in norms ", this->GetNorm(-2) - A->GetNorm(-2));
     ErrThrow("TMatrix::operator+= : the two matrices do not match.");
   }
   

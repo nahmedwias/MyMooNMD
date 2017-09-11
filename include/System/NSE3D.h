@@ -271,6 +271,19 @@ class NSE3D
     
 /********************************************************************************/
 // getters
+
+    const BlockFEMatrix & get_matrix() const
+    { return this->systems_.front().matrix_; }
+    
+    BlockFEMatrix & get_matrix()
+    { return this->systems_.front().matrix_; }
+    
+    const BlockVector & get_rhs() const
+    { return this->systems_.front().rhs_; }
+    
+    BlockVector & get_rhs()
+    { return this->systems_.front().rhs_; }
+    
     const TFEVectFunct3D& get_velocity() const
     { return this->systems_.front().u_; }
 

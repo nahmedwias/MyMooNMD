@@ -105,6 +105,15 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
   }
 }
 
+Example_CD2D::Example_CD2D(std::vector<DoubleFunct2D *> exact,
+                           std::vector<BoundCondFunct2D *> bc,
+                           std::vector<BoundValueFunct2D *> bd,
+                           CoeffFct2D* coeffs, double nu)
+: Example2D(exact, bc, bd, coeffs)
+{
+  this->example_database["diffusion_coefficient"] = nu;
+}
+
 
 void Example_CD2D::do_post_processing(CD2D& cd2d) const
 {

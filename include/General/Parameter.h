@@ -151,8 +151,14 @@ class Parameter
     void get_range(std::set<T>& range) const;
 
     /// @brief assignment of new value
+    ///
+    /// If check_range is false, then you can set a value which is not in the 
+    /// specified range. The range is therefore modified to inlcude the new 
+    /// value. This is in general not what you should do, but sometimes it is
+    /// still useful, for example for filenames. Note that the impose method 
+    /// does something similar.
     template <typename T>
-    void set(T value);
+    void set(T value, bool check_range = true);
     
     /// @brief return the value of this parameter
     template <typename T>
