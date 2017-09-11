@@ -9,7 +9,7 @@
 #ifndef _TTetGenMeshLoader
 #define _TTetGenMeshLoader
 /// using 1.4 version of the TetGen
-#define __TETGEN_14X__ 
+//#define __TETGEN_14X__ 
 
 #include <tetgen.h>
 

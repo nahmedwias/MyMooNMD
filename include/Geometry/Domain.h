@@ -21,7 +21,7 @@ class TDomain;
 #include <Iterator.h>
 #include <Mesh.h>
 #include <ParameterDatabase.h>
-#include <TetGenMeshLoader.h>
+class TTetGenMeshLoader;
 
 #ifdef __MORTAR__
 struct TMortarFaceStruct
