@@ -4,6 +4,7 @@
 #include <QuadAffin.h>
 #include <TriaAffin.h>
 #include <QuadBilinear.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -45,7 +46,12 @@ void PostProcessing2D::add_fe_function(const TFEFunction2D* fefunction)
       ErrThrow("new FE function has a different collection");
     }
   }
-  FEFunctionArray.push_back(fefunction);
+  bool already_known = std::any_of(FEFunctionArray.begin(),
+                                   FEFunctionArray.end(),
+                                   [fefunction](const TFEFunction2D* f)
+                                   {return f == fefunction;});
+  if(!already_known )
+    FEFunctionArray.push_back(fefunction);
 }
 
 void PostProcessing2D::add_fe_vector_function(
@@ -65,12 +71,16 @@ void PostProcessing2D::add_fe_vector_function(
       ErrThrow("new FE vector function has a different collection");
     }
   }
-  FEVectFunctArray.push_back(fevectfunction);
+  bool already_known = std::any_of(FEVectFunctArray.begin(),
+                                   FEVectFunctArray.end(),
+                                   [fevectfunction](const TFEVectFunct2D* f)
+                                   {return f == fevectfunction;});
+  if(!already_known )
+    FEVectFunctArray.push_back(fevectfunction);
 }
 
 void PostProcessing2D::write(double current_time)
 {
-  timeValues.push_back(current_time);
   if(writeVTK)
   {
     std::string name;
@@ -82,6 +92,7 @@ void PostProcessing2D::write(double current_time)
   }
   if(writeCASE)
   {
+    timeValues.push_back(current_time);
     if(timeValues.size() == 1) // first call to this method
     {
       // write geometry only in the first iteration
@@ -94,12 +105,6 @@ void PostProcessing2D::write(double current_time)
 
 void PostProcessing2D::write(int i)
 {
-  if(!timeValues.empty())
-    Output::warn<1>("PostProcessing2D::write(int i)", "it seems you have "
-                    "called PostProcessing2D::write(double) before, which is "
-                    "used for time dependent problems.\nThis method is "
-                    "typically for stationary problems. I am not sure if this "
-                    "works");
   if(writeVTK)
   {
     std::string name;
@@ -112,19 +117,16 @@ void PostProcessing2D::write(int i)
     Output::print<2>(" PostProcessing2D:: writing ", name);
     writeVtk(name);
   }
-
   if(writeCASE)
   {
-    // note: i<0 is used to avoid suffix in vtk output in steady problems
-    // it shall be disregarded for case output
-    if(i < 0) 
-      i = 0;
-    if(i == 0)
+    // we reuse (slightly abuse) the variable 'timeValues' here
+    timeValues.push_back(i);
+    if(timeValues.size() == 1) // first call to this method
     {
       // write geometry only in the first iteration
       writeCaseGeo();
     }
-    writeCaseVars(i);
+    writeCaseVars(timeValues.size()-1);
     writeCaseFile();
   }
 }

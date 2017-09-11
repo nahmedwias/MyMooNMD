@@ -271,7 +271,7 @@ void CD2D::solve()
   this->solver.solve(s.matrix, s.rhs, s.solution);
   
   t = GetTime() - t;
-  Output::print<2>(" solving of a CD2D problem done in ", t, " seconds");
+  Output::print<3>(" solving of a CD2D problem done in ", t, " seconds");
 }
 
 /** ************************************************************************ */
