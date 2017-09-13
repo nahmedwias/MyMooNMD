@@ -37,6 +37,8 @@ bool test_for_parameter_class()
 int main(int argc, char* argv[])
 {
   Output::print("starting parameter test");
+  if(!test_for_parameter_class())
+    return 1;
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   ParameterDatabase db2 = ParameterDatabase::parmoon_default_database();
   db.set_name("some test database");
@@ -75,6 +77,22 @@ int main(int argc, char* argv[])
     return 1;
   }
   
+  /////////////////////////////////////////////////////////////////////////////
+  // testing nested databases
+  auto nested_name = std::string("A nested database");
+  { // limit scope
+    ParameterDatabase db_nested(nested_name);
+    db_nested.add("testing_parameter", true, 
+                  "testing a parameter in a nested database");
+    db.add_nested_database(std::move(db_nested));
+  }
+  db.add_nested_database(ParameterDatabase::default_nonlinit_database());
+  
+  auto& db_nested = db.get_nested_database(nested_name);
+  db_nested["testing_parameter"] = false; // access to nested database
+  
+  /////////////////////////////////////////////////////////////////////////////
+  // testing write -> read
   std::stringstream os;
   db.write(os);
   db2.read(os);
@@ -83,14 +101,23 @@ int main(int argc, char* argv[])
     Output::print("ParameterDatabase write->read does not work");
     return 1;
   }
+  if(db.get_n_nested_databases() != db2.get_n_nested_databases())
+  {
+    Output::print("ParameterDatabase write->read does not work for nested "
+                  "databases", db.get_n_nested_databases(), " ",
+                  db2.get_n_nested_databases());
+    return 1;
+  }
   
   // test piping a Parameter into a stream
   os << p;
   
+  db.info();
+  Output::print("\n\n");
+  db2.info();
+  
+  
   ParameterDatabase timedb = ParameterDatabase::default_time_database();
-
-  if(!test_for_parameter_class())
-    return 1;
   
   Output::print("successful test");
   return 0;
