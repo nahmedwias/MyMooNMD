@@ -6,6 +6,7 @@
 #include <DirectSolver.h>
 #include <Solver.h>
 #include <Preconditioner.h>
+class ParameterDatabase;
 
 /** @brief implement special preconditioners for saddle point problems
  * 
@@ -19,19 +20,22 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     /// lsc - least squares commutator
     /// bd_lsc - boundary corrected least squares commutator
     enum class type {simple, lsc, bd_lsc};
+    /// The database passed to the constuctor should be named this or have a 
+    /// nested database with this name. Otherwise a default solver database is 
+    /// used to initialize a solver object for the velocity subsystem.
+    constexpr static char required_database_name[] = 
+      "Saddle Point Preconditioner Database";
     
     /** @brief constructor for a given system matrix */
     explicit Saddle_point_preconditioner(const BlockFEMatrix & m,
-                                         type t = type::lsc, 
-                                         bool direct_velocity_solve = true);
+                                         type t, const ParameterDatabase& db);
     /** @brief don't use this constuctor. It is here only for compatability 
      * in the Solver class.
      * 
      * @warning Do not use this constructor. You need a BlockFEMatrix instead.
      */
     explicit Saddle_point_preconditioner(const BlockMatrix & m,
-                                         type t = type::lsc, 
-                                         bool direct_velocity_solve = true);
+                                         type t, const ParameterDatabase& db);
     
     /** @brief destructor, delete all allocated memory */
     ~Saddle_point_preconditioner() = default;
@@ -66,14 +70,6 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
   protected:
     // saddle point preconditioner (spp) type
     type spp_type;
-    
-    // solution strategy within the LSC preconditioner
-    // 0: direct (umfpack)
-    // 1: fgmres (with ssor preconditioning), then use SC_LIN_RED_FACTOR_SCALAR
-    // in case of 1 you need a flexible solver, because the number of iterations
-    // is in general not constant.
-    unsigned int lsc_strategy;
-    
     
     /** @brief the system matrix
      * 
