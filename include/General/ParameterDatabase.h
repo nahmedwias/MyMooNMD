@@ -12,7 +12,7 @@
  * name. One can add parameters via some `add` methods and access them via
  * `operator[]` given the name of the desired parameter as a string.
  * 
- * Furthermore this class can write all its contents to a output stream (e.g. a
+ * Furthermore this class can write all its contents to an output stream (e.g. a
  * file stream) and also read from an input stream, see methods `read` and 
  * `write` for a description of the format.
  * 
@@ -21,9 +21,8 @@
  * 
  * To see all stored Parameters call `ParameterDatabase::info()`.
  * 
- * Additionally to any local ParameterDatabase there is a global one which is
- * accessible from anywhere in ParMooN (if this header is included). It is 
- * called `parmoon_db`.
+ * Furthermore, it is possible to store additional parameter databases. This 
+ * can be nested up to an arbitrary order.
  */
 class ParameterDatabase
 {
@@ -118,8 +117,19 @@ class ParameterDatabase
     
     /// @brief find out if a parameter with a given name exists in this database
     /// 
+    /// @note This does not search for such a parameter in nested databases.
     /// better name? one would write e.g.: if(db.contains("param_name"))
     bool contains(std::string name) const;
+    
+    /// @brief add a nested parameter database
+    void add_nested_database(ParameterDatabase&& db);
+    
+    /// @brief return additional parameter database with a given name.
+    const ParameterDatabase& get_nested_database(std::string name) const;
+    ParameterDatabase& get_nested_database(std::string name);
+    
+    /// @brief get the number of nested databases in this database
+    size_t get_n_nested_databases() const;
     
     /// @brief write database to a stream, which can be read again
     ///
@@ -133,6 +143,11 @@ class ParameterDatabase
     ///
     /// Additionally to the above the date, the database name, some hg revision 
     /// information and the host name is printed.
+    ///
+    /// Nested databases are printed at the end. This means that nesting with 
+    /// two or more levels is flattened as if all nested datases were stored
+    /// directly in this one. This is where read-write will produce different 
+    /// results.
     void write(std::ostream& stream, bool verbose = false) const;
     
     /// @brief read parameters from a stream
@@ -157,7 +172,8 @@ class ParameterDatabase
     /// '[_some_name_]' and the second (or the end of the stream respectively).
     /// That means any parameter before the first '[_some_name_]' is ignored!
     /// If no name is found at all, then a default name is given and all lines 
-    /// are considered to be read.
+    /// are considered to be read. In case there are more than one database, 
+    /// all remaining ones will be stored as nested databases.
     ///
     /// Each parameter must be on one line. Empty lines and lines without a 
     /// colon (':') are ignored. Parameters must not have spaces in their names.
@@ -187,12 +203,6 @@ class ParameterDatabase
     /// Parameters in your input stream, but don't want that to be read, use 
     /// two '#' instead of just one. This is how the default documentation in
     /// ParMooN can be kept inside the Parameter objects.
-    ///
-    /// If the input stream `is` is read until the end (this happens if there is
-    /// no second name found), the `operator bool()` on `is` will return false.
-    /// If it does return true, another database name has been found and a call
-    /// to `std::getline(is, line)` will return a line such as 
-    /// '[name_of_another_database_]'.
     void read(std::istream& is);
     
     /// @brief merge another database into this one
@@ -200,6 +210,8 @@ class ParameterDatabase
     /// Parameters which exist in this one get the values from the other
     /// database. All parameters in `other` which do not exist in this database,
     /// are copied into this one only if `create_new_parameters` is true.
+    /// Nested databases are copied into this one. If a nested database with the
+    /// same name already exists, 'merge' is called.
     void merge(const ParameterDatabase &other,
                bool create_new_parameters = true);
     
@@ -232,6 +244,20 @@ class ParameterDatabase
     /// @brief the set of all parameters stored in this parameter database
     std::list<Parameter> parameters;
     
+    /// @brief additional parameter databases (identified by their unique name)
+    std::list<ParameterDatabase> databases;
+    
+    /// @brief a helper function which is called by the other 'write' method.
+    /// 
+    /// This allows for a simpler implementation of nested database (where root
+    /// is false).
+    void write(std::ostream& stream, bool verbose, bool root) const;
+    
+    /// @brief a helper function which is called by the other 'read' method.
+    /// 
+    /// This allows for a simpler implementation of nested database (where root
+    /// is false).
+    void read(std::istream& is, bool root);
 };
 
 #endif // __PARAMETERDATABASE__

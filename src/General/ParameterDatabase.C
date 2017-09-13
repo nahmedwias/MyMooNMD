@@ -13,23 +13,25 @@
 #include <mpi.h>
 #endif
 
-// helper functions
-std::list<Parameter>::const_iterator 
-find_parameter(std::string name, const std::list<Parameter>& parameters)
+// helper functions to find a parameter or database by their name in a list 
+template<class T>
+typename std::list<T>::const_iterator 
+find_in_list(std::string name, const std::list<T>& search_list)
 {
-  auto search_lambda = [=](const Parameter& p){ return p.get_name() == name; };
-  return std::find_if(parameters.begin(), parameters.end(), search_lambda);
+  auto search_lambda = [=](const T& p){ return p.get_name() == name; };
+  return std::find_if(search_list.begin(), search_list.end(), search_lambda);
 }
-std::list<Parameter>::iterator 
-find_parameter(std::string name, std::list<Parameter>& parameters)
+template<class T>
+typename std::list<T>::iterator 
+find_in_list(std::string name, std::list<T>& search_list)
 {
-  auto search_lambda = [=](const Parameter& p){ return p.get_name() == name; };
-  return std::find_if(parameters.begin(), parameters.end(), search_lambda);
+  auto search_lambda = [=](const T& p){ return p.get_name() == name; };
+  return std::find_if(search_list.begin(), search_list.end(), search_lambda);
 }
 
 bool ParameterDatabase::contains(std::string param_name) const
 {
-  if(find_parameter(param_name, this->parameters) == this->parameters.end())
+  if(find_in_list(param_name, this->parameters) == this->parameters.end())
     return false;
   else
     return true;
@@ -37,19 +39,23 @@ bool ParameterDatabase::contains(std::string param_name) const
 
 /* ************************************************************************** */
 ParameterDatabase::ParameterDatabase(std::string name) 
- : name(name), parameters()
+ : name(name), parameters(), databases()
 {
   
 }
 
 /* ************************************************************************** */
 ParameterDatabase::ParameterDatabase(const ParameterDatabase& db)
- : name(db.name), parameters()
+ : name(db.name), parameters(), databases()
 {
   // iterate through the parameters in db
   for(const auto& p : db.parameters)
   {
     this->parameters.emplace_back(Parameter(p));
+  }
+  for(const auto& database : db.databases)
+  {
+    this->databases.emplace_back(database);
   }
 }
 
@@ -57,13 +63,18 @@ ParameterDatabase::ParameterDatabase(const ParameterDatabase& db)
 ParameterDatabase& ParameterDatabase::operator=(const ParameterDatabase& db)
 {
   this->name = db.get_name();
-  // remove parameters previously stored
+  // remove parameters and databases previously stored
   this->parameters.clear();
+  this->databases.clear();
   // add parmeter copies from db to this
   // iterate through the parameters in db
   for(const auto& p : db.parameters)
   {
     this->parameters.emplace_back(Parameter(p));
+  }
+  for(const auto& database : db.databases)
+  {
+    this->databases.emplace_back(database);
   }
   return *this;
 }
@@ -143,14 +154,14 @@ void ParameterDatabase::add(Parameter&& p)
 /* ************************************************************************** */
 const Parameter& ParameterDatabase::operator[](std::string parameter_name) const
 {
-  auto it = find_parameter(parameter_name, this->parameters);
+  auto it = find_in_list(parameter_name, this->parameters);
   if(it == this->parameters.end())
     ErrThrow("unknown parameter ", parameter_name);
   return *it;
 }
 Parameter& ParameterDatabase::operator[](std::string parameter_name)
 {
-  auto it = find_parameter(parameter_name, this->parameters);
+  auto it = find_in_list(parameter_name, this->parameters);
   if(it == this->parameters.end())
     ErrThrow("unknown parameter ", parameter_name);
   return *it;
@@ -175,7 +186,46 @@ size_t ParameterDatabase::get_n_parameters() const
 }
 
 /* ************************************************************************** */
-void ParameterDatabase::write(std::ostream& os, bool verbose) const
+void ParameterDatabase::add_nested_database(ParameterDatabase && db)
+{
+  if(find_in_list(db.get_name(), this->databases) == this->databases.end())
+  {
+    this->databases.emplace_back(db);
+  }
+  else
+  {
+    ErrThrow("additional database with this name already exists ", 
+             db.get_name());
+  }
+}
+
+/* ************************************************************************** */
+const ParameterDatabase & ParameterDatabase::get_nested_database(
+  std::string name) const
+{
+  auto it = find_in_list(name, this->databases);
+  if(it == this->databases.end())
+    ErrThrow("unknown nested database ", name);
+  return *it;
+}
+
+/* ************************************************************************** */
+ParameterDatabase & ParameterDatabase::get_nested_database(std::string name)
+{
+  auto it = find_in_list(name, this->databases);
+  if(it == this->databases.end())
+    ErrThrow("unknown nested database ", name);
+  return *it;
+}
+
+/* ************************************************************************** */
+size_t ParameterDatabase::get_n_nested_databases() const
+{
+  return this->databases.size();
+}
+
+/* ************************************************************************** */
+void ParameterDatabase::write(std::ostream& os, bool verbose, bool root) const
 {
   if(!os.good())
   {
@@ -183,24 +233,27 @@ void ParameterDatabase::write(std::ostream& os, bool verbose) const
     return;
   }
   
-  os << "# current date and time: " << utilities::get_date_and_time();
-  os << "# ParMooN hg revision: " << parmoon::hg_revision << "\n";
-  os << "# ParMooN hg branch  : " << parmoon::hg_branch << "\n";
-  os << "# ParMooN, local changes: " << parmoon::hg_local_changes << "\n";
-  os << "# ParMooN build information: " << parmoon::build_type << ", " 
-     << parmoon::parallel_type << "\n";
+  if(root) // write some information only once
+  {
+    os << "# current date and time: " << utilities::get_date_and_time();
+    os << "# ParMooN hg revision: " << parmoon::hg_revision << "\n";
+    os << "# ParMooN hg branch  : " << parmoon::hg_branch << "\n";
+    os << "# ParMooN, local changes: " << parmoon::hg_local_changes << "\n";
+    os << "# ParMooN build information: " << parmoon::build_type << ", " 
+       << parmoon::parallel_type << "\n";
 #ifdef _MPI
-  int size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  os << "# number of ParMooN mpi processes: " << size << "\n";
+    int size;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    os << "# number of ParMooN mpi processes: " << size << "\n";
 #endif
-  os << "# hostname: " << utilities::get_host_name() << "\n";
-  os << "# Writing a ParMooN parameter database with "
-     << this->get_n_parameters() << " parameters\n";
-  os << "\n";
+    os << "# hostname: " << utilities::get_host_name() << "\n";
+  }
+  os << "# A ParMooN parameter database with "
+     << this->get_n_parameters() << " parameters and "
+     << this->get_n_nested_databases() << " nested databases\n\n";
   if(verbose)
   {
-    os << "# The name of the database. This is usually not of any importance\n";
+    os << "# The name of the database.\n";
   }
   os << "[ " << this->name << " ]\n\n";
   
@@ -217,9 +270,25 @@ void ParameterDatabase::write(std::ostream& os, bool verbose) const
     {
       os << p.get_name() << ": " << p << "\n";
     }
-    
+  }
+  os << "\nNested databases:\n\n";
+  unsigned int n = 1; // count the nested databases
+  auto n_nested = this->databases.size();
+  for(const auto& db : this->databases)
+  {
+    os << "A nested parameter database of '" << this->name << "'. Number "
+       << n << " of " << n_nested;
+    db.write(os, verbose, false);
+    n++;
   }
 }
+
+/* ************************************************************************** */
+void ParameterDatabase::write(std::ostream& os, bool verbose) const
+{
+  this->write(os, verbose, true);
+}
+
 
 /* ************************************************************************** */
 // helper function to remove whitespace at the beginning of a string
@@ -675,7 +744,7 @@ bool read_parameter(const std::string& line, std::string& name,
 }
 
 /* ************************************************************************** */
-void ParameterDatabase::read(std::istream& is)
+void ParameterDatabase::read(std::istream& is, bool root)
 {
   if(!is.good())
   {
@@ -739,6 +808,21 @@ void ParameterDatabase::read(std::istream& is)
   
   this->name = tmp.get_name();
   this->merge(tmp);
+  // in case there are more databases in the stream, read those as well, but
+  // only in the root database
+  while(is.good() && root)
+  {
+    // additional database found
+    ParameterDatabase nested_db("Nested parameter Database");
+    nested_db.read(is, false);
+    this->add_nested_database(std::move(nested_db));
+  }
+}
+
+/* ************************************************************************** */
+void ParameterDatabase::read(std::istream& is)
+{
+  this->read(is, true);
 }
 
 /* ************************************************************************** */
@@ -754,6 +838,18 @@ void ParameterDatabase::merge(const ParameterDatabase &other,
     else if(create_new_parameters)
       this->add(Parameter(p)); // add a copy of the parameter p
   }
+  for(const ParameterDatabase& db : other.databases)
+  {
+    auto it = find_in_list(db.get_name(), this->databases);
+    if(it == this->databases.end())
+    {
+      this->databases.emplace_back(db);
+    }
+    else
+    {
+      it->merge(db, create_new_parameters);
+    }
+  }
 }
 
 /* ************************************************************************** */
@@ -761,12 +857,25 @@ void ParameterDatabase::info(bool only_names) const
 {
     Output::print("Parameter database: ", this->name);
     Output::print("  number of parameters: ", this->parameters.size());
+    auto n_nested = this->databases.size();
+    if(n_nested != 0)
+    {
+      Output::print("  number of nested parameter databases: ", n_nested); 
+    }
     for(const auto& p : this->parameters)
     {
         if(only_names)
             Output::print("    ", p.get_name(), ": ", p.value_as_string());
         else
             p.info();
+    }
+    unsigned int n = 1; // count the nested databases
+    for(const auto& db : this->databases)
+    {
+      Output::print("Info on a nested parameter database of '", this->name,
+                    "'. Number ", n, " of ", n_nested);
+      db.info();
+      n++;
     }
 }
 
