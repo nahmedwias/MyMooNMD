@@ -17,7 +17,7 @@ const int wall = 0;
 const int in = 3;
 
 int VELOCITY_CODE=0; //can be controlled by input parameter "velocity_code"
-double u_max[4] = {0.102958, 0.1825, 0.241916, 0.26738}; // maximum inflow velocity (m/s)
+double u_max[4] = {0.120958, 0.182498, 0.241916, 0.26738}; // maximum inflow velocity (m/s)
 double diffusion = 0.0001; // diffusion coefficient - unit of your choice
 
 void ExampleFile()

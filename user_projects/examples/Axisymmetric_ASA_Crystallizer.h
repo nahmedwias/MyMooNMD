@@ -49,11 +49,10 @@ namespace Physics
   double rho_E = 790; 		// kg/m^3, density (of Ethanol)
   double rho_ASA = 1350; 	// kg/m^3, density (of ASA)
   double rho_susp = 916.76; // kg/m^3, the assumed density of the suspension (see my modelling tables)
-  double delta_h_cryst = 1.6541e5; //fusion enthalpy [J/kg]
-  // should be diffusion coefficient of ASA in ethanol, is actually some
-  // diffusion of some kind of ASA in NaOH reported in
-  // http://www.iiste.org/Journals/index.php/JHMN/article/viewFile/10040/10256
-  double D = 1.69e-8; // m^2/s
+  double delta_h_cryst = 1.6541e5; //specific heat of fusion [J/kg]
+  // should be diffusion coefficient of ASA in ethanol, is actually diffusion
+  // coefficient of urea in EtOH as reported by Anker et al. 2015...
+  double D = 1.35e-9; // m^2/s
 
   double M_Ethanol = 0.04607; //molar mass of Ethanol (kg/mol)
   double M_ASA = 0.18016; //molar mass of ASA (kg/mol)

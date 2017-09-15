@@ -155,7 +155,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   std::size_t pos = out_dir.find("VTK");// Lil hack - the directory above 'VTK',
   out_dir = out_dir.substr(0,pos); 		// ...should be the general output directory.
   std::string brush_mesh_file(out_dir);
-  brush_mesh_file.append("/brush_mesh.mesh");
+  brush_mesh_file.append("./brush_mesh.mesh");
   brush_grid_->writeMesh(brush_mesh_file.c_str(), 2);
 
   double third_dim_stretch = 0;
