@@ -128,15 +128,16 @@ void MeshPartitionInOut::read_file (const TDomain& Domain,int size,
 	    		  		  {
 	    		  			ErrThrow("The input file contains a cell number greater than the maximal cell number.");
 	    		  		  }
-		    		  	  Cell_Rank[line]=Rank_Number;
+		    		  	  Cell_Rank[l-2]=Rank_Number;
 
-		    			  if (line>N_Cells-1){ErrThrow("The file has more lines than it should.");}
-		    			  	  ++line;
+		    			  if (l > N_Cells + 1){ErrThrow("The file has more lines than it should.");}
+		    			  ++l;
 		    		  }
 		    	  }
-
-		      if (line!=N_Cells) //After the while loop Line is the total number of read-in lines.
+	      }
+		      if (l-2!=N_Cells) //After the while loop l is the total number of read-in lines.
 		      {
+		    	Output::print(l, " ", N_Cells);
 		    	ErrThrow("The file has less lines than it should.");
 		      }
 	      }
