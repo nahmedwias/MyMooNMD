@@ -771,6 +771,11 @@ void AxialSymmetricNSE2D_ParamFunction(double *in, double *out)
 //See how the LocalAssembling object in the assemble_linear_term
 // routine is initialized to be in accordance with this thing (and the
 // above ParamFct2D). One will notice that there is a correspondence.
+// TODO To me it seems, that this routine is not yet in accordance to the theory
+// written down in my thesis, least to say correct at all. I think it is unclear,
+// which concrete form the convective and viscous term take here. In the thesis it goes:
+// 	- viscous term is \nabla : \nabla (Laplacian form)
+// 	- convective term is (u \cdot \nabla) v (convective form)
 void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
                           double *param, double hK,
                           double **OrigValues, int *N_BaseFuncts,
@@ -925,6 +930,10 @@ void AxialSymmetricNSE2D_AssembleFunction(double Mult, double *coeff,
   } // endfor i
 }
 
+// TODO To me it seems, that this routine is not yet in accordance to the theory
+// written down in my thesis. I think it is unclear, which concrete form
+// the convective term takes here. In the thesis it goes:
+// (u \cdot \nabla) v (convective form)
 void AxialSymmetricNSE2D_OnlyNonLinear_AssembleFunction(double Mult, double *coeff,
                 double *param, double hK,
                 double **OrigValues, int *N_BaseFuncts,
