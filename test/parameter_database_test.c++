@@ -31,6 +31,27 @@ bool test_for_parameter_class()
   p4.info();
   p4.impose(p);
   p4.info();
+  
+  Parameter p5("my_bool_vec", {true, true, false}, "my bool vector description");
+  p5.push_back(false);
+  p5.info();
+
+  Parameter p6("my_int_vec", {1,2,3}, "my unsigned int vector description");
+  p6.set_range(-1,6);
+  p6.push_back(5);
+  p6.info();
+  
+  Parameter p7("my_size_t_vec", {1u,2u,3u}, "my unsigned int vector description");
+  p7.set_range(1u,6u);
+  p7.push_back(5u);
+  p7.info();
+  
+  // with c++14 we can also write {"one"s, "two"s, "three"s}.
+  Parameter p8("my_string_vec", {std::string("one"),"two","three"}, 
+               "my string vector description");
+  p8.set_range(std::set<std::string>({"one", "two", "three", "four"}));
+  p8.push_back<std::string>("five", false);
+  p8.info();
   return true;
 }
 
@@ -45,6 +66,7 @@ int main(int argc, char* argv[])
   
   db.add("double_parameter", 1.2, "a dummy parameter", -2.0, 2.0);
   db.add("int_parameter", 0, "test parameter", {-4, -2, 0, 2, 4});
+  db.add("size_t_vector", {0u, 4u, 10u}, "test parameter");
   
   try
   {
