@@ -86,11 +86,34 @@ class ParameterDatabase
     template <typename T>
     void add(std::string name, T value, std::string description);
     
+    /// @brief construct and add a vector-valued parameter without given range.
+    ///
+    /// T can be bool, int, size_t, double, or std::string.
+    template <typename T>
+    void add(std::string name, std::vector<T> value, std::string description);
+    
+    /// @brief construct and add a vector-valued parameter without given range.
+    ///
+    /// T can be bool, int, size_t, double, or std::string.
+    /// This exists only for convenience, because without it often template 
+    /// argument deduction/substitution fails.
+    template <typename T>
+    void add(std::string name, std::initializer_list<T> value, 
+             std::string description);
+    
     /// @brief construct and add one parameter with a given interval as range
     ///
     /// T can be int, size_t, or double. The range is `[min, max]`.
     template <typename T>
     void add(std::string name, T value, std::string description, T min, T max);
+    
+    /// @brief construct and add one vector-valued parameter with a given 
+    /// interval as range.
+    ///
+    /// T can be int, size_t, or double. The range is `[min, max]`.
+    template <typename T>
+    void add(std::string name, std::vector<T> value, std::string description, 
+             T min, T max);
     
     /// @brief construct and add one parameter with a given set as range
     ///
@@ -99,8 +122,18 @@ class ParameterDatabase
     void add(std::string name, T value, std::string description, 
              std::set<T> range);
     
-    /// @brief add an already existing parameter
+    /// @brief construct and add one vector-valued parameter with a given set 
+    /// as range.
+    ///
+    /// T can be bool, int, size_t, or string.
+    template <typename T>
+    void add(std::string name, std::vector<T> value, std::string description, 
+             std::set<T> range);
+    
+    /// @brief add a parameter (move)
     void add(Parameter&& p);
+    /// @brief add a parameter (copy)
+    void add(const Parameter & p);
     
     /// @brief return parameter with a given name
     const Parameter& operator[](std::string parameter_name) const;
@@ -122,7 +155,7 @@ class ParameterDatabase
     bool contains(std::string name) const;
     
     /// @brief add a nested parameter database
-    void add_nested_database(ParameterDatabase&& db);
+    void add_nested_database(ParameterDatabase db);
     
     /// @brief return additional parameter database with a given name.
     const ParameterDatabase& get_nested_database(std::string name) const;
@@ -141,7 +174,7 @@ class ParameterDatabase
     /// - true, if you want the parameters, their description (documentation), 
     ///   and range.
     ///
-    /// Additionally to the above the date, the database name, some hg revision 
+    /// Additionally to the above, the date, the database name, some hg revision 
     /// information and the host name is printed.
     ///
     /// Nested databases are printed at the end. This means that nesting with 
@@ -149,6 +182,8 @@ class ParameterDatabase
     /// directly in this one. This is where read-write will produce different 
     /// results.
     void write(std::ostream& stream, bool verbose = false) const;
+    /// @brief convenience function which calls write(std::ostream&, bool)
+    void write(std::string filename, bool verbose = false) const;
     
     /// @brief read parameters from a stream
     ///
@@ -181,19 +216,27 @@ class ParameterDatabase
     ///     parameter_name: value
     ///     parameter_name: value [ range_min, range_max ]
     ///     parameter_name: value { range_1, range_2, range_3 }
+    ///     parameter_name: (v1, v2, v3)
+    ///     parameter_name: (v1, v2, v3) [ range_min, range_max ]
+    ///     parameter_name: (v1, v2, v3) { range_1, range_2, range_3 }
     ///
     /// There must be a colon (':') after the name. For booleans the value can 
-    /// be 'true' or 'false'.
+    /// be 'true' or 'false'. The vectors (indicated by '(' and ')') are 
+    /// translated to std::vector, so can have arbitrary length.
     ///
     /// All parameters can have a range. That means the parameter will never
     /// be outside some specified values (e.g. an interval or some set of 
-    /// values). Ranges for boolean parameters should be determined using braces 
-    /// (e.g. '{true}' or '{ true, false }'). For parameters of type int or 
-    /// size_t either braces ('{}') or brackets ('[]') are ok, one indicating a
-    /// set of individual entries and the other an interval. For double 
-    /// parameters only brackets (e.g. '[-2.5, 5.7]') are possible, indicating
-    /// an interval. There has to be a space (' ') between the value and the 
-    /// range.
+    /// values). Ranges for boolean and string parameters should be determined 
+    /// using braces  (e.g. '{true}' or '{ true, false }'). For parameters of 
+    /// type int or size_t either braces ('{}') or brackets ('[]') are ok, one
+    /// indicating a set of individual entries and the other an interval. For 
+    /// double parameters only brackets (e.g. '[-2.5, 5.7]') are possible, 
+    /// indicating an interval. There has to be a space (' ') between the value
+    /// and the range. For vector valued parameters each entry must be in the 
+    /// specified range.
+    ///
+    /// A parameter object is always in a consistent state, meaning that the
+    /// value(s) are always within the specified range.
     ///
     /// It is possible to read documentation for each parameter which will then
     /// become its Parameter::description. All lines directly before the line 
@@ -204,6 +247,8 @@ class ParameterDatabase
     /// two '#' instead of just one. This is how the default documentation in
     /// ParMooN can be kept inside the Parameter objects.
     void read(std::istream& is);
+    /// @brief convenience function which calls read(std::istream&)
+    void read(std::string filename);
     
     /// @brief merge another database into this one
     ///

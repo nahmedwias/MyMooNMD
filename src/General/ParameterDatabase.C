@@ -99,6 +99,53 @@ template<> void ParameterDatabase::add(std::string n,const char* v,
 
 /* ************************************************************************** */
 template <typename T>
+void ParameterDatabase::add(std::string name, std::vector<T> value,
+                            std::string description)
+{
+  Parameter p(name, value, description);
+  this->add(std::move(p));
+}
+template void ParameterDatabase::add(std::string n, std::vector<bool> v,
+                                     std::string d);
+template void ParameterDatabase::add(std::string n, std::vector<int> v,
+                                     std::string d);
+template void ParameterDatabase::add(std::string n, std::vector<size_t> v,
+                                     std::string d);
+template void ParameterDatabase::add(std::string n, std::vector<double> v,
+                                     std::string d);
+template void ParameterDatabase::add(std::string n, std::vector<std::string> v,
+                                     std::string d);
+template <typename T>
+void ParameterDatabase::add(std::string name, std::initializer_list<T> value,
+                            std::string description)
+{
+  Parameter p(name, value, description);
+  this->add(std::move(p));
+}
+template void ParameterDatabase::add(std::string n,
+                                     std::initializer_list<bool> v, 
+                                     std::string d);
+template void ParameterDatabase::add(std::string n,
+                                     std::initializer_list<int> v,
+                                     std::string d);
+template void ParameterDatabase::add(std::string n,
+                                     std::initializer_list<size_t> v,
+                                     std::string d);
+template<> void ParameterDatabase::add(std::string n,
+                                     std::initializer_list<unsigned int> v,
+                                     std::string d)
+{
+  std::vector<size_t> vals(v.begin(), v.end());
+  this->add(n, vals, d);
+}
+template void ParameterDatabase::add(std::string n,
+                                     std::initializer_list<double> v,
+                                     std::string d);
+template void ParameterDatabase::add(std::string n,
+                                     std::initializer_list<std::string> v,
+                                     std::string d);
+/* ************************************************************************** */
+template <typename T>
 void ParameterDatabase::add(std::string name, T value, std::string description,
                             T min, T max)
 {
@@ -112,6 +159,29 @@ template void ParameterDatabase::add(std::string n, size_t v, std::string d,
                                      size_t min, size_t max);
 template void ParameterDatabase::add(std::string n, double v, std::string d,
                                      double min, double max);
+
+/* ************************************************************************** */
+template <typename T>
+void ParameterDatabase::add(std::string name, std::vector<T> value, 
+                            std::string description, T min, T max)
+{
+  Parameter p(name, value, description);
+  p.set_range(min, max);
+  this->add(std::move(p));
+}
+template void ParameterDatabase::add(std::string n, std::vector<int> v,   
+                                     std::string d, int min, int max);
+template void ParameterDatabase::add(std::string n, std::vector<size_t> v,
+                                     std::string d, size_t min, size_t max);
+template<> void ParameterDatabase::add(std::string n, std::vector<unsigned int> v,
+                                       std::string d, unsigned int min,
+                                       unsigned int max)
+{
+  std::vector<size_t> val(v.begin(), v.end());
+  this->add(n, val, d, (size_t)min, (size_t)max);
+}
+template void ParameterDatabase::add(std::string n, std::vector<double> v,
+                                     std::string d, double min, double max);
 
 /* ************************************************************************** */
 template <typename T>
@@ -140,15 +210,41 @@ template<> void ParameterDatabase::add(std::string n,const char* v,
 }
 
 /* ************************************************************************** */
-void ParameterDatabase::add(Parameter&& p)
+template <typename T>
+void ParameterDatabase::add(std::string name, std::vector<T> value, 
+                            std::string description, std::set<T> range)
+{
+  Parameter p(name, value, description);
+  p.set_range(range);
+  this->add(std::move(p));
+}
+template void ParameterDatabase::add(std::string n, std::vector<bool> v,
+                                     std::string d, std::set<bool> range);
+template void ParameterDatabase::add(std::string n, std::vector<int> v,
+                                     std::string d, std::set<int> range);
+template void ParameterDatabase::add(std::string n, std::vector<size_t> v,
+                                     std::string d, std::set<size_t> range);
+template void ParameterDatabase::add(std::string n, std::vector<std::string> v,
+                                     std::string d, std::set<std::string> range);
+
+/* ************************************************************************** */
+void ParameterDatabase::add(Parameter && p)
 {
   // check if such a parameter already exists in this database
   if(!this->contains(p.get_name()))
-    this->parameters.emplace_back(std::move(p));
+    this->parameters.emplace_back(p);
   else
     ErrThrow("parameter with this name already exists ", p.get_name());
-   
-    // what happens to p now?
+}
+
+/* ************************************************************************** */
+void ParameterDatabase::add(const Parameter & p)
+{
+  // check if such a parameter already exists in this database
+  if(!this->contains(p.get_name()))
+    this->parameters.emplace_back(p);
+  else
+    ErrThrow("parameter with this name already exists ", p.get_name());
 }
 
 /* ************************************************************************** */
@@ -186,7 +282,7 @@ size_t ParameterDatabase::get_n_parameters() const
 }
 
 /* ************************************************************************** */
-void ParameterDatabase::add_nested_database(ParameterDatabase && db)
+void ParameterDatabase::add_nested_database(ParameterDatabase db)
 {
   if(find_in_list(db.get_name(), this->databases) == this->databases.end())
   {
@@ -271,16 +367,27 @@ void ParameterDatabase::write(std::ostream& os, bool verbose, bool root) const
       os << p.get_name() << ": " << p << "\n";
     }
   }
-  os << "\nNested databases:\n\n";
-  unsigned int n = 1; // count the nested databases
   auto n_nested = this->databases.size();
-  for(const auto& db : this->databases)
+  if(n_nested != 0)
   {
-    os << "A nested parameter database of '" << this->name << "'. Number "
-       << n << " of " << n_nested;
-    db.write(os, verbose, false);
-    n++;
+    os << "\n# Nested databases:\n\n";
+    unsigned int n = 1; // count the nested databases
+    for(const auto& db : this->databases)
+    {
+      os << "# A nested parameter database of '" << this->name << "'. Number "
+         << n << " of " << n_nested;
+      db.write(os, verbose, false);
+      n++;
+    }
   }
+}
+
+/* ************************************************************************** */
+void ParameterDatabase::write(std::string filename, bool verbose) const
+{
+  std::ofstream os(filename);
+  this->write(os, verbose);
+  os.close();
 }
 
 /* ************************************************************************** */
@@ -362,7 +469,9 @@ std::list<std::string> get_lines_of_database(std::istream& is,
 }
 
 // helper function to identify the type of a variable in `value_string`. Exactly
-// one of the other parameters are updated accordingly.
+// one of the other parameters are updated accordingly. The value_string must 
+// not be a vector-valued parameter. This is only for a single value (possibly 
+// within a vector).
 Parameter::types get_parameter_and_type(std::string value_string,
                                         bool & bool_ret,
                                         int & int_ret, size_t & size_t_ret, 
@@ -427,6 +536,157 @@ Parameter::types get_parameter_and_type(std::string value_string,
   string_ret = value_string;
   return Parameter::types::_string;
 }
+// helper function to identify the type of a variable in `value_string`. 
+// Depending on the returned type the respective other parameter is filled.
+// The other parameters might be used as well, but should then be discarded.
+Parameter::types get_parameter_and_type(std::string value_string,
+                                        bool & bool_ret,
+                                        int & int_ret, size_t & size_t_ret, 
+                                        double & double_ret,
+                                        std::string & string_ret,
+                                        std::vector<bool> & bool_vec,
+                                        std::vector<int> & int_vec,
+                                        std::vector<size_t> & size_t_vec,
+                                        std::vector<double> & double_vec,
+                                        std::vector<std::string> & string_vec)
+{
+  // find out if this is a vector:
+  std::vector<std::string> vector_entries;
+  auto npos = std::string::npos;
+  auto left = value_string.find("(");
+  if(left != npos)
+  {
+    // possibly a vector
+    auto right = value_string.find(")");
+    if(right != npos)
+    {
+      // consider this to be a vector
+      left += 1; // just after the "("
+      auto middle = value_string.find(",", left);
+      while(middle < right && middle != npos)
+      {
+        std::string value = value_string.substr(left, middle-left);
+        remove_trailing_whitespace(value);
+        remove_leading_whitespace(value);
+        vector_entries.push_back(value);
+        left = middle+1; // just after the comma
+        middle = value_string.find(",", left); // next comma
+      }
+      // find last entry
+      std::string value = value_string.substr(left, right-left);
+      remove_trailing_whitespace(value);
+      remove_leading_whitespace(value);
+      if(value.empty())
+        ErrThrow("empty vector, provide at least one value");
+      vector_entries.push_back(value);
+    }
+    // else // this could be a filename or a path (or an error)
+  }
+  if(!vector_entries.empty())
+  {
+    // only to get the type
+    auto type = get_parameter_and_type(vector_entries.at(0), bool_ret, int_ret,
+                                       size_t_ret,  double_ret, string_ret);
+    
+    typedef Parameter::types tps; // just for shorter code
+    for(const auto s : vector_entries)
+    {
+      auto type_local = get_parameter_and_type(s, bool_ret, int_ret, size_t_ret, 
+                                               double_ret, string_ret);
+      if(type != type_local)
+      {
+        if(type == tps::_bool || type_local == tps::_bool)
+          ErrThrow("cannot read vector where entries have different types ",
+                   type, ", ", type_local);
+        if(type == tps::_string || type_local == tps::_string)
+          ErrThrow("can not read vector with different types, ", type, " ",
+                   type_local);
+        if(type == tps::_int)
+        {
+          if(type_local == tps::_size_t)
+            int_ret = (int)size_t_ret;
+          if(type_local == tps::_double)
+          {
+            // switch type to double
+            double_vec.clear();
+            double_vec.insert(double_vec.begin(), int_vec.begin(), 
+                              int_vec.end());
+            type = tps::_double;
+          }
+        }
+        else if(type == tps::_size_t)
+        {
+          if(type_local == tps::_int)
+          {
+            // switch type to int
+            int_vec.clear();
+            int_vec.insert(int_vec.begin(), size_t_vec.begin(), 
+                           size_t_vec.end());
+            type = tps::_int;
+          }
+          else if(type_local == tps::_double)
+          {
+            // switch type to double
+            double_vec.clear();
+            double_vec.insert(double_vec.begin(), size_t_vec.begin(),
+                              size_t_vec.end());
+            type = tps::_double;
+          }
+        }
+        else if(type == tps::_double)
+        {
+          if(type_local == tps::_int)
+            double_ret = (double)int_ret;
+          if(type_local == tps::_size_t)
+            double_ret = (double)size_t_ret;
+        }
+      }
+      switch(type)
+      {
+        case tps::_bool:
+          bool_vec.push_back(bool_ret);
+          break;
+        case tps::_int:
+          int_vec.push_back(int_ret);
+          break;
+        case tps::_size_t:
+          size_t_vec.push_back(size_t_ret);
+          break;
+        case tps::_double:
+          double_vec.push_back(double_ret);
+          break;
+        case tps::_string:
+          string_vec.push_back(string_ret);
+          break;
+        default:
+          ErrThrow("unknown type.");
+      }
+    }
+    switch(type)
+    {
+      case tps::_bool:
+        return tps::_bool_vec;
+        break;
+      case tps::_int:
+        return tps::_int_vec;
+        break;
+      case tps::_size_t:
+        return tps::_size_t_vec;
+        break;
+      case tps::_double:
+        return tps::_double_vec;
+        break;
+      case tps::_string:
+        return tps::_string_vec;
+        break;
+      default:
+        ErrThrow("unknown type.");
+    }
+  }
+  // else // not a vector
+  return get_parameter_and_type(value_string, bool_ret, int_ret, size_t_ret, 
+                                double_ret, string_ret);
+}
 
 // if the parameter range consists of values of a different type than `type`,
 // that type needs to be adjusted. For example if the type is size_t but the 
@@ -442,24 +702,38 @@ void adjust_type(Parameter::types& type,
   size_t size_t_val;
   double double_val;
   std::string string_val;
+  std::vector<bool> bool_vec;
+  std::vector<int> int_vec;
+  std::vector<size_t> size_t_vec;
+  std::vector<double> double_vec;
+  std::vector<std::string> string_vec;
   
   for(const std::string & s : range_list.second)
   {
     Parameter::types t = get_parameter_and_type(s, bool_val, int_val, 
                                                 size_t_val, double_val, 
-                                                string_val);
+                                                string_val, bool_vec, int_vec,
+                                                size_t_vec, double_vec, 
+                                                string_vec);
     if(type == t)
       continue;
+    typedef Parameter::types types; // just to have less code
+    if( (type == types::_bool_vec && t == types::_bool)
+     || (type == types::_int_vec && t == types::_int)
+     || (type == types::_size_t_vec && t == types::_size_t)
+     || (type == types::_double_vec && t == types::_double)
+     || (type == types::_string_vec && t == types::_string)
+    )
+      continue;
     // type and t are different
-    if(type == Parameter::types::_bool || t == Parameter::types::_bool)
+    if(type == types::_bool || t == types::_bool)
       ErrThrow("value and range have different types, one is bool");
-    if(type == Parameter::types::_string || t == Parameter::types::_string)
+    if(type == types::_string || t == types::_string)
       ErrThrow("value and range have different types, one is string");
-    if(type == Parameter::types::_size_t && t == Parameter::types::_int)
-      type = Parameter::types::_int;
-    if((type == Parameter::types::_size_t || type == Parameter::types::_int)
-       && t == Parameter::types::_double)
-      type = Parameter::types::_double;
+    if(type == types::_size_t && t == types::_int)
+      type = types::_int;
+    if( (type == types::_size_t || type == types::_int) && t == types::_double)
+      type = types::_double;
     // in other cases we don't change the type 
   }
 }
@@ -538,6 +812,7 @@ void add_range_to_parameter(Parameter& p,
   switch(p.get_type())
   {
     case Parameter::types::_bool:
+    case Parameter::types::_bool_vec:
     {
       if(range_list.first)
         ErrThrow("unable to set an interval range for a boolean parameter");
@@ -556,13 +831,15 @@ void add_range_to_parameter(Parameter& p,
     }
     case Parameter::types::_int:
     case Parameter::types::_size_t:
+    case Parameter::types::_int_vec:
+    case Parameter::types::_size_t_vec:
     {
       if(range_list.first)
       {
         // interval range
         std::string min_string = *range_list.second.begin();
         std::string max_string;
-        if(range_list.second.size() == 1)
+        if(range_list.second.size() == 1) // one-element range
           max_string = min_string;
         else
           max_string = *range_list.second.rbegin();
@@ -570,7 +847,8 @@ void add_range_to_parameter(Parameter& p,
         {
           long min = stol(min_string);
           long max = stol(max_string);
-          if(p.get_type() == Parameter::types::_size_t)
+          if(p.get_type() == Parameter::types::_size_t 
+            || p.get_type() == Parameter::types::_size_t_vec)
           {
             if(min < 0 || max < 0)
               ErrThrow("reading negative value for size_t??");
@@ -600,27 +878,25 @@ void add_range_to_parameter(Parameter& p,
           ErrThrow("could not read range for int parameter");
         }
         // convert to the right `set` and set_range
-        if(p.get_type() == Parameter::types::_size_t)
+        if(p.get_type() == Parameter::types::_size_t
+          || p.get_type() == Parameter::types::_size_t_vec)
         {
-          std::set<size_t> size_t_range;
-          for(auto t : long_range)
-          {
-            if(t < 0)
-              ErrThrow("reading negative value for size_t??");
-            size_t_range.insert(t);
-          }
+          auto is_negative = [](long i){ return i < 0; };
+          if(std::any_of(long_range.begin(), long_range.end(), is_negative))
+            ErrThrow("reading negative value for size_t??");
+          std::set<size_t> size_t_range(long_range.begin(), long_range.end());
           p.set_range(size_t_range);
         }
         else
         {
-          std::set<int> int_range;
-          for(auto t : long_range) int_range.insert(t);
+          std::set<int> int_range(long_range.begin(), long_range.end());
           p.set_range(int_range);
         }
       }
       break;
     }
     case Parameter::types::_double:
+    case Parameter::types::_double_vec:
     {
       if(!range_list.first)
         ErrThrow("unable to set a set range for a double parameter");
@@ -643,6 +919,7 @@ void add_range_to_parameter(Parameter& p,
       break;
     }
     case Parameter::types::_string:
+    case Parameter::types::_string_vec:
     {
       if(range_list.first)
         ErrThrow("unable to set an interval range for a string parameter");
@@ -664,14 +941,24 @@ Parameter create_parameter(std::string name, std::string value_string,
   size_t size_t_val;
   double double_val;
   std::string string_val;
+  std::vector<bool> bool_vec;
+  std::vector<int> int_vec;
+  std::vector<size_t> size_t_vec;
+  std::vector<double> double_vec;
+  std::vector<std::string> string_vec;
+  
+  
   
   // p will be returned at the end. We use a pointer because the Parameter class
   // has no default constructor.
   std::unique_ptr<Parameter> p;
   // find out what type this is
   Parameter::types type = get_parameter_and_type(value_string, bool_val,
-                                                 int_val, size_t_val, 
-                                                 double_val, string_val);
+                                                 int_val, size_t_val,
+                                                 double_val, string_val,
+                                                 bool_vec, int_vec,
+                                                 size_t_vec, double_vec,
+                                                 string_vec);
   
   auto range_list = get_range_list(range_string);
   
@@ -695,8 +982,23 @@ Parameter create_parameter(std::string name, std::string value_string,
     case Parameter::types::_string:
       p.reset(new Parameter(name, string_val, description));
       break;
+    case Parameter::types::_bool_vec:
+      p.reset(new Parameter(name, bool_vec, description));
+      break;
+    case Parameter::types::_int_vec:
+      p.reset(new Parameter(name, int_vec, description));
+      break;
+    case Parameter::types::_size_t_vec:
+      p.reset(new Parameter(name, size_t_vec, description));
+      break;
+    case Parameter::types::_double_vec:
+      p.reset(new Parameter(name, double_vec, description));
+      break;
+    case Parameter::types::_string_vec:
+      p.reset(new Parameter(name, string_vec, description));
+      break;
     default:
-      ErrThrow("unknown type");
+      ErrThrow("unknown type ");
       break;
   }
   add_range_to_parameter(*p, range_list);
@@ -759,6 +1061,7 @@ void ParameterDatabase::read(std::istream& is, bool root)
   // get all lines of the input stream as a list of strings
   std::list<std::string> lines_read = get_lines_of_database(is, tmp.name);
   
+  
   std::string description; // accumulates from several lines
   // loop over all lines
   for(std::string & line : lines_read)
@@ -781,7 +1084,7 @@ void ParameterDatabase::read(std::istream& is, bool root)
       if(des.length() != 0 && des.at(0) == '#')
         description.clear();
       else
-        // add this line to the descripion
+        // add this line to the description
         description += des + " ";
       continue; // go to next line
     }
@@ -803,8 +1106,8 @@ void ParameterDatabase::read(std::istream& is, bool root)
                              range_string));
     description.clear();
   }
-  Output::print<2>("Done reading database from stream. Read ",
-                   this->parameters.size(), " parameters");
+  Output::print<2>("Done reading database from stream. Read ", 
+                   tmp.get_n_parameters(), " parameters.");
   
   this->name = tmp.get_name();
   this->merge(tmp);
@@ -815,8 +1118,16 @@ void ParameterDatabase::read(std::istream& is, bool root)
     // additional database found
     ParameterDatabase nested_db("Nested parameter Database");
     nested_db.read(is, false);
-    this->add_nested_database(std::move(nested_db));
+    this->add_nested_database(nested_db);
   }
+}
+
+/* ************************************************************************** */
+void ParameterDatabase::read(std::string filename)
+{
+  std::ifstream ifs(filename);
+  this->read(ifs);
+  ifs.close();
 }
 
 /* ************************************************************************** */
@@ -860,21 +1171,21 @@ void ParameterDatabase::info(bool only_names) const
     auto n_nested = this->databases.size();
     if(n_nested != 0)
     {
-      Output::print("  number of nested parameter databases: ", n_nested); 
+      Output::print("  number of nested parameter databases: ", n_nested);
     }
     for(const auto& p : this->parameters)
     {
-        if(only_names)
-            Output::print("    ", p.get_name(), ": ", p.value_as_string());
-        else
-            p.info();
+      if(only_names)
+        Output::print("    ", p.get_name(), ": ", p.value_as_string());
+      else
+        p.info();
     }
     unsigned int n = 1; // count the nested databases
     for(const auto& db : this->databases)
     {
       Output::print("Info on a nested parameter database of '", this->name,
                     "'. Number ", n, " of ", n_nested);
-      db.info();
+      db.info(only_names);
       n++;
     }
 }
