@@ -75,7 +75,7 @@ std::string convert_to_string(std::vector<T> x)
   if(x.empty())
     return std::string("");
   std::string ret("(");
-  for(auto i = 0u, n = x.size(); i < n-1; i++)
+  for(auto i = 0ul, n = x.size(); i < n-1; i++)
     ret += convert_to_string(x[i]) + ", ";
   ret += convert_to_string(x.back()) + ")";
   return ret;
