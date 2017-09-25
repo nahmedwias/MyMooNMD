@@ -201,6 +201,9 @@ protected:
     std::shared_ptr<TFEFunction3D> label_for_local_projection_fefct;
     // prepare spaces and matrices for the vms projection
     void set_matrices_vms(TCollection *coll_);
+    
+    ///
+    BlockVector rhs_from_time_disc;
 public:
   #ifdef _MPI
   Time_NSE3D_Merged(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
@@ -238,9 +241,41 @@ public:
     * This function will prepare the right hand side during the time
     * discretization but should be outside the nonlinear loop.
     */
-    void assemble_rhs();
+    void assemble_matrices_rhs(unsigned int it_counter);
     
+    /** @brief check if one of the stopping criteria is fulfilled
+     *
+     * either converged, maximum number of iterations reached, or slow
+     * convergence
+     *
+     * @param iteration_counter current iterate
+     *
+     * @note For the sequential case, this is the copy-paste NSE2D
+     * (with exception of slightly different compute_residual methods).
+     */
+    bool stop_it(unsigned int iteration_counter);
     
+    /** @brief Solve the current linear system. Nonlinear
+     * loop is outside of this class.
+    */
+    void solve();
+
+    /** @brief Compute the defect Ax-b, and the residuals and store it all.
+     * This method is also the one displaying the residuals.
+     * Updates defect and old_residuals.
+     * A is the current matrix, x is the current solution and b is the
+     * right hand side. Call this function after assembling the nonlinear
+     * matrix with the current solution.
+     */
+    void compute_residuals();
+
+    /** @brief Measure errors and draw a nice VTK picture,
+     * if requested to do so.
+     */
+    void output(int m, int &image);
+    
+    /** */
+    bool imex_scheme(bool print_info);
     
     /* *******************************************************************************/
 
@@ -309,10 +344,12 @@ public:
   void prepare_matrices_rhs(Time_NSE3D_Merged::System_per_grid& s, 
          LocalAssembling3D_type la_type, std::vector< TSquareMatrix3D* >& sqMatrices, 
          std::vector< TMatrix3D* >& rectMatrices, std::vector< double* >& rhs_array);
-  /**
-   */
-  void boundary_data(System_per_grid& s, std::vector<BoundCondFunct3D*> &bc, 
-                     std::vector<BoundValueFunct3D*> &bv);
+  /** 
+   * @brief restrict the function to on every grid
+  * nonliear assembling requires an approximate velocity
+  * on every grid
+  */
+  void restrict_function();
 };
 
 #endif // TIME_NSE3D_MERGED_H
