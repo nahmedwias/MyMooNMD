@@ -142,23 +142,22 @@ void TimeDiscretization::prepare_system_matrix(
   BlockFEMatrix& system_matrix, const BlockFEMatrix& mass_matrix, 
   unsigned int it_counter)
 {
+  const std::vector<std::vector<size_t>> 
+             cells = {{0,0},{0,1},{1,0},{1,1} 
+#ifdef __3D__ 
+               ,{0,2},{1,2},{2,0},{2,1},{2,2}
+#endif
+            };
+  double factor=0.;
   if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
-  {
-    const std::vector<std::vector<size_t>> cells = {{0,0},{0,1},{1,0},{1,1}};
-    system_matrix.scale_blocks_actives(current_time_step_length, cells);
-  }
+    factor = current_time_step_length;
   else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
-  {
-    const std::vector<std::vector<size_t>> cells = {{0,0},{0,1},{1,0},{1,1}};
-    system_matrix.scale_blocks_actives(current_time_step_length*bdf_coefficients[2], cells);
-  }
+    factor = current_time_step_length*bdf_coefficients[2];
   else if(db["time_discretization"].is("crank_nicolson"))
-  {
-    const std::vector<std::vector<size_t>> cells = {{0,0},{0,1},{1,0},{1,1}};
-    system_matrix.scale_blocks_actives(current_time_step_length*0.5, cells);
-  }
+    factor = current_time_step_length*0.5;
   else
     ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
+  system_matrix.scale_blocks_actives(factor, cells);
   // add the scaled block matrices
   system_matrix.add_blockfe_matrix(mass_matrix);
  
@@ -182,7 +181,12 @@ void TimeDiscretization::reset_linear_matrices(BlockFEMatrix& matrix,
     ErrThrow("Time stepping scheme ", db["time_discretization"], " is not supported");
 
   // reset the matrices
-  const std::vector<std::vector<size_t>> cells = {{0,0},{0,1},{1,0},{1,1}};
+  const std::vector<std::vector<size_t>> 
+             cells = {{0,0},{0,1},{1,0},{1,1} 
+#ifdef __3D__ 
+               ,{0,2},{1,2},{2,0},{2,1},{2,2}
+#endif
+            };
   matrix.scale_blocks_actives(1./factor, cells);
   // No need to reset the B, BT and C blocks because they are only scaled once during
   // the time step or re-assembled and scaled in the nonlinear case.
