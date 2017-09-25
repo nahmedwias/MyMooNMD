@@ -2436,6 +2436,9 @@ int TDomain::ReadParam(char *ParamFile)
 		TDatabase::ParamDB->stab_backflow_boundary_beta.end(), 0.);
     }
     
+    if (!strcmp(line, "type_stab_backflow_boundary:")) {
+      dat >> TDatabase::ParamDB->type_stab_backflow_boundary;
+    }
     if (!strcmp(line, "stab_backflow_boundary_id:")) {
       for (int ib=0; ib< TDatabase::ParamDB->n_stab_backflow_boundary; ib++) {
 	dat >> TDatabase::ParamDB->stab_backflow_boundary_id[ib];
@@ -2449,6 +2452,39 @@ int TDomain::ReadParam(char *ParamFile)
     }
     // ===================================================
 
+    // ===================================================
+    // parameters for backflow stabilization
+    if (!strcmp(line, "n_slip_boundary:"))
+    {
+      dat >> TDatabase::ParamDB-> n_slip_boundary;
+      N_Param++;
+      
+      TDatabase::ParamDB->slip_boundary_id.
+	resize(TDatabase::ParamDB->n_slip_boundary);
+      
+      TDatabase::ParamDB->slip_boundary_constant.
+	resize(TDatabase::ParamDB->n_slip_boundary);
+      
+      std::fill(TDatabase::ParamDB->slip_boundary_id.begin(),
+		TDatabase::ParamDB->slip_boundary_id.end(), -1);
+      
+      std::fill(TDatabase::ParamDB->slip_boundary_constant.begin(),
+		TDatabase::ParamDB->slip_boundary_constant.end(), 0.);
+    }
+    
+     if (!strcmp(line, "slip_boundary_id:")) {
+      for (int ib=0; ib< TDatabase::ParamDB->n_slip_boundary; ib++) {
+	dat >> TDatabase::ParamDB->slip_boundary_id[ib];
+      }
+    }
+    
+    if (!strcmp(line, "slip_boundary_constant:")) {
+      for (int ib=0; ib< TDatabase::ParamDB->n_slip_boundary; ib++) {
+	dat >> TDatabase::ParamDB->slip_boundary_constant[ib];
+      }
+    }
+    
+     // ===================================================
     // parameters for weakly imposing boundary/interface conditions
     if (!strcmp(line, "n_neumann_boundary:"))
       {

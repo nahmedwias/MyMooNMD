@@ -92,6 +92,21 @@ public:
                           const TFESpace2D *U_Space,
                           std::vector<TBoundEdge*> &edge,
                           double mult);
+
+    /** @brief integral ((\nabla u \cdot n).t, v.t)_{[boundary_component_id]}
+     @param[in] boundary_component_id: the boundary component to integrate on
+     @param[in] mult: given multiplicative factor
+     */
+    void matrix_gradv_n_v_tangential(BlockFEMatrix &M,
+				     const TFESpace2D *U_Space,
+				     int boundary_component_id,
+				     double mult
+				     );
+    
+    void matrix_gradv_n_v_tangential(BlockFEMatrix &M,
+				     const TFESpace2D *U_Space,
+				     std::vector<TBoundEdge*> &edge,
+				     double mult);
     
     /** @brief integral (u, v)_{[boundary_component_id]}
      @param[in] boundary_component_id: the boundary component to integrate on
@@ -125,6 +140,24 @@ public:
 				  double mult);
     
     void matrix_u_v_backflow_stab(BlockFEMatrix &M,
+				  const TFESpace2D *U_Space,
+				  std::vector< TFEFunction2D* >& u_conv,
+				  std::vector<TBoundEdge*> &edge,
+				  double mult);
+
+     /** @brief integral |u.n|_(dt(u), dt(v))_{[boundary_component_id]}
+     @param[in] boundary_component_id: the boundary component to integrate on
+     @param[in] mult: given multiplicative factor
+     @param[in] rescale_by_h: true: divide by length of the edges
+     false: do not divide by length of the edges
+     */
+    void matrix_dtu_dtv_backflow_stab(BlockFEMatrix &M,
+				  const TFESpace2D *U_Space,
+				  std::vector< TFEFunction2D* >& u_conv,
+				  int boundary_component_id,
+				  double mult);
+    
+    void matrix_dtu_dtv_backflow_stab(BlockFEMatrix &M,
 				  const TFESpace2D *U_Space,
 				  std::vector< TFEFunction2D* >& u_conv,
 				  std::vector<TBoundEdge*> &edge,

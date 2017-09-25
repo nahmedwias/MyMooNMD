@@ -26,6 +26,10 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
+namespace house
+{
+  #include "TNSE_2D/House.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -124,6 +128,30 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
 
       flow_around_cylinder::ExampleFile();
       break;
+
+  case 7:
+    exact_solution.push_back( house::ExactU1 );
+      exact_solution.push_back( house::ExactU2 );
+      exact_solution.push_back( house::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( house::BoundCondition );
+      boundary_conditions.push_back( house::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( house::U1BoundValue );
+      boundary_data.push_back( house::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = house::LinCoeffs;
+      
+      house::ExampleFile();
+      
+      house::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      break;
+      
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
