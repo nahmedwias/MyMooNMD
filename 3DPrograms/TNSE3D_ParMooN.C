@@ -8,7 +8,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <Time_NSE3D.h>
+#include <Time_NSE3D_Merged.h>
 #include <MeshPartition.h>
 #include <Chrono.h>
 #include <TetGenMeshLoader.h>
@@ -129,23 +129,25 @@ int main(int argc, char* argv[])
   SetTimeDiscParameters(0);
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
-  Time_NSE3D tnse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
+  Time_NSE3D_Merged tnse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
-  Time_NSE3D tnse3d(gridCollections, parmoon_db, example);
+  Time_NSE3D_Merged tnse3d(gridCollections, parmoon_db, example);
 #endif
   
   if(parmoon_db["example"].is(7))
   {
-    ChannelTau180::GetCoordinatesOfDof(tnse3d);
+    //ChannelTau180::GetCoordinatesOfDof(tnse3d);
   }
   
   tnse3d.assemble_initial_time();
   
   double end_time = TDatabase::TimeDB->ENDTIME;
-  tnse3d.current_step_ = 0;
+  tnse3d.time_stepping_scheme.current_step_ = 0;
+  tnse3d.time_stepping_scheme.set_time_disc_parameters();
+  
   int image = 0;
   
-  tnse3d.output(tnse3d.current_step_,image);
+  tnse3d.output(tnse3d.time_stepping_scheme.current_step_,image);
 
   int n_substeps = GetN_SubSteps();
 
@@ -153,9 +155,9 @@ int main(int argc, char* argv[])
   TDatabase::TimeDB->CURRENTTIME = 0.0;
   if(parmoon_db["example"].is(7))
   {
-    ChannelTau180::set_up_memory();
+    //ChannelTau180::set_up_memory();
     TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
-    ChannelTau180::computeMeanVelocity(tnse3d);
+    //ChannelTau180::computeMeanVelocity(tnse3d);
   }
   //======================================================================
   // time iteration
@@ -165,88 +167,62 @@ int main(int argc, char* argv[])
     // time measuring during every time iteration
     Chrono timer_timeit;
 
-    tnse3d.current_step_++;
+    tnse3d.time_stepping_scheme.current_step_++;
 
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-    for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
+    // set the time disc parameters
+    tnse3d.time_stepping_scheme.set_time_disc_parameters();
+    
+    double tau = parmoon_db["time_step_length"];
+    TDatabase::TimeDB->CURRENTTIME += tau;
+
+    if (my_rank==0)
+      Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    
+    timer_timeit.restart_and_print("preparation of nonlinear iteration");
+    for(unsigned int i=0;; i++)
     {
-      // setting the time discretization parameters
-      SetTimeDiscParameters(1);
-     if( tnse3d.current_step_ == 1 && my_rank==0) // a few output, not very necessary
-     {
-       Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
-       Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
-       Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
-       Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
-     }
-      // tau may change depending on the time discretization (adaptive time)
-      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-      TDatabase::TimeDB->CURRENTTIME += tau;
-
-      if (my_rank==0)
-        Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-
-      // prepare the right hand side vector - needed only once per time step
-      tnse3d.assemble_rhs();
-
-      // assemble the nonlinear matrices
-      tnse3d.assemble_nonlinear_term();
-
-      // prepare the matrices for defect computations and solvers
-      tnse3d.assemble_system();
+      tnse3d.assemble_matrices_rhs(i);
       
-      timer_timeit.restart_and_print("preparation of nonlinear iteration");
-
-      for(unsigned int k=0; ; k++)
+      tnse3d.compute_residuals();
+      
+      if (my_rank==0) // some outputs
       {
-        tnse3d.compute_residuals();
-
-        if (my_rank==0) // some outputs
-        {
-          Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
-          Output::print<1>("Residuals :", tnse3d.get_residuals());
-        }
-
-        // checking residuals and stop conditions
-        if(tnse3d.stop_it(k))
-          break;
-
-        tnse3d.solve();
-
-	if(tnse3d.imex_scheme(1))
+        Output::print<1>("\nNONLINEAR ITERATION :", setw(3), i);
+        Output::print<1>("Residuals :", tnse3d.get_residuals());
+      }
+      if(tnse3d.stop_it(i))
+        break;
+      tnse3d.solve();
+      
+      if(tnse3d.imex_scheme(1))
           continue;
-
-        tnse3d.assemble_nonlinear_term();
-
-        tnse3d.assemble_system();
-
-        timer_timeit.restart_and_print("solving and reassembling in the "
+      
+      timer_timeit.restart_and_print("solving and reassembling in the "
                                         "nonlinear iteration " + 
-                                        std::to_string(k));
-      }  // end of nonlinear loop
+                                        std::to_string(i));
+    }
+    tnse3d.output(tnse3d.time_stepping_scheme.current_step_, image);
 
       timer_timeit.restart_and_print(
         "solving the time iteration " +
         std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
-      tnse3d.output(tnse3d.current_step_,image);
-      
-      if(parmoon_db["example"].is(7))
-      {
-        if (TDatabase::TimeDB->CURRENTTIME>=TDatabase::TimeDB->T0)
-        {
-          if (TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION == 0)
-          {
-            TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
-            TDatabase::TimeDB->T0 = TDatabase::TimeDB->CURRENTTIME;
-          }
-        }
-        ChannelTau180::computeMeanVelocity(tnse3d);
-      }
+//       if(parmoon_db["example"].is(7))
+//       {
+//         if (TDatabase::TimeDB->CURRENTTIME>=TDatabase::TimeDB->T0)
+//         {
+//           if (TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION == 0)
+//           {
+//             TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
+//             TDatabase::TimeDB->T0 = TDatabase::TimeDB->CURRENTTIME;
+//           }
+//         }
+//         ChannelTau180::computeMeanVelocity(tnse3d);
+//       }
       
       timer_timeit.print_total_time(
         "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
-    } // end of subtime loop
   } // end of time loop
 
   timer.print_total_time("whole solving procedure ");
