@@ -60,9 +60,9 @@ int main(int argc, char* argv[])
   
   if(parmoon_db["example"].is(7))
   {
-    //std::ifstream f("/Home/flow/ahmed/tests_parMooN/house_2d/all_data.txt");
+    std::ifstream f("/Home/flow/ahmed/tests_parMooN/house_2d/all_data.txt");
     //std::ifstream f("/Users/caiazzo/work/src/ParMooN/tests/TNSE2D/COW_HOUSE/all_data.txt");
-    std::ifstream f("all_data.txt");
+    // std::ifstream f("all_data.txt");
     std::string line;
     double x, y, u, v, rmsu, rmsv;
 
