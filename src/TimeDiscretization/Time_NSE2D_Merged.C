@@ -819,17 +819,33 @@ void Time_NSE2D_Merged::call_assembling_routine(Time_NSE2D_Merged::System_per_gr
   u_conv[1] = s.u.GetComponent(1);
   for (int k=0;k<TDatabase::ParamDB->n_stab_backflow_boundary;k++)
   {
-    Output::print(" Backflow stab on boundary ",
-    		  TDatabase::ParamDB->stab_backflow_boundary_id[k],
-    		  " beta = ", TDatabase::ParamDB->stab_backflow_boundary_beta[k]);
+    
     BoundaryAssembling2D boundary_integral;
     int neumann_boundary_component = TDatabase::ParamDB->stab_backflow_boundary_id[k];
     double beta_backflow_stab = TDatabase::ParamDB->stab_backflow_boundary_beta[k];
-    boundary_integral.matrix_u_v_backflow_stab(s.matrix,
+    switch (TDatabase::ParamDB->type_stab_backflow_boundary) {
+    case 1:
+      Output::print(" Backflow stab (inertial) on boundary ",
+    		  TDatabase::ParamDB->stab_backflow_boundary_id[k],
+    		  " beta = ", TDatabase::ParamDB->stab_backflow_boundary_beta[k]);
+      boundary_integral.matrix_u_v_backflow_stab(s.matrix,
 				 v_space,
 				 u_conv,
 				 neumann_boundary_component,   
-				 beta_backflow_stab);     
+				 beta_backflow_stab);
+      break;
+      
+    case 2:
+      Output::print(" Backflow stab (tgt reg) on boundary ",
+    		  TDatabase::ParamDB->stab_backflow_boundary_id[k],
+    		  " beta = ", TDatabase::ParamDB->stab_backflow_boundary_beta[k]);
+      boundary_integral.matrix_dtu_dtv_backflow_stab(s.matrix,
+				 v_space,
+				 u_conv,
+				 neumann_boundary_component,   
+				 beta_backflow_stab);
+      break;
+    }
     
   }
   

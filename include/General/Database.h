@@ -675,10 +675,24 @@ struct TParaDB
   */
   // number of boundary components where backflow stabilization should be applied
   int n_stab_backflow_boundary;
+  int type_stab_backflow_boundary;
   // ids
   std::vector<int> stab_backflow_boundary_id;
   // stabilization parameter
   std::vector<double> stab_backflow_boundary_beta;
+
+   /*
+    ======================================================================
+    parameters for weakly imposing slip BC
+    ======================================================================
+  */
+  // number of boundary components where backflow stabilization should be applied
+  int n_slip_boundary;
+  // ids
+  std::vector<int> slip_boundary_id;
+  // stabilization parameter
+  std::vector<double> slip_boundary_constant;
+
   
   //======================================================================
   /** parameters for weakly imposing boundary/interface conditions for Brinkman problems  */
