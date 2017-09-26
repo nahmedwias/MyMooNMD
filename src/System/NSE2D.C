@@ -420,16 +420,25 @@ void NSE2D::assemble()
     BoundaryAssembling2D boundary_integral;
     for (int k=0;k<TDatabase::ParamDB->n_slip_boundary;k++)
     {
+      double viscosity = 1./TDatabase::ParamDB->RE_NR;
       int slip_boundary = TDatabase::ParamDB->slip_boundary_id[k];    
       double epsilon_slip = TDatabase::ParamDB->slip_boundary_constant[k];
-      boundary_integral.matrix_gradv_n_v(s.matrix,
+      Output::print(" Assembling weak slip BC on boundary ",
+		    TDatabase::ParamDB->slip_boundary_id[k],
+		    " epsilon: ",epsilon_slip);
+     
+      boundary_integral.matrix_gradu_n_v(s.matrix,
 					 v_space,
 					 slip_boundary,   
-					 1.);
-      boundary_integral.matrix_gradv_n_v_tangential(s.matrix,
-						    v_space,
-						    slip_boundary,   
-						    epsilon_slip);
+					 -1.*viscosity);
+      boundary_integral.matrix_gradv_n_u(s.matrix,
+					 v_space,
+					 slip_boundary,   
+					 1.*viscosity);
+      boundary_integral.matrix_gradv_n_tangential(s.matrix,
+						  v_space,
+						  slip_boundary,   
+						  epsilon_slip*viscosity);
 
     }
     

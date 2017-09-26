@@ -30,6 +30,10 @@ namespace house
 {
   #include "TNSE_2D/House.h"
 }
+namespace house_simple
+{
+  #include "TNSE_2D/House_simple.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -150,6 +154,29 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       house::ExampleFile();
       
       house::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      break;
+
+  case 8:
+    exact_solution.push_back( house_simple::ExactU1 );
+      exact_solution.push_back( house_simple::ExactU2 );
+      exact_solution.push_back( house_simple::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( house_simple::BoundCondition );
+      boundary_conditions.push_back( house_simple::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( house_simple::U1BoundValue );
+      boundary_data.push_back( house_simple::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = house_simple::LinCoeffs;
+      
+      house_simple::ExampleFile();
+      
+      house_simple::DIMENSIONLESS_VISCOSITY = this->get_nu();
       break;
       
     default:

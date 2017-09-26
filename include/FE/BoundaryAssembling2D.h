@@ -78,32 +78,52 @@ public:
                         std::vector<TBoundEdge*> &edge,
                         double mult);
     
-    /** @brief integral (\nabla u \cdot n, v)_{[boundary_component_id]}
+ /** @brief assemble integral (\nabla u \cdot n, v)_{L^2([boundary_component_id])}
      @param[in] boundary_component_id: the boundary component to integrate on
-     @param[in] mult: given multiplicative factor
+     @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
      */
-    void matrix_gradv_n_v(BlockFEMatrix &M,
+    
+    void matrix_gradu_n_v(BlockFEMatrix &M,
                           const TFESpace2D *U_Space,
                           int boundary_component_id,
                           double mult
                           );
     
-    void matrix_gradv_n_v(BlockFEMatrix &M,
+    void matrix_gradu_n_v(BlockFEMatrix &M,
+                          const TFESpace2D *U_Space,
+                          std::vector<TBoundEdge*> &edge,
+                          double mult,
+                          int boundary_component_id);
+    
+    
+    /** @brief assemble integral (\nabla v \cdot n, u)_{L^2([boundary_component_id])}
+     @param[in] boundary_component_id: the boundary component to integrate on
+     @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
+     */
+    void matrix_gradv_n_u(BlockFEMatrix &M,
+                          const TFESpace2D *U_Space,
+                          int boundary_component_id,
+                          double mult
+                          );
+    
+    void matrix_gradv_n_u(BlockFEMatrix &M,
                           const TFESpace2D *U_Space,
                           std::vector<TBoundEdge*> &edge,
                           double mult);
+
+  
 
     /** @brief integral ((\nabla u \cdot n).t, v.t)_{[boundary_component_id]}
      @param[in] boundary_component_id: the boundary component to integrate on
      @param[in] mult: given multiplicative factor
      */
-    void matrix_gradv_n_v_tangential(BlockFEMatrix &M,
+    void matrix_gradv_n_tangential(BlockFEMatrix &M,
 				     const TFESpace2D *U_Space,
 				     int boundary_component_id,
 				     double mult
 				     );
     
-    void matrix_gradv_n_v_tangential(BlockFEMatrix &M,
+    void matrix_gradv_n_tangential(BlockFEMatrix &M,
 				     const TFESpace2D *U_Space,
 				     std::vector<TBoundEdge*> &edge,
 				     double mult);
