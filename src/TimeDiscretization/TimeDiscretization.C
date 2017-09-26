@@ -37,11 +37,6 @@ ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
          "time adaptivity, it only corresponds to the initial value.",
          0., 0.5);
 
-  db.add("extrapolate_velocity", "constant_extrapolate",
-         "This is the extrapolate velcotity parameter"
-         "These values can be used with BDF's schemes or Crank_Nicolson",
-         {"constant_extrapolate", "linear_extrapolate", "quadratic_extrapolate"});
-
   db.add("ansatz_test_extrapolate", "no_extrapolation",
          "This is the parameter for deciding the extrapolation in test"
          " or ansatz functions. This is due to the non-linear terms appearing"
@@ -50,7 +45,8 @@ ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
 
   db.add("time_discretization", "backward_euler",
          "Determine the time stepping scheme: currently supported are",
-         {"backward_euler", "crank_nicolson", "bdf_two", "fractional_step"});
+         {"backward_euler", "crank_nicolson", "bdf_two", "fractional_step",
+          "semi_implicit_bdf_two"});
 
   return db;
 }
@@ -59,9 +55,9 @@ ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
 TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
 : db(default_TimeDiscretization_database())
 {
-  db.merge(param_db, false);
+  db.merge(param_db);
 
-  if(db["time_discretization"].is("bdf_two"))
+  if(db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two"))
   {
     bdf_coefficients = {4./3., -1./3., 2./3.};
     // pre-stage computation is done either by the
@@ -102,7 +98,7 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
 {
   // at the moment it's implemented in the way it was done in MooNMD
   // but have to be adopted to be fit according to the Butscher table
-  if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
+  if( (db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two")) && !pre_stage_bdf)
   {
     // right hand side with tau*..
     rhs[0].scaleActive(bdf_coefficients[2]*current_time_step_length);
@@ -119,7 +115,7 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
     // mass matrix times old solution goes to right hand side
     mass_matrix.apply_scaled_add_actives(old_solutions[0], rhs[0], 1.);
 
-    if(db["time_discretization"].is("bdf_two") && pre_stage_bdf)
+    if((db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two") ) && pre_stage_bdf)
     {
       Output::print<5>("First step in BDF2 scheme is performed by the BDF1 scheme");
     }
@@ -151,7 +147,7 @@ void TimeDiscretization::prepare_system_matrix(
   double factor=0.;
   if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
     factor = current_time_step_length;
-  else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
+  else if( (db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two")) && !pre_stage_bdf)
     factor = current_time_step_length*bdf_coefficients[2];
   else if(db["time_discretization"].is("crank_nicolson"))
     factor = current_time_step_length*0.5;
@@ -173,7 +169,7 @@ void TimeDiscretization::reset_linear_matrices(BlockFEMatrix& matrix,
   double factor;
   if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
     factor = step_length;
-  else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
+  else if((db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two") )&& !pre_stage_bdf)
     factor = bdf_coefficients[2]*step_length;
   else if(db["time_discretization"].is("crank_nicolson"))
     factor = step_length*0.5;
@@ -200,7 +196,7 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
   double factor;
   if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
     factor = current_time_step_length;
-  else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
+  else if((db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two"))&& !pre_stage_bdf)
     factor = current_time_step_length*bdf_coefficients[2];
   else if(db["time_discretization"].is("crank_nicolson"))
     factor = current_time_step_length;//this have to be adopted according to the stages
@@ -222,8 +218,8 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
   }
   // in the case of bdf2, we need to descale the b-blocks because of the scaling
   // argument, then rescale in the next lines
-  if(db["time_discretization"].is("bdf_two") && current_step_ == 1 
-    && scale_dscale.compare("descale")==0)
+  if((db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two"))
+      && current_step_ == 1 && scale_dscale.compare("descale")==0)
   {
     if(n_scale_block==5)
     {
@@ -237,8 +233,8 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
     }
   }
   // rescale the blocks with bdf bdf_coefficients
-  if(db["time_discretization"].is("bdf_two") && current_step_ == 2 
-    && scale_dscale.compare("scale")==0)
+  if((db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two"))
+      && current_step_ == 2 && scale_dscale.compare("scale")==0)
   {
     if(n_scale_block==5)
     {
@@ -255,7 +251,7 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
   if(b_bt_linear_nl.compare("solution_dependent") == 0)
   {
     if((db["time_discretization"].is("backward_euler") && current_step_ >= 2) ||
-    (db["time_discretization"].is("bdf_two") && current_step_ >= 3) )
+    ( (db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two")) && current_step_ >= 3) )
     {
       if(n_scale_block==5)
 	{
@@ -278,7 +274,7 @@ void TimeDiscretization::scale_nl_b_blocks(BlockFEMatrix& matrix)
   double factor;
   if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
     factor = current_time_step_length;
-  else if(db["time_discretization"].is("bdf_two") && !pre_stage_bdf)
+  else if((db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two"))&& !pre_stage_bdf)
     factor = current_time_step_length*bdf_coefficients[2];
   else if(db["time_discretization"].is("crank_nicolson"))
     factor = current_time_step_length;//this have to be adopted according to the stages
@@ -322,14 +318,14 @@ void TimeDiscretization::set_time_disc_parameters()
     TDatabase::TimeDB->THETA3 = 0.0;
     TDatabase::TimeDB->THETA4 = 1.0;
   }
-  if(db["time_discretization"].is("bdf_two") && (current_step_<=1) )
+  if((db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two"))&& (current_step_<=1) )
   {
     TDatabase::TimeDB->THETA1 = 1.0;
     TDatabase::TimeDB->THETA2 = 0.0;
     TDatabase::TimeDB->THETA3 = 0.0;
     TDatabase::TimeDB->THETA4 = 1.0;
   }
-  if(db["time_discretization"].is("bdf_two") &&
+  if((db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two"))&&
           (this->current_step_ >= 2))
   {
     this->pre_stage_bdf = false;

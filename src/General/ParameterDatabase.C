@@ -848,10 +848,10 @@ ParameterDatabase ParameterDatabase::default_time_database()
 //          "4 -> Extrapolated Crank_Nicholson (or IMplicit-EXplicit, IMEX)"
 //          "5 -> Backward Difference Formula second order (BDF2)",
 //          (size_t)0 , (size_t)5 );
-  db.add("extrapolate_velocity", "constant_extrapolate", 
+  db.add("extrapolate_velocity", "no_extrapolation", 
          "This is the extrapolate velcotity parameter"
          "These values can be used with BDF's schemes or Crank_Nicholson",
-         {"constant_extrapolate", "linear_extrapolate", "quadratic_extrapolate"});
+         {"no_extrapolation", "constant_extrapolate", "linear_extrapolate", "quadratic_extrapolate"});
   
   db.add("ansatz_test_extrapolate", "no_extrapolation",
          "This is the parameter for deciding the extrapolation in test"
