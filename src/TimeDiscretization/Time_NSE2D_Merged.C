@@ -282,8 +282,8 @@ void Time_NSE2D_Merged::set_parameters()
   {
     // in the IMEX scheme, the first three steps are done by using the 
     // full nonlinear version of supg
-    if((db["time_discretization"].is("semi_implicit_bdf_two") && time_stepping_scheme.current_step_ < 3) || db["time_discretization"].is("bdf_two"))
-    {       
+    if(db["time_discretization"].is("semi_implicit_bdf_two") || db["time_discretization"].is("bdf_two"))
+    {
        is_rhs_and_mass_matrix_nonlinear = true;
     }
   }
@@ -1340,6 +1340,7 @@ bool Time_NSE2D_Merged::imex_scheme(bool print_info)
     db["nonlinloop_maxit"] = 1;
     db["extrapolate_velocity"] = "linear_extrapolate";
     TDatabase::ParamDB->DISCTYPE = -2;
+    is_rhs_and_mass_matrix_nonlinear = false;
     if(print_info) // condition is here just to print it once
       Output::info<1>("Nonlinear Loop MaxIteration",
                       "The parameter 'nonlinloop_maxit' was changed to 1."
