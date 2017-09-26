@@ -55,7 +55,19 @@ void BoundCondition(int i, double t, BoundCond &cond)
   if(i == 17)
     cond = NEUMANN;
   else
+  {
     cond = DIRICHLET;
+    for (int k=0;k<TDatabase::ParamDB->n_slip_boundary;k++)
+    {
+      int slip_boundary = TDatabase::ParamDB->slip_boundary_id[k];
+	if (i == slip_boundary)
+	{
+	  cond = NEUMANN;
+	  //	  Output::print(" component ",i," -> SLIP BC");
+	}	    
+    }	  
+  }
+  
   if(i>27)
   {
     Output::print("cannot assign a boundary condition to component ",i);
@@ -130,9 +142,11 @@ void U1BoundValue(int BdComp, double Param, double &value)
       value = A1*log(B1*y) + C1;
       
     }
-    
-    
-  }
+  }  
+  /*else if(BdComp < 18) 
+  {
+    value = 0.;
+    }*/
   else // no-slip
   {
     value = 0.;

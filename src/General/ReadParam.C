@@ -2458,7 +2458,7 @@ int TDomain::ReadParam(char *ParamFile)
     {
       dat >> TDatabase::ParamDB-> n_slip_boundary;
       N_Param++;
-      
+
       TDatabase::ParamDB->slip_boundary_id.
 	resize(TDatabase::ParamDB->n_slip_boundary);
       
@@ -2477,7 +2477,7 @@ int TDomain::ReadParam(char *ParamFile)
 	dat >> TDatabase::ParamDB->slip_boundary_id[ib];
       }
     }
-    
+          
     if (!strcmp(line, "slip_boundary_constant:")) {
       for (int ib=0; ib< TDatabase::ParamDB->n_slip_boundary; ib++) {
 	dat >> TDatabase::ParamDB->slip_boundary_constant[ib];

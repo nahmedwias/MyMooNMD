@@ -301,7 +301,7 @@ void Brinkman2D::assemble()
         
         for (int k=0;k<TDatabase::ParamDB->n_gradunv_boundary;k++)
         {
-            bi.matrix_gradv_n_v(s.matrix,
+            bi.matrix_gradv_n_u(s.matrix,
                                 v_space,
                                 TDatabase::ParamDB->gradunv_boundary_id[k],     // boundary component
                                 TDatabase::ParamDB->gradunv_boundary_value[k]); // mult
@@ -334,7 +334,7 @@ void Brinkman2D::assemble()
             double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
             double t = fabs(sqrt((nu_eff/nu)*K));
             
-            bi.matrix_gradv_n_v(s.matrix,
+            bi.matrix_gradv_n_u(s.matrix,
                                 v_space,
                                 TDatabase::ParamDB->nitsche_boundary_id[k],     // boundary component
                                 -TDatabase::ParamDB->EFFECTIVE_VISCOSITY);      // mult
