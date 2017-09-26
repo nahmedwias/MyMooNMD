@@ -244,13 +244,7 @@ void Time_NSE2D_Merged::set_parameters()
   }
   if(db["disctype"].is("supg"))
   {
-    if(db["extrapolate_velocity"].is("constant_extrapolate") 
-      || db["extrapolate_velocity"].is("linear_extrapolate") )
-    {
-      TDatabase::ParamDB->DISCTYPE = -2;
-    }
-    else
-      TDatabase::ParamDB->DISCTYPE = 2;
+    TDatabase::ParamDB->DISCTYPE = 2;
     /// set scaling factor for B, BT's block
     // depends on how to deal the nonlinearity in the 
     // test function: fully implicit case
@@ -286,8 +280,9 @@ void Time_NSE2D_Merged::set_parameters()
   // the only case where one have to re-assemble the right hand side
   if(db["disctype"].is("supg"))
   {
-    if(!db["extrapolate_velocity"].is("constant_extrapolate")
-        && !db["extrapolate_velocity"].is("linear_extrapolate")  )
+    // in the IMEX scheme, the first three steps are done by using the 
+    // full nonlinear version of supg
+    if((db["time_discretization"].is("semi_implicit_bdf_two") && time_stepping_scheme.current_step_ < 3) || db["time_discretization"].is("bdf_two"))
     {       
        is_rhs_and_mass_matrix_nonlinear = true;
     }
@@ -1073,8 +1068,8 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
             reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
             reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
             reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-            if(!db["extrapolate_velocity"].is("constant_extrapolate")
-              && !db["extrapolate_velocity"].is("linear_extrapolate") )            
+
+            if(db["extrapolate_velocity"].is("no_extrapolation"))
             {
               rhs_array.resize(3);
               rhs_array[0] = s.rhs.block(0);
@@ -1179,15 +1174,14 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
     // part of the time derivative tested with pressue needs 
     // to be assembled together with the right-hand side (rhs3)
     if(db["time_discretization"].is("backward_euler") || 
+        db["time_discretization"].is("semi_implicit_bdf_two") ||
        (time_stepping_scheme.pre_stage_bdf) )
     {
       functions.resize(4);
       functions[2] = s.u_m1.GetComponent(0);
       functions[3] = s.u_m1.GetComponent(1);
       
-      if(db["extrapolate_velocity"].is("constant_extrapolate")
-        || db["extrapolate_velocity"].is("linear_extrapolate")
-      )
+      if(db["time_discretization"].is("semi_implicit_bdf_two"))
       {
         s.extrapolate_sol.reset();
         s.extrapolate_sol = s.solution_m1;
@@ -1201,7 +1195,9 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
         Output::print<5>("Fully nonlinear version of SUPG method");
       }
     }
-    if(db["time_discretization"].is("bdf_two") && !(time_stepping_scheme.pre_stage_bdf))
+    if( (db["time_discretization"].is("bdf_two")  || 
+        db["time_discretization"].is("semi_implicit_bdf_two") )
+        && !(time_stepping_scheme.pre_stage_bdf) )
     {
       //BEGIN DEBUG
       // cout << time_stepping_scheme.current_step_<<endl;
@@ -1249,6 +1245,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
   // extrapolation
   if(db["disctype"].is("residual_based_vms"))
   {
+    ErrThrow("not tested ");
     double tau = time_stepping_scheme.get_step_length();
     if(db["time_discretization"].is("backward_euler") 
        || (time_stepping_scheme.pre_stage_bdf))
@@ -1337,23 +1334,23 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
 /**************************************************************************** */
 bool Time_NSE2D_Merged::imex_scheme(bool print_info)
 {
-
-  if(!TDatabase::TimeDB->EXTRAPOLATE_VELOCITY)
-    return false;
-  bool interruption_condition  =
-    TDatabase::TimeDB->EXTRAPOLATE_VELOCITY *
-          (time_stepping_scheme.current_step_ >= 3);
-
-  // change maximum number of nonlin_iterations to 1 in IMEX case
-  if (interruption_condition)
+  if(db["time_discretization"].is("semi_implicit_bdf_two") && 
+      time_stepping_scheme.current_step_ >= 3 )
   {
     db["nonlinloop_maxit"] = 1;
+    db["extrapolate_velocity"] = "linear_extrapolate";
+    TDatabase::ParamDB->DISCTYPE = -2;
     if(print_info) // condition is here just to print it once
-        Output::info<1>("Nonlinear Loop MaxIteration",
-                        "The parameter 'nonlinloop_maxit' was changed to 1."
-                        " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+      Output::info<1>("Nonlinear Loop MaxIteration",
+                      "The parameter 'nonlinloop_maxit' was changed to 1."
+                      " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+    return true;
   }
-  return interruption_condition;
+  else
+  {
+    db["extrapolate_velocity"] = "no_extrapolation";
+    return false;
+  }
 }
 
 /**************************************************************************** */
