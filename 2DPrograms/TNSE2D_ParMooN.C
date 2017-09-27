@@ -173,12 +173,20 @@ int main(int argc, char* argv[])
     double tau = parmoon_db["time_step_length"];
     TDatabase::TimeDB->CURRENTTIME += tau;
     Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    
+    tnse2d.assemble_matrices_rhs(0);
+
     for(unsigned int i=0;; i++)
     {
-      tnse2d.assemble_matrices_rhs(i);
       if(tnse2d.stopIte(i))
         break;
+
       tnse2d.solve();
+
+      if(tnse2d.imex_scheme(1))
+        continue;
+
+      tnse2d.assemble_matrices_rhs(i+1);
     }
     tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
 

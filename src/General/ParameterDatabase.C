@@ -830,24 +830,6 @@ ParameterDatabase ParameterDatabase::default_time_database()
          "time adaptivity, it only corresponds to the initial value.",
          0., 0.5);
   
-//   db.add("extrapolate_velocity", (size_t)0, 
-//          "This is the extrapolate velcotity parameter"
-//          "These values can be used with BDF's schemes or Crank_Nicholson"
-//          "0 corresponds to no extrapolation"
-//          "1 corresponds to constant extrapolation"
-//          "2 corresponds to linear extrapolation", 
-//          (size_t)0, (size_t)5 );
-    
-//   db.add("time_discretization", (size_t)2,
-//          "This is the time discretization scheme. The following values are "
-//          "implemented :"
-//          "0 -> Forward Euler, "
-//          "1 -> Backward Euler, "
-//          "2 -> Crank-Nicholson, "
-//          "3 -> Fractional step."
-//          "4 -> Extrapolated Crank_Nicholson (or IMplicit-EXplicit, IMEX)"
-//          "5 -> Backward Difference Formula second order (BDF2)",
-//          (size_t)0 , (size_t)5 );
   db.add("extrapolate_velocity", "no_extrapolation", 
          "This is the extrapolate velcotity parameter"
          "These values can be used with BDF's schemes or Crank_Nicholson",
@@ -858,27 +840,7 @@ ParameterDatabase ParameterDatabase::default_time_database()
          " or ansatz functions. This is due to the non-linear terms appearing"
         "in the SUPG or Residual Based VMS methods", 
          {"only_velocity_test", "no_extrapolation"});
-  /*
-  db.add("time_discretization", "backward_euler",
-         "Determine the time stepping scheme: currently supported are",
-         {"backward_euler", "crank_nicolson", "bdf_two", "fractional_step"});*/ 
-  
-//   db.add("current_time_step_length", 0.05, 
-//           "This is the current time step which can be used for internal setting", 
-//          0., 10.);
-           
-//   db.add("theta1", 1.0, 
-//           "These are parameters for the time stepping scheme", 
-//          0., 1.);
-//   db.add("theta2", 0.0, 
-//           "These are parameters for the time stepping scheme", 
-//          0., 1.);
-//   db.add("theta3", 0.0, 
-//           "These are parameters for the time stepping scheme", 
-//          0., 1.);
-//   db.add("theta4", 1.0, 
-//           "These are parameters for the time stepping scheme", 
-//          0., 1.0);
+
   return db;
 }
 

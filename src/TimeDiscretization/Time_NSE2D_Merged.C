@@ -408,9 +408,6 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     }
     else
       call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_Rhs);
-    //BEGIN DEBUG
-    // s.rhs.print("rhs");
-    //END DEBUG
     // copy the non active to the solution vector
     // since the rhs vector will be passed to the solver
     // and is modified with matrix vector multiplication
@@ -436,22 +433,14 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     //NOTE: scale the B blocks only at the first iteration
     for(System_per_grid& sys : this->systems)
       time_stepping_scheme.scale_descale_all_b_blocks(sys.matrix, "scale");
-    //BEGIN DEBUG
-     // s.matrix.get_blocks().at(2)->Print("B1T");exit(0);
-    //END DEBUG
+   
     // prepare the right hand side for the solver
     time_stepping_scheme.prepare_rhs_from_time_disc(s.matrix, s.mass_matrix,
                      rhs_, oldsolutions);
     rhs_from_time_disc=rhs_[0];
     old_rhs=s.rhs;
     // copy the non-actives
-    rhs_from_time_disc.copy_nonactive(s.solution);
-    //BEGIN DEBUG
-    if(TDatabase::TimeDB->CURRENTTIME==-0.0025)
-    {
-      s.matrix.get_blocks().at(7)->Print("B1T");exit(0);
-    }
-    //END DEBUG
+    rhs_from_time_disc.copy_nonactive(s.solution);    
   }
   //Nonlinear assembling requires an approximate velocity solution on every grid!
   if(this->systems.size() > 1)
@@ -462,11 +451,7 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
   {
     call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
     compute_param = false;
-    //BEGIN DEBUG
-    // cout <<db["time_discretization"]<<endl;
-    // s.solution.print("s");
-    // s.matrix.get_blocks().at(6)->Print("B1T");exit(0);
-    //END DEBUG
+    
     if(db["disctype"].is("local_projection"))
       update_matrices_lps(s);
   }
@@ -524,10 +509,7 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
   unsigned int nuDof = s.solution.length(0);
   unsigned int npDof = s.solution.length(2);
   // unsigned int sc_minit = db["nonlinloop_minit"];
-  //BEGIN DEBUG
-  // s.matrix.get_blocks().at(2)->Print("A1");
-  //END DEBUG
-
+ 
   this->defect = rhs_from_time_disc;
   s.matrix.apply_scaled_add(s.solution, defect,-1.);
   //
@@ -774,11 +756,6 @@ void Time_NSE2D_Merged::call_assembling_routine(Time_NSE2D_Merged::System_per_gr
   set_matrices_rhs(s, type, sqMatrices, rectMatrices, rhs_array);
   // boundary conditions and boundary values array
   // boundary conditions:
-  /*std::vector<const BoundCondFunct2D*> bc(3);
-  bc[0]=s.velocity_space.GetBoundCondition();
-  bc[1]=bc[0];
-  bc[2]=s.pressure_space.GetBoundCondition();
-  */
   BoundCondFunct2D* bc[3] = {
     s.velocity_space.GetBoundCondition(),
     s.velocity_space.GetBoundCondition(),
@@ -1199,10 +1176,6 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
         db["time_discretization"].is("semi_implicit_bdf_two") )
         && !(time_stepping_scheme.pre_stage_bdf) )
     {
-      //BEGIN DEBUG
-      // cout << time_stepping_scheme.current_step_<<endl;
-      // cout << "its not first second step yet "<< endl;exit(0);
-      //END DEBUG
       s.combined_old_sols.reset();
       // copy and scale the solution at previous time step with factor 2
       s.combined_old_sols = s.solution_m1;
@@ -1250,10 +1223,6 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
     if(db["time_discretization"].is("backward_euler") 
        || (time_stepping_scheme.pre_stage_bdf))
     {
-      //BEGIN DEBUG
-      // cout << "time_stepping_scheme.current_step_ " 
-      // << time_stepping_scheme.current_step_ << "  " << tau<< endl;
-      //END DEBUG
       // for the residual in the nonlinear term
       // constant or linear extrapolation of the solution
       // is used
@@ -1290,13 +1259,6 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       // BDF2 consider the linear extrapolation of the 
       // test function "u"
       functions.resize(9);
-      //BEGIN DEBUG
-      if(time_stepping_scheme.current_step_ == 1)
-      {
-        cout<<"Hey here " << time_stepping_scheme.current_step_<<endl;
-        exit(0);
-      }
-      //END DEBUG
       s.extrapolate_sol.reset();
       s.extrapolate_sol = s.solution_m1;
       s.extrapolate_sol.scale(2.);
@@ -1503,6 +1465,8 @@ void Time_NSE2D_Merged::update_matrices_lps(System_per_grid &s)
 
 void Time_NSE2D_Merged::assemble_rhs_nonlinear()
 {
+  if(db["time_discretization"].is("semi_implicit_bdf_two") && time_stepping_scheme.current_step_>=3)
+    return;
   // initialize the rhs from the time discretization
   rhs_from_time_disc = this->systems.front().rhs;
   rhs_from_time_disc.reset();
