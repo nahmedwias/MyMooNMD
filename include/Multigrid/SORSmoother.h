@@ -13,6 +13,7 @@
 #include <Smoother.h>
 
 #include <memory>
+#include <string>
 
 class BlockVector;
 class BlockFEMatrix;

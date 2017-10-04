@@ -120,3 +120,8 @@ double LoopInfo::get_previous_residual() const
 {
   return this->old_residual;
 }
+
+unsigned int LoopInfo::get_n_previous_iterations() const
+{
+  return n_previous_iterations;
+}
