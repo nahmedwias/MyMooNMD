@@ -511,11 +511,8 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
   // unsigned int sc_minit = db["nonlinloop_minit"];
  
   this->defect = rhs_from_time_disc;
-  s.matrix.apply_scaled_add(s.solution, defect,-1.);
-  rhs_from_time_disc.print("r");
-  s.solution.print("s");
-  defect.print("d");
-  //
+  s.matrix.apply_scaled_add(s.solution, defect,-1.);  
+
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
                       TDatabase::ParamDB->VELOCITY_SPACE,
@@ -530,7 +527,7 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
   Output::print<3>("impulse_residual:  " , setw(3), impulse_residual);
   Output::print<3>("mass_residual   :  " , setw(3), mass_residual);
   Output::print<3>("residual        :  " , setw(3), sqrt(residual));
-  exit(0);
+
   if (it_counter>0)
   {
     Output::print<3>("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
@@ -570,7 +567,7 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
      }
      this->old_solution = s.solution;
 
-     Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual),
+     Output::print<3>("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual),
                    " Reduction : ",  sqrt(residual)/initial_residual);
 
      if(imex_scheme(0) && it_counter >0)
@@ -1426,12 +1423,7 @@ void Time_NSE2D_Merged::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
 
     std::vector<std::shared_ptr<FEMatrix>> mass_blocks;
     mass_blocks = s.mass_matrix.get_blocks_uniquely(true);
-    // s.mass_matrix.print_coloring_pattern("M", true);exit(0);
-    //cout<<mass_blocks.size()<<endl;exit(0);
-    /*std::vector<const BoundCondFunct2D*> bc(3);
-    bc[0]=s.velocity_space.GetBoundCondition();
-    bc[1]=bc[0];
-    bc[2]=s.pressure_space.GetBoundCondition();*/
+    
     BoundCondFunct2D* bc[3] = {
     s.velocity_space.GetBoundCondition(),
     s.velocity_space.GetBoundCondition(),
