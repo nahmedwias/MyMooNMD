@@ -512,6 +512,9 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
  
   this->defect = rhs_from_time_disc;
   s.matrix.apply_scaled_add(s.solution, defect,-1.);
+  rhs_from_time_disc.print("r");
+  s.solution.print("s");
+  defect.print("d");
   //
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
@@ -522,17 +525,27 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
          &this->defect[0]);
   double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
          &this->defect[2*nuDof]);
-  if(it_counter > 0)
+  
+  Output::print<3>("nonlinear step  :  " , setw(3), it_counter);
+  Output::print<3>("impulse_residual:  " , setw(3), impulse_residual);
+  Output::print<3>("mass_residual   :  " , setw(3), mass_residual);
+  Output::print<3>("residual        :  " , setw(3), sqrt(residual));
+  exit(0);
+  if (it_counter>0)
   {
-    Output::print("nonlinear step ", setw(3), it_counter , setw(14), impulse_residual,
-                setw(14), mass_residual, setw(14), sqrt(residual),
-                setw(14), sqrt(residual)/oldResidual);
+    Output::print<3>("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
   }
-  else
-  {
-    Output::print("nonlinear step " , setw(3), it_counter, setw(14), impulse_residual,
-                setw(14), mass_residual, setw(14), sqrt(residual));
-  }
+//   if(it_counter > 0)
+//   {
+//     Output::print("nonlinear step ", setw(3), it_counter , setw(14), impulse_residual,
+//                 setw(14), mass_residual, setw(14), sqrt(residual),
+//                 setw(14), sqrt(residual)/oldResidual);
+//   }
+//   else
+//   {
+//     Output::print("nonlinear step " , setw(3), it_counter, setw(14), impulse_residual,
+//                 setw(14), mass_residual, setw(14), sqrt(residual));
+//   }
 
   oldResidual = sqrt(residual);
   if(it_counter == 0)
@@ -548,7 +561,7 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
   if ( (((sqrt(residual)<=limit)||(it_counter==Max_It))) )
    {
      // project the solution
-     s.p.project_into_L20();
+     // s.p.project_into_L20();
 
      for(System_per_grid& s: this->systems)
      {
@@ -586,12 +599,14 @@ void Time_NSE2D_Merged::solve()
 {
   System_per_grid& s = this->systems.front();
   
-  solver.solve(s.matrix, rhs_from_time_disc, s.solution);
-    if(TDatabase::TimeDB->CURRENTTIME==-0.0025)
-    {
-      Output::print(db["disctype"]);
-      systems.front().matrix.get_combined_matrix()->Print("B1T");exit(0);
-    }
+  solver.solve(s.matrix, rhs_from_time_disc, s.solution);   
+  
+  double damping = this->db["nonlinloop_damping_factor"];
+  if(damping != 1.0)
+  {
+    s.solution.scale(damping);
+    s.solution.add_scaled(this->old_solution, 1-damping);
+  }
 
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are
@@ -599,6 +614,9 @@ void Time_NSE2D_Merged::solve()
   // for the next iteration we have to descale, see assemble_system()
   for(System_per_grid & s : this->systems)
     time_stepping_scheme.reset_linear_matrices(s.matrix, s.mass_matrix);
+  
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+       s.p.project_into_L20();
 }
 
 /**************************************************************************** */
@@ -1138,11 +1156,48 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
     spaces_rhs[2] = &s.pressure_space;
   }
 
-  // bool is_imex = imex_scheme(0);
-  functions.resize(3);
-  functions[0] = s.u.GetComponent(0);
-  functions[1] = s.u.GetComponent(1);
-  functions[2] = &s.p;
+  functions.resize(3);  
+  
+  bool is_imex = imex_scheme(0);
+  if(is_imex)
+  {
+    if(db["disctype"].is("galerkin"))
+    {
+      if(db["extrapolate_velocity"].is("constant_extrapolate"))
+      {
+        s.extrapolate_sol.reset();
+        s.extrapolate_sol = s.solution_m1;
+        
+        functions[0] = s.extrapolate_u.GetComponent(0);
+        functions[1] = s.extrapolate_u.GetComponent(1);
+      }
+      else if(db["extrapolate_velocity"].is("linear_extrapolate"))
+      {
+        s.extrapolate_sol.reset();
+        s.extrapolate_sol = s.solution_m1;
+        s.extrapolate_sol.scale(2.);
+        s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
+       
+        functions[0] = s.extrapolate_u.GetComponent(0);
+        functions[1] = s.extrapolate_u.GetComponent(1);
+      }
+      else
+      {
+        ErrThrow("Only constant or linear extrapolation of velocity are used");
+      }
+      functions[2] = &s.p;
+    }
+    if(db["disctype"].is("supg"))
+    {
+      // come back here again
+    }
+  }
+  else
+  {
+    functions[0] = s.u.GetComponent(0);
+    functions[1] = s.u.GetComponent(1);
+    functions[2] = &s.p;
+  }
   
   // finite element functions for the supg method: The nonlinear
   // version of the SUPG method.
@@ -1296,6 +1351,26 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
 /**************************************************************************** */
 bool Time_NSE2D_Merged::imex_scheme(bool print_info)
 {
+  
+  if(db["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3)
+  {
+    db["nonlinloop_maxit"] = 1;
+    db["extrapolate_velocity"] = "linear_extrapolate";
+    
+    if(print_info) // condition is here just to print it once
+      Output::info<1>("Nonlinear Loop MaxIteration",
+                      "The parameter 'nonlinloop_maxit' was changed to 1."
+                      " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+    
+    
+    return true;
+  }
+  else
+  {
+    db["extrapolate_velocity"] = "no_extrapolation";
+    return false;
+  }
+  
   if(db["time_discretization"].is("semi_implicit_bdf_two") && 
       time_stepping_scheme.current_step_ >= 3 )
   {
@@ -1500,4 +1575,10 @@ void Time_NSE2D_Merged::assemble_rhs_nonlinear()
     ErrThrow("rhs for Disctype: ", db["disctype"] , " is linear ");
   }
   // END DEBUG
+}
+
+
+double Time_NSE2D_Merged::getFullResidual() const
+{
+  return this->oldResidual;
 }
