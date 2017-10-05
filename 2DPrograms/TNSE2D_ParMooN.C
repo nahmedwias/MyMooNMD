@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
   // and M's blocks that are necessary
   tnse2d.assemble_initial_time();
 
-  tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
+  // tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
 
   double end_time = TDatabase::TimeDB->ENDTIME;
   
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
       if(tnse2d.stopIte(i))
       {
         loop_info.finish(i,tnse2d.getFullResidual());
-        linear_iteration++;
+        linear_iteration +=i;
         loop_info_time.print(linear_iteration, tnse2d.getFullResidual());
         break;
       }

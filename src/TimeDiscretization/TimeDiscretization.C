@@ -108,9 +108,9 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
     // right hand side with tau*..
     rhs[0].scaleActive(bdf_coefficients[2]*current_time_step_length);
 
-    mass_matrix.apply_scaled_add_actives(old_solutions[0], rhs[0],
+    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 2, 2,
                                            bdf_coefficients[0]);
-    mass_matrix.apply_scaled_add_actives(old_solutions[1], rhs[0],
+    mass_matrix.apply_scaled_submatrix(old_solutions[1], rhs[0],2 , 2,
                                            bdf_coefficients[1]);
     Output::print<5>(RED, "bdf2_stage ", pre_stage_bdf, BLACK);
   }
@@ -118,7 +118,7 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
   {
     rhs[0].scaleActive(current_time_step_length);
     // mass matrix times old solution goes to right hand side
-    mass_matrix.apply_scaled_add_actives(old_solutions[0], rhs[0], 1.);
+    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 2, 2, 1.);
 
     if((db["time_discretization"].is("bdf_two") || db["time_discretization"].is("semi_implicit_bdf_two") ) && pre_stage_bdf)
     {
