@@ -47,6 +47,11 @@ ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
          "Determine the time stepping scheme: currently supported are",
          {"backward_euler", "crank_nicolson", "bdf_two", "fractional_step",
           "semi_implicit_bdf_two"});
+  
+  db.add("imex_scheme_", false,
+         "This parameter can control, whether an implcit-explicit"
+         "scheme is used for the nonlinear problem.",
+         {true,false});
 
   return db;
 }
@@ -126,9 +131,9 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
     rhs[0].scaleActive(0.5*current_time_step_length);
     rhs[0].addScaledActive(rhs[1], 0.5*current_time_step_length);
     // mass matrix times old solution goes to right hand side
-    mass_matrix.apply_scaled_add_actives(old_solutions[0], rhs[0], 1.);
+    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 2, 2, 1.);
     // 
-    system_matrix.apply_scaled_add_actives(old_solutions[0], rhs[0], 
+    system_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 2, 2,
                                          -0.5*current_time_step_length);
   }
 }

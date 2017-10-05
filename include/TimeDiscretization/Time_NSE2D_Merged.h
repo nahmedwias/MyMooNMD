@@ -331,6 +331,8 @@ public:
     { return db; }
     /// @brief return the computed errors at each discre time point
     std::array<double, int(6)> get_errors();
+    
+    double getFullResidual() const;
 
 private:
   /// @brief this routines wraps up the call to Assemble2D

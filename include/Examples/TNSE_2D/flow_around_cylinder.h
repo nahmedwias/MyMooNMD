@@ -17,7 +17,7 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
-  values[0] = 0;
+  values[0] = 6.*y*(1.-y);
 }
 
 void InitialU2(double x, double y, double *values)
@@ -87,14 +87,14 @@ void BoundCondition(int i, double t, BoundCond &cond)
   }      
 }
 
-void U1BoundValue(int BdComp, double Param, double &value)
+void U1BoundValue(int BdComp, double y, double &value)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 
   switch(BdComp)
   {
     case 3: 
-       value=sin(Pi*t/8)*6*Param*(1-Param);
+       value=6.*y*(1-y);
        break;
     default: 
        value = 0;

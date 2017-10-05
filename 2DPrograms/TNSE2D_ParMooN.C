@@ -163,6 +163,12 @@ int main(int argc, char* argv[])
   tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
 
   double end_time = TDatabase::TimeDB->ENDTIME;
+  
+  LoopInfo loop_info_time("time loop");
+  loop_info_time.print_time_every_step = true;
+  loop_info_time.verbosity_threshold = 1;
+  int linear_iteration=0;
+  
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
     tnse2d.time_stepping_scheme.current_step_++;
@@ -176,10 +182,20 @@ int main(int argc, char* argv[])
     
     tnse2d.assemble_matrices_rhs(0);
 
+    LoopInfo loop_info("nonlinear");
+    loop_info.print_time_every_step = true;
+    loop_info.verbosity_threshold = 1;
     for(unsigned int i=0;; i++)
     {
       if(tnse2d.stopIte(i))
+      {
+        loop_info.finish(i,tnse2d.getFullResidual());
+        linear_iteration++;
+        loop_info_time.print(linear_iteration, tnse2d.getFullResidual());
         break;
+      }
+      else
+        loop_info.print(i, tnse2d.getFullResidual());
 
       tnse2d.solve();
 

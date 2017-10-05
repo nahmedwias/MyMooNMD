@@ -79,6 +79,8 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   db.add("time_step_length", 0.05, " ");
   db.add("current_time_step_length", 0.05, " ");
   
+  db.add("imex_scheme_", false,"");
+  
   db.add("extrapolate_velocity", "no_extrapolation" , " ", 
          {"no_extrapolation", "constant_extrapolate", "linear_extrapolate", "quadratic_extrapolate"});
 
