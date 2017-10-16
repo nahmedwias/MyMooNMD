@@ -387,10 +387,13 @@ void compute_drag_and_lift(const Time_NSE2D_Merged &tnse2d, double& val)
   p.FindGradient(0.25, 0.2, dP2);
 
   double t = TDatabase::TimeDB->CURRENTTIME;
-  Output::print("dof " , 2 * u1->GetLength() + p.GetLength());
-  Output::print( t, " C_drag: " , setprecision(16) , Cd, " C_lift: ", Cl, 
-                 " deltaP: ", dP1[0] - dP2[0]);
-  Output::print(setprecision(6));
+  
+  // print them reference values - f.y.i. some reference values are:
+  Output::print(">>>>> Flow Around Cylinder (steady inflow) 2D: Postprocessing Output <<<<<");
+  Output::print(t, " Drag = ",setprecision(16), Cd);
+  Output::print(t, " Lift = ", setprecision(16), Cl);
+  Output::print(t, " deltaP = ", setprecision(16), dP1[0] - dP2[0]);
+
 }
 
 

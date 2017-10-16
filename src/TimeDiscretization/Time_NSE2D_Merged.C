@@ -233,6 +233,11 @@ void Time_NSE2D_Merged::set_parameters()
     throw("TIME_DISC: 0 is not supported");
   }
 
+  if(db["imex_scheme_"] && db["extrapolate_velocity"])
+  {
+    // first two steps are performed with the full nonlinear 
+    db["extrapolate_velocity"] = false;
+  }
   // set the discretization parameters
   // standard Galerkin
   if(db["disctype"].is("galerkin"))
@@ -532,17 +537,6 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
   {
     Output::print<3>("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
   }
-//   if(it_counter > 0)
-//   {
-//     Output::print("nonlinear step ", setw(3), it_counter , setw(14), impulse_residual,
-//                 setw(14), mass_residual, setw(14), sqrt(residual),
-//                 setw(14), sqrt(residual)/oldResidual);
-//   }
-//   else
-//   {
-//     Output::print("nonlinear step " , setw(3), it_counter, setw(14), impulse_residual,
-//                 setw(14), mass_residual, setw(14), sqrt(residual));
-//   }
 
   oldResidual = sqrt(residual);
   if(it_counter == 0)
@@ -557,9 +551,6 @@ bool Time_NSE2D_Merged::stopIte(unsigned int it_counter)
   }
   if ( (((sqrt(residual)<=limit)||(it_counter==Max_It))) )
    {
-     // project the solution
-     // s.p.project_into_L20();
-
      for(System_per_grid& s: this->systems)
      {
        s.solution_m2 = s.solution_m1;
@@ -1061,7 +1052,7 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
             reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
             reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
 
-            if(db["extrapolate_velocity"].is("no_extrapolation"))
+            if(!db["extrapolate_velocity"] )
             {
               rhs_array.resize(3);
               rhs_array[0] = s.rhs.block(0);
@@ -1156,11 +1147,11 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
   functions.resize(3);  
   
   bool is_imex = imex_scheme(0);
-  if(is_imex)
+  if(is_imex && db["extrapolate_velocity"])
   {
     if(db["disctype"].is("galerkin"))
     {
-      if(db["extrapolate_velocity"].is("constant_extrapolate"))
+      if(db["extrapolation_type"].is("constant_extrapolate"))
       {
         s.extrapolate_sol.reset();
         s.extrapolate_sol = s.solution_m1;
@@ -1168,7 +1159,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
         functions[0] = s.extrapolate_u.GetComponent(0);
         functions[1] = s.extrapolate_u.GetComponent(1);
       }
-      else if(db["extrapolate_velocity"].is("linear_extrapolate"))
+      else if(db["extrapolation_type"].is("linear_extrapolate"))
       {
         s.extrapolate_sol.reset();
         s.extrapolate_sol = s.solution_m1;
@@ -1180,13 +1171,13 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       }
       else
       {
-        ErrThrow("Only constant or linear extrapolation of velocity are used");
+        ErrThrow("Only constant or linear extrapolation of velocity are used ", db["extrapolation_type"]);
       }
       functions[2] = &s.p;
     }
     if(db["disctype"].is("supg"))
     {
-      // come back here again
+      
     }
   }
   else
@@ -1239,7 +1230,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       functions[2] = s.comb_old_u.GetComponent(0);
       functions[3] = s.comb_old_u.GetComponent(1);
       
-      if(db["extrapolate_velocity"].is("constant_extrapolate"))
+      if(db["extrapolation_type"].is("constant_extrapolate"))
       {
         s.extrapolate_sol.reset();
         s.extrapolate_sol = s.solution_m1;
@@ -1248,7 +1239,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
         functions[4] = s.extrapolate_u.GetComponent(0);
         functions[5] = s.extrapolate_u.GetComponent(1);
       }
-      else if(db["extrapolate_velocity"].is("linear_extrapolate"))
+      else if(db["extrapolation_type"].is("linear_extrapolate"))
       {
         s.extrapolate_sol.reset();
         s.extrapolate_sol = s.solution_m1;
@@ -1348,11 +1339,10 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
 /**************************************************************************** */
 bool Time_NSE2D_Merged::imex_scheme(bool print_info)
 {
-  
   if(db["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3)
   {
     db["nonlinloop_maxit"] = 1;
-    db["extrapolate_velocity"] = "linear_extrapolate";
+    db["extrapolate_velocity"] = true;
     
     if(print_info) // condition is here just to print it once
       Output::info<1>("Nonlinear Loop MaxIteration",
@@ -1363,29 +1353,7 @@ bool Time_NSE2D_Merged::imex_scheme(bool print_info)
     return true;
   }
   else
-  {
-    db["extrapolate_velocity"] = "no_extrapolation";
     return false;
-  }
-  
-  if(db["time_discretization"].is("semi_implicit_bdf_two") && 
-      time_stepping_scheme.current_step_ >= 3 )
-  {
-    db["nonlinloop_maxit"] = 1;
-    db["extrapolate_velocity"] = "linear_extrapolate";
-    TDatabase::ParamDB->DISCTYPE = -2;
-    is_rhs_and_mass_matrix_nonlinear = false;
-    if(print_info) // condition is here just to print it once
-      Output::info<1>("Nonlinear Loop MaxIteration",
-                      "The parameter 'nonlinloop_maxit' was changed to 1."
-                      " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
-    return true;
-  }
-  else
-  {
-    db["extrapolate_velocity"] = "no_extrapolation";
-    return false;
-  }
 }
 
 /**************************************************************************** */

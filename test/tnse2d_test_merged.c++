@@ -70,8 +70,11 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   // rough check
   if(time_disc == 1)
     db.add("time_discretization", "backward_euler"," " );
-  else if(time_disc==2)
+  else if(time_disc == 2)
     db.add("time_discretization", "crank_nicolson", " " );
+  else if(time_disc == 3){
+    db.add("time_discretization", "bdf_two", " " );    
+  }
 
   db.add("disctype", "galerkin", "");
   db.add("time_start", 0., " ");
@@ -80,8 +83,9 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   db.add("current_time_step_length", 0.05, " ");
   
   db.add("imex_scheme_", false,"");
+  db.add("extrapolate_velocity", false, "");
   
-  db.add("extrapolate_velocity", "no_extrapolation" , " ", 
+  db.add("extrapolation_type", "no_extrapolation" , " ", 
          {"no_extrapolation", "constant_extrapolate", "linear_extrapolate", "quadratic_extrapolate"});
 
   TDatabase::TimeDB->TIME_DISC=time_disc;
@@ -251,6 +255,20 @@ int main(int argc, char* argv[])
     check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
     check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
     
+    //=============================================================================
+    // BACKWARD-EULER TIME STEPPING SCHEME
+    time_disc = 3;
+    //=============================================================================
+    Output::print<1>("LAPLACETYPE: ", 0, " NSTYPE's: ",1,", ",2,", ",3,", ",4, 
+    " TIME_DISC: ", time_disc );
+    errors[0] = {{0.001123315065, 0.01452798821, 0.008151783113, 0.07430027476}};
+    errors[1] = {{0.002257854029, 0.02900402091, 0.01381823763,0.1459569354}};
+    errors[2] = {{0.0191888938, 0.2444304958, 0.1000448675, 1.21617188}};
+    laplace_type = 0;
+    // check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
+    // check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
   }
   
   Output::print<1>("TEST SUCCESFULL: ");
