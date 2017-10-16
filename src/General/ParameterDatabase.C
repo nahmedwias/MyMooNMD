@@ -830,7 +830,13 @@ ParameterDatabase ParameterDatabase::default_time_database()
          "time adaptivity, it only corresponds to the initial value.",
          0., 0.5);
   
-  db.add("extrapolate_velocity", "no_extrapolation", 
+  db.add("extrapolate_velocity", false,
+			  "This parameter can control the computation of first "
+			  "two time step with the fully nonlinear version,"
+              "if the IMEX scheme is used.",
+			  {true,false});
+  
+  db.add("extrapolation_type", "no_extrapolation", 
          "This is the extrapolate velcotity parameter"
          "These values can be used with BDF's schemes or Crank_Nicholson",
          {"no_extrapolation", "constant_extrapolate", "linear_extrapolate", "quadratic_extrapolate"});
