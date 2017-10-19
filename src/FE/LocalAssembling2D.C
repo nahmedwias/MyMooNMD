@@ -3009,11 +3009,12 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG_Extr(LocalAssembling2D_type 
     case TNSE2D_NL:
       switch(TDatabase::ParamDB->NSTYPE){
         case 4:
-          this->N_Matrices = 2;
-          this->RowSpace =    { 0, 0};
-          this->ColumnSpace = { 0, 0};
-          this->N_Rhs = 0; 
-          this->RhsSpace = { };
+          this->N_Matrices = 5;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0,  0, 0};
+          this->ColumnSpace = { 0, 0, 0,  1, 1};
+          this->N_Rhs = 2; // only stabilization terms 
+          this->RhsSpace = {0, 0 };
           this->AssembleParam = TimeNSType4NLSUPGExtr;
           this->Manipulate = NULL;
           break; // NSTYPE 4
@@ -3032,14 +3033,14 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG_Extr(LocalAssembling2D_type 
     case TNSE2D_Rhs:
       switch(TDatabase::ParamDB->NSTYPE){
         case 4:
-          this->N_Matrices = 5;
-          this->RowSpace =    { 0, 1, 1, 0, 0};
-          this->ColumnSpace = { 0, 0, 0, 1, 1};
+          this->N_Matrices = 0;
+          this->RowSpace =    { };
+          this->ColumnSpace = { };
           this->N_Rhs = 2; 
           this->RhsSpace = { 0, 0 };
           this->AssembleParam = TimeNSType4RHSSUPGExtr;
           this->Manipulate = NULL;
-          ErrThrow("not tested yet");
+          // ErrThrow("not tested yet");
           break;
         case 14:
           this->N_Matrices = 0;

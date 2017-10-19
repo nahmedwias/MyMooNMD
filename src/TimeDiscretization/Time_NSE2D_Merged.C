@@ -1175,9 +1175,70 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       }
       functions[2] = &s.p;
     }
+    // supg: NOTE: only tested with BDF2 so far
+    if(db["disctype"].is("supg") && !db["time_discretization"].is("bdf_two"))
+    {
+      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
+    }
+    
     if(db["disctype"].is("supg"))
     {
-      
+      if(TDatabase::ParamDB->NSTYPE < 4)
+      {
+        ErrThrow("SUPG is for equal-order implemented so far !!!");        
+      }
+      functions[0] = s.u.GetComponent(0);
+      functions[1] = s.u.GetComponent(1);
+      functions[2] = &s.p;
+      // first step with backward euler method
+      if(time_stepping_scheme.pre_stage_bdf)
+      {
+        functions.resize(6);
+        functions[2] = s.u_m1.GetComponent(0);
+        functions[3] = s.u_m1.GetComponent(1);
+        
+        s.extrapolate_sol.reset();
+        s.extrapolate_sol = s.solution_m1;
+        
+        functions[4] = s.extrapolate_u.GetComponent(0);
+        functions[5] = s.extrapolate_u.GetComponent(1);
+      }
+      else // for bdf2 
+      {
+        s.combined_old_sols.reset();
+        // copy and scale the solution at previous time step with factor 2
+        s.combined_old_sols = s.solution_m1;
+        s.combined_old_sols.scale(2.);
+        // subtract with right factor the solution at pre-previous solution
+        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+        
+        functions.resize(6);
+        functions[2] = s.comb_old_u.GetComponent(0);
+        functions[3] = s.comb_old_u.GetComponent(1);
+        
+        if(db["extrapolation_type"].is("constant_extrapolate"))
+        {
+          s.extrapolate_sol.reset();
+          s.extrapolate_sol = s.solution_m1;
+          
+          functions[4] = s.extrapolate_u.GetComponent(0);
+          functions[5] = s.extrapolate_u.GetComponent(1);
+        }
+        else if(db["extrapolation_type"].is("linear_extrapolate"))
+        {
+          s.extrapolate_sol.reset();
+          s.extrapolate_sol = s.solution_m1;
+          s.extrapolate_sol.scale(2.);
+          s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
+          
+          functions[4] = s.extrapolate_u.GetComponent(0);
+          functions[5] = s.extrapolate_u.GetComponent(1);
+        }
+        else
+        {
+          ErrThrow("IMEX scheme only works with constant or linear extrapolation");
+        }
+      }
     }
   }
   else
@@ -1185,8 +1246,37 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
     functions[0] = s.u.GetComponent(0);
     functions[1] = s.u.GetComponent(1);
     functions[2] = &s.p;
+    
+    // supg: NOTE: only tested with BDF2 so far
+    if(db["disctype"].is("supg") && !db["time_discretization"].is("bdf_two"))
+    {
+      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
+    }
+    
+    if(db["disctype"].is("supg"))
+    {
+      if(time_stepping_scheme.pre_stage_bdf)
+      {
+        functions.resize(4);
+        functions[2] = s.u_m1.GetComponent(0);
+        functions[3] = s.u_m1.GetComponent(1);
+      }
+      else
+      {
+        s.combined_old_sols.reset();
+        // copy and scale the solution at previous time step with factor 2
+        s.combined_old_sols = s.solution_m1;
+        s.combined_old_sols.scale(2.);
+        // subtract with right factor the solution at pre-previous solution
+        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+        
+        functions.resize(4);
+        functions[2] = s.comb_old_u.GetComponent(0);
+        functions[3] = s.comb_old_u.GetComponent(1);
+      }
+    }
   }
-  
+  return;
   // finite element functions for the supg method: The nonlinear
   // version of the SUPG method.
   if(db["disctype"].is("supg") && TDatabase::ParamDB->NSTYPE == 14)
@@ -1348,8 +1438,11 @@ bool Time_NSE2D_Merged::imex_scheme(bool print_info)
       Output::info<1>("Nonlinear Loop MaxIteration",
                       "The parameter 'nonlinloop_maxit' was changed to 1."
                       " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
-    
-    
+    // this is typical for the problem with slip type boundary condition
+    // NOTE: only tested for the mixing layer problem for the moment
+    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
+      is_rhs_and_mass_matrix_nonlinear = true;
+    TDatabase::ParamDB->DISCTYPE = -2;
     return true;
   }
   else
@@ -1500,7 +1593,7 @@ void Time_NSE2D_Merged::update_matrices_lps(System_per_grid &s)
 
 void Time_NSE2D_Merged::assemble_rhs_nonlinear()
 {
-  if(db["time_discretization"].is("semi_implicit_bdf_two") && time_stepping_scheme.current_step_>=3)
+  if(imex_scheme(0))
     return;
   // initialize the rhs from the time discretization
   rhs_from_time_disc = this->systems.front().rhs;
