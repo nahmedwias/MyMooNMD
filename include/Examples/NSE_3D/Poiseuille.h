@@ -93,7 +93,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
-  static double eps = DIMENSIONLESS_VISCOSITY;
+	//static double eps = DIMENSIONLESS_VISCOSITY;
     double *coeff;
     
     for(int i=0;i<n_points;i++)
