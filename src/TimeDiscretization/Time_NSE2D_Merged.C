@@ -408,6 +408,9 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     // only assembles the right-hand side
     if(db["disctype"].is("residual_based_vms"))
     {
+      // for all grids assembling because all the matrices are also assembled 
+      // only for the first nonlinear loop. The reason is that the nonlinearity
+      // in the test is treated explicitly.
       for(System_per_grid& sys : this->systems)
         call_assembling_routine(sys, LocalAssembling2D_type::TNSE2D_Rhs);
     }
@@ -1145,9 +1148,11 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
   }
 
   functions.resize(3);  
-  
+  functions[0] = s.u.GetComponent(0);
+  functions[1] = s.u.GetComponent(1);
+  functions[2] = &s.p;
   bool is_imex = imex_scheme(0);
-  if(is_imex && db["extrapolate_velocity"])
+  if(is_imex && db["extrapolate_velocity"] && !db["disctype"].is("residual_based_vms"))
   {
     if(db["disctype"].is("galerkin"))
     {
@@ -1236,7 +1241,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
         }
         else
         {
-          ErrThrow("IMEX scheme only works with constant or linear extrapolation");
+          ErrThrow("IMEX scheme only works with constant or linear extrapolation ", db["extrapolation_type"]);
         }
       }
     }
@@ -1246,12 +1251,8 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       ErrThrow("First implementation for the test functions that are extrapolated");
     }
   }
-  else
+  else if(!db["disctype"].is("residual_based_vms"))
   {
-    functions[0] = s.u.GetComponent(0);
-    functions[1] = s.u.GetComponent(1);
-    functions[2] = &s.p;
-    
     // supg: NOTE: only tested with BDF2 so far
     if(db["disctype"].is("supg") && !db["time_discretization"].is("bdf_two"))
     {
@@ -1280,81 +1281,91 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
         functions[3] = s.comb_old_u.GetComponent(1);
       }
     }
-    
-    if(db["disctype"].is("residual_based_vms"))
+  }
+  
+  if(db["disctype"].is("residual_based_vms"))
+  {
+    double tau = time_stepping_scheme.get_step_length();
+    if(time_stepping_scheme.pre_stage_bdf)
     {
-      double tau = time_stepping_scheme.get_step_length();
-      if(time_stepping_scheme.pre_stage_bdf)
+      // First step is done with backward euler time stepping scheme.
+      // For the residual in the nonlinear term
+      // constant or linear extrapolation of the solution
+      // is used.
+      s.extrapolate_sol.reset();
+      s.extrapolate_sol = s.solution_m1;
+      functions.resize(9);
+      functions[2] = s.extrapolate_u.GetComponent(0);
+      functions[3] = s.extrapolate_u.GetComponent(1);
+      functions[4] = &s.p_old;
+      if(is_imex && db["extrapolate_velocity"])
       {
-        // First step is done with backward euler time stepping scheme.
-        // For the residual in the nonlinear term
-        // constant or linear extrapolation of the solution
-        // is used.
-        s.extrapolate_sol.reset();
-        s.extrapolate_sol = s.solution_m1;
-        functions.resize(9);
-        functions[2] = s.extrapolate_u.GetComponent(0);
-        functions[3] = s.extrapolate_u.GetComponent(1);
-        functions[4] = &s.p_old;
-        
-        //For the residual based vms scheme fill this
-        //with the time derivative which is used in the residual 
-        //computation 
-        s.combined_old_sols.reset();
-        s.combined_old_sols = s.solution;
-        s.combined_old_sols.add_scaled(s.solution_m1, -1.);
-        s.combined_old_sols.scale(1./tau);
-        
-        functions[5] = s.comb_old_u.GetComponent(0);
-        functions[6] = s.comb_old_u.GetComponent(1);
-        
-        // also the solution from previous time steps
-        // is used for the computation of right-hand
-        // side fro pressure term
-        s.combined_old_sols.reset();
-        s.combined_old_sols = s.solution_m1;
-        functions[7] = s.comb_old_u.GetComponent(0);
-        functions[8] = s.comb_old_u.GetComponent(1);
+        functions[0] = functions[2];
+        functions[1] = functions[3];
       }
-      else
+      
+      //For the residual based vms scheme fill this
+      //with the time derivative which is used in the residual 
+      //computation 
+      s.combined_old_sols.reset();
+      s.combined_old_sols = s.solution;
+      s.combined_old_sols.add_scaled(s.solution_m1, -1.);
+      s.combined_old_sols.scale(1./tau);
+      
+      functions[5] = s.comb_old_u.GetComponent(0);
+      functions[6] = s.comb_old_u.GetComponent(1);
+      
+      // also the solution from previous time steps
+      // is used for the computation of right-hand
+      // side fro pressure term
+      s.combined_old_sols.reset();
+      s.combined_old_sols = s.solution_m1;
+      functions[7] = s.comb_old_u.GetComponent(0);
+      functions[8] = s.comb_old_u.GetComponent(1);
+    }
+    else
+    {
+      // BDF2 consider the linear extrapolation of the 
+      // test function "u"
+      functions.resize(9);
+      s.extrapolate_sol.reset();
+      s.extrapolate_sol = s.solution_m1;
+      s.extrapolate_sol.scale(2.);
+      s.extrapolate_sol.add_scaled(s.solution_m2, -1./2.);
+      
+      functions[2] = s.extrapolate_u.GetComponent(0);
+      functions[3] = s.extrapolate_u.GetComponent(1);
+      functions[4] = &s.p_old;
+      
+      if(is_imex && db["extrapolate_velocity"])
       {
-        // BDF2 consider the linear extrapolation of the 
-        // test function "u"
-        functions.resize(9);
-        s.extrapolate_sol.reset();
-        s.extrapolate_sol = s.solution_m1;
-        s.extrapolate_sol.scale(2.);
-        s.extrapolate_sol.add_scaled(s.solution_m2, -1./2.);
-        
-        functions[2] = s.extrapolate_u.GetComponent(0);
-        functions[3] = s.extrapolate_u.GetComponent(1);
-        functions[4] = &s.p_old;
-        
-        //For the residual based vms scheme fill this
-        //with the time derivative which is used in the residual 
-        //computation 
-        //FIXME: NOTE: seems the derivative is computed correctly
-        s.combined_old_sols.reset();
-        s.combined_old_sols = s.solution;
-        s.combined_old_sols.scale(3./(2.*tau));
-        s.combined_old_sols.add_scaled(s.solution_m1, -2./tau);
-        // s.combined_old_sols = s.solution_m1;
-        s.combined_old_sols.add_scaled(s.solution_m2, -1./(2.*tau));
-        
-        functions[5] = s.comb_old_u.GetComponent(0);
-        functions[6] = s.comb_old_u.GetComponent(1);
-        
-        // also the solution from previous time steps
-        // is used for the computation of right-hand
-        // side fro pressure term
-        // NOTE: this is the same as above (extrapolation) not needed actually
-        s.combined_old_sols.reset();
-        s.combined_old_sols = s.solution_m1;
-        s.combined_old_sols.scale(2.);
-        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
-        functions[7] = s.comb_old_u.GetComponent(0);
-        functions[8] = s.comb_old_u.GetComponent(1);
+        functions[0] = functions[2];
+        functions[1] = functions[3];
       }
+      //For the residual based vms scheme fill this
+      //with the time derivative which is used in the residual 
+      //computation 
+      //FIXME: NOTE: seems the derivative is computed correctly
+      s.combined_old_sols.reset();
+      s.combined_old_sols = s.solution;
+      s.combined_old_sols.scale(3./(2.*tau));
+      s.combined_old_sols.add_scaled(s.solution_m1, -2./tau);
+      // s.combined_old_sols = s.solution_m1;
+      s.combined_old_sols.add_scaled(s.solution_m2, -1./(2.*tau));
+      
+      functions[5] = s.comb_old_u.GetComponent(0);
+      functions[6] = s.comb_old_u.GetComponent(1);
+      
+      // also the solution from previous time steps
+      // is used for the computation of right-hand
+      // side fro pressure term
+      // NOTE: this is the same as above (extrapolation) not needed actually
+      s.combined_old_sols.reset();
+      s.combined_old_sols = s.solution_m1;
+      s.combined_old_sols.scale(2.);
+      s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+      functions[7] = s.comb_old_u.GetComponent(0);
+      functions[8] = s.comb_old_u.GetComponent(1);
     }
   }
 }
