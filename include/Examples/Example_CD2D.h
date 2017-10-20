@@ -52,8 +52,8 @@ class Example_CD2D : public Example2D
      */
     Example_CD2D(std::vector <DoubleFunct2D*> exact,
                  std::vector <BoundCondFunct2D*> bc,
-                 std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
-    : Example2D(exact, bc, bd, coeffs) {};
+                 std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs,
+                 double nu = 1.);
 
     /// Apply the function stored as post processing routine.
     void do_post_processing(CD2D& cd2d) const;

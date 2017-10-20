@@ -2,7 +2,7 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <MooNMD_Io.h>
-
+#include <Database.h>
 #ifdef _MPI
 #include <mpi.h>
 #include <ParFECommunicator3D.h>
@@ -472,7 +472,7 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
              ",", matrix.get_n_total_columns());
   size_t n_block_rows = matrix.get_n_cell_rows();
   size_t n_block_cols = matrix.get_n_cell_columns();
-
+  
   // indicate if matrix is stored as a transposed, this is set when calling
   // matrix.get_block(...)
   bool transposed;
@@ -567,6 +567,10 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
     MatCreateNest(PETSC_COMM_WORLD, 2, NULL, 2, NULL, &sub_petsc_mats[0],
                   &petsc_mat);
   }
+  else
+  {
+    create_one_big_petsc_matrix(matrix, this->petsc_mat);
+  }
   
   // create solver and preconditioner objects
   KSPCreate(PETSC_COMM_WORLD, &ksp);
@@ -581,7 +585,6 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
   // the values in the parameter "petsc_arguments".
   KSPSetFromOptions(ksp);
   PCSetFromOptions(pc);
-  
   KSPSetUp(ksp);
   // some PETSc information about the solver
   /// @todo nicer output for the PETSc solver
@@ -654,12 +657,11 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   /// MatGetSize() does not work for MatNest mat type, which is used for
   /// saddle point problems.
   Output::info<5>("PETScSolver::solve");
-
   size_t n_local = solution.length();
   if(n_local != rhs.length())
   {
-    ErrThrow("PETScSolver::solve: size of the rhs and the solution are not equal, ",
-                 rhs.length(), " != ", n_local);
+    ErrThrow("PETScSolver::solve: size of the rhs and the solution are not "
+             "equal, ", rhs.length(), " != ", n_local);
   }
   
   // length of vector
@@ -675,8 +677,7 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   }
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    Output::print("<<HAAALLLOOOOO my_rank");
-    Output::print(my_rank);
+    
   auto block_local2global = local_to_global_block(comms_);
   auto block_masters = get_block_masters(comms_);
   if(block_local2global.size() != n_local)

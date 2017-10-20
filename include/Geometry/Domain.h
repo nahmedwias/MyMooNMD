@@ -21,7 +21,7 @@ class TDomain;
 #include <Iterator.h>
 #include <Mesh.h>
 #include <ParameterDatabase.h>
-#include <TetGenMeshLoader.h>
+class TTetGenMeshLoader;
 
 #ifdef __MORTAR__
 struct TMortarFaceStruct
@@ -140,6 +140,8 @@ class TDomain
     
     /** @brief destructor */
     ~TDomain();
+    
+    static ParameterDatabase default_domain_parameters();
     
     // Methods
     /** @brief Read in initial mesh from ".GEO" file.

@@ -52,6 +52,7 @@ enum LocalAssembling2D_type { ConvDiff,
                               Brinkman2D_Galerkin2,
                               Brinkman2D_Galerkin1ResidualStabP1,
                               Brinkman2D_Galerkin1ResidualStabP2,
+                              Brinkman2D_GradDivStabilization,
                               Custom /// Customized local assembling object. To be used with non-standard problems.
 };
 

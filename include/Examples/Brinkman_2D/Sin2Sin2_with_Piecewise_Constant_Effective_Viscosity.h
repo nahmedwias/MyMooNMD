@@ -7,9 +7,7 @@
 
 void ExampleFile()
 {
-  TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = OSEEN_PROBLEM;
-  Output::print<1>("Example: Sin2Sin2.h with INTERNAL_PROBLEM_IDENTITY ",
-                   TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY);
+  Output::print<1>("Example: Sin2Sin2.h");
 }
 
 // ========================================================================
@@ -276,9 +274,6 @@ void LinCoeffs(int n_points, double *X, double *Y,
     
     for(int i = 0; i < n_points; i++)
     {
-        coeffs[i][0] = 1./TDatabase::ParamDB->RE_NR;
-        coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
-        
         // effective viscosity unsteady
         if(X[i]>0.5)
         {
@@ -297,6 +292,14 @@ void LinCoeffs(int n_points, double *X, double *Y,
         coeffs[i][1] = -coeffs[i][5]*val1[3] + val3[1] + (coeffs[i][4]/coeffs[i][6])*val1[0];  // f1
         coeffs[i][2] = -coeffs[i][5]*val2[3] + val3[2] + (coeffs[i][4]/coeffs[i][6])*val2[0];  // f2
         coeffs[i][3] = val1[1] + val2[2];                           // g (divergence)
-    }
+      
+        coeffs[i][4] = TDatabase::ParamDB->VISCOSITY;
+        coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
+        coeff[1] = 0;//-coeff[5] * val_u1[3] - val_p[1] + (coeff[4]/coeff[6]) * val_u1[0];  //(coeff[4]/coeff[6])-1;                       // f1 (rhs of Brinkman problem for u1)
+        coeff[2] = 0;                                               // f2 (rhs of Brinkman problem for u2)
+        coeff[3] = 0;                                               // g (divergence term=u1_x+u2_y)
+        coeff[7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+        coeff[8] = TDatabase::ParamDB->grad_div_stab_weight;
+       }
     
 }

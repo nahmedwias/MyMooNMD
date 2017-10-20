@@ -73,7 +73,17 @@ void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
                                         double **OrigValues, int *N_BaseFuncts,
                                         double ***LocMatrices, double **LocRhs);
 
+// ======================================================================
+// Type 3, Grad-Div-Stabilization
+// ======================================================================
+/** @brief Grad-Div Stabilization terms
+ \zeta (div u, div v)= \zeta (g, div v)
+*/
 
+void BrinkmanGradDivStab(double Mult, double *coeff,
+                         double *param, double hK,
+                         double **OrigValues, int *N_BaseFuncts,
+                         double ***LocMatrices, double **LocRhs);
 
 
 #endif

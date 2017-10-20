@@ -158,7 +158,6 @@ void LinCoeffs(int n_points, double *x, double *y,
     {
         coeff = coeffs[i];
         
-        coeff[0] = eps;
         //coeff[1] = 1 + 8*eps + 4*y*(1-y);
         coeff[1] = -1 + 8*nu_eff + (nu/K)*4*y[i]*(1-y[i]);   //0;  // f1 (rhs of Brinkman problem for u1)
         coeff[2] = 0;                                   // f2 (rhs of Brinkman problem for u2)
@@ -177,9 +176,10 @@ void LinCoeffs(int n_points, double *x, double *y,
         
         //coeff[5]=TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
         coeff[6]=TDatabase::ParamDB->PERMEABILITY;
-        coeff[7]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
-        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
-    }
+        coeff[0] = (coeff[5] / coeff[4]) * coeff[6];
+        coeff[7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+        coeff[8] = TDatabase::ParamDB->grad_div_stab_weight;
+       }
 }
 
 

@@ -6,9 +6,8 @@
 
 void ExampleFile()
 {
-  TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = OSEEN_PROBLEM;
-  Output::print<1>("Example: SinCos.h with INTERNAL_PROBLEM_IDENTITY with inscribed physical region", 
-                   TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY);
+ // TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = OSEEN_PROBLEM;
+  Output::print<1>("Example: SinCos.h with with inscribed physical region");
 }
 
 // ========================================================================
@@ -271,8 +270,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
     
   for(int i = 0; i < n_points; i++)
   {
-    coeffs[i][0] = 1./TDatabase::ParamDB->RE_NR;
-    coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
+   coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
     coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;  
     coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
     
@@ -283,6 +281,9 @@ void LinCoeffs(int n_points, double *X, double *Y,
     coeffs[i][1] = -coeffs[i][5]*val1[3] + val3[1] + (coeffs[i][4]/coeffs[i][6])*val1[0];   // f1
     coeffs[i][2] = -coeffs[i][5]*val2[3] + val3[2] + (coeffs[i][4]/coeffs[i][6])*val2[0];   // f2
     coeffs[i][3] = val1[1] + val2[2];                                                       // g (divergence)
-  }
   
+    coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
+    coeffs[i][7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+    coeffs[i][8] = TDatabase::ParamDB->grad_div_stab_weight;
+     }
 }

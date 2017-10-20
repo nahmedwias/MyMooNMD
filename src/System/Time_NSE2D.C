@@ -817,6 +817,14 @@ void Time_NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
   solver.solve(s.matrix,s.rhs, s.solution);
+
+  // apply solution damping if prescribed
+  double damping = this->db["nonlinloop_damping_factor"];
+  if(damping != 1.0)
+  {
+    s.solution.scale(damping);
+    s.solution.add_scaled(this->old_solution, 1-damping);
+  }
   
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are 
@@ -917,7 +925,7 @@ void Time_NSE2D::output(int m)
   //do postprocessing step depending on what the example implements
   example.do_post_processing(*this);
   
-  if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
+  if((m==0) || (m % TDatabase::TimeDB->STEPS_PER_IMAGE ==0) )
   {
     if(db["output_write_vtk"])
     {

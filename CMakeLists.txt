@@ -311,15 +311,15 @@ endif(DOXYGEN_FOUND)
 
 include(cmake/get_repository_information.cmake)
 
+###############################################################################
+enable_testing()
 
 ###############################################################################
 # the CMakeLists.txt for the user_projects may define more targets, tests, ...
 add_subdirectory(user_projects)
 
-
 ###############################################################################
 # tests 
-enable_testing()
 add_subdirectory(test EXCLUDE_FROM_ALL)
 
 

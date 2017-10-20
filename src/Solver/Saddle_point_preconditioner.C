@@ -1,4 +1,5 @@
 #include <Saddle_point_preconditioner.h>
+#include <ParameterDatabase.h>
 #ifdef __2D__
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
@@ -15,24 +16,23 @@
 #include <Joint.h>
 #include <BoundEdge.h>
 #include <BoundFace.h>
+#include <Chrono.h>
+
+// see https://stackoverflow.com/a/8016853
+constexpr char Saddle_point_preconditioner::required_database_name[];
 
 /* ************************************************************************** */
 Saddle_point_preconditioner::Saddle_point_preconditioner(
-  const BlockFEMatrix& m, type t,  bool direct_velocity_solve)
-  : spp_type(t), lsc_strategy(direct_velocity_solve ? 0 : 1), M(&m),
-    velocity_block(), gradient_block(nullptr), divergence_block(nullptr),
-    velocity_solver(nullptr), inverse_diagonal(), 
+  const BlockFEMatrix& m, type t,  const ParameterDatabase& db)
+  : spp_type(t), M(&m), velocity_block(), gradient_block(nullptr),
+    divergence_block(nullptr), velocity_solver(nullptr), inverse_diagonal(), 
     velocity_space(&m.get_row_space(0)), pressure_space(nullptr),
     damping_factor(1.0), Poisson_solver_matrix(nullptr),
     Poisson_solver(nullptr), up_star(m), bdryCorrectionMatrix_(),
     poissonMatrixBdry_(nullptr), poissonSolverBdry_(nullptr)
 {
   Output::print<3>("constructing a Saddle_point_preconditioner");
-  if(lsc_strategy > 0)
-  {
-    Output::warn<2>("Saddle_point_preconditioner"," solving systems within LSC "
-                    "using some iterative routine requires a flexible solver.");
-  }
+  Chrono time_measuering;
   bool pressure_correction_in_matrix = this->M->pressure_correction_enabled();
   this->M->disable_pressure_correction();
   
@@ -56,26 +56,28 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   {
     // velocity solver database
     ParameterDatabase vs_db = Solver<>::default_solver_database();
-    if(lsc_strategy == 0)
+    auto db_name = 
+      std::string(Saddle_point_preconditioner::required_database_name);
+    // use the given database or one of its nested databases, depending on which
+    // one has the correct name. Otherwise the default solver database is used.
+    if(db.get_name() == db_name)
     {
-      // use umfpack direct solver
-      vs_db["solver_type"] = "direct";
-      vs_db["direct_solver_type"] = "umfpack";
+      vs_db.merge(db, false); // copy from input database
     }
     else
     {
-      vs_db["solver_type"] = "iterative";
-      vs_db["iterative_solver_type"] = "bi_cgstab";
-      //vs_db["preconditioner"] = "no_preconditioner";
-      //vs_db["preconditioner"] = "jacobi";
-      vs_db["preconditioner"] = "ssor";
-      vs_db["sor_omega"] = 1.0;
-      vs_db["max_n_iterations"] = 1000;
-      vs_db["residual_tolerance"] = 8.0e-9; // hardly ever reached
-      vs_db["residual_reduction"] = 1e-2;    // the actual stopping criterion
-      vs_db["gmres_restart"] = 50;
-      vs_db["damping_factor"] = 1.0; // no damping
-      //vs_db["divergence_factor"] = 1.0e10; // stop because of divergence
+      // see if a nested database with this name exists, and take that if so.
+      try
+      {
+        vs_db.merge(db.get_nested_database(db_name), false);
+      }
+      catch(...){}
+    }
+    if(vs_db["iterative_solver_type"].is("iterative"))
+    {
+      Output::warn<2>("Saddle_point_preconditioner",
+                      " Note that solving systems within LSC using some "
+                      "iterative routine requires a flexible solver.");
     }
     this->velocity_solver.reset(new Solver<BlockFEMatrix, BlockVector>(vs_db));
     this->velocity_solver->update_matrix(this->velocity_block);
@@ -122,11 +124,12 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   
   if(pressure_correction_in_matrix)
     this->M->enable_pressure_correction();
+  time_measuering.stop_and_print("Setting up a Saddle_point_preconditioner");
 }
 
 /* ************************************************************************** */
 Saddle_point_preconditioner::Saddle_point_preconditioner(
-  const BlockMatrix& m, type t,  bool direct_velocity_solve)
+  const BlockMatrix& m, type t,  const ParameterDatabase& db)
 {
   ErrThrow("Creating a Saddle_point_preconditioner with a BlockMatrix is not "
            "possible, you need a BlockFEMatrix.");

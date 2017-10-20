@@ -11,6 +11,8 @@
 #include <BoundaryAssembling3D.h>
 #include <Brinkman3D_Mixed.h>
 
+#include <GridTransfer.h>
+
 #ifdef _MPI
 #include "mpi.h"
 #include <ParFEMapper3D.h>
@@ -29,7 +31,7 @@ ParameterDatabase get_default_Brinkman3D_parameters()
     ParameterDatabase out_db = ParameterDatabase::default_output_database();
     db.merge(out_db, true);
     
-    db.add("Pk/Pk_stab", false,
+    db.add("PkPk_stab", false,
            "Use an assembling routine corresponding to a residual-based "
            "equal-order stabilization for the Brinkman problem."
            "This only works in two space "
@@ -37,7 +39,7 @@ ParameterDatabase get_default_Brinkman3D_parameters()
            "Usually this is used in the main program.",
            {true,false});
     
-        db.add("equal_order_stab_weight_Pk/Pk", 0,
+        db.add("equal_order_stab_weight_PkPk", 0,
                "Use an assembling routine corresponding to a residual-based "
                "equal-order stabilization for the Brinkman problem."
                "This only works in two space "
@@ -159,10 +161,11 @@ void Brinkman3D::output_problem_size_info() const
 Brinkman3D::Brinkman3D(const TDomain & domain,
                        const ParameterDatabase& param_db,
                        const Example_Brinkman3D& e,
-                       int reference_id
+                       
 #ifdef _MPI
-                       , int maxSubDomainPerDof
+                       int maxSubDomainPerDof,
 #endif
+int reference_id
 )
 : systems(), example(e), db(get_default_Brinkman3D_parameters()),
 solver(param_db), defect(), initial_residual(1e10), norms_of_old_residuals(),
@@ -176,20 +179,25 @@ errors()
     
     std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                                  TDatabase::ParamDB->PRESSURE_SPACE);
+
     
     // set the velocity and preesure spaces
     // this function returns a pair which consists of velocity and pressure orders
     this->get_velocity_pressure_orders(velocity_pressure_orders);
     
-//    // create the collection of cells from the domain (finest grid collection)
-//    TCollection *coll = collections.front();
+
     
+    //// create the collection of cells from the domain (finest grid)
+    //TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+    
+    //TCollection *coll = collections.front(); //the finest grid collection
+    // create finite element space and function, a matrix, rhs, and solution
+
+ 
     // create the collection of cells from the domain (finest grid)
     TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-    
-    // Output the mesh
-    coll->writeMesh("test.mesh");
-    //exit(1);
+
+
     
     // create finite element space and function, matrix, rhs, and solution
     switch(TDatabase::ParamDB->NSTYPE)
@@ -201,6 +209,7 @@ errors()
                                        velocity_pressure_orders,
                                        Brinkman3D::Matrix::Type4,
                                        maxSubDomainPerDof);
+           
 #else
             this->systems.emplace_back(e,
                                        *coll,
@@ -210,11 +219,15 @@ errors()
             break;
         case 14:
 #ifdef _MPI
+            
+            
             this->systems.emplace_back(e,
                                        *coll,
                                        velocity_pressure_orders,
                                        Brinkman3D::Matrix::Type14,
                                        maxSubDomainPerDof);
+            
+      
 #else
             this->systems.emplace_back(e,
                                        *coll,
@@ -236,13 +249,14 @@ errors()
 /** ************************************************************************ */
 Brinkman3D::Brinkman3D(std::list<TCollection* > collections,
                        const ParameterDatabase& param_db,
-                       const Example_Brinkman3D& e
+                       const Example_Brinkman3D& e,
 #ifdef _MPI
-                       , int maxSubDomainPerDof
+                        int maxSubDomainPerDoF,
 #endif
-)
+                        int reference_id
+                       )
 : systems(), example(e), db(get_default_Brinkman3D_parameters()),
-solver(param_db), defect(), norms_of_old_residuals(), initial_residual(1e10),
+solver(param_db), defect(), initial_residual(1e10), norms_of_old_residuals(),
 errors()
 
 {
@@ -258,8 +272,13 @@ errors()
     // this function returns a pair which consists of velocity and pressure order
     this->get_velocity_pressure_orders(velocity_pressure_orders);
     
+    
     // create the collection of cells from the domain (finest grid collection)
     TCollection *coll = collections.front();
+
+    // Output the mesh
+    //coll->writeMesh("test.mesh");
+    //exit(1);
     
     // create finite element space and function, matrix, rhs, and solution
     switch(TDatabase::ParamDB->NSTYPE)
@@ -270,7 +289,7 @@ errors()
                                        *coll,
                                        velocity_pressure_orders,
                                        Brinkman3D::Matrix::Type4,
-                                       maxSubDomainPerDof);
+                                       maxSubDomainPerDoF);
 #else
             this->systems.emplace_back(example,
                                        *coll,
@@ -284,7 +303,7 @@ errors()
                                        *coll,
                                        velocity_pressure_orders,
                                        Brinkman3D::Matrix::Type14,
-                                       maxSubDomainPerDof);
+                                       maxSubDomainPerDoF);
 #else
             this->systems.emplace_back(example,
                                        *coll,
@@ -308,7 +327,9 @@ Brinkman3D::~Brinkman3D()
 /** ************************************************************************ */
 void Brinkman3D::get_velocity_pressure_orders(std::pair <int,int>
                                               &velocity_pressure_orders)
-{
+
+{   velocity_pressure_orders.first = TDatabase::ParamDB->VELOCITY_SPACE; //NEW_17052017
+    velocity_pressure_orders.second = TDatabase::ParamDB->PRESSURE_SPACE; //NEW_17052017
     Output::print<1>("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
     Output::print<1>("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
@@ -444,6 +465,7 @@ void Brinkman3D::assemble()
                                    feFunction.data(),
                                    example.get_coeffs());
         
+        
         // assemble now the matrices and right hand side
         Assemble3D(N_FESpaces, fespmat,
                    n_sq_mat, sq_matrices,
@@ -454,6 +476,7 @@ void Brinkman3D::assemble()
         sq_matrices[0]->write("a11.out");
         sq_matrices[4]->write("a22.out");
         sq_matrices[8]->write("a33.out");
+        sq_matrices[9]->write("c.out");
         
         rect_matrices[0]->write("b1.out");
         rect_matrices[1]->write("b2.out");
@@ -462,9 +485,9 @@ void Brinkman3D::assemble()
         rect_matrices[4]->write("b2t.out");
         rect_matrices[5]->write("b3t.out");
         
-//----- Stabilizations
+        //----- Stabilizations
         if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE==TDatabase::ParamDB->PRESSURE_SPACE)
-        {
+        { Output::print("NEEEEEIIIIIIINNNNNNNNN");
             if (TDatabase::ParamDB->NSTYPE == 14)
             { type = LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1;
                 if (TDatabase::ParamDB->VELOCITY_SPACE==1)
@@ -501,36 +524,9 @@ void Brinkman3D::assemble()
         else if(db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE != TDatabase::ParamDB->PRESSURE_SPACE)
             ErrThrow("WARNING: You have switched on Pk/Pk-stabilization, but therefore velocity space order and pressure space order should be equal.");
         
-//-------
-        
         //delete the temorary feFunctions gained by GetComponent
         for(int i = 0; i<3; ++i)
             delete feFunction[i];
-        
-        //////}// endfor auto grid
-        
-        //copy non-actives from rhs to solution on finest grid
-        this->systems.front().solution.copy_nonactive(systems.front().rhs);
-        
-        /** When we call copy_nonactive in MPI-case, we have to remember the following:
-         * it can happen that some slave ACTTIVE DoFs are placed in the block of
-         * NON-ACTIVE DoFs (because they are at the interface between processors).
-         * Doing copy_nonactive changes then the value of these DOFs,although they are
-         * actually active.
-         * That's why we have to update the values so that the vector becomes consistent again.
-         * This is done here.
-         */
-#ifdef _MPI
-        double *u1 = this->systems.front().solution.block(0);
-        double *u2 = this->systems.front().solution.block(1);
-        double *u3 = this->systems.front().solution.block(2);
-        double *p  = this->systems.front().solution.block(3);
-        this->systems.front().velocity_space.get_communicator().consistency_update(u1, 3);
-        this->systems.front().velocity_space.get_communicator().consistency_update(u2, 3);
-        this->systems.front().velocity_space.get_communicator().consistency_update(u3, 3);
-        this->systems.front().pressure_space.get_communicator().consistency_update(p, 3);
-#endif
-        
         
         //--------------------------------------------------------------------------------------------------
         
@@ -574,7 +570,7 @@ void Brinkman3D::assemble()
                          TDatabase::ParamDB->neumann_boundary_id[k],
                          -TDatabase::ParamDB->neumann_boundary_value[k]);
         }
-       
+        
         
         // Nitsche combination - weak Dirichlet
         for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
@@ -599,14 +595,14 @@ void Brinkman3D::assemble()
                           true);                                                // rescale local integral by edge values
             
             bi.rhs_uD_v(s.rhs,
-                       v_space,
-                       this->example.get_bd(0),                                 // access to U1BoundValue in the example,
-                       this->example.get_bd(1),                                 // access to U2BoundValue in the example,
-                       this->example.get_bd(2),                                 // access to U3BoundValue in the example,
-                       allCells,
-                       TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
-                       t*TDatabase::ParamDB->nitsche_penalty[k],                // mult
-                       true);                                                   // rescale local integral by edge values
+                        v_space,
+                        this->example.get_bd(0),                                 // access to U1BoundValue in the example,
+                        this->example.get_bd(1),                                 // access to U2BoundValue in the example,
+                        this->example.get_bd(2),                                 // access to U3BoundValue in the example,
+                        allCells,
+                        TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
+                        t*TDatabase::ParamDB->nitsche_penalty[k],                // mult
+                        true);                                                   // rescale local integral by edge values
             
             bi.matrix_gradv_n_u(s.matrix,
                                 v_space,
@@ -647,7 +643,36 @@ void Brinkman3D::assemble()
                           1.*TDatabase::ParamDB->s2);
             
         }
+        
     }
+    
+    //-------
+    
+
+    
+    //////}// endfor auto grid
+    
+    //copy non-actives from rhs to solution on finest grid
+    this->systems.front().solution.copy_nonactive(systems.front().rhs);
+    
+    /** When we call copy_nonactive in MPI-case, we have to remember the following:
+     * it can happen that some slave ACTTIVE DoFs are placed in the block of
+     * NON-ACTIVE DoFs (because they are at the interface between processors).
+     * Doing copy_nonactive changes then the value of these DOFs,although they are
+     * actually active.
+     * That's why we have to update the values so that the vector becomes consistent again.
+     * This is done here.
+     */
+#ifdef _MPI
+    double *u1 = this->systems.front().solution.block(0);
+    double *u2 = this->systems.front().solution.block(1);
+    double *u3 = this->systems.front().solution.block(2);
+    double *p  = this->systems.front().solution.block(3);
+    this->systems.front().velocity_space.get_communicator().consistency_update(u1, 3);
+    this->systems.front().velocity_space.get_communicator().consistency_update(u2, 3);
+    this->systems.front().velocity_space.get_communicator().consistency_update(u3, 3);
+    this->systems.front().pressure_space.get_communicator().consistency_update(p, 3);
+#endif
 }
 
 /** ************************************************************************ */

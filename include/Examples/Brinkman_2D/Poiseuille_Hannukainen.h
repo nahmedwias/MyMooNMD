@@ -9,7 +9,7 @@ void ExampleFile()
 /*
  Square [0,1]x[0,1]
  t^2=K*(nu_eff/nu)
- u(x,y) = [(1+exp(1/t)-exp((1-y)/t) - exp(y/t)) / (1+exp(1/t)  ,  0], for t>0
+ u(x,y) = K/mu * [(1+exp(1/t)-exp((1-y)/t) - exp(y/t)) / (1+exp(1/t)  ,  0], for t>0
  u(x,y) = [1  ,  0], for t=1
  p(x,y) = -x+1/2
  */
@@ -44,10 +44,10 @@ void ExactU1(double x, double y, double *values)
     }
     else
     {
-        values[0] = (1+exp(1/t)-exp((1-y)/t) - exp(y/t)) / (1+exp(1/t));             //u1
+        values[0] = K/nu * (1+exp(1/t)-exp((1-y)/t) - exp(y/t)) / (1+exp(1/t));             //u1
         values[1] = 0;                                                               //u1_x
-        values[2] = (exp((1-y)/t)-exp(y/t))/(t*(1+exp(1/t)));                        //u1_y
-        values[3] = (-exp((1-y)/t)-exp(y/t))/(t*t*(1+exp(1/t)));                     //Delta u1
+        values[2] = K/nu * (exp((1-y)/t)-exp(y/t))/(t*(1+exp(1/t)));                        //u1_y
+        values[3] = K/nu * (-exp((1-y)/t)-exp(y/t))/(t*t*(1+exp(1/t)));                     //Delta u1
     }
 }
 
@@ -86,7 +86,7 @@ void BoundCondition(int i, double Param, BoundCond &cond)
     
     for (int j=0; j<TDatabase::ParamDB->n_neumann_boundary; j++)
     {
-        if (i==TDatabase::ParamDB->neumann_boundary_id[j])
+        if (i == TDatabase::ParamDB->neumann_boundary_id[j])
         {
             cond = NEUMANN;
             
@@ -112,6 +112,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
     double t = fabs(sqrt((nu_eff/nu)*K));
 
     // loop to impose Neumann boundary conditions
+    // Since we are using the Neumann boundary condition via boundaryAssembling, the boundvalue here has to be alway zero!!!!
     for (int j=0; j<TDatabase::ParamDB->n_neumann_boundary; j++)
     {
         if ( BdComp==TDatabase::ParamDB->neumann_boundary_id[j])
@@ -151,7 +152,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-    value=0;
+    value = 0;
 }
 
 
@@ -162,21 +163,29 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
+    double val_u1[4];
+    double val_u2[4];
+    double val_p[4];
+    
     double *coeff;
     
     for(int i=0;i<n_points;i++)
     {
-        coeff = coeffs[i];
+        ExactU1(x[i], y[i], val_u1);
+        ExactU2(x[i], y[i], val_u2);
+        ExactP(x[i], y[i], val_p);
         
-        coeff[0] = 1./TDatabase::ParamDB->RE_NR;
-        coeff[4]=TDatabase::ParamDB->VISCOSITY;
-        coeff[5]=TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-        coeff[6]=TDatabase::ParamDB->PERMEABILITY;
-        coeff[1] = (coeff[4]/coeff[6])-1;                             // f1 (rhs of Brinkman problem for u1)
+        coeff = coeffs[i];
+
+        coeff[4] = TDatabase::ParamDB->VISCOSITY;
+        coeff[5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+        coeff[6] = TDatabase::ParamDB->PERMEABILITY;
+        coeff[0] = (coeff[5] / coeff[4]) * coeff[6];
+        coeff[1] = 0;//-coeff[5] * val_u1[3] - val_p[1] + (coeff[4]/coeff[6]) * val_u1[0];  //(coeff[4]/coeff[6])-1;                       // f1 (rhs of Brinkman problem for u1)
         coeff[2] = 0;                                               // f2 (rhs of Brinkman problem for u2)
         coeff[3] = 0;                                               // g (divergence term=u1_x+u2_y)
-        coeff[7]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
-        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+        coeff[7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+        coeff[8] = TDatabase::ParamDB->grad_div_stab_weight;
     }
 }
 

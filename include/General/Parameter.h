@@ -3,6 +3,7 @@
 
 #include <set>
 #include <string>
+#include <vector>
 
 /** @brief store a single parameter
  * 
@@ -57,7 +58,9 @@ class Parameter
 {
   public:
     // the types which are supported by this class
-    enum class types { _bool, _int, _size_t, _double, _string };
+    enum class types { _bool, _int, _size_t, _double, _string,
+                       _bool_vec, _int_vec, _size_t_vec, _double_vec, 
+                       _string_vec};
     
 
     /// @brief Create bool parameter with given name, value and description
@@ -74,6 +77,57 @@ class Parameter
     
     /// @brief Create string parameter with given name, value and description
     explicit Parameter(std::string name, std::string value,
+                       std::string description);
+    
+    /// @brief Create vector valued bool parameter with given name, values and
+    /// description
+    explicit Parameter(std::string name, std::vector<bool> value,
+                       std::string description);
+    
+    /// @brief Create vector valued int parameter with given name, value and
+    /// description
+    explicit Parameter(std::string name, std::vector<int> value,
+                       std::string description);
+    
+    /// @brief Create vector valued size_t parameter with given name, value and 
+    /// description
+    explicit Parameter(std::string name, std::vector<size_t> value,
+                       std::string description);
+    
+    /// @brief Create vector valued double parameter with given name, value and 
+    /// description
+    explicit Parameter(std::string name, std::vector<double> value,
+                       std::string description);
+    
+    /// @brief Create vector valued string parameter with given name, value and
+    /// description
+    explicit Parameter(std::string name, std::vector<std::string> value,
+                       std::string description);
+    
+    // The following constructors with std::initializer_list are calling the 
+    // respective std::vector version.
+    /// @brief Create vector valued bool parameter with given name, values and
+    /// description
+    explicit Parameter(std::string name, std::initializer_list<bool> value,
+                       std::string description);
+    
+    /// @brief Create int parameter with given name, value and description
+    explicit Parameter(std::string name, std::initializer_list<int> value,
+                       std::string description);
+    
+    /// @brief Create size_t parameter with given name, value and description
+    explicit Parameter(std::string name, std::initializer_list<size_t> value,
+                       std::string description);
+    /// @brief Create size_t parameter with given name, value and description
+    explicit Parameter(std::string name, std::initializer_list<unsigned int> value,
+                       std::string description);
+    
+    /// @brief Create double parameter with given name, value and description
+    explicit Parameter(std::string name, std::initializer_list<double> value,
+                       std::string description);
+    
+    /// @brief Create string parameter with given name, value and description
+    explicit Parameter(std::string name, std::initializer_list<std::string> value,
                        std::string description);
     
 
@@ -151,8 +205,14 @@ class Parameter
     void get_range(std::set<T>& range) const;
 
     /// @brief assignment of new value
+    ///
+    /// If check_range is false, then you can set a value which is not in the 
+    /// specified range. The range is therefore modified to inlcude the new 
+    /// value. This is in general not what you should do, but sometimes it is
+    /// still useful, for example for filenames. Note that the impose method 
+    /// does something similar.
     template <typename T>
-    void set(T value);
+    void set(T value, bool check_range = true);
     
     /// @brief return the value of this parameter
     template <typename T>
@@ -172,6 +232,12 @@ class Parameter
     operator double() const;
     operator std::string() const;
     operator const char*() const;
+    operator std::vector<bool>() const;
+    operator std::vector<int>() const;
+    operator std::vector<size_t>() const;
+    operator std::vector<unsigned int>() const;
+    operator std::vector<double>() const;
+    operator std::vector<std::string>() const;
     //@}
     
     /// @name simple way to set the value of a Parameter
@@ -183,7 +249,19 @@ class Parameter
     Parameter& operator=(double);
     Parameter& operator=(std::string);
     Parameter& operator=(const char*);
+    Parameter& operator=(std::vector<bool>);
+    Parameter& operator=(std::vector<int>);
+    Parameter& operator=(std::vector<size_t>);
+    Parameter& operator=(std::vector<double>);
+    Parameter& operator=(std::vector<std::string>);
     //@}
+    
+    /// @brief add values to vector valued parameters
+    /// 
+    /// If the type was not a vector before, this will throw an 
+    /// exception. The type of a Parameter object does not change.
+    template <typename T>
+    void push_back(T value, bool check_range = true);
     
     /// @brief write the value of this parameter into a stream
     ///
@@ -224,6 +302,11 @@ class Parameter
     size_t unsigned_value = 0;
     double double_value = 0.0;
     std::string string_value = "";
+    std::vector<bool> bool_vector = {};
+    std::vector<int> int_vector = {};
+    std::vector<size_t> unsigned_vector = {};
+    std::vector<double> double_vector = {};
+    std::vector<std::string> string_vector = {};
     //@}
     
     /// @brief Access count
@@ -279,5 +362,7 @@ class Parameter
     std::set<std::string> string_range = std::set<std::string>();
     //@}
 };
+
+std::ostream& operator<<(std::ostream& out, Parameter::types type);
 
 #endif // __PARAMETER__

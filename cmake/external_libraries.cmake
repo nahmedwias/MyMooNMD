@@ -137,7 +137,7 @@ endif(_USING_OMP)
 # should be listed before B. For example the Blas library is the last one 
 # because it depends on no other library but others depend on it.
 list(APPEND _EXTERN_LIBRARIES ${TRIANGLE_LIBRARY})
-list(APPEND _EXTERN_LIBRARIES ${TETGEN_LIBRARY})
+#list(APPEND _EXTERN_LIBRARIES ${TETGEN_LIBRARY})
 if(_USING_OMP)
   list(APPEND _EXTERN_LIBRARIES ${PARDISO_LIBRARY})
 endif(_USING_OMP)
