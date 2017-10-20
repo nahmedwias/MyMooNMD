@@ -401,11 +401,11 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
               this->set_parameters_for_tnseSUPG_Extr(type);
               break;
             case RESIDUAL_VMS:
+            case RESIDUAL_VMS_EXTR:
               this->set_parameters_for_tnseResidual_vms(type);
               break;
-            case RESIDUAL_VMS_EXTR:
-              this->set_parameters_for_tnseResidual_vms_Extr(type);
-              break;
+              // this->set_parameters_for_tnseResidual_vms_Extr(type);
+              // break;
             case SMAGORINSKY:
               this->set_parameters_for_Smagorinsky(type);
               break;
