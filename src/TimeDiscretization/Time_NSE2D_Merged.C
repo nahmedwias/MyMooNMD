@@ -260,7 +260,7 @@ void Time_NSE2D_Merged::set_parameters()
   }
   if(db["disctype"].is("residual_based_vms"))
   {
-    TDatabase::ParamDB->DISCTYPE = -101;
+    TDatabase::ParamDB->DISCTYPE = 101;
     // here the explicit version is used to handle 
     // the nonlinearity due to tests
     time_stepping_scheme.b_bt_linear_nl = "solution_dependent";
@@ -1240,6 +1240,11 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
         }
       }
     }
+    // residual based variational multiscale method
+    if(db["disctype"].is("residual_based_vms"))
+    {
+      ErrThrow("First implementation for the test functions that are extrapolated");
+    }
   }
   else
   {
@@ -1275,155 +1280,83 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
         functions[3] = s.comb_old_u.GetComponent(1);
       }
     }
-  }
-  return;
-  // finite element functions for the supg method: The nonlinear
-  // version of the SUPG method.
-  if(db["disctype"].is("supg") && TDatabase::ParamDB->NSTYPE == 14)
-  {
-    // part of the time derivative tested with pressue needs 
-    // to be assembled together with the right-hand side (rhs3)
-    if(db["time_discretization"].is("backward_euler") || 
-        db["time_discretization"].is("semi_implicit_bdf_two") ||
-       (time_stepping_scheme.pre_stage_bdf) )
+    
+    if(db["disctype"].is("residual_based_vms"))
     {
-      functions.resize(4);
-      functions[2] = s.u_m1.GetComponent(0);
-      functions[3] = s.u_m1.GetComponent(1);
-      
-      if(db["time_discretization"].is("semi_implicit_bdf_two"))
+      double tau = time_stepping_scheme.get_step_length();
+      if(time_stepping_scheme.pre_stage_bdf)
       {
+        // First step is done with backward euler time stepping scheme.
+        // For the residual in the nonlinear term
+        // constant or linear extrapolation of the solution
+        // is used.
         s.extrapolate_sol.reset();
         s.extrapolate_sol = s.solution_m1;
+        functions.resize(9);
+        functions[2] = s.extrapolate_u.GetComponent(0);
+        functions[3] = s.extrapolate_u.GetComponent(1);
+        functions[4] = &s.p_old;
         
-        functions.resize(6);
-        functions[4] = s.extrapolate_u.GetComponent(0);
-        functions[5] = s.extrapolate_u.GetComponent(1);
+        //For the residual based vms scheme fill this
+        //with the time derivative which is used in the residual 
+        //computation 
+        s.combined_old_sols.reset();
+        s.combined_old_sols = s.solution;
+        s.combined_old_sols.add_scaled(s.solution_m1, -1.);
+        s.combined_old_sols.scale(1./tau);
+        
+        functions[5] = s.comb_old_u.GetComponent(0);
+        functions[6] = s.comb_old_u.GetComponent(1);
+        
+        // also the solution from previous time steps
+        // is used for the computation of right-hand
+        // side fro pressure term
+        s.combined_old_sols.reset();
+        s.combined_old_sols = s.solution_m1;
+        functions[7] = s.comb_old_u.GetComponent(0);
+        functions[8] = s.comb_old_u.GetComponent(1);
       }
       else
       {
-        Output::print<5>("Fully nonlinear version of SUPG method");
-      }
-    }
-    if( (db["time_discretization"].is("bdf_two")  || 
-        db["time_discretization"].is("semi_implicit_bdf_two") )
-        && !(time_stepping_scheme.pre_stage_bdf) )
-    {
-      s.combined_old_sols.reset();
-      // copy and scale the solution at previous time step with factor 2
-      s.combined_old_sols = s.solution_m1;
-      s.combined_old_sols.scale(2.);
-      // subtract with right factor the solution at pre-previous solution
-      s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
-
-      functions.resize(4);
-      functions[2] = s.comb_old_u.GetComponent(0);
-      functions[3] = s.comb_old_u.GetComponent(1);
-      
-      if(db["extrapolation_type"].is("constant_extrapolate"))
-      {
-        s.extrapolate_sol.reset();
-        s.extrapolate_sol = s.solution_m1;
-        
-        functions.resize(6);
-        functions[4] = s.extrapolate_u.GetComponent(0);
-        functions[5] = s.extrapolate_u.GetComponent(1);
-      }
-      else if(db["extrapolation_type"].is("linear_extrapolate"))
-      {
+        // BDF2 consider the linear extrapolation of the 
+        // test function "u"
+        functions.resize(9);
         s.extrapolate_sol.reset();
         s.extrapolate_sol = s.solution_m1;
         s.extrapolate_sol.scale(2.);
-        s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
-       
-        functions.resize(6);
-        functions[4] = s.extrapolate_u.GetComponent(0);
-        functions[5] = s.extrapolate_u.GetComponent(1);
-      }
-      else
-      {
-        Output::print<5>("Fully nonlinear version of SUPG method");
+        s.extrapolate_sol.add_scaled(s.solution_m2, -1./2.);
+        
+        functions[2] = s.extrapolate_u.GetComponent(0);
+        functions[3] = s.extrapolate_u.GetComponent(1);
+        functions[4] = &s.p_old;
+        
+        //For the residual based vms scheme fill this
+        //with the time derivative which is used in the residual 
+        //computation 
+        //FIXME: NOTE: seems the derivative is computed correctly
+        s.combined_old_sols.reset();
+        s.combined_old_sols = s.solution;
+        s.combined_old_sols.scale(3./(2.*tau));
+        s.combined_old_sols.add_scaled(s.solution_m1, -2./tau);
+        // s.combined_old_sols = s.solution_m1;
+        s.combined_old_sols.add_scaled(s.solution_m2, -1./(2.*tau));
+        
+        functions[5] = s.comb_old_u.GetComponent(0);
+        functions[6] = s.comb_old_u.GetComponent(1);
+        
+        // also the solution from previous time steps
+        // is used for the computation of right-hand
+        // side fro pressure term
+        // NOTE: this is the same as above (extrapolation) not needed actually
+        s.combined_old_sols.reset();
+        s.combined_old_sols = s.solution_m1;
+        s.combined_old_sols.scale(2.);
+        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+        functions[7] = s.comb_old_u.GetComponent(0);
+        functions[8] = s.comb_old_u.GetComponent(1);
       }
     }
   }
-  // finite element functions for the residual-based VMS method. In 
-  // the first case the velocity in the test is treated by 
-  // extrapolation
-  if(db["disctype"].is("residual_based_vms"))
-  {
-    ErrThrow("not tested ");
-    double tau = time_stepping_scheme.get_step_length();
-    if(db["time_discretization"].is("backward_euler") 
-       || (time_stepping_scheme.pre_stage_bdf))
-    {
-      // for the residual in the nonlinear term
-      // constant or linear extrapolation of the solution
-      // is used
-      s.extrapolate_sol.reset();
-      s.extrapolate_sol = s.solution_m1;
-      functions.resize(9);
-      functions[2] = s.extrapolate_u.GetComponent(0);
-      functions[3] = s.extrapolate_u.GetComponent(1);
-      functions[4] = &s.p_old;
-      
-      //For the residual based vms scheme fill this
-      //with the time derivative which is used in the residual 
-      //computation 
-      s.combined_old_sols.reset();
-      s.combined_old_sols = s.solution;
-      s.combined_old_sols.add_scaled(s.solution_m1, -1.);
-      s.combined_old_sols.scale(1./tau);
-      
-      functions[5] = s.comb_old_u.GetComponent(0);
-      functions[6] = s.comb_old_u.GetComponent(1);
-      
-      // also the solution from previous time steps
-      // is used for the computation of right-hand
-      // side fro pressure term
-      s.combined_old_sols.reset();
-      s.combined_old_sols = s.solution_m1;
-      functions[7] = s.comb_old_u.GetComponent(0);
-      functions[8] = s.comb_old_u.GetComponent(1);
-    }
-    // the first time step is treated by the backward Euler scheme
-    if(db["time_discretization"].is("bdf_two") 
-       && !(time_stepping_scheme.pre_stage_bdf))
-    {
-      // BDF2 consider the linear extrapolation of the 
-      // test function "u"
-      functions.resize(9);
-      s.extrapolate_sol.reset();
-      s.extrapolate_sol = s.solution_m1;
-      s.extrapolate_sol.scale(2.);
-      s.extrapolate_sol.add_scaled(s.solution_m2, -0.1);
-      
-      functions[2] = s.extrapolate_u.GetComponent(0);
-      functions[3] = s.extrapolate_u.GetComponent(1);
-      functions[4] = &s.p_old;
-      
-      //For the residual based vms scheme fill this
-      //with the time derivative which is used in the residual 
-      //computation 
-      s.combined_old_sols.reset();
-      s.combined_old_sols = s.solution_m1;
-      s.combined_old_sols.scale(1./tau);
-      s.combined_old_sols.add_scaled(s.solution_m2, -.5/tau);
-      
-      functions[5] = s.comb_old_u.GetComponent(0);
-      functions[6] = s.comb_old_u.GetComponent(1);
-      
-      // also the solution from previous time steps
-      // is used for the computation of right-hand
-      // side fro pressure term
-      s.combined_old_sols.reset();
-      s.combined_old_sols = s.solution_m1;
-      s.combined_old_sols.scale(2.);
-      s.combined_old_sols.add_scaled(s.solution_m2, -0.5);
-      functions[7] = s.comb_old_u.GetComponent(0);
-      functions[8] = s.comb_old_u.GetComponent(1);
-    }
-  }
-  
 }
 
 /**************************************************************************** */
@@ -1442,7 +1375,10 @@ bool Time_NSE2D_Merged::imex_scheme(bool print_info)
     // NOTE: only tested for the mixing layer problem for the moment
     if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
       is_rhs_and_mass_matrix_nonlinear = true;
-    TDatabase::ParamDB->DISCTYPE = -2;
+    if(db["disctype"].is("supg"))
+      TDatabase::ParamDB->DISCTYPE = -2;
+    if(db["disctype"].is("residual_based_vms"))
+      TDatabase::ParamDB->DISCTYPE = -101;
     return true;
   }
   else
