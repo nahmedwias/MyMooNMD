@@ -12,7 +12,7 @@
  * name. One can add parameters via some `add` methods and access them via
  * `operator[]` given the name of the desired parameter as a string.
  * 
- * Furthermore this class can write all its contents to a output stream (e.g. a
+ * Furthermore this class can write all its contents to an output stream (e.g. a
  * file stream) and also read from an input stream, see methods `read` and 
  * `write` for a description of the format.
  * 
@@ -21,9 +21,8 @@
  * 
  * To see all stored Parameters call `ParameterDatabase::info()`.
  * 
- * Additionally to any local ParameterDatabase there is a global one which is
- * accessible from anywhere in ParMooN (if this header is included). It is 
- * called `parmoon_db`.
+ * Furthermore, it is possible to store additional parameter databases. This 
+ * can be nested up to an arbitrary order.
  */
 class ParameterDatabase
 {
@@ -87,11 +86,34 @@ class ParameterDatabase
     template <typename T>
     void add(std::string name, T value, std::string description);
     
+    /// @brief construct and add a vector-valued parameter without given range.
+    ///
+    /// T can be bool, int, size_t, double, or std::string.
+    template <typename T>
+    void add(std::string name, std::vector<T> value, std::string description);
+    
+    /// @brief construct and add a vector-valued parameter without given range.
+    ///
+    /// T can be bool, int, size_t, double, or std::string.
+    /// This exists only for convenience, because without it often template 
+    /// argument deduction/substitution fails.
+    template <typename T>
+    void add(std::string name, std::initializer_list<T> value, 
+             std::string description);
+    
     /// @brief construct and add one parameter with a given interval as range
     ///
     /// T can be int, size_t, or double. The range is `[min, max]`.
     template <typename T>
     void add(std::string name, T value, std::string description, T min, T max);
+    
+    /// @brief construct and add one vector-valued parameter with a given 
+    /// interval as range.
+    ///
+    /// T can be int, size_t, or double. The range is `[min, max]`.
+    template <typename T>
+    void add(std::string name, std::vector<T> value, std::string description, 
+             T min, T max);
     
     /// @brief construct and add one parameter with a given set as range
     ///
@@ -100,8 +122,18 @@ class ParameterDatabase
     void add(std::string name, T value, std::string description, 
              std::set<T> range);
     
-    /// @brief add an already existing parameter
+    /// @brief construct and add one vector-valued parameter with a given set 
+    /// as range.
+    ///
+    /// T can be bool, int, size_t, or string.
+    template <typename T>
+    void add(std::string name, std::vector<T> value, std::string description, 
+             std::set<T> range);
+    
+    /// @brief add a parameter (move)
     void add(Parameter&& p);
+    /// @brief add a parameter (copy)
+    void add(const Parameter & p);
     
     /// @brief return parameter with a given name
     const Parameter& operator[](std::string parameter_name) const;
@@ -118,8 +150,19 @@ class ParameterDatabase
     
     /// @brief find out if a parameter with a given name exists in this database
     /// 
+    /// @note This does not search for such a parameter in nested databases.
     /// better name? one would write e.g.: if(db.contains("param_name"))
     bool contains(std::string name) const;
+    
+    /// @brief add a nested parameter database
+    void add_nested_database(ParameterDatabase db);
+    
+    /// @brief return additional parameter database with a given name.
+    const ParameterDatabase& get_nested_database(std::string name) const;
+    ParameterDatabase& get_nested_database(std::string name);
+    
+    /// @brief get the number of nested databases in this database
+    size_t get_n_nested_databases() const;
     
     /// @brief write database to a stream, which can be read again
     ///
@@ -131,9 +174,16 @@ class ParameterDatabase
     /// - true, if you want the parameters, their description (documentation), 
     ///   and range.
     ///
-    /// Additionally to the above the date, the database name, some hg revision 
+    /// Additionally to the above, the date, the database name, some hg revision 
     /// information and the host name is printed.
+    ///
+    /// Nested databases are printed at the end. This means that nesting with 
+    /// two or more levels is flattened as if all nested datases were stored
+    /// directly in this one. This is where read-write will produce different 
+    /// results.
     void write(std::ostream& stream, bool verbose = false) const;
+    /// @brief convenience function which calls write(std::ostream&, bool)
+    void write(std::string filename, bool verbose = false) const;
     
     /// @brief read parameters from a stream
     ///
@@ -157,7 +207,8 @@ class ParameterDatabase
     /// '[_some_name_]' and the second (or the end of the stream respectively).
     /// That means any parameter before the first '[_some_name_]' is ignored!
     /// If no name is found at all, then a default name is given and all lines 
-    /// are considered to be read.
+    /// are considered to be read. In case there are more than one database, 
+    /// all remaining ones will be stored as nested databases.
     ///
     /// Each parameter must be on one line. Empty lines and lines without a 
     /// colon (':') are ignored. Parameters must not have spaces in their names.
@@ -165,19 +216,27 @@ class ParameterDatabase
     ///     parameter_name: value
     ///     parameter_name: value [ range_min, range_max ]
     ///     parameter_name: value { range_1, range_2, range_3 }
+    ///     parameter_name: (v1, v2, v3)
+    ///     parameter_name: (v1, v2, v3) [ range_min, range_max ]
+    ///     parameter_name: (v1, v2, v3) { range_1, range_2, range_3 }
     ///
     /// There must be a colon (':') after the name. For booleans the value can 
-    /// be 'true' or 'false'.
+    /// be 'true' or 'false'. The vectors (indicated by '(' and ')') are 
+    /// translated to std::vector, so can have arbitrary length.
     ///
     /// All parameters can have a range. That means the parameter will never
     /// be outside some specified values (e.g. an interval or some set of 
-    /// values). Ranges for boolean parameters should be determined using braces 
-    /// (e.g. '{true}' or '{ true, false }'). For parameters of type int or 
-    /// size_t either braces ('{}') or brackets ('[]') are ok, one indicating a
-    /// set of individual entries and the other an interval. For double 
-    /// parameters only brackets (e.g. '[-2.5, 5.7]') are possible, indicating
-    /// an interval. There has to be a space (' ') between the value and the 
-    /// range.
+    /// values). Ranges for boolean and string parameters should be determined 
+    /// using braces  (e.g. '{true}' or '{ true, false }'). For parameters of 
+    /// type int or size_t either braces ('{}') or brackets ('[]') are ok, one
+    /// indicating a set of individual entries and the other an interval. For 
+    /// double parameters only brackets (e.g. '[-2.5, 5.7]') are possible, 
+    /// indicating an interval. There has to be a space (' ') between the value
+    /// and the range. For vector valued parameters each entry must be in the 
+    /// specified range.
+    ///
+    /// A parameter object is always in a consistent state, meaning that the
+    /// value(s) are always within the specified range.
     ///
     /// It is possible to read documentation for each parameter which will then
     /// become its Parameter::description. All lines directly before the line 
@@ -187,19 +246,17 @@ class ParameterDatabase
     /// Parameters in your input stream, but don't want that to be read, use 
     /// two '#' instead of just one. This is how the default documentation in
     /// ParMooN can be kept inside the Parameter objects.
-    ///
-    /// If the input stream `is` is read until the end (this happens if there is
-    /// no second name found), the `operator bool()` on `is` will return false.
-    /// If it does return true, another database name has been found and a call
-    /// to `std::getline(is, line)` will return a line such as 
-    /// '[name_of_another_database_]'.
     void read(std::istream& is);
+    /// @brief convenience function which calls read(std::istream&)
+    void read(std::string filename);
     
     /// @brief merge another database into this one
     ///
     /// Parameters which exist in this one get the values from the other
     /// database. All parameters in `other` which do not exist in this database,
     /// are copied into this one only if `create_new_parameters` is true.
+    /// Nested databases are copied into this one. If a nested database with the
+    /// same name already exists, 'merge' is called.
     void merge(const ParameterDatabase &other,
                bool create_new_parameters = true);
     
@@ -232,6 +289,20 @@ class ParameterDatabase
     /// @brief the set of all parameters stored in this parameter database
     std::list<Parameter> parameters;
     
+    /// @brief additional parameter databases (identified by their unique name)
+    std::list<ParameterDatabase> databases;
+    
+    /// @brief a helper function which is called by the other 'write' method.
+    /// 
+    /// This allows for a simpler implementation of nested database (where root
+    /// is false).
+    void write(std::ostream& stream, bool verbose, bool root) const;
+    
+    /// @brief a helper function which is called by the other 'read' method.
+    /// 
+    /// This allows for a simpler implementation of nested database (where root
+    /// is false).
+    void read(std::istream& is, bool root);
 };
 
 #endif // __PARAMETERDATABASE__

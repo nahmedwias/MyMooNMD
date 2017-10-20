@@ -44,7 +44,11 @@ void TTetGenMeshLoader::GenerateMesh()
     plc = true;
     // load the .smesh file 
     // convert std::string to char* b/c load_poly(char*)
+#ifdef __TETGEN_14X__
     meshTetGenIn.load_poly((char*)rawname.c_str());
+#else
+    ErrThrow("missing tetgen library, unable to generate a mesh ");
+#endif
     this->Tetgen();
   }
   else
@@ -137,8 +141,8 @@ void TTetGenMeshLoader::Tetgen()
     ErrThrow("parse_commandline failed !");    
   }
 #else
-  Output::print(" ** WARNING: apparently you are using an old version of Tetgen ** ");
-  tetrahedralize((char*) options.c_str(), &meshTetGenIn,&meshTetGenOut);
+  ErrThrow("missing tetgen library, unable to generate a mesh");
+  //tetrahedralize((char*) options.c_str(), &meshTetGenIn,&meshTetGenOut);
 #endif
 
   Output::print(" -- TTetGenMeshLoader::TetGen() completed --");

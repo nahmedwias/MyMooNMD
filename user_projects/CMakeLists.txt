@@ -22,6 +22,8 @@
 # where 'X' is the build type, e.g. SEQUENTIAL.
 ####################################################################################################
 
+set(parmoon_tests ${parmoon_tests} PARENT_SCOPE)
+
 # Here begins the code which enables usage of our project specific Coupled CDR stuff.
 # Clemens Bartsch, 2015/10/27
 
@@ -88,4 +90,3 @@ add_test(grid_transfer_tool ParMooN_test_grid_transfer)
 list(APPEND parmoon_project_tests ParMooN_test_grid_transfer)
 
 add_custom_target(project_check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure DEPENDS ${parmoon_project_tests})
-

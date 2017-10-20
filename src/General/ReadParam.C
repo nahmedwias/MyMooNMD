@@ -47,10 +47,8 @@ int TDomain::ReadParam(char *ParamFile)
   // if the max_line_length is too short, the program simply hangs
   size_t max_line_length = 1000;
   char line[max_line_length], *aux_char;
-  int N_Param = 0, flag[7];
+  int N_Param = 0;
   std::ifstream dat(ParamFile);
-
-  memset(flag,0,7*SizeOfInt);
 
   if (!dat)
   {
@@ -303,8 +301,18 @@ int TDomain::ReadParam(char *ParamFile)
           dat >> TDatabase::ParamDB->equal_order_stab_weight_PkPk;
           N_Param++;
       }
+//      if (!strcmp(line, "PkPk_stab:"))
+//      {
+//          dat >> TDatabase::ParamDB->PkPk_stab;
+//          N_Param++;
+//      }
       
-      
+      if (!strcmp(line, "grad_div_stab_weight:"))
+      {
+          dat >> TDatabase::ParamDB->grad_div_stab_weight;
+          N_Param++;
+      }
+
     if (!strcmp(line, "USE_ISOPARAMETRIC:"))
     {
       dat >> TDatabase::ParamDB->USE_ISOPARAMETRIC;
@@ -2582,6 +2590,17 @@ int TDomain::ReadParam(char *ParamFile)
                     TDatabase::ParamDB->nitsche_penalty.end(), 0.);
       }
       
+      if (!strcmp(line, "s1:"))
+      {
+          dat >> TDatabase::ParamDB->s1;
+          N_Param++;
+      }
+      
+      if (!strcmp(line, "s2:"))
+      {
+          dat >> TDatabase::ParamDB->s2;
+          N_Param++;
+      }
       if (!strcmp(line, "nitsche_boundary_id:")) {
           for (int ib=0; ib< TDatabase::ParamDB->n_nitsche_boundary; ib++) {
               dat >> TDatabase::ParamDB->nitsche_boundary_id[ib];

@@ -106,7 +106,7 @@ void Mesh::readFromFile(std::string filename)
     sscanf(line.c_str(),"%d",&dimension);
   else
     ifile >> dimension; 
-  Output::print("Read dimension: ",dimension);
+  Output::print<4>("Read dimension: ",dimension);
 
   // read nodes
   unsigned int numberOfNodes;
@@ -115,7 +115,7 @@ void Mesh::readFromFile(std::string filename)
     stripSpace(line);     
   } while (line.find("Vertices")==std::string::npos);
   ifile >> numberOfNodes;
-  Output::print("Read n of nodes: ",numberOfNodes);
+  Output::print<4>("Read n of nodes: ",numberOfNodes);
 
   vertex.resize(numberOfNodes);  
   for (unsigned int i=0; i<numberOfNodes; i++) {

@@ -19,11 +19,11 @@ void analytic_function(double x, double y, double z, double * values)
 
 int main(int argc, char **argv)
 {
-	#ifdef _MPI
+#ifdef _MPI
 	  MPI_Init(&argc, &argv);
-	  int my_rank, size;
-	  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-	  MPI_Comm_size(MPI_COMM_WORLD, &size);
+	int my_rank, size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
     //  declaration of old databases (unfortunately still needed in ParMooN)
   TDatabase Database;
@@ -84,6 +84,7 @@ int main(int argc, char **argv)
 
   // create second vector, read into it
   BlockVector v2(fe_space.GetN_DegreesOfFreedom());
+    ////// Output::print(v2);
   v2.read_from_stream(out_in_stream);
 
   // substract first vector (difference should be zero now)

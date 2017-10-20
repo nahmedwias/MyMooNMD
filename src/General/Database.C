@@ -400,10 +400,12 @@ void TDatabase::SetDefaultParameters()
   ParamDB->EFFECTIVE_VISCOSITY = 1;
   ParamDB->PERMEABILITY = 1;
     
-  ParamDB->equal_order_stab_weight_PkPk= 0;
-      ParamDB->equal_order_stab_weight_P1P1= 0;// wird noch in Brinkman2d benutzt --> ändern
-      ParamDB->equal_order_stab_weight_P2P2= 0;// wird noch in Brinkman2d benutzt --> ändern
-    
+  ParamDB->PkPk_stab = false;
+  ParamDB->equal_order_stab_weight_PkPk = 0;
+  
+  ParamDB->GradDiv_stab = false;
+  ParamDB->grad_div_stab_weight = 0;
+   
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
   ParamDB->VMM_COARSE_LEVEL = 4711;
@@ -1091,12 +1093,14 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("WEAK_BC_SIGMA: ", ParamDB->WEAK_BC_SIGMA);
   printToFile("WEAK_BC: ", ParamDB->WEAK_BC);
     
-  printToFile("EFFECTIVE-VISCOSITY:" ,ParamDB->EFFECTIVE_VISCOSITY);
-  printToFile("Viscosity:", ParamDB->VISCOSITY);
-  printToFile("PERMEABILITY:", ParamDB->PERMEABILITY);
+  printToFile("EFFECTIVE-VISCOSITY: " ,ParamDB->EFFECTIVE_VISCOSITY);
+  printToFile("Viscosity: ", ParamDB->VISCOSITY);
+  printToFile("PERMEABILITY: ", ParamDB->PERMEABILITY);
     
-  printToFile("equal_order_stab_weight_PkPk:", ParamDB->equal_order_stab_weight_PkPk); // wird noch in Brinkman2d benutzt --> ändern
-
+  printToFile("GradDiv_stab: ", ParamDB->GradDiv_stab); 
+  printToFile("grad_div_stab_weight: ", ParamDB->grad_div_stab_weight); 
+  printToFile("PkPk_stab: ", ParamDB->PkPk_stab); 
+  printToFile("equal_order_stab_weight_PkPk: ", ParamDB->equal_order_stab_weight_PkPk); 
     
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);

@@ -26,6 +26,7 @@ constexpr const char * hg_branch = "@PARMOON_HG_BRANCH@";
 constexpr const char * hg_local_changes = "@PARMOON_LOCAL_CHANGES@";
 constexpr const char * parallel_type = "@PARMOON_PARALLEL_TYPE@";
 constexpr const char * build_type = "@CMAKE_BUILD_TYPE@";
+constexpr const char * source_directory = "@CMAKE_SOURCE_DIR@";
 //@}
 }
 

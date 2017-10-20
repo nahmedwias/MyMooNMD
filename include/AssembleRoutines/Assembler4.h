@@ -18,6 +18,7 @@
 #include <BlockFEMatrix.h>
 #include <Example2D.h>
 #include "LocalAssembling2D.h"
+#include <memory>
 
 #ifdef __3D__
 #include <Aux2D3D.h>
@@ -60,7 +61,7 @@ public:
     /// @brief specify sizes of the linear system
     int n_square_matrices;
     int n_rectangular_matrices;
-    int n_rhs_blocks;
+    size_t n_rhs_blocks;
     int n_all_matrices;
     
     int maximum_number_base_function;
@@ -79,7 +80,7 @@ public:
                     std::vector <const TFESpace2D*>& fespaces,
                     std::vector <const TFESpace2D*>& ferhs,
                     const Example2D& example,
-		    std::vector< LocalAssembling2D* > la_list,
+		    std::vector< std::shared_ptr<LocalAssembling2D> > la_list,
                     int AssemblePhaseID=-1
                     );
 
@@ -92,7 +93,7 @@ public:
     **/
     void assemble_local_system(std::vector <const TFESpace2D*>& fespaces,
                                int i, double ***LocMatrices,double **LocRhs,
-			       LocalAssembling2D* la);
+			       std::shared_ptr<LocalAssembling2D> la);
 
     /** 
 	@brief assemble the boundary conditions

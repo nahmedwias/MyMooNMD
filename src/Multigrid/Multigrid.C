@@ -146,8 +146,6 @@ void Multigrid::set_finest_sol(const BlockVector& bv)
 
 void Multigrid::set_finest_rhs(const BlockVector& bv)
 {
-    Output::print("HIER", bv.length());
-    
   levels_.back().rhs_ = bv;
 }
 
@@ -177,9 +175,20 @@ void Multigrid::cycle()
 
 void Multigrid::update()
 {
-  for( auto lvl : levels_)
+  const auto& coarsest = levels_.front();
+  for( auto& lvl : levels_)
   {
+    if(&lvl == &coarsest) //measure time spent on coarsest grid
+    {
+      coarse_grid_timer.start();
+    }
+
     lvl.update_smoother();
+
+    if(&lvl == &coarsest) //stop measure time spent on coarsest grid
+    {
+      coarse_grid_timer.stop();
+    }
   }
 }
 

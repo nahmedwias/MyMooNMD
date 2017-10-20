@@ -301,11 +301,16 @@ struct TParaDB
   double PERMEABILITY;
     
   //======================================================================
-  /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
+  /** Parameters for residual-based equal-order stabilization of Brinkman problems                  */
   //======================================================================
-    double equal_order_stab_weight_PkPk;
-    double equal_order_stab_weight_P1P1; // wird noch in Brinkman2d benutzt --> ändern
-    double equal_order_stab_weight_P2P2; // wird noch in Brinkman2d benutzt --> ändern
+  bool PkPk_stab;
+  double equal_order_stab_weight_PkPk;
+ 
+  //======================================================================
+  /** Parameters for Grad-Div stabilization of Brinkman problems                  */
+  //======================================================================
+  bool GradDiv_stab;
+  double grad_div_stab_weight;
     
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */

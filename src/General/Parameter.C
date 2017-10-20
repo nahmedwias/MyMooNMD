@@ -6,7 +6,6 @@
 #include <iterator>
 #include <vector>
 #include <MooNMD_Io.h>
-#include <vector>
 
 /// @brief Check that name is allowed (no spaces or dots), it returns the name
 /// without any changes, or throws
@@ -36,6 +35,16 @@ template<> bool check_type<double>(Parameter::types t)
 { return Parameter::types::_double == t; }
 template<> bool check_type<std::string>(Parameter::types t)
 { return Parameter::types::_string == t; }
+template<> bool check_type<std::vector<bool>>(Parameter::types t)
+{ return Parameter::types::_bool_vec == t; }
+template<> bool check_type<std::vector<int>>(Parameter::types t)
+{ return Parameter::types::_int_vec == t; }
+template<> bool check_type<std::vector<size_t>>(Parameter::types t)
+{ return Parameter::types::_size_t_vec == t; }
+template<> bool check_type<std::vector<double>>(Parameter::types t)
+{ return Parameter::types::_double_vec == t; }
+template<> bool check_type<std::vector<std::string>>(Parameter::types t)
+{ return Parameter::types::_string_vec == t; }
 
 template <typename T>
 std::string convert_to_string(T x)
@@ -43,8 +52,33 @@ std::string convert_to_string(T x)
   // std::to_string does not work for std::string and more importantly for 
   // T=double it truncates to 6 digits, which is not what we want here
   std::ostringstream os;
-  os << std::setprecision(std::numeric_limits< double >::digits10+1) << x;
-  return os.str();
+  os << std::setprecision(std::numeric_limits< double >::digits10+1) 
+     << std::boolalpha << std::showpoint << x;
+  std::string s = os.str();
+  // remove trainling zeros (behind a decimal point). We leave one zero if it 
+  // is directly after the decimal point (to yield e.g. "1.0").
+  std::size_t found = s.find_last_not_of(std::string("0"));
+  auto npos = std::string::npos;
+  bool has_decimal_point = (s.find_last_of(std::string(".")) != npos);
+  if(has_decimal_point && found != npos)
+  {
+    if(s[found] == '.')
+      s.erase(found + 2);
+    else
+      s.erase(found + 1);
+  }
+  return s;
+}
+template <typename T>
+std::string convert_to_string(std::vector<T> x)
+{
+  if(x.empty())
+    return std::string("");
+  std::string ret("(");
+  for(auto i = 0ul, n = x.size(); i < n-1; i++)
+    ret += convert_to_string(x[i]) + ", ";
+  ret += convert_to_string(x.back()) + ")";
+  return ret;
 }
 
 template <typename T>
@@ -55,13 +89,19 @@ bool check_value_in_range(T new_value, const std::set<T>& range)
 
 std::string type_as_string(const Parameter::types t)
 {
+  typedef Parameter::types tps; // just for shorter code
   switch(t)
   {
-    case Parameter::types::_bool:   return std::string("bool");   break;
-    case Parameter::types::_int:    return std::string("int");    break;
-    case Parameter::types::_size_t: return std::string("size_t"); break;
-    case Parameter::types::_double: return std::string("double"); break;
-    case Parameter::types::_string: return std::string("string"); break;
+    case tps::_bool:   return std::string("bool");   break;
+    case tps::_int:    return std::string("int");    break;
+    case tps::_size_t: return std::string("size_t"); break;
+    case tps::_double: return std::string("double"); break;
+    case tps::_string: return std::string("string"); break;
+    case tps::_bool_vec:   return std::string("bool vector");   break;
+    case tps::_int_vec:    return std::string("int vector");    break;
+    case tps::_size_t_vec: return std::string("size_t vector"); break;
+    case tps::_double_vec: return std::string("double vector"); break;
+    case tps::_string_vec: return std::string("string vector"); break;
     default: return std::string("unknown Parameter type"); break;
   }
 }
@@ -102,10 +142,90 @@ Parameter::Parameter(std::string key, std::string new_value,
 {
 }
 
+Parameter::Parameter(std::string key, std::vector<bool> new_values,
+                     std::string description)
+ : type(Parameter::types::_bool_vec), bool_vector(new_values), name(key),
+   description(description)
+{
+}
+
+Parameter::Parameter(std::string key, std::vector<int> new_values,
+                     std::string description)
+ : type(Parameter::types::_int_vec), int_vector(new_values), name(key),
+   description(description)
+{
+  this->int_range.insert(new_values.begin(), new_values.end());
+}
+
+Parameter::Parameter(std::string key, std::vector<size_t> new_values,
+                     std::string description)
+ : type(Parameter::types::_size_t_vec), unsigned_vector(new_values), name(key),
+   description(description)
+{
+  this->unsigned_range.insert(new_values.begin(), new_values.end());
+}
+Parameter::Parameter(std::string key, 
+                     std::initializer_list<unsigned int> new_values,
+                     std::string description)
+ : type(Parameter::types::_size_t_vec), name(key), description(description)
+   
+{
+  unsigned_vector.reserve(new_values.size());
+  for(auto i : new_values)
+    unsigned_vector.push_back(i);
+  this->unsigned_range.insert(new_values.begin(), new_values.end());
+}
+
+Parameter::Parameter(std::string key, std::vector<double> new_values,
+                     std::string description)
+ : type(Parameter::types::_double_vec), double_vector(new_values), name(key),
+   description(description)
+{
+  auto result = std::minmax_element(new_values.begin(), new_values.end());
+  this->double_min = *result.first;
+  this->double_max = *result.second;
+}
+
+Parameter::Parameter(std::string key, std::vector<std::string> new_values,
+                     std::string description)
+ : type(Parameter::types::_string_vec), string_vector(new_values), name(key),
+   description(description), not_bool_value_allowed(true)
+{
+  this->string_range.insert(new_values.begin(), new_values.end());
+}
+
+Parameter::Parameter(std::string name, std::initializer_list<bool> value,
+                    std::string description)
+ : Parameter(name, std::vector<bool>(value), description)
+{}
+    
+Parameter::Parameter(std::string name, std::initializer_list<int> value,
+                     std::string description)
+ : Parameter(name, std::vector<int>(value), description)
+{}
+    
+Parameter::Parameter(std::string name, std::initializer_list<size_t> value,
+                     std::string description)
+ : Parameter(name, std::vector<size_t>(value), description)
+{}
+    
+Parameter::Parameter(std::string name, std::initializer_list<double> value,
+                     std::string description)
+ : Parameter(name, std::vector<double>(value), description)
+{}
+    
+Parameter::Parameter(std::string name, std::initializer_list<std::string> value,
+                     std::string description)
+ : Parameter(name, std::vector<std::string>(value), description)
+{}
+
 Parameter::Parameter(const Parameter& p)
  : type(p.type), bool_value(p.bool_value), int_value(p.int_value),
    unsigned_value(p.unsigned_value), double_value(p.double_value),
-   string_value(p.string_value), access_count(0), change_count(0), name(p.name),
+   string_value(p.string_value), bool_vector(p.bool_vector),
+   int_vector(p.int_vector), unsigned_vector(p.unsigned_vector),
+   double_vector(p.double_vector), string_vector(p.string_vector),
+   access_count(0), change_count(0), name(p.name),
    description(p.description), range_is_an_interval(p.range_is_an_interval),
    not_bool_value_allowed(p.not_bool_value_allowed), int_range(p.int_range),
    int_min(p.int_min), int_max(p.int_max), unsigned_range(p.unsigned_range), 
@@ -115,7 +235,6 @@ Parameter::Parameter(const Parameter& p)
 {
   Output::print<4>("Parameter(const Parameter& p)\tname: ", this->name);
 }
-
 
 /* ************************************************************************** */
 // change min and max to include range
@@ -361,6 +480,7 @@ std::string Parameter::range_as_string() const
   switch(this->type)
   {
     case types::_bool:
+    case types::_bool_vec:
       if(this->not_bool_value_allowed) // range consists of true and false
         return std::string("{ true, false }");
       else if(this->bool_value) // range consists only of the current value
@@ -369,6 +489,7 @@ std::string Parameter::range_as_string() const
         return std::string("{ false }");
       break;
     case types::_int: // almost equal to the size_t case
+    case types::_int_vec:
     {
       if(this->range_is_an_interval)
       {
@@ -389,6 +510,7 @@ std::string Parameter::range_as_string() const
       break;
     }
     case types::_size_t: // almost equal to the int case
+    case types::_size_t_vec:
     {
       if(range_is_an_interval)
       {
@@ -409,10 +531,12 @@ std::string Parameter::range_as_string() const
       break;
     }
     case types::_double:
+    case types::_double_vec:
       ret += "[ " + convert_to_string(this->double_min) + ", ";
       ret += convert_to_string(this->double_max) + " ]";
       break;
     case types::_string:
+    case types::_string_vec:
     {
       auto it = this->string_range.begin();
       ret += "{ " + *it;
@@ -486,6 +610,51 @@ std::string Parameter::get<std::string>() const
   access_count++;
   return this->string_value;
 }
+template<>
+std::vector<bool> Parameter::get<std::vector<bool>>() const
+{
+  if(!check_type<std::vector<bool>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _bool_vec");
+    access_count++;
+  return this->bool_vector;
+}
+template<>
+std::vector<int> Parameter::get<std::vector<int>>() const
+{
+  if(!check_type<std::vector<int>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _int_vec");
+  access_count++;
+  return this->int_vector;
+}
+template<>
+std::vector<size_t> Parameter::get<std::vector<size_t>>() const
+{
+  if(!check_type<std::vector<size_t>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _size_t_vec");
+  access_count++;
+  return this->unsigned_vector;
+}
+template<>
+std::vector<double> Parameter::get<std::vector<double>>() const
+{
+  if(!check_type<std::vector<double>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _double_vec");
+  access_count++;
+  return this->double_vector;
+}
+template<>
+std::vector<std::string> Parameter::get<std::vector<std::string>>() const
+{
+  if(!check_type<std::vector<std::string>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _string_vec");
+  access_count++;
+  return this->string_vector;
+}
 
 /* ************************************************************************** */
 template <typename T>
@@ -515,7 +684,11 @@ template bool Parameter::is(double) const;
 template bool Parameter::is(std::string) const;
 template<> bool Parameter::is(const char* v) const
 { return this->is<std::string>(std::string(v)); }
-
+template bool Parameter::is(std::vector<bool>) const;
+template bool Parameter::is(std::vector<int>) const;
+template bool Parameter::is(std::vector<size_t>) const;
+template bool Parameter::is(std::vector<double>) const;
+template bool Parameter::is(std::vector<std::string>) const;
 
 /* ************************************************************************** */
 Parameter::operator bool() const
@@ -554,6 +727,26 @@ Parameter::operator const char*() const
   access_count++;
   return this->string_value.c_str();
 }
+Parameter::operator std::vector<bool>() const
+{
+  return this->get<std::vector<bool>>();
+}
+Parameter::operator std::vector<int>() const
+{
+  return this->get<std::vector<int>>();
+}
+Parameter::operator std::vector<size_t>() const
+{
+  return this->get<std::vector<size_t>>();
+}
+Parameter::operator std::vector<double>() const
+{
+  return this->get<std::vector<double>>();
+}
+Parameter::operator std::vector<std::string>() const
+{
+  return this->get<std::vector<std::string>>();
+}
 
 /* ************************************************************************** */
 std::string Parameter::value_as_string() const
@@ -561,7 +754,7 @@ std::string Parameter::value_as_string() const
   switch(this->type)
   {
     case Parameter::types::_bool:
-      return this->bool_value ? "true" : "false";
+      return convert_to_string(this->bool_value);
       break;
     case Parameter::types::_int:
       return convert_to_string(this->int_value);
@@ -578,6 +771,21 @@ std::string Parameter::value_as_string() const
       break;
     case Parameter::types::_string:
       return this->string_value;
+      break;
+    case Parameter::types::_bool_vec:
+      return convert_to_string(this->bool_vector);
+      break;
+    case Parameter::types::_int_vec:
+      return convert_to_string(this->int_vector);
+      break;
+    case Parameter::types::_size_t_vec:
+      return convert_to_string(this->unsigned_vector);
+      break;
+    case Parameter::types::_double_vec:
+      return convert_to_string(this->double_vector);
+      break;
+    case Parameter::types::_string_vec:
+      return convert_to_string(this->string_vector);
       break;
     default:
       ErrThrow("unknown type: ", type_as_string(this->type));
@@ -668,52 +876,83 @@ template<> void Parameter::get_range(std::set<std::string>& range) const
 }
 
 /* ************************************************************************** */
-template<> void Parameter::set(bool new_value)
+template<> void Parameter::set(bool new_value, bool check_range)
 {
   if(!check_type<bool>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != bool");
   // check if new_value is in the specified parameter range
-  if(!not_bool_value_allowed && new_value != this->bool_value)
+  if(check_range && !not_bool_value_allowed && new_value != this->bool_value)
     ErrThrow("new parameter value out of range, Parameter ", this->name);
   
   this->change_count++;
+  if(!this->not_bool_value_allowed && new_value != this->bool_value)
+  {
+    // previously only either 'true' or 'false' was allowed, the 'new_value' is
+    // the other, so the new range is {true,false}.
+    this->not_bool_value_allowed = true;
+  }
   this->bool_value = new_value;
 }
-template<> void Parameter::set(size_t new_value)
+template<> void Parameter::set(size_t new_value, bool check_range)
 {
   if(!check_type<size_t>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != size_t");
-  // check if new_value is in the specified parameter range
-  if(  !this->range_is_an_interval 
-    && !check_value_in_range(new_value, this->unsigned_range))
+  if(check_range)
   {
-    ErrThrow("new parameter value out of range, Parameter ", this->name);
+    // check if new_value is in the specified parameter range
+    if(  !this->range_is_an_interval 
+      && !check_value_in_range(new_value, this->unsigned_range))
+    {
+      ErrThrow("new parameter value out of range, Parameter ", this->name);
+    }
+    else if( this->range_is_an_interval 
+          && (new_value < unsigned_min || new_value > unsigned_max))
+    {
+      ErrThrow("new parameter value out of range, Parameter ", this->name,
+               "The range is the interval ", this->range_as_string());
+    }
   }
-  else if( this->range_is_an_interval 
-        && (new_value < unsigned_min || new_value > unsigned_max))
+  else
   {
-    ErrThrow("new parameter value out of range, Parameter ", this->name,
-             "The range is the interval ", this->range_as_string());
+    if(this->range_is_an_interval)
+    {
+      unsigned_min = std::min(unsigned_min, new_value);
+      unsigned_max = std::max(unsigned_max, new_value);
+    }
+    else
+    {
+      unsigned_range.insert(new_value);
+    }
   }
   
   this->change_count++;
   this->unsigned_value = new_value;
 }
-template<> void Parameter::set(double new_value)
+template<> void Parameter::set(double new_value, bool check_range)
 {
   if(!check_type<double>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != double");
-  // check if new_value is in the specified parameter range
-  if(new_value < this->double_min || new_value > this->double_max)
-    ErrThrow("new parameter value out of range, Parameter ", this->name);
+  if(check_range)
+  {
+    // check if new_value is in the specified parameter range
+    if(new_value < this->double_min || new_value > this->double_max)
+      ErrThrow("new parameter value out of range, Parameter ", this->name,
+               ". The range is ", this->range_as_string(), 
+               ", the new value is ", new_value);
+  }
+  else
+  {
+    double_min = std::min(double_min, new_value);
+    double_max = std::max(double_max, new_value);
+  }
   
   this->change_count++;
   this->double_value = new_value;
 }
-template<> void Parameter::set(int new_value)
+template<> void Parameter::set(int new_value, bool check_range)
 {
   if(!check_type<int>(this->type) && !check_type<size_t>(this->type)
      && !check_type<double>(this->type))
@@ -725,46 +964,238 @@ template<> void Parameter::set(int new_value)
       ErrThrow("Parameter ", this->name, " has the wrong type: ",
                type_as_string(this->type), " != int");
     // setting a positive integer to a size_t parameter
-    this->set<size_t>(new_value);
+    this->set<size_t>(new_value, check_range);
     return;
   }
   if(check_type<double>(this->type))
   {
-    this->set<double>(new_value);
+    this->set<double>(new_value, check_range);
     return;
   }
-  // check if new_value is in the specified parameter range
-  if(  !this->range_is_an_interval 
-    && !check_value_in_range(new_value, this->int_range))
+  if(check_range)
   {
-    ErrThrow("new parameter value out of range, Parameter ", this->name);
+    // check if new_value is in the specified parameter range
+    if(  !this->range_is_an_interval 
+      && !check_value_in_range(new_value, this->int_range))
+    {
+      ErrThrow("new parameter value out of range, Parameter ", this->name);
+    }
+    else if( this->range_is_an_interval 
+          && (new_value < int_min || new_value > int_max))
+    {
+      ErrThrow("new parameter value out of range, Parameter ", this->name,
+               "The range is the interval ", this->range_as_string());
+    }
   }
-  else if( this->range_is_an_interval 
-        && (new_value < int_min || new_value > int_max))
+  else
   {
-    ErrThrow("new parameter value out of range, Parameter ", this->name,
-             "The range is the interval ", this->range_as_string());
+    if(this->range_is_an_interval)
+    {
+      int_min = std::min(int_min, new_value);
+      int_max = std::max(int_max, new_value);
+    }
+    else
+    {
+      int_range.insert(new_value);
+    }
   }
   
   this->change_count++;
   this->int_value = new_value;
 }
-template<> void Parameter::set(std::string new_value)
+template<> void Parameter::set(std::string new_value, bool check_range)
 {
   if(!check_type<std::string>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != std::string");
   
-  // check if new_value is in the specified parameter range
-  if(!check_value_in_range(new_value, this->string_range))
-    ErrThrow("new parameter value out of range, Parameter ", this->name);
+  if(check_range)
+  {
+    // check if new_value is in the specified parameter range
+    if(!check_value_in_range(new_value, this->string_range))
+      ErrThrow("new parameter value out of range, Parameter ", this->name);
+  }
+  else
+  {
+    string_range.insert(new_value);
+  }
   
   this->change_count++;
   this->string_value = new_value;
 }
-template<> void Parameter::set(const char* new_value)
+template<> void Parameter::set(const char* new_value, bool check_range)
 {
-  this->set<std::string>(std::string(new_value));
+  this->set<std::string>(std::string(new_value), check_range);
+}
+template<> void Parameter::set(std::vector<bool> new_values, bool check_range)
+{
+  if(!check_type<std::vector<bool>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != bool");
+  if(new_values.empty())
+    ErrThrow("cannot set empty vector as new values. Name: ", this->name);
+  bool first_entry = new_values[0];
+  // find out if both 'true' and 'false' exist as entries in the new values
+  bool contains_different_elements = 
+    std::all_of(new_values.begin()+1, new_values.end(), 
+                [first_entry](bool i){return i != first_entry;});
+  // check if new_value is in the specified parameter range
+  if(check_range && !not_bool_value_allowed)
+  {
+    // all values previously in this->bool_vector are the same, and this must
+    // be true for the new vector as well.
+    if(contains_different_elements)
+    {
+      ErrThrow("new parameter value out of range, Parameter ", this->name);
+    }
+  }
+  
+  this->change_count++;
+  if(!this->not_bool_value_allowed && contains_different_elements)
+  {
+    // previously only either 'true' or 'false' was allowed, the 'new_value' is
+    // the other, so the new range is {true,false}.
+    this->not_bool_value_allowed = true;
+  }
+  this->bool_vector = new_values;
+}
+template<> void Parameter::set(std::vector<double> new_values, bool check_range)
+{
+  if(!check_type<std::vector<double>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != double");
+  auto result = std::minmax_element(new_values.begin(), new_values.end());
+  if(check_range)
+  {
+    // check if new_value is in the specified parameter range
+    if(*result.first < this->double_min || *result.second > this->double_max)
+      ErrThrow("new parameter value out of range, Parameter ", this->name,
+               ". The range is ", this->range_as_string(), 
+               ", the new value is in an interval [", *result.first, ",", 
+               *result.second, "]");
+  }
+  else
+  {
+    double_min = std::min(double_min, *result.first);
+    double_max = std::max(double_max, *result.second);
+  }
+  
+  this->change_count++;
+  this->double_vector = new_values;
+}
+template<> void Parameter::set(std::vector<int> new_values, bool check_range)
+{
+  if(!check_type<std::vector<int>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _int_vec");
+  if(check_range)
+  {
+    // check if new_value is in the specified parameter range
+    if(this->range_is_an_interval)
+    {
+      auto result = std::minmax_element(new_values.begin(), new_values.end());
+      if(*result.first < this->int_min || *result.second > this->int_max)
+      ErrThrow("new parameter value out of range, Parameter ", this->name,
+               ". The range is ", this->range_as_string(), 
+               ", the new value is in an interval [", *result.first, ",", 
+               *result.second, "]");
+    }
+    else
+    {
+      for(int i : new_values)
+      {
+        if(!check_value_in_range(i, this->int_range))
+          ErrThrow("new parameter value out of range, Parameter ", this->name,
+                   "The range is the interval ", this->range_as_string(), 
+                   ". One new value is ", i);
+      }
+    }
+  }
+  else
+  {
+    if(this->range_is_an_interval)
+    {
+      auto result = std::minmax_element(new_values.begin(), new_values.end());
+      int_min = std::min(int_min, *result.first);
+      int_max = std::max(int_max, *result.second);
+    }
+    else
+    {
+      int_range.insert(new_values.begin(), new_values.end());
+    }
+  }
+  
+  this->change_count++;
+  this->int_vector = new_values;
+}
+template<> void Parameter::set(std::vector<size_t> new_values, bool check_range)
+{
+  if(!check_type<std::vector<size_t>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _size_t_vec");
+  if(check_range)
+  {
+    // check if new_value is in the specified parameter range
+    if(this->range_is_an_interval)
+    {
+      auto result = std::minmax_element(new_values.begin(), new_values.end());
+      if(*result.first < this->unsigned_min 
+        || *result.second > this->unsigned_max)
+      ErrThrow("new parameter value out of range, Parameter ", this->name,
+               ". The range is ", this->range_as_string(), 
+               ", the new value is in an interval [", *result.first, ",", 
+               *result.second, "]");
+    }
+    else
+    {
+      for(size_t i : new_values)
+      {
+        if(!check_value_in_range(i, this->unsigned_range))
+          ErrThrow("new parameter value out of range, Parameter ", this->name,
+                   "The range is the interval ", this->range_as_string(), 
+                   ". One new value is ", i);
+      }
+    }
+  }
+  else
+  {
+    if(this->range_is_an_interval)
+    {
+      auto result = std::minmax_element(new_values.begin(), new_values.end());
+      unsigned_min = std::min(unsigned_min, *result.first);
+      unsigned_max = std::max(unsigned_max, *result.second);
+    }
+    else
+    {
+      unsigned_range.insert(new_values.begin(), new_values.end());
+    }
+  }
+  
+  this->change_count++;
+  this->unsigned_vector = new_values;
+}
+template<> void Parameter::set(std::vector<std::string> new_values, bool check_range)
+{
+  if(!check_type<std::vector<std::string>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != std::string");
+  
+  if(check_range)
+  {
+    // check if new_value is in the specified parameter range
+    for(std::string s : new_values)
+    {
+      if(!check_value_in_range(s, this->string_range))
+        ErrThrow("new parameter value out of range, Parameter ", this->name);
+    }
+  }
+  else
+  {
+    string_range.insert(new_values.begin(), new_values.end());
+  }
+  
+  this->change_count++;
+  this->string_vector = new_values;
 }
 
 /* ************************************************************************** */
@@ -798,15 +1229,182 @@ Parameter& Parameter::operator=(const char* new_value)
   this->set<const char*>(new_value);
   return *this;
 }
+Parameter& Parameter::operator=(std::vector<bool> new_value)
+{
+  this->set<std::vector<bool>>(new_value);
+  return *this;
+}
+Parameter& Parameter::operator=(std::vector<int> new_value)
+{
+  this->set<std::vector<int>>(new_value);
+  return *this;
+}
+Parameter& Parameter::operator=(std::vector<size_t> new_value)
+{
+  this->set<std::vector<size_t>>(new_value);
+  return *this;
+}
+Parameter& Parameter::operator=(std::vector<double> new_value)
+{
+  this->set<std::vector<double>>(new_value);
+  return *this;
+}
+Parameter& Parameter::operator=(std::vector<std::string> new_value)
+{
+  this->set<std::vector<std::string>>(new_value);
+  return *this;
+}
+
+/* ************************************************************************** */
+template <> void Parameter::push_back(bool value, bool check_range)
+{
+  if(!check_type<std::vector<bool>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != typename T");
+  if(!this->not_bool_value_allowed && value != this->bool_vector.at(0))
+  {
+    if(check_range)
+    {
+      ErrThrow("Added value not in specified range, Parameter ", this->name);
+    }
+    else
+      this->not_bool_value_allowed = true;
+  }
+  this->change_count++;
+  this->bool_vector.push_back(value);
+}
+template <> void Parameter::push_back(int value, bool check_range)
+{
+  if(!check_type<std::vector<int>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _int_vec");
+  if(!this->range_is_an_interval 
+      && !check_value_in_range(value, this->int_range))
+  {
+    if(check_range)
+    {
+      ErrThrow("Added parameter value out of range, Parameter ", this->name);
+    }
+    else
+    {
+      this->int_range.insert(value);
+    }
+  }
+  else if(this->range_is_an_interval && (value < int_min || value > int_max))
+  {
+    if(check_range)
+    {
+      ErrThrow("Added parameter value out of range, Parameter ", this->name,
+               ". The range is the interval ", this->range_as_string());
+    }
+    else
+    {
+      this->int_min = std::min(this->int_min, value);
+      this->int_max = std::max(this->int_max, value);
+    }
+  }
+  this->change_count++;
+  this->int_vector.push_back(value);
+}
+template <> void Parameter::push_back(size_t value, bool check_range)
+{
+  if(!check_type<std::vector<size_t>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _size_t_vec");
+  if(!this->range_is_an_interval 
+     && !check_value_in_range(value, this->unsigned_range))
+  {
+    if(check_range)
+    {
+      ErrThrow("Added parameter value out of range, Parameter ", this->name);
+    }
+    else
+    {
+      this->unsigned_range.insert(value);
+    }
+  }
+  else if( this->range_is_an_interval 
+        && (value < unsigned_min || value > unsigned_max))
+  {
+    if(check_range)
+    {
+      ErrThrow("Added parameter value out of range, Parameter ", this->name,
+               ". The range is the interval ", this->range_as_string());
+    }
+    else
+    {
+      this->unsigned_min = std::min(this->unsigned_min, value);
+      this->unsigned_max = std::max(this->unsigned_max, value);
+    }
+  }
+  this->change_count++;
+  this->unsigned_vector.push_back(value);
+}
+template <> void Parameter::push_back(unsigned int value, bool check_range)
+{
+  this->push_back((size_t)value, check_range);
+}
+template <> void Parameter::push_back(double value, bool check_range)
+{
+  if(!check_type<std::vector<double>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _double_vec");
+  if(value < double_min || value > double_max)
+  {
+    if(check_range)
+    {
+      ErrThrow("Added parameter value out of range, Parameter ", this->name,
+               ". The range is the interval ", this->range_as_string());
+    }
+    else
+    {
+      this->double_min = std::min(this->double_min, value);
+      this->double_max = std::max(this->double_max, value);
+    }
+  }
+  this->change_count++;
+  this->double_vector.push_back(value);
+}
+template <> void Parameter::push_back(std::string value, bool check_range)
+{
+  if(!check_type<std::vector<std::string>>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != _string_vec");
+  if(!check_value_in_range(value, this->string_range))
+  {
+    if(check_range)
+    {
+      ErrThrow("Added parameter value out of range, Parameter ", this->name,
+               ". The range is the set ", this->range_as_string());
+    }
+    else // adjust range
+    {
+      this->string_range.insert(value);
+    }
+  }
+  this->change_count++;
+  this->string_vector.push_back(value);
+}
 
 /* ************************************************************************** */
 template<> void Parameter::set_range(int min_value, int max_value)
 {
-  if(!check_type<int>(this->type))
+  if(!check_type<int>(this->type) && !check_type<std::vector<int>>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != int");
-  if(this->int_value < min_value || this->int_value > max_value)
-    ErrThrow("current value not in specified range, Parameter ", this->name);
+  if(check_type<int>(this->type))
+  {
+    if(this->int_value < min_value || this->int_value > max_value)
+      ErrThrow("current value not in specified range, Parameter ", this->name);
+  }
+  else // type is _int_vec
+  {
+    auto f = [min_value, max_value](int i)
+             { return i < min_value || i > max_value; };
+    if(std::any_of(this->int_vector.begin(), this->int_vector.end(), f))
+      ErrThrow("Values in the stored vector are not in specified range, "
+               "Parameter", this->name);
+  }
   this->range_is_an_interval = true;
   this->int_min = min_value;
   this->int_max = max_value;
@@ -814,23 +1412,54 @@ template<> void Parameter::set_range(int min_value, int max_value)
 }
 template<> void Parameter::set_range(size_t min_value, size_t max_value)
 {
-  if(!check_type<size_t>(this->type))
+  if(!check_type<size_t>(this->type) 
+    && !check_type<std::vector<size_t>>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != size_t");
-  if(this->unsigned_value < min_value || this->unsigned_value > max_value)
-    ErrThrow("current value not in specified range, Parameter ", this->name);
+  if(check_type<size_t>(this->type))
+  {
+    if(this->unsigned_value < min_value || this->unsigned_value > max_value)
+      ErrThrow("current value not in specified range, Parameter ", this->name);
+  }
+  else // type is _size_t_vec
+  {
+    auto f = [min_value, max_value](size_t i)
+             { return i < min_value || i > max_value; };
+    if(std::any_of(this->unsigned_vector.begin(), this->unsigned_vector.end(), 
+                   f))
+      ErrThrow("Values in the stored vector are not in specified range, "
+               "Parameter", this->name);
+  }
   this->range_is_an_interval = true;
   this->unsigned_min = min_value;
   this->unsigned_max = max_value;
   this->unsigned_range.clear(); // not used
 }
+template<> void Parameter::set_range(unsigned int min_value, 
+                                     unsigned int max_value)
+{
+  this->set_range((size_t)min_value, (size_t)max_value);
+}
 template<> void Parameter::set_range(double min_value, double max_value)
 {
-  if(!check_type<double>(this->type))
+  if(!check_type<double>(this->type) 
+    && !check_type<std::vector<double>>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != double");
-  if(this->double_value < min_value || this->double_value > max_value)
-    ErrThrow("current value not in specified range, Parameter ", this->name);
+  if(check_type<double>(this->type))
+  {
+    if(this->double_value < min_value || this->double_value > max_value)
+      ErrThrow("current value not in specified range, Parameter ", this->name);
+  }
+  else
+  {
+    auto f = [min_value, max_value](double i)
+             { return i < min_value || i > max_value; };
+    if(std::any_of(this->double_vector.begin(), this->double_vector.end(), 
+                   f))
+      ErrThrow("Values in the stored vector are not in specified range, "
+               "Parameter", this->name);
+  }
   this->double_min = min_value;
   this->double_max = max_value;
 }
@@ -849,9 +1478,12 @@ template<> void Parameter::set_range(std::string min_value,
 /* ************************************************************************** */
 template<> void Parameter::set_range(std::set<bool> new_range)
 {
-  if(!check_type<bool>(this->type))
+  if(!check_type<bool>(this->type) 
+    && !check_type<std::vector<bool>>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != bool");
+  if(new_range.empty())
+    ErrThrow("Cannot use empty set as range of a parameter.");
   if(new_range.size() >= 2)
     this->not_bool_value_allowed = true;
   // check if (single element) range covers current value
@@ -868,40 +1500,88 @@ template<> void Parameter::set_range(std::set<bool> new_range)
 }
 template<> void Parameter::set_range(std::set<int> new_range)
 {
-  if(!check_type<int>(this->type))
+  if(!check_type<int>(this->type) && !check_type<std::vector<int>>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != int");
+  if(new_range.empty())
+    ErrThrow("Cannot use empty set as range of a parameter.");
   // check if current value is in new range
-  auto it = std::find(new_range.begin(), new_range.end(), this->int_value);
-  if(it == new_range.end())
-    ErrThrow("setting a range which does not cover the current value, "
-             "Parameter ", this->name);
+  if(check_type<int>(this->type))
+  {
+    auto it = std::find(new_range.begin(), new_range.end(), this->int_value);
+    if(it == new_range.end())
+      ErrThrow("setting a range which does not cover the current value, "
+               "Parameter ", this->name);
+  }
+  else // type is _int_vec
+  {
+    for(auto i : this->int_vector)
+    {
+      auto it = std::find(new_range.begin(), new_range.end(), i);
+      if(it == new_range.end())
+        ErrThrow("setting a range which does not cover the current value, "
+                 "Parameter ", this->name);
+    }
+  }
   this->range_is_an_interval = false;
   this->int_range = new_range;
 }
 template<> void Parameter::set_range(std::set<size_t> new_range)
 {
-  if(!check_type<size_t>(this->type))
+  if(!check_type<size_t>(this->type)
+    && !check_type<std::vector<size_t>>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
-             type_as_string(this->type), " != size_ts");
+             type_as_string(this->type), " != size_t");
+  if(new_range.empty())
+    ErrThrow("Cannot use empty set as range of a parameter.");
   // check if current value is in new range
-  auto it = std::find(new_range.begin(), new_range.end(), this->unsigned_value);
-  if(it == new_range.end())
-    ErrThrow("setting a range which does not cover the current value, "
-             "Parameter ", this->name);
+  if(check_type<size_t>(this->type))
+  {
+    auto it = std::find(new_range.begin(), new_range.end(), 
+                        this->unsigned_value);
+    if(it == new_range.end())
+      ErrThrow("setting a range which does not cover the current value, "
+               "Parameter ", this->name);
+  }
+  else // type is _size_t_vec
+  {
+    for(auto i : this->unsigned_vector)
+    {
+      auto it = std::find(new_range.begin(), new_range.end(), i);
+      if(it == new_range.end())
+        ErrThrow("setting a range which does not cover the current value, "
+                 "Parameter ", this->name);
+    }
+  }
   this->range_is_an_interval = false;
   this->unsigned_range = new_range;
 }
 template<> void Parameter::set_range(std::set<std::string> new_range)
 {
-  if(!check_type<std::string>(this->type))
+  if(!check_type<std::string>(this->type)
+    && !check_type<std::vector<std::string>>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != std::string");
+  if(new_range.empty())
+    ErrThrow("Cannot use empty set as range of a parameter.");
   // check if current value is in new range
-  auto it = std::find(new_range.begin(), new_range.end(), this->string_value);
-  if(it == new_range.end())
-    ErrThrow("setting a range which does not cover the current value, "
-             "Parameter ", this->name);
+  if(check_type<std::string>(this->type))
+  {
+    auto it = std::find(new_range.begin(), new_range.end(), this->string_value);
+    if(it == new_range.end())
+      ErrThrow("setting a range which does not cover the current value, "
+               "Parameter ", this->name);
+  }
+  else // type is _size_t_vec
+  {
+    for(auto i : this->string_vector)
+    {
+      auto it = std::find(new_range.begin(), new_range.end(), i);
+      if(it == new_range.end())
+        ErrThrow("setting a range which does not cover the current value, "
+                 "Parameter ", this->name);
+    }
+  }
   this->string_range = new_range;
 }
 template<> void Parameter::set_range(std::set<double>)
@@ -921,13 +1601,13 @@ void Parameter::info() const
 {
   std::ostringstream os;
   os << "  Parameter: " << this->name << "\n";
-  this->print_description(os, "", 60, "    description    ");
+  this->print_description(os, "", 60, "    description          ");
   std::string t = type_as_string(this->type);
-  os << "    value(" << t << ")" << std::string(8-t.length(), ' ') 
+  os << "    value(" << t << ")" << std::string(14-t.length(), ' ') 
      << this->value_as_string() << "\n";
-  os << "    accessed       " << this->access_count << " times\n";
-  os << "    changed        " << this->change_count << " times\n";
-  os << "    range          " << this->range_as_string();
+  os << "    accessed             " << this->access_count << " times\n";
+  os << "    changed              " << this->change_count << " times\n";
+  os << "    range                " << this->range_as_string();
   Output::print(os.str());
 }
 
@@ -965,3 +1645,31 @@ void Parameter::print_description(std::ostream& os, std::string prepend,
     os << "custom parameter without a description";
   os << "\n";
  }
+
+/* ************************************************************************** */
+std::ostream& operator<<(std::ostream& out, Parameter::types type)
+{
+  const char* s = 0;
+#define PROCESS_VAL(p)                                                         \
+  case(Parameter::types::p):                                                \
+    s = #p;                                                                    \
+    break;
+  switch(type)
+  {
+    PROCESS_VAL(_bool);
+    PROCESS_VAL(_int);
+    PROCESS_VAL(_size_t);
+    PROCESS_VAL(_double);
+    PROCESS_VAL(_string);
+    PROCESS_VAL(_bool_vec);
+    PROCESS_VAL(_int_vec);
+    PROCESS_VAL(_size_t_vec);
+    PROCESS_VAL(_double_vec);
+    PROCESS_VAL(_string_vec);
+    default:
+      s = "unknown Parameter::types type";
+      break;
+  }
+#undef PROCESS_VAL
+  return out << s;
+}

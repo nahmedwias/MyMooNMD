@@ -173,6 +173,16 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
   }
 }
 
+Example_NSE2D::Example_NSE2D(std::vector<DoubleFunct2D *> exact, 
+                             std::vector<BoundCondFunct2D *> bc,
+                             std::vector<BoundValueFunct2D *> bd, 
+                             CoeffFct2D* coeffs, double nu) 
+ : Example2D(exact, bc, bd, coeffs)
+{
+  this->example_database["reynolds_number"] = 1./nu;
+}
+
+
 void Example_NSE2D::do_post_processing(NSE2D& nse2d) const
 {
   if(post_processing_stat)

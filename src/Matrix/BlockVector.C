@@ -610,7 +610,7 @@ void BlockVector::read_from_stream(std::istream& is)
   if(!parser || parser.get() != EOF)
   {
     ErrThrow("formatting error, the first line in the file should contain ",
-             "only a number idicating the number of entries to be read");
+             "only a number indicating the number of entries to be read");
   }
   else if(this->length() == 0)
   {

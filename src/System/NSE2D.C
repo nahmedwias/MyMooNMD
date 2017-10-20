@@ -675,7 +675,7 @@ void NSE2D::solve()
   if(damping != 1.0)
   {
     s.solution.scale(damping);
-    s.solution.add_scaled(*old_solution, damping);
+    s.solution.add_scaled(*old_solution, 1-damping);
   }
   // project pressure if necessary
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
@@ -704,7 +704,7 @@ void NSE2D::output(int i)
 
   outputWriter.add_fe_function(&s.p);
   outputWriter.add_fe_vector_function(&s.u);
-  outputWriter.write();
+  outputWriter.write(i);
   
   /*
   // write solution to a vtk file

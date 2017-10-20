@@ -101,13 +101,6 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "omega). This is only used for the (symmetric) successive "
          "overrelaxation method.", 0., 2.);
   
-  db.add("saddle_point_preconditioner_direct_velocity_solve", true, 
-         "During the application of a Saddle_point_preconditioner one has to "
-         "solve a system involving only the velocity part of the matrix. Set "
-         "this parameter to true if you want to solve this with a direct "
-         "solver, otherwise some iterative scheme is used. Check out the class "
-         "Saddle_point_preconditioner.");
-  
   db.add("damping_factor", 1.0, "The damping in an iteration. A value of 1.0 "
          "means no damping while 0.0 would mean no progress. In general "
          "smaller values make iterations slower. This can still be necessary "
@@ -142,21 +135,18 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
   else if(preconditioner_name == "least_squares_commutator")
   {
     return std::make_shared<Saddle_point_preconditioner>(
-      matrix, Saddle_point_preconditioner::type::lsc,
-      db["saddle_point_preconditioner_direct_velocity_solve"]);
+      matrix, Saddle_point_preconditioner::type::lsc, db);
   }
   else if(preconditioner_name == "least_squares_commutator_boundary")
   {
     return std::make_shared<Saddle_point_preconditioner>(
-      matrix, Saddle_point_preconditioner::type::bd_lsc,
-      db["saddle_point_preconditioner_direct_velocity_solve"]);
+      matrix, Saddle_point_preconditioner::type::bd_lsc, db);
   }
   else if(preconditioner_name == 
           "semi_implicit_method_for_pressure_linked_equations")
   {
     return std::make_shared<Saddle_point_preconditioner>(
-      matrix, Saddle_point_preconditioner::type::simple,
-      db["saddle_point_preconditioner_direct_velocity_solve"]);
+      matrix, Saddle_point_preconditioner::type::simple, db);
   }
   else if(preconditioner_name == "vanka_cell")
   {

@@ -1177,6 +1177,13 @@ void Time_NSE3D::solve()
 {
   System_per_grid& s = systems_.front();
   
+  // store previous solution for damping, it is a pointer so that we can avoid
+  // the copy in case of no damping
+  double damping = this->db_["nonlinloop_damping_factor"];
+  std::shared_ptr<BlockVector> old_solution(nullptr);
+  if(damping != 1.0)
+    old_solution = std::make_shared<BlockVector>(s.solution_);
+
 #ifndef _MPI
   solver_.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
@@ -1184,6 +1191,9 @@ void Time_NSE3D::solve()
 #ifdef _MPI
   if(solver_.get_db()["solver_type"].is("direct"))
   {
+    if(damping != 1.0)
+      Output::warn("Time_NSE3D::solve", "damping in an MPI context is not tested");
+
     //set up a MUMPS wrapper
     MumpsWrapper mumps_wrapper(s.matrix_);
     //kick off the solving process
@@ -1192,6 +1202,14 @@ void Time_NSE3D::solve()
   else
     solver_.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential
 #endif
+
+  // apply damping if prescribed
+  if(damping != 1.0)
+  {
+    s.solution_.scale(damping);
+    s.solution_.add_scaled(*old_solution, 1-damping);
+  }
+
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11, A22 and A33 matrices are
   // reset and assembled again but the non-diagonal blocks are scaled, so
@@ -1249,7 +1267,7 @@ void Time_NSE3D::output(int m, int &image)
     s.p_.PrintMinMax();
   }
 
-  if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
+  if((m==0) || (m % TDatabase::TimeDB->STEPS_PER_IMAGE == 0) )
   {
     if(db_["output_write_vtk"])
     {
