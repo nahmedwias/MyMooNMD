@@ -400,11 +400,11 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             case SUPG_EXTR:
               this->set_parameters_for_tnseSUPG_Extr(type);
               break;
-            case RESIDUAL_VMS_EXTR:
-              this->set_parameters_for_tnseResidual_vms_Extr(type);
-              break;
             case RESIDUAL_VMS:
               this->set_parameters_for_tnseResidual_vms(type);
+              break;
+            case RESIDUAL_VMS_EXTR:
+              this->set_parameters_for_tnseResidual_vms_Extr(type);
               break;
             case SMAGORINSKY:
               this->set_parameters_for_Smagorinsky(type);
@@ -3057,7 +3057,7 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG_Extr(LocalAssembling2D_type 
   }
 }
 
-void LocalAssembling2D::set_parameters_for_tnseResidual_vms_Extr(LocalAssembling2D_type type)
+void LocalAssembling2D::set_parameters_for_tnseResidual_vms(LocalAssembling2D_type type)
 {
   if(TDatabase::ParamDB->NSTYPE < 4 )
   { 
@@ -3165,7 +3165,7 @@ void LocalAssembling2D::set_parameters_for_tnseResidual_vms_Extr(LocalAssembling
   }
 }
 
-void LocalAssembling2D::set_parameters_for_tnseResidual_vms(LocalAssembling2D_type type)
+void LocalAssembling2D::set_parameters_for_tnseResidual_vms_Extr(LocalAssembling2D_type type)
 {
   ErrThrow("not implemented ");
 }
