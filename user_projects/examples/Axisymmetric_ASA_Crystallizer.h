@@ -70,6 +70,7 @@ double m_dot_asa [4] ={0.000058, 0.000088, 0.000116, 0.000128};  // kg / s
 double c_p_ASA = 1260;      // J/(kg K)
 double m_dot_EtOH [4] = { 0.000116, 0.000175, 0.000232, 0.000257}; // kg / s
 double c_p_EtOH = 2400; // J/(kg K)
+//FIXME I have the suspicion, that the following line takes ALWAYS  VELOCITY_CODE=0!
 double m_tc_t = m_dot_asa[VELOCITY_CODE] * c_p_ASA + m_dot_EtOH[VELOCITY_CODE] * c_p_EtOH;
 
 // calculate total heat transfer coefficient
