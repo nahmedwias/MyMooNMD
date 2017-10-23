@@ -250,6 +250,10 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       case 6:
       {
         using namespace wiedmeyer_batch_crystallizer;
+        // Set example constants
+        FluidProperties::set_gravity(user_input_parameter_db["gravity"]);
+        FluidProperties::set_mass_flow_rate(user_input_parameter_db["mass_flow_rate"]);
+
         /** exact_solution */
         exact_solution.push_back( ExactU1 );
         exact_solution.push_back( ExactU2 );
@@ -270,6 +274,7 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
 
         /** coefficients */
         problem_coefficients = LinCoeffs;
+
 
         // /**post processing - drag and lift calculation and output */
         // post_processing_stat =

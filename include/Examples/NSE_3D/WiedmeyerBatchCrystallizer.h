@@ -4,11 +4,6 @@
  */
 
 
-void ExampleFile()
-{
-  Output::info<1>("EXAMPLE"," WiedmeyerBatchCrystallizer.h");
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
-}
 
 namespace FluidProperties
 {
@@ -18,15 +13,37 @@ double rho = 1050; // ( kg / m^3  ) the density (of a Kalialaun solution, VW)
 double u_infty = 1;    // (m/s) the characteristic velocity of the fluid
 double l_infty = 1;    // (m) the characteristic length scale of the tube
 
-double mass_flux = 56.0/3600; // (kg/s) the mass flux at in- and outflow (of the experiment, as reported by VW)
+double r_in = 0.01;   //cm the radius of the inlet
+double r_out = 0.075; //cm the radius of the outlet
 
-double u_avg_in = 0.047157;   //m/s
-double u_max_in = 2*u_avg_in; //m/s, assuming HP-inflow
-double u_avg_out = 0.00083834702534; //m/s
+double mass_flow_rate = 0; // (kg/s) the mass flow rate at in- and outflow
+double u_avg_in  = 0; //0.047157;   //m/s
+double u_max_in  = 0; //m/s, assuming HP-inflow
+double u_avg_out  = 0; //m/s
+
+bool gravity;
+
+void set_gravity(bool val){gravity = val;}
+void set_mass_flow_rate(double mfr)
+{
+	mass_flow_rate = mfr/3600; // (kg/s) the mass flow rate at in- and outflow
+	u_avg_in = mass_flow_rate / (rho * M_PI * r_in * r_in ); //0.047157;   //m/s
+	u_max_in = 2*u_avg_in; //m/s, assuming HP-inflow
+	u_avg_out = mass_flow_rate / (rho * M_PI * r_out*r_out ); //m/s
+}
 
 // note: in the coefficients function the de-dimensionalized diffusion
 // coefficient will be calculated as:
 //      eps = (eta/rho) / (u_infty*l_infty);
+}
+
+void ExampleFile()
+{
+  Output::info<1>("EXAMPLE"," WiedmeyerBatchCrystallizer.h");
+  std::string gravity_string = FluidProperties::gravity ? "gravity enabled" : "gravity disabled";
+  Output::info<1>("EXAMPLE"," With ", gravity_string,
+		  " and mass flow rate ", FluidProperties::mass_flow_rate * 3600, " kg/h.");
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 //Boundary parts of the Geometry, numbered "bottom up"
@@ -89,7 +106,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)	//no-slip
 		value = 0;
 	else //TOP - outflow
-		value = u_avg_out; //eigene Berechnung - konstante Velo ueber Querschnitt
+		value = u_avg_out; // constant velocity
 }
 
 // ========================================================================
@@ -111,7 +128,7 @@ void LinCoeffs(int n_points, double *x, double *y, double *z,
     coeff[0] = eps;
     coeff[1] = 0; // f1
     coeff[2] = 0; // f2
-    coeff[3] = 0; // f3		TODO Put some gracity forcing here?
+    coeff[3] = FluidProperties::gravity ? -9.81 : 0; // f3 - gravity forcing, if enabled
     coeff[4] = 0; // g
   }
 }
