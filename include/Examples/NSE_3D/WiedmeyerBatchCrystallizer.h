@@ -3,7 +3,7 @@
  * Experiment was reported by Viktoria Wiedmeyer (VW) in 2017.
  */
 
-
+bool TIME_DEPENDENT = false;
 
 namespace FluidProperties
 {
@@ -101,7 +101,14 @@ void U3BoundValue(double x, double y, double z, double &value)
 	{//HP inflow profile
 		double R = 0.01;
 		double r = sqrt(x*x + y*y);
-		value = u_max_in * (1 - r*r/R*R);
+		value = u_max_in * (1 - (r*r)/(R*R));
+	      if( TIME_DEPENDENT )
+	      {
+	        double t = TDatabase::TimeDB->CURRENTTIME;
+	        if(t < 1) //within first second of the simulated time
+	        	//multiply inflow with t ("anstroemen")
+	        	value  *=t;
+	      }
 	}
 	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)	//no-slip
 		value = 0;
@@ -170,4 +177,25 @@ void ExactP(double x, double y,  double z, double *values)
   values[2] = 0;
   values[3] = 0;
   values[4] = 0;
+}
+
+// In case this should be instationary.
+void InitialU1(double x, double y,  double z, double *values)
+{
+  values[0] = 0;
+}
+
+void InitialU2(double x, double y,  double z, double *values)
+{
+  values[0] = 0;
+}
+
+void InitialU3(double x, double y,  double z, double *values)
+{
+  values[0] = 0;
+}
+
+void InitialP(double x, double y,  double z, double *values)
+{
+  values[0] = 0;
 }
