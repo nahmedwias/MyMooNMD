@@ -69,6 +69,13 @@ int main(int argc, char* argv[])
 #endif
   TFEDatabase3D feDatabase;
 
+  //open OUTFILE, this is where all output is written to (additionally to console)
+  if(my_rank==0)
+  {
+    Output::set_outfile(parmoon_db["outfile"]);
+  }
+  Output::setVerbosity(parmoon_db["verbosity"]);
+
   // Choose and construct example.
   Example_TimeNSE3D example(parmoon_db);
 
@@ -77,20 +84,11 @@ int main(int argc, char* argv[])
   // =====================================================================
   // set the database values and generate mesh
   // =====================================================================
+  Output::decreaseVerbosity(1);
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1],parmoon_db);
+  Output::increaseVerbosity(1);
 
-  //open OUTFILE, this is where all output is written to (additionally to console)
-  if(parmoon_db["problem_type"].is(0))
-    parmoon_db["problem_type"] = 6;
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
-
-  //open OUTFILE, this is where all output is written to (additionally to console)
-  if(my_rank==0)
-  {
-    Output::set_outfile(parmoon_db["outfile"]);
-  }
-  Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
   {
@@ -112,7 +110,6 @@ int main(int argc, char* argv[])
   TCollection* coll = gridCollections.front();
   TOutput3D output(0,0,0,0,std::addressof(domain),coll);
   
-  output.WriteVtk("mesh.vtk");
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
   // set some parameters for time stepping
