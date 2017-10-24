@@ -375,7 +375,7 @@ void ParameterDatabase::write(std::ostream& os, bool verbose, bool root) const
     for(const auto& db : this->databases)
     {
       os << "# A nested parameter database of '" << this->name << "'. Number "
-         << n << " of " << n_nested;
+         << n << " of " << n_nested << "\n";
       db.write(os, verbose, false);
       n++;
     }
@@ -1138,7 +1138,7 @@ void ParameterDatabase::read(std::istream& is)
 
 /* ************************************************************************** */
 void ParameterDatabase::merge(const ParameterDatabase &other,
-                              bool create_new_parameters)
+                              bool create_new_parameters, bool recursive)
 {
   for(const Parameter & p : other.parameters)
   {
@@ -1149,16 +1149,19 @@ void ParameterDatabase::merge(const ParameterDatabase &other,
     else if(create_new_parameters)
       this->add(Parameter(p)); // add a copy of the parameter p
   }
-  for(const ParameterDatabase& db : other.databases)
+  if(recursive)
   {
-    auto it = find_in_list(db.get_name(), this->databases);
-    if(it == this->databases.end())
+    for(const ParameterDatabase& db : other.databases)
     {
-      this->databases.emplace_back(db);
-    }
-    else
-    {
-      it->merge(db, create_new_parameters);
+      auto it = find_in_list(db.get_name(), this->databases);
+      if(it == this->databases.end())
+      {
+        this->databases.emplace_back(db);
+      }
+      else
+      {
+        it->merge(db, create_new_parameters);
+      }
     }
   }
 }
