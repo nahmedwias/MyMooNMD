@@ -321,6 +321,14 @@ add_subdirectory(user_projects)
 ###############################################################################
 # tests 
 add_subdirectory(test EXCLUDE_FROM_ALL)
+####################################################
+#                THE CHECK TARGET                  #
+#   making this target results in building and     #
+#   running all tests corresponding to the current #
+#   parallel type. Use it excessively!             #
+####################################################
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure 
+                  DEPENDS ${parmoon_tests})
 
 
 ############
