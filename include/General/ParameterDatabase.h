@@ -255,10 +255,12 @@ class ParameterDatabase
     /// Parameters which exist in this one get the values from the other
     /// database. All parameters in `other` which do not exist in this database,
     /// are copied into this one only if `create_new_parameters` is true.
-    /// Nested databases are copied into this one. If a nested database with the
-    /// same name already exists, 'merge' is called.
+    /// If 'recursive' is true, nested databases are copied into this one. If a
+    /// nested database with the same name already exists and 'recursive' is 
+    /// true, 'merge' is called.
     void merge(const ParameterDatabase &other,
-               bool create_new_parameters = true);
+               bool create_new_parameters = true,
+               bool recursive = false);
     
     /// @brief out some information on the parameters
     ///
