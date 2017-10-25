@@ -60,7 +60,8 @@ std::string convert_to_string(T x)
   std::size_t found = s.find_last_not_of(std::string("0"));
   auto npos = std::string::npos;
   bool has_decimal_point = (s.find_last_of(std::string(".")) != npos);
-  if(has_decimal_point && found != npos)
+  bool has_exp_notation = (s.find_last_of(std::string("e")) != npos);
+  if(has_decimal_point && found != npos && !has_exp_notation)
   {
     if(s[found] == '.')
       s.erase(found + 2);
@@ -1354,7 +1355,8 @@ template <> void Parameter::push_back(double value, bool check_range)
     if(check_range)
     {
       ErrThrow("Added parameter value out of range, Parameter ", this->name,
-               ". The range is the interval ", this->range_as_string());
+               ". The range is the interval ", this->range_as_string(),
+               ". The new value: ", value);
     }
     else
     {
