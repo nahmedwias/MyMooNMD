@@ -4,6 +4,7 @@
  */
 
 bool TIME_DEPENDENT = false;
+bool ENCLOSED_FLOW = false;
 
 namespace FluidProperties
 {
@@ -43,7 +44,8 @@ void ExampleFile()
   std::string gravity_string = FluidProperties::gravity ? "gravity enabled" : "gravity disabled";
   Output::info<1>("EXAMPLE"," With ", gravity_string,
 		  " and mass flow rate ", FluidProperties::mass_flow_rate * 3600, " kg/h.");
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+  if(ENCLOSED_FLOW)
+	  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 //Boundary parts of the Geometry, numbered "bottom up"
@@ -78,7 +80,7 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
 		cond = DIRICHLET;
 	else //TOP
-		cond = DIRICHLET;
+		cond = ENCLOSED_FLOW ? DIRICHLET : NEUMANN;
 }
 
 // value of boundary condition
@@ -113,7 +115,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)	//no-slip
 		value = 0;
 	else //TOP - outflow
-		value = u_avg_out; // constant velocity
+		value = ENCLOSED_FLOW ? u_avg_out : 0; // constant velocity
 }
 
 // ========================================================================
