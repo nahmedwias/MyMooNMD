@@ -588,6 +588,12 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
 {
   // compute the residuals with the current matrix and solution
   this->computeNormsOfResiduals();
+
+  // check if minimum number of iterations was performed already
+  size_t min_it = db["nonlinloop_minit"];
+  if(iteration_counter < min_it)
+	  return false;
+
   // the current norm of the residual
   double normOfResidual = this->getFullResidual();
   // store initial residual, so later we can print the overall reduction
