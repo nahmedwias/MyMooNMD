@@ -1409,6 +1409,11 @@ void Time_NSE3D::output(int m, int &image)
     if(m % interval == 0)
     {//write solution to a binary file
       std::string file = db_["write_solution_binary_file"];
+      if(!db_["overwrite_solution_binary"]) //create a new file every time
+      {
+    	  file += ".";
+    	  file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
+      }
       Output::info("output", "Writing current solution to file ", file);
       systems_.front().solution_.write_to_file(file);
     }
