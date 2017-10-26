@@ -236,7 +236,7 @@ void Time_NSE2D_Merged::set_parameters()
   if(db["imex_scheme_"] && db["extrapolate_velocity"])
   {
     // first two steps are performed with the full nonlinear 
-    db["extrapolate_velocity"] = false;
+    db["extrapolate_velocity"] = true;
   }
   // set the discretization parameters
   // standard Galerkin
@@ -1055,14 +1055,14 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
             reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
             reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
 
-            if(!db["extrapolate_velocity"] )
-            {
+            //if(db["extrapolate_velocity"] )
+            //{
               rhs_array.resize(3);
               rhs_array[0] = s.rhs.block(0);
               rhs_array[1] = s.rhs.block(1);
               rhs_array[2] = s.rhs.block(2);
               s.rhs.reset();
-            }
+            //}
           }
           if(db["disctype"].is("residual_based_vms"))
           {
@@ -1198,36 +1198,25 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       // first step with backward euler method
       if(time_stepping_scheme.pre_stage_bdf)
       {
-        functions.resize(6);
-        functions[2] = s.u_m1.GetComponent(0);
-        functions[3] = s.u_m1.GetComponent(1);
-        
         s.extrapolate_sol.reset();
         s.extrapolate_sol = s.solution_m1;
         
-        functions[4] = s.extrapolate_u.GetComponent(0);
-        functions[5] = s.extrapolate_u.GetComponent(1);
+        functions[0] = s.extrapolate_u.GetComponent(0);
+        functions[1] = s.extrapolate_u.GetComponent(1);
+
+        functions.resize(4);
+        functions[2] = s.u_m1.GetComponent(0);
+        functions[3] = s.u_m1.GetComponent(1);
       }
       else // for bdf2 
       {
-        s.combined_old_sols.reset();
-        // copy and scale the solution at previous time step with factor 2
-        s.combined_old_sols = s.solution_m1;
-        s.combined_old_sols.scale(2.);
-        // subtract with right factor the solution at pre-previous solution
-        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
-        
-        functions.resize(6);
-        functions[2] = s.comb_old_u.GetComponent(0);
-        functions[3] = s.comb_old_u.GetComponent(1);
-        
         if(db["extrapolation_type"].is("constant_extrapolate"))
         {
           s.extrapolate_sol.reset();
           s.extrapolate_sol = s.solution_m1;
           
-          functions[4] = s.extrapolate_u.GetComponent(0);
-          functions[5] = s.extrapolate_u.GetComponent(1);
+          functions[0] = s.extrapolate_u.GetComponent(0);
+          functions[1] = s.extrapolate_u.GetComponent(1);
         }
         else if(db["extrapolation_type"].is("linear_extrapolate"))
         {
@@ -1236,13 +1225,23 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
           s.extrapolate_sol.scale(2.);
           s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
           
-          functions[4] = s.extrapolate_u.GetComponent(0);
-          functions[5] = s.extrapolate_u.GetComponent(1);
+          functions[0] = s.extrapolate_u.GetComponent(0);
+          functions[1] = s.extrapolate_u.GetComponent(1);
         }
         else
         {
           ErrThrow("IMEX scheme only works with constant or linear extrapolation ", db["extrapolation_type"]);
         }
+        s.combined_old_sols.reset();
+        // copy and scale the solution at previous time step with factor 2
+        s.combined_old_sols = s.solution_m1;
+        s.combined_old_sols.scale(2.);
+        // subtract with right factor the solution at pre-previous solution
+        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+        
+        functions.resize(4);
+        functions[2] = s.comb_old_u.GetComponent(0);
+        functions[3] = s.comb_old_u.GetComponent(1);
       }
     }
     // residual based variational multiscale method
@@ -1384,7 +1383,7 @@ bool Time_NSE2D_Merged::imex_scheme(bool print_info)
                       " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
     // this is typical for the problem with slip type boundary condition
     // NOTE: only tested for the mixing layer problem for the moment
-    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
+    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 && !db["disctype"].is("residual_based_vms"))
       is_rhs_and_mass_matrix_nonlinear = true;
     if(db["disctype"].is("supg"))
       TDatabase::ParamDB->DISCTYPE = -2;
