@@ -294,7 +294,10 @@ void TInnerInterfaceJoint::SetIndexInNeighbor(TBaseCell *neigh, int index)
     IndexInNeighbor[0] = index;
   else if(neigh == Neighb1)
     IndexInNeighbor[1] = index;
+  else
+  {
     ErrThrow("TInnerInterfaceJoint::SetIndexInNeighbor !!!!!!!!");
+  }
 }
 
 void TInnerInterfaceJoint::PrintInfo() const

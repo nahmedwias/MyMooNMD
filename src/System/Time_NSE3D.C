@@ -1071,6 +1071,11 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
     this->old_solution_ = this->systems_.front().solution_;
   }
 
+  // check if minimum number of iterations was performed already
+  size_t min_it = db_["nonlinloop_minit"];
+  if(iteration_counter < min_it)
+	  return false;
+
   /** Parameters for stopping criteria (desired precision epsilon, max number
    *  of iteration, convergence rate, IMEX_scheme : if IMEX is used, we only
    *  need to solve the nonlinear iterations for the first time step in order

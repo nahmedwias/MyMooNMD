@@ -370,13 +370,5 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   add_test(NAME read_write_fe_function_mpi COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_read_write_fe_function_mpi)
 
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
-	
-####################################################
-#                THE CHECK TARGET                  #
-#   making this target results in building and     #
-#   running all tests corresponding to the current #
-#   parallel type. Use it excessively!             #
-####################################################
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure DEPENDS ${parmoon_tests})
 
-
+set(parmoon_tests ${parmoon_tests} PARENT_SCOPE)

@@ -9,7 +9,7 @@
 
 /* examples */
 
-namespace poiseuille
+namespace poiseuille_brinkman
 {
 #include "Brinkman_2D/Poiseuille.h"
 }
@@ -24,7 +24,7 @@ namespace Poiseuille_Hannukainen_with_inscribed_physical_sphere
 #include "Brinkman_2D/Poiseuille_Hannukainen_with_inscribed_physical_sphere.h"
 }
 
-namespace sine_cosine
+namespace sine_cosine_brinkman
 {
 #include "Brinkman_2D/SinCos.h"
 }
@@ -60,28 +60,28 @@ Example_Brinkman2D::Example_Brinkman2D(
     {
         case 0:
             /** exact_solution */
-            exact_solution.push_back( poiseuille::ExactU1 );
-            exact_solution.push_back( poiseuille::ExactU2 );
-            exact_solution.push_back( poiseuille::ExactP );
+            exact_solution.push_back( poiseuille_brinkman::ExactU1 );
+            exact_solution.push_back( poiseuille_brinkman::ExactU2 );
+            exact_solution.push_back( poiseuille_brinkman::ExactP );
             
             /** boundary condition */
-            boundary_conditions.push_back( poiseuille::BoundCondition );
-            boundary_conditions.push_back( poiseuille::BoundCondition );
+            boundary_conditions.push_back( poiseuille_brinkman::BoundCondition );
+            boundary_conditions.push_back( poiseuille_brinkman::BoundCondition );
             boundary_conditions.push_back( BoundConditionNoBoundCondition );
             
             /** boundary values */
-            boundary_data.push_back( poiseuille::U1BoundValue );
-            boundary_data.push_back( poiseuille::U2BoundValue );
+            boundary_data.push_back( poiseuille_brinkman::U1BoundValue );
+            boundary_data.push_back( poiseuille_brinkman::U2BoundValue );
             boundary_data.push_back( BoundaryValueHomogenous );
             
             /** coefficients */
-            problem_coefficients = poiseuille::LinCoeffs;
+            problem_coefficients = poiseuille_brinkman::LinCoeffs;
             
             //this->example_database["equal_order_stab_weight"] = 500;
-            ////poiseuille::stab_weight = this->example_database["equal_order_stab_weight"];
+            ////poiseuille_brinkman::stab_weight = this->example_database["equal_order_stab_weight"];
             //double equal_order_stab_weight = this->example_database["equal_order_stab_weight"];
             
-            poiseuille::ExampleFile();
+            poiseuille_brinkman::ExampleFile();
 
             break;
         case 1:
@@ -128,24 +128,24 @@ Example_Brinkman2D::Example_Brinkman2D(
             break;
         case 3:
             /** exact_solution */
-            exact_solution.push_back( sine_cosine::ExactU1 );
-            exact_solution.push_back( sine_cosine::ExactU2 );
-            exact_solution.push_back( sine_cosine::ExactP );
+            exact_solution.push_back( sine_cosine_brinkman::ExactU1 );
+            exact_solution.push_back( sine_cosine_brinkman::ExactU2 );
+            exact_solution.push_back( sine_cosine_brinkman::ExactP );
             
             /** boundary condition */
-            boundary_conditions.push_back( sine_cosine::BoundCondition );
-            boundary_conditions.push_back( sine_cosine::BoundCondition );
-            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+            boundary_conditions.push_back(sine_cosine_brinkman::BoundCondition);
+            boundary_conditions.push_back(sine_cosine_brinkman::BoundCondition);
+            boundary_conditions.push_back(BoundConditionNoBoundCondition);
             
             /** boundary values */
-            boundary_data.push_back( sine_cosine::U1BoundValue );
-            boundary_data.push_back( sine_cosine::U2BoundValue );
+            boundary_data.push_back( sine_cosine_brinkman::U1BoundValue );
+            boundary_data.push_back( sine_cosine_brinkman::U2BoundValue );
             boundary_data.push_back( BoundaryValueHomogenous );
             
             /** coefficients */
-            problem_coefficients = sine_cosine::LinCoeffs;
+            problem_coefficients = sine_cosine_brinkman::LinCoeffs;
             
-            sine_cosine::ExampleFile();
+            sine_cosine_brinkman::ExampleFile();
             break;
         case 4:
             /** exact_solution */
