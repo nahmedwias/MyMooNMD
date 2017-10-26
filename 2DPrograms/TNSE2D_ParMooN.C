@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
   // set the database values and generate mesh
   // ======================================================================
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
-  TDomain Domain(argv[1], parmoon_db);
+  TDomain Domain(parmoon_db, argv[1]);
 
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);

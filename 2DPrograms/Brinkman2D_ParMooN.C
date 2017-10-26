@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
   fs.close();
 
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain Domain(argv[1], parmoon_db);
+  TDomain Domain(parmoon_db, argv[1]);
     
   //open OUTFILE, this is where all output is written to (addionally to console)
 
