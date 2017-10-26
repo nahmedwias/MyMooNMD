@@ -108,42 +108,54 @@ ParameterDatabase TDomain::default_domain_parameters()
   return db;
 }
 
-// Constructor
-TDomain::TDomain(const ParameterDatabase& param_db) :
-  Interfaces(nullptr),db(default_domain_parameters())
+TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
+  Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
 {
-  RefLevel = 0;
-  Output::print<4>("domain is initialized");
+
+  if(ParamFile)
+  {//read the param file and fil the old database
+	Output::info<4>("READ-IN","Constructing old database from file ", ParamFile);
+	ReadParam(ParamFile);
+  }
+
+  // get the relevant parameters from the new database
   db.merge(param_db, false);
   
+  Output::info<4>("Domain" "Domain is initialized");
   std::string geoname = db["geo_file"];
   std::string boundname = db["boundary_file"];
+  // This parameter is only used, if the other two are of no use.
   std::string smesh = db["mesh_tetgen_file"];
   
+  // Find out what kind of geometry input files are given.
   if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" )
       && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
       )
-  {
-    this->Init(boundname.c_str(), geoname.c_str());
-    Output::print<4>("GEO and PRM files are selected");
+  {//GEO and PRM file given (old-school MooNMD)
+    Output::info("Domain", "Initializing Domain using .GEO file ", geoname,
+          " and .PRM file ", boundname);
+    Init(boundname.c_str(), geoname.c_str());
   }
   else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
 	   && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
 	   )
-  {
-    Output::print<4>("mesh and PRM files are selected");
-    this->InitFromMesh(boundname.c_str(), geoname.c_str());
-    
+  {//.mesh file (medit format) and PRM file given
+    Output::info("Domain", "Initializing Domain using .mesh file ", geoname.c_str(),
+             " and PRM file ",boundname.c_str());
+    InitFromMesh(boundname.c_str(), geoname.c_str());
   }
 #ifdef __3D__
   else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" ) )
-  {
-    // note: in 3D, we allow domain initialization withtou PRM
-    Output::print<>("Initialize (3D) Domain using mesh file ",geoname.c_str());
-    this->InitFromMesh(boundname.c_str(), geoname.c_str());
+  {// in 3D, we allow domain initialization with .mesh file and without PRM
+    Output::info("Domain", "Initializing Domain using .mesh file ", geoname.c_str(),
+             " and no PRM file.");
+    InitFromMesh(boundname.c_str(), geoname.c_str());
   }
-  else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
-  {
+  else if( (smesh.substr(smesh.find_last_of(".")+1) == "smesh")||
+      (smesh.substr(smesh.find_last_of(".")+1) == "mesh") )
+  {// tetgen initialization from .smesh (surface mesh) file
+    Output::info("Domain", "Experimental feature: Initializing domain from "
+        ".smesh file ", smesh);
     // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
     TTetGenMeshLoader tetgen(smesh, db);   
     // convert the mesh into ParMooN Mesh object
@@ -155,75 +167,11 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
   }
 #endif
   else 
-  {
+  {// If nothing else fits, the program supposes a default geometry.
+    Output::info("Domain", "Trying to find a default geometry for ", geoname.c_str(),
+             " and ", boundname);
     // default cases for the tests
-    this->Init(boundname.c_str(), geoname.c_str());
-  }
-}
-
-//TODO This domain constructor, which is also responsible for read-in of the
-// old database, is to be reomved soon.
-TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
-  Interfaces(nullptr),db(default_domain_parameters())
-{
-  RefLevel = 0;
-  
-  db.merge(param_db, true);
-
-  // This will be removed as soon as we got entirely rid of the
-  // global database.
-  /** set variables' value in TDatabase using ParamFile */
-  this->ReadParam(ParamFile);
-  
-  std::string geoname = db["geo_file"];
-  std::string boundname = db["boundary_file"];
-  std::string smesh = db["mesh_tetgen_file"];
-  
-  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
-      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
-      )
-  {
-    this->Init(boundname.c_str(), geoname.c_str());
-    Output::print<4>("GEO and PRM files are selected");
-    
-  }
-  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
-	   && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
-	   )
-  {
-    Output::print<>("Initialize Domain using mesh file ",geoname.c_str(),
-		    " and PRM file ",boundname.c_str());
-    this->InitFromMesh(boundname.c_str(), geoname.c_str());
-  }
-    
-#ifdef __3D__
-  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" ) )
-  {
-    // note: in 3D, we allow domain initialization withtou PRM
-    Output::print<>("Initialize (3D) Domain using mesh file ",geoname.c_str());
-    this->InitFromMesh(boundname.c_str(), geoname.c_str());
-  }
-  
-  else if( (smesh.substr(smesh.find_last_of(".")+1) == "smesh")||
-	   (smesh.substr(smesh.find_last_of(".")+1) == "mesh") )
-  {
-    // intialize mesh using tetegen mesh loader
-    Output::print<>("Initialize Domain using the surface mesh file ", smesh.c_str());
-
-    // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
-    TTetGenMeshLoader tetgen(smesh, db);   
-    // convert the mesh into ParMooN Mesh object
-    Mesh m(tetgen.meshTetGenOut);
-    // generate vertices, cells and joint
-    GenerateFromMesh(m);
-    // test: write the mesh on a file
-    m.writeToMesh("test2.mesh");
-}
-#endif
-  else 
-  {
-    // default cases for the tests
-    this->Init(boundname.c_str(), geoname.c_str());
+    Init(boundname.c_str(), geoname.c_str());
   }
 }
 

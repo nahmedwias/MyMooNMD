@@ -123,20 +123,17 @@ class TDomain
       ParameterDatabase db;
 
   public:
-     /// Sets RefLevel (refinement level) to 0 and merges in given database.
-    TDomain(const ParameterDatabase& db);
-
     /**
-     * @brief Constructor. Reads in some data.
-     * @param ParamFile Path to a ParMooN parameter input textfile.
+     * @brief Constructor.
+     * Eventually reads in data of the old database - this feature is messy,
+     * it is a trait from heritage MooNMD, and should be removed soon.
+     *
      * @param param_db A database to be merged into the domain's own.
+     * @param ParamFile Path to a ParMooN parameter input textfile, if
+     * given, it is used to fill the old Database.
      *
-     * Invokes a read-in function for the parameter file and the domain
-     * description file afterwards.
-     *
-     * TODO This is messy in will be tidied up in the near future.
      */
-    TDomain(char *ParamFile, const ParameterDatabase& param_db);
+     TDomain(const ParameterDatabase& db, const char *ParamFile = nullptr);
     
     /** @brief destructor */
     ~TDomain();
@@ -185,7 +182,7 @@ class TDomain
 #endif
 
     /** @brief read parameter file */
-    int ReadParam(char *ParamFile);
+    int ReadParam(const char *ParamFile);
 
     /** @brief Reads in boundary parameterization in ".PRM" file format
      *

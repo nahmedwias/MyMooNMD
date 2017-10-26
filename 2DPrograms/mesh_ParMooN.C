@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
   fs.close();
 
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(argv[1], parmoon_db);
+  TDomain domain(parmoon_db, argv[1]);
 
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);

@@ -37,7 +37,7 @@
 
 #include <stdlib.h>
 
-int TDomain::ReadParam(char *ParamFile)
+int TDomain::ReadParam(const char *ParamFile)
 {
 #ifdef _MPI
   int rank;

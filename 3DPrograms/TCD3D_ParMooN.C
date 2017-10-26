@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 #endif
   
   TFEDatabase3D feDatabase;
-  TDomain domain(argv[1], parmoon_db);
+  TDomain domain(parmoon_db, argv[1]);
   
   // open outfile, this is where all output is written (additionally to console)
   if(i_am_root)

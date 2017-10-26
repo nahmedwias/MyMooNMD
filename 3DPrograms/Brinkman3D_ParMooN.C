@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 #endif
         
         // Construct domain, thereby read in controls from the input file (argv[1]).
-        TDomain domain(argv[1], parmoon_db);
+        TDomain domain(parmoon_db, argv[1]);
         
         
         // Produce an outfile "... .out", this is where all output is written to (addionally to console)
