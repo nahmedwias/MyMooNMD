@@ -938,6 +938,11 @@ void Time_NSE2D::output(int m)
     if(m % interval == 0)
     {//write solution to a binary file
       std::string file = db["write_solution_binary_file"];
+      if(!db["overwrite_solution_binary"]) //create a new file every time
+      {
+    	  file += ".";
+    	  file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
+      }
       Output::info("output", "Writing current solution to file ", file);
       systems.front().solution.write_to_file(file);
     }
