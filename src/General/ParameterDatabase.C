@@ -1397,8 +1397,13 @@ ParameterDatabase ParameterDatabase::default_solution_in_out_database()
   // into which file to write
   db.add("write_solution_binary_file", "my_solution_out.txt", "If "
       "'write_solution_binary' is set to 'true', this parameter sets the name"
-      " (and path) of the file to write the solution into. Note that this file"
-      " will be overwritten again and again.");
+      " (and path) of the file to write the solution into.");
+
+  // whether the file should be overwritten every time
+  db.add("overwrite_solution_binary", false, " Choose true, if the solution binary "
+		 "should be overwritten every time. If it stays false, a new file will be written"
+		  "every time, with the current time added to the filename.", {true, false} );
+
   return db;
 }
 
