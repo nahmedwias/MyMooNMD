@@ -25,11 +25,11 @@ int main(int argc, char* argv[])
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
-  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();  
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
-  
+
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(argv[1], parmoon_db);
 
