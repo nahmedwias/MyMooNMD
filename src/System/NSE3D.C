@@ -690,6 +690,11 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
   //compute and update defect and residuals
   compute_residuals();
   
+  // check if minimum number of iterations was performed already
+  size_t min_it = db["nonlinloop_minit"];
+  if(iteration_counter < min_it)
+	  return false;
+
   // the current norm of the residual
   const double normOfResidual = this->get_full_residual();
   // store initial residual, so later we can print the overall reduction
@@ -698,7 +703,6 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
 
   // hold the residual from 10 iterations ago
   const double oldNormOfResidual = this->old_residuals_.front().fullResidual;
-
 
   size_t max_it = db["nonlinloop_maxit"];
   double conv_speed = db["nonlinloop_slowfactor"];
