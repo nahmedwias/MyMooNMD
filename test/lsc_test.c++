@@ -112,6 +112,7 @@ int main(int argc, char* argv[])
 
         //solver for nonlinear loop
         db["solver_type"]= "direct";
+        db["nonlinloop_minit"] = 0;
         db["nonlinloop_maxit"] = 15;
         db["nonlinloop_slowfactor"] = 10000;
         db["nonlinloop_epsilon"] = 1.0e-5;
