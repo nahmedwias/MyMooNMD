@@ -73,7 +73,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
       }
       catch(...){}
     }
-    if(vs_db["iterative_solver_type"].is("iterative"))
+    if(vs_db["solver_type"].is("iterative"))
     {
       Output::warn<2>("Saddle_point_preconditioner",
                       " Note that solving systems within LSC using some "

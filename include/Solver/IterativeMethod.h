@@ -123,12 +123,12 @@ class IterativeMethod
       if(diverged)
       {
         if(my_rank == 0)
-        Output::warn("IterativeMethod", "iteration diverged: ", 
+        Output::warn("IterativeMethod", name, " diverged: ",
                      std::setprecision(12), this->divergence_factor, 
                      this->loop_info.get_initial_residual(), " -> ",
                      current_residual, ", at iteration ", current_iterate);
-	// stop execution of the coe 
-	ErrThrow("execution of the code stopped");
+        // stop execution of the code
+        ErrThrow("Execution of the code stopped because of solver divergence.");
       }
       if(converged)
         this->loop_info.finish(current_iterate, current_residual);
