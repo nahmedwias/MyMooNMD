@@ -6,7 +6,6 @@
 
 void ExampleFile()
 {
- // TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = OSEEN_PROBLEM;
   Output::print<1>("Example: SinCos.h with with inscribed physical region");
 }
 
