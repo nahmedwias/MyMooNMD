@@ -138,8 +138,19 @@ class TDomain
     /** @brief destructor */
     ~TDomain();
     
+    /**
+     * Creates a database filled with default parameters. This database will
+     * contain all necessary parameters for the control of a domain.
+     */
     static ParameterDatabase default_domain_parameters();
     
+    /**
+     * Creates a database filled with default parameters. This database will
+     * contain all necessary parameters for the control of a domain that should
+     * by constructed as a "sandwich grid" from a 2D initial mesh.
+     */
+    static ParameterDatabase default_sandwich_grid_parameters();
+
     // Methods
     /** @brief Read in initial mesh from ".GEO" file.
      *
@@ -189,12 +200,15 @@ class TDomain
      * @param[in] dat Input stream containing the boundary information in
      * ".PRM" style (the default MooNMD file format for domain description).
      *
-     * @param[in,out] Flag Used in 3D only, set to 1 if a boundary component
-     * of type TBdWall has to be constructed. Otherwise set to 0.
-     *
-     * @return Integer O on success, other numbers otherwise.
+     * @param[out] Flag Used in 3D only, set to 1 if a boundary component
+     * of type TBdWall has to be constructed - typical for sandwich grids.
+     * Otherwise set to 0.
      */
-    int ReadBdParam(std::istream& dat, int &Flag);
+#ifdef __2D__
+    void ReadBdParam(std::istream& dat);
+#else
+    void ReadBdParam(std::istream& dat, bool& sandwich_flag);
+#endif
 
     /** @brief read mapping and mortar information */
     int ReadMapFile(char *MapFile, TDatabase *database);
@@ -316,7 +330,7 @@ class TDomain
       * is neither checked nor tested. So use them carefully and be prepared for the worst!
       *
       */
-      void Init(const char *PRM, const char *GEO);
+      void Init(const std::string& PRM, const std::string& GEO);
 
       /**
        * @brief Initialize the domain starting from a boundary file and a mesh
@@ -599,18 +613,6 @@ class TDomain
 
   /** @brief adaptive refine  */
   int AdaptRefineAll();   
-
-  /**
-   * @brief Checks from the file name whether a .GEO -file will be read in or
-   * a .xGEO (extended GEO) file.
-   *
-   * This code was moved here from the ReadGeo method.
-   *
-   * @param[in] GEO the filename of the .(x)GEO file.
-   *
-   * @note This has not been tested with an actual .xGEO-file yet.
-   */
-  static bool isExtendedGEO(const char* GEO);
 
   /**
    * @return The value of parameter "refinement_n_initial_steps"

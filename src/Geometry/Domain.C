@@ -105,7 +105,26 @@ ParameterDatabase TDomain::default_domain_parameters()
    db.add("write_metis_file", std::string("mesh_partitioning_file.txt"), 
           "The partitioning of the mesh will be written here.");
 
+   db.add("sandwich_grid", false, "If 'true', then this domain should"
+       "be constructed as a sandwich grid from a 2d geometry and mesh.");
+
   return db;
+}
+
+ParameterDatabase TDomain::default_sandwich_grid_parameters()
+{
+
+}
+
+// A little helper function, copied from
+// https://stackoverflow.com/questions/874134/find-if-string-ends-with-another-string-in-c,
+// which makes it easier to decide, whether a string has a specific ending.
+bool ends_with (std::string const &fullString, std::string const &ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
 }
 
 TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
@@ -114,48 +133,71 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
 
   if(ParamFile)
   {//read the param file and fil the old database
-	Output::info<4>("READ-IN","Constructing old database from file ", ParamFile);
-	ReadParam(ParamFile);
+	  Output::info<4>("READ-IN","Constructing old database from file ", ParamFile);
+	  ReadParam(ParamFile);
   }
 
   // get the relevant parameters from the new database
   db.merge(param_db, false);
   
-  Output::info<4>("Domain" "Domain is initialized");
+#ifdef __3D__
+  //Check if this should be a sandwich grid
+  if(db["sandwich_grid"])
+  {// Try to find a nested database with the correct name
+    ParameterDatabase sandwich_db = default_sandwich_grid_parameters();
+    ParameterDatabase sandwich_in_db("Sandwich Grid Read In Database");
+    try
+    {
+      sandwich_in_db = param_db.get_nested_database("Sandwich Grid Database");
+    }
+    catch(...)
+    {
+      Output::warn("DOMAIN","If the domain should be built as sandwich grid, you"
+          " must give a nested database named '[Sandwich Grid Database]'.");
+      Output::warn("CONT'D","Did not find such a database, proceeding with defaults.");
+
+    }
+    // Merge the sandwich input database into the default one. Here we allow
+    // for the creation of new parameters, for easy include of example specific
+    // parametes, which should not appear in the default database.
+    sandwich_db.merge(sandwich_in_db, true);
+
+    //TODO Call whatever is necessary!
+  }
+#endif
+
+
+  Output::info<4>("Domain" "Starting domain initialization.");
+
   std::string geoname = db["geo_file"];
   std::string boundname = db["boundary_file"];
   // This parameter is only used, if the other two are of no use.
   std::string smesh = db["mesh_tetgen_file"];
   
   // Find out what kind of geometry input files are given.
-  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" )
-      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
-      )
+  if( ends_with(geoname, "GEO") && ends_with(boundname, ".PRM") )
   {//GEO and PRM file given (old-school MooNMD)
-    Output::info("Domain", "Initializing Domain using .GEO file ", geoname,
+    Output::info("Domain", "Initializing Domain using GEO file ", geoname,
           " and .PRM file ", boundname);
-    Init(boundname.c_str(), geoname.c_str());
+    Init(boundname, geoname);
   }
-  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
-	   && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
-	   )
+  else if( ends_with(geoname, ".mesh") && ends_with(boundname, ".PRM") )
   {//.mesh file (medit format) and PRM file given
-    Output::info("Domain", "Initializing Domain using .mesh file ", geoname.c_str(),
-             " and PRM file ",boundname.c_str());
-    InitFromMesh(boundname.c_str(), geoname.c_str());
+    Output::info("Domain", "Initializing Domain using .mesh file ", geoname,
+             " and .PRM file ", boundname);
+    InitFromMesh(boundname, geoname);
   }
 #ifdef __3D__
-  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" ) )
+  else if( ends_with(geoname, ".mesh") )
   {// in 3D, we allow domain initialization with .mesh file and without PRM
-    Output::info("Domain", "Initializing Domain using .mesh file ", geoname.c_str(),
-             " and no PRM file.");
-    InitFromMesh(boundname.c_str(), geoname.c_str());
+    Output::info("Domain", "Initializing Domain using .mesh file ", geoname,
+             " and no .PRM file.");
+    InitFromMesh(boundname, geoname);
   }
-  else if( (smesh.substr(smesh.find_last_of(".")+1) == "smesh")||
-      (smesh.substr(smesh.find_last_of(".")+1) == "mesh") )
+  else if( ends_with(smesh, ".smesh") || ends_with(smesh, ".mesh"))
   {// tetgen initialization from .smesh (surface mesh) file
-    Output::info("Domain", "Experimental feature: Initializing domain from "
-        ".smesh file ", smesh);
+    Output::info("Domain", "Experimental feature: Using tetgen for initialization "
+        " of domain from ", smesh);
     // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
     TTetGenMeshLoader tetgen(smesh, db);   
     // convert the mesh into ParMooN Mesh object
@@ -168,10 +210,10 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
 #endif
   else 
   {// If nothing else fits, the program supposes a default geometry.
-    Output::info("Domain", "Trying to find a default geometry for ", geoname.c_str(),
-             " and ", boundname);
+    Output::info("Domain", "Trying to find a default geometry and mesh "
+        " for ", geoname, " and ", boundname);
     // default cases for the tests
-    Init(boundname.c_str(), geoname.c_str());
+    Init(boundname, geoname);
   }
 }
 
@@ -874,102 +916,88 @@ int TDomain::GenInitGrid()
 }
 
 
-void TDomain::Init(const char *PRM, const char *GEO)
+void TDomain::Init(const std::string& PRM, const std::string& GEO)
 {
-  int Flag;
 
-  if(PRM == nullptr || GEO == nullptr)
-  {
-    ErrThrow("No boundary description or initial mesh specified");
-  }
-
-  //start with treatment of the boundary description
-  if (!strcmp(PRM, "Default_UnitSquare"))
-  {//catch the only implemented default case - boundary of the unit square
+  // Interpret the PRM string
+  if (PRM == "Default_UnitSquare")
+  {// default case - boundary of the [0,1] unit square
     initializeDefaultUnitSquareBdry();
   }
-  //start with treatment of the boundary description
-  else if (!strcmp(PRM, "DrivenCavitySquare"))
-  {//catch the only implemented default case - boundary of the unit square
+  else if (PRM == "DrivenCavitySquare")
+  {// default case - boundary of the [-1,1] unit square
     initializeDrivenCavitySquareBdry();
   }
   else
   {
-    // non-default: read in from file
-    //make an input file string from the file "PRM"
+    // non-default: read in from .PRM file
     std::ifstream bdryStream(PRM);
     if (!bdryStream)
     {
-      ErrThrow("cannot open PRM file");
+      ErrThrow("Cannot open .PRM file ", PRM);
     }
 
     //do the actual read in
-    ReadBdParam(bdryStream, Flag);
-
-    //close the stream
-    bdryStream.close();
+    ReadBdParam(bdryStream);
   }
 
-  // continue with initial mesh
-  if (!strcmp(GEO, "InitGrid"))
+  // Interpret the GEO string - start with default meshes
+  if (GEO == "InitGrid")
   {
     GenInitGrid();
   }
-  else if (!strcmp(GEO, "TwoTriangles"))
+  else if (GEO == "TwoTriangles")
   {
     TwoTriangles();
   }
-  else
-  if (!strcmp(GEO, "TwoTrianglesRef"))
+  else if (GEO == "TwoTrianglesRef")
   {
     TwoTrianglesRef();
   }
-  else if (!strcmp(GEO, "UnitSquare"))
+  else if (GEO ==  "UnitSquare")
   {
     UnitSquare();
   }
-  else if (!strcmp(GEO, "DrivenCavitySquareQuads"))
+  else if (GEO == "DrivenCavitySquareQuads")
   {
     DrivenCavitySquareQuads();
   }
-  else if (!strcmp(GEO, "UnitSquareRef"))
+  else if (GEO ==  "UnitSquareRef")
   {
     UnitSquareRef();
   }
-  else if (!strcmp(GEO, "SquareInSquare"))
+  else if (GEO == "SquareInSquare")
   {
     SquareInSquare();
   }
-  else if (!strcmp(GEO, "UnitSquare_US22"))
+  else if (GEO == "UnitSquare_US22")
   {
     UnitSquare_US22();
   }
-  else if (!strcmp(GEO, "SquareInSquareRef"))
+  else if (GEO == "SquareInSquareRef")
   {
     SquareInSquareRef();
   }
-  else if (!strcmp(GEO, "PeriodicSquares"))
+  else if (GEO == "PeriodicSquares")
   {
     PeriodicSquares();
   }
-  else if (!strcmp(GEO, "PeriodicSquaresLarge"))
+  else if (GEO ==  "PeriodicSquaresLarge")
   {
     PeriodicSquaresLarge();
   }
-  else if (!strcmp(GEO, "PeriodicTrianglesLarge"))
+  else if (GEO == "PeriodicTrianglesLarge")
   {
     PeriodicTrianglesLarge();
   }
-  else if (!strcmp(GEO, "PeriodicRectangle_2_4"))
+  else if (GEO == "PeriodicRectangle_2_4")
   {
     PeriodicRectangle_2_4();
   }
   else
   {
-
     // error message: .GEO file are no longer supported. They can be used to initialize a domain
     // only if the purpose is to covert the .GEO into a .mesh
-
     if (!strcmp(db["mesh_file"],"__nofile__"))
     {
       Output::print("** **************************************************************** **");
@@ -1001,9 +1029,8 @@ void TDomain::Init(const char *PRM, const char *GEO)
       Output::print("** Converting .GEO to .mesh **");    
     }
 	
-    // "GEO" interpreted as file path to GEO-file.
-    // check if it actually is an .xGEO-file
-    bool isxGEO = isExtendedGEO(GEO);
+    // check if the GEO file actually is an .xGEO-file
+    bool isxGEO = ends_with(GEO, ".xGEO");
 
     // make an input file string from the file "GEO"
     std::ifstream bdryStream(GEO);
@@ -1020,21 +1047,16 @@ void TDomain::Init(const char *PRM, const char *GEO)
 
 
 #else // 3D
-void TDomain::Init(const char *PRM, const char *GEO)
+void TDomain::Init(const std::string& PRM, const std::string& GEO)
 {
-  int IsSandwich = 0;
-
-  if(PRM == nullptr || GEO == nullptr)
-  {
-    ErrThrow("No boundary description or initial mesh specified");
-  }
+  bool isSandwich;
 
   // start with read in of boundary description
-
-  if (!strcmp(PRM, "Default_UnitCube"))
+  if (PRM == "Default_UnitCube")
   {
     // one implemented default case: unit cube
-    IsSandwich = initializeDefaultCubeBdry();
+    initializeDefaultCubeBdry();
+    isSandwich = false;
   }
   else
   {
@@ -1046,34 +1068,32 @@ void TDomain::Init(const char *PRM, const char *GEO)
       ErrThrow("cannot open PRM file");
     }
     // otherwise: try to read in given .PRM file
-    ReadBdParam(bdryStream, IsSandwich);
+    ReadBdParam(bdryStream, isSandwich);
   }
 
-  if(!IsSandwich)
+  if(!isSandwich)
   {
-    if (!strcmp(GEO, "TestGrid3D"))
+    if (GEO == "TestGrid3D")
     {
       TestGrid3D();
     }
-    else if (!strcmp(GEO, "Default_UnitCube_Hexa"))
+    else if (GEO == "Default_UnitCube_Hexa")
     {
       initialize_cube_hexa_mesh();
     }
-    else if (!strcmp(GEO, "Default_UnitCube_Tetra"))
+    else if (GEO == "Default_UnitCube_Tetra")
     {
       initialize_cube_tetra_mesh();
     }
     else
-    {
-      // "GEO" interpreted as file path to GEO-file.
-      // check if it actually is an .xGEO-file
-      bool isxGEO = isExtendedGEO(GEO);
+    { // non-default case, try to read an initial geometry from file
       // make an input file string from the file "GEO"
       std::ifstream bdryStream(GEO);
       if (!bdryStream)
       {
         ErrThrow("cannot open GEO file");
       }
+      bool isxGEO = ends_with(GEO, ".xGEO"); // check if the GEO file actually is an .xGEO-file
       ReadGeo( bdryStream, isxGEO );
     }
   }
@@ -1089,7 +1109,7 @@ void TDomain::Init(const char *PRM, const char *GEO)
     ReadSandwichGeo(bdryStream);
   }
 }
-#endif // __2D__
+#endif
 
 
 // initialize a domain from a mesh and a boundary(PRM) file
@@ -1104,10 +1124,7 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
     ErrThrow(" ** Error(TDomain::Init) cannot open PRM file ", PRM);
   }
   //do the actual read in
-  int Flag;
-  ReadBdParam(bdryStream, Flag);
-  //close the stream
-  bdryStream.close();
+  ReadBdParam(bdryStream);
 
   // read mesh
   Mesh m(MESHFILE);
@@ -1180,19 +1197,14 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
   delete [] ELEMSREF;
 #else
 
-  int IsSandwich = 0;
+  bool IsSandwich;
   std::ifstream bdryStream(PRM);
   if (bdryStream)
   {
     // read .PRM if available (for example for sandwich grid)
     ReadBdParam(bdryStream, IsSandwich);
     if (IsSandwich)
-    {
-      Output::print(" WARNING: Sandwich grid not yet implemented with .mesh input file");
-      Output::print("          Use a .GEO instead.");
-
-      // =======================================
-      // read the .GEO file
+    { // read the mesh file
       // note: this is the same as the above 2D code
       
       // read mesh
@@ -3375,32 +3387,6 @@ int TDomain::RefineallxDirection()
 	
 	return 0;
 }
-
-bool TDomain::isExtendedGEO(const char* GEO)
-  {
-      bool isXgeo{false};
-      // check if input file is an extended geo file (.xGEO)
-      int nn=0;
-      while (GEO[nn] != 0)
-      {
-        ++nn;
-      }
-
-      //check if we found the correct place in the char arary
-      if(GEO[nn-3] != 'G' || GEO[nn-2] != 'E' || GEO[nn-1] != 'O')
-      {
-        ErrThrow("Incorrect read-in of .(x)GEO-filename! (Make sure the "
-            "filename ends on '.GEO' or '.xGEO')" );
-      }
-
-      if (GEO[nn-4]=='x')
-      {
-	Output::print<2>(" *** reading xGEO file (with physical references) ***");
-        isXgeo = true;
-      }
-      return isXgeo;
-  }
-
 
 
 #ifdef __3D__

@@ -1649,8 +1649,7 @@ void TDomain::initializeDefaultUnitSquareBdry()
   bdryStream << "0.000000E+0000   -1.000000E+0000 \n";
 
   //call the readin method
-  int flag; //(used in 3D only, but expected in 2D, too)
-  ReadBdParam( bdryStream, flag );
+  ReadBdParam( bdryStream );
 
 }
 
@@ -1684,8 +1683,7 @@ void TDomain::initializeDrivenCavitySquareBdry()
   bdryStream << "0.000000E+0000   -2.000000E+0000 \n";
 
   //call the readin method
-  int flag; //(used in 3D only, but expected in 2D, too)
-  ReadBdParam( bdryStream, flag );
+  ReadBdParam( bdryStream );
 
 }
 
@@ -1758,7 +1756,7 @@ int TDomain::initializeDefaultCubeBdry()
   bdryStream << "0.000000E+0000    1.000000E+0000    0.000000E+0000 \n";
 
   //call the readin method
-  int isSandwich; //this returns as 0, but the method wants it anyway
+  bool isSandwich;
   ReadBdParam( bdryStream, isSandwich );
 
   return isSandwich;

@@ -2659,7 +2659,11 @@ int TDomain::ReadParam(const char *ParamFile)
   return 0;
 }
 
-int TDomain::ReadBdParam(std::istream& dat, int &Flag)
+#ifdef __2D__
+void TDomain::ReadBdParam(std::istream& dat)
+#else
+void TDomain::ReadBdParam(std::istream& dat, bool& sandwich_flag)
+#endif
 {
 #ifdef _MPI
   int rank; // out_rank=int(TDatabase::ParamDB->Par_P0);
@@ -2672,9 +2676,10 @@ int TDomain::ReadBdParam(std::istream& dat, int &Flag)
 #else
   TBoundComp3D *BdComp=nullptr;
   TBoundComp2D *BdComp2D=nullptr;
+  sandwich_flag = false;
 #endif
 
-  Flag = 0;
+
 
   // determine dimensions for creating arrays
   
@@ -2775,7 +2780,7 @@ int TDomain::ReadBdParam(std::istream& dat, int &Flag)
       if(abs(CompType)<10)
       {
         BdComp = new TBdWall(CompID-1, BdComp2D);
-        Flag = 1;
+        sandwich_flag = true;
       }
 #endif // 3D
       BdParts[i]->SetBdComp(j, BdComp);
@@ -2854,8 +2859,6 @@ int TDomain::ReadBdParam(std::istream& dat, int &Flag)
   }
   else
     PointInRegion = NULL;
-
-  return 0;
 }
 
 int TDomain::ReadMapFile(char *MapFile, TDatabase *Database)
