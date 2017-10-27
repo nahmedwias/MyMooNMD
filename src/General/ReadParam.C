@@ -153,21 +153,6 @@ int TDomain::ReadParam(const char *ParamFile)
       dat >> TDatabase::ParamDB->PRESSURE_SEPARATION;
       N_Param++;
     }
-    if (!strcmp(line, "DRIFT_X:"))
-    {
-      dat >> TDatabase::ParamDB->DRIFT_X;
-      N_Param++;
-    }
-    if (!strcmp(line, "DRIFT_Y:"))
-    {
-      dat >> TDatabase::ParamDB->DRIFT_Y;
-      N_Param++;
-    }
-    if (!strcmp(line, "DRIFT_Z:"))
-    {
-      dat >> TDatabase::ParamDB->DRIFT_Z;
-      N_Param++;
-    }
 
     if (!strcmp(line, "REFINEMENT:"))
     {

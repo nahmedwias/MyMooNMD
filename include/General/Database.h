@@ -88,9 +88,6 @@ struct TParaDB
 
   int OMPNUMTHREADS;
 
-  double DRIFT_X;
-  double DRIFT_Y;
-  double DRIFT_Z;
   int REFINEMENT;
   int GRID_TYPE;
   int GRID_TYPE_1;

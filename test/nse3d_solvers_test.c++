@@ -288,8 +288,6 @@ int main(int argc, char* argv[])
 
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
 
-  TDatabase::ParamDB->DRIFT_Z = 1;
-
   db["space_discretization_type"] = "galerkin"; //Galerkin discretization, nothing else implemented
   TDatabase::ParamDB->LAPLACETYPE = 0;
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;

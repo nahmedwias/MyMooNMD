@@ -362,10 +362,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->PRESSURE_SEPARATION = 0;
   ParamDB->OMPNUMTHREADS=1;
 
-  ParamDB->DRIFT_X = 0;
-  ParamDB->DRIFT_Y = 0;
-  ParamDB->DRIFT_Z = 0.41;
-
   
   ParamDB->REFINEMENT = 0;
   ParamDB->GRID_TYPE = 0;
@@ -1050,10 +1046,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
 
   printToFile("OMPNUMTHREADS: ", ParamDB->OMPNUMTHREADS);
 
-  printToFile("N_CELL_LAYERS: ", ParamDB->N_CELL_LAYERS);
-  printToFile("DRIFT_X: ", ParamDB->DRIFT_X);
-  printToFile("DRIFT_Y: ", ParamDB->DRIFT_Y);
-  printToFile("DRIFT_Z: ", ParamDB->DRIFT_Z);
   printToFile("REFINEMENT: ", ParamDB->REFINEMENT);
   printToFile("GRID_TYPE: ", ParamDB->GRID_TYPE);
   printToFile("GRID_TYPE_1: ", ParamDB->GRID_TYPE_1);

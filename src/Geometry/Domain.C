@@ -18,6 +18,7 @@
 #include <string.h>
 #include <fstream>
 #include <stdio.h>
+#include <limits>
 
 #ifdef __2D__
   #include <IsoBoundEdge.h>
@@ -113,7 +114,17 @@ ParameterDatabase TDomain::default_domain_parameters()
 
 ParameterDatabase TDomain::default_sandwich_grid_parameters()
 {
+  ParameterDatabase db("Sandwich Grid Database");
 
+  db.add("drift_x", 0.0, "Grid stretch in x direction.", 0.0, std::numeric_limits<double>::max());
+
+  db.add("drift_y", 0.0, "Grid stretch in y direction.", 0.0, std::numeric_limits<double>::max());
+
+  db.add("drift_z", 0.0, "Grid stretch in x direction.", 0.0, std::numeric_limits<double>::max());
+
+  db.add("n_layers", 10, "Number of cell layers to be stacked in the sandwich geometry.", 1, std::numeric_limits<int>::max() );
+
+  return db;
 }
 
 // A little helper function, copied from
@@ -145,7 +156,7 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
   if(db["sandwich_grid"])
   {// Try to find a nested database with the correct name
     ParameterDatabase sandwich_db = default_sandwich_grid_parameters();
-    ParameterDatabase sandwich_in_db("Sandwich Grid Read In Database");
+    ParameterDatabase sandwich_in_db("");
     try
     {
       sandwich_in_db = param_db.get_nested_database("Sandwich Grid Database");
@@ -1033,14 +1044,14 @@ void TDomain::Init(const std::string& PRM, const std::string& GEO)
     bool isxGEO = ends_with(GEO, ".xGEO");
 
     // make an input file string from the file "GEO"
-    std::ifstream bdryStream(GEO);
-    if (!bdryStream)
+    std::ifstream geo_stream(GEO);
+    if (!geo_stream)
     {
-      ErrThrow("cannot open GEO file");
+      ErrThrow("Cannot open GEO file ", GEO);
     }
 
     // and call the read-in method
-    ReadGeo(bdryStream,isxGEO);
+    ReadGeo(geo_stream,isxGEO);
   }
 }
 
@@ -1074,11 +1085,11 @@ void TDomain::Init(const std::string& PRM, const std::string& GEO)
           "sandwich geometry. It seems to lack a TBdWall boundary.");
 
     // make an input file string from the file "GEO"
-    std::ifstream bdryStream(GEO);
-    if (!bdryStream)
-      ErrThrow("cannot open GEO file");
+    std::ifstream geo_stream(GEO);
+    if (!geo_stream)
+      ErrThrow("Cannot open GEO file ", GEO);
 
-    ReadSandwichGeo(bdryStream);
+    ReadSandwichGeo(geo_stream);
 
     return;
   }
@@ -1103,13 +1114,13 @@ void TDomain::Init(const std::string& PRM, const std::string& GEO)
   else
   { // non-default case, try to read an initial geometry from file
     // make an input file string from the file "GEO"
-    std::ifstream bdryStream(GEO);
-    if (!bdryStream)
+    std::ifstream geo_stream(GEO);
+    if (!geo_stream)
     {
-      ErrThrow("cannot open GEO file");
+      ErrThrow("Cannot open GEO file ", GEO);
     }
     bool isxGEO = ends_with(GEO, ".xGEO"); // check if the GEO file actually is an .xGEO-file
-    ReadGeo( bdryStream, isxGEO );
+    ReadGeo( geo_stream, isxGEO );
   }
 }
 #endif
@@ -1200,116 +1211,116 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
   delete [] ELEMSREF;
 #else
 
-  bool IsSandwich;
-  std::ifstream bdryStream(PRM);
-  if (bdryStream)
+  bool prm_is_sandwich = false;
+
+  std::ifstream bdry_stream(PRM);
+  if (bdry_stream)
   {
     // read .PRM if available (for example for sandwich grid)
-    ReadBdParam(bdryStream, IsSandwich);
-    if (IsSandwich)
-    { // read the mesh file
-      // note: this is the same as the above 2D code
+    ReadBdParam(bdry_stream, prm_is_sandwich);
+
+    if(db["sandwich_grid"])
+    {
+      //this ought to be a sandwich grid
+      if(!prm_is_sandwich)
+        ErrThrow("The specified .PRM file ", PRM ," is not suitable for a "
+                 "sandwich geometry. It seems to lack a TBdWall boundary.");
+
+      // The constructor took care of this nested database being present.
+      const ParameterDatabase& sw_db = db.get_nested_database("Sandwich Grid Database");
+      double drift_x = sw_db["drift_x"];
+      double drift_y = sw_db["drift_y"];
+      double drift_z = sw_db["drift_z"];
+      size_t n_layers = sw_db["n_layers"];
+
+      // read the mesh file and prepare input for MakeSandwichGrid
       
-      // read mesh
       Mesh m(MESHFILE);
       m.setBoundary(PRM);
-      unsigned int numberOfElements = m.triangle.size() + m.quad.size();
-      unsigned int maxNVertexPerElem = 3;
+      size_t numberOfElements = m.triangle.size() + m.quad.size();
+      size_t maxNVertexPerElem = 3;
       // make the ParMooN-grid
       if (m.quad.size()) {
-	maxNVertexPerElem = 4;
+        maxNVertexPerElem = 4;
       }
       if (numberOfElements==0) {
-	Output::print(" ** Error(Domain::Init) the mesh has no elements");
-	exit(-1);
+        Output::print(" ** Error(Domain::Init) the mesh has no elements");
+        exit(-1);
       }
       
       // vertices data
       double *DCORVG;
       int *KNPR;
-      unsigned int n_vertices = m.vertex.size();
+      size_t n_vertices = m.vertex.size();
       KNPR = new int[n_vertices];
       DCORVG =  new double[2*n_vertices];
       
       // fill the DCORVG array with GEO-like coordinates of two-dimensional points
-      for (unsigned int i=0; i<n_vertices; i++) {
-	
-	// check if the vertex is on the boundary
-	double localParam;
-	int partID = m.boundary.isOnComponent(m.vertex[i].x,m.vertex[i].y,localParam);
-	if (partID>=0) {
-	  DCORVG[2*i] = localParam;
-	  DCORVG[2*i+1] = 0.;
-	  KNPR[i] = partID+1;
-	} else {
-	  DCORVG[2*i] = m.vertex[i].x;
-	  DCORVG[2*i+1] = m.vertex[i].y;
-	  KNPR[i] = 0;
-	}  
+      for (size_t i=0; i<n_vertices; i++) {
+
+        // check if the vertex is on the boundary
+        double localParam;
+        int partID = m.boundary.isOnComponent(m.vertex[i].x,m.vertex[i].y,localParam);
+        if (partID>=0) {
+          DCORVG[2*i] = localParam;
+          DCORVG[2*i+1] = 0.;
+          KNPR[i] = partID+1;
+        } else {
+          DCORVG[2*i] = m.vertex[i].x;
+          DCORVG[2*i+1] = m.vertex[i].y;
+          KNPR[i] = 0;
+        }
       }
-      int *KVERT,*ELEMSREF;
+      int *KVERT;
       KVERT = new int[maxNVertexPerElem * numberOfElements];
-      ELEMSREF = new int[numberOfElements];
       
       // store triangles (+ 0 when using a mixed mesh)
-      for (unsigned int i=0;i<m.triangle.size();i++)
-	{
-	  for (unsigned int  j=0; j<3; j++) 
-	    KVERT[maxNVertexPerElem*i + j] = m.triangle[i].nodes[j];
-	  
-	  if (maxNVertexPerElem==4) KVERT[maxNVertexPerElem*i + 3] = 0;
-	  
-	  ELEMSREF[i] = m.triangle[i].reference;
-	  
-	}
+      for (size_t i=0;i<m.triangle.size();i++)
+      {
+        for (size_t  j=0; j<3; j++)
+          KVERT[maxNVertexPerElem*i + j] = m.triangle[i].nodes[j];
+        if (maxNVertexPerElem==4)
+          KVERT[maxNVertexPerElem*i + 3] = 0;
+      }
       
       // store quadrilaterals
-      for (unsigned int i=0;i<m.quad.size();i++)
-	{
-	  for (unsigned int  j=0; j<4; j++) 
-	    KVERT[maxNVertexPerElem* (m.triangle.size() + i) + j] = m.quad[i].nodes[j];
-	  
-	  ELEMSREF[m.triangle.size()+i] = m.quad[i].reference;
-	  
-	}
+      for (size_t i=0;i<m.quad.size();i++)
+      {
+        for (size_t  j=0; j<4; j++)
+          KVERT[maxNVertexPerElem* (m.triangle.size() + i) + j] = m.quad[i].nodes[j];
+      }
       // N_RootCells is an internal Domain variable used in other functions
       N_RootCells = numberOfElements;
-      // =======================================
 
-      // =======================================
-      // parameters specific to the sandwich case
-      double DriftX = TDatabase::ParamDB->DRIFT_X;
-      double DriftY = TDatabase::ParamDB->DRIFT_Y;
-      double DriftZ = TDatabase::ParamDB->DRIFT_Z;
-      int N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;
-      
-      double *Lambda = new double[N_Layers];
-      for(int i=0;i<N_Layers;i++)
-      {
-	Lambda[i] = i * (1.0/(N_Layers-1));
-      }
-      // =======================================
+      // fill the lambda array - it has size n_layers + 1,
+      // starts with 0, ends with 1, and gives the relative placing
+      // of sandwich grid layers.
+      // todo Figure out a good way to let this depend on the example
+
+      //This is the default:
+      double* lambda = new double[n_layers + 1];
+      for(size_t i=0;i<n_layers;i++)
+        lambda[i] = i * (1.0/(n_layers-1));
       
       MakeSandwichGrid(DCORVG, KVERT, KNPR,  m.vertex.size(),maxNVertexPerElem,
-		       DriftX, DriftY, DriftZ, N_Layers, Lambda);
-      //exit(1);
+                       drift_x, drift_y, drift_z, n_layers, lambda);
+      delete[] DCORVG;
+      delete[] KVERT;
+
     }
     else
     {
-      Output::print("** ERROR: I can only initialize 3D domain using PRM for sandwich grid");
-      Output::print("** ERROR: check your input files." );
-      exit(1);
+      ErrThrow("The combination of .mesh file and sandwich grid "
+          "requires specification of a .PRM file.")
     }
     
   } else {
-
-    // otherwise: proceed without a PRM file
-    // read mesh
+    // if not sandwich, proceed without a PRM file
     Mesh m(MESHFILE);
     GenerateFromMesh(m);
   }
 
-#endif // __2D__
+#endif
 }
 
 int TDomain::PS(const char *name, Iterators iterator, int arg)
