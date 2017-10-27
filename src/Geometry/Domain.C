@@ -161,8 +161,8 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
     // for the creation of new parameters, for easy include of example specific
     // parametes, which should not appear in the default database.
     sandwich_db.merge(sandwich_in_db, true);
-
-    //TODO Call whatever is necessary!
+    //The sandwich database is then nested into the domain database.
+    db.add_nested_database(sandwich_db);
   }
 #endif
 
@@ -1045,68 +1045,71 @@ void TDomain::Init(const std::string& PRM, const std::string& GEO)
 }
 
 
-
 #else // 3D
 void TDomain::Init(const std::string& PRM, const std::string& GEO)
 {
-  bool isSandwich;
 
   // start with read in of boundary description
+  bool prm_is_sandwich = false;
   if (PRM == "Default_UnitCube")
   {
     // one implemented default case: unit cube
     initializeDefaultCubeBdry();
-    isSandwich = false;
   }
   else
   {
     // "PRM" interpreted as file path to PRM-file.
-    // make an input file string from the file "PRM"
     std::ifstream bdryStream(PRM);
     if (!bdryStream)
-    {
-      ErrThrow("cannot open PRM file");
-    }
-    // otherwise: try to read in given .PRM file
-    ReadBdParam(bdryStream, isSandwich);
+      ErrThrow("Cannot open PRM file ", PRM);
+
+    ReadBdParam(bdryStream, prm_is_sandwich);
   }
 
-  if(!isSandwich)
+  if(db["sandwich_grid"])
   {
-    if (GEO == "TestGrid3D")
-    {
-      TestGrid3D();
-    }
-    else if (GEO == "Default_UnitCube_Hexa")
-    {
-      initialize_cube_hexa_mesh();
-    }
-    else if (GEO == "Default_UnitCube_Tetra")
-    {
-      initialize_cube_tetra_mesh();
-    }
-    else
-    { // non-default case, try to read an initial geometry from file
-      // make an input file string from the file "GEO"
-      std::ifstream bdryStream(GEO);
-      if (!bdryStream)
-      {
-        ErrThrow("cannot open GEO file");
-      }
-      bool isxGEO = ends_with(GEO, ".xGEO"); // check if the GEO file actually is an .xGEO-file
-      ReadGeo( bdryStream, isxGEO );
-    }
+    //this ought to be a sandwich grid
+    if(!prm_is_sandwich)
+      ErrThrow("The specified .PRM file ", PRM ," is not suitable for a "
+          "sandwich geometry. It seems to lack a TBdWall boundary.");
+
+    // make an input file string from the file "GEO"
+    std::ifstream bdryStream(GEO);
+    if (!bdryStream)
+      ErrThrow("cannot open GEO file");
+
+    ReadSandwichGeo(bdryStream);
+
+    return;
+  }
+
+  if(prm_is_sandwich)
+    Output::warn("DOMAIN", "Your .PRM file is adapted to sandwich grid. This might "
+        "cause problems, since 'sandwich_grid' is false. (Untested!)");
+
+  // Check for default geometries.
+  if (GEO == "TestGrid3D")
+  {
+    TestGrid3D();
+  }
+  else if (GEO == "Default_UnitCube_Hexa")
+  {
+    initialize_cube_hexa_mesh();
+  }
+  else if (GEO == "Default_UnitCube_Tetra")
+  {
+    initialize_cube_tetra_mesh();
   }
   else
-  {
+  { // non-default case, try to read an initial geometry from file
     // make an input file string from the file "GEO"
     std::ifstream bdryStream(GEO);
     if (!bdryStream)
     {
       ErrThrow("cannot open GEO file");
     }
-    // then read in sandwich geo.
-    ReadSandwichGeo(bdryStream);
+    bool isxGEO = ends_with(GEO, ".xGEO"); // check if the GEO file actually is an .xGEO-file
+    ReadGeo( bdryStream, isxGEO );
   }
 }
 #endif
