@@ -6,9 +6,7 @@
 
 void ExampleFile()
 {
-  TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = OSEEN_PROBLEM;
-  Output::print<1>("Example: SinCos.h with INTERNAL_PROBLEM_IDENTITY ", 
-                   TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY);
+  Output::print("Example: Brinkman 3d, SinCos.h with piecewise constant effective viscosity.");
 }
 
 // ========================================================================

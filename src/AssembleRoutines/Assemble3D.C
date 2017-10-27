@@ -300,24 +300,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
 	    break;
     }
 
-    /* switch (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY)
-      {
-      case 180:
-  	if (TDatabase::ParamDB->P0 != 123454321) 
-	    hK = cell->GetShortestEdge();
-	else
-	    hK = pow(cell->GetMeasure(),1.0/3.0);
-        break;
-      case 22000:
-      case 40000:
-	hK = pow(cell->GetMeasure(),1.0/3.0);
-	hK = cell->GetShortestEdge();
-	break;
-      default: 
-	hK = cell->GetDiameter();
-	break;
-      }
-    */
     // ####################################################################
     // find local used elements on this cell
     // ####################################################################
@@ -1436,24 +1418,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 		    break;
 	    }
 
-	    /* switch (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY)
-	      {
-	      case 180:
-	  	if (TDatabase::ParamDB->P0 != 123454321)
-		    hK = cell->GetShortestEdge();
-		else
-		    hK = pow(cell->GetMeasure(),1.0/3.0);
-	        break;
-	      case 22000:
-	      case 40000:
-		hK = pow(cell->GetMeasure(),1.0/3.0);
-		hK = cell->GetShortestEdge();
-		break;
-	      default:
-		hK = cell->GetDiameter();
-		break;
-	      }
-	    */
 	    // ####################################################################
 	    // find local used elements on this cell
 	    // ####################################################################
