@@ -981,6 +981,10 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
 #else
 int TDomain::ReadSandwichGeo(std::istream& dat)
 {
+
+  // The constructor took care of this nested database being present.
+  const ParameterDatabase& sw_db = db.get_nested_database("Sandwich Grid Database");
+
   char line[100];
   int i, j, N_Vertices, NVpF, NVE, NBCT;
   double *DCORVG;
