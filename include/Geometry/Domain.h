@@ -164,18 +164,13 @@ class TDomain
     int ReadGeo(std::istream& dat, bool isXGeoFile);
 
 #ifdef __3D__
-    /** @brief Read in initial mesh from ".GEO" file as sandwich geometry.
-     *
-     * @param[in] dat Input stream which contains the initial mesh information
-     * in MooNMD-native ".GEO"-format.
-     *
-     * @note The implementation of this method contains some undocumented surprises
-     * ("else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 180)"). Handle
-     * with care.
-     *
-     * @return Integer O on success, other numbers otherwise.
+    /**
+     *  @brief Read in initial mesh from either ".GEO" oder ".mesh" file as sandwich geometry.
+     * @param[in] file_name Input stream which contains the initial mesh information
+     * in either MooNMD-native ".GEO"-format or medit style ".mesh"-format.
      */
-    int ReadSandwichGeo(std::istream& dat);
+    void ReadSandwichGeo(std::string file_name,
+                         std::string prm_file_name = "");
 
     /** @brief make boundary parameter consistent */
     void MakeBdParamsConsistent(TCollection *coll);
