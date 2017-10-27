@@ -979,75 +979,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
 }
 
 #else
-int TDomain::ReadSandwichGeo(std::istream& dat)
-{
 
-  // The constructor took care of this nested database being present.
-  const ParameterDatabase& sw_db = db.get_nested_database("Sandwich Grid Database");
-  double drift_x = sw_db["drift_x"];
-  double drift_y = sw_db["drift_y"];
-  double drift_z = sw_db["drift_z"];
-  size_t n_layers = sw_db["n_layers"];
-
-
-  char line[100];
-  int i, j, N_Vertices, NVpF, NVE, NBCT;
-  double *DCORVG;
-  int *KVERT, *KNPR;
-
-  dat.getline (line, 99);
-  dat.getline (line, 99);
-
-  // determine dimensions for creating arrays
-  dat >> N_RootCells >> N_Vertices >> NVpF >> NVE >> NBCT;
-  dat.getline (line, 99);
-  dat.getline (line, 99);
-
-  // allocate auxillary fields
-  DCORVG =  new double[2*N_Vertices];
-  KVERT = new int[NVE*N_RootCells];
-  KNPR = new int[N_Vertices];
-  // read fields
-  for (i=0;i<N_Vertices;i++)
-  {
-    dat >> DCORVG[2*i] >> DCORVG[2*i + 1];
-    dat.getline (line, 99);
-  }
-
-  dat.getline (line, 99);
-
-  for (i=0;i<N_RootCells;i++)
-  {
-    for (j=0;j<NVE;j++)
-      dat >> KVERT[NVE*i + j];
-    dat.getline (line, 99);
-  }
-
-  dat.getline (line, 99);
-
-  for (i=0;i<N_Vertices;i++)
-    dat >> KNPR[i];
-
-  // fill the lambda array - it has size n_layers + 1,
-  // starts with 0, ends with 1, and gives the relative placing
-  // of sandwich grid layers.
-  // todo Figure out a good way to let this depend on the example
-
-  //This is the default:
-  double* lambda = new double[n_layers + 1];
-  for(i=0;i<n_layers;i++)
-    lambda[i] = i * (1.0/(n_layers-1));
-
-  MakeSandwichGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE,
-                   drift_x, drift_y, drift_z, n_layers, lambda);
-
-  delete[] DCORVG;
-  delete[] KVERT;
-  delete[] KNPR;
-  delete[] lambda;
-
-  return 0;
-}
 
 // this makes a 3D coarse grid
 int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
