@@ -984,15 +984,16 @@ int TDomain::ReadSandwichGeo(std::istream& dat)
 
   // The constructor took care of this nested database being present.
   const ParameterDatabase& sw_db = db.get_nested_database("Sandwich Grid Database");
+  double drift_x = sw_db["drift_x"];
+  double drift_y = sw_db["drift_y"];
+  double drift_z = sw_db["drift_z"];
+  size_t n_layers = sw_db["n_layers"];
+
 
   char line[100];
   int i, j, N_Vertices, NVpF, NVE, NBCT;
   double *DCORVG;
   int *KVERT, *KNPR;
-  double DriftX, DriftY, DriftZ, *Lambda;
-  int N_Layers, grid_type;
-
-  grid_type = TDatabase::ParamDB->GRID_TYPE;
 
   dat.getline (line, 99);
   dat.getline (line, 99);
@@ -1027,102 +1028,23 @@ int TDomain::ReadSandwichGeo(std::istream& dat)
   for (i=0;i<N_Vertices;i++)
     dat >> KNPR[i];
 
-  DriftX = TDatabase::ParamDB->DRIFT_X;
-  DriftY = TDatabase::ParamDB->DRIFT_Y;
-  DriftZ = TDatabase::ParamDB->DRIFT_Z;
+  // fill the lambda array - it has size n_layers + 1,
+  // starts with 0, ends with 1, and gives the relative placing
+  // of sandwich grid layers.
+  // todo Figure out a good way to let this depend on the example
 
-  if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1234)
-   {
-    TDatabase::ParamDB->N_CELL_LAYERS = 3;
-    N_Layers = 4;
-    Lambda = new double[N_Layers];
-    Lambda[0] = 0.0;
-    Lambda[1] = 7.66/20.32;
-    Lambda[2] = 15.32/20.32;
-    Lambda[3] = 1.0;
-   }
-/*  else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1356)
-   {
-    N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;     
-    Lambda = new double[N_Layers];     
-    double tmp [] = { 0, 0.0119047619, 0.02380952381, 0.03571428571, 0.04761904762,
-                 0.05952380952, 0.07142857143, 0.08333333333, 0.09523809524, 0.10714285714,
-                 0.11904761905, 0.13333333333, 0.14761904762, 0.16666666667, 0.18571428571, 
-                 0.20952380952, 0.23333333333, 0.2619047619, 0.29523809524, 0.33333333333, 
-                 0.38095238095, 0.42857142857, 0.47619047619, 0.52380952381, 0.57142857143, 
-                 0.61904761905, 0.66666666667, 0.71428571429, 0.7619047619, 0.80952380952, 
-                 0.85714285714, 0.90476190476, 0.95238095238, 1  };
-                 
-    for(i=0;i<N_Layers; i++)     
-     Lambda[i] = tmp[i];
-                 
-//      MPI_Finalize();
-//      exit(0);
-   }  */   
-  else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 180)
-  {
-    // turbulent channel flow for Re_tau = 180, IMPORTANT !!!
-     N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;
-     Lambda = new double[N_Layers];
-     for(i=0;i<N_Layers;i++)
-      {
-      if (grid_type == 0)
-       Lambda[i] = 1 + tanh(2.75*(2.0*i/(N_Layers-1) -1))/tanh(2.75);
-      else
-       Lambda[i] = 1-cos(i*Pi/(N_Layers-1));
-
-       OutPut("z coordinate " << Lambda[i] <<endl);
-       Lambda[i] /= 2.0;
-      }
-     Lambda[0] = 0;
-     Lambda[N_Layers-1] = 1;
-   }
-  else if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 6)
-   {
-    // for Channel_Carolina.h
-    N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;
-    Lambda = new double[N_Layers];
-    for(i=0;i<N_Layers;i++)
-     {
-      Lambda[i] = tanh(4.50*i/(N_Layers-1))/tanh(4.50);
-      OutPut("z coordinate " << Lambda[i] <<endl);
-     }
-    Lambda[0] = 0;
-    Lambda[N_Layers-1] = 1;     
-   }
-  else
-   {
-    N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;
-    Lambda = new double[N_Layers];
-    for(i=0;i<N_Layers;i++)
-     {
-      Lambda[i] = i * (1.0/(N_Layers-1));
-     //OutPut("lambda " << i << " " << Lambda[i] << endl);
-     }
-
-  }
-
-
-
-
-  // for WIND TUNNEL
-  /*if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1506)
-  {
-      N_Layers = 19;
-      Lambda = new double[N_Layers];
-      for(i=0;i<N_Layers;i++)
-      {
-	  Lambda[i] = i*0.01;
-	  OutPut("wind tunnel: z coordinate " << Lambda[i] <<endl);
-      }
-      }*/
+  //This is the default:
+  double* lambda = new double[n_layers + 1];
+  for(i=0;i<n_layers;i++)
+    lambda[i] = i * (1.0/(n_layers-1));
 
   MakeSandwichGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE,
-                   DriftX, DriftY, DriftZ, N_Layers, Lambda);
+                   drift_x, drift_y, drift_z, n_layers, lambda);
 
   delete[] DCORVG;
   delete[] KVERT;
   delete[] KNPR;
+  delete[] lambda;
 
   return 0;
 }

@@ -146,7 +146,6 @@ int main(int argc, char* argv[])
     db.add("boundary_file", "Default_UnitCube", "");
     db.add("geo_file", "Default_UnitCube_Hexa", "",
            {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
-    TDatabase::ParamDB->DRIFT_Z = 1;
     db.add("refinement_n_initial_steps",(size_t) 4,"",(size_t) 0, (size_t) 5);
     //CB DEBUG
     db["refinement_n_initial_steps"].set(4);
