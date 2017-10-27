@@ -15,22 +15,25 @@ void ExampleFile()
 // ========================================================================
 void InitialU1(double x, double y, double *values)
 {
-  double rho_0, z1, z2;
+  double rho_0, z1, z2, cn;
 
   rho_0 = 1./28.;
   z1 = (4*y-2)/rho_0;
   z2 = (y-0.5)/rho_0;
-  values[0] = U_INFTY * (exp(z1)-1)/(exp(z1)+1);
-  values[0] -= 0.001*0.001 * U_INFTY * exp(-z2*z2)*cos(8*Pi*x)*2*z2;
+  cn = 1.e-3;
+  values[0] = cn * U_INFTY * (exp(z1)-1)/(exp(z1)+1);
+  
+  values[0] -= cn * U_INFTY * exp(-z2*z2)*2*z2/rho_0*(cos(8.*Pi*x) + cos(20.*Pi*x));
 }
 
 void InitialU2(double x, double y, double *values)
 {
-  double rho_0, z2;
+  double rho_0, z2, cn;
 
   rho_0 = 1./28.;
   z2 = (y-0.5)/rho_0;
-  values[0] = -0.001*0.001*U_INFTY* exp(-z2*z2)*sin(8*Pi*x)*8*Pi;
+  cn = 1.e-3;
+  values[0] = cn*U_INFTY * exp(-z2*z2)*(sin(8.*Pi*x)*8.*Pi + sin(20.*Pi*x) * 20.*Pi);
 }
 
 void InitialP(double x, double y, double *values)
@@ -139,7 +142,7 @@ void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
       // compute coordinate of vertex
       cell->GetVertex(j)->GetCoords(x0, y0);
       // no vertices on lower and upper boundary
-      if ((fabs(y0-1)< 1e-6)||(fabs(y0+1)< 1e-6))
+      if ((fabs(y0-1)< 1e-6)||(fabs(y0)< 1e-6))
         continue;
       // for all edges which has a larger number
       for (k=j+1; k < N_Edges;k++)

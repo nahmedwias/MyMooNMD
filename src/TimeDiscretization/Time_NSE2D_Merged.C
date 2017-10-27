@@ -638,7 +638,7 @@ void Time_NSE2D_Merged::output(int m)
     TAuxParam2D aux;
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
     double t=TDatabase::TimeDB->CURRENTTIME;
-    if(db["example"].is(3))
+    if(db["example"].is(3) || db["example"].is(6))
     {
       u1->GetErrors(ExactNull,3, allderiv, 2, L2H1Errors, nullptr,
                   &aux,1, &v_sp,locerr);
@@ -691,7 +691,7 @@ void Time_NSE2D_Merged::output(int m)
   double *sol = s.solution.get_entries();
   StreamFunction(&s.velocity_space, sol,sol+n,
                      stream_function_space.get(), psi.data());
-  if(db["example"].is(3))// mixing layer example
+  if(db["example"].is(3) || db["example"].is(6))// mixing layer example
   {
     ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
                                vorticity_funct->GetValues(), divergence->GetValues());
@@ -1330,7 +1330,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       s.extrapolate_sol.reset();
       s.extrapolate_sol = s.solution_m1;
       s.extrapolate_sol.scale(2.);
-      s.extrapolate_sol.add_scaled(s.solution_m2, -1./2.);
+      s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
       
       functions[2] = s.extrapolate_u.GetComponent(0);
       functions[3] = s.extrapolate_u.GetComponent(1);
@@ -1496,7 +1496,7 @@ void Time_NSE2D_Merged::prepared_postprocessing(TCollection *coll)
   // add to the wrapper
   outputWriter.add_fe_function(stream_function.get());
 
-  if(db["example"].is(3))
+  if(db["example"].is(3) || db["example"].is(6))
   {
     zero_vorticity = -4711;
     vorticity_space
