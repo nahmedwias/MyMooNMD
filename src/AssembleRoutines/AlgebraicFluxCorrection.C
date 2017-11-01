@@ -23,6 +23,7 @@
 //! Anonymous namespace for helper methods which do not have to be assessed
 //! from the outside.
 namespace {
+ 
 
 /** Check whether the setup fulfils the cfl-like condition needed in a partly
  * explicit afc scheme (Kuzmin 2009, eq (11) ).
@@ -655,7 +656,7 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
 
   // Type of AFC to be applied.
   db.add("algebraic_flux_correction", "none", " Chose which type of afc to use.",
-         {"none", "default", "afc", "fem-fct-cn"});
+         {"none", "afc", "fem-fct-cn"});
 
   db.add("afc_prelimiter", 0, "Choose an afc flux prelimiting scheme. Options "
       "are 0 (none), 1 (min-mod), 2 (grad-direction), 3 (both)", {0,1,2,3});
@@ -667,6 +668,10 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
   // iteration scheme for the afc methods 
   db.add("afc_iteration_scheme", "fixed_point_matrix", "Choose an iteration scheme for the afc methods. Options are"
       "fixed_point_rhs, fixed_point_matrix, newton", {"fixed_point_rhs", "fixed_point_matrix", "newton"});
+  
+  
+  db.add("afc_nonlin_damping", 1.0, "A damping parameter for the nonlinear loop in AFC."
+    "Must be a value between 1 (no damping) and 0 (no update).", 0.0,1.0);
 
   return db;
 }
