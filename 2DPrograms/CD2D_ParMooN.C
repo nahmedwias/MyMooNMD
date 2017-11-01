@@ -54,7 +54,21 @@ int main(int argc, char* argv[])
   CD2D cd2d(domain, parmoon_db);
   cd2d.assemble();
   cd2d.solve();
+  
+  if( parmoon_db["algebraic_flux_correction"].is("afc") )
+  {//nonlinear loop necessary
+    for(int i = 0; i < 200; ++i)
+    {
+      Output::print("AFC nonlin loop, step ", i);
+      cd2d.assemble();
+      cd2d.solve();
+    }
+  }
+  
   cd2d.output();
+  Output::print(parmoon_db["algebraic_flux_correction"]);
+  
+  
   //=========================================================================
   //db.info(false);
   Output::close_file();

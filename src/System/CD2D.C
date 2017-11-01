@@ -266,8 +266,15 @@ void CD2D::assemble()
 /** ************************************************************************ */
 void CD2D::solve()
 {
+
   double t = GetTime();
   System_per_grid& s = this->systems.front();
+  //CB DEBUG
+  BlockVector res = s.rhs;
+  s.matrix.apply_scaled_add(s.solution , res ,-1.0);
+  double eps = res.norm();
+  Output::print("residual before solve: ", eps);
+  //END DEBUG  
   this->solver.solve(s.matrix, s.rhs, s.solution);
   
   t = GetTime() - t;
