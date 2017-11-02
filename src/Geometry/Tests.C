@@ -13,9 +13,6 @@
   #include <BoundFace.h>
 #endif
 
-#ifdef  __MORTAR__
-  #include <MortarJoint.h>
-#endif
 
 #ifndef __3D__
 
@@ -837,92 +834,6 @@ void TDomain::RefCardioide(double A)
     }
   }
 }
-
-#ifdef __MORTAR__
-
-void TDomain::RefOnMortarEdge()
-{
-  TBaseCell *CurrCell;
-  int info;
-
-  TDatabase::IteratorDB[It_Mortar1]->Init((1 << 8) + 10);
-
-  // loop over all cells on a mortar edge
-  while ((CurrCell = TDatabase::IteratorDB[It_Mortar1]->Next(info)) != NULL)
-    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadToTri1]);
-
-  Refine();
-}
-
-void TDomain::TestMortar()
-{
-  CellTree[0]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
-  Refine();
-
-/*
- CellTree[0]->GetChild(0)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(1)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(2)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(3)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
-  Refine();
-
- CellTree[0]->GetChild(0)->GetChild(0)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(0)->GetChild(1)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(0)->GetChild(2)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(0)->GetChild(3)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(1)->GetChild(0)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(1)->GetChild(1)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(1)->GetChild(2)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(1)->GetChild(3)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(2)->GetChild(0)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(2)->GetChild(1)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(2)->GetChild(2)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(2)->GetChild(3)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(3)->GetChild(0)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(3)->GetChild(1)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(3)->GetChild(2)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
- CellTree[0]->GetChild(3)->GetChild(3)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadReg]);
-  Refine();
-*/
-
-/*
- CellTree[0]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N2]);
- CellTree[1]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N1]);
- CellTree[2]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N1]);
- CellTree[3]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N1]);
- CellTree[4]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N1]);
- CellTree[5]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N1]);
- CellTree[6]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N1]);
- CellTree[7]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N1]);
- CellTree[8]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N1]);
- CellTree[9]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Mortar + MORTAR_N1]);
- Refine();
-
- for(int i=0;i<10;i++)
-   for(int j=0;j<4;j++)
-     CellTree[i]->GetChild(j)->SetRefDesc(TDatabase::RefDescDB[N_SHAPES +
-                                          QuadReg]);
- Refine();
-*/
-
-  //cout << "ID = " << ((TMacroCell *) CellTree[0])->GetSubGridID() << endl;
-  //cout << "h = " << CellTree[1]->GetDiameter() << endl;
-}
-
-//void TDomain::TestMortar2()
-//{
-//  TBaseCell *cell1, *cell2;
-//
-//  CellTree[3]->SetJoint(2, CellTree[2]->GetChild(2)->GetJoint(1));
-//  CellTree[3]->SetJoint(3, CellTree[1]->GetChild(2)->GetJoint(1));
-//
-//  CellTree[3]->GetJoint(2)->SetNeighbour(CellTree[3]);
-//  CellTree[3]->GetJoint(3)->SetNeighbour(CellTree[3]);
-//
-//  cell1 = CellTree[3]->GetJoint(2)->GetNeighbour(0);
-//  cell2 = CellTree[3]->GetJoint(2)->GetNeighbour(1);
-//}
-#endif
 
 void TDomain::PeriodicSquares()
 {
