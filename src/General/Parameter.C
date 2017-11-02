@@ -258,6 +258,7 @@ void Parameter::impose(const Parameter& p)
     ErrThrow("cannot impose another parameter to this one because it has a "
              "different name: ", this->name, " ", p.get_name());
   }
+
   // reset change_count and access_count
   this->access_count = 0;
   this->change_count = 0;
@@ -299,6 +300,11 @@ void Parameter::impose(const Parameter& p)
   this->unsigned_value = p.unsigned_value;
   this->double_value = p.double_value;
   this->string_value = p.string_value;
+  this->bool_vector = p.bool_vector;
+  this->int_vector = p.int_vector;
+  this->unsigned_vector = p.unsigned_vector;
+  this->double_vector = p.double_vector;
+  this->string_vector = p.string_vector;
   
   // if the types do not match, there are some combinations which are allowed
   if(this->type != p.get_type())

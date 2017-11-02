@@ -18,6 +18,7 @@
 #include <string.h>
 #include <fstream>
 #include <stdio.h>
+#include <limits>
 
 #ifdef __2D__
   #include <IsoBoundEdge.h>
@@ -39,15 +40,9 @@
   #include <IsoEdge3D.h>
 #endif
 
-#ifdef __MORTAR__
-  #include <BoundPoint.h>
-  #include <MortarBaseJoint.h>
-  #include <MortarJoint.h>
-#endif
-
-
 #include <string.h>
 #include <vector>
+#include <algorithm>
 
 extern "C"
 {
@@ -105,45 +100,120 @@ ParameterDatabase TDomain::default_domain_parameters()
    db.add("write_metis_file", std::string("mesh_partitioning_file.txt"), 
           "The partitioning of the mesh will be written here.");
 
+   db.add("sandwich_grid", false, "If 'true', then this domain should"
+       "be constructed as a sandwich grid from a 2d geometry and mesh.");
+
   return db;
 }
 
-// Constructor
-TDomain::TDomain(const ParameterDatabase& param_db) :
-  Interfaces(nullptr),db(default_domain_parameters())
+ParameterDatabase TDomain::default_sandwich_grid_parameters()
 {
-  RefLevel = 0;
-  Output::print<4>("domain is initialized");
+  ParameterDatabase db("Sandwich Grid Database");
+
+  db.add("drift_x", 0.0, "Grid stretch in x direction.", 0.0, std::numeric_limits<double>::max());
+
+  db.add("drift_y", 0.0, "Grid stretch in y direction.", 0.0, std::numeric_limits<double>::max());
+
+  db.add("drift_z", 1.0, "Grid stretch in z direction.", 0.0, std::numeric_limits<double>::max());
+
+  db.add("n_layers", 1, "Number of cell layers to be stacked "
+      "in the sandwich geometry. If this is specified and 'lambda' "
+      "is at its default value {0,1}, a total number of 'n_layer'"
+      "cell layers are equally distributed across the height of the"
+      "sandwich grid. Note that 'lambda' is prioritised over 'n_layers'.",
+      1, std::numeric_limits<int>::max() );
+
+  db.add("lambda", {0.0,1.0}, "The vector of seperators of the cell "
+      "layers. Minimum length is 2, the first value must be 0 and "
+      "the last value must be 1. The values in between give the "
+      "relative positions of the layer seperators. If this is "
+      "specified other than {0,1} it is given priority over n_layers.");
+
+  return db;
+}
+
+// A little helper function, copied from
+// https://stackoverflow.com/questions/874134/find-if-string-ends-with-another-string-in-c,
+// which makes it easier to decide, whether a string has a specific ending.
+bool ends_with (std::string const &fullString, std::string const &ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
+}
+
+TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
+  Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
+{
+
+  if(ParamFile)
+  {//read the param file and fil the old database
+	  Output::info<4>("READ-IN","Constructing old database from file ", ParamFile);
+	  ReadParam(ParamFile);
+  }
+
+  // get the relevant parameters from the new database
   db.merge(param_db, false);
   
+#ifdef __3D__
+  //Check if this should be a sandwich grid
+  if(db["sandwich_grid"])
+  {// Try to find a nested database with the correct name
+    ParameterDatabase sandwich_db = default_sandwich_grid_parameters();
+    ParameterDatabase sandwich_in_db("");
+    try
+    {
+      sandwich_in_db = param_db.get_nested_database("Sandwich Grid Database");
+    }
+    catch(...)
+    {
+      Output::warn("DOMAIN","If the domain should be built as sandwich grid, you"
+          " must give a nested database named '[Sandwich Grid Database]'.");
+      Output::warn("CONT'D","Did not find such a database, proceeding with defaults.");
+
+    }
+    // Merge the sandwich input database into the default one. Here we allow
+    // for the creation of new parameters, for easy include of example specific
+    // parameters, which should not appear in the default database.
+    sandwich_db.merge(sandwich_in_db, true);
+    //The sandwich database is then nested into the domain database.
+    db.add_nested_database(sandwich_db);
+  }
+#endif
+
+
+  Output::info<4>("Domain" "Starting domain initialization.");
+
   std::string geoname = db["geo_file"];
   std::string boundname = db["boundary_file"];
+  // This parameter is only used, if the other two are of no use.
   std::string smesh = db["mesh_tetgen_file"];
   
-  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" )
-      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
-      )
-  {
-    this->Init(boundname.c_str(), geoname.c_str());
-    Output::print<4>("GEO and PRM files are selected");
+  // Find out what kind of geometry input files are given.
+  if( ends_with(geoname, "GEO") && ends_with(boundname, ".PRM") )
+  {//GEO and PRM file given (old-school MooNMD)
+    Output::info("Domain", "Initializing Domain using GEO file ", geoname,
+          " and .PRM file ", boundname);
+    Init(boundname, geoname);
   }
-  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
-	   && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
-	   )
-  {
-    Output::print<4>("mesh and PRM files are selected");
-    this->InitFromMesh(boundname.c_str(), geoname.c_str());
-    
+  else if( ends_with(geoname, ".mesh") && ends_with(boundname, ".PRM") )
+  {//.mesh file (medit format) and PRM file given
+    Output::info("Domain", "Initializing Domain using .mesh file ", geoname,
+             " and .PRM file ", boundname);
+    InitFromMesh(boundname, geoname);
   }
 #ifdef __3D__
-  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" ) )
-  {
-    // note: in 3D, we allow domain initialization withtou PRM
-    Output::print<>("Initialize (3D) Domain using mesh file ",geoname.c_str());
-    this->InitFromMesh(boundname.c_str(), geoname.c_str());
+  else if( ends_with(geoname, ".mesh") )
+  {// in 3D, we allow domain initialization with .mesh file and without PRM
+    Output::info("Domain", "Initializing Domain using .mesh file ", geoname,
+             " and no .PRM file.");
+    InitFromMesh(boundname, geoname);
   }
-  else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
-  {
+  else if( ends_with(smesh, ".smesh") || ends_with(smesh, ".mesh"))
+  {// tetgen initialization from .smesh (surface mesh) file
+    Output::info("Domain", "Experimental feature: Using tetgen for initialization "
+        " of domain from ", smesh);
     // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
     TTetGenMeshLoader tetgen(smesh, db);   
     // convert the mesh into ParMooN Mesh object
@@ -155,75 +225,11 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
   }
 #endif
   else 
-  {
+  {// If nothing else fits, the program supposes a default geometry.
+    Output::info("Domain", "Trying to find a default geometry and mesh "
+        " for ", geoname, " and ", boundname);
     // default cases for the tests
-    this->Init(boundname.c_str(), geoname.c_str());
-  }
-}
-
-//TODO This domain constructor, which is also responsible for read-in of the
-// old database, is to be reomved soon.
-TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
-  Interfaces(nullptr),db(default_domain_parameters())
-{
-  RefLevel = 0;
-  
-  db.merge(param_db, true);
-
-  // This will be removed as soon as we got entirely rid of the
-  // global database.
-  /** set variables' value in TDatabase using ParamFile */
-  this->ReadParam(ParamFile);
-  
-  std::string geoname = db["geo_file"];
-  std::string boundname = db["boundary_file"];
-  std::string smesh = db["mesh_tetgen_file"];
-  
-  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
-      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
-      )
-  {
-    this->Init(boundname.c_str(), geoname.c_str());
-    Output::print<4>("GEO and PRM files are selected");
-    
-  }
-  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" )
-	   && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" )
-	   )
-  {
-    Output::print<>("Initialize Domain using mesh file ",geoname.c_str(),
-		    " and PRM file ",boundname.c_str());
-    this->InitFromMesh(boundname.c_str(), geoname.c_str());
-  }
-    
-#ifdef __3D__
-  else if( (geoname.substr(geoname.find_last_of(".") + 1) == "mesh" ) )
-  {
-    // note: in 3D, we allow domain initialization withtou PRM
-    Output::print<>("Initialize (3D) Domain using mesh file ",geoname.c_str());
-    this->InitFromMesh(boundname.c_str(), geoname.c_str());
-  }
-  
-  else if( (smesh.substr(smesh.find_last_of(".")+1) == "smesh")||
-	   (smesh.substr(smesh.find_last_of(".")+1) == "mesh") )
-  {
-    // intialize mesh using tetegen mesh loader
-    Output::print<>("Initialize Domain using the surface mesh file ", smesh.c_str());
-
-    // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
-    TTetGenMeshLoader tetgen(smesh, db);   
-    // convert the mesh into ParMooN Mesh object
-    ParM::Mesh m(tetgen.meshTetGenOut);
-    // generate vertices, cells and joint
-    GenerateFromMesh(m);
-    // test: write the mesh on a file
-    m.writeToMesh("test2.mesh");
-}
-#endif
-  else 
-  {
-    // default cases for the tests
-    this->Init(boundname.c_str(), geoname.c_str());
+    Init(boundname, geoname);
   }
 }
 
@@ -258,249 +264,6 @@ int TDomain::GetLocalBdCompID(int BdCompID)
 
   return BdCompID - StartBdCompID[i];
 }
-
-#ifdef __MORTAR__
-int TDomain::SetSubGridIDs(IntFunct2D *TestFunc)
-{
-  int i, j, N_, ID, CurrID;
-  TVertex *Vert;
-
-  for (i=0;i<N_RootCells;i++)
-  {
-    ID = 0;
-    N_ = CellTree[i]->GetRefDesc()->GetN_OrigVertices();
-    for(j=0;j<N_;j++)
-    {
-      Vert = CellTree[i]->GetVertex(j);
-      CurrID = TestFunc(Vert->GetX(), Vert->GetY());
-
-      if (CurrID > ID) ID = CurrID;
-    }
-
-    ((TMacroCell *) CellTree[i])->SetSubGridID(ID);
-  }
-  
-  return 0;
-}
-
-int TDomain::GenMortarStructs()
-{
-  int i, j, k, N_1, N_2, ID1, ID2;
-  TBaseCell *MeBase, *Me, *Neighb;
-  TJoint *Joint;
-  //TVector<int> *MortarAux;
-
-  //MortarAux = new TVector<int>(30,30);
-  std::vector<int> MortarAux;
-
-  N_MortarFaces = 0;
-
-  for (i=0;i<N_RootCells;i++)
-    CellTree[i]->SetClipBoard(0);
-
-  for (i=0;i<N_RootCells;i++)
-  {
-    Me = CellTree[i];
-    N_1 = Me->GetRefDesc()->GetN_OrigEdges();
-    for(j=0;j<N_1;j++)
-      if (Neighb = Me->GetJoint(j)->GetNeighbour(CellTree[i]))
-        if ((ID1 = Me->GetSubGridID()) != (ID2 = Neighb->GetSubGridID()))
-        {
-          N_2 = Neighb->GetRefDesc()->GetN_OrigEdges();
-          for (k=0;k<N_2;k++)
-            if (Neighb->GetJoint(k) == Me->GetJoint(j)) break;
-
-          if (!(Me->GetClipBoard() & 1 << j))
-          {
-            N_MortarFaces++;
-            Me->SetClipBoard(Me->GetClipBoard() | 1 << j);
-            Neighb->SetClipBoard(Neighb->GetClipBoard() | 1 << k);
-
-            if (ID1 < ID2)
-              //MortarAux->AddElement(i);
-              MortarAux.push_back(i);
-            else
-              //MortarAux->AddElement(-i-1);
-              MortarAux.push_back(-i-1);
-
-            //MortarAux->AddElement(j);
-            //MortarAux->AddElement(k);
-            MortarAux.push_back(j);
-            MortarAux.push_back(k);
-          }
-        }
-  } 
-
-  MortarFaces = new TMortarFace[N_MortarFaces];
-
-  for (i=0;i<N_MortarFaces;i++)
-  {
-    //if (MortarAux->GetElement(3*i) >= 0)
-    if (MortarAux.at(3*i) >= 0)
-    {
-      //MortarFaces[i].Cell = CellTree[MortarAux->GetElement(3*i)];
-      //MortarFaces[i].LocFaceNumber[0] = MortarAux->GetElement(3*i + 1);
-      //MortarFaces[i].LocFaceNumber[1] = MortarAux->GetElement(3*i + 2);
-      MortarFaces[i].Cell = CellTree[MortarAux.at(3*i)];
-      MortarFaces[i].LocFaceNumber[0] = MortarAux.at(3*i + 1);
-      MortarFaces[i].LocFaceNumber[1] = MortarAux.at(3*i + 2);
-    }
-    else
-    {
-      //MeBase = CellTree[-MortarAux->GetElement(3*i) - 1];
-      //MortarFaces[i].LocFaceNumber[0] = MortarAux->GetElement(3*i + 2);
-      //MortarFaces[i].LocFaceNumber[1] = MortarAux->GetElement(3*i + 1);
-      MeBase = CellTree[-MortarAux.at(3*i) - 1];
-      MortarFaces[i].LocFaceNumber[0] = MortarAux.at(3*i + 2);
-      MortarFaces[i].LocFaceNumber[1] = MortarAux.at(3*i + 1);
-      MortarFaces[i].Cell = MeBase->GetJoint(MortarFaces[i].LocFaceNumber[1])->
-                            GetNeighbour(MeBase);
-    }
-  }
-
-  for (i=0;i<N_MortarFaces;i++)
-  {
-    k = MortarFaces[i].LocFaceNumber[0];
-    Me = MortarFaces[i].Cell;
-    Joint = Me->GetJoint(k);
-    Neighb = Joint->GetNeighbour(Me);
-
-    delete Joint;
-
-    Joint = new TMortarBaseJoint(Me, Neighb);
-    Me->SetJoint(k, Joint);
-    Neighb->SetJoint(MortarFaces[i].LocFaceNumber[1], Joint);
-  }
-  
-  //delete MortarAux;
-  
-  return 0;
-}
-
-TCollection *TDomain::GetMortarColl(Iterators it, int level)
-{
-  TCollection *coll;
-  int i, n_cells = 0, lev, info;
-  const int *TmpEV;
-  TBaseCell **cells, *CurrCell, *LastCell, *NewCell;
-  TJoint *Joint;
-
-  BeginMFace = new int[N_MortarFaces + 1];
-  BeginMFace[0] = 0;
-  
-  for (i=0;i<N_MortarFaces;i++)
-  {
-    lev = level + (i << 8);
-    TDatabase::IteratorDB[it]->Init(lev);
-    while (TDatabase::IteratorDB[it]->Next(info)) n_cells++;
-    BeginMFace[i+1] = n_cells;
-  }
-
-  cells = new TBaseCell*[n_cells];
-
-  for (n_cells=i=0;i<N_MortarFaces;i++)
-  {
-    lev = level + (i << 8);
-    TDatabase::IteratorDB[it]->Init(lev);
-    LastCell = NULL;
-    while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
-    {
-      NewCell = new TGridCell(TDatabase::RefDescDB[S_Line], RefLevel);
-
-      CurrCell->GetRefDesc()->GetShapeDesc()->GetEdgeVertex(TmpEV);
-      NewCell->SetVertex(0, CurrCell->GetVertex(TmpEV[2*info]));
-      NewCell->SetVertex(1, CurrCell->GetVertex(TmpEV[2*info + 1]));
-
-      if (LastCell)
-      {
-        Joint = new TJointEqN(NewCell, LastCell);
-        NewCell->SetJoint(0, Joint);
-        LastCell->SetJoint(1, Joint);
-      }
-      else
-        NewCell->SetJoint(0, new TJointEqN(NewCell));
-
-      cells[n_cells++] = LastCell = NewCell;
-    }
-    NewCell->SetJoint(1, new TJointEqN(NewCell));
-  }
-
-  coll = new TCollection(n_cells, cells);
-
-  #ifdef  _MPI 
-  coll->SetN_OwnCells(N_OwnCells);
-  #endif
-
- return coll;
-}
-
-int TDomain::InitMortarJoints(Iterators it, int level, TCollection *coll)
-{
-  int i, j, ncell, Ncell, lev, info;
-  const int *TmpEV;
-  bool Left;
-  double X0, Y0, X1, Y1, X, Y;
-  TBaseCell *CurrCell, *Cell1D;
-
-  for (ncell=i=0;i<N_MortarFaces;i++)
-  {
-    lev = level + (i << 8);
-    TDatabase::IteratorDB[it]->Init(lev);
-    while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
-      if (CurrCell->GetParent())
-        ((TMortarJoint *) CurrCell->GetJoint(info))->SetMEdgeInColl(ncell++);
-      else
-        ((TMortarBaseJoint *) CurrCell->GetJoint(info))->
-                                SetMEdgeInColl(ncell++);
-  }
-
-  for (i=0;i<N_MortarFaces;i++)
-  {
-    lev = - level - (i << 8);
-    TDatabase::IteratorDB[it]->Init(lev);
-    ncell = BeginMFace[i];
-    Ncell = BeginMFace[i+1] - 1;
-    while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
-    {
-      CurrCell->GetRefDesc()->GetShapeDesc()->GetEdgeVertex(TmpEV);
-      X0 = CurrCell->GetVertex(TmpEV[2*info])->GetX();
-      Y0 = CurrCell->GetVertex(TmpEV[2*info])->GetY();
-      X1 = CurrCell->GetVertex(TmpEV[2*info+1])->GetX();
-      Y1 = CurrCell->GetVertex(TmpEV[2*info+1])->GetY();
-
-      do
-      {
-        Cell1D = coll->GetCell(ncell);
-        X = Cell1D->GetVertex(0)->GetX();
-        Y = Cell1D->GetVertex(0)->GetY();
-        Left = (bool) ((X1-X)*(X1-X0) + (Y1-Y)*(Y1-Y0) < 0);
-
-        if (Left) ncell++;
-
-      } while (ncell < Ncell && Left);
-
-      if (ncell > Ncell)
-        ncell--;
-      else
-      {
-        Cell1D = coll->GetCell(ncell);
-        X = Cell1D->GetVertex(0)->GetX();
-        Y = Cell1D->GetVertex(0)->GetY();
-        if ((X1-X)*(X1-X0) + (Y1-Y)*(Y1-Y0) > 0) ncell--;
-      }
-
-      if (CurrCell->GetParent())
-        ((TMortarJoint *) CurrCell->GetJoint(info))->
-                            SetMEdgeInColl(-ncell - 1);
-      else
-        ((TMortarBaseJoint *) CurrCell->GetJoint(info))->
-                                SetMEdgeInColl(-ncell - 1);
-    }
-  }
-
-  return 0;
-}
-#endif // __MORTAR__
 
 #ifdef __2D__
 //void SaveTri(struct triangulateio &outt);
@@ -742,11 +505,6 @@ int TDomain::GenInitGrid()
   TDatabase::IteratorDB[It_Between]->SetParam(this);
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
 
-  #ifdef __MORTAR__
-    TDatabase::IteratorDB[It_Mortar1]->SetParam(this);
-    TDatabase::IteratorDB[It_Mortar2]->SetParam(this);
-  #endif 
-
   // search neighbours
   N_ = outt.numberofpoints;
   PointNeighb = new int[N_];
@@ -926,102 +684,88 @@ int TDomain::GenInitGrid()
 }
 
 
-void TDomain::Init(const char *PRM, const char *GEO)
+void TDomain::Init(const std::string& PRM, const std::string& GEO)
 {
-  int Flag;
 
-  if(PRM == nullptr || GEO == nullptr)
-  {
-    ErrThrow("No boundary description or initial mesh specified");
-  }
-
-  //start with treatment of the boundary description
-  if (!strcmp(PRM, "Default_UnitSquare"))
-  {//catch the only implemented default case - boundary of the unit square
+  // Interpret the PRM string
+  if (PRM == "Default_UnitSquare")
+  {// default case - boundary of the [0,1] unit square
     initializeDefaultUnitSquareBdry();
   }
-  //start with treatment of the boundary description
-  else if (!strcmp(PRM, "DrivenCavitySquare"))
-  {//catch the only implemented default case - boundary of the unit square
+  else if (PRM == "DrivenCavitySquare")
+  {// default case - boundary of the [-1,1] unit square
     initializeDrivenCavitySquareBdry();
   }
   else
   {
-    // non-default: read in from file
-    //make an input file string from the file "PRM"
+    // non-default: read in from .PRM file
     std::ifstream bdryStream(PRM);
     if (!bdryStream)
     {
-      ErrThrow("cannot open PRM file");
+      ErrThrow("Cannot open .PRM file ", PRM);
     }
 
     //do the actual read in
-    ReadBdParam(bdryStream, Flag);
-
-    //close the stream
-    bdryStream.close();
+    ReadBdParam(bdryStream);
   }
 
-  // continue with initial mesh
-  if (!strcmp(GEO, "InitGrid"))
+  // Interpret the GEO string - start with default meshes
+  if (GEO == "InitGrid")
   {
     GenInitGrid();
   }
-  else if (!strcmp(GEO, "TwoTriangles"))
+  else if (GEO == "TwoTriangles")
   {
     TwoTriangles();
   }
-  else
-  if (!strcmp(GEO, "TwoTrianglesRef"))
+  else if (GEO == "TwoTrianglesRef")
   {
     TwoTrianglesRef();
   }
-  else if (!strcmp(GEO, "UnitSquare"))
+  else if (GEO ==  "UnitSquare")
   {
     UnitSquare();
   }
-  else if (!strcmp(GEO, "DrivenCavitySquareQuads"))
+  else if (GEO == "DrivenCavitySquareQuads")
   {
     DrivenCavitySquareQuads();
   }
-  else if (!strcmp(GEO, "UnitSquareRef"))
+  else if (GEO ==  "UnitSquareRef")
   {
     UnitSquareRef();
   }
-  else if (!strcmp(GEO, "SquareInSquare"))
+  else if (GEO == "SquareInSquare")
   {
     SquareInSquare();
   }
-  else if (!strcmp(GEO, "UnitSquare_US22"))
+  else if (GEO == "UnitSquare_US22")
   {
     UnitSquare_US22();
   }
-  else if (!strcmp(GEO, "SquareInSquareRef"))
+  else if (GEO == "SquareInSquareRef")
   {
     SquareInSquareRef();
   }
-  else if (!strcmp(GEO, "PeriodicSquares"))
+  else if (GEO == "PeriodicSquares")
   {
     PeriodicSquares();
   }
-  else if (!strcmp(GEO, "PeriodicSquaresLarge"))
+  else if (GEO ==  "PeriodicSquaresLarge")
   {
     PeriodicSquaresLarge();
   }
-  else if (!strcmp(GEO, "PeriodicTrianglesLarge"))
+  else if (GEO == "PeriodicTrianglesLarge")
   {
     PeriodicTrianglesLarge();
   }
-  else if (!strcmp(GEO, "PeriodicRectangle_2_4"))
+  else if (GEO == "PeriodicRectangle_2_4")
   {
     PeriodicRectangle_2_4();
   }
   else
   {
-
     // error message: .GEO file are no longer supported. They can be used to initialize a domain
     // only if the purpose is to covert the .GEO into a .mesh
-
     if (!strcmp(db["mesh_file"],"__nofile__"))
     {
       Output::print("** **************************************************************** **");
@@ -1044,104 +788,270 @@ void TDomain::Init(const char *PRM, const char *GEO)
       Output::print("** (4) replace 'geo_file: [the new mesh file]' in your input file   **");
       Output::print("**                                                                  **");
       Output::print("** Note: using .GEO and .PRM files is only allowed with the         **");
-      Output::print("** purpose of converting .GEO -> .mesh                              **");      
+      Output::print("** purpose of converting .GEO -> .mesh                              **");
       Output::print("** **************************************************************** **");
       exit(1);
-    }      
-    else 
+    }
+    else
     {
-      Output::print("** Converting .GEO to .mesh **");    
+      Output::print("** Converting .GEO to .mesh **");
     }
 	
-    // "GEO" interpreted as file path to GEO-file.
-    // check if it actually is an .xGEO-file
-    bool isxGEO = isExtendedGEO(GEO);
+    // check if the GEO file actually is an .xGEO-file
+    bool isxGEO = ends_with(GEO, ".xGEO");
 
     // make an input file string from the file "GEO"
-    std::ifstream bdryStream(GEO);
-    if (!bdryStream)
+    std::ifstream geo_stream(GEO);
+    if (!geo_stream)
     {
-      ErrThrow("cannot open GEO file");
+      ErrThrow("Cannot open GEO file ", GEO);
     }
 
     // and call the read-in method
-    ReadGeo(bdryStream,isxGEO);
+    ReadGeo(geo_stream,isxGEO);
   }
 }
 
 
-
 #else // 3D
-void TDomain::Init(const char *PRM, const char *GEO)
+void TDomain::Init(const std::string& PRM, const std::string& GEO)
 {
-  int IsSandwich = 0;
-
-  if(PRM == nullptr || GEO == nullptr)
-  {
-    ErrThrow("No boundary description or initial mesh specified");
-  }
 
   // start with read in of boundary description
-
-  if (!strcmp(PRM, "Default_UnitCube"))
+  bool prm_is_sandwich = false;
+  if (PRM == "Default_UnitCube")
   {
     // one implemented default case: unit cube
-    IsSandwich = initializeDefaultCubeBdry();
+    initializeDefaultCubeBdry();
   }
   else
   {
     // "PRM" interpreted as file path to PRM-file.
-    // make an input file string from the file "PRM"
     std::ifstream bdryStream(PRM);
     if (!bdryStream)
-    {
-      ErrThrow("cannot open PRM file");
-    }
-    // otherwise: try to read in given .PRM file
-    ReadBdParam(bdryStream, IsSandwich);
+      ErrThrow("Cannot open PRM file ", PRM);
+
+    ReadBdParam(bdryStream, prm_is_sandwich);
   }
 
-  if(!IsSandwich)
+  if(db["sandwich_grid"])
   {
-    if (!strcmp(GEO, "TestGrid3D"))
-    {
-      TestGrid3D();
-    }
-    else if (!strcmp(GEO, "Default_UnitCube_Hexa"))
-    {
-      initialize_cube_hexa_mesh();
-    }
-    else if (!strcmp(GEO, "Default_UnitCube_Tetra"))
-    {
-      initialize_cube_tetra_mesh();
-    }
-    else
-    {
-      // "GEO" interpreted as file path to GEO-file.
-      // check if it actually is an .xGEO-file
-      bool isxGEO = isExtendedGEO(GEO);
-      // make an input file string from the file "GEO"
-      std::ifstream bdryStream(GEO);
-      if (!bdryStream)
-      {
-        ErrThrow("cannot open GEO file");
-      }
-      ReadGeo( bdryStream, isxGEO );
-    }
+    //this ought to be a sandwich grid
+    if(!prm_is_sandwich)
+      ErrThrow("The specified .PRM file ", PRM ," is not suitable for a "
+          "sandwich geometry. It seems to lack a TBdWall boundary.");
+
+    // make an input file string from the file "GEO"
+    ReadSandwichGeo(GEO);
+
+    return;
+  }
+
+  if(prm_is_sandwich)
+    Output::warn("DOMAIN", "Your .PRM file is adapted to sandwich grid. This might "
+        "cause problems, since 'sandwich_grid' is false. (Untested!)");
+
+  // Check for default geometries.
+  if (GEO == "TestGrid3D")
+  {
+    TestGrid3D();
+  }
+  else if (GEO == "Default_UnitCube_Hexa")
+  {
+    initialize_cube_hexa_mesh();
+  }
+  else if (GEO == "Default_UnitCube_Tetra")
+  {
+    initialize_cube_tetra_mesh();
   }
   else
-  {
+  { // non-default case, try to read an initial geometry from file
     // make an input file string from the file "GEO"
-    std::ifstream bdryStream(GEO);
-    if (!bdryStream)
+    std::ifstream geo_stream(GEO);
+    if (!geo_stream)
     {
-      ErrThrow("cannot open GEO file");
+      ErrThrow("Cannot open GEO file ", GEO);
     }
-    // then read in sandwich geo.
-    ReadSandwichGeo(bdryStream);
+    bool isxGEO = ends_with(GEO, ".xGEO"); // check if the GEO file actually is an .xGEO-file
+    ReadGeo( geo_stream, isxGEO );
   }
 }
-#endif // __2D__
+
+void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
+{
+
+  // The constructor took care of this nested database being present.
+  const ParameterDatabase& sw_db = db.get_nested_database("Sandwich Grid Database");
+  double drift_x = sw_db["drift_x"];
+  double drift_y = sw_db["drift_y"];
+  double drift_z = sw_db["drift_z"];
+  int n_layers = sw_db["n_layers"]; //layers of cells (!)
+
+  //Three C-style arrays needed for the call to MakeSandwichGrid.
+  double *DCORVG;
+  int* KVERT;
+  int* KNPR;
+  int N_Vertices;
+  int NVE;
+
+  // First case: the file_name is a .GEO file.
+  if(ends_with(file_name, ".GEO"))
+  {
+    std::ifstream dat(file_name);
+    if (!dat)
+      ErrThrow("Cannot open .GEO file ", dat);
+    char line[100];
+    int NVpF, NBCT;
+
+    dat.getline (line, 99);
+    dat.getline (line, 99);
+
+    // determine dimensions for creating arrays
+    dat >> N_RootCells >> N_Vertices >> NVpF >> NVE >> NBCT;
+    dat.getline (line, 99);
+    dat.getline (line, 99);
+
+    // allocate auxillary fields
+    DCORVG =  new double[2*N_Vertices];
+    KVERT = new int[NVE*N_RootCells];
+    KNPR = new int[N_Vertices];
+    // read fields
+    for (int i=0;i<N_Vertices;i++)
+    {
+      dat >> DCORVG[2*i] >> DCORVG[2*i + 1];
+      dat.getline (line, 99);
+    }
+
+    dat.getline (line, 99);
+
+    for (int i=0;i<N_RootCells;i++)
+    {
+      for (int j=0;j<NVE;j++)
+        dat >> KVERT[NVE*i + j];
+      dat.getline (line, 99);
+    }
+
+    dat.getline (line, 99);
+
+    for (int i=0;i<N_Vertices;i++)
+      dat >> KNPR[i];
+  }
+  // Second case: the file_name is a .mesh file.
+  else if (ends_with(file_name, ".mesh"))
+  {
+    // read the mesh file and prepare input for MakeSandwichGrid
+     ParM::Mesh m(file_name);
+     m.setBoundary(prm_file_name);
+
+     size_t numberOfElements = m.triangle.size() + m.quad.size();
+     size_t maxNVertexPerElem = 3;
+     // make the ParMooN-grid
+     if (m.quad.size()) {
+       maxNVertexPerElem = 4;
+     }
+     if (numberOfElements==0) {
+       ErrThrow(" ** Error(Domain::Init) the mesh has no elements");
+     }
+
+     // vertices data
+     size_t n_vertices = m.vertex.size();
+     KNPR = new int[n_vertices];
+     DCORVG =  new double[2*n_vertices];
+
+     // fill the DCORVG array with GEO-like coordinates of two-dimensional points
+     for (size_t i=0; i<n_vertices; i++) {
+       // check if the vertex is on the boundary
+       double localParam;
+       int partID = m.boundary.isOnComponent(m.vertex[i].x,m.vertex[i].y,localParam);
+       if (partID>=0) {
+         DCORVG[2*i] = localParam;
+         DCORVG[2*i+1] = 0.;
+         KNPR[i] = partID+1;
+       } else {
+         DCORVG[2*i] = m.vertex[i].x;
+         DCORVG[2*i+1] = m.vertex[i].y;
+         KNPR[i] = 0;
+       }
+     }
+     KVERT = new int[maxNVertexPerElem * numberOfElements];
+
+     // store triangles (+ 0 when using a mixed mesh)
+     for (size_t i=0;i<m.triangle.size();i++)
+     {
+       for (size_t  j=0; j<3; j++)
+         KVERT[maxNVertexPerElem*i + j] = m.triangle[i].nodes[j];
+       if (maxNVertexPerElem==4)
+         KVERT[maxNVertexPerElem*i + 3] = 0;
+     }
+
+     // store quadrilaterals
+     for (size_t i=0;i<m.quad.size();i++)
+     {
+       for (size_t  j=0; j<4; j++)
+         KVERT[maxNVertexPerElem* (m.triangle.size() + i) + j] = m.quad[i].nodes[j];
+     }
+     // N_RootCells is an internal Domain variable used in other functions
+     N_RootCells = numberOfElements;
+     N_Vertices = m.vertex.size();
+     NVE = maxNVertexPerElem;
+  }
+
+  // figure out the relative placing of sandwich grid layers.
+  std::vector<double> lambda = sw_db["lambda"];
+
+  bool control_by_lambda = true;
+  if(!std::is_sorted(lambda.begin(), lambda.end()))
+  {//check if lambda is valid
+    Output::warn("DOMAIN", "Invalid lambda for sandwich grid given. "
+                 "The entries must be in ascending order. "
+                 "Opting for control parameter n_layers.");
+    control_by_lambda = false;
+  }
+  if(*std::min_element(lambda.begin(), lambda.end()) != 0 ||
+     *std::max_element(lambda.begin(), lambda.end()) != 1)
+  {//check if lambda is valid
+    Output::warn("DOMAIN", "Invalid lambda for sandwich grid given. "
+                 "The vector must start with 0 and end with 1. "
+                 "Opting for control parameter n_layers.");
+    control_by_lambda = false;
+  }
+  if(lambda == std::vector<double>({0,1}))
+  {//default lambda is given - take n_layers instead
+    Output::info("DOMAIN", "Default lambda for sandwich grid given. "
+                 "Opting for control parameter n_layers.");
+    control_by_lambda = false;
+  }
+  if(!control_by_lambda)
+  {//n_layers is used as control parameter
+    Output::info("DOMAIN", "Taking sandwich grid database "
+        "parameter 'n_layers' = ", sw_db["n_layers"]);
+    int n_node_layers = sw_db["n_layers"];
+    ++n_node_layers; //count up to get the number of node (and not cell) layers
+
+    //fill a lambda with equally spaced numbers
+    lambda.resize(n_node_layers);
+    for(int i=0 ; i<n_node_layers ; i++)
+      lambda[i] = i * (1.0/n_layers);
+  }
+  else
+  {//control by lambda
+    Output::info("DOMAIN", "Taking sandwich grid database "
+      "parameter 'lambda'.");
+  }
+
+
+
+  // Call the private method which does the actual work.
+  MakeSandwichGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE,
+                   drift_x, drift_y, drift_z, lambda);
+
+  delete[] DCORVG;
+  delete[] KVERT;
+  delete[] KNPR;
+
+}
+
+#endif
 
 
 // initialize a domain from a mesh and a boundary(PRM) file
@@ -1156,10 +1066,7 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
     ErrThrow(" ** Error(TDomain::Init) cannot open PRM file ", PRM);
   }
   //do the actual read in
-  int Flag;
-  ReadBdParam(bdryStream, Flag);
-  //close the stream
-  bdryStream.close();
+  ReadBdParam(bdryStream);
 
   // read mesh
   ParM::Mesh m(MESHFILE);
@@ -1232,121 +1139,36 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
   delete [] ELEMSREF;
 #else
 
-  int IsSandwich = 0;
-  std::ifstream bdryStream(PRM);
-  if (bdryStream)
+  bool prm_is_sandwich = false;
+
+  std::ifstream bdry_stream(PRM);
+  if (bdry_stream)
   {
     // read .PRM if available (for example for sandwich grid)
-    ReadBdParam(bdryStream, IsSandwich);
-    if (IsSandwich)
+    ReadBdParam(bdry_stream, prm_is_sandwich);
+
+    if(db["sandwich_grid"])
     {
-      Output::print(" WARNING: Sandwich grid not yet implemented with .mesh input file");
-      Output::print("          Use a .GEO instead.");
+      //this ought to be a sandwich grid
+      if(!prm_is_sandwich)
+        ErrThrow("The specified .PRM file ", PRM ," is not suitable for a "
+                 "sandwich geometry. It seems to lack a TBdWall boundary.");
 
-      // =======================================
-      // read the .GEO file
-      // note: this is the same as the above 2D code
-      
-      // read mesh
-      ParM::Mesh m(MESHFILE);
-      m.setBoundary(PRM);
-      unsigned int numberOfElements = m.triangle.size() + m.quad.size();
-      unsigned int maxNVertexPerElem = 3;
-      // make the ParMooN-grid
-      if (m.quad.size()) {
-         maxNVertexPerElem = 4;
-      }
-      if (numberOfElements==0) {
-	Output::print(" ** Error(Domain::Init) the mesh has no elements");
-	exit(-1);
-      }
-      
-      // vertices data
-      double *DCORVG;
-      int *KNPR;
-      unsigned int n_vertices = m.vertex.size();
-      KNPR = new int[n_vertices];
-      DCORVG =  new double[2*n_vertices];
-      
-      // fill the DCORVG array with GEO-like coordinates of two-dimensional points
-      for (unsigned int i=0; i<n_vertices; i++) {
-	
-	// check if the vertex is on the boundary
-	double localParam;
-	int partID = m.boundary.isOnComponent(m.vertex[i].x,m.vertex[i].y,localParam);
-	if (partID>=0) {
-	  DCORVG[2*i] = localParam;
-	  DCORVG[2*i+1] = 0.;
-	  KNPR[i] = partID+1;
-	} else {
-	  DCORVG[2*i] = m.vertex[i].x;
-	  DCORVG[2*i+1] = m.vertex[i].y;
-	  KNPR[i] = 0;
-	}  
-      }
-      int *KVERT,*ELEMSREF;
-      KVERT = new int[maxNVertexPerElem * numberOfElements];
-      ELEMSREF = new int[numberOfElements];
-      
-      // store triangles (+ 0 when using a mixed mesh)
-      for (unsigned int i=0;i<m.triangle.size();i++)
-	{
-	  for (unsigned int  j=0; j<3; j++) 
-	    KVERT[maxNVertexPerElem*i + j] = m.triangle[i].nodes[j];
-	  
-	  if (maxNVertexPerElem==4) KVERT[maxNVertexPerElem*i + 3] = 0;
-	  
-	  ELEMSREF[i] = m.triangle[i].reference;
-	  
-	}
-      
-      // store quadrilaterals
-      for (unsigned int i=0;i<m.quad.size();i++)
-	{
-	  for (unsigned int  j=0; j<4; j++) 
-	    KVERT[maxNVertexPerElem* (m.triangle.size() + i) + j] = m.quad[i].nodes[j];
-	  
-	  ELEMSREF[m.triangle.size()+i] = m.quad[i].reference;
-	  
-	}
-      // N_RootCells is an internal Domain variable used in other functions
-      N_RootCells = numberOfElements;
-      // =======================================
+      ReadSandwichGeo(MESHFILE, PRM);
 
-      // =======================================
-      // parameters specific to the sandwich case
-      double DriftX = TDatabase::ParamDB->DRIFT_X;
-      double DriftY = TDatabase::ParamDB->DRIFT_Y;
-      double DriftZ = TDatabase::ParamDB->DRIFT_Z;
-      int N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;
-      
-      double *Lambda = new double[N_Layers];
-      for(int i=0;i<N_Layers;i++)
-      {
-	Lambda[i] = i * (1.0/(N_Layers-1));
-      }
-      // =======================================
-      
-      MakeSandwichGrid(DCORVG, KVERT, KNPR,  m.vertex.size(),maxNVertexPerElem,
-		       DriftX, DriftY, DriftZ, N_Layers, Lambda);
-      //exit(1);
     }
     else
     {
-      Output::print("** ERROR: I can only initialize 3D domain using PRM for sandwich grid");
-      Output::print("** ERROR: check your input files." );
-      exit(1);
+      ErrThrow("The combination of .mesh file and sandwich grid "
+          "requires specification of a .PRM file.")
     }
-    
   } else {
-
-    // otherwise: proceed without a PRM file
-    // read mesh
-  ParM::Mesh m(MESHFILE);
+    // if not sandwich, one can proceed without a PRM file
+    ParM::Mesh m(MESHFILE);
     GenerateFromMesh(m);
   }
 
-#endif // __2D__
+#endif
 }
 
 int TDomain::PS(const char *name, Iterators iterator, int arg)
@@ -2489,9 +2311,6 @@ TCollection *TDomain::GetCollection(Iterators it, int level) const
   TBaseCell **cells, *CurrCell;
 
   // initialize the iterator
-  // note:
-  // enum Iterators {It_EQ, It_LE, It_Finest, It_EQLevel, It_LELevel,
-  //            It_Between, It_OCAF, It_Mortar1, It_Mortar2};
   TDatabase::IteratorDB[it]->Init(level);
   n_cells=0;
   // if the pointer to the next item is not empty increase number of cells
@@ -2526,9 +2345,6 @@ TCollection *TDomain::GetCollection(Iterators it, int level, int ID) const
   
   int info;
   // initialize the iterator
-  // note:
-  // enum Iterators {It_EQ, It_LE, It_Finest, It_EQLevel, It_LELevel,
-  //            It_Between, It_OCAF, It_Mortar1, It_Mortar2};
   TDatabase::IteratorDB[it]->Init(level);
   
   //cout << " count cells " << endl;
@@ -3427,36 +3243,6 @@ int TDomain::RefineallxDirection()
 	
 	return 0;
 }
-
-bool TDomain::isExtendedGEO(const char* GEO)
-  {
-	  Output::print(GEO[0],GEO[1],GEO[2],GEO[3],GEO[4]);
-      bool isXgeo{false};
-      // check if input file is an extended geo file (.xGEO)
-      int nn=0;
-      while (GEO[nn] != 0)
-      {
-        ++nn;
-      }
-      if(GEO[nn-4] == 'm' && GEO[nn-3] == 'e' && GEO[nn-2] == 's' && GEO[nn-1] != 'h')
-    	  //it's a .mesh file!
-    	  return false;
-
-      //check if we found the correct place in the char arary
-      if(GEO[nn-3] != 'G' || GEO[nn-2] != 'E' || GEO[nn-1] != 'O')
-      {
-        ErrThrow("Incorrect read-in of .(x)GEO-filename! (Make sure the "
-            "filename ends on '.GEO' or '.xGEO')" );
-      }
-
-      if (GEO[nn-4]=='x')
-      {
-	Output::print<2>(" *** reading xGEO file (with physical references) ***");
-        isXgeo = true;
-      }
-      return isXgeo;
-  }
-
 
 
 #ifdef __3D__

@@ -282,7 +282,9 @@ ParamFct *ParameterFctMS[1] = { MinSurfParams };
 // generate undisturbed interface at z = height/2
 void UnDisturbed(double x, double y, double *values)
 {
-  static double middle = 0.5*TDatabase::ParamDB->DRIFT_Z;
+  // The height is fixed here.
+  double height = 1;
+  static double middle = 0.5*height;
 
   values[0] = middle;
   values[1] = 0;

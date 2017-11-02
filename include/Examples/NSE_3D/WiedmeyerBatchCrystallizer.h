@@ -3,8 +3,11 @@
  * Experiment was reported by Viktoria Wiedmeyer (VW) in 2017.
  */
 
-bool TIME_DEPENDENT = false;
-bool ENCLOSED_FLOW = false;
+
+enum class OutCondition{DO_NOTHING, CONSTANT, PARABOLIC};
+
+bool TIME_DEPENDENT;
+OutCondition out_condition;
 
 namespace FluidProperties
 {
@@ -22,9 +25,6 @@ double u_avg_in  = 0; //0.047157;   //m/s
 double u_max_in  = 0; //m/s, assuming HP-inflow
 double u_avg_out  = 0; //m/s
 
-bool gravity;
-
-void set_gravity(bool val){gravity = val;}
 void set_mass_flow_rate(double mfr)
 {
 	mass_flow_rate = mfr/3600; // (kg/s) the mass flow rate at in- and outflow
@@ -33,19 +33,46 @@ void set_mass_flow_rate(double mfr)
 	u_avg_out = mass_flow_rate / (rho * M_PI * r_out*r_out ); //m/s
 }
 
+void set_out_condition(const std::string& cond)
+{
+  if(cond == "do_nothing")
+    out_condition = OutCondition::DO_NOTHING;
+  else if(cond == "constant")
+    out_condition = OutCondition::CONSTANT;
+  else if(cond == "parabolic")
+    out_condition = OutCondition::PARABOLIC;
+  else
+    ErrThrow("Unrecognized outflow option. Choose between 'do_nothing',"
+        "'constant' and 'parabolic'.");
+}
+
+std::string out_condition_string()
+{
+  if(out_condition == OutCondition::DO_NOTHING)
+    return "do_nothing";
+  if(out_condition == OutCondition::CONSTANT)
+    return "constant";
+  if(out_condition == OutCondition::PARABOLIC)
+    return "parabolic";
+  else
+    return "terribly wrong";
+}
+
 // note: in the coefficients function the de-dimensionalized diffusion
 // coefficient will be calculated as:
 //      eps = (eta/rho) / (u_infty*l_infty);
 }
 
+
+
 void ExampleFile()
 {
-  Output::info<1>("EXAMPLE"," WiedmeyerBatchCrystallizer.h");
-  std::string gravity_string = FluidProperties::gravity ? "gravity enabled" : "gravity disabled";
-  Output::info<1>("EXAMPLE"," With ", gravity_string,
-		  " and mass flow rate ", FluidProperties::mass_flow_rate * 3600, " kg/h.");
-  if(ENCLOSED_FLOW)
-	  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+  Output::info<1>("EXAMPLE","WiedmeyerBatchCrystallizer.h");
+  Output::info<1>("EXAMPLE","With mass flow rate ", FluidProperties::mass_flow_rate * 3600, " kg/h.");
+  Output::info<1>("EXAMPLE","and outflow condition '", FluidProperties::out_condition_string() ,"'.");
+
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE =
+      out_condition == OutCondition::DO_NOTHING ? 0 : 1;
 }
 
 //Boundary parts of the Geometry, numbered "bottom up"
@@ -80,7 +107,7 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
 		cond = DIRICHLET;
 	else //TOP
-		cond = ENCLOSED_FLOW ? DIRICHLET : NEUMANN;
+		cond = out_condition == OutCondition::DO_NOTHING ? NEUMANN : DIRICHLET;
 }
 
 // value of boundary condition
@@ -103,6 +130,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 	{//HP inflow profile
 		double R = 0.01;
 		double r = sqrt(x*x + y*y);
+
 		value = u_max_in * (1 - (r*r)/(R*R));
 	      if( TIME_DEPENDENT )
 	      {
@@ -115,7 +143,29 @@ void U3BoundValue(double x, double y, double z, double &value)
 	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)	//no-slip
 		value = 0;
 	else //TOP - outflow
-		value = ENCLOSED_FLOW ? u_avg_out : 0; // constant velocity
+	{
+	  if(out_condition == OutCondition::DO_NOTHING)
+	  {//do-nothing outflow condition
+	    value = 0;
+	  }
+	  else if(out_condition == OutCondition::CONSTANT)
+	  {//constant outflow condition
+	    value = FluidProperties::u_avg_out;
+	  }
+	  else if(out_condition == OutCondition::PARABOLIC)
+	  {//parabolic outflow profile
+	    double R = 0.075;
+	    double r = sqrt(x*x + y*y);
+	    value = (2*u_avg_out) * (1 - (r*r)/(R*R));
+	    if( TIME_DEPENDENT )
+	    {
+	      double t = TDatabase::TimeDB->CURRENTTIME;
+	      if(t < 1) //within first second of the simulated time
+	        //multiply outflow with t ("anstroemen")
+	        value  *=t;
+	    }
+	  }
+	}
 }
 
 // ========================================================================
@@ -137,7 +187,7 @@ void LinCoeffs(int n_points, double *x, double *y, double *z,
     coeff[0] = eps;
     coeff[1] = 0; // f1
     coeff[2] = 0; // f2
-    coeff[3] = FluidProperties::gravity ? -9.81 : 0; // f3 - gravity forcing, if enabled
+    coeff[3] = -9.81; // f3 - gravity forcing
     coeff[4] = 0; // g
   }
 }

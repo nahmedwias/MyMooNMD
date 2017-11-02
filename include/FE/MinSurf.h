@@ -11,6 +11,7 @@ int ColumnSpace2d[2] = { 0 };
 int N_Rhs2d = 1;
 int RhsSpace2d[1] = { 0 };
 
+
 MultiIndex2D AllDerivatives2d[3] = { D00, D10, D01 };
 
 void L2H1Errors2d(int N_Points, double *X, double *Y, double *AbsDetjk, 
@@ -276,7 +277,9 @@ ParamFct *ParameterFctMS[1] = { MinSurfParams };
 // generate undisturbed interface at z = height/2
 void UnDisturbed(double x, double y, double *values)
 {
-  static double middle = 0.5*TDatabase::ParamDB->DRIFT_Z;
+  // The height is fixed here.
+  double height = 1;
+  static double middle = 0.5*height;
 
   values[0] = middle;
   values[1] = 0;

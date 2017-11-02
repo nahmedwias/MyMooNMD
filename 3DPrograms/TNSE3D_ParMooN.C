@@ -85,8 +85,33 @@ int main(int argc, char* argv[])
   // set the database values and generate mesh
   // =====================================================================
   Output::decreaseVerbosity(1);
+  //CB EXAMPLE
+  //This code is specific to the WiedmeyerBatchCrystallizer Example.
+  if(parmoon_db["sandwich_grid"])
+  {//prepare parameters for an example specific sandwich grid
+    ParameterDatabase& sw_db = parmoon_db.get_nested_database("Sandwich Grid Database");
+    sw_db.add("lambda", {0.0,1.0}, "Check default_sandwich_grid_parameters for description.");
+
+    int n_layers_inflow = sw_db["n_layers_inflow"];
+    int n_layers_cone = sw_db["n_layers_cone"];
+    int n_layers_outflow = sw_db["n_layers_outflow"];
+    std::vector<double> lambda(n_layers_inflow + n_layers_cone + n_layers_outflow + 1);
+    //TODO fill lambda somehow
+    for(int i=0; i<lambda.size(); ++i)
+    {//fill lambda
+      if(i < n_layers_inflow)
+        lambda[i] = (1.0/10) * i * (1.0/n_layers_inflow);
+      else if(i < n_layers_inflow + n_layers_cone)
+        lambda[i] = 1.0/10 +(6.0/10) * (i - n_layers_inflow) * (1.0/n_layers_cone);
+      else
+        lambda[i] = 7.0/10 +(3.0/10) * (i - n_layers_inflow - n_layers_cone) * (1.0/n_layers_outflow);
+    }
+    //put the new lambda into the database
+    sw_db["lambda"] = lambda;
+  }
+  //END EXAMPLE
   // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1],parmoon_db);
+  TDomain domain(parmoon_db, argv[1]);
   Output::increaseVerbosity(1);
 
 
@@ -112,6 +137,12 @@ int main(int argc, char* argv[])
   
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
+  //CB DEBUG
+  // TODO check all grids at least once visually!
+  output.WriteVtk("sandwich_mesh.vtk");
+  exit(1);
+//  //END DEBUG
+
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
   // Construct an object of the Time_NSE3D-problem type.

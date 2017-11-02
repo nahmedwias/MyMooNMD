@@ -223,7 +223,6 @@ int main(int argc, char* argv[])
          {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
   // db["output_write_vtk"] = false;
 
-  TDatabase::ParamDB->DRIFT_Z = 1;
   db["space_discretization_type"] = "galerkin"; //Galerkin discretization, nothing else implemented
 
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output

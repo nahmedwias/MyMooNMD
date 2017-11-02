@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     TFEDatabase3D feDatabase;
 
     // Construct domain, thereby read in controls from the input file.
-    TDomain domain(argv[1], parmoon_db);
+    TDomain domain(parmoon_db, argv[1]);
 
     //open OUTFILE, this is where all output is written to (addionally to console)
     if(my_rank==0)

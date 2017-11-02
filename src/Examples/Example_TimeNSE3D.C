@@ -301,9 +301,8 @@ Example_TimeNSE3D::Example_TimeNSE3D(
 
       // Set example constants
       TIME_DEPENDENT = true;
-      ENCLOSED_FLOW = user_input_parameter_db["enclosed_flow"];
-      FluidProperties::set_gravity(user_input_parameter_db["gravity"]);
       FluidProperties::set_mass_flow_rate(user_input_parameter_db["mass_flow_rate"]);
+      FluidProperties::set_out_condition(user_input_parameter_db["out_condition"]);
 
       /** exact_solution */
       exact_solution.push_back( ExactU1 );

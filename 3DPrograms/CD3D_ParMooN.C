@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
   size_t n_refinements = domain_trick["refinement_n_initial_steps"];
   domain_trick["multigrid_n_levels"] = n_refinements - 1;
   // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1], call_metis_earlier ? domain_trick : parmoon_db);
+  TDomain domain(call_metis_earlier ? domain_trick : parmoon_db, argv[1]);
 
   //open OUTFILE, this is where all output is written to (addionally to console)
   if(my_rank==0)
