@@ -430,7 +430,6 @@ class TDomain
       void TestGrid1();
       void TestGrid2();
       void TestGrid3();
-      void TestMortar();
       void TestShishkin();
       void TriangleShishkin();
       void UnitSquare();
@@ -442,7 +441,6 @@ class TDomain
       void SquareInSquareRef();
       void SetBoundBox(double boundx, double boundy);
       void SetBoundBoxstart(double startx , double starty);
-      void RefOnMortarEdge();
       void RefCardioide(double A);
       void PeriodicSquares();
       void PeriodicSquaresLarge();
