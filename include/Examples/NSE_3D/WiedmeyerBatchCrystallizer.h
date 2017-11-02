@@ -151,6 +151,13 @@ void U3BoundValue(double x, double y, double z, double &value)
 	  else if(out_condition == OutCondition::CONSTANT)
 	  {//constant outflow condition
 	    value = FluidProperties::u_avg_out;
+      if( TIME_DEPENDENT )
+      {
+        double t = TDatabase::TimeDB->CURRENTTIME;
+        if(t < 1) //within first second of the simulated time
+          //multiply outflow with t ("anstroemen")
+          value  *=t;
+      }
 	  }
 	  else if(out_condition == OutCondition::PARABOLIC)
 	  {//parabolic outflow profile
