@@ -337,6 +337,13 @@ void compute_position_in_crystallizer_geometry(
  {
    ErrThrow("z is out of range!");
  }
+
+ // Finally, divide everything by 100 - input geometry is expected
+ // in [cm], but internally we use [m] currently
+ x_trans/=100;
+ y_trans/=100;
+ z_trans/=100;
+
 }
 
 /**
