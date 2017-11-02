@@ -23,16 +23,6 @@ class TDomain;
 #include <ParameterDatabase.h>
 class TTetGenMeshLoader;
 
-#ifdef __MORTAR__
-struct TMortarFaceStruct
-       {
-         TBaseCell *Cell;
-         int LocFaceNumber[2];
-       };
-
-typedef struct TMortarFaceStruct TMortarFace;
-#endif
-
 /** contains the boundary description, the virtual cell
     tree and macro grid */
 class TDomain
@@ -95,16 +85,6 @@ class TDomain
 
     /** @brief current refinment level */
     int RefLevel;
-
-#ifdef __MORTAR__
-      /** @brief number of mortar faces */
-      int N_MortarFaces;
-      /** @brief structur for mortar faces */
-      TMortarFace *MortarFaces;
-
-      /** @brief begin of each mortar face on coll */
-      int *BeginMFace;
-#endif
     
     friend class TTetGenMeshLoader;
 
@@ -123,26 +103,34 @@ class TDomain
       ParameterDatabase db;
 
   public:
-     /// Sets RefLevel (refinement level) to 0 and merges in given database.
-    TDomain(const ParameterDatabase& db);
-
     /**
-     * @brief Constructor. Reads in some data.
-     * @param ParamFile Path to a ParMooN parameter input textfile.
+     * @brief Constructor.
+     * Eventually reads in data of the old database - this feature is messy,
+     * it is a trait from heritage MooNMD, and should be removed soon.
+     *
      * @param param_db A database to be merged into the domain's own.
+     * @param ParamFile Path to a ParMooN parameter input textfile, if
+     * given, it is used to fill the old Database.
      *
-     * Invokes a read-in function for the parameter file and the domain
-     * description file afterwards.
-     *
-     * TODO This is messy in will be tidied up in the near future.
      */
-    TDomain(char *ParamFile, const ParameterDatabase& param_db);
+     TDomain(const ParameterDatabase& db, const char *ParamFile = nullptr);
     
     /** @brief destructor */
     ~TDomain();
     
+    /**
+     * Creates a database filled with default parameters. This database will
+     * contain all necessary parameters for the control of a domain.
+     */
     static ParameterDatabase default_domain_parameters();
     
+    /**
+     * Creates a database filled with default parameters. This database will
+     * contain all necessary parameters for the control of a domain that should
+     * by constructed as a "sandwich grid" from a 2D initial mesh.
+     */
+    static ParameterDatabase default_sandwich_grid_parameters();
+
     // Methods
     /** @brief Read in initial mesh from ".GEO" file.
      *
@@ -156,18 +144,13 @@ class TDomain
     int ReadGeo(std::istream& dat, bool isXGeoFile);
 
 #ifdef __3D__
-    /** @brief Read in initial mesh from ".GEO" file as sandwich geometry.
-     *
-     * @param[in] dat Input stream which contains the initial mesh information
-     * in MooNMD-native ".GEO"-format.
-     *
-     * @note The implementation of this method contains some undocumented surprises
-     * ("else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 180)"). Handle
-     * with care.
-     *
-     * @return Integer O on success, other numbers otherwise.
+    /**
+     *  @brief Read in initial mesh from either ".GEO" oder ".mesh" file as sandwich geometry.
+     * @param[in] file_name Input stream which contains the initial mesh information
+     * in either MooNMD-native ".GEO"-format or medit style ".mesh"-format.
      */
-    int ReadSandwichGeo(std::istream& dat);
+    void ReadSandwichGeo(std::string file_name,
+                         std::string prm_file_name = "");
 
     /** @brief make boundary parameter consistent */
     void MakeBdParamsConsistent(TCollection *coll);
@@ -185,21 +168,24 @@ class TDomain
 #endif
 
     /** @brief read parameter file */
-    int ReadParam(char *ParamFile);
+    int ReadParam(const char *ParamFile);
 
     /** @brief Reads in boundary parameterization in ".PRM" file format
      *
      * @param[in] dat Input stream containing the boundary information in
      * ".PRM" style (the default MooNMD file format for domain description).
      *
-     * @param[in,out] Flag Used in 3D only, set to 1 if a boundary component
-     * of type TBdWall has to be constructed. Otherwise set to 0.
-     *
-     * @return Integer O on success, other numbers otherwise.
+     * @param[out] Flag Used in 3D only, set to 1 if a boundary component
+     * of type TBdWall has to be constructed - typical for sandwich grids.
+     * Otherwise set to 0.
      */
-    int ReadBdParam(std::istream& dat, int &Flag);
+#ifdef __2D__
+    void ReadBdParam(std::istream& dat);
+#else
+    void ReadBdParam(std::istream& dat, bool& sandwich_flag);
+#endif
 
-    /** @brief read mapping and mortar information */
+    /** @brief read mapping information */
     int ReadMapFile(char *MapFile, TDatabase *database);
 
     /** @brief get boundary part of BdCompID */
@@ -235,47 +221,9 @@ class TDomain
       #endif 
     }
 
-    #ifdef __MORTAR__
-      /** @brief set subgrid ID's on all MacroCells and generate mortar structurs */
-      int SetSubGridIDs(IntFunct2D *TestFunc);
-      /** @brief generate mortar structurs */
-      int GenMortarStructs();
-      /** @brief return number of mortar face structs */
-      int GetN_MortarFace()
-      { return N_MortarFaces; }
-      /** @brief return mortar face struct */
-      TMortarFace *GetMortarFace(int i)
-      { return &(MortarFaces[i]); }
-
-      /** @brief get a collection of all mortar cells */
-      TCollection *GetMortarColl(Iterators it, int level);
-
-      /** @brief initialize all mortar joints with FE-information */
-      int InitMortarJoints(Iterators it, int level, TCollection *coll);
-    #endif
-
     /** @brief generate initial grid using external mesh generator */
     int GenInitGrid();
-    #ifdef __2D__
-      /** @brief make initial 2D grid */
-      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
-                   int NVE);
-      /** @brief make initial 2D grid, extended version which sets ReferenceID
-       *         in cells */
-      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
-                   int N_Vertices, int NVE);
-    #else
-      /** @brief make initial 3D grid */
-      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
-                   int N_Vertices, int NVE, int *BoundFaces, int *FaceParam,
-                   int NBF, int NVpF,
-                   int *Interfaceparam, int N_Interfaces);
-      /** @brief make initial sandwich grid */
-      int MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
-                           int N_Vertices, int NVE,
-                           double DriftX, double DriftY, double DriftZ,
-                           int N_Layers, double *Lambda);
-     #endif
+
 
     /**
       * @brief Chooses in what way to construct the domain's geometry
@@ -319,7 +267,7 @@ class TDomain
       * is neither checked nor tested. So use them carefully and be prepared for the worst!
       *
       */
-      void Init(const char *PRM, const char *GEO);
+      void Init(const std::string& PRM, const std::string& GEO);
 
       /**
        * @brief Initialize the domain starting from a boundary file and a mesh
@@ -482,7 +430,6 @@ class TDomain
       void TestGrid1();
       void TestGrid2();
       void TestGrid3();
-      void TestMortar();
       void TestShishkin();
       void TriangleShishkin();
       void UnitSquare();
@@ -494,7 +441,6 @@ class TDomain
       void SquareInSquareRef();
       void SetBoundBox(double boundx, double boundy);
       void SetBoundBoxstart(double startx , double starty);
-      void RefOnMortarEdge();
       void RefCardioide(double A);
       void PeriodicSquares();
       void PeriodicSquaresLarge();
@@ -604,18 +550,6 @@ class TDomain
   int AdaptRefineAll();   
 
   /**
-   * @brief Checks from the file name whether a .GEO -file will be read in or
-   * a .xGEO (extended GEO) file.
-   *
-   * This code was moved here from the ReadGeo method.
-   *
-   * @param[in] GEO the filename of the .(x)GEO file.
-   *
-   * @note This has not been tested with an actual .xGEO-file yet.
-   */
-  static bool isExtendedGEO(const char* GEO);
-
-  /**
    * @return The value of parameter "refinement_n_initial_steps"
    * stored in this object's database.
    */
@@ -660,6 +594,29 @@ class TDomain
 
   /// Get a const reference to the database of this domain object.
   const ParameterDatabase& get_database() const {return this->db;};
+
+  //TODO reorganize methods, put everything private here!
+  private:
+    #ifdef __2D__
+      /** @brief make initial 2D grid */
+      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
+                   int NVE);
+      /** @brief make initial 2D grid, extended version which sets ReferenceID
+       *         in cells */
+      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
+                   int N_Vertices, int NVE);
+    #else
+      /** @brief make initial 3D grid */
+      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
+                   int N_Vertices, int NVE, int *BoundFaces, int *FaceParam,
+                   int NBF, int NVpF,
+                   int *Interfaceparam, int N_Interfaces);
+      /** @brief make initial sandwich grid */
+      int MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
+                           int N_Vertices, int NVE,
+                           double DriftX, double DriftY, double DriftZ,
+                           const std::vector<double>& Lambda);
+     #endif
 
 };
 
@@ -706,5 +663,7 @@ void determine_n_refinement_steps_multigrid(
   int n_multigrid_levels,
   int n_initial_refinement_steps,
   int& n_ref_before, int& n_ref_after);
+
+
 
 #endif

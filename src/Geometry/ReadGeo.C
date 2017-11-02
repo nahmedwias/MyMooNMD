@@ -327,10 +327,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   TDatabase::IteratorDB[It_Between]->SetParam(this);
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
 
-  #ifdef __MORTAR__
-    TDatabase::IteratorDB[It_Mortar1]->SetParam(this);
-    TDatabase::IteratorDB[It_Mortar2]->SetParam(this);
-  #endif
 
   // generate edges
   KMT = new TJoint*[N_RootCells*4];
@@ -744,11 +740,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
   TDatabase::IteratorDB[It_Between]->SetParam(this);
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
 
-  #ifdef __MORTAR__
-    TDatabase::IteratorDB[It_Mortar1]->SetParam(this);
-    TDatabase::IteratorDB[It_Mortar2]->SetParam(this);
-  #endif
-
   // generate edges
   KMT = new TJoint*[N_RootCells*4];
   for (i=0;i<N_RootCells*4;i++)
@@ -979,149 +970,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
 }
 
 #else
-int TDomain::ReadSandwichGeo(std::istream& dat)
-{
-  char line[100];
-  int i, j, N_Vertices, NVpF, NVE, NBCT;
-  double *DCORVG;
-  int *KVERT, *KNPR;
-  double DriftX, DriftY, DriftZ, *Lambda;
-  int N_Layers, grid_type;
 
-  grid_type = TDatabase::ParamDB->GRID_TYPE;
-
-  dat.getline (line, 99);
-  dat.getline (line, 99);
-
-  // determine dimensions for creating arrays
-  dat >> N_RootCells >> N_Vertices >> NVpF >> NVE >> NBCT;
-  dat.getline (line, 99);
-  dat.getline (line, 99);
-
-  // allocate auxillary fields
-  DCORVG =  new double[2*N_Vertices];
-  KVERT = new int[NVE*N_RootCells];
-  KNPR = new int[N_Vertices];
-  // read fields
-  for (i=0;i<N_Vertices;i++)
-  {
-    dat >> DCORVG[2*i] >> DCORVG[2*i + 1];
-    dat.getline (line, 99);
-  }
-
-  dat.getline (line, 99);
-
-  for (i=0;i<N_RootCells;i++)
-  {
-    for (j=0;j<NVE;j++)
-      dat >> KVERT[NVE*i + j];
-    dat.getline (line, 99);
-  }
-
-  dat.getline (line, 99);
-
-  for (i=0;i<N_Vertices;i++)
-    dat >> KNPR[i];
-
-  DriftX = TDatabase::ParamDB->DRIFT_X;
-  DriftY = TDatabase::ParamDB->DRIFT_Y;
-  DriftZ = TDatabase::ParamDB->DRIFT_Z;
-
-  if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1234)
-   {
-    TDatabase::ParamDB->N_CELL_LAYERS = 3;
-    N_Layers = 4;
-    Lambda = new double[N_Layers];
-    Lambda[0] = 0.0;
-    Lambda[1] = 7.66/20.32;
-    Lambda[2] = 15.32/20.32;
-    Lambda[3] = 1.0;
-   }
-/*  else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1356)
-   {
-    N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;     
-    Lambda = new double[N_Layers];     
-    double tmp [] = { 0, 0.0119047619, 0.02380952381, 0.03571428571, 0.04761904762,
-                 0.05952380952, 0.07142857143, 0.08333333333, 0.09523809524, 0.10714285714,
-                 0.11904761905, 0.13333333333, 0.14761904762, 0.16666666667, 0.18571428571, 
-                 0.20952380952, 0.23333333333, 0.2619047619, 0.29523809524, 0.33333333333, 
-                 0.38095238095, 0.42857142857, 0.47619047619, 0.52380952381, 0.57142857143, 
-                 0.61904761905, 0.66666666667, 0.71428571429, 0.7619047619, 0.80952380952, 
-                 0.85714285714, 0.90476190476, 0.95238095238, 1  };
-                 
-    for(i=0;i<N_Layers; i++)     
-     Lambda[i] = tmp[i];
-                 
-//      MPI_Finalize();
-//      exit(0);
-   }  */   
-  else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 180)
-  {
-    // turbulent channel flow for Re_tau = 180, IMPORTANT !!!
-     N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;
-     Lambda = new double[N_Layers];
-     for(i=0;i<N_Layers;i++)
-      {
-      if (grid_type == 0)
-       Lambda[i] = 1 + tanh(2.75*(2.0*i/(N_Layers-1) -1))/tanh(2.75);
-      else
-       Lambda[i] = 1-cos(i*Pi/(N_Layers-1));
-
-       OutPut("z coordinate " << Lambda[i] <<endl);
-       Lambda[i] /= 2.0;
-      }
-     Lambda[0] = 0;
-     Lambda[N_Layers-1] = 1;
-   }
-  else if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 6)
-   {
-    // for Channel_Carolina.h
-    N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;
-    Lambda = new double[N_Layers];
-    for(i=0;i<N_Layers;i++)
-     {
-      Lambda[i] = tanh(4.50*i/(N_Layers-1))/tanh(4.50);
-      OutPut("z coordinate " << Lambda[i] <<endl);
-     }
-    Lambda[0] = 0;
-    Lambda[N_Layers-1] = 1;     
-   }
-  else
-   {
-    N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;
-    Lambda = new double[N_Layers];
-    for(i=0;i<N_Layers;i++)
-     {
-      Lambda[i] = i * (1.0/(N_Layers-1));
-     //OutPut("lambda " << i << " " << Lambda[i] << endl);
-     }
-
-  }
-
-
-
-
-  // for WIND TUNNEL
-  /*if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1506)
-  {
-      N_Layers = 19;
-      Lambda = new double[N_Layers];
-      for(i=0;i<N_Layers;i++)
-      {
-	  Lambda[i] = i*0.01;
-	  OutPut("wind tunnel: z coordinate " << Lambda[i] <<endl);
-      }
-      }*/
-
-  MakeSandwichGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE,
-                   DriftX, DriftY, DriftZ, N_Layers, Lambda);
-
-  delete[] DCORVG;
-  delete[] KVERT;
-  delete[] KNPR;
-
-  return 0;
-}
 
 // this makes a 3D coarse grid
 int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
@@ -1526,7 +1375,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
 int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
                               int N_Vertices, int NVE,
                               double DriftX, double DriftY, double DriftZ,
-                              int N_Layers, double *Lambda)
+                              const std::vector<double>& Lambda)
 {
   int a, b, i, j, k, l, comp, Part, Neib, N_E, maxElpV = 0;
   int aux1, aux2, aux3;
@@ -1551,6 +1400,8 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
   double x0, x1, x2; // x3;
   double y0, y1, y2; // y3;
   double z0, z1, z2; // z3;
+
+  int N_Layers = Lambda.size();
 //  double det;
 
   // generate vertices, edges and cells

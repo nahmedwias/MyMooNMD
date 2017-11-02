@@ -260,7 +260,7 @@ class ParameterDatabase
     /// true, 'merge' is called.
     void merge(const ParameterDatabase &other,
                bool create_new_parameters = true,
-               bool recursive = true);
+               bool recursive = false);
     
     /// @brief out some information on the parameters
     ///

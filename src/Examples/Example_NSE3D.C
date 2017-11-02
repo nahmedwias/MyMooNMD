@@ -252,9 +252,8 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
         using namespace wiedmeyer_batch_crystallizer;
         // Set example constants
         TIME_DEPENDENT = false;
-        ENCLOSED_FLOW = user_input_parameter_db["enclosed_flow"];
-        FluidProperties::set_gravity(user_input_parameter_db["gravity"]);
         FluidProperties::set_mass_flow_rate(user_input_parameter_db["mass_flow_rate"]);
+        FluidProperties::set_out_condition(user_input_parameter_db["out_condition"]);
 
         /** exact_solution */
         exact_solution.push_back( ExactU1 );

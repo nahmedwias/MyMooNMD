@@ -201,7 +201,6 @@ int main(int argc, char* argv[])
   db.add("geo_file", "Default_UnitCube_Hexa", "",
 	 {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
   
-  TDatabase::ParamDB->DRIFT_Z = 1;
   db["space_discretization_type"] = "galerkin"; //Galerkin discretization, nothing else implemented
 
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
