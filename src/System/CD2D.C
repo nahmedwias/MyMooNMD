@@ -176,11 +176,11 @@ void CD2D::set_parameters()
   //////////////// Algebraic flux correction ////////////
   if(!db["algebraic_flux_correction"].is("none"))
   {//some kind of afc enabled
-    if(!db["algebraic_flux_correction"].is("fem-tvd"))
+    if(!db["algebraic_flux_correction"].is("afc"))
     {
-      db["algebraic_flux_correction"].set("fem-tvd");
+      db["algebraic_flux_correction"].set("afc");
       Output::print("Only kind of algebraic flux correction"
-          " for CD problems is FEM-TVD (fem-tvd).");
+          " for CD problems is AFC (afc).");
     }
     //make sure that galerkin discretization is used
     if (!db["space_discretization_type"].is("galerkin"))
@@ -263,15 +263,42 @@ void CD2D::assemble()
 
 }
 
-/** ************************************************************************ */
-void CD2D::solve()
+bool CD2D::solve(const int iteration)
 {
+
   double t = GetTime();
   System_per_grid& s = this->systems.front();
+
+  // compute norm of residual
+  BlockVector res = s.rhs;
+  s.matrix.apply_scaled_add(s.solution , res ,-1.0);
+  double eps = res.norm();
+  Output::print<2>("nonlinear step ", iteration, " residual before solve: ", eps);
+  
+  if(!db["algebraic_flux_correction"].is("none"))
+  {
+    // stop iteration if norm of residual is sufficiently small 
+    if (eps <= (double)db["afc_nonlinloop_epsilon"])
+    {
+      Output::print<1>("NONLINEAR iteration converged: iterations ", iteration, " norm of residual ", eps);
+      return(TRUE);
+    }
+  }
+  
+  // store solution for nonlinear discretizations
+  if(!db["algebraic_flux_correction"].is("none"))
+    res = s.solution;
+  
   this->solver.solve(s.matrix, s.rhs, s.solution);
   
   t = GetTime() - t;
   Output::print<3>(" solving of a CD2D problem done in ", t, " seconds");
+  
+  if(!db["algebraic_flux_correction"].is("none"))
+  {
+    AlgebraicFluxCorrection::AFC_Compute_New_Iterate(res, s.solution, db);
+  }
+  return(FALSE);   
 }
 
 /** ************************************************************************ */
@@ -334,15 +361,26 @@ void CD2D::output(int i)
   } 
 }
 
+AlgebraicFluxCorrection::Limiter string_to_limiter(std::string afc_limiter);
+AlgebraicFluxCorrection::Iteration_Scheme string_to_it_scheme(std::string afc_iteration_scheme);
+
 /** ************************************************************************ */
 void CD2D::do_algebraic_flux_correction()
 {
+  Output::print<4>("AFC: enter do_algebraic_flux_correction");
   for(auto & s : this->systems) // do it on all levels.
   {
+    bool compute_D_and_gamma = FALSE;
+    
     //determine which kind of afc to use
     if(db["algebraic_flux_correction"].is("default") ||
-        db["algebraic_flux_correction"].is("fem-tvd"))
+        db["algebraic_flux_correction"].is("afc"))
     {
+      
+      //
+      AlgebraicFluxCorrection::Limiter limiter = string_to_limiter(db["afc_limiter"]);
+      AlgebraicFluxCorrection::Iteration_Scheme it_scheme = string_to_it_scheme(db["afc_iteration_scheme"]);
+      
       //get pointers/references to the relevant objects
       TFESpace2D& feSpace = s.fe_space;
       FEMatrix& one_block = *s.matrix.get_blocks_uniquely().at(0).get();
@@ -356,12 +394,27 @@ void CD2D::do_algebraic_flux_correction()
 
       std::vector<int> neumToDiri(nDiri, 0);
       std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
-
+      
+      // if necessary, set up vector gamma and matrix D
+      if(s.afc_matrix_D_entries.empty())
+      {
+	Output::print<4>("AFC: allocate matrix D");
+	s.afc_matrix_D_entries.resize(one_block.GetN_Entries(),0.0);
+	compute_D_and_gamma = TRUE;
+      }
+      if ((limiter== AlgebraicFluxCorrection::Limiter::LINEAR_PRESERVE_BJK17) && (s.afc_gamma.empty()))
+      {
+	Output::print<4>("AFC: vector gamma");
+	s.afc_gamma.resize(feSpace.GetN_DegreesOfFreedom(),0.0);
+      }
+      
       // apply FEM-TVD
-      AlgebraicFluxCorrection::fem_tvd_algorithm(
+      AlgebraicFluxCorrection::steady_state_algorithm(
           one_block,
           solEntries,rhsEntries,
-          neumToDiri);
+          neumToDiri, 
+	  s.afc_matrix_D_entries, s.afc_gamma, compute_D_and_gamma,
+	  limiter, it_scheme);
 
       //...and finally correct the entries in the Dirchlet rows
       AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
@@ -373,6 +426,36 @@ void CD2D::do_algebraic_flux_correction()
       ErrThrow("The chosen algebraic flux correction scheme is unknown "
           "to class CD2D.");
     }
+  }
+}
+
+/** ************************************************************************ */
+AlgebraicFluxCorrection::Limiter string_to_limiter(std::string afc_limiter)
+{
+  if (afc_limiter == std::string("zalesak"))
+    return AlgebraicFluxCorrection::Limiter::ZALESAK;
+  else if (afc_limiter == std::string("linearity_preserving_BJK17"))
+    return AlgebraicFluxCorrection::Limiter::LINEAR_PRESERVE_BJK17;
+  else 
+  {
+    ErrThrow("afc_limiter ", afc_limiter, " not implemented!!!"); 
+  }
+}
+
+/** ************************************************************************ */
+AlgebraicFluxCorrection::Iteration_Scheme string_to_it_scheme(std::string afc_iteration_scheme)
+{
+  if (afc_iteration_scheme == std::string("fixed_point_rhs"))
+    return AlgebraicFluxCorrection::Iteration_Scheme::FIXEDPOINT_RHS;
+  else if (afc_iteration_scheme == std::string("fixed_point_matrix"))
+    return AlgebraicFluxCorrection::Iteration_Scheme::FIXEDPOINT_MATRIX;
+  else if (afc_iteration_scheme == std::string("newton"))
+  {
+    ErrThrow("afc_iteration_scheme ",afc_iteration_scheme, " not yet implemented!!!"); 
+  }
+  else 
+  {
+    ErrThrow("afc_iteration_scheme ", afc_iteration_scheme, " not implemented!!!"); 
   }
 }
 

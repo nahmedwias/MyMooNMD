@@ -16,11 +16,22 @@
 #include <ParameterDatabase.h>
 
 #include <vector>
+#include <BlockVector.h>
 
 class TMatrix;
 class FEMatrix;
 
 namespace AlgebraicFluxCorrection {
+
+/**
+ * control parameter which limiter to use (in steady-state problem so far)
+ * ZALESAK: limiter from Zalesak (1979)
+ * LINEAR_PRESERVE_BJK17: limiter from Barrenechea, John, Knobloch (2017)
+ */
+enum class Limiter
+{
+    ZALESAK, LINEAR_PRESERVE_BJK17
+};
 
 /**
  * Control parameters which prelimiter to use (flux limiter before application
@@ -35,6 +46,17 @@ enum class Prelimiter
     NONE, MIN_MOD, GRAD_DIRECTION, BOTH
 };
 
+/**
+ * control parameter for the iteration scheme for the afc problem 
+ * (in steady-state problem so far)
+ * FIXEDPOINT_RHS: fixed point iterations with changes of the right-hand side
+ * FIXEDPOINT_MATRIX: fixed point iterations with changes of the matrix
+ * NEWTON: Newton's method
+ */
+enum class Iteration_Scheme
+{
+    FIXEDPOINT_RHS, FIXEDPOINT_MATRIX, NEWTON
+};
 /**
  * Sets up and returns a default algebraic flux correction database,
  * which contains all control parameters necessary for an algebraic
@@ -63,19 +85,25 @@ ParameterDatabase default_afc_database();
  * @param[in] neum_to_diri array which contains the indices of actual
  *  Dirichlet dof which were but treated as Neumann dof. CB: That paramerter
  *  is unused at the moment!
- * @param[in] continuous_proposal If true, a slightly different version
- * of the algorithm is used (continuous proposal in appllication of nodal
- * correction factors).
- * @param[in] nonsymmetric_application If true, a slightly different version
- * of the algorithm is used (nonsymmetric application of flux correction)
+ * @param[in] afc_matrix_D_entries entries of the matrix D
+ * @param[in] gamma weights needed in the linearity preserving limiter from 
+ * [BJK17]
+ * @param[in] compute_D_and_gamma boolean that gives the information  of the matrix
+ * D and the vector gamma need to be computed 
+ * @param[in] limiter Specifies the used limiter
+ * @param[in] it_scheme Specifies the used iteration scheme
  */
-void fem_tvd_algorithm(
+void steady_state_algorithm(
     FEMatrix& system_matrix,
     const std::vector<double>& sol,
     std::vector<double>& rhs,
     const std::vector<int>& neum_to_diri,
-    bool continuous_proposal = false,
-    bool nonsymmetric_application = false);
+    std::vector<double>& afc_matrix_D_entries,
+    std::vector<double>& gamma,
+    bool compute_D_and_gamma,    
+    Limiter limiter = AlgebraicFluxCorrection::Limiter::ZALESAK,
+    Iteration_Scheme it_scheme = AlgebraicFluxCorrection::Iteration_Scheme::FIXEDPOINT_MATRIX);
+
 
 /**
  * @brief Apply the linear Crank-Nicolson FEM-FCT algorithm for
@@ -131,6 +159,19 @@ void crank_nicolson_fct(
  * @param[in,out] MatrixA The matrix to be corrected. Must be square.
  */
 void correct_dirichlet_rows(FEMatrix& MatrixA);
+
+
+
+
+/** 
+ * Computes the new iterate for the AFC schemes
+ * @param[in] old_solution The solution from the previous iteration
+ * @param[in,out] new_solution Input: solution of the linear system, would be
+ * the new iterate if there is no damping
+ * Output: new iterate 
+ */
+ void AFC_Compute_New_Iterate(const BlockVector& old_solution, BlockVector& new_solution,
+  const ParameterDatabase& db);
 
 }
 

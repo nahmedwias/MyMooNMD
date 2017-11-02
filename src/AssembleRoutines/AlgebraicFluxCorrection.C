@@ -23,6 +23,7 @@
 //! Anonymous namespace for helper methods which do not have to be assessed
 //! from the outside.
 namespace {
+ 
 
 /** Check whether the setup fulfils the cfl-like condition needed in a partly
  * explicit afc scheme (Kuzmin 2009, eq (11) ).
@@ -526,6 +527,127 @@ void ZalesaksFluxLimiter(
   // MPI: At output, correction factors alpha_ij are rowwise level-0-consistent
 }
 
+
+/**
+ * Compute the weights for the linearty preserving limiter from Barrenechea, John, Knobloch; M3AS 2017.
+ *
+ * @param[in] FEMatrix system matrix
+ * @param[in] current solution vector
+ * @param[out] gamma vector with the weights 
+ * 
+ */
+
+void Compute_Parameter_For_Linearity_Preservation(FEMatrix& system_matrix, const std::vector<double>& u,
+  std::vector<double>& gamma)
+{
+ 
+  int i, j, index, N_Cells, N_Unknowns, N_V;
+  int *global_numbers, *begin_index, *dof;
+  double area, edge, x[3], y[3], dist, dist_max, dist_max2;
+  TCollection *Coll;
+  const TFESpace2D *fespace;
+  TBaseCell *cell;
+  FE2D CurrentElement;
+
+  Output::print<4>("AFC: compute parameter for linearity preservation");
+  // get fe space  
+  fespace = system_matrix.GetFESpace2D();  
+  // get collection
+  Coll = fespace->GetCollection();
+  // number of mesh cells
+  N_Cells = Coll->GetN_Cells();
+  // array with global numbers of d.o.f.
+  global_numbers = fespace->GetGlobalNumbers();
+  // array which points to the beginning of the global numbers in
+  // global_numbers for each mesh cell
+  begin_index = fespace->GetBeginIndex();
+  // number of unknowns
+  N_Unknowns = u.size();
+  // allocate memory for the parameter
+  std::vector<double> parameter(N_Unknowns);
+  parameter.resize(2*N_Unknowns, 4711.0);
+      
+  // loop over the mesh cells
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    N_V = cell->GetN_Vertices();
+    // get pointer to local dofs
+    dof = global_numbers+begin_index[i];
+    // finite element on the mesh cell
+    CurrentElement = fespace->GetFE2D(i, cell);
+    // only for P_1
+    if (CurrentElement != C_P1_2D_T_A)
+    {
+      ErrThrow("Compute_Parameter_For_Linearity_Preservation only implemented for P_1 !!!");
+    }
+    area = cell->GetMeasure();
+    // loop over the vertices
+    for (j=0;j<N_V;j++)
+    {
+      // get coordinates
+      cell->GetVertex(j)->GetCoords(x[j], y[j]);
+    }
+    for (j=0;j<N_V;j++)
+    {
+      index = dof[j];
+      // check for obtuse angles with opposite edge
+      // vertex j+1
+      if ((x[(j+2)%N_V] - x[(j+1)%N_V])*(x[(j)] - x[(j+1)%N_V])
+	+ (y[(j+2)%N_V] - y[(j+1)%N_V])*(y[(j)] - y[(j+1)%N_V]) <=0)
+      {
+	dist = sqrt((x[j] - x[(j+1)%N_V])*(x[(j)] - x[(j+1)%N_V])
+	+ (y[j] - y[(j+1)%N_V])*(y[(j)] - y[(j+1)%N_V]));
+        dist_max = sqrt((x[j] - x[(j+2)%N_V])*(x[(j)] - x[(j+2)%N_V])
+	+ (y[j] - y[(j+2)%N_V])*(y[(j)] - y[(j+2)%N_V]));
+       // OutPut("obt1 ");
+      }
+      else
+      {
+        // check for obtuse angles with opposite edge
+        // vertex j+2
+        if ((x[(j+1)%N_V] - x[(j+2)%N_V])*(x[(j)] - x[(j+2)%N_V])
+	+ (y[(j+1)%N_V] - y[(j+2)%N_V])*(y[(j)] - y[(j+2)%N_V]) <=0)
+        {
+	  dist = sqrt((x[j] - x[(j+2)%N_V])*(x[(j)] - x[(j+2)%N_V])
+	  + (y[j] - y[(j+2)%N_V])*(y[(j)] - y[(j+2)%N_V]));
+          dist_max = sqrt((x[j] - x[(j+1)%N_V])*(x[(j)] - x[(j+1)%N_V])
+          + (y[j] - y[(j+1)%N_V])*(y[(j)] - y[(j+1)%N_V]));	
+         // OutPut("obt2 ");
+        }
+        else
+	  // no obtuse angle
+	{
+          // length opposite egde 
+         edge = (x[(j+1)%N_V] - x[(j+2)%N_V]) *  (x[(j+1)%N_V] - x[(j+2)%N_V]); 
+         edge +=  (y[(j+1)%N_V] - y[(j+2)%N_V]) *  (y[(j+1)%N_V] - y[(j+2)%N_V]);
+         edge = sqrt(edge);
+	 dist = 2.*area/edge;
+	 //OutPut(edge << " ");
+         dist_max = sqrt((x[j] - x[(j+1)%N_V])*(x[(j)] - x[(j+1)%N_V])
+          + (y[j] - y[(j+1)%N_V])*(y[(j)] - y[(j+1)%N_V]));	
+         dist_max2 = sqrt((x[j] - x[(j+2)%N_V])*(x[(j)] - x[(j+2)%N_V])
+          + (y[j] - y[(j+2)%N_V])*(y[(j)] - y[(j+2)%N_V]));	
+	 if (dist_max2 > dist_max)
+	   dist_max = dist_max2;
+	}
+      }
+      // compute numerator
+      if (dist_max > parameter[index])
+        parameter[index] = dist_max;
+      // compute denominator
+      if (dist < parameter[index+N_Unknowns])
+        parameter[index+N_Unknowns] = dist;
+    }
+  }
+  
+  // loop over the unknowns
+  for (i=0;i<N_Unknowns;i++)
+  {
+    gamma[i] = parameter[i]/ parameter[i+N_Unknowns];
+  }
+}
+ 
 }
 
 ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
@@ -534,11 +656,28 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
 
   // Type of AFC to be applied.
   db.add("algebraic_flux_correction", "none", " Chose which type of afc to use.",
-         {"none", "default", "fem-tvd", "fem-fct-cn"});
+         {"none", "afc", "fem-fct-cn"});
 
-  db.add("afc_prelimiter", 0, "Chose an afc flux prelimiting scheme. Options "
+  db.add("afc_prelimiter", 0, "Choose an afc flux prelimiting scheme. Options "
       "are 0 (none), 1 (min-mod), 2 (grad-direction), 3 (both)", {0,1,2,3});
+  
+  // type of the limiter to be applied for steady-state case
+  db.add("afc_limiter", "zalesak", "Choose an afc limiter. Options are"
+      "zalesak, linearity_preserving_BJK17", {"zalesak", "linearity_preserving_BJK17"});
+  
+  // iteration scheme for the afc methods 
+  db.add("afc_iteration_scheme", "fixed_point_matrix", "Choose an iteration scheme for the afc methods. Options are"
+      "fixed_point_rhs, fixed_point_matrix, newton", {"fixed_point_rhs", "fixed_point_matrix", "newton"});
+  
+  db.add("afc_nonlinloop_damping_factor", 1.0, "A damping parameter for the nonlinear loop in AFC."
+    "Must be a value between 1 (no damping) and 0 (no update).", 0.0,1.0);
 
+  db.add("afc_nonlinloop_maxit", 1 , "Maximal number of iterations for the nonlinear loop in AFC."
+    "Must be a value between 0 and 100000.", 0, 100000);
+
+  db.add("afc_nonlinloop_epsilon", 1e-10, "Stopping criterion for the nonlinear loop in AFC."
+    "Must be a value between 1e-20 an 1e20.", 1e-20, 1e20);
+  
   return db;
 }
 
@@ -547,15 +686,19 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
 // ////////////////////////////////////////////////////////////////////////////
 
 
-void AlgebraicFluxCorrection::fem_tvd_algorithm(
+void AlgebraicFluxCorrection::steady_state_algorithm(
     FEMatrix& system_matrix,
     const std::vector<double>& sol,
     std::vector<double>& rhs,
     //this argument is used in outcommented code block only
     const std::vector<int>& neum_to_diri,
-    bool continuous_proposal,
-    bool nonsymmetric_application)
+    std::vector<double>& afc_matrix_D_entries,
+    std::vector<double>& gamma,
+    bool compute_D_and_gamma,
+    Limiter limiter,
+    Iteration_Scheme it_scheme)
 {
+  Output::print<4>("AFC: enter steady_state_algorithm");
   //catch non-square matrix
   if (!system_matrix.is_square())
   {
@@ -566,8 +709,8 @@ void AlgebraicFluxCorrection::fem_tvd_algorithm(
   int nDofs = system_matrix.GetN_Rows();
 
   // heritage style index declaration
-  int i,j,j0,j1,j2,j3,jj,index;
-  double nenner, zaehler;
+  int i,j,j0,j1,j2,j3,jj,kk,index;
+  double alpha_ij;
 
   // get pointers to columns, rows and entries of matrix A
   const int * ColInd = system_matrix.GetKCol();
@@ -586,16 +729,60 @@ void AlgebraicFluxCorrection::fem_tvd_algorithm(
   double* Q_minus = Q_plus + nDofs;
   double* R_plus = Q_minus + nDofs;
   double* R_minus = R_plus + nDofs;
+  std::vector<double> umin, umax, q;
 
   // compute entries of the artificial diffusion matrix D
-  // TODO make matrix D an actual TMatrix and not only an entries vector
-  std::vector<double> matrix_D_Entries(N_Entries, 0.0);
-  compute_artificial_diffusion_matrix(system_matrix, matrix_D_Entries);
+  // TODO make matrix D an actual TMatrix and not only an entries vector  
+  if (compute_D_and_gamma)
+  {
+    Output::print<4>("AFC: compute matrix D");
+    compute_artificial_diffusion_matrix(system_matrix, afc_matrix_D_entries);
+    if (limiter == Limiter::LINEAR_PRESERVE_BJK17)
+    {
+      Output::print<4>("AFC: compute vector gamma");
+      Compute_Parameter_For_Linearity_Preservation(system_matrix, sol, gamma);
+    }
+  }
 
   // add this matrix to A giving \tilde A (Entries)
   // this is the matrix with the properties of an M matrix
-  Daxpy(N_Entries, 1.0, &matrix_D_Entries[0], Entries);
-
+  Daxpy(N_Entries, 1.0, &afc_matrix_D_entries[0], Entries);
+  
+  // allocate and fill arrays for linearity preserving limiter
+  // from Barrenechea, John, Knobloch M3AS (2017)
+  //if ((TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE==4)||(TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE==14))
+  if (limiter == Limiter::LINEAR_PRESERVE_BJK17)
+  {
+    
+    umin.resize(nDofs,0.0);
+    umax.resize(nDofs,0.0);
+    q.resize(nDofs,0.0);
+    gamma.reserve(nDofs);
+    gamma.resize(nDofs);
+ 
+    for (i=0;i<nDofs;i++)
+    {
+      umin[i] = umax[i] = sol[i];
+      q[i] = 0;
+      // i-th row of sqmatrix
+      j0 = RowPtr[i];
+      j1 = RowPtr[i+1];
+      // check values of the neighbor dofs
+      for(j=j0;j<j1;j++)
+      {
+        // column
+        index = ColInd[j];
+        if (sol[index] < umin[i])
+          umin[i] = sol[index];
+        if (sol[index] > umax[i])
+          umax[i] = sol[index];
+        if (i != index)
+          q[i] += afc_matrix_D_entries[j];
+      }
+      q[i] *= gamma[i];       
+    }
+  }
+  
   // compute matrix F
   // loop over all rows
   for(i=0;i<nDofs;i++)
@@ -608,179 +795,256 @@ void AlgebraicFluxCorrection::fem_tvd_algorithm(
     {
       // column
       index = ColInd[j];
-      // d_ij (u_i - u_j)
-      F[j] = matrix_D_Entries[j] * (sol[index]-sol[i]);
+      // d_ij (u_j - u_i)
+      F[j] = afc_matrix_D_entries[j] * (sol[index]-sol[i]);
     }
   }
   // matrix F is computed
 
   // compute flux limiters
   // loop over all rows
-  for(i=0;i<nDofs;i++)
+  // linearity preserving limiter from [BJK17]
+  if (limiter == Limiter::LINEAR_PRESERVE_BJK17)
   {
-    // i-th row of sqmatrix
-    j0 = RowPtr[i];
-    j1 = RowPtr[i+1];
-    for(j=j0;j<j1;j++)
+    for(i=0;i<nDofs;i++)
     {
-      if (Entries[j] > 0)
-        continue;
-      // column
-      index = ColInd[j];
-      // check transposed entry -> jj
-      // diagonal
-      if (index==i)
-        continue;
-      j2 = RowPtr[index];
-      j3 = RowPtr[index+1];
-      for (jj=j2;jj<j3;jj++)
+      // i-th row of sqmatrix
+      j0 = RowPtr[i];
+      j1 = RowPtr[i+1];
+      // loop over the neighbors
+      for(j=j0;j<j1;j++)
       {
-        if (ColInd[jj]==i)
-        {
-          break;
-        }
+	// column
+        index = ColInd[j];
+        // diagonal
+        if (index==i)
+          continue;
+        if (F[j] > 0)
+          P_plus[i] += F[j];
+        if (F[j] < 0)
+          P_minus[i] += F[j];
       }
-      // check upwind condition
-      // this ensures that the 'link' between i and index is treated only once
-      if (Entries[jj] > Entries[j])
-        continue;
-      // only the active part of the matrix
-      if (F[j] > 0)
-      {
-        P_plus[i] += F[j];
-        if (index<nDofs)
-          Q_plus[index] += F[j];
-        Q_minus[i] -= F[j];
-      }
-      if (F[j] < 0)
-      {
-        P_minus[i] += F[j];
-        Q_plus[i] -= F[j];
-        if (index<nDofs)
-          Q_minus[index] +=  F[j];
-      }
-    }                                             // end loop j
+      Q_plus[i] = q[i]*(sol[i]-umax[i]);
+      Q_minus[i] = q[i]*(sol[i]-umin[i]);
+    }
   }
-
+   
+  // Zalesak limiter 
+  if (limiter == Limiter::ZALESAK)
+  {
+    for(i=0;i<nDofs;i++)
+    {
+      // i-th row of sqmatrix
+      j0 = RowPtr[i];
+      j1 = RowPtr[i+1];
+      for(j=j0;j<j1;j++)
+      {
+	if ((it_scheme == Iteration_Scheme::FIXEDPOINT_RHS) && (Entries[j] > 0))
+          continue;
+        // column
+        index = ColInd[j];
+        // check transposed entry -> jj
+        // diagonal
+        if (index==i)
+          continue;
+        j2 = RowPtr[index];
+        j3 = RowPtr[index+1];
+        for (jj=j2;jj<j3;jj++)
+        {
+          if (ColInd[jj]==i)
+          {
+            break;
+          }
+        }
+        // check upwind condition
+        // this ensures that the 'link' between i and index is treated only once
+        if (Entries[jj] > Entries[j])
+          continue;
+        // only the active part of the matrix
+        if (F[j] > 0)
+        {
+          P_plus[i] += F[j];
+          if (index<nDofs)
+            Q_plus[index] += F[j];
+          Q_minus[i] -= F[j];
+        }
+        if (F[j] < 0)
+        {
+          P_minus[i] += F[j];
+          Q_plus[i] -= F[j];
+          if (index<nDofs)
+            Q_minus[index] +=  F[j];
+        }
+      }                                           // end loop j
+    }
+  }
+  
+  
   // apply the nodal correction factor evaluated at the upwind node i
   // loop over all nodes
-  if (!continuous_proposal)
-  { // original but discontinuous proposal
-    for(i=0;i<nDofs;i++)
-    {
-      if (fabs(P_plus[i])>0)
-      {
-        R_plus[i] = Q_plus[i]/P_plus[i];
-        if (R_plus[i] >1)
-          R_plus[i] = 1;
-      }
-      if (fabs(P_minus[i])>0)
-      {
-        R_minus[i] = Q_minus[i]/P_minus[i];
-        if (R_minus[i] >1)
-          R_minus[i] = 1;
-      }
-    }
-  }
-  else
-  { // continuous proposal
-    for(i=0;i<nDofs;i++)
-    {
-      zaehler =  Q_plus[i];
-      if (-Q_minus[i] < zaehler)
-        zaehler = -Q_minus[i];
-      nenner = 1e-32;
-      if (P_plus[i] > nenner)
-        nenner = P_plus[i];
-      if (-P_minus[i] > nenner)
-        nenner = -P_minus[i];
-      R_plus[i] = zaehler/nenner;
-      if (R_plus[i] > 1)
-        R_plus[i] = 1;
-      R_minus[i] = R_plus[i];
-    }
-  }
 
-
-//  // treat Dirichlet nodes CB 2016/ I commented this out,
-    // because it breaks my example. TODO Needs further investigation.
-//  for (j=0;j < (int) neum_to_diri.size();j++)
-//  {
-//    i=neum_to_diri[j];
-//    if (i >= nDofs)
-//    {
-//      ErrThrow("neum_to_diri index ", i, " is out of scope!");
-//    }
-//    R_plus[i] = 1;
-//    R_minus[i] = 1;
-//  }
+  // original but discontinuous proposal
+  // other propsals in MooNMD
+      for(i=0;i<nDofs;i++)
+      {
+        // initialization
+        R_plus[i] = R_minus[i] = 1.0;
+        if (fabs(P_plus[i])>0)
+        {
+          R_plus[i] = Q_plus[i]/P_plus[i];
+          if (R_plus[i] >1)
+            R_plus[i] = 1;
+        }
+        if (fabs(P_minus[i])>0)
+        {
+          R_minus[i] = Q_minus[i]/P_minus[i];
+          if (R_minus[i] >1)
+            R_minus[i] = 1;
+        }
+      }
+  
+  // treat Dirichlet nodes
+  for (j=0;j < (int) neum_to_diri.size();j++)
+  {
+    i=neum_to_diri[j];
+    R_plus[i] = 1;
+    R_minus[i] = 1;
+  }  
 
   // apply the flux limiters
   // loop over all rows
   for(i=0;i<nDofs;i++)
   {
+    int diag_index=i;
+    double update_diag;
+    
     // i-th row of sqmatrix
     j0 = RowPtr[i];
     j1 = RowPtr[i+1];
+    update_diag = 0;
+    // loop over the columns
     for(j=j0;j<j1;j++)
     {
       // column
       index = ColInd[j];
+      // diagonal entry
       if (index==i)
+      {
+	diag_index = j;
         continue;
-       // this should not happen
+      }
+      // this should not be happen
       if (Entries[j] > 0)
       {
         ErrThrow("positive non-diagonal entry in FEM-TVD ", i, " ", j, " ",
                  Entries[j]);
       }
-
-      // check transposed entry
-      j2 = RowPtr[index];
-      j3 = RowPtr[index+1];
-      for (jj=j2;jj<j3;jj++)
+      if ((it_scheme == Iteration_Scheme::FIXEDPOINT_RHS) && (Entries[j] > 0))
       {
-        if (ColInd[jj]==i)
-        {
-          break;
-        }
+        OutPut("positive entry in FEMTVD " << i << " " << j << " " << Entries[j] << endl);
+        exit(4711);
       }
-
-      if (!nonsymmetric_application)
-      {
+      
         // original, symmetric application
-        // check upwind condition
-        // this ensures that the 'link' between i and index is treated only once
-        if (Entries[jj] > Entries[j])
-          continue;
-        // compute contribution to rhs
-        if (F[j] > 0)
+        if (limiter == Limiter::LINEAR_PRESERVE_BJK17)
         {
-          F[j] = R_plus[i]*F[j];
+	  alpha_ij = 1;
+          if (F[j] > 0)
+          {
+            alpha_ij = R_plus[i];
+            if (R_minus[index] < alpha_ij)
+              alpha_ij = R_minus[index];
+          }
+          if (F[j] < 0)
+          {
+            alpha_ij = R_minus[i];
+            if (R_plus[index] < alpha_ij)
+              alpha_ij = R_plus[index];
+          }
+          if (F[j]==0)
+	    alpha_ij = 1;
+	  
+         // explicit treatment
+	  if (it_scheme == Iteration_Scheme::FIXEDPOINT_RHS) 
+	 {
+	    // update rhs
+            rhs[i] += alpha_ij*F[j];
+	 }
+	  if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
+	 { // implicit treatment
+	   // off diagonal
+	   Entries[j] += (1-alpha_ij)*afc_matrix_D_entries[j];
+	   update_diag -= (1-alpha_ij)*afc_matrix_D_entries[j];
+	 }
         }
-        else
-          F[j] = R_minus[i]*F[j];
-        // update rhs of current row
-        rhs[i] += F[j];
-        // update rhs wrt to current column
-        // note that F[j] = -F[jj] and alpha_j = alpha_jj (symmetry)
-        if (index<nDofs)
-          rhs[index] -= F[j];
-      }
-      else
-      { // nonsymmetric application
-        // compute contribution to rhs
-        if (F[j] > 0)
+        
+        if (limiter == Limiter::ZALESAK)
         {
-          F[j] = R_plus[i]*F[j];
-        }
-        else
-          F[j] = R_minus[i]*F[j];
-        // update rhs of current row
-        rhs[i] += F[j];
-      }
+	  // check transposed entry
+          j2 = RowPtr[index];
+          j3 = RowPtr[index+1];
+          for (jj=j2;jj<j3;jj++)
+          {
+             // index of transposed entry
+             if (ColInd[jj]==i)
+             {
+                break;
+             }
+          }
+	  // check upwind condition
+          // this ensures that the 'link' between i and index is treated only once
+          if (Entries[jj] > Entries[j])
+            continue;
+	  
+	  if (F[j] > 0)
+          {
+	    alpha_ij = R_plus[i];
+          }
+          else
+          {
+	    alpha_ij = R_minus[i];
+          }
+          if (F[j]==0)
+	    alpha_ij = 1;
+ 
+	 // explicit treatment   
+	  if (it_scheme == Iteration_Scheme::FIXEDPOINT_RHS) 
+	 {
+            F[j] = alpha_ij *F[j];
+            // update rhs of current row
+            rhs[i] += F[j];
+            // update rhs wrt to current column
+            // note that F[j] = -F[jj] and alpha_j = alpha_jj (symmetry of alpha matrix)
+            if (index<nDofs)
+              rhs[index] -= F[j];
+	 }
+	  if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
+	 {
+	   // implicit treatment
+	   // both entries are change with the same magnitude since matrix_D_Entries is symmetric
+	   Entries[j] += (1-alpha_ij)*afc_matrix_D_entries[j];
+	   update_diag -= (1-alpha_ij)*afc_matrix_D_entries[j];
+	   Entries[jj] += (1-alpha_ij)*afc_matrix_D_entries[jj];
+  	   // find diagonal entry of the row from the transposed entry
+           for (kk=j2;kk<j3;kk++)
+           {
+             if (ColInd[kk]==index)
+             {
+               break;
+             }
+           }
+	   Entries[kk] -= (1-alpha_ij)*afc_matrix_D_entries[jj];
+	 }
+       }  
+    }                                             // end loop j
+    // update diagonal 
+    if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
+    {
+      //OutPut(i << " update_diag " << update_diag << endl);
+       Entries[diag_index] += update_diag;
     }
   }
+
   delete [] F;
 }
 
@@ -1025,3 +1289,15 @@ void AlgebraicFluxCorrection::correct_dirichlet_rows(FEMatrix& MatrixA)
 		}
 	}
 }
+
+void AlgebraicFluxCorrection::AFC_Compute_New_Iterate(const BlockVector& old_solution, BlockVector& new_solution,
+  const ParameterDatabase& db)
+{
+    // update direction
+    new_solution.add_scaled(old_solution,-1.0);
+    // damping
+    new_solution.scale(db["afc_nonlinloop_damping_factor"]);
+    // new iterate
+    new_solution.add_scaled(old_solution,1.0);
+}
+ 

@@ -25,11 +25,11 @@ int main(int argc, char* argv[])
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
-  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();  
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
-  
+
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(argv[1], parmoon_db);
 
@@ -53,8 +53,23 @@ int main(int argc, char* argv[])
   //=========================================================================
   CD2D cd2d(domain, parmoon_db);
   cd2d.assemble();
-  cd2d.solve();
-  cd2d.output();
+  cd2d.solve(0);
+  
+  if( parmoon_db["algebraic_flux_correction"].is("afc") )
+  {//nonlinear loop necessary
+    size_t Max_It =parmoon_db["afc_nonlinloop_maxit"];
+    for(unsigned int k = 1;; k++)
+    {
+      bool converged;
+      cd2d.assemble();
+      converged = cd2d.solve(k);
+      if ((converged)||(k>= Max_It))
+	break;
+    }
+  }
+  
+  cd2d.output();  
+  
   //=========================================================================
   //db.info(false);
   Output::close_file();

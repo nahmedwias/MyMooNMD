@@ -50,6 +50,10 @@ class CD2D
       BlockVector solution;
       /** @brief Finite Element function */
       TFEFunction2D fe_function;
+      /** @brief vector of weights for an AFC scheme */
+      std::vector<double> afc_gamma;
+      /** @brief entries of correction matrix for AFC schemes */
+      std::vector<double> afc_matrix_D_entries;
       
       /** @brief constructor */
       System_per_grid( const Example_CD2D& example, TCollection& coll, 
@@ -177,8 +181,12 @@ class CD2D
      */
     void assemble();
     
-    /** @brief solve the system */
-    void solve();
+    /** @brief solve the system 
+     * 
+     * @param[in] iteration current iteration
+     */
+    /// @brief returns whether or not the method is converged, unimportant for linear discretizations
+    bool solve(const int iteration);
     
     /** 
      * @brief measure errors and write pictures 
