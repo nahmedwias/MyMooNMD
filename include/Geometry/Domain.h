@@ -262,26 +262,7 @@ class TDomain
 
     /** @brief generate initial grid using external mesh generator */
     int GenInitGrid();
-    #ifdef __2D__
-      /** @brief make initial 2D grid */
-      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
-                   int NVE);
-      /** @brief make initial 2D grid, extended version which sets ReferenceID
-       *         in cells */
-      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
-                   int N_Vertices, int NVE);
-    #else
-      /** @brief make initial 3D grid */
-      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
-                   int N_Vertices, int NVE, int *BoundFaces, int *FaceParam,
-                   int NBF, int NVpF,
-                   int *Interfaceparam, int N_Interfaces);
-      /** @brief make initial sandwich grid */
-      int MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
-                           int N_Vertices, int NVE,
-                           double DriftX, double DriftY, double DriftZ,
-                           int N_Layers, double *Lambda);
-     #endif
+
 
     /**
       * @brief Chooses in what way to construct the domain's geometry
@@ -655,6 +636,29 @@ class TDomain
   /// Get a const reference to the database of this domain object.
   const ParameterDatabase& get_database() const {return this->db;};
 
+  //TODO reorganize methods, put everything private here!
+  private:
+    #ifdef __2D__
+      /** @brief make initial 2D grid */
+      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
+                   int NVE);
+      /** @brief make initial 2D grid, extended version which sets ReferenceID
+       *         in cells */
+      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
+                   int N_Vertices, int NVE);
+    #else
+      /** @brief make initial 3D grid */
+      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
+                   int N_Vertices, int NVE, int *BoundFaces, int *FaceParam,
+                   int NBF, int NVpF,
+                   int *Interfaceparam, int N_Interfaces);
+      /** @brief make initial sandwich grid */
+      int MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
+                           int N_Vertices, int NVE,
+                           double DriftX, double DriftY, double DriftZ,
+                           const std::vector<double>& Lambda);
+     #endif
+
 };
 
 /**
@@ -700,5 +704,7 @@ void determine_n_refinement_steps_multigrid(
   int n_multigrid_levels,
   int n_initial_refinement_steps,
   int& n_ref_before, int& n_ref_after);
+
+
 
 #endif

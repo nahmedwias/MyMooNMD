@@ -1384,7 +1384,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
 int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
                               int N_Vertices, int NVE,
                               double DriftX, double DriftY, double DriftZ,
-                              int N_Layers, double *Lambda)
+                              const std::vector<double>& Lambda)
 {
   int a, b, i, j, k, l, comp, Part, Neib, N_E, maxElpV = 0;
   int aux1, aux2, aux3;
@@ -1409,6 +1409,8 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
   double x0, x1, x2; // x3;
   double y0, y1, y2; // y3;
   double z0, z1, z2; // z3;
+
+  int N_Layers = Lambda.size();
 //  double det;
 
   // generate vertices, edges and cells
