@@ -299,6 +299,11 @@ void Parameter::impose(const Parameter& p)
   this->unsigned_value = p.unsigned_value;
   this->double_value = p.double_value;
   this->string_value = p.string_value;
+  this->bool_vector = p.bool_vector;
+  this->int_vector = p.int_vector;
+  this->unsigned_vector = p.unsigned_vector;
+  this->double_vector = p.double_vector;
+  this->string_vector = p.string_vector;
   
   // if the types do not match, there are some combinations which are allowed
   if(this->type != p.get_type())
