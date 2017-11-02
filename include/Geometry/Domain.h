@@ -23,16 +23,6 @@ class TDomain;
 #include <ParameterDatabase.h>
 class TTetGenMeshLoader;
 
-#ifdef __MORTAR__
-struct TMortarFaceStruct
-       {
-         TBaseCell *Cell;
-         int LocFaceNumber[2];
-       };
-
-typedef struct TMortarFaceStruct TMortarFace;
-#endif
-
 /** contains the boundary description, the virtual cell
     tree and macro grid */
 class TDomain
@@ -95,16 +85,6 @@ class TDomain
 
     /** @brief current refinment level */
     int RefLevel;
-
-#ifdef __MORTAR__
-      /** @brief number of mortar faces */
-      int N_MortarFaces;
-      /** @brief structur for mortar faces */
-      TMortarFace *MortarFaces;
-
-      /** @brief begin of each mortar face on coll */
-      int *BeginMFace;
-#endif
     
     friend class TTetGenMeshLoader;
 
@@ -205,7 +185,7 @@ class TDomain
     void ReadBdParam(std::istream& dat, bool& sandwich_flag);
 #endif
 
-    /** @brief read mapping and mortar information */
+    /** @brief read mapping information */
     int ReadMapFile(char *MapFile, TDatabase *database);
 
     /** @brief get boundary part of BdCompID */
@@ -240,25 +220,6 @@ class TDomain
       N_OwnCells = 0;
       #endif 
     }
-
-    #ifdef __MORTAR__
-      /** @brief set subgrid ID's on all MacroCells and generate mortar structurs */
-      int SetSubGridIDs(IntFunct2D *TestFunc);
-      /** @brief generate mortar structurs */
-      int GenMortarStructs();
-      /** @brief return number of mortar face structs */
-      int GetN_MortarFace()
-      { return N_MortarFaces; }
-      /** @brief return mortar face struct */
-      TMortarFace *GetMortarFace(int i)
-      { return &(MortarFaces[i]); }
-
-      /** @brief get a collection of all mortar cells */
-      TCollection *GetMortarColl(Iterators it, int level);
-
-      /** @brief initialize all mortar joints with FE-information */
-      int InitMortarJoints(Iterators it, int level, TCollection *coll);
-    #endif
 
     /** @brief generate initial grid using external mesh generator */
     int GenInitGrid();
