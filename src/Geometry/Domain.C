@@ -49,6 +49,7 @@
 
 #include <string.h>
 #include <vector>
+#include <algorithm>
 
 extern "C"
 {
@@ -120,9 +121,20 @@ ParameterDatabase TDomain::default_sandwich_grid_parameters()
 
   db.add("drift_y", 0.0, "Grid stretch in y direction.", 0.0, std::numeric_limits<double>::max());
 
-  db.add("drift_z", 0.0, "Grid stretch in x direction.", 0.0, std::numeric_limits<double>::max());
+  db.add("drift_z", 1.0, "Grid stretch in z direction.", 0.0, std::numeric_limits<double>::max());
 
-  db.add("n_layers", 10, "Number of cell layers to be stacked in the sandwich geometry.", 1, std::numeric_limits<int>::max() );
+  db.add("n_layers", 1, "Number of cell layers to be stacked "
+      "in the sandwich geometry. If this is specified and 'lambda' "
+      "is at its default value {0,1}, a total number of 'n_layer'"
+      "cell layers are equally distributed across the height of the"
+      "sandwich grid. Note that 'lambda' is prioritised over 'n_layers'.",
+      1, std::numeric_limits<int>::max() );
+
+  db.add("lambda", {0.0,1.0}, "The vector of seperators of the cell "
+      "layers. Minimum length is 2, the first value must be 0 and "
+      "the last value must be 1. The values in between give the "
+      "relative positions of the layer seperators. If this is "
+      "specified other than {0,1} it is given priority over n_layers.");
 
   return db;
 }
@@ -170,7 +182,7 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
     }
     // Merge the sandwich input database into the default one. Here we allow
     // for the creation of new parameters, for easy include of example specific
-    // parametes, which should not appear in the default database.
+    // parameters, which should not appear in the default database.
     sandwich_db.merge(sandwich_in_db, true);
     //The sandwich database is then nested into the domain database.
     db.add_nested_database(sandwich_db);
@@ -1031,13 +1043,13 @@ void TDomain::Init(const std::string& PRM, const std::string& GEO)
       Output::print("** (4) replace 'geo_file: [the new mesh file]' in your input file   **");
       Output::print("**                                                                  **");
       Output::print("** Note: using .GEO and .PRM files is only allowed with the         **");
-      Output::print("** purpose of converting .GEO -> .mesh                              **");      
+      Output::print("** purpose of converting .GEO -> .mesh                              **");
       Output::print("** **************************************************************** **");
       exit(1);
-    }      
-    else 
+    }
+    else
     {
-      Output::print("** Converting .GEO to .mesh **");    
+      Output::print("** Converting .GEO to .mesh **");
     }
 	
     // check if the GEO file actually is an .xGEO-file
@@ -1128,7 +1140,7 @@ void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
   double drift_x = sw_db["drift_x"];
   double drift_y = sw_db["drift_y"];
   double drift_z = sw_db["drift_z"];
-  size_t n_layers = sw_db["n_layers"];
+  int n_layers = sw_db["n_layers"]; //layers of cells (!)
 
   //Three C-style arrays needed for the call to MakeSandwichGrid.
   double *DCORVG;
@@ -1239,23 +1251,58 @@ void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
      NVE = maxNVertexPerElem;
   }
 
-  // fill the lambda array - it has size n_layers + 1,
-  // starts with 0, ends with 1, and gives the relative placing
-  // of sandwich grid layers.
-  // todo Figure out a good way to let this depend on the example
+  // figure out the relative placing of sandwich grid layers.
+  std::vector<double> lambda = sw_db["lambda"];
 
-  //This is the default:
-  double* lambda = new double[n_layers + 1];
-  for(size_t i=0;i<n_layers;i++)
-    lambda[i] = i * (1.0/(n_layers-1));
+  bool control_by_lambda = true;
+  if(!std::is_sorted(lambda.begin(), lambda.end()))
+  {//check if lambda is valid
+    Output::warn("DOMAIN", "Invalid lambda for sandwich grid given. "
+                 "The entries must be in ascending order. "
+                 "Opting for control parameter n_layers.");
+    control_by_lambda = false;
+  }
+  if(*std::min_element(lambda.begin(), lambda.end()) != 0 ||
+     *std::max_element(lambda.begin(), lambda.end()) != 1)
+  {//check if lambda is valid
+    Output::warn("DOMAIN", "Invalid lambda for sandwich grid given. "
+                 "The vector must start with 0 and end with 1. "
+                 "Opting for control parameter n_layers.");
+    control_by_lambda = false;
+  }
+  if(lambda == std::vector<double>({0,1}))
+  {//default lambda is given - take n_layers instead
+    Output::info("DOMAIN", "Default lambda for sandwich grid given. "
+                 "Opting for control parameter n_layers.");
+    control_by_lambda = false;
+  }
+  if(!control_by_lambda)
+  {//n_layers is used as control parameter
 
+    Output::info("DOMAIN", "Taking sandwich grid database "
+        "parameter 'n_layers' = ", sw_db["n_layers"]);
+    int n_node_layers = sw_db["n_layers"];
+    ++n_node_layers; //count up to get the number of node (and not cell) layers
+
+    //fill a lambda with equally spaced numbers
+    lambda.resize(n_node_layers);
+    for(int i=0 ; i<n_node_layers ; i++)
+      lambda[i] = i * (1.0/n_layers);
+
+  }
+  else
+  {//control by lambda
+    Output::info("DOMAIN", "Taking sandwich grid database "
+      "parameter 'lambda'.");
+  }
+
+  // Call the private method which does the actual work.
   MakeSandwichGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE,
-                   drift_x, drift_y, drift_z, n_layers, lambda);
+                   drift_x, drift_y, drift_z, lambda);
+
   delete[] DCORVG;
   delete[] KVERT;
   delete[] KNPR;
-  delete[] lambda;
-
 
 }
 
