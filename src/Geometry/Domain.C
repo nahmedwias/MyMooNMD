@@ -1022,7 +1022,7 @@ void TDomain::Init(const char *PRM, const char *GEO)
     // error message: .GEO file are no longer supported. They can be used to initialize a domain
     // only if the purpose is to covert the .GEO into a .mesh
 
-    if (!strcmp(db["mesh_file"],"__nofile__"))
+    /*if (!strcmp(db["mesh_file"],"__nofile__"))
     {
       Output::print("** **************************************************************** **");
       Output::print("** ERROR: the (x)GEO files are no longer supported in ParMooN (2D): **");
@@ -1051,7 +1051,7 @@ void TDomain::Init(const char *PRM, const char *GEO)
     else 
     {
       Output::print("** Converting .GEO to .mesh **");    
-    }
+    }*/
 	
     // "GEO" interpreted as file path to GEO-file.
     // check if it actually is an .xGEO-file
