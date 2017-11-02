@@ -327,10 +327,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   TDatabase::IteratorDB[It_Between]->SetParam(this);
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
 
-  #ifdef __MORTAR__
-    TDatabase::IteratorDB[It_Mortar1]->SetParam(this);
-    TDatabase::IteratorDB[It_Mortar2]->SetParam(this);
-  #endif
 
   // generate edges
   KMT = new TJoint*[N_RootCells*4];
@@ -743,11 +739,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
   TDatabase::IteratorDB[It_Finest]->SetParam(this);
   TDatabase::IteratorDB[It_Between]->SetParam(this);
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
-
-  #ifdef __MORTAR__
-    TDatabase::IteratorDB[It_Mortar1]->SetParam(this);
-    TDatabase::IteratorDB[It_Mortar2]->SetParam(this);
-  #endif
 
   // generate edges
   KMT = new TJoint*[N_RootCells*4];

@@ -40,13 +40,6 @@
   #include <IsoEdge3D.h>
 #endif
 
-#ifdef __MORTAR__
-  #include <BoundPoint.h>
-  #include <MortarBaseJoint.h>
-  #include <MortarJoint.h>
-#endif
-
-
 #include <string.h>
 #include <vector>
 #include <algorithm>
@@ -271,249 +264,6 @@ int TDomain::GetLocalBdCompID(int BdCompID)
 
   return BdCompID - StartBdCompID[i];
 }
-
-#ifdef __MORTAR__
-int TDomain::SetSubGridIDs(IntFunct2D *TestFunc)
-{
-  int i, j, N_, ID, CurrID;
-  TVertex *Vert;
-
-  for (i=0;i<N_RootCells;i++)
-  {
-    ID = 0;
-    N_ = CellTree[i]->GetRefDesc()->GetN_OrigVertices();
-    for(j=0;j<N_;j++)
-    {
-      Vert = CellTree[i]->GetVertex(j);
-      CurrID = TestFunc(Vert->GetX(), Vert->GetY());
-
-      if (CurrID > ID) ID = CurrID;
-    }
-
-    ((TMacroCell *) CellTree[i])->SetSubGridID(ID);
-  }
-  
-  return 0;
-}
-
-int TDomain::GenMortarStructs()
-{
-  int i, j, k, N_1, N_2, ID1, ID2;
-  TBaseCell *MeBase, *Me, *Neighb;
-  TJoint *Joint;
-  //TVector<int> *MortarAux;
-
-  //MortarAux = new TVector<int>(30,30);
-  std::vector<int> MortarAux;
-
-  N_MortarFaces = 0;
-
-  for (i=0;i<N_RootCells;i++)
-    CellTree[i]->SetClipBoard(0);
-
-  for (i=0;i<N_RootCells;i++)
-  {
-    Me = CellTree[i];
-    N_1 = Me->GetRefDesc()->GetN_OrigEdges();
-    for(j=0;j<N_1;j++)
-      if (Neighb = Me->GetJoint(j)->GetNeighbour(CellTree[i]))
-        if ((ID1 = Me->GetSubGridID()) != (ID2 = Neighb->GetSubGridID()))
-        {
-          N_2 = Neighb->GetRefDesc()->GetN_OrigEdges();
-          for (k=0;k<N_2;k++)
-            if (Neighb->GetJoint(k) == Me->GetJoint(j)) break;
-
-          if (!(Me->GetClipBoard() & 1 << j))
-          {
-            N_MortarFaces++;
-            Me->SetClipBoard(Me->GetClipBoard() | 1 << j);
-            Neighb->SetClipBoard(Neighb->GetClipBoard() | 1 << k);
-
-            if (ID1 < ID2)
-              //MortarAux->AddElement(i);
-              MortarAux.push_back(i);
-            else
-              //MortarAux->AddElement(-i-1);
-              MortarAux.push_back(-i-1);
-
-            //MortarAux->AddElement(j);
-            //MortarAux->AddElement(k);
-            MortarAux.push_back(j);
-            MortarAux.push_back(k);
-          }
-        }
-  } 
-
-  MortarFaces = new TMortarFace[N_MortarFaces];
-
-  for (i=0;i<N_MortarFaces;i++)
-  {
-    //if (MortarAux->GetElement(3*i) >= 0)
-    if (MortarAux.at(3*i) >= 0)
-    {
-      //MortarFaces[i].Cell = CellTree[MortarAux->GetElement(3*i)];
-      //MortarFaces[i].LocFaceNumber[0] = MortarAux->GetElement(3*i + 1);
-      //MortarFaces[i].LocFaceNumber[1] = MortarAux->GetElement(3*i + 2);
-      MortarFaces[i].Cell = CellTree[MortarAux.at(3*i)];
-      MortarFaces[i].LocFaceNumber[0] = MortarAux.at(3*i + 1);
-      MortarFaces[i].LocFaceNumber[1] = MortarAux.at(3*i + 2);
-    }
-    else
-    {
-      //MeBase = CellTree[-MortarAux->GetElement(3*i) - 1];
-      //MortarFaces[i].LocFaceNumber[0] = MortarAux->GetElement(3*i + 2);
-      //MortarFaces[i].LocFaceNumber[1] = MortarAux->GetElement(3*i + 1);
-      MeBase = CellTree[-MortarAux.at(3*i) - 1];
-      MortarFaces[i].LocFaceNumber[0] = MortarAux.at(3*i + 2);
-      MortarFaces[i].LocFaceNumber[1] = MortarAux.at(3*i + 1);
-      MortarFaces[i].Cell = MeBase->GetJoint(MortarFaces[i].LocFaceNumber[1])->
-                            GetNeighbour(MeBase);
-    }
-  }
-
-  for (i=0;i<N_MortarFaces;i++)
-  {
-    k = MortarFaces[i].LocFaceNumber[0];
-    Me = MortarFaces[i].Cell;
-    Joint = Me->GetJoint(k);
-    Neighb = Joint->GetNeighbour(Me);
-
-    delete Joint;
-
-    Joint = new TMortarBaseJoint(Me, Neighb);
-    Me->SetJoint(k, Joint);
-    Neighb->SetJoint(MortarFaces[i].LocFaceNumber[1], Joint);
-  }
-  
-  //delete MortarAux;
-  
-  return 0;
-}
-
-TCollection *TDomain::GetMortarColl(Iterators it, int level)
-{
-  TCollection *coll;
-  int i, n_cells = 0, lev, info;
-  const int *TmpEV;
-  TBaseCell **cells, *CurrCell, *LastCell, *NewCell;
-  TJoint *Joint;
-
-  BeginMFace = new int[N_MortarFaces + 1];
-  BeginMFace[0] = 0;
-  
-  for (i=0;i<N_MortarFaces;i++)
-  {
-    lev = level + (i << 8);
-    TDatabase::IteratorDB[it]->Init(lev);
-    while (TDatabase::IteratorDB[it]->Next(info)) n_cells++;
-    BeginMFace[i+1] = n_cells;
-  }
-
-  cells = new TBaseCell*[n_cells];
-
-  for (n_cells=i=0;i<N_MortarFaces;i++)
-  {
-    lev = level + (i << 8);
-    TDatabase::IteratorDB[it]->Init(lev);
-    LastCell = NULL;
-    while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
-    {
-      NewCell = new TGridCell(TDatabase::RefDescDB[S_Line], RefLevel);
-
-      CurrCell->GetRefDesc()->GetShapeDesc()->GetEdgeVertex(TmpEV);
-      NewCell->SetVertex(0, CurrCell->GetVertex(TmpEV[2*info]));
-      NewCell->SetVertex(1, CurrCell->GetVertex(TmpEV[2*info + 1]));
-
-      if (LastCell)
-      {
-        Joint = new TJointEqN(NewCell, LastCell);
-        NewCell->SetJoint(0, Joint);
-        LastCell->SetJoint(1, Joint);
-      }
-      else
-        NewCell->SetJoint(0, new TJointEqN(NewCell));
-
-      cells[n_cells++] = LastCell = NewCell;
-    }
-    NewCell->SetJoint(1, new TJointEqN(NewCell));
-  }
-
-  coll = new TCollection(n_cells, cells);
-
-  #ifdef  _MPI 
-  coll->SetN_OwnCells(N_OwnCells);
-  #endif
-
- return coll;
-}
-
-int TDomain::InitMortarJoints(Iterators it, int level, TCollection *coll)
-{
-  int i, j, ncell, Ncell, lev, info;
-  const int *TmpEV;
-  bool Left;
-  double X0, Y0, X1, Y1, X, Y;
-  TBaseCell *CurrCell, *Cell1D;
-
-  for (ncell=i=0;i<N_MortarFaces;i++)
-  {
-    lev = level + (i << 8);
-    TDatabase::IteratorDB[it]->Init(lev);
-    while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
-      if (CurrCell->GetParent())
-        ((TMortarJoint *) CurrCell->GetJoint(info))->SetMEdgeInColl(ncell++);
-      else
-        ((TMortarBaseJoint *) CurrCell->GetJoint(info))->
-                                SetMEdgeInColl(ncell++);
-  }
-
-  for (i=0;i<N_MortarFaces;i++)
-  {
-    lev = - level - (i << 8);
-    TDatabase::IteratorDB[it]->Init(lev);
-    ncell = BeginMFace[i];
-    Ncell = BeginMFace[i+1] - 1;
-    while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
-    {
-      CurrCell->GetRefDesc()->GetShapeDesc()->GetEdgeVertex(TmpEV);
-      X0 = CurrCell->GetVertex(TmpEV[2*info])->GetX();
-      Y0 = CurrCell->GetVertex(TmpEV[2*info])->GetY();
-      X1 = CurrCell->GetVertex(TmpEV[2*info+1])->GetX();
-      Y1 = CurrCell->GetVertex(TmpEV[2*info+1])->GetY();
-
-      do
-      {
-        Cell1D = coll->GetCell(ncell);
-        X = Cell1D->GetVertex(0)->GetX();
-        Y = Cell1D->GetVertex(0)->GetY();
-        Left = (bool) ((X1-X)*(X1-X0) + (Y1-Y)*(Y1-Y0) < 0);
-
-        if (Left) ncell++;
-
-      } while (ncell < Ncell && Left);
-
-      if (ncell > Ncell)
-        ncell--;
-      else
-      {
-        Cell1D = coll->GetCell(ncell);
-        X = Cell1D->GetVertex(0)->GetX();
-        Y = Cell1D->GetVertex(0)->GetY();
-        if ((X1-X)*(X1-X0) + (Y1-Y)*(Y1-Y0) > 0) ncell--;
-      }
-
-      if (CurrCell->GetParent())
-        ((TMortarJoint *) CurrCell->GetJoint(info))->
-                            SetMEdgeInColl(-ncell - 1);
-      else
-        ((TMortarBaseJoint *) CurrCell->GetJoint(info))->
-                                SetMEdgeInColl(-ncell - 1);
-    }
-  }
-
-  return 0;
-}
-#endif // __MORTAR__
 
 #ifdef __2D__
 //void SaveTri(struct triangulateio &outt);
@@ -754,11 +504,6 @@ int TDomain::GenInitGrid()
   TDatabase::IteratorDB[It_Finest]->SetParam(this);
   TDatabase::IteratorDB[It_Between]->SetParam(this);
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
-
-  #ifdef __MORTAR__
-    TDatabase::IteratorDB[It_Mortar1]->SetParam(this);
-    TDatabase::IteratorDB[It_Mortar2]->SetParam(this);
-  #endif 
 
   // search neighbours
   N_ = outt.numberofpoints;
@@ -2566,9 +2311,6 @@ TCollection *TDomain::GetCollection(Iterators it, int level) const
   TBaseCell **cells, *CurrCell;
 
   // initialize the iterator
-  // note:
-  // enum Iterators {It_EQ, It_LE, It_Finest, It_EQLevel, It_LELevel,
-  //            It_Between, It_OCAF, It_Mortar1, It_Mortar2};
   TDatabase::IteratorDB[it]->Init(level);
   n_cells=0;
   // if the pointer to the next item is not empty increase number of cells
@@ -2603,9 +2345,6 @@ TCollection *TDomain::GetCollection(Iterators it, int level, int ID) const
   
   int info;
   // initialize the iterator
-  // note:
-  // enum Iterators {It_EQ, It_LE, It_Finest, It_EQLevel, It_LELevel,
-  //            It_Between, It_OCAF, It_Mortar1, It_Mortar2};
   TDatabase::IteratorDB[it]->Init(level);
   
   //cout << " count cells " << endl;
