@@ -899,7 +899,7 @@ void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
   {
     std::ifstream dat(file_name);
     if (!dat)
-      ErrThrow("Cannot open .GEO file ", dat);
+      ErrThrow("Cannot open .GEO file ", file_name);
     char line[100];
     int NVpF, NBCT;
 
