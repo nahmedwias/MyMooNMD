@@ -301,6 +301,8 @@ Example_TimeNSE3D::Example_TimeNSE3D(
 
       // Set example constants
       TIME_DEPENDENT = true;
+      double new_r_out = user_input_parameter_db["outflow_stretch"];
+      FluidProperties::set_r_out(new_r_out/100);
       FluidProperties::set_mass_flow_rate(user_input_parameter_db["mass_flow_rate"]);
       FluidProperties::set_out_condition(user_input_parameter_db["out_condition"]);
 
