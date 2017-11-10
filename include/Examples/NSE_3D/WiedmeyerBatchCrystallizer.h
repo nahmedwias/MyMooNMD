@@ -17,13 +17,18 @@ double rho = 1050; // ( kg / m^3  ) the density (of a Kalialaun solution, VW)
 double u_infty = 1;    // (m/s) the characteristic velocity of the fluid
 double l_infty = 1;    // (m) the characteristic length scale of the tube
 
-double r_in = 0.01;   //cm the radius of the inlet
-double r_out = 0.075; //cm the radius of the outlet
+double r_in = 0.01;   //m the radius of the inlet
+double r_out = 0.075; //m the radius of the outlet
 
 double mass_flow_rate = 0; // (kg/s) the mass flow rate at in- and outflow
 double u_avg_in  = 0; //0.047157;   //m/s
 double u_max_in  = 0; //m/s, assuming HP-inflow
 double u_avg_out  = 0; //m/s
+
+void set_r_out(double new_r_out)
+{
+  r_out = new_r_out;
+}
 
 void set_mass_flow_rate(double mfr)
 {
@@ -83,7 +88,8 @@ BoundaryPart determine_boundary_part(double x, double y, double z)
 {
 	double tol = 1e-8;
 	//catch first those values that lie on the wall parts of top and bottom
-	if(fabs(sqrt(x*x + y*y) - 0.01) < tol || fabs(sqrt(x*x + y*y) - 0.075) < tol)
+	if(    (fabs(sqrt(x*x + y*y) - FluidProperties::r_in) < tol && fabs(z-0) < tol)      //bottom wall
+	    || (fabs(sqrt(x*x + y*y) - FluidProperties::r_out) < tol && fabs(z-0.5) < tol) ) //top wall
 	{
 		return BoundaryPart::WALL;
 	}
@@ -141,7 +147,9 @@ void U3BoundValue(double x, double y, double z, double &value)
 	      }
 	}
 	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)	//no-slip
+	{
 		value = 0;
+	}
 	else //TOP - outflow
 	{
 	  if(out_condition == OutCondition::DO_NOTHING)
@@ -161,15 +169,15 @@ void U3BoundValue(double x, double y, double z, double &value)
 	  }
 	  else if(out_condition == OutCondition::PARABOLIC)
 	  {//parabolic outflow profile
-	    double R = 0.075;
+	    double R = r_out;
 	    double r = sqrt(x*x + y*y);
 	    value = (2*u_avg_out) * (1 - (r*r)/(R*R));
 	    if( TIME_DEPENDENT )
 	    {
 	      double t = TDatabase::TimeDB->CURRENTTIME;
-	      if(t < 1) //within first second of the simulated time
+	      if(t < 0.1) //within first second of the simulated time
 	        //multiply outflow with t ("anstroemen")
-	        value  *=t;
+	        value  *= (10*t);
 	    }
 	  }
 	}
