@@ -29,7 +29,7 @@ double timeC = 0;
 #endif
 
 // CB EXAMPLE
-void transform_to_crystallizer_geometry(TCollection *coll);
+void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretch);
 // END EXAMPLE
 
 // main program
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
     int n_layers_outflow = sw_db["n_layers_outflow"];
     std::vector<double> lambda(n_layers_inflow + n_layers_cone + n_layers_outflow + 1);
     //TODO fill lambda somehow
-    for(size_t i=0; i<lambda.size(); ++i)
+    for(int i=0; i<(int)lambda.size(); ++i)
     {//fill lambda
       if(i < n_layers_inflow)
         lambda[i] = (1.0/10) * i * (1.0/n_layers_inflow);
@@ -142,7 +142,10 @@ int main(int argc, char* argv[])
   // This code is specific to the WiedmeyerBatchCrystallizer Example.
   // This will be done for only the finest grid -
   // the other grids share its vertices!
-  transform_to_crystallizer_geometry(gridCollections.front());
+  double outflow_stretch = 7.5;
+  if(parmoon_db.contains("outflow_stretch"))
+    outflow_stretch = parmoon_db["outflow_stretch"];
+  transform_to_crystallizer_geometry(gridCollections.front(), outflow_stretch);
   //END EXAMPLE
 
   TCollection* coll = gridCollections.front();
@@ -300,7 +303,9 @@ int main(int argc, char* argv[])
 //This code is specific to the WiedmeyerBatchCrystallizer Example.
 void compute_position_in_crystallizer_geometry(
     double x, double y, double z,
-    double& x_trans, double& y_trans, double& z_trans)
+    double& x_trans, double& y_trans, double& z_trans,
+    double outflow_stretch
+    )
 {// We assume that the input geometry is a cylinder with radius 1 (cm)
  // and height 50 (cm), z being the height direction.
  // The cylinder is further assumed to 'fit' the inflow of
@@ -310,7 +315,6 @@ void compute_position_in_crystallizer_geometry(
  double inflow_end = 5;
  double cone_end = 35;
  double outflow_end = 50;
- double outflow_stretch = 7.5;
 
  if(z < inflow_end + tol)//inflow piece,keep it unchanged.
  {
@@ -352,7 +356,7 @@ void compute_position_in_crystallizer_geometry(
  * No checks whatsoever are performed, the method it is
  * extremely specific. You must know what you are doing.
  */
-void transform_to_crystallizer_geometry(TCollection *coll)
+void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretch)
 {
   int N_Cells = coll->GetN_Cells();
 
@@ -384,7 +388,7 @@ void transform_to_crystallizer_geometry(TCollection *coll)
         double x_transf, y_transf, z_transf;
 
         vertex->GetCoords(x, y, z);
-        compute_position_in_crystallizer_geometry(x, y, z, x_transf, y_transf, z_transf);
+        compute_position_in_crystallizer_geometry(x, y, z, x_transf, y_transf, z_transf, outflow_stretch);
         vertex->SetCoords(x_transf, y_transf, z_transf);
 
         //mark this vertex as treated
