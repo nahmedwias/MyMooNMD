@@ -113,7 +113,7 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 )
 : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
    solver_(param_db), defect_(), old_residual_(), 
-   initial_residual_(1e10), errors_(), oldtau_()
+   initial_residual_(1e10), errors_(), oldtau_(), current_step_(0)
 {
   db_.merge(param_db, false);
   this->check_parameters();
