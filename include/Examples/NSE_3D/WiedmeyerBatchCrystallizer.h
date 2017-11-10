@@ -135,9 +135,9 @@ void U3BoundValue(double x, double y, double z, double &value)
 	      if( TIME_DEPENDENT )
 	      {
 	        double t = TDatabase::TimeDB->CURRENTTIME;
-	        if(t < 1) //within first second of the simulated time
+	        if(t < 0.1) //within first second of the simulated time
 	        	//multiply inflow with t ("anstroemen")
-	        	value  *=t;
+	        	value  *= (10*t);
 	      }
 	}
 	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)	//no-slip
@@ -151,13 +151,13 @@ void U3BoundValue(double x, double y, double z, double &value)
 	  else if(out_condition == OutCondition::CONSTANT)
 	  {//constant outflow condition
 	    value = FluidProperties::u_avg_out;
-      if( TIME_DEPENDENT )
-      {
-        double t = TDatabase::TimeDB->CURRENTTIME;
-        if(t < 1) //within first second of the simulated time
-          //multiply outflow with t ("anstroemen")
-          value  *=t;
-      }
+	    if( TIME_DEPENDENT )
+	    {
+	      double t = TDatabase::TimeDB->CURRENTTIME;
+	      if(t < 0.1) //within first second of the simulated time
+	        //multiply outflow with t ("anstroemen")
+	        value  *= (10*t);
+	    }
 	  }
 	  else if(out_condition == OutCondition::PARABOLIC)
 	  {//parabolic outflow profile
