@@ -298,6 +298,12 @@ int TDomain::ReadParam(const char *ParamFile)
           N_Param++;
       }
 
+if (!strcmp(line, "sign_MatrixBi:"))
+      {
+          dat >> TDatabase::ParamDB->sign_MatrixBi;
+          N_Param++;
+      }
+
     if (!strcmp(line, "USE_ISOPARAMETRIC:"))
     {
       dat >> TDatabase::ParamDB->USE_ISOPARAMETRIC;
