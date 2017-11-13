@@ -155,7 +155,9 @@ public:
    //BoundValueFunct2D **BoundaryValues;
 
     
-    
+ // Initialize/Declare Brinkman 2D database, called with the constructor (for the use outside Brinkman2D.C)
+ static ParameterDatabase get_default_Brinkman2D_parameters();
+
 protected:
     
     /**

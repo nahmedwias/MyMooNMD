@@ -9,7 +9,7 @@
 #include <ParameterDatabase.h>
 #include <memory>
 
-ParameterDatabase get_default_Brinkman2D_parameters()
+ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
 {
     Output::print<5>("creating a default Brinkman2D parameter database");
     
@@ -33,7 +33,20 @@ ParameterDatabase get_default_Brinkman2D_parameters()
            "dimensions and is meaningfull for the finite elemnt space P1/P1 only."
            "Usually this is used in the main program.",
            {true,false});
-    
+
+    db.add("EqualOrder_PressureStab_type", "symmetric GLS", 
+           "This string sets the type of residual-based momentum stabilization," 
+           "usually used for the stabilization of P_k/P_k finite elements, for the" 
+           "Brinkman problem in 2D. For stability of the method, the chosen "
+           "equal-order stabilization has to fit the other chosen stabilizations and "
+           "variants of the standard Galerkin scheme (symmetry or non-symmetry).",
+          {"symmetric GLS", "nonsymmetric GLS"});
+
+    db.add("Galerkin_type", "symmetric Galerkin formulation", 
+           "This string enables to choose between symmetry and non-symmetry of the standard Galerkin scheme."
+           "This might be irrelevant in for direct solvers as long as no addiditional terms (stabilization) are apparent.",
+          {"symmetric Galerkin formulation", "nonsymmetric Galerkin formulation"});
+
 //    db.add("s1", 0.0,
 //           "Use an assembling routine corresponding to a residual-based "
 //           "equal-order stabilization for the Brinkman problem."
@@ -131,12 +144,14 @@ Brinkman2D::Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
 Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db,
                        const Example_Brinkman2D & e,
                        unsigned int reference_id)
-: db(get_default_Brinkman2D_parameters()), solver(param_db),
+: db(Brinkman2D::get_default_Brinkman2D_parameters()), solver(param_db),
   outputWriter(param_db),
   systems(), example(e), defect(), oldResiduals(), 
 initial_residual(1e10), errors()
 {
     this->db.merge(param_db,true);
+// TODO LB 13.11.17    check_and_set_assemble_type(db["EqualOrder_PressureStab_type"], db["brinkman_assemble_option"]);
+    
     //this->db.merge(param_db,false);
     
     // set the argument to false for more detailed output on the console
@@ -239,25 +254,52 @@ void Brinkman2D::assemble()
         { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
         
         LocalAssembling2D_type type;
-        
-//        if (db["P2P2_stab"].is(true))
-//        {type=Brinkman2D_Galerkin1ResidualStabP2;
-//        Output::print<>("P2P2 Stabilization");}
-//        else
-       if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE == 1)
-        {
-            type = Brinkman2D_Galerkin1ResidualStabP1;
-            Output::print<>("P1P1-GLS-Stabilization was applied");
-        }
-        else if(db["PkPk_stab"].is(false))
-        {
-            type = Brinkman2D_Galerkin1;
-        }
 
-        std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, fe_functions,
-                             this->example.get_coeffs()));
-        
-        //--------------------------------------------------------------------------------------------------
+
+if ( db["PkPk_stab"].is(true) && db["EqualOrder_PressureStab_type"].is("symmetric GLS") )
+  TDatabase::ParamDB->sign_MatrixBi = 1;
+else if ( db["PkPk_stab"].is(true) && db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") )
+  TDatabase::ParamDB->sign_MatrixBi = -1;
+else if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("symmetric Galerkin formulation") )
+  TDatabase::ParamDB->sign_MatrixBi = 1;
+else if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") )
+  TDatabase::ParamDB->sign_MatrixBi = -1;
+else
+  Output::print("WARNING: Please specify the discrete formulation you wish to use via the" 
+                " parameters EqualOrder_PressureStab_type and Galerkin_type. ");
+
+
+type = Brinkman2D_Galerkin1;      
+std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, fe_functions,
+                              this->example.get_coeffs()));
+
+// use a list of LocalAssembling2D↲                                          
+std::vector< std::shared_ptr <LocalAssembling2D >> la_list;                 
+la_list.push_back(la);                   
+
+if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE == 1)
+   {                                                                     
+    type = Brinkman2D_Galerkin1ResidualStabP1;                        
+    Output::print<>("P1P1-GLS-Stabilization was applied");            
+    std::shared_ptr <LocalAssembling2D> la_P1P1stab(new LocalAssembling2D(type, fe_functions,
+    this->example.get_coeffs()));                         
+    la_list.push_back(la_P1P1stab);
+   }                                                                     
+else if(db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE != 1)                                     
+   {                                                                      
+    Output::print<>("Up to now, the GLS stabilization is only implemented correctly for P1/P1");
+   }  
+if (db["GradDiv_stab"].is(true))                                             
+    {                                                                            
+     Output::print("Grad-Div Stabilization was applied");                     
+     type = Brinkman2D_GradDivStabilization;                                   
+     std::shared_ptr <LocalAssembling2D> la_graddiv(new LocalAssembling2D(type, fe_functions,
+     this->example.get_coeffs()));                          
+     la_list.push_back(la_graddiv);                                          
+    }
+
+
+       //--------------------------------------------------------------------------------------------------
         //std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
         // Note: We use only Type 14 for Brinkman (for now)
         // call the assemble method with the information that has been patched together
@@ -280,44 +322,30 @@ void Brinkman2D::assemble()
 //        const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
 //        fesprhs[2]  = p_space;
 //        size_t N_Rhs = 3; // is 3 if NSE type is 4 or 14 (else it is 2)
-	
-	
-	/*Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
-		   n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
-		   boundary_conditions, non_const_bound_values.data(), la);
-	*/
+  
+  
+  //Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
+  //   n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
+  //   boundary_conditions, non_const_bound_values.data(), la);
+  ///
         //--------------------------------------------------------------------------------------------------
 
-	// use a list of LocalAssembling2D
-	std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
-	la_list.push_back(la);
-   if (db["GradDiv_stab"].is(true))
-   {
-      Output::print("Grad-Div Stabilization was applied");
-      type = Brinkman2D_GradDivStabilization;
-      std::shared_ptr <LocalAssembling2D> la_graddiv(new LocalAssembling2D(type, fe_functions,
-                        this->example.get_coeffs()));
-      la_list.push_back(la_graddiv);
-   }
-
-
-   	// Brinkmann-specific choices
+// Brinkmann-specific choices
         std::vector<const TFESpace2D*> spaces_for_matrix;
         spaces_for_matrix.resize(2);
         spaces_for_matrix[0] = v_space;
         spaces_for_matrix[1] = p_space;
-        
+
         std::vector<const TFESpace2D*> spaces_for_rhs;
         spaces_for_rhs.resize(3);
         spaces_for_rhs[0] = v_space;
         spaces_for_rhs[1] = v_space;
         spaces_for_rhs[2] = p_space;
-        
+
         Assembler4 Ass;
         Ass.Assemble2D(s.matrix,s.rhs,
-		       spaces_for_matrix,spaces_for_rhs,
-		       example,la_list);
-       
+         spaces_for_matrix,spaces_for_rhs,
+         example,la_list);
 
 //===========================================================================//
 // Weakly Imposing Boundary Conditions - Boundary Integrals
