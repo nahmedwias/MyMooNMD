@@ -401,7 +401,9 @@ void TDatabase::SetDefaultParameters()
   
   ParamDB->GradDiv_stab = false;
   ParamDB->grad_div_stab_weight = 0;
-   
+
+  ParamDB->sign_MatrixBi = 1;
+
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
   ParamDB->VMM_COARSE_LEVEL = 4711;
@@ -1093,6 +1095,8 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("grad_div_stab_weight: ", ParamDB->grad_div_stab_weight); 
   printToFile("PkPk_stab: ", ParamDB->PkPk_stab); 
   printToFile("equal_order_stab_weight_PkPk: ", ParamDB->equal_order_stab_weight_PkPk); 
+  
+  printToFile("sign_MatrixBi: ", ParamDB->sign_MatrixBi);
     
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);

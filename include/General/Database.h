@@ -308,7 +308,23 @@ struct TParaDB
   //======================================================================
   bool GradDiv_stab;
   double grad_div_stab_weight;
-    
+  
+  //======================================================================
+  /** Parameter for the specification of symmetry or non-symmetry of the 
+      discrete formulation for Brinkman problems. It is internally set 
+      according to the input (string) assigned to the parameters 
+      EqualOrder_PressureStab_type and Galerkin_type. 
+      By default it is sign_MatrixBi = 1, i.e., symmetry;
+      -1 would corresdpond to non-symmetry and additionally the implementation 
+      could be widened to allow for scalings that do not have absolute value 1.
+      In detail, this parameter decides wether the divergence constraint is 
+      added or subtracted and adapts stabilizations if apparent. 
+      This is for example relevant for stability resp. convergence if one 
+      considers additional terms (e.g., stabilizations) or if one does not use 
+      a direct solver.*/
+  //======================================================================
+  double sign_MatrixBi;
+
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */
   //======================================================================
