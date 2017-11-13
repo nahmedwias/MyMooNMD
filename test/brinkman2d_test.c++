@@ -43,7 +43,7 @@
 // the array
 void compareErrors(const Brinkman2D& brinkman2d, std::array<double, 4> reference_errors)
 {
-    const double eps = 2e-9;
+    const double eps = 2e-7;
     
     
     Output::print(setprecision(14),reference_errors[0]);
@@ -381,8 +381,7 @@ void tests_on_triangles_P2P1(unsigned int nRefinements, ParameterDatabase& db)
 {//Not yet Nitsche (normals)
     // default construct a domain object
     TDomain domain(db);
-    
-    // Initialization of the default parameters
+   // Initialization of the default parameters
     TDatabase::SetDefaultParameters();
     
     // refine grid up to the coarsest level
@@ -398,7 +397,9 @@ void tests_on_triangles_P2P1(unsigned int nRefinements, ParameterDatabase& db)
     TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.004;
     TDatabase::ParamDB->VISCOSITY=0.004;
     TDatabase::ParamDB->PkPk_stab=false;
-    
+    TDatabase::ParamDB->GradDiv_stab=false;
+   // TDatabase::ParamDB->sign_MatrixBi=-1;
+    db["Galerkin_type"] = "symmetric Galerkin formulation";
     TDatabase::ParamDB->n_neumann_boundary=2;
     TDatabase::ParamDB->neumann_boundary_id={1,3};
     TDatabase::ParamDB->neumann_boundary_value={-0.5, 0.5};
@@ -431,12 +432,16 @@ void tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche(unsigned int nRefine
     }
     std::array<double, 4>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
-   db["example"] = 1; // Poiseuille_Hannukainen
+    db["example"] = 1; // Poiseuille_Hannukainen
     //TDatabase::ParamDB->problem_type=3;
     TDatabase::ParamDB->PERMEABILITY=1.;
     TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.004;
     TDatabase::ParamDB->VISCOSITY=0.004;
     TDatabase::ParamDB->PkPk_stab=false;
+    TDatabase::ParamDB->GradDiv_stab=false;
+    //TDatabase::ParamDB->sign_MatrixBi=-1;
+    db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+  //  TDatabase::ParamDB->sign_MatrixBi = -1;
     
     TDatabase::ParamDB->n_neumann_boundary=2;
     TDatabase::ParamDB->neumann_boundary_id={1,3};
@@ -484,6 +489,9 @@ void tests_on_triangles_P1P1_GLSstab(unsigned int nRefinements, ParameterDatabas
     db["equal_order_stab_weight_PkPk"]=0.01;
     TDatabase::ParamDB->PkPk_stab=true;
     TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.01;
+    TDatabase::ParamDB->GradDiv_stab=false;
+    //TDatabase::ParamDB->sign_MatrixBi=-1;
+    db["EqualOrder_PressureStab_type"] = "symmetric GLS";
 
     TDatabase::ParamDB->n_neumann_boundary = 2;
     TDatabase::ParamDB->neumann_boundary_id = {1,3};
@@ -520,7 +528,7 @@ void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche(unsigned int
     }
     std::array<double, 4>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
-   db["example"] = 1; // Poiseuille_Hannukainen
+    db["example"] = 1; // Poiseuille_Hannukainen
     //TDatabase::ParamDB->problem_type=3;
     TDatabase::ParamDB->PERMEABILITY = 1.;
     TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
@@ -531,8 +539,11 @@ void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche(unsigned int
     db["equal_order_stab_weight_PkPk"]=0.01;
     TDatabase::ParamDB->PkPk_stab=true;
     TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.01;
-  
-  TDatabase::ParamDB->n_neumann_boundary = 2;
+    TDatabase::ParamDB->GradDiv_stab=false;
+    //TDatabase::ParamDB->sign_MatrixBi=-1;
+    db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+
+    TDatabase::ParamDB->n_neumann_boundary = 2;
     TDatabase::ParamDB->neumann_boundary_id = {1,3};
     TDatabase::ParamDB->neumann_boundary_value = {-0.5, 0.5};
 
@@ -571,15 +582,16 @@ int main(int argc, char* argv[])
     //---------------------------------------------------------------------
     // merge TDatabase with Problem specific ParameterDatabase db
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-    db.merge(ParameterDatabase::default_output_database());
-    db.merge(Example2D::default_example_database());
+    db.merge(ParameterDatabase::default_output_database(),true);
+    db.merge(Example2D::default_example_database(),true);
+    db.merge(Brinkman2D::get_default_Brinkman2D_parameters(),true);
     db["example"] = 1; // known Poiseuille solution
     db["output_compute_errors"] = true;
     db["output_write_vtk"] = false;
     //db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "TwoTriangles", "", {"UnitSquare","Default_UnitSquare", "TwoTriangles"});
     //db.add("P1P1_stab", (bool) false, "" );
-    db.add("PkPk_stab", (bool) false, "", {true, false} );
+    //db.add("PkPk_stab", (bool) false, "", {true, false} );
     db.add("equal_order_stab_weight_PkPk", (double) 0., "", (double) -1000, (double) 1000 );
     db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
     
