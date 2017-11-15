@@ -75,16 +75,14 @@ int main(int argc, char **argv)
     TFEFunction3D f(&fe_space, (char*)"dummy", (char*) "dummy",
                     v1.get_entries(), v1.length());
     f.Interpolate(analytic_function);
-    //Output::print("function norm ", v1.norm());
   }
 
   // write the vector
   std::stringstream out_in_stream;
   v1.write_to_stream(out_in_stream);
 
-  // create second vector, read into it
+// create second vector, read into it
   BlockVector v2(fe_space.GetN_DegreesOfFreedom());
-    ////// Output::print(v2);
   v2.read_from_stream(out_in_stream);
 
   // substract first vector (difference should be zero now)
