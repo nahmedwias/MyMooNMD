@@ -3,8 +3,8 @@
  * @name   Brinkman2D
  * @brief  store everything needed to solve a Brinkman problem
  *
- *         Store matrix, right hand side, FE spaces, FE functions and the 
- *         solution vector of a Stokes problem. This wraps up everything which 
+ *         Store the matrix, right hand side, FE spaces, FE functions and the 
+ *         solution vector of a Brinkman problem. This wraps up everything which 
  *         is necessary to solve a Brinkman problem in 2D.
  *
  * @author     Alfonso Caiazzo and Laura Blank
@@ -25,103 +25,13 @@
 #include <PostProcessing2D.h>
 #include <utility>
 #include <array>
+#include <FEFunction2D.h>
 
 class Brinkman2D
 {
-    enum class Matrix{Type14, Type1, Type2, Type3, Type4};
-    
-protected:
-    
-    /** @brief store a complete system on a particular grid
-     *
-     * This combines a matrix, rhs, solution, spaces and functions needed to
-     * describe one Darcy problem in 2D.
-     */
-    struct System_per_grid
-    {
-        /** @brief Finite Element space for the velocity */
-        TFESpace2D velocity_space;
-        /** @brief Finite Element space for the pressure */
-        TFESpace2D pressure_space;
-        /** The system matrix. */
-        BlockFEMatrix matrix;
-        /** @brief the right hand side vector */
-        BlockVector rhs;
-        /** @brief solution vector with two components. */
-        BlockVector solution;
-        /** @brief Finite Element function for velocity */
-        TFEVectFunct2D u;
-        /** @brief Finite Element function for pressure */
-        TFEFunction2D p;
-        
-        /** @brief constructor */
-        System_per_grid(const Example_Brinkman2D& example, TCollection& coll,
-                        std:: pair <int,int> velocity_pressure_orders,
-                        Brinkman2D::Matrix type);
-        
-        /**
-         * Special member functions mostly deleted,
-         * for struct takes ownership of the bad
-         * classes TFEFunction2D, TFEVectFunct2D and TFESpace2D.
-         */
-        //! Delete copy constructor.
-        System_per_grid(const System_per_grid&) = delete;
-        
-        //! Delete move constructor.
-        System_per_grid(System_per_grid&&) = delete;
-        
-        //! Delete copy assignment operator.
-        System_per_grid& operator=(const System_per_grid&) = delete;
-        
-        //! Delete move assignment operator.
-        System_per_grid& operator=(System_per_grid&&) = delete;
-        
-        //! Default destructor.
-        ~System_per_grid() = default;
-    };
-    
-    /** @brief a local parameter database which constrols this class
-     *
-     * The database given to the constructor will be merged into this one. Only
-     * parameters which are of interest to this class are stored (and the
-     * defualt ParMooN parameters). Note that this usually does not include
-     * other parameters such as solver parameters. Those are only in the
-     * Solver object.
-     */
-    ParameterDatabase db;
-    
-    /** @brief a solver object which will solve the linear system
-     *
-     * Storing it means that for a direct solver we also store the factorization
-     * which is usually not necessary.
-     */
-    Solver<BlockFEMatrix, BlockVector> solver;
+// This is only interesting if we consider different matrix types, see "todo" in Brinkman2D.C
+   enum class Matrix{Type14, Type1, Type2, Type3, Type4};
 
-    /** @brief class for output handling (vtk and case files) */
-    PostProcessing2D outputWriter;
-    
-    /** @brief a complete system on each grid
-     *
-     * Note that the size of this deque is at least one and larger only in case
-     * of multigrid.
-     */
-    std::deque<System_per_grid> systems;
-    
-    /** @brief Definition of the used example */
-    const Example_Brinkman2D example;
-    
-    /** @brief an array to store defect, so that we don't have to reallocate
-     *         so often
-     */
-    BlockVector defect;
-    
-    /** @brief stores the norms of the residuals of previous iterations.
-     * The default length is 10
-     */
-    std::vector<double> norms_of_residuals;
-    
-
-    
 public:
     /**
      * @brief a simple struct storing one set of residuals
@@ -158,47 +68,7 @@ public:
  // Initialize/Declare Brinkman 2D database, called with the constructor (for the use outside Brinkman2D.C)
  static ParameterDatabase get_default_Brinkman2D_parameters();
 
-protected:
-    
-    /**
-     * @brief store the norms of residuals from previous iterations
-     */
-    FixedSizeQueue<10, Residuals> oldResiduals;
-    
-    /** @brief store the initial residual so that the nonlinear iteration can
-     *         be stopped as soon as a desired reduction is achieved
-     */
-    double initial_residual;
-    
-    /** @brief set the velocity and pressure orders
-     *
-     * This function sets the corresponding velocity and
-     * pressure orders. The pressure order is set if it is
-     * not specified by the readin file. Default is -4711
-     */
-    void get_velocity_pressure_orders(std::pair <int,int>
-                                      &velocity_pressure_orders);
-    
-    /** @brief set parameters in database
-     *
-     * This functions checks if the parameters in the database are meaningful
-     * and resets them otherwise. The hope is that after calling this function
-     * this class is fully functional.
-     *
-     * If some parameters are set to unsupported values, an error occurs and
-     * throws an exception.
-     */
-    void set_parameters();
-    
-    /** @brief Errors to be accesed from outside the class
-     * The array is filled during the function call Brinkman2D::output()
-     * Currently, the errors store the L2 and H1 errors of the velocity
-     * and pressure
-     */
-    std::array<double, int(5)> errors;
-    
-public:
-    
+
     /** @brief constructor
      *
      * This constructor calls the other constructor creating an Example_Brinkman2D
@@ -264,7 +134,7 @@ public:
     
     /// @name return computed errors
     ///
-    /// You have to call Darcy2D::output for any of these to return a
+    /// You have to call Brinkman2D::output for any of these to return a
     /// meaningful value.
     //@{
     /// @brief return the computed L2 error of the velocity
@@ -327,7 +197,139 @@ public:
     /// @brief get the current residual (updated in Brinkman2D::normOfResidual)
     double getFullResidual() const;
     /// @brief return the computed errors
-    std::array<double, int(5)> get_errors();
+    std::array<double, int(6)> get_errors();
+
+protected:
+    
+    /** @brief store a complete system on a particular grid
+     *
+     * This combines a matrix, rhs, solution, spaces and functions needed to
+     * describe one Brinkman problem in 2D.
+     */
+    struct System_per_grid
+    {
+        /** @brief Finite Element space for the velocity */
+        TFESpace2D velocity_space;
+        /** @brief Finite Element space for the pressure */
+        TFESpace2D pressure_space;
+        /** The system matrix. */
+        BlockFEMatrix matrix;
+        /** @brief the right hand side vector */
+        BlockVector rhs;
+        /** @brief solution vector with two components. */
+        BlockVector solution;
+        /** @brief Finite Element function for velocity */
+        TFEVectFunct2D u;
+        /** @brief Finite Element function for pressure */
+        TFEFunction2D p;
+        
+        /** @brief constructor */
+        System_per_grid(const Example_Brinkman2D& example, TCollection& coll,
+                        std:: pair <int,int> velocity_pressure_orders,
+                        Brinkman2D::Matrix type);
+        
+        /**
+         * Special member functions mostly deleted,
+         * for struct takes ownership of the bad
+         * classes TFEFunction2D, TFEVectFunct2D and TFESpace2D.
+         */
+        //! Delete copy constructor.
+        System_per_grid(const System_per_grid&) = delete;
+        
+        //! Delete move constructor.
+        System_per_grid(System_per_grid&&) = delete;
+        
+        //! Delete copy assignment operator.
+        System_per_grid& operator=(const System_per_grid&) = delete;
+        
+        //! Delete move assignment operator.
+        System_per_grid& operator=(System_per_grid&&) = delete;
+        
+        //! Default destructor.
+        ~System_per_grid() = default;
+    };
+    
+    /** @brief a local parameter database which constrols this class
+     *
+     * The database given to the constructor will be merged into this one. Only
+     * parameters which are of interest to this class are stored (and the
+     * default ParMooN parameters). Note that this usually does not include
+     * other parameters such as solver parameters. Those are only in the
+     * Solver object.
+     */
+    ParameterDatabase db;
+    
+    /** @brief a solver object which will solve the linear system
+     *
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
+
+    /** @brief class for output handling (vtk and case files) */
+    PostProcessing2D outputWriter;
+    
+    /** @brief a complete system on each grid
+     *
+     * Note that the size of this deque is at least one and larger only in case
+     * of multigrid.
+     */
+    std::deque<System_per_grid> systems;
+    
+    /** @brief Definition of the used example */
+    const Example_Brinkman2D example;
+    
+    /** @brief an array to store defect, so that we don't have to reallocate
+     *         so often
+     */
+    BlockVector defect;
+    
+    /** @brief stores the norms of the residuals of previous iterations.
+     * The default length is 10
+     */
+    std::vector<double> norms_of_residuals;
+
+    /**
+     * @brief store the norms of residuals from previous iterations
+     */
+    FixedSizeQueue<10, Residuals> oldResiduals;
+
+    /** @brief store the initial residual so that the nonlinear iteration can
+     *         be stopped as soon as a desired reduction is achieved
+     */
+    double initial_residual;
+    
+    /** @brief set the velocity and pressure orders
+     *
+     * This function sets the corresponding velocity and
+     * pressure orders. The pressure order is set if it is
+     * not specified by the readin file. Default is -4711
+     */
+    void get_velocity_pressure_orders(std::pair <int,int>
+                                      &velocity_pressure_orders);
+    
+    /** @brief set parameters in database
+     *
+     * This functions checks if the parameters in the database are meaningful
+     * and resets them otherwise. The hope is that after calling this function
+     * this class is fully functional.
+     *
+     * If some parameters are set to unsupported values, an error occurs and
+     * throws an exception.
+     */
+    void set_parameters();
+
+    // This function checks if the input Parameters are set in an 'admissible' way.↲
+    // (Basicalley it chhecks the 'consistency' of symmetry and nonsymmetry)
+    void check_input_parameters();
+
+    /** @brief Errors to be accesed from outside the class
+     * The array is filled during the function call Brinkman2D::output()
+     * Currently, the errors store the L2 and H1 errors of the velocity
+     * and pressure
+     */
+    std::array<double, int(6)> errors;
+    
 };
 
 
