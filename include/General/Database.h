@@ -292,7 +292,6 @@ struct TParaDB
   //======================================================================
   /** Parameters for Brinkman problems                  */
   //======================================================================
-  int BrinkmanTYPE;
   double VISCOSITY;
   double EFFECTIVE_VISCOSITY;
   double PERMEABILITY;
@@ -314,8 +313,8 @@ struct TParaDB
       discrete formulation for Brinkman problems. It is internally set 
       according to the input (string) assigned to the parameters 
       EqualOrder_PressureStab_type and Galerkin_type. 
-      By default it is sign_MatrixBi = 1, i.e., symmetry;
-      -1 would corresdpond to non-symmetry and additionally the implementation 
+      By default it is sign_MatrixBi = 1, i.e., unsymmetry;
+      -1 would corresdpond to symmetry and additionally the implementation 
       could be widened to allow for scalings that do not have absolute value 1.
       In detail, this parameter decides wether the divergence constraint is 
       added or subtracted and adapts stabilizations if apparent. 
