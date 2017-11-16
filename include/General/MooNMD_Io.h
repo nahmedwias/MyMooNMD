@@ -96,6 +96,7 @@ the rest of it:
 - Output::suppressAll
 - Output::redirect
 - Output::resetOutfile
+- Output::set_script_mode
 - #ErrThrow
  */
 namespace Output
@@ -119,7 +120,7 @@ namespace Output
   ///
   /// The print methods print to both std::cout and the outfile. This method 
   /// opens the file and it should be closed again calling Output::close_file().
-  void set_outfile(std::string filename);
+  void set_outfile(std::string filename, bool script_mode = false);
   
   /// @brief close files which have been previously opened
   ///
@@ -146,6 +147,11 @@ namespace Output
   /// This restores the normal behavior of the print methods.
   void resetOutfile();
   
+  /// @brief do not write anything to console, only to the outfile
+  ///
+  /// In contrast to the 'redirect' method, this respects the verbosity setting.
+  /// If you do use 'redirect' the script mode does not play a role.
+  void set_script_mode(bool script_mode);
   
   /// @brief Write something to std::cout and the outfile 
   ///
@@ -226,6 +232,9 @@ namespace Output
   /// returns the stream of that file.
   std::ofstream& get_outfile();
   
+  /// @brief determine if scrip mode is turned on.
+  bool in_script_mode();
+  
   // implementation of the print method
   template<unsigned int verbosity, typename ... Arguments>
   void print(Arguments const& ... args)
@@ -238,8 +247,8 @@ namespace Output
     
     // the following writes all the arguments into the stream. With c++17 we can
     // also use 'fold expressions':
-    // (std::cout << ... << args) << std::endl;
-    // (get_outfile() << ... << args) << std::endl;
+    // (std::cout << ... << args) << "\n";
+    // (get_outfile() << ... << args) << "\n";
     // http://stackoverflow.com/a/21812549
     // http://stackoverflow.com/a/33621132
     std::ostringstream stream;
@@ -268,13 +277,17 @@ namespace Output
     {
       if(verbose(verbosity))
       {
-        std::cout << stream.str() << std::endl;
-        get_outfile() << stream.str() << std::endl;
+        if(!in_script_mode())
+        {
+          std::cout << stream.str() << "\n";
+        }
+        get_outfile() << stream.str() << "\n";
       }
     }
     else
     {
-      get_outfile() << stream.str() << std::endl;
+      // purposely ignoring the viscosity setting 
+      get_outfile() << stream.str() << "\n";
     }
   }
   
@@ -306,18 +319,10 @@ namespace Output
   template<unsigned int verbosity, typename ... Arguments>
   void printToFile(Arguments const& ... args)
   {
-    static_assert(verbosity > 0,
-                  "It makes no sense to call print with 0 verbosity"
-                  "Use a value greater than 0");
-    static_assert(verbosity <= maxVerbosity, 
-                  "calling Output::print with verbosity too large");
-    
-    if(verbose(verbosity))
-    {
-      using List= int[];
-      (void)List{0, ( (void)(get_outfile() << args), 0 ) ... };
-      get_outfile() << std::endl;
-    }
+    bool sm = in_script_mode();
+    set_script_mode(true); // temporarily turn off output to console
+    print<verbosity>(args ...);
+    set_script_mode(sm);
   }
   
   // implementation of the errThrow method
@@ -333,12 +338,12 @@ namespace Output
     using List= int[];
     (void)List{0, ( (void)(stream << args), 0 ) ... };
     
-    get_outfile() << stream.str() << std::endl;
+    get_outfile() << stream.str() << "\n";
     throw std::runtime_error(stream.str());
   }
 };
 
-/// @brief old macro to print things into a file and t std::cout, deprecated
+/// @brief old macro to print things into a file and to std::cout, deprecated
 ///
 /// use instead the Output::print methods.
 #define OutPut(x) {std::stringstream temporary; temporary << x; Output::print(temporary.str());}

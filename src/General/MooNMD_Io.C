@@ -28,7 +28,7 @@ namespace Output
   
   void setVerbosity(unsigned int i)
   {
-    verbosityThreshold = std::max<unsigned int>(1, std::min<unsigned int>(5,i));
+    verbosityThreshold = std::max(1u, std::min(5u,i));
   }
   
   unsigned int getVerbosity()
@@ -41,7 +41,7 @@ namespace Output
     verbosityThreshold = 0;
   }
   
-  // v is greater than 0 (not equal)
+  // 'verbosity' is greater than 0 (not equal)
   bool verbose(unsigned int verbosity)
   {
     return verbosity <= verbosityThreshold;
@@ -64,8 +64,10 @@ namespace Output
   // redirect (any calls to std::cout will be written to some file), one can
   // restore the original behavior.
   std::streambuf * coutBuffer = nullptr;
+  // no output to console, respect verbosity settings
+  bool script_mode = false;
   
-  void set_outfile(std::string filename)
+  void set_outfile(std::string filename, bool sm)
   {
     if(outfile.is_open())
     {
@@ -73,6 +75,7 @@ namespace Output
     }
     outfile.open(filename, std::ofstream::out);
     outfile.setf(std::ios::scientific);
+    script_mode = sm;
   }
   
   void redirect(std::string filename)
@@ -114,6 +117,16 @@ namespace Output
   bool writeOnlyToFile()
   {
     return local_outfile.is_open();
+  }
+  
+  void set_script_mode(bool sm)
+  {
+    script_mode = sm;
+  }
+  
+  bool in_script_mode()
+  {
+    return script_mode;
   }
   
   void close_file()
