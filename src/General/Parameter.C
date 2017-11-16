@@ -63,7 +63,7 @@ std::string convert_to_string(T x)
   bool has_exp_notation = (s.find_last_of(std::string("e")) != npos);
   if(has_decimal_point && found != npos && !has_exp_notation)
   {
-    if(s[found] == '.')
+    if(s[found] == '.' && s.size() >= found + 2)
       s.erase(found + 2);
     else
       s.erase(found + 1);
