@@ -1106,8 +1106,9 @@ void ParameterDatabase::read(std::istream& is, bool root)
                              range_string));
     description.clear();
   }
-  Output::print<2>("Done reading database from stream. Read ", 
-                   tmp.get_n_parameters(), " parameters.");
+  Output::print<2>("Done reading database '", tmp.get_name(),
+                   "' from stream. Read ", tmp.get_n_parameters(),
+                   " parameters.");
   
   this->name = tmp.get_name();
   this->merge(tmp);
