@@ -1232,6 +1232,9 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "output you will get. Such output will be written to console and the "
          "'outfile'.", (size_t)1, (size_t)5);
   
+  db.add("script_mode", false, "Set ParMooN into script mode. This means all "
+         "output is written to the outfile and not to console.");
+  
   db.add("space_discretization_type", "galerkin",
          "Replaces the global parameter DISCTYPE.",
          {"galerkin",      // = old global DISCTYPE = GALERKIN = 1
