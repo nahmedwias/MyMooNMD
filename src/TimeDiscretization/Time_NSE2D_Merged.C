@@ -263,8 +263,8 @@ void Time_NSE2D_Merged::set_parameters()
     TDatabase::ParamDB->DISCTYPE = 101;
     // here the explicit version is used to handle 
     // the nonlinearity due to tests
-    time_stepping_scheme.b_bt_linear_nl = "solution_dependent";
-    time_stepping_scheme.n_scale_block = 4;
+    time_stepping_scheme.b_bt_linear_nl = "nonlinear";
+    time_stepping_scheme.n_scale_block = 2;
     if(TDatabase::ParamDB->NSTYPE==14)
       time_stepping_scheme.n_scale_block = 5;
   }
@@ -352,6 +352,9 @@ void Time_NSE2D_Merged::get_velocity_pressure_orders(std::pair< int, int > &velo
         case 22: case 23: case 24:
           pressure_order = -(velocity_order-11)*10;
           break;
+        case 100: case 201: case 302: case 403: case 504:          
+          pressure_order = -(velocity_order%100 + 10)*10;
+          break; 
       }
       break;
     case 1:case 2: case 3: case 4: case 5:
@@ -360,6 +363,9 @@ void Time_NSE2D_Merged::get_velocity_pressure_orders(std::pair< int, int > &velo
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
       pressure_order = pressure_order*10;
+      break;
+    case 100: case 201: case 302: case 403: case 504:
+      // pressure order is chosen correctly
       break;
     default:
       ErrThrow("pressure space is not chosen properly ", pressure_order);
@@ -411,8 +417,8 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
       // for all grids assembling because all the matrices are also assembled 
       // only for the first nonlinear loop. The reason is that the nonlinearity
       // in the test is treated explicitly.
-      for(System_per_grid& sys : this->systems)
-        call_assembling_routine(sys, LocalAssembling2D_type::TNSE2D_Rhs);
+      //for(System_per_grid& sys : this->systems)
+      call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_Rhs);
     }
     else
       call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_Rhs);
@@ -435,8 +441,8 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     rhs_[0] = rhs_from_time_disc; // current rhs
     rhs_[1] = old_rhs; // old right hand side is needed for the Crank-Nicolson time stepping
     // modification of the matrices due to slip b.c
-    if((time_stepping_scheme.current_step_ == 1 || db["disctype"].is("residual_based_vms")) 
-        && TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
+    if((time_stepping_scheme.current_step_ == 1 ) 
+      && TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
         this->modify_slip_bc(true, true);
     //NOTE: scale the B blocks only at the first iteration
     for(System_per_grid& sys : this->systems)
@@ -463,13 +469,14 @@ void Time_NSE2D_Merged::assemble_matrices_rhs(unsigned int it_counter)
     if(db["disctype"].is("local_projection"))
       update_matrices_lps(s);
   }
+  
   // slip boundary modification of matrices
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 )
   {
     if(is_rhs_and_mass_matrix_nonlinear)
       this->modify_slip_bc(true, true);
-    else if(db["disctype"].is("residual_based_vms"))
-      this->modify_slip_bc(false, true);
+    //else if(db["disctype"].is("residual_based_vms"))
+    //  this->modify_slip_bc(false, true);
     else
       this->modify_slip_bc();
   }
@@ -642,11 +649,11 @@ void Time_NSE2D_Merged::output(int m)
     {
       u1->GetErrors(ExactNull,3, allderiv, 2, L2H1Errors, nullptr,
                   &aux,1, &v_sp,locerr);
-      double locerrorKE = locerr[0]*locerr[0];
+      
       u2->GetErrors(ExactNull,3, allderiv, 2, L2H1Errors, nullptr,
-                  &aux,1, &v_sp,locerr);
-      locerrorKE += locerr[0]*locerr[0];
-      Output::print( t, " kinetic energy ", locerrorKE/2 );
+                  &aux,1, &v_sp,locerr+2);
+      
+      Output::print( t, " kinetic energy ", (locerr[0]*locerr[0] + locerr[2]*locerr[2])/2 );
     }
     else
     {
@@ -1021,12 +1028,24 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
           }
           if(db["disctype"].is("residual_based_vms"))
           {
-            sqMat.resize(4);
+            sqMat.resize(8);
             sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
             sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
             sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
             sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-            rhs_array.resize(0);
+            
+            sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+            sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
+            sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());
+            sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+            
+            reMat.resize(2); 
+            reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); 
+            reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+            rhs_array.resize(2);
+            rhs_array[0] = s.rhs.block(0);
+            rhs_array[1] = s.rhs.block(1);
+            s.rhs.reset(); // reset to zero
           }
           break;
         case 14:
@@ -1084,31 +1103,7 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
       // right hand side
       rhs_array.resize(2);
       rhs_array[0]=s.rhs.block(0);
-      rhs_array[1]=s.rhs.block(1);
-      if(db["disctype"].is("residual_based_vms"))
-      {
-        // we need to assemble the mass matrices and the B-blocks
-        // due to the extrapolation of velocity. We treat the nonlinearity
-        // of the tests using velocity-extrapolation.
-        sqMat.resize(4);
-        sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
-        sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());  
-        sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
-        if(TDatabase::ParamDB->NSTYPE == 14)
-        {
-          // this is because the stabilization parameter depends on solution
-          // vector which is also treated by extrapolation
-          sqMat.resize(5);
-          sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-        }
-        
-        reMat.resize(4);
-        reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); 
-        reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-        reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); 
-        reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());  
-      }
+      rhs_array[1]=s.rhs.block(1);     
       
       if(TDatabase::ParamDB->NSTYPE == 14)
       {
@@ -1154,7 +1149,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
   bool is_imex = imex_scheme(0);
   if(is_imex && db["extrapolate_velocity"] && !db["disctype"].is("residual_based_vms"))
   {
-    if(db["disctype"].is("galerkin"))
+    if(db["disctype"].is("galerkin") || db["disctype"].is("local_projection"))
     {
       if(db["extrapolation_type"].is("constant_extrapolate"))
       {
@@ -1282,7 +1277,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
     }
   }
   
-  if(db["disctype"].is("residual_based_vms"))
+  if(db["disctype"].is("residual_based_vms") && is_imex)
   {
     double tau = time_stepping_scheme.get_step_length();
     if(time_stepping_scheme.pre_stage_bdf)
@@ -1367,6 +1362,40 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       functions[8] = s.comb_old_u.GetComponent(1);
     }
   }
+  else if (db["disctype"].is("residual_based_vms"))
+  {
+    // supg: NOTE: only tested with BDF2 so far
+    if(db["disctype"].is("residual_based_vms") && !db["time_discretization"].is("bdf_two"))
+    {
+      ErrThrow("residual based vms method is only implemented for BDF2 time stepping scheme");
+    }
+    functions.resize(9);
+    if(time_stepping_scheme.pre_stage_bdf)
+    {
+      functions[2] = s.u_m1.GetComponent(0);
+      functions[3] = s.u_m1.GetComponent(1);
+    }
+    else
+    {
+      s.combined_old_sols.reset();
+      // copy and scale the solution at previous time step with factor 2
+      s.combined_old_sols = s.solution_m1;
+      s.combined_old_sols.scale(2.);
+      // subtract with right factor the solution at pre-previous solution
+      s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+      
+      functions[2] = s.comb_old_u.GetComponent(0);
+      functions[3] = s.comb_old_u.GetComponent(1);
+    }
+    // temporary
+    functions[2] = functions[0];
+    functions[3] = functions[0];
+    functions[4] = functions[0];
+    functions[5] = functions[0];
+    functions[6] = functions[0];
+    functions[7] = functions[0];
+    functions[8] = functions[0];
+  }
 }
 
 /**************************************************************************** */
@@ -1383,7 +1412,7 @@ bool Time_NSE2D_Merged::imex_scheme(bool print_info)
                       " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
     // this is typical for the problem with slip type boundary condition
     // NOTE: only tested for the mixing layer problem for the moment
-    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 && !db["disctype"].is("residual_based_vms"))
+    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
       is_rhs_and_mass_matrix_nonlinear = true;
     if(db["disctype"].is("supg"))
       TDatabase::ParamDB->DISCTYPE = -2;
@@ -1539,8 +1568,8 @@ void Time_NSE2D_Merged::update_matrices_lps(System_per_grid &s)
 
 void Time_NSE2D_Merged::assemble_rhs_nonlinear()
 {
-  if(imex_scheme(0))
-    return;
+//  if(imex_scheme(0))
+//    return;
   // initialize the rhs from the time discretization
   rhs_from_time_disc = this->systems.front().rhs;
   rhs_from_time_disc.reset();
@@ -1567,13 +1596,7 @@ void Time_NSE2D_Merged::assemble_rhs_nonlinear()
   old_rhs=s.rhs;
   // copy the non-actives
   rhs_from_time_disc.copy_nonactive(s.rhs);
-  s.solution.copy_nonactive(s.rhs);
-  // CB SEBUG
-  if(db["disctype"].is("residual_based_vms"))
-  {
-    ErrThrow("rhs for Disctype: ", db["disctype"] , " is linear ");
-  }
-  // END DEBUG
+  s.solution.copy_nonactive(s.rhs);  
 }
 
 

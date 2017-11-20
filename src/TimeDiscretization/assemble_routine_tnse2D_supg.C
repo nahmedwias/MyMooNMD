@@ -51,7 +51,10 @@ void TimeNSType4SUPG(double Mult, double *coeff, double *param, double hK,
   tau_m =  hK*hK*TDatabase::ParamDB->DELTA0;
   tau_c =  TDatabase::ParamDB->DELTA1;
   
-  
+  double skew_11 = 0.;
+  double skew_22 = 0.;
+  double skew_12 = 0.;
+  double skew_21 = 0.;
   for(int i=0; i<N_U; ++i)
   {
     test10 = Orig0[i];
@@ -74,18 +77,38 @@ void TimeNSType4SUPG(double Mult, double *coeff, double *param, double hK,
       ansatz02 = Orig7[j];
       
       // Galerkin part
-      double val  = c0*(test10*ansatz10 + test01*ansatz01) // diffusion term
-                     + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      double val  = c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
+      if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
+        val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
+      {
+        // skew symmetric form 
+        val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
+        val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
+      }
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+      {
+        // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
+        val += (u1*ansatz10 + u2*ansatz01)*test00;
+        skew_11 = 0.5*(ansatz10*u1*test00);
+        skew_22 = 0.5*(ansatz01*u2*test00);
+        skew_12 = 0.5*ansatz01*u1*test00;
+        skew_21 = 0.5*ansatz10*u2*test00;
+      }
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
+      {
+        ErrThrow("EMEC should be implemented");
+      }
       // supg contribution
       val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugrad;
       // grad div contribution
-      MatrixA11[i][j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
-      MatrixA22[i][j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
+      MatrixA11[i][j] += Mult * (val + skew_11+tau_c*test10*ansatz10); // A11 block
+      MatrixA22[i][j] += Mult * (val + skew_22+tau_c*test01*ansatz01); // A22 block
       
-      val = tau_c * test10*ansatz01;
+      val = tau_c * test10*ansatz01 + skew_12;
       MatrixA12[i][j] += Mult * val; // A12 block
       
-      val = tau_c * test01*ansatz10;
+      val = tau_c * test01*ansatz10 + skew_21;
       MatrixA21[i][j] += Mult * val; // A21 block 
       
       // weighted mass matrix
@@ -170,6 +193,10 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
   double tau_c = TDatabase::ParamDB->DELTA1;
   
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double skew_11 = 0.;
+  double skew_22 = 0.;
+  double skew_12 = 0.;
+  double skew_21 = 0.;
   for(int i=0; i<N_U; ++i)
   {
     Matrix11Row = MatrixA11[i];
@@ -193,13 +220,33 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
       ansatz02 = Orig7[j];
       
       // Galerkin part
-      double val  = c0*(test10*ansatz10 + test01*ansatz01) // diffusion term
-                     + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      double val  = c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
+      if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
+        val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
+      {
+        // skew symmetric form 
+        val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
+        val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
+      }
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+      {
+        // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
+        val += (u1*ansatz10 + u2*ansatz01)*test00;
+        skew_11 = 0.5*(ansatz10*u1*test00);
+        skew_22 = 0.5*(ansatz01*u2*test00);
+        skew_12 = 0.5*ansatz01*u1*test00;
+        skew_21 = 0.5*ansatz10*u2*test00;
+      }
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
+      {
+        ErrThrow("EMEC or other forms should be implemented");
+      }
       // supg contribution
       val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) )*ugrad;
       // grad div contribution
-      Matrix11Row[j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
-      Matrix22Row[j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
+      Matrix11Row[j] += Mult * (val + skew_11 + tau_c*test10*ansatz10); // A11 block
+      Matrix22Row[j] += Mult * (val + skew_22 + tau_c*test01*ansatz01); // A22 block
 
       // weighted mass matrix
       val = ansatz00 * (test00 + ugrad);
@@ -302,7 +349,10 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
     tau_c = stab_param[1];
   }
   
-  
+  double skew_11 = 0.;
+  double skew_22 = 0.;
+  double skew_12 = 0.;
+  double skew_21 = 0.;
   for(int i=0; i<N_U; ++i)
   {
     test10 = Orig0[i];
@@ -325,18 +375,40 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
       ansatz02 = Orig7[j];
       
       // Galerkin part
-      double val  = c0*(test10*ansatz10 + test01*ansatz01) // diffusion term
-                     + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      double val  = c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
+      if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 0)
+        val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 1)
+      {
+        // skew symmetric form 
+        val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
+        val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
+      }
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+      {
+        // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
+        val += (u1*ansatz10 + u2*ansatz01)*test00;
+        skew_11 = 0.5*(ansatz10*u1*test00);
+        skew_22 = 0.5*(ansatz01*u2*test00);
+        skew_12 = 0.5*ansatz01*u1*test00;
+        skew_21 = 0.5*ansatz10*u2*test00;
+      }
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
+      {
+        ErrThrow("EMEC or other forms should be implemented");
+      }
+
+      //               + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
       // supg contribution
       val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugradv;
       // grad div contribution
-      MatrixA11[i][j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
-      MatrixA22[i][j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
+      MatrixA11[i][j] += Mult * (val + skew_11 + tau_c*test10*ansatz10); // A11 block
+      MatrixA22[i][j] += Mult * (val + skew_22 + tau_c*test01*ansatz01); // A22 block
       
-      val = tau_c * test10*ansatz01;
+      val = tau_c * test10*ansatz01 +skew_12;
       MatrixA12[i][j] += Mult * val; // A12 block
       
-      val = tau_c * test01*ansatz10;
+      val = tau_c * test01*ansatz10 +skew_21;
       MatrixA21[i][j] += Mult * val; // A21 block 
       
       // weighted mass matrix
@@ -484,7 +556,10 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
     tau_m = stab_param[0];
     tau_c = stab_param[1];
   }
-  
+  double skew_11 = 0.;
+  double skew_22 = 0.;
+  double skew_12 = 0.;
+  double skew_21 = 0.;
   for(int i=0; i<N_U; ++i)
   {
     test10 = Orig0[i];
@@ -507,18 +582,40 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
       ansatz02 = Orig7[j];
       
       // Galerkin part
-      double val  = c0*(test10*ansatz10 + test01*ansatz01) // diffusion term
-                     + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      double val  = c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
+      if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
+        val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
+      {
+        // skew symmetric form 
+        val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
+        val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
+      }
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+      {
+        // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
+        val += (u1*ansatz10 + u2*ansatz01)*test00;
+        skew_11 = 0.5*(ansatz10*u1*test00);
+        skew_22 = 0.5*(ansatz01*u2*test00);
+        skew_12 = 0.5*ansatz01*u1*test00;
+        skew_21 = 0.5*ansatz10*u2*test00;
+      }
+      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
+      {
+        ErrThrow("EMEC or other forms should be implemented");
+      }
+
+      //               + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
       // supg contribution
       val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugradv;
       // grad div contribution
-      MatrixA11[i][j] += Mult * (val + tau_c*test10*ansatz10); // A11 block
-      MatrixA22[i][j] += Mult * (val + tau_c*test01*ansatz01); // A22 block
+      MatrixA11[i][j] += Mult * (val + skew_11 + tau_c*test10*ansatz10); // A11 block
+      MatrixA22[i][j] += Mult * (val + skew_22 + tau_c*test01*ansatz01); // A22 block
       
-      val = tau_c * test10*ansatz01;
+      val = skew_12 + tau_c * test10*ansatz01;
       MatrixA12[i][j] += Mult * val; // A12 block
       
-      val = tau_c * test01*ansatz10;
+      val = skew_21 + tau_c * test01*ansatz10;
       MatrixA21[i][j] += Mult * val; // A21 block 
       
       // weighted mass matrix
