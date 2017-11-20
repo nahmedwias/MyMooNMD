@@ -8,6 +8,7 @@ double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
   Output::print("Example: MixingLayerSlipSmallSquares.h");
+  TDatabase::ParamDB->INTERNAL_QUAD_RULE = 97;
 }
 
 // ========================================================================
@@ -21,7 +22,7 @@ void InitialU1(double x, double y, double *values)
   z1 = (4*y-2)/rho_0;
   z2 = (y-0.5)/rho_0;
   cn = 1.e-3;
-  values[0] = cn * U_INFTY * (exp(z1)-1)/(exp(z1)+1);
+  values[0] = U_INFTY * (exp(z1)-1)/(exp(z1)+1);
   
   values[0] -= cn * U_INFTY * exp(-z2*z2)*2*z2/rho_0*(cos(8.*Pi*x) + cos(20.*Pi*x));
 }
@@ -208,9 +209,18 @@ void EvaluateSolution(const Time_NSE2D_Merged &tnse2d, double & zero_vort)
   double thickness;
   ComputeVorticiyThickness(&vorticity, thickness);
 
+  double t=TDatabase::TimeDB->CURRENTTIME;
+  const TFESpace2D * sp = vorticity.GetFESpace2D();
+  MultiIndex2D allderiv[3]= {D00, D10, D01};
+  TAuxParam2D aux;
+  double locerr[8];
+  vorticity.GetErrors(ExactNull, 3, allderiv, 2, L2H1Errors, nullptr, &aux, 1, 
+                               &sp, locerr);
+  
+  Output::print(t, " " , "enstrophy ", (locerr[0]*locerr[0])/2, " ", (locerr[1]*locerr[1])/2);
+  
   if(zero_vort < 0)
     zero_vort = thickness;
-  double t=TDatabase::TimeDB->CURRENTTIME;
   Output::print( t, " ", "vorticity thickness: ", thickness,
                  " ", thickness/zero_vort);
   

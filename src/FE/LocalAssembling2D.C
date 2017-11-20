@@ -3120,11 +3120,11 @@ void LocalAssembling2D::set_parameters_for_tnseResidual_vms(LocalAssembling2D_ty
     case TNSE2D_NL:
       switch(TDatabase::ParamDB->NSTYPE){
         case 4:
-          this->N_Matrices = 4;
-          this->RowSpace =    { 0, 0, 0, 0};
-          this->ColumnSpace = { 0, 0, 0, 0};
-          this->N_Rhs = 0; 
-          this->RhsSpace = {  };
+          this->N_Matrices = 10;
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2; 
+          this->RhsSpace = { 0, 0 };
           this->AssembleParam = TimeNSType4NLResidual_VMS;
           this->Manipulate = NULL;
           break;
@@ -3143,11 +3143,17 @@ void LocalAssembling2D::set_parameters_for_tnseResidual_vms(LocalAssembling2D_ty
     case TNSE2D_Rhs:
       switch(TDatabase::ParamDB->NSTYPE){
         case 4:
-          this->N_Matrices = 6;
-          this->RowSpace =    { 0, 0, 0, 0, 1, 1, 0, 0};
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1};
-          this->N_Rhs = 2; 
-          this->RhsSpace = { 0, 0 };
+          
+          this->N_Terms = 3;
+          this->Derivatives = { D10, D01, D00};
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = { };
+          this->ColumnSpace = { };
+          this->N_Rhs = 2 ;
+          this->RhsSpace = {0, 0 };
           this->AssembleParam = TimeNSType4RHS_Residual_VMS;
           this->Manipulate = NULL;
           break;

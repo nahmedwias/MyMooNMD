@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
   
   cout <<"# of cells containing output points"<< cells.size()<<endl;
  
-  if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4))
+  if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4) || parmoon_db["example"].is(6))
   {
     MeanVelocity::fill_arrays(tnse2d);
   }  
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
     }
     tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
 
-    if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4) )      
+    if(parmoon_db["example"].is(3) || parmoon_db["example"].is(4) || parmoon_db["example"].is(6))      
     {
       MeanVelocity::compute_mean_velocity(tnse2d);
     }

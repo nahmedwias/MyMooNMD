@@ -11,30 +11,39 @@ void MeanVelocity::fill_arrays(const Time_NSE2D_Merged& tnse2d)
   const TFESpace2D& space = tnse2d.get_velocity_space();
   nDofs=space.GetN_DegreesOfFreedom();
   
-  xDofs.resize(nDofs); yDofs.resize(nDofs); 
+  xDofs = std::vector<double>(nDofs,0.0); 
+  yDofs = std::vector<double>(nDofs,0.0);
   
   for(size_t i=0; i<nDofs; ++i)
+  {
     space.GetDOFPosition(i, xDofs.at(i), yDofs.at(i));
+    bool periodic_boundary = fabs(xDofs.at(i)) < 1e-8 
+                             || fabs(xDofs.at(i) - 1.) < 1e-8;
+    if(periodic_boundary)
+      xDofs.at(i) = 0.;
+  }
   
   n_xlayers =0;
   n_ylayers = 0;
-  xlayers.resize(nDofs);
-  ylayers.resize(nDofs);
+  xlayers = std::vector<double>(nDofs,0.0);
+  ylayers = std::vector<double>(nDofs,0.0);
   
   for(size_t i=0; i<nDofs; i++)
   {
-    if(fabs(xDofs.at(i)) < 1e-6 )
+    bool periodic_boundary = fabs(xDofs.at(i)) < 1e-8 
+                             || fabs(xDofs.at(i) - 1.) < 1e-8;
+    bool bottom_boundary = fabs(yDofs.at(i)) < 1e-8;
+    if(periodic_boundary)
     {
       ylayers.at(n_ylayers) = yDofs.at(i);
       n_ylayers++;
     }
-    if(fabs(yDofs.at(i)) < 1e-6 )
+    if(bottom_boundary)
     {
       xlayers.at(n_xlayers) = xDofs.at(i);
       n_xlayers++;
     }
-  }
-  
+  }     
   xlayers.shrink_to_fit();
   ylayers.shrink_to_fit();
   
@@ -64,7 +73,7 @@ void MeanVelocity::compute_mean_velocity(const Time_NSE2D_Merged& tnse2d)
   {
     for(size_t j=0; j<n_ylayers; ++j)
     {
-      if(fabs(yDofs[i]-ylayers[j]) < 1e-6)
+      if(fabs(yDofs[i]-ylayers[j]) < 1e-8)
       {
         u1_spt_mean.at(j) = u1_spt_mean.at(j) + u1.at(i);
         
@@ -78,7 +87,7 @@ void MeanVelocity::compute_mean_velocity(const Time_NSE2D_Merged& tnse2d)
   {
     for(size_t j=0; j<n_xlayers; ++j)
     {
-      if(fabs(xDofs[i]-xlayers[j]) < 1e-6)
+      if(fabs(xDofs[i]-xlayers[j]) < 1e-8)
       {
         u2_spt_mean.at(j) = u2_spt_mean.at(j) + u2.at(i);
         
@@ -89,11 +98,11 @@ void MeanVelocity::compute_mean_velocity(const Time_NSE2D_Merged& tnse2d)
   }
 
   // compute the average
-  for(size_t i=0; i<n_ylayers; ++i)
-    u1_spt_mean.at(i) /= counts_ndofs_per_ylayer.at(i);
+  for(size_t i=0; i<n_ylayers; ++i)    
+    u1_spt_mean.at(i) /= counts_ndofs_per_ylayer.at(i);   
   
   for(size_t i=0; i<n_xlayers; ++i)
-    u2_spt_mean.at(i) /= counts_ndofs_per_xlayer.at(i);
+    u2_spt_mean.at(i) /= counts_ndofs_per_xlayer.at(i);    
   
   double tau=TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   double ct = TDatabase::TimeDB->CURRENTTIME;
