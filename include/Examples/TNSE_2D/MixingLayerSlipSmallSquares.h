@@ -77,7 +77,7 @@ void BoundCondition(int i, double t, BoundCond &cond)
 {
   cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
   TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+  // TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
