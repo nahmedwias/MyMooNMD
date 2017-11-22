@@ -48,8 +48,13 @@ void TimeNSType4SUPG(double Mult, double *coeff, double *param, double hK,
   double test10, test01, test00;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
   double tau_m, tau_c;
-  tau_m =  hK*hK*TDatabase::ParamDB->DELTA0;
-  tau_c =  TDatabase::ParamDB->DELTA1;
+  // tau_m =  hK*hK*TDatabase::ParamDB->DELTA0;
+  // tau_c =  TDatabase::ParamDB->DELTA1;
+  
+  double stab_param[2];
+  stab_params(hK,param,c0,coeff[19],stab_param);
+  tau_m = stab_param[0];
+  tau_c = stab_param[1];
   
   double skew_11 = 0.;
   double skew_22 = 0.;
@@ -189,9 +194,14 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
   double test10, test01, test00;  
   double ansatz10, ansatz01, ansatz00, ansatz20, ansatz02;
   // initially for the test case 
-  double tau_m =  TDatabase::ParamDB->DELTA0*hK*hK;  
-  double tau_c = TDatabase::ParamDB->DELTA1;
+  double tau_m;// =  TDatabase::ParamDB->DELTA0*hK*hK;  
+  double tau_c;// = TDatabase::ParamDB->DELTA1;
   
+  double stab_param[2];
+  stab_params(hK,param,c0,coeff[19],stab_param);
+  tau_m = stab_param[0];
+  tau_c = stab_param[1];
+    
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double skew_11 = 0.;
   double skew_22 = 0.;
@@ -327,16 +337,10 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
   double tau_m, tau_c;
   if(TDatabase::ParamDB->P1 == 100)
   {
-    double t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-    tau_m = 4./(t*t);
-    double u = sqrt(u1*u1+u2*u2);
-    tau_m += 4.*u/(hK*hK);
-    double hp4 = pow(hK,4);
-    tau_m += 32.*c0*c0/hp4;
-    
-    tau_m = 1./sqrt(tau_m);
-    
-    tau_c = hK*hK/(8.*tau_m);
+    double stab_param[2];
+    stab_params(hK,param,c0,coeff[19],stab_param);
+    tau_m = stab_param[0];
+    tau_c = stab_param[1];
     
     TDatabase::ParamDB->P14 = tau_m;
     TDatabase::ParamDB->P15 = tau_c;
@@ -535,16 +539,10 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
   double tau_m, tau_c;
   if(TDatabase::ParamDB->P1==100)
   {
-    double t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-    tau_m = 4./(t*t);
-    double u = sqrt(u1*u1+u2*u2);
-    tau_m += 4.*u/(hK*hK);
-    double hp4 = pow(hK,4);
-    tau_m += 32.*c0*c0/hp4;
-    
-    tau_m = 1./sqrt(tau_m);
-    
-    tau_c = hK*hK/(8.*tau_m);
+    double stab_param[2];
+    stab_params(hK,param,c0,coeff[19],stab_param);
+    tau_m = stab_param[0];
+    tau_c = stab_param[1];
     
     TDatabase::ParamDB->P14 = tau_m;
     TDatabase::ParamDB->P15 = tau_c;
@@ -664,12 +662,12 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
       // scaling with factor*step_length is done within the main class
       double val = -test00*ansatz10; // galerkin part
       // supg terms 
-      val -=  tau_m * (ansatz00/(t1*dt) - c0*(ansatz20+ansatz02) 
+      val +=  tau_m * (ansatz00/(t1*dt) - c0*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test10;
       MatrixB1[i][j] -= Mult*val;
 
       val = -test00*ansatz01;
-      val -=  tau_m * (ansatz00/(t1*dt) - c0*(ansatz20+ansatz02) 
+      val +=  tau_m * (ansatz00/(t1*dt) - c0*(ansatz20+ansatz02) 
                        + (u1*ansatz10+u2*ansatz01) ) * test01;
 
       MatrixB2[i][j] -= Mult*val;      
@@ -706,7 +704,11 @@ void TimeNSType4RHSSUPG(double Mult, double* coeff, double* param, double hK,
   double u1=param[0];
   double u2=param[1];
 
-  double tau_m =  TDatabase::ParamDB->DELTA0*hK*hK;
+  double tau_m;// =  TDatabase::ParamDB->DELTA0*hK*hK;
+  double stab_param[2];
+  stab_params(hK,param,c0,coeff[19],stab_param);
+  tau_m = stab_param[0];
+  // tau_c = stab_param[1];
   
   double test10, test01, test00;  
   int N_U = N_BaseFuncts[0];
@@ -753,15 +755,12 @@ void TimeNSType14RHSSUPG(double Mult, double* coeff, double* param, double hK,
   double tau_m;
   if(TDatabase::ParamDB->P1 == 100)
   {
-    double t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-    tau_m = 4./(t*t);
-    double u = sqrt(u1sigma*u1sigma+u2sigma*u2sigma);
-    tau_m += 4.*u/(hK*hK);
-    double hp4 = pow(hK,4);
-    tau_m += 32.*c0*c0/hp4;
-    tau_m = 1./sqrt(tau_m);
+    double stab_param[2];
+    stab_params(hK,param,c0,coeff[19],stab_param);
+    tau_m = stab_param[0];
     
     TDatabase::ParamDB->P14 = tau_m;
+    TDatabase::ParamDB->P15 = stab_param[1];
   }
   else
   {

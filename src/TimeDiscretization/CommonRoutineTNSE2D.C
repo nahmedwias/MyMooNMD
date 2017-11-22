@@ -70,3 +70,20 @@ void stabilization_parameters_equal_order(double Mult, double* u, double* coeff,
   TDatabase::ParamDB->P14 = tau_m;
   TDatabase::ParamDB->P15 = tau_c;
 }
+
+void stab_params(double hk, double *u, double nu, double K, double *param)
+{
+  param[0] = 0.; param[1] = 0.;
+  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double tau_m = 4./(dt*dt);
+  double tmp = pow(0.5*hk,4);
+  tau_m += 32.*nu*nu/tmp;
+  tmp = 4.*(u[0]*u[0] + u[1]*u[1])/K;
+  tau_m += tmp/(hk*hk/4.);
+  
+  tau_m = 1./sqrt(tau_m);
+  double tau_c = (hk*hk/4.0) / (8.*tau_m);
+  
+  param[0] = tau_m;
+  param[1] = tau_c;
+}
