@@ -56,6 +56,8 @@ namespace Physics
 
   double M_Ethanol = 0.04607; //molar mass of Ethanol (kg/mol)
   double M_ASA = 0.18016; //molar mass of ASA (kg/mol)
+
+  double mu = 0.01; //dynamic viscosity according to Eder et al.
 }
 
 namespace Temperature
