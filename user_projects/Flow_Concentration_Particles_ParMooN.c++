@@ -52,19 +52,15 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
-  // four different databases
-  ParameterDatabase general_database("General Database");
-  ParameterDatabase flow_database("Flow Database");
-  ParameterDatabase conc_database("Conc Database");
-  ParameterDatabase particle_database("Particle Database");
 
-  // read in the databases one by one
+  // read in the database and distribute them
   std::ifstream fs(argv[1]);
+  ParameterDatabase general_database("General Database");
   general_database.read(fs);
-  flow_database.read(fs);
-  conc_database.read(fs);
-  particle_database.read(fs);
   fs.close();
+  ParameterDatabase flow_database = general_database.get_nested_database("Flow Database");
+  ParameterDatabase conc_database = general_database.get_nested_database("Conc Database");
+  ParameterDatabase particle_database = general_database.get_nested_database("Particle Database");
 
   // put some needed parameters into the respective DBs
   flow_database.merge(general_database, true);
@@ -75,7 +71,7 @@ int main(int argc, char* argv[])
   Chrono total_chrono;
 
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(argv[1], general_database);
+  TDomain domain(general_database, argv[1]);
 
   //open OUTFILE, this is where all output is written to (additionally to console)
   Output::set_outfile(general_database["outfile"]);
@@ -85,10 +81,6 @@ int main(int argc, char* argv[])
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
-
-  /* include the mesh from a mesh generator, for a standard mesh use the
-   * build-in function. The GEOFILE describes the boundary of the domain. */
-  domain.InitFromMesh(general_database["boundary_file"], general_database["mesh_file"]);
 
   std::string brush_grid_control = particle_database["brush_grid_control"];
 
