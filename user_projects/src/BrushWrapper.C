@@ -38,7 +38,7 @@ void ZeroBoundaryValues(int BdComp, double Param, double &value)
 
 
 
-void BrushWrapper::pick_example(int exmpl_code)
+void BrushWrapper::pick_example(int exmpl_code, double& viscosity)
 {
   switch(exmpl_code)
   {
@@ -54,6 +54,7 @@ void BrushWrapper::pick_example(int exmpl_code)
       //source and sink information ('from Brush')
       source_and_sink_function_names_ = source_and_sink_term_names;
       source_and_sink_requests_ = source_and_sink_fct_requests;
+      viscosity = Physics::mu;
 
       // this stuff must be done for the Eder example, which has 4 different
       // parameter sets. It is not nice, but it does the trick.
@@ -83,6 +84,8 @@ void BrushWrapper::pick_example(int exmpl_code)
       //source and sink information ('from Brush')
       source_and_sink_function_names_ = source_and_sink_term_names;
       source_and_sink_requests_ = source_and_sink_fct_requests;
+
+      viscosity = 0.01; //dummy
 
       // this stuff must be done for the Eder example, which has 4 different
       // parameter sets. It is not nice, but it does the trick.
@@ -148,7 +151,8 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
 {
 
   // get and store example specific information
-  pick_example(db_["example"]);
+  double viscosity=0;
+  pick_example(db_["example"], viscosity);
 
   //write the brush grid to a file, which can be read by Brush
   std::string out_dir(db_["output_vtk_directory"].value_as_string());
@@ -169,6 +173,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
       db_["therm_file"], db_["chem_file"],
       db_["coagulation_parameter"],
 	  db_["max_sp_per_cell"], db_["max_m0_per_cell"],
+	  viscosity,
 	  axisymmetric
   );
 

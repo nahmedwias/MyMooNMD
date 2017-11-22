@@ -84,9 +84,10 @@ class BrushWrapper
   private:
     // Fill example depending data. This is like an "init" function,
     // called only by the constructor.
-    //  0 - Eder's ASA flow crystallizer example.
-    //
-    void pick_example(int exmpl_code);
+    //  0 - Eder's ASA flow crystallizer example (axisymmetric).
+    //  1 - Eder's ASA flow crystallizer example (non-axisymmetric, not working).
+    // viscosity is a out-parameter which then goes to Brush
+    void pick_example(int exmpl_code, double& viscosity);
 
     /// The ParMooN interface of Brush which is wrapped up by 'this'.
     /// TODO Ownership for the object is taken, but there is some trouble with the
