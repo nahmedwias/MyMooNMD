@@ -9,7 +9,8 @@
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <Convolution.h>
-#include "../../include/AssembleRoutines/TNSE3D_Routines.h"
+#include <CommonRoutineTNSE3D.h>
+
 
 // ======================================================================
 // Type 3, Standard Galerkin with friction, D(u):D(v)

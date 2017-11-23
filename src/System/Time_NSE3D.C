@@ -566,9 +566,14 @@ void Time_NSE3D::assemble_initial_time()
       assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
 
     // local assembling object - used in Assemble3D
+    int disc_type_number = 1; //usually it's Galerkin
+    if(db_["space_discretization_type"].is("smagorinsky"))
+      disc_type_number = 4;
+
     const LocalAssembling3D
               localAssembling(LocalAssembling3D_type::TNSE3D_LinGAL,
-                              fe_functions,this->example_.get_coeffs());
+                              fe_functions,this->example_.get_coeffs(),
+                              disc_type_number); //I despise this utterly!
 
     // assemble all the matrices and right hand side
     Assemble3D(nFESpace, spaces,
@@ -702,9 +707,14 @@ void Time_NSE3D::assemble_rhs()
    boundary_values[3] = this->example_.get_bd(3);
 
    // Assembling the right hand side
+   int disc_type_number = 1; //usually it's Galerkin
+   if(db_["space_discretization_type"].is("smagorinsky"))
+     disc_type_number = 4;
+
   LocalAssembling3D
       localAssembling(LocalAssembling3D_type::TNSE3D_Rhs,
-                      fe_functions,this->example_.get_coeffs());
+                      fe_functions,this->example_.get_coeffs(),
+                      disc_type_number);
 
   Assemble3D(1, spaces,
              0, nullptr,
@@ -948,9 +958,13 @@ void Time_NSE3D::assemble_nonlinear_term()
     }
 
     // assemble nonlinear matrices
-    LocalAssembling3D
-        localAssembling(LocalAssembling3D_type::TNSE3D_NLGAL,
-                        fe_functions, this->example_.get_coeffs());
+    int disc_type_number = 1; //usually it's Galerkin
+    if(db_["space_discretization_type"].is("smagorinsky"))
+      disc_type_number = 4;
+
+    LocalAssembling3D localAssembling(LocalAssembling3D_type::TNSE3D_NLGAL,
+                        fe_functions, this->example_.get_coeffs(),
+                        disc_type_number);
 
     Assemble3D(nFESpace, spaces,
                nSquareMatrices, sqMatrices.data(),
