@@ -142,10 +142,13 @@ int main(int argc, char* argv[])
   // This code is specific to the WiedmeyerBatchCrystallizer Example.
   // This will be done for only the finest grid -
   // the other grids share its vertices!
-  double outflow_stretch = 7.5;
-  if(parmoon_db.contains("outflow_stretch"))
-    outflow_stretch = parmoon_db["outflow_stretch"];
-  transform_to_crystallizer_geometry(gridCollections.front(), outflow_stretch);
+  if(parmoon_db["sandwich_grid"])
+  {
+    double outflow_stretch = 7.5;
+    if(parmoon_db.contains("outflow_stretch"))
+      outflow_stretch = parmoon_db["outflow_stretch"];
+    transform_to_crystallizer_geometry(gridCollections.front(), outflow_stretch);
+  }
   //END EXAMPLE
 
   TCollection* coll = gridCollections.front();
