@@ -65,6 +65,8 @@ int main(int argc, char* argv[])
   tcd.assemble_initial_time();
   // ======================================================================
   
+  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME
+
   double end_time = TDatabase::TimeDB->ENDTIME; 
   int step = 0;
   int n_substeps = GetN_SubSteps();
@@ -77,7 +79,6 @@ int main(int argc, char* argv[])
   {
     step++;
     // Output::print("mem before: ", GetMemory());
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j=0; j < n_substeps; ++j)
     {
       SetTimeDiscParameters(1);
