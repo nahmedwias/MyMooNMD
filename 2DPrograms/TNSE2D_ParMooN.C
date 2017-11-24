@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     Domain.PS("Domain.ps", It_Finest, 0);
   
   // set some parameters for time stepping 
-  //TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
+  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   SetTimeDiscParameters(0);
 
   Example_TimeNSE2D example( parmoon_db );
@@ -70,7 +70,6 @@ int main(int argc, char* argv[])
    {
      step++;
      // Output::print("mem before: ", GetMemory());
-     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
      for(int j=0; j < n_substeps; ++j)
      {
        // setting the time disc parameters

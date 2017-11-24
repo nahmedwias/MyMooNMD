@@ -192,8 +192,6 @@ int main(int argc, char* argv[])
   {
     step++;
 
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-
     SetTimeDiscParameters(1);
 
     double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;

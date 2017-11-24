@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
   int linear_iterations = 0; 
 
   timer.restart_and_print("setting up spaces, matrices and initial assembling");
-  TDatabase::TimeDB->CURRENTTIME = 0.0;  
+  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   //======================================================================
   // time iteration
   //======================================================================
@@ -205,7 +205,6 @@ int main(int argc, char* argv[])
 
     tnse3d.current_step_++;
 
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
     {
       // setting the time discretization parameters
