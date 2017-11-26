@@ -86,7 +86,8 @@ class Time_NSE2D_Merged
       BlockVector solution_m1;
       BlockVector solution_m2;
       TFEVectFunct2D u_m1;
-      TFEFunction2D p_old;
+      TFEFunction2D p_m1;
+      TFEFunction2D p_m2;
       TFEVectFunct2D u_m2;
 
       BlockVector combined_old_sols;
@@ -94,6 +95,9 @@ class Time_NSE2D_Merged
 
       BlockVector extrapolate_sol;
       TFEVectFunct2D extrapolate_u;
+      TFEFunction2D extrapolate_p;
+      BlockVector time_deriv_sol;
+      TFEVectFunct2D u_td;
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeNSE2D& example, TCollection& coll,

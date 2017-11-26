@@ -50,17 +50,24 @@ Time_NSE2D_Merged::System_per_grid::System_per_grid(const Example_TimeNSE2D& exa
    solution_m1(matrix, false),
    u_m1(&velocity_space, (char*)"u", (char*)"u", solution_m1.block(0),
         solution_m1.length(0), 2),
-   p_old(&pressure_space, (char*)"p", (char*)"p", this->solution_m1.block(2),
+   p_m1(&pressure_space, (char*)"p", (char*)"p", this->solution_m1.block(2),
      solution_m1.length(2)),
    solution_m2(matrix, false),
    u_m2(&velocity_space, (char*)"u", (char*)"u", solution_m2.block(0),
         solution_m2.length(0), 2),
+   p_m2(&pressure_space, (char*)"p", (char*)"p", this->solution_m2.block(2),
+     solution_m2.length(2)),
    combined_old_sols(matrix, false),
    comb_old_u(&velocity_space, (char*)"u", (char*)"u", combined_old_sols.block(0),
         combined_old_sols.length(0), 2),
    extrapolate_sol(matrix, false),
    extrapolate_u(&velocity_space, (char*)"u", (char*)"u", extrapolate_sol.block(0),
-        extrapolate_sol.length(0), 2)
+        extrapolate_sol.length(0), 2),
+   extrapolate_p(&pressure_space, (char*)"p", (char*)"p", extrapolate_sol.block(2),
+        extrapolate_sol.length(2)),
+   time_deriv_sol(matrix, false),
+   u_td(&velocity_space, (char*)"ut", (char*)"ut", time_deriv_sol.block(0),
+        time_deriv_sol.length(0), 2)
 {
   mass_matrix = BlockFEMatrix::Mass_Matrix_NSE2D(velocity_space, pressure_space);
 
@@ -283,7 +290,7 @@ void Time_NSE2D_Merged::set_parameters()
   }
 
   // the only case where one have to re-assemble the right hand side
-  if(db["disctype"].is("supg"))
+  if(db["disctype"].is("supg") || db["disctype"].is("residual_based_vms"))
   {
     // in the IMEX scheme, the first three steps are done by using the 
     // full nonlinear version of supg
@@ -1061,12 +1068,24 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
           sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
           sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
           
-          if(db["disctype"].is("supg"))
+          if(db["disctype"].is("supg") || db["disctype"].is("residual_based_vms"))
           {
-            sqMat.resize(6);
-            sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-            // pressure-pressure block
-            sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+            if(db["disctype"].is("residual_based_vms"))
+            {
+              sqMat.resize(9);
+              sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+              sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
+              sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());
+              sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+              sqMat[8] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+            }
+            else
+            {
+              sqMat.resize(6);
+              sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+              // pressure-pressure block
+              sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+            }
             
             reMat.resize(4);
             reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
@@ -1074,22 +1093,19 @@ void Time_NSE2D_Merged::set_matrices_rhs(Time_NSE2D_Merged::System_per_grid& s,
             reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
             reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
 
-            //if(db["extrapolate_velocity"] )
-            //{
-              rhs_array.resize(3);
-              rhs_array[0] = s.rhs.block(0);
-              rhs_array[1] = s.rhs.block(1);
-              rhs_array[2] = s.rhs.block(2);
-              s.rhs.reset();
-            //}
+            rhs_array.resize(3);
+            rhs_array[0] = s.rhs.block(0);
+            rhs_array[1] = s.rhs.block(1);
+            rhs_array[2] = s.rhs.block(2);
+            s.rhs.reset();
           }
-          if(db["disctype"].is("residual_based_vms"))
-          {
-            reMat.resize(2);
-            reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
-            reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-            rhs_array.resize(0);
-          }
+//           if(db["disctype"].is("residual_based_vms"))
+//           {
+//             reMat.resize(2);
+//             reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
+//             reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+//             rhs_array.resize(0);
+//           }
           break;
       }// endswitch NSTYPE
       break;
@@ -1146,6 +1162,7 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
   functions[0] = s.u.GetComponent(0);
   functions[1] = s.u.GetComponent(1);
   functions[2] = &s.p;
+  double tau = time_stepping_scheme.get_step_length();
   bool is_imex = imex_scheme(0);
   if(is_imex && db["extrapolate_velocity"] && !db["disctype"].is("residual_based_vms"))
   {
@@ -1279,104 +1296,33 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
   
   if(db["disctype"].is("residual_based_vms") && is_imex)
   {
-    double tau = time_stepping_scheme.get_step_length();
-    if(time_stepping_scheme.pre_stage_bdf)
-    {
-      // First step is done with backward euler time stepping scheme.
-      // For the residual in the nonlinear term
-      // constant or linear extrapolation of the solution
-      // is used.
-      s.extrapolate_sol.reset();
-      s.extrapolate_sol = s.solution_m1;
-      functions.resize(9);
-      functions[2] = s.extrapolate_u.GetComponent(0);
-      functions[3] = s.extrapolate_u.GetComponent(1);
-      functions[4] = &s.p_old;
-      if(is_imex && db["extrapolate_velocity"])
-      {
-        functions[0] = functions[2];
-        functions[1] = functions[3];
-      }
-      
-      //For the residual based vms scheme fill this
-      //with the time derivative which is used in the residual 
-      //computation 
-      s.combined_old_sols.reset();
-      s.combined_old_sols = s.solution;
-      s.combined_old_sols.add_scaled(s.solution_m1, -1.);
-      s.combined_old_sols.scale(1./tau);
-      
-      functions[5] = s.comb_old_u.GetComponent(0);
-      functions[6] = s.comb_old_u.GetComponent(1);
-      
-      // also the solution from previous time steps
-      // is used for the computation of right-hand
-      // side fro pressure term
-      s.combined_old_sols.reset();
-      s.combined_old_sols = s.solution_m1;
-      functions[7] = s.comb_old_u.GetComponent(0);
-      functions[8] = s.comb_old_u.GetComponent(1);
-    }
-    else
-    {
-      // BDF2 consider the linear extrapolation of the 
-      // test function "u"
-      functions.resize(9);
-      s.extrapolate_sol.reset();
-      s.extrapolate_sol = s.solution_m1;
-      s.extrapolate_sol.scale(2.);
-      s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
-      
-      functions[2] = s.extrapolate_u.GetComponent(0);
-      functions[3] = s.extrapolate_u.GetComponent(1);
-      functions[4] = &s.p_old;
-      
-      if(is_imex && db["extrapolate_velocity"])
-      {
-        functions[0] = functions[2];
-        functions[1] = functions[3];
-      }
-      //For the residual based vms scheme fill this
-      //with the time derivative which is used in the residual 
-      //computation 
-      //FIXME: NOTE: seems the derivative is computed correctly
-      s.combined_old_sols.reset();
-      s.combined_old_sols = s.solution;
-      s.combined_old_sols.scale(3./(2.*tau));
-      s.combined_old_sols.add_scaled(s.solution_m1, -2./tau);
-      // s.combined_old_sols = s.solution_m1;
-      s.combined_old_sols.add_scaled(s.solution_m2, -1./(2.*tau));
-      
-      functions[5] = s.comb_old_u.GetComponent(0);
-      functions[6] = s.comb_old_u.GetComponent(1);
-      
-      // also the solution from previous time steps
-      // is used for the computation of right-hand
-      // side fro pressure term
-      // NOTE: this is the same as above (extrapolation) not needed actually
-      s.combined_old_sols.reset();
-      s.combined_old_sols = s.solution_m1;
-      s.combined_old_sols.scale(2.);
-      s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
-      functions[7] = s.comb_old_u.GetComponent(0);
-      functions[8] = s.comb_old_u.GetComponent(1);
-    }
-  }
-  else if (db["disctype"].is("residual_based_vms"))
-  {
-    // supg: NOTE: only tested with BDF2 so far
     if(db["disctype"].is("residual_based_vms") && !db["time_discretization"].is("bdf_two"))
     {
-      ErrThrow("residual based vms method is only implemented for BDF2 time stepping scheme");
+      ErrThrow("residual_based_vms method is only implemented for BDF2 time stepping scheme");
     }
-    functions.resize(9);
     if(time_stepping_scheme.pre_stage_bdf)
     {
+      functions.resize(7);
       functions[2] = s.u_m1.GetComponent(0);
       functions[3] = s.u_m1.GetComponent(1);
+      // additional fe functions for residual based vms method
+      // extrapolated pressure. At first step constant extrapolation is 
+      // used
+      // s.extrapolate_sol.reset();
+      // s.extrapolate_sol = s.solution_m1;
+      functions[4] = &s.p;// extrapolate_p;
+      // time derivative
+      s.time_deriv_sol.reset();
+      s.time_deriv_sol = s.solution;
+      s.time_deriv_sol.scale(1./tau);
+      s.time_deriv_sol.add_scaled(s.solution_m1, -1./tau);
+      functions[5] = s.u_td.GetComponent(0);
+      functions[6] = s.u_td.GetComponent(1);
     }
-    else
+    else // not the prestage; BDF2
     {
+      // combination of previous time solutions for the pressure right hand side
+      // computations
       s.combined_old_sols.reset();
       // copy and scale the solution at previous time step with factor 2
       s.combined_old_sols = s.solution_m1;
@@ -1384,24 +1330,37 @@ void Time_NSE2D_Merged::set_arrays(Time_NSE2D_Merged::System_per_grid& s,
       // subtract with right factor the solution at pre-previous solution
       s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
       
+      functions.resize(7);
       functions[2] = s.comb_old_u.GetComponent(0);
       functions[3] = s.comb_old_u.GetComponent(1);
+      // additional fe functions for residual based vms method
+      // extrapolated pressure. From second step linear extrapolation is 
+      // used
+      s.extrapolate_sol.reset();
+      s.extrapolate_sol = s.solution_m1;
+      s.extrapolate_sol.scale(2.);
+      s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
+      
+      functions[0] = s.extrapolate_u.GetComponent(0);
+      functions[1] = s.extrapolate_u.GetComponent(1);
+      functions[4] = &s.p;// extrapolate_p;
+      // time derivative: BDF 2
+      s.time_deriv_sol.reset();
+      s.time_deriv_sol = s.solution_m1;
+      s.time_deriv_sol.add_scaled(s.solution_m2, -1);
+      s.time_deriv_sol.scale(3./(2.*tau));
+      s.time_deriv_sol.add_scaled(s.solution_m1, -2./tau);
+      s.time_deriv_sol.add_scaled(s.solution_m2, 1./(2.*tau));
+      functions[5] = s.u_td.GetComponent(0);
+      functions[6] = s.u_td.GetComponent(1);
     }
-    // temporary
-    functions[2] = functions[0];
-    functions[3] = functions[0];
-    functions[4] = functions[0];
-    functions[5] = functions[0];
-    functions[6] = functions[0];
-    functions[7] = functions[0];
-    functions[8] = functions[0];
   }
 }
 
 /**************************************************************************** */
 bool Time_NSE2D_Merged::imex_scheme(bool print_info)
 {
-  if(db["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3)
+  if((db["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3) || db["disctype"].is("residual_based_vms"))
   {
     db["nonlinloop_maxit"] = 1;
     db["extrapolate_velocity"] = true;
