@@ -18,6 +18,11 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.set_name("Brinkman2D parameter database");
 
+    db.add("Galerkin_type", "symmetric Galerkin formulation", 
+           "This string enables to choose between symmetry and non-symmetry of the standard Galerkin scheme."
+           "This might be irrelevant for direct solvers as long as no addiditional terms (stabilization) are apparent.",
+           {"symmetric Galerkin formulation", "nonsymmetric Galerkin formulation"});
+
     db.add("PkPk_stab", false,
            "Use a Brinkman specific assembling routine corresponding to a "
            "residual-based equal-order stabilization for the Brinkman problem."
@@ -26,14 +31,7 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
            "Usually this is used in the main program.",
            {true,false});
 
-     db.add("GradDiv_stab", false,
-            "Use an assembling routine for the stabilization of the "
-            "divergence constraint.This only works in two space dimensions and"
-            " is meaningfull for the finite elemnt space P1/P1 only."
-            "Usually this is used in the main program.",
-            {true,false});
-
-    db.add("EqualOrder_PressureStab_type", "symmetric GLS", 
+     db.add("EqualOrder_PressureStab_type", "symmetric GLS", 
            "This string sets the type of residual-based momentum stabilization," 
            "usually used for the stabilization of P_k/P_k finite elements, for the" 
            "Brinkman problem in 2D. For stability of the method, the chosen "
@@ -41,10 +39,19 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
            "variants of the standard Galerkin scheme (symmetry or non-symmetry).",
            {"symmetric GLS", "nonsymmetric GLS"});
 
-    db.add("Galerkin_type", "symmetric Galerkin formulation", 
-           "This string enables to choose between symmetry and non-symmetry of the standard Galerkin scheme."
-           "This might be irrelevant for direct solvers as long as no addiditional terms (stabilization) are apparent.",
-           {"symmetric Galerkin formulation", "nonsymmetric Galerkin formulation"});
+     db.add("GradDiv_stab", false,
+            "Use an assembling routine for the stabilization of the "
+            "divergence constraint.This only works in two space dimensions and"
+            " is meaningfull for the finite elemnt space P1/P1 only."
+            "Usually this is used in the main program.",
+            {true,false});
+    db.add("equal_order_stab_scaling", "by h_T",
+           "This string enables to switch between the prefactor h_T^2/(mueff + sigma h_T^2) and h_T^2/(mueff + sigma L_0^2) for some characteristic length of the domain.",
+            {"by h_T", "by L_0"});
+      db.add("equal_order_stab_weight_PkPk", (double) 0., "", (double) -1000, (double) 1000 );
+
+      db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
+
 
 /* // Possible candidates for own database (maybe also a boundary assembling database, or into the assembling 2d database)
     db.add("s1", 0.0,
@@ -62,14 +69,6 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
            "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
            "Usually this is used in the main program.",
            {-1.0, 0.0, 1.0});
-
-    db.add("PkPk_stab", false,
-           "Use an assembling routine corresponding to a residual-based "
-           "equal-order stabilization for the Brinkman problem."
-           "This only works in two space "
-           "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
-           "Usually this is used in the main program.",
-           {true,false});
 
     db.add("equal_order_stab_weight_PkPk", 0.0,
            "Use an assembling routine corresponding to a residual-based "
@@ -151,7 +150,8 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
   systems(), example(e), defect(), oldResiduals(), 
   initial_residual(1e10), errors()
 {
-    this->db.merge(param_db,true);   //  db.info(true); 
+    this->db.merge(param_db,true);   
+   // db.info(true); 
 
 // TODO LB 13.11.17    check_and_set_assemble_type(db["EqualOrder_PressureStab_type"], db["brinkman_assemble_option"]);
 
@@ -218,7 +218,7 @@ void Brinkman2D::set_parameters()
 /** ************************************************************************ */
 void Brinkman2D::check_input_parameters()
 {
- // if (db["EqualOrder_PresureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") || db["EqualOrder_PresureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation")  )
+ // if (db["EqualOrder_PressureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") || db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation")  )
  // { 
  //   Output::print("Warning, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability.");
  //   //getch();
@@ -254,28 +254,46 @@ void Brinkman2D::assemble()
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
 
     if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") )
-      TDatabase::ParamDB->sign_MatrixBi = 1;
+    {
+      TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
+    }
     else if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("symmetric Galerkin formulation") )
-      TDatabase::ParamDB->sign_MatrixBi = -1;
-    else if ( db["PkPk_stab"].is(true) && db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") )
-      TDatabase::ParamDB->sign_MatrixBi = 1;
-    else if ( db["PkPk_stab"].is(true) && db["EqualOrder_PressureStab_type"].is("symmetric GLS") )
-      TDatabase::ParamDB->sign_MatrixBi = -1;
-    else if (db["EqualOrder_PresureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation"))
-      {Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Are you sure you want to continue?");
-      //double tmp;
-      //std::cin>>tmp;
+    {
+      TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
+    }
+    else if ( db["PkPk_stab"].is(true) )
+    {
+      if ( db["Galerkin_type"].is("nonsymmetric Galerkin formulation") && db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") )
+      {
+        TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
       }
-    else if (db["EqualOrder_PresureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation"))
-      Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Are you sure you want to continue?");
-    else
-      Output::print("WARNING: Please specify the discrete formulation you wish to use via the" 
-          " parameters EqualOrder_PressureStab_type and Galerkin_type. ");
+      else if ( db["PkPk_stab"].is(true)  && db["Galerkin_type"].is("symmetric Galerkin formulation")  && db["EqualOrder_PressureStab_type"].is("symmetric GLS") )
+      {
+        TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
+      }
+      else if (db["EqualOrder_PressureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation"))
+      {
+        Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Therefore, both were set to be symmetric. Are you sure you want to continue?");
+         TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
+       //double tmp;
+        //std::cin>>tmp;
+      }
+      else if (db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation"))
+      {
+        Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Therefore, both were set to be nonsymmetric. Are you sure you want to continue?");
+       TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
+       }
+      else
+      { 
+        Output::print("WARNING: Please specify the discrete formulation you wish to use via the" 
+            " parameters EqualOrder_PressureStab_type and Galerkin_type. ");
+      }
+    } 
 
     LocalAssembling2D_type type;
     // use a list of LocalAssembling2D objects
     std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
- 
+
     type = Brinkman2D_Galerkin1;
     std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, fe_functions,
           this->example.get_coeffs()));
@@ -285,6 +303,14 @@ void Brinkman2D::assemble()
 
     if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE == 1)
     {
+      if (db["equal_order_stab_scaling"].is("by h_T"))
+        {
+        TDatabase::ParamDB->l_T = 1;
+        }
+      else if (db["equal_order_stab_scaling"].is("by L_0"))
+        {
+        TDatabase::ParamDB->l_T = -1;
+        }
       type = Brinkman2D_Galerkin1ResidualStabP1;
       std::shared_ptr <LocalAssembling2D> la_P1P1stab(new LocalAssembling2D(type, fe_functions,
             this->example.get_coeffs()));
