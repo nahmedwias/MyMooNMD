@@ -40,7 +40,6 @@ void ExampleFile()
       ErrThrow("Unknown obstacle. Set P0 in the input file to 0,...,7");
       break;
   }
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // ========================================================================

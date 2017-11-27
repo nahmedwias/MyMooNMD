@@ -649,7 +649,7 @@ void NSE2D::computeNormsOfResiduals()
   this->defect = s.rhs;
   s.matrix.apply_scaled_add(s.solution, defect,-1.);
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix.pressure_projection_enabled())
   {
     IntoL20FEFunction(&defect[2*n_u_dof], n_p_dof, &this->get_pressure_space(),
                       TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -684,7 +684,7 @@ void NSE2D::solve()
     s.solution.add_scaled(*old_solution, 1-damping);
   }
   // project pressure if necessary
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix.pressure_projection_enabled())
     s.p.project_into_L20();
 }
 

@@ -52,7 +52,6 @@ void BoundCondition(int i, double Param, BoundCond &cond)
         if (i==TDatabase::ParamDB->neumann_boundary_id[j])
         {
             cond = NEUMANN;
-            TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
             return;
         }
     }
@@ -61,15 +60,9 @@ void BoundCondition(int i, double Param, BoundCond &cond)
         if (i==TDatabase::ParamDB->nitsche_boundary_id[j])
         {
             cond = DIRICHLET_WEAK;
-            //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
             return;
         }
     }
-    
-    if (TDatabase::ParamDB->n_neumann_boundary==0)
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average 0 (for uniqueness)
-    else
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
 

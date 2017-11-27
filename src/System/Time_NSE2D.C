@@ -766,7 +766,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   this->defect = s.rhs; 
   s.matrix.apply_scaled_add(s.solution, defect,-1.);
   // 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix.pressure_projection_enabled())
     IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
                       TDatabase::ParamDB->VELOCITY_SPACE, 
                       TDatabase::ParamDB->PRESSURE_SPACE);
@@ -832,7 +832,7 @@ void Time_NSE2D::solve()
   // for the next iteration we have to descale, see assemble_system()
   this->deScaleMatrices();
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix.pressure_projection_enabled())
        s.p.project_into_L20();
 
   this->old_solution = s.solution;

@@ -263,7 +263,6 @@ void check_brinkman2d(TDomain & domain, ParameterDatabase& db, int velocityCode,
 //    TDatabase::ParamDB->n_nitsche_boundary=4;
 //    TDatabase::ParamDB->nitsche_boundary_id={0, 1, 2, 3};
 //    TDatabase::ParamDB->nitsche_penalty={1000, 1000, 1000, 1000};
-//    TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 //    Output::print("\nstarting with Nitsche (parameter 1000) on P2/P1 on quads with visc_eff=1, visc=1, perm= 1");
 //    reference_errors = {{0.00071104275913606,0.0086539449600541,0.0137946704876,0.11201103666807}};
 //    check_brinkman2d(domain, db, 2,1, reference_errors);
@@ -405,7 +404,6 @@ void tests_on_triangles_P2P1(unsigned int nRefinements, ParameterDatabase& db)
   TDatabase::ParamDB->s1=-1;
   TDatabase::ParamDB->s2=-1;
 
-  //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;↲                       
   Output::print("\nstarting with Brinkman2D on TwoTriangles (symmetric Galerkin formulation), P2/P1, with Dirichlet and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
   reference_errors = {{0.0054680957600273, 0.014317962190331, 0.1443805008035, 5.246987770953e-05, 0.00061083280165159}};
   check_brinkman2d(domain, db, 2,1, reference_errors); 
@@ -450,7 +448,6 @@ void tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche(unsigned int nRefine
   TDatabase::ParamDB->s1=-1;
   TDatabase::ParamDB->s2=-1;
 
-  //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;↲                       
   Output::print("\nstarting with Brinkman2D on TwoTriangles, P2/P1, with penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
   reference_errors = {{0.049354569383435, 0.049746071781475 , 0.20428824240268, 9.3291684594421e-05, 0.0010263458082476}};
   check_brinkman2d(domain, db, 2,1, reference_errors); 
@@ -493,7 +490,6 @@ void tests_on_triangles_P1P1_GLSstab(unsigned int nRefinements, ParameterDatabas
   TDatabase::ParamDB->s1 = -1;
   TDatabase::ParamDB->s2 = -1;
 
-  //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;↲                       
   Output::print("\nstarting with Brinkman2D on TwoTriangles, P1/P1-Stab (symmetric GLS), Dirichlet and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
   reference_errors = {{  1.2424692993215, 0.031419104874062, 16.668762604057, 0.0018335349292131, 0.034019179940349 }}; 
   check_brinkman2d(domain, db, 1, 1, reference_errors); 
@@ -541,7 +537,6 @@ void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche(unsigned int
   TDatabase::ParamDB->s1 = -1;
   TDatabase::ParamDB->s2 = -1;
 
-  //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;↲                       
   Output::print("\nstarting with Brinkman2D on TwoTriangles, P1/P1-Stab (symmetric GLS), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
   reference_errors = {{10.192177714504, 5.8853778774783, 25.146773888043, 0.16699522666312, 3.1493307465155 }};
   check_brinkman2d(domain, db, 1, 1, reference_errors); 
@@ -592,7 +587,6 @@ void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche_GradDivStab(
   TDatabase::ParamDB->s1 = -1;
   TDatabase::ParamDB->s2 = -1;
 
-  //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;↲                       
   Output::print("\nstarting with Brinkman2D on TwoTriangles, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.01), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
   reference_errors = {{ 10.869461373038, 0.0015555188075453, 24.270540284686, 0.1885807925005, 2.3578866662985 }};
   check_brinkman2d(domain, db, 1, 1, reference_errors); 

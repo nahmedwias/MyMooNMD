@@ -239,7 +239,7 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   } // endfor i
 }
 
-// TODO Disabled due to use of deprecated parameter INTERNAL_PROJECT_PRESSURE.
+// TODO Disabled due to use of deprecated parameter.
 //void Defect_NSE2C(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r)
 //{
 //  int N_UDOF,N_PDOF;
@@ -247,7 +247,7 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
 //  CoupledDefect(A[0], B[0], B[1], B[2], B[3], B[4], x, b, r);
 //  N_UDOF = A[0]->GetN_Rows();
 //  N_PDOF = B[0]->GetN_Rows();
-//  if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+//  if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE) //deprecated!
 //    IntoL20Vector2D(r+2*N_UDOF, N_PDOF, TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
 //  return;
 //}
@@ -1946,17 +1946,18 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
   } // endfor i
 }
 
-void Defect_NSE4C(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r)
-{
-  int N_UDOF,N_PDOF;
-
-  CoupledDefect(A[0], A[1], A[2], A[3], B[0], B[1], B[2], B[3], B[4], x, b, r);
-  N_UDOF = A[0]->GetN_Rows();
-  N_PDOF = B[0]->GetN_Rows();
-  if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-    IntoL20Vector2D(r+2*N_UDOF, N_PDOF,TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
-  return;
-}
+// Disabled due to use of deprecated parameter.
+//void Defect_NSE4C(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r)
+//{
+//  int N_UDOF,N_PDOF;
+//
+//  CoupledDefect(A[0], A[1], A[2], A[3], B[0], B[1], B[2], B[3], B[4], x, b, r);
+//  N_UDOF = A[0]->GetN_Rows();
+//  N_PDOF = B[0]->GetN_Rows();
+//  if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE) //deprecated!
+//    IntoL20Vector2D(r+2*N_UDOF, N_PDOF,TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
+//  return;
+//}
 
 double UltraLocalErrorDivergence(TFEFunction2D *uh1, TFEFunction2D *uh2,
                        DoubleFunct2D *ExactU1, DoubleFunct2D *ExactU2,
