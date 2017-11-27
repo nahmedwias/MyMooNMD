@@ -48,6 +48,10 @@ namespace poiseuille_channel
 #include "Brinkman_2D/Poiseuille_Channel_1x2.h"
 }
 
+namespace SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D
+{
+#include "Brinkman_2D/SinCos_BadiaCodina_DarcyFlow_Test.h"
+}
 
 
 
@@ -233,7 +237,29 @@ Example_Brinkman2D::Example_Brinkman2D(
             poiseuille_channel::ExampleFile();
             break;
 
-            
+         case 8:
+            /** exact_solution */
+            exact_solution.push_back( SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::ExactU1 );
+            exact_solution.push_back( SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::ExactU2 );
+            exact_solution.push_back( SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::ExactP );
+
+            /** boundary condition */
+            boundary_conditions.push_back( SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::BoundCondition );
+            boundary_conditions.push_back( SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::BoundCondition );
+            boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+            /** boundary values */
+            boundary_data.push_back( SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::U1BoundValue );
+            boundary_data.push_back( SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::U2BoundValue );
+            boundary_data.push_back( BoundaryValueHomogenous );
+
+            /** coefficients */
+            problem_coefficients = SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::LinCoeffs;
+
+            SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::ExampleFile();
+            break;
+
+           
         default:
             ErrThrow("Unknown Brinkman example!");
     }
