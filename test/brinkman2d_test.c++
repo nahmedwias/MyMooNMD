@@ -96,6 +96,10 @@ void check_brinkman2d(TDomain & domain, ParameterDatabase& db, int velocityCode,
     brinkman2d.solve();
     brinkman2d.output();
     
+    //CB DEBUG
+    Output::print("CHECK THAT: ", TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE);
+    //END DEBUG
+
     // compare computed with given errors
     compareErrors(brinkman2d, reference_errors); // throws upon a difference
 }

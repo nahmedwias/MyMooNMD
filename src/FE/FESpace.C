@@ -41,7 +41,7 @@ TFESpace::TFESpace(TCollection *coll,
   BoundaryNodesBound = nullptr;
   DirichletBound = 0;
   ActiveBound = 0;
-  DGSpace = 0;
+  is_discontinuous_galerkin_space = false;
 }
 
 /** destructor */

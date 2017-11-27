@@ -27,7 +27,6 @@ TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string descript
   UsedElements = NULL;
   AllElements = NULL;
   ElementForShape = NULL;
-  DGSpace=0;
 }
 
 // =====================================================================
@@ -85,8 +84,6 @@ TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string descript
 
   // construct space
   ConstructSpace();
-  
-  DGSpace=0;
 }
 
 /** constructor for building a space with the given elements */
@@ -103,8 +100,6 @@ TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string descript
 
   // construct space
   ConstructSpace();
-  
-  DGSpace=0;
 }
 
 /** return the FE Id for element i, corresponding to cell */

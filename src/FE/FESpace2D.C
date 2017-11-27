@@ -48,7 +48,6 @@ TFESpace2D::TFESpace2D(TCollection *coll,
   UsedElements = NULL;
   AllElements = NULL;
   ElementForShape = NULL;
-  DGSpace = 0;
 }
 
 // =====================================================================
@@ -66,7 +65,6 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   AllElements = NULL;
-  DGSpace = 0;
   
   this->BoundCondition = BoundaryCondition;
 
@@ -571,8 +569,7 @@ TFESpace2D::TFESpace2D(TCollection *coll,  std::string name, std::string descrip
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   AllElements = NULL;
-  DGSpace = 0;
-  
+
   this->BoundCondition = BoundaryCondition;
 
   ElementForShape = new FE2D[N_SHAPES];
@@ -1164,7 +1161,6 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   ElementForShape = NULL;
-  DGSpace = 0;
   //AllElements = fes;
   N_ = coll->GetN_Cells();
   AllElements = new FE2D[N_];
