@@ -1025,8 +1025,15 @@ void Time_NSE3D::assemble_system()
     const FEMatrix& mass_blocks =
         *s.massMatrix_.get_blocks().at(0).get();
 
+    std::vector<std::vector<size_t>> cells;
+#ifdef __2D__
+    cells = {{0,0},{1,1}};
+#else
+    cells = {{0,0},{1,1},{2,2}};
+#endif
+
     s.matrix_.add_matrix_actives(mass_blocks, 1.0,
-                                 {{0,0}, {1,1}, {2,2}},
+                                 cells,
                                  {false, false, false});
   }
 

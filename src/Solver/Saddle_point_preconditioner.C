@@ -33,8 +33,8 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
 {
   Output::print<3>("constructing a Saddle_point_preconditioner");
   Chrono time_measuering;
-  bool pressure_correction_in_matrix = this->M->pressure_correction_enabled();
-  this->M->disable_pressure_correction();
+  bool pressure_correction_in_matrix = this->M->pressure_projection_enabled();
+  this->M->disable_pressure_projection();
   
   // number of block columns and rows
   unsigned int n_rows = this->M->get_n_cell_rows();
@@ -123,7 +123,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   }
   
   if(pressure_correction_in_matrix)
-    this->M->enable_pressure_correction();
+    this->M->enable_pressure_projection();
   time_measuering.stop_and_print("Setting up a Saddle_point_preconditioner");
 }
 

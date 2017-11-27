@@ -89,7 +89,6 @@ void BoundCondition(int i, double Param, BoundCond &cond)
         if (i == TDatabase::ParamDB->neumann_boundary_id[j])
         {
             cond = NEUMANN;
-            
             return;
         }
     }

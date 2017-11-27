@@ -96,8 +96,8 @@ class TFESpace
     /** number of inner and non-Dirichlet boundary nodes are less than */
     int ActiveBound;
 
-    /** 0 space for Galerkin disc, 1 - space for DG disc */
-    int DGSpace;
+    /// True if this space contains discontinuous elements.
+    bool is_discontinuous_galerkin_space;
 
   public:
     /**
@@ -177,6 +177,22 @@ class TFESpace
     int GetN_Dirichlet() const
     { return N_Dirichlet; }
 
+    /** @return The number of Neumann boundary d.o.f. */
+    int get_n_neumann_dof() const
+    {
+      //CB DEBUG
+      for(int i =0; i<N_DiffBoundNodeTypes; ++i)
+      {
+        Output::print("Cond ", BoundaryNodeTypes[i], " N ", N_BoundaryNodes[i]);
+      }
+      //END DEBUG
+      return N_BoundaryNodes[NEUMANN];
+    }
+
+    /** @return The number of Neumann boundary d.o.f. */
+    int get_n_robin_dof() const
+    { return N_BoundaryNodes[ROBIN]; }
+
     /** return N_Inner */
     int GetN_Inner() const
     { return N_Inner; }
@@ -200,11 +216,9 @@ class TFESpace
     /** write info on fespace into file */
     int Write(const std::string filename);
 
-    void SetAsDGSpace()
-    { DGSpace = 1; }
+    void SetAsDGSpace() { is_discontinuous_galerkin_space = true; }
 
-    int IsDGSpace() const
-    { return DGSpace; }
+    bool IsDGSpace() const { return is_discontinuous_galerkin_space; }
 
 
 };

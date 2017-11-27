@@ -17,8 +17,8 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         TMatrix *B1T, TMatrix *B2T, TMatrix *C,
         double *x, double *b, double *r);
 
-void Defect_NSE2C(TSquareMatrix **A, TMatrix **B, double *x,
-                  double *b, double *r);
+//void Defect_NSE2C(TSquareMatrix **A, TMatrix **B, double *x,
+//                  double *b, double *r);
 
 void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         TMatrix *B1T, TMatrix *B2T, TMatrix *C,
