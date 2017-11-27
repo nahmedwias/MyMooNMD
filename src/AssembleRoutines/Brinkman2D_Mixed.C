@@ -864,7 +864,7 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
                          double **OrigValues, int *N_BaseFuncts,
                          double ***LocMatrices, double **LocRhs)
 {
-    //double ansatz10, ansatz01;    // ansatz functions
+    double ansatz10, ansatz01;    // ansatz functions
     double test10, test01;          // test functions
 
     double ** MatrixA11 = LocMatrices[0];
