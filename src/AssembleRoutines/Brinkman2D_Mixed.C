@@ -110,15 +110,15 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
         }
     }
  
-//double sign_MatrixBi = -1; // the weak divergence constraint is added for sign_MatrixBi = 1 and subtracted for sign_MatrixB1i = -1
-   // double sign_MatrixBi;
+//double SIGN_MATRIX_BI = -1; // the weak divergence constraint is added for SIGN_MATRIX_BI = 1 and subtracted for SIGN_MATRIX_BI = -1
+   // double SIGN_MATRIX_BI;
    // switch(TDatabase::ParamDB->P9)
    // {
    // case -4711:
-   //    sign_MatrixBi = 1;
+   //    SIGN_MATRIX_BI = 1;
    // break;
    //case -4712:
-   // sign_MatrixBi = -1;
+   // SIGN_MATRIX_BI = -1;
    // break;
    // default:
    // ErrThrow("Something went terribly wrong here!")
@@ -128,16 +128,16 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
     {
       test00 = Orig3[i];      // p
 
-      Rhs_p[i] += Mult * (TDatabase::ParamDB->sign_MatrixBi) * test10 * c3;                    // stabilization: (g, q)
+      Rhs_p[i] += Mult * (TDatabase::ParamDB->SIGN_MATRIX_BI) * test00 * c3; //test10 * c3;                    // stabilization: (g, q)
 
       for(int j = 0; j < N_U; j++)
       {
         ansatz10 = Orig0[j];
         ansatz01 = Orig1[j];
-        val = TDatabase::ParamDB->sign_MatrixBi * test00 * ansatz10;                       // +/- (q,div u)= +/- q * u_x
+        val = TDatabase::ParamDB->SIGN_MATRIX_BI * test00 * ansatz10;                       // +/- (q,div u)= +/- q * u_x
         MatrixB1[i][j] += Mult * val;
 
-        val = TDatabase::ParamDB->sign_MatrixBi * test00 * ansatz01;                       // +/- (q,div u)= +/- q * u_y
+        val = TDatabase::ParamDB->SIGN_MATRIX_BI * test00 * ansatz01;                       // +/- (q,div u)= +/- q * u_y
         MatrixB2[i][j] += Mult * val;
       }
     }
@@ -602,17 +602,23 @@ void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
     double K = coeff[6];                    // permeability
     double alpha = coeff[7];                // equal_order_stab_weight
     //double t = fabs(sqrt((mu_eff/mu) * K));
-    
+    double PSPGStab; 
     //double PSPGStab =  alpha * (K/mu) * (hK*hK)/(c0+(hK*hK)); // stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
     ///double PSPGStab =  alpha * (hK*hK)/(c0+(hK*hK)); // Without Sigma^{-1} as it is in Hannukainen and Sogn   
     ///double PSPGStab =  alpha * (hK*hK)/(c0); // stabilization acccording to Franca and Hughes (basically for stokes) but with t
     ///double PSPGStab =  alpha * (hK*hK)/(mu_eff); // stabilization acccording to Franca and Hughes (basically for stokes) with mueff
-    ///double PSPGStab = -alpha * (hK*hK)/(c0+(hK*hK)) ; // stabilization formulation according to Volker ACHTUNG: Hierfür muss sign_matrixBi=-1 sein!!!!
-    double PSPGStab = alpha * (hK*hK)/(mu_eff + (mu/K)* (hK*hK)); // Brinkman_P1P1.tex with l_T=h_T
-    //double L_0 = ???
-    //double PSPGStab = alpha * (hK*hK)/(mu_eff + (mu/K)* (L_0*L_0)); // Brinkman_P1P1 with l_T=L_0
+    ///double PSPGStab = -alpha * (hK*hK)/(c0+(hK*hK)) ; // stabilization formulation according to Volker ACHTUNG: Hierfür muss SIGN_MATRIX_BI=-1 sein!!!!
+    if (TDatabase::ParamDB->l_T == 1)
+    {
+    PSPGStab = alpha * (hK*hK)/(mu_eff + (mu/K)* (hK*hK)); // Brinkman_P1P1.tex with l_T=h_T 
+    }
+    else if (TDatabase::ParamDB->l_T == -1)
+    {
+    double L_0 = 0.1 * 1;
+    PSPGStab = alpha * (hK*hK)/(mu_eff + (mu/K)* (L_0*L_0)); // Brinkman_P1P1 with l_T=L_0
+    }
 
-    if (TDatabase::ParamDB->sign_MatrixBi == -1)
+    if (TDatabase::ParamDB->SIGN_MATRIX_BI == -1)
     { PSPGStab = alpha * (hK*hK);
       PSPGStab = PSPGStab * (-1);
     }
@@ -901,13 +907,11 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
     double val;
 
     
-    if (TDatabase::ParamDB->sign_MatrixBi == -1)
-    { // TODO LB: Doe the stability analysis for the symmetric GLS stabilization and adapt the 'grad_div_stab_weight' accordingly.' 
-    grad_div_stab_weight = coeff[8];
-    }
+    if (TDatabase::ParamDB->SIGN_MATRIX_BI == -1)
+      { // TODO LB: Do the stability analysis for the symmetric GLS stabilization and adapt the 'grad_div_stab_weight' accordingly.' 
+        grad_div_stab_weight = coeff[8];
+      }
 
-
-    
     for(int i = 0; i < N_U; i++)
       {
         test10 = Orig0[i];
