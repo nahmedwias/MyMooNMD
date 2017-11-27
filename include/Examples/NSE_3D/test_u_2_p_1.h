@@ -17,8 +17,6 @@ double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
   Output::info<1>("EXAMPLE","test_u_2_p_1.");
-  // \TODO check if the expected geometry is used
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 // exact solution

@@ -78,7 +78,6 @@ void BoundCondition(int bdcomp, double t, BoundCond &cond)
   {
     case 1:
       cond = NEUMANN;
-      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
       break;
     default:
       cond = DIRICHLET;

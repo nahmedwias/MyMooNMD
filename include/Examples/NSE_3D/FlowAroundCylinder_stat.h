@@ -26,7 +26,6 @@ void ExampleFile()
   if(my_rank == 0)
 #endif
   Output::info<1>("EXAMPLE","FlowAroundCylinder_stat.h");
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
 // ========================================================================

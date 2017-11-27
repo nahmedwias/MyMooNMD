@@ -198,7 +198,7 @@ void Darcy2D::solve()
   
   this->solver.solve(s.matrix, s.rhs, s.solution);
   
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix.pressure_projection_enabled())
     s.p.project_into_L20();
   
   t = GetTime() - t;

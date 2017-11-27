@@ -549,7 +549,6 @@ struct TParaDB
   are used as global variables */
   //======================================================================
   int    INTERNAL_PROBLEM_LINEAR;
-  int    INTERNAL_PROJECT_PRESSURE;
   int    INTERNAL_PRESSURE_SPACE;
   int    INTERNAL_SLIP_WITH_FRICTION;
   int    INTERNAL_SLIP_WITH_FRICTION_IDENTITY;

@@ -145,7 +145,6 @@ int main(int argc, char* argv[])
   {
     //for fiddling around with: nse-style matrix with one off-diagonal zero block
     BlockFEMatrix nsemat({&fe_space_1, &fe_space_1, &fe_space_2});
-    TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
     nsemat.replace_blocks(fe_matrix_1,
                           {{0,0},{0,1},{1,1}},
                           {false, false, false});

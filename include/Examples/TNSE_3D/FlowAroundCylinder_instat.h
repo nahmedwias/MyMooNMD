@@ -21,7 +21,6 @@ double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
   OutPut("Example: FlowAroundCylinder_instat.h" << endl);
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
 // ========================================================================

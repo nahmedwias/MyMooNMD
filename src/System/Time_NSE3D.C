@@ -1167,7 +1167,7 @@ void Time_NSE3D::compute_residuals()
   this->defect_ = s.rhs_;
   s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix_.pressure_projection_enabled())
   {
     IntoL20Vector3D(&defect_[3*number_u_Dof], number_p_Dof,
                       TDatabase::ParamDB->PRESSURE_SPACE);
@@ -1242,7 +1242,7 @@ void Time_NSE3D::solve()
   // for the next iteration we have to descale, see assemble_system()
   this->descale_matrices();
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix_.pressure_projection_enabled())
        s.p_.project_into_L20();
 }
 

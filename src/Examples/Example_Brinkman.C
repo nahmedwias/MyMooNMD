@@ -34,9 +34,6 @@ Example Example::Brinkman(const ParameterDatabase& param_db)
     {
       if(!two_d)
         ErrThrow("Poiseuille flow example in 3D not yet implemented");
-      // this example has all Dirichlet boundary, therefore we need to project
-      // the pressure
-      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
       // boundary condition:
       bc.push_back(BoundaryCondition(DIRICHLET));
       auto u1 = [](const Point& point, FunctionEvaluation& v)

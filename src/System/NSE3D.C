@@ -755,7 +755,7 @@ void NSE3D::compute_residuals()
   defect_ = s.rhs_;
   s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix_.pressure_projection_enabled())
   {
     IntoL20Vector3D(&defect_[3*n_u_dof], n_p_dof,
                     TDatabase::ParamDB->PRESSURE_SPACE);
@@ -823,7 +823,7 @@ void NSE3D::solve()
   }
 
   // project pressure if necessary
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix_.pressure_projection_enabled())
     s.p_.project_into_L20();
 }
 

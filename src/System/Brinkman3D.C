@@ -702,7 +702,7 @@ void Brinkman3D::compute_norm_of_residual()
     //    this->defect = s.rhs;
     //    s.matrix.apply_scaled_add(s.solution, defect,-1.);
     //
-    //    if( TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE )
+    //    if( s.matrix.pressure_projection_enabled() )
     //    {
     //            IntoL20Vector3D(&defect[3*n_u_dof], n_p_dof,
     //                            TDatabase::ParamDB->PRESSURE_SPACE);
@@ -762,7 +762,7 @@ void Brinkman3D::solve()
         this->solver.solve(s.matrix, s.rhs, s.solution); // same as sequential
 #endif
     
-    if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    if(s.matrix.pressure_projection_enabled())
     {
         s.p.project_into_L20();
     }
@@ -803,7 +803,7 @@ void Brinkman3D::solve_with_Petsc(ParameterDatabase parmoon_db)
 //#endif
 ////---------
     
-    if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    if(s.matrix.pressure_projection_enabled())
     {
         s.p.project_into_L20();
     }

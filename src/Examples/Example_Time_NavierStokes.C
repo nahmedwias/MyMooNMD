@@ -32,9 +32,6 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
   {
     case 0: // sine example
     {
-      // this example has all Dirichlet boundary, therefore we need to project
-      // the pressure
-      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
       // boundary condition:
       bc.push_back(BoundaryCondition(DIRICHLET));
 
@@ -316,9 +313,6 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
     case 1: // Poisseuille flow
     {
       ErrThrow("Time dependent Poisseuille flow example not yet implemented");
-      // this example has all Dirichlet boundary, therefore we need to project
-      // the pressure
-      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
       // boundary condition:
       bc.push_back(BoundaryCondition(DIRICHLET));
       auto u1 = [](const Point& point, FunctionEvaluation& v)
@@ -375,9 +369,6 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
     case 2: // driven cavity
     {
       ErrThrow("Time dependent driven cavity example not yet implemented");
-      // this example has all Dirichlet boundary, therefore we need to project
-      // the pressure
-      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
       // boundary condition:
       bc.push_back(BoundaryCondition(DIRICHLET));
 
