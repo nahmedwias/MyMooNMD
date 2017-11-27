@@ -33,7 +33,6 @@
 #include <BoundEdge.h>
 #include <InterfaceJoint.h>
 
-#include <string.h>
 #include <fstream>
 #include <stdlib.h>
 #include <sstream>
@@ -45,8 +44,8 @@
 #include <sys/types.h>
 
 /** constructor with vector initialization */
-TFEVectFunct2D::TFEVectFunct2D(const TFESpace2D *fespace2D, char *name, 
-                             char *description, double *values, 
+TFEVectFunct2D::TFEVectFunct2D(const TFESpace2D *fespace2D, std::string name,
+                               std::string description, double *values,
                              int length, int n_components)
   : TFEFunction2D(fespace2D, name, description, values, length)
 {
@@ -552,7 +551,7 @@ void TFEVectFunct2D::WriteSol(double t, std::string directory,
 
 
 /** Read the solution from a given data file - written by Sashi **/
-void TFEVectFunct2D::ReadSol(char *BaseName)
+void TFEVectFunct2D::ReadSol(std::string BaseName)
 {
  int i, j, N_Joints, N_Cells, N_cells, N_joints, N_components, length;
  char line[100];
