@@ -60,9 +60,9 @@ Brinkman3D::System_per_grid::System_per_grid (const Example_Brinkman3D& example,
 , int maxSubDomainPerDof
 #endif
 )
-: velocity_space(&coll, (char*)"u", (char*)"Brinkman3D velocity", example.get_bc(0), //bd cond at 0 is x velo bc
+: velocity_space(&coll, "u", "Brinkman3D velocity", example.get_bc(0), //bd cond at 0 is x velo bc
                  velocity_pressure_orders.first),
-pressure_space(&coll, (char*)"p", (char*)"Brinkman3D pressure", example.get_bc(3), //bd condition at 3 is pressure bc
+pressure_space(&coll, "p", "Brinkman3D pressure", example.get_bc(3), //bd condition at 3 is pressure bc
                velocity_pressure_orders.second)
 // TODO CB: Building the matrix here and rebuilding later is due to the
 // highly non-functional class TFEVectFunction3D (and TFEFunction3D,
@@ -70,9 +70,9 @@ pressure_space(&coll, (char*)"p", (char*)"Brinkman3D pressure", example.get_bc(3
 ,matrix({&velocity_space, &velocity_space,&velocity_space, &pressure_space}),
 rhs(matrix, true),
 solution(matrix, false),
-u(&velocity_space, (char*)"u", (char*)"u", solution.block(0),
+u(&velocity_space, "u", "u", solution.block(0),
   solution.length(0), 3),
-p(&pressure_space, (char*)"p", (char*)"p", solution.block(3),
+p(&pressure_space, "p", "p", solution.block(3),
   solution.length(3))
 
 {

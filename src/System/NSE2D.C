@@ -44,9 +44,9 @@ ParameterDatabase get_default_NSE2D_parameters()
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders,
                NSE2D::Matrix type)
- : velocity_space(&coll, (char*)"u", (char*)"Navier--Stokes velocity", example.get_bc(0),
+ : velocity_space(&coll, "u", "Navier--Stokes velocity", example.get_bc(0),
                   velocity_pressure_orders.first, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"Navier--Stokes pressure", example.get_bc(2),
+   pressure_space(&coll, "p", "Navier--Stokes pressure", example.get_bc(2),
                   velocity_pressure_orders.second, nullptr)
 // TODO CB: Building the matrix here and rebuilding later is due to the
 // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
@@ -54,9 +54,9 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
    ,matrix({&velocity_space, &velocity_space, &pressure_space}),
    rhs(matrix, true),
    solution(matrix, false),
-   u(&velocity_space, (char*)"u", (char*)"u", solution.block(0),
+   u(&velocity_space, "u", "u", solution.block(0),
      solution.length(0), 2),
-   p(&pressure_space, (char*)"p", (char*)"p", solution.block(2),
+   p(&pressure_space, "p", "p", solution.block(2),
      solution.length(2))
 {
 // rebuild the matrix due to NSE type. We must be sure, that the rhs and solution

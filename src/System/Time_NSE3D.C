@@ -57,17 +57,17 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
                   , int maxSubDomainPerDof
 #endif
 )
- : velocitySpace_(&coll, (char*)"u", (char*)"velocity space",  example.get_bc(0),
+ : velocitySpace_(&coll, "u", "velocity space",  example.get_bc(0),
                   order.first),
-   pressureSpace_(&coll, (char*)"p", (char*)"pressure space", example.get_bc(3),
+   pressureSpace_(&coll, "p", "pressure space", example.get_bc(3),
                   order.second),
    matrix_({&velocitySpace_, &velocitySpace_, &velocitySpace_, &pressureSpace_}),
    massMatrix_({&velocitySpace_, &velocitySpace_, &velocitySpace_}),
    rhs_(matrix_, true),
    solution_(matrix_, false),
-   u_(&velocitySpace_, (char*)"u", (char*)"u", solution_.block(0),
+   u_(&velocitySpace_, "u", "u", solution_.block(0),
      solution_.length(0), 3),
-   p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
+   p_(&pressureSpace_, "p", "p", solution_.block(3),
      solution_.length(3))
 {
   // Mass Matrix
@@ -946,7 +946,7 @@ void Time_NSE3D::assemble_nonlinear_term()
       // Namely, extrapolated_solution takes the nonActive of the current Rhs.
       this->construct_extrapolated_solution();
       TFEVectFunct3D extrapolated_velocity_vector(&this->systems_.front().velocitySpace_,
-                                                  (char*)"", (char*)"",
+                                                  "", "",
                                                   extrapolated_solution_.block(0),
                                                   extrapolated_solution_.length(0), 3);
 

@@ -21,7 +21,7 @@
 #include <string.h>
 
 /** Constructor */
-TFESpace1D::TFESpace1D(TCollection *coll, char *name, char *description) :
+TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string description) :
      TFESpace(coll, name, description)
 {
   UsedElements = NULL;
@@ -36,7 +36,7 @@ TFESpace1D::TFESpace1D(TCollection *coll, char *name, char *description) :
 // =====================================================================
 
 /** constructor for building a space with elements of order k */
-TFESpace1D::TFESpace1D(TCollection *coll, char *name, char *description, 
+TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string description,
                        int ord) : TFESpace(coll, name, description)
 {
   UsedElements = NULL;
@@ -90,7 +90,7 @@ TFESpace1D::TFESpace1D(TCollection *coll, char *name, char *description,
 }
 
 /** constructor for building a space with the given elements */
-TFESpace1D::TFESpace1D(TCollection *coll, char *name, char *description,
+TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string description,
                FE1D *fes) : TFESpace(coll, name, description)
 {
   UsedElements = NULL;
@@ -409,7 +409,6 @@ void TFESpace1D::ConstructSpace()
 
 TFESpace1D::~TFESpace1D()
 {
-  delete [] BoundaryNodesBound;
 
   if (UsedElements)
     delete [] UsedElements;

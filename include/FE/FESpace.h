@@ -24,6 +24,7 @@
 #define __FESPACE__
 
 #include <Collection.h>
+#include <string.h>
 
 /** general super class for all finite element spaces, special spaces are
     implemented in subclasses */
@@ -34,10 +35,10 @@ class TFESpace
 // administration
 // =======================================================================
     /** name of the space */
-    char *Name;
+    std::string Name;
 
     /** some more words describing the space */
-    char *Description;
+    std::string Description;
 
 // =======================================================================
 // information of cell collection
@@ -98,23 +99,27 @@ class TFESpace
     /** 0 space for Galerkin disc, 1 - space for DG disc */
     int DGSpace;
 
-  private:
-    /** copying given parameters into inner storage places */
-    int InitData(TCollection *coll, char *name, char *description);
-
   public:
-    /** constructor */
-    TFESpace(TCollection *coll, char *name, char *description);
+    /**
+     * Constructor, setting name, description, cellgrid, and a lot of
+     * dummy variables. Note that FESpace is more like an interface class,
+     * only its daughter classes (with fixed dimension) are usable.
+     *
+     * @param[in] coll The cell grid (i.e. the finite element mesh).
+     * @param[in] name The name of the space, used in printout etc.
+     * @param[in] description A description of the space, used in printout etc.
+     */
+    TFESpace(TCollection *coll, std::string name, std::string description);
 
     /** destrcutor */
     virtual ~TFESpace();
 
     /** return name */
-    char *GetName() const
+    std::string GetName() const
     { return Name; }
 
     /** return description */
-    char *GetDescription() const
+    std::string GetDescription() const
     { return Description; }
 
     /** return number of cells in the triangulation used for building 
@@ -193,7 +198,7 @@ class TFESpace
     { return ActiveBound; }
 
     /** write info on fespace into file */
-    int Write(const char *filename);
+    int Write(const std::string filename);
 
     void SetAsDGSpace()
     { DGSpace = 1; }

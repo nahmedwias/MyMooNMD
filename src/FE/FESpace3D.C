@@ -31,7 +31,6 @@
 
 #include <MooNMD_Io.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <Edge.h>
 
@@ -41,7 +40,7 @@
 #endif
 
 /** Constructor */
-TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description) :
+TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description) :
      TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
@@ -62,7 +61,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description) :
 // =====================================================================
 
 /** constructor for building a space with elements of order k */
-TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description, 
+TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description,
                        BoundCondFunct3D *BoundaryCondition, int ord) :
      TFESpace(coll, name, description)
 {
@@ -230,7 +229,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
 }
 
 /** constructor for building a space with the given elements */
-TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
+TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description,
                BoundCondFunct3D *BoundaryCondition,
                FE3D *fes) : TFESpace(coll, name, description)
 {
@@ -250,7 +249,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
 }
 
 /** constructor for building a space with elements of order k */
-TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description, 
+TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description,
                        BoundCondFunct3D *BoundaryCondition, SpaceType type,
                        int ord) :
      TFESpace(coll, name, description)
@@ -2086,8 +2085,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
 TFESpace3D::~TFESpace3D()
 {
-  delete[] BoundaryNodesBound;
-
   if (UsedElements)
     delete[] UsedElements;
 

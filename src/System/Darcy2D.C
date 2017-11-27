@@ -28,16 +28,16 @@ ParameterDatabase get_default_Darcy2D_parameters()
 /** ************************************************************************ */
 Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
                                           TCollection& coll)
- : velocity_space(&coll, (char*)"u", (char*)"Darcy velocity", example.get_bc(0),
+ : velocity_space(&coll, "u", "Darcy velocity", example.get_bc(0),
                   TDatabase::ParamDB->VELOCITY_SPACE, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(1),
+   pressure_space(&coll, "p", "Darcy pressure", example.get_bc(1),
                   TDatabase::ParamDB->PRESSURE_SPACE, nullptr),
    matrix({&this->velocity_space, &this->pressure_space}),
    rhs(this->matrix, true),
    solution(this->matrix, false),
-   u(&this->velocity_space, (char*)"u", (char*)"u", this->solution.block(0),
+   u(&this->velocity_space, "u", "u", this->solution.block(0),
      this->solution.length(0)),
-   p(&this->pressure_space, (char*)"p", (char*)"p", this->solution.block(1),
+   p(&this->pressure_space, "p", "p", this->solution.block(1),
      this->solution.length(1))
 {
   velocity_space.SetAsDGSpace();
