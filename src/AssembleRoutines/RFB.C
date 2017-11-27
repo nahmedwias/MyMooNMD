@@ -23,7 +23,7 @@
 #ifdef __3D__
 #include <FEDatabase3D.h>
 #include <FEFunction3D.h>
-#include <TNSE3D_Routines.h>
+#include <CommonRoutineTNSE3D.h>
 #endif
 
 #ifdef __2D__

@@ -26,10 +26,10 @@ class TFEFunction3D
 {
   protected:
     /** name of the function */
-    char *Name;
+    std::string Name;
 
     /** some more words describing the function */
-    char *Description;
+    std::string Description;
 
     /** space to which this function belongs to */
     const TFESpace3D *FESpace3D;
@@ -42,18 +42,19 @@ class TFEFunction3D
 
   public:
     /** constructor with vector initialization */
-    TFEFunction3D(const TFESpace3D *fespace3D, char *name, char *description,
+    TFEFunction3D(const TFESpace3D *fespace3D,
+                  std::string name, std::string description,
                   double *values, int length);
 
     /** destructor */
     ~TFEFunction3D();
 
     /** return name */
-    char *GetName()
+    std::string GetName()
     { return Name; }
 
     /** return description */
-    char *GetDescription()
+    std::string GetDescription()
     { return Description; }
 
     /** return fe space */

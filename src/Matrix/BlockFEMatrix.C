@@ -10,6 +10,12 @@
 #include <limits>
 #include <algorithm>
 
+#ifdef __2D__
+bool determine_need_for_pressure_row_correction(std::vector<const TFESpace2D*> spaces);
+#else //__3D__
+bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> spaces);
+#endif
+
 /* ************************************************************************* */
 // IMPLEMENTATION OF PUBLIC METHODS
 /* ************************************************************************* */
@@ -17,14 +23,13 @@
 #ifdef __2D__
 BlockFEMatrix::BlockFEMatrix(
     std::vector< const TFESpace2D*  > spaces) :
-#elif __3D__
+#else
     BlockFEMatrix::BlockFEMatrix(
         std::vector< const TFESpace3D*  > spaces) :
 #endif
     BlockMatrix(), //base class object is default (empty) constructed
     test_spaces_rowwise_(spaces),
-    ansatz_spaces_columnwise_(spaces),
-    pressure_correction(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE != 0)
+    ansatz_spaces_columnwise_(spaces)
 {
   Output::print<5>("BlockFEMatrix constructor");
   // class invariant: testspaces are not allowed to hold hanging nodes,
@@ -51,7 +56,7 @@ BlockFEMatrix::BlockFEMatrix(
     //hold the testspace each cell in this row will have
 #ifdef __2D__
     const TFESpace2D& testspace_of_row = *spaces[i];
-#elif __3D__
+#else
     const TFESpace3D& testspace_of_row = *spaces[i];
 #endif
     //hold the number of rows each cell in this row will have
@@ -62,7 +67,7 @@ BlockFEMatrix::BlockFEMatrix(
       //hold the ansatzspace each cell in this column will have
 #ifdef __2D__
       const TFESpace2D& ansatzspace_of_column = *spaces[j];
-#elif __3D__
+#else
       const TFESpace3D& ansatzspace_of_column = *spaces[j];
 #endif
       //hold the number of columns each cell in this column will have
@@ -90,6 +95,8 @@ BlockFEMatrix::BlockFEMatrix(
     }
   }
 
+  // TODO figure out whether pressure correction is needed
+  use_pressure_projection_ = determine_need_for_pressure_row_correction(ansatz_spaces_columnwise_);
 
 }
 
@@ -601,7 +608,7 @@ void BlockFEMatrix::apply_scaled_add_actives(const BlockVector & x, BlockVector 
 {
   //Correction due to pressure projection! //TODO THIS! IS! SUCH! A! MESS!
   double valuable_entry;
-  //if(pressure_correction) FIXME When to do this - when not?
+  //if(use_pressure_projection_) FIXME When to do this - when not?
   if(false)
   {
     int first_pressure_row = -1;
@@ -645,7 +652,7 @@ void BlockFEMatrix::apply_scaled_add_actives(const BlockVector & x, BlockVector 
     }
 
     //Correction due to pressure projection! //TODO THIS! IS! SUCH! A! MESS!
-    //if(pressure_correction) FIXME When to do this - when not?
+    //if(use_pressure_projection_) FIXME When to do this - when not?
     if(false)
     {
       size_t first_pressure_row;
@@ -997,17 +1004,15 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
   }
 
   //B: CORRECTIONS DUE TO PRESSURE PROJECTION
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-  {// TODO: remove database dependency
-    // TODO: this entire business is still a mess!!!
-    // check that its really a Navier-Stokes matrices
+  if(use_pressure_projection_)
+  {
 #ifdef __2D__
     size_t dim = 2;
 #endif
 #ifdef __3D__
     size_t dim = 3;
 #endif
-    if( pressure_correction && n_cell_rows_ == dim + 1 
+    if( use_pressure_projection_ && n_cell_rows_ == dim + 1
         && n_cell_columns_ == dim + 1 && r_first <= dim && r_last >= dim)
     {
 #ifdef _MPI
@@ -1347,21 +1352,21 @@ void BlockFEMatrix::scale_blocks_actives(
 }
 
 /* ************************************************************************* */
-void BlockFEMatrix::enable_pressure_correction() const
+void BlockFEMatrix::enable_pressure_projection() const
 {
-  this->pressure_correction = true;
+  this->use_pressure_projection_ = true;
 }
 
 /* ************************************************************************* */
-void BlockFEMatrix::disable_pressure_correction() const
+void BlockFEMatrix::disable_pressure_projection() const
 {
-  this->pressure_correction = false;
+  this->use_pressure_projection_ = false;
 }
 
 /* ************************************************************************* */
-bool BlockFEMatrix::pressure_correction_enabled() const
+bool BlockFEMatrix::pressure_projection_enabled() const
 {
-  return this->pressure_correction;
+  return this->use_pressure_projection_;
 }
 
 /* ************************************************************************* */
@@ -1397,7 +1402,7 @@ BlockFEMatrix::BlockFEMatrix(const BlockFEMatrix& other)
     }
   }
 
-  this->pressure_correction = other.pressure_correction;
+  this->use_pressure_projection_ = other.use_pressure_projection_;
 }
 
 BlockFEMatrix::BlockFEMatrix(BlockFEMatrix&& other)
@@ -1426,7 +1431,7 @@ BlockFEMatrix::BlockFEMatrix(BlockFEMatrix&& other)
       }
     }
   }
-  this->pressure_correction = other.pressure_correction;
+  this->use_pressure_projection_ = other.use_pressure_projection_;
 }
 
 /* ************************************************************************* */
@@ -1440,7 +1445,7 @@ void swap(BlockFEMatrix& first, BlockFEMatrix& second)
   std::swap(first.color_count_, second.color_count_);
   std::swap(first.ansatz_spaces_columnwise_, second.ansatz_spaces_columnwise_);
   std::swap(first.test_spaces_rowwise_, second.test_spaces_rowwise_);
-  std::swap(first.pressure_correction, second.pressure_correction);
+  std::swap(first.use_pressure_projection_, second.use_pressure_projection_);
 }
 
 /* ************************************************************************* */
@@ -1587,3 +1592,73 @@ void BlockFEMatrix::scale_blocks_actives( double scaling_factor,
   }
 }
 /* ************************************************************************* */
+
+// Implementation of a helper method, which is used to figure out,
+// whether this is an enclosed flow problem, and hence pressure correction is
+// needed.
+#ifdef __2D__
+bool determine_need_for_pressure_row_correction(std::vector<const TFESpace2D*> spaces)
+#else //__3D__
+bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> spaces)
+#endif
+{
+  int my_rank = 0;
+#ifdef _MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+
+  // if both theses conditions are fulfilled, (enclosed flow problem)
+  // the matrix requires pressure row correction
+  bool is_saddle_point_problem = false;
+  bool is_enclosed_flow = false;
+
+  // CHECK IF SADDLE POINT PROBLEM
+  //determine which space is the last in the sequence of equals
+  #ifdef __2D__
+  auto p = std::adjacent_find(spaces.begin(), spaces.end(), std::not_equal_to<const TFESpace2D*>());
+  auto first_space = spaces.front();
+  #else //__3D__
+  auto p = std::adjacent_find(spaces.begin(), spaces.end(), std::not_equal_to<const TFESpace3D*>());
+  auto first_space = spaces.front();
+  #endif
+
+  auto penultimate_space = spaces.end() - 2;
+  if(p == penultimate_space)
+  {//the last space in the sequence of equals is the penultimate space
+    is_saddle_point_problem = true;
+    if(my_rank == 0)
+      Output::info("Pressure Projection","BlockFEMatrix identified as saddle point matrix "
+                   "by the pattern of its FE spaces.");
+  }
+
+  // CHECK IF ENCLOSED FLOW
+  int n_velo_neumann = first_space->get_n_neumann_dof();
+  int n_velo_robin = first_space->get_n_robin_dof();
+  /// ... add further types of bdry conditions to check?
+
+  if(n_velo_neumann == 0 && n_velo_robin == 0)
+    is_enclosed_flow = true;
+
+#ifdef _MPI
+  bool sbuf = is_enclosed_flow;
+  bool rbuf = false;
+  MPI_Allreduce(&sbuf, &rbuf, 1, MPI::BOOL, MPI_LOR, MPI_COMM_WORLD);
+  //rbuf will contain "true", if any of the processes held "true" before
+  is_enclosed_flow = rbuf;
+#endif
+
+  if(my_rank == 0)
+  {
+    if(is_enclosed_flow)
+      Output::info("Pressure Projection", "BlockFEMatrix identified as enclosed flow, "
+          "due to the boundary conditions of its FE spaces.");
+    else
+      Output::info("Pressure Projection","BlockFEMatrix identified as non-enclosed flow, "
+          "due to the boundary conditions of its FE spaces.");
+  }
+
+  bool needs_prc = is_saddle_point_problem && is_enclosed_flow;
+
+  return needs_prc;
+
+}

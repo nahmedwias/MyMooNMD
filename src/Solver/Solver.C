@@ -231,7 +231,7 @@ Solver<L, V>::Solver(const ParameterDatabase& param_db)
    direct_solver(nullptr), iterative_method(nullptr), preconditioner(nullptr),
    multigrid(nullptr), petsc_solver(nullptr)
 {
-  this->db.merge(param_db, false);
+  this->db.merge(param_db, false, true);
   if(this->is_using_multigrid())
     multigrid = std::make_shared<Multigrid>(param_db);
 }

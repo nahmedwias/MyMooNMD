@@ -30,7 +30,7 @@ ParameterDatabase get_default_CD2D_parameters()
 /** ************************************************************************ */
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
                                        TCollection& coll, int ansatz_order)
-: fe_space(&coll, (char*)"space", (char*)"cd2d fe_space", example.get_bc(0),
+: fe_space(&coll, "space", "cd2d fe_space", example.get_bc(0),
            ansatz_order, nullptr),
            // TODO CB: Building the matrix here and rebuilding later is due to the
            // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
@@ -38,7 +38,7 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
            matrix({&fe_space}),
            rhs(this->matrix, true),
            solution(this->matrix, false),
-           fe_function(&this->fe_space, (char*)"c", (char*)"c",
+           fe_function(&this->fe_space, "c", "c",
                        this->solution.get_entries(), this->solution.length())
 {
   

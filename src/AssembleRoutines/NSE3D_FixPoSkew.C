@@ -14,7 +14,7 @@
 #include <Convolution.h>
 
 #include "../../include/AssembleRoutines/NSE3D_FixPo.h"
-#include "../../include/AssembleRoutines/TNSE3D_Routines.h"
+#include <CommonRoutineTNSE3D.h>
 
 
 // ======================================================================

@@ -28,7 +28,7 @@ class TFEVectFunct2D : public TFEFunction2D
 
   public:
     /** constructor with vector initialization */
-    TFEVectFunct2D(const TFESpace2D *fespace2D, char *name, char *description,
+    TFEVectFunct2D(const TFESpace2D *fespace2D, std::string name, std::string description,
                   double *values, int length, int n_components);
 
     /** return number of components */
@@ -42,7 +42,7 @@ class TFEVectFunct2D : public TFEFunction2D
       std::ostringstream os;
       os.seekp(std::ios::beg);
       os << Name << i <<ends;
-      return new TFEFunction2D(FESpace2D, (char*)os.str().c_str(), Description,
+      return new TFEFunction2D(FESpace2D, os.str(), Description,
                                Values+i*Length, Length);
     }
 
@@ -71,7 +71,7 @@ class TFEVectFunct2D : public TFEFunction2D
 		   std::string basename=std::string("parmoon_solution"));
 
   /** Read the solution from a given data file - written by Sashi **/
-   void ReadSol(char *BaseName);
+   void ReadSol(std::string BaseName);
    
    /** determine the value of a vect function and its first derivatives at
     the given point */
