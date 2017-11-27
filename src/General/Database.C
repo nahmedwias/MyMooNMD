@@ -391,17 +391,14 @@ void TDatabase::SetDefaultParameters()
   ParamDB->DARCYTYPE = 1;
     
   ParamDB->SIGMA_PERM = 1;
+
   ParamDB->VISCOSITY = 1;
   ParamDB->EFFECTIVE_VISCOSITY = 1;
-  ParamDB->PERMEABILITY = 1;
-    
-  ParamDB->PkPk_stab = false;
+  ParamDB->PERMEABILITY = 1;  
   ParamDB->equal_order_stab_weight_PkPk = 0;
-  
-  ParamDB->GradDiv_stab = false;
   ParamDB->grad_div_stab_weight = 0;
-
-  ParamDB->sign_MatrixBi = 1;
+  ParamDB->SIGN_MATRIX_BI = 1;
+  ParamDB->l_T = 1;
 
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
@@ -1084,18 +1081,15 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("FACE_SIGMA: ", ParamDB->FACE_SIGMA);
   printToFile("WEAK_BC_SIGMA: ", ParamDB->WEAK_BC_SIGMA);
   printToFile("WEAK_BC: ", ParamDB->WEAK_BC);
-    
-  printToFile("EFFECTIVE-VISCOSITY: " ,ParamDB->EFFECTIVE_VISCOSITY);
-  printToFile("Viscosity: ", ParamDB->VISCOSITY);
+
+  printToFile("EFFECTIVE_VISCOSITY: " ,ParamDB->EFFECTIVE_VISCOSITY);
+  printToFile("VISCOSITY: ", ParamDB->VISCOSITY);
   printToFile("PERMEABILITY: ", ParamDB->PERMEABILITY);
-    
-  printToFile("GradDiv_stab: ", ParamDB->GradDiv_stab); 
-  printToFile("grad_div_stab_weight: ", ParamDB->grad_div_stab_weight); 
-  printToFile("PkPk_stab: ", ParamDB->PkPk_stab); 
-  printToFile("equal_order_stab_weight_PkPk: ", ParamDB->equal_order_stab_weight_PkPk); 
-  
-  printToFile("sign_MatrixBi: ", ParamDB->sign_MatrixBi);
-    
+  printToFile("EQUAL_ORDER_STAB_WEIGHT_PkPk: ", ParamDB->equal_order_stab_weight_PkPk); 
+  printToFile("GRAD_DIV_STAB_WEIGHT: ", ParamDB->grad_div_stab_weight); 
+  printToFile("SIGN_MATRIX_BI: ", ParamDB->SIGN_MATRIX_BI);
+  printToFile("l_T: ", ParamDB->l_T);
+
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);
   printToFile("ROSSBY_NR: ", ParamDB->ROSSBY_NR);
