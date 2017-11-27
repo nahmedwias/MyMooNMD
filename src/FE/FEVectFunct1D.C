@@ -14,8 +14,8 @@
 #include <FEVectFunct1D.h>
 
 /** constructor with vector initialization */
-TFEVectFunct1D::TFEVectFunct1D(TFESpace1D *fespace1D, char *name, 
-                             char *description, double *values, 
+TFEVectFunct1D::TFEVectFunct1D(TFESpace1D *fespace1D, std::string name,
+                               std::string description, double *values,
                              int length, int n_components)
   : TFEFunction1D(fespace1D, name, description, values, length)
 {

@@ -24,7 +24,6 @@
 #include <TetraIsoparametric.h>
 #include <Database.h>
 
-#include <string.h>
 #include <fstream>
 #include <stdlib.h>
 #include <sstream>
@@ -36,8 +35,8 @@
 #include <sys/types.h>
 
 /** constructor with vector initialization */
-TFEVectFunct3D::TFEVectFunct3D(TFESpace3D *fespace3D, char *name, 
-                             char *description, double *values, 
+TFEVectFunct3D::TFEVectFunct3D(TFESpace3D *fespace3D, std::string name,
+                               std::string description, double *values,
                              int length, int n_components)
   : TFEFunction3D(fespace3D, name, description, values, length)
 {
@@ -439,22 +438,20 @@ void TFEVectFunct3D::WriteSol(double t,
   i=0;
   cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
-  const char* BaseName = basename.c_str();
-  const char* output_directory = directory.c_str();
 
   std::ostringstream os;
   os << " ";
 
   #ifdef _MPI
-  OutPut("Writing solution into "<< output_directory << "/" << BaseName << rank
+  OutPut("Writing solution into "<< directory << "/" << basename << rank
          << ".Sol MooNMD file"<< endl);
   os.seekp(std::ios::beg);
-  os << output_directory << "/" << BaseName<<rank<<".Sol" << ends;
+  os << directory << "/" << basename<<rank<<".Sol" << ends;
   #else
-  OutPut("Writing solution into "<< output_directory << "/" << BaseName << t
+  OutPut("Writing solution into "<< directory << "/" << basename << t
          << ".Sol MooNMD file"<< endl);
   os.seekp(std::ios::beg);
-  os << output_directory << "/" << BaseName << t<<".Sol" << ends;
+  os << directory << "/" << basename << t<<".Sol" << ends;
   #endif  
   
   std::ofstream dat(os.str().c_str());
@@ -483,7 +480,7 @@ void TFEVectFunct3D::WriteSol(double t,
 
 
 /** Read the solution from a given data file - written by Sashi **/
-void TFEVectFunct3D::ReadSol(char *BaseName)
+void TFEVectFunct3D::ReadSol(std::string BaseName)
 {
  int i, j, rank, N_Joints, N_Cells, N_cells, N_joints, N_components, length;
  char line[100];

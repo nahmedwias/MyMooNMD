@@ -53,11 +53,6 @@ class TFESpace2D : public TFESpace
     /** boundary condition used to create this space */
    BoundCondFunct2D *BoundCondition;
 
-#ifdef __MORTAR__
-    /** 1D collection of mortar cells */
-    TCollection *MortarColl;
-#endif
-
    /** indices for mapping between Nodalfunctional/Nodal-interpolation point 
       in operator-splitting methods ---  Sashikumaar Ganesan */
    int *IntlPtIndexOfPts;
@@ -65,20 +60,20 @@ class TFESpace2D : public TFESpace
 
   public:
     /** constructor */
-    TFESpace2D(TCollection *coll, char *name, char *description);
+    TFESpace2D(TCollection *coll, std::string name, std::string description);
 
     /** constructor for building a space with elements of order k */
     // if no mortar is used, the last argument can be set to NULL
-    TFESpace2D(TCollection *coll, char *name, char *description, 
+    TFESpace2D(TCollection *coll, std::string name, std::string description,
                BoundCondFunct2D *BoundaryCondition, int k,
                TCollection *mortarcoll);
 
-    TFESpace2D(TCollection *coll, char *name, char *description, 
+    TFESpace2D(TCollection *coll, std::string name, std::string description,
                BoundCondFunct2D *BoundaryCondition, SpaceType type,
                int k, TCollection *mortarcoll);
 
     /** constructor for building a space with the given elements */
-    TFESpace2D(TCollection *coll, char *name, char *description,
+    TFESpace2D(TCollection *coll, std::string name, std::string description,
                BoundCondFunct2D *BoundaryCondition,
                FE2D *fes, TCollection *mortarcoll);
 
@@ -152,8 +147,5 @@ class TFESpace2D : public TFESpace
     friend  bool operator!= (const TFESpace2D &lhs, const TFESpace2D &rhs);
 };
 
-#ifdef __MORTAR__
-  double GetLambda(double , double , TVertex *, double , double );
-#endif // __MORTAR__
 
 #endif

@@ -13,7 +13,6 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <FEFunction1D.h>
-#include <string.h>
 #include <AllRefTrans.h>
 #include <MooNMD_Io.h>
 
@@ -21,14 +20,11 @@
 #include <NodalFunctional1D.h>
 #include <stdlib.h>
 /** constructor with vector initialization */
-TFEFunction1D::TFEFunction1D(TFESpace1D *fespace1D, char *name, 
-                             char *description, double *values, int length)
+TFEFunction1D::TFEFunction1D(TFESpace1D *fespace1D, std::string name,
+                             std::string description, double *values, int length)
+: Name(name), Description(description)
 {
   FESpace1D=fespace1D;
-
-  Name=strdup(name);
-
-  Description=strdup(description);
 
   Values=values;
 
@@ -414,7 +410,5 @@ void TFEFunction1D::GridToData()
 
 TFEFunction1D::~TFEFunction1D()
 {
-  if(Name) delete Name;
-  if(Description) delete Description;
 }
 

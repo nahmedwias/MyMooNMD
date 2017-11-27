@@ -24,9 +24,6 @@
 #include <BoundComp2D.h>
 #include <FEDatabase2D.h>
 
-#ifdef __MORTAR__
-  #include <MortarBaseJoint.h>
-#endif
 
 #include <Database.h>
 #include <InterfaceJoint.h>
@@ -39,10 +36,11 @@
 
 #include <MooNMD_Io.h>
 #include <stdlib.h>
-#include <string.h>
 
 /** Constructor */
-TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description) :
+TFESpace2D::TFESpace2D(TCollection *coll,
+                       std::string name,
+                       std::string description) :
      TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
@@ -50,7 +48,6 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description) :
   UsedElements = NULL;
   AllElements = NULL;
   ElementForShape = NULL;
-  DGSpace = 0;
 }
 
 // =====================================================================
@@ -59,7 +56,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description) :
 // =====================================================================
 
 /** constructor for building a space with elements of order k */
-TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description, 
+TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string description,
                        BoundCondFunct2D *BoundaryCondition, int ord,
                        TCollection *mortarcoll) :
      TFESpace(coll, name, description)
@@ -68,10 +65,6 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   AllElements = NULL;
-  DGSpace = 0;
-#ifdef __MORTAR__
-  MortarColl = mortarcoll;
-#endif
   
   this->BoundCondition = BoundaryCondition;
 
@@ -567,7 +560,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
 }
 
 /** constructor for building a space with elements of order k */
-TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description, 
+TFESpace2D::TFESpace2D(TCollection *coll,  std::string name, std::string description,
                        BoundCondFunct2D *BoundaryCondition, SpaceType type,
                        int ord, TCollection *mortarcoll) :
      TFESpace(coll, name, description)
@@ -576,11 +569,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   AllElements = NULL;
-  DGSpace = 0;
-#ifdef __MORTAR__
-  MortarColl = mortarcoll;
-#endif
-  
+
   this->BoundCondition = BoundaryCondition;
 
   ElementForShape = new FE2D[N_SHAPES];
@@ -1161,7 +1150,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
 }
 
 /** constructor for building a space with the given elements */
-TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
+TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string description,
                BoundCondFunct2D *BoundaryCondition,
                FE2D *fes, TCollection *mortarcoll) :
     TFESpace(coll, name, description)
@@ -1172,17 +1161,12 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   ElementForShape = NULL;
-  DGSpace = 0;
   //AllElements = fes;
   N_ = coll->GetN_Cells();
   AllElements = new FE2D[N_];
   
   for(i=0;i<N_;i++)
     AllElements[i] =  fes[i];  
-  
-#ifdef __MORTAR__
-  MortarColl = mortarcoll;
-#endif
   
   this->BoundCondition = BoundaryCondition;
 
@@ -1822,173 +1806,6 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
     } // endfor j
   } // endfor i
 
-#ifdef __MORTAR__
-#ifdef __CONNECT_CROSSPOINTS__
-  bool Connect_Crosspoints = false;
-  const int *TmpCE, *TmpEV, *TmpnEoE, *TmpVE, *TmpnVEqoV, *TmpIndex;
-  int N_, N2_, C_loc, J_loc, V_loc, V_inc, clip, v0, w0, v1, w1;
-  int N_JointDOFs, **JointDOFs;
-  TBaseCell *cell1D, *cell2, *cell3;
-  TJoint *CurrJoint;
-  TVertex *CurrVert;
-  FE2D CurrElementID;
-  TFE2D *CurrElement;
-  TFEDesc2D *CurrDesc;
-  JointType type;
-
-  for (i=0;i<N_UsedElements;i++)
-  {
-    CurrElementID = UsedElements[i];
-    if (CurrElementID != N_P1_2D_T_A && CurrElementID != N_Q1_2D_Q_A &&
-        CurrElementID != N_Q1_2D_Q_M && CurrElementID != C_P0_2D_T_A &&
-        CurrElementID < D_P1_2D_Q_A)
-    {
-      Connect_Crosspoints = true;
-      break;
-    }
-  }
-
-  if (Connect_Crosspoints)
-  {
-    // connect DOFs on crosspoints of mortar edges
-    for (i=0;i<N_Cells;i++)
-    {
-      cell = Collection->GetCell(i);
-      N_ = cell->GetN_Edges();
-      for (j=0;j<N_;j++)
-      {
-        CurrJoint = cell->GetJoint(j);
-        type = CurrJoint->GetType();
-        if (type == MortarJoint || type == MortarBaseJoint)
-        {
-          if (type == MortarJoint)
-            k = ((TMortarJoint *) CurrJoint)->GetMEdgeInColl();
-          else
-            k = ((TMortarBaseJoint *) CurrJoint)->GetMEdgeInColl();
-
-          // consider only cells on the non-mortar side
-          if (k < 0) continue;
-          cell1D = MortarColl->GetCell(k);
-
-          // bound cell of mortar edge
-          if (cell1D->GetJoint(0)->GetNeighbour((int) 1) &&
-              cell1D->GetJoint(1)->GetNeighbour((int) 1))
-            continue;
-
-          cell2 = cell;
-          J_loc = j;
-          while (cell3 = cell2->GetParent())
-          {
-            N2_ = cell3->GetN_Edges();
-            for (k=0;k<N2_;k++)
-              if (cell3->GetChild(k) == cell2) break;
-
-            cell3->GetRefDesc()->GetChildEdge(TmpCE, MaxLen1);
-            cell3->GetRefDesc()->GetNewEdgeOldEdge(TmpnEoE);
-
-            J_loc = TmpnEoE[TmpCE[MaxLen1*k + J_loc]];
-
-            cell2 = cell3;
-          }
-
-          // switch to mortar side
-          CurrJoint = cell2->GetJoint(J_loc);
-          cell3 = CurrJoint->GetNeighbour(cell2);
-
-          N2_ = cell3->GetN_Edges();
-          for (J_loc=0;J_loc<N2_;J_loc++)
-            if (cell3->GetJoint(J_loc) == CurrJoint) break;
-
-          // check whether cell3 belongs to the collection
-          clip = cell3->GetClipBoard();
-
-         if (clip >= 0 && clip < N_Cells)
-            clip = Collection->GetCell(clip) != cell3 ? 1 : 0;
-          else
-            clip = 1;
-
-          if (clip)
-          {
-            // select the right vertex
-            if (cell1D->GetJoint(1)->GetNeighbour((int) 1))
-              CurrVert = cell1D->GetVertex(0);
-            else
-              CurrVert = cell1D->GetVertex(1);
-
-            cell3->GetShapeDesc()->GetEdgeVertex(TmpEV);
-            V_inc = cell3->GetVertex(TmpEV[2*J_loc]) == CurrVert ? 0 : 1;
-
-            while (cell3->ExistChildren())
-            {
-              cell3->GetShapeDesc()->GetEdgeVertex(TmpEV);
-              cell3->GetRefDesc()->GetEdgeChild(TmpEC, TmpLen1, MaxLen2);
-              cell3->GetRefDesc()->GetNewVertEqOldVert(TmpnVEqoV, TmpIndex);
-              cell3->GetRefDesc()->GetVertexEdge(TmpVE, TmpLen1, MaxLen1);
-              cell3->GetRefDesc()->GetNewEdgeOldEdge(TmpnEoE);
-              cell3->GetRefDesc()->GetOldEdgeNewLocEdge(TmpoEnlE);
-
-              V_loc = TmpnVEqoV[TmpEV[2*J_loc + V_inc]];
-              N2_ = TmpLen1[V_loc];
-              for (k=0;k<N2_;k++)
-                if (TmpnEoE[TmpVE[MaxLen1*V_loc + k]] == J_loc) break;
-
-              C_loc = TmpEC[MaxLen2*TmpVE[MaxLen1*V_loc + k]];
-              N2_ = cell3->GetN_Edges();
-              J_loc = TmpoEnlE[C_loc*N2_ + J_loc];
-
-              cell3 = cell3->GetChild(C_loc);
-
-              clip = cell3->GetClipBoard();
-
-              if (clip >= 0 && clip < N_Cells)
-                if (Collection->GetCell(clip) == cell3) break;
-            }
-          }
-          else
-            clip = cell3->GetClipBoard();
-
-          // consistency check
-          if (Collection->GetCell(clip) != cell3)
-          {
-            cerr << "ERROR in TFESpace2D mortar part: wrong cell"<< endl;
-            exit (-1);
-          }
-
-          // get parameter of non-mortar cell
-          CurrElementID = GetFE2D(i, cell);
-          CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
-          CurrDesc = CurrElement->GetFEDesc2D();
-
-          JointDOFs = CurrDesc->GetJointDOF();
-          N_JointDOFs = CurrDesc->GetN_JointDOF();
-
-          w0 = BeginIndex[i] + JointDOFs[j][(!V_inc)*(N_JointDOFs-1)];
-          while ((v0 = GlobalNumbers[w0]) > -1) w0 = v0;
-
-          // get parameter of mortar cell
-          CurrElementID = GetFE2D(clip, cell3);
-          CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
-          CurrDesc = CurrElement->GetFEDesc2D();
-
-          JointDOFs = CurrDesc->GetJointDOF();
-          N_JointDOFs = CurrDesc->GetN_JointDOF();
-
-          w1 = BeginIndex[clip] + JointDOFs[J_loc][V_inc*(N_JointDOFs-1)];
-          while ((v1 = GlobalNumbers[w1]) > -1) w1 = v1;
-
-          // connect both DOFs
-          if (v0 != v1)
-            if (v0 > v1)
-              GlobalNumbers[w1] = w0;
-            else
-              GlobalNumbers[w0] = w1;
-        }
-      }
-    }
-  }
-#endif // __CONNECT_CROSSPOINTS__
-#endif // __MORTAR__
-
   // find global numbers
 
   // do something with hanging nodes LATER
@@ -2262,12 +2079,11 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 
 TFESpace2D::~TFESpace2D()
 {
-  delete [] BoundaryNodesBound;
-
   if (UsedElements)
     delete [] UsedElements;
 
-  delete [] HangingNodeArray;
+  if (HangingNodeArray)
+    delete [] HangingNodeArray;
 
   if(AllElements)
     delete [] AllElements;

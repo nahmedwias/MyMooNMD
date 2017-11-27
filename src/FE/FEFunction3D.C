@@ -17,7 +17,6 @@
 #include <BoundFace.h>
 #include <FEDatabase3D.h>
 #include <FEFunction3D.h>
-#include <string.h>
 #include <AllRefTrans3D.h>
 // #include <NodalFunctional3D.h>
 
@@ -36,14 +35,11 @@ void OnlyDirichlet(double x, double y, double z, BoundCond &cond)
 }
 
 /** constructor with vector initialization */
-TFEFunction3D::TFEFunction3D(const TFESpace3D *fespace3D, char *name, 
-                             char *description, double *values, int length)
+TFEFunction3D::TFEFunction3D(const TFESpace3D *fespace3D, std::string name,
+                             std::string description, double *values, int length)
+: Name(name), Description(description)
 {
   FESpace3D=fespace3D;
-
-  Name=strdup(name);
-
-  Description=strdup(description);
 
   Values=values;
 
@@ -52,8 +48,7 @@ TFEFunction3D::TFEFunction3D(const TFESpace3D *fespace3D, char *name,
 
 TFEFunction3D::~TFEFunction3D()
 {
-  free(Name);
-  free(Description);
+
 }
 
 

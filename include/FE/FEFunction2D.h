@@ -16,6 +16,7 @@
 #define __FEFUNCTION2D__
 
 #include <stdlib.h>
+#include <string.h>
 #include <vector>
 #include <functional>
 
@@ -30,10 +31,10 @@ class TFEFunction2D
 {
   protected:
     /** name of the function */
-    char *Name;
+    std::string Name;
 
     /** some more words describing the function */
-    char *Description;
+    std::string Description;
 
     /** space to which this function belongs to */
     const TFESpace2D *FESpace2D;
@@ -46,15 +47,15 @@ class TFEFunction2D
 
   public:
     /** constructor with vector initialization */
-    TFEFunction2D(const TFESpace2D *fespace2D, char *name, char *description,
+    TFEFunction2D(const TFESpace2D *fespace2D, std::string name, std::string description,
                   double *values, int length);
 
     /** return name */
-    char *GetName() const
+    std::string GetName() const
     { return Name; }
 
     /** return description */
-    char *GetDescription() const
+    std::string GetDescription() const
     { return Description; }
 
     /** return fe space */
@@ -164,7 +165,7 @@ class TFEFunction2D
 		   std::string basename=std::string("parmoon_solution"));
 
    /** Read the solution from a given data file - written by Sashi **/
-   void ReadSol(char *BaseName);
+   void ReadSol(std::string BaseName);
    
 
    /** sol will be correct to conserve the Old_Mass (remessing, temp, surfact, psd, etc) - added by sashi */   

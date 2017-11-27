@@ -29,7 +29,6 @@
 #include <BdLine.h>
 #include <LinAlg.h>
 
-#include <string.h>
 #include <fstream>
 #include <sstream>
 #include <MooNMD_Io.h>
@@ -48,17 +47,14 @@ void OnlyDirichlet(int i, double t, BoundCond &cond)
 }
 
 /** constructor with vector initialization */
-TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, char *name,
-char *description, double *values, int length)
+TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, std::string name,
+std::string description, double *values, int length)
+: Name(name), Description(description)
 {
   Output::print<3>("Constructor of TFEFunction2D");
   
   FESpace2D=fespace2D;
  
-  Name=strdup(name); // this calls malloc, so call 'free' instead of 'delete'
-
-  Description=strdup(description); // this calls malloc
-
   Values=values;
 
   Length=length;
@@ -67,8 +63,7 @@ char *description, double *values, int length)
 
 TFEFunction2D::~TFEFunction2D()
 {
-  free(Name);
-  free(Description);
+
 }
 
 
@@ -1405,7 +1400,7 @@ void TFEFunction2D::WriteSol(std::string directory, std::string basename)
 
 
 /** Read the solution from a given data file - written by Sashi **/
-void TFEFunction2D::ReadSol(char *BaseName)
+void TFEFunction2D::ReadSol(std::string BaseName)
 {
  int i, j, N_Joints, N_Cells, N_cells, N_joints, length;
  char line[100];

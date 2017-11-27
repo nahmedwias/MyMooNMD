@@ -72,18 +72,18 @@ class TFESpace3D : public TFESpace
 
   public:
     /** constructor */
-    TFESpace3D(TCollection *coll, char *name, char *description);
+    TFESpace3D(TCollection *coll, std::string name, std::string description);
 
     /** constructor for building a space with elements of order k */
-    TFESpace3D(TCollection *coll, char *name, char *description, 
+    TFESpace3D(TCollection *coll, std::string name, std::string description,
                BoundCondFunct3D *BoundaryCondition, int k);
 
     /** constructor for building a space with the given elements */
-    TFESpace3D(TCollection *coll, char *name, char *description,
+    TFESpace3D(TCollection *coll, std::string name, std::string description,
                BoundCondFunct3D *BoundaryCondition,
                FE3D *fes);
 
-    TFESpace3D(TCollection *coll, char *name, char *description, 
+    TFESpace3D(TCollection *coll, std::string name, std::string description,
                BoundCondFunct3D *BoundaryCondition, SpaceType type,
                int ord);
 
