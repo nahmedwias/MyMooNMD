@@ -62,15 +62,7 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 ) :  velocitySpace_(&coll, "u", "nse3d velocity", example.get_bc(0), //bd cond at 0 is x velo bc
                     order.first),
      pressureSpace_(&coll, "p", "nse3d pressure", example.get_bc(3), //bd condition at 3 is pressure bc
-                    order.second),
-     matrix_({&velocitySpace_, &velocitySpace_, &velocitySpace_, &pressureSpace_}),
-     rhs_(matrix_, true),
-     solution_(matrix_, false),
-     u_(&velocitySpace_, "u", "u", solution_.block(0),
-        solution_.length(0), 3),
-     p_(&pressureSpace_, "p", "p", solution_.block(3),
-        solution_.length(3))
-
+                    order.second)
 {
   switch(TDatabase::ParamDB->NSTYPE)
   {
@@ -92,6 +84,14 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
     default:
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
+
+  rhs_ = BlockVector(matrix_, true);
+  solution_ = BlockVector(matrix_, false);
+
+  u_ = TFEVectFunct3D(&velocitySpace_, "u", "u", solution_.block(0),
+     solution_.length(0), 3);
+  p_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_.block(3),
+     solution_.length(3));
 
 #ifdef _MPI
 

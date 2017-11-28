@@ -31,20 +31,22 @@ Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
  : velocity_space(&coll, "u", "Darcy velocity", example.get_bc(0),
                   TDatabase::ParamDB->VELOCITY_SPACE, nullptr),
    pressure_space(&coll, "p", "Darcy pressure", example.get_bc(1),
-                  TDatabase::ParamDB->PRESSURE_SPACE, nullptr),
-   matrix({&this->velocity_space, &this->pressure_space}),
-   rhs(this->matrix, true),
-   solution(this->matrix, false),
-   u(&this->velocity_space, "u", "u", this->solution.block(0),
-     this->solution.length(0)),
-   p(&this->pressure_space, "p", "p", this->solution.block(1),
-     this->solution.length(1))
+                  TDatabase::ParamDB->PRESSURE_SPACE, nullptr)
+
 {
   velocity_space.SetAsDGSpace();
   pressure_space.SetAsDGSpace();
   
   matrix = BlockFEMatrix::Darcy2D(this->velocity_space,
-                                         this->pressure_space);
+                                  this->pressure_space);
+
+  rhs = BlockVector(this->matrix, true);
+  solution = BlockVector(this->matrix, false);
+
+  u = TFEFunction2D(&this->velocity_space, "u", "u", this->solution.block(0),
+      this->solution.length(0));
+  p = TFEFunction2D(&this->pressure_space, "p", "p", this->solution.block(1),
+      this->solution.length(1));
 }
 
 /** ************************************************************************ */

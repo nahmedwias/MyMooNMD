@@ -60,19 +60,8 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
  : velocitySpace_(&coll, "u", "velocity space",  example.get_bc(0),
                   order.first),
    pressureSpace_(&coll, "p", "pressure space", example.get_bc(3),
-                  order.second),
-   matrix_({&velocitySpace_, &velocitySpace_, &velocitySpace_, &pressureSpace_}),
-   massMatrix_({&velocitySpace_, &velocitySpace_, &velocitySpace_}),
-   rhs_(matrix_, true),
-   solution_(matrix_, false),
-   u_(&velocitySpace_, "u", "u", solution_.block(0),
-     solution_.length(0), 3),
-   p_(&pressureSpace_, "p", "p", solution_.block(3),
-     solution_.length(3))
+                  order.second)
 {
-  // Mass Matrix
-  // Output::increaseVerbosity(5);
-
   massMatrix_ = BlockFEMatrix::Mass_NSE3D(velocitySpace_);
       
   switch(type)
@@ -95,6 +84,15 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
     default:
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
+
+  rhs_ = BlockVector(matrix_, true);
+  solution_ = BlockVector(matrix_, false);
+
+  u_ = TFEVectFunct3D(&velocitySpace_, "u", "u", solution_.block(0),
+                     solution_.length(0), 3);
+  p_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_.block(3),
+                    solution_.length(3));
+
 #ifdef _MPI
   velocitySpace_.initialize_parallel(maxSubDomainPerDof);
   pressureSpace_.initialize_parallel(maxSubDomainPerDof);

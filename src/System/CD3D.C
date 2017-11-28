@@ -42,20 +42,20 @@ ParameterDatabase get_default_CD3D_parameters()
   CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example,
                                      TCollection& coll, int maxSubDomainPerDof)
    : feSpace_(&coll, "space", "cd3d fe_space", example.get_bc(0),
-              TDatabase::ParamDB->ANSATZ_ORDER),
-     matrix_({&feSpace_}), //system block matrix
-     rhs_(matrix_, true), // suitable right hand side vector filled with zeroes
-     solution_(matrix_, false), // suitable solution vector filled with zeroes
-     feFunction_(&feSpace_, "c", "c", solution_.get_entries(),
-                 solution_.length())
-
+              TDatabase::ParamDB->ANSATZ_ORDER)
   {
     //inform the fe space about the maximum number of subdomains per dof
     feSpace_.initialize_parallel(maxSubDomainPerDof);
     feSpace_.get_communicator().print_info();
 
-    // reset the matrix with named constructor
+    // set the matrix with named constructor
     matrix_ = BlockFEMatrix::CD3D(feSpace_);
+
+    rhs_ = BlockVector(matrix_, true);
+    solution_ = BlockVector(matrix_, false);
+
+    feFunction_ = TFEFunction3D(&feSpace_, "c", "c", solution_.get_entries(),
+                solution_.length());
 
   }
 #else
@@ -63,14 +63,16 @@ ParameterDatabase get_default_CD3D_parameters()
   CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example,
                                      TCollection& coll)
    : feSpace_(&coll, "space", "cd3d fe_space", example.get_bc(0),
-              TDatabase::ParamDB->ANSATZ_ORDER),
-     matrix_({&feSpace_}), //system block matrix
-     rhs_(matrix_, true), // suitable right hand side vector filled with zeroes
-     solution_(matrix_, false), // suitable solution vector filled with zeroes
-     feFunction_(&feSpace_, "c", "c", solution_.get_entries(), solution_.length())
+              TDatabase::ParamDB->ANSATZ_ORDER)
   {
-    // reset the matrix with named constructor
+    // set the matrix with named constructor
     matrix_ = BlockFEMatrix::CD3D(feSpace_);
+
+    rhs_ = BlockVector(matrix_, true);
+    solution_ = BlockVector(matrix_, false);
+
+    feFunction_ = TFEFunction3D(&feSpace_, "c", "c", solution_.get_entries(),
+                solution_.length());
   }
 #endif
 

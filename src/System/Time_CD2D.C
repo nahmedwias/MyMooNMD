@@ -36,20 +36,16 @@ ParameterDatabase get_default_TCD2D_parameters()
 Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
                                             TCollection& coll)
 : fe_space(&coll, "space", "time_cd2d space", example.get_bc(0),
-           TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
-           // TODO CB: Building the matrix here and rebuilding later is due to the
-           // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
-           // which do neither provide default constructors nor working copy assignments.)
-           stiff_matrix({&fe_space}),
-           mass_matrix({&fe_space}),
-           rhs(this->stiff_matrix, true),
-           solution(this->stiff_matrix, false),
-           old_Au(this->stiff_matrix, true),
-           fe_function(&this->fe_space, "c", "c",
-                       this->solution.get_entries(), this->solution.length())
+           TDatabase::ParamDB->ANSATZ_ORDER, nullptr)
 {
   stiff_matrix = BlockFEMatrix::CD2D(fe_space);
   mass_matrix = BlockFEMatrix::CD2D(fe_space);
+
+  rhs = BlockVector(stiff_matrix, true);
+  solution = BlockVector(stiff_matrix, false);
+  old_Au = BlockVector(stiff_matrix, true);
+  fe_function = TFEFunction2D(&fe_space, "c", "c",
+                              solution.get_entries(), solution.length());
 }
 
 

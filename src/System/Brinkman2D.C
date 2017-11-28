@@ -92,22 +92,11 @@ Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
                                               Brinkman2D::Matrix type)
 : velocity_space(&coll, "u", "Brinkman velocity", example.get_bc(0),
                        velocity_pressure_orders.first, nullptr),
-pressure_space(&coll, "p", "Brinkman pressure", example.get_bc(2),
-                       velocity_pressure_orders.second, nullptr),
-// TODO CB: Building the matrix here and rebuilding later is due to the
-// highly non-functional class TFEVectFunction2D (and TFEFunction2D,
-// which do neither provide default constructors nor working copy assignments.)
-        matrix({&velocity_space, &velocity_space, &pressure_space}),
-        rhs(matrix, true),
-        solution(matrix, false),
-u(&velocity_space, "u", "u", solution.block(0),
-          solution.length(0), 2),
-p(&pressure_space, "p", "p", solution.block(2),
-        solution.length(2))
+  pressure_space(&coll, "p", "Brinkman pressure", example.get_bc(2),
+                       velocity_pressure_orders.second, nullptr)
 {
-    // rebuild the matrix due to NSE type. We must be sure, that the rhs and solution
-    // vector which we built above do fit the new matrix, too!
-    // Note that at the moment only Matrix::Type14 is allowed (see the constructor the of a Brinkman2D object below)
+    // Note that at the moment only Matrix::Type14 is allowed
+    // (see the constructor the of a Brinkman2D object below)
     switch (type)
     {
         case Brinkman2D::Matrix::Type1:
@@ -128,6 +117,14 @@ p(&pressure_space, "p", "p", solution.block(2),
         default:
             ErrThrow("Unknown Brinkman type given to constructor of Brinkman2D::System_per_grid.");
     }
+
+    rhs = BlockVector(matrix, true);
+    solution = BlockVector(matrix, false);
+
+    u = TFEVectFunct2D(&velocity_space, "u", "u", solution.block(0),
+        solution.length(0), 2);
+    p = TFEFunction2D(&pressure_space, "p", "p", solution.block(2),
+        solution.length(2));
 }
 
 /** ************************************************************************ */
