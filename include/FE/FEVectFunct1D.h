@@ -25,7 +25,7 @@ class TFEVectFunct1D : public TFEFunction1D
 
   public:
     /** constructor with vector initialization */
-    TFEVectFunct1D(TFESpace1D *fespace1D, char *name, char *description,
+    TFEVectFunct1D(TFESpace1D *fespace1D, std::string name, std::string description,
                   double *values, int length, int n_components);
 
     /** return number of components */

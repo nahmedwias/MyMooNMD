@@ -59,16 +59,16 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 #ifdef _MPI
                                     , int maxSubDomainPerDof
 #endif
-) :  velocitySpace_(&coll, (char*)"u", (char*)"nse3d velocity", example.get_bc(0), //bd cond at 0 is x velo bc
+) :  velocitySpace_(&coll, "u", "nse3d velocity", example.get_bc(0), //bd cond at 0 is x velo bc
                     order.first),
-     pressureSpace_(&coll, (char*)"p", (char*)"nse3d pressure", example.get_bc(3), //bd condition at 3 is pressure bc
+     pressureSpace_(&coll, "p", "nse3d pressure", example.get_bc(3), //bd condition at 3 is pressure bc
                     order.second),
      matrix_({&velocitySpace_, &velocitySpace_, &velocitySpace_, &pressureSpace_}),
      rhs_(matrix_, true),
      solution_(matrix_, false),
-     u_(&velocitySpace_, (char*)"u", (char*)"u", solution_.block(0),
+     u_(&velocitySpace_, "u", "u", solution_.block(0),
         solution_.length(0), 3),
-     p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
+     p_(&pressureSpace_, "p", "p", solution_.block(3),
         solution_.length(3))
 
 {
@@ -755,7 +755,7 @@ void NSE3D::compute_residuals()
   defect_ = s.rhs_;
   s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix_.pressure_projection_enabled())
   {
     IntoL20Vector3D(&defect_[3*n_u_dof], n_p_dof,
                     TDatabase::ParamDB->PRESSURE_SPACE);
@@ -823,7 +823,7 @@ void NSE3D::solve()
   }
 
   // project pressure if necessary
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix_.pressure_projection_enabled())
     s.p_.project_into_L20();
 }
 

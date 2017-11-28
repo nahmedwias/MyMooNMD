@@ -9,9 +9,8 @@
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
-#include <TNSE3D_Routines.h>
 #include <Convolution.h>
-#include "../../include/AssembleRoutines/TNSE3D_Routines.h"
+#include <CommonRoutineTNSE3D.h>
 
 // this file gets only compiled #ifdef __3D__ - this is why it is no problem
 // to define the global variable assemble_nse here AND in NSE2D_FixPo (which

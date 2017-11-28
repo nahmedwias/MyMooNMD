@@ -10,7 +10,7 @@
 #include <BlockVector.h>
 #include <MumpsWrapper.h>
 #include <ParFECommunicator3D.h>
-#include <Database.h> // for handling of INTERNAL_PROJECT_PRESSURE
+#include <Database.h>
 
 #include <mpi.h>
 #include <memory>
@@ -530,12 +530,10 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
     }//end loop over columns
   }//end loop over rows
 
-  // if the matrix conme from an enclosed flow problem,
+  // if the matrix comes from an enclosed flow problem,
   // an internal pressure row correction is necessary
-  if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-  {
+  if (bmatrix.pressure_projection_enabled())
     pressure_row_correction(comms_);
-  }
 
 }
 

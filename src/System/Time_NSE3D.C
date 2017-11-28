@@ -57,17 +57,17 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
                   , int maxSubDomainPerDof
 #endif
 )
- : velocitySpace_(&coll, (char*)"u", (char*)"velocity space",  example.get_bc(0),
+ : velocitySpace_(&coll, "u", "velocity space",  example.get_bc(0),
                   order.first),
-   pressureSpace_(&coll, (char*)"p", (char*)"pressure space", example.get_bc(3),
+   pressureSpace_(&coll, "p", "pressure space", example.get_bc(3),
                   order.second),
    matrix_({&velocitySpace_, &velocitySpace_, &velocitySpace_, &pressureSpace_}),
    massMatrix_({&velocitySpace_, &velocitySpace_, &velocitySpace_}),
    rhs_(matrix_, true),
    solution_(matrix_, false),
-   u_(&velocitySpace_, (char*)"u", (char*)"u", solution_.block(0),
+   u_(&velocitySpace_, "u", "u", solution_.block(0),
      solution_.length(0), 3),
-   p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
+   p_(&pressureSpace_, "p", "p", solution_.block(3),
      solution_.length(3))
 {
   // Mass Matrix
@@ -113,7 +113,7 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 )
 : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
    solver_(param_db), defect_(), old_residual_(), 
-   initial_residual_(1e10), errors_(), oldtau_()
+   initial_residual_(1e10), errors_(), oldtau_(), current_step_(0)
 {
   db_.merge(param_db, false);
   this->check_parameters();
@@ -566,9 +566,14 @@ void Time_NSE3D::assemble_initial_time()
       assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
 
     // local assembling object - used in Assemble3D
+    int disc_type_number = 1; //usually it's Galerkin
+    if(db_["space_discretization_type"].is("smagorinsky"))
+      disc_type_number = 4;
+
     const LocalAssembling3D
               localAssembling(LocalAssembling3D_type::TNSE3D_LinGAL,
-                              fe_functions,this->example_.get_coeffs());
+                              fe_functions,this->example_.get_coeffs(),
+                              disc_type_number); //I despise this utterly!
 
     // assemble all the matrices and right hand side
     Assemble3D(nFESpace, spaces,
@@ -702,9 +707,14 @@ void Time_NSE3D::assemble_rhs()
    boundary_values[3] = this->example_.get_bd(3);
 
    // Assembling the right hand side
+   int disc_type_number = 1; //usually it's Galerkin
+   if(db_["space_discretization_type"].is("smagorinsky"))
+     disc_type_number = 4;
+
   LocalAssembling3D
       localAssembling(LocalAssembling3D_type::TNSE3D_Rhs,
-                      fe_functions,this->example_.get_coeffs());
+                      fe_functions,this->example_.get_coeffs(),
+                      disc_type_number);
 
   Assemble3D(1, spaces,
              0, nullptr,
@@ -936,7 +946,7 @@ void Time_NSE3D::assemble_nonlinear_term()
       // Namely, extrapolated_solution takes the nonActive of the current Rhs.
       this->construct_extrapolated_solution();
       TFEVectFunct3D extrapolated_velocity_vector(&this->systems_.front().velocitySpace_,
-                                                  (char*)"", (char*)"",
+                                                  "", "",
                                                   extrapolated_solution_.block(0),
                                                   extrapolated_solution_.length(0), 3);
 
@@ -948,9 +958,13 @@ void Time_NSE3D::assemble_nonlinear_term()
     }
 
     // assemble nonlinear matrices
-    LocalAssembling3D
-        localAssembling(LocalAssembling3D_type::TNSE3D_NLGAL,
-                        fe_functions, this->example_.get_coeffs());
+    int disc_type_number = 1; //usually it's Galerkin
+    if(db_["space_discretization_type"].is("smagorinsky"))
+      disc_type_number = 4;
+
+    LocalAssembling3D localAssembling(LocalAssembling3D_type::TNSE3D_NLGAL,
+                        fe_functions, this->example_.get_coeffs(),
+                        disc_type_number);
 
     Assemble3D(nFESpace, spaces,
                nSquareMatrices, sqMatrices.data(),
@@ -1011,8 +1025,15 @@ void Time_NSE3D::assemble_system()
     const FEMatrix& mass_blocks =
         *s.massMatrix_.get_blocks().at(0).get();
 
+    std::vector<std::vector<size_t>> cells;
+#ifdef __2D__
+    cells = {{0,0},{1,1}};
+#else
+    cells = {{0,0},{1,1},{2,2}};
+#endif
+
     s.matrix_.add_matrix_actives(mass_blocks, 1.0,
-                                 {{0,0}, {1,1}, {2,2}},
+                                 cells,
                                  {false, false, false});
   }
 
@@ -1146,7 +1167,7 @@ void Time_NSE3D::compute_residuals()
   this->defect_ = s.rhs_;
   s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix_.pressure_projection_enabled())
   {
     IntoL20Vector3D(&defect_[3*number_u_Dof], number_p_Dof,
                       TDatabase::ParamDB->PRESSURE_SPACE);
@@ -1221,7 +1242,7 @@ void Time_NSE3D::solve()
   // for the next iteration we have to descale, see assemble_system()
   this->descale_matrices();
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix_.pressure_projection_enabled())
        s.p_.project_into_L20();
 }
 

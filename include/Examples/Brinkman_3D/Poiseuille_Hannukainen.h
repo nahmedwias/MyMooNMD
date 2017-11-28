@@ -74,15 +74,6 @@ void ExactP(double x, double y, double *values)
 void BoundCondition(int i, double Param, BoundCond &cond)
 {
     cond = DIRICHLET; // default
-
-    if (TDatabase::ParamDB->n_neumann_boundary==0)
-    {
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
-    }
-    else
-    {
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
-    }
     
     for (int j=0; j<TDatabase::ParamDB->n_neumann_boundary; j++)
     {

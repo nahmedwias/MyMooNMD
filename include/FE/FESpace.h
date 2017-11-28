@@ -24,6 +24,7 @@
 #define __FESPACE__
 
 #include <Collection.h>
+#include <string.h>
 
 /** general super class for all finite element spaces, special spaces are
     implemented in subclasses */
@@ -34,10 +35,10 @@ class TFESpace
 // administration
 // =======================================================================
     /** name of the space */
-    char *Name;
+    std::string Name;
 
     /** some more words describing the space */
-    char *Description;
+    std::string Description;
 
 // =======================================================================
 // information of cell collection
@@ -95,26 +96,30 @@ class TFESpace
     /** number of inner and non-Dirichlet boundary nodes are less than */
     int ActiveBound;
 
-    /** 0 space for Galerkin disc, 1 - space for DG disc */
-    int DGSpace;
-
-  private:
-    /** copying given parameters into inner storage places */
-    int InitData(TCollection *coll, char *name, char *description);
+    /// True if this space contains discontinuous elements.
+    bool is_discontinuous_galerkin_space;
 
   public:
-    /** constructor */
-    TFESpace(TCollection *coll, char *name, char *description);
+    /**
+     * Constructor, setting name, description, cellgrid, and a lot of
+     * dummy variables. Note that FESpace is more like an interface class,
+     * only its daughter classes (with fixed dimension) are usable.
+     *
+     * @param[in] coll The cell grid (i.e. the finite element mesh).
+     * @param[in] name The name of the space, used in printout etc.
+     * @param[in] description A description of the space, used in printout etc.
+     */
+    TFESpace(TCollection *coll, std::string name, std::string description);
 
     /** destrcutor */
     virtual ~TFESpace();
 
     /** return name */
-    char *GetName() const
+    std::string GetName() const
     { return Name; }
 
     /** return description */
-    char *GetDescription() const
+    std::string GetDescription() const
     { return Description; }
 
     /** return number of cells in the triangulation used for building 
@@ -172,6 +177,16 @@ class TFESpace
     int GetN_Dirichlet() const
     { return N_Dirichlet; }
 
+    /** @return The number of Neumann boundary d.o.f. */
+    int get_n_neumann_dof() const
+    {
+      return N_BoundaryNodes[0];
+    }
+
+    /** @return The number of Neumann boundary d.o.f. */
+    int get_n_robin_dof() const
+    { return N_BoundaryNodes[1]; }
+
     /** return N_Inner */
     int GetN_Inner() const
     { return N_Inner; }
@@ -193,13 +208,11 @@ class TFESpace
     { return ActiveBound; }
 
     /** write info on fespace into file */
-    int Write(const char *filename);
+    int Write(const std::string filename);
 
-    void SetAsDGSpace()
-    { DGSpace = 1; }
+    void SetAsDGSpace() { is_discontinuous_galerkin_space = true; }
 
-    int IsDGSpace() const
-    { return DGSpace; }
+    bool IsDGSpace() const { return is_discontinuous_galerkin_space; }
 
 
 };

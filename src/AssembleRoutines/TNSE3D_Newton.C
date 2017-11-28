@@ -9,7 +9,7 @@
 #include <MooNMD_Io.h>
 #include <stdlib.h>
 #include "../../include/AssembleRoutines/TNSE3D_FixPo.h"
-#include "../../include/AssembleRoutines/TNSE3D_Routines.h"
+#include <CommonRoutineTNSE3D.h>
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v)
@@ -700,7 +700,7 @@ void TimeNSType3SmagorinskyNewton3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   
-  Output::print("Also change the function call of TurbulentViscosity3D: see TNSE3D_Routines.C");
+  Output::print("Also change the function call of TurbulentViscosity3D: see CommonRoutineTNSE3D.h");
   exit(4711);
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
@@ -836,7 +836,7 @@ void TimeNSType3SmagorinskyNewtonDD3D(double Mult, double *coeff,
   u1 = param[0]; // u1old
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
-Output::print("Also change the function call of TurbulentViscosity3D: see TNSE3D_Routines.C");
+  Output::print("Also change the function call of TurbulentViscosity3D: see CommonRoutineTNSE3D.h");
   exit(4711);
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
@@ -1008,7 +1008,7 @@ void TimeNSType3GL00AuxProblemNewton3D(double Mult, double *coeff,
  
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                             param[21]);
-Output::print("Also change the function call of TurbulentViscosity3D: see TNSE3D_Routines.C");
+  Output::print("Also change the function call of TurbulentViscosity3D: see CommonRoutineTNSE3D.h");
   exit(4711);
   for(i=0;i<N_U;i++)
   {
@@ -1155,7 +1155,7 @@ void TimeNSType3GL00AuxProblemNewtonDD3D(double Mult, double *coeff,
 
   // delta^2/(4 gamma)
   mu2 = 0.25*delta*delta/gamma;
-Output::print("Also change the function call of TurbulentViscosity3D: see TNSE3D_Routines.C");
+  Output::print("Also change the function call of TurbulentViscosity3D: see CommonRoutineTNSE3D.h");
   exit(4711);
   mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
                             param[21]);

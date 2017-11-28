@@ -746,12 +746,12 @@ class BlockFEMatrix : public BlockMatrix
         double factor,
         const std::vector<std::vector<size_t>>& cell_positions );
 
-    /// @brief turn on pressure correction
-    void enable_pressure_correction() const;
-    /// @brief turn off pressure correction
-    void disable_pressure_correction() const;
+    /// @brief turn on pressure projection manually
+    void enable_pressure_projection() const;
+    /// @brief turn off pressure projection manually
+    void disable_pressure_projection() const;
     /// @brief find out if pressure correction is currently enabled
-    bool pressure_correction_enabled() const;
+    bool pressure_projection_enabled() const;
 
     // Special member functions.
 
@@ -798,9 +798,9 @@ class BlockFEMatrix : public BlockMatrix
     ///
     /// It's not nice that this is mutable, but usually the call to the method
     /// 'get_combined_matrix' is made on a const BlockFEMatrix. So the setter
-    /// methods `enable_pressure_correction`/`disable_pressure_correction` must
+    /// methods `enable_pressure_correction`/`disable_pressure_projection` must
     /// be const as well.
-    mutable bool pressure_correction;
+    mutable bool use_pressure_projection_;
 
   private:
     /**

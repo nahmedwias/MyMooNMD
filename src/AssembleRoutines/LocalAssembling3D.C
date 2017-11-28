@@ -19,6 +19,7 @@
 #include <TCD3D.h> // local routines for time convection-diffusion-reaction
 #include <TNSE3D_FixPo.h>
 #include <TNSE3D_ParamRout.h>
+#include <TNSE3DSmagorinsky.h>
 
 /**
  * TODO There is still a lot of cases where the array "Needs2ndDerivatives" is

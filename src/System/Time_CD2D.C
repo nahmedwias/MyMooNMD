@@ -35,7 +35,7 @@ ParameterDatabase get_default_TCD2D_parameters()
 /**************************************************************************** */
 Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
                                             TCollection& coll)
-: fe_space(&coll, (char*)"space", (char*)"time_cd2d space", example.get_bc(0),
+: fe_space(&coll, "space", "time_cd2d space", example.get_bc(0),
            TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
            // TODO CB: Building the matrix here and rebuilding later is due to the
            // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
@@ -45,7 +45,7 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
            rhs(this->stiff_matrix, true),
            solution(this->stiff_matrix, false),
            old_Au(this->stiff_matrix, true),
-           fe_function(&this->fe_space, (char*)"c", (char*)"c",
+           fe_function(&this->fe_space, "c", "c",
                        this->solution.get_entries(), this->solution.length())
 {
   stiff_matrix = BlockFEMatrix::CD2D(fe_space);

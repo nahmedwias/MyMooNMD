@@ -39,17 +39,17 @@ ParameterDatabase get_default_TNSE2D_parameters()
 Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example, 
                   TCollection& coll, std::pair< int, int > order, 
                   Time_NSE2D::Matrix type)
- : velocity_space(&coll, (char*)"u", (char*)"velocity space",  example.get_bc(0),
+ : velocity_space(&coll, "u", "velocity space",  example.get_bc(0),
                   order.first, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"pressure space", example.get_bc(2),
+   pressure_space(&coll, "p", "pressure space", example.get_bc(2),
                   order.second, nullptr),
    matrix({&velocity_space, &velocity_space, &pressure_space}),
    Mass_Matrix({&velocity_space, &velocity_space}),
    rhs(matrix, true),
    solution(matrix, false),
-   u(&velocity_space, (char*)"u", (char*)"u", solution.block(0), 
+   u(&velocity_space, "u", "u", solution.block(0),
      solution.length(0), 2),
-   p(&pressure_space, (char*)"p", (char*)"p", this->solution.block(2),
+   p(&pressure_space, "p", "p", this->solution.block(2),
      solution.length(2))
 {
   Mass_Matrix = BlockFEMatrix::Mass_NSE2D(velocity_space);
@@ -766,7 +766,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   this->defect = s.rhs; 
   s.matrix.apply_scaled_add(s.solution, defect,-1.);
   // 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix.pressure_projection_enabled())
     IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
                       TDatabase::ParamDB->VELOCITY_SPACE, 
                       TDatabase::ParamDB->PRESSURE_SPACE);
@@ -832,7 +832,7 @@ void Time_NSE2D::solve()
   // for the next iteration we have to descale, see assemble_system()
   this->deScaleMatrices();
 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  if(s.matrix.pressure_projection_enabled())
        s.p.project_into_L20();
 
   this->old_solution = s.solution;
