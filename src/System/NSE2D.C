@@ -48,19 +48,8 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                   velocity_pressure_orders.first, nullptr),
    pressure_space(&coll, "p", "Navier--Stokes pressure", example.get_bc(2),
                   velocity_pressure_orders.second, nullptr)
-// TODO CB: Building the matrix here and rebuilding later is due to the
-// highly non-functional class TFEVectFunction2D (and TFEFunction2D,
-// which do neither provide default constructors nor working copy assignments.)
-   ,matrix({&velocity_space, &velocity_space, &pressure_space}),
-   rhs(matrix, true),
-   solution(matrix, false),
-   u(&velocity_space, "u", "u", solution.block(0),
-     solution.length(0), 2),
-   p(&pressure_space, "p", "p", solution.block(2),
-     solution.length(2))
 {
-// rebuild the matrix due to NSE type. We must be sure, that the rhs and solution
-// vector which we built above do fit the new matrix, too!
+  // build the matrix due to NSE type
   switch (type)
   {
     case NSE2D::Matrix::Type1:
@@ -81,6 +70,14 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
     default:
       ErrThrow("Unknown NSE type given to constructor of NSE2D::System_per_grid.");
   }
+
+  rhs = BlockVector(matrix, true);
+  solution = BlockVector(matrix, false);
+
+  u = TFEVectFunct2D(&velocity_space, "u", "u", solution.block(0),
+    solution.length(0), 2);
+  p = TFEFunction2D(&pressure_space, "p", "p", solution.block(2),
+    solution.length(2));
 
 }
 

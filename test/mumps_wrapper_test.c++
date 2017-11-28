@@ -182,8 +182,8 @@ int main(int argc, char* argv[])
     wrap.solve(rhs, sol );
 
     //hard-coded test, I don't know anything better at the moment...
-    Output::print(sol.norm());
-    if(fabs(sol.norm() - 24.6171) > 1e-4)
+    Output::print(sol.norm(nsemat.get_communicators()));
+    if(fabs(sol.norm(nsemat.get_communicators()) - 24.6171) > 1e-4)
     {// solution is same (resp. permutations)
      // on all processes, cause all dofs are known to both processes,
      // which makes this easy test possible. For bigger matrix- check residual

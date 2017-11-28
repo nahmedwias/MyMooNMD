@@ -62,22 +62,10 @@ Brinkman3D::System_per_grid::System_per_grid (const Example_Brinkman3D& example,
 )
 : velocity_space(&coll, "u", "Brinkman3D velocity", example.get_bc(0), //bd cond at 0 is x velo bc
                  velocity_pressure_orders.first),
-pressure_space(&coll, "p", "Brinkman3D pressure", example.get_bc(3), //bd condition at 3 is pressure bc
+  pressure_space(&coll, "p", "Brinkman3D pressure", example.get_bc(3), //bd condition at 3 is pressure bc
                velocity_pressure_orders.second)
-// TODO CB: Building the matrix here and rebuilding later is due to the
-// highly non-functional class TFEVectFunction3D (and TFEFunction3D,
-// which do neither provide default constructors nor working copy assignments.)
-,matrix({&velocity_space, &velocity_space,&velocity_space, &pressure_space}),
-rhs(matrix, true),
-solution(matrix, false),
-u(&velocity_space, "u", "u", solution.block(0),
-  solution.length(0), 3),
-p(&pressure_space, "p", "p", solution.block(3),
-  solution.length(3))
-
 {
-    // rebuild the matrix due to NSE type. We must be sure, that the rhs and solution
-    // vector which we built above do fit the new matrix, too!
+    // Build the correct matrix.
     switch (type)
     {
         case Brinkman3D::Matrix::Type1:
@@ -99,6 +87,13 @@ p(&pressure_space, "p", "p", solution.block(3),
             ErrThrow("Unknown Brinkman type given to constructor of Brinkman3D::System_per_grid.");
     }
     
+    rhs = BlockVector(matrix, true);
+    solution = BlockVector(matrix, false);
+    u = TFEVectFunct3D(&velocity_space, "u", "u", solution.block(0),
+      solution.length(0), 3);
+    p = TFEFunction3D(&pressure_space, "p", "p", solution.block(3),
+      solution.length(3));
+
 #ifdef _MPI
     
     velocity_space.initialize_parallel(maxSubDomainPerDof);
