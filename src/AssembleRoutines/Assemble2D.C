@@ -2278,14 +2278,12 @@ double factor
 //
 // =======================================================================
 
-void Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
+void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 int n_matrices, TMatrix2D **matrices,
-int n_rhs, double **rhs, TFESpace2D **ferhs,
-TDiscreteForm2D *DiscreteForm,
+int n_rhs, double **rhs, const TFESpace2D **ferhs,
 BoundCondFunct2D **BoundaryConditions,
 BoundValueFunct2D **BoundaryValues,
-TAuxParam2D *Parameters,
 TFEFunction2D *u1, TFEFunction2D *u2)
 {
   int N_AllMatrices = n_sqmatrices+n_matrices;
@@ -2371,8 +2369,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   double z0, z1;
 #endif
 
-  int axial3D = TDatabase::ParamDB->Axial3D;
-  
+
   // ########################################################################
   // store information in local arrays
   // ########################################################################
@@ -2437,14 +2434,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 
   }                                               // endif n_rhs
 
-  N_Parameters = Parameters->GetN_Parameters();
-  if(N_Parameters)
-  {
-    aux = new double [MaxN_QuadPoints_2D*N_Parameters];
-    for(j=0;j<MaxN_QuadPoints_2D;j++)
-      Param[j] = aux + j*N_Parameters;
-  }
-
   // 20 <= number of term in bilinear form
   aux = new double [MaxN_QuadPoints_2D*40];
   for(j=0;j<MaxN_QuadPoints_2D;j++)
@@ -2475,7 +2464,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   {
     cell = Coll->GetCell(i);
 
-    //double hK = cell->GetDiameter();
+    // double hK = cell->GetDiameter();
     // ####################################################################
     // find local used elements on this cell
     // ####################################################################
@@ -2504,6 +2493,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
       CurrentElement = fespace->GetFE2D(i, cell);
 
       N_ = N_BaseFunct[CurrentElement];
+
       RHS = rhs[j];
 
       // find bounds in fe space
@@ -2513,7 +2503,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
       DOF = RhsGlobalNumbers[j] + RhsBeginIndex[j][i];
 
       // only for edges on the boundary
-      BoundaryCondition = BoundaryConditions[j];
+      BoundaryCondition = BoundaryConditions[j];      
       ele = TFEDatabase2D::GetFE2D(CurrentElement);
       // nf = ele->GetNodalFunctional2D();
       // nf->GetPointsForEdge(N_EdgePoints, EdgePoints);
@@ -2526,12 +2516,10 @@ TFEFunction2D *u1, TFEFunction2D *u2)
       for(m=0;m<N_Joints;m++)
       {
         joint = cell->GetJoint(m);
-        if(joint->GetType() == BoundaryEdge||
-           joint->GetType() == InterfaceJoint ||
-           joint->GetType() == IsoBoundEdge)
-         {
-          if(joint->GetType() == BoundaryEdge||
-           joint->GetType() == InterfaceJoint)
+        if(joint->GetType() == BoundaryEdge ||
+          joint->GetType() == IsoBoundEdge)
+        {
+          if(joint->GetType() == BoundaryEdge)
           {
             boundedge = (TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
@@ -2544,8 +2532,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
             isoboundedge->GetParameters(t0, t1);
           }
           // get id of the boundary component
-          comp=BoundComp->GetID();                  
-          
+          comp=BoundComp->GetID();
           // get type of the boundary condition at the beginning
           // and at the end of the current edge
           if (t0 < t1)
@@ -2569,12 +2556,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 
               case NEUMANN:
                 break;
-
-            case FREESURF:
-            case INTERFACE:
-              // do nothing here
-              // everything is done in Freesurfint, see Freesurface2D.C
-              break;
 
               case SLIP:
                 exit(4711);
@@ -2613,56 +2594,53 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                 // tangential normal vector to this boundary (normalized)
                 tx = (x1-x0)/hE;
                 ty = (y1-y0)/hE;
-                
-                
-
-//                   OutPut("A " << x0 << " " << y0 << " B " << x1 << " " << y1 << endl);
-//                   OutPut("t " << tx << " " << ty << " n " << nx << " " << ny << endl);
-
-//                 delta = CharacteristicFilterWidth(hK);
+                // OutPut("A " << x0 << " " << y0 << " B " << x1 << " " << y1 << endl);
+                // double delta = CharacteristicFilterWidth(hK);
 #ifdef  __CHANNELSTEPSLIP__
                 // upper boundary - free slip
                 if (comp==6)
                   friction_constant = 0;
 #endif
+
                 // penalty value for weak imposition of no penetration bc
                 penetration_penalty = penetration_constant*pow(hE,penetration_power);;
 
                 // parameter for friction
                 //BoundaryValue(comp, (t0+t1)/2.0,friction_parameter);
-//                 switch(friction_type)
-//                 {
-//                   case 1:
-//                     // linear friction
-//                     friction_parameter = friction_constant * pow(hE,friction_power);
-//                     //OutPut("fric " <<  friction_parameter << endl);
-//                     break;
-//                   case 2:
-//                     // nonlinear type 1
-//                     // beta = sqrt(Re)(w\cdot tau)/(U_0/2-(w\cdot tau)
-//                     // centre of the boundary edge
-//                     x = (x1+x0)/2.0;
-//                     y = (y1+y0)/2.0;
-//                     // compute velocity in (x,y);
-//                     u1->FindGradientLocal(cell,i,x,y,u1_values);
-//                     u2->FindGradientLocal(cell,i,x,y,u2_values);
-//                     // compute tangential velocity
-//                     tangential_velo = u1_values[0]*tx + u2_values[0]*ty;
-//                     // get Reynolds number
-//                     RE_NR = TDatabase::ParamDB->RE_NR;
-//                     U0 = TDatabase::ParamDB->FRICTION_U0;
-//                     denominator = U0/2-tangential_velo;
-//                     if (fabs(denominator)<1e-8)
-//                     {
-//                       OutPut("nonlinear slip bc type 1, denominator zero !!!" << endl);
-//                       exit(4711);
-//                     }
-//                     friction_parameter = sqrt(RE_NR) * tangential_velo/denominator;
-//                     friction_parameter = fabs(friction_parameter);
-//                     OutPut("x " << x << " y " << y);
-//                     OutPut(" friction paramater " << friction_parameter << endl);
-//                     break;
-//                 }
+                switch(friction_type)
+                {
+                  case 1:
+                  default:
+                    // linear friction
+                    friction_parameter = friction_constant * pow(hE,friction_power);
+                    //OutPut("fric " <<  friction_parameter << endl);
+                    break;
+                  case 2:
+                    // nonlinear type 1
+                    // beta = sqrt(Re)(w\cdot tau)/(U_0/2-(w\cdot tau)
+                    // centre of the boundary edge
+                    x = (x1+x0)/2.0;
+                    y = (y1+y0)/2.0;
+                    // compute velocity in (x,y);
+                    u1->FindGradientLocal(cell,i,x,y,u1_values);
+                    u2->FindGradientLocal(cell,i,x,y,u2_values);
+                    // compute tangential velocity
+                    tangential_velo = u1_values[0]*tx + u2_values[0]*ty;
+                    // get Reynolds number
+                    RE_NR = TDatabase::ParamDB->RE_NR;
+                    U0 = TDatabase::ParamDB->FRICTION_U0;
+                    denominator = U0/2-tangential_velo;
+                    if (fabs(denominator)<1e-8)
+                    {
+                      OutPut("nonlinear slip bc type 1, denominator zero !!!" << endl);
+                      exit(4711);
+                    }
+                    friction_parameter = sqrt(RE_NR) * tangential_velo/denominator;
+                    friction_parameter = fabs(friction_parameter);
+                    OutPut("x " << x << " y " << y);
+                    OutPut(" friction paramater " << friction_parameter << endl);
+                    break;
+                }
 
                 hE = hE/2;
 
@@ -2701,13 +2679,13 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                       RowPtr3 = sqmatrices[4]->GetRowPtr();
                       ColInd3 = sqmatrices[4]->GetKCol();
                       Entries4 = sqmatrices[6]->GetEntries();
-                      RowPtr4 = sqmatrices[6]->GetRowPtr();
+                      RowPtr4 = sqmatrices[6]->GetRowPtr();                      
                     }
 
                     if (n_matrices==2)
                     {
                       Entries5 = matrices[0]->GetEntries();
-                      RowPtr5 = matrices[0]->GetRowPtr();
+                      RowPtr5 = matrices[0]->GetRowPtr();                      
                     }
                   }
                   // second velocity component -> matrices A_21 and A_22
@@ -2731,12 +2709,12 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                       RowPtr3 = sqmatrices[5]->GetRowPtr();
                       ColInd3 = sqmatrices[5]->GetKCol();
                       Entries4 = sqmatrices[7]->GetEntries();
-                      RowPtr4 = sqmatrices[7]->GetRowPtr();
+                      RowPtr4 = sqmatrices[7]->GetRowPtr();                      
                     }
                     if (n_matrices==2)
                     {
                       Entries5 = matrices[1]->GetEntries();
-                      RowPtr5 = matrices[1]->GetRowPtr();
+                      RowPtr5 = matrices[1]->GetRowPtr();                      
                     }
                   }
 
@@ -2763,104 +2741,31 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                         x = x0 + 0.5*(x1-x0)*(zeta[l]+1);
                         y = y0 + 0.5*(y1-y0)*(zeta[l]+1);
 
-                        if(!axial3D) 
-                         { r_axial = 1.;}
-                        else if(axial3D && fabs(x)<1e-12)
-                         { r_axial = 0.0; }
-                        else
-                         { r_axial = fabs(x); }
-
-
-               // added varient for impinging droplets - Sashi
-                
-                if(fabs(x)>1e-12)
-                 { beta_h = fabs(x); }
-                else
-                 { beta_h = 1.;}
-                 
-                switch(friction_type)
-                {
-                 case 1:
-                  friction_parameter = friction_constant * pow(hE,friction_power);
-                  break;
-
-                 case 2:  
-                  friction_parameter = friction_constant*pow(hE,friction_power)/(beta_h);
-                  break;
-
-                 case 3:
-                  friction_parameter = friction_constant * pow(hE,friction_power)/(beta_h*beta_h);
-                  break;
-
-                 case 4:
-                  friction_parameter = friction_constant *pow(hE,friction_power)/(beta_h*beta_h*beta_h);
-                  break;
-
-                 case 12: // Volker part
-                    // nonlinear type 1
-                    // beta = sqrt(Re)(w\cdot tau)/(U_0/2-(w\cdot tau)
-                    // centre of the boundary edge
-                    x = (x1+x0)/2.0;
-                    y = (y1+y0)/2.0;
-                    // compute velocity in (x,y);
-                    u1->FindGradientLocal(cell,i,x,y,u1_values);
-                    u2->FindGradientLocal(cell,i,x,y,u2_values);
-                    // compute tangential velocity
-                    tangential_velo = u1_values[0]*tx + u2_values[0]*ty;
-                    // get Reynolds number
-                    RE_NR = TDatabase::ParamDB->RE_NR;
-                    U0 = TDatabase::ParamDB->FRICTION_U0;
-                    denominator = U0/2-tangential_velo;
-                    if (fabs(denominator)<1e-8)
-                    {
-                      OutPut("nonlinear slip bc type 1, denominator zero !!!" << endl);
-                      exit(4711);
-                    }
-                    friction_parameter = sqrt(RE_NR) * tangential_velo/denominator;
-                    friction_parameter = fabs(friction_parameter);
-                    OutPut("x " << x << " y " << y);
-                    OutPut(" friction paramater " << friction_parameter << endl);
-                    break;
-    
-                default:
-                 Error("Slip with friction Type not maching !!!!!!!!!!" << endl);
-                 Error("file: " << __FILE__ << " line " << __LINE__ << endl);
-                 exit(-1);  
-
-                }
-                
-                       //t = t0 + 0.5*(t1-t0)*(zeta[l]+1);
+                        //t = t0 + 0.5*(t1-t0)*(zeta[l]+1);
 
                         // weight times determinant of reference trafo
-                        // r_axial = 0, on axial BD so integrals are always zero on Axial BD
-                        s = hE * LineWeights[l]*r_axial;
+                        s = hE * LineWeights[l];
                         // (A_11)_{ii,jj}
-//                         OutPut ("before " << integral[0] << " " << integral[1] << endl);
+                        //OutPut ("before " << integral[0] << " " << integral[1] << endl);
                         val = penetration_penalty*JointValue[jj]*nx*JointValue[ii]*nx;
                         val += friction_parameter*JointValue[jj]*tx*JointValue[ii]*tx;
                         integral[0] += val*s;
-// 			Frict_Force1 += val*s;
-			
                         // (A_12)_{ii,jj}
                         val =  penetration_penalty*JointValue[jj]*ny*JointValue[ii]*nx;
                         val+= friction_parameter*JointValue[jj]*ty*JointValue[ii]*tx;
                         integral[1] += val*s;
-// 			Frict_Force2 += val*s;
                         //OutPut("    s   " <<s << endl);
                         //OutPut("       " << penetration_penalty*JointValue[jj]*nx*JointValue[ii]*nx<< endl);
-//                         OutPut("       " << friction_parameter*JointValue[jj]*tx*JointValue[ii]*tx << endl);
+                        //OutPut("       " << friction_parameter*JointValue[jj]*tx*JointValue[ii]*tx << endl);
                         //OutPut("       " << penetration_penalty*JointValue[jj]*ny*JointValue[ii]*nx << endl);
-//                         OutPut("       " << friction_parameter*JointValue[jj]*ty*JointValue[ii]*tx << endl);
+                        //OutPut("       " << friction_parameter*JointValue[jj]*ty*JointValue[ii]*tx << endl);
                       }
                       //if ((integral[0]==0)&&( integral[1]==0)) continue;
                       //OutPut ("1 " << integral[0] << " " << integral[1] << endl);
 
                       // edge not parallel to y axis or penetration
-//                       if ((fabs(ny)>eps)||(penetration_penalty<1e3))
-                      if ((fabs(tx)>eps)||(penetration_penalty>0))
-                       {
-//                         if(comp==0 || comp==1 || comp==5 )
-//                          cout << j <<  " X " << x << " Y " << y <<endl;
+                      if ((fabs(ny)>eps)||(penetration_penalty<1e3))
+                      {
                         // update first matrix
                         found = 0;
                         for (ll=RowPtr1[dof_ii];ll < RowPtr1[dof_ii+1]; ll++)
@@ -2899,7 +2804,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                           }
                         }
                       }
-                      else   // edge parallel to y-axis and no panetration
+                      else                        // edge parallel to y-axis and no panetration
                       {
                         found = 0;
                         for (ll=0;ll<N_EdgeDOF; ll++)
@@ -2960,24 +2865,16 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                         // get quadrature point on the boundary
                         x = x0 + 0.5*(x1-x0)*(zeta[l]+1);
                         y = y0 + 0.5*(y1-y0)*(zeta[l]+1);
-                        
-                        if(!axial3D) 
-                         { r_axial = 1.;}
-                        else if(axial3D && fabs(x)<1e-12)
-                         { r_axial = 0.0; }
-                        else
-                         { r_axial = fabs(x); }
-                         
+
                         //t = t0 + 0.5*(t1-t0)*(zeta[l]+1);
                         // get velocity in this quadrature point
 
                         // weight times determinant of reference trafo
-                        s = hE * LineWeights[l]*r_axial;
+                        s = hE * LineWeights[l];
                         // (A_21)_{ii,jj}
                         val = penetration_penalty*JointValue[jj]*nx*JointValue[ii]*ny;
                         val += friction_parameter*JointValue[jj]*ty*JointValue[ii]*tx;
                         integral[0] += s*val;
-	
                         // (A_22)_{ii,jj}
                         val = penetration_penalty*JointValue[jj]*ny*JointValue[ii]*ny;
                         val += friction_parameter*JointValue[jj]*ty*JointValue[ii]*ty;
@@ -2987,9 +2884,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                       //OutPut ("2 " << integral[0] << " " << integral[1] << endl);
 
                       // edge not parallel to x-axis or pentration
-
-//                      if ((fabs(nx) > eps)|| (penetration_penalty < 1e3))
-                     if ((fabs(nx) > eps) || (fabs(penetration_penalty) > 0.0))
+                      if ((fabs(nx)>eps)|| (penetration_penalty < 1e3))
                       {
                         // OutPut("nox" << endl);
                         if (n_sqmatrices>2)
@@ -3046,7 +2941,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 
                         // update first matrix, set all entries to zero
                         if (n_sqmatrices>2)
-                        {                            
+                        {
                           for (ll=RowPtr1[dof_ii];ll < RowPtr1[dof_ii+1]; ll++)
                             Entries1[ll] = 0;
                         }
@@ -3055,9 +2950,11 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                         for (ll=RowPtr2[dof_ii];ll < RowPtr2[dof_ii+1]; ll++)
                         {
                           if (ColInd2[ll] == dof_ii)
-                          { Entries2[ll] = 1; }
+                          {                       //OutPut("diag " << dof_ii << endl);
+                            Entries2[ll] = 1;
+                          }
                           else
-                           {  Entries2[ll] = 0; }
+                            Entries2[ll] = 0;
                         }
 
                         // set rhs to zero
@@ -3088,10 +2985,8 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                 TFEDatabase2D::GetBaseFunct2D(BaseFuncts[CurrentElement])
                   ->ChangeBF(Coll, cell, N_LinePoints, JointValues);
                 break;                            // end slip with friction and penetration with resistance bc
-            default:
- 
-            break;   
-            }                                     // endswitch Cond0     
+
+            }                                     // endswitch Cond0
           }                                       // endif (Cond0==Cond1)
           else
           {
@@ -3104,9 +2999,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     }                                             // endfor j (n_rhs)
   }                                               // endfor i (N_Cells)
 
-  
-//   OutPut(" Frict_Force1 " << Frict_Force1  << " " << Frict_Force2  <<endl);
-  
   if(n_sqmatrices)
   {
     delete [] GlobalNumbers;
@@ -3209,7 +3101,8 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   }
   */
 
-}  // end of Assemble
+}    
+ // end of Assemble
 
 
 /*

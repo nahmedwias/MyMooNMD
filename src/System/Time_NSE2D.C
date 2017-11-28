@@ -4,6 +4,7 @@
 #include <LinAlg.h>
 #include <Upwind.h>
 #include <DirectSolver.h>
+#include <TimeDiscretizations.h>
 
 #include <GridTransfer.h>
 
