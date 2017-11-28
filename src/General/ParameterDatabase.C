@@ -1247,7 +1247,8 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
           "vms_projection",     // = old global DISCTYPE = VMS_PROJECTION = 9
           "vms_projection_expl",// = old global DISCTYPE = VMS_PROJECTION_EXPL = 10
           "local_projection",   // = old global DISCTYPE = LOCAL_PROJECTION = 14
-          "local_projection_2_level"}); // = old global DISCTYPE = LOCAL_PROJECTION_2_LEVEL = 15
+          "local_projection_2_level", // = old global DISCTYPE = LOCAL_PROJECTION_2_LEVEL = 15
+         "residual_based_vms"}); 
 
   return db;
 }

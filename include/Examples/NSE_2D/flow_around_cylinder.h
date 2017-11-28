@@ -18,7 +18,6 @@ double DIMENSIONLESS_VISCOSITY;
 void ExampleFile()
 {
   Output::print("Example: flow_around_cylinder.h (stationary, 2D)");
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
 // ========================================================================

@@ -115,7 +115,6 @@ values[4] = 0;
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
   cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // value of boundary condition

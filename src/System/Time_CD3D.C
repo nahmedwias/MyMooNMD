@@ -41,14 +41,14 @@ ParameterDatabase get_default_TCD3D_parameters()
 #ifdef _MPI
 Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll, 
                                              int maxSubDomainPerDof)
-: feSpace_(&coll, (char*)"space", (char*)"TCD3D feSpace", example.get_bc(0), 
+: feSpace_(&coll, "space", "TCD3D feSpace", example.get_bc(0),
            TDatabase::ParamDB->ANSATZ_ORDER),
   stiffMatrix_({&feSpace_}), // stiffness matrix (block matrix)
   massMatrix_({&feSpace_}), // mass matrix (block matrix)
   rhs_(stiffMatrix_, true), // rhs hand side vector (filled with zeros)
   solution_(stiffMatrix_, false), // solution vector (filled with zeros)
   old_Au(this->stiffMatrix_, true),
-  feFunction_(&feSpace_, (char*)"u", (char*)"u", solution_.get_entries(),solution_.length())
+  feFunction_(&feSpace_, "u", "u", solution_.get_entries(),solution_.length())
 {
   //inform the fe space about the maximum number of subdomains per dof
   feSpace_.initialize_parallel(maxSubDomainPerDof);
@@ -60,14 +60,14 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollec
 #else /* ***********************************************************************/
 Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, 
                                         TCollection& coll)
-: feSpace_(&coll, (char*)"space", (char*)"TCD3D feSpace", example.get_bc(0), 
+: feSpace_(&coll, "space", "TCD3D feSpace", example.get_bc(0),
            TDatabase::ParamDB->ANSATZ_ORDER),
   stiffMatrix_({&feSpace_}),
   massMatrix_({&feSpace_}),
   rhs_(stiffMatrix_, true),
   solution_(stiffMatrix_, false),
   old_Au(this->stiffMatrix_, true),
-  feFunction_(&feSpace_, (char*)"u", (char*)"u", solution_.get_entries(),
+  feFunction_(&feSpace_, "u", "u", solution_.get_entries(),
               solution_.length())
 {
   stiffMatrix_ = BlockFEMatrix::CD3D(feSpace_);

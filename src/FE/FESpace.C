@@ -16,49 +16,51 @@
 #include <Constants.h>
 #include <FESpace.h>
 #include <MooNMD_Io.h>
-#include <string.h>
 
-/** copying given parameters into inner storage places */
-int TFESpace::InitData(TCollection *coll, char *name, char *description)
+TFESpace::TFESpace(TCollection *coll,
+                   std::string name,
+                   std::string description)
+:  Name(name), Description(description),
+   Collection(coll)
 {
-  Name=strdup(name);
-  Description=strdup(description);
 
-  // cout << "Name: " << name << endl;
-  // cout << "Desc: " << Description << endl;
-
-  Collection=coll;
   N_Cells=Collection->GetN_Cells();
-  N_DegreesOfFreedom=0;
-  GlobalNumbers=NULL;
-  BeginIndex=NULL;
-  N_UsedElements=0;
 
-  N_Dirichlet=0;
-  DGSpace = 0; // use 'void SetAsDGSpace()' to change this
-
-  return 0;
-}
-
-/** Constructor */
-TFESpace::TFESpace(TCollection *coll, char *name, char *description)
-{
-  InitData(coll, name, description);
+  // The following values are dummies, they are re-set by
+  // the ConstructSpace method of the daughter classes.
+  N_DegreesOfFreedom = 0;
+  GlobalNumbers = nullptr;
+  BeginIndex = nullptr;
+  N_UsedElements = 0;
+  N_DiffBoundNodeTypes = 0;
+  BoundaryNodeTypes = nullptr;
+  N_Dirichlet = 0;
+  N_BoundaryNodes = nullptr;
+  N_Inner = 0;
+  InnerBound = 0;
+  BoundaryNodesBound = nullptr;
+  DirichletBound = 0;
+  ActiveBound = 0;
+  is_discontinuous_galerkin_space = false;
 }
 
 /** destructor */
 TFESpace::~TFESpace()
 {
-  free(Name);
-  free(Description);
-  delete [] GlobalNumbers;
-  delete [] BeginIndex;
-  delete [] BoundaryNodeTypes;
-  delete [] N_BoundaryNodes;
+  if(GlobalNumbers)
+    delete [] GlobalNumbers;
+  if(BeginIndex)
+    delete [] BeginIndex;
+  if(BoundaryNodeTypes)
+    delete [] BoundaryNodeTypes;
+  if(N_BoundaryNodes)
+    delete [] N_BoundaryNodes;
+  if(BoundaryNodesBound)
+    delete [] BoundaryNodesBound;
 }
 
 /** write info on fespace into file */
-int TFESpace::Write(const char *filename)
+int TFESpace::Write(std::string filename)
 {
   int header[4];
   int N_LocalDOF;

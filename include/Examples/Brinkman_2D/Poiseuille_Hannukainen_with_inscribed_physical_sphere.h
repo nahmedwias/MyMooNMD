@@ -94,14 +94,6 @@ void BoundCondition(int i, double Param, BoundCond &cond)
         }
     }
     
-    if (TDatabase::ParamDB->n_neumann_boundary==0)
-    {
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
-    }
-    else
-    {
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
-    }
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)

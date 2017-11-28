@@ -25,7 +25,7 @@ class TFEVectFunct3D : public TFEFunction3D
 
   public:
     /** constructor with vector initialization */
-    TFEVectFunct3D(TFESpace3D *fespace3D, char *name, char *description,
+    TFEVectFunct3D(TFESpace3D *fespace3D, std::string name, std::string description,
                   double *values, int length, int n_components);
 
     /** return number of components */
@@ -62,7 +62,7 @@ class TFEVectFunct3D : public TFEFunction3D
     		std::string basename=std::string("parmoon_solution"));
 
     /** Read the solution from a given data file **/
-    void ReadSol(char *BaseName);
+    void ReadSol(std::string BaseName);
    
 };
 

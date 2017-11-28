@@ -10,7 +10,7 @@
 #include <MooNMD_Io.h>
 #include <Convolution.h>
 #include <stdlib.h>
-#include "../../include/AssembleRoutines/TNSE3D_Routines.h"
+#include <CommonRoutineTNSE3D.h>
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v)

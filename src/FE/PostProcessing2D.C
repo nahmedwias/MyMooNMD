@@ -725,7 +725,7 @@ int N_LocVertices, TVertex **Vertices)
   for(unsigned int space_number=0; space_number<FEFunctionArray.size(); space_number++)
   {
     fefunction = FEFunctionArray[space_number];
-    if(fefunction->GetFESpace2D()->IsDGSpace() != 1)
+    if(!fefunction->GetFESpace2D()->IsDGSpace())
       continue;
     // this is a discontinuous space
 

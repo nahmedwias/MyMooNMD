@@ -45,7 +45,6 @@ void BoundCondition(int i, double t, BoundCond &cond)
   if (i==1)
   {
     cond = NEUMANN;
-    TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
   }
   else
     cond = DIRICHLET;

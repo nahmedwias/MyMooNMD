@@ -290,25 +290,45 @@ struct TParaDB
   double OSEEN_ZERO_ORDER_COEFF;
 
   //======================================================================
-  /** Parameters for Brinkman problems                  */
+  /** Parameters for Brinkman problems */
+  // Unfortunately, due to the rigidity of the assemble function and the 
+  // function LinCoeffs(), the following 7 parameters can not be set in the 
+  // new 'local' Brinkman database.
   //======================================================================
-  int BrinkmanTYPE;
   double VISCOSITY;
   double EFFECTIVE_VISCOSITY;
   double PERMEABILITY;
-    
-  //======================================================================
-  /** Parameters for residual-based equal-order stabilization of Brinkman problems                  */
-  //======================================================================
-  bool PkPk_stab;
+
+  /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
   double equal_order_stab_weight_PkPk;
- 
-  //======================================================================
-  /** Parameters for Grad-Div stabilization of Brinkman problems                  */
-  //======================================================================
-  bool GradDiv_stab;
+
+  /** Parameter for Grad-Div stabilization of Brinkman problems                  */
   double grad_div_stab_weight;
-    
+
+  /** Parameter for the specification of symmetry or non-symmetry of the 
+    discrete formulation for Brinkman problems. It is internally set 
+    according to the input (string) assigned to the parameters 
+    EqualOrder_PressureStab_type and Galerkin_type. That is, 
+    it is NOT readed from the input-file via ReadParam.C. 
+    By default it is SIGN_MATRIX_BI = 1, i.e., unsymmetry;
+    -1 would corresdpond to symmetry and additionally the implementation 
+    could be widened to allow for scalings that do not have absolute value 1.
+    In detail, this parameter decides wether the divergence constraint is 
+    added or subtracted and adapts stabilizations if apparent. 
+    This is for example relevant for stability resp. convergence if one 
+    considers additional terms (e.g., stabilizations) or if one does not use 
+    a direct solver.*/
+  double SIGN_MATRIX_BI;
+
+  /** According to the string that is assigned to "equal_order_stab_scaling" in
+    the input file, either l_T = 1 or l_T = -1 is set. This corresponds to a 
+    mesh-dependent scaling of the NSGLS stabilization either of the form 
+    h_T^2/(mueff+sigma h_T^2) (l_T = 1) or h_T^2/(mueff+sigma L_0^2) (l_T = -1). 
+    The quantity L_0 should be chosen as some characteristic length, e.g the 
+    diameter of the domain. i
+    However, here it is up to now internally fixed to L_0 = 0.1*1. */
+  int l_T;
+
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */
   //======================================================================
@@ -529,7 +549,6 @@ struct TParaDB
   are used as global variables */
   //======================================================================
   int    INTERNAL_PROBLEM_LINEAR;
-  int    INTERNAL_PROJECT_PRESSURE;
   int    INTERNAL_PRESSURE_SPACE;
   int    INTERNAL_SLIP_WITH_FRICTION;
   int    INTERNAL_SLIP_WITH_FRICTION_IDENTITY;

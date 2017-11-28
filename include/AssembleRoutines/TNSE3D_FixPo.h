@@ -42,15 +42,6 @@ void TimeNSType1Upwind3D(double Mult, double *coeff,
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 1, Smagorinsky
-// ======================================================================
-void TimeNSType1Smagorinsky3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
 // ======================================================================
 // Type 1, ClassicalLES
 // ======================================================================
@@ -112,14 +103,6 @@ void TimeNSType2Galerkin3D(double Mult, double *coeff,
 // Type 2, Upwind (only Laplacian in A block)
 // ======================================================================
 void TimeNSType2Upwind3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 2, Smagorinsky
-// ======================================================================
-void TimeNSType2Smagorinsky3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
@@ -202,22 +185,6 @@ void TimeNSType3Upwind3D(double Mult, double *coeff,
 // Type 3, Upwind (no convection term), D(u):D(v)
 // ======================================================================
 void TimeNSType3UpwindDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 3, Standard Smagorinsky, (grad u, grad v)
-// ======================================================================
-void TimeNSType3Smagorinsky3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 3, Standard Smagorinsky, D(u):D(v)
-// ======================================================================
-void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
@@ -328,22 +295,6 @@ void TimeNSType4Upwind3D(double Mult, double *coeff,
 // Type 4, Upwind (no convection terms), D(u):D(v)
 // ======================================================================
 void TimeNSType4UpwindDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 4, Smagorinsky, (grad u, grad v)
-// ======================================================================
-void TimeNSType4Smagorinsky3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 4, Smagorinsky, D(u):D(v)
-// ======================================================================
-void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
@@ -627,15 +578,6 @@ void TimeNSType1_2NLUpwind3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
-// Type 1, Smagorinsky, only nonlinear part
-// Type 2, Smagorinsky, only nonlinear part
-// ======================================================================
-void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
 // declaration for all Navier-Stokes problems of type 3
 //      main diagonal blocks A11, A22
 //      WITHOUT right hand sides
@@ -693,30 +635,6 @@ void TimeNSType3_4NLUpwindDD3D(double Mult, double *coeff,
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 3, Standard Smagorinsky, (grad u, grad v), only nonlinear part
-// Type 4, Standard Smagorinsky, (grad u, grad v), only nonlinear part
-// ======================================================================
-//static int TimeNSType3_4NLSmagorinskyN_Matrices = 9;
-//static int TimeNSType3_4NLSmagorinskyRowSpace[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-//static int TimeNSType3_4NLSmagorinskyColumnSpace[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-
-void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// Type 3, Standard Smagorinsky, D(u):D(v), only nonlinear diagonal blocks
-// Type 4, Standard Smagorinsky, D(u):D(v), only nonlinear diagonal blocks
-// ======================================================================
-void TimeNSType3_4NLSmagorinskyDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v), only nonlinear part

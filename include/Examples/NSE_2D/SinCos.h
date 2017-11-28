@@ -54,7 +54,6 @@ void InitialP(double x, double y, double *values)
 void BoundCondition(int i, double t, BoundCond &cond)
 {
   cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 void transform(const int BdComp, const double Param, double& x, double& y, 

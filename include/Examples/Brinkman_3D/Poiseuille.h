@@ -10,7 +10,6 @@
 void ExampleFile()
 {
   Output::info<1>("EXAMPLE","Poiseuille.h");
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // ========================================================================
@@ -73,18 +72,15 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
     cond = DIRICHLET;
     if (TDatabase::ParamDB->n_neumann_boundary==0)
     {
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
         return;
         // If n_neumann_boundary==1 this means in this example that we set Neumann bc. on top of the cylinder
     } else if (TDatabase::ParamDB->n_neumann_boundary==1){
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
         if (z==zTop) {
             cond = NEUMANN;
             return;
         }
         // If n_neumann_boundary==2 this means in this example that we set Neumann bc. on top and at the bottom of the cylinder
     } else if (TDatabase::ParamDB->n_neumann_boundary==2){
-        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
         if (z==zBottom || z==zTop) {
             cond = NEUMANN;
             return;
@@ -100,10 +96,8 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 //    // second case: all Dirichlet
 //    cond = DIRICHLET; 
 //    if (TDatabase::ParamDB->n_neumann_boundary==0) {
-//      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // means average = 0 (for uniqueness)
 //      return;
 //    } else {
-//      TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 //
 //      // third case:  2 Neumann boundaries (label 1 and 2), Dirichlet on label 3
 //      
