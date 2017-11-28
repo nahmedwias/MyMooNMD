@@ -20,7 +20,7 @@ double DIMENSIONLESS_VISCOSITY;
 //side effect: sets the global parameter
 void ExampleFile()
 {
-  OutPut("Example: FlowAroundCylinder_instat.h" << endl);
+  Output::root_info<1>("Example","FlowAroundCylinder_instat.h");
 }
 
 // ========================================================================

@@ -16,7 +16,7 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  Output::info<1>("EXAMPLE","test_u_2_p_1.");
+  Output::root_info<1>("EXAMPLE","test_u_2_p_1.");
 }
 
 // exact solution

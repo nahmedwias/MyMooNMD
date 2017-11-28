@@ -1532,7 +1532,7 @@ void TDomain::Rectangular(int n, int m)
 
 void TDomain::initializeDefaultUnitSquareBdry()
 {
-  OutPut("Loading default domain description: Default_UnitSquare." << endl);
+  Output::root_info("Domain","Loading default domain description: Default_UnitSquare.");
 
   //create an i/o string stream
   std::stringstream bdryStream;
@@ -1566,7 +1566,7 @@ void TDomain::initializeDefaultUnitSquareBdry()
 
 void TDomain::initializeDrivenCavitySquareBdry()
 {
-  OutPut("Loading default domain description: DrivenCavitySquare." << endl);
+  Output::root_info("Domain","Loading default domain description: DrivenCavitySquare.");
 
   //create an i/o string stream
   std::stringstream bdryStream;
@@ -1627,7 +1627,7 @@ void TDomain::TestGrid3D()
 
 int TDomain::initializeDefaultCubeBdry()
 {
-  OutPut("Loading default domain description: Default_UnitCube." << endl);
+  Output::root_info("Domain","Loading default domain description: Default_UnitCube.");
 
   //create an i/o string stream
   std::stringstream bdryStream;
@@ -1675,7 +1675,7 @@ int TDomain::initializeDefaultCubeBdry()
 
 void TDomain::initialize_cube_hexa_mesh()
 {
-  OutPut("Loading default initial mesh: Default_UnitCube_Hexa." << endl);
+  Output::root_info("Domain","Loading default initial mesh: Default_UnitCube_Hexa.");
 
   //create an i/o string stream
   std::stringstream geoStream;
@@ -1719,7 +1719,7 @@ void TDomain::initialize_cube_hexa_mesh()
 
 void TDomain::initialize_cube_tetra_mesh()
 {
-  OutPut("Loading default initial mesh: Default_UnitCube_Tetra." << endl);
+  Output::root_info("Domain","Loading default initial mesh: Default_UnitCube_Tetra.");
 
   //create an i/o string stream
   std::stringstream geoStream;

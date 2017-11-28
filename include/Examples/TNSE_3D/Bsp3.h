@@ -11,7 +11,7 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  OutPut("Example: Bsp3.h" << endl);
+  Output::root_info<1>("Example","Bsp3.h");
 }
 
 // ========================================================================

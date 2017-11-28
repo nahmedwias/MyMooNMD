@@ -13,7 +13,7 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  Output::info<1>("EXAMPLE","Simple example with sin and cos solution and p=0");
+  Output::root_info<1>("EXAMPLE","Simple example with sin and cos solution and p=0");
 }
 
 // exact solution

@@ -26,7 +26,7 @@ bool dirichlet_on_sides = false;
 
 void ExampleFile()
 {
-  Output::print("Example: Hemker_3D.h");
+  Output::root_info("Example", "Hemker_3D.h");
 }
 
 // exact solution is not known

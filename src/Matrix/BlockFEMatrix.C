@@ -1760,38 +1760,33 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
   if(p == penultimate_space)
   {//the last space in the sequence of equals is the penultimate space
     is_saddle_point_problem = true;
-    if(my_rank == 0)
-      Output::info("Pressure Projection","BlockFEMatrix identified as saddle point matrix "
-                   "by the pattern of its FE spaces.");
   }
 
-  // CHECK IF ENCLOSED FLOW
-  int n_velo_neumann = first_space->get_n_neumann_dof();
-  int n_velo_robin = first_space->get_n_robin_dof();
-  /// ... add further types of bdry conditions to check?
+  if(is_saddle_point_problem)
+  {
+    // CHECK IF ENCLOSED FLOW
+    int n_velo_neumann = first_space->get_n_neumann_dof();
+    int n_velo_robin = first_space->get_n_robin_dof();
+    /// ... add further types of bdry conditions to check?
 
-  if(n_velo_neumann == 0 && n_velo_robin == 0)
-    is_enclosed_flow = true;
+    if(n_velo_neumann == 0 && n_velo_robin == 0)
+      is_enclosed_flow = true;
 
 #ifdef _MPI
-  bool sbuf = is_enclosed_flow;
-  bool rbuf = false;
-  MPI_Allreduce(&sbuf, &rbuf, 1, MPI::BOOL, MPI_LOR, MPI_COMM_WORLD);
-  //rbuf will contain "true", if any of the processes held "true" before
-  is_enclosed_flow = rbuf;
+    bool sbuf = is_enclosed_flow;
+    bool rbuf = false;
+    MPI_Allreduce(&sbuf, &rbuf, 1, MPI::BOOL, MPI_LOR, MPI_COMM_WORLD);
+    //rbuf will contain "true", if any of the processes held "true" before
+    is_enclosed_flow = rbuf;
 #endif
 
-  if(my_rank == 0)
-  {
-    if(is_enclosed_flow)
-      Output::info("Pressure Projection", "BlockFEMatrix identified as enclosed flow, "
-          "due to the boundary conditions of its FE spaces.");
-    else
-      Output::info("Pressure Projection","BlockFEMatrix identified as non-enclosed flow, "
-          "due to the boundary conditions of its FE spaces.");
   }
 
   bool needs_prc = is_saddle_point_problem && is_enclosed_flow;
+
+  if(needs_prc && my_rank == 0)
+      Output::info("Pressure Projection","BlockFEMatrix identified as enclosed-flow saddle point matrix. "
+                   "Pressure projection enabled.");
 
   return needs_prc;
 

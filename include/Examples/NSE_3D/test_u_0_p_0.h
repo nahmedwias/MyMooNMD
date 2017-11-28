@@ -21,7 +21,7 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  Output::info<1>("EXAMPLE","test_u_0_p_0. Constant velocity solution u=(1,0,0), "
+  Output::root_info<1>("EXAMPLE","test_u_0_p_0. Constant velocity solution u=(1,0,0), "
 	 "constant pressure solution p=0. \n");
 }
 
