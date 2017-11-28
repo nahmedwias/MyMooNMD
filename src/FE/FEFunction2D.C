@@ -46,12 +46,20 @@ void OnlyDirichlet(int i, double t, BoundCond &cond)
 	cond = DIRICHLET;
 }
 
+TFEFunction2D::TFEFunction2D() :
+    Name("dummy_fe_fct_2d"), Description("dummy_fe_fct_2d")
+{
+  FESpace2D=nullptr;
+  Values=nullptr;
+  Length=0;
+}
+
 /** constructor with vector initialization */
 TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, std::string name,
 std::string description, double *values, int length)
 : Name(name), Description(description)
 {
-  Output::print<3>("Constructor of TFEFunction2D");
+  Output::print<5>("Constructor of TFEFunction2D");
   
   FESpace2D=fespace2D;
  
@@ -1748,43 +1756,14 @@ TFEFunction2D & TFEFunction2D::operator+=(const TFEFunction2D & rhs)
   return *this;
 }
 
-TFEFunction2D::TFEFunction2D(TFEFunction2D&& other) :
-  FESpace2D(std::move(other.FESpace2D)),
-  Values(std::move(other.Values)),
-  Length(std::move(other.Length))
+TFEFunction2D & TFEFunction2D::operator=(const TFEFunction2D & other)
 {
-  // move name and description
-  Name=std::move(other.Name);
-  other.Name = nullptr;
-  Description=std::move(other.Description);
-  other.Description = nullptr;
-}
+  this->Name        = other.Name;
+  this->Description = other.Description;
+  this->FESpace2D   = other.FESpace2D;
+  this->Values      = other.Values;
+  this->Length      = other.Length;
 
-TFEFunction2D & TFEFunction2D::operator=(const TFEFunction2D & rhs)
-{
-  if(FESpace2D != rhs.FESpace2D)
-  {
-    OutPut("ERROR: TFEFunction2D::operator=() The two arguments "
-           << "have different fe spaces. Exiting" << endl);
-    exit(1);
-  }
-  if(Length != rhs.Length)
-  {
-    OutPut("ERROR: TFEFunction2D::operator=() The two arguments "
-           << "have different lengths. Exiting" << endl);
-    exit(1);
-  }
-  if(Values == rhs.Values)
-  {
-    OutPut("WARNING: TFEFunction2D::operator=() The two arguments "
-           << "have the same solution vector already. No action taken.");
-    return *this;
-  }
-  // copy the values from rhs to *this
-  for (int i=0;i<Length; i++)
-  {
-    Values[i] = rhs.Values[i];
-  }
   return *this;
 }
 

@@ -43,6 +43,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+/// Default constructor. Constructs an empty object.
+TFEVectFunct2D::TFEVectFunct2D()
+{
+  N_Components = 0;
+}
+
+
 /** constructor with vector initialization */
 TFEVectFunct2D::TFEVectFunct2D(const TFESpace2D *fespace2D, std::string name,
                                std::string description, double *values,
@@ -50,6 +57,16 @@ TFEVectFunct2D::TFEVectFunct2D(const TFESpace2D *fespace2D, std::string name,
   : TFEFunction2D(fespace2D, name, description, values, length)
 {
   N_Components = n_components;
+}
+
+TFEVectFunct2D& TFEVectFunct2D::operator=( const TFEVectFunct2D & other)
+{
+  //call base class copy assignment
+  TFEFunction2D::operator=(other);
+
+  this->N_Components  = other.N_Components;
+
+  return *this;
 }
 
 /** convert current grid to vector-values FE function */
@@ -1021,42 +1038,6 @@ TFEVectFunct2D & TFEVectFunct2D::operator+=(const TFEVectFunct2D & rhs)
     {
       Values[i+n*Length] += rhs.Values[i+n*Length];
     }
-  }
-  return *this;
-}
-
-TFEVectFunct2D & TFEVectFunct2D::operator=(const TFEVectFunct2D & rhs)
-{
-  if(FESpace2D != rhs.FESpace2D)
-  {
-    OutPut("ERROR: TFEVectFunct2D::operator=() The two arguments "
-           << "have different fe spaces. Exiting" << endl);
-    exit(1);
-  }
-  if(Length != rhs.Length)
-  {
-    OutPut("ERROR: TFEVectFunct2D::operator=() The two arguments "
-           << "have different lengths. Exiting" << endl);
-    exit(1);
-  }
-  if(N_Components != rhs.N_Components)
-  {
-    OutPut("ERROR: TFEVectFunct2D::operator=() The two arguments "
-           << "have different number of components. You are trying to set a "
-           << rhs.N_Components << "-dimensional vector to a " << N_Components
-           << "-dimensional vector! Exiting" << endl);
-    exit(1);
-  }
-  if(Values == rhs.Values)
-  {
-    OutPut("WARNING: TFEVectFunct2D::operator=() The two arguments "
-           << "have the same solution vector already. No action taken.");
-    return *this;
-  }
-  // copy the values from rhs to *this
-  for (int i=0;i<Length*N_Components; i++)
-  {
-    Values[i] = rhs.Values[i];
   }
   return *this;
 }
