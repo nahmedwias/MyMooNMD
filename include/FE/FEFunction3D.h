@@ -41,10 +41,17 @@ class TFEFunction3D
     int Length;
 
   public:
+    /// Default constructor. All empty object.
+    TFEFunction3D();
+
     /** constructor with vector initialization */
     TFEFunction3D(const TFESpace3D *fespace3D,
                   std::string name, std::string description,
                   double *values, int length);
+
+    /// Copy assignment operator. Shallow copy, as the
+    /// FEFunction does not take any memory responsibility.
+    TFEFunction3D& operator=( const TFEFunction3D & );
 
     /** destructor */
     ~TFEFunction3D();

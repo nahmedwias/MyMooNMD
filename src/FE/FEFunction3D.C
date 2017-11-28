@@ -34,6 +34,14 @@ void OnlyDirichlet(double x, double y, double z, BoundCond &cond)
 	cond = DIRICHLET;
 }
 
+TFEFunction3D::TFEFunction3D() :
+    Name("dummy_fe_fct_3d"), Description("dummy_fe_fct_3d")
+{
+  FESpace3D=nullptr;
+  Values=nullptr;
+  Length=0;
+}
+
 /** constructor with vector initialization */
 TFEFunction3D::TFEFunction3D(const TFESpace3D *fespace3D, std::string name,
                              std::string description, double *values, int length)
@@ -46,10 +54,24 @@ TFEFunction3D::TFEFunction3D(const TFESpace3D *fespace3D, std::string name,
   Length=length;
 }
 
+TFEFunction3D& TFEFunction3D::operator=(const TFEFunction3D& other)
+{
+  this->Name        = other.Name;
+  this->Description = other.Description;
+  this->FESpace3D   = other.FESpace3D;
+  this->Values      = other.Values;
+  this->Length      = other.Length;
+
+  return *this;
+}
+
 TFEFunction3D::~TFEFunction3D()
 {
 
 }
+
+
+
 
 
 /** calculate errors to given function */

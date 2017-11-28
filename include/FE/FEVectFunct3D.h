@@ -24,9 +24,17 @@ class TFEVectFunct3D : public TFEFunction3D
     int N_Components;
 
   public:
+
+    /// Default constructor. Constructs an empty object.
+    TFEVectFunct3D();
+
     /** constructor with vector initialization */
     TFEVectFunct3D(TFESpace3D *fespace3D, std::string name, std::string description,
                   double *values, int length, int n_components);
+
+    /// Copy assignment operator. Shallow copy, as the
+    /// FEFunction does not take any memory responsibility.
+    TFEVectFunct3D& operator=( const TFEVectFunct3D & );
 
     /** return number of components */
     int GetN_Components()

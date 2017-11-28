@@ -34,13 +34,31 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+/// Default constructor. Constructs an empty object.
+TFEVectFunct3D::TFEVectFunct3D()
+{
+  N_Components = 0;
+}
+
+
+
 /** constructor with vector initialization */
 TFEVectFunct3D::TFEVectFunct3D(TFESpace3D *fespace3D, std::string name,
                                std::string description, double *values,
-                             int length, int n_components)
-  : TFEFunction3D(fespace3D, name, description, values, length)
+                               int length, int n_components)
+: TFEFunction3D(fespace3D, name, description, values, length)
 {
   N_Components = n_components;
+}
+
+TFEVectFunct3D& TFEVectFunct3D::operator=( const TFEVectFunct3D & other)
+{
+  //call base class copy assignment
+  TFEFunction3D::operator=(other);
+
+  this->N_Components  = other.N_Components;
+
+  return *this;
 }
 
 /** convert current grid to vector-values FE function */

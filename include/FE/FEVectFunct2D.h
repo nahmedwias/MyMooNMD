@@ -27,9 +27,17 @@ class TFEVectFunct2D : public TFEFunction2D
     int N_Components;
 
   public:
+
+    /// Default constructor. Constructs an empty object.
+    TFEVectFunct2D();
+
     /** constructor with vector initialization */
     TFEVectFunct2D(const TFESpace2D *fespace2D, std::string name, std::string description,
                   double *values, int length, int n_components);
+
+    /// Copy assignment operator. Shallow copy, as the
+    /// FEFunction does not take any memory responsibility.
+    TFEVectFunct2D& operator=( const TFEVectFunct2D & );
 
     /** return number of components */
     int GetN_Components() const
@@ -87,10 +95,6 @@ class TFEVectFunct2D : public TFEFunction2D
     /** @brief add one TFEVectFunct2D to another one. Both have to be defined on
      *         the same space. Only non-Dirichlet dofs are added!  */
     TFEVectFunct2D & operator+=(const TFEVectFunct2D & rhs);
-   
-    /** @brief copy one TFEVectFunct2D to another one. Both have to be defined 
-     *         on the same space */
-    TFEVectFunct2D & operator=(const TFEVectFunct2D & rhs);
 };
 
 #endif
