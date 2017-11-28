@@ -290,14 +290,14 @@ bool CD2D::solve(const int iteration)
     res = s.solution;
   
   this->solver.solve(s.matrix, s.rhs, s.solution);
-  
+  Output::print<2>("SOLVE DONE");
   t = GetTime() - t;
   Output::print<3>(" solving of a CD2D problem done in ", t, " seconds");
-  
   if(!db["algebraic_flux_correction"].is("none"))
   {
-    AlgebraicFluxCorrection::AFC_Compute_New_Iterate(res, s.solution, db);
+   AlgebraicFluxCorrection::AFC_Compute_New_Iterate(res, s.solution, db);
   }
+  Output::print<4>("solve done ", iteration);
   return(FALSE);   
 }
 
@@ -450,9 +450,7 @@ AlgebraicFluxCorrection::Iteration_Scheme string_to_it_scheme(std::string afc_it
   else if (afc_iteration_scheme == std::string("fixed_point_matrix"))
     return AlgebraicFluxCorrection::Iteration_Scheme::FIXEDPOINT_MATRIX;
   else if (afc_iteration_scheme == std::string("newton"))
-  {
-    ErrThrow("afc_iteration_scheme ",afc_iteration_scheme, " not yet implemented!!!"); 
-  }
+    return AlgebraicFluxCorrection::Iteration_Scheme::NEWTON;
   else 
   {
     ErrThrow("afc_iteration_scheme ", afc_iteration_scheme, " not implemented!!!"); 

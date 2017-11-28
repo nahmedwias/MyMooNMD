@@ -314,7 +314,6 @@ double MinMod(double a, double b)
     return b; //return sign * b;
   }
 }
-
 /**
  * Apply Zalesaks flux limiter as described in Kuzmin 2009 pp.6-7
  * to compute flux correction factors. Used with FEM-FCT for time-
@@ -527,6 +526,385 @@ void ZalesaksFluxLimiter(
   // MPI: At output, correction factors alpha_ij are rowwise level-0-consistent
 }
 
+/* Computation of Derivative Product for the Matrix DF(Jacobian Matrix for Newton iteration)
+ *            and the Zalesak limiter
+ * @param[in] A: The system matrix A
+ * @param[in] F: The Matrix where entries f_ij=d_ij-(uj_-u_i)
+ * @param[in] P_plus, Q_plus
+ *            P_minus, Q_minus
+ *            R_plus, R_minus: The fluxes used for computation of the limiters alpha_ij
+ * @param[in] row_i: Denotes the ith row of matrix DF for which summation is required
+ * @param[in] afc_matrix_D_entries: The artificial diffusion matrix
+ * @param[in] entries_pointer: Denotes the pointer to the array Entries 
+ * @param[in] col_j: Column number for entry a_ij
+ * 
+ * @param[out] The summation required in the entry of the Jacobian matrix.
+ */ 
+double Derivative_Product_Zalesak(const FEMatrix& A,
+                          const double * F , 
+			  const double * P_plus,  
+			  const double * Q_plus,
+			  const double * Q_minus,
+			  const double * P_minus,
+			  const double * R_minus,
+			  const double * R_plus,
+			  int row_i,
+			  const std::vector<double>& afc_matrix_D_entries,
+			  int entries_pointer, 
+			  int col_j)
+{
+  double sum=0;
+  //DQ_minus, DQ_plus, DP_minus, DP_plus: Denotes the Derivative of the raw fluxes.
+  double DQ_plus, DQ_minus,DP_plus,DP_minus, sumD=0;
+  const double eps = 1e-10;
+  const int* ColInd = A.GetKCol();
+  const int* RowPtr = A.GetRowPtr(); 
+  const double* Entries = A.GetEntries();
+  int k0, k1, temp, temp1;
+  
+  k0=RowPtr[row_i];
+  k1=RowPtr[row_i+1];  
+  //Computation of the entry a_ji
+  for(int mm=RowPtr[col_j];mm<RowPtr[col_j+1];mm++)
+  {
+    if(ColInd[mm]==row_i)
+    {
+      temp1=mm;
+      break;
+      
+    }
+  }
+  // loop over all dofs that are connected with the matrix entry a_{ij}
+  for(int k=k0; k<k1;k++)
+  {
+    // cases without contribution to the sum
+    if(F[k]>0 && fabs(R_plus[row_i]-1)<eps)
+      continue;
+    else if(fabs(F[k])<eps)
+      continue;
+    else if(F[k]<0 && fabs(R_minus[row_i]-1)<eps)
+      continue;    
+    // first case with contribution
+    else if(F[k]>0 && R_plus[row_i]<1)
+    {
+      //Calculations for finding derivative of Q_plus
+      if(F[entries_pointer]>=0 && row_i!=col_j)
+	DQ_plus=0;
+      else if(F[entries_pointer]<0 && row_i!=col_j)
+        DQ_plus=-afc_matrix_D_entries[entries_pointer];
+      else if(row_i==col_j)
+      {
+	sumD=0;
+	int m0,m1;
+	m0=RowPtr[row_i];
+	m1=RowPtr[row_i+1];
+	for(int m=m0;m<m1;m++)
+	{
+	  if(F[m]<0)
+	   sumD+=afc_matrix_D_entries[m];
+        }//End of loop m
+	DQ_plus=sumD;
+      }
+      //Calculations for finding derivative of P_plus
+      if(F[entries_pointer]<=0 && row_i!=col_j)
+	DP_plus=0;
+      else if(F[entries_pointer]>0 && row_i!=col_j && Entries[entries_pointer]>=Entries[temp1])
+        DP_plus=afc_matrix_D_entries[entries_pointer];
+      else if(row_i==col_j)
+      {
+	sumD=0;
+	int m0,m1;
+	m0=RowPtr[row_i];
+	m1=RowPtr[row_i+1];
+	for(int m=m0;m<m1;m++)
+	{
+	 int transposed_entry=ColInd[m];
+	 for(int ll=RowPtr[transposed_entry];ll<RowPtr[transposed_entry+1];ll++)
+	 {
+	   if(ColInd[ll]==row_i)
+	   {
+	    temp=ll;
+	    break;
+	   }
+         }
+	 if(F[m]>0 && Entries[m]>=Entries[temp])
+	  sumD+=afc_matrix_D_entries[m];
+        }//End of loop m
+	DP_plus=-sumD;
+      }
+      sum+=((DQ_plus*P_plus[row_i]-Q_plus[row_i]*DP_plus)/(P_plus[row_i]*P_plus[row_i]))*F[k];
+      continue;
+     }
+     // second case with contribution
+      else if(F[k]<0 && R_minus[row_i]<1)
+     {
+      //Calculations for finding derivative of Q_minus
+       if(F[entries_pointer]<=0 && row_i!=col_j)
+	DQ_minus=0;
+      else if(F[entries_pointer]>0 && row_i!=col_j)
+        DQ_minus=-afc_matrix_D_entries[entries_pointer];
+      else if(row_i==col_j)
+      {
+	sumD=0;
+	int m0,m1;
+	m0=RowPtr[row_i];
+	m1=RowPtr[row_i+1];
+	for(int m=m0;m<m1;m++)
+	{
+	  if(F[m]>0)
+	  sumD+=afc_matrix_D_entries[m];
+	}//End of loop m
+	DQ_minus=sumD;
+      }
+      //Calculations for finding derivative of P_minus
+      if(F[entries_pointer]>=0 && row_i!=col_j)
+	DP_minus=0;
+      else if(F[entries_pointer]<0 && row_i!=col_j && Entries[entries_pointer]>=Entries[temp1])
+        DP_minus=afc_matrix_D_entries[entries_pointer];
+      else if(row_i==col_j)
+      {
+	sumD=0;
+        int m0,m1;
+	m0=RowPtr[row_i];
+	m1=RowPtr[row_i+1];
+	for(int m=m0;m<m1;m++)
+	{
+	 int transposed_entry=ColInd[m];
+	 for(int ll=RowPtr[transposed_entry];ll<RowPtr[transposed_entry+1];ll++)
+	 {
+	   if(ColInd[ll]==row_i)
+	   {
+	    temp=ll;
+	    break;
+	   }
+          }
+          if(F[m]<0 && Entries[m]>=Entries[temp])
+	   sumD+=afc_matrix_D_entries[m];
+	  }//End of loop m
+	DP_minus=-sumD;
+      }
+      sum+=((DQ_minus*P_minus[row_i]-Q_minus[row_i]*DP_minus)/(P_minus[row_i]*P_minus[row_i]))*F[k];
+      continue;
+     } 
+     else
+       Output::print<4>("ERROR ERROR");
+  }
+return sum;  
+}
+
+/* Computation of Derivative Product for the Matrix DF(Jacobian Matrix for Newton iteration)
+ *            and the BJK17 Linear preserving limiter
+ * @param[in] A: The system matrix A
+ * @param[in] F: The Matrix where entries f_ij=d_ij-(uj_-u_i)
+ * @param[in] P_plus, Q_plus
+ *            P_minus, Q_minus
+ *            R_plus, R_minus: The fluxes used for computation of the limiters alpha_ij
+ * @param[in] umax: Vector where umax_i=max{u_ij, 1<=j<=Ndofs}
+ * @parma[in] umin: Vector where umin_i=min{u_ij, 1<=j<=Ndofs}
+ * @param[in] sol: The solution vector of the problem
+ * @parma[in] q: Vector where q_i=gamma_i\sum d_ij
+ * @param[in] row_i: Denotes the ith row of matrix DF for which summation is required
+ * @param[in] afc_matrix_D_entries: The artificial diffusion matrix
+ * @param[in] entries_pointer: Denotes the pointer to the array Entries 
+ * @param[in] col_j: Column number for entry a_ij
+ * 
+ * @param[out] The summation required in the entry of the Jacobian matrix.
+ */ 
+
+double Derivative_Product_Linear(const FEMatrix A,
+			  const double * F , 
+			  const double * P_plus,  
+			  const double * P_minus,
+			  const double * Q_plus,
+			  const double * Q_minus,
+			  const double * R_plus,
+			  const double * R_minus,
+			  const std::vector<double> umax,
+			  const std::vector<double> umin,
+			  const std::vector<double> q,
+			  const std::vector<double>& sol,
+			  const int row_i,
+			  const int entries_pointer, 
+			  const int col_j,
+			  const std::vector<double> afc_matrix_D_entries)
+                                 
+{
+  double sum=0;
+  //DQ_minus, DQ_plus, DP_minus, DP_plus: Denotes the Derivative of the raw fluxes.
+  double DQ_plus, DQ_minus,DP_plus,DP_minus, sumD=0;
+  const int* ColInd = A.GetKCol();
+  const int* RowPtr = A.GetRowPtr(); 
+  int k0, k1;  
+  k0=RowPtr[row_i];
+  k1=RowPtr[row_i+1];  
+  for(int k=k0;k<k1;k++)
+  {
+    //Conditions for which we don't have any contributions
+    if(F[k]==0)
+      continue;
+    else if(F[k]>0 && R_plus[row_i]==1)
+      continue;
+    else if(F[k]<0 && R_minus[row_i]==1)
+      continue;
+    //First conditon where we have contribution
+    else if(F[k]>0 && R_plus[row_i]<1)
+    {
+      if(R_plus[row_i]<=R_minus[ColInd[k]])
+      {
+	//Computation of derivatives of Q_plus
+	if(row_i!=col_j)
+	{
+	  if(umax[row_i]==sol[col_j])
+	    DQ_plus=-q[row_i];
+	  else
+	    DQ_plus=0;
+	}
+	else
+	{
+	  if(umax[row_i]==sol[col_j])
+	    DQ_plus=0;
+	  else
+	    DQ_plus=q[row_i];
+	}
+	//Computation of derivatives of P_plus
+	if(F[entries_pointer]<=0 && row_i!=col_j)
+	DP_plus=0;
+        else if(F[entries_pointer]>0 && row_i!=col_j)
+        DP_plus=afc_matrix_D_entries[entries_pointer];
+        else if(row_i==col_j)
+        {
+	 sumD=0;
+	 int m0,m1;
+	 m0=RowPtr[row_i];
+	 m1=RowPtr[row_i+1];
+	 for(int m=m0;m<m1;m++)
+	 {
+	   if(F[m]>0)
+	    sumD+=afc_matrix_D_entries[m];
+         }//End of loop m
+	 DP_plus=-sumD;
+        }
+       sum+=((DQ_plus*P_plus[row_i]-Q_plus[row_i]*DP_plus)/(P_plus[row_i]*P_plus[row_i]))*F[k];
+       continue;
+      }
+      //R_minus[k]<R_plus[i] then R_minus[k]<1
+      else
+      {
+	 if(ColInd[k]!=col_j)
+	  {
+	    if(umin[ColInd[k]]==sol[col_j])
+	    DQ_minus=-q[ColInd[k]];
+	    else
+	    DQ_minus=0;
+	  }
+	  else
+	  {
+	    if(umin[ColInd[k]]==sol[col_j])
+	     DQ_minus=0;
+	    else
+	     DQ_minus=q[ColInd[k]];
+	  }
+	  if(F[entries_pointer]>=0 && ColInd[k]!=col_j)
+	   DP_minus=0;
+          else if(F[entries_pointer]<0 && ColInd[k]!=col_j)
+           DP_minus=afc_matrix_D_entries[entries_pointer];
+          else if(ColInd[k]==col_j)
+          {
+	    sumD=0;
+	    int m0,m1;
+	    m0=RowPtr[ColInd[k]];
+	    m1=RowPtr[ColInd[k]+1];
+	    for(int m=m0;m<m1;m++)
+	    {
+	      if(F[m]<0)
+	       sumD+=afc_matrix_D_entries[m];
+            }//End of loop m
+	    DP_plus=-sumD;
+          }
+          sum+=((DQ_minus*P_minus[ColInd[k]]-Q_minus[ColInd[k]]*DP_minus)/(P_minus[ColInd[k]]*P_minus[ColInd[k]]))*F[k];
+          continue;
+      }
+    }
+    else if(F[k]<0 && R_minus[row_i]<1)
+    {
+      if(R_minus[row_i]<=R_plus[ColInd[k]])
+      {
+	if(row_i!=col_j)
+	{
+	  if(umin[row_i]==sol[col_j])
+	    DQ_minus=-q[row_i];
+	  else
+	    DQ_minus=0;
+	}
+	else
+	{
+	  if(umin[row_i]==sol[col_j])
+	    DQ_minus=0;
+	  else
+	    DQ_minus=q[row_i];
+	}
+	if(F[entries_pointer]>=0 && row_i!=col_j)
+	DP_minus=0;
+        else if(F[entries_pointer]<0 && row_i!=col_j)
+        DP_minus=afc_matrix_D_entries[entries_pointer];
+        else if(row_i==col_j)
+        {
+	 sumD=0;
+	 int m0,m1;
+	 m0=RowPtr[row_i];
+	 m1=RowPtr[row_i+1];
+	 for(int m=m0;m<m1;m++)
+	 {
+	   if(F[m]<0)
+	    sumD+=afc_matrix_D_entries[m];
+         }//End of loop m
+	 DP_minus=-sumD;
+        }
+       sum+=((DQ_minus*P_minus[row_i]-Q_minus[row_i]*DP_minus)/(P_minus[row_i]*P_minus[row_i]))*F[k];
+       continue;
+      }
+      else
+      {
+	  if(ColInd[k]!=col_j)
+	  {
+	    if(umax[ColInd[k]]==sol[col_j])
+	    DQ_plus=-q[ColInd[k]];
+	    else
+	    DQ_plus=0;
+	  }
+	  else
+	  {
+	    if(umax[ColInd[k]]==sol[col_j])
+	     DQ_plus=0;
+	    else
+	     DQ_plus=q[ColInd[k]];
+	  }
+	  if(F[entries_pointer]<=0 && ColInd[k]!=col_j)
+	   DP_plus=0;
+          else if(F[entries_pointer]>0 && ColInd[k]!=col_j)
+           DP_plus=afc_matrix_D_entries[entries_pointer];
+          else if(ColInd[k]==col_j)
+          {
+	    sumD=0;
+	    int m0,m1;
+	    m0=RowPtr[ColInd[k]];
+	    m1=RowPtr[ColInd[k]+1];
+	    for(int m=m0;m<m1;m++)
+	    {
+	      if(F[m]>0)
+	       sumD+=afc_matrix_D_entries[m];
+            }//End of loop m
+	    DP_plus=-sumD;
+          }
+          sum+=((DQ_plus*P_plus[ColInd[k]]-Q_plus[ColInd[k]]*DP_plus)/(P_plus[ColInd[k]]*P_plus[ColInd[k]]))*F[k];
+          continue;
+      }
+    }
+    else
+      Output::print<4>("ERROR");
+  }
+  return sum;
+}
 
 /**
  * Compute the weights for the linearty preserving limiter from Barrenechea, John, Knobloch; M3AS 2017.
@@ -672,8 +1050,8 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
   db.add("afc_nonlinloop_damping_factor", 1.0, "A damping parameter for the nonlinear loop in AFC."
     "Must be a value between 1 (no damping) and 0 (no update).", 0.0,1.0);
 
-  db.add("afc_nonlinloop_maxit", 1 , "Maximal number of iterations for the nonlinear loop in AFC."
-    "Must be a value between 0 and 100000.", 0, 100000);
+  db.add("afc_nonlinloop_maxit", (size_t) 1 , "Maximal number of iterations for the nonlinear loop in AFC."
+    "Must be a value between 0 and 100000.", (size_t)  0, (size_t)  100000);
 
   db.add("afc_nonlinloop_epsilon", 1e-10, "Stopping criterion for the nonlinear loop in AFC."
     "Must be a value between 1e-20 an 1e20.", 1e-20, 1e20);
@@ -729,8 +1107,11 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
   double* Q_minus = Q_plus + nDofs;
   double* R_plus = Q_minus + nDofs;
   double* R_minus = R_plus + nDofs;
+  std::vector<double> alphas;
   std::vector<double> umin, umax, q;
 
+  if (it_scheme == Iteration_Scheme::NEWTON)
+     alphas.resize(N_Entries,0.0);
   // compute entries of the artificial diffusion matrix D
   // TODO make matrix D an actual TMatrix and not only an entries vector  
   if (compute_D_and_gamma)
@@ -752,13 +1133,10 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
   // from Barrenechea, John, Knobloch M3AS (2017)
   //if ((TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE==4)||(TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE==14))
   if (limiter == Limiter::LINEAR_PRESERVE_BJK17)
-  {
-    
+  {    
     umin.resize(nDofs,0.0);
     umax.resize(nDofs,0.0);
     q.resize(nDofs,0.0);
-    gamma.reserve(nDofs);
-    gamma.resize(nDofs);
  
     for (i=0;i<nDofs;i++)
     {
@@ -826,7 +1204,7 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
       }
       Q_plus[i] = q[i]*(sol[i]-umax[i]);
       Q_minus[i] = q[i]*(sol[i]-umin[i]);
-    }
+    } 
   }
    
   // Zalesak limiter 
@@ -973,9 +1351,11 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
 	  if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
 	 { // implicit treatment
 	   // off diagonal
-	   Entries[j] += (1-alpha_ij)*afc_matrix_D_entries[j];
-	   update_diag -= (1-alpha_ij)*afc_matrix_D_entries[j];
+	   Entries[j] += (0-alpha_ij)*afc_matrix_D_entries[j];
+	   update_diag -= (0-alpha_ij)*afc_matrix_D_entries[j];
 	 }
+	 if(it_scheme==Iteration_Scheme::NEWTON)
+	   alphas[j]=alpha_ij;
         }
         
         if (limiter == Limiter::ZALESAK)
@@ -1022,9 +1402,9 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
 	 {
 	   // implicit treatment
 	   // both entries are change with the same magnitude since matrix_D_Entries is symmetric
-	   Entries[j] += (1-alpha_ij)*afc_matrix_D_entries[j];
-	   update_diag -= (1-alpha_ij)*afc_matrix_D_entries[j];
-	   Entries[jj] += (1-alpha_ij)*afc_matrix_D_entries[jj];
+	   Entries[j] += (0-alpha_ij)*afc_matrix_D_entries[j];
+	   update_diag -= (0-alpha_ij)*afc_matrix_D_entries[j];
+	   Entries[jj] += (0-alpha_ij)*afc_matrix_D_entries[jj];
   	   // find diagonal entry of the row from the transposed entry
            for (kk=j2;kk<j3;kk++)
            {
@@ -1033,20 +1413,132 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
                break;
              }
            }
-	   Entries[kk] -= (1-alpha_ij)*afc_matrix_D_entries[jj];
+	   Entries[kk] -= (0-alpha_ij)*afc_matrix_D_entries[jj];
 	 }
-       }  
-    }                                             // end loop j
+	 if(it_scheme == Iteration_Scheme::NEWTON)
+	 {
+	   alphas[j] = alpha_ij;
+	   alphas[jj] = alpha_ij;
+	 }
+	}//End of Zalesak limiter
+    } //End of For loop j
+
     // update diagonal 
-    if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
+         if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
+         {
+            //OutPut(i << " update_diag " << update_diag << endl);
+            Entries[diag_index] += update_diag;
+	    //Output::print<4>(i," ", j, " ", diag_index, " ",  Entries[diag_index]);
+         }
+         if(it_scheme==Iteration_Scheme::NEWTON)
+	   alphas[diag_index]=1.0;
+    
+  }//End of loop i
+ 
+ 
+  if(it_scheme == Iteration_Scheme::NEWTON)
+  {
+    int j3, j4, index1;
+    std::vector<double> df(N_Entries,0.0);    
+    // compute first part of rhs
+    // with old matrix 
+    for(int i=0;i<nDofs;i++)
     {
-      //OutPut(i << " update_diag " << update_diag << endl);
-       Entries[diag_index] += update_diag;
+      j3=RowPtr[i];
+      j4=RowPtr[i+1];
+      for(int j=j3;j<j4;j++)
+      {
+	index1 = ColInd[j];
+	rhs[i] -= Entries[j]*sol[index1]+(0-alphas[j])*F[j]-sol[i]*afc_matrix_D_entries[j];
+        //Output::print<4>(index1, " ", sol[index1],  " " , alphas[j], " " , F[j]);
+      } 
     }
+    
+    Output::print<4>("AFC: computing Jacobian");
+    // compute Jacobian, store on matrix entries
+    if (limiter == Limiter::ZALESAK)
+    {
+      // Computation of Matrix DF
+      // loop over the degrees of freedom
+      for(int i=0;i<nDofs;i++)
+      {
+	j3=RowPtr[i];
+	j4=RowPtr[i+1];
+	// loop over the columns of the matrix
+	for(int j=j3;j<j4;j++)
+	{
+	  index1=ColInd[j];
+	  //Non-Diagonal Entries
+	  if(i!=index1) 
+	  {
+	    //Derivative Product is a function which returns the summation inside the DF matrix
+	    df[j]=Entries[j]+(0-alphas[j])*afc_matrix_D_entries[j]
+	    -Derivative_Product_Zalesak(system_matrix,F,P_plus,Q_plus,Q_minus,P_minus,R_minus,R_plus,i,afc_matrix_D_entries,j, index1);
+          }
+	  else
+	  {
+	    double sum_flux=0.0;
+	    for(int jj=j3;jj<j4;jj++)
+	      {
+	        if(ColInd[jj]!=i)
+	        sum_flux+=(0-alphas[jj])*afc_matrix_D_entries[jj];
+	      }
+	    df[j]=Entries[j]-sum_flux-Derivative_Product_Zalesak(system_matrix,F,P_plus,Q_plus,Q_minus,P_minus,R_minus,R_plus,i,afc_matrix_D_entries,j, index1);
+	  }
+        }
+      }//Formation of matrix DF complete
+    }
+    
+    if(limiter == Limiter::LINEAR_PRESERVE_BJK17)
+    {
+      //Computation of matrix DF
+      //Loop over the degrees of freedom
+      for(int i=0;i<nDofs;i++)
+      {
+	j3=RowPtr[i];
+	j4=RowPtr[i+1];
+	//Loop over the columns
+	for(int j=j3;j<j4;j++)
+	{
+	  index1=ColInd[j];
+	  //Non-Diagonal Entries
+	  if(i!=index1) 
+	  {
+	    //Derivative Product is a function which returns the summation inside the DF matrix
+	    df[j]=Entries[j]+(0-alphas[j])*afc_matrix_D_entries[j]
+	    -Derivative_Product_Linear(system_matrix, F, P_plus,P_minus,Q_plus,Q_minus,R_plus,R_minus,umax,umin,q,sol,i,j,index1,afc_matrix_D_entries);
+          }
+	  else
+	  {
+	    double sum_flux=0.0;
+	    for(int jj=j3;jj<j4;jj++)
+	      {
+	        if(ColInd[jj]!=i)
+	        sum_flux+=(0-alphas[jj])*afc_matrix_D_entries[jj];
+	      }
+	    df[j]=Entries[j]-sum_flux-Derivative_Product_Linear(system_matrix, F, P_plus,P_minus,Q_plus,Q_minus,R_plus,R_minus,umax,umin,q,sol,i,j,index1,afc_matrix_D_entries);
+	  }
+        }
+      }
+    }
+        
+    // update rhs for system to be solved
+    for(int i=0;i<nDofs;i++)
+    {
+      j3=RowPtr[i];
+      j4=RowPtr[i+1];
+      for(int j=j3;j<j4;j++)
+      {
+	index1 = ColInd[j];
+	rhs[i] += df[j]*sol[index1]; //Using DF instead of matrix A
+	//Output::print<4>(index1, " ", sol[index1],  " " , alphas[j], " " , F[j]);
+	Entries[j]=df[j];
+      }
+    } 
   }
 
-  delete [] F;
-}
+  delete [] F; // here it should be
+}//End of function definition
 
 void AlgebraicFluxCorrection::crank_nicolson_fct(
        const FEMatrix& M_C, FEMatrix& K,
@@ -1293,11 +1785,12 @@ void AlgebraicFluxCorrection::correct_dirichlet_rows(FEMatrix& MatrixA)
 void AlgebraicFluxCorrection::AFC_Compute_New_Iterate(const BlockVector& old_solution, BlockVector& new_solution,
   const ParameterDatabase& db)
 {
-    // update direction
-    new_solution.add_scaled(old_solution,-1.0);
-    // damping
-    new_solution.scale(db["afc_nonlinloop_damping_factor"]);
-    // new iterate
-    new_solution.add_scaled(old_solution,1.0);
+    {
+      // update direction
+      new_solution.add_scaled(old_solution,-1.0);
+      new_solution.scale(db["afc_nonlinloop_damping_factor"]);
+      new_solution.add_scaled(old_solution,1.0);
+      new_solution.copy_nonactive(old_solution);
+    }
 }
  
