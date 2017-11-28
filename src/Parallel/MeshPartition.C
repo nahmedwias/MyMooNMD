@@ -370,7 +370,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    }
    std:: cout << Cell_Rank;
    t2 = MPI_Wtime();
-   OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
+   Output::root_info("Domain Decomposition","Time taken for METIS mesh partitioning ", t2-t1, " sec");
   }
   //if 'wrtie_metis' is true, than a file is created which contains the partitioning of the cells on the processors.
   if(write_metis)

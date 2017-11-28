@@ -226,7 +226,7 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
 #endif
   else 
   {// If nothing else fits, the program supposes a default geometry.
-    Output::info("Domain", "Trying to find a default geometry and mesh "
+    Output::root_info("Domain", "Trying to find a default geometry and mesh "
         " for ", geoname, " and ", boundname);
     // default cases for the tests
     Init(boundname, geoname);

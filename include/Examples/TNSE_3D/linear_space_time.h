@@ -9,7 +9,7 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  Output::print<1>("Example: linear_space_time.h");
+  Output::root_info<1>("Example","linear_space_time.h");
 }
 
 // ========================================================================

@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  Output::print<1>("Example: Laplace.h");
+  Output::root_info<1>("Example", "Laplace.h");
 }
 
 double PECLET_NUMBER;

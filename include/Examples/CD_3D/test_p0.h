@@ -13,7 +13,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: test_p0_zero.h" << endl) ;
+  Output::root_info<1>("Example", "test_p0_zero.h");
 }
 
 // exact solution

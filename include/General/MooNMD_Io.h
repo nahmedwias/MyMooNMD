@@ -179,6 +179,9 @@ namespace Output
   void info(std::string context, Arguments const& ... rest);
 
   template<unsigned int verbosity = 1, typename ... Arguments>
+  void root_info(std::string context, Arguments const& ... rest);
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
   void dash(Arguments const& ... rest);
 
   /// @brief print only to the outfile depending on verbosity
@@ -307,6 +310,28 @@ namespace Output
   void info(std::string context, Arguments const& ... rest)
   {
 	  print<verbosity>("INFO (",context,"): ", rest ...);
+  }
+
+  /// Use this method whenever only the root process should give
+  /// an info. In sequential, this performs just the same as info.
+  template<unsigned int verbosity, typename ... Arguments>
+  void root_info(std::string context, Arguments const& ... rest)
+  {
+    int my_rank = 0;
+#ifdef _MPI
+    // In MPI case, tell us which process is talking to us.
+    // This feature is in testing stage.
+    int finalized = 0;
+    MPI_Finalized(&finalized);
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+    if(!finalized && initialized)
+    {
+      MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    }
+#endif
+    if(my_rank == 0)
+      print<verbosity>("INFO (",context,"): ", rest ...);
   }
 
   template<unsigned int verbosity, typename ... Arguments>

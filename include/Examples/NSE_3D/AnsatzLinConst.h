@@ -10,7 +10,7 @@ double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
-  Output::info<1>("EXAMPLE","AnsatzLinConst.h");
+  Output::root_info<1>("EXAMPLE","AnsatzLinConst.h");
 }
 
 // ========================================================================

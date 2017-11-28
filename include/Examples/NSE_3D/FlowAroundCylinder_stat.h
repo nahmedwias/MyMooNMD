@@ -25,7 +25,7 @@ void ExampleFile()
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   if(my_rank == 0)
 #endif
-  Output::info<1>("EXAMPLE","FlowAroundCylinder_stat.h");
+  Output::root_info<1>("EXAMPLE","FlowAroundCylinder_stat.h");
 }
 
 // ========================================================================
