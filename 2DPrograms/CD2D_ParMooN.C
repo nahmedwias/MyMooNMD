@@ -55,14 +55,16 @@ int main(int argc, char* argv[])
   cd2d.assemble();
   cd2d.solve(0);
   
-  if( parmoon_db["algebraic_flux_correction"].is("afc") )
+  if( cd2d.get_db()["algebraic_flux_correction"].is("afc") )
   {//nonlinear loop necessary
-    size_t Max_It =parmoon_db["afc_nonlinloop_maxit"];
+    size_t Max_It = cd2d.get_db()["afc_nonlinloop_maxit"];
     for(unsigned int k = 1;; k++)
     {
       bool converged;
       cd2d.assemble();
+      
       converged = cd2d.solve(k);
+
       if ((converged)||(k>= Max_It))
 	break;
     }
