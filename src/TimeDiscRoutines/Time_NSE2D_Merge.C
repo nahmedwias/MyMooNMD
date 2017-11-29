@@ -1314,18 +1314,18 @@ void Time_NSE2D_Merge::output(int m)
   
   int n= s.solution.length(0);
   double *sol = s.solution.get_entries();
-  //StreamFunction(&s.velocity_space, sol,sol+n,
-  //                   stream_function_space.get(), psi.data());
+  StreamFunction(&s.velocity_space, sol,sol+n,
+                    stream_function_space.get(), psi.data());
   if(db["example"].is(3) || db["example"].is(6))// mixing layer example
   {
-    //ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
-    //                           vorticity_funct->GetValues(), divergence->GetValues());
-    //example.do_post_processing(*this, zero_vorticity);
+    ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
+                              vorticity_funct->GetValues(), divergence->GetValues());
+    example.do_post_processing(*this, zero_vorticity);
   }
   else
   {
-    double temp=0;
-    // example.do_post_processing(*this, temp);
+    //double temp=0;
+    //example.do_post_processing_old(*this);
   }
 
   if(time_stepping_scheme.current_step_ % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)

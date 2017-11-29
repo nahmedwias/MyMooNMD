@@ -2,6 +2,7 @@
 #include <Database.h>
 #include <MainUtilities.h>
 #include <FEDatabase2D.h>
+#include <Time_NSE2D_Merge.h>
 #include <Time_NSE2D.h>
 
 #include <string>
@@ -24,6 +25,11 @@ namespace sincosexp
 namespace flow_around_cylinder_steady_inflow
 {
 #include "flow_around_cylinder_steady_inflow.h"
+}
+
+namespace mixing_layer_us
+{
+#include "TNSE_2D/MixingLayerSlipSmallSquares.h"
 }
 
 Example_TimeNSE2D::Example_TimeNSE2D(
@@ -136,16 +142,61 @@ Example_TimeNSE2D::Example_TimeNSE2D(
 
       flow_around_cylinder_steady_inflow::ExampleFile();
       break;
+    case 6:
+      exact_solution.push_back( mixing_layer_us::ExactU1 );
+      exact_solution.push_back( mixing_layer_us::ExactU2 );
+      exact_solution.push_back( mixing_layer_us::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( mixing_layer_us::BoundCondition );
+      boundary_conditions.push_back( mixing_layer_us::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( mixing_layer_us::U1BoundValue );
+      boundary_data.push_back( mixing_layer_us::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = mixing_layer_us::LinCoeffs;
+      
+      initialCondition.push_back(mixing_layer_us::InitialU1);
+      initialCondition.push_back(mixing_layer_us::InitialU2);
+      
+      mixing_layer_us::ExampleFile();
+      
+      mixing_layer_us::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      
+      /**post processing - drag and lift calculation and output */
+      post_processing_stat = mixing_layer_us::EvaluateSolution;
+      break;
     default:
       ErrThrow("Unknown time-dependent Example_TimeNSE2D example!");
   }
 }
 
-void Example_TimeNSE2D::do_post_processing(Time_NSE2D& tnse2d) const
+void Example_TimeNSE2D::do_post_processing(Time_NSE2D_Merge& tnse2d, double& val) const
 {
   if(post_processing_stat)
   {
-    post_processing_stat(tnse2d);
+    post_processing_stat(tnse2d, val);
+  }
+  else
+  {
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
+#endif
+      Output::info<2>("Example_TimeNSE2D","No post processing done for the current example.");
+  }
+}
+
+void Example_TimeNSE2D::do_post_processing_old(Time_NSE2D& tnse2d) const
+{
+  if(post_processing_stat_old)
+  {
+    //post_processing_stat(tnse2d);
   }
   else
   {
