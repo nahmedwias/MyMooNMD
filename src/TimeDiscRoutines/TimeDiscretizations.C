@@ -220,16 +220,16 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
     cells = {{0,2},{1,2},{2,0},{2,1},{2,2}};
 #endif
 #ifdef __3D__ 
-    const std::vector<std::vector<size_t>> cells = {{0,3},{1,3},{2,3},{3,0},{3,1},{3,2},{3,3}};
+    cells = {{0,3},{1,3},{2,3},{3,0},{3,1},{3,2},{3,3}};
 #endif      
   }
   else
   {
 #ifdef __2D__ 
-    const std::vector<std::vector<size_t>> cells = {{0,2},{1,2},{2,0},{2,1}};
+    cells = {{0,2},{1,2},{2,0},{2,1}};
 #endif
 #ifdef __3D__ 
-    const std::vector<std::vector<size_t>> cells = {{0,3},{1,3},{2,3},{3,0},{3,1},{3,2}};
+    cells = {{0,3},{1,3},{2,3},{3,0},{3,1},{3,2}};
 #endif  
   }
   
@@ -238,11 +238,13 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
   // step with the BDF2 coefficients  
   if(current_step_ ==1 )
   {
-    if(scale_dscale.compare("scale")==0)
+    if(scale_dscale.compare("scale")==0){      
       matrix.scale_blocks(factor, cells);
+    }
     else if (db["time_discretization"].is("bdf_two")
-              && scale_dscale.compare("descale")==0)
+              && scale_dscale.compare("descale")==0){
       matrix.scale_blocks(1./factor, cells);
+    }
   }  
   
   // at the second time step, rescale the blocks with bdf bdf_coefficients

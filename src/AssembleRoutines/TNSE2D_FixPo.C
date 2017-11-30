@@ -2789,55 +2789,7 @@ double ***LocMatrices, double **LocRhs)
 // Type 1, GL00AuxProblem, only nonlinear part
 // Type 2, GL00AuxProblem, only nonlinear part
 // ======================================================================
-void TimeNSType1_2NLGalerkin(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA;
-  double val;
-  double *MatrixRow;
-  double ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U;
-  double c0;
-  double u1, u2;
 
-  MatrixA = LocMatrices[0];
-
-  N_U = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-
-  c0 = coeff[0];                 // nu
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
-  {
-    MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-        val += (u1*ansatz10+u2*ansatz01)*test00;
-
-      MatrixRow[j] += Mult * val;
-    }                            // endfor j
-  }                              // endfor i
-}
 
 
 // ======================================================================
@@ -2952,58 +2904,6 @@ double ***LocMatrices, double **LocRhs)
 // Type 3, GL00AuxProblem, (grad u, grad v), only nonlinear part
 // Type 4, GL00AuxProblem, (grad u, grad v), only nonlinear part
 // ======================================================================
-void TimeNSType3_4NLGalerkin(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA11, **MatrixA22;
-  double val;
-  double *Matrix11Row, *Matrix22Row;
-  double ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j, N_U;
-  double c0;
-  double u1, u2;
-
-  MatrixA11 = LocMatrices[0];
-  MatrixA22 = LocMatrices[1];
-
-  N_U = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-
-  c0 = coeff[0];                 // nu
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-    Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-        val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix11Row[j] += Mult * val;
-      Matrix22Row[j] += Mult * val;
-
-    }                            // endfor j
-  }                              // endfor i
-}
 
 
 // ======================================================================
@@ -3012,60 +2912,6 @@ double ***LocMatrices, double **LocRhs)
 // Type 3, Coletti, D(u):D(v), only nonlinear diagonal blocks
 // Type 4, Coletti, D(u):D(v), only nonlinear diagonal blocks
 // ======================================================================
-void TimeNSType3_4NLGalerkinDD(double Mult, double *coeff,
-double *param, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA11, **MatrixA22;
-  double val, val1;
-  double *Matrix11Row, *Matrix22Row;
-  double ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j, N_U;
-  double c0;
-  double u1, u2;
-
-  MatrixA11 = LocMatrices[0];
-  MatrixA22 = LocMatrices[1];
-
-  N_U = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-
-  c0 = coeff[0];                 // nu
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-    Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val1 = (u1*ansatz10+u2*ansatz01)*test00;
-      val  = c0*(2*test10*ansatz10+test01*ansatz01);
-      val += val1;
-      Matrix11Row[j] += Mult * val;
-
-      val  = c0*(test10*ansatz10+2*test01*ansatz01);
-      val += val1;
-      Matrix22Row[j] += Mult * val;
-
-    }                            // endfor j
-  }                              // endfor i
-}
-
 
 // ======================================================================
 // Type 3, Standard Galerkin, D(u):D(v), only nonlinear diagonal blocks

@@ -252,6 +252,14 @@ class BlockFEMatrix : public BlockMatrix
     
     static BlockFEMatrix Mass_Matrix_NSE2D(const TFESpace2D& velocity, 
                               const TFESpace2D& pressure);
+    
+    /**
+     * 
+     */
+    static BlockFEMatrix Mass_NSE2D_Type1( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix Mass_NSE2D_Type2( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix Mass_NSE2D_Type3( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix Mass_NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
 #elif __3D__
     /**

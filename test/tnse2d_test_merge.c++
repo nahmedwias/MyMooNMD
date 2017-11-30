@@ -189,8 +189,8 @@ int main(int argc, char* argv[])
     errors[1] = {{0.002261228092, 0.02900169754, 0.02290308963, 0.1548609258}};
     errors[2] = {{0.01917368068, 0.2444306449, 0.1019443925, 1.213868823}};
     laplace_type = 0;
-    //check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
-    //check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
     check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
     check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
     
@@ -211,8 +211,8 @@ int main(int argc, char* argv[])
     errors[1] = {{0.0001999247874, 0.003792810533, 0.01926073977, 0.07440290132}};
     errors[2] = {{0.001688306366, 0.03196972361, 0.01508981038, 0.2468378611}};
     laplace_type=0;
-    //check(domain, 13, -4711, 1, laplace_type, nl_form, time_disc, errors);
-    //check(domain, 13, -4711, 2, laplace_type, nl_form, time_disc, errors);
+    check(domain, 13, -4711, 1, laplace_type, nl_form, time_disc, errors);
+    check(domain, 13, -4711, 2, laplace_type, nl_form, time_disc, errors);
     check(domain, 13, -4711, 3, laplace_type, nl_form, time_disc, errors);
     check(domain, 13, -4711, 4, laplace_type, nl_form, time_disc, errors);
     
@@ -240,8 +240,8 @@ int main(int argc, char* argv[])
     errors[1] = {{0.002257854029, 0.02900402091, 0.01381823763,0.1459569354}};
     errors[2] = {{0.0191888938, 0.2444304958, 0.1000448675, 1.21617188}};
     laplace_type = 0;
-    // check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
-    // check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
     check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
     check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
     
@@ -264,8 +264,8 @@ int main(int argc, char* argv[])
     errors[1] = {{0.002257854029, 0.02900402091, 0.01381823763,0.1459569354}};
     errors[2] = {{0.0191888938, 0.2444304958, 0.1000448675, 1.21617188}};
     laplace_type = 0;
-    // check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
-    // check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
     check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
     check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
   }
