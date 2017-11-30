@@ -230,6 +230,15 @@ target_compile_definitions(tnse2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### TNSE2D ###
+# Standard executable target.
+add_executable(tnse2d_merge ${PROJECT_SOURCE_DIR}/2DPrograms/TNSE2D_ParMooN_Merge.C)
+set_target_properties(tnse2d_merge PROPERTIES OUTPUT_NAME parMooN_tnse2d_merge_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(tnse2d_merge PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(tnse2d_merge parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ### MESH ###
 # Standard executable target.
 add_executable(mesh ${PROJECT_SOURCE_DIR}/2DPrograms/mesh_ParMooN.C)

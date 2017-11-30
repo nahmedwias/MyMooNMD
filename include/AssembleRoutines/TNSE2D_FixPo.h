@@ -494,10 +494,10 @@ void TimeNSType4VMSProjectionDD(double Mult, double *coeff,
 // Type 1, GL00Convolution, only nonlinear part
 // Type 2, GL00Convolution, only nonlinear part
 // ======================================================================
-void TimeNSType1_2NLGalerkin(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
+// void TimeNSType1_2NLGalerkin(double Mult, double *coeff, 
+//                 double *param, double hK, 
+//                 double **OrigValues, int *N_BaseFuncts,
+//                 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
 // Type 1, for upwind (only laplacian in A block)
@@ -565,10 +565,10 @@ void TimeNSType1_2NLSmagorinsky(double Mult, double *coeff,
 // Type 3, GL00Convolution, (grad u, grad v), only nonlinear part
 // Type 4, GL00Convolution, (grad u, grad v), only nonlinear part
 // ======================================================================
-void TimeNSType3_4NLGalerkin(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
+// void TimeNSType3_4NLGalerkin(double Mult, double *coeff, 
+//                 double *param, double hK, 
+//                 double **OrigValues, int *N_BaseFuncts,
+//                 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
 // Type 3, Standard Galerkin, D(u):D(v), only nonlinear diagonal blocks
@@ -578,10 +578,10 @@ void TimeNSType3_4NLGalerkin(double Mult, double *coeff,
 // Type 3, GL00Convolution, D(u):D(v), only nonlinear diagonal blocks
 // Type 4, GL00Convolution, D(u):D(v), only nonlinear diagonal blocks
 // ======================================================================
-void TimeNSType3_4NLGalerkinDD(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
+// void TimeNSType3_4NLGalerkinDD(double Mult, double *coeff, 
+//                 double *param, double hK, 
+//                 double **OrigValues, int *N_BaseFuncts,
+//                 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
 // Type 3, Upwind (no convection term), (grad u, grad v)

@@ -30,6 +30,10 @@ ParameterDatabase get_default_TNSE2D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
+  // a default solution in out database
+  ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
+  db.merge(in_out_db,true);
+  
   return db;
 }
 /* *************************************************************************** */
@@ -66,24 +70,27 @@ Time_NSE2D_Merge::System_per_grid::System_per_grid(const Example_TimeNSE2D& exam
    extrapolate_u(&velocity_space, (char*)"u", (char*)"u", extrapolate_sol.block(0),
         extrapolate_sol.length(0), 2)
 {
-  mass_matrix = BlockFEMatrix::Mass_Matrix_NSE2D(velocity_space, pressure_space);
-
   switch(type)
   {
     case Time_NSE2D_Merge::Matrix::Type1:
       matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type1(velocity_space, pressure_space);
       break;
     case Time_NSE2D_Merge::Matrix::Type2:
       matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type2(velocity_space, pressure_space);
       break;
     case Time_NSE2D_Merge::Matrix::Type3:
       matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type3(velocity_space, pressure_space);
       break;
     case Time_NSE2D_Merge::Matrix::Type4:
       matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(velocity_space, pressure_space);
       break;
     case Time_NSE2D_Merge::Matrix::Type14:
       matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(velocity_space, pressure_space);
       break;
   }
 }
@@ -181,20 +188,20 @@ Time_NSE2D_Merge::Time_NSE2D_Merge(const TDomain& domain,
   }
   
   // initial solution on finest grid - read-in or interpolation
- /* if(db["read_initial_solution"].is(true))
+  if(db["read_initial_solution"].is(true))
   {//initial solution is given
     std::string file = db["initial_solution_file"];
     Output::info("Initial Solution", "Reading initial solution from file ", file);
     systems.front().solution.read_from_file(file);
   }
   else
-  {*///interpolate initial condition from the example
+  {///interpolate initial condition from the example
     Output::info("Initial Solution", "Interpolating initial solution from example.");
     TFEFunction2D * u1 = this->systems.front().u.GetComponent(0);
     TFEFunction2D * u2 = this->systems.front().u.GetComponent(1);
     u1->Interpolate(example.get_initial_cond(0));
     u2->Interpolate(example.get_initial_cond(1));
-//   }
+  }
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
 
@@ -448,7 +455,7 @@ void Time_NSE2D_Merge::assemble_matrices_rhs(unsigned int it_counter)
   {
     call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
     // update matrices with local projection term
-    if(db["disctype"].is("local_projection"))
+    if(db["space_discretization_type"].is("local_projection"))
       update_matrices_lps(s);
   }
   
@@ -472,7 +479,7 @@ void Time_NSE2D_Merge::assemble_matrices_rhs(unsigned int it_counter)
   {
     // call the preparing method
     time_stepping_scheme.prepare_system_matrix(s.matrix, s.mass_matrix);
-    if(db["disctype"].is("supg"))
+    if(db["space_discretization_type"].is("supg"))
       time_stepping_scheme.scale_nl_b_blocks(s.matrix);
   }
   Output::print<5>("Assembling of matrices and right hand side is done");
@@ -564,15 +571,16 @@ void Time_NSE2D_Merge::call_assembling_routine(Time_NSE2D_Merge::System_per_grid
   // diagonal block M22 to be the same
   // For SUPG method, mass matrix is non-linear and will be changed during 
   // the nonlinear assembling, therefor also copy the M11 to M22.
-  if(db["space_discretization_type"].is("supg"))
-  {
-    s.mass_matrix.replace_blocks(*s.mass_matrix.get_blocks().at(0).get(), {{1,1}}, {false});
-  }
+  //if(db["space_discretization_type"].is("supg"))
+  //{
+  //if(time_stepping_scheme.current_step_ == 1)
+  //  s.mass_matrix.replace_blocks(*s.mass_matrix.get_blocks().at(0).get(), {{1,1}}, {false});    
+    
+  //}
 }
 
 /**************************************************************************** */
-void Time_NSE2D_Merge::set_matrices_rhs(Time_NSE2D_Merge::System_per_grid& s,
-                   LocalAssembling2D_type type, std::vector< TSquareMatrix2D* >& sqMat,
+void Time_NSE2D_Merge::set_matrices_rhs(Time_NSE2D_Merge::System_per_grid& s, LocalAssembling2D_type type, std::vector< TSquareMatrix2D* >& sqMat,
                    std::vector< TMatrix2D* >& reMat, std::vector< double* >& rhs_array)
 {
   rhs_array.resize(0);
@@ -1145,7 +1153,7 @@ bool Time_NSE2D_Merge::stopIte(unsigned int it_counter)
  
   this->defect = rhs_from_time_disc;
   s.matrix.apply_scaled_add(s.solution, defect,-1.);  
-
+  
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
                       TDatabase::ParamDB->VELOCITY_SPACE,

@@ -327,6 +327,84 @@ BlockFEMatrix BlockFEMatrix::Mass_Matrix_NSE2D(const TFESpace2D& velocity,
   
   return my_matrix;
 }
+
+BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type1( const TFESpace2D& velocity,
+                                         const TFESpace2D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo(&velocity, &velocity); //A block
+  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
+
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo, {{0,0},{1,1}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{1,0},{0,1}}, {false, false});
+
+  return my_matrix;
+}
+
+BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type2(
+    const TFESpace2D& velocity, const TFESpace2D& pressure)
+
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo(&velocity, &velocity); //A block
+  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
+
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo, {{0,0},{1,1}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{1,0},{0,1}}, {false, false});
+
+  return my_matrix;
+}
+
+
+BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type3(
+    const TFESpace2D& velocity, const TFESpace2D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
+
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+
+  // B's and C stays as default initialized
+
+  return my_matrix;
+}
+
+BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type4(
+    const TFESpace2D& velocity, const TFESpace2D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
+
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+
+  //B's and C stays as default initialized
+
+  return my_matrix;
+}
 #elif __3D__
 //3D named constructors
 BlockFEMatrix BlockFEMatrix::CD3D( const TFESpace3D& space )
