@@ -9,8 +9,6 @@ include_directories("${CMAKE_SOURCE_DIR}/include/TimeDiscRoutines")
 
 list(APPEND TimeDisc_SOURCES "${PROJECT_SOURCE_DIR}/src/TimeDiscRoutines/TimeDiscretizations.C")
 # Source files used in 2D and 3D.
-list(APPEND TimeDisc_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/TimeDiscRoutines/Time_NSE2D_Merge.C") 
-
 
 list(APPEND PARMOON_SOURCES_2D ${TimeDisc_SOURCES} )
 list(APPEND PARMOON_SOURCES_3D ${TimeDisc_SOURCES} )

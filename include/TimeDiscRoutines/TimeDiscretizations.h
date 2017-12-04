@@ -59,7 +59,7 @@ public:
     
     /// @brief this will be used to indicate the matrices B, BT and C
     /// are linear or nonlinear or solution dependent and are setted 
-    // in the class Time_NSE2D_Merged.h (later will be in Time_NSE2D.)
+    // in the class Time_NSE2D
     std::string b_bt_linear_nl;
     
     /// @brief This function scales all B, BT (or C) blocks at the 

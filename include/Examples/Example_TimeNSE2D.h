@@ -19,7 +19,6 @@
 #include <Example_NonStationary2D.h>
 #include <functional>
 
-class Time_NSE2D_Merge; //forward declaration
 class Time_NSE2D; //forward declaration
 
 class Example_TimeNSE2D : public Example_NonStationary2D
@@ -47,9 +46,7 @@ public:
   };
 
   /// Apply the function stored as post processing routine.
-  void do_post_processing(Time_NSE2D_Merge& tnse2d, double& val) const;
-  
-  void do_post_processing_old(Time_NSE2D& tnse2d) const;
+  void do_post_processing(Time_NSE2D& tnse2d, double& val) const;
 
   /// Return kinematic viscosity, if set.
   double get_nu() const;
@@ -57,7 +54,7 @@ public:
   private:
   /// Function doing the post processing for a stationary example.
   /// TODO put Time_NSE2D argument const as soon as FEFunctions can be copied properly!
-  std::function<void(Time_NSE2D_Merge &, double& val)> post_processing_stat;
+  std::function<void(Time_NSE2D&, double& val)> post_processing_stat;
   
   std::function<void(Time_NSE2D &)> post_processing_stat_old;
   /// TODO Function doing the post processing for a time dependent example.

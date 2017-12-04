@@ -10,14 +10,15 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-  double t_start=GetTime();
   TDatabase Database;
   TFEDatabase2D FEDatabase2D;
-  
+
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
+  //std::string time_disc = parmoon_db["time_discretization"];
+  //parmoon_db.merge(ParameterDatabase::default_time_database(time_disc), true);
 
   // ======================================================================
   // set the database values and generate mesh
@@ -29,10 +30,9 @@ int main(int argc, char* argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
 
   parmoon_db.write(Output::get_outfile());
-  check_parameters_consistency_NSE(parmoon_db);
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
-  
+
   // refine grid up to the coarsest level
   size_t n_ref = Domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
@@ -41,95 +41,70 @@ int main(int argc, char* argv[])
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
-  
-  // set some parameters for time stepping 
+
+  // set some parameters for time stepping
   //TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   SetTimeDiscParameters(0);
 
   Example_TimeNSE2D example( parmoon_db );
   // create an object of Time_NSE2D class
   Time_NSE2D tnse2d(Domain, parmoon_db, example);
+  
+  tnse2d.time_stepping_scheme.current_step_ = 0;
+  tnse2d.time_stepping_scheme.set_time_disc_parameters();
+  
   // assemble everything at the start time
   // this includes assembling of all A's, B's
-  // and M's blocks that are necessary 
+  // and M's blocks that are necessary
   tnse2d.assemble_initial_time();
+
+  tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
+
+  double end_time = TDatabase::TimeDB->ENDTIME;
   
   LoopInfo loop_info_time("time loop");
   loop_info_time.print_time_every_step = true;
-  loop_info_time.verbosity_threshold = 1; // full verbosity
- 
-  double end_time = TDatabase::TimeDB->ENDTIME; 
-  int step = 0;
-  int n_substeps = GetN_SubSteps();
-  int linear_iterations = 0;
+  loop_info_time.verbosity_threshold = 1;
+  int linear_iteration=0;
+  
+  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  {
+    tnse2d.time_stepping_scheme.current_step_++;
+
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    // set the time parameters
+    tnse2d.time_stepping_scheme.set_time_disc_parameters();
+    double tau = parmoon_db["time_step_length"];
+    TDatabase::TimeDB->CURRENTTIME += tau;
+    Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
     
-  // ======================================================================
-  // time iteration
-  // ======================================================================
-   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
-   {
-     step++;
-     // Output::print("mem before: ", GetMemory());
-     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-     for(int j=0; j < n_substeps; ++j)
-     {
-       // setting the time disc parameters
-       SetTimeDiscParameters(1);
-       if(step==1)
-       {
-         Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
-         Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
-         Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
-         Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
-       }
-       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-       TDatabase::TimeDB->CURRENTTIME += tau;
-       
-       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-       // prepare the right hand side vector
-       // only needed once per time step
-       tnse2d.assemble_rhs();
-       // assemble the nonlinear matrices
-       tnse2d.assemble_nonlinear_term();
-       // prepare the matrices for defect computations
-       // and solvers
-       tnse2d.assemble_system();
-       // nonlinear iteration
-       LoopInfo loop_info("nonlinear");
-       loop_info.print_time_every_step = true;
-       loop_info.verbosity_threshold = 1; // full verbosity
-       for(unsigned int k=0;; k++)
-       {
-         if(tnse2d.stopIte(k))
-         {
-           loop_info.finish(k, tnse2d.getFullResidual());
-	   linear_iterations+=k;
-	   /// @todo provide all parts of the residual 
-	   /// @todo loop_info restricted to the solver only
-           loop_info_time.print(linear_iterations, tnse2d.getFullResidual());
-	   break;
-         }
-         else
-           loop_info.print(k, tnse2d.getFullResidual());
-         tnse2d.solve();
-         // assemble the nonlinear matrices 
-         tnse2d.assemble_nonlinear_term();
-         // prepare the matrices for next nonlinear iteration
-         tnse2d.assemble_system();
-       }
-       // post processing: error computations
-       // and solutions for visualization
-       // FIXME CB: The call to output depends on 'step' but is in the loop
-       // over 'substeps' - shouldn't it be outside of the loop?
-       tnse2d.output(step);
-     }
-   }
-   
-  loop_info_time.finish(linear_iterations, tnse2d.getFullResidual());
-  // ======================================================================
-  Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
-  Output::print("used time: ", GetTime() - t_start, "s");
-  // ======================================================================
+    tnse2d.assemble_matrices_rhs(0);
+
+    LoopInfo loop_info("nonlinear");
+    loop_info.print_time_every_step = true;
+    loop_info.verbosity_threshold = 1;
+    for(unsigned int i=0;; i++)
+    {
+      if(tnse2d.stopIte(i))
+      {
+        loop_info.finish(i,tnse2d.getFullResidual());
+        linear_iteration +=i;
+        loop_info_time.print(linear_iteration, tnse2d.getFullResidual());
+        break;
+      }
+      else
+        loop_info.print(i, tnse2d.getFullResidual());
+
+      tnse2d.solve();
+
+      if(tnse2d.imex_scheme(1))
+        continue;
+
+      tnse2d.assemble_matrices_rhs(i+1);
+    }
+    tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
+  }
+  loop_info_time.finish(linear_iteration, tnse2d.getFullResidual());
   Output::close_file();
   return 0;
 }
