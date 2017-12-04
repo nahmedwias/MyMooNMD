@@ -173,12 +173,6 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(tnse2d ParMooN_test_tnse2d)
   list(APPEND parmoon_tests ParMooN_test_tnse2d)
-  
-  #tnse2d test merged version (direct solver)
-  add_executable(ParMooN_test_tnse2d_merged tnse2d_test_merge.c++)
-  target_link_libraries(ParMooN_test_tnse2d_merged parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(tnse2d_merge ParMooN_test_tnse2d_merged)
-  list(APPEND parmoon_tests ParMooN_test_tnse2d_merged)
 	
   # test for hdiv elements
   add_executable(ParMooN_test_hdiv Hdiv_element_test.c++)

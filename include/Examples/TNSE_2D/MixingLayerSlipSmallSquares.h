@@ -203,7 +203,7 @@ void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
   return;
 }
 
-void EvaluateSolution(const Time_NSE2D_Merge &tnse2d, double & zero_vort)
+void EvaluateSolution(const Time_NSE2D &tnse2d, double & zero_vort)
 {
   const TFEFunction2D& vorticity(tnse2d.get_vorticity_funct());
   double thickness;
