@@ -207,14 +207,6 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain,
 
   outputWriter.add_fe_vector_function(&this->get_velocity());
   outputWriter.add_fe_function(&this->get_pressure());
-  
-  if(TDatabase::ParamDB->NSTYPE==14)
-  {
-    // outputWriter.add_fe_function(stab_param_function.get());
-    // outputWriter.setCellValues(stab_param.data());
-    // std::string name = "param";
-    // outputWriter.setCellValuesName(name);
-  }
 
   // print out the information (cells, dofs, etc)
   this->output_problem_size_info();
@@ -797,6 +789,9 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
       s.rhs.reset();
       break;
     }
+    default:
+      ErrThrow("The assembling type ",type, " is unknown to Time_NSE2D.");
+      
   }
   // reset matrices
   for(auto sm : sqMat)
@@ -1340,7 +1335,8 @@ void Time_NSE2D::output(int m)
   {
     if(db["output_write_vtk"])
     {
-      outputWriter.write(TDatabase::TimeDB->CURRENTTIME);
+      int m = time_stepping_scheme.current_step_/TDatabase::TimeDB->STEPS_PER_IMAGE;
+      outputWriter.write(m);
     }
   }
   delete u1;

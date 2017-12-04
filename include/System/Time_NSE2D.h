@@ -84,11 +84,11 @@ class Time_NSE2D
        * routines
        */
       BlockVector solution_m1;
-      BlockVector solution_m2;
       TFEVectFunct2D u_m1;
       TFEFunction2D p_m1;
-      TFEFunction2D p_m2;
+      BlockVector solution_m2;
       TFEVectFunct2D u_m2;
+      TFEFunction2D p_m2;
 
       BlockVector combined_old_sols;
       TFEVectFunct2D comb_old_u;
@@ -157,6 +157,19 @@ class Time_NSE2D
     /** old time step length used to scale the pressure blocks*/
     double oldtau;
 
+    /// @brief time stepping scheme object to access everything
+    TimeDiscretization time_stepping_scheme;
+    /// @brief is the mass matrix and right hand side is solution
+    /// dependent: for example the SUPG method
+    bool is_rhs_and_mass_matrix_nonlinear;
+    /// @brief system right hand side which passes to the solver
+    BlockVector rhs_from_time_disc;
+
+    /// this is for setting the discretization type globally, since the DISCTYPE 
+    /// is removed fromt the global database but it's not simple/possible to use
+    /// different space discretization in the LocalAssembling2D
+    int space_disc_global;
+    
     /** @brief set parameters in database
     *
     * This functions checks if the parameters in the database are meaningful
@@ -173,21 +186,6 @@ class Time_NSE2D
 
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
-
-    /// 
-    bool is_rhs_and_mass_matrix_nonlinear;
-    ///
-    BlockVector rhs_from_time_disc;
-    /// 
-    bool compute_param;
-    std::shared_ptr<TFESpace2D> stab_space;
-    std::vector<double> stab_param;
-    std::shared_ptr<TFEFunction2D> stab_param_function;
-    
-    /// this is for setting the discretization type globally, since the DISCTYPE 
-    /// is removed fromt the global database but it's not simple/possible to use
-    /// different space discretization in the LocalAssembling2D
-    int space_disc_global;
 public:
     Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
                int reference_id = -4711);
@@ -205,7 +203,6 @@ public:
                const Example_TimeNSE2D& ex, int reference_id = -4711);
 
 
-    TimeDiscretization time_stepping_scheme;
     //
     /** @brief Assemble all the matrices and rhs before the time iterations
      *
@@ -337,9 +334,14 @@ public:
     { return db; }
     /// @brief return the computed errors at each discre time point
     std::array<double, int(6)> get_errors();
-    
+    // @brief
     double getFullResidual() const;
 
+    TimeDiscretization& get_time_stepping_scheme()
+    {return time_stepping_scheme;}
+    const TimeDiscretization& get_time_stepping_scheme() const
+    {return time_stepping_scheme;}
+    
     int get_space_disc_global() {return space_disc_global;}
     
 private:
