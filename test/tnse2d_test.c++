@@ -94,8 +94,8 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   
   Time_NSE2D tnse2d(domain, db);
   
-  tnse2d.time_stepping_scheme.current_step_ = 0;
-  tnse2d.time_stepping_scheme.set_time_disc_parameters();
+  tnse2d.get_time_stepping_scheme().current_step_ = 0;
+  tnse2d.get_time_stepping_scheme().set_time_disc_parameters();
   
   tnse2d.assemble_initial_time();
   
@@ -104,11 +104,11 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   while(TDatabase::TimeDB->CURRENTTIME < 
     TDatabase::TimeDB->ENDTIME-1e-10)
   {
-    tnse2d.time_stepping_scheme.current_step_++;
+    tnse2d.get_time_stepping_scheme().current_step_++;
     TDatabase::TimeDB->INTERNAL_STARTTIME 
        = TDatabase::TimeDB->CURRENTTIME;
     
-    tnse2d.time_stepping_scheme.set_time_disc_parameters();
+    tnse2d.get_time_stepping_scheme().set_time_disc_parameters();
     double tau = db["time_step_length"];   
     TDatabase::TimeDB->CURRENTTIME += tau;
     
@@ -127,7 +127,7 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
       tnse2d.assemble_matrices_rhs(i+1);
     }
     // post processing: error computations
-    tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
+    tnse2d.output(tnse2d.get_time_stepping_scheme().current_step_);
     // check the errors
     if(step==1)
       compare(tnse2d, errors[0]);

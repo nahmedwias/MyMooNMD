@@ -3,6 +3,7 @@
 #include <FEDatabase2D.h>
 #include <Example_TimeNSE2D.h>
 #include <Time_NSE2D.h>
+#include <TimeDiscretizations.h>
 #include <TimeDiscRout.h>
 #include <LoopInfo.h>
 
@@ -50,15 +51,16 @@ int main(int argc, char* argv[])
   // create an object of Time_NSE2D class
   Time_NSE2D tnse2d(Domain, parmoon_db, example);
   
-  tnse2d.time_stepping_scheme.current_step_ = 0;
-  tnse2d.time_stepping_scheme.set_time_disc_parameters();
+  TimeDiscretization& tss = tnse2d.get_time_stepping_scheme();
+  tss.current_step_ = 0;
+  tss.set_time_disc_parameters();
   
   // assemble everything at the start time
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary
   tnse2d.assemble_initial_time();
 
-  tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
+  tnse2d.output(tss.current_step_);
 
   double end_time = TDatabase::TimeDB->ENDTIME;
   
@@ -69,11 +71,11 @@ int main(int argc, char* argv[])
   
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
-    tnse2d.time_stepping_scheme.current_step_++;
+    tss.current_step_++;
 
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     // set the time parameters
-    tnse2d.time_stepping_scheme.set_time_disc_parameters();
+    tss.set_time_disc_parameters();
     double tau = parmoon_db["time_step_length"];
     TDatabase::TimeDB->CURRENTTIME += tau;
     Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
@@ -102,7 +104,7 @@ int main(int argc, char* argv[])
 
       tnse2d.assemble_matrices_rhs(i+1);
     }
-    tnse2d.output(tnse2d.time_stepping_scheme.current_step_);
+    tnse2d.output(tss.current_step_);
   }
   loop_info_time.finish(linear_iteration, tnse2d.getFullResidual());
   Output::close_file();
