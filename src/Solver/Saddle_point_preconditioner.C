@@ -334,8 +334,6 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
 #ifdef _MPI
       const TParFECommunicator3D& u_comm = *M->get_communicators()[0];
       const TParFECommunicator3D& p_comm = *M->get_communicators()[3];
-      int n_u_dof = u_comm.GetNDof();
-      int n_p_dof = p_comm.GetNDof();
       p_comm.consistency_update(p_tmp.get_entries(),3);
 #endif
 
