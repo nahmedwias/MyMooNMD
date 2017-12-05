@@ -276,7 +276,7 @@ void check_column_consistency(const FEMatrix& A, int sending_ps, int cons_level)
           std::vector<double> col_master_cpy = col_master;
           comm.consistency_update(col_master.data(), cons_level); //CONSIST UPDATE
           //now check the differences between updated and original column
-          for(int i = 0 ; i < col_master.size(); ++i)
+          for(size_t i = 0 ; i < col_master.size(); ++i)
           {
             if(col_master[i] != col_master_cpy[i])
             {

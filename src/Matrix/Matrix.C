@@ -568,8 +568,8 @@ const
     ErrThrow("Multiplying a matrix of SparsityType::B_TIMES_BT with "
              "its transposed breaks parallel functionality.");
   //check if number of dofs fit
-  size_t n_col_dof_comm = 0;
-  size_t n_row_dof_comm = 0;
+  int n_col_dof_comm = 0;
+  int n_row_dof_comm = 0;
   for(auto tc : test_comms)
     n_col_dof_comm += tc->GetNDof();
   if(n_col_dof_comm != this->GetN_Rows())

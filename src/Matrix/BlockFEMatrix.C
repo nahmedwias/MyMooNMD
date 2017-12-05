@@ -1701,16 +1701,16 @@ void BlockFEMatrix::add_blockfe_matrix(const BlockFEMatrix& Matrix, double facto
     ErrThrow("ansatz spaces are not same");
   }
   
-  int colors = Matrix.color_count_.size();
+  size_t colors = Matrix.color_count_.size();
   
-  for(int c = 0; c<colors; ++c)
+  for(size_t c = 0; c<colors; ++c)
   {
     FEMatrix* matrix_to_add;
     std::vector<std::vector<size_t>> blocks_to_add_to;
     std::vector<bool> is_transposed;
-    for(int br=0; br<Matrix.n_cell_rows_; ++br)
+    for(size_t br=0; br<Matrix.n_cell_rows_; ++br)
     {
-      for(int bc=0; bc<Matrix.n_cell_columns_; ++ bc)
+      for(size_t bc=0; bc<Matrix.n_cell_columns_; ++ bc)
       {
         if(Matrix.cell_grid_[br][bc].color_ == c)
         {

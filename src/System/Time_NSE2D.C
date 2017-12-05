@@ -13,7 +13,6 @@
 #include <LocalProjection.h>
 
 /* *************************************************************************** */
-  //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
 ParameterDatabase get_default_TNSE2D_parameters()
 {
   Output::print<5>("creating a default TNSE2D parameter database");
@@ -44,31 +43,7 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example,
  : velocity_space(&coll, "u", "velocity space",  example.get_bc(0),
                   order.first, nullptr),
    pressure_space(&coll, "p", "pressure space", example.get_bc(2),
-                  order.second, nullptr),
-   matrix({&velocity_space, &velocity_space, &pressure_space}),
-   mass_matrix({&velocity_space, &velocity_space}),
-   rhs(matrix, true),
-   solution(matrix, false),
-   u(&velocity_space, (char*)"u", (char*)"u", solution.block(0),
-     solution.length(0), 2),
-   p(&pressure_space, (char*)"p", (char*)"p", this->solution.block(2),
-     solution.length(2)),
-   solution_m1(matrix, false),
-   u_m1(&velocity_space, (char*)"u", (char*)"u", solution_m1.block(0),
-        solution_m1.length(0), 2),
-   p_m1(&pressure_space, (char*)"p", (char*)"p", this->solution_m1.block(2),
-     solution_m1.length(2)),
-   solution_m2(matrix, false),
-   u_m2(&velocity_space, (char*)"u", (char*)"u", solution_m2.block(0),
-        solution_m2.length(0), 2),
-   p_m2(&pressure_space, (char*)"p", (char*)"p", this->solution_m2.block(2),
-     solution_m2.length(2)),
-   combined_old_sols(matrix, false),
-   comb_old_u(&velocity_space, (char*)"u", (char*)"u", combined_old_sols.block(0),
-        combined_old_sols.length(0), 2),
-   extrapolate_sol(matrix, false),
-   extrapolate_u(&velocity_space, (char*)"u", (char*)"u", extrapolate_sol.block(0),
-        extrapolate_sol.length(0), 2)
+                  order.second, nullptr)
 {
   switch(type)
   {
@@ -93,6 +68,28 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example,
       mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(velocity_space, pressure_space);
       break;
   }
+  rhs = BlockVector(matrix, true);
+  solution = BlockVector(matrix, false);
+  u = TFEVectFunct2D(&velocity_space, "u", "u", solution.block(0),
+    solution.length(0), 2);
+  p = TFEFunction2D(&pressure_space,"p","p", this->solution.block(2),
+    solution.length(2));
+  solution_m1 = BlockVector(matrix, false);
+  u_m1 = TFEVectFunct2D(&velocity_space, "u", "u", solution_m1.block(0),
+       solution_m1.length(0), 2);
+  p_m1 = TFEFunction2D(&pressure_space,"p","p", this->solution_m1.block(2),
+    solution_m1.length(2));
+  solution_m2 = BlockVector(matrix, false);
+  u_m2 = TFEVectFunct2D(&velocity_space,"u","u", solution_m2.block(0),
+                        solution_m2.length(0), 2);
+  p_m2 = TFEFunction2D(&pressure_space,"p","p", this->solution_m2.block(2),
+       solution_m2.length(2));
+  combined_old_sols = BlockVector(matrix, false);
+  comb_old_u = TFEVectFunct2D(&velocity_space,"u","u", combined_old_sols.block(0),
+       combined_old_sols.length(0), 2);
+  extrapolate_sol = BlockVector(matrix, false);
+  extrapolate_u = TFEVectFunct2D(&velocity_space,"u","u", extrapolate_sol.block(0),
+       extrapolate_sol.length(0), 2);
 }
 
 /**************************************************************************** */
@@ -1266,7 +1263,7 @@ void Time_NSE2D::output(int m)
     TAuxParam2D aux;
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
     double t=TDatabase::TimeDB->CURRENTTIME;
-    if(db["example"].is(3) || db["example"].is(6))
+    if(db["example"].is(6))
     {
       u1->GetErrors(ExactNull,3, allderiv, 2, L2H1Errors, nullptr,
                   &aux,1, &v_sp,locerr);
@@ -1319,7 +1316,7 @@ void Time_NSE2D::output(int m)
   double *sol = s.solution.get_entries();
   StreamFunction(&s.velocity_space, sol,sol+n,
                     stream_function_space.get(), psi.data());
-  if(db["example"].is(3) || db["example"].is(6))// mixing layer example
+  if(db["example"].is(6))// mixing layer example
   {
     ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
                               vorticity_funct->GetValues(), divergence->GetValues());
@@ -1327,9 +1324,12 @@ void Time_NSE2D::output(int m)
   }
   else
   {
-    //double temp=0;
-    //example.do_post_processing_old(*this);
+    double dummy = 0;
+    example.do_post_processing(*this, dummy);
   }
+
+  delete u1;
+  delete u2;
 
   if(time_stepping_scheme.current_step_ % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
   {
@@ -1339,8 +1339,23 @@ void Time_NSE2D::output(int m)
       outputWriter.write(m);
     }
   }
-  delete u1;
-  delete u2;
+
+  if(db["write_solution_binary"].is(true))
+  {
+    size_t interval = db["write_solution_binary_all_n_steps"];
+    if(m % interval == 0)
+    {//write solution to a binary file
+      std::string file = db["write_solution_binary_file"];
+      if(!db["overwrite_solution_binary"]) //create a new file every time
+      {
+        file += ".";
+        file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
+      }
+      Output::info("output", "Writing current solution to file ", file);
+      systems.front().solution.write_to_file(file);
+    }
+  }
+
 }
 
 /**************************************************************************** */
