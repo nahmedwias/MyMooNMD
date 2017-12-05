@@ -109,8 +109,9 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       initialCondition.push_back(sincosexp::InitialU1);
       initialCondition.push_back(sincosexp::InitialU2);
 
-     sincosexp::ExampleFile();
-    
+      sincosexp::ExampleFile();
+      break;
+
     case 3:
       /** exact_solution */
       exact_solution.push_back( flow_around_cylinder_steady_inflow::ExactU1 );
