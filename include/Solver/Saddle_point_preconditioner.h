@@ -6,6 +6,10 @@
 #include <DirectSolver.h>
 #include <Solver.h>
 #include <Preconditioner.h>
+#ifdef _MPI
+#include <MumpsWrapper.h>
+#endif
+
 class ParameterDatabase;
 
 /** @brief implement special preconditioners for saddle point problems
@@ -91,7 +95,13 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     std::shared_ptr<TMatrix> divergence_block;
     
     /** @brief storing a factorization for the 'velocity_block' */
+#ifdef _SEQ
     std::shared_ptr<Solver<BlockFEMatrix, BlockVector>> velocity_solver;
+#endif
+#ifdef _MPI
+    // TODO: Enable iterative solve as well!
+    std::shared_ptr<MumpsWrapper> velocity_solver;
+#endif
     
     /** @brief the inverse of the diagonal of the system matrix */
     std::vector<double> inverse_diagonal;
@@ -122,8 +132,14 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      */
     std::shared_ptr<BlockMatrix> Poisson_solver_matrix;
     
+#ifdef _SEQ
     /** @brief storing a factorization for the 'Poisson_solver_matrix' */
     std::shared_ptr<DirectSolver> Poisson_solver;
+#endif
+#ifdef _MPI
+    /** @brief storing a factorization for the 'Poisson_solver_matrix' */
+    std::shared_ptr<MumpsWrapper> Poisson_solver;
+#endif
     
     /** @brief a vector to store some intermediate results
      * 

@@ -18,6 +18,10 @@
 #include <BoundFace.h>
 #include <Chrono.h>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif
+
 // see https://stackoverflow.com/a/8016853
 constexpr char Saddle_point_preconditioner::required_database_name[];
 
@@ -31,14 +35,18 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     Poisson_solver(nullptr), up_star(m), bdryCorrectionMatrix_(),
     poissonMatrixBdry_(nullptr), poissonSolverBdry_(nullptr)
 {
-  Output::print<3>("constructing a Saddle_point_preconditioner");
-  Chrono time_measuering;
+#ifdef _MPI
+  if(this->spp_type != Saddle_point_preconditioner::type::lsc)
+    ErrThrow("In MPI case, only least_squares_commutator is enabled so far.")
+#endif
+  Output::print<5>("Constructing a Saddle_point_preconditioner");
+  Chrono time_measuring;
   bool pressure_correction_in_matrix = this->M->pressure_projection_enabled();
   this->M->disable_pressure_projection();
   
   // number of block columns and rows
-  unsigned int n_rows = this->M->get_n_cell_rows();
-  unsigned int n_cols = this->M->get_n_cell_columns();
+  size_t n_rows = this->M->get_n_cell_rows();
+  size_t n_cols = this->M->get_n_cell_columns();
   pressure_space = &m.get_row_space(n_rows - 1);
   if(n_rows < 2 || n_cols != n_rows)
     ErrThrow("can not create a Saddle_point_preconditioner with this matrix");
@@ -53,6 +61,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   this->velocity_block = M->get_sub_blockfematrix(0, n_rows-2);
   this->fill_inverse_diagonal();
   
+#ifdef _SEQ
   {
     // velocity solver database
     ParameterDatabase vs_db = Solver<>::default_solver_database();
@@ -73,6 +82,16 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
       }
       catch(...){}
     }
+//    //CB DEBUG
+//    vs_db["solver_type"] = "iterative";
+//    vs_db["iterative_solver_type"] = "bi_cgstab";
+//    vs_db["preconditioner"] = "ssor";
+//    vs_db["sor_omega"] = 1.0;
+//    vs_db["max_n_iterations"] = 1000;
+//    vs_db["residual_tolerance"]= 1.0e-10;
+//    vs_db["residual_reduction"] = 1.0e-10;
+//    vs_db["damping_factor"] = 1.0;
+//    //END DEBUG
     if(vs_db["solver_type"].is("iterative"))
     {
       Output::warn<2>("Saddle_point_preconditioner",
@@ -82,6 +101,10 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     this->velocity_solver.reset(new Solver<BlockFEMatrix, BlockVector>(vs_db));
     this->velocity_solver->update_matrix(this->velocity_block);
   }
+#endif
+#ifdef _MPI
+  velocity_solver.reset(new MumpsWrapper(velocity_block));
+#endif
   
   //gradient block B^T
   // take last column without last block (which would be pressure-pressure)
@@ -98,8 +121,16 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   }
   // construct an approximation to the Schur complement matrix
   this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
-  this->Poisson_solver.reset(new DirectSolver(*this->Poisson_solver_matrix,
-                             DirectSolver::DirectSolverTypes::umfpack));
+  #ifdef _SEQ
+      this->Poisson_solver.reset(new DirectSolver(*Poisson_solver_matrix,
+                                                  DirectSolver::DirectSolverTypes::umfpack));
+  #endif
+  #ifdef _MPI
+      //comms should contain only the pressure space communicator
+      std::vector<const TParFECommunicator3D*> comms
+      = {M->get_communicators()[M->get_n_cell_rows() - 1]};
+      Poisson_solver.reset(new MumpsWrapper(*Poisson_solver_matrix, comms));
+  #endif
   u_star = BlockVector(velocity_block);
   p_star = BlockVector(*this->Poisson_solver_matrix);
   u_tmp = BlockVector(u_star);
@@ -124,7 +155,8 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   
   if(pressure_correction_in_matrix)
     this->M->enable_pressure_projection();
-  time_measuering.stop_and_print("Setting up a Saddle_point_preconditioner");
+
+  time_measuring.stop_and_print("Setting up a Saddle_point_preconditioner");
 }
 
 /* ************************************************************************** */
@@ -150,7 +182,12 @@ void Saddle_point_preconditioner::update()
   // take all blocks except from last row and last column
   this->velocity_block = M->get_sub_blockfematrix(0, n_rows-2);
   
+#ifdef _SEQ
   this->velocity_solver->update_matrix(this->velocity_block);
+#endif
+#ifdef _MPI
+  velocity_solver.reset(new MumpsWrapper(velocity_block));
+#endif
   
   // we assume the blocks involving pressure did not change
   if(this->spp_type == Saddle_point_preconditioner::type::simple)
@@ -174,9 +211,19 @@ void Saddle_point_preconditioner::update()
     
     //recompute the Poisson_solver_matrix and then create new Poisson_solver
     this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
+
+
+#ifdef _SEQ
     this->Poisson_solver.reset(
       new DirectSolver(*this->Poisson_solver_matrix,
                        DirectSolver::DirectSolverTypes::umfpack));
+#endif
+#ifdef _MPI
+    //comms should contain only the pressure space communicator
+    std::vector<const TParFECommunicator3D*> comms
+    = {M->get_communicators()[M->get_n_cell_rows() - 1]};
+    Poisson_solver.reset(new MumpsWrapper(*Poisson_solver_matrix, comms));
+#endif
   }
   else if(this->spp_type == Saddle_point_preconditioner::type::lsc 
           || this->spp_type == Saddle_point_preconditioner::type::bd_lsc)
@@ -193,9 +240,16 @@ void Saddle_point_preconditioner::update()
 }
 
 /* ************************************************************************** */
-void solve_velocity(std::shared_ptr<Solver<BlockFEMatrix>> velocity_solver, 
+void solve_velocity(
+#ifdef _SEQ
+                    std::shared_ptr<Solver<BlockFEMatrix>> velocity_solver,
+#endif
+#ifdef _MPI
+                    std::shared_ptr<MumpsWrapper> velocity_solver,
+#endif
                     const BlockVector& rhs, BlockVector& sol)
 {
+  Output::print<5>("Saddle_point_preconditioner, solve_velocity");
   unsigned int verbosity = Output::getVerbosity();
   //Output::suppressAll();
   Output::setVerbosity(1);
@@ -207,7 +261,7 @@ void solve_velocity(std::shared_ptr<Solver<BlockFEMatrix>> velocity_solver,
 void Saddle_point_preconditioner::apply(const BlockVector &z,
                                         BlockVector &r) const
 {
-  Output::print<5>("Saddle_point_preconditioner::solve");
+  Output::print<5>("Saddle_point_preconditioner::apply");
   if(r.n_blocks() == 0)
   {
     // only the standard constructor has been called for r so far
@@ -270,11 +324,6 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       // a short name to tell if the correction at the boundary should be done
       bool correct_boundary = 
         this->spp_type == Saddle_point_preconditioner::type::bd_lsc;
-      //if(correct_boundary) 
-      //  Output::print<5>("bd_LSC Saddle_point_preconditioner::solve");
-      //else
-      //  Output::print<5>("LSC Saddle_point_preconditioner::solve");
-      // -----------------------------------------------------------------------
       // The cases lsc and bd_lsc only differ in Step 1 and substep 2.2!
       unsigned int n_blocks = z.n_blocks();
       
@@ -282,12 +331,23 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       // S_p = B Q^(-1) B^T
       p_tmp = z.block(n_blocks - 1);
       
+#ifdef _MPI
+      const TParFECommunicator3D& u_comm = *M->get_communicators()[0];
+      const TParFECommunicator3D& p_comm = *M->get_communicators()[3];
+      int n_u_dof = u_comm.GetNDof();
+      int n_p_dof = p_comm.GetNDof();
+      p_comm.consistency_update(p_tmp.get_entries(),3);
+#endif
+
       if(correct_boundary)
         this->poissonSolverBdry_->solve(p_tmp, p_star);
       else
         this->Poisson_solver->solve(p_tmp, p_star);
       
       // Step 2. Update p_tmp = -B Q^(-1) K Q^(-1) B^T p_star
+#ifdef _MPI
+      p_comm.consistency_update(p_star.get_entries(),3);
+#endif
       
       // Substep 2.1. Compute B^T p_star and store it in u_tmp
       u_tmp = 0.;
@@ -309,10 +369,20 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
         }
       }
       
+#ifdef _MPI
+      u_comm.consistency_update(u_tmp.block(0),3);
+      u_comm.consistency_update(u_tmp.block(1),3);
+      u_comm.consistency_update(u_tmp.block(2),3);
+#endif
       
       // Substep 2.3. Compute  K Q^(-1) B^T p_star and store it in u_star
       velocity_block.apply(u_tmp, u_star);
       
+#ifdef _MPI
+      u_comm.consistency_update(u_star.block(0),3);
+      u_comm.consistency_update(u_star.block(1),3);
+      u_comm.consistency_update(u_star.block(2),3);
+#endif
       
       //Substep 2.4. Compute Q^(-1) K Q^(-1) B^T p_star and store it in u_star
       for(unsigned int i = 0, n_v = gradient_block->GetN_Rows(); i < n_v; ++i)
@@ -323,23 +393,42 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       // Subset 2.5. Compute B Q^(-1) K Q^(-1) B^T p_star and store it in p_tmp
       p_tmp.reset();
       divergence_block->multiply(u_star.get_entries(), p_tmp.get_entries(), 1.);
+
+#ifdef _MPI
+      p_comm.consistency_update(p_tmp.get_entries(),3);
+#endif
       
       //Step 3: 2. solver solve S_p p_star = p_tmp and store it in p_star
       Poisson_solver->solve(p_tmp, p_star);
       
+#ifdef _MPI
+      p_comm.consistency_update(p_star.get_entries(),3);
+#endif
+
       //Step 4. Update u_star = z_u - B^T p_star
       u_star = z.get_entries();
       gradient_block->multiply(p_star.get_entries(), u_star.get_entries(), -1.);
       
+#ifdef _MPI
+      u_comm.consistency_update(u_star.block(0),3);
+      u_comm.consistency_update(u_star.block(1),3);
+      u_comm.consistency_update(u_star.block(2),3);
+#endif
+
       //Step 5. Solve K u_tmp = u_star
       solve_velocity(this->velocity_solver, u_star, u_tmp);
       
+#ifdef _MPI
+      u_comm.consistency_update(u_tmp.block(0),3);
+      u_comm.consistency_update(u_tmp.block(1),3);
+      u_comm.consistency_update(u_tmp.block(2),3);
+#endif
+
       r.reset();
       // copy u_tmp and p_star back to r
       for(unsigned int i = 0; i < n_blocks - 1; ++i)
         r.add(u_tmp.block(i), i);
       r.copy(p_star.block(0), n_blocks-1);
-      /// TODO damping? this->damping_factor
       
       if(this->damping_factor != 1.0)
       {
@@ -375,8 +464,25 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
       break;
     case Saddle_point_preconditioner::type::lsc: // original LSC
     case Saddle_point_preconditioner::type::bd_lsc: // bdry corrected LSC
+#ifdef _SEQ
       ret.reset(
         divergence_block->multiply_with_transpose_from_right(inverse_diagonal));
+
+#endif
+#ifdef _MPI
+      {
+        const TParFECommunicator3D* u_comm = M->get_communicators()[0];
+        const TParFECommunicator3D* p_comm = M->get_communicators()[3];
+        std::vector<const TParFECommunicator3D*> test_comms = {p_comm};
+        std::vector<const TParFECommunicator3D*> ansatz_comms = {u_comm, u_comm, u_comm};
+
+        ret.reset(
+            divergence_block->multiply_with_transpose_from_right(inverse_diagonal,
+                                                                 test_comms,
+                                                                 ansatz_comms));
+
+      }
+#endif
       break;
     default:
       ErrThrow("unknown preconditioner for saddle point problems ");
@@ -565,6 +671,13 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     {
       this->inverse_diagonal[d] = 1.0 / mass_matrix.get(d, d);
     }
+#ifdef _MPI
+    //update the inverse diagonal to consistency level 3 (full consistent storage).
+    const TParFECommunicator3D& velo_comm = *M->get_communicators()[0];
+    velo_comm.consistency_update(&inverse_diagonal[0],3);
+    velo_comm.consistency_update(&inverse_diagonal[velo_comm.GetNDof()],3);
+    velo_comm.consistency_update(&inverse_diagonal[2*velo_comm.GetNDof()],3);
+#endif
     //delete neumann_velocity_space;
   }
 }
@@ -803,9 +916,21 @@ void Saddle_point_preconditioner::computePoissonMatrixBdry()
   if(this->spp_type == Saddle_point_preconditioner::type::bd_lsc)
   {
     bool transpose;
+#ifdef _MPI
+    ErrThrow("Boundary Corrected LSC is not yet implemented for MPI.")
+    const TParFECommunicator3D* u_comm = M->get_communicators()[0];
+    const TParFECommunicator3D* p_comm = M->get_communicators()[3];
+    std::vector<const TParFECommunicator3D*> test_comms = {p_comm};
+    std::vector<const TParFECommunicator3D*> ansatz_comms = {u_comm, u_comm, u_comm};
+#endif
     TMatrix* ret = divergence_block->multiply_with_transpose_from_right(
       bdryCorrectionMatrix_,
-      Poisson_solver_matrix->get_block(0, 0, transpose)->GetStructure());
+      Poisson_solver_matrix->get_block(0, 0, transpose)->GetStructure()
+#ifdef _MPI
+      , test_comms, ansatz_comms
+#endif
+    );
+
     poissonMatrixBdry_.reset(ret);
   }
   else
@@ -814,4 +939,3 @@ void Saddle_point_preconditioner::computePoissonMatrixBdry()
 }
 
 /* End extra methods for boundary corrected LSC */
-

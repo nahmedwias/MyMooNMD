@@ -25,6 +25,10 @@
 
 MumpsWrapper::MumpsWrapper(const BlockFEMatrix& bmatrix)
 {
+
+  //check the input
+  check_input_matrix(bmatrix);
+
   //copy the BlockFEMatrices communicators and store them
   comms_ = bmatrix.get_communicators();
 
@@ -42,6 +46,32 @@ MumpsWrapper::MumpsWrapper(const BlockFEMatrix& bmatrix)
   // transform and store the matrix distributed in coordinate format
   store_in_distributed_coordinate_form(bmatrix);
 
+}
+
+MumpsWrapper::MumpsWrapper( const BlockMatrix& bmatrix,
+              std::vector<const TParFECommunicator3D*> comms,
+              std::vector<int> loc_to_seq)
+{
+
+  //check the input
+  check_input_matrix(bmatrix);
+
+  //copy the BlockFEMatrices communicators and store them
+  comms_ = comms;
+
+  // initialize the mumps entity
+  // set those "hard" parameters which must be set before initializing
+  id_.par = 1; // root will take part in computation
+  id_.comm_fortran = MPI_Comm_c2f(MPI_COMM_WORLD);
+  id_.sym = 0; //non-symmetric matrix
+  id_.job=JOB_INIT;
+  dmumps_c(&id_);
+
+  // the "softer" parameters must be set after initializing
+  set_mumps_parameters();
+
+  // transform and store the matrix distributed in coordinate format
+  store_in_distributed_coordinate_form(bmatrix,loc_to_seq);
 }
 
 void MumpsWrapper::solve(const BlockVector& rhs, BlockVector& solution)
@@ -338,19 +368,20 @@ void MumpsWrapper::set_mumps_parameters()
 }
 
 void MumpsWrapper::store_in_distributed_coordinate_form(
-    const BlockFEMatrix& bmatrix
+    const BlockMatrix& bmatrix,
+    std::vector<int> loc_to_seq
 )
 {
-
-  // TODO This method should also react to the parameter
-  // INTERNAL_FULL_MATRIX_STRUCTURE, which is important for algebraic flux
-  // correction schemes of fem-fct and fem-tvd type. Because this is not
-  // implemented yet, the MUMPS solver is currently not applicable for problems
-  // that were stabilized with AFC.
-  if(TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
-    ErrThrow("MumpsWrapper cannot deal with INTERNAL_FULL_MATRIX_STRUCTURE "
-        "(a parameter enabled, e.g., when FEM-FCT is used) yet. Use an iterative "
-        "solver instead.")
+  //check what kind of block matrix we deal with
+  bool is_block_fe_matrix = true;
+  try
+  {
+    dynamic_cast<const BlockFEMatrix&>(bmatrix);
+  }
+  catch(const std::bad_cast& e)
+  {//cast did not work
+    is_block_fe_matrix = false;
+  }
 
   // no input checks - assume that this method is only called from
   // the constructor, which already performed checks
@@ -428,7 +459,7 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   //will always hold the transposed state of the last treated block
   bool transp;
   //will always hold the last treated block
-  std::shared_ptr<const FEMatrix> block = bmatrix.get_block(0, 0, transp);
+  std::shared_ptr<const TMatrix> block = bmatrix.get_block(0, 0, transp);
 
   for(size_t cell_row = 0; cell_row < nComms; ++cell_row) //loop over rows
   {
@@ -443,6 +474,7 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
 
       //fetch all the info from the current block
       block = bmatrix.get_block(cell_row, cell_col, transp);
+      bool is_bbt_type = ( block->get_sparse_type() == SparsityType::B_TIMES_BT );
       const int* row_ptr = block->GetRowPtr();
       const int* k_col = block->GetKCol();
       const double* entries = block->GetEntries();
@@ -464,12 +496,27 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
             // into the sparsity structure on this process
             bool is_nonzero = (entry != 0.0);
             bool is_in_master_row = masters.at(row) == mpi_rank;
-            bool is_in_active_row = row < bmatrix.get_n_row_actives(cell_row);
+            bool is_in_active_row = true; //true for standard block matrix
+            if(is_block_fe_matrix)
+              is_in_active_row  = (row < static_cast<const BlockFEMatrix&>(bmatrix).get_n_row_actives(cell_row) );
+
+            // If this is BB^T case, the matrix is assumed to be
+            // in additive storage and all entries are made count.
+            if(is_bbt_type)
+              is_in_master_row = true;
 
             if (is_nonzero && is_in_master_row && is_in_active_row)
             {//put entry into the new mumps matrix
-              matrix_.irn_loc.push_back(row_shift + row_l2g.at(row) + 1);
-              matrix_.jcn_loc.push_back(col_shift + col_l2g.at(col) + 1);
+              if(loc_to_seq.empty())
+              {
+                matrix_.irn_loc.push_back(row_shift + row_l2g.at(row) + 1);
+                matrix_.jcn_loc.push_back(col_shift + col_l2g.at(col) + 1);
+              }
+              else
+              {
+                matrix_.irn_loc.push_back(row_shift + loc_to_seq.at(row) + 1);
+                matrix_.jcn_loc.push_back(col_shift + loc_to_seq.at(col) + 1);
+              }
               matrix_.a_loc.push_back(entry);
               ++matrix_.nz_loc;
             }
@@ -478,11 +525,16 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
       }//end non-transposed case
       else if (transp) //block is stored transposed
       {
-        if ( block->GetActiveBound() != block->GetN_Rows()) //check for security
+        if ( is_block_fe_matrix)
         {
-          ErrThrow("This block (",cell_row,",",cell_col,") has test space "
-                   "non-actives, it should never have been stored in transposed state!");
+          // static cast is okay, because we are sure to deal with a BlockFEMatrix
+          if(std::static_pointer_cast<const FEMatrix>(block)->GetActiveBound() != block->GetN_Rows()) //check for security
+          {
+            ErrThrow("This block (",cell_row,",",cell_col,") has test space "
+                     "non-actives, it should never have been stored in transposed state!");
+          }
         }
+
         for (int row = 0; row < block->GetN_Rows(); ++row)
         {
           size_t row_start = row_ptr[row];
@@ -497,7 +549,9 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
             // into the sparsity structure on this process
             bool is_nonzero = (entry != 0.0);
             bool is_in_master_row = masters.at(col) == mpi_rank;
-            bool is_in_active_row = col < bmatrix.get_n_row_actives(cell_row);
+            bool is_in_active_row = true; //true for standard block matrix
+             if(is_block_fe_matrix)
+               is_in_active_row  = (col < static_cast<const BlockFEMatrix&>(bmatrix).get_n_row_actives(cell_row) );
 
             if (is_nonzero && is_in_master_row && is_in_active_row)
             {//fill entry in the sparsity structure
@@ -509,32 +563,37 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
           }
         }
       }
-      //on diagonal blocks, set the ones on diagonals of non-active rows
-      // (same code both cases, but loop does only make iterations for
-      // non-transp case, because transposed storage of blocks with testspace
-      // non-actives is not allowed in BlockFEMatrix)
-      if(cell_row == cell_col)
+      if (is_block_fe_matrix)
       {
-        for(int row =   block->GetActiveBound(); row < block->GetN_Rows(); ++row)
+        //on diagonal blocks, set the ones on diagonals of non-active rows
+        // (same code both cases, but loop does only make iterations for
+        // non-transp case, because transposed storage of blocks with testspace
+        // non-actives is not allowed in BlockFEMatrix)
+        if(cell_row == cell_col)
         {
-          if(masters.at(row)==mpi_rank)
-          {//only add the entry if the current process is master of its row
-            //put a 1 on the diagonal
-            matrix_.irn_loc.push_back(row_shift + row_l2g.at(row) + 1);
-            matrix_.jcn_loc.push_back(row_shift + row_l2g.at(row) + 1);
-            matrix_.a_loc.push_back(1);
-            ++matrix_.nz_loc;
+          for(int row = std::static_pointer_cast<const FEMatrix>(block)->GetActiveBound(); row < block->GetN_Rows(); ++row)
+          {
+            if(masters.at(row)==mpi_rank)
+            {//only add the entry if the current process is master of its row
+              //put a 1 on the diagonal
+              matrix_.irn_loc.push_back(row_shift + row_l2g.at(row) + 1);
+              matrix_.jcn_loc.push_back(row_shift + row_l2g.at(row) + 1);
+              matrix_.a_loc.push_back(1);
+              ++matrix_.nz_loc;
+            }
           }
-        }
-      }//end treating dirichlet rows
+        }//end treating dirichlet rows
+      }
     }//end loop over columns
   }//end loop over rows
 
-  // if the matrix comes from an enclosed flow problem,
-  // an internal pressure row correction is necessary
-  if (bmatrix.pressure_projection_enabled())
-    pressure_row_correction(comms_);
-
+  if (is_block_fe_matrix)
+  {
+    // if the matrix comes from an enclosed flow problem,
+    // an internal pressure row correction is necessary
+    if (static_cast<const BlockFEMatrix&>(bmatrix).pressure_projection_enabled())
+      pressure_row_correction(comms_);
+  }
 }
 
 void MumpsWrapper::pressure_row_correction(
@@ -542,7 +601,7 @@ void MumpsWrapper::pressure_row_correction(
 {
   if(comms.size() != 4)
   {
-    ErrThrow("I expected that 'comms' had size 4, since this should be a"
+    ErrThrow("I expected that 'comms' had size 4, since this should be an"
         " NSE3D problem!");
   }
   int size, my_rank;
@@ -625,6 +684,44 @@ void MumpsWrapper::scatter_vector(
 
   delete [] displ;
   delete [] N_ElementsAll;
+}
+
+void MumpsWrapper::check_input_matrix(const BlockMatrix& bmatrix)
+{
+  // TODO This method should also react to the parameter
+  // INTERNAL_FULL_MATRIX_STRUCTURE, which is important for algebraic flux
+  // correction schemes of fem-fct and fem-tvd type. Because this is not
+  // implemented yet, the MUMPS solver is currently not applicable for problems
+  // that were stabilized with AFC.
+  if(TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
+    ErrThrow("MumpsWrapper cannot deal with INTERNAL_FULL_MATRIX_STRUCTURE "
+        "(a parameter enabled, e.g., when FEM-FCT is used) yet. Use an iterative "
+        "solver instead.")
+
+  // Check that, if there is a B*B^T-matrix contained, it
+  // is the only matrix and it is non-transposed.
+  for(size_t row = 0 ; row<bmatrix.get_n_cell_rows(); ++row )
+  {
+    for(size_t col =0; col < bmatrix.get_n_cell_rows(); ++col )
+    {
+      bool transp;
+      if(bmatrix.get_block(row,col,transp)->get_sparse_type()==SparsityType::B_TIMES_BT)
+      {
+        if(bmatrix.get_n_cell_rows() != 1 || bmatrix.get_n_cell_rows() != 1 || transp)
+        {
+          //currently I do not feel like thinking about this case
+          ErrThrow("SparsityType::B_TIMES_BT matrix found in "
+              "non-1x1 BlockMatrix (or in transposed state).");
+        }
+        else
+        {
+          Output::root_info("MumpsWrapper", "SparsityType::B_TIMES_BT matrix found.");
+        }
+      }
+    }
+  }
+
+
 }
 
 #endif

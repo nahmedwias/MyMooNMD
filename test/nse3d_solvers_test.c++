@@ -240,10 +240,10 @@ double get_tolerance(std::string solver_name)
     return 1e-8;
   if(solver_name.compare("petsc") == 0)
     return 1e-9;
+  if(solver_name.compare("lsc") == 0)
+    return 1e-9;
 #ifndef _MPI
   if(solver_name.compare("umfpack") == 0)
-    return 1e-9;
-  if(solver_name.compare("lsc") == 0)
     return 1e-9;
   if(solver_name.compare("multigrid") == 0)
     return 1e-8;

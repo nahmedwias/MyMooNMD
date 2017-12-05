@@ -26,8 +26,15 @@
 #include <fstream>
 #include <algorithm>
 
-TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
+TMatrix::TMatrix(std::shared_ptr<TStructure> structure
+#ifdef _MPI
+            , const SparsityType& sparse_type_in
+#endif
+)
  : structure(structure), entries(this->structure->GetN_Entries(), 0.)
+#ifdef _MPI
+            ,sparse_type(sparse_type_in)
+#endif
 {
 }
 
@@ -497,17 +504,31 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
   return c;
 }
 
-TMatrix* TMatrix::multiply_with_transpose_from_right() const{
+TMatrix* TMatrix::multiply_with_transpose_from_right(
+#ifdef _MPI
+  const std::vector<const TParFECommunicator3D*>& test_comms
+  , const std::vector<const TParFECommunicator3D*>& ansatz_comms
+#endif
+) const{
 
   // put up a unity diagonal matrix as a vector
   std::vector<double> unityScaling(structure->GetN_Columns(), 1.0);
 
   // let the other implementations do the work.
-  return multiply_with_transpose_from_right(unityScaling);
+  return multiply_with_transpose_from_right(unityScaling
+#ifdef _MPI
+      ,test_comms, ansatz_comms
+#endif
+  );
 }
 
 TMatrix* TMatrix::multiply_with_transpose_from_right(
-  const std::vector<double>& diagonalScaling) const
+  const std::vector<double>& diagonalScaling
+#ifdef _MPI
+  , const std::vector<const TParFECommunicator3D*>& test_comms
+  , const std::vector<const TParFECommunicator3D*>& ansatz_comms
+#endif
+) const
 {
   // put up the structure by call to the specific structure generating method
   TStructure * productStructure = 
@@ -515,13 +536,23 @@ TMatrix* TMatrix::multiply_with_transpose_from_right(
 
   // construct the matrix and return a pointer
   TMatrix * ret =  multiply_with_transpose_from_right(diagonalScaling, 
-                                                      *productStructure);
+                                                      *productStructure
+#ifdef _MPI
+      ,test_comms, ansatz_comms
+#endif
+  );
+
   delete productStructure; // this has been (deep) copied in the above method
   return ret;
 }
 
 TMatrix* TMatrix::multiply_with_transpose_from_right(
-  const std::vector<double>& diagonalScaling, const TStructure& knownStructure) 
+  const std::vector<double>& diagonalScaling, const TStructure& knownStructure
+#ifdef _MPI
+  , const std::vector<const TParFECommunicator3D*>& test_comms
+  , const std::vector<const TParFECommunicator3D*>& ansatz_comms
+#endif
+)
 const
 {
   //check if the dimensions match
@@ -531,13 +562,49 @@ const
              structure->GetN_Columns());
   }
 
+#ifdef _MPI
+  //check the sparsity type
+  if(this->sparse_type == SparsityType::B_TIMES_BT)
+    ErrThrow("Multiplying a matrix of SparsityType::B_TIMES_BT with "
+             "its transposed breaks parallel functionality.");
+  //check if number of dofs fit
+  size_t n_col_dof_comm = 0;
+  size_t n_row_dof_comm = 0;
+  for(auto tc : test_comms)
+    n_col_dof_comm += tc->GetNDof();
+  if(n_col_dof_comm != this->GetN_Rows())
+    ErrThrow("Test space communicators hold wrong number of dof.");
+  for(auto ac : ansatz_comms)
+    n_row_dof_comm += ac->GetNDof();
+  if(n_row_dof_comm != this->GetN_Columns())
+    ErrThrow("Ansatz space communicators hold wrong number of dof.");
+  //fill a vector of ansatz master processes
+  std::vector<int> ansatz_masters(n_row_dof_comm,0);
+  size_t shift = 0;
+  for(auto ac : ansatz_comms)
+  {
+    const int* copy_start = ac->GetMaster();
+    int n_to_copy = ac->GetNDof();
+    std::copy(copy_start, copy_start + n_to_copy,
+              ansatz_masters.begin() + shift);
+    shift += n_to_copy;
+  }
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
   const size_t nProductRows = structure->GetN_Rows();
 
   // copy construct the product's TStructure
   std::shared_ptr<TStructure> productStructure = 
     std::make_shared<TStructure>(knownStructure);
   // create new matrix with this structure
+#ifdef _SEQ
   TMatrix* product = new TMatrix(productStructure);
+#endif
+#ifdef _MPI
+  TMatrix* product = new TMatrix(productStructure, SparsityType::B_TIMES_BT);
+#endif
   
   int * productRowPtr = productStructure->GetRowPtr();
   double * productEntries = product->GetEntries();
@@ -585,11 +652,18 @@ const
         }
         else
         {
-          //we found a pair of indices with equal entry in KCol: account for 
-          // the scaling matrix!
-          temp +=  row1EntriesBegin[index1]
-                 * row2EntriesBegin[index2]
-                 * diagonalScaling[row1ColBegin[index1]];
+          // we found a pair of indices with equal entry in KCol.
+#ifdef _MPI
+          int col = row1ColBegin[index1];
+          if(ansatz_masters.at(col) == rank)
+          {//the coupling column is master? take this entry!
+#endif
+            temp +=  row1EntriesBegin[index1]
+                   * row2EntriesBegin[index2]
+                   * diagonalScaling[row1ColBegin[index1]];
+#ifdef _MPI
+          }
+#endif
           index1++;
           index2++;
         }
@@ -604,8 +678,17 @@ const
 }
 
 std::shared_ptr< TMatrix > 
-  TMatrix::multiply_with_transpose_from_right(const TMatrix& B) const
+  TMatrix::multiply_with_transpose_from_right(const TMatrix& B
+#ifdef _MPI
+  , const std::vector<const TParFECommunicator3D*>& test_comms
+  , const std::vector<const TParFECommunicator3D*>& ansatz_comms
+#endif
+  ) const
 {
+#ifdef _MPI
+  ErrThrow("multiply_with_transpose_from_right(const TMatrix& B) "
+           "is not finished yet for MPI.");
+#endif
   // dimension check
   if(B.GetN_Rows() != this->GetN_Columns() 
     || B.GetN_Columns() !=this->GetN_Columns())

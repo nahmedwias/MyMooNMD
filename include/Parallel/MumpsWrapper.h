@@ -34,6 +34,7 @@ extern "C"
 
 //forward declarations
 class BlockFEMatrix;
+class BlockMatrix;
 class BlockVector;
 class TParFECommunicator3D;
 
@@ -45,6 +46,24 @@ class MumpsWrapper
      * @param[in] bmatrix The matrix to wrap a mumps solver around.
      */
     MumpsWrapper( const BlockFEMatrix& bmatrix );
+
+    /**
+     * Set up a Mumps wrapper for a certain BlockMatrix, supplying additional
+     * communicators for the interpretation of the matrix.
+     *
+     * Calling this will be necessary only in special cases - and
+     * will need the caller to know what he or she is doing.
+     *
+     * @param[in] matrix The matrix to wrap a mumps solver around.
+     * @param[in] comms The communicators with which to interpret
+     *                  the parallel structure of the matrix.
+     * @param loc_to_seq This optional parameter can specify a re-ordering
+     *            of the d.o.f. ("local to sequential" was my use-case).
+     *            This can be used for debugging purposes.
+     */
+    MumpsWrapper( const BlockMatrix& matrix,
+                  std::vector<const TParFECommunicator3D*> comms,
+                  std::vector<int> loc_to_seq = {});
 
     /**
      * Solve an equation system for the wrapped up matrix with the mumps solver.
@@ -86,6 +105,12 @@ class MumpsWrapper
     ~MumpsWrapper();
 
   private:
+
+    /**
+     *
+     */
+    static void check_input_matrix(const BlockMatrix& bmatrix);
+
     /**
      * Performs a couple of input checks for the solve method.
      * As a side effect, counts the global number of dofs
@@ -123,12 +148,16 @@ class MumpsWrapper
 
     /**
      * A method in mumps solver wrapper which transforms the
-     * BlockFEMatrix to the coordinate format which mumps requires.
+     *
+     * BlockMatrix to the coordinate format which Mumps requires.
      * On each process only those dofs which it is master of will be regarded.
      *
-     * @param bmatrix The BlockFEMatrix which is to transform.
+     * @param bmatrix The BlockMatrix which is to transform. In
+     * case it is a BlockFEMatrix, some extra stuff on the non-actives etc.
+     * is performed.
      */
-    void store_in_distributed_coordinate_form(const BlockFEMatrix& bmatrix);
+    void store_in_distributed_coordinate_form(const BlockMatrix& bmatrix,
+                                              std::vector<int> loc_to_seq = {});
 
     /**
      * This method is need for enclosed flows. Determines which row is the

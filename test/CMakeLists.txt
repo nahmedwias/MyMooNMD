@@ -355,6 +355,8 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   add_test(NAME nse3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_nse3d_solver_mpi mumps)
   #multigrid with cell_vanka_jacobi smoother (works in SEQ and MPI), with iterative solver fgmres
   add_test(NAME nse3d_mpi_cell_vanka_jac COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_nse3d_solver_mpi cell_vanka_jacobi)
+  #parallelized lsc
+  add_test(NAME nse3d_mpi_lsc COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_nse3d_solver_mpi lsc)
   
   #tnse3d tests
   set(_EXEC_NAME ParMooN_test_tnse3d_mpi)
