@@ -29,6 +29,19 @@
 
 #ifdef _MPI
 class TParFECommunicator3D;
+/**
+ * In MPI case, different sparsity patterns may need adaptations in
+ * other program parts (MumpsWrapper!)
+ *
+ * STANDARD: Is the usual case - non-zero entries M_{ij} occur only
+ * when i and j are d.o.f. sharing the same cell.
+ *
+ * B_TIMES_BT: This sparsity pattern occurs, when a STANDARD matrix
+ * B gets multiplied with its own transpose. The product matrix P
+ * will have additional entries P_{ij} with i and j in adjacent cells,
+ * which necessitates changes in the parallel structure of the code.
+ */
+enum class SparsityType{STANDARD, B_TIMES_BT};
 #endif
 
 class TMatrix
@@ -47,6 +60,12 @@ class TMatrix
      * Its size is determined by the TMatrix::structure.
      */
     std::vector<double> entries;
+
+#ifdef _MPI
+    /// The sparsity type of the matrix, holding information for
+    /// other program parts, esp. the solver.
+    SparsityType sparse_type;
+#endif
     
     /**
      * @brief replace the structure by a copy
@@ -67,7 +86,11 @@ class TMatrix
     
   public:
     /** @brief generate the matrix, initialize entries with zeros */
-    TMatrix(std::shared_ptr<TStructure> structure);
+    TMatrix(std::shared_ptr<TStructure> structure
+#ifdef _MPI
+            , const SparsityType& sparse_type = SparsityType::STANDARD
+#endif
+    );
 
     /**
      * @brief Generates an empty `nRows`*`nCols` Matrix with no entries
@@ -345,7 +368,12 @@ class TMatrix
      * 
      * @return A pointer to the product matrix B*B^T.
      */
-    TMatrix* multiply_with_transpose_from_right() const;
+    TMatrix* multiply_with_transpose_from_right(
+#ifdef _MPI
+  const std::vector<const TParFECommunicator3D*>& test_comms,
+  const std::vector<const TParFECommunicator3D*>& ansatz_comms
+#endif
+    ) const;
 
     /** @brief multiply this matrix B with its transposed B^T from the right 
      * and scale with a diagonal matrix in between. 
@@ -358,7 +386,12 @@ class TMatrix
      * @return A pointer to the product matrix B*D*B^T.
      */
     TMatrix* multiply_with_transpose_from_right(
-      const std::vector<double>& diagonalScaling) const;
+        const std::vector<double>& diagonalScaling
+#ifdef _MPI
+        , const std::vector<const TParFECommunicator3D*>& test_comms,
+        const std::vector<const TParFECommunicator3D*>& ansatz_comms
+#endif
+    ) const;
 
     /** @brief multiply this matrix B with its transposed B^T from the right 
      * and scale with a diagonal matrix in between.
@@ -373,7 +406,12 @@ class TMatrix
      * @return A pointer to the product matrix B*D*B^T.
      */
     TMatrix* multiply_with_transpose_from_right(
-      const std::vector<double>& diagonalScaling, const TStructure& structure) 
+        const std::vector<double>& diagonalScaling, const TStructure& structure
+#ifdef _MPI
+        , const std::vector<const TParFECommunicator3D*>& test_comms,
+        const std::vector<const TParFECommunicator3D*>& ansatz_comms
+#endif
+    )
     const;
     
     /** @brief multiply this matrix A with its transposed A^T from the right 
@@ -383,7 +421,12 @@ class TMatrix
      * @return A pointer to the product matrix A*B*A^T.
      */
     std::shared_ptr< TMatrix > multiply_with_transpose_from_right( 
-                   const TMatrix& B) const;
+        const TMatrix& B
+#ifdef _MPI
+        , const std::vector<const TParFECommunicator3D*>& test_comms,
+        const std::vector<const TParFECommunicator3D*>& ansatz_comms
+#endif
+    ) const;
     
     
     /// @brief perform one successive overrelaxation (sor) sweep.
@@ -481,6 +524,11 @@ class TMatrix
     {
       return structure->isSquare();
     }
+
+#ifdef _MPI
+    /// Get the sparsity type of the matrix.
+    SparsityType get_sparse_type() const{return sparse_type;};
+#endif
 };
 
 #endif
