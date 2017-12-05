@@ -588,7 +588,7 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
   double **Values = new double* [N_FEValues];
   double ***orig_values = new double** [N_FEValues];
   int **Index = new int* [N_FEValues];
-  double Temp[2 + N_FEValues];
+  double Temp[3 + N_FEValues];
   int n;
 
    // collect information
@@ -1368,7 +1368,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
 {
   //NOTE: change according to the discretization schemes used
   // changing needed for turbulent models and for the newton method
-  this->N_Parameters = 3;
+  this->N_Parameters = 12;
   this->N_ParamFct = 1;
   this->ParameterFct =  { TimeNSParamsVelo_GradVelo3D };
   this->N_FEValues = 12;
