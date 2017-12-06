@@ -22,7 +22,7 @@
  *
  * So far the test is adapted to:
  *  - testing the umfpack solver when compiled SEQUENTIAL
- *  - testing lsc preconditioned fgmres SEQUENTIAL
+ *  - testing lsc preconditioned fgmres SEQUENTIAL/MPI
  *  - testing multigrid preconditioned fgmres SEQUENTIAL
  *  - testing the mumps solver when compiled MPI
  *
@@ -240,10 +240,11 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 double get_tolerance(std::string solver_name)
 {//solver dependent tolerance?
 
+  if(solver_name.compare("lsc") == 0)
+    return 1e-7;
+
 #ifndef _MPI
   if(solver_name.compare("umfpack") == 0)
-    return 1e-7;
-  if(solver_name.compare("lsc") == 0)
     return 1e-7;
   if(solver_name.compare("multigrid") == 0)
     return 1e-7;
