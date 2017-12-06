@@ -170,8 +170,8 @@ void correct_dirichlet_rows(FEMatrix& MatrixA);
  * the new iterate if there is no damping
  * Output: new iterate 
  */
- void AFC_Compute_New_Iterate(const BlockVector& old_solution, BlockVector& new_solution,
-  const ParameterDatabase& db);
+ void AFC_Compute_New_Iterate(const BlockVector& old_solution, BlockVector& new_solution, const double omega);
+  //const ParameterDatabase& db);
 
 }
 

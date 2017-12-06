@@ -31,7 +31,7 @@ class Multigrid;
 
 class CD2D
 {
-  protected:
+   protected:
     
     /** @brief store a complete system on a particular grid
      * 
@@ -266,7 +266,24 @@ class CD2D
      * Which afc algorithm is performed is determined by switching over
      * ALGEBRAIC_FLUX_CORRECTION.
      */
+    
+    /*eps: The current residue r_k+1
+     * eps_old: The previous residue r_k
+     * t: Time taken to complete one iteration
+     * rhs_flag: Use to denote when one it takes one iteration of Newton as well as one iteration of Fixed_point_RHS more than 2 seconds
+     * newton_flag: Use to denote when iteration moves from Newton to Fixed_point_RHS and hence increase the tolerance
+     * up_param: The tolerance taken to change fron one schem to another
+     * 
+     */
     void do_algebraic_flux_correction();
+    double eps,t, eps_old; 
+    double omega_min, omega, omega_max;
+    double c1, c2, c3, c4;
+    double time_newton, time_rhs;
+    int rhs_flag, newton_flag, first_damp;
+    int newton_iterate, rhs_iterate;
+    double up_param;
+    BlockVector old_solution;
 };
 
 #endif // __CD2D_H__

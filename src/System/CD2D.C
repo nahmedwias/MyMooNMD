@@ -50,6 +50,13 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
            int reference_id)
  : CD2D(domain, param_db, Example_CD2D(param_db), reference_id)
 {
+  eps=1.0,t=0, eps_old=1.0;
+  omega_min=0.01, omega=1.0, omega_max=1.0;
+  c1=1.001, c2=1.1, c3=1.001, c4=0.9;
+  time_newton=0, time_rhs=0;
+  rhs_flag=0, newton_flag=0;
+  newton_iterate=0, rhs_iterate=0;
+  up_param=1e-05;
 }
 
 /** ************************************************************************ */
@@ -146,6 +153,13 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
     matrices.push_front(&systems.back().matrix);
   }
   mg->initialize(matrices);
+  eps=1.0,t=0, eps_old=1.0;
+  omega_min=0.01, omega=1.0, omega_max=1.0;
+  c1=1.001, c2=1.1, c3=1.001, c4=0.9;
+  time_newton=0, time_rhs=0;
+  rhs_flag=0, newton_flag=0;
+  newton_iterate=0, rhs_iterate=0;
+  up_param=1e-05;
 }
 
 /** ************************************************************************ */
@@ -266,16 +280,60 @@ void CD2D::assemble()
 bool CD2D::solve(const int iteration)
 {
 
-  double t = GetTime();
+  t = GetTime();
   System_per_grid& s = this->systems.front();
-
   // compute norm of residual
   BlockVector res = s.rhs;
-  s.matrix.apply_scaled_add(s.solution , res ,-1.0);
-  double eps = res.norm();
-  Output::print<2>("nonlinear step ", iteration, " residual before solve: ", eps);
-  
-  if(!db["algebraic_flux_correction"].is("none"))
+  //The Dynamic damping factor is used for Zalesak Limiter because of slow convergence fin LINEAR_PRESERVE_BJK17
+  //For iteration=0 we would have got an error which is highlighted below
+  if(!db["algebraic_flux_correction"].is("none") && iteration>0 && !db["afc_limiter"].is("linearity_preserving_BJK17"))
+  {
+    Output::print<2>("nonlinear step ", iteration, " residual before solve: ", eps_old);
+    if(eps_old>(double)db["afc_nonlinloop_epsilon"])
+    {
+      first_damp=1;
+      abc:                                                                    // label to use for goto
+      //The error comes in this line as for iteration=0, we don't have any value for old_solution
+      AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, s.solution, omega);
+      s.matrix.apply_scaled_add(s.solution , res ,-1.0);                      //Calculation of residue r_k+1
+      eps = res.norm();
+      if(eps<eps_old || omega<=c1*omega_min)                                  //eps_old is the residue r_k
+      {
+	if(eps<eps_old &&first_damp==1)
+        {
+	  omega_max=std::min(1.0,c3*omega_max);
+       	  omega=std::min(omega_max,c2*omega);
+        }
+      }
+      else
+      {
+	omega=std::max(omega_min,omega/2);
+        if(first_damp==1)
+        {
+	  omega_max=std::max(omega_min,c4*omega_max);
+	  first_damp=0;	  
+	}
+	//Output::print<4>("Epsilon Old :", eps_old, " and Epsilon new is ", eps," at iteration: ",iteration, " and omega :", omega);
+	goto abc;
+      }
+      //Output::print<4>("Value of Omega ", iteration, " : ", omega);
+    }
+    //When the solution converges
+    else
+    {
+      Output::print<1>("NONLINEAR iteration converged: iterations ", iteration, " norm of residual ", eps);
+      return(TRUE);
+    } 
+  }  
+  //For initial iteration and when the limiter is LINEAR_PRESERVE_BJK17
+  if(iteration==0 || db["afc_limiter"].is("linearity_preserving_BJK17"))
+  {
+    s.matrix.apply_scaled_add(s.solution , res ,-1.0);
+    eps = res.norm();
+    Output::print<2>("nonlinear step ", iteration, " residual before solve: ", eps);
+  }
+  //Stopping criteria for LINEAR_PRESERVE_BJK17
+  if(!db["algebraic_flux_correction"].is("none") && db["afc_limiter"].is("linearity_preserving_BJK17"))
   {
     // stop iteration if norm of residual is sufficiently small 
     if (eps <= (double)db["afc_nonlinloop_epsilon"])
@@ -284,20 +342,22 @@ bool CD2D::solve(const int iteration)
       return(TRUE);
     }
   }
-  
-  // store solution for nonlinear discretizations
+  //Storage of old solution
   if(!db["algebraic_flux_correction"].is("none"))
-    res = s.solution;
+    old_solution = s.solution;
   
   this->solver.solve(s.matrix, s.rhs, s.solution);
   Output::print<2>("SOLVE DONE");
   t = GetTime() - t;
   Output::print<3>(" solving of a CD2D problem done in ", t, " seconds");
-  if(!db["algebraic_flux_correction"].is("none"))
+  //Damping of the solution using the damping factor in database
+  if(!db["algebraic_flux_correction"].is("none") && db["afc_limiter"].is("linearity_preserving_BJK17"))
   {
-   AlgebraicFluxCorrection::AFC_Compute_New_Iterate(res, s.solution, db);
+    AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, s.solution, db["afc_nonlinloop_damping_factor"]);
   }
   Output::print<4>("solve done ", iteration);
+  //Storage of old residue
+  eps_old=eps;
   return(FALSE);   
 }
 
@@ -380,6 +440,62 @@ void CD2D::do_algebraic_flux_correction()
       //
       AlgebraicFluxCorrection::Limiter limiter = string_to_limiter(db["afc_limiter"]);
       AlgebraicFluxCorrection::Iteration_Scheme it_scheme = string_to_it_scheme(db["afc_iteration_scheme"]);
+      
+      //USE OF NEWTON METHOD WHEN RESIDUE BECOMES LESS THAN E-05
+      /*There is change of scheme when time taken by the scheme exceeds 2 secomds
+       * When the time step is approximated to 2 seconds in Newton we bring back the time for FIXED_POINT_RHS to 0 seconds
+       * For FIXED_POINT_RHS we used a different method because as soon as we have time_rhs>1 and if we used ceiling function
+       * we would have moved back to newton method and hence we use floor function. As soon as we get time_rhs>2 
+       * we reset time_newton to 0 and hence we move back to NEWTON method.
+       */
+      
+      //CONDITION WHEN ONE ITERATE OF NEWTON AS WELL AS FIXED POINT RHS TAKES MORE THAN 2 SECONDS
+      /*There can be cases when one iterate of Newton as well as Fixed point RHS takes more than 2 seconds. For that
+       *case we are using newton_iterate and rhs_iterate which will count the number of iterations that happened while
+       *running that scheme. If newton as well as rhs takes 2 seconds for one iteration then we make rhs_flag as 1, which will help
+       * us to identify that both the iterations are slow and hence we move to Newton Method as it takes less number of steps. 
+       */
+      
+      //CHANGE IN TOLERANCE WHEN NEWTON MOVES BACK TO FIXED_POINT_RHS
+      /*When the iteration changes from newton to fixed_point_rhs we increase the tolerance limit by a factor of 1e-02 
+       */
+      if(eps_old<up_param && time_newton<=2.0 && rhs_flag==0)
+      {
+	Output::print<1>("NEWTON IMPLEMENTED");
+	it_scheme=AlgebraicFluxCorrection::Iteration_Scheme::NEWTON;
+	time_newton+=t;
+	newton_iterate++;
+	if(std::ceil(time_newton)==2.0)
+	{
+	  time_rhs=0.0;
+	  rhs_iterate=0; 
+	}
+	newton_flag=1;
+      }
+      else if(eps_old<up_param && time_rhs<=2.5 && rhs_flag==0)
+      {
+	it_scheme=AlgebraicFluxCorrection::Iteration_Scheme::FIXEDPOINT_RHS;
+	time_rhs+=t;
+	rhs_iterate++;
+	if(std::floor(time_rhs)==2.0 && rhs_iterate==1 && newton_iterate==1)
+	  rhs_flag=1;
+	if(std::floor(time_rhs)==2.0)
+	{
+	  newton_iterate=0;
+	  time_newton=0.0;
+	}
+      }
+      if(eps_old<up_param && rhs_flag==1)
+	it_scheme=AlgebraicFluxCorrection::Iteration_Scheme::NEWTON;
+      if(eps_old>=up_param && newton_flag==1)
+      {
+	up_param*=1e-02;
+	newton_flag=0;
+      }
+      Output::print<4>("Iterate RHS: ", rhs_iterate);
+      Output::print<4>("Time RHS: ", time_rhs);
+      Output::print<4>("Iterate Newton: ", newton_iterate);
+      Output::print<4>("Time NEWTON: ", time_newton);
       
       //get pointers/references to the relevant objects
       TFESpace2D& feSpace = s.fe_space;
