@@ -1087,7 +1087,7 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
   int nDofs = system_matrix.GetN_Rows();
 
   // heritage style index declaration
-  int i,j,j0,j1,j2,j3,jj,kk,index;
+  int i,j,j0,j1,j2,j3,jj,index;
   double alpha_ij;
 
   // get pointers to columns, rows and entries of matrix A
@@ -1110,7 +1110,7 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
   std::vector<double> alphas;
   std::vector<double> umin, umax, q;
 
-  if (it_scheme == Iteration_Scheme::NEWTON)
+  if ((it_scheme == Iteration_Scheme::NEWTON)||(it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX))
      alphas.resize(N_Entries,0.0);
   // compute entries of the artificial diffusion matrix D
   // TODO make matrix D an actual TMatrix and not only an entries vector  
@@ -1293,13 +1293,10 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
   // loop over all rows
   for(i=0;i<nDofs;i++)
   {
-    int diag_index=i;
-    double update_diag;
-    
+    int diag_index=i;    
     // i-th row of sqmatrix
     j0 = RowPtr[i];
     j1 = RowPtr[i+1];
-    update_diag = 0;
     // loop over the columns
     for(j=j0;j<j1;j++)
     {
@@ -1348,13 +1345,8 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
 	    // update rhs
             rhs[i] += alpha_ij*F[j];
 	 }
-	  if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
-	 { // implicit treatment
-	   // off diagonal
-	   Entries[j] += (0-alpha_ij)*afc_matrix_D_entries[j];
-	   update_diag -= (0-alpha_ij)*afc_matrix_D_entries[j];
-	 }
-	 if(it_scheme==Iteration_Scheme::NEWTON)
+	 if ((it_scheme==Iteration_Scheme::NEWTON)||(it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX))
+	   // store limiter
 	   alphas[j]=alpha_ij;
         }
         
@@ -1398,44 +1390,50 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
             if (index<nDofs)
               rhs[index] -= F[j];
 	 }
-	  if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
+	 if ((it_scheme == Iteration_Scheme::NEWTON)||(it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX))
 	 {
-	   // implicit treatment
-	   // both entries are change with the same magnitude since matrix_D_Entries is symmetric
-	   Entries[j] += (0-alpha_ij)*afc_matrix_D_entries[j];
-	   update_diag -= (0-alpha_ij)*afc_matrix_D_entries[j];
-	   Entries[jj] += (0-alpha_ij)*afc_matrix_D_entries[jj];
-  	   // find diagonal entry of the row from the transposed entry
-           for (kk=j2;kk<j3;kk++)
-           {
-             if (ColInd[kk]==index)
-             {
-               break;
-             }
-           }
-	   Entries[kk] -= (0-alpha_ij)*afc_matrix_D_entries[jj];
-	 }
-	 if(it_scheme == Iteration_Scheme::NEWTON)
-	 {
+	   // store limiters
 	   alphas[j] = alpha_ij;
 	   alphas[jj] = alpha_ij;
 	 }
 	}//End of Zalesak limiter
     } //End of For loop j
 
-    // update diagonal 
-         if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
-         {
-            //OutPut(i << " update_diag " << update_diag << endl);
-            Entries[diag_index] += update_diag;
-	    //Output::print<4>(i," ", j, " ", diag_index, " ",  Entries[diag_index]);
-         }
-         if(it_scheme==Iteration_Scheme::NEWTON)
-	   alphas[diag_index]=1.0;
-    
+         if((it_scheme==Iteration_Scheme::NEWTON)||(it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX))
+	   alphas[diag_index]=1.0;   
   }//End of loop i
  
- 
+  if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX) 
+  {
+    int j3, j4, index1;
+    // update matrix 
+     for(int i=0;i<nDofs;i++)
+      {
+	j3=RowPtr[i];
+	j4=RowPtr[i+1];
+	// loop over the columns of the matrix
+	for(int j=j3;j<j4;j++)
+	{
+	  index1=ColInd[j];
+	  //Non-Diagonal Entries
+	  if(i!=index1) 
+	  {
+	    Entries[j]-=alphas[j]*afc_matrix_D_entries[j];
+          }
+	  else
+	  {
+	    double sum_flux=0.0;
+	    for(int jj=j3;jj<j4;jj++)
+	      {
+	        if(ColInd[jj]!=i)
+	        sum_flux += alphas[jj]*afc_matrix_D_entries[jj];
+	      }
+	    Entries[j]+=sum_flux;
+	  }
+        }
+      }//Formation of matrix complete   
+  }
+  
   if(it_scheme == Iteration_Scheme::NEWTON)
   {
     int j3, j4, index1;
@@ -1454,7 +1452,7 @@ void AlgebraicFluxCorrection::steady_state_algorithm(
       } 
     }
     
-    Output::print<4>("AFC: computing Jacobian");
+    Output::print<1>("AFC: computing Jacobian");
     // compute Jacobian, store on matrix entries
     if (limiter == Limiter::ZALESAK)
     {
@@ -1782,15 +1780,12 @@ void AlgebraicFluxCorrection::correct_dirichlet_rows(FEMatrix& MatrixA)
 	}
 }
 
-void AlgebraicFluxCorrection::AFC_Compute_New_Iterate(const BlockVector& old_solution, BlockVector& new_solution,
-  const ParameterDatabase& db)
+void AlgebraicFluxCorrection::AFC_Compute_New_Iterate(const BlockVector& old_solution, BlockVector& new_solution,const double omega)
+  //const ParameterDatabase& db)
 {
-    {
-      // update direction
-      new_solution.add_scaled(old_solution,-1.0);
-      new_solution.scale(db["afc_nonlinloop_damping_factor"]);
-      new_solution.add_scaled(old_solution,1.0);
-      new_solution.copy_nonactive(old_solution);
-    }
+   new_solution.add_scaled(old_solution,-1.0);
+   new_solution.scale(omega);//db["afc_nonlinloop_damping_factor"]);
+   new_solution.add_scaled(old_solution,1.0);
+   new_solution.copy_nonactive(old_solution);
 }
  
