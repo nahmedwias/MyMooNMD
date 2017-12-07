@@ -75,9 +75,6 @@ void ExampleFile()
   Output::info<1>("EXAMPLE","WiedmeyerBatchCrystallizer.h");
   Output::info<1>("EXAMPLE","With mass flow rate ", FluidProperties::mass_flow_rate * 3600, " kg/h.");
   Output::info<1>("EXAMPLE","and outflow condition '", FluidProperties::out_condition_string() ,"'.");
-
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE =
-      out_condition == OutCondition::DO_NOTHING ? 0 : 1;
 }
 
 //Boundary parts of the Geometry, numbered "bottom up"
