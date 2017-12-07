@@ -666,7 +666,7 @@ void Brinkman2D::output(int i)
   {
     std::array<double, 6> errors_temporary;
     errors_temporary.fill(0);
-    errors_temporary[1] = s.u.GetL2NormDivergence();
+    errors_temporary[1] = s.u.GetL2NormDivergenceError(example.get_exact(0), example.get_exact(1));
 
     TAuxParam2D aux_error;
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
