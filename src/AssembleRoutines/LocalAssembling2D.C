@@ -135,7 +135,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                                      int disctype)
  : type(type), discretization_type(disctype),
    name(LocalAssembling2D_type_to_string(type, disctype)), Coeffs(coeffs),
-   FEFunctions2D(fefunctions2d)
+   FEFunctions2D(fefunctions2d), N_Spaces(0)
 {
     Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
     
@@ -214,8 +214,10 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             case GALERKIN:
                 this->N_Terms = 3;
                 this->Derivatives = { D10, D01, D00 };
-                this->Needs2ndDerivatives = new bool[1];
+                this->Needs2ndDerivatives = new bool[3];//CB: better safe than sorry, this gave a valgrind error in my branch
                 this->Needs2ndDerivatives[0] = false;
+                this->Needs2ndDerivatives[1] = false;
+                this->Needs2ndDerivatives[2] = false;
                 this->FESpaceNumber = { 0, 0, 0 };
                 
                 this->AssembleParam = LocalMatrixARhs;
@@ -425,7 +427,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                                      const TAuxParam2D& aux,
                                      const TDiscreteForm2D& df)
- : type(type),
+ : type(type), discretization_type(),
    name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
@@ -501,7 +503,7 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 		TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
 		std::vector<int> myFEValue_FctIndex, std::vector<MultiIndex2D> myFEValue_MultiIndex)
 
-: type{LocalAssembling2D_type::Custom},
+: type{LocalAssembling2D_type::Custom}, discretization_type(GALERKIN), //hard coded for now
   N_Terms(myN_Terms), Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
   RowSpace(myRowSpace), ColumnSpace(myColumnSpace), RhsSpace(myRhsSpace),
   Coeffs(myCoeffs), AssembleParam(myAssembleParam), Manipulate(myManipulate),
@@ -581,13 +583,13 @@ LocalAssembling2D::~LocalAssembling2D()
 
 //==============================================================================
 void LocalAssembling2D::GetLocalForms(int N_Points,
-				      double *weights, 
+				      	  	  	  	  double *weights,
                                       double *AbsDetjk,
-				      double *X, double *Y,
+									  double *X, double *Y,
                                       int *N_BaseFuncts,
                                       BaseFunct2D *BaseFuncts,
                                       double **Parameters,
-				      double **AuxArray,
+									  double **AuxArray,
                                       TBaseCell *Cell, int N_Matrices,
                                       int N_Rhs,
                                       double ***LocMatrix, double **LocRhs,
@@ -624,6 +626,20 @@ void LocalAssembling2D::GetLocalForms(int N_Points,
     if(Coeffs)
         Coeffs(N_Points, X, Y, Parameters, AuxArray);
     
+//    //CB DEBUG
+//    if(name==std::string("TCD2D_Stiff_Rhs"))
+//    {
+//    	for(int i =0; i<N_Points;++i)
+//    	{
+//    		if(fabs(AuxArray[i][4]) > 1e-20 && AuxArray[i][4] < 0) //something's going on (sink)!
+//    		{
+//    			Output::print("non-zero in cell ", Cell->GetCellIndex(), ": ", AuxArray[i][4]);
+//    			break;
+//    		}
+//    	}
+//    }
+//    //END DEBUG
+
     if(Manipulate)
         Manipulate(N_Points, AuxArray, Parameters, Cell);
     
@@ -759,6 +775,11 @@ void LocalAssembling2D::get_local_forms(int N_Points,
     // coefficient_values[i][19] is set by hand
     coefficient_values[i][19] = AbsDetjk[i];
     
+    // FIXME CB I want this removed. Here it seems, as if in the axisymmetric case
+    // the radius 'r', which is either 'x' or 'y' depending on the rotation,
+    // gets passed on as coeff[20] - it would be better if a) always 'y' was the
+    // rotational axis (as is the case in NSE2D) and b) y gets passed as a param,
+    // not as a coefficient.
     if(TDatabase::ParamDB->Axial3DAxis == 1)
       coefficient_values[i][20] = Y[i]; // r in axial3D (X: symmetric) problems (Sashikumaar Ganesan)
     else

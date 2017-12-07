@@ -29,13 +29,17 @@ namespace driven_cavity3d //3
 {
 #include "NSE_3D/DrivenCavity3D.h"
 }
-namespace flow_around_cylinder_stat
+namespace flow_around_cylinder_stat// 4
 {
 #include "NSE_3D/FlowAroundCylinder_stat.h"
 }
 namespace poiseuille// 5
 {
 #include "NSE_3D/Poiseuille.h"
+}
+namespace wiedmeyer_batch_crystallizer //6
+{
+#include "NSE_3D/WiedmeyerBatchCrystallizer.h"
 }
 
 //test examples
@@ -242,6 +246,42 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
           
           poiseuille::ExampleFile();
           break;
+      }
+      case 6:
+      {
+        using namespace wiedmeyer_batch_crystallizer;
+        // Set example constants
+        TIME_DEPENDENT = false;
+        FluidProperties::set_mass_flow_rate(user_input_parameter_db["mass_flow_rate"]);
+        FluidProperties::set_out_condition(user_input_parameter_db["out_condition"]);
+
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+
+        // /**post processing - drag and lift calculation and output */
+        // post_processing_stat =
+
+        ExampleFile();
+        break;
       }
     case -1:
     {
