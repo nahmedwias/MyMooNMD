@@ -92,7 +92,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
 {
   static double eps = DIMENSIONLESS_VISCOSITY;
   int i;
-  double *coeff, x, y, z;
+  double *coeff;
 
  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES)
   {
@@ -111,14 +111,10 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
     for(i=0;i<n_points;i++)
     {
       coeff = coeffs[i];
-      
-      x = X[i];
-      y = Y[i];
-      z = Z[i];
       coeff[0] = eps;
-        coeff[1] = 0; // f1
-        coeff[2] = 0; // f2
-        coeff[3] = 0; // f3
+      coeff[1] = 0; // f1
+      coeff[2] = 0; // f2
+      coeff[3] = 0; // f3
         /*coeff[1] = 4*x-2*y-3*z; // f1
       coeff[2] = 3*x+11*y+5*z; // f2
       coeff[3] = -10*x-y+5*z; // f3*/

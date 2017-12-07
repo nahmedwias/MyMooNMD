@@ -125,15 +125,6 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D **fespaces,
                        BoundCondFunct2D **BoundaryConditions,
                        BoundValueFunct2D * const * const BoundaryValues
                        );
-
-#ifdef __MORTAR__
-void Assemble(TMatrix2D *matrix);
-
-/** add link term (SDFEM) */
-#ifdef __ADD_LINK_SDFEM__
-void AddLinkSDFEM(TFESpace2D *Space2D, TSquareMatrix2D *Matrix,
-#endif
-#endif // __MORTAR__
                   
                   void Assemble2D(int n_fespaces,
                                   TFESpace2D **fespaces,

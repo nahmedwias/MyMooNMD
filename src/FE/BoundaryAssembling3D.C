@@ -40,7 +40,7 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
                                             int *DOF_p = P_Space->GetGlobalDOF(cell->GetCellIndex());
 
                                             // loop over the faces (joints)
-                                            for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+                                            for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
                                                 TJoint* joint = cell->GetJoint(joint_id);
                                                 
                                                 // select boundary faces
@@ -117,8 +117,7 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
                                         int componentID,
                                         double mult)
 {
-    int ActiveBound = P_Space->GetActiveBound();
-    
+
     std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
     /**
      * @todo: check if the matrix structure is correct:
@@ -135,7 +134,7 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
         int *DOF_p = P_Space->GetGlobalDOF(cell->GetCellIndex());
         
         // loop over the faces (joints)
-        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+        for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
             TJoint* joint = cell->GetJoint(joint_id);
             
             // select boundary faces
@@ -215,7 +214,6 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
                                       int componentID,
                                       double mult)
 {
-    int ActiveBound = P_Space->GetActiveBound();
     
 //    std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
     /**
@@ -233,7 +231,7 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
         int *DOF_p = P_Space->GetGlobalDOF(cell->GetCellIndex());
         
         // loop over the faces (joints)
-        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+        for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
             TJoint* joint = cell->GetJoint(joint_id);
             
             // select boundary faces
@@ -264,16 +262,15 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
                     for(size_t l=0;l<qWeights_u.size();l++) {
                         
                         double commonFactor  = mult * qWeights_u[l] * transformationDeterminant;
-                        double scaleFactor= commonFactor;
                         
-			std::vector<double> uDirichlet(3);
+                        std::vector<double> uDirichlet(3);
                         uDirichlet[0]=0.;
                         uDirichlet[1]=0.;
-			uDirichlet[2]=0.;
-			// getXYZofTS(...)
-			// given_boundary_data0(x,y,z,uDirichlet[0]);
-			// given_boundary_data1(x,y,z,uDirichlet[1]);
-			// given_boundary_data2(x,y,z,uDirichlet[2]);
+                        uDirichlet[2]=0.;
+                        // getXYZofTS(...)
+                        // given_boundary_data0(x,y,z,uDirichlet[0]);
+                        // given_boundary_data1(x,y,z,uDirichlet[1]);
+                        // given_boundary_data2(x,y,z,uDirichlet[2]);
 			
                         for(size_t k1=0;k1<basisFunctionsValues_p[l].size();k1++) {
                             int global_dof_from_local_p = DOF_p[k1]; // Test-DOF
@@ -287,9 +284,9 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
                                 double  n_z=normal[2];
                                 
                                 // add for all three components
-                                rhs.block(0)[global_dof_from_local_p] += commonFactor * q * uDirichlet[0] * normal[0];
-                                rhs.block(1)[global_dof_from_local_p] += commonFactor * q * uDirichlet[1] * normal[1];
-                                rhs.block(2)[global_dof_from_local_p] += commonFactor * q * uDirichlet[2] * normal[2];
+                                rhs.block(0)[global_dof_from_local_p] += commonFactor * q * uDirichlet[0] * n_x;
+                                rhs.block(1)[global_dof_from_local_p] += commonFactor * q * uDirichlet[1] * n_y;
+                                rhs.block(2)[global_dof_from_local_p] += commonFactor * q * uDirichlet[2] * n_z;
                                 
                             } //for(l=0;l<N_BaseFunct;l++)
                         }
@@ -322,7 +319,7 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
         // mapping from local (cell) DOF to global DOF
         int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
         // loop over the faces (joints)
-        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+        for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
             TJoint* joint = cell->GetJoint(joint_id);
             
             // select boundary faces
@@ -366,9 +363,9 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
                                     int global_dof_from_local = DOF[k2]; // Ansatz-DOF
                                     
                                     if(global_dof_from_local < U_Space->GetActiveBound()) {
-                                        double u_x = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
-                                        double u_y = u_x;
-                                        double u_z = u_x;
+                                        //double u_x = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
+                                        //double u_y = u_x;
+                                        //double u_z = u_x;
                                         
                                         double  n_x=normal[0];
                                         double  n_y=normal[1];
@@ -421,7 +418,7 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
         // mapping from local (cell) DOF to global DOF
         int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
         // loop over the faces (joints)
-        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+        for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
             TJoint* joint = cell->GetJoint(joint_id);
             
             // select boundary faces
@@ -457,9 +454,9 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
                             int global_dof_from_local = DOF[k1]; // Test-DOF
                             
                             if(global_dof_from_local < U_Space->GetActiveBound()) {
-                                double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
-                                double v_y = v_x;
-                                double v_z = v_x;
+                                //double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
+                                //double v_y = v_x;
+                                //double v_z = v_x;
                                 
                                 double v_dx = basisFunctionsValues_derivative_x[l][k1];
                                 double v_dy = basisFunctionsValues_derivative_x[l][k1];
@@ -527,7 +524,7 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
         // mapping from local (cell) DOF to global DOF
         int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
         // loop over the faces (joints)
-        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+        for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
             TJoint* joint = cell->GetJoint(joint_id);
             
             // select boundary faces
@@ -557,16 +554,15 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
                         
                         // rescale local integral by mesh-size (important for Nitsche boundary)
                         double commonFactor = mult * qWeights[l] * transformationDeterminant;
-                        double scaleFactor = commonFactor;
                         
-			std::vector<double> uDirichlet(3);
+                        std::vector<double> uDirichlet(3);
                         uDirichlet[0]=0.;
                         uDirichlet[1]=0.;
-			uDirichlet[2]=0.;
-			// getXYZofTS(...)
-			// given_boundary_data0(x,y,z,uDirichlet[0]);
-			// given_boundary_data1(x,y,z,uDirichlet[1]);
-			// given_boundary_data2(x,y,z,uDirichlet[2]);
+                        uDirichlet[2]=0.;
+                        // getXYZofTS(...)
+                        // given_boundary_data0(x,y,z,uDirichlet[0]);
+                        // given_boundary_data1(x,y,z,uDirichlet[1]);
+                        // given_boundary_data2(x,y,z,uDirichlet[2]);
 			
                         
                         
@@ -574,9 +570,9 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
                             int global_dof_from_local = DOF[k1]; // Test-DOF
                             
                             if(global_dof_from_local < U_Space->GetActiveBound()) {
-                                double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
-                                double v_y = v_x;
-                                double v_z = v_x;
+                                //double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
+                                //double v_y = v_x;
+                                //double v_z = v_x;
                                 
                                 double v_dx = basisFunctionsValues_derivative_x[l][k1];
                                 double v_dy = basisFunctionsValues_derivative_x[l][k1];
@@ -623,7 +619,7 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
         int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
         
         // loop over the faces (joints)
-        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+        for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
             TJoint* joint = cell->GetJoint(joint_id);
             
             // select boundary faces
@@ -718,7 +714,7 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
         // mapping from local (cell) DOF to global DOF
         int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
         
-        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+        for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
             TJoint* joint = cell->GetJoint(joint_id);
             
             if (joint->GetType() == BoundaryFace ||
@@ -811,7 +807,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
         // mapping from local (cell) DOF to global DOF
         int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
         
-        for(size_t joint_id=0; joint_id< cell->GetN_Faces(); joint_id++) {
+        for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
             TJoint* joint = cell->GetJoint(joint_id);
             
             if (joint->GetType() == BoundaryFace ||
@@ -899,7 +895,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
                         qWeights.resize(N_Points);
                         qPointsT.resize(N_Points);
                         qPointsS.resize(N_Points);
-                        for (size_t k=0; k<N_Points; k++) {
+                        for (size_t k=0; k<(size_t)N_Points; k++) {
                             qWeights[k] = faceWeights[k];
                             qPointsT[k] = t[k];
                             qPointsS[k] = s[k];
@@ -970,7 +966,7 @@ void BoundaryAssembling3D::getQuadratureDataIncludingFirstDerivatives(
     qWeights.resize(N_Points);
     qPointsT.resize(N_Points);
     qPointsS.resize(N_Points);
-    for (size_t k=0; k<N_Points; k++) {
+    for (size_t k=0; k<(size_t)N_Points; k++) {
         qWeights[k] = faceWeights[k];
         qPointsT[k] = t[k];
         qPointsS[k] = s[k];
