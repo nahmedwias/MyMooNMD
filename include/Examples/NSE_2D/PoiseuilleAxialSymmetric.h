@@ -24,7 +24,6 @@ void ExampleFile()
 {
   Output::print<1>("Example: PoiseuilleAxialSymmetric.h (adapted to ASA crystallizer example)");
   Output::dash("with velocity_code ", VELOCITY_CODE, " and u_max ", u_max[VELOCITY_CODE]);
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
 // ========================================================================

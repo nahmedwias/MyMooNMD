@@ -1869,21 +1869,6 @@ TFEFunction2D & TFEFunction2D::operator=(const TFEFunction2D & other)
   this->Values      = other.Values;
   this->Length      = other.Length;
 
-TFEFunction2D::TFEFunction2D(const TFEFunction2D& other)
-:
-    FESpace2D(other.FESpace2D),
-    Values(other.Values), //points at the same values initially
-    Length(other.Length)
-{
-  // copy name and description
-  Name=strdup(other.Name);
-  Description=strdup(other.Description);
-}
-
-  // copy name and description
-  Name=strdup(rhs.Name);
-  Description=strdup(rhs.Description);
-
   return *this;
 }
 
