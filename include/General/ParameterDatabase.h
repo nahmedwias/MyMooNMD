@@ -157,6 +157,10 @@ class ParameterDatabase
     /// @brief add a nested parameter database
     void add_nested_database(ParameterDatabase db);
     
+    /// @brief Kindly ask, whether a nested database of the name
+    ///        'name' is contained.
+    bool has_nested_database(std::string name) const;
+
     /// @brief return additional parameter database with a given name.
     const ParameterDatabase& get_nested_database(std::string name) const;
     ParameterDatabase& get_nested_database(std::string name);
