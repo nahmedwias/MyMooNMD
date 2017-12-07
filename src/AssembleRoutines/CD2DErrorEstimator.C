@@ -603,7 +603,7 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
   double absdet1D[MaxN_QuadPoints_2D];
   double cell_x0,cell_y0,cell_x1,cell_y1,*xi1DNeigh,*eta1DNeigh, *FEFunctValuesNeigh;
   double *X1DNeigh,*Y1DNeigh,*X1DCell,*Y1DCell;
-  double delta_K;
+  double delta_K=0;
   const int *TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpLen3;
   const int  *TmpoEnlE, *TmpEdVer, *TmpECI, *TmpCE, *TmpEdVerParent, *TmpEdVerNeigh;
   TJoint *joint,*parent_joint;

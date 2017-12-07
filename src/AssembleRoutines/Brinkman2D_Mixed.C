@@ -593,7 +593,7 @@ void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
     double * Orig5 = OrigValues[5];          // p_y
     
     // values defined in the example
-    double c0 = coeff[0];                   // t^2
+    //double c0 = coeff[0];                   // t^2
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
     //double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)

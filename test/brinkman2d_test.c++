@@ -87,7 +87,7 @@ void check_brinkman2d(TDomain & domain, ParameterDatabase& db, int velocityCode,
 
   Output::print("FEDATABASE");
   Output::set_outfile("Test.out");
-  TDatabase::WriteParamDB("FEDATA");
+  TDatabase::WriteParamDB((char*)"FEDATA");
 
   Brinkman2D brinkman2d(domain, db);
   brinkman2d.assemble();
