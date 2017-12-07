@@ -147,9 +147,6 @@ int main(int argc, char* argv[])
     db.add("geo_file", "Default_UnitCube_Hexa", "",
            {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
     db.add("refinement_n_initial_steps",(size_t) 4,"",(size_t) 0, (size_t) 5);
-    //CB DEBUG
-    db["refinement_n_initial_steps"].set(4);
-    //END DEBUG
     db.merge(Solver<>::default_solver_database(), true);
     db["solver_type"] = "iterative";
     db["iterative_solver_type"] = "fgmres";
