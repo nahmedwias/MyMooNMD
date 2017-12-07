@@ -24,10 +24,8 @@ The boundary condition is treated as an essential boundary condition.
    }
  */
 
-
 void ExampleFile()
 {
-  // TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = OSEEN_PROBLEM;
   Output::print<1>("Example: SinCos_BadiaCodina_DarcyFlow_Test.h");
 }
 
@@ -59,7 +57,6 @@ void ExactP(double x, double y, double *values)
   values[3] = sigma * (-8) * Pi * Pi * sin(2 * Pi * x) * sin(2 * Pi * y);   //Delta p=p_xx+p_yy
 }
 
- // 20.11.17 LB OLD
 // ========================================================================
 // boundary conditions (Parametrisierung des Randes); Param \in [0,1]
 // ========================================================================
@@ -84,44 +81,19 @@ void BoundCondition(int i, double Param, BoundCond &cond)
       return;
     }
   }
-
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-/*// LB 15.11.17 start OLD
-// loop to impose Neumann boundary conditions
-  for (int j = 0; j < TDatabase::ParamDB->n_neumann_boundary; j++)
-  {
-    if ( BdComp == TDatabase::ParamDB->neumann_boundary_id[j])
-    {
-      switch(BdComp)
-      {
-        case 0:
-          value = 0.;//TDatabase::ParamDB->neumann_boundary_value[j];
-          break;
-        case 2:
-          value = 0.;//-TDatabase::ParamDB->neumann_boundary_value[j];
-          break;
-        default:
-          Output::print("I cannot impose Neumann boundary condition on component ", BdComp);
-          exit(1);
-          break;
-      }
-      return;
-    }
-  }
-*/
-// loop to impose (strong or weak) Dirichlet
   switch(BdComp)
   {
     case 0: value = 0.;
             break;
-    case 1: value = -2 * Pi * sin( 2 * Pi * Param ); //0.;//-2 * Pi * sin(2 * Pi * Param) ; // u \cdot n = u_1; x = 1 --> cos(2 pi x) = 1
+    case 1: value = -2 * Pi * sin( 2 * Pi * Param );  // u \cdot n = u_1; x = 1 --> cos(2 pi x) = 1
             break;
     case 2: value = 0.;
             break;
-    case 3: value = -2 * Pi * sin( 2 * Pi * (1-Param) );   //0.;//2 * Pi * sin(2 * Pi * (1-Param));  // u \cdot n = - u_1; x = 0 --> cos(2 pi x) = 1
+    case 3: value = -2 * Pi * sin( 2 * Pi * (1-Param) );  // u \cdot n = - u_1; x = 0 --> cos(2 pi x) = 1
             break;
     default: cout << "No boundary component with this number." << endl;
              break;
@@ -130,101 +102,20 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-///* LB 15.11.17 start OLD
-//  // loop to impose Neumann boundary conditions
-//  for (int j = 0; j < TDatabase::ParamDB->n_neumann_boundary; j++)
- //  {
-  //   if ( BdComp == TDatabase::ParamDB->neumann_boundary_id[j])
- //    {
- //      switch(BdComp)
- //      {
- //        case 1:
-  //         value = 0.;//TDatabase::ParamDB->neumann_boundary_value[j];
-  //         break;
-  //       case 2:
-  //         value = 0.;//-TDatabase::ParamDB->neumann_boundary_value[j];
-   //        break;
-  //       case 3:
-  //         value = 0.;//-TDatabase::ParamDB->neumann_boundary_value[j];
- //          break;
-  //       default:
-  //         Output::print("I cannot impose Neumann boundary condition on component ", BdComp);
-  //         exit(1);
-  //         break;
-   //    }
-  //     return;
-  //   }
- //  }
- // /* LB 15.11.17 start OLD
-
-  // loop to impose (strong or weak) Dirichlet
   switch(BdComp)
   {
-    case 0: value = -2 * Pi * sin( 2 * Pi * Param);  //0.; //2 * Pi * sin(2 * Pi * Param);  // u \cdot n = - u_2; y = 0 --> cos(2 pi y) = 1
+    case 0: value = -2 * Pi * sin( 2 * Pi * Param);  // u \cdot n = - u_2; y = 0 --> cos(2 pi y) = 1
             break;
     case 1: value = 0.;
             break;
-    case 2: value = -2 * Pi * sin( 2 * Pi * (1-Param)); //0.; //-2 * Pi * sin(2 * Pi * (1-Param));  // u \cdot n = u_2; y = 1 --> cos(2 pi y) = 1
+    case 2: value = -2 * Pi * sin( 2 * Pi * (1-Param));  // u \cdot n = u_2; y = 1 --> cos(2 pi y) = 1
             break;
     case 3: value = 0.;
             break;
     default: cout << "No boundary component with this number." << endl;
              break;
   }
-
 }
-// 20.11.17 LB OLD^
-
-/*// 20.11.17 LB New start
-void BoundCondition(int bdComp, double t, BoundCond &cond)
-{
-  cond = (bdComp == 0) ? NEUMANN : DIRICHLET;
-}
-// u \cdot n
-void UNBoundValue(int BdComp, double t, double &value)
-{
-  double x, y, nx, ny;
-  switch(BdComp)
-  {
-    case 0:
-      x = t; y = 0.;
-      nx = 0.; ny = -1.;
-      break;
-    case 1:
-      x = 1.; y = t;
-      nx = 1.; ny = 0.;
-        break;
-    case 2:
-      x = 1. - t; y = 1.;
-        nx = 0.; ny = 1.;
-      break;
-    case 3:
-      x = 0; y = 1. - t;
-      nx = -1.; ny = 0.;
-      break;
-    default:
-      ErrThrow("wrong boundary part number ", BdComp);
-      break;
-  }
-  BoundCond cond;
-  BoundCondition(BdComp, t, cond); 
-  if(cond == DIRICHLET)
-  {
-    double u1[4], u2[4];
-    ExactU1(x, y, u1);
-    ExactU2(x, y, u2);
-    value = nx * u1[0] + ny * u2[0]; 
-  }
-  else // Neumann
-  {
-    //Not yet done!
-    // double p[4];
-    // ExactP(x, y, p);
-    // value = p[0];
-  }
-}
-*/// 20.11.17 LB New end
-
 
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
@@ -253,5 +144,5 @@ void LinCoeffs(int n_points, double *X, double *Y,
     coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
     coeffs[i][7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
     coeffs[i][8] = TDatabase::ParamDB->grad_div_stab_weight;
-  }
+    }
 }
