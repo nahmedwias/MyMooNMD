@@ -40,7 +40,7 @@ void testCN(Time_CD2D &tcd, int m)
   else if(m==1)
   {
     if( fabs(errors[0] - 0.0707957) > eps1 )
-      ErrThrow("test Crank-Nicolson: L2 norm not correct.");
+      ErrThrow("test Crank-Nicolson: L2 norm not correct.", errors[0]);
     if( fabs(errors[1] - 6.85906) > eps2 )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
@@ -96,8 +96,6 @@ void time_integration(int td, Time_CD2D& tcd)
     TDatabase::TimeDB->ENDTIME-1e-10)
   {
     step ++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME
-       = TDatabase::TimeDB->CURRENTTIME;
     SetTimeDiscParameters(1);
 
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;

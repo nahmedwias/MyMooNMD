@@ -48,7 +48,7 @@ Example_TimeCD2D::Example_TimeCD2D(
       problem_coefficients = linear_space_time::BilinearCoeffs;
       
       /** Initial condition*/
-      initialCondition.push_back(linear_space_time::InitialCondition);
+     initialCondition.push_back(linear_space_time::InitialCondition);
      linear_space_time::ExampleFile();
 
      this->timeDependentRhs = linear_space_time::rhs_depends_on_time;

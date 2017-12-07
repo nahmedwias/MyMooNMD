@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
   //print information on the mesh partition on the finest grid
   domain.print_info("TCD3D domain");
   
+  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
 
@@ -104,7 +105,6 @@ int main(int argc, char *argv[])
   while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME - 1e-10)
   {
     step++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     SetTimeDiscParameters(1);
 
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
