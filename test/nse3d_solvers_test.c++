@@ -149,6 +149,19 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["preconditioner"] = "least_squares_commutator";
     db["nonlinloop_epsilon"] = 1e-12;
+    // If you want to run tests with an iterative solver for the
+    // velocity block, comment out these lines of code here.
+    ParameterDatabase velocity_solver_db = Solver<>::default_solver_database();
+    velocity_solver_db.set_name("Saddle Point Preconditioner Database");
+    velocity_solver_db["solver_type"] = "iterative";
+    velocity_solver_db["iterative_solver_type"] = "bi_cgstab";
+    velocity_solver_db["preconditioner"] = "ssor";
+    velocity_solver_db["sor_omega"] = 1.0;
+    velocity_solver_db["max_n_iterations"] = 1000;
+    velocity_solver_db["residual_tolerance"] = 1.0e-10;
+    velocity_solver_db["residual_reduction"] = 1.0e-10;
+    velocity_solver_db["damping_factor"] = 1.0;
+    db.add_nested_database(velocity_solver_db);
   }
   else if (solver_name.compare("multigrid") == 0)
   {
@@ -315,7 +328,7 @@ int main(int argc, char* argv[])
   {
     //do the domain thingy
     db.add("boundary_file", "Default_UnitCube", "");
-    db.add("geo_file", "Default_UnitCube_Hexa", "", 
+    db.add("geo_file", "Default_UnitCube_Hexa", "",
 	   {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
     TDomain domain_hex(db);
 
@@ -335,9 +348,6 @@ int main(int argc, char* argv[])
 
     if(std::string(argv[1]) == std::string("cell_vanka_jacobi"))
     {//the cell vanka case - test only on Q2/P1-disc element (MPI parallelized & disc press)
-      // we are only testing this simple example, because Richardson iteration
-      // (which, up to now, is the only MPI parallel iterative solver, is plain
-      // bad)
       db["example"] = -1;
       size_t nstype = 4; //nstype should not matter much here
 #ifndef _MPI
@@ -419,17 +429,12 @@ int main(int argc, char* argv[])
     }
 #ifndef _MPI
     {
-      //FIXME This test does currently not converge for multigrid! Investigate!
-      // Update: It seems in the old version, it did not run either - the old
-      // multigrid test just used an fgmres preconditioned with a direct solver
-      // - switching the smoothers to actual nodal vanka in the old implementation
-      // leads to no convergence!
       if(std::string(argv[1]) == std::string("multigrid"))
-        return 0;
+        return 0; //no convergence for multigrid
       if(my_rank==0)
         Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
       db["example"] = -4;
-      size_t nstype = 4; //TODO 14
+      size_t nstype = 4;
       check(db, grid_collections, 3,-4711, nstype, errors, tol);
     }
 #endif

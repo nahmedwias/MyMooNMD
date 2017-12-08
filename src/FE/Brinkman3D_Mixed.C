@@ -42,7 +42,7 @@ void Brinkman3DType1Galerkin(double Mult, double *coeff,
     //double **MatrixA31 = LocMatrices[6];
     //double **MatrixA32 = LocMatrices[7];
     double **MatrixA33 = LocMatrices[8];
-    double **MatrixC = LocMatrices[9];
+    //double **MatrixC = LocMatrices[9];
     double **MatrixB1  = LocMatrices[10];
     double **MatrixB2  = LocMatrices[11];
     double **MatrixB3  = LocMatrices[12];

@@ -61,7 +61,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   this->velocity_block = M->get_sub_blockfematrix(0, n_rows-2);
   this->fill_inverse_diagonal();
   
-#ifdef _SEQ
+
   {
     // velocity solver database
     ParameterDatabase vs_db = Solver<>::default_solver_database();
@@ -70,41 +70,42 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     // use the given database or one of its nested databases, depending on which
     // one has the correct name. Otherwise the default solver database is used.
     if(db.get_name() == db_name)
-    {
-      vs_db.merge(db, false); // copy from input database
+    {//...the input database has the required name
+      vs_db.merge(db, false);
     }
-    else
-    {
-      // see if a nested database with this name exists, and take that if so.
-      try
-      {
-        vs_db.merge(db.get_nested_database(db_name), false);
-      }
-      catch(...){}
+    else if(db.has_nested_database(db_name))
+    {//...the input database has a nested database of the required name
+      vs_db.merge(db.get_nested_database(db_name), false);
     }
-//    //CB DEBUG
-//    vs_db["solver_type"] = "iterative";
-//    vs_db["iterative_solver_type"] = "bi_cgstab";
-//    vs_db["preconditioner"] = "ssor";
-//    vs_db["sor_omega"] = 1.0;
-//    vs_db["max_n_iterations"] = 1000;
-//    vs_db["residual_tolerance"]= 1.0e-10;
-//    vs_db["residual_reduction"] = 1.0e-10;
-//    vs_db["damping_factor"] = 1.0;
-//    //END DEBUG
     if(vs_db["solver_type"].is("iterative"))
     {
-      Output::warn<2>("Saddle_point_preconditioner",
-                      " Note that solving systems within LSC using some "
+      Output::root_info<2>("Saddle_point_preconditioner",
+                      "Note that solving systems within LSC using some "
                       "iterative routine requires a flexible solver.");
     }
-    this->velocity_solver.reset(new Solver<BlockFEMatrix, BlockVector>(vs_db));
-    this->velocity_solver->update_matrix(this->velocity_block);
-  }
+#ifdef _SEQ
+    velocity_solver.reset(new Solver<BlockFEMatrix, BlockVector>(vs_db));
+    velocity_solver->update_matrix(this->velocity_block);
 #endif
 #ifdef _MPI
-  velocity_solver.reset(new MumpsWrapper(velocity_block));
+    if(vs_db["solver_type"].is("direct"))
+    {
+      Output::root_info<3>("Saddle_point_preconditioner",
+                           "Setting up a MUMPS velocity solver.");
+      velocity_mumps_wrapper.reset(new MumpsWrapper(velocity_block));
+    }
+    else if (vs_db["solver_type"].is("iterative"))
+    {
+      Output::root_info<3>("Saddle_point_preconditioner",
+                           "Setting up an iterative velocity solver "
+                           "of type ", vs_db["iterative_solver_type"],".");
+      velocity_solver.reset(new Solver<BlockFEMatrix, BlockVector>(vs_db));
+      velocity_solver->update_matrix(velocity_block);
+    }
+    else
+      ErrThrow("What kind of solver should that be???");
 #endif
+  }
   
   //gradient block B^T
   // take last column without last block (which would be pressure-pressure)
@@ -186,7 +187,21 @@ void Saddle_point_preconditioner::update()
   this->velocity_solver->update_matrix(this->velocity_block);
 #endif
 #ifdef _MPI
-  velocity_solver.reset(new MumpsWrapper(velocity_block));
+  if(velocity_solver && velocity_mumps_wrapper)
+    ErrThrow("Both velocity_solver and velocity_mumps_wrapper are "
+             "initialised, that puzzles me quite a bit.");
+  if(velocity_mumps_wrapper)
+  {
+    Output::root_info<4>("Saddle_point_preconditioner: Update velocity_mumps_wrapper.");
+    velocity_mumps_wrapper.reset(new MumpsWrapper(velocity_block));
+  }
+  else if (velocity_solver)
+  {
+    Output::root_info<4>("Saddle_point_preconditioner: Update velocity_solver.");
+    velocity_solver->update_matrix(velocity_block);
+  }
+  else
+    ErrThrow("No velocity solver could be updated!");
 #endif
   
   // we assume the blocks involving pressure did not change
@@ -240,20 +255,30 @@ void Saddle_point_preconditioner::update()
 }
 
 /* ************************************************************************** */
-void solve_velocity(
-#ifdef _SEQ
-                    std::shared_ptr<Solver<BlockFEMatrix>> velocity_solver,
-#endif
-#ifdef _MPI
-                    std::shared_ptr<MumpsWrapper> velocity_solver,
-#endif
-                    const BlockVector& rhs, BlockVector& sol)
+void Saddle_point_preconditioner::solve_velocity(
+    const BlockVector& rhs, BlockVector& sol) const
 {
   Output::print<5>("Saddle_point_preconditioner, solve_velocity");
   unsigned int verbosity = Output::getVerbosity();
   //Output::suppressAll();
   Output::setVerbosity(1);
+#ifdef _SEQ
   velocity_solver->solve(rhs, sol);
+#endif
+#ifdef _MPI
+  //decide whether velocity_solver or velocity_mumps_wrapper must be used
+  if(velocity_solver && velocity_mumps_wrapper)
+    ErrThrow("Both velocity_solver and velocity_mumps_wrapper are "
+             "initialised, that puzzles me quite a bit.");
+  if(velocity_solver)
+  {
+    velocity_solver->solve(rhs, sol);
+  }
+  else if(velocity_mumps_wrapper)
+    velocity_mumps_wrapper->solve(rhs, sol);
+  else
+    ErrThrow("No velocity solver could be found!");
+#endif
   Output::setVerbosity(verbosity); // reset verbosity for further output
 }
 
@@ -282,7 +307,7 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       // ----------------------------------------------------------------------
       // solve A du* = r_u
       u_tmp = z.get_entries();
-      solve_velocity(this->velocity_solver, u_tmp, u_star);
+      solve_velocity(u_tmp, u_star);
       
       // ----------------------------------------------------------------------
       // solve ^S dp* = r_p - B du*
@@ -414,7 +439,7 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
 #endif
 
       //Step 5. Solve K u_tmp = u_star
-      solve_velocity(this->velocity_solver, u_star, u_tmp);
+      solve_velocity(u_star, u_tmp);
       
 #ifdef _MPI
       u_comm.consistency_update(u_tmp.block(0),3);

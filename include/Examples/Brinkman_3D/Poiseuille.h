@@ -50,8 +50,8 @@ void ExactP(double x, double y,  double z, double *values)
     double Umax = 1.;
     double DP = 4*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
     //  double DP = 8*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
-    double Pinlet = DP/2;
-    double Poutlet = -DP/2;
+    //double Pinlet = DP/2;
+    //double Poutlet = -DP/2;
     double zInlet = 1.;
     values[0] = -DP/Length*(z-zInlet)+DP/2;
     //  values[0] = -DP/3*z+5*DP/6;
@@ -154,10 +154,10 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
     double *coeff;
-    double Length = 1;
-    double Radius = 1.;
-    double Umax = 1.;
-    double DP = 4*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
+    //double Length = 1;
+    //double Radius = 1.;
+    //double Umax = 1.;
+    //double DP = 4*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
     //  double DP = 8*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
 
     

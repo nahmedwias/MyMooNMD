@@ -168,7 +168,7 @@ class LocalAssembling2D
      * discretization: one can include all other forms, for example
      * the different non-linear forms etc
      */
-    void set_parameters_for_tnseGalerkin(LocalAssembling2D_type type);
+    void set_parameters_for_tnseGalerkin(LocalAssembling2D_type type);    
     /** @brief parameters which are used only for the SUPG
      * discretization: one can include all other forms, for example
      * the different non-linear forms etc
