@@ -169,6 +169,17 @@ class LocalAssembling2D
      * the different non-linear forms etc
      */
     void set_parameters_for_tnseGalerkin(LocalAssembling2D_type type);
+    /** @brief parameters which are used only for the SUPG
+     * discretization: one can include all other forms, for example
+     * the different non-linear forms etc
+     */
+    void set_parameters_for_tnseSUPG(LocalAssembling2D_type type);
+    /** @brief parameters which are used only for the SUPG
+     * discretization: one can include all other forms, for example
+     * the different non-linear forms etc
+     */
+    void set_parameters_for_tnseSmagorinsky(LocalAssembling2D_type type);
+    
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
