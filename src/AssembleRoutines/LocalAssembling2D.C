@@ -395,10 +395,21 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
         case LocalAssembling2D_type::TNSE2D:
         case LocalAssembling2D_type::TNSE2D_NL:
         case LocalAssembling2D_type::TNSE2D_Rhs:
-            this->set_parameters_for_tnseGalerkin(type);
-            // this->set_parameters_for_tnse(type);
-            break;
-            
+	  switch(this->discretization_type)
+            {
+              case GALERKIN:
+                this->set_parameters_for_tnseGalerkin(type);
+                break;
+              case SUPG:
+                // this->set_parameters_for_tnseSUPG(type);
+                break;
+              case SMAGORINSKY:
+                //this->set_parameters_for_tnseSmagorinsky(type);
+                break;
+            default:
+              ErrThrow("DISCTYPE ", this->discretization_type, " is not supported yet");
+          }
+          break;
         default:
             ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);
             throw("unknown LocalAssembling2D_type");
@@ -1615,18 +1626,18 @@ void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type t
           this->AssembleParam = TimeNSType2Galerkin;
           break; // nstype 2
         case 3:
-          this->N_Matrices    = 7;
-          this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1 };
-          this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0 };
+          this->N_Matrices    = 8;
+          this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1 };
+          this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0 };
           if(TDatabase::ParamDB->LAPLACETYPE == 0)
             this->AssembleParam = TimeNSType3Galerkin;
           else
             this->AssembleParam = TimeNSType3GalerkinDD;
           break; // nstype 3
         case 4:
-          this->N_Matrices    = 9;
-          this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
-          this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
+          this->N_Matrices    = 10;
+          this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
+          this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
           if(TDatabase::ParamDB->LAPLACETYPE == 0)
             this->AssembleParam = TimeNSType4Galerkin;
           else
@@ -1677,4 +1688,3 @@ void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type t
       ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
   }
 }
-

@@ -43,7 +43,10 @@ class TFEVectFunct3D : public TFEFunction3D
     /** return i-th component as FEFunction3D */
     TFEFunction3D *GetComponent(int i) const
     {
-      return new TFEFunction3D(FESpace3D, Name, Description,
+      // the name of the component will include the index i
+      std::string fct_name(Name);
+      fct_name += std::to_string(i);
+      return new TFEFunction3D(FESpace3D, fct_name, Description,
                                Values+i*Length, Length);
     }
 
