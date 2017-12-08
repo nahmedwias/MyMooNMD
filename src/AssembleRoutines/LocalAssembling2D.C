@@ -398,6 +398,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
         case LocalAssembling2D_type::TNSE2D_Rhs:
 	  switch(discretization_type){
 	    case GALERKIN:
+	    case LOCAL_PROJECTION:
 	      this->set_parameters_for_tnseGalerkin(type);
 	      break;
 	    case SUPG:

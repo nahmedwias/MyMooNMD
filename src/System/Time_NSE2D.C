@@ -1315,8 +1315,9 @@ void Time_NSE2D::output(int m)
   
   int n= s.solution.length(0);
   double *sol = s.solution.get_entries();
-  StreamFunction(&s.velocity_space, sol,sol+n,
-                    stream_function_space.get(), psi.data());
+  if(!db["space_discretization_type"].is("local_projection"))
+    StreamFunction(&s.velocity_space, sol,sol+n,
+		   stream_function_space.get(), psi.data());
   if(db["example"].is(6))// mixing layer example
   {
     ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
