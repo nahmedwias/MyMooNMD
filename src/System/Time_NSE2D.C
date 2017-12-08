@@ -265,9 +265,7 @@ void Time_NSE2D::set_parameters()
   // Smagorinsky
   if(db["space_discretization_type"].is("smagorinsky"))
   {
-    space_disc_global = 4;
-    TDatabase::ParamDB->NSTYPE = 4;
-    TDatabase::ParamDB->LAPLACETYPE =1;
+    space_disc_global = 4;    
   }
 
   if(db["space_discretization_type"].is("local_projection"))
@@ -735,7 +733,7 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           }  
           break;
         case 14:
-          if(!db["space_discretization_type"].is("supg") || !db["space_discretization_type"].is("local_projection"))
+          if(!db["space_discretization_type"].is("supg") && !db["space_discretization_type"].is("local_projection"))
           {
             ErrThrow("NSTYPE 14 only supports SUPG and Local Projection ");
           }
@@ -749,10 +747,11 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           
           if(db["space_discretization_type"].is("supg") )
           {
-            sqMat.resize(6);
+            sqMat.resize(7);
             sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+	    sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
             // pressure-pressure block
-            sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+            sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
           }
           
           reMat.resize(4);
