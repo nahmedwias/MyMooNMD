@@ -355,12 +355,9 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       // Step 1: Poisson solver: solve S_p p_star = p_tmp = z_p, where 
       // S_p = B Q^(-1) B^T
       p_tmp = z.block(n_blocks - 1);
-      
-#ifdef _MPI
-      const TParFECommunicator3D& u_comm = *M->get_communicators()[0];
-      const TParFECommunicator3D& p_comm = *M->get_communicators()[3];
-      p_comm.consistency_update(p_tmp.get_entries(),3);
-#endif
+
+      // MPI: it is not necessary to update p_tmp,
+      // because rhs 'z' enters in consistency lvl 3
 
       if(correct_boundary)
         this->poissonSolverBdry_->solve(p_tmp, p_star);
@@ -369,6 +366,9 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       
       // Step 2. Update p_tmp = -B Q^(-1) K Q^(-1) B^T p_star
 #ifdef _MPI
+      const TParFECommunicator3D& u_comm = *M->get_communicators()[0];
+      const TParFECommunicator3D& p_comm = *M->get_communicators()[3];
+      // update p_star to lvl3, for matrix-vector product.
       p_comm.consistency_update(p_star.get_entries(),3);
 #endif
       
@@ -393,38 +393,40 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       }
       
 #ifdef _MPI
+      // update u_tmp to lvl3, for matrix-vector product.
       u_comm.consistency_update(u_tmp.block(0),3);
       u_comm.consistency_update(u_tmp.block(1),3);
       u_comm.consistency_update(u_tmp.block(2),3);
 #endif
-      
       // Substep 2.3. Compute  K Q^(-1) B^T p_star and store it in u_star
       velocity_block.apply(u_tmp, u_star);
-      
-#ifdef _MPI
-      u_comm.consistency_update(u_star.block(0),3);
-      u_comm.consistency_update(u_star.block(1),3);
-      u_comm.consistency_update(u_star.block(2),3);
-#endif
-      
+
       //Substep 2.4. Compute Q^(-1) K Q^(-1) B^T p_star and store it in u_star
       for(unsigned int i = 0, n_v = gradient_block->GetN_Rows(); i < n_v; ++i)
       {
         u_star[i] *= this->inverse_diagonal[i];
       }
       
+#ifdef _MPI
+      //MPI: update u_star to lvl 3, so that the matrix-vector
+      //     product below will result in a lvl 0 consistent u_star.
+      u_comm.consistency_update(u_star.block(0),3);
+      u_comm.consistency_update(u_star.block(1),3);
+      u_comm.consistency_update(u_star.block(2),3);
+#endif
       // Subset 2.5. Compute B Q^(-1) K Q^(-1) B^T p_star and store it in p_tmp
       p_tmp.reset();
       divergence_block->multiply(u_star.get_entries(), p_tmp.get_entries(), 1.);
 
-#ifdef _MPI
-      p_comm.consistency_update(p_tmp.get_entries(),3);
-#endif
+      //MPI: no update of p_tmp, it is the RHS in the call to solve
+      //     below, thus consistency lvl 0 is enough.
       
       //Step 3: 2. solver solve S_p p_star = p_tmp and store it in p_star
       Poisson_solver->solve(p_tmp, p_star);
       
 #ifdef _MPI
+      //MPI: update p_star to lvl 3, so that the matrix-vector
+      //     product below will result in a lvl 0 consistent u_star.
       p_comm.consistency_update(p_star.get_entries(),3);
 #endif
 
@@ -432,20 +434,14 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       u_star = z.get_entries();
       gradient_block->multiply(p_star.get_entries(), u_star.get_entries(), -1.);
       
-#ifdef _MPI
-      u_comm.consistency_update(u_star.block(0),3);
-      u_comm.consistency_update(u_star.block(1),3);
-      u_comm.consistency_update(u_star.block(2),3);
-#endif
+      //MPI: No update of u_star necessary, it is the RHS in the
+      //     solve_velocity call below, consistency 0 is enough.
 
       //Step 5. Solve K u_tmp = u_star
       solve_velocity(u_star, u_tmp);
       
-#ifdef _MPI
-      u_comm.consistency_update(u_tmp.block(0),3);
-      u_comm.consistency_update(u_tmp.block(1),3);
-      u_comm.consistency_update(u_tmp.block(2),3);
-#endif
+      //MPI: No update of u_tmp necessasry, solution 'r'
+      //     must only leave this method in consistency 0.
 
       r.reset();
       // copy u_tmp and p_star back to r
