@@ -296,6 +296,16 @@ void ParameterDatabase::add_nested_database(ParameterDatabase db)
 }
 
 /* ************************************************************************** */
+bool ParameterDatabase::has_nested_database(std::string name) const
+{
+  auto it = find_in_list(name, this->databases);
+  if(it == this->databases.end())
+    return false;
+  else
+    return true;
+}
+
+/* ************************************************************************** */
 const ParameterDatabase & ParameterDatabase::get_nested_database(
   std::string name) const
 {

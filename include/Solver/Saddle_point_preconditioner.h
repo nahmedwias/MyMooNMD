@@ -94,13 +94,17 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     /** @brief the block which represents the divergence of the pressure */
     std::shared_ptr<TMatrix> divergence_block;
     
-    /** @brief storing a factorization for the 'velocity_block' */
-#ifdef _SEQ
+    /** @brief storing a factorization for the 'velocity_block'.
+     *
+     *  In MPI case, either the velocity_solver will be used (if an
+     *  iterative velocity solver is requested) or the MUMPS wrapper
+     *  object velocity_mumps_wrapper, in the case the velocity problem
+     *  should be solved with a direct solver. The respective other
+     *  object will be left empty.
+     */
     std::shared_ptr<Solver<BlockFEMatrix, BlockVector>> velocity_solver;
-#endif
 #ifdef _MPI
-    // TODO: Enable iterative solve as well!
-    std::shared_ptr<MumpsWrapper> velocity_solver;
+    std::shared_ptr<MumpsWrapper> velocity_mumps_wrapper;
 #endif
     
     /** @brief the inverse of the diagonal of the system matrix */
@@ -195,6 +199,13 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * Call only after Poisson_solver_matrix has been constructed, work with a copy of its structure
      */
     void computePoissonMatrixBdry();
+
+    /**
+     * @brief Call the velocity solver to solve for rhs and sol.
+     * In MPI case, this decides whether velocity_solver or
+     * velocity_mumps_wrapper must be used.
+     */
+    void solve_velocity(const BlockVector& rhs, BlockVector& sol) const;
 };
 
 

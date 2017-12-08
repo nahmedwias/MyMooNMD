@@ -272,7 +272,6 @@ void Time_NSE2D::set_parameters()
   {
      space_disc_global = 14;
   }
-
   // the only case where one have to re-assemble the right hand side
   if(db["space_discretization_type"].is("supg") && db["time_discretization"].is("bdf_two"))
   {

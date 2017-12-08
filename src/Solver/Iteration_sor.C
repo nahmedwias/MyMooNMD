@@ -13,7 +13,7 @@ Iteration_sor<L, V>::Iteration_sor(const L& mat, int flag, double w)
    sor_type(flag), omega(w), linear_operator(mat)
 {
 #ifdef _MPI
-    parallel_strategy_ = std::string("all_cells"); //default parallel strategy
+    parallel_strategy_ = std::string("own_cells"); //default parallel strategy
 #endif
 }
 
