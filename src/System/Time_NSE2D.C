@@ -274,7 +274,6 @@ void Time_NSE2D::set_parameters()
   {
      space_disc_global = 14;
   }
-
   // the only case where one have to re-assemble the right hand side
   if(db["space_discretization_type"].is("supg") && db["time_discretization"].is("bdf_two"))
   {
@@ -626,13 +625,14 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           {
             ErrThrow("Wrong blocks.size() ", blocks.size());
           }
-          sqMat.resize(5);
+          sqMat.resize(6);
           sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
           sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
           sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
           sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
           // mass matrix
           sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+	  sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
           // rectangular matrices
           reMat.resize(2);
           reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //first the lying B blocks
@@ -648,17 +648,18 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           {
             ErrThrow("Wrong blocks.size() ", blocks.size());
           }
-          sqMat.resize(5);
+          sqMat.resize(6);
           sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
           sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
           sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
           sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
           
           sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+	  sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
           if(TDatabase::ParamDB->NSTYPE == 14)
           {// C block
-            sqMat.resize(6);
-            sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+            sqMat.resize(7);
+            sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
           }
           // rectangular matrices
           reMat.resize(4);
