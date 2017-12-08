@@ -443,6 +443,7 @@ class TDomain
       void SetBoundBoxstart(double startx , double starty);
       void RefCardioide(double A);
       void PeriodicSquares();
+      void PeriodicTriangles();
       void PeriodicSquaresLarge();
       void PeriodicRectangle_2_4();
       void PeriodicTrianglesLarge();
