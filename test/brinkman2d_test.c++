@@ -367,15 +367,15 @@ void check_brinkman2d(TDomain & domain, ParameterDatabase& db, int velocityCode,
 //    
 //    db["example"] = 0; // Poiseuille
 //    db["P2P2_stab"]=false;
-//
-//    
-//
 //}
-//
 
+
+
+
+//################# EXAMPLE 1 - Exponential Flow (Hannukainen & Co) ####################################
 //======================================================================================================
-void tests_on_triangles_P2P1(unsigned int nRefinements, ParameterDatabase& db)
-{   // default construct a domain object
+void tests_on_triangles_P2P1_Example1(unsigned int nRefinements, ParameterDatabase& db)
+{ // default construct a domain object
   TDomain domain(db);
   // Initialization of the default parameters
   TDatabase::SetDefaultParameters(); 
@@ -385,44 +385,41 @@ void tests_on_triangles_P2P1(unsigned int nRefinements, ParameterDatabase& db)
     domain.RegRefineAll();
   }
   std::array<double, 5>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+  //--------------------------------------------------------------------------------------------------------------------
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY=1.;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.004;
-  TDatabase::ParamDB->VISCOSITY=0.004;
-  db["PkPk_stab"]=false;
-  db["equal_order_stab_scaling"]= "by h_T";
+  TDatabase::ParamDB->PERMEABILITY = 1.;
+  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
+  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["PkPk_stab"] = false;
+  db["equal_order_stab_scaling"] = "by h_T";
   db["Galerkin_type"] = "symmetric Galerkin formulation";
-  TDatabase::ParamDB->n_neumann_boundary=2;
-  TDatabase::ParamDB->neumann_boundary_id={1,3};
-  TDatabase::ParamDB->neumann_boundary_value={-0.5, 0.5};
+  TDatabase::ParamDB->n_neumann_boundary = 2;
+  TDatabase::ParamDB->neumann_boundary_id = {1, 3};
+  TDatabase::ParamDB->neumann_boundary_value = {-0.5, 0.5};
   db["GradDiv_stab"] = false;
- 
-  TDatabase::ParamDB->n_nitsche_boundary=0; //2;                     
-  TDatabase::ParamDB->nitsche_boundary_id={0,2};
-  TDatabase::ParamDB->nitsche_penalty={0, 0};
-  TDatabase::ParamDB->s1=-1;
-  TDatabase::ParamDB->s2=-1;
 
-  Output::print("\nstarting with Brinkman2D on TwoTriangles (symmetric Galerkin formulation), P2/P1, with Dirichlet and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
+  TDatabase::ParamDB->n_nitsche_boundary = 0; //2;
+  TDatabase::ParamDB->nitsche_boundary_id = {0, 2};
+  TDatabase::ParamDB->nitsche_penalty = {0, 0};
+  TDatabase::ParamDB->s1 = -1;
+  TDatabase::ParamDB->s2 = -1;
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles (symmetric Galerkin formulation), Example 1, P2/P1, with Dirichlet and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
   reference_errors = {{0.0054680957600273, 0.014317962190331, 0.1443805008035, 5.246987770953e-05, 0.00061083280165159}};
-  check_brinkman2d(domain, db, 2,1, reference_errors); 
+  check_brinkman2d(domain, db, 2,1, reference_errors);
 
   db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
-  Output::print("\nstarting with Brinkman2D on TwoTriangles (nonsymmetric Galerkin formulation), P2/P1, with Dirichlet and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
+  Output::print("\nstarting with Brinkman2D on TwoTriangles (nonsymmetric Galerkin formulation), Example 1, P2/P1, with Dirichlet and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
   reference_errors = {{0.0054680957600273, 0.014317962190331, 0.1443805008035, 5.246987770953e-05, 0.00061083280165159}};
-  check_brinkman2d(domain, db, 2,1, reference_errors); 
+  check_brinkman2d(domain, db, 2,1, reference_errors);
 }
 
 //======================================================================================================
-void tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche(unsigned int nRefinements, ParameterDatabase& db)
-{  // default construct a domain object
+void tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche_Example1(unsigned int nRefinements, ParameterDatabase& db)
+{
   TDomain domain(db);
-
-  // Initialization of the default parameters
   TDatabase::SetDefaultParameters();
 
-  // refine grid up to the coarsest level
   for(unsigned int i = 0; i < nRefinements; i++)
   {
     domain.RegRefineAll();
@@ -430,36 +427,34 @@ void tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche(unsigned int nRefine
   std::array<double, 5>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY=1.;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.004;
-  TDatabase::ParamDB->VISCOSITY=0.004;
-  db["PkPk_stab"]=false;
-  db["equal_order_stab_scaling"]= "by h_T";
+  TDatabase::ParamDB->PERMEABILITY = 1.;
+  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
+  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["PkPk_stab"] = false;
+  db["equal_order_stab_scaling"] = "by h_T";
   db["Galerkin_type"] = "symmetric Galerkin formulation";
   db["GradDiv_stab"] = false;
- 
-  TDatabase::ParamDB->n_neumann_boundary=2;
-  TDatabase::ParamDB->neumann_boundary_id={1,3};
-  TDatabase::ParamDB->neumann_boundary_value={-0.5, 0.5};
 
-  TDatabase::ParamDB->n_nitsche_boundary=2; //2;                     
-  TDatabase::ParamDB->nitsche_boundary_id={0,2};
-  TDatabase::ParamDB->nitsche_penalty={0, 0};
-  TDatabase::ParamDB->s1=-1;
-  TDatabase::ParamDB->s2=-1;
+  TDatabase::ParamDB->n_neumann_boundary = 2;
+  TDatabase::ParamDB->neumann_boundary_id = {1,3};
+  TDatabase::ParamDB->neumann_boundary_value = {-0.5, 0.5};
 
-  Output::print("\nstarting with Brinkman2D on TwoTriangles, P2/P1, with penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
+  TDatabase::ParamDB->n_nitsche_boundary = 2; //2;
+  TDatabase::ParamDB->nitsche_boundary_id = {0, 2};
+  TDatabase::ParamDB->nitsche_penalty = {0, 0};
+  TDatabase::ParamDB->s1 = -1;
+  TDatabase::ParamDB->s2 = -1;
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 1, P2/P1, with penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
   reference_errors = {{0.049354569383435, 0.049746071781475 , 0.20428824240268, 9.3291684594421e-05, 0.0010263458082476}};
   check_brinkman2d(domain, db, 2,1, reference_errors); 
 }
 
 //======================================================================================================
-void tests_on_triangles_P1P1_GLSstab(unsigned int nRefinements, ParameterDatabase& db)
-{  // default construct a domain object
+void tests_on_triangles_P1P1_GLSStab_Example1(unsigned int nRefinements, ParameterDatabase& db)
+{
   TDomain domain(db);
-  // Initialization of the default parameters
   TDatabase::SetDefaultParameters();
-  // refine grid up to the coarsest level
   for(unsigned int i = 0; i < nRefinements; i++)
   {
     domain.RegRefineAll();
@@ -472,42 +467,38 @@ void tests_on_triangles_P1P1_GLSstab(unsigned int nRefinements, ParameterDatabas
   TDatabase::ParamDB->VISCOSITY = 0.004;
 
   //Note that the parameters below have to be set in db AND TDatabase
-  db["PkPk_stab"]=true;
-  db["equal_order_stab_weight_PkPk"]=0.01;
-  TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.01;
+  db["PkPk_stab"] = true;
+  db["equal_order_stab_weight_PkPk"] = 0.01;
+  TDatabase::ParamDB->equal_order_stab_weight_PkPk = 0.01;
   db["EqualOrder_PressureStab_type"] = "symmetric GLS";
-  db["equal_order_stab_scaling"]= "by h_T";
-  db["equal_order_stab_scaling"]= "by h_T";
+  db["equal_order_stab_scaling"] = "by h_T";
   db["GradDiv_stab"] = false;
- 
+
   TDatabase::ParamDB->n_neumann_boundary = 2;
-  TDatabase::ParamDB->neumann_boundary_id = {1,3};
+  TDatabase::ParamDB->neumann_boundary_id = {1, 3};
   TDatabase::ParamDB->neumann_boundary_value = {-0.5, 0.5};
 
   TDatabase::ParamDB->n_nitsche_boundary = 0; //2;                     
-  TDatabase::ParamDB->nitsche_boundary_id = {0,2};
+  TDatabase::ParamDB->nitsche_boundary_id = {0, 2};
   TDatabase::ParamDB->nitsche_penalty = {0, 0};
   TDatabase::ParamDB->s1 = -1;
   TDatabase::ParamDB->s2 = -1;
 
-  Output::print("\nstarting with Brinkman2D on TwoTriangles, P1/P1-Stab (symmetric GLS), Dirichlet and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example1, P1/P1-Stab (symmetric GLS), Dirichlet and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
   reference_errors = {{  1.2424692993215, 0.031419104874062, 16.668762604057, 0.0018335349292131, 0.034019179940349 }}; 
   check_brinkman2d(domain, db, 1, 1, reference_errors); 
 
   db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
-  Output::print("\nstarting with Brinkman2D on TwoTriangles, P1/P1-Stab (nonsymmetric GLS), Dirichlet and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example1, P1/P1-Stab (nonsymmetric GLS), Dirichlet and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
   reference_errors = {{ 1.2347001456568, 1.3166645102027, 16.750021539147,0.018674085154587, 0.22010507412489}};
   check_brinkman2d(domain, db, 1, 1, reference_errors); 
 }
 
-
 //======================================================================================================
-void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche(unsigned int nRefinements, ParameterDatabase& db)
-{  // default construct a domain object
+void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_Example1(unsigned int nRefinements, ParameterDatabase& db)
+{ 
   TDomain domain(db);
-  // Initialization of the default parameters
   TDatabase::SetDefaultParameters();
-  // refine grid up to the coarsest level
   for(unsigned int i = 0; i < nRefinements; i++)
   {
     domain.RegRefineAll();
@@ -524,11 +515,11 @@ void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche(unsigned int
   db["equal_order_stab_weight_PkPk"] = 0.01;
   TDatabase::ParamDB->equal_order_stab_weight_PkPk = 0.01;
   db["EqualOrder_PressureStab_type"] = "symmetric GLS";
-  db["equal_order_stab_scaling"]= "by h_T";
+  db["equal_order_stab_scaling"] = "by h_T";
   db["GradDiv_stab"] = false;
-  
+
   TDatabase::ParamDB->n_neumann_boundary = 2;
-  TDatabase::ParamDB->neumann_boundary_id = {1,3};
+  TDatabase::ParamDB->neumann_boundary_id = {1, 3};
   TDatabase::ParamDB->neumann_boundary_value = {-0.5, 0.5};
 
   TDatabase::ParamDB->n_nitsche_boundary = 2;                     
@@ -537,25 +528,22 @@ void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche(unsigned int
   TDatabase::ParamDB->s1 = -1;
   TDatabase::ParamDB->s2 = -1;
 
-  Output::print("\nstarting with Brinkman2D on TwoTriangles, P1/P1-Stab (symmetric GLS), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example1, P1/P1-Stab (symmetric GLS), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
   reference_errors = {{10.192177714504, 5.8853778774783, 25.146773888043, 0.16699522666312, 3.1493307465155 }};
   check_brinkman2d(domain, db, 1, 1, reference_errors); 
 
   db["Galerkin_type"] = "symmetric Galerkin formulation";
-  
+
   db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
-  Output::print("\nstarting with Brinkman2D on TwoTriangles, P1/P1-Stab (nonsymmetric GLS), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example1, P1/P1-Stab (nonsymmetric GLS), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
   reference_errors = {{9.599443219491, 4.1492978030163,  23.384929664058, 0.022130923948982, 0.27177748647831}};
   check_brinkman2d(domain, db, 1, 1, reference_errors); 
 }
 
 //======================================================================================================
-void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche_GradDivStab(unsigned int nRefinements, ParameterDatabase& db)
-{  // default construct a domain object
-  TDomain domain(db);
-  // Initialization of the default parameters
+void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab100_Example1(unsigned int nRefinements, ParameterDatabase& db)
+{ TDomain domain(db);
   TDatabase::SetDefaultParameters();
-  // refine grid up to the coarsest level
   for(unsigned int i = 0; i < nRefinements; i++)
   {
     domain.RegRefineAll();
@@ -575,7 +563,7 @@ void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche_GradDivStab(
   db["GradDiv_stab"] = true;
   TDatabase::ParamDB->grad_div_stab_weight = 100;
   db["EqualOrder_PressureStab_type"] = "symmetric GLS";
-  db["equal_order_stab_scaling"]= "by h_T";
+  db["equal_order_stab_scaling"] = "by h_T";
 
   TDatabase::ParamDB->n_neumann_boundary = 2;
   TDatabase::ParamDB->neumann_boundary_id = {1,3};
@@ -587,26 +575,286 @@ void tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche_GradDivStab(
   TDatabase::ParamDB->s1 = -1;
   TDatabase::ParamDB->s2 = -1;
 
-  Output::print("\nstarting with Brinkman2D on TwoTriangles, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.01), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example1, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.01), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
   reference_errors = {{ 10.869461373038, 0.0015555188075453, 24.270540284686, 0.1885807925005, 2.3578866662985 }};
   check_brinkman2d(domain, db, 1, 1, reference_errors); 
 
   db["Galerkin_type"] = "symmetric Galerkin formulation";
-  
   db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
-  Output::print("\nstarting with Brinkman2D on TwoTriangles, P1/P1-Stab (nonsymmetric GLS), Grad-Div stab (0.01), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff=visc=0.004, perm= 1");
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example1, P1/P1-Stab (nonsymmetric GLS), Grad-Div stab (0.01), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
   reference_errors = {{10.581773844742, 0.29752211831635, 24.022855667394, 0.10196998348134, 0.59373617246339}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+}
+
+//======================================================================================================
+void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(unsigned int nRefinements, ParameterDatabase& db)
+{ TDomain domain(db);
+  TDatabase::SetDefaultParameters();
+  for(unsigned int i = 0; i < nRefinements; i++)
+  {
+    domain.RegRefineAll();
+  }
+  std::array<double, 5>  reference_errors;
+  //--------------------------------------------------------------------------------------------------------------------↲
+  db["example"] = 1; // Poiseuille_Hannukainen
+  TDatabase::ParamDB->PERMEABILITY = 1.;
+  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
+  TDatabase::ParamDB->VISCOSITY = 0.004;
+
+  //Note that the parameters below have to be set in db AND TDatabase↲ 
+  db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+  db["PkPk_stab"] = true;
+  db["equal_order_stab_weight_PkPk"] = 0.1;
+  TDatabase::ParamDB->equal_order_stab_weight_PkPk = 0.1;
+  db["GradDiv_stab"] = true;
+  TDatabase::ParamDB->grad_div_stab_weight = 0.1;
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+  db["equal_order_stab_scaling"] = "by L_0";
+
+  TDatabase::ParamDB->n_neumann_boundary = 2;
+  TDatabase::ParamDB->neumann_boundary_id = {1, 3};
+  TDatabase::ParamDB->neumann_boundary_value = {-0.5, 0.5};
+
+  TDatabase::ParamDB->n_nitsche_boundary = 2;
+  TDatabase::ParamDB->nitsche_boundary_id = {0, 2};
+  TDatabase::ParamDB->nitsche_penalty = {0, 0};
+  TDatabase::ParamDB->s1 = -1;
+  TDatabase::ParamDB->s2 = -1;
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example1, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.01), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
+  reference_errors = {{10.666137970649, 1.2062306735909, 24.166125351829, 0.21575466767375, 3.3261411856147}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example1, P1/P1-Stab (nonsymmetric GLS), Grad-Div stab (0.01), penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
+  reference_errors = {{9.8125894591994, 8.617299671234, 25.051206032843, 0.045806976649214, 0.32576244958451}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+}
+
+
+
+//############################## EXAMPLE 8 - SinCos_BadiaCodina ###########################################
+//======================================================================================================
+void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example8(unsigned int nRefinements, ParameterDatabase& db)
+{ TDomain domain(db);
+  TDatabase::SetDefaultParameters();
+  for(unsigned int i = 0; i < nRefinements; i++)
+  {
+    domain.RegRefineAll();
+  }
+  std::array<double, 5>  reference_errors;
+  //--------------------------------------------------------------------------------------------------------------------↲
+  db["example"] = 8; // Poiseuille_Hannukainen
+  TDatabase::ParamDB->PERMEABILITY = 1;
+  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.;
+  TDatabase::ParamDB->VISCOSITY = 0.004;
+
+  //Note that the parameters below have to be set in db AND TDatabase↲ 
+  db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+  db["PkPk_stab"] = true;
+  db["equal_order_stab_weight_PkPk"] = 0.1;
+  TDatabase::ParamDB->equal_order_stab_weight_PkPk = 0.1;
+  db["GradDiv_stab"] = true;
+  TDatabase::ParamDB->grad_div_stab_weight = 0.1;
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+  db["equal_order_stab_scaling"] = "by L_0";
+
+  TDatabase::ParamDB->n_neumann_boundary = 0;
+  TDatabase::ParamDB->neumann_boundary_id = {1, 3};
+  TDatabase::ParamDB->neumann_boundary_value = {-0.5, 0.5};
+
+  TDatabase::ParamDB->n_nitsche_boundary = 4;
+  TDatabase::ParamDB->nitsche_boundary_id = {0, 1, 2, 3};
+  TDatabase::ParamDB->nitsche_penalty = {0, 0, 0, 0};
+  TDatabase::ParamDB->s1 = -1;
+  TDatabase::ParamDB->s2 = -1;
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.01), penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 1");
+  reference_errors = {{5.967728815198, 27.218645176007, 45.026548460105, 2.5622671365087, 33.995673079637}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (nonsymmetric GLS), Grad-Div stab (0.01), penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 1");
+  reference_errors = {{2.3166504721005, 24.851364206268, 27.233327688498, 0.00084168519671418, 0.010828366364366}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+}
+
+//======================================================================================================
+void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_smallK_Example8(unsigned int nRefinements, ParameterDatabase& db)
+{ TDomain domain(db);
+  TDatabase::SetDefaultParameters();
+  for(unsigned int i = 0; i < nRefinements; i++)
+  {
+    domain.RegRefineAll();
+  }
+  std::array<double, 5>  reference_errors;
+  //--------------------------------------------------------------------------------------------------------------------↲
+  db["example"] = 8; // Poiseuille_Hannukainen
+  TDatabase::ParamDB->PERMEABILITY = 0.00001;
+  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.;
+  TDatabase::ParamDB->VISCOSITY = 0.004;
+
+  //Note that the parameters below have to be set in db AND TDatabase↲ 
+  db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+  db["PkPk_stab"] = true;
+  db["equal_order_stab_weight_PkPk"] = 0.1;
+  TDatabase::ParamDB->equal_order_stab_weight_PkPk = 0.1;
+  db["GradDiv_stab"] = true;
+  TDatabase::ParamDB->grad_div_stab_weight = 0.1;
+  db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+  db["equal_order_stab_scaling"] = "by L_0";
+ 
+  TDatabase::ParamDB->n_neumann_boundary = 0;
+  TDatabase::ParamDB->neumann_boundary_id = {1, 3};
+  TDatabase::ParamDB->neumann_boundary_value = {-0.5, 0.5};
+
+  TDatabase::ParamDB->n_nitsche_boundary = 4;
+  TDatabase::ParamDB->nitsche_boundary_id = {0, 1, 2, 3};
+  TDatabase::ParamDB->nitsche_penalty = {0, 0, 0, 0};
+  TDatabase::ParamDB->s1 = -1;
+  TDatabase::ParamDB->s2 = -1;
+
+//l_T=-1
+TDatabase::ParamDB->l_T = -1;
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS), Grad-Div stab (0.1), l_T = -1, scaling by L_0, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.00001");
+  reference_errors = {{2.3166504721003, 24.851364206268, 27.233327688498, 84.168519671385, 1082.8366364365}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.1), l_T = -1, scaling by L_0, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.00001 ");
+  reference_errors = {{5.6528468593088, 33.609960101853, 43.609769730799, 362.86296558258, 2403.2148842124}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["equal_order_stab_scaling"] = "by h_T";
+  db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+
+Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS), Grad-Div stab (0.1), l_T = -1, scaling by h_T, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.00001");
+  reference_errors = {{1.3167265706952, 21.848230410711, 28.026777395638, 93.875214873957, 2044.9301910272}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.1), l_T = -1, scaling by h_T, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.00001");
+  reference_errors = {{5.6528468593088, 33.609960101853, 43.609769730799, 362.86296558258, 2403.2148842124}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+//l_T=1
+ TDatabase::ParamDB->l_T = 1;
+ db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+ db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+ db["equal_order_stab_scaling"] = "by L_0";
+
+
+ Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS), Grad-Div stab (0.1), l_T = 1, scaling by L_0, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.00001");
+  reference_errors = {{2.3166504721003, 24.851364206268, 27.233327688498, 84.168519671385, 1082.8366364365}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.1), l_T = 1, scaling by L_0, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.00001");
+  reference_errors = {{5.6528468593088, 33.609960101853, 43.609769730799, 362.86296558258, 2403.2148842124}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["equal_order_stab_scaling"] = "by h_T";
+  db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+
+Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS), Grad-Div stab (0.1), l_T = 1, scaling by h_T, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.00001");
+  reference_errors = {{1.3167265706952, 21.848230410711, 28.026777395638, 93.875214873957, 2044.9301910272}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.1), l_T = 1, scaling by h_T, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.00001");
+  reference_errors = {{5.6528468593088, 33.609960101853, 43.609769730799, 362.86296558258, 2403.2148842124}};
   check_brinkman2d(domain, db, 1, 1, reference_errors); 
 
 
 
+TDatabase::ParamDB->PERMEABILITY = 0.01;
+//l_T=-1
+TDatabase::ParamDB->l_T = -1;
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS), Grad-Div stab (0.1), l_T = -1, scaling by L_0, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.01");
+  reference_errors = {{6.9403153847088, 27.940690277924, 68.678905054303, 3.0862494660051, 35.636962892309}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.1), l_T = -1, scaling by L_0, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.01 ");
+  reference_errors = {{6.9403153847088, 27.940690277924, 68.678905054303, 3.0862494660051, 35.636962892309}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["equal_order_stab_scaling"] = "by h_T";
+  db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+
+Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS), Grad-Div stab (0.1), l_T = -1, scaling by h_T, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.01");
+  reference_errors = {{1.3167265706952, 21.848230410711, 28.026777395638, 0.093875214873957, 2.0449301910272}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.1), l_T = -1, scaling by h_T, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.01");
+  reference_errors = {{6.9403153847088, 27.940690277924, 68.678905054303, 3.0862494660051, 35.636962892309}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+//l_T=1
+ TDatabase::ParamDB->l_T = 1;
+ db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+ db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+ db["equal_order_stab_scaling"] = "by L_0";
+
+
+ Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS), Grad-Div stab (0.1), l_T = 1, scaling by L_0, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.01");
+  reference_errors = {{2.3166504721003, 24.851364206268, 27.233327688498, 0.084168519671385, 1.0828366364365}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.1), l_T = 1, scaling by L_0, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.01");
+  reference_errors = {{6.9403153847088, 27.940690277924, 68.678905054303, 3.0862494660051, 35.636962892309}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["equal_order_stab_scaling"] = "by h_T";
+  db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+
+Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS), Grad-Div stab (0.1), l_T = 1, scaling by h_T, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.01");
+  reference_errors = {{1.3167265706952, 21.848230410711, 28.026777395638, 0.093875214873957, 2.0449301910272}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+  db["Galerkin_type"] = "symmetric Galerkin formulation";
+  db["EqualOrder_PressureStab_type"] = "symmetric GLS";
+
+  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (symmetric GLS), Grad-Div stab (0.1), l_T = 1, scaling by h_T, penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 0.004, perm = 0.01");
+  reference_errors = {{6.9403153847088, 27.940690277924, 68.678905054303, 3.0862494660051, 35.636962892309}};
+  check_brinkman2d(domain, db, 1, 1, reference_errors); 
+
+
 }
 
-//========================================================================
+
+// ========================================================================
 // =======================================================================
 // main program
 // =======================================================================
-//========================================================================
+// ========================================================================
 int main(int argc, char* argv[])
 {
   //  declaration of databases
@@ -645,20 +893,21 @@ int main(int argc, char* argv[])
   //----------------------------------------
   //tests_on_quads_Nitsche(nRefinements, db);
 
-  //----------------------------------------
-  tests_on_triangles_P2P1(nRefinements, db);
+  tests_on_triangles_P2P1_Example1(nRefinements, db);
 
-  //----------------------------------------
-  tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche(nRefinements, db);
+  tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche_Example1(nRefinements, db);
 
-  //----------------------------------------
-  tests_on_triangles_P1P1_GLSstab(nRefinements, db);
+  tests_on_triangles_P1P1_GLSStab_Example1(nRefinements, db);
 
-  //-----------------------------------------
-  tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche(nRefinements, db);
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_Example1(nRefinements, db);
 
-  //-----------------------------------------
-  tests_on_triangles_P1P1_GLSstab_PenaltyFreeNonSymmetricNitsche_GradDivStab(nRefinements, db);
- 
- return 0;
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab100_Example1(nRefinements, db);
+
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(nRefinements, db);
+
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example8(nRefinements, db);
+
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_smallK_Example8(nRefinements, db);
+  
+  return 0;
 }

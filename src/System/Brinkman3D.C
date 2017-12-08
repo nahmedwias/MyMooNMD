@@ -671,8 +671,8 @@ void Brinkman3D::assemble()
 }
 
 /** ************************************************************************ */
-bool Brinkman3D::stopIt(unsigned int iteration_counter)
-{
+void Brinkman3D::stopIt(unsigned int iteration_counter)
+{ 
 }
 
 
