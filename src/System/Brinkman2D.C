@@ -615,7 +615,7 @@ void Brinkman2D::solve()
 }
 
 /** ************************************************************************ */
-void Brinkman2D::output(int i)
+void Brinkman2D::output(int level, int i)
 {
   bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
   if( no_output )
@@ -629,13 +629,21 @@ void Brinkman2D::output(int i)
   // The following output is made for the geometry channel.mesh or channel_simple.mesh
   if (Output::getVerbosity() == 5)
   {Output::print("The values the solution u1, u2 takes at the line y=1 are saved in u_values_atline.txt.");
-    std::ofstream velfile("u_values_atline.txt");
+    std::ostringstream oss;
+    oss << "u_values_LineCut_2Neumann2NSPFNitsche_ExponentialFlow_Perm_" << TDatabase::ParamDB->PERMEABILITY << "EffVisc" << TDatabase::ParamDB->EFFECTIVE_VISCOSITY << "Visc" << TDatabase::ParamDB->VISCOSITY << "_level_" << level << ".txt";
+    std::string var = oss.str();
+    std::ofstream velfile(var);
+
+    ///   std::ofstream velfile("u_values_atline.txt");
     double values_u1[3];
     double values_u2[3];
     for ( int k=0; k<(4*20)+1; k++ )
     {
-      double x = k*(0.05/4);
-      double y=1.;
+      //double x = k*(0.05/4);
+      //double y = 0.25; //1.;
+      double y = k*(0.05/4);
+      double x = 0.25; //1.;
+
       u1->FindGradient(x, y, values_u1);
       u2->FindGradient(x, y, values_u2);
       velfile << x << " " << y << " " << values_u1[0] << " " << values_u2[0] << endl;
