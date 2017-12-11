@@ -47,10 +47,9 @@ class TFEVectFunct2D : public TFEFunction2D
     TFEFunction2D *GetComponent(int i) const
     {
       // the name of the component will include the index i
-      std::ostringstream os;
-      os.seekp(std::ios::beg);
-      os << Name << i <<ends;
-      return new TFEFunction2D(FESpace2D, os.str(), Description,
+      std::string fct_name(Name);
+      fct_name += std::to_string(i);
+      return new TFEFunction2D(FESpace2D, fct_name, Description,
                                Values+i*Length, Length);
     }
 
