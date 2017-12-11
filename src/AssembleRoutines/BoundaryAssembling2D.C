@@ -644,14 +644,10 @@ void BoundaryAssembling2D::matrix_gradu_n_v(BlockFEMatrix &M,
                     blocks[4]->add(test_DOF, ansatz_DOF, scale_factor * v2 * u2_dx * n1 ); // A22
                     
 //LB DEBUG start
-//
 //                    Output::print("has value:",scale_factor * v1 * u1_dx * n1 + scale_factor * v1 * u1_dy * n2 );
 //                    Output::print(test_DOF);
 //                    test_DOF_vec[l1] = test_DOF;
-//                    
-//                     Output::print("HALLOOOO");
 //                    ansatz_DOF_vec[l2] = ansatz_DOF;
-//                     Output::print("HALLOOOO");
 //                    A11_gradunv[l1][l2]=scale_factor * v1 * u1_dx * n1 + scale_factor * v1 * u1_dy * n2;
 //LB DEBUG end
                     
@@ -998,7 +994,7 @@ void BoundaryAssembling2D::matrix_q_u_n(BlockFEMatrix &M,
                     if(test_DOF >= ActiveBound)
                         continue;
                     double q = porig[k][l2];
-                                        //Output::print("HIIIEEERRRRRRR: ", quadPoints.size());
+                    //Output::print("Number of quadrature points is: ", quadPoints.size());
                     // (see the note about blocks at the beginning of the function)
                     blocks[6]->add(test_DOF, ansatz_DOF, scale_factor * q * u1 * n1 ); // B1
 //                    Output::print("q * u1 * n1: ",q * u1 * n1);
@@ -1018,7 +1014,7 @@ void BoundaryAssembling2D::matrix_q_u_n(BlockFEMatrix &M,
 
                 } //for(l=0;l<N_BaseFunct;l++)
                 
-//                Output::print("HIIIEEERRRRRRR l1: ", l1);
+//                Output::print("l1: ", l1);
 //                int test_DOF = DOF_P[l1];
 //                // if the DOF is Dirichlet, continue
 //                if(test_DOF >= ActiveBound)
@@ -1027,12 +1023,12 @@ void BoundaryAssembling2D::matrix_q_u_n(BlockFEMatrix &M,
 //                
 //                // loop on ansatz functions
 //                for(unsigned int l2=0; l2<porig[k].size(); l2++)
-//                {Output::print("HIIIEEERRRRRRR l2: ", l2);
+//                {Output::print("l2: ", l2);
 //                    int ansatz_DOF = DOF_U[l2];
 //                    
 //                    double u1 = uorig[k][l2];
 //                    double u2 = u1; // x and y component have the same FE space
-//                    //Output::print("HIIIEEERRRRRRR: ", quadPoints.size());
+//                    //Output::print("Number of quadrature points is: ", quadPoints.size());
 //                    // (see the note about blocks at the beginning of the function)
 //                    blocks[6]->add(test_DOF, ansatz_DOF, scale_factor*q*u1*nx ); // B1'
 //                    //blocks[1]->add(test_DOF, ansatz_DOF, scale_factor*(vx*nx)*uyy ); // A12
