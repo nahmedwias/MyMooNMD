@@ -198,19 +198,16 @@ void TBaseCell::SetNormalOrientation()
 
 //LB ====================================================
 bool TBaseCell::IsBoundaryCell( int BoundComp_id ) const
-{ Output::print("HHHAALLLLLOOOOO ");
-    int num_inner_joints = 0;
+{   int num_inner_joints = 0;
     for(int j = 0;  j < this->GetN_Joints(); j++)
-    {   Output::print("HHHAALLLLLOOOOO ");
-        Output::print("this->GetN_Joints() ", this->GetN_Joints());
-        const TJoint *joint = this->GetJoint(j);
+    {   const TJoint *joint = this->GetJoint(j);
         if( joint->InnerJoint())
         {
             num_inner_joints=num_inner_joints+1;
             continue;
         }
         else if(!(joint->InnerJoint()) && BoundComp_id == -4711)
-            {  Output::print("HHHAALLLLLOOOOO ");
+            {
                 return true;  
             }
         else if(!(joint->InnerJoint()) && BoundComp_id != -4711)
