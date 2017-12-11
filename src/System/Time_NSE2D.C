@@ -265,9 +265,7 @@ void Time_NSE2D::set_parameters()
   // Smagorinsky
   if(db["space_discretization_type"].is("smagorinsky"))
   {
-    space_disc_global = 4;
-    TDatabase::ParamDB->NSTYPE = 4;
-    TDatabase::ParamDB->LAPLACETYPE =1;
+    space_disc_global = 4;    
   }
 
   if(db["space_discretization_type"].is("local_projection"))
@@ -706,32 +704,35 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           reMat.resize(0);
           // right hand side
           rhs_array.resize(0);
-          if(db["space_discretization_type"].is("smagorinsky"))
+          if(db["space_discretization_type"].is("smagorinsky") || db["space_discretization_type"].is("supg"))
           {
             sqMat.resize(4);
             sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
             sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
             sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+	    
+	    // In the case of SUPG: together with the other contributions to 
+	    // the viscous and nonlinear terms, additional Mass matrix, BT-block, 
+	    // and right-had-side needs to be assembled during the nonlinear 
+	    // iteration due to the weighted test function.
+	    if(db["space_discretization_type"].is("supg"))
+	    {
+	      sqMat.resize(6);
+	      sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+	      sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+	      
+	      reMat.resize(2); 
+	      reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); 
+	      reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+	      rhs_array.resize(2);
+	      rhs_array[0] = s.rhs.block(0);
+	      rhs_array[1] = s.rhs.block(1);
+	      s.rhs.reset(); // reset to zero
+	    }  
           }  
-          // In the case of SUPG: together with the other contributions to 
-          // the viscous and nonlinear terms, additional Mass matrix, BT-block, 
-          // and right-had-side needs to be assembled during the nonlinear 
-          // iteration due to the weighted test function.
-          if(db["space_discretization_type"].is("supg"))
-          {
-            sqMat.resize(3);
-            sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-            reMat.resize(2); 
-            reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); 
-            reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-            rhs_array.resize(2);
-            rhs_array[0] = s.rhs.block(0);
-            rhs_array[1] = s.rhs.block(1);
-            s.rhs.reset(); // reset to zero
-          }          
           break;
         case 14:
-          if(!db["space_discretization_type"].is("supg") || !db["space_discretization_type"].is("local_projection"))
+          if(!db["space_discretization_type"].is("supg") && !db["space_discretization_type"].is("local_projection"))
           {
             ErrThrow("NSTYPE 14 only supports SUPG and Local Projection ");
           }
@@ -745,10 +746,11 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           
           if(db["space_discretization_type"].is("supg") )
           {
-            sqMat.resize(6);
+            sqMat.resize(7);
             sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+	    sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
             // pressure-pressure block
-            sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+            sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
           }
           
           reMat.resize(4);
@@ -952,8 +954,6 @@ bool Time_NSE2D::imex_scheme(bool print_info)
     // NOTE: only tested for the mixing layer problem for the moment
     if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
       is_rhs_and_mass_matrix_nonlinear = true;
-    if(db["space_discretization_type"].is("supg"))
-      space_disc_global = -2;
     return true;
   }
   else
@@ -1315,8 +1315,9 @@ void Time_NSE2D::output(int m)
   
   int n= s.solution.length(0);
   double *sol = s.solution.get_entries();
-  StreamFunction(&s.velocity_space, sol,sol+n,
-                    stream_function_space.get(), psi.data());
+  if(!db["space_discretization_type"].is("local_projection"))
+    StreamFunction(&s.velocity_space, sol,sol+n,
+		   stream_function_space.get(), psi.data());
   if(db["example"].is(6))// mixing layer example
   {
     ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
