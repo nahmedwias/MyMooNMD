@@ -130,7 +130,7 @@ public:
      *
      * @param i suffix for output file name, -1 means no suffix
      */
-    void output(int i = -1);
+    void output(int level, int i = -1);
     
     /// @name return computed errors
     ///

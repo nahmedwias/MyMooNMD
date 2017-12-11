@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
   timer.restart_and_print("assembling: ");
   brinkman2d.solve();
   timer.restart_and_print("solving: ");
-  brinkman2d.output();
+  brinkman2d.output(0);
   timer.restart_and_print("creating the output: ");
 
 
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
     timer.restart_and_print("assembling: ");
     brinkman2d.solve();
     timer.restart_and_print("solving: ");
-    brinkman2d.output();
+    brinkman2d.output(i+1);
     timer.restart_and_print("creating the output: ");
     //=========================================================================
     Output::print("<<<<< ParMooN Finished: Brinkman2D Main Program >>>>>");
