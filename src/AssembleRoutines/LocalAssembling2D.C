@@ -21,6 +21,9 @@
 
 #include "TNSE2DGalerkin.h"
 #include "NSE2DGalerkin.h"
+#include "TNSE2DSUPG.h"
+
+#include "CommonRoutineTNSE2D.h"
 
 //==============================================================================
 /** @brief a helper function returning a string with the name of the
@@ -393,21 +396,23 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
         case LocalAssembling2D_type::TNSE2D:
         case LocalAssembling2D_type::TNSE2D_NL:
         case LocalAssembling2D_type::TNSE2D_Rhs:
-	  switch(this->discretization_type)
-            {
-              case GALERKIN:
-                this->set_parameters_for_tnseGalerkin(type);
-                break;
-              case SUPG:
-                // this->set_parameters_for_tnseSUPG(type);
-                break;
-              case SMAGORINSKY:
-                //this->set_parameters_for_tnseSmagorinsky(type);
-                break;
-            default:
-              ErrThrow("DISCTYPE ", this->discretization_type, " is not supported yet");
-          }
-          break;
+	  switch(discretization_type){
+	    case GALERKIN:
+	    case LOCAL_PROJECTION:
+	      this->set_parameters_for_tnseGalerkin(type);
+	      break;
+	    case SUPG:
+	      this->set_parameters_for_tnseSUPG(type);
+	      break;
+	    case SMAGORINSKY:
+	      this->set_parameters_for_tnseSmagorinsky(type);
+	      break;
+	    default:
+	      ErrThrow("space discretization type: ", discretization_type, " is not supported");
+	  }
+	  // this->set_parameters_for_tnse(type);
+	  break;
+            
         default:
             ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);
             throw("unknown LocalAssembling2D_type");
@@ -1663,6 +1668,272 @@ void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type t
       this->Manipulate = NULL;
       break; // case TNSE2D_Rhs
    //==============================
+    default:
+      ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
+  }
+}
+
+
+void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
+{
+  if(TDatabase::ParamDB->NSTYPE < 4 )
+  { 
+    ErrThrow("SUPG method is only supported for NSTYPE 4 and 14 ", TDatabase::ParamDB->NSTYPE);
+  }
+  if(TDatabase::ParamDB->NSTYPE == 4)
+  {
+    this->N_Parameters = 2;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParams2};
+    this->N_FEValues = 2;
+    this->BeginParameter = { 0 };
+    this->FEValue_MultiIndex = { D00, D00 };
+    this->FEValue_FctIndex = { 0, 1 };    
+  }
+  if(TDatabase::ParamDB->NSTYPE == 14)
+  {
+    this->N_Parameters = 4;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSType14ParamsSUPG};
+    this->N_FEValues = 4;
+    this->BeginParameter = { 0 };
+    this->FEValue_MultiIndex = { D00, D00, D00, D00 };
+    this->FEValue_FctIndex = { 0, 1, 2, 3 };
+  }
+  
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = true;
+  this->Needs2ndDerivatives[1] = true;
+  
+  switch(type)
+  {
+    case TNSE2D:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 8; // Derivatives
+                          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices 
+          this->N_Matrices = 10;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2; // f1, f2, 
+          this->RhsSpace = { 0, 0 };
+          this->AssembleParam = TimeNSType4SUPG;
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          this->N_Terms = 8; // Derivatives
+                          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices 
+          this->N_Matrices = 11;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
+          this->N_Rhs = 3; // f1, f2, f3 (pressure part)
+          this->RhsSpace = { 0, 0, 1 };
+          this->AssembleParam = TimeNSType14SUPG;
+          this->Manipulate = NULL;
+         break;
+      }
+      break;
+   //==============================
+    case TNSE2D_NL:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 8; // Derivatives
+                          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices 
+          this->N_Matrices = 8;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2; // only stabilization terms 
+          this->RhsSpace = {0, 0 };
+          this->AssembleParam = TimeNSType4NLSUPG;
+          this->Manipulate = NULL;
+         break;
+        case 14:
+          this->N_Terms = 8; // Derivatives
+                          // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+          this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+          // 0: velocity space, 1: pressure space
+          this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };
+          // total number of matrices 
+          this->N_Matrices = 11;
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
+          this->N_Rhs = 3; // only stabilization terms 
+          this->RhsSpace = {0, 0, 1 };
+          this->AssembleParam = TimeNSType14NLSUPG;
+          this->Manipulate = NULL;
+          break;
+      }
+      break;
+     //==============================
+    case TNSE2D_Rhs:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 3;
+          this->Derivatives = { D10, D01, D00};
+          this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = { };
+          this->ColumnSpace = { };
+          this->N_Rhs = 2 ;
+          this->RhsSpace = {0, 0 };
+          this->AssembleParam =TimeNSType4RHSSUPG;
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          this->N_Terms = 5;
+          this->Derivatives = { D10, D01, D00, D10, D01};
+          this->FESpaceNumber = { 0, 0, 0, 1, 1 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = {};
+          this->ColumnSpace = { };
+          this->N_Rhs = 3 ;
+          this->RhsSpace = {0, 0, 1};
+          this->AssembleParam =TimeNSType14RHSSUPG; 
+          this->Manipulate = NULL;
+        break;
+      }
+      break;
+     //==============================
+    default:
+      ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
+  }
+}
+
+void LocalAssembling2D::set_parameters_for_tnseSmagorinsky(LocalAssembling2D_type type)
+{
+  this->N_Parameters = 2;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { TimeNSParamsVelo_GradVelo };
+  this->N_FEValues = 6;
+  this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+  // u1old, u2old, u3old, all derivatives of u1, u2, u3
+  this->FEValue_MultiIndex = { D00, D00, 
+                               D10, D10,
+                               D01, D01};     
+  this->BeginParameter = { 0 };
+  // common for all NSTYPE, Discrete forms, etc
+  if(type==TNSE2D)
+  {
+    this->N_Terms = 4;
+    this->Derivatives = { D10, D01, D00, D00 };  
+    this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure    
+    this->N_Rhs = 3; // NOTE: check why is this always three??
+    this->RhsSpace = { 0, 0, 0 };
+  }
+  else if(type==TNSE2D_NL)
+  {
+    this->N_Terms = 3;
+    this->Derivatives = { D10, D01, D00 };    
+    this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure        
+    this->N_Rhs = 0;
+    this->RhsSpace = {};
+  }
+  
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Manipulate = NULL;
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  switch(type)
+  {
+    case TNSE2D:
+      switch(nstype)
+      {
+        case 1:
+          this->N_Matrices    = 4;
+          this->RowSpace      = { 0, 0, 1, 1 };
+          this->ColumnSpace   = { 0, 0, 0, 0 };
+          this->AssembleParam = TimeNSType1Smagorinsky;
+          break; // nstype 1
+        case 2:
+          this->N_Matrices    = 6;
+          this->RowSpace      = { 0, 0, 1, 1, 0, 0 };
+          this->ColumnSpace   = { 0, 0, 0, 0, 1, 1 };
+          this->AssembleParam = TimeNSType2Smagorinsky;
+          break; // nstype 2
+        case 3:
+          this->N_Matrices    = 8;
+          this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1 };
+          this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0 };
+          if(TDatabase::ParamDB->LAPLACETYPE == 0)
+            this->AssembleParam = TimeNSType3Smagorinsky;
+          else
+            this->AssembleParam = TimeNSType3SmagorinskyDD;
+          break; // nstype 3
+        case 4:
+          this->N_Matrices    = 10;
+          this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
+          this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
+          if(TDatabase::ParamDB->LAPLACETYPE == 0)
+            this->AssembleParam = TimeNSType4Smagorinsky;
+          else
+            this->AssembleParam = TimeNSType4SmagorinskyDD;
+          break; // nstype 4
+      }// switch nstype
+      break;// case TNSE2D 
+  //==============================
+    case TNSE2D_NL:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+        case 2:
+          this->N_Matrices    = 1;
+          this->RowSpace      = { 0 };
+          this->ColumnSpace   = { 0 };
+          this->AssembleParam = TimeNSType1_2NLSmagorinsky;
+          break; // nstype 1, 2
+        case 3:
+        case 4:
+          if(TDatabase::ParamDB->LAPLACETYPE==0)
+	  {
+	    this->N_Matrices    = 2;
+	    this->RowSpace      = { 0, 0 };
+	    this->ColumnSpace   = { 0, 0 };
+	    this->AssembleParam = TimeNSType3_4NLSmagorinsky;
+	  }
+          else
+	  {
+	    this->N_Matrices    = 4;
+	    this->RowSpace      = { 0, 0, 0, 0 };
+	    this->ColumnSpace   = { 0, 0, 0, 0 };
+	    this->AssembleParam = TimeNSType3_4NLSmagorinskyDD;
+	  }
+          break; // nstype 3, 4
+      }
+      break;
+  //==============================
+    case TNSE2D_Rhs:
+      this->N_Terms = 1;
+      this->Derivatives = { D00 };      
+      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 0;
+      this->RowSpace = {};
+      this->ColumnSpace = { };
+      this->N_Rhs = 3;
+      this->RhsSpace = {0, 0, 0};
+      this->AssembleParam =TimeNSRHS;
+      this->Manipulate = NULL;
+     break;
+  //==============================
     default:
       ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
   }
