@@ -750,6 +750,10 @@ void TDomain::Init(const std::string& PRM, const std::string& GEO)
   {
     PeriodicSquares();
   }
+  else if (GEO == "PeriodicTriangles")
+  {
+    PeriodicTriangles();
+  }
   else if (GEO ==  "PeriodicSquaresLarge")
   {
     PeriodicSquaresLarge();
