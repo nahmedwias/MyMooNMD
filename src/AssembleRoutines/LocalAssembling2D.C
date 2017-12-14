@@ -22,6 +22,7 @@
 #include "TNSE2DGalerkin.h"
 #include "NSE2DGalerkin.h"
 #include "TNSE2DSUPG.h"
+#include "TNSE2DResBasedVMS.h"
 
 #include "CommonRoutineTNSE2D.h"
 
@@ -406,6 +407,9 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
 	      break;
 	    case SMAGORINSKY:
 	      this->set_parameters_for_tnseSmagorinsky(type);
+	      break;
+	    case RBVMS:
+	      this->set_parameters_for_tnseRBVMS(type);
 	      break;
 	    default:
 	      ErrThrow("space discretization type: ", discretization_type, " is not supported");
@@ -1820,7 +1824,7 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
 
 void LocalAssembling2D::set_parameters_for_tnseSmagorinsky(LocalAssembling2D_type type)
 {
-  this->N_Parameters = 2;
+  this->N_Parameters = 6;
   this->N_ParamFct = 1;
   this->ParameterFct =  { TimeNSParamsVelo_GradVelo };
   this->N_FEValues = 6;
@@ -1905,9 +1909,9 @@ void LocalAssembling2D::set_parameters_for_tnseSmagorinsky(LocalAssembling2D_typ
         case 4:
           if(TDatabase::ParamDB->LAPLACETYPE==0)
 	  {
-	    this->N_Matrices    = 2;
-	    this->RowSpace      = { 0, 0 };
-	    this->ColumnSpace   = { 0, 0 };
+	    this->N_Matrices    = 4;
+	    this->RowSpace      = { 0, 0, 0, 0 };
+	    this->ColumnSpace   = { 0, 0, 0, 0 };
 	    this->AssembleParam = TimeNSType3_4NLSmagorinsky;
 	  }
           else
@@ -1936,5 +1940,125 @@ void LocalAssembling2D::set_parameters_for_tnseSmagorinsky(LocalAssembling2D_typ
   //==============================
     default:
       ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
+  }
+}
+
+void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type)
+{
+  
+  if(TDatabase::ParamDB->NSTYPE < 4 )
+  { 
+    ErrThrow("Residual Based VMS method is only supported for NSTYPE 4 and 14 ", 
+             TDatabase::ParamDB->NSTYPE);
+  }
+  this->N_Parameters = 17;
+  this->N_ParamFct = 1;
+  this->ParameterFct = {TimeNSParams_Residual_VMS};
+  this->N_FEValues = 17;
+  this->BeginParameter = { 0 };
+  this->FEValue_MultiIndex = { D00, D00, // u1sigma, u2sigma
+                               D00, D00, // combination of previous 2 solutions
+                               D10, D10, D01, D01, // u1sigma_x, u2sigma_x, u1sigma_y, u2sigma_y
+                               D20, D20, D02, D02,// u1sigma_xx, u2sigma_xx, u1sigma_yy, u2sigma_yy
+                               D10, D01, D00, // pold_x, pold_y, pold
+                               D00, D00 // time derivative
+  };
+  this->FEValue_FctIndex = { 0, 1,        //  
+                             2, 3,        // 
+                             0, 1, 0, 1,  //
+                             0, 1, 0, 1,  //
+                             4, 4, 4,     //
+                             5, 6         //
+  };
+
+  
+  this->N_Terms = 8;
+  this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};
+  this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };  
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = true;
+  this->Needs2ndDerivatives[1] = true;
+  
+  switch(type){
+    case TNSE2D:
+      switch(TDatabase::ParamDB->NSTYPE){
+        case 4:
+          this->N_Matrices = 12;
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2; 
+          this->RhsSpace = { 0, 0 };
+          this->AssembleParam = TimeNSType4Residual_VMS;
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          this->N_Matrices = 13;
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
+          this->N_Rhs = 3; 
+          this->RhsSpace = { 0, 0, 1 };
+          this->AssembleParam = TimeNSType14Residual_VMS;
+          this->Manipulate = NULL;
+          break;
+      }// switch nstype     
+      break; // case TNSE2D
+//--------------------------
+    case TNSE2D_NL:
+      switch(TDatabase::ParamDB->NSTYPE){
+        case 4:
+          this->N_Matrices = 10;
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->N_Rhs = 2; 
+          this->RhsSpace = { 0, 0 };
+          this->AssembleParam = TimeNSType4NLResidual_VMS;
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          this->N_Matrices = 13;
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
+          this->N_Rhs = 3; 
+          this->RhsSpace = { 0, 0, 1 };
+          this->AssembleParam = TimeNSType14Residual_VMS;
+          this->Manipulate = NULL;
+          break;
+      }// switch nstype   
+      break;// case TNSE2D_NL
+//---------------------------      
+    case TNSE2D_Rhs:
+      switch(TDatabase::ParamDB->NSTYPE){
+        case 4:
+          
+          this->N_Terms = 3;
+          this->Derivatives = { D10, D01, D00};
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = { };
+          this->ColumnSpace = { };
+          this->N_Rhs = 2 ;
+          this->RhsSpace = {0, 0 };
+          this->AssembleParam = TimeNSType4RHS_Residual_VMS;
+          this->Manipulate = NULL;
+          break;
+        case 14:
+          this->N_Terms = 5;
+          this->Derivatives = { D10, D01, D00, D10, D01};
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0, 0, 0, 1, 1 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = {};
+          this->ColumnSpace = { };
+          this->N_Rhs = 3 ;
+          this->RhsSpace = {0, 0, 1};
+          this->AssembleParam = TimeNSType14RHS_Residual_VMS;
+          this->Manipulate = NULL;
+          break;
+      }// switch nstype   
+      break; // case TNSE2D_Rhs
   }
 }

@@ -90,6 +90,11 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example,
   extrapolate_sol = BlockVector(matrix, false);
   extrapolate_u = TFEVectFunct2D(&velocity_space,"u","u", extrapolate_sol.block(0),
        extrapolate_sol.length(0), 2);
+  extrapolate_p = TFEFunction2D(&pressure_space, (char*)"p", (char*)"p", extrapolate_sol.block(2),
+        extrapolate_sol.length(2));
+   time_deriv_sol = BlockVector(matrix, false);
+   u_td = TFEVectFunct2D(&velocity_space, (char*)"ut", (char*)"ut", time_deriv_sol.block(0),
+        time_deriv_sol.length(0), 2);
 }
 
 /**************************************************************************** */
@@ -207,6 +212,9 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain,
 
   // print out the information (cells, dofs, etc)
   this->output_problem_size_info();
+  
+  // copy solution
+  this->systems.front().solution_m1 = this->systems.front().solution;
 }
 
 /**************************************************************************** */
@@ -245,14 +253,18 @@ void Time_NSE2D::set_parameters()
     time_stepping_scheme.b_bt_linear_nl = "linear";
   }
   
-  if(db["space_discretization_type"].is("supg"))
+  if(db["space_discretization_type"].is("supg") 
+    || db["space_discretization_type"].is("residual_based_vms"))
   {
     // supg: NOTE: only tested with BDF2 so far
     if(!db["time_discretization"].is("bdf_two"))
     {
-      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
+      ErrThrow("supg and RBVMS methods are only implemented for BDF2 time stepping scheme");
     }
-    space_disc_global = 2;
+    if(db["space_discretization_type"].is("supg"))
+      space_disc_global = 2;
+    else
+      space_disc_global = 20;
     /// set scaling factor for B, BT's block
     // depends on how to deal the nonlinearity in the 
     // test function: fully implicit case
@@ -272,10 +284,15 @@ void Time_NSE2D::set_parameters()
   {
      space_disc_global = 14;
   }
+
   // the only case where one have to re-assemble the right hand side
-  if(db["space_discretization_type"].is("supg") && db["time_discretization"].is("bdf_two"))
+  if(db["space_discretization_type"].is("supg") 
+    || db["space_discretization_type"].is("residual_based_vms"))
   {
-    is_rhs_and_mass_matrix_nonlinear = true;
+    if(db["time_discretization"].is("bdf_two"))
+      is_rhs_and_mass_matrix_nonlinear = true;
+    else
+      is_rhs_and_mass_matrix_nonlinear = false;
   }  
 }
 
@@ -462,10 +479,10 @@ void Time_NSE2D::assemble_matrices_rhs(unsigned int it_counter)
   //
   // also prepare the system matrices for the solver
   for(System_per_grid& s : this->systems)
-  {
-    // call the preparing method
+  {// call the preparing method
     time_stepping_scheme.prepare_system_matrix(s.matrix, s.mass_matrix);
-    if(db["space_discretization_type"].is("supg"))
+    if(db["space_discretization_type"].is("supg") 
+      || db["space_discretization_type"].is("residual_based_vms"))
       time_stepping_scheme.scale_nl_b_blocks(s.matrix);
   }
   Output::print<5>("Assembling of matrices and right hand side is done");
@@ -481,7 +498,7 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
   std::vector<TFEFunction2D*> fefunctios;
   // call to routine to set arrays
   set_arrays(s, spaces_mat, spaces_rhs, fefunctios);
-
+  
   // prepare matrices and rhs for assembling
   std::vector<TSquareMatrix2D*> sqMatrices;
   std::vector<TMatrix2D*> rectMatrices;
@@ -654,10 +671,18 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           
           sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
 	  sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+	  if(db["space_discretization_type"].is("residual_based_vms"))
+	  {
+	    sqMat.resize(8);
+	    sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+	    sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
+	    sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());
+	    sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+	  }
           if(TDatabase::ParamDB->NSTYPE == 14)
           {// C block
-            sqMat.resize(7);
-            sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+            sqMat.resize(9);
+            sqMat[8] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
           }
           // rectangular matrices
           reMat.resize(4);
@@ -729,10 +754,33 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
 	      rhs_array[1] = s.rhs.block(1);
 	      s.rhs.reset(); // reset to zero
 	    }  
-          }  
+          }
+          if(db["space_discretization_type"].is("residual_based_vms"))
+	  {
+	    sqMat.resize(8);
+            sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+            sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+            sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+
+	    sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+	    sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
+	    sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());
+	    sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+	    
+	    reMat.resize(2); 
+	    reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); 
+	    reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+	    
+	    rhs_array.resize(2);
+	    rhs_array[0] = s.rhs.block(0);
+	    rhs_array[1] = s.rhs.block(1);
+	    s.rhs.reset(); // reset to zero
+	  }
           break;
         case 14:
-          if(!db["space_discretization_type"].is("supg") && !db["space_discretization_type"].is("local_projection"))
+          if(!db["space_discretization_type"].is("supg") 
+	    && !db["space_discretization_type"].is("local_projection") 
+	    && !db["space_discretization_type"].is("residual_based_vms"))
           {
             ErrThrow("NSTYPE 14 only supports SUPG and Local Projection ");
           }
@@ -753,6 +801,16 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
             sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
           }
           
+          if(db["space_discretization_type"].is("residual_based_vms"))
+	  {
+	    sqMat.resize(9);
+	    sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+	    sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
+	    sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());
+	    sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+
+	    sqMat[8] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+	  }
           reMat.resize(4);
           reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
           reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
@@ -824,57 +882,134 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
   functions[0] = s.u.GetComponent(0);
   functions[1] = s.u.GetComponent(1);
   functions[2] = &s.p;
-  bool is_imex = imex_scheme(0);
-  if(is_imex && db["extrapolate_velocity"])
+  if(!db["space_discretization_type"].is("residual_based_vms"))
   {
-    if(db["space_discretization_type"].is("galerkin") || db["space_discretization_type"].is("local_projection"))
+    bool is_imex = imex_scheme(0);
+    if(is_imex && db["extrapolate_velocity"])
     {
-      if(db["extrapolation_type"].is("constant_extrapolate"))
+      if(db["space_discretization_type"].is("galerkin") || db["space_discretization_type"].is("local_projection"))
       {
-        s.extrapolate_sol.reset();
-        s.extrapolate_sol = s.solution_m1;
-        
-        functions[0] = s.extrapolate_u.GetComponent(0);
-        functions[1] = s.extrapolate_u.GetComponent(1);
+	if(db["extrapolation_type"].is("constant_extrapolate"))
+	{
+	  s.extrapolate_sol.reset();
+	  s.extrapolate_sol = s.solution_m1;
+	  
+	  functions[0] = s.extrapolate_u.GetComponent(0);
+	  functions[1] = s.extrapolate_u.GetComponent(1);
+	}
+	else if(db["extrapolation_type"].is("linear_extrapolate"))
+	{
+	  s.extrapolate_sol.reset();
+	  s.extrapolate_sol = s.solution_m1;
+	  s.extrapolate_sol.scale(2.);
+	  s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
+	
+	  functions[0] = s.extrapolate_u.GetComponent(0);
+	  functions[1] = s.extrapolate_u.GetComponent(1);
+	}
+	else
+	{
+	  ErrThrow("Only constant or linear extrapolation of velocity are used ", db["extrapolation_type"]);
+	}
+	functions[2] = &s.p;
       }
-      else if(db["extrapolation_type"].is("linear_extrapolate"))
+      // supg: NOTE: only tested with BDF2 so far
+      if(db["space_discretization_type"].is("supg") && !db["time_discretization"].is("bdf_two"))
       {
-        s.extrapolate_sol.reset();
-        s.extrapolate_sol = s.solution_m1;
-        s.extrapolate_sol.scale(2.);
-        s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
-       
-        functions[0] = s.extrapolate_u.GetComponent(0);
-        functions[1] = s.extrapolate_u.GetComponent(1);
+	ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
       }
-      else
-      {
-        ErrThrow("Only constant or linear extrapolation of velocity are used ", db["extrapolation_type"]);
-      }
-      functions[2] = &s.p;
-    }
-    // supg: NOTE: only tested with BDF2 so far
-    if(db["space_discretization_type"].is("supg") && !db["time_discretization"].is("bdf_two"))
-    {
-      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
-    }
-    
-    if(db["space_discretization_type"].is("supg"))
-    {
-      if(TDatabase::ParamDB->NSTYPE < 4)
-      {
-        ErrThrow("SUPG is for equal-order implemented so far !!!");        
-      }
-      functions.resize(4);
       
+      if(db["space_discretization_type"].is("supg") 
+	|| db["space_discretization_type"].is("residual_based_vms"))
+      {
+	if(TDatabase::ParamDB->NSTYPE < 4)
+	{
+	  ErrThrow("SUPG is for equal-order implemented so far !!!");        
+	}
+	functions.resize(4);
+	
+	s.extrapolate_sol.reset();
+	s.extrapolate_sol = s.solution_m1;
+	s.extrapolate_sol.scale(2.);
+	s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
+	functions[0] = s.extrapolate_u.GetComponent(0);
+	functions[1] = s.extrapolate_u.GetComponent(1);
+	// combination of previous time solutions for assembling the right-hand
+	// side, this is used for the pressure part.
+	s.combined_old_sols.reset();
+	// copy and scale the solution at previous time step with factor 2
+	s.combined_old_sols = s.solution_m1;
+	s.combined_old_sols.scale(2.);
+	// subtract with right factor the solution at pre-previous solution
+	s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+	
+	functions[2] = s.comb_old_u.GetComponent(0);
+	functions[3] = s.comb_old_u.GetComponent(1);
+      }    
+    }
+    else 
+    {
+      // For the standard methods or symmetric stabilization schemes
+      // there is no time derivative involved in combination with the 
+      // pressure or velocity as in the supg case. So nothing to do 
+      // for those schemes.
+      if(db["space_discretization_type"].is("supg"))
+      {
+	if(time_stepping_scheme.pre_stage_bdf)
+	{
+	  functions.resize(4);
+	  functions[2] = s.u_m1.GetComponent(0);
+	  functions[3] = s.u_m1.GetComponent(1);
+	}
+	else
+	{
+	  s.combined_old_sols.reset();
+	  // copy and scale the solution at previous time step with factor 2
+	  s.combined_old_sols = s.solution_m1;
+	  s.combined_old_sols.scale(2.);
+	  // subtract with right factor the solution at pre-previous solution
+	  s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+	  
+	  functions.resize(4);
+	  functions[2] = s.comb_old_u.GetComponent(0);
+	  functions[3] = s.comb_old_u.GetComponent(1);
+	}
+      }
+    }//
+  }
+  // residual based vms first step is also extrapolated
+  if(db["space_discretization_type"].is("residual_based_vms"))
+  {
+    double tau = time_stepping_scheme.get_step_length();
+    functions.resize(7);
+    if(time_stepping_scheme.pre_stage_bdf)
+    {
+      // backward euler method
+      functions[2] = s.u_m1.GetComponent(0);
+      functions[3] = s.u_m1.GetComponent(1);
+      // old pressure combination
+      functions[4] = &s.p;// extrapolate_p;
+      // time derivative
+      s.time_deriv_sol.reset();
+      s.time_deriv_sol = s.solution;
+      s.time_deriv_sol.scale(1./tau);	
+      s.time_deriv_sol.add_scaled(s.solution_m1, -1./tau);
+      functions[5] = s.u_td.GetComponent(0);
+      functions[6] = s.u_td.GetComponent(1);
+    }
+    else
+    {
+      // additional fe functions for residual based vms method
+      // extrapolated pressure. From second step linear extrapolation is 
+      // used
       s.extrapolate_sol.reset();
       s.extrapolate_sol = s.solution_m1;
       s.extrapolate_sol.scale(2.);
       s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
       functions[0] = s.extrapolate_u.GetComponent(0);
       functions[1] = s.extrapolate_u.GetComponent(1);
-      // combination of previous time solutions for assembling the right-hand
-      // side, this is used for the pressure part.
+      
+      // old combination of solutions
       s.combined_old_sols.reset();
       // copy and scale the solution at previous time step with factor 2
       s.combined_old_sols = s.solution_m1;
@@ -884,39 +1019,20 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
       
       functions[2] = s.comb_old_u.GetComponent(0);
       functions[3] = s.comb_old_u.GetComponent(1);
+      // old pressure combination
+      functions[4] = &s.p;
+      // time derivative: BDF 2
+      s.time_deriv_sol.reset();
+      s.time_deriv_sol = s.solution_m1;
+      s.time_deriv_sol.add_scaled(s.solution_m2, -0.5);
+      s.time_deriv_sol.scale(3./(tau));
+      s.time_deriv_sol.add_scaled(s.solution_m1, -2./tau);
+      s.time_deriv_sol.add_scaled(s.solution_m2, 1./(2.*tau));
+      // time derivatives
+      functions[5] = s.u_td.GetComponent(0);
+      functions[6] = s.u_td.GetComponent(1);
     }
-  }
-  else 
-  {
-    // For the standard methods or symmetric stabilization schemes
-    // there is no time derivative involved in combination with the 
-    // pressure or velocity as in the supg case. So nothing to do 
-    // for those schemes.
-    
-    // 
-    if(db["space_discretization_type"].is("supg"))
-    {
-      if(time_stepping_scheme.pre_stage_bdf)
-      {
-        functions.resize(4);
-        functions[2] = s.u_m1.GetComponent(0);
-        functions[3] = s.u_m1.GetComponent(1);
-      }
-      else
-      {
-        s.combined_old_sols.reset();
-        // copy and scale the solution at previous time step with factor 2
-        s.combined_old_sols = s.solution_m1;
-        s.combined_old_sols.scale(2.);
-        // subtract with right factor the solution at pre-previous solution
-        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
-        
-        functions.resize(4);
-        functions[2] = s.comb_old_u.GetComponent(0);
-        functions[3] = s.comb_old_u.GetComponent(1);
-      }
-    }
-  }
+  }// endif residual_based_vms
 }
 
 /**************************************************************************** */
@@ -936,12 +1052,39 @@ void Time_NSE2D::restrict_function()
     }
     GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
   }
+  for( int block = 0; block < 2 ;++block)
+  {
+    std::vector<const TFESpace2D*> spaces;
+    std::vector<double*> u_entries;
+    std::vector<size_t> u_ns_dofs;
+    for(auto &s : systems )
+    {
+      spaces.push_back(&s.velocity_space);
+      u_entries.push_back(s.solution_m1.block(block));
+      u_ns_dofs.push_back(s.solution_m1.length(block));
+    }
+    GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+  }
+  for( int block = 0; block < 2 ;++block)
+  {
+    std::vector<const TFESpace2D*> spaces;
+    std::vector<double*> u_entries;
+    std::vector<size_t> u_ns_dofs;
+    for(auto &s : systems )
+    {
+      spaces.push_back(&s.velocity_space);
+      u_entries.push_back(s.solution_m2.block(block));
+      u_ns_dofs.push_back(s.solution_m2.length(block));
+    }
+    GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+  }
 }
 
 /**************************************************************************** */
 bool Time_NSE2D::imex_scheme(bool print_info)
 {
-  if((db["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3))
+  if(db["imex_scheme_"] && 
+    ((time_stepping_scheme.current_step_ >= 3) || db["space_discretization_type"].is("residual_based_vms")) )
   {
     db["nonlinloop_maxit"] = 1;
     db["extrapolate_velocity"] = true;

@@ -174,11 +174,18 @@ class LocalAssembling2D
      * the different non-linear forms etc
      */
     void set_parameters_for_tnseSUPG(LocalAssembling2D_type type);
-    /** @brief parameters which are used only for the SUPG
+    /** @brief parameters which are used only for the smagorinsky
      * discretization: one can include all other forms, for example
      * the different non-linear forms etc
      */
     void set_parameters_for_tnseSmagorinsky(LocalAssembling2D_type type);
+    
+    /** @brief parameters which are used only for the resiudal 
+     * base variational multiscale methods:
+     * one can include all other forms, for example
+     * the different non-linear forms etc
+     */
+    void set_parameters_for_tnseRBVMS(LocalAssembling2D_type type);
     
   public:
     /** constructor */

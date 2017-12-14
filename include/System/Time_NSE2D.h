@@ -84,17 +84,33 @@ class Time_NSE2D
        * routines
        */
       BlockVector solution_m1;
+      ///@brief Finite element functions for velocity and pressure
       TFEVectFunct2D u_m1;
       TFEFunction2D p_m1;
+      ///@brief solution from two previous time steps
+      ///this is used for the BDF2 scheme
       BlockVector solution_m2;
+      ///@brief the corresponding finite element functions for 
+      ///velocity and pressure
       TFEVectFunct2D u_m2;
       TFEFunction2D p_m2;
-
+      ///@brief linear combination of old solutions
+      ///this particularly is used for the BDF2 and SUPG/RBVMS
+      ///when the equal-order elements are used
       BlockVector combined_old_sols;
       TFEVectFunct2D comb_old_u;
-
+      
+      /// @brief extrapolated solution for imex scheme
       BlockVector extrapolate_sol;
-      TFEVectFunct2D extrapolate_u;      
+      TFEVectFunct2D extrapolate_u;
+      
+      /// @brief extrapolated pressure 
+      TFEFunction2D extrapolate_p;
+      /// @brief time derivative of the solution
+      /// this is actually used in the computation of the residual
+      /// for the residual based vms methods
+      BlockVector time_deriv_sol;      
+      TFEVectFunct2D u_td;
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeNSE2D& example, TCollection& coll,
