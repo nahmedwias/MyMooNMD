@@ -511,7 +511,7 @@ double ***LocMatrices, double **LocRhs)
   double u1, u2, mu;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA22 = LocMatrices[1];
+  MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
 

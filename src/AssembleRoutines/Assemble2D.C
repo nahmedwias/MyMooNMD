@@ -2314,7 +2314,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
-  double *Param[MaxN_QuadPoints_2D];
+  //double *Param[MaxN_QuadPoints_2D];
   double *righthand = nullptr;
   double **Matrices = nullptr;
   double *aux = nullptr;
@@ -3029,10 +3029,10 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     delete [] RhsGlobalNumbers;
   }
 
-  if(Param[0])
-  {
-    delete [] Param[0];
-  }
+//   if(Param[0])
+//   {
+//     // delete [] Param[0];
+//   }
 
   if(N_AllMatrices)
   {

@@ -160,6 +160,7 @@ typedef void EvaluateSolutionFunct2D(TFEFunction2D **, TFEVectFunct2D **,
 #define GALERKIN         1
 #define SDFEM            2
 #define SUPG             2
+#define RBVMS            20
 #define UPWIND           3
 #define SMAGORINSKY      4
 #define SMAGORINSKY_EXPL 5
