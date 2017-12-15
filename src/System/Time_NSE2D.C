@@ -669,8 +669,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
           sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
           
-          sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-	  sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
 	  if(db["space_discretization_type"].is("residual_based_vms"))
 	  {
 	    sqMat.resize(8);
@@ -678,11 +676,21 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
 	    sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
 	    sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());
 	    sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+            if(TDatabase::ParamDB->NSTYPE == 14)
+            {// C block
+              sqMat.resize(9);
+              sqMat[8] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+            }
 	  }
-          if(TDatabase::ParamDB->NSTYPE == 14)
-          {// C block
-            sqMat.resize(9);
-            sqMat[8] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+          else
+          {
+            sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
+	    sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+            if(TDatabase::ParamDB->NSTYPE == 14)
+            {// C block
+              sqMat.resize(7);
+              sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+            }
           }
           // rectangular matrices
           reMat.resize(4);
