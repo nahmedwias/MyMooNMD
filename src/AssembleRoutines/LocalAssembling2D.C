@@ -1623,6 +1623,7 @@ void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type t
             this->AssembleParam = TimeNSType3GalerkinDD;
           break; // nstype 3
         case 4:
+        case 14:
           this->N_Matrices    = 10;
           this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
           this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
@@ -1646,6 +1647,7 @@ void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type t
           break; // nstype 1, 2
         case 3:
         case 4:
+        case 14:
           this->N_Matrices    = 2;
           this->RowSpace      = { 0, 0 };
           this->ColumnSpace   = { 0, 0 };

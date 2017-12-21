@@ -252,6 +252,15 @@ void Time_NSE2D::set_parameters()
     time_stepping_scheme.n_scale_block = 4;
     time_stepping_scheme.b_bt_linear_nl = "linear";
   }
+  if(db["space_discretization_type"].is("local_projection"))
+  {
+    space_disc_global = 1;
+    /// set scaling factor for B, BT's block
+    time_stepping_scheme.n_scale_block = 4;
+    if(TDatabase::ParamDB->LP_PRESSURE)
+      time_stepping_scheme.n_scale_block = 5;
+    time_stepping_scheme.b_bt_linear_nl = "linear";
+  }
   
   if(db["space_discretization_type"].is("supg") 
     || db["space_discretization_type"].is("residual_based_vms"))
@@ -397,6 +406,7 @@ void Time_NSE2D::assemble_initial_time()
     s.solution_m1 = s.solution;
     s.solution_m2 = s.solution;
   }
+  
   // copy the current right hand side vector to the old_rhs
   this->old_rhs = this->systems.front().rhs;
   // set the solution vectors
@@ -686,7 +696,8 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           {
             sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
 	    sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
-            if(TDatabase::ParamDB->NSTYPE == 14)
+            if(TDatabase::ParamDB->NSTYPE == 14 
+              && !db["space_discretization_type"].is("local_projection"))
             {// C block
               sqMat.resize(7);
               sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
@@ -703,7 +714,8 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           rhs_array.resize(2);
           rhs_array[0] = s.rhs.block(0);
           rhs_array[1] = s.rhs.block(1);
-          if(TDatabase::ParamDB->NSTYPE == 14)
+          if(TDatabase::ParamDB->NSTYPE == 14 &&
+            !db["space_discretization_type"].is("local_projection"))
           {
             // additional right hand sides
             rhs_array.resize(3);
@@ -794,11 +806,20 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           }
           // we need to re-assemble all the matrices due to the solution
           // dependency of the stabilization parameters
-          sqMat.resize(4);
-          sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-          sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-          sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-          sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+          if(db["space_discretization_type"].is("local_projection"))
+          {
+            sqMat.resize(2);
+            sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+            sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+          }
+          else
+          {
+            sqMat.resize(4);
+            sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+            sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+            sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+            sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+          }
           
           if(db["space_discretization_type"].is("supg") )
           {
@@ -819,17 +840,20 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
 
 	    sqMat[8] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
 	  }
-          reMat.resize(4);
-          reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
-          reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-          reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
-          reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-          
-          rhs_array.resize(3);
-          rhs_array[0] = s.rhs.block(0);
-          rhs_array[1] = s.rhs.block(1);
-          rhs_array[2] = s.rhs.block(2);
-          s.rhs.reset();
+	  if(!db["space_discretization_type"].is("local_projection"))
+          {
+            reMat.resize(4);
+            reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
+            reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+            reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
+            reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+            
+            rhs_array.resize(3);
+            rhs_array[0] = s.rhs.block(0);
+            rhs_array[1] = s.rhs.block(1);
+            rhs_array[2] = s.rhs.block(2);
+            s.rhs.reset();
+          }
           break;
       }// endswitch NSTYPE
       break;
@@ -846,7 +870,7 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
       rhs_array[0]=s.rhs.block(0);
       rhs_array[1]=s.rhs.block(1);     
       
-      if(TDatabase::ParamDB->NSTYPE == 14)
+      if(TDatabase::ParamDB->NSTYPE == 14 && !db["space_discretization_type"].is("local_projection"))
       {
         rhs_array.resize(3);
         rhs_array[2] = s.rhs.block(2); // pressure block
@@ -1268,14 +1292,20 @@ void Time_NSE2D::update_matrices_lps(System_per_grid &s)
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks;
   blocks = s.matrix.get_blocks_uniquely();
-  if(TDatabase::ParamDB->NSTYPE==3 || TDatabase::ParamDB->NSTYPE==4)
+  if(TDatabase::ParamDB->NSTYPE==4 || TDatabase::ParamDB->NSTYPE==14)
   {
     //update matrices for local projection stabilization
     std::vector< TSquareMatrix2D* > sqMat(2);
     sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
     sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
     UltraLocalProjection(sqMat[0], FALSE);
-    UltraLocalProjection(sqMat[1], FALSE);
+    UltraLocalProjection(sqMat[1], FALSE);    
+    if(TDatabase::ParamDB->LP_PRESSURE && time_stepping_scheme.current_step_== 0)
+    {
+      std::vector< TSquareMatrix2D* > sqMat(1);
+      sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+      UltraLocalProjection(sqMat[0], TRUE);
+    }
   }
   else
   {
