@@ -194,6 +194,7 @@ void Example_TimeNSE2D::do_post_processing(Time_NSE2D& tnse2d, double& val) cons
 double Example_TimeNSE2D::get_nu() const
 {
   double inverse_reynolds = this->example_database["reynolds_number"];
+  TDatabase::ParamDB->RE_NR = inverse_reynolds;
   inverse_reynolds = 1/inverse_reynolds;
   return inverse_reynolds;
 }

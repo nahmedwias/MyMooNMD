@@ -1085,7 +1085,46 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
         for(m=0;m<N_DOF;m++)
           cout << l << " " << m << " " << LocMatrix[l*N_DOF+m] << endl;
     */
-
+    double stab_coeff=0., norm_u=0., area_cell=0.;
+    // double p_deg=TDatabase::ParamDB->INTERNAL_POLYNOMIAL_DEGREE;
+    double nu = 1./TDatabase::ParamDB->RE_NR;
+    double dt, tau_m, hp4;
+    switch(TDatabase::ParamDB->LP_COEFF_TYPE)
+    {
+      case 0:
+        stab_coeff=TDatabase::ParamDB->LP_STREAMLINE_COEFF*pow(hK,TDatabase::ParamDB->LP_STREAMLINE_EXPONENT);
+        break;
+      case 1:
+        norm_u=0.;
+        area_cell=0.;
+        for(j=0;j<N_Points;j++)
+        {
+          double w = AbsDetjk[j]*weights[j];
+          ChildValue= ChildValues[j];
+          valx=0.0;
+          valy=0.0;
+          for(k=0;k<N_DOF;k++)
+          {
+            l = DOF[k];
+            valx += ChildValue[k]*Values1[l];
+            valy += ChildValue[k]*Values2[l];
+          }
+          norm_u += sqrt(valx*valx + valy*valy)*w;
+          area_cell += w;
+        }
+        norm_u /= sqrt(area_cell);
+        dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+        tau_m = 4./(dt*dt);        
+        tau_m += 4.*norm_u/(hK*hK);
+        hp4 = pow(hK,4);
+        tau_m += 32.*nu*nu/hp4;
+        tau_m = 1./sqrt(tau_m);        
+        stab_coeff = tau_m;
+        // stab_coeff = pow( ( 4./(dt*dt) + 4*nu/(hK*hK/(p_deg*p_deg)) + 2*norm_u/(hK/p_deg) ) , -1);
+        break;
+      default:
+        stab_coeff=TDatabase::ParamDB->LP_STREAMLINE_COEFF*pow(hK,TDatabase::ParamDB->LP_STREAMLINE_EXPONENT);        
+    }
     // add to global matrix
     for(l=0;l<N_DOF;l++)
     {

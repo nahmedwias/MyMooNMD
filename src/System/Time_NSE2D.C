@@ -1292,14 +1292,27 @@ void Time_NSE2D::update_matrices_lps(System_per_grid &s)
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks;
   blocks = s.matrix.get_blocks_uniquely();
+  double lpcoeff=TDatabase::ParamDB->LP_STREAMLINE_COEFF;
+  double lpexpon=TDatabase::ParamDB->LP_STREAMLINE_EXPONENT;
+  int lporddif= TDatabase::ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE;
   if(TDatabase::ParamDB->NSTYPE==4 || TDatabase::ParamDB->NSTYPE==14)
   {
     //update matrices for local projection stabilization
     std::vector< TSquareMatrix2D* > sqMat(2);
     sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
     sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-    UltraLocalProjection(sqMat[0], FALSE);
-    UltraLocalProjection(sqMat[1], FALSE);    
+    if(TDatabase::ParamDB->LP_FULL_GRADIENT)
+    {
+      UltraLocalProjection(sqMat[0], FALSE);
+      UltraLocalProjection(sqMat[1], FALSE);    
+    }
+    if(TDatabase::ParamDB->LP_STREAMLINE)
+    {
+      AddStreamlineTerm(sqMat[0], s.u.GetComponent(0),s.u.GetComponent(1),
+                        lpcoeff, lpexpon,lporddif);
+      AddStreamlineTerm(sqMat[1], s.u.GetComponent(0),s.u.GetComponent(1),
+                        lpcoeff, lpexpon,lporddif);
+    }
     if(TDatabase::ParamDB->LP_PRESSURE && time_stepping_scheme.current_step_== 0)
     {
       std::vector< TSquareMatrix2D* > sqMat(1);
@@ -1311,7 +1324,11 @@ void Time_NSE2D::update_matrices_lps(System_per_grid &s)
   {
     std::vector< TSquareMatrix2D* > sqMat(1);
     sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-    UltraLocalProjection(sqMat[0], FALSE);
+    if(TDatabase::ParamDB->LP_FULL_GRADIENT)
+      UltraLocalProjection(sqMat[0], FALSE);
+    if(TDatabase::ParamDB->LP_STREAMLINE)
+      AddStreamlineTerm(sqMat[0], s.u.GetComponent(0),s.u.GetComponent(1),
+                        lpcoeff, lpexpon,lporddif);
   }
   
 }
