@@ -610,12 +610,12 @@ void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
     ///double PSPGStab = -alpha * (hK*hK)/(c0+(hK*hK)) ; // stabilization formulation according to Volker ACHTUNG: Hierfür muss SIGN_MATRIX_BI=-1 sein!!!!
     if (TDatabase::ParamDB->l_T == 1)
     {
-    PSPGStab = alpha * (hK*hK)/(mu_eff + (mu/K)* (hK*hK)); // Brinkman_P1P1.tex with l_T=h_T 
+      PSPGStab = alpha * (hK*hK)/(mu_eff + (mu/K)* (hK*hK)); // Brinkman_P1P1.tex with l_T=h_T 
     }
     else if (TDatabase::ParamDB->l_T == -1)
     {
-    double L_0 = 0.1 * 1;
-    PSPGStab = alpha * (hK*hK)/(mu_eff + (mu/K)* (L_0*L_0)); // Brinkman_P1P1 with l_T=L_0
+      double L_0 = 0.1 * 1;
+      PSPGStab = alpha * (hK*hK)/(mu_eff + (mu/K)* (L_0*L_0)); // Brinkman_P1P1 with l_T=L_0
     }
 
     if (TDatabase::ParamDB->SIGN_MATRIX_BI == -1)
@@ -903,13 +903,22 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
     //double grad_div_stab_weight = coeff[8]; // without considering the units
     //double grad_div_stab_weight = coeff[8] * (mu/K) * hK * hK; // units are fine
     //double grad_div_stab_weight = coeff[8] * mu_eff;  // units are fine
-    double grad_div_stab_weight = coeff[8] * (mu_eff + (mu/K) * hK * hK);  // Brinkman_P1P1.tex with l_T=h_T
+    double grad_div_stab;
+    if (TDatabase::ParamDB->l_T == 1)
+    {
+      grad_div_stab = coeff[8] * (mu_eff + (mu/K) * hK * hK); // Brinkman_P1P1.tex with l_T=h_T 
+    }
+    else if (TDatabase::ParamDB->l_T == -1)
+    {
+      double L_0 = 0.1 * 1;
+      grad_div_stab = coeff[8] * (mu_eff + (mu/K) * L_0 * L_0); // Brinkman_P1P1.tex with l_T=L_0
+    }
     double val;
 
-    
+
     if (TDatabase::ParamDB->SIGN_MATRIX_BI == -1)
       { // TODO LB: Do the stability analysis for the symmetric GLS stabilization and adapt the 'grad_div_stab_weight' accordingly.' 
-        grad_div_stab_weight = coeff[8];
+        grad_div_stab = coeff[8];
       }
 
     for(int i = 0; i < N_U; i++)
@@ -917,8 +926,8 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
         test10 = Orig0[i];
         test01 = Orig1[i];
 
-        Rhs_u1[i] += Mult * grad_div_stab_weight * c3 * test10; //(g,div v) = g (dv_1/dx_1 + ...)
-        Rhs_u2[i] += Mult * grad_div_stab_weight * c3 * test01; //(g,div v) = g(... + dv_2/dx_2)
+        Rhs_u1[i] += Mult * grad_div_stab * c3 * test10; //(g,div v) = g (dv_1/dx_1 + ...)
+        Rhs_u2[i] += Mult * grad_div_stab * c3 * test01; //(g,div v) = g(... + dv_2/dx_2)
 
         for(int j = 0; j < N_U; j++)
         {
@@ -926,16 +935,16 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
             ansatz01 = Orig1[j];
 
             val = test10 * ansatz10;        // (div u,div v) = (dv_1/dx_1 * du_1/dx_1 + ... + ...)
-            MatrixA11[i][j] += Mult * grad_div_stab_weight * val;
+            MatrixA11[i][j] += Mult * grad_div_stab * val;
 
             val = ansatz01 * test10;                                // ... = du_2/dx_2 * dv_1/dx_1
-            MatrixA12[i][j] += Mult * grad_div_stab_weight * val;
+            MatrixA12[i][j] += Mult * grad_div_stab * val;
 
             val = test01 * ansatz01;        // (div u,div v) = (du_2/dx_2 * dv_2/dx_2 + ... + ...)
-            MatrixA22[i][j] += Mult * grad_div_stab_weight * val;
+            MatrixA22[i][j] += Mult * grad_div_stab * val;
 
             val = ansatz10 * test01;                                // ... = du_1/dx_1 * dv_2/dx_2
-            MatrixA21[i][j] += Mult * grad_div_stab_weight * val;
+            MatrixA21[i][j] += Mult * grad_div_stab * val;
          }
      }
 }

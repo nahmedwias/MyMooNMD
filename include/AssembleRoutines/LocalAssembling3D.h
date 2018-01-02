@@ -207,7 +207,8 @@ class LocalAssembling3D
                       std::vector<int> myBeginParameter, int myN_Parameters,
                       TFEFunction3D** myFEFunctions3D,  int myN_FEValues,
                       std::vector<int> myFEValue_FctIndex, 
-                      std::vector<MultiIndex3D> myFEValue_MultiIndex);
+                      std::vector<MultiIndex3D> myFEValue_MultiIndex,
+                      int discretization_type = 1);
     
     /** destructor */
     ~LocalAssembling3D();

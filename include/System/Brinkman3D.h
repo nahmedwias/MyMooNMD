@@ -244,7 +244,7 @@ public:
      *
      * @param iteration_counter current iterate
      */
-    bool stopIt(unsigned int iteration_counter);
+    void stopIt(unsigned int iteration_counter);
     
     /**
      * @brief measure errors and create pictures

@@ -45,7 +45,12 @@ extern "C"
 #include <MeshPartitionInOut.h>
 #endif
 
+#include<algorithm>
+#include<vector>
 
+
+// This is an implementation of quick-sort, sorting an array
+// of pointers to TVertices according to their addresses.
 void MeshPartitionAuxFunctions::Sort(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
@@ -98,6 +103,8 @@ void MeshPartitionAuxFunctions::Sort(TVertex **Array, int length)
 
 }
 
+// This is an implementation of finding an Element
+// in a sorted array (sorted according to address, i.e., pointer arithmetic)
 int MeshPartitionAuxFunctions::GetIndex(TVertex **Array, int Length, TVertex *Element)
 {
   int l=0, r=Length, m=(r+l)/2;
@@ -132,10 +139,11 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 {
  idx_t *Cell_Rank, *Vert_Rank, ne, nn, *eptr, nparts, edgecut=0, ncommon=3;
 
+ std::vector<int> vertex_cell_neighbors_info{};
  
  int i, j, ll, m, M, MM, n, rank, size, N_Cells, N, NN, ID, Neib_ID;
  int *GlobalCellIndex, N_RootVertices, N_VertInCell, N_JointsInCell, N_AllLocVert;
- int *VertexNumbers, *PointNeighb, MaxCpV;
+ int *VertexNumbers, MaxCpV;
  int MaxLen, N_Edges, N_FaceEdges, ii, jj, GblCellNr;
  int N_EdgeDel=0, N_VertexDel=0, N_CellDel=0, N_CellsInHaloVert;
  const int *TmpFV, *TmpLen, *EdgeVertex;
@@ -174,11 +182,11 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   cell = coll->GetCell(0);
   N_VertInCell = cell->GetN_Vertices();
   N_JointsInCell = cell->GetN_Joints();
-  N_AllLocVert = N_VertInCell*N_Cells;
+  N_AllLocVert = N_VertInCell*N_Cells; //this assumes that all cells have the same geometry
   VertexNumbers= new int[N_AllLocVert];
   Vert_Rank = new idx_t[N_AllLocVert];  
   Cell_Rank = new idx_t[N_Cells];  
-  eptr = new idx_t[N_Cells+1];  
+  eptr = new idx_t[N_Cells+1];
   
  // if(rank==0)
  //  printf("Number of  ranks: %d\n",  size);
@@ -301,7 +309,6 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
      }
     N_RootVertices++;
 
-
   /** *********************************************/   
   /** STEP 4 : STORE THE INDICES CELL-WISE */
   /** *********************************************/ 
@@ -379,48 +386,45 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   }
 
   /** *********************************************/
-  /** STEP 6 : TO FIND MAXIMUM CELLS PER VERTEX */
+  /** STEP 6 : FIND AND COMMUNICATE MAXIMUM CELLS PER VERTEX */
   /** *********************************************/ 
-   PointNeighb = new int[N_RootVertices];
-   memset(PointNeighb, 0, N_RootVertices*SizeOfInt);
-
+  std::vector<int> number_of_cells_sharing_vertex(N_RootVertices, 0);
   
   for (i=0;i<N_AllLocVert;i++)
-    PointNeighb[VertexNumbers[i]]++;
+    number_of_cells_sharing_vertex.at(VertexNumbers[i])+=1;
  
-   // find maximum cells per vertex ( maxCpV )
-   for (i=0;i<N_RootVertices;i++)
-    if (PointNeighb[i] > MaxCpV) MaxCpV = PointNeighb[i];
+  // find maximum cells per vertex ( MaxCpV )
+  MaxCpV = *std::max_element(number_of_cells_sharing_vertex.begin(),number_of_cells_sharing_vertex.end());
+  MaxCpV++; //count it up by 1, because the array vertex_cell_neighbors_info needs room for the number of cells sharing each vertex
 
-//       printf("Max number of cells per vertex %d \n", MaxCpV);
-   MaxCpV++;
+  //Output::print("MaxCpV: ", MaxCpV);
+
   for(i=1;i<size;i++)
-   MPI_Send(&MaxCpV, 1, MPI_INT, i, 85, comm);
-
-   delete [] PointNeighb;
+   MPI_Send(&MaxCpV, 1, MPI_INT, i, 85, comm);  //broadcast MaxCpV to all processes
   
   /** ********************************************************************************************/
   /** STEP 7 : CREATE AN ARRAY CONTAINING INFO REGARDING THE NEIGHBOURS OF VERTICES (CELL INDEX) */
   /** PointNeighb's first column contains number of neib cells associated with each vertex*/
   /** further columns contain the cell numbers associated with this vertex*/
   /** ********************************************************************************************/
-   PointNeighb = new int[N_RootVertices*MaxCpV];
-   memset(PointNeighb, 0, (N_RootVertices*MaxCpV)*SizeOfInt);
+  // This vector gets filled with the information, which vertex is shared by which cells.
+  vertex_cell_neighbors_info.resize(N_RootVertices*MaxCpV,0);
 
    for(i=0;i<N_Cells;i++)
-    {
+   {
      cell = coll->GetCell(i);
 
      for(j=0;j<N_VertInCell;j++)
       {
        M = VertexNumbers[i*N_VertInCell + j] *MaxCpV ;
-       PointNeighb[M]++;
-       PointNeighb[M + PointNeighb[M]  ] = i;
+       //Output::print("M: ",M);
+       vertex_cell_neighbors_info.at(M) += 1;
+       vertex_cell_neighbors_info.at(M + vertex_cell_neighbors_info.at(M)) = i;
       } // for(j=0;j<k;j++) 
     } //  for(i=0;i<N_Cells;i++) 
 
    for(i=1;i<size;i++)
-    MPI_Send(PointNeighb, N_RootVertices*MaxCpV, MPI_INT, i, 90, comm); 
+    MPI_Send(&vertex_cell_neighbors_info.at(0), N_RootVertices*MaxCpV, MPI_INT, i, 90, comm);
 
    delete [] MetisVertexNumbers;
    delete [] NumberVertex;
@@ -436,9 +440,9 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 
     MPI_Recv(&MaxCpV, 1, MPI_INT, 0, 85, comm, &status);
 
-    PointNeighb = new int[N_RootVertices*MaxCpV];
+    vertex_cell_neighbors_info.resize(N_RootVertices*MaxCpV,0);
 
-    MPI_Recv(PointNeighb, N_RootVertices*MaxCpV, MPI_INT, 0, 90, comm, &status);     
+    MPI_Recv(&vertex_cell_neighbors_info.at(0), N_RootVertices*MaxCpV, MPI_INT, 0, 90, comm, &status);
   } //else if(rank==0)
 
 
@@ -505,14 +509,14 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
           CurrVert->SetClipBoard(5);
           N = VertexNumbers[i*N_VertInCell + j]*MaxCpV ;
 
-          N_CellsInThisVert =  PointNeighb[N];
+          N_CellsInThisVert =  vertex_cell_neighbors_info.at(N);
 
           // check! any subdomain cell containg this vert has to be added
           // Setting all halo cells
           UPDATE = TRUE;
           for(ii=1;ii<=N_CellsInThisVert;ii++)
            {
-            VertexCellNo = PointNeighb[N + ii];
+            VertexCellNo = vertex_cell_neighbors_info.at(N + ii);
             Vertexcell = coll->GetCell(VertexCellNo);
             VertexcellID = Vertexcell->GetSubDomainNo();
 
@@ -539,7 +543,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
            if(CurrVert->IsSubDomainVert())
              for(ii=1;ii<=N_CellsInThisVert;ii++)
               {
-               VertexCellNo = PointNeighb[N + ii];
+               VertexCellNo = vertex_cell_neighbors_info.at(N + ii);
                Vertexcell = coll->GetCell(VertexCellNo);
                VertexcellID = Vertexcell->GetSubDomainNo();
 
@@ -974,10 +978,10 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
          CurrVert->SetClipBoard(5);
 
          N = VertexNumbers[M*N_VertInCell + j] *MaxCpV;
-         N_CellsInThisVert =  PointNeighb[N];
+         N_CellsInThisVert =  vertex_cell_neighbors_info.at(N);
 
          for(ii=1;ii<=N_CellsInThisVert;ii++)
-           IncCells[ii-1] = coll->GetCell(PointNeighb[N + ii]);
+           IncCells[ii-1] = coll->GetCell(vertex_cell_neighbors_info.at(N + ii));
 
          CurrVert->SetVertexCells(N_CellsInThisVert, IncCells);
 
@@ -1008,11 +1012,11 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 
                 MM = IncCells[ii]->GetGlobalCellNo();
                 NN = VertexNumbers[MM*N_VertInCell + jj] *MaxCpV;
-                N_CellsInHaloVert =  PointNeighb[NN];
+                N_CellsInHaloVert =  vertex_cell_neighbors_info.at(NN);
 
                 for(kk=1;kk<=N_CellsInHaloVert;kk++)
                  {
-                  HalloCell = coll->GetCell(PointNeighb[NN + kk]);
+                  HalloCell = coll->GetCell(vertex_cell_neighbors_info.at(NN + kk));
  
                   /** include only owna and Halo in the neib list */
                   if(HalloCell->GetSubDomainNo() == rank || HalloCell->IsHaloCell())
@@ -1094,7 +1098,6 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 //    delete [] Vert_Rank; // for more no. processor showing double free or corruption 
    delete [] VertexNumbers;
    delete [] Cell_Rank;
-   delete [] PointNeighb;
 
    
    //Barrier is needed, before calling FECommunicator, since neib process must have all info

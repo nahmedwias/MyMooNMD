@@ -72,6 +72,9 @@ class TFEVectFunct2D : public TFEFunction2D
     /** calculate L2-nrom of divergence */
     double GetL2NormDivergence();
 
+   /** calculate L2-norm of divergence error */
+    double GetL2NormDivergenceError(DoubleFunct2D *Exact_u1, DoubleFunct2D *Exact_u2);
+
   /** write the solution into a data file **/
    void WriteSol(double t,
 		   std::string directory=std::string("."),

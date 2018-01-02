@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
 //#ifdef _MPI
 //
 //            Brinkman3D brinkman3d(domain, parmoon_db, example, maxSubDomainPerDof);
-//            Output::print("HAAALLLLLOOOOO ENDE");
+//            Output::print("!!!!!!!!!!!!ENDE");
 //#else
 //            Brinkman3D brinkman3d(domain, parmoon_db, example);
 //#endif
@@ -167,8 +167,7 @@ int main(int argc, char* argv[])
             //Chrono timer_sol;
             //timer_sol.stop();
             //timer_sol.start();
-            //    Output::print("HAAALLLLOOOOOO2");
-       
+
             brinkman3d.solve();
           Output::print(my_rank,": I SOLVED");
           //  timer_sol.stop();
