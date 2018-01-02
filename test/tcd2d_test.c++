@@ -94,8 +94,6 @@ void time_integration(int td, Time_CD2D& tcd)
     TDatabase::TimeDB->ENDTIME-1e-10)
   {
     step ++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME 
-       = TDatabase::TimeDB->CURRENTTIME;
     SetTimeDiscParameters(1);
     
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;

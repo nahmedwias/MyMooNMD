@@ -17,6 +17,7 @@
 #include <BoundEdge.h>
 #include <FEDatabase2D.h>
 #include <FEFunction2D.h>
+#include <FEFunctionInterpolator.h> //CB In fact I do not like this mutual include.
 #include <string.h>
 #include <AllRefTrans.h>
 #include <NodalFunctional2D.h>
@@ -398,12 +399,10 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 
 /** determine the value of function and its first derivatives at
     the given point */
-void TFEFunction2D::FindGradient(double x, double y, double *values) const
+void TFEFunction2D::FindGradient(double x, double y, double *values, const std::vector<int>& containing_cells) const
 {
-  int i,j, N_Cells;
   double xi, eta;
-  TBaseCell *cell;
-  TCollection *Coll;
+  TCollection *Coll = FESpace2D->GetCollection();
   FE2D FE_ID;
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
@@ -411,95 +410,173 @@ void TFEFunction2D::FindGradient(double x, double y, double *values) const
   int N_BaseFunct;
   double *uorig, *uxorig, *uyorig, *uref, *uxiref, *uetaref;
 
-  int *Numbers, N_Found;
+  int *Numbers;
   double u, ux, uy;
   double val;
-  int *GlobalNumbers, *BeginIndex;
+  int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
+  int *BeginIndex = FESpace2D->GetBeginIndex();
 
-  N_Found = 0;
   values[0] = 0;
   values[1] = 0;
   values[2] = 0;
 
-  BeginIndex = FESpace2D->GetBeginIndex();
-  GlobalNumbers = FESpace2D->GetGlobalNumbers();
 
-  Coll = FESpace2D->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  for(i=0;i<N_Cells;i++)
-  {
-    cell = Coll->GetCell(i);
-    if(cell->PointInCell(x,y))
+  if(containing_cells.empty())
+  {//containing cells not given - must search through the entire collection
+    int N_Found = 0;
+    int N_Cells = Coll->GetN_Cells();
+    for(int i=0;i<N_Cells;i++)
     {
-      N_Found++;
-      // cout << "point found" << endl;
-      FE_ID = FESpace2D->GetFE2D(i, cell);
-      FE_Obj = TFEDatabase2D::GetFE2D(FE_ID);
-      RefTrans = FE_Obj->GetRefTransID();
-
-      // set cell for reference transformation
-      TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
-
-      // find local coordinates of the given point
-      TFEDatabase2D::GetRefFromOrig(RefTrans, x, y, xi, eta);
-      // cout << " xi: " << xi << endl;
-      // cout << "eta: " << eta << endl;
-
-      // get base function object
-      bf = FE_Obj->GetBaseFunct2D();
-      N_BaseFunct = bf->GetDimension();
-
-      uorig = new double[N_BaseFunct];
-      uxorig = new double[N_BaseFunct];
-      uyorig = new double[N_BaseFunct];
-
-      uref = new double[N_BaseFunct];
-      uxiref = new double[N_BaseFunct];
-      uetaref = new double[N_BaseFunct];
-
-      bf->GetDerivatives(D00, xi, eta, uref);
-      bf->GetDerivatives(D10, xi, eta, uxiref);
-      bf->GetDerivatives(D01, xi, eta, uetaref);
-
-      TFEDatabase2D::GetOrigValues(RefTrans, xi, eta, bf, Coll, (TGridCell *)cell,
-        uref, uxiref, uetaref, uorig, uxorig, uyorig);
-
-      u = 0;
-      ux = 0;
-      uy = 0;
-      Numbers = GlobalNumbers + BeginIndex[i];
-      for(j=0;j<N_BaseFunct;j++)
+      TBaseCell* cell = Coll->GetCell(i);
+      if(cell->PointInCell(x,y))
       {
-        val = Values[Numbers[j]];      
-        u += uorig[j]*val;
-        ux += uxorig[j]*val;
-        uy += uyorig[j]*val;
-      }
+        N_Found++;
+        // cout << "point found" << endl;
+        FE_ID = FESpace2D->GetFE2D(i, cell);
+        FE_Obj = TFEDatabase2D::GetFE2D(FE_ID);
+        RefTrans = FE_Obj->GetRefTransID();
 
-      values[0] += u;
-      values[1] += ux;
-      values[2] += uy;
+        // set cell for reference transformation
+        TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
 
-      delete[] uorig;
-      delete[] uxorig;
-      delete[] uyorig;
-      delete[] uref;
-      delete[] uxiref;
-      delete[] uetaref;
+        // find local coordinates of the given point
+        TFEDatabase2D::GetRefFromOrig(RefTrans, x, y, xi, eta);
+        // cout << " xi: " << xi << endl;
+        // cout << "eta: " << eta << endl;
 
-    }                                             // endif
-  }                                               // endfor
+        // get base function object
+        bf = FE_Obj->GetBaseFunct2D();
+        N_BaseFunct = bf->GetDimension();
 
-  if(N_Found>0)
-  {
-    values[0] /= N_Found;
-    values[1] /= N_Found;
-    values[2] /= N_Found;
+        uorig = new double[N_BaseFunct];
+        uxorig = new double[N_BaseFunct];
+        uyorig = new double[N_BaseFunct];
+
+        uref = new double[N_BaseFunct];
+        uxiref = new double[N_BaseFunct];
+        uetaref = new double[N_BaseFunct];
+
+        bf->GetDerivatives(D00, xi, eta, uref);
+        bf->GetDerivatives(D10, xi, eta, uxiref);
+        bf->GetDerivatives(D01, xi, eta, uetaref);
+
+        TFEDatabase2D::GetOrigValues(RefTrans, xi, eta, bf, Coll, (TGridCell *)cell,
+                                     uref, uxiref, uetaref, uorig, uxorig, uyorig);
+
+        u = 0;
+        ux = 0;
+        uy = 0;
+        Numbers = GlobalNumbers + BeginIndex[i];
+        for(int j=0;j<N_BaseFunct;j++)
+        {
+          val = Values[Numbers[j]];
+          u += uorig[j]*val;
+          ux += uxorig[j]*val;
+          uy += uyorig[j]*val;
+        }
+
+        values[0] += u;
+        values[1] += ux;
+        values[2] += uy;
+
+        delete[] uorig;
+        delete[] uxorig;
+        delete[] uyorig;
+        delete[] uref;
+        delete[] uxiref;
+        delete[] uetaref;
+
+      }                                             // endif
+    }                                               // endfor
+
+    if(N_Found>0)
+    {
+      values[0] /= N_Found;
+      values[1] /= N_Found;
+      values[2] /= N_Found;
+    }
+    else
+    {
+      OutPut(" Point not found " <<   "x " <<x <<   " y " << y <<  endl);
+      exit(0);
+    }
   }
   else
   {
-   OutPut(" Point not found " <<   "x " <<x <<   " y " << y <<  endl);
-   exit(0);
+    for(auto c : containing_cells)
+    {
+      //Output::print("Cached!", this->GetName());
+      TBaseCell* cell = Coll->GetCell(c);
+//      if(cell->PointInCell(x,y))
+//      {
+        // cout << "point found" << endl;
+        FE_ID = FESpace2D->GetFE2D(c, cell);
+        FE_Obj = TFEDatabase2D::GetFE2D(FE_ID);
+        RefTrans = FE_Obj->GetRefTransID();
+
+        // set cell for reference transformation
+        TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
+
+        // find local coordinates of the given point
+        TFEDatabase2D::GetRefFromOrig(RefTrans, x, y, xi, eta);
+        // cout << " xi: " << xi << endl;
+        // cout << "eta: " << eta << endl;
+
+        // get base function object
+        bf = FE_Obj->GetBaseFunct2D();
+        N_BaseFunct = bf->GetDimension();
+
+        uorig = new double[N_BaseFunct];
+        uxorig = new double[N_BaseFunct];
+        uyorig = new double[N_BaseFunct];
+
+        uref = new double[N_BaseFunct];
+        uxiref = new double[N_BaseFunct];
+        uetaref = new double[N_BaseFunct];
+
+        bf->GetDerivatives(D00, xi, eta, uref);
+        bf->GetDerivatives(D10, xi, eta, uxiref);
+        bf->GetDerivatives(D01, xi, eta, uetaref);
+
+        TFEDatabase2D::GetOrigValues(RefTrans, xi, eta, bf, Coll, (TGridCell *)cell,
+                                     uref, uxiref, uetaref, uorig, uxorig, uyorig);
+
+        u = 0;
+        ux = 0;
+        uy = 0;
+        Numbers = GlobalNumbers + BeginIndex[c];
+        for(int j=0;j<N_BaseFunct;j++)
+        {
+          val = Values[Numbers[j]];
+          u += uorig[j]*val;
+          ux += uxorig[j]*val;
+          uy += uyorig[j]*val;
+        }
+
+        values[0] += u;
+        values[1] += ux;
+        values[2] += uy;
+
+        delete[] uorig;
+        delete[] uxorig;
+        delete[] uyorig;
+        delete[] uref;
+        delete[] uxiref;
+        delete[] uetaref;
+
+//      }
+//      else
+//      {
+//          ErrThrow("Point (",x,",",y,") not in cell ", c," as cheat says!");
+//      }
+    }// end loop over containing cells
+
+    //now average the summed up values
+    int n_containing_cells = containing_cells.size();
+    values[0] /= n_containing_cells;
+    values[1] /= n_containing_cells;
+    values[2] /= n_containing_cells;
+
   }
   
 }
@@ -1456,7 +1533,8 @@ void TFEFunction2D::ReadSol(std::string BaseName)
 
 
 /** interpolate the old mesh fe function values to the new fe function */
-void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
+void TFEFunction2D::Interpolate(const TFEFunction2D *OldFeFunction,
+                                const FEInterpolationCheatSheet* cheat_sheet)
 {
   int i,j, N_Cells, N_Edges = 0;
   int N_DOFs, N_LocalDOFs;
@@ -1490,6 +1568,14 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
   N_DOFs = FESpace2D->GetN_DegreesOfFreedom();
+
+  if(cheat_sheet)
+  {
+    if(N_Cells != (int) cheat_sheet->get_n_cells())
+    {
+      throw std::runtime_error("Cheat sheet does not have the right number of cells.");
+    }
+  }
 
   
   IntIndex = new int[N_DOFs];
@@ -1563,9 +1649,28 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
     TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
     TFEDatabase2D::GetOrigFromRef(RefTrans, N_Points, xi, eta, X, Y, AbsDetjk);
 
+    if(cheat_sheet)
+    {//here is a very good plae to check whether the cheat sheet has at least
+     //the right number of entries
+      if(N_Points != (int) cheat_sheet->get_n_points_to_cell(i))
+      {
+        Output::print(N_Points);
+        Output::print(cheat_sheet->get_n_points_to_cell(i));
+        throw std::runtime_error("Cheat sheet has wrong number of points in one cell!");
+      }
+    }
+
     for(j=0;j<N_Points;j++)
     {
-      OldFeFunction->FindGradient(X[j], Y[j], values);
+      if(cheat_sheet)
+      {//find fct value and dervtvs, but give a hint from the cheat sheet.
+        FEInterpolationCheatSheet::ContainingCells cheat = cheat_sheet->get_cheats(i,j);
+        OldFeFunction->FindGradient(X[j], Y[j], values, cheat);
+      }
+      else
+      {
+        OldFeFunction->FindGradient(X[j], Y[j], values);
+      }
       PointValues[j] = values[0]; 
     }
 
@@ -1916,7 +2021,7 @@ void TFEFunction2D::SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
 
 
 /** correct the sol to the Old_Mass (remessing, temp, surfact, psd, etc) - added by sashi */
-void  TFEFunction2D::CorrectMass(double OldMass)
+void  TFEFunction2D::CorrectMass(double OldMass, bool is_axisymmetric, char symmetry_axis)
 {
   int i;
   
@@ -1946,12 +2051,12 @@ void  TFEFunction2D::CorrectMass(double OldMass)
      
     // calculate the weitgted volume, if w=1, this step is not needed, but sol may take negative
     memcpy(Values, w, Length*SizeOfDouble);   
-    this->GetMassAndMean(params); 
+    this->GetMassAndMean(params, is_axisymmetric, symmetry_axis);
     WeightedVol = params[0];
     
     // copy back the orig values to fefunction
     memcpy(Values, OrigSol, Length*SizeOfDouble);   
-    this->GetMassAndMean(params);
+    this->GetMassAndMean(params, is_axisymmetric, symmetry_axis);
     MeanDiff = (OldMass - params[0])/WeightedVol;
       
 
@@ -1968,7 +2073,7 @@ void  TFEFunction2D::CorrectMass(double OldMass)
 
 
 /** Retun the mass, domain volume and mean values of the function - added by Sashi*/
-void  TFEFunction2D::GetMassAndMean(double *OutVal)
+void  TFEFunction2D::GetMassAndMean(double *OutVal, bool is_axisymmetric, char symmetry_axis) const
 {
   int i,j,k,l, polydegree, N_QFPoints, ORDER;
   int N_Cells, N_Joints;
@@ -2055,7 +2160,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case TriaAffin:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(9);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TTriaAffin *)F_K)->SetCell(cell);
 //         locvol = ((TTriaAffin *)rt)->GetVolume();
@@ -2066,7 +2171,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case TriaIsoparametric:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(9);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TTriaIsoparametric *)F_K)->SetApproximationOrder(ORDER);
         ((TTriaIsoparametric *)F_K)->SetQuadFormula(QuadFormula);
@@ -2079,7 +2184,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case QuadAffin:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(3*polydegree);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TQuadAffin *)F_K)->SetCell(cell);
 //         locvol = ((TQuadAffin *)rt)->GetVolume();
@@ -2090,7 +2195,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case QuadBilinear:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(3*polydegree);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TTriaIsoparametric *)F_K)->SetApproximationOrder(polydegree);
         ((TQuadBilinear *)F_K)->SetCell(cell);
@@ -2101,7 +2206,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
       case QuadIsoparametric:
         polydegree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEid);
         QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(3*polydegree);
-	qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
+        qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
         qf2->GetFormulaData(N_QFPoints, weights, xi, eta);
         ((TQuadIsoparametric *)F_K)->SetApproximationOrder(polydegree);
         ((TQuadIsoparametric *)F_K)->SetQuadFormula(QuadFormula);
@@ -2121,44 +2226,47 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
      {
       bf->GetDerivatives(D00, xi[k], eta[k], values[k]);
       
-      if(TDatabase::ParamDB->Axial3D)
-       {
-        if(TDatabase::ParamDB->Axial3DAxis==1)
-         {
-          r_axial = Y[k];  //   (X: symmetric  problems   
-         }
-        else
-         {
-          r_axial = X[k];  // Y: symmetric problems     
-         }   
+      if(is_axisymmetric)
+      {
+    	  if(symmetry_axis=='x')
+    	  {
+    		  r_axial = Y[k];  //   X: symmetric  problems
+    	  }
+    	  else if (symmetry_axis=='y')
+    	  {
+    		  r_axial = X[k];  // Y: symmetric problems
+    	  }
+    	  else
+    	  {
+    		  ErrThrow("Hey, the symmetry_axis must be either the x-axis ('x') or "
+    				  "the y-axis ('y')!");
+    	  }
 
-      if(r_axial<=0)
-       {
-        cout <<"X[k] negative in GetMassAndMean, change Quad rule " <<  r_axial <<endl;
-//         exit(0);
-       }
-       
-       r_axial = fabs(r_axial);      
-       }
+    	  if(r_axial<=0)
+    	  {
+    		  ErrThrow("X[k] is negative in function GetMassAndMean, change Quad rule!");
+    	  }
+    	  r_axial = fabs(r_axial);
+      }
       else
       {
-       r_axial = 1.;
+    	  r_axial = 1.;
       }
 
       Mult = r_axial*weights[k]*AbsDetjk[k];
       val = 0.;
       for(l=0;l<N_BF;l++)
-       {
-        j = DOF[l];
-        val += Values[j]*values[k][l];
-       }
+      {
+    	  j = DOF[l];
+    	  val += Values[j]*values[k][l];
+      }
 
-     mass += val*Mult;
-     volume += Mult;
+      mass += val*Mult;
+      volume += Mult;
     } //  for(k=0;k<N_QFPoints;      
    } // for(i=0;i<N_Cells
   
-   if(TDatabase::ParamDB->Axial3D)  
+   if(is_axisymmetric)
     {
      OutVal[0] = 2.*Pi*mass;
      OutVal[1] = 2.*Pi*volume;

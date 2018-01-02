@@ -23,6 +23,7 @@
 
 class TFEFunction2D;
 class TAuxParam2D;
+class FEInterpolationCheatSheet;
 #include <FESpace2D.h>
 //#include <AuxParam2D.h>
 
@@ -105,8 +106,13 @@ class TFEFunction2D
                   double * const errors) const;
     
     /** determine the value of function and its first derivatives at
-        the given point */
-    void FindGradient(double x, double y, double *values) const;
+        the given point
+      @param containing_cells An array holding all cells in which the point (x,y)
+      is contained. It defaults to {}. Gives the option to avoid searching for (x,y)
+      in all cells of the collection, at the cost of caching the data somewhere
+      else in the program.
+        */
+    void FindGradient(double x, double y, double *values, const std::vector<int>& containing_cells = {}) const;
 
     /** determine the value of function and its first derivatives at
         the given point */
@@ -125,7 +131,8 @@ class TFEFunction2D
     * Note that this is rather slow, because no further information is 
     * required. The function 'OldFeFunction' could even live on a larger domain.
     */
-    void Interpolate(TFEFunction2D *F);
+    void Interpolate(const TFEFunction2D *F,
+                     const FEInterpolationCheatSheet* cheat_sheet = nullptr);
     
     /**
      * @brief project this functions into the space L20 (having zero mean value)
@@ -180,10 +187,17 @@ class TFEFunction2D
    
 
    /** sol will be correct to conserve the Old_Mass (remessing, temp, surfact, psd, etc) - added by sashi */   
-   void CorrectMass(double OldMass);
+   void CorrectMass(double OldMass, bool is_axisymmetric, char symmetry_axis);
 
-   /** Retun the mass, domain volume and mean values of the function - added by sashi */
-   void GetMassAndMean(double *OutVal);
+   /** Retun the mass, domain volume and mean values of the function - added by sashi
+    * The out-parameter "OutVal" is filled as follows
+    * 	out[0] - total "mass" of the function (the integral \int_\Omega c dx )
+    * 	out[1] - total volume of the domain \Omega
+    * 	out[2] - the quotient out[0]/out[1], i.e. the average "mass" concentration.
+    */
+   void GetMassAndMean(double *OutVal,
+		   	   	   	   bool is_axisymmetric = false,
+					   char symmetry_axis='x') const;
 
     /**
      * @brief return the values of FE function on mesh nodes 

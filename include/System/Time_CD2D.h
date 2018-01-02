@@ -13,7 +13,7 @@
 #ifndef __Time_CD2D__
 #define __Time_CD2D__
 
-#include <FEFunction2D.h>
+#include <FEVectFunct2D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Example_TimeCD2D.h>
@@ -24,8 +24,10 @@
 
 #include <vector>
 #include <deque>
+#include <memory>
 
-class LocalAssembling2D; //forward declaration
+class LocalAssembling2D; //forward declarations
+class FEFunctionInterpolator;
 
 class Time_CD2D
 {
@@ -111,7 +113,8 @@ class Time_CD2D
      * 
      * Note that the size of this deque is at least one and larger than that
      * only in case of multigrid (when it holds as many systems as there are
-     * multigrid levels).
+     * multigrid levels). The first entry is the finest grid, the others follow
+     * ordered by fineness.
      */
     std::deque<System_per_grid> systems;
     
@@ -142,6 +145,10 @@ class Time_CD2D
     /// @brief class for handling (time dependent) output 
     PostProcessing2D timeDependentOutput;
     
+    /// @brief A flag to be set if this thing is used for an axisymmetric 2D problem.
+    /// Must come from the example.
+    bool axisymmetric_;
+
   public:
     /** @brief constructor
      * This constructor calls the other constructor creating an Example_CD2D
@@ -166,15 +173,39 @@ class Time_CD2D
      * 
      * This includes the assembling of: Stiff_matrix, Mass_Matrix, 
      * (additional matrixK in case of SUPG stabilization), rhs
+     *
+     * @param velocity_field A constant pointer to a pre-computed
+     * velocity field, which is to be used as coefficient function in the
+     * advective term.
+     *
+     * The only thing which is checked is, that the given FEFunction has a space
+     * on the same Collection of grid cells as this object (which might not
+     * even be the right thing to check).
+     *
      */
-    void assemble_initial_time();
+    void assemble_initial_time(
+    		TFEFunction2D* velo1 = nullptr,
+			TFEFunction2D* velo2 = nullptr);
     
     /** @brief assemble the matrices
      * this function will assemble the stiffness matrix and rhs
      * In addition the system matrix and the rhs which passes to the solver 
      * are also prepared within the function
+     *
+     * There is the possibility to give a pre-computed velocity field which is
+     * responsible for the advective transport to this routine, which will then
+     * be used as a parameter in the Assembling process. It is provided as a
+     * raw pointer, such that it can default to nullptr (no externally
+     * precomputed velo field).
+     *
+     * @param velocity_field A constant pointer to a pre-computed
+     * velocity field, which is to be used as coefficient function in the
+     * advective term.
      */
-    void assemble();
+    void assemble(
+    		TFEFunction2D* velo1 = nullptr,
+			TFEFunction2D* velo2 = nullptr,
+            TFEFunction2D* sources_and_sinks = nullptr);
     
     /**
      * Descales the stiffness matrices from the modifications due to time
@@ -221,6 +252,10 @@ class Time_CD2D
     const ParameterDatabase & get_db() const
     { return db; }
     
+    /// Return discrete reisdual of the currently stored system.
+    // ASsumes that stiff_matrix is the matrix to be solved.
+    double get_discrete_residual() const;
+
     /**
     * @brief return the computed errors at each discre time point
     * 
@@ -259,6 +294,36 @@ class Time_CD2D
     void call_assembling_routine(Time_CD2D::System_per_grid& system,
                                  LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
                                  bool assemble_both);
+
+    /**
+     * Modifies the local assembling object for stiffness matrix and rhs
+     * to take into account a given flow field for the convection, and, optionally
+     * a source-and-sink right hand side. Then calls the "standard" method
+     * call_assembling_routine.
+     *
+     * @param s The system belonging to the grid this works on.
+     * @param la_stiff A fitting constructed LocalAssemble2D object which
+     * is responsible for the assembling of the stiffness matrix and right hand
+     * side.
+     * @param la_mass A fitting constructed LocalAssemble2D object which
+     * is responsible for the assembling of the mass matrix. The mass matrix
+     * will not be assembled and la_mass will be ignored, when assemble_both
+     * is 'false'.
+     * @param assemble_both If true, both stiffness (+rhs) and mass matrix are
+     * assembled, if false only stiffness matrix and rhs.
+     * @param velocity_field The velocity field responsible for the convection.
+     *
+     * @param sources_and_sinks This is optional, contains source and sink terms
+     * for the right hand side.
+     */
+    void modify_and_call_assembling_routine(
+        System_per_grid& s,
+        LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
+        bool assemble_both,
+		TFEFunction2D* velo1 = nullptr,
+		TFEFunction2D* velo2 = nullptr,
+        TFEFunction2D* sources_and_sinks = nullptr);
+
 };
 
 #endif

@@ -217,7 +217,7 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
     // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
     TTetGenMeshLoader tetgen(smesh, db);   
     // convert the mesh into ParMooN Mesh object
-    Mesh m(tetgen.meshTetGenOut);
+    ParM::Mesh m(tetgen.meshTetGenOut);
     // generate vertices, cells and joint
     GenerateFromMesh(m);
     // test: write the mesh on a file
@@ -944,7 +944,7 @@ void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
   else if (ends_with(file_name, ".mesh"))
   {
     // read the mesh file and prepare input for MakeSandwichGrid
-     Mesh m(file_name);
+     ParM::Mesh m(file_name);
      m.setBoundary(prm_file_name);
 
      size_t numberOfElements = m.triangle.size() + m.quad.size();
@@ -1027,7 +1027,6 @@ void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
   }
   if(!control_by_lambda)
   {//n_layers is used as control parameter
-
     Output::info("DOMAIN", "Taking sandwich grid database "
         "parameter 'n_layers' = ", sw_db["n_layers"]);
     int n_node_layers = sw_db["n_layers"];
@@ -1037,13 +1036,14 @@ void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
     lambda.resize(n_node_layers);
     for(int i=0 ; i<n_node_layers ; i++)
       lambda[i] = i * (1.0/n_layers);
-
   }
   else
   {//control by lambda
     Output::info("DOMAIN", "Taking sandwich grid database "
       "parameter 'lambda'.");
   }
+
+
 
   // Call the private method which does the actual work.
   MakeSandwichGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE,
@@ -1073,7 +1073,7 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
   ReadBdParam(bdryStream);
 
   // read mesh
-  Mesh m(MESHFILE);
+  ParM::Mesh m(MESHFILE);
   m.setBoundary(PRM);
   unsigned int numberOfElements = m.triangle.size() + m.quad.size();
   unsigned int maxNVertexPerElem = 3;
@@ -1168,7 +1168,7 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
     }
   } else {
     // if not sandwich, one can proceed without a PRM file
-    Mesh m(MESHFILE);
+    ParM::Mesh m(MESHFILE);
     GenerateFromMesh(m);
   }
 
@@ -3773,7 +3773,7 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
 #ifdef __3D__
 
 
-void TDomain::GenerateFromMesh(Mesh& m)
+void TDomain::GenerateFromMesh(ParM::Mesh& m)
 {
   // create inner faces (if needed)
   m.createInnerFaces();
@@ -3805,7 +3805,7 @@ void TDomain::GenerateFromMesh(Mesh& m)
 // adjacency (1,-1 for boundary faces)
 // list of points
 ///@todo write part of the function inside the Mesh class, here set only the BdParts
-void TDomain::buildBoundary(Mesh& m)
+void TDomain::buildBoundary(ParM::Mesh& m)
 {
   // we consider only 1 boundary part
   ///@todo do we need to take into account the general case?
@@ -3909,7 +3909,7 @@ void TDomain::buildBoundary(Mesh& m)
 }
 
 
-void TDomain::buildParMooNMesh(Mesh& m)
+void TDomain::buildParMooNMesh(ParM::Mesh& m)
 {
   // create a vector<TVertex*> from the list of pointa
   this->setVertices(m);
@@ -3926,7 +3926,7 @@ void TDomain::buildParMooNMesh(Mesh& m)
  * and creates TVertex*, stored in the vector meshVertices
  * Moreover, bounds for the domain are computed
  */
-void TDomain::setVertices(Mesh& m)
+void TDomain::setVertices(ParM::Mesh& m)
 {
  
   double xmin=0, xmax=0, ymin=0, ymax=0, zmin=0, zmax=0;
@@ -3971,7 +3971,7 @@ void TDomain::setVertices(Mesh& m)
 
 }
 
-void TDomain::allocRootCells(Mesh& m)
+void TDomain::allocRootCells(ParM::Mesh& m)
 {
   TVertex *Vertex;
   TMacroCell *Cell;
@@ -3999,7 +3999,7 @@ void TDomain::allocRootCells(Mesh& m)
 }
 
 ///@attention the functions hashTriFaces(), CreateAdjacency() must have been called before
-void TDomain::distributeJoints(Mesh& m)
+void TDomain::distributeJoints(ParM::Mesh& m)
 {
   // allocate the joints array
   meshJoints.resize(m.triangle.size());

@@ -25,6 +25,8 @@
 
 class tetgenio;
 
+namespace ParM
+{
 struct meshNode
 {
   double x,y,z;
@@ -147,7 +149,7 @@ class Mesh
   Mesh(std::string filename,std::string filenameBoundary);
   Mesh(tetgenio& tgio);
   // Destructor
-  ~Mesh(){};
+  ~Mesh();
 
   /**
      @brief read mesh from a file
@@ -244,5 +246,6 @@ class Mesh
   };
 
 };
+}
 
 #endif
