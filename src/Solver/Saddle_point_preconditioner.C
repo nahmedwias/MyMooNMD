@@ -286,6 +286,8 @@ void Saddle_point_preconditioner::solve_velocity(
 void Saddle_point_preconditioner::apply(const BlockVector &z,
                                         BlockVector &r) const
 {
+  Chrono apply_chrono;
+
   Output::print<5>("Saddle_point_preconditioner::apply");
   if(r.n_blocks() == 0)
   {
@@ -359,11 +361,14 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       // MPI: it is not necessary to update p_tmp,
       // because rhs 'z' enters in consistency lvl 3
 
+      Chrono poisson_solve_chrono;
       if(correct_boundary)
         this->poissonSolverBdry_->solve(p_tmp, p_star);
       else
         this->Poisson_solver->solve(p_tmp, p_star);
+      poisson_solve_chrono.print_total_time("LSC POISSON SOLVE");
       
+      Chrono velocity_solve_chrono;
       // Step 2. Update p_tmp = -B Q^(-1) K Q^(-1) B^T p_star
 #ifdef _MPI
       const TParFECommunicator3D& u_comm = *M->get_communicators()[0];
@@ -460,11 +465,14 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       //                  TDatabase::ParamDB->VELOCITY_SPACE,
       //                  TDatabase::ParamDB->PRESSURE_SPACE);
       break;
+      velocity_solve_chrono.print_total_time("LSC VELOCITY SOLVE");
     }
     default:
       ErrThrow("unknown saddle point preconditioner type");
       break;
   }
+
+  apply_chrono.print_total_time("APPLICATION OF LSC");
 }
 
 /* ************************************************************************** */
