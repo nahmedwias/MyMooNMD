@@ -423,8 +423,10 @@ LocalAssembling3D::LocalAssembling3D(
   std::vector<int> myBeginParameter, int myN_Parameters,
   TFEFunction3D** myFEFunctions3D, int myN_FEValues,
   std::vector<int> myFEValue_FctIndex,
-  std::vector<MultiIndex3D> myFEValue_MultiIndex)
- : type{LocalAssembling3D_type::Custom}, N_Terms(myN_Terms),
+  std::vector<MultiIndex3D> myFEValue_MultiIndex,
+  int discretization_type_in)
+ : type{LocalAssembling3D_type::Custom}, discretization_type{discretization_type_in},
+   N_Terms(myN_Terms),
    Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
    RowSpace(myRowSpace), ColumnSpace(myColumnSpace), RhsSpace(myRhsSpace),
    Coeffs(myCoeffs), AssembleParam(myAssembleParam), Manipulate(myManipulate),

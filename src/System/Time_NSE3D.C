@@ -1152,8 +1152,7 @@ void Time_NSE3D::compute_residuals()
   unsigned int number_p_Dof = s.solution_.length(3);
 
 #ifdef _MPI
-    //MPI: solution in consistency level 3 (TODO: maybe this is superfluous here
-    // (because solution might be in level 3 consistency already)!)
+    //MPI: put solution in consistency level 3
     auto comms = s.matrix_.get_communicators();
     for (size_t bl = 0; bl < comms.size() ;++bl)
     {

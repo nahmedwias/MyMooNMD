@@ -341,11 +341,20 @@ class TBaseCell
     int GetCellIndex() const
        {return CellIndex;}
 
-    /**  @brief set subdomain number to this cell   */
+    /**
+     * @brief Set a global cell number to this cell.
+     *
+     * This must be consistent over all processors, and no excuses.
+     */
     void SetGlobalCellNo(int val)
        {GlobalCellNo = val;}
 
-    /**  @brief set subdomain number to this cell   */
+    /**
+     * @brief Get the global cell number of this cell.
+     *
+     *  The GlobalCellNo being consistent on all processors is crucial
+     *  for a functioning domain decomposition method.
+     */
     int GetGlobalCellNo() const
        {return GlobalCellNo;}
 
