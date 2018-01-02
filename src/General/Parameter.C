@@ -258,6 +258,7 @@ void Parameter::impose(const Parameter& p)
     ErrThrow("cannot impose another parameter to this one because it has a "
              "different name: ", this->name, " ", p.get_name());
   }
+
   // reset change_count and access_count
   this->access_count = 0;
   this->change_count = 0;
