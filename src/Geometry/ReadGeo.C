@@ -1370,7 +1370,30 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   return 0;
 }
 
-
+/**
+ * Check in which order three given vertices are, according
+ * to the alphanumeric order given by the operator < of TVertex.
+ */
+int alphanumeric_order(const TVertex& vert0, const TVertex& vert1, const TVertex& vert2)
+{
+  if( (vert0 < vert1) && (vert1 < vert2) )
+    return 0; // 0-1-2
+  if( (vert0 < vert2) && (vert2 < vert1) )
+    return 1; // 0-2-1
+  if( (vert1 < vert0) && (vert0 < vert2) )
+    return 2; // 1-0-2
+  if( (vert1 < vert2) && (vert2 < vert0) )
+    return 3;  // 1-2-0
+  if( (vert2 < vert0) && (vert0 < vert1) )
+    return 4; // 2-0-1
+  if( (vert2 < vert1) && (vert1 < vert0) )
+    return 5; // 2-1-0
+  else
+  {
+    ErrThrow("This should not happen!");
+    return -1;
+  }
+}
 
 int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
                               int N_Vertices, int NVE,
@@ -1868,18 +1891,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
         vert1 = NewVertices[KVERT[NVE*i + 1]-1];
         vert2 = NewVertices[KVERT[NVE*i + 2]-1];
 
-        if( (vert0 < vert1) && (vert1 < vert2) )
-          SortOrder = 0; // 0-1-2
-        if( (vert0 < vert2) && (vert2 < vert1) )
-          SortOrder = 1; // 0-2-1
-        if( (vert1 < vert0) && (vert0 < vert2) )
-          SortOrder = 2; // 1-0-2
-        if( (vert1 < vert2) && (vert2 < vert0) )
-          SortOrder = 3;  // 1-2-0
-        if( (vert2 < vert0) && (vert0 < vert1) )
-          SortOrder = 4; // 2-0-1
-        if( (vert2 < vert1) && (vert1 < vert0) )
-          SortOrder = 5; // 2-1-0
+        SortOrder = alphanumeric_order(*vert0,*vert1,*vert2);
 
         OrderArray[i] = SortOrder;
         // cout << "SortOrder: " << SortOrder << endl;
@@ -2573,8 +2585,8 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
     break;
 
     default:
-      Error("wrong NVE! Only 3 and 4 are allowed!" << endl);
-      exit(-1);
+      ErrThrow("Wrong Number of Vertices per Element ('NVE'). "
+               "Only 3 (triangles) and 4 (quads) are allowed!");
   } // endswitch(NVE)
 
 //   cout << "N_RootCells: " << N_RootCells << endl;
@@ -2702,7 +2714,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
   delete[] NewVertices;
 
   // exit(-1);
-  
+
   return 0;
 }
 
