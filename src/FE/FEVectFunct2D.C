@@ -482,6 +482,7 @@ double TFEVectFunct2D::GetL2NormDivergence()
     OrigFEValuesY = TFEDatabase2D::GetOrigElementValues(BaseFunct, D01);
 
     locdiv = 0;
+
     // for all quadrature points
     for(j=0;j<N_Points;j++)
     {
@@ -492,8 +493,9 @@ double TFEVectFunct2D::GetL2NormDivergence()
       {
         value += FEFunctValues0[l] * OrigX[l] + FEFunctValues1[l] * OrigY[l];
       } // endfor l
-      locdiv += AbsDetJK[j]*weights[j]*(value*value);
-    } // endfor j
+      locdiv += AbsDetJK[j]*weights[j]*(value*value); 
+
+     } // endfor j
 
     diverror += locdiv;
 
@@ -502,7 +504,101 @@ double TFEVectFunct2D::GetL2NormDivergence()
   diverror = sqrt(diverror);
 
   return diverror;
+
 } // TFEVectFunct2D::GetL2NormDivergence
+
+
+/** calculate L2-norm of divergence error - written by Laura*/
+double TFEVectFunct2D::GetL2NormDivergenceError(DoubleFunct2D *Exact_u1,DoubleFunct2D *Exact_u2)
+{
+  BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+  int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+
+  double *Values0 = Values;
+  double *Values1 = Values+Length;
+
+  int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
+  int *BeginIndex = FESpace2D->GetBeginIndex();
+
+  TCollection *Coll = FESpace2D->GetCollection();
+  int N_Cells = Coll->GetN_Cells();
+
+  // Initialize Pointer (necessary: Resource allocation is initialization Paradigm)
+  double *ExactVal_u1[MaxN_QuadPoints_2D];
+  double *ExactVal_u2[MaxN_QuadPoints_2D];
+  double *aux1 = new double [MaxN_QuadPoints_2D * 4]{0.};
+  double *aux2 = new double [MaxN_QuadPoints_2D * 4]{0.};
+  for(int ii = 0; ii < MaxN_QuadPoints_2D; ii++)
+  {
+    ExactVal_u1[ii] = aux1 + ii*4;
+    ExactVal_u2[ii] = aux2 + ii*4;
+  }
+
+  double loc_div_values_exact_solution = 0.;
+  double loc_div_values_FEsolution = 0.;
+  int N_UsedElements = 1;
+  FE2D UsedElements[1];
+  double FEFunctValues0[MaxN_BaseFunctions2D];
+  double FEFunctValues1[MaxN_BaseFunctions2D];
+  double **OrigFEValuesX, *OrigX, value;
+  double **OrigFEValuesY, *OrigY;
+  double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+  bool SecondDer[1] = { FALSE };
+  double AbsDetJK[MaxN_QuadPoints_2D];
+
+  double div_error = 0.;
+  // loop over all cells
+  for(int i = 0; i < N_Cells; i++)
+  {
+    TBaseCell *cell = Coll->GetCell(i);
+    FE2D FEid = FESpace2D->GetFE2D(i, cell);
+    UsedElements[0] = FEid;
+
+    // compute transformation to reference cell
+    double *xi, *eta, *weights;
+    int N_Points;
+    TFEDatabase2D::GetOrig(N_UsedElements, UsedElements, 
+        Coll, cell, SecondDer,
+        N_Points, xi, eta, weights, X, Y, AbsDetJK);
+
+    // calculate all needed derivatives of this FE function
+    BaseFunct2D BaseFunct = BaseFuncts[FEid];
+    int N_Bf = N_BaseFunct[FEid];
+
+    int *DOF = GlobalNumbers + BeginIndex[i];
+    for(int jj = 0; jj < N_Bf; jj++)
+    {
+      int k = DOF[jj];
+      FEFunctValues0[jj] = Values0[k];
+      FEFunctValues1[jj] = Values1[k];
+    }
+
+    OrigFEValuesX = TFEDatabase2D::GetOrigElementValues(BaseFunct, D10);
+    OrigFEValuesY = TFEDatabase2D::GetOrigElementValues(BaseFunct, D01);
+
+    // loop over all quadrature points
+    for(int j = 0; j < N_Points; j++)
+    {
+      OrigX = OrigFEValuesX[j];
+      OrigY = OrigFEValuesY[j];
+      value = 0;
+      for(int l = 0; l < N_Bf; l++)
+      {
+        value += FEFunctValues0[l] * OrigX[l] + FEFunctValues1[l] * OrigY[l];
+      }
+      loc_div_values_FEsolution = value;
+
+      Exact_u1(X[j], Y[j], ExactVal_u1[j]);
+      Exact_u2(X[j], Y[j], ExactVal_u2[j]);
+      loc_div_values_exact_solution = ExactVal_u1[j][1] + ExactVal_u2[j][2];
+
+      div_error += AbsDetJK[j] * weights[j] * fabs(loc_div_values_FEsolution - loc_div_values_exact_solution) * fabs(loc_div_values_FEsolution - loc_div_values_exact_solution);
+    } // endfor j
+  } // endfor i
+  div_error = sqrt(div_error);
+  return div_error;
+} // TFEVectFunct2D::GetL2NormDivergenceError
+
 
 
 /** write the solution into a data file - written by Sashi **/

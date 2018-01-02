@@ -251,11 +251,11 @@ int main(int argc, char* argv[])
         // checking residuals and stop conditions
         if(tnse3d.stop_it(k))
         {
-           loop_info.finish(k, tnse3d.get_full_residual());
-	   linear_iterations+=k;
-	   /// @todo provide all parts of the residual 
-	   /// @todo loop_info restricted to the solver only
-           loop_info_time.print(linear_iterations, tnse3d.get_full_residual());
+          loop_info.finish(k, tnse3d.get_full_residual());
+          linear_iterations+=k;
+          /// @todo provide all parts of the residual
+          /// @todo loop_info restricted to the solver only
+          loop_info_time.print(linear_iterations, tnse3d.get_full_residual());
 	   break;
          }
          else

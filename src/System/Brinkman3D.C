@@ -482,9 +482,10 @@ void Brinkman3D::assemble()
         
         //----- Stabilizations
         if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE==TDatabase::ParamDB->PRESSURE_SPACE)
-        { Output::print("NEEEEEIIIIIIINNNNNNNNN");
+        { 
             if (TDatabase::ParamDB->NSTYPE == 14)
-            { type = LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1;
+              { 
+                 type = LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1;
                 if (TDatabase::ParamDB->VELOCITY_SPACE==1)
                     Output::print<>("P1/P1 Stabilization");
                 else if (TDatabase::ParamDB->VELOCITY_SPACE==2)
@@ -671,8 +672,8 @@ void Brinkman3D::assemble()
 }
 
 /** ************************************************************************ */
-bool Brinkman3D::stopIt(unsigned int iteration_counter)
-{
+void Brinkman3D::stopIt(unsigned int iteration_counter)
+{ 
 }
 
 
