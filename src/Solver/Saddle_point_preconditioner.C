@@ -464,8 +464,8 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       //                  pressure_space,
       //                  TDatabase::ParamDB->VELOCITY_SPACE,
       //                  TDatabase::ParamDB->PRESSURE_SPACE);
-      break;
       velocity_solve_chrono.print_total_time("LSC VELOCITY SOLVE");
+      break;
     }
     default:
       ErrThrow("unknown saddle point preconditioner type");
