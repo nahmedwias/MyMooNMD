@@ -191,7 +191,14 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
   if(db_["read_initial_solution"].is(true))
   {//initial solution is given
     std::string file = db_["initial_solution_file"];
-    Output::info("Initial Solution", "Reading initial solution from file ", file);
+    Output::root_info("Initial Solution", "Reading initial solution from file ", file);
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    file += ".proc" + std::to_string(my_rank);
+    Output::root_info("Initial Solution", "Appending .proc<RANK> to the "
+        "expected initial solution file name.");
+#endif
     systems_.front().solution_.read_from_file(file);
   }
   else
@@ -1431,6 +1438,9 @@ void Time_NSE3D::output(int m, int &image)
       {
     	  file += ".";
     	  file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
+#ifdef _MPI
+    	  file += ".proc" + std::to_string(my_rank);
+#endif
       }
       Output::info("output", "Writing current solution to file ", file);
       systems_.front().solution_.write_to_file(file);
