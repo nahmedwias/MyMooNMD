@@ -226,7 +226,11 @@ class MumpsWrapper
         std::vector<double> a_loc;
     } matrix_;
 
+    /// The vector of parallel communicators belonging to the matrix.
     std::vector< const TParFECommunicator3D* > comms_;
+
+    /// Flag that checks if there was already a factorization of the matrix computed.
+    bool analyzed_and_factorized;
 
 };
 

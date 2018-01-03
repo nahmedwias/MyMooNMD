@@ -24,6 +24,7 @@
 #define INFOG(I) infog[(I)-1]
 
 MumpsWrapper::MumpsWrapper(const BlockFEMatrix& bmatrix)
+: analyzed_and_factorized(false)
 {
 
   //check the input
@@ -51,6 +52,7 @@ MumpsWrapper::MumpsWrapper(const BlockFEMatrix& bmatrix)
 MumpsWrapper::MumpsWrapper( const BlockMatrix& bmatrix,
               std::vector<const TParFECommunicator3D*> comms,
               std::vector<int> loc_to_seq)
+: analyzed_and_factorized(false)
 {
 
   //check the input
@@ -152,10 +154,13 @@ void MumpsWrapper::solve(const BlockVector& rhs, BlockVector& solution)
     glob_dof_shift += current_n_dofs_global;
   }
   //2) let mumps do its jobs
-  id_.nz_loc  = matrix_.nz_loc;
-  id_.irn_loc = &matrix_.irn_loc.at(0);
-  id_.jcn_loc = &matrix_.jcn_loc.at(0);
-  id_.a_loc   = &matrix_.a_loc.at(0);
+  if(!analyzed_and_factorized)
+  {
+    id_.nz_loc  = matrix_.nz_loc;
+    id_.irn_loc = &matrix_.irn_loc.at(0);
+    id_.jcn_loc = &matrix_.jcn_loc.at(0);
+    id_.a_loc   = &matrix_.a_loc.at(0);
+  }
 
   if(i_am_root)
   {
@@ -165,8 +170,12 @@ void MumpsWrapper::solve(const BlockVector& rhs, BlockVector& solution)
     id_.n    = matrix_.n;
   }
 
-  kick_off_job(std::string("analyze"));
-  kick_off_job(std::string("factorize"));
+  if(!analyzed_and_factorized)
+  {
+    kick_off_job(std::string("analyze"));
+    kick_off_job(std::string("factorize"));
+    analyzed_and_factorized = true;
+  }
   kick_off_job(std::string("solve"));
 
   //3) distribute solution among processes
