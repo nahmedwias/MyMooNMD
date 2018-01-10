@@ -616,26 +616,10 @@ void Time_NSE3D::assemble_initial_time()
     for(int i = 0; i<3; ++i)
       delete fe_functions[i];
 
-    /** manage dirichlet condition by copying non-actives DoFs
-     * from rhs to solution of front grid (=finest grid)
-     * Note: this operation can also be done inside the loop, so that
-     * the s.solution is corrected on every grid. This is the case in
-     * TNSE2D.
-     * TODO: CHECK WHAT IS THE DIFFERENCE BETWEEN doing this on every grid
-     * and doing it only on the finest grid!
-     **/
+    // manage dirichlet condition by copying non-actives DoFsfrom rhs to solution
     s.solution_.copy_nonactive(s.rhs_);
   }// end for system per grid - the last system is the finer one (front)
 
-  /** manage dirichlet condition by copying non-actives DoFs
-  * from rhs to solution of front grid (=finest grid)
-  * Note: this operation can also be done inside the loop, so that
-  * the s.solution is corrected on every grid. This is the case in
-  * TNSE2D.
-  * TODO: CHECK WHAT IS THE DIFFERENCE BETWEEN doing this on every grid
-  * and doing it only on the finest grid!
-  * **/
-  // this->systems_.front().solution_.copy_nonactive(this->systems_.front().rhs_);
 
   /** After copy_nonactive, the solution vectors needs to be Comm-updated
    * in MPI-case in order to be consistently saved. It is necessary that
@@ -1173,8 +1157,10 @@ void Time_NSE3D::compute_residuals()
 
   if(s.matrix_.pressure_projection_enabled())
   {
-    IntoL20Vector3D(&defect_[3*number_u_Dof], number_p_Dof,
-                      TDatabase::ParamDB->PRESSURE_SPACE);
+    TFEFunction3D defect_fctn(&s.pressureSpace_,
+                              "p_def","pressure defect function",
+                              &defect_[3*number_u_Dof], number_p_Dof);
+    defect_fctn.project_into_L20();
   }
 
   // This is the calculation of the residual, given the defect.
@@ -1206,19 +1192,17 @@ void Time_NSE3D::compute_residuals()
 void Time_NSE3D::solve()
 {
   System_per_grid& s = systems_.front();
-  
+
   // store previous solution for damping, it is a pointer so that we can avoid
   // the copy in case of no damping
   double damping = this->db_["nonlinloop_damping_factor"];
   std::shared_ptr<BlockVector> old_solution(nullptr);
   if(damping != 1.0)
     old_solution = std::make_shared<BlockVector>(s.solution_);
-
 #ifndef _MPI
   solver_.solve(s.matrix_, s.rhs_, s.solution_);
-#endif
-  
-#ifdef _MPI
+#elif defined(_MPI)
+
   if(solver_.get_db()["solver_type"].is("direct"))
   {
     if(damping != 1.0)
@@ -1247,7 +1231,7 @@ void Time_NSE3D::solve()
   this->descale_matrices();
 
   if(s.matrix_.pressure_projection_enabled())
-       s.p_.project_into_L20();
+     s.p_.project_into_L20();
 }
 
 /**************************************************************************** */
