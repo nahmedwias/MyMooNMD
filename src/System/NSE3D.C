@@ -757,8 +757,10 @@ void NSE3D::compute_residuals()
 
   if(s.matrix_.pressure_projection_enabled())
   {
-    IntoL20Vector3D(&defect_[3*n_u_dof], n_p_dof,
-                    TDatabase::ParamDB->PRESSURE_SPACE);
+    TFEFunction3D defect_fctn(&s.pressureSpace_,
+                              "p_def","pressure defect function",
+                              &defect_[3*n_u_dof], n_p_dof);
+    defect_fctn.project_into_L20();
   }
 
   // This is the calculation of the residual, given the defect.
