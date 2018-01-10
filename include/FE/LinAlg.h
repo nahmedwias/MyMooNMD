@@ -415,7 +415,7 @@ void RestrictFunction(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace
     int N_Functions,
     double *CoarseFunction, double *FineFunction, double *aux);
 
-/** project vector v into L20 */
+// FIXME: This does not work in MPI case and should therefore be removed.
 void IntoL20Vector3D(double *v, int Length, int order);
 
 /** project fe function into L20 */
