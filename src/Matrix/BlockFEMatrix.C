@@ -704,22 +704,6 @@ void BlockFEMatrix::apply_scaled_add(const BlockVector & x,
 void BlockFEMatrix::apply_scaled_add_actives(const BlockVector & x, BlockVector & y,
                               double a) const
 {
-  //Correction due to pressure projection! //TODO THIS! IS! SUCH! A! MESS!
-  double valuable_entry;
-  //if(use_pressure_projection_) FIXME When to do this - when not?
-  if(false)
-  {
-    int first_pressure_row = -1;
-    if(get_n_cell_rows() == 3)
-    {//assume this to be a 2D (Navier-)Stokes matrix
-      first_pressure_row = 2*get_test_space(0,0).GetN_DegreesOfFreedom();
-    }
-    else if(get_n_cell_rows() == 4)
-    {//assume this to be a 3D (Navier-)Stokes matrix
-      first_pressure_row = 3*get_test_space(0,0).GetN_DegreesOfFreedom();
-    }
-    valuable_entry = y.get_entries()[first_pressure_row];
-  }
     //check if the vectors fit, if not so the program throws an error
     check_vector_fits_pre_image(x);
     check_vector_fits_image(y);
@@ -747,24 +731,6 @@ void BlockFEMatrix::apply_scaled_add_actives(const BlockVector & x, BlockVector 
         col_offset += cell_grid_[i][j].n_columns_;
       }
       row_offset += cell_grid_[i][0].n_rows_;
-    }
-
-    //Correction due to pressure projection! //TODO THIS! IS! SUCH! A! MESS!
-    //if(use_pressure_projection_) FIXME When to do this - when not?
-    if(false)
-    {
-      size_t first_pressure_row;
-      if(get_n_cell_rows() == 3)
-      {//assume this to be a 2D (Navier-)Stokes matrix
-        first_pressure_row = 2*get_test_space(0,0).GetN_DegreesOfFreedom();
-      }
-      else if(get_n_cell_rows() == 4)
-      {//assume this to be a 3D (Navier-)Stokes matrix
-        first_pressure_row = 3*get_test_space(0,0).GetN_DegreesOfFreedom();
-      }
-      else
-        return;
-      y.get_entries()[first_pressure_row] = valuable_entry + a*x.get_entries()[first_pressure_row];
     }
 }
 
