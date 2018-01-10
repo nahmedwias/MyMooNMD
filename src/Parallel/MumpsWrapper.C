@@ -23,7 +23,8 @@
 #define ICNTL(I) icntl[(I)-1]
 #define INFOG(I) infog[(I)-1]
 
-MumpsWrapper::MumpsWrapper(const BlockFEMatrix& bmatrix)
+MumpsWrapper::MumpsWrapper(const BlockFEMatrix& bmatrix,
+                           std::vector<double> pres0)
 : analyzed_and_factorized(false)
 {
 
@@ -45,13 +46,14 @@ MumpsWrapper::MumpsWrapper(const BlockFEMatrix& bmatrix)
   set_mumps_parameters();
 
   // transform and store the matrix distributed in coordinate format
-  store_in_distributed_coordinate_form(bmatrix);
+  store_in_distributed_coordinate_form(bmatrix, pres0);
 
 }
 
 MumpsWrapper::MumpsWrapper( const BlockMatrix& bmatrix,
-              std::vector<const TParFECommunicator3D*> comms,
-              std::vector<int> loc_to_seq)
+                            std::vector<const TParFECommunicator3D*> comms,
+                            std::vector<double> pres0,
+                            std::vector<std::vector<int>> loc_to_seq)
 : analyzed_and_factorized(false)
 {
 
@@ -73,7 +75,7 @@ MumpsWrapper::MumpsWrapper( const BlockMatrix& bmatrix,
   set_mumps_parameters();
 
   // transform and store the matrix distributed in coordinate format
-  store_in_distributed_coordinate_form(bmatrix,loc_to_seq);
+  store_in_distributed_coordinate_form(bmatrix, pres0, loc_to_seq);
 }
 
 void MumpsWrapper::solve(const BlockVector& rhs, BlockVector& solution)
@@ -374,11 +376,17 @@ void MumpsWrapper::set_mumps_parameters()
   // FIXME in the current setup of the libraries, parmetis is segfaulting when
   // called - that's why id_.ICNTL(28) is set to 1 (sequential ordering) so far
   id_.ICNTL(29)=2;//request parmetis to do the ordering if id.ICNTL(28)=2
+
+  // This parameter forces MUMPS to repeat the solution 2 times
+  // using a simple iterative scheme. This (usually) makes the solution
+  // more exact by several orders of magnitude.
+  id_.ICNTL(10)=-2;
 }
 
 void MumpsWrapper::store_in_distributed_coordinate_form(
     const BlockMatrix& bmatrix,
-    std::vector<int> loc_to_seq
+    std::vector<double> pres0,
+    std::vector<std::vector<int>> loc_to_seq
 )
 {
   //check what kind of block matrix we deal with
@@ -523,8 +531,8 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
               }
               else
               {
-                matrix_.irn_loc.push_back(row_shift + loc_to_seq.at(row) + 1);
-                matrix_.jcn_loc.push_back(col_shift + loc_to_seq.at(col) + 1);
+                matrix_.irn_loc.push_back(row_shift + loc_to_seq.at(cell_row).at(row) + 1);
+                matrix_.jcn_loc.push_back(col_shift + loc_to_seq.at(cell_col).at(col) + 1);
               }
               matrix_.a_loc.push_back(entry);
               ++matrix_.nz_loc;
@@ -559,13 +567,21 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
             bool is_nonzero = (entry != 0.0);
             bool is_in_master_row = masters.at(col) == mpi_rank;
             bool is_in_active_row = true; //true for standard block matrix
-             if(is_block_fe_matrix)
+            if(is_block_fe_matrix)
                is_in_active_row  = (col < static_cast<const BlockFEMatrix&>(bmatrix).get_n_row_actives(cell_row) );
 
             if (is_nonzero && is_in_master_row && is_in_active_row)
             {//fill entry in the sparsity structure
-              matrix_.irn_loc.push_back(row_shift + row_l2g.at(col) + 1);
-              matrix_.jcn_loc.push_back(col_shift + col_l2g.at(row) + 1);
+              if(loc_to_seq.empty())
+              {
+                matrix_.irn_loc.push_back(row_shift + row_l2g.at(col) + 1);
+                matrix_.jcn_loc.push_back(col_shift + col_l2g.at(row) + 1);
+              }
+              else
+              {
+                matrix_.irn_loc.push_back(row_shift + loc_to_seq.at(cell_row).at(col) + 1);
+                matrix_.jcn_loc.push_back(col_shift + loc_to_seq.at(cell_col).at(row) + 1);
+              }
               matrix_.a_loc.push_back(entry);
               ++matrix_.nz_loc;
             }
@@ -585,8 +601,16 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
             if(masters.at(row)==mpi_rank)
             {//only add the entry if the current process is master of its row
               //put a 1 on the diagonal
-              matrix_.irn_loc.push_back(row_shift + row_l2g.at(row) + 1);
-              matrix_.jcn_loc.push_back(row_shift + row_l2g.at(row) + 1);
+              if(loc_to_seq.empty())
+              {
+                matrix_.irn_loc.push_back(row_shift + row_l2g.at(row) + 1);
+                matrix_.jcn_loc.push_back(row_shift + col_l2g.at(row) + 1);
+              }
+              else
+              {
+                matrix_.irn_loc.push_back(row_shift + loc_to_seq.at(cell_row).at(row) + 1);
+                matrix_.jcn_loc.push_back(row_shift + loc_to_seq.at(cell_col).at(row) + 1);
+              }
               matrix_.a_loc.push_back(1);
               ++matrix_.nz_loc;
             }
@@ -601,46 +625,115 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
     // if the matrix comes from an enclosed flow problem,
     // an internal pressure row correction is necessary
     if (static_cast<const BlockFEMatrix&>(bmatrix).pressure_projection_enabled())
-      pressure_row_correction(comms_);
+    {
+      Output::root_info<5>("Pressure Projection", "MumpsWrapper applying pressure row correction.");
+      pressure_row_correction(pres0);
+    }
   }
 }
 
 void MumpsWrapper::pressure_row_correction(
-    std::vector<const TParFECommunicator3D*> comms)
+    std::vector<double> pres0)
 {
-  if(comms.size() != 4)
-  {
-    ErrThrow("I expected that 'comms' had size 4, since this should be an"
-        " NSE3D problem!");
-  }
-  int size, my_rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-  int n_velo_dofs_global;
-  int n_velo_dofs_local = comms.at(0)->GetN_Master(); //master dofs
-  int sendbuf[1]={n_velo_dofs_local};
-  int recvbuf[1]={0};
-  //gather total number of velo dofs in root 0
-  MPI_Reduce(sendbuf, recvbuf, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-  // due to the used global ordering it is process 0 that hold the
-  // globally first pressure row. that row should to be set to unit vector
-  if(my_rank == 0)
-  {
-    n_velo_dofs_global = 3*recvbuf[0]; //we're in 3D, thus multiply by 3
-    int first_p_rw = n_velo_dofs_global;
-    //go through the matrix and remove all entries
-    for(size_t i = 0; i<matrix_.nz_loc; ++i)
+  if(!pres0.empty())
+  { //
+    const TFESpace3D* pres_space = this->comms_.at(3)->get_fe_space();
+    double p0_x = pres0.at(0);
+    double p0_y = pres0.at(1);
+    double p0_z = pres0.at(2);
+    int pressure_dof_to_correct = -1;
+    for(int d = 0 ; d<pres_space->GetN_DegreesOfFreedom() ; ++d)
     {
-      if(matrix_.irn_loc.at(i)==first_p_rw)
+      double x,y,z;
+      double tol = 1e-6;
+      pres_space->GetDOFPosition(d,x,y,z);
+      if(    std::abs(p0_x - x) < tol
+          && std::abs(p0_y - y) < tol
+          && std::abs(p0_z - z) < tol)
       {
-        if(matrix_.jcn_loc.at(i) != first_p_rw)
-        {//off-diagonal entry - set to zero!
-          matrix_.a_loc.at(i) = 0;
+        pressure_dof_to_correct = d;
+        break;
+      }
+    }
+
+    int size;
+    int rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    int n_velo_dofs_local = comms_.at(0)->GetN_Master(); //master dofs
+    int sendbuf[1]={n_velo_dofs_local};
+    int recvbuf[1]={0};
+    //gather total number of velo dofs in root 0
+    MPI_Allreduce(sendbuf, recvbuf, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+    bool i_am_master = false;
+    if(pressure_dof_to_correct != -1)
+    {
+        i_am_master = (comms_.at(3)->GetMaster()[pressure_dof_to_correct] == rank);
+    }
+
+    if(i_am_master)
+    {//correct that entire row on "my" process
+      Output::print("I AM YOUR MASTER!");
+      int n_velo_dofs_global = 3*recvbuf[0]; //we're in 3D, thus multiply by 3
+      //go through the matrix and remove all entries
+      bool found_diagonal = false;
+      for(size_t i = 0; i<matrix_.nz_loc; ++i)
+      {
+        if(matrix_.irn_loc.at(i) == n_velo_dofs_global + pressure_dof_to_correct + 1)
+        {
+          if(matrix_.jcn_loc.at(i) != n_velo_dofs_global + pressure_dof_to_correct + 1)
+          {//off-diagonal entry - set to zero!
+            matrix_.a_loc.at(i) = 0;
+          }
+          else
+          {//diagonal entry - put to one!
+            matrix_.a_loc.at(i) = 1;
+            found_diagonal = true;
+          }
         }
-        else
-        {//diagonal entry - put to one!
-          matrix_.a_loc.at(i) = 1;
+      }
+      if(!found_diagonal)
+      {
+        matrix_.irn_loc.push_back(n_velo_dofs_global + pressure_dof_to_correct + 1);
+        matrix_.jcn_loc.push_back(n_velo_dofs_global + pressure_dof_to_correct + 1);
+        matrix_.a_loc.push_back(1);
+        matrix_.nz_loc = matrix_.nz_loc + 1;
+      }
+    }
+
+  }
+  else
+  {
+    int size, my_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    int n_velo_dofs_local = comms_.at(0)->GetN_Master(); //master dofs
+    int sendbuf[1]={n_velo_dofs_local};
+    int recvbuf[1]={0};
+    //gather total number of velo dofs in root 0
+    MPI_Reduce(sendbuf, recvbuf, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    // due to the used global ordering it is process 0 that holds the
+    // globally first pressure row. that row should to be set to unit vector
+    if(my_rank == 0)
+    {
+      int n_velo_dofs_global = 3*recvbuf[0]; //we're in 3D, thus multiply by 3
+      int first_p_rw = n_velo_dofs_global;
+      //go through the matrix and remove all entries
+      for(size_t i = 0; i<matrix_.nz_loc; ++i)
+      {
+        if(matrix_.irn_loc.at(i)==first_p_rw)
+        {
+          if(matrix_.jcn_loc.at(i) != first_p_rw)
+          {//off-diagonal entry - set to zero!
+            matrix_.a_loc.at(i) = 0;
+          }
+          else
+          {//diagonal entry - put to one!
+            matrix_.a_loc.at(i) = 1;
+          }
         }
       }
     }

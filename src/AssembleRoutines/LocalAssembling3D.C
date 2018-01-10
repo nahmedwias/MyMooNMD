@@ -109,6 +109,8 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
   this->FEValue_MultiIndex = {};
   this->BeginParameter = {};
   
+  this->N_Spaces=0; // is unused for built-in discretization types anyway
+
   // set all member variables according to type
   switch(this->type)
   {
@@ -367,7 +369,8 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, TAuxParam3D& a
    ParameterFct(this->N_ParamFct, nullptr), BeginParameter(this->N_ParamFct, 0),
    N_Parameters(aux.getNParameters()), N_FEValues(aux.getNFeValues()),
    FEFunctions3D(aux.getFeFunctions3D()), FEValue_FctIndex(this->N_FEValues,0),
-   FEValue_MultiIndex(this->N_FEValues, D000)
+   FEValue_MultiIndex(this->N_FEValues, D000),
+   discretization_type(0)//default value for custom constructor
 {
   this->Needs2ndDerivatives = new bool[this->N_Spaces];
   for(int i = 0; i < this->N_Spaces; ++i)
