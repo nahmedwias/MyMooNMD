@@ -32,6 +32,7 @@ double timeC = 0;
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  {
 #ifdef _MPI
   //Construct and initialise the default MPI communicator.
   MPI_Init(&argc, &argv);
@@ -125,7 +126,7 @@ int main(int argc, char* argv[])
 #endif
   
   tnse3d.assemble_initial_time();
-  
+
   double end_time = TDatabase::TimeDB->ENDTIME;
   tnse3d.current_step_ = 0;
 
@@ -177,7 +178,6 @@ int main(int argc, char* argv[])
 
       // prepare the matrices for defect computations and solvers
       tnse3d.assemble_system();
-      
       timer_timeit.restart_and_print("preparation of nonlinear iteration");
 
       // nonlinear iteration
@@ -240,6 +240,8 @@ int main(int argc, char* argv[])
   // ======================================================================
 
   Output::close_file();
+
+}
 #ifdef _MPI
   MPI_Finalize();
 #endif
