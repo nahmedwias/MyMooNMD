@@ -376,6 +376,11 @@ void MumpsWrapper::set_mumps_parameters()
   // FIXME in the current setup of the libraries, parmetis is segfaulting when
   // called - that's why id_.ICNTL(28) is set to 1 (sequential ordering) so far
   id_.ICNTL(29)=2;//request parmetis to do the ordering if id.ICNTL(28)=2
+
+  // This parameter forces MUMPS to repeat the solution 2 times
+  // using a simple iterative scheme. This (usually) makes the solution
+  // more exact by several orders of magnitude.
+  id_.ICNTL(10)=-2;
 }
 
 void MumpsWrapper::store_in_distributed_coordinate_form(
