@@ -612,6 +612,13 @@ class TDomain
                    int N_Vertices, int NVE, int *BoundFaces, int *FaceParam,
                    int NBF, int NVpF,
                    int *Interfaceparam, int N_Interfaces);
+
+      void NewMakeSandwichGrid(
+    		  double *DCORVG, int *KVERT, int *KNPR,
+    		  int N_Vertices, int NVE,
+    		  double DriftX, double DriftY, double DriftZ,
+    		  const std::vector<double>& Lambda);
+
       /** @brief make initial sandwich grid */
       int MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
                            int N_Vertices, int NVE,
