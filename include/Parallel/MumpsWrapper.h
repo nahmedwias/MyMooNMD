@@ -45,7 +45,8 @@ class MumpsWrapper
      * Set up a Mumps wrapper for a certain BlockFEMatrix.
      * @param[in] bmatrix The matrix to wrap a mumps solver around.
      */
-    MumpsWrapper( const BlockFEMatrix& bmatrix );
+    MumpsWrapper( const BlockFEMatrix& bmatrix,
+                  std::vector<double> pres0 = {});
 
     /**
      * Set up a Mumps wrapper for a certain BlockMatrix, supplying additional
@@ -63,7 +64,8 @@ class MumpsWrapper
      */
     MumpsWrapper( const BlockMatrix& matrix,
                   std::vector<const TParFECommunicator3D*> comms,
-                  std::vector<int> loc_to_seq = {});
+                  std::vector<double> pres0 = {},
+                  std::vector<std::vector<int>> loc_to_seq = {});
 
     /**
      * Solve an equation system for the wrapped up matrix with the mumps solver.
@@ -157,13 +159,14 @@ class MumpsWrapper
      * is performed.
      */
     void store_in_distributed_coordinate_form(const BlockMatrix& bmatrix,
-                                              std::vector<int> loc_to_seq = {});
+                                              std::vector<double> pres0 = {},
+                                              std::vector<std::vector<int>> loc_to_seq = {});
 
     /**
      * This method is need for enclosed flows. Determines which row is the
      * first pressure row and sets it to 0 with a 1 on the diagonal.
      */
-    void pressure_row_correction(std::vector<const TParFECommunicator3D*> comms);
+    void pressure_row_correction(std::vector<double> pres0 = {});
 
     /**
      * Wraps two MPI calls which are used to comunicate all local master values
@@ -226,7 +229,11 @@ class MumpsWrapper
         std::vector<double> a_loc;
     } matrix_;
 
+    /// The vector of parallel communicators belonging to the matrix.
     std::vector< const TParFECommunicator3D* > comms_;
+
+    /// Flag that checks if there was already a factorization of the matrix computed.
+    bool analyzed_and_factorized;
 
 };
 
