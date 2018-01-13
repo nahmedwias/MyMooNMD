@@ -635,7 +635,7 @@ void L1Int3D(int N_Points, double *X, double *Y, double *Z,
   } // endfor i
 }
 
-/** project vector v into L20 */
+// FIXME: This does not work in MPI case and should therefore be removed.
 void IntoL20Vector3D(double *v, int Length, int order)
 {
   double s;
