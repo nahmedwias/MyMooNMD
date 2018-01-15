@@ -51,28 +51,16 @@ int main(int argc, char* argv[])
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  std::ifstream fs(argv[1]);
-  parmoon_db.read(fs);
-  fs.close();
-
+  parmoon_db.read(argv[1]);
+  
 #ifdef _MPI
   TDatabase::ParamDB->Comm = comm;
 #endif
 
   TFEDatabase3D feDatabase;
 
-  bool call_metis_earlier = 
-    parmoon_db["preconditioner"].is("multigrid") &&
-    parmoon_db["solver_type"].is("iterative");
-  ParameterDatabase domain_trick(Solver<>::default_solver_database());
-  domain_trick.merge(parmoon_db, true);
-  domain_trick["preconditioner"] = "multigrid";
-  domain_trick["solver_type"] = "iterative";
-  domain_trick["multigrid_type"] = "standard";
-  size_t n_refinements = domain_trick["refinement_n_initial_steps"];
-  domain_trick["multigrid_n_levels"] = n_refinements - 1;
   // Construct domain, thereby read in controls from the input file.
-  TDomain domain(call_metis_earlier ? domain_trick : parmoon_db, argv[1]);
+  TDomain domain(parmoon_db, argv[1]);
 
   //open OUTFILE, this is where all output is written to (addionally to console)
   if(my_rank==0)
@@ -96,15 +84,12 @@ int main(int argc, char* argv[])
   int maxSubDomainPerDof = 0;
 #endif
   std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections(
-      call_metis_earlier ? domain_trick : parmoon_db
+  = domain.refine_and_get_hierarchy_of_collections(parmoon_db
   #ifdef _MPI
       , maxSubDomainPerDof
   #endif
       );
-  if(call_metis_earlier)
-    gridCollections = {gridCollections.front()};
-
+  
   //print information on the mesh partition on the finest grid
   domain.print_info("cd3d domain");
 
