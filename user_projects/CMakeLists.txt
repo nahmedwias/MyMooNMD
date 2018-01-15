@@ -38,7 +38,7 @@ IF(Boost_FOUND)
     MESSAGE("Boost libraries located in: ${Boost_LIBRARIES}")
 ENDIF(Boost_FOUND)
 
-# Shuffle everything into a static project library.
+# Shuffle everything into a static project library for 2D.
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/BrushWrapper.C")
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/CoupledCDR_2D.C")
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Coupled_Time_CDR_2D.C")
@@ -50,6 +50,12 @@ list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Reactio
 
 add_library(PROJECT_LIB_2D STATIC ${_PROJECT_SOURCES_2D})
 target_compile_definitions(PROJECT_LIB_2D PUBLIC -D__2D__)
+
+# Shuffle everything into a static project library for 3D.
+list(APPEND _PROJECT_SOURCES_3D "${PROJECT_SOURCE_DIR}/user_projects/src/BrushWrapper.C")
+
+add_library(PROJECT_LIB_3D STATIC ${_PROJECT_SOURCES_3D})
+target_compile_definitions(PROJECT_LIB_3D PUBLIC -D__3D__)
 
 # Brush will need OpenMP
 find_package(OpenMP)
@@ -78,6 +84,12 @@ add_executable(flow_and_conc_2d ${PROJECT_SOURCE_DIR}/user_projects/Flow_Concent
 set_target_properties(flow_and_conc_2d PROPERTIES OUTPUT_NAME parMooN_flow_and_concentrations_2d_${PARMOON_PARALLEL_TYPE})
 target_compile_definitions(flow_and_conc_2d PUBLIC -D__2D__)
 target_link_libraries(flow_and_conc_2d PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${BRUSH_LIBS} ${_EXTERN_LIBRARIES})
+
+# Add an executable target from 3D_Flow_And_Concentrations_ParMooN.c++
+add_executable(flow_and_conc_3d ${PROJECT_SOURCE_DIR}/user_projects/3D_Flow_Concentration_Particles_ParMooN.c++)
+set_target_properties(flow_and_conc_3d PROPERTIES OUTPUT_NAME parMooN_flow_and_concentrations_3d_${PARMOON_PARALLEL_TYPE})
+target_compile_definitions(flow_and_conc_3d PUBLIC -D__3D__)
+target_link_libraries(flow_and_conc_3d PROJECT_LIB_3D parmoon_3d_${PARMOON_PARALLEL_TYPE} ${BRUSH_LIBS} ${_EXTERN_LIBRARIES})
 
 #################
 # tests
