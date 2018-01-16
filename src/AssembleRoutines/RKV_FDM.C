@@ -5108,7 +5108,7 @@ double *y_coord, int N_x, int N_y)
   }
   OutPut("write vtk " << name << " " << N_x+1 << " " << N_y+1 <<  endl);
 
-  fprintf(out,"# vtk DataFile Version 4.2\n");
+  fprintf(out,"# vtk DataFile Version 4.0\n");
   fprintf(out,"file created by MooNMD\n");
   fprintf(out,"ASCII\n");
   fprintf(out,"DATASET UNSTRUCTURED_GRID\n\n");
@@ -5965,7 +5965,7 @@ double *y_coord, double *z_coord, int N_x, int N_y, int N_z)
   }
   OutPut("write vtk " << name << " " << N_x+1 << " " << N_y+1 << " " << N_z+1 <<  endl);
 
-  fprintf(out,"# vtk DataFile Version 4.2\n");
+  fprintf(out,"# vtk DataFile Version 4.0\n");
   fprintf(out,"file created by MooNMD\n");
   fprintf(out,"ASCII\n");
   fprintf(out,"DATASET UNSTRUCTURED_GRID\n\n");

@@ -286,6 +286,8 @@ void Saddle_point_preconditioner::solve_velocity(
 void Saddle_point_preconditioner::apply(const BlockVector &z,
                                         BlockVector &r) const
 {
+  //Chrono apply_chrono;
+
   Output::print<5>("Saddle_point_preconditioner::apply");
   if(r.n_blocks() == 0)
   {
@@ -359,11 +361,14 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       // MPI: it is not necessary to update p_tmp,
       // because rhs 'z' enters in consistency lvl 3
 
+      //Chrono poisson_solve_chrono;
       if(correct_boundary)
         this->poissonSolverBdry_->solve(p_tmp, p_star);
       else
         this->Poisson_solver->solve(p_tmp, p_star);
+      //poisson_solve_chrono.print_total_time("LSC POISSON SOLVE");
       
+      //Chrono velocity_solve_chrono;
       // Step 2. Update p_tmp = -B Q^(-1) K Q^(-1) B^T p_star
 #ifdef _MPI
       const TParFECommunicator3D& u_comm = *M->get_communicators()[0];
@@ -393,7 +398,7 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       }
       
 #ifdef _MPI
-      // update u_tmp to lvl3, for matrix-vector product.
+      // update u_tmp to lvl3, for matrix-vector product. TODO Here consistency level 2 should be enough!
       u_comm.consistency_update(u_tmp.block(0),3);
       u_comm.consistency_update(u_tmp.block(1),3);
       u_comm.consistency_update(u_tmp.block(2),3);
@@ -459,12 +464,15 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       //                  pressure_space,
       //                  TDatabase::ParamDB->VELOCITY_SPACE,
       //                  TDatabase::ParamDB->PRESSURE_SPACE);
+      //velocity_solve_chrono.print_total_time("LSC VELOCITY SOLVE");
       break;
     }
     default:
       ErrThrow("unknown saddle point preconditioner type");
       break;
   }
+
+  //apply_chrono.print_total_time("APPLICATION OF LSC");
 }
 
 /* ************************************************************************** */

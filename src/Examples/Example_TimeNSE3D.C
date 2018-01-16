@@ -34,6 +34,11 @@ namespace flow_around_cylinder_instationary
 #include "TNSE_3D/FlowAroundCylinder_instat.h"   // 6
 }
 
+namespace wiedmeyer_batch_crystallizer //7
+{
+#include "TNSE_3D/WiedmeyerBatchCrystallizer.h"
+}
+
 //=========================================================
 Example_TimeNSE3D::Example_TimeNSE3D(
   const ParameterDatabase& user_input_parameter_db)
@@ -286,6 +291,51 @@ Example_TimeNSE3D::Example_TimeNSE3D(
 
       /** some variables to change values in the example */
       flow_around_cylinder_instationary::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      ExampleFile();
+      break;
+    }
+    case 7:
+    {
+      using namespace wiedmeyer_batch_crystallizer;
+
+      // Set example constants
+      if(user_input_parameter_db["sandwich_grid"])
+      {
+        double new_r_out = user_input_parameter_db["outflow_stretch"];
+        FluidProperties::set_r_out(new_r_out/100);
+      }
+      FluidProperties::set_mass_flow_rate(user_input_parameter_db["mass_flow_rate"]);
+      FluidProperties::set_out_condition(user_input_parameter_db["out_condition"]);
+
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** initial conditions */
+      initialCondtion.push_back( InitialU1 );
+      initialCondtion.push_back( InitialU2 );
+      initialCondtion.push_back( InitialU3 );
+
+      // /**post processing - drag and lift calculation and output */
+      // post_processing_stat =
 
       ExampleFile();
       break;

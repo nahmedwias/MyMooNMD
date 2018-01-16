@@ -124,7 +124,10 @@ class TCollection
    int getIndexInCollection(TBaseCell *cell);
 
    ///@brief write the geometry in .mesh format
-   int writeMesh(const char *meshFileName);
+   /// @param dimension If the file should be written in 2D or 3D. 3D is necessary
+   /// for opening the file with gmsh. 2D must be used if the file is supposed to
+   /// be used by, e.g., Brush.
+   int writeMesh(const char *meshFileName, int dimension = 3);
     
    /**@brief Write a list of boundary edges
     */

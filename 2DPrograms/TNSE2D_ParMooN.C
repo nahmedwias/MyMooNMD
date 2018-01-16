@@ -73,7 +73,6 @@ int main(int argc, char* argv[])
   {
     tss.current_step_++;
 
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     // set the time parameters
     tss.set_time_disc_parameters();
     double tau = parmoon_db["time_step_length"];
