@@ -6,7 +6,6 @@
 
 enum class OutCondition{DO_NOTHING, CONSTANT, PARABOLIC};
 
-bool TIME_DEPENDENT;
 OutCondition out_condition;
 
 namespace FluidProperties
@@ -32,10 +31,10 @@ void set_r_out(double new_r_out)
 
 void set_mass_flow_rate(double mfr)
 {
-	mass_flow_rate = mfr/3600; // (kg/s) the mass flow rate at in- and outflow
-	u_avg_in = mass_flow_rate / (rho * M_PI * r_in * r_in ); //0.047157;   //m/s
-	u_max_in = 2*u_avg_in; //m/s, assuming HP-inflow
-	u_avg_out = mass_flow_rate / (rho * M_PI * r_out*r_out ); //m/s
+  mass_flow_rate = mfr/3600; // (kg/s) the mass flow rate at in- and outflow
+  u_avg_in = mass_flow_rate / (rho * M_PI * r_in * r_in ); //0.047157;   //m/s
+  u_max_in = 2*u_avg_in; //m/s, assuming HP-inflow
+  u_avg_out = mass_flow_rate / (rho * M_PI * r_out*r_out ); //m/s
 }
 
 void set_out_condition(const std::string& cond)
@@ -83,40 +82,40 @@ enum class BoundaryPart {BOTTOM, WALL, TOP};
 //Find out which boundary part a boundary point lies on. Measures are in m.
 BoundaryPart determine_boundary_part(double x, double y, double z)
 {
-	double tol = 1e-8;
-	//catch first those values that lie on the wall parts of top and bottom
-	if(    (fabs(sqrt(x*x + y*y) - FluidProperties::r_in) < tol && fabs(z-0) < tol)      //bottom wall
-	    || (fabs(sqrt(x*x + y*y) - FluidProperties::r_out) < tol && fabs(z-0.5) < tol) ) //top wall
-	{
-		return BoundaryPart::WALL;
-	}
-	if (fabs(z-0) < tol )
-	{
-		return BoundaryPart::BOTTOM;
-	}
-	else if (fabs(z-0.5) < tol )
-	{
-		return BoundaryPart::TOP;
-	}
-	else //everything "complicated" is on the wall boundary
-		return BoundaryPart::WALL;
+  double tol = 1e-8;
+  //catch first those values that lie on the wall parts of top and bottom
+  if(    (fabs(sqrt(x*x + y*y) - FluidProperties::r_in) < tol && fabs(z-0) < tol)      //bottom wall
+      || (fabs(sqrt(x*x + y*y) - FluidProperties::r_out) < tol && fabs(z-0.5) < tol) ) //top wall
+  {
+    return BoundaryPart::WALL;
+  }
+  if (fabs(z-0) < tol )
+  {
+    return BoundaryPart::BOTTOM;
+  }
+  else if (fabs(z-0.5) < tol )
+  {
+    return BoundaryPart::TOP;
+  }
+  else //everything "complicated" is on the wall boundary
+    return BoundaryPart::WALL;
 }
 
 // kind of boundary condition
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-	if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM)
-		cond = DIRICHLET;
-	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
-		cond = DIRICHLET;
-	else //TOP
-		cond = out_condition == OutCondition::DO_NOTHING ? NEUMANN : DIRICHLET;
+  if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM)
+    cond = DIRICHLET;
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
+    cond = DIRICHLET;
+  else //TOP
+    cond = out_condition == OutCondition::DO_NOTHING ? NEUMANN : DIRICHLET;
 }
 
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
 {
-	value = 0;
+  value = 0;
 }
 
 // value of boundary condition
@@ -128,56 +127,47 @@ void U2BoundValue(double x, double y, double z, double &value)
 // value of boundary condition
 void U3BoundValue(double x, double y, double z, double &value)
 {
-	using namespace FluidProperties;
-	if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM) //inflow
-	{//HP inflow profile
-		double R = 0.01;
-		double r = sqrt(x*x + y*y);
+  using namespace FluidProperties;
+  if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM) //inflow
+  {//HP inflow profile
+    double R = 0.01;
+    double r = sqrt(x*x + y*y);
 
-		value = u_max_in * (1 - (r*r)/(R*R));
-	      if( TIME_DEPENDENT )
-	      {
-	        double t = TDatabase::TimeDB->CURRENTTIME;
-	        if(t < 0.1) //within first second of the simulated time
-	        	//multiply inflow with t ("anstroemen")
-	        	value  *= (10*t);
-	      }
-	}
-	else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)	//no-slip
-	{
-		value = 0;
-	}
-	else //TOP - outflow
-	{
-	  if(out_condition == OutCondition::DO_NOTHING)
-	  {//do-nothing outflow condition
-	    value = 0;
-	  }
-	  else if(out_condition == OutCondition::CONSTANT)
-	  {//constant outflow condition
-	    value = FluidProperties::u_avg_out;
-	    if( TIME_DEPENDENT )
-	    {
-	      double t = TDatabase::TimeDB->CURRENTTIME;
-	      if(t < 0.1) //within first second of the simulated time
-	        //multiply outflow with t ("anstroemen")
-	        value  *= (10*t);
-	    }
-	  }
-	  else if(out_condition == OutCondition::PARABOLIC)
-	  {//parabolic outflow profile
-	    double R = r_out;
-	    double r = sqrt(x*x + y*y);
-	    value = (2*u_avg_out) * (1 - (r*r)/(R*R));
-	    if( TIME_DEPENDENT )
-	    {
-	      double t = TDatabase::TimeDB->CURRENTTIME;
-	      if(t < 0.1) //within first second of the simulated time
-	        //multiply outflow with t ("anstroemen")
-	        value  *= (10*t);
-	    }
-	  }
-	}
+    value = u_max_in * (1 - (r*r)/(R*R));
+    double t = TDatabase::TimeDB->CURRENTTIME;
+    if(t < 0.1) //within first second of the simulated time
+      //multiply inflow with t ("anstroemen")
+      value  *= (10*t);
+  }
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)	//no-slip
+  {
+    value = 0;
+  }
+  else //TOP - outflow
+  {
+    if(out_condition == OutCondition::DO_NOTHING)
+    {//do-nothing outflow condition
+      value = 0;
+    }
+    else if(out_condition == OutCondition::CONSTANT)
+    {//constant outflow condition
+      value = FluidProperties::u_avg_out;
+      double t = TDatabase::TimeDB->CURRENTTIME;
+      if(t < 0.1) //within first second of the simulated time
+        //multiply outflow with t ("anstroemen")
+        value  *= (10*t);
+    }
+    else if(out_condition == OutCondition::PARABOLIC)
+    {//parabolic outflow profile
+      double R = r_out;
+      double r = sqrt(x*x + y*y);
+      value = (2*u_avg_out) * (1 - (r*r)/(R*R));
+      double t = TDatabase::TimeDB->CURRENTTIME;
+      if(t < 0.1) //within first second of the simulated time
+        //multiply outflow with t ("anstroemen")
+        value  *= (10*t);
+    }
+  }
 }
 
 // ========================================================================

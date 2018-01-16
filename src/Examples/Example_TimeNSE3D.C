@@ -36,7 +36,7 @@ namespace flow_around_cylinder_instationary
 
 namespace wiedmeyer_batch_crystallizer //7
 {
-#include "NSE_3D/WiedmeyerBatchCrystallizer.h"
+#include "TNSE_3D/WiedmeyerBatchCrystallizer.h"
 }
 
 //=========================================================
@@ -300,7 +300,6 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       using namespace wiedmeyer_batch_crystallizer;
 
       // Set example constants
-      TIME_DEPENDENT = true;
       if(user_input_parameter_db["sandwich_grid"])
       {
         double new_r_out = user_input_parameter_db["outflow_stretch"];
