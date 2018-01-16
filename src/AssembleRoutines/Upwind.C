@@ -722,8 +722,8 @@ void UpwindForConvDiff(CoeffFct2D *Coeff, TSquareMatrix2D *sqmatrix,
       }
     }                                             // endfor m
   }                                               // endfor i
-  delete param;
-  delete coeff;
+  delete [] param;
+  delete [] coeff;
 }                                                 // UpwindForConvDiff
 
 /******************************************************************************/

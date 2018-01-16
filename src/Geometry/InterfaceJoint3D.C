@@ -20,7 +20,7 @@ TInterfaceJoint3D::TInterfaceJoint3D(TBoundComp3D *bdcomp,
                                  TBaseCell *neigh0)
    : TJointEqN(neigh0)
 {
-  register int i;
+  int i;
   
   ID = InterfaceJoint3D;
 
@@ -40,7 +40,7 @@ TInterfaceJoint3D::TInterfaceJoint3D(TBoundComp3D *bdcomp,
                                  TBaseCell *neigh0, TBaseCell *neigh1)
    : TJointEqN(neigh0, neigh1)
 {
-  register int i;
+  int i;
   
   ID = InterfaceJoint3D;
 
@@ -98,7 +98,7 @@ TJoint *TInterfaceJoint3D::NewInst()
 /** return both parameter vectors */
 void TInterfaceJoint3D::GetParameters(double *param1, double *param2)
 {
-  register int i;
+  int i;
 
   for(i=0;i<4;i++)
   {
@@ -110,7 +110,7 @@ void TInterfaceJoint3D::GetParameters(double *param1, double *param2)
 /** set both parameter vectors */
 void TInterfaceJoint3D::SetParameters(double *param1, double *param2)
 {
-  register int i;
+  int i;
 
   for(i=0;i<4;i++)
   {

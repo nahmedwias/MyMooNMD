@@ -765,7 +765,7 @@ void NSE3D::compute_residuals()
 
   // This is the calculation of the residual, given the defect.
   BlockVector defect_impuls({n_u_dof,n_u_dof,n_u_dof});
-  BlockVector defect_mass({n_p_dof});
+  BlockVector defect_mass{n_p_dof};
   //copy the entries (BlockVector offers no functionality to do this more nicely)
   for(size_t i = 0; i<3*n_u_dof ;++i)
     defect_impuls.get_entries()[i] = defect_.get_entries()[i];
