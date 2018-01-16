@@ -28,6 +28,10 @@ double bound = 0;
 double timeC = 0;
 #endif
 
+// CB EXAMPLE
+void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretch);
+// END EXAMPLE
+
 // main program
 // =======================================================================
 int main(int argc, char* argv[])
@@ -70,6 +74,13 @@ int main(int argc, char* argv[])
 #endif
   TFEDatabase3D feDatabase;
 
+  //open OUTFILE, this is where all output is written to (additionally to console)
+  if(my_rank==0)
+  {
+    Output::set_outfile(parmoon_db["outfile"]);
+  }
+  Output::setVerbosity(parmoon_db["verbosity"]);
+
   // Choose and construct example.
   Example_TimeNSE3D example(parmoon_db);
 
@@ -78,20 +89,38 @@ int main(int argc, char* argv[])
   // =====================================================================
   // set the database values and generate mesh
   // =====================================================================
-  // Construct domain, thereby read in controls from the input file.
-  TDomain domain(parmoon_db, argv[1]);
 
-  //open OUTFILE, this is where all output is written to (additionally to console)
-  if(parmoon_db["problem_type"].is(0))
-    parmoon_db["problem_type"] = 6;
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  //CB EXAMPLE
+  //This code is specific to the WiedmeyerBatchCrystallizer Example.
+  if(parmoon_db["sandwich_grid"])
+  {//prepare parameters for an example specific sandwich grid
+    ParameterDatabase& sw_db = parmoon_db.get_nested_database("Sandwich Grid Database");
+    sw_db.add("lambda", {0.0,1.0}, "Check default_sandwich_grid_parameters for description.");
 
-  //open OUTFILE, this is where all output is written to (additionally to console)
-  if(my_rank==0)
-  {
-    Output::set_outfile(parmoon_db["outfile"]);
+    int n_layers_inflow = sw_db["n_layers_inflow"];
+    int n_layers_cone = sw_db["n_layers_cone"];
+    int n_layers_outflow = sw_db["n_layers_outflow"];
+    std::vector<double> lambda(n_layers_inflow + n_layers_cone + n_layers_outflow + 1);
+    //TODO fill lambda somehow
+    for(int i=0; i<(int)lambda.size(); ++i)
+    {//fill lambda
+      if(i < n_layers_inflow)
+        lambda[i] = (1.0/10) * i * (1.0/n_layers_inflow);
+      else if(i < n_layers_inflow + n_layers_cone)
+        lambda[i] = 1.0/10 +(6.0/10) * (i - n_layers_inflow) * (1.0/n_layers_cone);
+      else
+        lambda[i] = 7.0/10 +(3.0/10) * (i - n_layers_inflow - n_layers_cone) * (1.0/n_layers_outflow);
+    }
+    //put the new lambda into the database
+    sw_db["lambda"] = lambda;
   }
-  Output::setVerbosity(parmoon_db["verbosity"]);
+  //END EXAMPLE
+
+  // Construct domain, thereby read in controls from the input file.
+  Output::decreaseVerbosity(1);
+  TDomain domain(parmoon_db, argv[1]);
+  Output::increaseVerbosity(1);
+
 
   if(my_rank==0) //Only one process should do that.
   {
@@ -110,12 +139,38 @@ int main(int argc, char* argv[])
        , maxSubDomainPerDof
 #endif       
     );
+  //CB EXAMPLE
+  // This code is specific to the WiedmeyerBatchCrystallizer Example.
+  // This will be done for only the finest grid -
+  // the other grids share its vertices!
+  if(parmoon_db["sandwich_grid"])
+  {
+    double outflow_stretch = 7.5;
+    if(parmoon_db.contains("outflow_stretch"))
+      outflow_stretch = parmoon_db["outflow_stretch"];
+    transform_to_crystallizer_geometry(gridCollections.front(), outflow_stretch);
+  }
+  //END EXAMPLE
+
   TCollection* coll = gridCollections.front();
   TOutput3D output(0,0,0,0,std::addressof(domain),coll);
   
-  output.WriteVtk("mesh.vtk");
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
+
+//  //CB DEBUG
+//  // In case you want to look at the result.
+//  int i=0;
+//  for(auto grid : gridCollections)
+//  {
+//    TOutput3D output(0,0,0,0,std::addressof(domain),grid);
+//    std::string my_str = "sandwich_mesh.";
+//    my_str += std::to_string(i++);
+//    my_str += ".vtk";
+//    output.WriteVtk(my_str.c_str());
+//  }
+//  //END DEBUG
+
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
   // Construct an object of the Time_NSE3D-problem type.
@@ -140,7 +195,7 @@ int main(int argc, char* argv[])
   int linear_iterations = 0; 
 
   timer.restart_and_print("setting up spaces, matrices and initial assembling");
-  TDatabase::TimeDB->CURRENTTIME = 0.0;  
+  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   //======================================================================
   // time iteration
   //======================================================================
@@ -151,7 +206,6 @@ int main(int argc, char* argv[])
 
     tnse3d.current_step_++;
 
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
     {
       // setting the time discretization parameters
@@ -247,3 +301,104 @@ int main(int argc, char* argv[])
 #endif
   return 0;
 }
+
+
+//CB EXAMPLE
+//This code is specific to the WiedmeyerBatchCrystallizer Example.
+void compute_position_in_crystallizer_geometry(
+    double x, double y, double z,
+    double& x_trans, double& y_trans, double& z_trans,
+    double outflow_stretch
+    )
+{// We assume that the input geometry is a cylinder with radius 1 (cm)
+ // and height 50 (cm), z being the height direction.
+ // The cylinder is further assumed to 'fit' the inflow of
+ // the crystallizer geometry, i.e., the conical
+ // part and the outflow part are gained by a stretching.
+ double tol = 1e-6;
+ double inflow_end = 5;
+ double cone_end = 35;
+ double outflow_end = 50;
+
+ if(z < inflow_end + tol)//inflow piece,keep it unchanged.
+ {
+   x_trans = x;
+   y_trans = y;
+   z_trans = z;
+ }
+ else if (z < cone_end + tol)//conical piece, stretch it linearly
+ {
+   double lincomb = (1 - (z - inflow_end)/(cone_end - inflow_end)) * 1.0 +
+                    (z - inflow_end)/(cone_end - inflow_end) * outflow_stretch;
+   x_trans = x * lincomb;
+   y_trans = y * lincomb;
+   z_trans = z;
+ }
+ else if (z < outflow_end + tol)//outflow piece, stretch it constantly
+ {
+
+   x_trans = x * outflow_stretch;
+   y_trans = y * outflow_stretch;
+   z_trans = z;
+ }
+ else
+ {
+   ErrThrow("z is out of range!");
+ }
+
+ // Finally, divide everything by 100 - input geometry is expected
+ // in [cm], but internally we use [m] currently
+ x_trans/=100;
+ y_trans/=100;
+ z_trans/=100;
+
+}
+
+/**
+ * This method transforms a cylindrical input grid to
+ * the 'batch crystallizer geometry'.
+ * No checks whatsoever are performed, the method it is
+ * extremely specific. You must know what you are doing.
+ */
+void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretch)
+{
+  int N_Cells = coll->GetN_Cells();
+
+  // initialise ClipBoard
+  for(int i=0 ; i<N_Cells ; i++)
+  {
+    TBaseCell* cell = coll->GetCell(i);
+    int n_verts = cell->GetN_Vertices();
+
+    for (int j=0 ; j<n_verts ; j++)
+    {
+      TVertex* vertex = cell->GetVertex(j);
+      vertex->SetClipBoard(0);
+    }
+  }
+
+  // visit each vertex, reset its coordinates to its new position
+  for(int i=0 ; i < N_Cells ; i++)
+  {
+    TBaseCell* cell = coll->GetCell(i);
+    int n_verts = cell->GetN_Vertices();
+
+    for (int j=0 ; j < n_verts ; j++)
+    {
+      TVertex* vertex = cell->GetVertex(j);
+      if (!vertex->GetClipBoard())
+      {
+        double x, y, z;
+        double x_transf, y_transf, z_transf;
+
+        vertex->GetCoords(x, y, z);
+        compute_position_in_crystallizer_geometry(x, y, z, x_transf, y_transf, z_transf, outflow_stretch);
+        vertex->SetCoords(x_transf, y_transf, z_transf);
+
+        //mark this vertex as treated
+        vertex->SetClipBoard(1);
+      }
+    }
+  }
+}
+//END EXAMPLE

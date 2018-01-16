@@ -562,12 +562,23 @@ int TCollection::createElementLists()
 #ifdef __2D__
   nBoundaryFaces = 0;
   int nInterfaceFaces = 0;
+  BdFacesReferences.clear();
   for(int i=0;i<N_Cells;i++){
     for (int j=0; j<Cells[i]->GetN_Edges(); j++) {
       
       TJoint *joint = Cells[i]->GetJoint(j);
-      if(!(joint->InnerJoint())) {
-	nBoundaryFaces++;	
+      if(!(joint->InnerJoint()))
+      {
+        if(joint->GetType() != BoundaryEdge)
+        {//CB: Interface joints cannot be treated yet.
+          ErrThrow("TCollection::createElementLists() can only deal ",
+                   "with BoundaryEdge type joints. This thing has type ", joint->GetType());
+        }
+        TBoundEdge* boundface = dynamic_cast<TBoundEdge*>(joint);
+        // The number of the boundary component. CB: Or should it be physical ID??
+        int local_reference = boundface->GetBoundComp()->GetID();
+        BdFacesReferences.push_back(local_reference + 5);
+        nBoundaryFaces++;
       } else {
 	///@todo check for internal/interface joints
 	/*
@@ -597,7 +608,7 @@ int TCollection::createElementLists()
   } //for(int i=0;i<nElements;i++){
 
   nBoundaryFaces = nBoundaryFaces+nInterfaceFaces;
-  BdFacesReferences.resize(nBoundaryFaces);
+  //BdFacesReferences.resize(nBoundaryFaces);
   BdFacesNodes.resize(nVertexPerFace*nBoundaryFaces);
   
 #else
@@ -767,10 +778,11 @@ int TCollection::getIndexInCollection(TBaseCell *cell)
    Notes: 
    (1) we always write a .mesh file with three dimensions. This
    is done for visualization purposes (with medit).
+   CB: I changed this. For using the mesh in Brush, we also need 2D.
    (2) In two dimensions, mixed meshes (triangles+quadrilaterals) are supported
    (3) In 3D, we only write boundary faces and volume elements
 */
-int TCollection::writeMesh(const char *meshFileName)
+int TCollection::writeMesh(const char *meshFileName, int dimension)
 {
   int dim = 3;
 #ifdef __2D__
@@ -795,8 +807,8 @@ int TCollection::writeMesh(const char *meshFileName)
   // header of .mesh file
   MESHfile.open(meshFileName);
   MESHfile << "MeshVersionFormatted 1" << endl;
-  MESHfile << endl;
-  MESHfile << "Dimension 3" << endl; //note: dim always 3 (for visualization)
+  MESHfile << "Dimension" << endl;
+  MESHfile << dimension << endl;
   MESHfile << endl;
   MESHfile << "Vertices" << endl;
   unsigned int nPoints = NodesReferences.size();
@@ -805,7 +817,7 @@ int TCollection::writeMesh(const char *meshFileName)
     for (int j=0; j<dim; j++) {
      MESHfile << NodesCoords[i*dim+j] << "  ";
     }
-    if (dim==2) {
+    if (dim==2 && dimension == 3) {
       MESHfile << "0.0000  " ;
     }
     MESHfile << NodesReferences[i] << endl;

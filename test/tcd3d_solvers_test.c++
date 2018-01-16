@@ -91,7 +91,6 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME-1e-10)
   {
     step ++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     SetTimeDiscParameters(1);
 
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;

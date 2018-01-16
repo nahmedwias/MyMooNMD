@@ -12,6 +12,10 @@
 #include "../../include/AssembleRoutines/TNSE2D_Routines.h"
 
 
+// CB FIXME Most of the methods termed "Axial" here are just crap.
+// It seems like they either a) never got adapted (NSType4GalerkinDDAxialSymm3D)
+// or b) got wrongly adapted (NSType4GalerkinAxialSymm3D - what's with that -(ansatz10+ansatz01)*test00 term ???).
+
 // ======================================================================
 // Type 4, Standard Galerkin, (grad u, grad v)
 // ======================================================================
