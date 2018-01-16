@@ -2325,18 +2325,25 @@ TCollection *TDomain::GetCollection(Iterators it, int level) const
   cells=new TBaseCell*[n_cells];
   TDatabase::IteratorDB[it]->Init(level);
   i=0;
+#ifdef _MPI //the number of own cells in this collection must be counted
+  int own_cell_counter = 0;
+#endif
   while (((CurrCell = TDatabase::IteratorDB[it]->Next(info))))
   {
     cells[i]=CurrCell;
     cells[i]->SetCellIndex(i);
     i++;
+#ifdef _MPI
+    if (!CurrCell->IsHaloCell())
+      ++own_cell_counter;
+#endif
   }
 
   // create collection from an array of cells
   coll=new TCollection(n_cells, cells);
 
-  #ifdef  _MPI 
-  coll->SetN_OwnCells(N_OwnCells);
+  #ifdef  _MPI
+  coll->SetN_OwnCells(own_cell_counter);
   #endif
 
   return coll;
