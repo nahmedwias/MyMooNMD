@@ -883,11 +883,11 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                   while(neigh->GetJoint(neigh_edge)->GetNeighbour(neigh)!=parent) neigh_edge ++;
                   ver2 = neigh->GetVertex(TmpEdVerParent[2*neigh_edge]);          // vertices of edge
                   ver3 = neigh->GetVertex(TmpEdVerParent[2*neigh_edge+1]);
-                  if ((ver1==ver2))                               // first part of long edge
+                  if(ver1 == ver2)                               // first part of long edge
                     {
                       part = -1;
                     }
-                  else if ((ver0==ver3))                          // second part of long edge
+                  else if(ver0 == ver3)                          // second part of long edge
                     {
                       part = 1;
                     }

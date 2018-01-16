@@ -357,7 +357,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
 //========================================================================
 LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, TAuxParam3D& aux,
                                      TDiscreteForm3D& df)
-  :type(type),
+  :type(type), discretization_type(0), //default value for custom constructor
    name(df.getName()), N_Terms(df.getNTerms()), N_Spaces(df.getNSpaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D000), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.getNMatrices(), 0),
@@ -369,8 +369,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, TAuxParam3D& a
    ParameterFct(this->N_ParamFct, nullptr), BeginParameter(this->N_ParamFct, 0),
    N_Parameters(aux.getNParameters()), N_FEValues(aux.getNFeValues()),
    FEFunctions3D(aux.getFeFunctions3D()), FEValue_FctIndex(this->N_FEValues,0),
-   FEValue_MultiIndex(this->N_FEValues, D000),
-   discretization_type(0)//default value for custom constructor
+   FEValue_MultiIndex(this->N_FEValues, D000)
 {
   this->Needs2ndDerivatives = new bool[this->N_Spaces];
   for(int i = 0; i < this->N_Spaces; ++i)

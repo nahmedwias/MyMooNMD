@@ -18,7 +18,7 @@
 TBoundFace::TBoundFace(TBoundComp3D *bdcomp, double *param1, double *param2)
  : TJoint()
 {
-  register int i;
+  int i;
   ID = BoundaryFace;
 
   BoundComp = bdcomp;
@@ -48,7 +48,7 @@ TBoundFace::TBoundFace(TBoundComp3D *bdcomp) : TJoint()
 int TBoundFace::CheckMatchingRef(TBaseCell *Me, int J_i,
                   struct StoreGeom &Tmp)
 {
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
   return 0;
 }
 
@@ -65,7 +65,7 @@ TJoint *TBoundFace::NewInst()
 
 void TBoundFace::SetParameters(double *param1, double *param2)
 {
-  register int i;
+  int i;
 
   for(i=0;i<4;i++)
   {
@@ -76,7 +76,7 @@ void TBoundFace::SetParameters(double *param1, double *param2)
 
 void TBoundFace::GetParameters(double *param1, double *param2)
 {
-  register int i;
+  int i;
 
   for(i=0;i<4;i++)
   {
