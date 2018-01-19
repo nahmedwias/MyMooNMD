@@ -254,10 +254,33 @@ class BlockFEMatrix : public BlockMatrix
                               const TFESpace2D& pressure);
     
     /**
-     * 
+     * Named constructor for a mass matrix type 1, 2
+     * The matrix takes the block structure
+     *
+     * ( M11  0  0 )
+     * ( 0  M22  0 )
+     * ( 0   0   0   )
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 1, 2.
      */
     static BlockFEMatrix Mass_NSE2D_Type1( const TFESpace2D& velocity, const TFESpace2D& pressure);
     static BlockFEMatrix Mass_NSE2D_Type2( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    /**
+     * Named constructor for a mass matrix type 3, 4
+     * The matrix takes the block structure
+     *
+     * ( M11  M12  0 )
+     * ( M21  M22  0 )
+     * ( 0   0     0 )
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 3, 4.
+     */
     static BlockFEMatrix Mass_NSE2D_Type3( const TFESpace2D& velocity, const TFESpace2D& pressure);
     static BlockFEMatrix Mass_NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
@@ -385,7 +408,39 @@ class BlockFEMatrix : public BlockMatrix
      * 3D NSE time dependent problems
      */
     static BlockFEMatrix Mass_NSE3D(const TFESpace3D& velocity);
-
+    
+    /**
+     * Named constructor for a mass matrix type 1, 2
+     * The matrix takes the block structure
+     *
+     * ( M11  0  0   0)
+     * ( 0  M22  0   0)
+     * ( 0   0   M33 0)
+     * ( 0   0   0   0)
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 1, 2.
+     */
+    static BlockFEMatrix Mass_NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    static BlockFEMatrix Mass_NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    /**
+     * Named constructor for a mass matrix type 3, 4
+     * The matrix takes the block structure
+     *
+     * ( M11  M12  0    0)
+     * ( M21  M22  0    0)
+     * ( 0    0    M33  0)
+     * ( 0    0    0    0)
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 3, 4.
+     */
+    static BlockFEMatrix Mass_NSE3D_Type3( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    static BlockFEMatrix Mass_NSE3D_Type4( const TFESpace3D& velocity, const TFESpace3D& pressure);
 #endif
 
 
