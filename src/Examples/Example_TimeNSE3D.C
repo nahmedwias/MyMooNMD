@@ -303,7 +303,13 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       if(user_input_parameter_db["sandwich_grid"])
       {
         double new_r_out = user_input_parameter_db["outflow_stretch"];
+        if(user_input_parameter_db["cut_off_entry"])
+        {
+          double new_z_out = 0.45;
+          FluidProperties::set_z_out(new_z_out);
+        }
         FluidProperties::set_r_out(new_r_out/100);
+
       }
       FluidProperties::set_mass_flow_rate(user_input_parameter_db["mass_flow_rate"]);
       FluidProperties::set_out_condition(user_input_parameter_db["out_condition"]);

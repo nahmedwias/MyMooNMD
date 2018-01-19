@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
   //END EXAMPLE
 
   TCollection* coll = gridCollections.front();
-  TOutput3D output(0,0,0,0,std::addressof(domain),coll);
+  TOutput3D output(0,0,0,0,coll);
   
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");

@@ -133,7 +133,7 @@ class TCollection
    // Triangulation_3 of the CGAL package.
    // Note that that class Triangulation_3 can only deal with 3D
    // tetrahedralizations of convex sets.
-   void write_cgal(std::ostream& stream);
+   void write_verts(std::ostream& stream);
     
    /**@brief Write a list of boundary edges
     */

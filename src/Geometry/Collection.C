@@ -933,29 +933,18 @@ int TCollection::writeMesh(const char *meshFileName, int dimension)
   
 }
 
-void TCollection::write_cgal(std::ostream& stream)
+void TCollection::write_verts(std::ostream& stream)
 {
   //this is just the same as when writing a .mesh file
   createElementLists();
   size_t N_Nodes = this->NodesReferences.size();
 
-  stream << "3" << std::endl;
-  stream << N_Nodes << std::endl;
   for(int i = 0; i<N_Nodes ;++i)
   {
     stream << NodesCoords[3*i] << " "
            << NodesCoords[3*i + 1] << " "
            << NodesCoords[3*i + 2] << std::endl;
   }
-  stream << N_Cells << std::endl;
-  for(auto el : ElementNodes)
-  {
-    for( auto node : el)
-      stream << node << " ";
-    stream << std::endl;
-  }
-
-
 
 }
 

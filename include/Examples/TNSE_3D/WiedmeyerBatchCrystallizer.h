@@ -18,6 +18,7 @@ double l_infty = 1;    // (m) the characteristic length scale of the tube
 
 double r_in = 0.01;   //m the radius of the inlet
 double r_out = 0.075; //m the radius of the outlet
+double z_out = 0.5;   //m the distance from inflow to outflow
 
 double mass_flow_rate = 0; // (kg/s) the mass flow rate at in- and outflow
 double u_avg_in  = 0; //0.047157;   //m/s
@@ -27,6 +28,11 @@ double u_avg_out  = 0; //m/s
 void set_r_out(double new_r_out)
 {
   r_out = new_r_out;
+}
+
+void set_z_out(double new_z_out)
+{
+  z_out = new_z_out;
 }
 
 void set_mass_flow_rate(double mfr)
@@ -93,7 +99,7 @@ BoundaryPart determine_boundary_part(double x, double y, double z)
   {
     return BoundaryPart::BOTTOM;
   }
-  else if (fabs(z-0.5) < tol )
+  else if (fabs(z-FluidProperties::z_out) < tol )
   {
     return BoundaryPart::TOP;
   }
