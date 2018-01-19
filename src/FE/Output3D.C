@@ -5,7 +5,6 @@
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <FEVectFunct3D.h>
-#include <Domain.h>
 
 #include <TetraAffin.h>
 #include <HexaAffin.h>
@@ -24,7 +23,7 @@
 
 /** constructor maximum number of these things */
 TOutput3D::TOutput3D(int maxn_fespaces, int maxn_scalar,
-                     int maxn_vect, int maxn_parameters, TDomain *domain, TCollection *coll, const char *name)
+                     int maxn_vect, int maxn_parameters,  TCollection *coll, const char *name)
 {
   MaxN_FESpaces=maxn_fespaces;
   N_FESpaces=0;
@@ -49,8 +48,6 @@ TOutput3D::TOutput3D(int maxn_fespaces, int maxn_scalar,
   ParameterDescription=new const char*[MaxN_Parameters];
 
   Coll = coll;
-
-  Domain = domain;
 
   Data = NULL;
 

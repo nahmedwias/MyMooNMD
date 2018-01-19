@@ -22,27 +22,44 @@ namespace Axisymmetric_ASA_crystallizer
   #include <Axisymmetric_ASA_Crystallizer.h>
 }
 
+namespace Wiedmeyer_Batch_crystallizer
+{
+#include "TNSE_3D/WiedmeyerBatchCrystallizer.h"
+}
+
 //CB DEBUG
 #include "fstream"
 #include "cmath"
 //END DEBUG
 
+// Hashing function for strings, allows switch over string.
+// https://stackoverflow.com/questions/16388510/evaluate-a-string-with-a-switch-in-c
+constexpr unsigned int string_hash(const char* str, int h = 0)
+{
+    return !str[h] ? 5381 : (string_hash(str, h+1) * 33) ^ str[h];
+}
+
 void DirichletBoundaryConditions(int BdComp, double t, BoundCond &cond)
 {
       cond = DIRICHLET;
 }
-void ZeroBoundaryValues(int BdComp, double Param, double &value)
+void DirichletBoundaryConditions_3D(double x, double y, double z, BoundCond &cond)
+{
+      cond = DIRICHLET;
+}
+void ZeroBoundaryValues_3D(double x, double y, double z, double &value)
 {
       value = 0;
 }
 
 
 
-void BrushWrapper::pick_example(int exmpl_code, double& viscosity)
+void BrushWrapper::pick_example(const std::string& exmpl_name,
+                                double& viscosity)
 {
-  switch(exmpl_code)
+  switch(string_hash(exmpl_name.c_str()))
   {
-    case 0:
+    case string_hash("eder_crystallizer_axis"):
     {//Axisymmetric ASA crystallizer
       using namespace Axisymmetric_ASA_crystallizer;
       //parameters information ('to Brush')
@@ -72,7 +89,7 @@ void BrushWrapper::pick_example(int exmpl_code, double& viscosity)
 
       break;
     }
-    case 1:
+    case string_hash("eder_crystallizer"):
     {//non-axisymmetric (==false) ASA crystallizer
       using namespace ASA_crystallizer;
       //parameters information ('to Brush')
@@ -103,8 +120,16 @@ void BrushWrapper::pick_example(int exmpl_code, double& viscosity)
 
       break;
     }
+    case string_hash("wiedmeyer_crystallizer"):
+    {
+      using namespace Wiedmeyer_Batch_crystallizer;
+      //TODO implement the example
+      Output::warn("The 'wiedmeyer_crystallizer' example is not "
+          "implemented yet, this is a dummy call!");
+      break;
+    }
     default:
-      ErrThrow("Not implemented: example ", exmpl_code);
+      ErrThrow("Not implemented: example ", exmpl_name);
   }
 }
 
@@ -120,21 +145,32 @@ void BrushWrapper::pick_example(int exmpl_code, double& viscosity)
  */
 BrushWrapper::BrushWrapper(TCollection* brush_grid,
                            TCollection* parmoon_grid,
-                           const ParameterDatabase& db,
-						   bool axisymmetric)
+                           const ParameterDatabase& db)
 : //database
   db_(db),
   //brush fe
   brush_grid_(brush_grid),
-  br_grid_space_(brush_grid_, (char*)"brush-space", (char*)"Space for the "
+#ifdef __2D__
+  br_grid_space_(brush_grid_, "brush-space", "Space for the "
       "direct representation of Brush's 0 order fe functions in ParMooN.",
        DirichletBoundaryConditions, 0, nullptr),
+#elif defined(__3D__)
+  br_grid_space_(brush_grid_, "brush-space", "Space for the "
+      "direct representation of Brush's 0 order fe functions in ParMooN.",
+      DirichletBoundaryConditions_3D, 0),
+#endif
   //parmoon fe
   parmoon_grid_(parmoon_grid),
-  pm_grid_space_(parmoon_grid_,(char*)"parmoon-space", (char*)"Space for the "
+#ifdef __2D__
+  pm_grid_space_(parmoon_grid_,"parmoon-space", "Space for the "
                  "ParMooN-representation of the functions which Brush returns",
                  DirichletBoundaryConditions , 0,
                  nullptr),
+#elif defined(__3D__)
+  pm_grid_space_(parmoon_grid_,"parmoon-space", "Space for the "
+                 "ParMooN-representation of the functions which Brush returns",
+                 DirichletBoundaryConditions_3D, 0),
+#endif
   //grid trafo and control
   //pm_to_brush_tool_(&br_grid_space_, GridTransferType::Interpolation),
   //brush_to_pm_tool_(&pm_grid_space_, GridTransferType::Interpolation),
@@ -146,8 +182,12 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   //output files and vtk object
   moment_stats_file_(db_["out_part_moments_file"].get<std::string>()),
   outflow_particles_file_(db_["out_part_lists_file"].get<std::string>()),
-  inflow_particles_file_(db_["in_part_lists_file"].get<std::string>()),
-  output_writer_(db_)
+  inflow_particles_file_(db_["in_part_lists_file"].get<std::string>())
+#ifdef __2D__
+  ,output_writer_(db_)
+#elif defined(__3D__)
+  , output_writer_(1,3,0,0,brush_grid) //...bunch of magic numbers for control of the (almost deprecated) 3DOutput object
+#endif
 {
 
   // get and store example specific information
@@ -158,23 +198,38 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   std::string out_dir(db_["output_vtk_directory"].value_as_string());
   std::size_t pos = out_dir.find("VTK");// Lil hack - the directory above 'VTK',
   out_dir = out_dir.substr(0,pos); 		// ...should be the general output directory.
-  std::string brush_mesh_file(out_dir);
-  brush_mesh_file.append("./brush_mesh.mesh");
-  brush_grid_->writeMesh(brush_mesh_file.c_str(), 2);
+#ifdef __2D
+  int dim = 2;
+  std::string brush_grid_file = "./brush_grid.mesh";
+  brush_grid_->writeMesh(brush_grid_file.c_str(), dim);
+#elif defined(__3D__)
+  std::string brush_grid_file = "./brush_grid.mesh";
+  ErrThrow("Brush geometry issue EBUG"
+      "in 3d still unresolved.");
+//  std::ofstream output_stream;
+//  output_stream.open(brush_grid_file);
+//  brush_grid_->write_cgal(output_stream);
+//  output_stream.close();
+#endif
 
+#ifdef __2D__
   double third_dim_stretch = 0;
   if(db_.contains("third_dim_stretch"))
 	  third_dim_stretch=db_["third_dim_stretch"];
+  bool axisymmetric = (db_["example"] == eder_crystallizer_axis);
+#endif
 
-  // set up Brushs ParMooN interface
+  // set up Brush's ParMooN interface
   interface_ = new Brush::InterfacePM(
-		  brush_mesh_file, third_dim_stretch,
+      brush_grid_file,
       db_["sweep_file"], " ",
       db_["therm_file"], db_["chem_file"],
       db_["coagulation_parameter"],
-	  db_["max_sp_per_cell"], db_["max_m0_per_cell"],
-	  viscosity,
-	  axisymmetric
+      db_["max_sp_per_cell"], db_["max_m0_per_cell"],
+      viscosity
+#ifdef __2D__
+      ,third_dim_stretch, axisymmetric
+#endif
   );
 
   // check if the numbering of cells in the brush grid is the same in Brush and ParMooN
@@ -222,7 +277,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   for(int s=0; s < n_s_and_s_terms; ++s)
   {
     pm_grid_source_fcts_.at(s) =
-        new TFEFunction2D(&pm_grid_space_,source_and_sink_function_names_[s].c_str(),
+        new TFEFunctionXD(&pm_grid_space_,source_and_sink_function_names_[s].c_str(),
                           (char*) "Brush function transferred to ParMooN grid.",
                           &pm_grid_source_fcts_values_[s].at(0), pm_space_fe_length);
   }
@@ -235,7 +290,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   for(int s=0; s < n_s_and_s_terms; ++s)
   {
     br_grid_source_fcts_.at(s) =
-        new TFEFunction2D(&br_grid_space_, (char*) &source_and_sink_function_names_.at(s),
+        new TFEFunctionXD(&br_grid_space_, (char*) &source_and_sink_function_names_.at(s),
                           (char*) "Brush function representation on Brush grid.",
                           &br_grid_source_fcts_values_[s].at(0), br_space_fe_length);
   }
@@ -248,7 +303,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   for(int p = 0; p < n_param_fcts; ++p)
   {
     br_grid_param_fcts_.at(p) =
-        new TFEFunction2D(&br_grid_space_, (char*) &parameter_function_names_.at(p),
+        new TFEFunctionXD(&br_grid_space_, (char*) &parameter_function_names_.at(p),
                           (char*) "ParMooN function representation on Brush grid.",
                           &br_grid_param_fcts_values_[p].at(0), br_space_fe_length);
   }
@@ -257,19 +312,25 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   br_grid_psdmom_fcts_values_ = std::vector<std::vector<double>>(3, dummy_fe_values);
 
   br_grid_psdmom_fcts_.resize(3);
-  br_grid_psdmom_fcts_.at(0) = new TFEFunction2D(&br_grid_space_,
+  br_grid_psdmom_fcts_.at(0) = new TFEFunctionXD(&br_grid_space_,
         (char*)"pd-m0", (char*)"", &br_grid_psdmom_fcts_values_[0].at(0), br_space_fe_length);
-  br_grid_psdmom_fcts_.at(1) = new TFEFunction2D(&br_grid_space_,
+  br_grid_psdmom_fcts_.at(1) = new TFEFunctionXD(&br_grid_space_,
         (char*)"pd-m1", (char*)"", &br_grid_psdmom_fcts_values_[1].at(0), br_space_fe_length);
-  br_grid_psdmom_fcts_.at(2) = new TFEFunction2D(&br_grid_space_,
+  br_grid_psdmom_fcts_.at(2) = new TFEFunctionXD(&br_grid_space_,
         (char*)"pd-m2", (char*)"", &br_grid_psdmom_fcts_values_[2].at(0), br_space_fe_length);
 
   if(db_["output_write_vtk"].is(true))
   {
+#ifdef __2D__
 	  //add the moments functions to the output writer
 	  output_writer_.add_fe_function(br_grid_psdmom_fcts_[0]);
 	  output_writer_.add_fe_function(br_grid_psdmom_fcts_[1]);
 	  output_writer_.add_fe_function(br_grid_psdmom_fcts_[2]);
+#elif defined(__3D__)
+	  output_writer_.AddFEFunction(br_grid_psdmom_fcts_[0]);
+    output_writer_.AddFEFunction(br_grid_psdmom_fcts_[1]);
+    output_writer_.AddFEFunction(br_grid_psdmom_fcts_[2]);
+#endif
 	  // store moments m0, m1 and m2.
 	  interface_->update_stats();
 	  interface_->fetch_moment(0, &br_grid_psdmom_fcts_values_[0].at(0));
@@ -335,9 +396,7 @@ BrushWrapper::~BrushWrapper()
 
 }
 
-std::valarray<double> center_point_calc(const TBaseCell& cell);
-
-std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
+std::vector<TFEFunctionXD*> BrushWrapper::sources_and_sinks()
 {
 
   // The sources and sinks from Brush are picked and stored as function values
@@ -361,33 +420,40 @@ std::vector<TFEFunction2D*> BrushWrapper::sources_and_sinks()
  return pm_grid_source_fcts_;
 }
 
-//CB DEBUG
-std::valarray<double> center_point_calc(const TBaseCell& cell)
+std::valarray<double> simplex_barycenter(const TBaseCell& cell)
 {
-#ifdef __3D__
-  ErrThrow("Does center point calculation work in 3D?");
-#endif
   std::valarray<double> p(0.0,3);
 
   unsigned int n_verts = cell.GetN_Vertices();
+#ifdef __2D__
+  if(n_verts != 3)
+    Output::warn("Calling simplex_barycenter in 2d on non-triangle!");
+#elif defined (__3D__)
+  if(n_verts != 4)
+    Output::warn("Calling simplex_barycenter in 3d on non-tetrahedron!");
+#endif
+
   for(unsigned int v = 0; v < n_verts; v++)
   {
     cell.GetVertex(v)->GetX();
     p[0] += cell.GetVertex(v)->GetX();
     p[1] += cell.GetVertex(v)->GetY();
+#ifdef __3D__
+    p[2] += cell.GetVertex(v)->GetZ();
+#endif
   }
   p[0] /= n_verts;
   p[1] /= n_verts;
+  p[2] /= n_verts;
 
   return p;
 }
-//END DEBUG
 
 void BrushWrapper::reset_fluid_phase(
-		const TFEFunction2D& u1,
-		const TFEFunction2D& u2,
-		const TFEFunction2D& p,
-		std::vector<TFEFunction2D*> species
+		const TFEFunctionXD& u1,
+		const TFEFunctionXD& u2,
+		const TFEFunctionXD& p,
+		std::vector<TFEFunctionXD*> species
 )
 {
   //check input
@@ -403,7 +469,7 @@ void BrushWrapper::reset_fluid_phase(
   size_t n_specs_primary = parameter_n_specs_primary_;
   size_t n_specs_derived = parameter_n_specs_derived_;
 
-  std::vector<const TFEFunction2D*> fe_fcts_original(dim + 1 + n_specs_primary);
+  std::vector<const TFEFunctionXD*> fe_fcts_original(dim + 1 + n_specs_primary);
   fe_fcts_original[0] = &u1;
   fe_fcts_original[1] = &u2;
   //if(dim==3) fe_fcts_original[2] = &u3; //in 3D case...
@@ -444,7 +510,7 @@ void BrushWrapper::reset_fluid_phase(
   //give the data to Brush
   interface_->reset_fluid_phase(pm_data);
 
-  //CB DEBUG
+  //TODO What is the following code good for? Comment!
   double del = fabs(TDatabase::TimeDB->CURRENTTIME - std::round(TDatabase::TimeDB->CURRENTTIME));
   if(del < 1e-3)
   {
@@ -460,7 +526,7 @@ void BrushWrapper::reset_fluid_phase(
   for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
   {
 
-	  auto cntr = center_point_calc(*brush_grid_->GetCell(c));
+	  auto cntr = simplex_barycenter(*brush_grid_->GetCell(c));
 	  myfile << TDatabase::TimeDB->CURRENTTIME << ",";
 	  myfile << c << ",";
 	  myfile << cntr[0] << ",";
@@ -471,21 +537,20 @@ void BrushWrapper::reset_fluid_phase(
 	  auto dof = dofs[bgn_ind[c]];
 	  myfile << br_grid_psdmom_fcts_values_[1].at(dof) << ",";
 	  //ParMooN ASA values
-	  bgn_ind= br_grid_param_fcts_[4]->GetFESpace2D()->GetBeginIndex();
-	  dofs = br_grid_param_fcts_[4]->GetFESpace2D()->GetGlobalNumbers();
+	  bgn_ind= br_grid_param_fcts_[4]->GetFESpaceXD()->GetBeginIndex();
+	  dofs = br_grid_param_fcts_[4]->GetFESpaceXD()->GetGlobalNumbers();
 	  dof = dofs[bgn_ind[c]];
 	  double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * 0.18016;
 	  myfile << val_in_kg << ",";
 	  //velocity (x direction) in the current ambient
-	  bgn_ind= br_grid_param_fcts_[0]->GetFESpace2D()->GetBeginIndex();
-	  dofs = br_grid_param_fcts_[0]->GetFESpace2D()->GetGlobalNumbers();
+	  bgn_ind= br_grid_param_fcts_[0]->GetFESpaceXD()->GetBeginIndex();
+	  dofs = br_grid_param_fcts_[0]->GetFESpaceXD()->GetGlobalNumbers();
 	  dof = dofs[bgn_ind[c]];
 	  double velo = br_grid_param_fcts_[0]->GetValues()[dof];
 	  myfile << velo << "\n";
   }
   myfile.close();
   }
-  //END DEBUG
 
 }
 
@@ -514,7 +579,15 @@ void BrushWrapper::output(double t)
 		interface_->fetch_moment(0, &br_grid_psdmom_fcts_values_[0].at(0));
 		interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
 		interface_->fetch_moment(2, &br_grid_psdmom_fcts_values_[2].at(0));
+#ifdef __2D__
 		output_writer_.write(t);
+#elif defined(__3D__)
+    std::string filename = db_["output_vtk_directory"];
+    filename += "/" + db_["output_basename"].value_as_string();
+    filename += "." + std::to_string(t);
+    filename += ".vtk";
+    output_writer_.WriteVtk(filename.c_str());
+#endif
 	}
 
   interface_->write_particle_stats(t, moment_stats_file_);

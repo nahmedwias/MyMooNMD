@@ -13,12 +13,23 @@
 
 #include <Domain.h>
 #include <GridTransferTool.h>
+#include <Output3D.h>
 #include <ParameterDatabase.h>
 #include <PostProcessing2D.h>
 #ifdef __2D__
 #include <FEFunction2D.h>
-#elif __3D__
+#elif defined(__3D__)
 #include <FEFunction3D.h>
+#endif
+
+#ifdef __2D__
+#define TFEFunctionXD TFEFunction2D
+#define TFESpaceXD TFESpace2D
+#define GetFESpaceXD() GetFESpace2D()
+#elif defined(__3D__)
+#define TFEFunctionXD TFEFunction3D
+#define TFESpaceXD TFESpace3D
+#define GetFESpaceXD() GetFESpace3D()
 #endif
 
 #include <valarray>
@@ -46,8 +57,7 @@ class BrushWrapper
     /// Constructor taking a TCollection and a database.
     BrushWrapper(TCollection* brush_grid,
                  TCollection* parmoon_grid,
-                 const ParameterDatabase& db,
-				 bool axisymmetric = false);
+                 const ParameterDatabase& db);
 
     /// Destructor.
     ~BrushWrapper();
@@ -56,7 +66,7 @@ class BrushWrapper
 
     /// Let Brush compute the source and sink terms which will
     /// be added to the right hand side of the CDR equations.
-    std::vector<TFEFunction2D*> sources_and_sinks();
+    std::vector<TFEFunctionXD*> sources_and_sinks();
 
     /**
      * Reset the fluid phase data in Brush, i.e., velocity, pressure, temperature
@@ -69,10 +79,10 @@ class BrushWrapper
      *            order in which Brush expects them.
      */
     void reset_fluid_phase(
-        const TFEFunction2D& u1,
-    	const TFEFunction2D& u2,
-        const TFEFunction2D& p,
-        std::vector<TFEFunction2D*> species);
+        const TFEFunctionXD& u1,
+    	  const TFEFunctionXD& u2,
+        const TFEFunctionXD& p,
+        std::vector<TFEFunctionXD*> species);
 
     /// Run the particle solver.
     void solve(double t_start, double t_end);
@@ -84,10 +94,11 @@ class BrushWrapper
   private:
     // Fill example depending data. This is like an "init" function,
     // called only by the constructor.
-    //  0 - Eder's ASA flow crystallizer example (axisymmetric).
-    //  1 - Eder's ASA flow crystallizer example (non-axisymmetric, not working).
+    //  eder_crystallizer_axis - Eder's ASA flow crystallizer example (axisymmetric).
+    //  eder_crystallizer - Eder's ASA flow crystallizer example (non-axisymmetric, not working).
+    //  wiedmeyer_crystallizer - 2017 Wiedmeyer Batch Crystallizer, 3d example
     // viscosity is a out-parameter which then goes to Brush
-    void pick_example(int exmpl_code, double& viscosity);
+    void pick_example(const std::string& exmpl_name, double& viscosity);
 
     /// The ParMooN interface of Brush which is wrapped up by 'this'.
     /// TODO Ownership for the object is taken, but there is some trouble with the
@@ -101,24 +112,24 @@ class BrushWrapper
     //grid
     TCollection* brush_grid_;
     //fe space (Q0 or P0)
-    TFESpace2D br_grid_space_;
+    TFESpaceXD br_grid_space_;
     //fe functions for source and sink data (as returned from Brush)
-    std::vector<TFEFunction2D*> br_grid_source_fcts_;
+    std::vector<TFEFunctionXD*> br_grid_source_fcts_;
     std::vector<std::vector<double>> br_grid_source_fcts_values_;
     //fe functions for parameter data (as handed over to Brush)
-    std::vector<TFEFunction2D*> br_grid_param_fcts_;
+    std::vector<TFEFunctionXD*> br_grid_param_fcts_;
     std::vector<std::vector<double>> br_grid_param_fcts_values_;
     //fe functions for moments of the psd data (as returned from Brush) (used for output only)
-    std::vector<TFEFunction2D*> br_grid_psdmom_fcts_;
+    std::vector<TFEFunctionXD*> br_grid_psdmom_fcts_;
     std::vector<std::vector<double>> br_grid_psdmom_fcts_values_;
 
     // PARMOON FE OBJECTS
     //grid
     TCollection* parmoon_grid_;
     //fe space on parmoon_grid_, for return values to parmoon
-    TFESpace2D pm_grid_space_;
+    TFESpaceXD pm_grid_space_;
     //fe functions for source and sink data (as handed over to other ParMooN parts)
-    std::vector<TFEFunction2D*> pm_grid_source_fcts_;
+    std::vector<TFEFunctionXD*> pm_grid_source_fcts_;
     std::vector<std::vector<double>> pm_grid_source_fcts_values_;
 
 
@@ -160,7 +171,12 @@ class BrushWrapper
     std::ofstream inflow_particles_file_;
     // Moments of the PSD which can be calculated by Brush. Used only for visual-
     // ization with paraview, which is performed by the output_writer_.
+#ifdef __2D__
     PostProcessing2D output_writer_;
+#elif defined(__3D__)
+    TOutput3D output_writer_;
+#endif
+
 
 };
 

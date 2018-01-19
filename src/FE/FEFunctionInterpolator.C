@@ -23,13 +23,6 @@
 
 #include <memory>
 
-// Experimental Macro to avoid double code.
-#ifdef __2D__
-#define TFESpaceXD TFESpace2D
-#elif __3D__
-#define TFESpaceXD TFESpace3D
-#endif
-
 FEInterpolationCheatSheet::FEInterpolationCheatSheet(
         const TFESpaceXD* old_fe_space, const TFESpaceXD* new_fe_space)
 {
@@ -128,7 +121,7 @@ FEInterpolationCheatSheet::FEInterpolationCheatSheet(
       }
     }
   }
-#elif __3D__
+#elif defined(__3D__)
     ErrThrow("FEInterpolationCheatSheet is not yet implemented in 3D!");
 #endif
 }
@@ -220,6 +213,14 @@ TFEFunction2D FEFunctionInterpolator::interpolate(
 
   return interpolation;
 }
+#elif defined(__3D__)
+    TFEFunction3D& FEFunctionInterpolator::interpolate(
+      const TFEFunction3D& original_funct,
+      std::vector<double>& values_memory,
+      bool use_cheat_sheet) const
+    {
+      ErrThrow("This method (FEFunctionInterpolator::interpolate) is not implemented yet in 3D!");
+    }
 #endif
 // ////////////////////// //    private method(s)   // ////////////////////// //
 
