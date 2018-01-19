@@ -203,15 +203,13 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   std::string brush_grid_file = "./brush_grid.mesh";
   brush_grid_->writeMesh(brush_grid_file.c_str(), dim);
 #elif defined(__3D__)
-  std::string brush_grid_file = "./brush_grid.mesh";
-  ErrThrow("Brush geometry issue EBUG"
-      "in 3d still unresolved.");
-//  std::ofstream output_stream;
-//  output_stream.open(brush_grid_file);
-//  brush_grid_->write_cgal(output_stream);
-//  output_stream.close();
+  std::string brush_grid_file = "./batch_cryst.vert";
+  std::ofstream grid_stream;
+  grid_stream.open(brush_grid_file);
+  brush_grid_->write_verts(grid_stream);
+  grid_stream.close();
+  exit(0);
 #endif
-
 #ifdef __2D__
   double third_dim_stretch = 0;
   if(db_.contains("third_dim_stretch"))
