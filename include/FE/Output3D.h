@@ -20,6 +20,8 @@
 
 class TFEVectFunct3D;
 class TDomain;
+class TFESpace3D;
+class TFEFunction3D;
 
 /** store given data and realize output */
 class TOutput3D
@@ -67,9 +69,6 @@ protected:
     /** description for parameters */
     const char **ParameterDescription;
     
-    /** corresponding domain */
-    TDomain *Domain;
-    
     /** add a FESpace into this output object (internal use) */
     int AddFESpace(const TFESpace3D *fespace);
     
@@ -101,7 +100,7 @@ protected:
 public:
     /** constructor: maximum number of these things */
     TOutput3D(int maxn_fespaces, int maxn_scalar, int maxn_vect,
-              int maxn_parameters, TDomain *domain, TCollection *coll=NULL,
+              int maxn_parameters, TCollection *coll=NULL,
               const char *name=NULL);
     
     /** destructor: freeing all allocated space */

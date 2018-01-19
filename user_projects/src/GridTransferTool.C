@@ -1,6 +1,8 @@
 #include <FEFunction2D.h>
+#include <FEFunction3D.h>
 #include <FEFunctionInterpolator.h>
 #include <FESpace2D.h>
+#include <FESpace3D.h>
 #include <GridTransfer.h>
 #include <GridTransferTool.h>
 
@@ -11,9 +13,7 @@
 // This is of course tatlly misplaced here.
 std::valarray<double> center_point(const TBaseCell& cell)
 {
-#ifdef __3D__
-  ErrThrow("Does center point calculation work in 3D?");
-#endif
+#ifdef __2D__
   std::valarray<double> p(0.0,3);
 
   unsigned int n_verts = cell.GetN_Vertices();
@@ -27,21 +27,27 @@ std::valarray<double> center_point(const TBaseCell& cell)
   p[1] /= n_verts;
 
   return p;
+#elif defined(__3D__)
+  //TODO implement center point calculation in 3D
+  ErrThrow("Implement this in 3D!");
+#endif
+
+
 }
 
 GridTransferTool::GridTransferTool(
-        const TFESpace2D* to_space,
+        const TFESpaceXD* to_space,
         GridTransferType type) :
         to_space_(to_space), type_(type)
 {
 }
 
 void GridTransferTool::transfer(
-    const TFEFunction2D& input_fct, TFEFunction2D& output_fct,
+    const TFEFunctionXD& input_fct, TFEFunctionXD& output_fct,
     std::vector<double>& output_fct_values) const
 {
   //check input
-  if(output_fct.GetFESpace2D() != this->to_space_)
+  if(output_fct.GetFESpaceXD() != this->to_space_)
     ErrThrow("Space of output fe function and stored fe space do not agree.");
 
   if(type_ == GridTransferType::Interpolation)
@@ -50,7 +56,7 @@ void GridTransferTool::transfer(
    std::shared_ptr<FEFunctionInterpolator> intpol;
    for(auto it : interpolators_)
    {
-     if(it->get_from_space() == input_fct.GetFESpace2D())
+     if(it->get_from_space() == input_fct.GetFESpaceXD())
      {//found!
        Output::print<5>("Interpolator found, will be reused.");
        intpol = it;
@@ -59,7 +65,7 @@ void GridTransferTool::transfer(
    if(!intpol)
    {//have to set it up new
      Output::print<5>("New interpolator set up.");
-     intpol = std::make_shared<FEFunctionInterpolator>(output_fct.GetFESpace2D());
+     intpol = std::make_shared<FEFunctionInterpolator>(output_fct.GetFESpaceXD());
      interpolators_.push_back(intpol);
    }
    //do the actual interpolation
@@ -70,7 +76,7 @@ void GridTransferTool::transfer(
   {
 	  // find out if we have to prolongate or restrict (primitive)
 	  bool restriction = true;
-	  if(input_fct.GetFESpace2D()->GetN_Cells() < output_fct.GetFESpace2D()->GetN_Cells())
+	  if(input_fct.GetFESpaceXD()->GetN_Cells() < output_fct.GetFESpaceXD()->GetN_Cells())
 	  {//output space is finer - use a prolongation
 		  restriction = false;
 	  }
@@ -78,14 +84,14 @@ void GridTransferTool::transfer(
 	  if(restriction)
 	  {//input is fine, output is coarse
 		  GridTransfer::RestrictFunction(
-				  *to_space_, *input_fct.GetFESpace2D(),
+				  *to_space_, *input_fct.GetFESpaceXD(),
 				    &output_fct_values.at(0), output_fct_values.size(),
 					input_fct.GetValues(), input_fct.GetLength());
 	  }
 	  else
 	  {//prolongation: input is coarse, output is fine
 		  GridTransfer::Prolongate(
-		      *input_fct.GetFESpace2D() , *to_space_,
+		      *input_fct.GetFESpaceXD() , *to_space_,
 			  input_fct.GetValues(), input_fct.GetLength(),
 			  &output_fct_values.at(0), output_fct_values.size());
 	  }

@@ -52,6 +52,7 @@ add_library(PROJECT_LIB_2D STATIC ${_PROJECT_SOURCES_2D})
 target_compile_definitions(PROJECT_LIB_2D PUBLIC -D__2D__)
 
 # Shuffle everything into a static project library for 3D.
+list(APPEND _PROJECT_SOURCES_3D "${PROJECT_SOURCE_DIR}/user_projects/src/GridTransferTool.C")
 list(APPEND _PROJECT_SOURCES_3D "${PROJECT_SOURCE_DIR}/user_projects/src/BrushWrapper.C")
 
 add_library(PROJECT_LIB_3D STATIC ${_PROJECT_SOURCES_3D})

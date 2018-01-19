@@ -73,12 +73,16 @@ class TFEFunction3D
     { return FESpace3D; }
 
     /** return length */
-    int GetLength()
+    int GetLength() const
     { return Length; }
 
     /** return vector of data */
     double *GetValues()
     { return Values; }
+
+    const  double * GetValues() const
+    { return Values; }
+
 
     /** @brief calculate errors to given function 
      * 

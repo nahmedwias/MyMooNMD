@@ -128,6 +128,12 @@ class TCollection
    /// for opening the file with gmsh. 2D must be used if the file is supposed to
    /// be used by, e.g., Brush.
    int writeMesh(const char *meshFileName, int dimension = 3);
+
+   // Write the collection into a stream that is readable by
+   // Triangulation_3 of the CGAL package.
+   // Note that that class Triangulation_3 can only deal with 3D
+   // tetrahedralizations of convex sets.
+   void write_cgal(std::ostream& stream);
     
    /**@brief Write a list of boundary edges
     */

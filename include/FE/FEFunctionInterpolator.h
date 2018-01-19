@@ -27,9 +27,11 @@
 // Experimental Macro to avoid double code.
 #ifdef __2D__
 class TFESpace2D;
+class TFEFunction2D;
 #define TFESpaceXD TFESpace2D
-#elif __3D__
+#elif defined(__3D__)
 class TFESpace3D;
+class TFEFunction3D;
 #define TFESpaceXD TFESpace3D
 #endif
 
@@ -61,7 +63,6 @@ class FEInterpolationCheatSheet{
     /// This is the data.
     std::vector<std::vector<ContainingCells>> cheat_sheet;
 };
-#undef TFESpaceXD
 
 class FEFunctionInterpolator{
   public:
@@ -109,11 +110,12 @@ class FEFunctionInterpolator{
         const TFEFunction2D& original_funct,
         std::vector<double>& values_memory,
         bool use_cheat_sheet) const;
+#elif defined(__3D__)
+    TFEFunction3D& interpolate(
+      const TFEFunction3D& original_funct,
+      std::vector<double>& values_memory,
+      bool use_cheat_sheet) const;
 #endif
-
-    //TFEFunction3D& interpolate(
-    //  const TFEFunction3D& original_funct,
-    //  std::vector<double>& values_memory ) const;
 
     //! Call (different?) check methods to test the state of the object.
     //! Will throw an error if something is wrong.

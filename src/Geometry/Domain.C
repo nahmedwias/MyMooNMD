@@ -2331,7 +2331,7 @@ TCollection *TDomain::GetCollection(Iterators it, int level) const
   while (((CurrCell = TDatabase::IteratorDB[it]->Next(info))))
   {
     cells[i]=CurrCell;
-    cells[i]->SetCellIndex(i);
+    cells[i]->SetCellIndex(i); //FIXME This is dangerous, when a cell finds itself in more than one Collection!
     i++;
 #ifdef _MPI
     if (!CurrCell->IsHaloCell())
