@@ -6338,22 +6338,22 @@ TAuxParam2D *Parameters)
     {
       for(m=0; m < MaxN_QuadPoints_1D; m++)
       {
-        delete xietaval_ref1D[i][j][m];
-        delete xideriv_ref1D[i][j][m];
-        delete etaderiv_ref1D[i][j][m];
+        delete [] xietaval_ref1D[i][j][m];
+        delete [] xideriv_ref1D[i][j][m];
+        delete [] etaderiv_ref1D[i][j][m];
       }
-      delete xietaval_ref1D[i][j];
-      delete xideriv_ref1D[i][j];
-      delete etaderiv_ref1D[i][j];
+      delete [] xietaval_ref1D[i][j];
+      delete [] xideriv_ref1D[i][j];
+      delete [] etaderiv_ref1D[i][j];
     }
-    delete xietaval_ref1D[i];
-    delete xideriv_ref1D[i];
-    delete  etaderiv_ref1D[i];
+    delete [] xietaval_ref1D[i];
+    delete [] xideriv_ref1D[i];
+    delete [] etaderiv_ref1D[i];
   }
 
-  delete xietaval_ref1D;
-  delete xideriv_ref1D;
-  delete etaderiv_ref1D;
+  delete [] xietaval_ref1D;
+  delete [] xideriv_ref1D;
+  delete [] etaderiv_ref1D;
 
   for (i=0;i<4;i++)
   {
@@ -6382,18 +6382,18 @@ TAuxParam2D *Parameters)
   {
     for (j=0;j<ref_n;j++)
     {
-      delete value_basefunct_ref1D[i][j];
-      delete xderiv_basefunct_ref1D[i][j];
-      delete yderiv_basefunct_ref1D[i][j];
+      delete [] value_basefunct_ref1D[i][j];
+      delete [] xderiv_basefunct_ref1D[i][j];
+      delete [] yderiv_basefunct_ref1D[i][j];
     }
-    delete value_basefunct_ref1D[i];
-    delete xderiv_basefunct_ref1D[i];
-    delete yderiv_basefunct_ref1D[i];
+    delete [] value_basefunct_ref1D[i];
+    delete [] xderiv_basefunct_ref1D[i];
+    delete [] yderiv_basefunct_ref1D[i];
   }
 
-  delete value_basefunct_ref1D;
-  delete xderiv_basefunct_ref1D;
-  delete yderiv_basefunct_ref1D;
+  delete [] value_basefunct_ref1D;
+  delete [] xderiv_basefunct_ref1D;
+  delete [] yderiv_basefunct_ref1D;
 
 
   /*for (n=0;n<N_BaseFuncts2D;n++)
@@ -6403,9 +6403,9 @@ TAuxParam2D *Parameters)
 
   for (i=0;i<N_Points1D;i++)
   {
-    delete xyval_refNeigh1D[i];
-    delete  xderiv_refNeigh1D[i];
-    delete   yderiv_refNeigh1D[i];
+    delete [] xyval_refNeigh1D[i];
+    delete [] xderiv_refNeigh1D[i];
+    delete [] yderiv_refNeigh1D[i];
   }
   /*        delete xderiv_Neigh1D;
           delete  yderiv_Neigh1D;
@@ -8035,13 +8035,13 @@ TAuxParam2D *Parameters)
   {
       for (j=0;j<ref_n;j++)
       {
-	  delete value_basefunct_ref1D[i][j];
-	  delete xderiv_basefunct_ref1D[i][j];
-	  delete yderiv_basefunct_ref1D[i][j];
+	  delete [] value_basefunct_ref1D[i][j];
+	  delete [] xderiv_basefunct_ref1D[i][j];
+	  delete [] yderiv_basefunct_ref1D[i][j];
       }
-      delete value_basefunct_ref1D[i];
-      delete xderiv_basefunct_ref1D[i];
-      delete yderiv_basefunct_ref1D[i];
+      delete [] value_basefunct_ref1D[i];
+      delete [] xderiv_basefunct_ref1D[i];
+      delete [] yderiv_basefunct_ref1D[i];
   }
 
   for (i=0;i<N_Points1D;i++)
@@ -8069,26 +8069,26 @@ TAuxParam2D *Parameters)
       {
 	for(m=0; m < MaxN_QuadPoints_1D; m++)
           {
-	    delete xietaval_ref1D[i][j][m];
-	    delete xideriv_ref1D[i][j][m];
-	    delete etaderiv_ref1D[i][j][m];
+	    delete [] xietaval_ref1D[i][j][m];
+	    delete [] xideriv_ref1D[i][j][m];
+	    delete [] etaderiv_ref1D[i][j][m];
 	  }
-	delete xietaval_ref1D[i][j];
-	delete xideriv_ref1D[i][j];
-	delete etaderiv_ref1D[i][j];
+	delete [] xietaval_ref1D[i][j];
+	delete [] xideriv_ref1D[i][j];
+	delete [] etaderiv_ref1D[i][j];
       }
-    delete xietaval_ref1D[i];
-    delete xideriv_ref1D[i];
-    delete  etaderiv_ref1D[i];
+    delete [] xietaval_ref1D[i];
+    delete [] xideriv_ref1D[i];
+    delete [] etaderiv_ref1D[i];
   }
 
-  delete value_basefunct_ref1D;
-  delete xderiv_basefunct_ref1D;
-  delete yderiv_basefunct_ref1D;
+  delete [] value_basefunct_ref1D;
+  delete [] xderiv_basefunct_ref1D;
+  delete [] yderiv_basefunct_ref1D;
 
-  delete xietaval_ref1D;
-  delete xideriv_ref1D;
-  delete etaderiv_ref1D;
+  delete [] xietaval_ref1D;
+  delete [] xideriv_ref1D;
+  delete [] etaderiv_ref1D;
 
   if (weak>=1) // ???
   {
