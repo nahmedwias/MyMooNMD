@@ -655,8 +655,7 @@ int N_LocVertices, TVertex **Vertices)
   int N_CellVertices;        // number of all vertices in this cell
   int i,j,k,l;               // loop variables
   const TFEFunction2D *fefunction; // this function, which is discontinuous
-  TBaseCell *current_cell;   
-  double *function_value;    // value of function at a particular vertex
+  TBaseCell *current_cell;
   double **allValues;        // in case of vector valued basis functions, store
                              // all values of all components
   // copy the file name add a string to the output file name
@@ -739,7 +738,7 @@ int N_LocVertices, TVertex **Vertices)
       dat << "SCALARS " << fefunction->GetName();
       dat << " float" << endl;
       dat << "LOOKUP_TABLE " << "default" << endl;
-      function_value = new double[1];  // only need to allocate this first entry
+      double function_value;    // value of function at a particular vertex
       for(i=0;i<N_Elements;i++)
       {
         current_cell = Coll->GetCell(i);
@@ -751,16 +750,17 @@ int N_LocVertices, TVertex **Vertices)
 #else
           current_cell->GetVertex(j)->GetCoords(x,y);
 #endif
-          fefunction->FindValueLocal(current_cell,i,x,y,function_value);
-          dat << function_value[0] << endl;
+          fefunction->FindValueLocal(current_cell,i,x,y, &function_value);
+          dat << function_value << endl;
         }
       }
+      
     }
     else if(BaseVectDim==2)
     {
       // find values for all components
-      function_value = new double[2];             // 2==BaseVectDim
-      allValues = new double*[BaseVectDim];       // 2==BaseVectDim
+      double function_value[BaseVectDim]; // function values at a vertex
+      allValues = new double*[BaseVectDim];
       for(l=0; l<BaseVectDim; l++)
         allValues[l] = new double[N_LocVertices];
       k=0;
@@ -801,12 +801,14 @@ int N_LocVertices, TVertex **Vertices)
           }
         }
       }
+      for(l=0; l<BaseVectDim; l++)
+        delete [] allValues[l];
+      delete [] allValues;
     }
     else
-      OutPut("TOutput2D::writeVtkDiscontinuous: Basis functions of dimension "
-        << BaseVectDim << " are not supported." << endl);
+      Output::print("TOutput2D::writeVtkDiscontinuous: Basis functions of "
+                    "dimension ", BaseVectDim, " are not supported.");
   }
-
 }
 
 
