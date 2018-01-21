@@ -696,8 +696,8 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           {
             sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
 	    sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
-            if(TDatabase::ParamDB->NSTYPE == 14 
-              && !db["space_discretization_type"].is("local_projection"))
+            if(TDatabase::ParamDB->NSTYPE == 14 )
+              //&& !db["space_discretization_type"].is("local_projection"))
             {// C block
               sqMat.resize(7);
               sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
