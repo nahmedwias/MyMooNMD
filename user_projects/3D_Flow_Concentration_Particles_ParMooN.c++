@@ -21,6 +21,8 @@
 #include <Time_NSE3D.h>
 #include <TimeDiscRout.h>
 
+#include <math.h>
+
 
 // CB EXAMPLE
 void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretch, bool cut_off_entry);
@@ -174,11 +176,14 @@ int main(int argc, char* argv[])
     // the other grids share its vertices!
     if(flow_database["sandwich_grid"])
     {
+      TCollection* finest_collection = domain.GetCollection(It_Finest, 0);
       double outflow_stretch = 7.5;
       if(flow_database.contains("outflow_stretch"))
         outflow_stretch = flow_database["outflow_stretch"];
-      transform_to_crystallizer_geometry(flow_grids.front(),
-                                         outflow_stretch, flow_database["cut_off_entry"]);
+      transform_to_crystallizer_geometry(finest_collection,
+                                         outflow_stretch,
+                                         flow_database["cut_off_entry"]);
+      delete finest_collection;
     }
     //END EXAMPLE
 
@@ -199,8 +204,11 @@ int main(int argc, char* argv[])
     Time_NSE3D flow_object(flow_grids, flow_database, flow_example);
 #endif
 
-//    // the particles object which wraps up Brush
-//    BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
+    int image_dummy;
+    flow_object.output(0,image_dummy);
+
+    // the particles object which wraps up Brush
+    BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
 
     flow_object.assemble_initial_time();
 
@@ -232,7 +240,7 @@ int main(int argc, char* argv[])
         double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
         TDatabase::TimeDB->CURRENTTIME += tau;
 
-        Output::root_info("\nCURRENT TIME", TDatabase::TimeDB->CURRENTTIME);
+        Output::root_info("CURRENT TIME", TDatabase::TimeDB->CURRENTTIME);
 
         // prepare the right hand side vector - needed only once per time step
         flow_object.assemble_rhs();
@@ -252,7 +260,7 @@ int main(int argc, char* argv[])
         {
           flow_object.compute_residuals();
 
-          Output::root_info<1>("\nNONLINEAR ITERATION ", setw(3), k);
+          Output::root_info<1>("NONLINEAR ITERATION ", setw(3), k);
           Output::root_info<1>("Residuals ", flow_object.get_residuals());
 
           // checking residuals and stop conditions
@@ -315,6 +323,7 @@ void compute_position_in_crystallizer_geometry(
   // The cylinder is further assumed to 'fit' the inflow of
   // the crystallizer geometry, i.e., the conical
   // part and the outflow part are gained by a stretching.
+
   double tol = 1e-6;
   double inflow_end = 5;
   double cone_end = 35;
@@ -332,12 +341,14 @@ void compute_position_in_crystallizer_geometry(
     y_trans = y;
     z_trans = z;
   }
-  else if (z < cone_end + tol)//conical piece, stretch it linearly
+  else if (z < cone_end)//conical piece, stretch it linearly
   {
     double lincomb = (1 - (z - inflow_end)/(cone_end - inflow_end)) * 1.0 +
         (z - inflow_end)/(cone_end - inflow_end) * outflow_stretch;
     x_trans = x * lincomb;
     y_trans = y * lincomb;
+    x_trans *= 1+std::abs(z - 30)/30;
+    y_trans *= 1+std::abs(z - 30)/30;
     z_trans = z;
   }
   else if (z < outflow_end + tol)//outflow piece, stretch it constantly

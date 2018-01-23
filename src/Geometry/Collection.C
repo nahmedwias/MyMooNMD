@@ -941,7 +941,7 @@ void TCollection::write_verts(std::ostream& stream)
 
   for(int i = 0; i<N_Nodes ;++i)
   {
-    stream << NodesCoords[3*i] << " "
+    stream << std::setprecision(32) << NodesCoords[3*i] << " "
            << NodesCoords[3*i + 1] << " "
            << NodesCoords[3*i + 2] << std::endl;
   }

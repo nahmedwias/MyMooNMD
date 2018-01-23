@@ -52,7 +52,7 @@ void ZeroBoundaryValues_3D(double x, double y, double z, double &value)
       value = 0;
 }
 
-
+std::valarray<double> simplex_barycenter(const TBaseCell& cell);
 
 void BrushWrapper::pick_example(const std::string& exmpl_name,
                                 double& viscosity)
@@ -200,16 +200,11 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   out_dir = out_dir.substr(0,pos); 		// ...should be the general output directory.
 #ifdef __2D
   int dim = 2;
+#elif defined(__3D__)
+  int dim = 3;
+#endif
   std::string brush_grid_file = "./brush_grid.mesh";
   brush_grid_->writeMesh(brush_grid_file.c_str(), dim);
-#elif defined(__3D__)
-  std::string brush_grid_file = "./batch_cryst.vert";
-  std::ofstream grid_stream;
-  grid_stream.open(brush_grid_file);
-  brush_grid_->write_verts(grid_stream);
-  grid_stream.close();
-  exit(0);
-#endif
 #ifdef __2D__
   double third_dim_stretch = 0;
   if(db_.contains("third_dim_stretch"))
@@ -217,9 +212,16 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   bool axisymmetric = (db_["example"] == eder_crystallizer_axis);
 #endif
 
+  std::vector<std::valarray<double>> cell_centers = {};
+// TODO it seems this is unnecessary, tetgen preserves the input order of the medit file.
+//  for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
+//  {
+//    cell_centers.push_back(simplex_barycenter(*brush_grid_->GetCell(c)));
+//  }
+
   // set up Brush's ParMooN interface
   interface_ = new Brush::InterfacePM(
-      brush_grid_file,
+      brush_grid_file, dim, cell_centers,
       db_["sweep_file"], " ",
       db_["therm_file"], db_["chem_file"],
       db_["coagulation_parameter"],
@@ -230,20 +232,27 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
 #endif
   );
 
+  Output::print("Setting up Brush::InterfacePM SUCCESS.");
+  Output::print("Performing cell checks");
+
   // check if the numbering of cells in the brush grid is the same in Brush and ParMooN
+  // TODO This scales quadratically in the number of cells,
+  // and should therefore only run in test scenarios.
+  // BEGIN CHECK
   std::vector<std::valarray<double>> centers = interface_->get_cell_centers();
   for(size_t brush_cell = 0 ; brush_cell < centers.size()  ; ++brush_cell)
   {
     std::valarray<double> point = centers.at(brush_cell);
     double x = point[0];
     double y = point[1];
+    double z = point[2]; //TODO 3d only!
     //Output::print("Remote cell ", brush_cell, " midpoint (", point[0],",",point[1],")");
     std::vector<int> found_in;
     for(int loc_cell = 0 ; loc_cell < brush_grid_->GetN_Cells() ;++loc_cell)
     {
       TBaseCell* cell = brush_grid_->GetCell(loc_cell);
 
-      if( cell->PointInCell(x,y) )
+      if( cell->PointInCell(x,y,z) ) //2d:  cell->PointInCell(x,y)
       {
         found_in.push_back(loc_cell);
         //Output::print("Midpoint of remote cell ", brush_cell, " found in local cell ", loc_cell );
@@ -260,6 +269,8 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
                "local cell ", found_in.at(0), " which is unexpected.");
     // if these checks passed, everything is fine.
   }
+  Output::print("Performing cell checks SUCCESS.");
+  // END CHECK
 
   // load the initial particle solution
   interface_->set_initial_particles(db_["init_partsol_file"]);
