@@ -75,30 +75,48 @@ std::ostream& operator << (std::ostream& s, const TVertex *v)
 }
 #endif
 
-
-bool operator <= (const TVertex& V , const TVertex& W)
+bool operator < (const TVertex& V, const TVertex& W)
 {
-	double tol = 1e-7;
 
-	double Vx = V.GetX();
-	double Vy = V.GetY();
-	double Wx = W.GetX();
-	double Wy = W.GetY();
+  double V_X = V.GetX();
+  double W_X = W.GetX();
+  double V_Y = V.GetY();
+  double W_Y = W.GetY();
+#ifdef __3D__
+  double V_Z = V.GetZ();
+  double W_Z = W.GetZ();
+#endif
 
-	if ( Vx - Wx < - tol )
-		return true;
-	else if ( Vx - Wx > tol )
-		return false;
-	else if (Vy - Wy < - tol )
-		return true;
-	else if (Vy - Wy > tol )
-		return false;
-	else
-	{
-		Output::warn("Those vertices seem to be equal - it is not advised to keep "
-					 "copies of vertices.");
-		return true;
-	}
+  double tol = 1e-8;
+
+  if(V_X - W_X < -tol)
+    return true;
+  else if(V_X-W_X > tol)
+    return false;
+  else
+  {//x regarded as same, compare y
+    if(V_Y - W_Y < -tol)
+      return true;
+    else if(V_Y - W_Y > tol)
+      return false;
+#ifdef __2D__
+    else
+      return false;
+#endif
+#ifdef __3D__
+    else
+    {
+      if(V_Z - W_Z < -tol)
+        return true;
+      else if(V_Z - W_Z > tol)
+        return false;
+      else
+        return false;
+    }
+#endif
+
+  }
+
 
 }
 

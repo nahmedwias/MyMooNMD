@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <functional>
+#include <limits>
 
 
 #include <InnerInterfaceJoint.h>
@@ -1376,6 +1377,30 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
 enum class ElementShape {TETS, QUADS};
 
 /**
+ * Check in which order three given vertices are, according
+ * to the alphanumeric order given by the operator < of TVertex.
+ */
+int alphanumeric_order(const TVertex& vert0, const TVertex& vert1, const TVertex& vert2)
+{
+  if( (vert0 < vert1) && (vert1 < vert2) )
+    return 0; // 0-1-2
+  if( (vert0 < vert2) && (vert2 < vert1) )
+   return 1; // 0-2-1
+  if( (vert1 < vert0) && (vert0 < vert2) )
+    return 2; // 1-0-2
+  if( (vert1 < vert2) && (vert2 < vert0) )
+    return 3;  // 1-2-0
+  if( (vert2 < vert0) && (vert0 < vert1) )
+    return 4; // 2-0-1
+  if( (vert2 < vert1) && (vert1 < vert0) )
+    return 5; // 2-1-0
+  else
+  {
+    ErrThrow("This should not happen!");
+    return -1;
+  }
+}
+/*
  * Given a certain 2D base element by 'current_element_id'
  * and one of its edges by the ids of its two vertices,
  * find that other element, if any, which neighbors the current
@@ -1425,7 +1450,7 @@ void sort_vertices(TVertex*& A, TVertex*& B, TVertex*& C)
 {
 	// sort the three vertices consistently (alphanumeric)
 	std::function<bool (const TVertex*, const TVertex*)> less_or_eq
-			= [](const TVertex* V, const TVertex*W) { return *V <= *W; };
+			= [](const TVertex* V, const TVertex*W) { return *V < *W; };
 	std::vector<TVertex*> sorted = {A,B,C};
 	std::sort(sorted.begin(),sorted.end(), less_or_eq);
 	A = sorted[0];
@@ -1450,6 +1475,7 @@ void find_low_and_high_face_element(
 	TVertex* A_bot = low_element->GetVertex(0); //get verts 0,1,2, by creation they should be the bot verts
 	TVertex* B_bot = low_element->GetVertex(1);
 	TVertex* C_bot = low_element->GetVertex(2);
+
 	// just for safety, the verts should still be ordered
 	sort_vertices(A_bot, B_bot, C_bot);
 	// now A < B < C
@@ -1529,16 +1555,11 @@ void TDomain::NewMakeSandwichGrid(
 
     base_verts_per_base_elem.at(e) = verts;
   }
-
-  //TODO The boundaries must be put in place:
-  // fuer alle BdWall: BdWall->SetParams(drift_x, drift_y, drift_z);
-  // fuer Top und Bottom:
-  //	    Bottom = new TBdPlane(1000); // Magic number ersetzen!
-  //		Bottom->SetParams(0,0,0, 1,0,0, 0,0,-1);
-  //		Top = new TBdPlane(1001);
-  //		Top->SetParams(0,0,DriftZ, 1,0,0, 0,0,1);
-  //
-  //TODO At some point, set the bounding box.
+  
+  double BdBox_xmin = std::numeric_limits<double>::infinity();
+  double BdBox_ymin = std::numeric_limits<double>::infinity();
+  double BdBox_xmax = -std::numeric_limits<double>::infinity();
+  double BdBox_ymax = -std::numeric_limits<double>::infinity();
 
   std::vector<TVertex*> sandw_vertices(n_base_vertices*n_vert_layers,nullptr);
   for(size_t bv = 0; bv < n_base_vertices ; ++bv)
@@ -1573,6 +1594,17 @@ void TDomain::NewMakeSandwichGrid(
       TBdWall* BdWall = dynamic_cast<TBdWall*>(BdParts[part]->GetBdComp(comp));
       BdWall->GetBdComp2D()->GetXYofT(tau, base_x, base_y);
     }
+    
+    if(base_x<BdBox_xmin)
+        BdBox_xmin=base_x;
+    if(base_y<BdBox_ymin)
+        BdBox_ymin=base_y;  
+    if(base_x>BdBox_xmax)
+        BdBox_xmax=base_x; 
+    if(base_y>BdBox_ymax)
+        BdBox_ymax=base_y;     
+    
+
     // ...in both cases, create all corresponding 3D vertices
     for(size_t l = 0; l < n_vert_layers;++l)
     {
@@ -1584,6 +1616,45 @@ void TDomain::NewMakeSandwichGrid(
       sandw_vertices.at(new_vertex_id) = new TVertex(sandw_x, sandw_y, sandw_z);
     }
   }
+
+
+  //TODO The boundaries must be put in place:
+  // fuer alle BdWall: BdWall->SetParams(drift_x, drift_y, drift_z);
+  // fuer Top und Bottom:
+  //	    Bottom = new TBdPlane(1000); // Magic number ersetzen!
+  //		Bottom->SetParams(0,0,0, 1,0,0, 0,0,-1);
+  //		Top = new TBdPlane(1001);
+  //		Top->SetParams(0,0,DriftZ, 1,0,0, 0,0,1);
+  //
+  //TODO At some point, set the bounding box.
+  StartX = BdBox_xmin;
+  StartY = BdBox_ymin;
+  StartZ = 0;
+  BoundX = BdBox_xmax - BdBox_xmin + drift_x;
+  BoundY = BdBox_ymax - BdBox_ymin + drift_y;
+  BoundZ = drift_z;
+
+
+  //Wie werden die BdComps durchnummeriert?
+  int N_BdWalls=0;
+  for(int part=0 ; part<N_BoundParts ; part++)
+  {
+  	int N_BoundComp= BdParts[part]->GetN_BdComps();
+  	N_BdWalls+=N_BoundComp;
+
+  	for(int comp=0 ; comp<N_BoundComp ; comp++)
+  	{
+  		TBdWall* BdWall = dynamic_cast<TBdWall*>(BdParts[part]->GetBdComp(comp));
+  	    BdWall->SetParams(drift_x,drift_y,drift_z);
+  	}
+  }
+ // The BdComp.IDs (N_BdWalls and N_BdWalls+1) may not be important,
+ // probably they aren't used later anyway...
+   TBdPlane Bottom = new TBdPlane(N_BdWalls);
+   Bottom.SetParams(0,0,0, 1,0,0, 0,0,-1);
+   TBdPlane Top = new TBdPlane(N_BdWalls+1);
+   Top.SetParams(0,0,drift_z, 1,0,0, 0,0,1);
+
 
   if(elements_shape == ElementShape::QUADS)
     ErrThrow("NewMakeSandwichGrid only deals with triangular/"
@@ -1646,8 +1717,20 @@ void TDomain::NewMakeSandwichGrid(
       TJointEqN* mid_high_inner_joint = new TJointEqN(mid_tet,high_tet);
       mid_tet->SetJoint(3, mid_high_inner_joint);
       high_tet->SetJoint(0, mid_high_inner_joint);
+
+      // put outer joint between layers into place
+      if(l>0)
+      {
+    	  TBaseCell *top_tet = CellTree[3 * (l-1) * n_base_elements + e + 2];
+          TJointEqN* top_bot_outer_joint = new TJointEqN(low_tet,top_tet);
+          top_tet->SetJoint(0,top_bot_outer_joint);
+          low_tet->SetJoint(3,top_bot_outer_joint);
+      }
     }
   }
+
+  //to keep track of which elements were treated already
+  std::vector<std::vector<int>> treated_edges(n_base_vertices, std::vector<int>(10, -1));
 
   // Joints seitlich zwischen den Zellen bzw. am seitlichen Rand
   for (size_t e=0;e<n_base_elements;e++)
@@ -1664,93 +1747,167 @@ void TDomain::NewMakeSandwichGrid(
      {base_vert_2_id,base_vert_0_id}
     };
 
-    //to keep track of which edges were treated already
-    std::vector<std::vector<int>> treated_edges(n_base_vertices);
-
     for(int edge = 0 ; edge < 3 ; ++edge)
     {
 
       int vert_1_id = edges.at(edge).first;
       int vert_2_id = edges.at(edge).second;
 
-      // TODO: checke, ob diese Kante bereits behandelt wurde.
+      //Check on the element containing the edge
+      if(std::find(treated_edges.at(vert_1_id).begin(), treated_edges.at(vert_1_id).end(),vert_2_id)!=treated_edges.at(vert_1_id).end())
+		continue;
+
+      treated_edges.at(vert_1_id).push_back(vert_2_id);
+      treated_edges.at(vert_2_id).push_back(vert_1_id);
 
       int e_neighbor =
           find_neighbor_base_element_id(
               base_verts_per_base_elem, e, vert_1_id, vert_2_id);
 
 
-      if(e_neighbor == -1)
-      {//this is a boundary edge, treat it accordingly
-        //TODO treatment of boundary edges
-      }
-      else
-      {// there are two tets sharing a face to both sides of all sandwich
-        // repetitions of the current edge - create their joints!
-        for(size_t l = 0 ; l < n_elem_layers; ++l)
-        {
-          TGridCell* my_low_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e]);
-          TGridCell* my_mid_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e + 1]);
-          TGridCell* my_high_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e + 2]);
+    	  if(e_neighbor == -1)
+    	  {//this is a boundary edge, treat it accordingly
+    		  //TODO check conditions
+                if (Interfaces[KNPR[vert_1_id]-1] < 0 || Interfaces[KNPR[vert_2_id]-1] < 0)
+                {
+                  Error("Error in ReadGeo, line " << __LINE__ << endl);
+                  exit(-1);
+                }
 
-          TGridCell* yo_low_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e_neighbor]);
-          TGridCell* yo_mid_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e_neighbor + 1]);
-          TGridCell* yo_high_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e_neighbor + 2]);
+    		  //treatment of boundary edges
+    		  int edge_bdr_part= base_vert_bdry.at(vert_1_id);
+    		  int edge_bdr_comp= static_cast<int>(base_vert_coords.at(vert_1_id).first);
+    		  double T_vert_1 =base_vert_coords.at(vert_1_id).first - edge_bdr_comp;
+    		  double T_vert_2 =base_vert_coords.at(vert_2_id).first - edge_bdr_comp;
 
-          TVertex* vert1(my_low_tet->GetVertex(vert_1_id));
-          TVertex* vert2(my_low_tet->GetVertex(vert_2_id));
+    		  if(BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp)->IsFreeBoundary())
+    		                {
+    		                  Error("Error in ReadGeo, line " << __LINE__ << endl);
+    		                  exit(-1);
+    		                }
 
-          {//set the lower of the two joints
-            int my_lower_joint_id, yo_lower_joint_id;
-            TGridCell* my_lower_joint_element;
-            TGridCell* yo_lower_joint_element;
+    		  for(size_t l = 0 ; l < n_elem_layers; ++l)
+    		  {
+    			  TGridCell* my_low_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e]);
+    			  TGridCell* my_mid_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e + 1]);
+    			  TGridCell* my_high_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e + 2]);
 
-            int my_upper_joint_id, yo_upper_joint_id;
-            TGridCell* my_upper_joint_element;
-            TGridCell* yo_upper_joint_element;
+    			  TVertex* vert1(my_low_tet->GetVertex(vert_1_id));
+    			  TVertex* vert2(my_low_tet->GetVertex(vert_2_id));
 
-            find_low_and_high_face_element(
-                my_low_tet,
-                my_mid_tet,
-                my_high_tet,
-                vert1, vert2,
-                my_lower_joint_element, my_lower_joint_id,
-                my_upper_joint_element, my_upper_joint_id
-            );
-            find_low_and_high_face_element(
-                yo_low_tet,
-                yo_mid_tet,
-                yo_high_tet,
-                vert1, vert2,
-                yo_lower_joint_element, yo_lower_joint_id,
-                yo_upper_joint_element, yo_upper_joint_id
-            );
+    			  int my_lower_joint_id, my_upper_joint_id;
+    			  TGridCell* my_lower_joint_element;
+    			  TGridCell* my_upper_joint_element;
 
-            TJointEqN* low_joint = new TJointEqN(my_lower_joint_element, yo_lower_joint_element);
-            my_lower_joint_element->SetJoint(my_lower_joint_id, low_joint);
-            yo_lower_joint_element->SetJoint(yo_lower_joint_id, low_joint);
 
-            TJointEqN* high_joint = new TJointEqN(my_upper_joint_element, yo_upper_joint_element);
-            my_upper_joint_element->SetJoint(my_upper_joint_id, high_joint);
-            yo_upper_joint_element->SetJoint(yo_upper_joint_id, high_joint);
-          }
-        }
+    			  find_low_and_high_face_element(
+    			      						  my_low_tet,
+    			      						  my_mid_tet,
+    			      						  my_high_tet,
+    			      						  vert1, vert2,
+    			      						  my_lower_joint_element, my_lower_joint_id,
+    			      						  my_upper_joint_element, my_upper_joint_id
+    			      						  );
 
-      }
+    			  //Set parameterlists (t1,t2,t3) and (z1,z2,z3)
+    			  //TODO: Intern order might cause problems if its used/checked in another method
+
+    			  if(edge==2)
+    				  std::swap(vert1,vert2);
+    			  //using vert1 < vert2 => edge between (vert1,low) and (vert2, high)
+
+    			  double my_lower_param1[4] =
+    			  	  {T_vert_1,T_vert_2,T_vert_2,0.};
+    			  double my_lower_param2[4] =
+    			  	  {lambda[l],lambda[l],lambda[l+1],0.};
+
+    			  double my_upper_param1[4] =
+    			  	  {T_vert_1,T_vert_1,T_vert_2,0.};
+    			  double my_upper_param2[4] =
+    			  	  {lambda[l],lambda[l+1],lambda[l+1],0.};
+
+    			  TJoint* low_joint = new TBoundFace(BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp),
+    			                              my_lower_param1, my_lower_param2);
+    			  my_lower_joint_element->SetJoint(my_lower_joint_id, low_joint);
+
+    			  TJoint* high_joint = new TBoundFace(BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp),
+    			                              my_upper_param1, my_upper_param2);
+    			  my_upper_joint_element->SetJoint(my_upper_joint_id, high_joint);
+
+    		  }
+
+    	  }
+    	  else
+    	  {	  // there are two tets sharing a face to both sides of all sandwich
+    		  // repetitions of the current edge - create their joints!
+    		  for(size_t l = 0 ; l < n_elem_layers; ++l)
+    		  {
+    			  TGridCell* my_low_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e]);
+    			  TGridCell* my_mid_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e + 1]);
+    			  TGridCell* my_high_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e + 2]);
+
+    			  TGridCell* yo_low_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e_neighbor]);
+    			  TGridCell* yo_mid_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e_neighbor + 1]);
+    			  TGridCell* yo_high_tet = dynamic_cast<TGridCell*>(CellTree[3 * l * n_base_elements + e_neighbor + 2]);
+
+    			  TVertex* vert1(my_low_tet->GetVertex(vert_1_id));
+    			  TVertex* vert2(my_low_tet->GetVertex(vert_2_id));
+
+    			  {//set the lower of the two joints
+    				  int my_lower_joint_id, yo_lower_joint_id;
+    				  TGridCell* my_lower_joint_element;
+    				  TGridCell* yo_lower_joint_element;
+
+    				  int my_upper_joint_id, yo_upper_joint_id;
+    				  TGridCell* my_upper_joint_element;
+    				  TGridCell* yo_upper_joint_element;
+
+    				  find_low_and_high_face_element(
+    						  my_low_tet,
+    						  my_mid_tet,
+    						  my_high_tet,
+    						  vert1, vert2,
+    						  my_lower_joint_element, my_lower_joint_id,
+    						  my_upper_joint_element, my_upper_joint_id
+    				  );
+    				  find_low_and_high_face_element(
+    						  yo_low_tet,
+    						  yo_mid_tet,
+    						  yo_high_tet,
+    						  vert1, vert2,
+    						  yo_lower_joint_element, yo_lower_joint_id,
+    						  yo_upper_joint_element, yo_upper_joint_id
+    				  );
+
+    				  TJointEqN* low_joint = new TJointEqN(my_lower_joint_element, yo_lower_joint_element);
+    				  my_lower_joint_element->SetJoint(my_lower_joint_id, low_joint);
+    				  yo_lower_joint_element->SetJoint(yo_lower_joint_id, low_joint);
+
+    				  TJointEqN* high_joint = new TJointEqN(my_upper_joint_element, yo_upper_joint_element);
+    				  my_upper_joint_element->SetJoint(my_upper_joint_id, high_joint);
+    				  yo_upper_joint_element->SetJoint(yo_upper_joint_id, high_joint);
+    			  }
+    		  }
+
+    	  }
+
+
+
     }
   }
 
-  // TODO Jonts oben und unten zwischen den Zellen
+  // TODO Joints oben und unten zwischen den Zellen
+  //Done in line 1651-1655
 
   // TODO Top und Bottom Joints
 
   // komische Sonderaufgaben:
   // 1) initialize iterators
-  // TDatabase::IteratorDB[It_EQ]->SetParam(this);
-  // TDatabase::IteratorDB[It_LE]->SetParam(this);
-  // TDatabase::IteratorDB[It_Finest]->SetParam(this);
-  // TDatabase::IteratorDB[It_Between]->SetParam(this);
-  // TDatabase::IteratorDB[It_OCAF]->SetParam(this);
+   TDatabase::IteratorDB[It_EQ]->SetParam(this);
+   TDatabase::IteratorDB[It_LE]->SetParam(this);
+   TDatabase::IteratorDB[It_Finest]->SetParam(this);
+   TDatabase::IteratorDB[It_Between]->SetParam(this);
+   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
   // 2) folgende Zeile auf alle Joints aufrufen
   // CurrCell->GetJoint(j)->SetMapType();
   // 3) N_RootCells auf die Zahl 3D (nicht: 2D) Zellen setzen
@@ -2255,18 +2412,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
         vert1 = NewVertices[KVERT[NVE*i + 1]-1];
         vert2 = NewVertices[KVERT[NVE*i + 2]-1];
 
-        if( (vert0 < vert1) && (vert1 < vert2) )
-          SortOrder = 0; // 0-1-2
-        if( (vert0 < vert2) && (vert2 < vert1) )
-          SortOrder = 1; // 0-2-1
-        if( (vert1 < vert0) && (vert0 < vert2) )
-          SortOrder = 2; // 1-0-2
-        if( (vert1 < vert2) && (vert2 < vert0) )
-          SortOrder = 3;  // 1-2-0
-        if( (vert2 < vert0) && (vert0 < vert1) )
-          SortOrder = 4; // 2-0-1
-        if( (vert2 < vert1) && (vert1 < vert0) )
-          SortOrder = 5; // 2-1-0
+        SortOrder = alphanumeric_order(*vert0,*vert1,*vert2);
 
         OrderArray[i] = SortOrder;
         // cout << "SortOrder: " << SortOrder << endl;
@@ -2317,7 +2463,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
               k += N_Vertices;
               LocVerts[5] = NewVertices[k];
 
-              k0 = 1; k1 = 1; k2 = 3; k3 = 2;
+              k0 = 1; k1 = 1; k2 = 3; k3 = 2; //k1=1 correct??
 
               KMTupper[((j-1)*N_RootCells+i)*3 + 2] = 2*32 + 3;
               KMTupper[((j-1)*N_RootCells+i)*3 + 1] = 1*32 + 2;
@@ -2759,7 +2905,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
               
               if (T_b < T_a)
               {
-                T_b = 1.;
+                T_b = 1.; //Was soll das? Nimmt das alle doppelten Ecken raus?
                 // cout << "AT ";
               }
               // cout << T_a << " ... " << T_b << endl;
@@ -2960,8 +3106,8 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
     break;
 
     default:
-      Error("wrong NVE! Only 3 and 4 are allowed!" << endl);
-      exit(-1);
+      ErrThrow("Wrong Number of Vertices per Element ('NVE'). "
+               "Only 3 (triangles) and 4 (quads) are allowed!");
   } // endswitch(NVE)
 
 //   cout << "N_RootCells: " << N_RootCells << endl;
@@ -3089,7 +3235,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
   delete[] NewVertices;
 
   // exit(-1);
-  
+
   return 0;
 }
 
