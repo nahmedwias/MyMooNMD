@@ -200,7 +200,7 @@ int MovingNSType1NLN_Matrices = 1;
 int MovingNSType1NLRowSpace[1] = { 0 };
 int MovingNSType1NLColumnSpace[1] = { 0 };
 int MovingNSType1NLN_Rhs = 0;
-int *MovingNSType1NLRhsSpace = NULL;
+int *MovingNSType1NLRhsSpace = nullptr;
 
 // ======================================================================
 // Type 1, Standard Galerkin, only nonlinear part
@@ -232,7 +232,7 @@ int MovingNSType2NLN_Matrices = 1;
 int MovingNSType2NLRowSpace[1] = { 0 };
 int MovingNSType2NLColumnSpace[1] = { 0 };
 int MovingNSType2NLN_Rhs = 0;
-int *MovingNSType2NLRhsSpace = NULL;
+int *MovingNSType2NLRhsSpace = nullptr;
 
 // ======================================================================
 // Type 2, Standard Galerkin, only nonlinear part
@@ -263,7 +263,7 @@ int MovingNSType3NLN_Matrices = 2;
 int MovingNSType3NLRowSpace[2] = { 0, 0 };
 int MovingNSType3NLColumnSpace[2] = { 0, 0 };
 int MovingNSType3NLN_Rhs = 0;
-int *MovingNSType3NLRhsSpace = NULL;
+int *MovingNSType3NLRhsSpace = nullptr;
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v), only nonlinear part
@@ -311,7 +311,7 @@ int MovingNSType4NLN_Matrices = 2;
 int MovingNSType4NLRowSpace[2] = { 0, 0 };
 int MovingNSType4NLColumnSpace[2] = { 0, 0 };
 int MovingNSType4NLN_Rhs = 0;
-int *MovingNSType4NLRhsSpace = NULL;
+int *MovingNSType4NLRhsSpace = nullptr;
 
 // ======================================================================
 // Type 4, Standard Galerkin, (grad u, grad v), only nonlinear part
@@ -358,8 +358,8 @@ int MovingNSRHSN_Terms = 1;
 MultiIndex2D MovingNSRHSDerivatives[1] = { D00 };
 int MovingNSRHSSpaceNumbers[1] = { 0 };
 int MovingNSRHSN_Matrices = 0;
-int *MovingNSRHSRowSpace = NULL;
-int *MovingNSRHSColumnSpace = NULL;
+int *MovingNSRHSRowSpace = nullptr;
+int *MovingNSRHSColumnSpace = nullptr;
 int MovingNSRHSN_Rhs = 2;
 int MovingNSRHSRhsSpace[2] = { 0, 0 };
 
@@ -422,7 +422,7 @@ int GridN_Matrices = 1;
 int GridRowSpace[1] = { 0 };
 int GridColumnSpace[1] = { 0 };
 int GridN_Rhs = 0;
-int *GridRhsSpace = NULL;
+int *GridRhsSpace = nullptr;
 
 // ======================================================================
 // Type 1, Standard Galerkin

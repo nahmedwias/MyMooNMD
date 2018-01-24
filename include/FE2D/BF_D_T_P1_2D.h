@@ -59,4 +59,4 @@ TBaseFunct2D *BF_D_T_P1_2D_Obj = new TBaseFunct2D
          D_T_P1_2D_Funct, D_T_P1_2D_DeriveXi,
          D_T_P1_2D_DeriveEta, D_T_P1_2D_DeriveXiXi,
          D_T_P1_2D_DeriveXiEta, D_T_P1_2D_DeriveEtaEta, 1, 1,
-         0, NULL);
+         0, nullptr);

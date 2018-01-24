@@ -47,7 +47,7 @@ static int C_T_P2_3D_Vert[4] =  {0, 2, 5, 9};
 static int C_T_P2_3D_NInner = 0;
 
 // array containing the numbers for the inner dofs (here is no inner dof)
-static int *C_T_P2_3D_Inner = NULL;
+static int *C_T_P2_3D_Inner = nullptr;
 
 static char C_T_P2_3D_String[] = "C_T_P2_3D";
 

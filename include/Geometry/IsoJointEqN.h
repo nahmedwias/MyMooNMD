@@ -40,7 +40,7 @@ class TIsoJointEqN : public TJointEqN
     virtual TJoint *NewInst(double T_0, double T_1, TBaseCell *Me)
     { return new TIsoJointEqN(Me); }
     virtual TJoint *NewInst()
-    { return new TIsoJointEqN(NULL); }
+    { return new TIsoJointEqN(nullptr); }
 
     /** return number of additional vertices */
     int GetN_Vertices()

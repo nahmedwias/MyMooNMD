@@ -26,7 +26,7 @@ static int *Q3_Q3_Pairs[4] = { (int *)Q3_Q3_Pairs0, (int *)Q3_Q3_Pairs1,
 static int Q3_Q3_NNodes = 32;
 
 static int Q3_Q3_NNoOpposite = 0;
-static int **Q3_Q3_NoOpposite = NULL;
+static int **Q3_Q3_NoOpposite = nullptr;
 
 TFE3DMapper *Q3_Q3 = new TFE3DMapper(Q3_Q3_Name, Q3_Q3_Desc,
                              Q3_Q3_N0, Q3_Q3_N1,

@@ -22,7 +22,7 @@ static int *N_Q_RT0_2D_J[4] = { N_Q_RT0_2D_J0, N_Q_RT0_2D_J1,
 static int N_Q_RT0_2D_NInner = 0;
 
 // array containing the numbers for the inner dofs (here is no inner dof)
-static int *N_Q_RT0_2D_Inner = NULL;
+static int *N_Q_RT0_2D_Inner = nullptr;
 
 // number of outer dofs
 static int N_Q_RT0_2D_NOuter = 4;

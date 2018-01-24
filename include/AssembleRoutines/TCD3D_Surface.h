@@ -16,7 +16,7 @@ namespace TCD3D_Surf
   static int N_Rhs = 0;
   static int RowSpaces[2] = { 0, 0 };
   static int ColumnSpaces[2] = { 0, 0 };
-  static int *RhsSpaces = NULL;
+  static int *RhsSpaces = nullptr;
   
   void MatricesAssemble (double Mult, double *coeff, double *param, double hK,
 			 double **OrigValues, int *N_BaseFuncts,

@@ -322,7 +322,7 @@ static double NF_D_Q_Q4_2D_Weight24[25] = {
     0.068641912358186242182, -0.1944, 0.25151617528362751564,
    -0.1944, 0.068641912358186242182 };
 
-static double *NF_D_Q_Q4_2D_T = NULL;
+static double *NF_D_Q_Q4_2D_T = nullptr;
 
 void NF_D_Q_Q4_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)
@@ -995,5 +995,5 @@ void NF_D_Q_Q4_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double
 
 TNodalFunctional2D *NF_D_Q_Q4_2D_Obj = new TNodalFunctional2D
         (NF_D_Q_Q4_2D, 25, 0, 25, 0, NF_D_Q_Q4_2D_Xi, NF_D_Q_Q4_2D_Eta,
-         NF_D_Q_Q4_2D_T, NF_D_Q_Q4_2D_EvalAll, NULL);
+         NF_D_Q_Q4_2D_T, NF_D_Q_Q4_2D_EvalAll, nullptr);
 

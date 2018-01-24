@@ -14,11 +14,11 @@ static HNDesc C1_2_C1_2_1Reg_HangingTypes[] = { HN_C_P1_2D_0 };
 static int C1_2_C1_2_1Reg_Coupling_0[] = { 0, 1 };
 static int *C1_2_C1_2_1Reg_Coupling[] = { C1_2_C1_2_1Reg_Coupling_0 };
 static int C1_2_C1_2_1Reg_NFarHanging = 0;
-static int *C1_2_C1_2_1Reg_FarHanging = NULL;
-static HNDesc *C1_2_C1_2_1Reg_FarHangingTypes = NULL;
-static int ****C1_2_C1_2_1Reg_FarCoupling = NULL;
+static int *C1_2_C1_2_1Reg_FarHanging = nullptr;
+static HNDesc *C1_2_C1_2_1Reg_FarHangingTypes = nullptr;
+static int ****C1_2_C1_2_1Reg_FarCoupling = nullptr;
 static int C1_2_C1_2_1Reg_NNoopposite = 0;
-static int *C1_2_C1_2_1Reg_Nopposite = NULL;
+static int *C1_2_C1_2_1Reg_Nopposite = nullptr;
 static int C1_2_C1_2_1Reg_NNodes = 6;
 
 TFE2DMapper1Reg *C1_2_C1_2_1Reg = new TFE2DMapper1Reg(

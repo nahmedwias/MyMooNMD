@@ -17,7 +17,7 @@ static double NF_D_T_SV1_2D_Eta[] = {
                                       7.0/18, 2.0/9, 13.0/18,
                                       7.0/18, 13.0/18, 2.0/9
                                     };
-static double *NF_D_T_SV1_2D_T = NULL;
+static double *NF_D_T_SV1_2D_T = nullptr;
 
 void NF_D_T_SV1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)

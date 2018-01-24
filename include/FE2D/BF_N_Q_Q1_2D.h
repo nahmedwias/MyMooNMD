@@ -64,4 +64,4 @@ TBaseFunct2D *BF_N_Q_Q1_2D_Obj = new TBaseFunct2D
          N_Q_Q1_2D_Funct, N_Q_Q1_2D_DeriveXi,
          N_Q_Q1_2D_DeriveEta, N_Q_Q1_2D_DeriveXiXi,
          N_Q_Q1_2D_DeriveXiEta, N_Q_Q1_2D_DeriveEtaEta, 2, 1,
-         0, NULL);
+         0, nullptr);

@@ -239,7 +239,7 @@ class TDomain
       * "Default_UnitSquare" - Default domain boundary description (2D only).
       * "Default_UnitCube" - Default domain boundary description (3D only).
       *
-      * If not this and not NULL, PRM is interpreted as a filepath to a .PRM file
+      * If not this and not nullptr, PRM is interpreted as a filepath to a .PRM file
       * and gets handed over to TDomain::ReadBdParam() to be read in.
       *
       *	@param[in] GEO The description of the initial mesh. Possibilities are:

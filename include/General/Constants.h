@@ -11,12 +11,6 @@
 #ifndef __CONSTANTS__
 #define __CONSTANTS__
 
-#ifdef NULL
-  #undef NULL
-#endif
-
-#define NULL 0
-
 #include <cmath>
 
 #ifdef __2D__

@@ -18,7 +18,7 @@ static int *C_L_P1_1D_J[2] = { C_L_P1_1D_J0, C_L_P1_1D_J1 };
 static int C_L_P1_1D_NInner = 0;
 
 // array containing the numbers for the inner dofs
-static int *C_L_P1_1D_Inner = NULL;
+static int *C_L_P1_1D_Inner = nullptr;
 
 static char C_L_P1_1D_String[] = "C_L_P1_1D";
 
