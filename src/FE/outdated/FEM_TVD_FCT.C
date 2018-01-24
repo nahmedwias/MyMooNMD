@@ -688,7 +688,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
       {
         i=neum_to_diri[j];
 #ifdef __2D__
-	if (BoundaryValue!=NULL)
+	if (BoundaryValue!=nullptr)
 	{
 	    BoundaryValue(neum_to_diri_bdry[j], neum_to_diri_param[j],
 			  tilde_u[i]);
@@ -699,7 +699,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
 	}
 #endif
 #ifdef __3D__
-	if (BoundaryValue!=NULL)
+	if (BoundaryValue!=nullptr)
 	{
 	    BoundaryValue(neum_to_diri_x[j], neum_to_diri_y[j], neum_to_diri_z[j],
 			  tilde_u[i]);
@@ -841,7 +841,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
       {
         i=neum_to_diri[j];
 #ifdef __2D__
-	if (BoundaryValue!=NULL)
+	if (BoundaryValue!=nullptr)
 	{
 	    BoundaryValue(neum_to_diri_bdry[j], neum_to_diri_param[j],
 			  tilde_u[i]);
@@ -852,7 +852,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
 	}
 #endif
 #ifdef __3D__
-	if (BoundaryValue!=NULL)
+	if (BoundaryValue!=nullptr)
 	{
 	    BoundaryValue(neum_to_diri_x[j], neum_to_diri_y[j], neum_to_diri_z[j],
 			  tilde_u[i]);
@@ -1014,7 +1014,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
         {
           i=neum_to_diri[j];
 #ifdef __2D__
-	if (BoundaryValue!=NULL)
+	if (BoundaryValue!=nullptr)
 	{
           BoundaryValue(neum_to_diri_bdry[j], neum_to_diri_param[j],
             tilde_u[i]);
@@ -1028,7 +1028,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
 #endif
 #ifdef __3D__
           // WRONG
-	if (BoundaryValue!=NULL)
+	if (BoundaryValue!=nullptr)
 	{
           BoundaryValue(neum_to_diri_x[j], neum_to_diri_y[j], neum_to_diri_z[j],
             tilde_u[i]);

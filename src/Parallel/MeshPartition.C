@@ -296,7 +296,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   /** ***************************************************/
   /**STEP 3: STORE THE SORTED POINTER ARRAY AS INDICES */
   /** ***************************************************/
-    Last=NULL;
+    Last=nullptr;
     N_RootVertices=-1;
     for(i=0;i<N_AllLocVert;i++)
      {
@@ -363,12 +363,12 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   t1 = MPI_Wtime();
    if(type == 0)
     {
-     METIS_PartMeshNodal(&ne, &nn, eptr, MetisVertexNumbers, NULL, NULL, &nparts, NULL, options, &edgecut, Cell_Rank, Vert_Rank);
+     METIS_PartMeshNodal(&ne, &nn, eptr, MetisVertexNumbers, nullptr, nullptr, &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
     }
    else if(type == 1)
     {
-     METIS_PartMeshDual(&ne, &nn,  eptr, MetisVertexNumbers,  NULL, NULL,  &ncommon,
-                       &nparts, NULL, options, &edgecut, Cell_Rank, Vert_Rank);
+     METIS_PartMeshDual(&ne, &nn,  eptr, MetisVertexNumbers,  nullptr, nullptr,  &ncommon,
+                       &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
     }
    else
    {
@@ -662,8 +662,8 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
       }
      else
       {
-       SubDomainCells = NULL;
-       GlobalCellIndex = NULL; 
+       SubDomainCells = nullptr;
+       GlobalCellIndex = nullptr; 
       }
 
 
@@ -718,7 +718,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 //     if(N_CellDel)
 //      Sort(CellDel, N_CellDel);
 
-  /*  Last=NULL;
+  /*  Last=nullptr;
     for(i=0;i<N_VertexDel;i++)
      {
       if( VertexDel[i] != Last)
@@ -730,7 +730,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    delete [] VertexDel;
 
 
-    LastEdge=NULL;
+    LastEdge=nullptr;
     for(i=0;i<N_EdgeDel;i++)
      {
       if( EdgeDel[i] != LastEdge)
@@ -741,7 +741,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
      }
    delete [] EdgeDel;
 
-    LastCell=NULL;
+    LastCell=nullptr;
     for(i=0;i<N_CellDel;i++)
      {
       if( CellDel[i] != LastCell)
@@ -1194,7 +1194,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
   /** ***************************************************/
     /**STEP 3: STORE THE SORTED POINTER ARRAY AS INDICES */
   /** ***************************************************/
-    Last=NULL;
+    Last=nullptr;
     N_RootVertices=-1;
     for(i=0;i<N_AllLocVert;i++)
      {
@@ -1464,8 +1464,8 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
       }
      else
       {
-       SubDomainCells = NULL;
-       GlobalCellIndex = NULL;
+       SubDomainCells = nullptr;
+       GlobalCellIndex = nullptr;
       }
 
 
@@ -1521,7 +1521,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 //     if(N_CellDel)
 //      Sort(CellDel, N_CellDel);
 
-  /*  Last=NULL;
+  /*  Last=nullptr;
     for(i=0;i<N_VertexDel;i++)
      {
       if( VertexDel[i] != Last)
@@ -1533,7 +1533,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
    delete [] VertexDel;
 
 
-    LastEdge=NULL;
+    LastEdge=nullptr;
     for(i=0;i<N_EdgeDel;i++)
      {
       if( EdgeDel[i] != LastEdge)
@@ -1544,7 +1544,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
      }
    delete [] EdgeDel;
 
-    LastCell=NULL;
+    LastCell=nullptr;
     for(i=0;i<N_CellDel;i++)
      {
       if( CellDel[i] != LastCell)

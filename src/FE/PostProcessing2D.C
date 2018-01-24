@@ -191,7 +191,7 @@ void PostProcessing2D::writeVtk(std::string name)
   sort(Vertices, N_);
   TVertex *Last, *Current;
 
-  Last=NULL;
+  Last=nullptr;
   int N_Vertices=0;
   for(int i=0;i<N_LocVertices;i++)
     if((Current=Vertices[i])!=Last)
@@ -203,7 +203,7 @@ void PostProcessing2D::writeVtk(std::string name)
   std::vector<double> Coords(2*N_Vertices);
   std::vector<int> VertexNumbers(N_LocVertices);
   std::vector<int> NumberVertex(N_LocVertices);
-  Last=NULL;
+  Last=nullptr;
   N_=0; 
   int k1=-1;
 #ifdef __3D__

@@ -3237,7 +3237,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     //int max_n_BF = *max_element(LocN_BF.begin(),LocN_BF.end()); 
     // for every matrix we allocate a local matrix with corresponding number of 
     // rows and columns
-    double ***LocMatrices = NULL;
+    double ***LocMatrices = nullptr;
     if(N_AllMatrices)
     {
       LocMatrices = new double**[N_AllMatrices];
@@ -3460,7 +3460,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                 double *JointValue = JointValues[ilinePoint];
                 TFEDatabase2D::GetOrigValues(
                     fe->GetRefTransID(), zeta[ilinePoint], BaseFunct, ijoint,
-                    JointValue, NULL,NULL, JointValuesTransformed, NULL,NULL); 
+                    JointValue, nullptr,nullptr, JointValuesTransformed, nullptr,nullptr); 
                 // get quadrature point on the boundary
                 double t = t0 + 0.5*(t1-t0)*(zeta[ilinePoint]+1);
                 double s;

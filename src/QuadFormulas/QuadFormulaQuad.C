@@ -25,7 +25,7 @@ TQuadFormulaQuad::TQuadFormulaQuad(int n_points, double* weights,
 
 void TQuadFormulaQuad::Gauss2()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[4]={ 1, 1, 1, 1 };
   double x[4]={
         -0.57735026918962576450914878050195746,
@@ -42,7 +42,7 @@ void TQuadFormulaQuad::Gauss2()
 
 void TQuadFormulaQuad::Gauss3()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
 
   double w[9] = {
         0.30864197530864197530864197530864198,
@@ -82,7 +82,7 @@ void TQuadFormulaQuad::Gauss3()
 
 void TQuadFormulaQuad::Gauss4()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
 
   double w[16] = {
         0.12100299328560200552121209737014755,
@@ -143,7 +143,7 @@ void TQuadFormulaQuad::Gauss4()
 
 void TQuadFormulaQuad::Gauss5()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
 
   double w[25] = {
         0.056134348862428635954651158026251974,
@@ -231,7 +231,7 @@ void TQuadFormulaQuad::Gauss5()
 
 void TQuadFormulaQuad::Gauss6()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   
   double w[36] = {
         0.029352081688980397634757062732583707,
@@ -352,7 +352,7 @@ void TQuadFormulaQuad::Gauss6()
 
 void TQuadFormulaQuad::Gauss7()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
 
   double w[49] = {
         0.016766356463753329011668073624634837,
@@ -512,7 +512,7 @@ void TQuadFormulaQuad::Gauss7()
 
 void TQuadFormulaQuad::Gauss8()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
 
   double w[64] = {
         0.010247216559492023290653071261207573,
@@ -717,7 +717,7 @@ void TQuadFormulaQuad::Gauss8()
 
 void TQuadFormulaQuad::Gauss9()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
 
   double w[81] = {
         0.0066055262035480222296868720976836826,
@@ -973,7 +973,7 @@ void TQuadFormulaQuad::Gauss9()
 
 void TQuadFormulaQuad::Vertex()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[4]={ 1,  1, 1,  1};
   double x[4]={-1,  1, 1, -1};
   double e[4]={-1, -1, 1,  1};
@@ -983,7 +983,7 @@ void TQuadFormulaQuad::Vertex()
 
 void TQuadFormulaQuad::Simpson()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[9]={ 0.11111111111111111111, 0.11111111111111111111,
                 0.11111111111111111111, 0.11111111111111111111,
                 0.44444444444444444444, 0.44444444444444444444,

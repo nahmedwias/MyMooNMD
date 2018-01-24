@@ -413,19 +413,19 @@ int TDomain::GenInitGrid()
         CurrPoint++;
   }
 
-  outt.pointlist = NULL;        
-  outt.pointmarkerlist = NULL; 
-  outt.trianglelist = NULL;    
-  outt.neighborlist = NULL;
-  outt.segmentlist = NULL;
-  outt.segmentmarkerlist = NULL;
-  outt.edgelist = NULL;        
-  outt.edgemarkerlist = NULL;  
-  outt.triangleattributelist = NULL;
+  outt.pointlist = nullptr;        
+  outt.pointmarkerlist = nullptr; 
+  outt.trianglelist = nullptr;    
+  outt.neighborlist = nullptr;
+  outt.segmentlist = nullptr;
+  outt.segmentmarkerlist = nullptr;
+  outt.edgelist = nullptr;        
+  outt.edgemarkerlist = nullptr;  
+  outt.triangleattributelist = nullptr;
 
   opts << "pq" << TDatabase::ParamDB->MESHGEN_REF_QUALITY;
   opts << "zneQA" << ends;
-  triangulate((char *)(opts.str().c_str()), &inn, &outt, (struct triangulateio *) NULL);
+  triangulate((char *)(opts.str().c_str()), &inn, &outt, (struct triangulateio *) nullptr);
   //SaveTri(outt);
 
   N_RootCells = outt.numberoftriangles;
@@ -2475,7 +2475,7 @@ void TDomain::GetSortedCollection(TCollection* &Coll, int* &Indices)
         CurrentChild[ActiveLevel] = 0;
       }
       else
-      { ActiveCell=NULL;}
+      { ActiveCell=nullptr;}
      }
     while (N_Children[ActiveLevel] && ActiveLevel != Level && ActiveCell)
     {
@@ -2533,7 +2533,7 @@ void TDomain::GetSortedCollection(TCollection* &Coll, int* &Indices)
         CurrentChild[ActiveLevel] = 0;
       }
       else
-      { ActiveCell=NULL;}
+      { ActiveCell=nullptr;}
      }
     while (N_Children[ActiveLevel] && ActiveLevel != Level && ActiveCell)
     {
@@ -2909,7 +2909,7 @@ int TDomain::Grape(const char *name, TCollection *coll)
   // sort the Vertices array
   Sort(Vertices, N_);
 
-  Last = NULL;
+  Last = nullptr;
   N_Vertices = 0;
   for(i=0;i<N_LocVertices;i++)
     if ((Current = Vertices[i]) != Last)
@@ -2932,7 +2932,7 @@ int TDomain::Grape(const char *name, TCollection *coll)
   VertexNumbers = new int[N_LocVertices];
   NumberVertex = new int[N_LocVertices];
 
-  Last=NULL;
+  Last=nullptr;
   N_=0; k=-1;
   for(i=0;i<N_LocVertices;i++)
   {
@@ -3332,7 +3332,7 @@ int TDomain::GenerateEdgeInfo()
   // sort the Vertices array
   Sort(Vertices_All, NVert_All);
 // NVert_All++;
-  Last=NULL;
+  Last=nullptr;
   N_RootVertices=-1;
   for(i=0;i<NVert_All;i++)
    {
@@ -3471,7 +3471,7 @@ int TDomain::GenerateEdgeInfo()
       N_Neibs = 0;
       edge = CurrCell->GetEdge(i);
       
-      if(edge==NULL) // edge not yet created
+      if(edge==nullptr) // edge not yet created
        {
         a = RootVer_Loc[EdgeVertex[2*i]];
         b = RootVer_Loc[EdgeVertex[2*i+1]];
@@ -3520,7 +3520,7 @@ int TDomain::GenerateEdgeInfo()
              {
               Neibedge = NeibCell->GetEdge(k);
 
-              if(Neibedge==NULL) // edge not yet created
+              if(Neibedge==nullptr) // edge not yet created
                {
                  Neiba = NeibRootVer_Loc[EdgeVertex[2*k]];
                  Neibb = NeibRootVer_Loc[EdgeVertex[2*k+1]];
@@ -3570,7 +3570,7 @@ int TDomain::GenerateEdgeInfo()
         {
          edge = new TInnerEdge(N_Neibs, NeibCells);
         }                
-       } //if(edge==NULL)
+       } //if(edge==nullptr)
 //      else
 //       {
 //          cout <<  ii <<  " Edge already set " << i  <<endl;
@@ -4152,7 +4152,7 @@ void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
   ///@attention misuse of trifacemarkerlist
   //  0 = boundary faces, i>0 = i-th boundary face
   ///@todo this should be changed in order to allow physical boundary markers
-  if(tgml.meshTetGenOut.trifacemarkerlist == NULL)
+  if(tgml.meshTetGenOut.trifacemarkerlist == nullptr)
     tgml.meshTetGenOut.trifacemarkerlist = new int [n_trifaces];
 
   for(int i=0;i<n_trifaces;++i)

@@ -76,10 +76,10 @@ TInterfaceJoint3D::TInterfaceJoint3D(TBoundComp3D *bdcomp,
 TInterfaceJoint3D::~TInterfaceJoint3D()
    {
     if(Neighb0)
-     { Neighb0 = NULL;}
+     { Neighb0 = nullptr;}
   
     if(Neighb1)
-     { Neighb1 = NULL;}   
+     { Neighb1 = nullptr;}   
    }
    
   
@@ -92,7 +92,7 @@ TJoint *TInterfaceJoint3D::NewInst(double newtT_0, double newT_1, TBaseCell *Me)
 
 TJoint *TInterfaceJoint3D::NewInst()
 {
-  return new TInterfaceJoint3D(BoundComp, NULL);
+  return new TInterfaceJoint3D(BoundComp, nullptr);
 }
 
 /** return both parameter vectors */

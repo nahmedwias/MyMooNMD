@@ -52,7 +52,7 @@ TOutput3D::TOutput3D(int maxn_fespaces, int maxn_scalar,
 
   Domain = domain;
 
-  Data = NULL;
+  Data = nullptr;
 
   if (name) Name = strdup(name);
   else Name = strdup("none");
@@ -368,7 +368,7 @@ int TOutput3D::WriteVtk(const char *name)
 //   cout << "N_" << N_ << endl;
   Sort(Vertices, N_);
   //Sort(cell_types, N_);
-  Last=NULL;
+  Last=nullptr;
   N_Vertices=0;
   for(i=0;i<N_LocVertices;i++)
     if((Current=Vertices[i])!=Last)
@@ -380,7 +380,7 @@ int TOutput3D::WriteVtk(const char *name)
   Coords=new double[3*N_Vertices];
   VertexNumbers=new int[N_LocVertices];
   NumberVertex=new int[N_LocVertices];
-  Last=NULL;
+  Last=nullptr;
   N_=0; k=-1;
   for(i=0;i<N_LocVertices;i++)
   {
@@ -1229,7 +1229,7 @@ int TOutput3D::Write_ParVTK(
   if(N_)
    Sort(Vertices, N_);
 
-  Last=NULL;
+  Last=nullptr;
   N_Vertices=0;
   for(i=0;i<N_LocVertices;i++)
     if((Current=Vertices[i])!=Last)
@@ -1244,7 +1244,7 @@ int TOutput3D::Write_ParVTK(
     VertexNumbers=new int[N_LocVertices];
     NumberVertex=new int[N_LocVertices];
    }
-   Last=NULL;
+   Last=nullptr;
    N_=0; k=-1;
   for(i=0;i<N_LocVertices;i++)
   {

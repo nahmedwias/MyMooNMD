@@ -173,7 +173,7 @@ int TDomain::AdaptRefineAll()
     // sort the Vertices array
     Sort(Vertices, N);
     
-    Last=NULL;
+    Last=nullptr;
     N_RootVertices=-1;
     for(i=0;i<N_AllLocVert;i++)
      {

@@ -1325,7 +1325,7 @@ void SubGridDissipation(int N_Points, double *X, double *Y,
     gradu[1] = deriv_x[2];
     gradu[2] = deriv_y[1];
     gradu[3] = deriv_y[2];    
-    mu = TurbulentViscosity(delta,gradu,NULL,NULL);
+    mu = TurbulentViscosity(delta,gradu,nullptr,nullptr);
     
     // weight
     w = Weights[i]*AbsDetjk[i];
@@ -1851,7 +1851,7 @@ void SubGridDissipation(int N_Points, double *X, double *Y, double *Z,
     gradu[6] = deriv_z[1];
     gradu[7] = deriv_z[2];
     gradu[8] = deriv_z[3];
-    mu = TurbulentViscosity3D(delta,gradu,u,NULL,NULL,NULL,NULL,-4711);
+    mu = TurbulentViscosity3D(delta,gradu,u,nullptr,nullptr,nullptr,nullptr,-4711);
     Output::print("change according to the CommonRoutineTNSE3D.h");exit(0);
     // weight
     w = Weights[i]*AbsDetjk[i];

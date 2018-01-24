@@ -244,7 +244,7 @@ void TNSE_MGLevel1::CellVanka(double *u1, double *rhs1,
   double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
   TBaseCell *Cell;
   double *u2, *p, *rhs2, *rhsp;
-  TItMethod *itmethod = NULL;
+  TItMethod *itmethod = nullptr;
   int LargestDirectSolve = TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
   MatVecProc *MatVect=MatVectFull;
   DefectProc *Defect=DefectFull;
@@ -350,7 +350,7 @@ void TNSE_MGLevel1::CellVanka(double *u1, double *rhs1,
         if ( TDatabase::ParamDB->INTERNAL_LOCAL_DOF >0)
           delete itmethod;
         // allocate new itmethod
-        itmethod = new TFgmresIte(MatVect, Defect, NULL, 0, N_LocalDOF, 1);
+        itmethod = new TFgmresIte(MatVect, Defect, nullptr, 0, N_LocalDOF, 1);
         TDatabase::ParamDB->INTERNAL_LOCAL_DOF = N_LocalDOF;
       }
     }
@@ -509,7 +509,7 @@ void TNSE_MGLevel1::CellVanka(double *u1, double *rhs1,
       if (N_LocalDOF > LargestDirectSolve)
       { 
         memset(sol,0,N_LocalDOF*SizeOfDouble);
-        itmethod->Iterate(matrix,NULL,sol,Rhs);
+        itmethod->Iterate(matrix,nullptr,sol,Rhs);
         memcpy(Rhs, sol, N_LocalDOF*SizeOfDouble);
       }
       else
@@ -587,7 +587,7 @@ void TNSE_MGLevel1::NodalVanka(double *u1, double *rhs1, double *aux,
   int begin, end, HangingBound, begin1, end1;
   int UDOFs[MaxN_LocalU], UDOF, N_U, N_UGEO;
   double *u2, *p, *rhs2, *rhsp;
-  TItMethod *itmethod = NULL;
+  TItMethod *itmethod = nullptr;
   double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
   int LargestDirectSolve = TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
   MatVecProc *MatVect=MatVectFull;
@@ -711,9 +711,9 @@ void TNSE_MGLevel1::NodalVanka(double *u1, double *rhs1, double *aux,
         }
         // allocate new itmethod
         //if ( TDatabase::ParamDB->P7 >0.0)
-        //  prec = new TDiagVankaIte(MatVect, Defect, NULL, 0, N_LocalDOF);
+        //  prec = new TDiagVankaIte(MatVect, Defect, nullptr, 0, N_LocalDOF);
         //else
-        itmethod = new TFgmresIte(MatVect, Defect, NULL, 0, N_LocalDOF, 1);
+        itmethod = new TFgmresIte(MatVect, Defect, nullptr, 0, N_LocalDOF, 1);
         TDatabase::ParamDB->INTERNAL_LOCAL_DOF = N_LocalDOF;
       }
     }
@@ -853,7 +853,7 @@ void TNSE_MGLevel1::NodalVanka(double *u1, double *rhs1, double *aux,
         //OutPut(i << " local dof " << N_LocalDOF << endl);
          //for (ii=0;ii<10;ii++)
         //  cout << ii << " " << System[ii] << endl;
-        itmethod->Iterate(matrix,NULL,sol,Rhs);
+        itmethod->Iterate(matrix,nullptr,sol,Rhs);
         //SolveLinearSystem(System, Rhs, N_LocalDOF, N_LocalDOF);
         //norm =0 ;
         //for (ii=0;ii<N_LocalDOF;ii++)

@@ -276,7 +276,7 @@ void NSType1SmagorinskySkew3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -659,7 +659,7 @@ void NSType2SmagorinskySkew3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -1066,7 +1066,7 @@ void NSType3SmagorinskySkew3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -1198,7 +1198,7 @@ void NSType3SmagorinskyDDSkew3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -2071,7 +2071,7 @@ void NSType4SmagorinskySkew3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -2223,7 +2223,7 @@ void NSType4SmagorinskyDDSkew3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = c0 + mu/2.0;
 
   for(i=0;i<N_U;i++)
@@ -2508,7 +2508,7 @@ void NSType1_2NLSmagorinskySkew3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
     
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   c0 += mu;
 
   for(i=0;i<N_U;i++)
@@ -2866,7 +2866,7 @@ void NSType3_4NLSmagorinskySkew3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = c0 + mu;
 
   for(i=0;i<N_U;i++)
@@ -2970,7 +2970,7 @@ void NSType3_4NLSmagorinskyDDSkew3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = c0 + mu/2.0;
 
   for(i=0;i<N_U;i++)

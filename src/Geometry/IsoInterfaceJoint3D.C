@@ -23,7 +23,7 @@ TIsoInterfaceJoint3D::TIsoInterfaceJoint3D(TBoundComp3D *bdcomp,
   ID = IsoInterfaceJoint3D;
 
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
 }
 
 /** initialize the joint with the boundary parameters and two neighbours */
@@ -35,7 +35,7 @@ TIsoInterfaceJoint3D::TIsoInterfaceJoint3D(TBoundComp3D *bdcomp,
   ID = IsoInterfaceJoint3D;
 
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
 }
 
 /** initialize the joint with the boundary parameters and two neighbours */
@@ -46,7 +46,7 @@ TIsoInterfaceJoint3D::TIsoInterfaceJoint3D(TBoundComp3D *bdcomp,
   ID = IsoInterfaceJoint3D;
 
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
 }
 
 
@@ -54,10 +54,10 @@ TIsoInterfaceJoint3D::TIsoInterfaceJoint3D(TBoundComp3D *bdcomp,
 TIsoInterfaceJoint3D::~TIsoInterfaceJoint3D()
    {
     if(Neighb0)
-     { Neighb0 = NULL;}
+     { Neighb0 = nullptr;}
   
     if(Neighb1)
-     { Neighb1 = NULL;}   
+     { Neighb1 = nullptr;}   
    }
    
 
@@ -69,7 +69,7 @@ TJoint *TIsoInterfaceJoint3D::NewInst(double newtT_0, double newT_1, TBaseCell *
 
 TJoint *TIsoInterfaceJoint3D::NewInst()
 {
-  return new TIsoInterfaceJoint3D(BoundComp, NULL);
+  return new TIsoInterfaceJoint3D(BoundComp, nullptr);
 }
 
 void TIsoInterfaceJoint3D::SetVertices(int n_vertices, TVertex **vertices)

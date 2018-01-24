@@ -26,7 +26,7 @@ TQuadFormulaTria::TQuadFormulaTria(int n_points, double* weights,
 
 void TQuadFormulaTria::BaryCenter()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[1]={0.5};
   double x[1]={0.33333333333333333333333333};
   double e[1]={0.33333333333333333333333333};
@@ -36,7 +36,7 @@ void TQuadFormulaTria::BaryCenter()
 
 void TQuadFormulaTria::MidPoint()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[3]={0.16666666666666666666666667, 0.16666666666666666666666667,
                0.16666666666666666666666667};
   double x[3]={0.5, 0.5, 0.0};
@@ -47,7 +47,7 @@ void TQuadFormulaTria::MidPoint()
 
 void TQuadFormulaTria::SevenPoint()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[7]={ 0.225,
                 0.06666666666666666666666667, 0.06666666666666666666666667,
                 0.06666666666666666666666667,
@@ -64,7 +64,7 @@ void TQuadFormulaTria::SevenPoint()
 
 void TQuadFormulaTria::Vertex()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[3]={ 0.16666666666666666666666667, 0.16666666666666666666666667,
                 0.16666666666666666666666667 };
   double x[3]={ 0.0, 1.0, 0.0 };

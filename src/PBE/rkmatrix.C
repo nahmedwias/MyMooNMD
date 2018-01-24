@@ -162,9 +162,9 @@ int rkmatrix::rk_svd(double* u, double* sifma, double* v) {
 		return -1;
 	}
 
-	if(u != NULL)
+	if(u != nullptr)
 		matrix_times_matrix(atmp, "N", rows, rk, ru, "N", rk, rk, u, 1, 0);
-	if(v != NULL)
+	if(v != nullptr)
 		matrix_times_matrix(btmp, "N", rows, rk, rv, "T", rk, rk, v, 1, 0);
 
 	free_vector(work);

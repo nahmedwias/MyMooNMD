@@ -381,7 +381,7 @@ void NSType1Smagorinsky3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -496,7 +496,7 @@ double ***LocMatrices, double **LocRhs)
   u3 = param[2];                 // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -1025,7 +1025,7 @@ void NSType2Smagorinsky3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -1682,7 +1682,7 @@ void NSType3Smagorinsky3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -1818,7 +1818,7 @@ void NSType3SmagorinskyDD3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -2956,7 +2956,7 @@ void NSType4Smagorinsky3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -3104,7 +3104,7 @@ void NSType4SmagorinskyDD3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = c0 + mu/2.0;
 
   for(i=0;i<N_U;i++)
@@ -3416,7 +3416,7 @@ void NSType1_2NLSmagorinsky3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
     
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   c0 += mu;
 
   for(i=0;i<N_U;i++)
@@ -3483,7 +3483,7 @@ double ***LocMatrices, double **LocRhs)
   u3 = param[2];                 // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = mu+c0;
 
   for(i=0;i<N_U;i++)
@@ -3963,7 +3963,7 @@ void NSType3_4NLSmagorinsky3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = c0 + mu;
 
   for(i=0;i<N_U;i++)
@@ -4065,7 +4065,7 @@ void NSType3_4NLSmagorinskyDD3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = c0 + mu/2.0;
 
   for(i=0;i<N_U;i++)
@@ -4778,7 +4778,7 @@ void NSAuxProblem(double Mult, double *coeff,
   // delta^2/(4 gamma)
   mu2 = 0.25*delta*delta/gamma;
 
-//  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);   // not used in the rest of this function
+//  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);   // not used in the rest of this function
 
   for(i=0;i<N_U;i++)
   {

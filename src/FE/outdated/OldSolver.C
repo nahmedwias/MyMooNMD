@@ -109,7 +109,7 @@ int N_Unknowns, int ns_type
       switch (prec_type)
       {
         case 1:
-          prec = new TJacobiIte(MatVect, Defect, NULL,
+          prec = new TJacobiIte(MatVect, Defect, nullptr,
             0, N_Unknowns, 1
 #ifdef _MPI   
                   , ParComm
@@ -118,16 +118,16 @@ int N_Unknowns, int ns_type
                    );
           break;
         case 3:
-          prec = new TSSORIte(MatVect, Defect, NULL,
+          prec = new TSSORIte(MatVect, Defect, nullptr,
             0, N_Unknowns, 1);
           break;
         case 5:
 #ifdef __2D__
-          prec = new TMultiGridScaIte(MatVect, Defect, NULL,
+          prec = new TMultiGridScaIte(MatVect, Defect, nullptr,
               0, N_Unknowns, MG, 0);
 #else
-          prec = new TMultiGridScaIte(MatVect, Defect, NULL,
-              0, N_Unknowns, NULL, 0);
+          prec = new TMultiGridScaIte(MatVect, Defect, nullptr,
+              0, N_Unknowns, nullptr, 0);
 #endif
           break;
         default:
@@ -207,7 +207,7 @@ int N_Unknowns, int ns_type
           exit(4711);
       }
       // solve linear system
-      itmethod->Iterate(sqmatrices,NULL,itmethod_sol,itmethod_rhs);
+      itmethod->Iterate(sqmatrices,nullptr,itmethod_sol,itmethod_rhs);
 
       delete prec;
       delete itmethod;
@@ -367,9 +367,9 @@ memory[0]=memory[1]=memory[2]=0.;
   B[0]->nonzeros = 0;
   B[0]->bandwidth=-1;
   B[0]->connections = 0;
-  B[0]->ra = NULL;
-  B[0]->ja = NULL;
-  B[0]->a =  NULL;
+  B[0]->ra = nullptr;
+  B[0]->ja = nullptr;
+  B[0]->a =  nullptr;
 
   B[1] = B[0];
 
@@ -546,9 +546,9 @@ void OldSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs)
   B[0]->nonzeros = 0;
   B[0]->bandwidth=-1;
   B[0]->connections = 0;
-  B[0]->ra = NULL;
-  B[0]->ja = NULL;
-  B[0]->a =  NULL;
+  B[0]->ra = nullptr;
+  B[0]->ja = nullptr;
+  B[0]->a =  nullptr;
 
   B[1] = B[0];
 
@@ -705,9 +705,9 @@ int N_Rhs)
       B[0]->nonzeros = 0;
       B[0]->bandwidth=-1;
       B[0]->connections = 0;
-      B[0]->ra = NULL;
-      B[0]->ja = NULL;
-      B[0]->a =  NULL;
+      B[0]->ra = nullptr;
+      B[0]->ja = nullptr;
+      B[0]->a =  nullptr;
 
       B[1] = B[0];
           
@@ -1077,9 +1077,9 @@ double *sol1, double *sol2)
   B[0]->nonzeros = 0;
   B[0]->bandwidth=-1;
   B[0]->connections = 0;
-  B[0]->ra = NULL;
-  B[0]->ja = NULL;
-  B[0]->a =  NULL;
+  B[0]->ra = nullptr;
+  B[0]->ja = nullptr;
+  B[0]->a =  nullptr;
 
   B[1] = B[0];
 
@@ -1330,9 +1330,9 @@ double *sol1, double *sol2)
   B[0]->nonzeros = 0;
   B[0]->bandwidth=-1;
   B[0]->connections = 0;
-  B[0]->ra = NULL;
-  B[0]->ja = NULL;
-  B[0]->a =  NULL;
+  B[0]->ra = nullptr;
+  B[0]->ja = nullptr;
+  B[0]->a =  nullptr;
 
   B[1] = B[0];
 
@@ -1633,9 +1633,9 @@ double *sol1, double *sol2, double *sol3)
   B[0]->nonzeros = 0;
   B[0]->bandwidth=-1;
   B[0]->connections = 0;
-  B[0]->ra = NULL;
-  B[0]->ja = NULL;
-  B[0]->a =  NULL;
+  B[0]->ra = nullptr;
+  B[0]->ja = nullptr;
+  B[0]->a =  nullptr;
 
   B[1] = B[0];
 
@@ -1948,9 +1948,9 @@ double *sol1, double *sol2, double *sol3)
   B[0]->nonzeros = 0;
   B[0]->bandwidth=-1;
   B[0]->connections = 0;
-  B[0]->ra = NULL;
-  B[0]->ja = NULL;
-  B[0]->a =  NULL;
+  B[0]->ra = nullptr;
+  B[0]->ja = nullptr;
+  B[0]->a =  nullptr;
 
   B[1] = B[0];
 

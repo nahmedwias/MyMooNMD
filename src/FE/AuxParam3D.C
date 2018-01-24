@@ -53,7 +53,7 @@ TAuxParam3D::TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d)
   if(name=="Velocity") // for Navier-Stokes
   {
     N_FESpace3D = 0;
-    FESpaces3D = NULL;
+    FESpaces3D = nullptr;
     
     N_FEFunction3D = 3;
     FEFunctions3D = fefunctions3d;

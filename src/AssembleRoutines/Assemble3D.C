@@ -105,8 +105,8 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   int *EdgeDOF, N_EdgeDOF;
   double *FaceWeights;
   double **JointValues, *JointValue;
-  // static bool *SecondDer = NULL;
-  bool *SecondDer = NULL;
+  // static bool *SecondDer = nullptr;
+  bool *SecondDer = nullptr;
   double LinComb[4];
  
   const int *TmpFV, *TmpLen, *TmpFE, *ETmpLen;
@@ -225,7 +225,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
 
 //   SecondDer = DiscreteForm3D->GetNeeds2ndDerivatives();
   
-  if(SecondDer == NULL)
+  if(SecondDer == nullptr)
   {
     SecondDer = new bool[n_fespaces];
     for(i=0;i<n_fespaces;i++)
@@ -1223,8 +1223,8 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  int *EdgeDOF, N_EdgeDOF;
 	  double *FaceWeights;
 	  double **JointValues, *JointValue;
-	  // static bool *SecondDer = NULL;
-	  bool *SecondDer = NULL;
+	  // static bool *SecondDer = nullptr;
+	  bool *SecondDer = nullptr;
 	  double LinComb[4];
 
 	  const int *TmpFV, *TmpLen, *TmpFE, *ETmpLen;
@@ -1343,7 +1343,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
 	  SecondDer = la.GetNeeds2ndDerivatives();
 
-	  if(SecondDer == NULL)
+	  if(SecondDer == nullptr)
 	  {
 	    SecondDer = new bool[n_fespaces];
 	    for(i=0;i<n_fespaces;i++)
@@ -3519,7 +3519,7 @@ TAuxParam3D *Parameters)
   if(Parameters)
   {
     ErrMsg("input 'Parameters' of type 'TAuxParam3D*' is "<<
-          "not set to NULL. This is usually done if you want values of FE "<<
+          "not set to nullptr. This is usually done if you want values of FE "<<
           "functions during local assembling, for example in nonlinear "
           "problems. This is not yet supported. Exiting.");
     exit(1);
@@ -3574,7 +3574,7 @@ TAuxParam3D *Parameters)
   double *FaceWeights;
   double **JointValues, *JointValue;
 
-  // static bool *SecondDer = NULL;
+  // static bool *SecondDer = nullptr;
   bool *SecondDer;
   double LinComb[4];
 

@@ -123,7 +123,7 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
   N_Parameters = Aux->GetN_Parameters();
   
   if(N_Parameters==0)
-   aux = NULL;
+   aux = nullptr;
   else
    aux = new double [MaxN_QuadPoints_3D*N_Parameters];
   
@@ -420,25 +420,25 @@ void TFEFunction3D::GetErrorsForVectorValuedFunction(
     double hK = 1;
     double LocError[3]; // L^2 error in value, divergence and first derivative
     ErrMeth(N_Points, X, Y, Z, AbsDetjk, weights, hK, Derivatives, ExactVal,
-            NULL, LocError);
+            nullptr, LocError);
     for(int j=0;j<3;j++) 
     {
       errors[j] += LocError[j];
     }
     // delete everything which was created with "new" within this loop
     // otherwise one would get (many) memory leaks
-    delete [] AbsDetjk; AbsDetjk = NULL;
-    delete [] X;        X        = NULL;
-    delete [] Y;        Y        = NULL;
-    delete [] Z;        Z        = NULL;
+    delete [] AbsDetjk; AbsDetjk = nullptr;
+    delete [] X;        X        = nullptr;
+    delete [] Y;        Y        = nullptr;
+    delete [] Z;        Z        = nullptr;
     for (int j=0; j<N_Points; j++)
     {
-      delete [] ExactVal[j];    ExactVal[j] = NULL;
-      delete [] Derivatives[j]; Derivatives[j] = NULL;
+      delete [] ExactVal[j];    ExactVal[j] = nullptr;
+      delete [] Derivatives[j]; Derivatives[j] = nullptr;
     }
-    delete [] ExactVal;      ExactVal = NULL;
-    delete [] Derivatives;   Derivatives = NULL;
-    delete [] FEFunctValues; FEFunctValues = NULL;
+    delete [] ExactVal;      ExactVal = nullptr;
+    delete [] Derivatives;   Derivatives = nullptr;
+    delete [] FEFunctValues; FEFunctValues = nullptr;
     
   } // end loop over all cells
   

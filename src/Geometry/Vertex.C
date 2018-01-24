@@ -28,11 +28,11 @@ TVertex::TVertex(double initX, double initY, double initZ)
   N_Cells = 0;
   SubDomainVert = FALSE;
   N_SubDomains = 0;
-  SubDomain_Ranks = NULL;
-  SubDomainGlobalCellNo = NULL;
-  SubDomainLocVertNo = NULL;
+  SubDomain_Ranks = nullptr;
+  SubDomainGlobalCellNo = nullptr;
+  SubDomainLocVertNo = nullptr;
   N_CrossNeibCells = 0;
-  Cells = NULL;
+  Cells = nullptr;
 #endif
   BoundVert=FALSE; 
 }

@@ -537,7 +537,7 @@ void Time_CD2D::call_assembling_routine(
   // reset right hand side and matrix to zero
   s.rhs.reset();
   stiff_block[0]->reset();
-  Assemble2D(1, &fe_space, N_Matrices, stiff_block, 0, NULL, 1, &rhs_entries,
+  Assemble2D(1, &fe_space, N_Matrices, stiff_block, 0, nullptr, 1, &rhs_entries,
              &fe_space, &boundary_conditions, non_const_bound_value, la_stiff);
 
   // If assemble_both is true, we also (re)assemble the mass matrix.
@@ -547,7 +547,7 @@ void Time_CD2D::call_assembling_routine(
     TSquareMatrix2D * mass_block[1]{reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get())};
 
     mass_block[0]->reset();
-    Assemble2D(1, &fe_space, N_Matrices, mass_block, 0, NULL, 0, NULL,
-               NULL, &boundary_conditions, non_const_bound_value, la_mass);
+    Assemble2D(1, &fe_space, N_Matrices, mass_block, 0, nullptr, 0, nullptr,
+               nullptr, &boundary_conditions, non_const_bound_value, la_mass);
   }
 }

@@ -61,7 +61,7 @@ TJoint *TInterfaceJoint::NewInst(double newT_0, double newT_1, TBaseCell *Me)
 
 TJoint *TInterfaceJoint::NewInst()
 {
-  return new TInterfaceJoint(BoundComp, T_0, T_1, NULL);
+  return new TInterfaceJoint(BoundComp, T_0, T_1, nullptr);
 }
 
 int TInterfaceJoint::GetXYofT(double T, double &X, double &Y)

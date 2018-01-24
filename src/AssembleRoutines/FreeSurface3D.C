@@ -1109,8 +1109,8 @@ void FindFreeSurfaceFromJointType(TCollection *Coll, JointType type,
   
   if ( k == 0 ) 
   {
-    CellNumbers = NULL;
-    JointNumbers = NULL;
+    CellNumbers = nullptr;
+    JointNumbers = nullptr;
     N_SurfaceJoints = 0;
     return;
   }
@@ -1184,7 +1184,7 @@ void CalculateNormals(TCollection *Coll,
   GlobalNumbers = fespace->GetGlobalNumbers();
   BeginIndex = fespace->GetBeginIndex();
 
-  if(n1 == NULL)
+  if(n1 == nullptr)
   {
     n1 = new double[N_DOF];
     n2 = new double[N_DOF];

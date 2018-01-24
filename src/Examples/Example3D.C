@@ -41,7 +41,7 @@ ParameterDatabase Example3D::default_example_database()
 
 Example3D::Example3D(const ParameterDatabase & db)
  : example_database(Example3D::default_example_database()), exact_solution(),
-   boundary_conditions(), boundary_data(), problem_coefficients(NULL)
+   boundary_conditions(), boundary_data(), problem_coefficients(nullptr)
 {
   this->example_database.merge(db, false);
 }

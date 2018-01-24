@@ -35,7 +35,7 @@
 Assembler4::Assembler4()
 {
   
-    Coll = NULL;
+    Coll = nullptr;
     hangingEntries.resize(0);
     hangingRhs.resize(0);
     square_matrices.resize(0);

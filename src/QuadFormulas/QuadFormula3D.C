@@ -16,9 +16,9 @@
 
 TQuadFormula3D::TQuadFormula3D() : TQuadFormula()
 {
-  Xi=NULL;
-  Eta=NULL;
-  Zeta=NULL;
+  Xi=nullptr;
+  Eta=nullptr;
+  Zeta=nullptr;
 }
 
 TQuadFormula3D::TQuadFormula3D(int n_points, double* weights, 
@@ -52,7 +52,7 @@ void TQuadFormula3D::InitObject(int n, double* w,
 
 double *TQuadFormula3D::GetCoords(int i)
 {
-  double *ret=NULL;
+  double *ret=nullptr;
 
   switch(i)
   {

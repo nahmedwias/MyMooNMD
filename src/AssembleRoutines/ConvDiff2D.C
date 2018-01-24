@@ -868,7 +868,7 @@ double ***LocMatrices, double **LocRhs)
   c5 = coeff[5];                                  // \|b\|_infty
 
   delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
-  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, delta, NULL, 0, 0, 0);
+  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, delta, nullptr, 0, 0, 0);
 
   // current finite element solution of equation
   u[0] = param[0];                                // u

@@ -20,7 +20,7 @@ TIsoBoundEdge::TIsoBoundEdge(TBoundComp2D *bdcomp, double t_0, double t_1)
   ID = IsoBoundEdge;
 
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
 }
 
 // Methods
@@ -115,7 +115,7 @@ void TIsoBoundEdge::DeleteVertices()
   if(Vertices)
     delete Vertices;
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
  }
  
  

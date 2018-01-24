@@ -34,10 +34,10 @@ TJointEqN::TJointEqN(TBaseCell *neighb0, TBaseCell *neighb1) : TJoint()
 TJointEqN::~TJointEqN()
    {
     if(Neighb0)
-     { Neighb0 = NULL;}
+     { Neighb0 = nullptr;}
   
     if(Neighb1)
-     { Neighb1 = NULL;}   
+     { Neighb1 = nullptr;}   
    }
    
    
@@ -45,7 +45,7 @@ TJointEqN::~TJointEqN()
 
 int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
 {
-  TBaseCell *Neighb, *Parent = NULL;
+  TBaseCell *Neighb, *Parent = nullptr;
   int i, J_j, N_, MaxLen1, MaxLen2, auxi, aux;
   const int *TmpValues1, *TmpValues2;
   TRefDesc *NeighbRefDesc, *ParRefDesc;

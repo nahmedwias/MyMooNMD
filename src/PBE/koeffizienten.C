@@ -73,16 +73,16 @@ matrix_new(int m,int n) {
 	int  k;
 
 	back = (matrix_p) malloc(sizeof(matrix_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	ASSERT( m > 0 );
 	ASSERT( n > 0 );
 
 	a = (fepc_real_t**) malloc(sizeof(fepc_real_t*) * m);
-	ASSERT(a != NULL);
+	ASSERT(a != nullptr);
 
 	a[0] = (fepc_real_t*) malloc(sizeof(fepc_real_t) * m * n);
-	ASSERT(a[0] != NULL);
+	ASSERT(a[0] != nullptr);
 
 	for (k=0;k<m;k++){
 		a[k] = a[0] + k * n;
@@ -116,9 +116,9 @@ koeffizienten_xi_1dim(int grad) {
 
 	ASSERT(grad >= 0);
 	a = (fepc_real_t*) malloc(sizeof(fepc_real_t) * (2*grad + 1) );
-	ASSERT(a != NULL);
+	ASSERT(a != nullptr);
 	b = (fepc_real_t*) malloc(sizeof(fepc_real_t) * (2*grad + 1) );
-	ASSERT(b != NULL);
+	ASSERT(b != nullptr);
 
 	matrix = matrix_new( 2*grad+1, 2*grad+1 );
 	x = matrix->a;
@@ -185,9 +185,9 @@ koeffizienten_gamma_1dim(int grad) {
 
 	ASSERT(grad >= 0);
 	A = (fepc_real_t*) malloc(sizeof(fepc_real_t)*(3*grad+1));
-	ASSERT(A != NULL);
+	ASSERT(A != nullptr);
 	B = (fepc_real_t*) malloc(sizeof(fepc_real_t)*(3*grad+1));
-	ASSERT(B != NULL);
+	ASSERT(B != nullptr);
 
 	for (n=0;n<=3*grad;n++) {
 		A[n] = sqrt(2.*n+3)*sqrt(2.*n+1)/(fepc_real_t)(n+1);
@@ -291,23 +291,23 @@ matrix3_new(int d1,int d2,int d3) {
 	int  i, j;
 
 	back = (matrix3_p) malloc(sizeof(matrix3_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	ASSERT( d1 > 0 );
 	ASSERT( d2 > 0 );
 	ASSERT( d3 > 0 );
 
 	a = (fepc_real_t***) malloc(sizeof(fepc_real_t**) * d1);
-	ASSERT(a != NULL);
+	ASSERT(a != nullptr);
 
 	a[0] = (fepc_real_t**) malloc(sizeof(fepc_real_t*) * d1 * d2);
-	ASSERT(a[0] != NULL);
+	ASSERT(a[0] != nullptr);
 	for (i=0;i<d1;i++) {
 		a[i] = a[0] + i * d2;
 	}
 
 	a[0][0] = (fepc_real_t*) malloc(sizeof(fepc_real_t) * d1 * d2 * d3);
-	ASSERT(a[0][0] != NULL);
+	ASSERT(a[0][0] != nullptr);
 	for(i=0;i<d1;i++) {
 		for(j=0;j<d2;j++) {
 			a[i][j] = a[0][0] + i*d2*d3 + j*d3;

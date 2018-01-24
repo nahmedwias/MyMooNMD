@@ -74,7 +74,7 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a,
   for(i=0;i<N_Aux;i++)
     Aux[i] = aux+i*N_DOF;
 
-  Additional = NULL;
+  Additional = nullptr;
 
   Permutation = permutation;
   
@@ -121,7 +121,7 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
   for(i=0;i<N_Aux;i++)
     Aux[i] = aux+i*N_DOF;
 
-  Additional = NULL;
+  Additional = nullptr;
 
   Permutation = permutation;
   
@@ -799,7 +799,7 @@ void TMGLevel3D::ILU(double *sol, double *f, double *aux,
 {
   int i,j,k, begin, end;
 
-  if (Additional==NULL)
+  if (Additional==nullptr)
   {
     Output::print<2>("do ILU decomposition");
     ILUDecomposition();

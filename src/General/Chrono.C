@@ -54,7 +54,7 @@ double get_wall_time()
 #endif
   //wall time
   struct timeval wall_time;
-  if (gettimeofday(&wall_time,NULL))
+  if (gettimeofday(&wall_time,nullptr))
     ErrThrow("Error in gettimeofday!");
   return wall_time.tv_sec + wall_time.tv_usec/(double)1000000;
 }
