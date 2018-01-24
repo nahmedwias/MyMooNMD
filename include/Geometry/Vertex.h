@@ -80,6 +80,8 @@ class TVertex
 
     // Destructor
     ~TVertex();
+    TVertex& operator=(const TVertex&) = delete;
+    TVertex(const TVertex&) = delete;
 
     // Methods
 
@@ -120,11 +122,13 @@ class TVertex
 
     /** write some information of the vertex in stream s */
     friend std::ostream& operator << (std::ostream& s, const TVertex *v);
-    
-    /**Alphanumeric comparison operator - compares first x values,
-     * then y values if x values were equal. Gives a warning, when
-     * V==W, since no copies of vertices should be made. */
-    friend bool operator <= (const TVertex& V , const TVertex& W);
+    /**
+     * This operator introduces an alphanumeric order on the vertices. It will
+     * compare first the x component, then the y and finally the z component, if the
+     * other ones are equal.
+     * The vertices are regarded as equal with a tolerance of 1e-8.
+     */
+    friend bool operator < (const TVertex& V, const TVertex& W);
 
     /** set value in ClipBoard */
     void SetClipBoard(int value)
