@@ -56,7 +56,7 @@ static int TimeNSType3_4NLNewtonN_Matrices = 3;
 static int TimeNSType3_4NLNewtonRowSpace[9] = { 0, 0, 0, 0, 0, 0, 0, 0 ,0 };
 static int TimeNSType3_4NLNewtonColumnSpace[9] = { 0, 0, 0, 0, 0, 0, 0, 0 ,0 };
 static int TimeNSType3_4NLNewtonN_Rhs = 0;
-static int *TimeNSType3_4NLNewtonRhsSpace = NULL;
+static int *TimeNSType3_4NLNewtonRhsSpace = nullptr;
 
 void TimeNSType3_4NLGalerkinNewton3D(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -91,8 +91,8 @@ static int TimeNSRHSNewtonN_Terms = 1;
 static MultiIndex3D TimeNSRHSNewtonDerivatives[1] = { D000 };
 static int TimeNSRHSNewtonSpaceNumbers[1] = { 0 };
 static int TimeNSRHSNewtonN_Matrices = 0;
-static int *TimeNSRHSNewtonRowSpace = NULL;
-static int *TimeNSRHSNewtonColumnSpace = NULL;
+static int *TimeNSRHSNewtonRowSpace = nullptr;
+static int *TimeNSRHSNewtonColumnSpace = nullptr;
 static int TimeNSRHSNewtonN_Rhs = 6;
 static int TimeNSRHSNewtonRhsSpace[6] = { 0, 0, 0, 0, 0, 0 };
 

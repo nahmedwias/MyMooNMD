@@ -967,4 +967,4 @@ TBaseFunct2D *BF_C_T_UL4_2D_Obj = new TBaseFunct2D
          C_T_UL4_2D_Funct, C_T_UL4_2D_DeriveXi,
          C_T_UL4_2D_DeriveEta, C_T_UL4_2D_DeriveXiXi,
          C_T_UL4_2D_DeriveXiEta, C_T_UL4_2D_DeriveEtaEta, 6, 4,
-         0, NULL);
+         0, nullptr);

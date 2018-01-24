@@ -9,9 +9,9 @@ static int D_T_P2_2D_NDOF = 6;
 static int D_T_P2_2D_JointDOF = 0;
 
 // which local dofs are on the joints
-static int *D_T_P2_2D_J0 = NULL;
-static int *D_T_P2_2D_J1 = NULL;
-static int *D_T_P2_2D_J2 = NULL;
+static int *D_T_P2_2D_J0 = nullptr;
+static int *D_T_P2_2D_J1 = nullptr;
+static int *D_T_P2_2D_J2 = nullptr;
 
 static int *D_T_P2_2D_J[3] = { D_T_P2_2D_J0, D_T_P2_2D_J1, D_T_P2_2D_J2 };
 

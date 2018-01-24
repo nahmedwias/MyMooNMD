@@ -18,7 +18,7 @@ static int *N4_N4_Pairs[4] = { (int *)N4_N4_Pairs0, (int *)N4_N4_Pairs1,
 static int N4_N4_NNodes = 20;
 
 static int N4_N4_NNoOpposite = 0;
-static int **N4_N4_NoOpposite = NULL;
+static int **N4_N4_NoOpposite = nullptr;
 
 TFE3DMapper *N4_N4 = new TFE3DMapper(N4_N4_Name, N4_N4_Desc,
                              N4_N4_N0, N4_N4_N1,

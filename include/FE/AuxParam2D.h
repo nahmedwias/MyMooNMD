@@ -93,7 +93,7 @@ class TAuxParam2D
      * 
      * If you don't need values of a finite element function in your assembling,
      * choose this constructor. This is equivalent to calling 
-     * TAuxParam2D(0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+     * TAuxParam2D(0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
      */
     TAuxParam2D();
 

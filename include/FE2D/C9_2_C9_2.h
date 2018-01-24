@@ -7,15 +7,15 @@ static int C9_2_C9_2_NPairs = 10;
 static int C9_2_C9_2_Pairs[][2] = { {0,19}, {1,18}, {2,17}, {3,16}, {4,15},
                                     {5,14}, {6,13}, {7,12}, {8,11}, {9,10} };
 static int C9_2_C9_2_NHanging = 0;
-static int *C9_2_C9_2_Hanging = NULL;
-static HNDesc *C9_2_C9_2_HangingTypes = NULL;
-static int **C9_2_C9_2_Coupling = NULL;
+static int *C9_2_C9_2_Hanging = nullptr;
+static HNDesc *C9_2_C9_2_HangingTypes = nullptr;
+static int **C9_2_C9_2_Coupling = nullptr;
 static int C9_2_C9_2_NFarHanging = 0;
-static int *C9_2_C9_2_FarHanging = NULL;
-static HNDesc *C9_2_C9_2_FarHangingTypes = NULL;
-static int ****C9_2_C9_2_FarCoupling = NULL;
+static int *C9_2_C9_2_FarHanging = nullptr;
+static HNDesc *C9_2_C9_2_FarHangingTypes = nullptr;
+static int ****C9_2_C9_2_FarCoupling = nullptr;
 static int C9_2_C9_2_NNoopposite = 0;
-static int *C9_2_C9_2_Nopposite = NULL;
+static int *C9_2_C9_2_Nopposite = nullptr;
 static int C9_2_C9_2_NNodes = 20;
 
 TFE2DMapper *C9_2_C9_2 = new TFE2DMapper(C9_2_C9_2_Name, C9_2_C9_2_Desc,

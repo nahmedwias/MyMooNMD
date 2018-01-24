@@ -24,7 +24,7 @@ static int *N_H_BDDF1_3D_J[6] = { N_H_BDDF1_3D_J0, N_H_BDDF1_3D_J1,
 static int N_H_BDDF1_3D_NInner = 0;
 
 // array containing the numbers for the inner dofs
-static int *N_H_BDDF1_3D_Inner = NULL;
+static int *N_H_BDDF1_3D_Inner = nullptr;
 
 // number of outer dofs
 static int N_H_BDDF1_3D_NOuter = 18;

@@ -9,12 +9,12 @@ static int D_H_P2_3D_NDOF = 10;
 static int D_H_P2_3D_JointDOF = 0;
 
 // which local dofs are on the joints
-static int *D_H_P2_3D_J0 = NULL;
-static int *D_H_P2_3D_J1 = NULL;
-static int *D_H_P2_3D_J2 = NULL;
-static int *D_H_P2_3D_J3 = NULL;
-static int *D_H_P2_3D_J4 = NULL;
-static int *D_H_P2_3D_J5 = NULL;
+static int *D_H_P2_3D_J0 = nullptr;
+static int *D_H_P2_3D_J1 = nullptr;
+static int *D_H_P2_3D_J2 = nullptr;
+static int *D_H_P2_3D_J3 = nullptr;
+static int *D_H_P2_3D_J4 = nullptr;
+static int *D_H_P2_3D_J5 = nullptr;
 
 static int *D_H_P2_3D_J[6] = { D_H_P2_3D_J0, D_H_P2_3D_J1,
                              D_H_P2_3D_J2, D_H_P2_3D_J3,

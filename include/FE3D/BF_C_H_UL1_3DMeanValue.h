@@ -280,4 +280,4 @@ new TBaseFunct3D(9, BF_C_H_UL1_3D, BFUnitHexahedron,
                  C_H_UL1_3D_DeriveXiZeta, C_H_UL1_3D_DeriveEtaEta,
                  C_H_UL1_3D_DeriveEtaZeta, C_H_UL1_3D_DeriveZetaZeta,
                  2, 1,
-                 0, NULL);
+                 0, nullptr);

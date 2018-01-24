@@ -9,7 +9,7 @@ static int C_T_P0_2D_NDOF = 1;
 static int C_T_P0_2D_JointDOF = 0;
 
 // which local dofs are on the joints
-static int *C_T_P0_2D_J[3] = { NULL, NULL, NULL };
+static int *C_T_P0_2D_J[3] = { nullptr, nullptr, nullptr };
 
 // number of inner dofs
 static int C_T_P0_2D_NInner = 1;

@@ -98,7 +98,7 @@ class TGridCell : public TBaseCell
     virtual int IsToRefine();
     /**  @brief check whether exist some children */
     virtual int ExistChildren()
-    { return Children == NULL ? FALSE : TRUE; }
+    { return Children == nullptr ? FALSE : TRUE; }
 
 #ifdef __2D__
     /**  @brief return coordinates of mid point P\_j on edge J\_i */

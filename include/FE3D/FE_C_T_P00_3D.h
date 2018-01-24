@@ -9,10 +9,10 @@ static int C_T_P00_3D_NDOF = 1;
 static int C_T_P00_3D_JointDOF = 0;
 
 // which local dofs are on the joints
-static int *C_T_P00_3D_J0 = NULL;
-static int *C_T_P00_3D_J1 = NULL;
-static int *C_T_P00_3D_J2 = NULL;
-static int *C_T_P00_3D_J3 = NULL;
+static int *C_T_P00_3D_J0 = nullptr;
+static int *C_T_P00_3D_J1 = nullptr;
+static int *C_T_P00_3D_J2 = nullptr;
+static int *C_T_P00_3D_J3 = nullptr;
 
 static int *C_T_P00_3D_J[4] = { C_T_P00_3D_J0, C_T_P00_3D_J1,
                                C_T_P00_3D_J2, C_T_P00_3D_J3 };

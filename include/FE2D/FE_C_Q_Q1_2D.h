@@ -21,7 +21,7 @@ static int *C_Q_Q1_2D_J[4] = { C_Q_Q1_2D_J0, C_Q_Q1_2D_J1,
 static int C_Q_Q1_2D_NInner = 0;
 
 // array containing the numbers for the inner dofs (here is no inner dof)
-static int *C_Q_Q1_2D_Inner = NULL;
+static int *C_Q_Q1_2D_Inner = nullptr;
 
 // number of outer dofs
 static int C_Q_Q1_2D_NOuter = 4;

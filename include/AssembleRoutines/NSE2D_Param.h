@@ -29,7 +29,7 @@ int NSType1NLN_Matrices = 1;
 int NSType1NLRowSpace[1] = { 0 };
 int NSType1NLColumnSpace[1] = { 0 };
 int NSType1NLN_Rhs = 0;
-int *NSType1NLRhsSpace = NULL;
+int *NSType1NLRhsSpace = nullptr;
 
 int NSType1NLSDFEMN_Rhs = 2;
 int NSType1NLSDFEMRhsSpace[2] = {0, 0};
@@ -102,7 +102,7 @@ int NSType2NLN_Matrices = 1;
 int NSType2NLRowSpace[1] = { 0 };
 int NSType2NLColumnSpace[1] = { 0 };
 int NSType2NLN_Rhs = 0;
-int *NSType2NLRhsSpace = NULL;
+int *NSType2NLRhsSpace = nullptr;
 
 
 // ======================================================================
@@ -152,7 +152,7 @@ int NSType3NLN_Matrices = 2;
 int NSType3NLRowSpace[2] = { 0, 0 };
 int NSType3NLColumnSpace[2] = { 0, 0 };
 int NSType3NLN_Rhs = 0;
-int *NSType3NLRhsSpace = NULL;
+int *NSType3NLRhsSpace = nullptr;
 
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 3
@@ -167,7 +167,7 @@ int NSType3NLSmagorinskyN_Matrices = 4;
 int NSType3NLSmagorinskyRowSpace[4] = { 0, 0, 0, 0 };
 int NSType3NLSmagorinskyColumnSpace[4] = { 0, 0, 0, 0 };
 int NSType3NLSmagorinskyN_Rhs = 0;
-int *NSType3NLSmagorinskyRhsSpace = NULL;
+int *NSType3NLSmagorinskyRhsSpace = nullptr;
 
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 3
@@ -252,7 +252,7 @@ int NSType4NLN_Matrices = 2;
 int NSType4NLRowSpace[2] = { 0, 0 };
 int NSType4NLColumnSpace[2] = { 0, 0 };
 int NSType4NLN_Rhs = 0;
-int *NSType4NLRhsSpace = NULL;
+int *NSType4NLRhsSpace = nullptr;
 
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 4
@@ -302,7 +302,7 @@ int NSType4NLSmagorinskyN_Matrices = 4;
 int NSType4NLSmagorinskyRowSpace[4] = { 0, 0, 0, 0 };
 int NSType4NLSmagorinskyColumnSpace[4] = { 0, 0, 0, 0 };
 int NSType4NLSmagorinskyN_Rhs = 0;
-int *NSType4NLSmagorinskyRhsSpace = NULL;
+int *NSType4NLSmagorinskyRhsSpace = nullptr;
 
 
 // ======================================================================
@@ -353,8 +353,8 @@ int NSPressSepN_Terms = 1;
 MultiIndex2D NSPressSepDerivatives[1] = { D00 };
 int NSPressSepSpaceNumbers[1] = { 0 };
 int NSPressSepN_Matrices = 0;
-int *NSPressSepRowSpace = NULL;
-int *NSPressSepColumnSpace = NULL;
+int *NSPressSepRowSpace = nullptr;
+int *NSPressSepColumnSpace = nullptr;
 int NSPressSepN_Rhs = 2;
 int NSPressSepRhsSpace[2] = { 0, 0 };
 
@@ -381,7 +381,7 @@ int NSRFBRhsN_Terms = 1;
 MultiIndex2D NSRFBRhsDerivatives[1] = { D00 };
 int NSRFBRhsSpaceNumbers[1] = { 0 };
 int NSRFBRhsN_Matrices = 0;
-int *NSRFBRhsRowSpace = NULL;
-int *NSRFBRhsColumnSpace = NULL;
+int *NSRFBRhsRowSpace = nullptr;
+int *NSRFBRhsColumnSpace = nullptr;
 int NSRFBRhsN_Rhs = 2;
 int NSRFBRhsRhsSpace[2] = { 0, 0 };
