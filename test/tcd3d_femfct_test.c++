@@ -61,7 +61,7 @@ void check_solution_norms(Time_CD3D &tcd, int m)
   if(m%10 == 0)
   {
     MultiIndex3D allDerivatives[4] = { D000, D100, D010, D001 };
-    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+    TAuxParam3D aux(1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
     std::array<double, 5> locError = {};
     const TFESpace3D* space = tcd.get_function().GetFESpace3D();
 
