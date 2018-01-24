@@ -127,7 +127,7 @@ double *rhs)
   if(version)
   {
     //Algo wie in Buch
-    if (prec==NULL)
+    if (prec==nullptr)
     {
       Dcopy(N_DOF, r, z);
     }
@@ -185,7 +185,7 @@ double *rhs)
 
        dnormlast=dnorm;
      //z_j+1=M^-1*r_j+1
-      if (prec==NULL)
+      if (prec==nullptr)
       {
         Dcopy(N_DOF, r,z);
       }
@@ -258,7 +258,7 @@ double *rhs)
     for (i=0; i<maxite ; i++)
     {
       //z_j+1=M^-1*r_j+1
-      if (prec==NULL)
+      if (prec==nullptr)
       {
         Dcopy(N_DOF, r,z);
       }

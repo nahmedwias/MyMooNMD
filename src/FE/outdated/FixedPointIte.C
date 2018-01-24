@@ -74,7 +74,7 @@ TFixedPointIte::TFixedPointIte(MatVecProc *MatVec,
     AuxArray[i] = aux+i*N_DOF;  
   
 #ifdef _MPI   
-     ParComm = NULL;
+     ParComm = nullptr;
 #endif     
 }
 

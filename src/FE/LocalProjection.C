@@ -2714,7 +2714,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   Entries = A->GetEntries();
 
   // get values of fe function if available
-  if (uh != NULL)
+  if (uh != nullptr)
   {
       Values = uh->GetValues();     
   }
@@ -3434,7 +3434,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
     if (cell->GetClipBoard()>=0)
     {
       parent_cell = cell->GetParent();
-      if (parent_cell == NULL)
+      if (parent_cell == nullptr)
       {
   OutPut("no coarse grid to project !!!" << endl);
         delete params;
@@ -3509,7 +3509,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
    OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);
   // get coarse grid
   // FIXME that parameter is gone! coll_coarse=Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR-1);
-//  if (coll_coarse == NULL)
+//  if (coll_coarse == nullptr)
 //  {
 //    OutPut("No coarse grid !!!" << endl);
 //    return;

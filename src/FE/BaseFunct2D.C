@@ -431,7 +431,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula)
   for(i=0;i<N_Joints;i++)
   {
     Values=TFEDatabase2D::GetJointValues2D(BaseFunct, LineQuadFormula, i);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -445,7 +445,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula)
 
     Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
                                                 D10);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -459,7 +459,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula)
 
     Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
                                                 D01);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -475,7 +475,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula)
     // D20
     Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
                                                 D20);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -490,7 +490,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula)
     // D11
     Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
                                                 D11);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -505,7 +505,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula)
     // D02
     Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
                                                 D02);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -532,7 +532,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
   
   // D00
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D00);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [N_Points];
     AllValues = new double [N_Points*Dimension*BaseVectDim];
@@ -545,7 +545,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
 
   // D10
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D10);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [N_Points];
     AllValues = new double [N_Points*Dimension*BaseVectDim];
@@ -558,7 +558,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
 
   // D01
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D01);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [N_Points];
     AllValues = new double [N_Points*Dimension*BaseVectDim];
@@ -571,7 +571,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
 
   // D20
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D20);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [N_Points];
     AllValues = new double [N_Points*Dimension*BaseVectDim];
@@ -584,7 +584,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
 
   // D11
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D11);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [N_Points];
     AllValues = new double [N_Points*Dimension*BaseVectDim];
@@ -597,7 +597,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
 
   // D02
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D02);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [N_Points];
     AllValues = new double [N_Points*Dimension*BaseVectDim];

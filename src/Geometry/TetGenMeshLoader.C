@@ -208,7 +208,7 @@ void TTetGenMeshLoader::hashTriFaces()
 
     hash = a+b+c;
 
-    if(meshTrifaceHash.at(hash) == NULL)
+    if(meshTrifaceHash.at(hash) == nullptr)
     {
       meshTrifaceHash.at(hash) = new int[BucketCount.at(hash)+1];
       meshTrifaceHash.at(hash)[0] = 1;
@@ -285,7 +285,7 @@ int TTetGenMeshLoader::findTriFace(int a, int b, int c)
   int *trifacelist = meshTetGenOut.trifacelist;
   int triface, vertex, found;
 
-  assert(meshTrifaceHash[hash] != NULL);
+  assert(meshTrifaceHash[hash] != nullptr);
   count = meshTrifaceHash[hash][0];
 
   for(int i=1;i<=count;++i)

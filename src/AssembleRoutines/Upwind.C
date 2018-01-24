@@ -771,7 +771,7 @@ double *c_mh)
   sx /= N_Edges;
   sy /= N_Edges;
   // get coefficients, are assumed to be constant on the triangle
-  Coeffs(1, &sx, &sy, NULL, &coeff);
+  Coeffs(1, &sx, &sy, nullptr, &coeff);
   b1 = coeff[1];
   b2 = coeff[2];
 
@@ -1256,7 +1256,7 @@ BoundCondFunct2D *BoundaryCondition)
     sx /= N_Vertices;
     sy /= N_Vertices;
     // get coefficients
-    Coeffs(1, &sx, &sy, NULL, &coeff);
+    Coeffs(1, &sx, &sy, nullptr, &coeff);
     b1 = coeff[1];
     b2 = coeff[2];
 
@@ -1346,7 +1346,7 @@ BoundCondFunct2D *BoundaryCondition)
         {
           x = (xcoords[jj]+xcoords[(jj+1)%3])/2;
           y = (ycoords[jj]+ycoords[(jj+1)%3])/2;
-          Coeffs(1, &x, &y, NULL, &coeff);
+          Coeffs(1, &x, &y, nullptr, &coeff);
           val += coeff[4];
         }
         val *= area * c_mh[ii] / 3.0;

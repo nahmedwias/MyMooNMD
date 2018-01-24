@@ -291,12 +291,12 @@ TDatabase::TDatabase()
   SetDefaultParameters();
 }
 
-TShapeDesc **TDatabase::ShapeDB = NULL;
-TRefDesc   **TDatabase::RefDescDB = NULL;
-TMapper    **TDatabase::MapperDB = NULL;
-TIterator  **TDatabase::IteratorDB = NULL;
-TParamDB   *TDatabase::ParamDB = NULL;
-TTimeDB    *TDatabase::TimeDB = NULL;
+TShapeDesc **TDatabase::ShapeDB = nullptr;
+TRefDesc   **TDatabase::RefDescDB = nullptr;
+TMapper    **TDatabase::MapperDB = nullptr;
+TIterator  **TDatabase::IteratorDB = nullptr;
+TParamDB   *TDatabase::ParamDB = nullptr;
+TTimeDB    *TDatabase::TimeDB = nullptr;
 
 // Methods
 
@@ -687,26 +687,26 @@ void TDatabase::SetDefaultParameters()
   
   // parameters for higher order Galerkin-type methods
   TimeDB->INTERNAL_SYSTEMSIZE = 0;
-  TimeDB->INTERNAL_ALPHA = NULL;
-  TimeDB->INTERNAL_BETA = NULL;
-  TimeDB->VALUE_AT_ONE = NULL;
-  TimeDB->VAL_AT_QUAD_POINTS = NULL;
-  TimeDB->DER_AT_QUAD_POINTS = NULL;
-  TimeDB->CORR_AT_QUAD_POINTS = NULL;
-  TimeDB->DER_CORR_AT_QUAD_POINTS = NULL;
-  TimeDB->DER_AT_START = NULL;
-  TimeDB->DER_AT_ONE = NULL;
-  TimeDB->DER_COR_AT_ONE = NULL;
+  TimeDB->INTERNAL_ALPHA = nullptr;
+  TimeDB->INTERNAL_BETA = nullptr;
+  TimeDB->VALUE_AT_ONE = nullptr;
+  TimeDB->VAL_AT_QUAD_POINTS = nullptr;
+  TimeDB->DER_AT_QUAD_POINTS = nullptr;
+  TimeDB->CORR_AT_QUAD_POINTS = nullptr;
+  TimeDB->DER_CORR_AT_QUAD_POINTS = nullptr;
+  TimeDB->DER_AT_START = nullptr;
+  TimeDB->DER_AT_ONE = nullptr;
+  TimeDB->DER_COR_AT_ONE = nullptr;
   TimeDB->NORMW = 0;
   TimeDB->N_QUADPOINTS = 0;
   TimeDB->N_DEGREES = 0;
-  TimeDB->ZETA = NULL;
-  TimeDB->WEIGHTS = NULL;
-  TimeDB->ALPHA0 = NULL;
-  TimeDB->BETA0 = NULL;
-  TimeDB->GAMMA0 = NULL;
-  TimeDB->CORRECTION = NULL;
-  TimeDB->POINTS = NULL;
+  TimeDB->ZETA = nullptr;
+  TimeDB->WEIGHTS = nullptr;
+  TimeDB->ALPHA0 = nullptr;
+  TimeDB->BETA0 = nullptr;
+  TimeDB->GAMMA0 = nullptr;
+  TimeDB->CORRECTION = nullptr;
+  TimeDB->POINTS = nullptr;
 
   ParamDB->INPUT_QUAD_RULE = 0;
   ParamDB->INTERNAL_PROBLEM_LINEAR = 0;
@@ -742,7 +742,7 @@ void TDatabase::SetDefaultParameters()
 
   ParamDB->INTERNAL_FESPACE_CONSTRUCT = 0;
   ParamDB->INTERNAL_DO_NOT_RESPECT_DIRICHLET_BC = 0;
-  ParamDB->INTERNAL_P1_Array = NULL;
+  ParamDB->INTERNAL_P1_Array = nullptr;
   ParamDB->INTERNAL_START_PARAM = 0;
 
   /** parameters for free surface calculation */

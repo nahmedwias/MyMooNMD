@@ -23,13 +23,13 @@ TFEDesc3D::TFEDesc3D(char *description, int n_dof, int n_jointdof,
   N_InnerDOF = n_innerdof;
   InnerDOF = innerdof;
   N_OuterDOF = 0;
-  OuterDOF = NULL;
+  OuterDOF = nullptr;
   
 #ifdef _MPI    
   N_EdgeDOF = 0;
-  EdgeDOF = NULL;
+  EdgeDOF = nullptr;
   N_VertDOF = 0;
-  VertDOF = NULL;
+  VertDOF = nullptr;
   EdgeVertData_Filled = 0;  
 #endif
 
@@ -51,9 +51,9 @@ TFEDesc3D::TFEDesc3D(char *description, int n_dof, int n_jointdof,
   
 #ifdef _MPI    
   N_EdgeDOF = 0;
-  EdgeDOF = NULL;
+  EdgeDOF = nullptr;
   N_VertDOF = 0;
-  VertDOF = NULL;
+  VertDOF = nullptr;
   EdgeVertData_Filled = 0;
 #endif
   
@@ -72,7 +72,7 @@ TFEDesc3D::TFEDesc3D(char *description, int n_dof, int n_jointdof,
   N_InnerDOF = n_innerdof;
   InnerDOF = innerdof;
   N_OuterDOF = 0;
-  OuterDOF = NULL;
+  OuterDOF = nullptr;
 
   N_EdgeDOF = n_edgeDOF;
   EdgeDOF = edgeDOF;

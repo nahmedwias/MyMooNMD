@@ -730,7 +730,7 @@ void NSType3SmagorinskyNewton3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -869,7 +869,7 @@ void NSType3SmagorinskyNewtonDD3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -2143,7 +2143,7 @@ void NSType4SmagorinskyNewton3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
 
   for(i=0;i<N_U;i++)
   {
@@ -2294,7 +2294,7 @@ void NSType4SmagorinskyNewtonDD3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = c0 + mu/2.0;
 
   for(i=0;i<N_U;i++)
@@ -2968,7 +2968,7 @@ void NSType3_4NLSmagorinskyNewton3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = c0 + mu;
 
   for(i=0;i<N_U;i++)
@@ -3072,7 +3072,7 @@ void NSType3_4NLSmagorinskyNewtonDD3D(double Mult, double *coeff,
   u3 = param[2]; // u3old
 
   delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],nullptr,nullptr,nullptr,-4711);
   viscosity = c0 + mu/2.0;
 
   for(i=0;i<N_U;i++)

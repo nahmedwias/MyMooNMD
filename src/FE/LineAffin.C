@@ -96,14 +96,14 @@ void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points
     N_Functs = TFEDatabase2D::GetBaseFunct1D(BaseFunct)->GetDimension();
 
     refvaluesD0 = TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D0);
-    if(refvaluesD0==NULL)
+    if(refvaluesD0==nullptr)
      {
       TFEDatabase2D::GetBaseFunct1D(BaseFunct)->MakeRefElementData(QuadFormula);
       refvaluesD0=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D0);
      }
 
     origvaluesD0=TFEDatabase2D::GetOrigElementValues(BaseFunct, D0);
-    if(origvaluesD0==NULL)
+    if(origvaluesD0==nullptr)
      {
       origvaluesD0 = new double* [MaxN_QuadPoints_1D];
       aux = new double [MaxN_QuadPoints_1D*MaxN_BaseFunctions1D];
@@ -125,7 +125,7 @@ void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points
     refvaluesD1=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D1);
     origvaluesD1=TFEDatabase2D::GetOrigElementValues(BaseFunct, D1);
 
-    if(origvaluesD1==NULL)
+    if(origvaluesD1==nullptr)
      {
       origvaluesD1 = new double* [MaxN_QuadPoints_1D];
       aux = new double [MaxN_QuadPoints_1D*MaxN_BaseFunctions1D];
@@ -143,7 +143,7 @@ void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points
       refvaluesD2=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D2);
       origvaluesD2=TFEDatabase2D::GetOrigElementValues(BaseFunct, D2);    
     
-     if(origvaluesD2==NULL)
+     if(origvaluesD2==nullptr)
      {
       origvaluesD2 = new double* [MaxN_QuadPoints_1D];
       aux = new double [MaxN_QuadPoints_1D*MaxN_BaseFunctions1D];

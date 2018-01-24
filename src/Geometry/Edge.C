@@ -34,12 +34,12 @@ TEdge::TEdge(int n_Neibs, TBaseCell **neighbs)
   SubDomainEdge = FALSE;
   SubDomainCrossEdge = FALSE;
   N_SubDomainNeibs = 0;
-  SubDomainNeibsRank = NULL;
-  CrossNeibsGlobalNo = NULL;
+  SubDomainNeibsRank = nullptr;
+  CrossNeibsGlobalNo = nullptr;
   N_CrossNeibs = 0;
-  CrossNeibsLocalEdgeNo = NULL;
-  CrossEdgeMaptype = NULL;
-  CrossNeibsRank = NULL;
+  CrossNeibsLocalEdgeNo = nullptr;
+  CrossEdgeMaptype = nullptr;
+  CrossNeibsRank = nullptr;
 #endif 
  
 }

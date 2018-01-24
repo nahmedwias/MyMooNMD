@@ -160,7 +160,7 @@ double *rhs)
     rho_last=rho;
 
     //y=Kp
-    if (prec!=NULL)
+    if (prec!=nullptr)
     {
       memset(y,0.0,N_DOF*SizeOfDouble);
       for (j=0; j<prec_maxit; j++)
@@ -205,7 +205,7 @@ double *rhs)
       break;
     }
     //y=Ks=Kr
-    if(prec!=NULL)
+    if(prec!=nullptr)
     {
       //no need for y anymore so we reuse it for z
       memset(y,0.0,N_DOF*SizeOfDouble);

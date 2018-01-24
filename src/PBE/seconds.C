@@ -11,7 +11,7 @@ seconds ()
     double  sec, usec;
     struct  timeval  tvd;
 
-    gettimeofday( & tvd, NULL );
+    gettimeofday( & tvd, nullptr );
 
     sec  = tvd.tv_sec;
     usec = tvd.tv_usec;

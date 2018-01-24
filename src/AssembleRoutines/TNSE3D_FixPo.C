@@ -73,7 +73,7 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
     // deformation tensor of small scales
     // compute (grad(u)+grad(u)^T)/2 - G^H
     // works only with VMS methods
-    if (uConv == NULL)
+    if (uConv == nullptr)
     {
        OutPut("TURBULENT_VISCOSITY_TENSOR 2 works only with VMS methods !!!" << endl);
        exit(4711);

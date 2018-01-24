@@ -23,8 +23,8 @@ TGridCell::TGridCell(TRefDesc *refdesc, int reflevel) : TBaseCell(refdesc)
 {
   Vertices = new TVertex*[RefDesc->GetN_OrigVertices()];
 
-  Children = NULL;
-  Parent = NULL;
+  Children = nullptr;
+  Parent = nullptr;
 
   RefLevel = reflevel;
 }
@@ -64,7 +64,7 @@ int TGridCell::GetN_Children()
 
 int TGridCell::GetN_Parents()
 {
-  if ( Parent == NULL)
+  if ( Parent == nullptr)
     return 0;
   else
     return 1;
@@ -909,7 +909,7 @@ int TGridCell::SetNoRefinement()
 
 int TGridCell::IsToRefine()
 {
-  return RefDesc->IsToRefine() ? Children == NULL ? TRUE : FALSE : FALSE;
+  return RefDesc->IsToRefine() ? Children == nullptr ? TRUE : FALSE : FALSE;
 }
 
 #ifdef __2D__

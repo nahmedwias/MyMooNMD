@@ -3495,8 +3495,8 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace)
 {
   TestSpace1D = testspace;
   AnsatzSpace2D = ansatzspace;
-  TestSpace2D = NULL;
-  AnsatzSpace1D = NULL;
+  TestSpace2D = nullptr;
+  AnsatzSpace1D = nullptr;
 
   TBaseCell *CurrCell1D, *CurrCell2D;
   TCollection *coll1D = TestSpace1D->GetCollection();
@@ -3803,9 +3803,9 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace, int **ans
 
   TFESpace1D* TestSpace1D = testspace;
   TFESpace2D* AnsatzSpace2D = ansatzspace;
-  TFESpace2D* TestSpace2D = NULL;
-  TFESpace1D* AnsatzSpace1D = NULL;
-  TestMortarSpaceGlobNo = NULL;
+  TFESpace2D* TestSpace2D = nullptr;
+  TFESpace1D* AnsatzSpace1D = nullptr;
+  TestMortarSpaceGlobNo = nullptr;
 
   ansatzcell  = ansatzcelljoints[0];
   ansatzjoint = ansatzcelljoints[1];
@@ -4115,9 +4115,9 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
 
   TestSpace1D = testspace;
   AnsatzSpace2D = ansatzspace;
-  TestSpace2D = NULL;
-  AnsatzSpace1D = NULL;
-  TestMortarSpaceGlobNo = NULL;
+  TestSpace2D = nullptr;
+  AnsatzSpace1D = nullptr;
+  TestMortarSpaceGlobNo = nullptr;
 
   // all dof are treated as unknowns !!!
   // no boundary description is used so far!!!
@@ -4339,12 +4339,12 @@ TStructure::TStructure(TFESpace2D *testspace, TFESpace1D *ansatzspace,
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
   
-  TestSpace1D = NULL;
-  AnsatzSpace2D = NULL;
+  TestSpace1D = nullptr;
+  AnsatzSpace2D = nullptr;
   TestSpace2D = testspace;
   AnsatzSpace1D = ansatzspace;
-  TestMortarSpaceGlobNo = NULL; 
-  AnsatzNonMortarSpaceGlobNo = NULL;
+  TestMortarSpaceGlobNo = nullptr; 
+  AnsatzNonMortarSpaceGlobNo = nullptr;
   
   // all dof are treated as unknowns !!!
   // no boundary description is used so far!!!

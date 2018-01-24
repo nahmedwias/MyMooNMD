@@ -53,9 +53,9 @@ void print_registered_message_2D(std::string entities)
 // =======================================================================
 // initialize static members
 // =======================================================================
-TQuadFormula1D *TFEDatabase2D::QuadFormulas1D[N_QuadFormulas_1D] =  { NULL };
-TQuadFormula2D *TFEDatabase2D::QuadFormulas2D[N_QuadFormulas_2D] =  { NULL };
-TQuadFormula3D *TFEDatabase2D::QuadFormulas3D[N_QuadFormulas_3D] = { NULL };
+TQuadFormula1D *TFEDatabase2D::QuadFormulas1D[N_QuadFormulas_1D] =  { nullptr };
+TQuadFormula2D *TFEDatabase2D::QuadFormulas2D[N_QuadFormulas_2D] =  { nullptr };
+TQuadFormula3D *TFEDatabase2D::QuadFormulas3D[N_QuadFormulas_3D] = { nullptr };
 
 QuadFormula1D TFEDatabase2D::QFLineFromDegree[MAXDEGREE] = { Gauss1Line };
 int TFEDatabase2D::HighestAccuracyLine = 0;
@@ -66,51 +66,51 @@ int TFEDatabase2D::HighestAccuracyTria = 0;
 QuadFormula2D TFEDatabase2D::QFQuadFromDegree[MAXDEGREE] = { VertexQuad };
 int TFEDatabase2D::HighestAccuracyQuad = 0;
 
-TFE1D *TFEDatabase2D::FEs1D[N_FEs1D] = { NULL };
-TFE2D *TFEDatabase2D::FEs2D[N_FEs2D] = { NULL };
-TFEDesc1D *TFEDatabase2D::FEDescs1D[N_FEDescs1D] = { NULL };
-TFEDesc2D *TFEDatabase2D::FEDescs2D[N_FEDescs2D] = { NULL };
-TBaseFunct2D *TFEDatabase2D::BaseFuncts2D[N_BaseFuncts2D] = { NULL };
-TBaseFunct1D *TFEDatabase2D::BaseFuncts1D[N_BaseFuncts1D] = { NULL };
+TFE1D *TFEDatabase2D::FEs1D[N_FEs1D] = { nullptr };
+TFE2D *TFEDatabase2D::FEs2D[N_FEs2D] = { nullptr };
+TFEDesc1D *TFEDatabase2D::FEDescs1D[N_FEDescs1D] = { nullptr };
+TFEDesc2D *TFEDatabase2D::FEDescs2D[N_FEDescs2D] = { nullptr };
+TBaseFunct2D *TFEDatabase2D::BaseFuncts2D[N_BaseFuncts2D] = { nullptr };
+TBaseFunct1D *TFEDatabase2D::BaseFuncts1D[N_BaseFuncts1D] = { nullptr };
 TNodalFunctional2D *TFEDatabase2D::NodalFunctionals2D[N_NodalFunctionals2D] 
-   = { NULL };
+   = { nullptr };
 
 TNodalFunctional1D *TFEDatabase2D::NodalFunctionals1D[N_NodalFunctionals1D] 
-   = { NULL };
+   = { nullptr };
 
-TFE2DMapper *TFEDatabase2D::FE2DMapper[N_FEDescs2D][N_FEDescs2D] = { { NULL } };
-TFE2DMapper1Reg *TFEDatabase2D::FE2DMapper1Reg[N_FEDescs2D][N_FEDescs2D] = { { NULL } };
+TFE2DMapper *TFEDatabase2D::FE2DMapper[N_FEDescs2D][N_FEDescs2D] = { { nullptr } };
+TFE2DMapper1Reg *TFEDatabase2D::FE2DMapper1Reg[N_FEDescs2D][N_FEDescs2D] = { { nullptr } };
 
-THNDesc *TFEDatabase2D::HNDescs2D[N_HNDescs] = { NULL };
+THNDesc *TFEDatabase2D::HNDescs2D[N_HNDescs] = { nullptr };
 
 double **TFEDatabase2D::RefElementValues1D[N_BaseFuncts1D][N_QuadFormulas_1D]
-        [N_MultiIndices1D] ={ { { NULL } } };
+        [N_MultiIndices1D] ={ { { nullptr } } };
 double **TFEDatabase2D::OrigElementValues1D[N_BaseFuncts1D]
-        [N_MultiIndices1D] = { { NULL } };
+        [N_MultiIndices1D] = { { nullptr } };
 
 double **TFEDatabase2D::RefElementValues2D[N_BaseFuncts2D][N_QuadFormulas_2D]
-        [N_MultiIndices2D] = { { { NULL } } };
+        [N_MultiIndices2D] = { { { nullptr } } };
 double **TFEDatabase2D::OrigElementValues2D[N_BaseFuncts2D]
-        [N_MultiIndices2D] = { { NULL } };
+        [N_MultiIndices2D] = { { nullptr } };
 double **TFEDatabase2D::JointValues2D[N_BaseFuncts2D][N_QuadFormulas_1D]
-        [MAXN_JOINTS] = { { { NULL } } };
+        [MAXN_JOINTS] = { { { nullptr } } };
 double **TFEDatabase2D::JointDerivatives2D[N_BaseFuncts2D][N_QuadFormulas_1D]
-        [MAXN_JOINTS][N_MultiIndices2D] = { { { { NULL } } } };
+        [MAXN_JOINTS][N_MultiIndices2D] = { { { { nullptr } } } };
 
-TRefTrans2D *TFEDatabase2D::ReferenceTrans2D[N_RefTrans2D] = { NULL };
+TRefTrans2D *TFEDatabase2D::ReferenceTrans2D[N_RefTrans2D] = { nullptr };
 
-TRefTrans1D *TFEDatabase2D::ReferenceTrans1D[N_RefTrans1D] = { NULL };
+TRefTrans1D *TFEDatabase2D::ReferenceTrans1D[N_RefTrans1D] = { nullptr };
 
 double *TFEDatabase2D::ProlongationMatrix2D[MaxN_BaseFunctions2D]
-        [N_REFDESC][MaxN_BaseFunctions2D][MAXN_CHILDREN] = { { { { NULL } } } };
+        [N_REFDESC][MaxN_BaseFunctions2D][MAXN_CHILDREN] = { { { { nullptr } } } };
 
 double *TFEDatabase2D::RestrictionMatrix2D[MaxN_BaseFunctions2D]
-        [N_REFDESC][MaxN_BaseFunctions2D][MAXN_CHILDREN] = { { { { NULL } } } };
+        [N_REFDESC][MaxN_BaseFunctions2D][MAXN_CHILDREN] = { { { { nullptr } } } };
 
 FEDesc2D TFEDatabase2D::
            FEDesc2D_IDFromFE2D[N_FEs2D] = { FE_C_T_P0_2D };
 TFEDesc2D *TFEDatabase2D::
-           FEDesc2DFromFE2D[N_FEs2D] = { NULL };
+           FEDesc2DFromFE2D[N_FEs2D] = { nullptr };
 BaseFunct2D TFEDatabase2D::
            BaseFunct2D_IDFromFE2D[N_FEs2D] = { BF_C_T_P0_2D };
 int TFEDatabase2D::
@@ -120,11 +120,11 @@ int TFEDatabase2D::
 int TFEDatabase2D::
            AccuracyFromFE2D[N_FEs2D] = { 0 };
 TBaseFunct2D *TFEDatabase2D::
-           BaseFunct2DFromFE2D[N_FEs2D] = { NULL };
+           BaseFunct2DFromFE2D[N_FEs2D] = { nullptr };
 NodalFunctional2D TFEDatabase2D::
            NodalFunctional2D_IDFromFE2D[N_FEs2D] = { NF_C_T_P0_2D };
 TNodalFunctional2D *TFEDatabase2D::
-           NodalFunctional2DFromFE2D[N_FEs2D] = { NULL };
+           NodalFunctional2DFromFE2D[N_FEs2D] = { nullptr };
 RefTrans2D TFEDatabase2D::
            RefTrans2D_IDFromFE2D[N_FEs2D] = { TriaAffin };
 BF2DRefElements TFEDatabase2D::
@@ -2292,9 +2292,9 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
 
   ret = ProlongationMatrix2D[Coarse][refine][Fine][childnumber]; 
 
-  if(ret == NULL)
+  if(ret == nullptr)
   {
-    // cerr << "ret == NULL" << endl;
+    // cerr << "ret == nullptr" << endl;
     // prolongation matrix was not generated yet
 
     BaseFunctions = CoarseElement->GetBaseFunct2D();
@@ -2343,7 +2343,7 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
         for(l=0;l<N_Points;l++)
           PointValues[l] = AllPointValues[l][k];
 
-        nf->GetAllFunctionals(NULL, NULL, PointValues,
+        nf->GetAllFunctionals(nullptr, nullptr, PointValues,
                               ret2+k*MaxN_BaseFunctions2D);
       }
 
@@ -2406,7 +2406,7 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
           for(l=0;l<N_Points;l++)
             PointValues[l] = AllPointValues[l][k];
   
-          nf->GetAllFunctionals(NULL, NULL, PointValues,
+          nf->GetAllFunctionals(nullptr, nullptr, PointValues,
                                 ret2+k*MaxN_BaseFunctions2D);
         }
 
@@ -2464,7 +2464,7 @@ double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent,
 
   ret = RestrictionMatrix2D[Coarse][refine][Fine][childnumber]; 
 
-  if(ret == NULL)
+  if(ret == nullptr)
   {
     // restriction matrix was not generated yet
 

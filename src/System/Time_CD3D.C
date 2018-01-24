@@ -458,7 +458,7 @@ void Time_CD3D::output(int m, int& image)
    {
      if(db["output_write_vtk"])
      {
-       TOutput3D output(1, 1, 0, 0, NULL);
+       TOutput3D output(1, 1, 0, 0, nullptr);
        output.AddFEFunction(&s.feFunction_);
 #ifdef _MPI
        char SubID[] = "";
@@ -488,7 +488,7 @@ void Time_CD3D::output(int m, int& image)
   if(db["output_compute_errors"])
   {
     MultiIndex3D allDerivatives[4] = { D000, D100, D010, D001 };
-    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+    TAuxParam3D aux(1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
     std::array<double, 5> locError = {};
     const TFESpace3D* space = s.feFunction_.GetFESpace3D();
     

@@ -230,7 +230,7 @@ double *rhs)
         //u2_values[0] = 0;
 
         // compute value of rhs in (xs,ys)
-        Coeffs(1, &xs, &ys, NULL, &coeff);
+        Coeffs(1, &xs, &ys, nullptr, &coeff);
         //OutPut("rhs " << xs << " " << ys << " " << coeff[1] << " " << coeff[2] << endl);
         // just for comparison with a known shape of solution
         //coeff[1] = 1;
@@ -750,7 +750,7 @@ double *rhs)
         //u2_values[0] = 0;
 
         // compute value of rhs in (xs,ys)
-        Coeffs(1, &xs, &ys, NULL, &coeff);
+        Coeffs(1, &xs, &ys, nullptr, &coeff);
         //OutPut("rhs " << xs << " " << ys << " " << coeff[1] << " " << coeff[2] << endl);
         // just for comparison with a known shape of solution
         //coeff[1] = 1;
@@ -1334,7 +1334,7 @@ double *rhs)
         //u2_values[0] = 0;
 
         // compute value of rhs in (xs,ys)
-        Coeffs(1, &xs, &ys, NULL, &coeff);
+        Coeffs(1, &xs, &ys, nullptr, &coeff);
         //OutPut("rhs " << xs << " " << ys << " " << coeff[1] << " " << coeff[2] << endl);
         // just for comparison with a known shape of solution
         //coeff[1] = 1;
@@ -2065,7 +2065,7 @@ double *rhs)
           u3->FindGradientLocal(cell,i,xs,ys,zs,u3_values);
 
           // compute value of rhs in (xs,ys)
-          Coeffs(1, &xs, &ys, &zs, NULL, &coeff);
+          Coeffs(1, &xs, &ys, &zs, nullptr, &coeff);
           //OutPut("rhs " << xs << " " << ys << " " << coeff[1] << " " << coeff[2] << endl);
 
           // update matrix entries
@@ -2654,7 +2654,7 @@ double *rhs)
           p->FindGradientLocal(cell,i,xs,ys,zs,p_values);
 
           // compute value of rhs in (xs,ys)
-          Coeffs(1, &xs, &ys, &zs, NULL, &coeff);
+          Coeffs(1, &xs, &ys, &zs, nullptr, &coeff);
           //OutPut("rhs " << xs << " " << ys << " " << coeff[1] << " " << coeff[2] << endl);
 
           // prepare computation of turbulent viscosity
@@ -2668,7 +2668,7 @@ double *rhs)
             gradU[3*ii+2]=u3_values[ii+1];
           }
           // turbulent viscosity
-          mu_T = TurbulentViscosity3D(delta,gradU,valU,NULL,NULL,NULL,&zs,-4711);
+          mu_T = TurbulentViscosity3D(delta,gradU,valU,nullptr,nullptr,nullptr,&zs,-4711);
 
           // parameter for div-div term
           tau_K = DivDivStab3D(u1_values[0],u2_values[0],u3_values[0],hK,eps);
@@ -3436,7 +3436,7 @@ double *rhs)
           p->FindGradientLocal(cell,i,xs,ys,zs,p_values);
 
           // compute value of rhs in (xs,ys,zs)
-          Coeffs(1, &xs, &ys, &zs, NULL, &coeff);
+          Coeffs(1, &xs, &ys, &zs, nullptr, &coeff);
           //OutPut("rhs " << xs << " " << ys << " " << coeff[1] << " " << coeff[2] << endl);
 
           valU[0]=u1_values[0];
@@ -3449,7 +3449,7 @@ double *rhs)
             gradU[3*ii+2]=u3_values[ii+1];
           }
           // turbulent viscosity
-          mu_T = TurbulentViscosity3D(delta,gradU,valU,NULL,NULL,NULL,NULL,-4711);
+          mu_T = TurbulentViscosity3D(delta,gradU,valU,nullptr,nullptr,nullptr,nullptr,-4711);
           // update matrix entries
           // the matrix is stored column wise
           // ii -- test function
@@ -4763,7 +4763,7 @@ double *rhs)
             //u1_values[0] = u2_values[0] = u3_values[0]  = 0;
             //p_values[0] = 0;
             // compute value of rhs in quadrature point
-            Coeffs(1, &xq, &yq, &zq, NULL, &coeff);
+            Coeffs(1, &xq, &yq, &zq, nullptr, &coeff);
             //OutPut("coeff " << coeff[1] << " " << coeff[2] << endl);
             //coeff[1] = 1; coeff[2] = 0; coeff[3] = 0;
             // prepare computation of turbulent viscosity
@@ -4777,7 +4777,7 @@ double *rhs)
               gradU[3*ii+2]=u3_values[ii+1];
             }
             // turbulent viscosity
-            mu_T = TurbulentViscosity3D(delta,gradU,valU,NULL,NULL,NULL,&zq,-4711);
+            mu_T = TurbulentViscosity3D(delta,gradU,valU,nullptr,nullptr,nullptr,&zq,-4711);
 	   
             // update rhs and matrix entries
             // the matrix is stored column wise
@@ -6389,7 +6389,7 @@ double *old_small_scales, double *rhs)
             u1_values[3] = u2_values[3] = u3_values[3]  = 0;
             p_values[0] = 0;*/
             // compute value of rhs in quadrature point
-            Coeffs(1, &xq, &yq, &zq, NULL, &coeff);
+            Coeffs(1, &xq, &yq, &zq, nullptr, &coeff);
             //OutPut("coeff " << coeff[1] << " " << coeff[2] << endl);
             //coeff[1] = 1; coeff[2] = 0; coeff[3] = 0;
             // prepare computation of turbulent viscosity
@@ -6415,7 +6415,7 @@ double *old_small_scales, double *rhs)
 	    gradU[6] += old_small_u1[3];
 	    gradU[7] += old_small_u2[3];
 	    gradU[8] += old_small_u3[3];
-            mu_T = TurbulentViscosity3D(delta,gradU,valU,NULL,NULL,NULL,&zq,-4711);
+            mu_T = TurbulentViscosity3D(delta,gradU,valU,nullptr,nullptr,nullptr,&zq,-4711);
 	    valU[0] -= old_small_u1[0];	    
 	    valU[1] -= old_small_u2[0];	    
 	    valU[2] -= old_small_u3[0];	    
@@ -7764,7 +7764,7 @@ double *old_small_scales, double *rhs)
 	  //  OutPut(old_small_u1_qp[0] << " " << old_small_u1_qp[1] <<  " " << old_small_u3_qp[2]<<endl);
 	  
           // compute value of rhs in (xs,ys)
-          Coeffs(1, &xs, &ys, &zs, NULL, &coeff);
+          Coeffs(1, &xs, &ys, &zs, nullptr, &coeff);
           //OutPut("rhs " << xs << " " << ys << " " << coeff[1] << " " << coeff[2] << endl);
 	  /*u1_values[0] = u2_values[0] = u3_values[0]  = 0;
 	  u1_values[1] = u2_values[1] = u3_values[1]  = 0;
@@ -7796,7 +7796,7 @@ double *old_small_scales, double *rhs)
 	    gradU[6] += old_small_u1[3];
 	    gradU[7] += old_small_u2[3];
 	    gradU[8] += old_small_u3[3];
-	    mu_T = TurbulentViscosity3D(delta,gradU,valU,NULL,NULL,NULL,&zs,-4711);
+	    mu_T = TurbulentViscosity3D(delta,gradU,valU,nullptr,nullptr,nullptr,&zs,-4711);
 	    valU[0] -= old_small_u1[0];	    
 	    valU[1] -= old_small_u2[0];	    
 	    valU[2] -= old_small_u3[0];	    

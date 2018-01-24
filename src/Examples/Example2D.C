@@ -42,7 +42,7 @@ ParameterDatabase Example2D::default_example_database()
 
 Example2D::Example2D(const ParameterDatabase & db) 
  : example_database(Example2D::default_example_database()), exact_solution(),
-   boundary_conditions(), boundary_data(), problem_coefficients(NULL)
+   boundary_conditions(), boundary_data(), problem_coefficients(nullptr)
 {
   this->example_database.merge(db, false);
 }

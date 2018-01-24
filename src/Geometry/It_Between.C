@@ -45,7 +45,7 @@ TBaseCell *TIt_Between::Next(int &info)
       Status[ActiveLevel].CurrentChild = 0;
     }
     else
-    { return NULL;}
+    { return nullptr;}
   }
   
   while (Status[ActiveLevel].N_Children && ActiveLevel != Level)

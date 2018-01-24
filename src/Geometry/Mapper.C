@@ -10,8 +10,8 @@
 
 #include <Mapper.h>
 
-#ifndef NULL
-#define NULL 0
+#ifndef nullptr
+#define nullptr 0
 #endif
 
 // MapTriReg0: map tri, reg, (0,0)
@@ -610,11 +610,11 @@ TMapper::TMapper(Mapper which)
          break;
 
     default:
-         MapRefVerts = NULL;
-         MapRefEdges = NULL;
-         MapRefFaces = NULL;
+         MapRefVerts = nullptr;
+         MapRefEdges = nullptr;
+         MapRefFaces = nullptr;
 
-         MapOrigVerts = NULL;
-         MapOrigEdges = NULL;
+         MapOrigVerts = nullptr;
+         MapOrigEdges = nullptr;
   }
 }

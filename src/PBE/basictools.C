@@ -468,7 +468,7 @@ int get_index(double* x, int n, double x0) {
 
 // Functions for testing
 void generate_orthonormal_matrix(double* Q, int k, int n) {
-	srand((unsigned)time(NULL));
+	srand((unsigned)time(nullptr));
 
 	for(int i = 0; i < k; i++) {
 		for(int j = 0; j < n; j++)
@@ -483,7 +483,7 @@ void generate_normalized_vector(double* v, int n) {
 }
 
 void generate_vector(double* v, int n) {
-	srand((unsigned)time(NULL));
+	srand((unsigned)time(nullptr));
 
 	for(int i = 0; i < n; i++)
 		v[i] = ((double)rand() - 16000.0) / 16000.0;

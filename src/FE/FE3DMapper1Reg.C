@@ -37,7 +37,7 @@ TFE3DMapper1Reg::TFE3DMapper1Reg(char *name, char *description,
   if(n_noopposite)
     CurrentNoOp = NoOpposite[0];
   else
-    CurrentNoOp = NULL;
+    CurrentNoOp = nullptr;
 
   N_Hanging = n_hanging;
   Hanging = hanging;

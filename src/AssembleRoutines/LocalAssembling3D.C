@@ -135,7 +135,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
                 //END DEBUG
                 this->RhsSpace = { 0, 0, 0, 1 };
                 this->AssembleParam = Brinkman3DType2Galerkin;
-                this->Manipulate = NULL;
+                this->Manipulate = nullptr;
                 break;
             case 14:
                 //Matrix Type 14
@@ -151,7 +151,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
                 this->N_Rhs = 4;
                 this->RhsSpace = { 0, 0, 0, 1 };
                 this->AssembleParam = Brinkman3DType1Galerkin;
-                this->Manipulate = NULL;
+                this->Manipulate = nullptr;
                 break;
         }
             break;
@@ -174,7 +174,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
                 this->N_Rhs = 4;                                                                                // f1, f2, g
                 this->RhsSpace = { 0, 0, 0, 1 };                                                                // corresp. to velocity testspace = 0 / pressure = 1
                 this->AssembleParam = ResidualStabPkPk_for_Brinkman3DType1Galerkin;
-                this->Manipulate = NULL;
+                this->Manipulate = nullptr;
                 break;
         }
             break;
@@ -197,7 +197,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
                 this->N_Rhs = 4;                                                                                // f1, f2, g
                 this->RhsSpace = { 0, 0, 0, 1 };                                                                // corresp. to velocity testspace = 0 / pressure = 1
                 this->AssembleParam = GradDivStab_for_Brinkman3DType1Galerkin;
-                this->Manipulate = NULL;
+                this->Manipulate = nullptr;
                 break;
         }
             break;
@@ -220,7 +220,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->N_Rhs = 1;
           this->RhsSpace = { 0 };
           this->AssembleParam = BilinearAssembleGalerkin;
-          this->Manipulate = NULL;
+          this->Manipulate = nullptr;
           break;
         case SUPG:
           // second derivatives are not supported yet
@@ -237,7 +237,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->N_Rhs = 1;
           this->RhsSpace = { 0 };
           this->AssembleParam = BilinearAssemble_SD;
-          this->Manipulate = NULL;
+          this->Manipulate = nullptr;
           break;
         default:
           ErrThrow("currently DISCTYPE ", this->discretization_type,
@@ -261,7 +261,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->N_Rhs = 1;
           this->RhsSpace = { 0 };
           this->AssembleParam = MatrixMARhsAssemble;
-          this->Manipulate = NULL;
+          this->Manipulate = nullptr;
 	  break;
 	case SUPG:
 	  this->N_Terms = 4;
@@ -275,7 +275,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->N_Rhs = 1;
           this->RhsSpace = { 0 };
           this->AssembleParam = MatricesMARhsAssemble_SUPG; 
-          this->Manipulate = NULL;
+          this->Manipulate = nullptr;
 	  break;
       }
       break;
@@ -293,8 +293,8 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
 	  this->ColumnSpace = { 0 };
 	  this->N_Rhs = 1;
 	  this->RhsSpace = { 0 };
-	  this->Manipulate = NULL;
-	  this->Manipulate = NULL;
+	  this->Manipulate = nullptr;
+	  this->Manipulate = nullptr;
 	  this->AssembleParam = MatrixARhsAssemble;
 	  break;
 	case SUPG:
@@ -308,8 +308,8 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
 	  this->ColumnSpace = { 0, 0 };
 	  this->N_Rhs = 1;
 	  this->RhsSpace = { 0 };
-	  this->Manipulate = NULL;
-	  this->Manipulate = NULL;
+	  this->Manipulate = nullptr;
+	  this->Manipulate = nullptr;
 	  this->AssembleParam = MatricesMARhsAssemble_SUPG;
 	  break;
       }
@@ -345,11 +345,11 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
   OrigValues = new double* [N_Terms];
 
   // some consistency checks
-  if(Coeffs == NULL)
+  if(Coeffs == nullptr)
   {
     ErrThrow("You need to specify a valid function for the coefficients");
   }
-  if(AssembleParam == NULL)
+  if(AssembleParam == nullptr)
   {
     ErrThrow("A local assembling routine was not set!");
   }
@@ -403,11 +403,11 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, TAuxParam3D& a
   }
   
   // some consistency checks
-  if(Coeffs == NULL)
+  if(Coeffs == nullptr)
   {
     ErrThrow("You need to specify a valid function for the coefficients");
   }
-  if(this->AssembleParam == NULL)
+  if(this->AssembleParam == nullptr)
   {
     // this means in the discrete form there was only a pointer to a
     // AssembleFct3D rather than a AssembleFctParam3D.
@@ -692,7 +692,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                      this->AssembleParam = NSType1Galerkin3D;
                    else
                      this->AssembleParam = NSType1GalerkinSkew3D;
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -722,7 +722,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     this->AssembleParam = NSType2Galerkin3D;
                   else
                     this->AssembleParam = NSType2GalerkinSkew3D;
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -758,7 +758,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     else
                       this->AssembleParam = NSType3GalerkinDDSkew3D;
                   }
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -797,7 +797,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     else
                       this->AssembleParam = NSType4GalerkinDDSkew3D;
                   }
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -843,7 +843,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     // else
                     //   this->AssembleParam = ;
                   }
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -882,7 +882,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     // else
                     //   this->AssembleParam = ;
                   }
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -931,7 +931,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     this->AssembleParam = NSType1_2NLGalerkin3D;
                   else
                     this->AssembleParam = NSType1_2NLGalerkinSkew3D;
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -961,7 +961,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     this->AssembleParam = NSType1_2NLGalerkin3D;
                   else
                     this->AssembleParam = NSType1_2NLGalerkinSkew3D;
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -997,7 +997,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     else
                       this->AssembleParam = NSType3_4NLGalerkinDDSkew3D;
                   }
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -1033,7 +1033,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     else
                       this->AssembleParam = NSType3_4NLGalerkinDDSkew3D;
                   }
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -1078,7 +1078,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     // else
                     //   this->AssembleParam = ;
                   }
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -1114,7 +1114,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                     // else
                     //   this->AssembleParam = ;
                   }
-                  this->Manipulate = NULL;
+                  this->Manipulate = nullptr;
                   
                   this->N_Parameters = 3;
                   this->N_ParamFct = 1;
@@ -1181,7 +1181,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
               this->AssembleParam = TimeNSType1Galerkin3D;
-              this->Manipulate = NULL;              
+              this->Manipulate = nullptr;              
             }
               break;
             case 2:
@@ -1198,7 +1198,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
               this->AssembleParam = TimeNSType2Galerkin3D;
-              this->Manipulate = NULL;
+              this->Manipulate = nullptr;
             }
               break;
             case 3:
@@ -1219,7 +1219,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               else 
                 this->AssembleParam = TimeNSType3GalerkinDD3D;
               
-              this->Manipulate = NULL;
+              this->Manipulate = nullptr;
               break;
             case 4:
               this->N_Terms = 5;
@@ -1239,7 +1239,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               else 
                 this->AssembleParam = TimeNSType4GalerkinDD3D;
               
-              this->Manipulate = NULL;
+              this->Manipulate = nullptr;
               break;
             case 14:
               // I have to do that 
@@ -1289,7 +1289,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->N_Rhs = 0;
               this->RhsSpace = { };
               this->AssembleParam = TimeNSType1_2NLGalerkin3D;
-              this->Manipulate = NULL;    
+              this->Manipulate = nullptr;    
               break;
             case 3:
             case 4:
@@ -1308,7 +1308,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
                 this->AssembleParam = TimeNSType3_4NLGalerkin3D;
               else
                 this->AssembleParam = TimeNSType3_4NLGalerkinDD3D;
-              this->Manipulate = NULL;    
+              this->Manipulate = nullptr;    
               break;
             case 14:
               ErrThrow("NSTYPE 14 is not supported yet");
@@ -1353,7 +1353,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
           this->N_Rhs = 4 ; // TODO The case NSTYPE4 has to be implemented
           this->RhsSpace = {0, 0, 0, 0};
           this->AssembleParam =TimeNSRHS3D;
-          this->Manipulate = NULL;
+          this->Manipulate = nullptr;
           break;
         case 1: // Newton iteration
           ErrThrow("Newton iteration is not supported yet.");
@@ -1408,7 +1408,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
               this->AssembleParam=TimeNSType1Smagorinsky3D;
-              this->Manipulate = NULL;              
+              this->Manipulate = nullptr;              
               break;
             case 2:
               this->N_Terms = 5;
@@ -1424,7 +1424,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->RhsSpace = { 0, 0, 0, 0 };
 
               this->AssembleParam=TimeNSType2Smagorinsky3D;
-              this->Manipulate = NULL;
+              this->Manipulate = nullptr;
               break;
             case 3:
               this->N_Terms = 5;
@@ -1439,7 +1439,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
 
-              this->Manipulate = NULL;
+              this->Manipulate = nullptr;
               if(TDatabase::ParamDB->LAPLACETYPE==0)
                 this->AssembleParam=TimeNSType3Smagorinsky3D;
               else 
@@ -1459,7 +1459,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 1};
 
-              this->Manipulate = NULL;
+              this->Manipulate = nullptr;
               if(TDatabase::ParamDB->LAPLACETYPE==0)
                 this->AssembleParam=TimeNSType4Smagorinsky3D;
               else 
@@ -1504,7 +1504,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->N_Rhs = 0;
               this->RhsSpace = { };
               this->AssembleParam = TimeNSType1_2NLSmagorinsky3D;
-              this->Manipulate = NULL;    
+              this->Manipulate = nullptr;    
               break;
             case 3:
             case 4:
@@ -1529,7 +1529,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
                 this->AssembleParam = TimeNSType3_4NLSmagorinskyDD3D;
               }
               
-              this->Manipulate = NULL;    
+              this->Manipulate = nullptr;    
               break;
           }
         break;
@@ -1568,7 +1568,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
           this->N_Rhs = 4 ; // TODO The case NSTYPE4 has to be implemented
           this->RhsSpace = {0, 0, 0, 0};
           this->AssembleParam = TimeNSRHS3D;
-          this->Manipulate = NULL;
+          this->Manipulate = nullptr;
           break;
         case 1: // Newton iteration
           ErrThrow("Newton iteration is not supported yet.");

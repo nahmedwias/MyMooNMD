@@ -561,7 +561,7 @@ void Brinkman3D::assemble()
         
         for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
         {
-            bi.rhs_g_v_n(s.rhs,v_space,NULL,
+            bi.rhs_g_v_n(s.rhs,v_space,nullptr,
                          allCells,
                          TDatabase::ParamDB->neumann_boundary_id[k],
                          -TDatabase::ParamDB->neumann_boundary_value[k]);
@@ -608,9 +608,9 @@ void Brinkman3D::assemble()
             
             bi.rhs_gradv_n_uD(s.rhs,
                               v_space,
-                              NULL, //this->example.get_bd(0),                                 // access to U1BoundValue in the example,
-                              NULL, //this->example.get_bd(1),                                 // access to U2BoundValue in the example,
-                              NULL, //this->example.get_bd(2),
+                              nullptr, //this->example.get_bd(0),                                 // access to U1BoundValue in the example,
+                              nullptr, //this->example.get_bd(1),                                 // access to U2BoundValue in the example,
+                              nullptr, //this->example.get_bd(2),
                               allCells,
                               TDatabase::ParamDB->nitsche_boundary_id[k],
                               -TDatabase::ParamDB->s1*TDatabase::ParamDB->EFFECTIVE_VISCOSITY);
@@ -631,9 +631,9 @@ void Brinkman3D::assemble()
             
             bi.rhs_q_uD_n( s.rhs,
                           p_space,
-                          NULL, //this->example.get_bd(0),                                 // access to U1BoundValue in the example,
-                          NULL, //this->example.get_bd(1),                                 // access to U2BoundValue in the example,
-                          NULL, //this->example.get_bd(2),
+                          nullptr, //this->example.get_bd(0),                                 // access to U1BoundValue in the example,
+                          nullptr, //this->example.get_bd(1),                                 // access to U2BoundValue in the example,
+                          nullptr, //this->example.get_bd(2),
                           allCells,
                           TDatabase::ParamDB->nitsche_boundary_id[k],
                           1.*TDatabase::ParamDB->s2);
@@ -837,7 +837,7 @@ void Brinkman3D::output(int i)
     if(db["output_write_vtk"])
     {
         // last argument in the following is domain, but is never used in this class
-        TOutput3D Output(5, 5, 2, 1, NULL);
+        TOutput3D Output(5, 5, 2, 1, nullptr);
         Output.AddFEFunction(&s.p);
         Output.AddFEVectFunct(&s.u);
 #ifdef _MPI
@@ -870,7 +870,7 @@ void Brinkman3D::output(int i)
         double err_u3[4]; // have not at least size 4
         double err_p[4];
         
-        TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+        TAuxParam3D aux(1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
         MultiIndex3D nsAllDerivs[4] = {D000, D100, D010, D001};
         const TFESpace3D *velocity_space = &this->get_velocity_space();
         const TFESpace3D *pressure_space = &this->get_pressure_space();

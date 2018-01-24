@@ -1286,7 +1286,7 @@ void Time_NSE3D::output(int m, int &image)
     if(db_["output_write_vtk"])
     {
       // last argument in the following is domain but is never used in this class
-      TOutput3D output(5, 5, 2, 1, NULL);
+      TOutput3D output(5, 5, 2, 1, nullptr);
       output.AddFEFunction(&s.p_);
       output.AddFEVectFunct(&s.u_);
 #ifdef _MPI
@@ -1325,7 +1325,7 @@ void Time_NSE3D::output(int m, int &image)
     double err_u3[4];  // these have not at least size 4.
     double err_p[4];
 
-    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+    TAuxParam3D aux(1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
     MultiIndex3D allderiv[4]= {D000, D100, D010, D001};
     const TFESpace3D *v_space = &this->get_velocity_space();
     const TFESpace3D *p_space = &this->get_pressure_space();

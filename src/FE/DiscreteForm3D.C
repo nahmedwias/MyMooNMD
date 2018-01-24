@@ -43,7 +43,7 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
   Coeffs = coeffs;
 
   Assemble = assemble;
-  AssembleParam = NULL;
+  AssembleParam = nullptr;
 
   Manipulate = manipulate;
 
@@ -112,7 +112,7 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
 
   Coeffs = coeffs;
 
-  Assemble = NULL;
+  Assemble = nullptr;
   AssembleParam = assembleparam;
 
   Manipulate = manipulate;

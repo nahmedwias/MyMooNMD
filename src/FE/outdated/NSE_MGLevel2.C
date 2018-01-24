@@ -95,11 +95,11 @@ TNSE_MGLevel2::TNSE_MGLevel2(int level, TSquareMatrix3D *a,
   B3Entries = B3->GetEntries();
 #endif  
 
-  C = NULL;
-  StructureC = NULL;
-  CRowPtr = NULL;
-  CKCol = NULL;
-  CEntries = NULL;
+  C = nullptr;
+  StructureC = nullptr;
+  CRowPtr = nullptr;
+  CKCol = nullptr;
+  CEntries = nullptr;
 
 #ifdef __2D__
   USpace = A->GetFESpace2D();
@@ -360,7 +360,7 @@ void TNSE_MGLevel2::CellVanka(double *u1, double *rhs1, double *aux,
   double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
   TBaseCell *Cell;
   double *u2, *p, *rhs2, *rhsp;
-  TItMethod *itmethod = NULL;
+  TItMethod *itmethod = nullptr;
   int LargestDirectSolve = TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
   MatVecProc *MatVect=MatVectFull;
   DefectProc *Defect=DefectFull;
@@ -457,7 +457,7 @@ void TNSE_MGLevel2::CellVanka(double *u1, double *rhs1, double *aux,
           delete itmethod;
 
         // allocate new itmethod
-        itmethod = new TFgmresIte(MatVect, Defect, NULL, 0, N_LocalDOF, 1);
+        itmethod = new TFgmresIte(MatVect, Defect, nullptr, 0, N_LocalDOF, 1);
         TDatabase::ParamDB->INTERNAL_LOCAL_DOF = N_LocalDOF;
       }
     }
@@ -645,7 +645,7 @@ void TNSE_MGLevel2::CellVanka(double *u1, double *rhs1, double *aux,
       if (N_LocalDOF > LargestDirectSolve)
       { 
         memset(sol,0,N_LocalDOF*SizeOfDouble);
-        itmethod->Iterate(matrix,NULL,sol,Rhs);
+        itmethod->Iterate(matrix,nullptr,sol,Rhs);
         memcpy(Rhs, sol, N_LocalDOF*SizeOfDouble);
       }
       else
@@ -728,7 +728,7 @@ void TNSE_MGLevel2::NodalVanka(double *u1, double *rhs1, double *aux,
   int begin, end, HangingBound;
   double *u2, *p, *rhs2, *rhsp;
   int UDOFs[MaxN_LocalU], UDOF, N_U, N_UGEO;
-  TItMethod *itmethod = NULL, *prec;
+  TItMethod *itmethod = nullptr, *prec;
   int LargestDirectSolve = TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
   double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
   MatVecProc *MatVect=MatVectFull;
@@ -827,7 +827,7 @@ void TNSE_MGLevel2::NodalVanka(double *u1, double *rhs1, double *aux,
           delete itmethod;
 
         // allocate new itmethod
-        prec = NULL;
+        prec = nullptr;
         itmethod = new TFgmresIte(MatVect, Defect, prec, 0, N_LocalDOF, 1);
         TDatabase::ParamDB->INTERNAL_LOCAL_DOF = N_LocalDOF;
       }
@@ -963,7 +963,7 @@ void TNSE_MGLevel2::NodalVanka(double *u1, double *rhs1, double *aux,
       if (N_LocalDOF > LargestDirectSolve)
       { 
         memset(sol,0,N_LocalDOF*SizeOfDouble);
-        itmethod->Iterate(matrix,NULL,sol,Rhs);
+        itmethod->Iterate(matrix,nullptr,sol,Rhs);
         memcpy(Rhs, sol, N_LocalDOF*SizeOfDouble);
       }
       else
