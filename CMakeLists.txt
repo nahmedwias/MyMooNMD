@@ -151,6 +151,8 @@ include(cmake/sources_matrix.cmake)
 include(cmake/sources_timediscroutines.cmake)
 # include(cmake/sources_pbe.cmake)
 
+include_directories("${BRUSH_SOURCE_DIR}/brush/include/")
+
 # Define two static libraries. Each has its own precompiler flag (2D/3D).
 # Adding dummy.f to the libraries is a hack - no automatic fortran linking (lapack!) without fortran compiling.
 add_library(parmoon_2d_${PARMOON_PARALLEL_TYPE} STATIC ${PARMOON_SOURCES_2D} dummy.f)

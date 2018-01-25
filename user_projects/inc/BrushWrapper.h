@@ -81,6 +81,9 @@ class BrushWrapper
     void reset_fluid_phase(
         const TFEFunctionXD& u1,
     	  const TFEFunctionXD& u2,
+#ifdef __3D__
+    	  const TFEFunctionXD& u3,
+#endif
         const TFEFunctionXD& p,
         std::vector<TFEFunctionXD*> species);
 

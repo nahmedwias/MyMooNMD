@@ -23,6 +23,13 @@
 
 #include <math.h>
 
+//CB DEBUG
+#include <GridTransferTool.h>
+void DirichletBoundaryConditions_TEST(int BdComp, double t, BoundCond &cond)
+{
+      cond = DIRICHLET;
+}
+//END DEBUG
 
 // CB EXAMPLE
 void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretch, bool cut_off_entry);
@@ -205,12 +212,30 @@ int main(int argc, char* argv[])
 #endif
 
     int image_dummy;
-    flow_object.output(0,image_dummy);
 
     // the particles object which wraps up Brush
     BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
 
+    // PARTS: SET UP INITIAL STATES /////////////////////////////////////////////
+    Output::info("PROGRAM PART", "Setting up initial states.");
+
+    //first assembling of the flow object
     flow_object.assemble_initial_time();
+
+    //set fluid phase in the particle object
+    const TFEFunction3D& ux = *flow_object.get_velocity_component(0);
+    const TFEFunction3D& uy = *flow_object.get_velocity_component(1);
+    const TFEFunction3D& uz = *flow_object.get_velocity_component(2);
+    const TFEFunction3D& pressure = flow_object.get_pressure();
+    TFEFunction3D* dummy_T    = &flow_object.get_pressure();    //TODO Currently the pressure will be our replacement for temperature and concentration
+    TFEFunction3D* dummy_conc = &flow_object.get_pressure();    //TODO Currently the pressure will be our replacement for temperature and concentration
+    std::vector<TFEFunction3D*> fcts = {dummy_T, dummy_conc};
+    part_object.reset_fluid_phase(ux, uy, uz, pressure, fcts);
+
+    timer.restart_and_print("setting up spaces, matrices and initial assembling");
+
+    // PART: SOLVE THE SYSTEM IN A TIME LOOP ///////////////////////////////////
+    Output::info("PROGRAM PART", "Solving the coupled system.");
 
     double end_time = TDatabase::TimeDB->ENDTIME;
     flow_object.current_step_ = 0;
@@ -218,9 +243,12 @@ int main(int argc, char* argv[])
     int image = 0;
     LoopInfo loop_info_time("time loop", true, true, 1);
     int linear_iterations = 0;
-
-    timer.restart_and_print("setting up spaces, matrices and initial assembling");
     TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
+
+    int output_steps_parts = particle_database["output_all_k_steps"];
+    int output_steps_flow = flow_database["output_all_k_steps"];
+    int step = 0;
+
     //======================================================================
     // time iteration
     //======================================================================
@@ -229,8 +257,19 @@ int main(int argc, char* argv[])
       // time measuring during every time iteration
       Chrono timer_timeit;
 
+      step++;
+
+      //////////////////// THE PARTICLES //////////////////////
+      Output::print(" BRUSH - UPDATE AND SOLVE");
+      part_object.reset_fluid_phase(ux,uy,uz, pressure, fcts);
+      Output::print(" resetting complete");
+      Output::print(TDatabase::TimeDB->CURRENTTIME, " ", TDatabase::TimeDB->CURRENTTIME + TDatabase::TimeDB->CURRENTTIMESTEPLENGTH);
+      part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + TDatabase::TimeDB->CURRENTTIMESTEPLENGTH);
+      Output::print(" solving complete");
+
       flow_object.current_step_++;
 
+      //TODO I should never use a scheme which requires a sub-time loop!
       for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
       {
         // setting the time discretization parameters
@@ -242,6 +281,8 @@ int main(int argc, char* argv[])
 
         Output::root_info("CURRENT TIME", TDatabase::TimeDB->CURRENTTIME);
 
+        ////////////////////   THE FLOW   //////////////////////
+        Output::print(" PARMOON - UPDATE AND SOLVE");
         // prepare the right hand side vector - needed only once per time step
         flow_object.assemble_rhs();
 
@@ -250,8 +291,6 @@ int main(int argc, char* argv[])
 
         // prepare the matrices for defect computations and solvers
         flow_object.assemble_system();
-        timer_timeit.restart_and_print("preparation of nonlinear iteration");
-
         //LoopInfo for the nonlinear loop, printing full verbose info every step.
         LoopInfo loop_info("nonlinear", true, true, 1);
 
@@ -292,7 +331,11 @@ int main(int argc, char* argv[])
             "solving the time iteration " +
             std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
-        flow_object.output(flow_object.current_step_,image);
+        if(step %  output_steps_parts == 0)
+          part_object.output(TDatabase::TimeDB->CURRENTTIME);
+        if(step % output_steps_flow == 0)
+          flow_object.output(flow_object.current_step_,image);
+
         timer_timeit.print_total_time(
             "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
       } // end of subtime loop

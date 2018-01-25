@@ -3,6 +3,7 @@
  * Experiment was reported by Viktoria Wiedmeyer (VW) in 2017.
  */
 
+#include <parmoon_source_and_sink_terms.h>
 
 enum class OutCondition{DO_NOTHING, CONSTANT, PARABOLIC};
 
@@ -71,6 +72,28 @@ std::string out_condition_string()
 // note: in the coefficients function the de-dimensionalized diffusion
 // coefficient will be calculated as:
 //      eps = (eta/rho) / (u_infty*l_infty);
+}
+
+//! Some information that is necessary to set up the BrushWrapper for this example.
+namespace BrushInfo
+{
+  //! The spatial dimension is obviously 3.
+  size_t parameter_spatial_dimension = 3;
+  //! There are two "species" to be communicated: temperature and dissolved potash alum conc
+  size_t parameter_n_specs_primary = 2;
+  // TODO Maybe later we have to add potash alum saturation concentration here
+  size_t parameter_n_specs_derived = 0;
+  // Names of the parameters to be sent to Brush, just for double-checking.
+  std::vector<std::string> parameter_term_names = {"ux","uy","uz","p","T","POTASHALUM"};
+  // TODO Maybe later we have to add a function computing potash alum saturation concentration here
+  std::vector<std::function<double(const std::vector<double>&)>> parameter_specs_derived_fcts = {};
+  //! Names of the functions that are requested from Brush.
+  std::vector<Exmpl::SourceAndSinkTerms> source_and_sink_fct_requests =
+    { Exmpl::SourceAndSinkTerms::PotashAlumCrystEnergyRelease,
+      Exmpl::SourceAndSinkTerms::PotashAlumCrystConcConsumption };
+  //! Names of the functions that are expected from Brush in return.
+  std::vector<std::string> source_and_sink_term_names = {"T_sources", "c_POTASHALUM_sinks" };
+
 }
 
 
