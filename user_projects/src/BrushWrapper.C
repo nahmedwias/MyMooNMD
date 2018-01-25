@@ -27,11 +27,6 @@ namespace Wiedmeyer_Batch_crystallizer
 #include "TNSE_3D/WiedmeyerBatchCrystallizer.h"
 }
 
-//CB DEBUG
-#include "fstream"
-#include "cmath"
-//END DEBUG
-
 // Hashing function for strings, allows switch over string.
 // https://stackoverflow.com/questions/16388510/evaluate-a-string-with-a-switch-in-c
 constexpr unsigned int string_hash(const char* str, int h = 0)
@@ -123,9 +118,19 @@ void BrushWrapper::pick_example(const std::string& exmpl_name,
     case string_hash("wiedmeyer_crystallizer"):
     {
       using namespace Wiedmeyer_Batch_crystallizer;
-      //TODO implement the example
-      Output::warn("The 'wiedmeyer_crystallizer' example is not "
-          "implemented yet, this is a dummy call!");
+
+      parameter_spatial_dimension_ = BrushInfo::parameter_spatial_dimension;
+      parameter_n_specs_primary_ = BrushInfo::parameter_n_specs_primary;
+      parameter_n_specs_derived_ = BrushInfo::parameter_n_specs_derived;
+      parameter_function_names_ = BrushInfo::parameter_term_names;
+      parameter_specs_derived_fcts_ = BrushInfo::parameter_specs_derived_fcts;
+      //source and sink information ('from Brush')
+      source_and_sink_function_names_ = BrushInfo::source_and_sink_term_names;
+      source_and_sink_requests_ = BrushInfo::source_and_sink_fct_requests;
+
+      //TODO this might change in case of de-dimensionalization
+      viscosity = FluidProperties::eta/FluidProperties::rho;
+
       break;
     }
     default:
@@ -213,7 +218,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
 #endif
 
   std::vector<std::valarray<double>> cell_centers = {};
-// TODO it seems this is unnecessary, tetgen preserves the input order of the medit file.
+// it seems this is unnecessary, tetgen preserves the input order of the medit file.
 //  for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
 //  {
 //    cell_centers.push_back(simplex_barycenter(*brush_grid_->GetCell(c)));
@@ -221,15 +226,13 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
 
   // set up Brush's ParMooN interface
   interface_ = new Brush::InterfacePM(
-      brush_grid_file, dim, cell_centers,
+      brush_grid_file, cell_centers,
       db_["sweep_file"], " ",
       db_["therm_file"], db_["chem_file"],
-      db_["coagulation_parameter"],
       db_["max_sp_per_cell"], db_["max_m0_per_cell"],
+      db_["example"],
       viscosity
-#ifdef __2D__
-      ,third_dim_stretch, axisymmetric
-#endif
+      //,db_["coagulation_parameter"]
   );
 
   Output::print("Setting up Brush::InterfacePM SUCCESS.");
@@ -245,17 +248,24 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
     std::valarray<double> point = centers.at(brush_cell);
     double x = point[0];
     double y = point[1];
-    double z = point[2]; //TODO 3d only!
+    double z;
+    if(dim == 3)
+     z = point[2];
     //Output::print("Remote cell ", brush_cell, " midpoint (", point[0],",",point[1],")");
     std::vector<int> found_in;
     for(int loc_cell = 0 ; loc_cell < brush_grid_->GetN_Cells() ;++loc_cell)
     {
       TBaseCell* cell = brush_grid_->GetCell(loc_cell);
 
-      if( cell->PointInCell(x,y,z) ) //2d:  cell->PointInCell(x,y)
+      if(dim == 2)
       {
-        found_in.push_back(loc_cell);
-        //Output::print("Midpoint of remote cell ", brush_cell, " found in local cell ", loc_cell );
+        if(cell->PointInCell(x,y))
+          found_in.push_back(loc_cell);
+      }
+      else if(dim == 3)
+      {
+        if( cell->PointInCell(x,y,z) )
+          found_in.push_back(loc_cell);
       }
     }
     //check the vector found_in - point found in and only found in the right local cell?
@@ -362,27 +372,26 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   // so that it can be filled with data from now on.
   interface_->write_headers(moment_stats_file_, outflow_particles_file_, inflow_particles_file_);
 
-  //CB DEBUG
-  std::string mass_bal_file = out_dir + "mass_balance.csv";
-  remove(mass_bal_file.c_str()); //file from old run, clean away
-  std::ofstream myfile;
-  myfile.open (mass_bal_file.c_str(),std::ios_base::app);
-  myfile << "t" << ",";
-  myfile << "cell #" << ",";
-  myfile << "z" << ",";
-  myfile << "r" << ",";
-  myfile << "ASA crys [kg/m^3]" << ",";
-  myfile << "ASA diss [kg/m^3]" << ",";
-  myfile << "velo [m/s] " << "\n";
-  myfile.close();
-  //END DEBUG
+// The following debug code was used in the 2d example to control the mass flow balance
+//  //CB DEBUG
+//  std::string mass_bal_file = out_dir + "mass_balance.csv";
+//  remove(mass_bal_file.c_str()); //file from old run, clean away
+//  std::ofstream myfile;
+//  myfile.open (mass_bal_file.c_str(),std::ios_base::app);
+//  myfile << "t" << ",";
+//  myfile << "cell #" << ",";
+//  myfile << "z" << ",";
+//  myfile << "r" << ",";
+//  myfile << "ASA crys [kg/m^3]" << ",";
+//  myfile << "ASA diss [kg/m^3]" << ",";
+//  myfile << "velo [m/s] " << "\n";
+//  myfile.close();
+//  //END DEBUG
 }
 
 BrushWrapper::~BrushWrapper()
 {
-  //FIXME THERE IS A BUG (CONNECTED TO THE MOON-GEOMETRY) WHEN
-  // CALLING THE FOLLOWING DESTRUCTOR!!!
-  //delete interface_;
+  delete interface_;
 
   moment_stats_file_.close();
   outflow_particles_file_.close();
@@ -461,6 +470,9 @@ std::valarray<double> simplex_barycenter(const TBaseCell& cell)
 void BrushWrapper::reset_fluid_phase(
 		const TFEFunctionXD& u1,
 		const TFEFunctionXD& u2,
+#ifdef __3D__
+    const TFEFunctionXD& u3,
+#endif
 		const TFEFunctionXD& p,
 		std::vector<TFEFunctionXD*> species
 )
@@ -481,7 +493,9 @@ void BrushWrapper::reset_fluid_phase(
   std::vector<const TFEFunctionXD*> fe_fcts_original(dim + 1 + n_specs_primary);
   fe_fcts_original[0] = &u1;
   fe_fcts_original[1] = &u2;
-  //if(dim==3) fe_fcts_original[2] = &u3; //in 3D case...
+#ifdef __3D__
+  fe_fcts_original[2] = &u3;
+#endif
   fe_fcts_original[dim] = &p;
   std::copy( species.begin() , species.end(), &fe_fcts_original[dim + 1]);
 
@@ -519,47 +533,46 @@ void BrushWrapper::reset_fluid_phase(
   //give the data to Brush
   interface_->reset_fluid_phase(pm_data);
 
-  //TODO What is the following code good for? Comment!
-  double del = fabs(TDatabase::TimeDB->CURRENTTIME - std::round(TDatabase::TimeDB->CURRENTTIME));
-  if(del < 1e-3)
-  {
-  interface_->update_stats();
-  interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
-  std::ofstream myfile;
-  std::string out_dir(db_["output_vtk_directory"].value_as_string());
-  std::size_t pos = out_dir.find("VTK");// Lil hack - the directory above 'VTK',
-  out_dir = out_dir.substr(0,pos); 		// ...should be the general output directory.
-  std::string mass_bal_file = out_dir + "mass_balance.csv";
-  myfile.open (mass_bal_file.c_str(),std::ios_base::app);
-
-  for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
-  {
-
-	  auto cntr = simplex_barycenter(*brush_grid_->GetCell(c));
-	  myfile << TDatabase::TimeDB->CURRENTTIME << ",";
-	  myfile << c << ",";
-	  myfile << cntr[0] << ",";
-	  myfile << cntr[1] << ",";
-	  //Brush ASA values
-	  auto bgn_ind= br_grid_space_.GetBeginIndex();
-	  auto dofs = br_grid_space_.GetGlobalNumbers();
-	  auto dof = dofs[bgn_ind[c]];
-	  myfile << br_grid_psdmom_fcts_values_[1].at(dof) << ",";
-	  //ParMooN ASA values
-	  bgn_ind= br_grid_param_fcts_[4]->GetFESpaceXD()->GetBeginIndex();
-	  dofs = br_grid_param_fcts_[4]->GetFESpaceXD()->GetGlobalNumbers();
-	  dof = dofs[bgn_ind[c]];
-	  double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * 0.18016;
-	  myfile << val_in_kg << ",";
-	  //velocity (x direction) in the current ambient
-	  bgn_ind= br_grid_param_fcts_[0]->GetFESpaceXD()->GetBeginIndex();
-	  dofs = br_grid_param_fcts_[0]->GetFESpaceXD()->GetGlobalNumbers();
-	  dof = dofs[bgn_ind[c]];
-	  double velo = br_grid_param_fcts_[0]->GetValues()[dof];
-	  myfile << velo << "\n";
-  }
-  myfile.close();
-  }
+//  // .csv mass balance control output every 1s - not needed for 3d example so far
+//  double del = fabs(TDatabase::TimeDB->CURRENTTIME - std::round(TDatabase::TimeDB->CURRENTTIME));
+//  if(del < 1e-3)
+//  {
+//    interface_->update_stats();
+//    interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
+//    std::ofstream myfile;
+//    std::string out_dir(db_["output_vtk_directory"].value_as_string());
+//    std::size_t pos = out_dir.find("VTK");// Lil hack - the directory above 'VTK',
+//    out_dir = out_dir.substr(0,pos); 		// ...should be the general output directory.
+//    std::string mass_bal_file = out_dir + "mass_balance.csv";
+//    myfile.open (mass_bal_file.c_str(),std::ios_base::app);
+//
+//    for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
+//    {
+//      auto cntr = simplex_barycenter(*brush_grid_->GetCell(c));
+//      myfile << TDatabase::TimeDB->CURRENTTIME << ",";
+//      myfile << c << ",";
+//      myfile << cntr[0] << ",";
+//      myfile << cntr[1] << ",";
+//      //Brush ASA values
+//      auto bgn_ind= br_grid_space_.GetBeginIndex();
+//      auto dofs = br_grid_space_.GetGlobalNumbers();
+//      auto dof = dofs[bgn_ind[c]];
+//      myfile << br_grid_psdmom_fcts_values_[1].at(dof) << ",";
+//      //ParMooN ASA values
+//      bgn_ind= br_grid_param_fcts_[4]->GetFESpaceXD()->GetBeginIndex();
+//      dofs = br_grid_param_fcts_[4]->GetFESpaceXD()->GetGlobalNumbers();
+//      dof = dofs[bgn_ind[c]];
+//      double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * 0.18016;
+//      myfile << val_in_kg << ",";
+//      //velocity (x direction) in the current ambient
+//      bgn_ind= br_grid_param_fcts_[0]->GetFESpaceXD()->GetBeginIndex();
+//      dofs = br_grid_param_fcts_[0]->GetFESpaceXD()->GetGlobalNumbers();
+//      dof = dofs[bgn_ind[c]];
+//      double velo = br_grid_param_fcts_[0]->GetValues()[dof];
+//      myfile << velo << "\n";
+//    }
+//    myfile.close();
+//  }
 
 }
 
