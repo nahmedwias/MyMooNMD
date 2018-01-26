@@ -3229,6 +3229,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     // this could provide values of FE functions during the local assemble
     // routine, not yet supported.
     //la.GetParameters(N_Points,Coll, cell,icell, xi,eta, X,Y, Param);
+    la.compute_parameters(N_Points, Coll, cell, icell, X, Y);
 
     // ########################################################################
     // assemble local matrices and right hand sides
@@ -3254,9 +3255,9 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       }
     }                                               // endif N_AllMatrices
     
-    la.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, &LocN_BF[0], &LocBF[0],
-                     cell, LocMatrices, LocRhs);
-    
+    la.get_local_forms(N_Points, weights, AbsDetjk, X, Y, &LocN_BF[0],
+                       &LocBF[0], cell, N_AllMatrices, n_rhs, LocMatrices, 
+                       LocRhs);
     
     // ########################################################################
     // add local matrices to global matrices (ansatz == test)
