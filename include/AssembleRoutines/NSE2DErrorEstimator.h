@@ -87,7 +87,7 @@ public:
                           MultiIndex2D *NeededDerivatives,
                           int N_DerivativesP,
                           MultiIndex2D *NeededDerivativesP,
-                          CoeffFct2D *Coeff, 
+                          CoeffFct2D Coeff, 
                           BoundCondFunct2D **BoundaryConds,
                           BoundValueFunct2D **BoundaryValues,
                           TAuxParam2D *Aux,

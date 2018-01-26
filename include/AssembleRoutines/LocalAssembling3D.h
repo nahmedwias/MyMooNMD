@@ -98,7 +98,7 @@ class LocalAssembling3D
     std::vector<int> RhsSpace;
 
     /** function for calculating the coefficients */
-    CoeffFct3D *Coeffs;
+    CoeffFct3D Coeffs;
 
     /** @brief function doing the real assembling using parameters from 
      *         argument list */
@@ -172,7 +172,7 @@ class LocalAssembling3D
      *
      */
     LocalAssembling3D(LocalAssembling3D_type type, TFEFunction3D **fefunctions3d,
-                      CoeffFct3D *coeffs, int disctype = 1);
+                      CoeffFct3D coeffs, int disctype = 1);
     
     /** @brief Constructor for backward compatibility
      * 
@@ -199,7 +199,7 @@ class LocalAssembling3D
                       std::vector<int> myRowSpace,
                       std::vector<int> myColumnSpace,
                       std::vector<int> myRhsSpace,
-                      CoeffFct3D* myCoeffs, 
+                      CoeffFct3D myCoeffs, 
                       AssembleFctParam3D* myAssembleParam,
                       ManipulateFct3D* myManipulate,
                       int myN_Matrices, int myN_Rhs,
@@ -237,7 +237,7 @@ class LocalAssembling3D
     { return Needs2ndDerivatives; }
 
     /** function for calculating the coefficients */
-    CoeffFct3D *GetCoeffFct() const
+    const CoeffFct3D& GetCoeffFct() const
     { return Coeffs; }
     
     /** return the index of the row space of the i-th matrix */

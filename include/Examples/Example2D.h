@@ -53,7 +53,7 @@ class Example2D
     Example2D(std::vector <DoubleFunct2D*> exact,
               std::vector <BoundCondFunct2D*> bc,
               std::vector <BoundValueFunct2D*> bd, 
-              CoeffFct2D *coeffs);
+              CoeffFct2D coeffs);
 
     /* functions representing the exact solution */
     std::vector <DoubleFunct2D*> exact_solution;
@@ -62,7 +62,7 @@ class Example2D
     /* functions representing the boundary data */
     std::vector <BoundValueFunct2D*> boundary_data;
     /* functions representing the coefficients of the pde */
-    CoeffFct2D *problem_coefficients;
+    CoeffFct2D problem_coefficients;
     //void *example_info();
 
     //Declaration of special member functions - rule of zero
@@ -105,7 +105,7 @@ class Example2D
     BoundValueFunct2D* get_bd(unsigned int i) const
     { return boundary_data.at(i); }
 
-    CoeffFct2D* get_coeffs() const
+    const CoeffFct2D& get_coeffs() const
     { return problem_coefficients; }
 
     const ParameterDatabase & get_database() const

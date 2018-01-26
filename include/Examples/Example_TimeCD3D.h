@@ -44,7 +44,7 @@ public:
   Example_TimeCD3D(std::vector <DoubleFunct3D*> exact,
                    std::vector <BoundCondFunct3D*> bc,
                    std::vector <BoundValueFunct3D*> bd, 
-                   CoeffFct3D *coeffs,                    
+                   CoeffFct3D coeffs,                    
                    bool timedependentrhs, bool timedependentcoeffs, 
                    std::vector <DoubleFunct3D*> init_cond)
   : Example_NonStationary3D(exact, bc, bd, coeffs,  timedependentrhs, 

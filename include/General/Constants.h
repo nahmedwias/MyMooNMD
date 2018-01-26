@@ -12,6 +12,7 @@
 #define __CONSTANTS__
 
 #include <cmath>
+#include <functional>
 
 #ifdef __2D__
 #define GEO_DIM 2
@@ -88,14 +89,11 @@ typedef void ErrorMethod3D(int, double *, double *, double *,
 
 typedef DoubleFunctVect ParamFct;
 
-typedef void CoeffFct2D(int n_points, double *X, double *Y,
-                        double **param, double **coeffs);
+typedef std::function<void(int, double*, double*, double**, double**)> 
+  CoeffFct2D;
 
-typedef void CoeffFct3D(int n_points, double *X, double *Y, double *Z,
-                        double **param, double **coeffs);
-                        
-typedef void CoeffFctND(int n_points, int N_Dim, double **Coords,
-                        double **param, double **coeffs);  
+typedef std::function<void(int, double*, double*, double*, double**, double**)>
+  CoeffFct3D;
 
 typedef void AssembleFct2D(double, double *, double, double **, 
                            int *, double ***, double **);

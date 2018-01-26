@@ -1179,9 +1179,9 @@ int time_dependent_problem)
 /*************************************************************************/
 double EstimateCoercivityConstant(TCollection *Coll,
 #ifdef __2D__
-                                  CoeffFct2D *Coeffs
+                                  CoeffFct2D Coeffs
 #else // 3D
-                                  CoeffFct3D *Coeffs
+                                  CoeffFct3D Coeffs
 #endif
                                   )
 {
@@ -1337,7 +1337,7 @@ void SetSoldParameters(int i)
 
 #ifdef __2D__
 void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u, 
-                       CoeffFct2D *Coeffs, double *rhs, int time_dependent,
+                       CoeffFct2D Coeffs, double *rhs, int time_dependent,
                        double *time_step, TFEFunction2D *old_u)
 {
   int i, j, ii, N_Cells, *GlobalNumbers, *BeginIndex;

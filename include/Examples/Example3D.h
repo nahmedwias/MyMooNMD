@@ -51,7 +51,7 @@ class Example3D
      */
     Example3D(std::vector <DoubleFunct3D*> exact,
               std::vector <BoundCondFunct3D*> bc,
-              std::vector <BoundValueFunct3D*> bd, CoeffFct3D *coeffs);
+              std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs);
 
     /* functions representing the exact solution */
     std::vector <DoubleFunct3D*> exact_solution;
@@ -60,7 +60,7 @@ class Example3D
     /* functions representing the boundary data */
     std::vector <BoundValueFunct3D*> boundary_data;
     /* functions representing the coefficients of the pde */
-    CoeffFct3D *problem_coefficients;
+    CoeffFct3D problem_coefficients;
     
     //Declaration of special member functions - rule of zero
 
@@ -102,7 +102,7 @@ class Example3D
     BoundValueFunct3D* get_bd(unsigned int i) const
     { return boundary_data.at(i); }
 
-    CoeffFct3D* get_coeffs() const
+    const CoeffFct3D& get_coeffs() const
     { return problem_coefficients; }
 
     const ParameterDatabase & get_database() const

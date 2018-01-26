@@ -65,7 +65,7 @@ class TFEVectFunct2D : public TFEFunction2D
         int N_Derivatives,
         MultiIndex2D *NeededDerivatives,
         int N_Errors, ErrorMethod2D *ErrorMeth, 
-        CoeffFct2D *Coeff, TAuxParam2D *Aux,
+        CoeffFct2D Coeff, TAuxParam2D *Aux,
         int n_fespaces, TFESpace2D **fespaces,
         double *errors);
 

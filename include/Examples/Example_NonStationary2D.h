@@ -59,7 +59,7 @@ class Example_NonStationary2D : public Example2D
     Example_NonStationary2D(std::vector <DoubleFunct2D*> exact,
               std::vector <BoundCondFunct2D*> bc,
               std::vector <BoundValueFunct2D*> bd, 
-              CoeffFct2D *coeffs,
+              CoeffFct2D coeffs,
               bool timedependentrhs = true, bool timedependentcoeffs=true,
               std::vector <DoubleFunct2D*> init_cond=std::vector<DoubleFunct2D*>());
     
