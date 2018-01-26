@@ -66,14 +66,14 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
 
   Needs2ndDerivatives = new bool[N_Spaces];
   for(i=0;i<N_Spaces;i++)
-    Needs2ndDerivatives[i] = FALSE;
+    Needs2ndDerivatives[i] = false;
 
   for(i=0;i<N_Terms;i++)
   {
     alpha = Derivatives[i];
     j = FESpaceNumber[i];
     if(alpha == D20 || alpha == D11 || alpha == D02)
-      Needs2ndDerivatives[j] = TRUE;
+      Needs2ndDerivatives[j] = true;
   }
 
   #ifdef _MPI
@@ -135,14 +135,14 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
 
   Needs2ndDerivatives = new bool[N_Spaces];
   for(i=0;i<N_Spaces;i++)
-    Needs2ndDerivatives[i] = FALSE;
+    Needs2ndDerivatives[i] = false;
 
   for(i=0;i<N_Terms;i++)
   {
     alpha = Derivatives[i];
     j = FESpaceNumber[i];
     if(alpha == D20 || alpha == D11 || alpha == D02)
-      Needs2ndDerivatives[j] = TRUE;
+      Needs2ndDerivatives[j] = true;
   }
 
 #ifdef _MPI

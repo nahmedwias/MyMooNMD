@@ -209,4 +209,4 @@ TBaseFunct2D *BF_C_Q_EL1_2D_Obj = new TBaseFunct2D
          C_Q_EL1_2D_Funct, C_Q_EL1_2D_DeriveXi,
          C_Q_EL1_2D_DeriveEta, C_Q_EL1_2D_DeriveXiXi,
          C_Q_EL1_2D_DeriveXiEta, C_Q_EL1_2D_DeriveEtaEta, 2, 1,
-         0, nullptr, TRUE);
+         0, nullptr, true);

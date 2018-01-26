@@ -21,8 +21,8 @@
  */
 
 typedef enum { 
-	FEPC_FALSE, 
-	FEPC_TRUE 
+	FEPC_false, 
+	FEPC_true 
 } bool_t;
 
 typedef double  fepc_real_t;

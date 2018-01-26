@@ -1267,7 +1267,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
    } //if(cell->IsLayerCell())
 // =================================================================
 
-  IsIsoparametric = FALSE;
+  IsIsoparametric = false;
   if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
   {
     for(i=0;i<N_Faces;i++)
@@ -1278,22 +1278,22 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
       {
         bdtype = ((TBoundFace *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Plane)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
       if(jointtype == InterfaceJoint3D)
       {
         bdtype = ((TInterfaceJoint3D *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Plane)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
       if(jointtype == IsoInterfaceJoint3D)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
 
       if(jointtype == IsoJointEqN)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
 
       if(jointtype == IsoBoundFace)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
     } // endfor
     
     if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY==1)
@@ -1312,7 +1312,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
             vertex++;
         }
         if (vertex>=2)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
     } // endif  
         

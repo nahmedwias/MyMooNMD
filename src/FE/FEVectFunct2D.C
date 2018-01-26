@@ -280,7 +280,7 @@ void TFEVectFunct2D::GetDeformationTensorErrors(
 
   SecondDer = new bool[n_fespaces];
   for(i=0;i<n_fespaces;i++)
-    SecondDer[i] = FALSE;
+    SecondDer[i] = false;
 
   N_Parameters = Aux->GetN_Parameters();
   aux1 = new double [MaxN_QuadPoints_2D*N_Parameters];
@@ -429,7 +429,7 @@ double TFEVectFunct2D::GetL2NormDivergence()
   int N_UsedElements = 1;
   BaseFunct2D BaseFunct, *BaseFuncts;
   int *N_BaseFunct, N_Bf;
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
   double diverror, locdiv;
   int N_Points;
   double *xi, *eta, *weights;
@@ -543,7 +543,7 @@ double TFEVectFunct2D::GetL2NormDivergenceError(DoubleFunct2D *Exact_u1,DoubleFu
   double **OrigFEValuesX, *OrigX, value;
   double **OrigFEValuesY, *OrigY;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
   double AbsDetJK[MaxN_QuadPoints_2D];
 
   double div_error = 0.;
@@ -783,7 +783,7 @@ void TFEVectFunct2D::Interpolate(TFEVectFunct2D *OldVectFunct)
     
     RefTrans = RefTransArray[FEId];
 
-    IsIsoparametric = FALSE;
+    IsIsoparametric = false;
     if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
     {
       for(j=0;j<N_Edges;j++)
@@ -794,17 +794,17 @@ void TFEVectFunct2D::Interpolate(TFEVectFunct2D *OldVectFunct)
         {
           bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Line)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
         if(jointtype == InterfaceJoint)
         {
           bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Line)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
         if(jointtype == IsoInterfaceJoint ||
            jointtype == IsoBoundEdge)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
     } // endif    
  
@@ -945,7 +945,7 @@ void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *
       TFEDatabase2D::GetRefFromOrig(RefTrans, x, y, xi, eta);
       
       // values are calculated in oldfunction, so isoparam        
-      IsIsoparametric = FALSE;           
+      IsIsoparametric = false;           
       if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
       {
        RefElement = FE_Obj->GetBaseFunct2D()->GetRefElement();     
@@ -972,17 +972,17 @@ void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *
         {
          bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
          if(bdtype != Line)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
         }
        if(jointtype == InterfaceJoint)
        {
         bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Line)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
        }
        
        if(jointtype == IsoInterfaceJoint || jointtype == IsoBoundEdge)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
        }
       }// endif 
 

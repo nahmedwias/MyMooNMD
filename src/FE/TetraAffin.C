@@ -447,7 +447,7 @@ void TTetraAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
 
     if(Needs2ndDer[i])
     {
-      SecondDer = TRUE;
+      SecondDer = true;
       
       refvaluesD200 = TFEDatabase3D::GetRefElementValues(BaseFunct,
                                                          QuadFormula, D200);

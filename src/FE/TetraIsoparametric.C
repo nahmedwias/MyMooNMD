@@ -352,7 +352,7 @@ void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
 
   QuadFormula = quadformula;
 
-  SecondDer = FALSE;
+  SecondDer = false;
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];

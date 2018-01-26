@@ -26,7 +26,7 @@ TVertex::TVertex(double initX, double initY, double initZ)
 
 #ifdef _MPI
   N_Cells = 0;
-  SubDomainVert = FALSE;
+  SubDomainVert = false;
   N_SubDomains = 0;
   SubDomain_Ranks = nullptr;
   SubDomainGlobalCellNo = nullptr;
@@ -34,7 +34,7 @@ TVertex::TVertex(double initX, double initY, double initZ)
   N_CrossNeibCells = 0;
   Cells = nullptr;
 #endif
-  BoundVert=FALSE; 
+  BoundVert=false; 
 }
 #else
 TVertex::TVertex(double initX, double initY)
@@ -163,7 +163,7 @@ void TVertex::AddCrossNeib(int Neib_ID)
 {
  int i, tmp;
  
-  CrossVert = TRUE;
+  CrossVert = true;
  
     for(i=N_CrossNeibCells;i<N_SubDomains;i++)
      if(SubDomain_Ranks[i] == Neib_ID) // swap, cross ID will be at the begning

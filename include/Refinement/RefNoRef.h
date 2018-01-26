@@ -22,7 +22,7 @@ class TRefNoRef : public TRefDesc
     TRefNoRef(TShapeDesc *shape);
 
     // Methods
-    /** return TRUE because object is to refine */
+    /** return true because object is to refine */
     virtual int IsToRefine()
     { return false; }
 

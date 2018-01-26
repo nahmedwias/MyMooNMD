@@ -58,7 +58,7 @@ int TIt_Finest::GetMaxLevel()
       if (ActiveLevel > MaxLevel) MaxLevel = ActiveLevel;
     }
 
-  } while (TRUE);
+  } while (true);
 
   return MaxLevel;
 }

@@ -2451,7 +2451,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   }                                               // endif N_AllMatrices
 
   SecondDer = new bool[n_fespaces];
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   // ########################################################################
   // loop over all cells
@@ -5144,7 +5144,7 @@ TAuxParam2D *Parameters)
   }                                               // endif N_AllMatrices
 
   SecondDer = new bool[n_fespaces];
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   if(n_rhs)
   {
@@ -5467,7 +5467,7 @@ TAuxParam2D *Parameters)
       DOF = GlobalNumbers[n] + BeginIndex[n][i];  // dof of current mesh cell
 
       LocalUsedElements[0] = CurrentElement;
-      SecondDer[0] = FALSE;
+      SecondDer[0] = false;
       RefTrans = TFEDatabase2D::GetOrig(1, LocalUsedElements,
         Coll, cell, SecondDer,
         N_Points, xi, eta, weights, X, Y, AbsDetjk);
@@ -6664,7 +6664,7 @@ TAuxParam2D *Parameters)
   }                                               // endif N_AllMatrices
 
   SecondDer = new bool[n_fespaces];
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   for (i=0;i<N_BaseFuncts2D;i++)
   {
@@ -6970,7 +6970,7 @@ TAuxParam2D *Parameters)
       DOF = GlobalNumbers[n] + BeginIndex[n][i];  // dof of current mesh cell
 
       LocalUsedElements[0] = CurrentElement;
-      SecondDer[0] = FALSE;
+      SecondDer[0] = false;
       RefTrans = TFEDatabase2D::GetOrig(1, LocalUsedElements,
         Coll, cell, SecondDer,
         N_Points, xi, eta, weights, X, Y, AbsDetjk);

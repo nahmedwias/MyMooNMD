@@ -196,7 +196,7 @@ void TQuadIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
   bool SecondDer;
   double rec_detjk, a11, a12, a21, a22;
 
-  SecondDer = FALSE;
+  SecondDer = false;
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
@@ -252,7 +252,7 @@ void TQuadIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
   
     if(Needs2ndDer[i])
     {
-      SecondDer = TRUE;
+      SecondDer = true;
 
 //      refvaluesD20=TFEDatabase2D::GetRefElementValues(BaseFunct,
 //                                        formula, D20);

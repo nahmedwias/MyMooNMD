@@ -62,7 +62,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
   int MaxLen3;
 #endif
 
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
 
   if (Neighb0 == Me)
     Neighb = Neighb1;
@@ -152,7 +152,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
     if (NeibEdgeRef != MyEdgeRef)
       return -2;
    
-    Tmp.Filled = TRUE;
+    Tmp.Filled = true;
 
     NeighbRefDesc = Neighb->GetRefDesc();
 
@@ -220,7 +220,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
     }
 
 
-    Tmp.Filled = TRUE;
+    Tmp.Filled = true;
 
     NeighbRefDesc = Neighb->GetRefDesc();
 
@@ -279,7 +279,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, StoreGeomMortar &Tmp)
   TRefDesc *NeighbRefDesc;
   Refinements NeibEdgeRef, MyEdgeRef;
 
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
 
   if (Neighb0 == Me)
     Neighb = Neighb1;
@@ -300,7 +300,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, StoreGeomMortar &Tmp)
     if (NeibEdgeRef != MyEdgeRef)
       return -2;
 
-    Tmp.Filled = TRUE;
+    Tmp.Filled = true;
 
     NeighbRefDesc = Neighb->GetRefDesc();
 

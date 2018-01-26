@@ -31,8 +31,8 @@ TEdge::TEdge(int n_Neibs, TBaseCell **neighbs)
    Neighbs[i] = neighbs[i];
 
 #ifdef  _MPI  
-  SubDomainEdge = FALSE;
-  SubDomainCrossEdge = FALSE;
+  SubDomainEdge = false;
+  SubDomainCrossEdge = false;
   N_SubDomainNeibs = 0;
   SubDomainNeibsRank = nullptr;
   CrossNeibsGlobalNo = nullptr;
@@ -59,7 +59,7 @@ void TEdge::InitSubDomainInfo(int rank)
   for(i=0; i<N_Neibs; i++)
    if(Neighbs[i]->GetSubDomainNo() != rank )
     {
-     SubDomainEdge = TRUE;
+     SubDomainEdge = true;
      break;
     }
 
@@ -78,11 +78,11 @@ void TEdge::InitSubDomainInfo(int rank)
       if(ID==rank)
        continue;
 
-     UPDATE = TRUE;
+     UPDATE = true;
      for(j=0; j<N_SubDomainNeibs; j++)
       if(ID==SubDomainNeibsRank[j])
        {
-        UPDATE = FALSE;
+        UPDATE = false;
         break;
        }
 
@@ -132,7 +132,7 @@ void TEdge::SetCrossNeibInfo(TVertex *Vert_a)
 
  if(N_CrossNeibs>0)
   {
-   SubDomainCrossEdge = TRUE;
+   SubDomainCrossEdge = true;
    CrossNeibsGlobalNo = new int[N_CrossNeibs];
    CrossNeibsLocalEdgeNo = new int[N_CrossNeibs];
    CrossEdgeMaptype = new int[N_CrossNeibs];

@@ -1941,7 +1941,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
       N_Edges = 0;
   } // endswitch
 
-  bool IsIsoparametric = FALSE;
+  bool IsIsoparametric = false;
   if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
   {
     for(int i=0;i<N_Edges;i++)
@@ -1952,17 +1952,17 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
       {
         BoundTypes bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Line)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
       if(jointtype == InterfaceJoint)
       {
         BoundTypes bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Line)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
       if(jointtype == IsoInterfaceJoint ||
          jointtype == IsoBoundEdge)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
     }
   }// endif 
 

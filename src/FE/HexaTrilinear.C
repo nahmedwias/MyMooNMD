@@ -451,7 +451,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
   
-  SecondDer = FALSE;
+  SecondDer = false;
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
@@ -519,7 +519,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
       /*
       if(Needs2ndDer[i])
         {
-          SecondDer = TRUE;
+          SecondDer = true;
           
           refvaluesD200=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
           origvaluesD200=TFEDatabase3D::GetOrigElementValues(BaseFunct, D200);

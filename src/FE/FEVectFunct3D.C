@@ -288,7 +288,7 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
 
   SecondDer = new bool[n_fespaces];
   for(i=0;i<n_fespaces;i++)
-    SecondDer[i] = FALSE;
+    SecondDer[i] = false;
 
   N_Parameters = Aux->GetN_Parameters();
   aux1 = new double [MaxN_QuadPoints_3D*N_Parameters];

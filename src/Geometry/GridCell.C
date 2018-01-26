@@ -909,7 +909,7 @@ int TGridCell::SetNoRefinement()
 
 int TGridCell::IsToRefine()
 {
-  return RefDesc->IsToRefine() ? Children == nullptr ? TRUE : FALSE : FALSE;
+  return RefDesc->IsToRefine() ? Children == nullptr ? true : false : false;
 }
 
 #ifdef __2D__
@@ -1010,7 +1010,7 @@ int TGridCell::LineMidT(int J_i, int SJ_j, double &T_0, double &T_1)
 bool TGridCell::PointInCell(double X, double Y)
 {
   int i, j, N_ = RefDesc->GetN_OrigEdges();
-  bool test = TRUE;
+  bool test = true;
   double NX, NY, DX, DY;
 //   double len;
 
@@ -1055,7 +1055,7 @@ bool TGridCell::PointInCell(double X, double Y, double Z)
   double xmax = -1e+8,  ymax = -1e+8, zmax = -1e+8;
   double x, y, z;
   int i;
-  bool ret = FALSE;
+  bool ret = false;
   TTetraAffin *rt;
   double xi, eta, zeta;
 
@@ -1078,7 +1078,7 @@ bool TGridCell::PointInCell(double X, double Y, double Z)
         ymin <= Y && Y <= ymax &&
         zmin <= Z && Z <= zmax)
     { 
-      ret = TRUE;
+      ret = true;
     }
   }
   else
@@ -1091,7 +1091,7 @@ bool TGridCell::PointInCell(double X, double Y, double Z)
        -1e-4 < zeta && zeta < 1.0001 &&
        xi + eta + zeta < 1.0001)
     {
-      ret = TRUE;
+      ret = true;
     }
     // cout << "ref: " << xi << "  " << eta << "  " << zeta << endl;
     rt->GetRefFromOrig(xi, eta, zeta, X, Y, Z);

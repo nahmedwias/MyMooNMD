@@ -513,7 +513,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 
           // check! any subdomain cell containg this vert has to be added
           // Setting all halo cells
-          UPDATE = TRUE;
+          UPDATE = true;
           for(ii=1;ii<=N_CellsInThisVert;ii++)
            {
             VertexCellNo = vertex_cell_neighbors_info.at(N + ii);
@@ -529,7 +529,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
                 cell->SetAsDependentCell();
                 CurrVert->SetAsSubDomainVert();
                 HaloCellIndex[VertexcellID]= VertexCellNo;
-                UPDATE = FALSE;
+                UPDATE = false;
                }
               Vertexcell->SetAsHaloCell();
 
@@ -554,12 +554,12 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
                 continue;
 
                N_CellsIn_b = VertNeibRanks[N];
-               UPDATE = TRUE;
+               UPDATE = true;
 
                for(jj=1;jj<=N_CellsIn_b;jj++)
                 if( VertNeibRanks[N + jj]==VertexcellID)
                  {
-                  UPDATE = FALSE;
+                  UPDATE = false;
                   break;
                  }
 
@@ -1342,7 +1342,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 
           // check! any subdomain cell containg this vert has to be added
           // Setting all halo cells
-          UPDATE = TRUE;
+          UPDATE = true;
           for(ii=1;ii<=N_CellsInThisVert;ii++)
            {
             VertexCellNo = PointNeighb[N + ii];
@@ -1358,7 +1358,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 		
                 CurrVert->SetAsSubDomainVert();
                 HaloCellIndex[VertexcellID]= VertexCellNo;
-                UPDATE = FALSE;
+                UPDATE = false;
                }
               Vertexcell->SetAsHaloCell();
 
@@ -1383,12 +1383,12 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
                 continue;
 
                int N_CellsIn_b = VertNeibRanks[N];
-               UPDATE = TRUE;
+               UPDATE = true;
 
                for(jj=1;jj<=N_CellsIn_b;jj++)
                 if( VertNeibRanks[N + jj]==VertexcellID)
                  {
-                  UPDATE = FALSE;
+                  UPDATE = false;
                   break;
                  }
 

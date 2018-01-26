@@ -755,7 +755,7 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
   for(i=0;i<MaxN_QuadPoints_3D;i++)
     Derivatives[i] = der+i;
 
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   GlobalNumbers = FESpace->GetGlobalNumbers();
   BeginIndex = FESpace->GetBeginIndex();
@@ -898,7 +898,7 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace,
   for(i=0;i<MaxN_QuadPoints_3D;i++)
     Derivatives[i] = der+i;
 
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   GlobalNumbers = FESpace->GetGlobalNumbers();
   BeginIndex = FESpace->GetBeginIndex();
@@ -1256,7 +1256,7 @@ void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
       for(i=0;i<MaxN_QuadPoints_2D;i++)
         Derivatives[i] = der+i;
 
-      SecondDer[0] = FALSE;
+      SecondDer[0] = false;
 
       GlobalNumbers = FESpace->GetGlobalNumbers();
       BeginIndex = FESpace->GetBeginIndex();
@@ -1377,7 +1377,7 @@ void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
   for(i=0;i<MaxN_QuadPoints_2D;i++)
     Derivatives[i] = der+i;
 
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   GlobalNumbers = FESpace->GetGlobalNumbers();
   BeginIndex = FESpace->GetBeginIndex();

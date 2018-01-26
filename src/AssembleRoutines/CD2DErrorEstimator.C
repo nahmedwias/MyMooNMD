@@ -369,7 +369,7 @@ double *estimated_global_error)
     {
       CurrentElement = fespaces[j]->GetFE2D(i,cell);
       LocalUsedElements[j] = CurrentElement;
-      SecondDer[j] = TRUE;                        // with 2nd derivative
+      SecondDer[j] = true;                        // with 2nd derivative
     }
     N_LocalUsedElements = n_fespaces;
 

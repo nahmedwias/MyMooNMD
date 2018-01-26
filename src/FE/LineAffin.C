@@ -85,7 +85,7 @@ void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points
   double *refD2, *origD2;
   double *aux;
 
-  bool SecondDer=FALSE;
+  bool SecondDer=false;
 
   BaseFunct1D BaseFunct;
 
@@ -138,7 +138,7 @@ void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points
 
     if(Needs2ndDer[i])
      {
-      SecondDer = TRUE;
+      SecondDer = true;
       
       refvaluesD2=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D2);
       origvaluesD2=TFEDatabase2D::GetOrigElementValues(BaseFunct, D2);    

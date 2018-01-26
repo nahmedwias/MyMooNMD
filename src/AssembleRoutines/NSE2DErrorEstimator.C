@@ -346,9 +346,9 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
 //      LocN_BF[j] = N_BaseFunct[CurrentElement]; // local basis functions
 //      LocBF[j] = BaseFuncts[CurrentElement];
       if (j==0)
-        SecondDer[j] = TRUE;                      // with 2nd derivative
+        SecondDer[j] = true;                      // with 2nd derivative
       else                                        // for velo
-        SecondDer[j] = FALSE;
+        SecondDer[j] = false;
     }
     N_LocalUsedElements = n_fespaces;
 
