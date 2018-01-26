@@ -700,8 +700,9 @@ void LocalAssembling2D::get_local_forms(int N_Points,
   Parameters = new double*[this->parameter_functions_values.size()];
   for(unsigned int i=0; i<this->parameter_functions_values.size(); i++)
   {
-    Parameters[i] = new double[this->parameter_functions_values[i].size()];
+    Parameters[i] = &this->parameter_functions_values[i][0];
   }
+  
 
     // allocate the memory for matrices
   for(int i = 0; i < N_Matrices; i++)
@@ -786,7 +787,7 @@ void LocalAssembling2D::get_local_forms(int N_Points,
 		  LocRhs);
   } // end loop over quadrature points
  
-   
+  delete [] Parameters;
 }
 
 
