@@ -106,7 +106,7 @@ std::vector<char*> str_to_vector_char_p(const std::string &s)
   std::vector<size_t> word_positions;
   word_positions.reserve(n_arg+1);
   // zero is always the first position
-  word_positions.push_back((size_t)0);
+  word_positions.push_back(0u);
 
   // fill the vector word_positions
   current_position = s.find(" ");
