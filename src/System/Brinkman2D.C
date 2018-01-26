@@ -48,9 +48,9 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
     db.add("equal_order_stab_scaling", "by h_T",
            "This string enables to switch between the prefactor h_T^2/(mueff + sigma h_T^2) and h_T^2/(mueff + sigma L_0^2) for some characteristic length of the domain.",
             {"by h_T", "by L_0"});
-      db.add("equal_order_stab_weight_PkPk", (double) 0., "", (double) -1000, (double) 1000 );
+      db.add("equal_order_stab_weight_PkPk", 0., "", -1000., 1000. );
 
-      db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
+      db.add("refinement_n_initial_steps", 2u , "", 0u, 10000u);
 
 
 /* // Possible candidates for own database (maybe also a boundary assembling database, or into the assembling 2d database)
