@@ -4988,7 +4988,7 @@ double *rhs_for_stress_other)
 //
 // =======================================================================
 
-void Assemble2D_DG(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_DG(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 int n_matrices, TMatrix2D **matrices,
 int n_rhs, double **rhs, TFESpace2D **ferhs,
@@ -6482,7 +6482,7 @@ TAuxParam2D *Parameters)
 //
 // =======================================================================
 
-void Assemble2D_CIP(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_CIP(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 int n_matrices, TMatrix2D **matrices,
 int n_rhs, double **rhs, TFESpace2D **ferhs,

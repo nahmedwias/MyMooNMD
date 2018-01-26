@@ -90,7 +90,7 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type, int di
 
 LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, 
                                      TFEFunction3D **fefunctions3d,
-                                     CoeffFct3D *coeffs,
+                                     CoeffFct3D coeffs,
                                      int disctype)
  : type(type), discretization_type(disctype),
    name(LocalAssembling3D_type_to_string(type,disctype)), Coeffs(coeffs),
@@ -419,7 +419,7 @@ LocalAssembling3D::LocalAssembling3D(
   int myN_Terms, std::vector<MultiIndex3D> myDerivatives,
   std::vector<int> myFESpaceNumber, std::vector<int> myRowSpace,
   std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
-  CoeffFct3D* myCoeffs, AssembleFctParam3D* myAssembleParam,
+  CoeffFct3D myCoeffs, AssembleFctParam3D* myAssembleParam,
   ManipulateFct3D* myManipulate, int myN_Matrices, int myN_Rhs,
   int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
   std::vector<int> myBeginParameter, int myN_Parameters,

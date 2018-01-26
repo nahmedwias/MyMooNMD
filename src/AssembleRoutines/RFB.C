@@ -28,7 +28,7 @@
 
 #ifdef __2D__
 void ApproximateRFBSolutionQuadNSE2DOri(TCollection *Coll, TFEFunction2D *u1,
-TFEFunction2D *u2, CoeffFct2D *Coeffs,
+TFEFunction2D *u2, CoeffFct2D Coeffs,
 double *rhs)
 {
   int i, j, N_Cells, N_V, ii, jj, ic, jc, dof[4], N_U, N_;
@@ -525,7 +525,7 @@ double *rhs)
 
 
 void ApproximateRFBSolutionQuadNSE2D(TCollection *Coll, TFEFunction2D *u1,
-TFEFunction2D *u2, CoeffFct2D *Coeffs,
+TFEFunction2D *u2, CoeffFct2D Coeffs,
 double *rhs)
 {
   int i, j, N_Cells, N_V, ii, jj, ic, jc, dof[4], N_U, N_, ij;
@@ -1080,7 +1080,7 @@ double *rhs)
 // =======================================================================
 
 void ApproximateRFBSolutionQuad_Q2_NSE2D(TCollection *Coll, TFEFunction2D *u1,
-TFEFunction2D *u2, CoeffFct2D *Coeffs,
+TFEFunction2D *u2, CoeffFct2D Coeffs,
 double *rhs)
 {
   int i, j, N_Cells, N_V, ii, jj, ic, jc, dof[9], N_U, N_, ij;

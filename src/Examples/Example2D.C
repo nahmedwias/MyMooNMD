@@ -49,7 +49,7 @@ Example2D::Example2D(const ParameterDatabase & db)
 
 Example2D::Example2D(std::vector <DoubleFunct2D*> exact,
                      std::vector <BoundCondFunct2D*> bc,
-                     std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
+                     std::vector <BoundValueFunct2D*> bd, CoeffFct2D coeffs)
  : example_database(Example2D::default_example_database()), exact_solution(exact),
    boundary_conditions(bc), boundary_data(bd), problem_coefficients(coeffs)
 { 

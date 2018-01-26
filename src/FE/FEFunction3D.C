@@ -78,7 +78,7 @@ TFEFunction3D::~TFEFunction3D()
 void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                               MultiIndex3D *NeededDerivatives,
                               int N_Errors, ErrorMethod3D *ErrorMeth, 
-                              CoeffFct3D *Coeff, 
+                              CoeffFct3D Coeff, 
                               TAuxParam3D *Aux,
                               int n_fespaces, const TFESpace3D **fespaces,
                               double *errors) const
@@ -450,7 +450,7 @@ void TFEFunction3D::GetErrorsForVectorValuedFunction(
 void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
                               MultiIndex3D *NeededDerivatives,
                               int N_Errors, ErrorMethod3D *ErrorMeth, 
-                              CoeffFct3D *Coeff, 
+                              CoeffFct3D Coeff, 
                               TAuxParam3D *Aux,
                               int n_fespaces, const TFESpace3D **fespaces,
                               double *errors, double *cell_parameters)

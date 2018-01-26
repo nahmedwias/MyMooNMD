@@ -131,7 +131,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type, int di
 //==============================================================================
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
                                      TFEFunction2D **fefunctions2d,
-                                     CoeffFct2D *coeffs,
+                                     CoeffFct2D coeffs,
                                      int disctype)
  : type(type), discretization_type(disctype),
    name(LocalAssembling2D_type_to_string(type, disctype)), Coeffs(coeffs),
@@ -506,7 +506,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
 LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 		std::vector<MultiIndex2D> myDerivatives, std::vector<int> myFESpaceNumber,
 		std::vector<int> myRowSpace, std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
-		CoeffFct2D* myCoeffs, AssembleFctParam2D* myAssembleParam, ManipulateFct2D* myManipulate,
+		CoeffFct2D myCoeffs, AssembleFctParam2D* myAssembleParam, ManipulateFct2D* myManipulate,
 		int myN_Matrices, int myN_Rhs,
 		int myN_ParamFct, std::vector<ParamFct*> myParameterFct, std::vector<int> myBeginParameter, int myN_Parameters,
 		TFEFunction2D **myFEFunctions2D,  int myN_FEValues,

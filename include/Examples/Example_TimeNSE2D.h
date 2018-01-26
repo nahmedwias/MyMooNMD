@@ -36,7 +36,7 @@ public:
   Example_TimeNSE2D(std::vector <DoubleFunct2D*> exact,
                    std::vector <BoundCondFunct2D*> bc,
                    std::vector <BoundValueFunct2D*> bd, 
-                   CoeffFct2D *coeffs,
+                   CoeffFct2D coeffs,
                    bool timedependentrhs, bool timedependentcoeffs,
                    std::vector <DoubleFunct2D*> init_cond)
   : Example_NonStationary2D(exact, bc, bd, coeffs, timedependentrhs, 

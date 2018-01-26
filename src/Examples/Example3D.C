@@ -48,7 +48,7 @@ Example3D::Example3D(const ParameterDatabase & db)
 
 Example3D::Example3D(std::vector <DoubleFunct3D*> exact,
                      std::vector <BoundCondFunct3D*> bc,
-                     std::vector <BoundValueFunct3D*> bd, CoeffFct3D *coeffs)
+                     std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs)
  : example_database(Example3D::default_example_database()), exact_solution(exact),
    boundary_conditions(bc), boundary_data(bd), problem_coefficients(coeffs)
 { 

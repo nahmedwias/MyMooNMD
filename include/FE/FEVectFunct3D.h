@@ -63,7 +63,7 @@ class TFEVectFunct3D : public TFEFunction3D
         int N_Derivatives,
         MultiIndex3D *NeededDerivatives,
         int N_Errors, ErrorMethod3D *ErrorMeth, 
-        CoeffFct3D *Coeff, TAuxParam3D *Aux,
+        CoeffFct3D Coeff, TAuxParam3D *Aux,
         int n_fespaces, TFESpace3D **fespaces,
         double *errors);
         

@@ -37,7 +37,7 @@ class Example_NSE3D : public Example3D
      */
     Example_NSE3D(std::vector <DoubleFunct3D*> exact,
                   std::vector <BoundCondFunct3D*> bc,
-                  std::vector <BoundValueFunct3D*> bd, CoeffFct3D *coeffs)
+                  std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs)
       : Example3D(exact, bc, bd, coeffs) {};
 
     /// Apply the function stored as post processing routine.
