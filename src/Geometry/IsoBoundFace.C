@@ -41,7 +41,7 @@ TIsoBoundFace::TIsoBoundFace(TBoundComp3D *bdcomp)
 int TIsoBoundFace::CheckMatchingRef(TBaseCell *Me, int J_i,
                   struct StoreGeom &Tmp)
 {
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
   return 0;
 }
 

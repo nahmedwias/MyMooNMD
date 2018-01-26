@@ -253,7 +253,7 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
   int N_Functs;
   bool SecondDer;
 
-  SecondDer = FALSE;
+  SecondDer = false;
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
@@ -318,7 +318,7 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
   
     if(Needs2ndDer[i])
     {
-      SecondDer = TRUE;
+      SecondDer = true;
 
       refvaluesD20=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D20);
       origvaluesD20=TFEDatabase2D::GetOrigElementValues(BaseFunct, D20);

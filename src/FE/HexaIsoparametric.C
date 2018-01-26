@@ -347,7 +347,7 @@ void THexaIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
 
   QuadFormula = quadformula;
   
-  SecondDer = FALSE;
+  SecondDer = false;
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
@@ -432,7 +432,7 @@ void THexaIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
 /*
   if(Needs2ndDer[i])
   {
-    SecondDer = TRUE;
+    SecondDer = true;
           
     refvaluesD200=TFEDatabase3D::GetRefElementValues
                         (BaseFunct, QuadFormula, D200);

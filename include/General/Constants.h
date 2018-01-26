@@ -34,21 +34,11 @@
 #define SizeOfFloat    ((long) 4)
 #define SizeOfDouble   ((long) 8)
 
-
-#ifdef FALSE
-#undef FALSE
-#endif
-#ifdef TRUE
-#undef TRUE
-#endif
-
 #ifdef _MPI
   #define BYADD 0
   #define BYMASTER 1
   #define BYOWN 2
 #endif
-
-enum boolean {FALSE, TRUE};
 
 #define N_BOUNDCOND 10
 enum BoundCond { DIRICHLET, NEUMANN, ROBIN, SLIP, FREESURF, 

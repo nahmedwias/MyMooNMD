@@ -2135,7 +2135,7 @@ void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const
 
     N_Joints = cell->GetN_Joints();
 
-    IsIsoparametric = FALSE;
+    IsIsoparametric = false;
     if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
     {
       for(j=0;j<N_Joints;j++)
@@ -2146,22 +2146,22 @@ void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const
         {
           bdtype = ((TBoundFace *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Plane)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
         if(jointtype == InterfaceJoint3D)
         {
           bdtype = ((TInterfaceJoint3D *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Plane)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
         if(jointtype == IsoInterfaceJoint3D)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
   
         if(jointtype == IsoJointEqN)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
   
         if(jointtype == IsoBoundFace)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
     }// endif
 
@@ -2283,7 +2283,7 @@ void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
   
       N_Joints = cell->GetN_Joints();
   
-      IsIsoparametric = FALSE;
+      IsIsoparametric = false;
       if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
       {
         for(j=0;j<N_Joints;j++)
@@ -2294,22 +2294,22 @@ void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
           {
             bdtype = ((TBoundFace *)(joint))->GetBoundComp()->GetType();
             if(bdtype != Plane)
-              IsIsoparametric = TRUE;
+              IsIsoparametric = true;
           }
           if(jointtype == InterfaceJoint3D)
           {
             bdtype = ((TInterfaceJoint3D *)(joint))->GetBoundComp()->GetType();
             if(bdtype != Plane)
-              IsIsoparametric = TRUE;
+              IsIsoparametric = true;
           }
           if(jointtype == IsoInterfaceJoint3D)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
     
           if(jointtype == IsoJointEqN)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
     
           if(jointtype == IsoBoundFace)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
       }// endif
   

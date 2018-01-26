@@ -484,7 +484,7 @@ LocalAssembling3D::LocalAssembling3D(
   //Fill the array Needs2ndDerivatives from the vector myNeeds2ndDerivatives
   Needs2ndDerivatives = new bool[N_Spaces];
   for(int i=0;i<N_Spaces;i++){
-    Needs2ndDerivatives[i] = FALSE;
+    Needs2ndDerivatives[i] = false;
   }
   for(int i=0;i<N_Terms;i++)
   {
@@ -492,7 +492,7 @@ LocalAssembling3D::LocalAssembling3D(
     int j = FESpaceNumber[i];
     if(alpha == D200 || alpha == D020 || alpha == D002 || alpha == D110 
        || alpha == D101 || alpha == D011)
-      Needs2ndDerivatives[j] = TRUE;
+      Needs2ndDerivatives[j] = true;
   }
 }
 

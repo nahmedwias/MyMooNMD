@@ -50,10 +50,10 @@ TBaseCell::TBaseCell(TRefDesc *refdesc)
   GlobalCellNo = -1;
   SubDomainLocalCellNo = -1;
 
-  OwnCell=FALSE;
-  HaloCell=FALSE;
-  SubDomainInterfaceCell=FALSE;
-  DependentCell=FALSE;
+  OwnCell=false;
+  HaloCell=false;
+  SubDomainInterfaceCell=false;
+  DependentCell=false;
   N_NeibProcesses = 0;
   NeibProcessesIds = nullptr;
 #endif

@@ -567,14 +567,14 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 	//Fill the array Needs2ndDerivatives from the vector myNeeds2ndDerivatives
 	Needs2ndDerivatives = new bool[N_Spaces];
 	for(int i=0;i<N_Spaces;i++){
-		Needs2ndDerivatives[i] = FALSE;
+		Needs2ndDerivatives[i] = false;
 	}
 	for(int i=0;i<N_Terms;i++)
 	{
 		MultiIndex2D alpha = Derivatives[i];
 		int j = FESpaceNumber[i];
 		if(alpha == D20 || alpha == D11 || alpha == D02)
-			Needs2ndDerivatives[j] = TRUE;
+			Needs2ndDerivatives[j] = true;
 	}
 	//END code taken from TDiscretForm2D::TDiscreteForm2D(...)
 

@@ -307,7 +307,7 @@ void PostProcessing2D::writeVtk(std::string name)
     std::fill(DoubleArray.begin(), DoubleArray.end(), 0.0);
     std::fill(WArray.begin(), WArray.end(), 0.0);
 
-    // set to TRUE if basis functions are vectors
+    // set to true if basis functions are vectors
     bool VectOutput = false;
     if (BaseVectDim>1) VectOutput = true;
     
