@@ -211,8 +211,6 @@ int main(int argc, char* argv[])
     Time_NSE3D flow_object(flow_grids, flow_database, flow_example);
 #endif
 
-    int image_dummy;
-
     // the particles object which wraps up Brush
     BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
 
@@ -220,7 +218,8 @@ int main(int argc, char* argv[])
     Output::info("PROGRAM PART", "Setting up initial states.");
 
     //first assembling of the flow object
-    flow_object.assemble_initial_time();
+    if(!flow_database["force_stationary"])
+      flow_object.assemble_initial_time();
 
     //set fluid phase in the particle object
     const TFEFunction3D& ux = *flow_object.get_velocity_component(0);
@@ -239,8 +238,14 @@ int main(int argc, char* argv[])
 
     double end_time = TDatabase::TimeDB->ENDTIME;
     flow_object.current_step_ = 0;
-    int n_substeps = GetN_SubSteps();
-    int image = 0;
+
+    // Those two variables are used for the .VTK output filename control
+    int flow_image = 0;
+    int part_image = 0;
+
+    if(flow_database["force_stationary"]) //put it out just once
+      flow_object.output(flow_object.current_step_,flow_image);
+
     LoopInfo loop_info_time("time loop", true, true, 1);
     int linear_iterations = 0;
     TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
@@ -263,24 +268,23 @@ int main(int argc, char* argv[])
       Output::print(" BRUSH - UPDATE AND SOLVE");
       part_object.reset_fluid_phase(ux,uy,uz, pressure, fcts);
       Output::print(" resetting complete");
-      Output::print(TDatabase::TimeDB->CURRENTTIME, " ", TDatabase::TimeDB->CURRENTTIME + TDatabase::TimeDB->CURRENTTIMESTEPLENGTH);
       part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + TDatabase::TimeDB->CURRENTTIMESTEPLENGTH);
       Output::print(" solving complete");
 
-      flow_object.current_step_++;
+      if(!flow_database["force_stationary"])
+        flow_object.current_step_++;
 
-      //TODO I should never use a scheme which requires a sub-time loop!
-      for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
+      // setting the time discretization parameters
+      SetTimeDiscParameters(1);
+
+      // tau may change depending on the time discretization (adaptive time)
+      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      TDatabase::TimeDB->CURRENTTIME += tau;
+
+      Output::root_info("CURRENT TIME", TDatabase::TimeDB->CURRENTTIME);
+
+      if(!flow_database["force_stationary"])
       {
-        // setting the time discretization parameters
-        SetTimeDiscParameters(1);
-
-        // tau may change depending on the time discretization (adaptive time)
-        double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-        TDatabase::TimeDB->CURRENTTIME += tau;
-
-        Output::root_info("CURRENT TIME", TDatabase::TimeDB->CURRENTTIME);
-
         ////////////////////   THE FLOW   //////////////////////
         Output::print(" PARMOON - UPDATE AND SOLVE");
         // prepare the right hand side vector - needed only once per time step
@@ -291,6 +295,7 @@ int main(int argc, char* argv[])
 
         // prepare the matrices for defect computations and solvers
         flow_object.assemble_system();
+
         //LoopInfo for the nonlinear loop, printing full verbose info every step.
         LoopInfo loop_info("nonlinear", true, true, 1);
 
@@ -326,19 +331,18 @@ int main(int argc, char* argv[])
               "nonlinear iteration " +
               std::to_string(k));
         }  // end of nonlinear loop
+      }
+      timer_timeit.restart_and_print(
+          "solving the time iteration " +
+          std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
-        timer_timeit.restart_and_print(
-            "solving the time iteration " +
-            std::to_string(TDatabase::TimeDB->CURRENTTIME));
+      if(step %  output_steps_parts == 0)
+        part_object.output(part_image,TDatabase::TimeDB->CURRENTTIME);
+      if(step % output_steps_flow == 0 && !flow_database["force_stationary"])
+        flow_object.output(flow_object.current_step_,flow_image);
 
-        if(step %  output_steps_parts == 0)
-          part_object.output(TDatabase::TimeDB->CURRENTTIME);
-        if(step % output_steps_flow == 0)
-          flow_object.output(flow_object.current_step_,image);
-
-        timer_timeit.print_total_time(
-            "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
-      } // end of subtime loop
+      timer_timeit.print_total_time(
+          "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
     } // end of time loop
     loop_info_time.finish(linear_iterations, flow_object.get_full_residual());
 
@@ -390,6 +394,7 @@ void compute_position_in_crystallizer_geometry(
         (z - inflow_end)/(cone_end - inflow_end) * outflow_stretch;
     x_trans = x * lincomb;
     y_trans = y * lincomb;
+    //with those two lines enforce convexity in the conical section
     x_trans *= 1+std::abs(z - 30)/30;
     y_trans *= 1+std::abs(z - 30)/30;
     z_trans = z;

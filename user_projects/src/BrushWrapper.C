@@ -222,6 +222,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
 //  for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
 //  {
 //    cell_centers.push_back(simplex_barycenter(*brush_grid_->GetCell(c)));
+//    Output::print("Cell ", c, " center ", cell_centers[c][0], " ", cell_centers[c][1], " ", cell_centers[c][2]);
 //  }
 
   // set up Brush's ParMooN interface
@@ -238,49 +239,49 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   Output::print("Setting up Brush::InterfacePM SUCCESS.");
   Output::print("Performing cell checks");
 
-  // check if the numbering of cells in the brush grid is the same in Brush and ParMooN
-  // TODO This scales quadratically in the number of cells,
-  // and should therefore only run in test scenarios.
-  // BEGIN CHECK
-  std::vector<std::valarray<double>> centers = interface_->get_cell_centers();
-  for(size_t brush_cell = 0 ; brush_cell < centers.size()  ; ++brush_cell)
-  {
-    std::valarray<double> point = centers.at(brush_cell);
-    double x = point[0];
-    double y = point[1];
-    double z;
-    if(dim == 3)
-     z = point[2];
-    //Output::print("Remote cell ", brush_cell, " midpoint (", point[0],",",point[1],")");
-    std::vector<int> found_in;
-    for(int loc_cell = 0 ; loc_cell < brush_grid_->GetN_Cells() ;++loc_cell)
-    {
-      TBaseCell* cell = brush_grid_->GetCell(loc_cell);
-
-      if(dim == 2)
-      {
-        if(cell->PointInCell(x,y))
-          found_in.push_back(loc_cell);
-      }
-      else if(dim == 3)
-      {
-        if( cell->PointInCell(x,y,z) )
-          found_in.push_back(loc_cell);
-      }
-    }
-    //check the vector found_in - point found in and only found in the right local cell?
-    if(found_in.size() == 0)
-      ErrThrow("Did not find mid point of Brush cell ", brush_cell, "in any local cell.");
-    if(found_in.size() > 1)
-      ErrThrow("Found mid point of Brush cell ", brush_cell, " in ",
-               found_in.size(), " local cells , which is too much." );
-    if(found_in.at(0) != (int) brush_cell)
-      ErrThrow("Found mid point of Brush cell ", brush_cell, " in "
-               "local cell ", found_in.at(0), " which is unexpected.");
-    // if these checks passed, everything is fine.
-  }
-  Output::print("Performing cell checks SUCCESS.");
-  // END CHECK
+//  // check if the numbering of cells in the brush grid is the same in Brush and ParMooN
+//  // This scales quadratically in the number of cells,
+//  // and should therefore only run in test scenarios.
+//  // BEGIN CHECK
+//  std::vector<std::valarray<double>> centers = interface_->get_cell_centers();
+//  for(size_t brush_cell = 0 ; brush_cell < centers.size()  ; ++brush_cell)
+//  {
+//    std::valarray<double> point = centers.at(brush_cell);
+//    double x = point[0];
+//    double y = point[1];
+//    double z;
+//    if(dim == 3)
+//     z = point[2];
+//    //Output::print("Remote cell ", brush_cell, " midpoint (", point[0],",",point[1],")");
+//    std::vector<int> found_in;
+//    for(int loc_cell = 0 ; loc_cell < brush_grid_->GetN_Cells() ;++loc_cell)
+//    {
+//      TBaseCell* cell = brush_grid_->GetCell(loc_cell);
+//
+//      if(dim == 2)
+//      {
+//        if(cell->PointInCell(x,y))
+//          found_in.push_back(loc_cell);
+//      }
+//      else if(dim == 3)
+//      {
+//        if( cell->PointInCell(x,y,z) )
+//          found_in.push_back(loc_cell);
+//      }
+//    }
+//    //check the vector found_in - point found in and only found in the right local cell?
+//    if(found_in.size() == 0)
+//      ErrThrow("Did not find mid point of Brush cell ", brush_cell, "in any local cell.");
+//    if(found_in.size() > 1)
+//      ErrThrow("Found mid point of Brush cell ", brush_cell, " in ",
+//               found_in.size(), " local cells , which is too much." );
+//    if(found_in.at(0) != (int) brush_cell)
+//      ErrThrow("Found mid point of Brush cell ", brush_cell, " in "
+//               "local cell ", found_in.at(0), " which is unexpected.");
+//    // if these checks passed, everything is fine.
+//  }
+//  Output::print("Performing cell checks SUCCESS.");
+//  // END CHECK
 
   // load the initial particle solution
   interface_->set_initial_particles(db_["init_partsol_file"]);
@@ -349,6 +350,29 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
 	  output_writer_.AddFEFunction(br_grid_psdmom_fcts_[0]);
     output_writer_.AddFEFunction(br_grid_psdmom_fcts_[1]);
     output_writer_.AddFEFunction(br_grid_psdmom_fcts_[2]);
+
+    //CB EXPERIMENTAL - this is for discontinuous .vtk output
+    disc_output_n_loc_verts=0;
+    for(int i=0;i<brush_grid_->GetN_Cells();i++)
+    {
+      TBaseCell* cell = brush_grid_->GetCell(i);
+      disc_output_n_loc_verts += cell->GetN_Vertices();
+    }
+    disc_output_loc_verts =new TVertex*[disc_output_n_loc_verts];
+    int N_=0;
+
+    for(int i=0;i<brush_grid_->GetN_Cells();i++)
+    {
+      TBaseCell* cell = brush_grid_->GetCell(i);
+      int k=cell->GetN_Vertices();
+      for(int j=0;j<k;j++)
+      {
+        disc_output_loc_verts[N_]=cell->GetVertex(j);
+        N_++;
+      }
+    }
+    //END EXPERIMENTAL
+
 #endif
 	  // store moments m0, m1 and m2.
 	  interface_->update_stats();
@@ -372,21 +396,24 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   // so that it can be filled with data from now on.
   interface_->write_headers(moment_stats_file_, outflow_particles_file_, inflow_particles_file_);
 
-// The following debug code was used in the 2d example to control the mass flow balance
-//  //CB DEBUG
-//  std::string mass_bal_file = out_dir + "mass_balance.csv";
-//  remove(mass_bal_file.c_str()); //file from old run, clean away
-//  std::ofstream myfile;
-//  myfile.open (mass_bal_file.c_str(),std::ios_base::app);
-//  myfile << "t" << ",";
-//  myfile << "cell #" << ",";
-//  myfile << "z" << ",";
-//  myfile << "r" << ",";
-//  myfile << "ASA crys [kg/m^3]" << ",";
-//  myfile << "ASA diss [kg/m^3]" << ",";
-//  myfile << "velo [m/s] " << "\n";
-//  myfile.close();
-//  //END DEBUG
+  //CB DEBUG - Total mass control file, write header.
+  std::string mass_bal_file = out_dir + "mass_balance.csv";
+  remove(mass_bal_file.c_str()); //file from old run, clean away
+  std::ofstream myfile;
+  myfile.open (mass_bal_file.c_str(),std::ios_base::app);
+  myfile << "t" << ",";
+  myfile << "cell #" << ",";
+  myfile << "x" << ",";
+  myfile << "y" << ",";
+  myfile << "z" << ",";
+  myfile << "Volume [m^3]" << ",";
+  myfile << "POTASHALUM crys [kg/m^3]" << ",";
+  //myfile << "ASA diss [kg/m^3]" << ",";
+  myfile << "x velo [m/s] " << ",";
+  myfile << "y velo [m/s] " << ",";
+  myfile << "z velo [m/s] " << "\n";
+  myfile.close();
+  //END DEBUG
 }
 
 BrushWrapper::~BrushWrapper()
@@ -533,47 +560,6 @@ void BrushWrapper::reset_fluid_phase(
   //give the data to Brush
   interface_->reset_fluid_phase(pm_data);
 
-//  // .csv mass balance control output every 1s - not needed for 3d example so far
-//  double del = fabs(TDatabase::TimeDB->CURRENTTIME - std::round(TDatabase::TimeDB->CURRENTTIME));
-//  if(del < 1e-3)
-//  {
-//    interface_->update_stats();
-//    interface_->fetch_moment(1, &br_grid_psdmom_fcts_values_[1].at(0));
-//    std::ofstream myfile;
-//    std::string out_dir(db_["output_vtk_directory"].value_as_string());
-//    std::size_t pos = out_dir.find("VTK");// Lil hack - the directory above 'VTK',
-//    out_dir = out_dir.substr(0,pos); 		// ...should be the general output directory.
-//    std::string mass_bal_file = out_dir + "mass_balance.csv";
-//    myfile.open (mass_bal_file.c_str(),std::ios_base::app);
-//
-//    for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
-//    {
-//      auto cntr = simplex_barycenter(*brush_grid_->GetCell(c));
-//      myfile << TDatabase::TimeDB->CURRENTTIME << ",";
-//      myfile << c << ",";
-//      myfile << cntr[0] << ",";
-//      myfile << cntr[1] << ",";
-//      //Brush ASA values
-//      auto bgn_ind= br_grid_space_.GetBeginIndex();
-//      auto dofs = br_grid_space_.GetGlobalNumbers();
-//      auto dof = dofs[bgn_ind[c]];
-//      myfile << br_grid_psdmom_fcts_values_[1].at(dof) << ",";
-//      //ParMooN ASA values
-//      bgn_ind= br_grid_param_fcts_[4]->GetFESpaceXD()->GetBeginIndex();
-//      dofs = br_grid_param_fcts_[4]->GetFESpaceXD()->GetGlobalNumbers();
-//      dof = dofs[bgn_ind[c]];
-//      double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * 0.18016;
-//      myfile << val_in_kg << ",";
-//      //velocity (x direction) in the current ambient
-//      bgn_ind= br_grid_param_fcts_[0]->GetFESpaceXD()->GetBeginIndex();
-//      dofs = br_grid_param_fcts_[0]->GetFESpaceXD()->GetGlobalNumbers();
-//      dof = dofs[bgn_ind[c]];
-//      double velo = br_grid_param_fcts_[0]->GetValues()[dof];
-//      myfile << velo << "\n";
-//    }
-//    myfile.close();
-//  }
-
 }
 
 
@@ -591,7 +577,7 @@ void BrushWrapper::solve(double t_start, double t_end)
 
 
 
-void BrushWrapper::output(double t)
+void BrushWrapper::output(int &image, double t)
 {
 	// Updating stats and fetching moments is only relevant for
 	// visualization and the output
@@ -606,9 +592,75 @@ void BrushWrapper::output(double t)
 #elif defined(__3D__)
     std::string filename = db_["output_vtk_directory"];
     filename += "/" + db_["output_basename"].value_as_string();
-    filename += "." + std::to_string(t);
-    filename += ".vtk";
-    output_writer_.WriteVtk(filename.c_str());
+
+    if(image<10) filename += ".0000";
+    else if(image<100) filename += ".000";
+    else if(image<1000) filename += ".00";
+    else if(image<10000) filename += ".0";
+    else filename += ".";
+    filename += std::to_string(image) + ".vtk";
+
+    //CB EXPERIMENTAL
+    //output_writer_.WriteVtk(filename.c_str());
+    output_writer_.WriteVtkDiscontinuous(filename.c_str(), disc_output_n_loc_verts ,disc_output_loc_verts);
+    //END EXPERIMENTAL
+
+    //CB DEBUG - Total mass control file, output every 1s
+    //double del = fabs(t - std::round(t));
+    //if(del < 1e-3)
+    {
+      std::ofstream myfile;
+      std::string out_dir(db_["output_vtk_directory"].value_as_string());
+      std::size_t pos = out_dir.find("VTK");// Lil hack - the directory above 'VTK',
+      out_dir = out_dir.substr(0,pos);    // ...should be the general output directory.
+      std::string mass_bal_file = out_dir + "mass_balance.csv";
+      myfile.open (mass_bal_file.c_str(),std::ios_base::app);
+
+      for(int c=0; c < brush_grid_->GetN_Cells(); ++c)
+      {
+
+        // Brush function representation
+        auto bgn_ind= br_grid_space_.GetBeginIndex();
+        auto dofs = br_grid_space_.GetGlobalNumbers();
+        auto dof = dofs[bgn_ind[c]];
+        if (br_grid_psdmom_fcts_values_[1].at(dof)!= 0.0) //get active only if there are particles in this cell
+        {
+          auto cntr = simplex_barycenter(*brush_grid_->GetCell(c));
+          myfile << t << ",";
+          myfile << c << ",";
+          myfile << cntr[0] << ",";
+          myfile << cntr[1] << ",";
+          myfile << cntr[2] << ",";
+          //Cell volume
+          myfile << brush_grid_->GetCell(c)->GetMeasure() << ",";
+          //Brush POTASHALUM mass (kg/m^3)
+          myfile << br_grid_psdmom_fcts_values_[1].at(dof) << ",";
+//          //ParMooN dissolved POTASHALUM values
+//          bgn_ind= br_grid_param_fcts_[4]->GetFESpaceXD()->GetBeginIndex();
+//          dofs = br_grid_param_fcts_[4]->GetFESpaceXD()->GetGlobalNumbers();
+//          dof = dofs[bgn_ind[c]];
+//          double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * density;
+//          myfile << val_in_kg << ",";
+          //velocity in the current ambient
+          bgn_ind= br_grid_param_fcts_[0]->GetFESpaceXD()->GetBeginIndex();
+          dofs = br_grid_param_fcts_[0]->GetFESpaceXD()->GetGlobalNumbers();
+          dof = dofs[bgn_ind[c]];
+          //x velo
+          double velo = br_grid_param_fcts_[0]->GetValues()[dof];
+          myfile << velo << ",";
+          //y velo
+          velo = br_grid_param_fcts_[1]->GetValues()[dof];
+          myfile << velo << ",";
+          //z velo
+          velo = br_grid_param_fcts_[2]->GetValues()[dof];
+          myfile << velo << "\n";
+        }
+      }
+      myfile.close();
+    }
+    //END DEBUG
+
+    image++;
 #endif
 	}
 
