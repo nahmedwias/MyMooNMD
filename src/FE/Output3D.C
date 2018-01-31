@@ -864,8 +864,8 @@ int N_LocVertices, TVertex **Vertices)
   for(int space_number = 0; space_number < N_ScalarVar; space_number++)
   {
     TFEFunction3D* fefunction = FEFunctionArray[space_number];
-    if(!fefunction->GetFESpace3D()->IsDGSpace())
-      continue;
+//    if(!fefunction->GetFESpace3D()->IsDGSpace())
+//      continue;
     // this is a discontinuous space
     int BaseVectDim = TFEDatabase3D::GetFE3D(
       fefunction->GetFESpace3D()->GetFE3D(0,Coll->GetCell(0)))

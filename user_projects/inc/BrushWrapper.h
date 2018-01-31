@@ -92,7 +92,7 @@ class BrushWrapper
 
     /// Write moments of the particle distribution to a .vtk-file, which was
     /// specified in the database given to the constructor.
-    void output(double t);
+    void output(int& image_nr, double t);
 
   private:
     // Fill example depending data. This is like an "init" function,
@@ -178,6 +178,9 @@ class BrushWrapper
     PostProcessing2D output_writer_;
 #elif defined(__3D__)
     TOutput3D output_writer_;
+    // cache some values that are needed for discontinuous .vtk output
+    int disc_output_n_loc_verts;
+    TVertex** disc_output_loc_verts;
 #endif
 
 
