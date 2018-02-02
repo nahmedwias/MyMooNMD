@@ -929,21 +929,41 @@ void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &ed
       TBaseCell *cell = this->Cells[i];
       for(int j=0;  j < cell->GetN_Joints(); j++)
         {
-	  TJoint *joint= cell->GetJoint(j);
-	  if (joint->GetType()==BoundaryEdge)
+    TJoint *joint= cell->GetJoint(j);
+    if (joint->GetType()==BoundaryEdge)
             {
-	      TBoundEdge *boundedge = (TBoundEdge *)joint;
-	      TBoundComp *BoundComp = boundedge->GetBoundComp();
-	      if (BoundComp->GetID() == id)
+        TBoundEdge *boundedge = (TBoundEdge *)joint;
+        TBoundComp *BoundComp = boundedge->GetBoundComp();
+     if (BoundComp->GetID() == id)
                 {
-		  ///@todo set the boundedge properties in the function MakeGrid
-		  boundedge->SetNeighbour(cell);
-		  boundedge->set_index_in_neighbour(cell,j);
-		  edges.push_back(boundedge);                 
+    ///@todo set the boundedge properties in the function MakeGrid
+    boundedge->SetNeighbour(cell);
+    boundedge->set_index_in_neighbour(cell,j);
+    edges.push_back(boundedge);                 
                 }
             }
         }
     }
+}
+void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges)
+{
+  edges.clear();
+  for(int i = 0; i < this->N_Cells; i++)
+  {
+    TBaseCell *cell = this->Cells[i];
+    for(int j = 0; j < cell->GetN_Joints(); j++)
+    {
+      TJoint *joint = cell->GetJoint(j);
+      if (joint->GetType() == BoundaryEdge)
+      {
+        TBoundEdge *boundedge = (TBoundEdge *)joint;
+          ///@todo set the boundedge properties in the function MakeGrid
+          boundedge->SetNeighbour(cell);
+          boundedge->set_index_in_neighbour(cell,j);
+          edges.push_back(boundedge);                 
+      }
+    }
+  }
 }
 
 #ifdef _MPI
