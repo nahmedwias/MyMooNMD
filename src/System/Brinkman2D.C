@@ -8,7 +8,7 @@
 #include <Database.h>
 #include <ParameterDatabase.h>
 #include <memory>
-
+#include <BlockFEMatrix.h>
 
 // Create a Brinkman specific database
 ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
@@ -749,6 +749,49 @@ void Brinkman2D::output(int level, int i)
     // Output::print<1>( setprecision(5),  "$",errors_temporary[0], "$ & $", errors_temporary[1], "$ & $", errors_temporary[2], "$ & $", errors_temporary[3], "$"& $", errors_temporary[4], "$");
      */ //LB 14.11.17 OLD ^
 
+
+//New LB Start 05.02.18
+// Here, the error in the L^2-norm at the boundary is computed.
+//Therefore, a FEMatrix containing the necessary terms and the approximate xolution Blockvector have to be used
+    BoundaryAssembling2D bi2;
+    const TFESpace2D * v_space = &s.velocity_space;
+    BlockFEMatrix Boundary_matrix_u, Boundary_matrix_u_n;
+    Boundary_matrix_u = BlockFEMatrix::NSE2D_Type14(s.velocity_space, s.pressure_space);
+    Boundary_matrix_u_n = BlockFEMatrix::NSE2D_Type14(s.velocity_space, s.pressure_space);
+
+    for (int k = 0; k < TDatabase::ParamDB->n_nitsche_boundary; k++)
+    {
+      Output::print("k = ", k);
+      bi2.matrix_u_v(Boundary_matrix_u, v_space,
+          TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
+          //t*t*TDatabase::ParamDB->nitsche_penalty[k],   //t*TDatabase::ParamDB->nitsche_penalty[k],             // mult
+          TDatabase::ParamDB->nitsche_penalty[k]* TDatabase::ParamDB->EFFECTIVE_VISCOSITY,   //mueff*TDatabase::ParamDB->nitsche_penalty[k],             // mult
+          true);                                                // rescale local integral by edge values
+
+      bi2.matrix_u_n_v_n(Boundary_matrix_u_n, v_space, 
+          TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component↲
+          TDatabase::ParamDB->nitsche_penalty[k]* (TDatabase::ParamDB->VISCOSITY/TDatabase::ParamDB->PERMEABILITY) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0,
+          true);
+
+    }
+
+    std::vector< double > boundary_errors;
+    boundary_errors.resize(2,0);
+    // boundary_errors[0]=u^T*A*u;
+    BlockVector Au, Au_n;
+    Au = BlockVector(Boundary_matrix_u, true);
+    Au_n = BlockVector(Boundary_matrix_u_n, true);
+
+    Boundary_matrix_u.print_matrix_info("Boundary_matrix_u Infos");
+    Boundary_matrix_u.apply(s.solution, Au);
+    boundary_errors[0]=dot(s.solution, Au);
+    Boundary_matrix_u_n.print_matrix_info("Boundary_matrix_u_n Infos");
+    Boundary_matrix_u_n.apply(s.solution, Au_n);
+    boundary_errors[1]=dot(s.solution, Au_n);
+
+    Output::print("The value of the boundary norm \sum \gamma* 1/h_E* || u ||_E^2 is: ", boundary_errors[0]);
+    Output::print("The value of the boundary norm \sum \gamma* 1/h_E* || u.n ||_E^2", boundary_errors[1]);
+    //New LB END 05.02.18^
 
     Output::print("------------------------------------------------------");
     Output::print<1>(" L2(u):      ", setprecision(14), errors_temporary[0]);
