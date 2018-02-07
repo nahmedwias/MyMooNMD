@@ -92,27 +92,44 @@ int main(int argc, char* argv[])
 
   //CB EXAMPLE
   //This code is specific to the WiedmeyerBatchCrystallizer Example.
-  if(parmoon_db["sandwich_grid"])
+  if(flow_database["sandwich_grid"])
   {//prepare parameters for an example specific sandwich grid
-    ParameterDatabase& sw_db = parmoon_db.get_nested_database("Sandwich Grid Database");
+    ParameterDatabase& sw_db = flow_database.get_nested_database("Sandwich Grid Database");
     sw_db.add("lambda", {0.0,1.0}, "Check default_sandwich_grid_parameters for description.");
 
     int n_layers_inflow = sw_db["n_layers_inflow"];
     int n_layers_cone = sw_db["n_layers_cone"];
     int n_layers_outflow = sw_db["n_layers_outflow"];
+    double inflow_part = 1.0/10;
+    double cone_part = 6.0/10;
+    double outflow_part = 3.0/10;
+    if(flow_database["cut_off_entry"])
+    {
+      n_layers_inflow = 0;
+      inflow_part = 0;
+      cone_part = 2.0/3;
+      outflow_part = 1.0/3;
+    }
+
     std::vector<double> lambda(n_layers_inflow + n_layers_cone + n_layers_outflow + 1);
-    //TODO fill lambda somehow
     for(int i=0; i<(int)lambda.size(); ++i)
     {//fill lambda
       if(i < n_layers_inflow)
-        lambda[i] = (1.0/10) * i * (1.0/n_layers_inflow);
+        lambda[i] = inflow_part * i * (1.0/n_layers_inflow);
       else if(i < n_layers_inflow + n_layers_cone)
-        lambda[i] = 1.0/10 +(6.0/10) * (i - n_layers_inflow) * (1.0/n_layers_cone);
+        lambda[i] = inflow_part + cone_part * (i - n_layers_inflow) * (1.0/n_layers_cone);
       else
-        lambda[i] = 7.0/10 +(3.0/10) * (i - n_layers_inflow - n_layers_cone) * (1.0/n_layers_outflow);
+        lambda[i] = inflow_part + cone_part
+        + outflow_part * (i - n_layers_inflow - n_layers_cone) * (1.0/n_layers_outflow);
     }
     //put the new lambda into the database
     sw_db["lambda"] = lambda;
+
+    if(flow_database["cut_off_entry"])
+    {
+      sw_db["drift_z"] = 45;
+      Output::root_info("SANDWICH GRID", "drift_z was set to 45 due to 'cut_off_entry'");
+    }
   }
   //END EXAMPLE
 
@@ -143,12 +160,16 @@ int main(int argc, char* argv[])
   // This code is specific to the WiedmeyerBatchCrystallizer Example.
   // This will be done for only the finest grid -
   // the other grids share its vertices!
-  if(parmoon_db["sandwich_grid"])
+  if(flow_database["sandwich_grid"])
   {
+    TCollection* finest_collection = domain.GetCollection(It_Finest, 0);
     double outflow_stretch = 7.5;
-    if(parmoon_db.contains("outflow_stretch"))
-      outflow_stretch = parmoon_db["outflow_stretch"];
-    transform_to_crystallizer_geometry(gridCollections.front(), outflow_stretch);
+    if(flow_database.contains("outflow_stretch"))
+      outflow_stretch = flow_database["outflow_stretch"];
+    transform_to_crystallizer_geometry(finest_collection,
+                                       outflow_stretch,
+                                       flow_database["cut_off_entry"]);
+    delete finest_collection;
   }
   //END EXAMPLE
 
@@ -308,49 +329,60 @@ int main(int argc, char* argv[])
 void compute_position_in_crystallizer_geometry(
     double x, double y, double z,
     double& x_trans, double& y_trans, double& z_trans,
-    double outflow_stretch
-    )
+    double outflow_stretch, bool cut_off_entry
+)
 {// We assume that the input geometry is a cylinder with radius 1 (cm)
- // and height 50 (cm), z being the height direction.
- // The cylinder is further assumed to 'fit' the inflow of
- // the crystallizer geometry, i.e., the conical
- // part and the outflow part are gained by a stretching.
- double tol = 1e-6;
- double inflow_end = 5;
- double cone_end = 35;
- double outflow_end = 50;
+  // and height 50 cm OR 45 cm (if cut_off_entry) , z being the height direction.
+  // The cylinder is further assumed to 'fit' the inflow of
+  // the crystallizer geometry, i.e., the conical
+  // part and the outflow part are gained by a stretching.
 
- if(z < inflow_end + tol)//inflow piece,keep it unchanged.
- {
-   x_trans = x;
-   y_trans = y;
-   z_trans = z;
- }
- else if (z < cone_end + tol)//conical piece, stretch it linearly
- {
-   double lincomb = (1 - (z - inflow_end)/(cone_end - inflow_end)) * 1.0 +
-                    (z - inflow_end)/(cone_end - inflow_end) * outflow_stretch;
-   x_trans = x * lincomb;
-   y_trans = y * lincomb;
-   z_trans = z;
- }
- else if (z < outflow_end + tol)//outflow piece, stretch it constantly
- {
+  double tol = 1e-6;
+  double inflow_end = 5;
+  double cone_end = 35;
+  double outflow_end = 50;
+  if(cut_off_entry)
+  {
+    inflow_end = 0;
+    cone_end = 30;
+    outflow_end = 45;
+  }
 
-   x_trans = x * outflow_stretch;
-   y_trans = y * outflow_stretch;
-   z_trans = z;
- }
- else
- {
-   ErrThrow("z is out of range!");
- }
+  if(z < inflow_end + tol)//inflow piece,keep it unchanged.
+  {
+    x_trans = x;
+    y_trans = y;
+    z_trans = z;
+  }
+  else if (z < cone_end)//conical piece, stretch it linearly
+  {
+    double lincomb = (1 - (z - inflow_end)/(cone_end - inflow_end)) * 1.0 +
+        (z - inflow_end)/(cone_end - inflow_end) * outflow_stretch;
+    x_trans = x * lincomb;
+    y_trans = y * lincomb;
+    //with those two lines enforce convexity in the conical section
+    //x_trans *= 1+std::abs(z - 30)/30;
+    //y_trans *= 1+std::abs(z - 30)/30;
+    z_trans = z;
+  }
+  else if (z < outflow_end + tol)//outflow piece, stretch it constantly
+  {
 
- // Finally, divide everything by 100 - input geometry is expected
- // in [cm], but internally we use [m] currently
- x_trans/=100;
- y_trans/=100;
- z_trans/=100;
+    x_trans = x * outflow_stretch;
+    y_trans = y * outflow_stretch;
+    z_trans = z;
+  }
+  else
+  {
+    ErrThrow("z is out of range!");
+  }
+
+  // Finally, divide everything by 100 - input geometry is expected
+  // in [cm], but internally we use [m] currently
+  //TODO this could be changed to cm eventually!
+  x_trans/=100;
+  y_trans/=100;
+  z_trans/=100;
 
 }
 
@@ -360,7 +392,8 @@ void compute_position_in_crystallizer_geometry(
  * No checks whatsoever are performed, the method it is
  * extremely specific. You must know what you are doing.
  */
-void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretch)
+void transform_to_crystallizer_geometry(
+    TCollection *coll, double outflow_stretch, bool cut_off_entry)
 {
   int N_Cells = coll->GetN_Cells();
 
@@ -392,7 +425,8 @@ void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretc
         double x_transf, y_transf, z_transf;
 
         vertex->GetCoords(x, y, z);
-        compute_position_in_crystallizer_geometry(x, y, z, x_transf, y_transf, z_transf, outflow_stretch);
+        compute_position_in_crystallizer_geometry(x, y, z, x_transf, y_transf, z_transf,
+                                                  outflow_stretch, cut_off_entry);
         vertex->SetCoords(x_transf, y_transf, z_transf);
 
         //mark this vertex as treated

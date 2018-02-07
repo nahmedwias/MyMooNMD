@@ -601,8 +601,8 @@ void BrushWrapper::output(int &image, double t)
     filename += std::to_string(image) + ".vtk";
 
     //CB EXPERIMENTAL
-    //output_writer_.WriteVtk(filename.c_str());
-    output_writer_.WriteVtkDiscontinuous(filename.c_str(), disc_output_n_loc_verts ,disc_output_loc_verts);
+    output_writer_.WriteVtk(filename.c_str());
+    //output_writer_.WriteVtkDiscontinuous(filename.c_str(), disc_output_n_loc_verts ,disc_output_loc_verts);
     //END EXPERIMENTAL
 
     //CB DEBUG - Total mass control file, output every 1s

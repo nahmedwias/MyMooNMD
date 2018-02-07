@@ -395,8 +395,8 @@ void compute_position_in_crystallizer_geometry(
     x_trans = x * lincomb;
     y_trans = y * lincomb;
     //with those two lines enforce convexity in the conical section
-    x_trans *= 1+std::abs(z - 30)/30;
-    y_trans *= 1+std::abs(z - 30)/30;
+    //x_trans *= 1+std::abs(z - 30)/30;
+    //y_trans *= 1+std::abs(z - 30)/30;
     z_trans = z;
   }
   else if (z < outflow_end + tol)//outflow piece, stretch it constantly
