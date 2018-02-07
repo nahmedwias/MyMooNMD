@@ -29,7 +29,7 @@ double timeC = 0;
 #endif
 
 // CB EXAMPLE
-void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretch);
+void transform_to_crystallizer_geometry(TCollection *coll, double outflow_stretch, bool cut_off_entry);
 // END EXAMPLE
 
 // main program
@@ -92,9 +92,9 @@ int main(int argc, char* argv[])
 
   //CB EXAMPLE
   //This code is specific to the WiedmeyerBatchCrystallizer Example.
-  if(flow_database["sandwich_grid"])
+  if(parmoon_db["sandwich_grid"])
   {//prepare parameters for an example specific sandwich grid
-    ParameterDatabase& sw_db = flow_database.get_nested_database("Sandwich Grid Database");
+    ParameterDatabase& sw_db = parmoon_db.get_nested_database("Sandwich Grid Database");
     sw_db.add("lambda", {0.0,1.0}, "Check default_sandwich_grid_parameters for description.");
 
     int n_layers_inflow = sw_db["n_layers_inflow"];
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
     double inflow_part = 1.0/10;
     double cone_part = 6.0/10;
     double outflow_part = 3.0/10;
-    if(flow_database["cut_off_entry"])
+    if(parmoon_db["cut_off_entry"])
     {
       n_layers_inflow = 0;
       inflow_part = 0;
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     //put the new lambda into the database
     sw_db["lambda"] = lambda;
 
-    if(flow_database["cut_off_entry"])
+    if(parmoon_db["cut_off_entry"])
     {
       sw_db["drift_z"] = 45;
       Output::root_info("SANDWICH GRID", "drift_z was set to 45 due to 'cut_off_entry'");
@@ -160,15 +160,15 @@ int main(int argc, char* argv[])
   // This code is specific to the WiedmeyerBatchCrystallizer Example.
   // This will be done for only the finest grid -
   // the other grids share its vertices!
-  if(flow_database["sandwich_grid"])
+  if(parmoon_db["sandwich_grid"])
   {
     TCollection* finest_collection = domain.GetCollection(It_Finest, 0);
     double outflow_stretch = 7.5;
-    if(flow_database.contains("outflow_stretch"))
-      outflow_stretch = flow_database["outflow_stretch"];
+    if(parmoon_db.contains("outflow_stretch"))
+      outflow_stretch = parmoon_db["outflow_stretch"];
     transform_to_crystallizer_geometry(finest_collection,
                                        outflow_stretch,
-                                       flow_database["cut_off_entry"]);
+                                       parmoon_db["cut_off_entry"]);
     delete finest_collection;
   }
   //END EXAMPLE
