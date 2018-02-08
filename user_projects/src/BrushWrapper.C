@@ -11,6 +11,7 @@
 #include <parmoon_data.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace ASA_crystallizer
 {
@@ -666,8 +667,16 @@ void BrushWrapper::output(int &image, double t)
 
   interface_->write_particle_stats(t, moment_stats_file_);
 
-  interface_->write_outlet_particle_list(outflow_particles_file_);
-
   interface_->write_inlet_particle_list(inflow_particles_file_);
+
+  double it = 0;
+  if(std::abs(std::modf(t,&it)) < 1e-10 || std::abs(std::modf(t,&it) -1 ) < 1e-10) //this is a very inelegant way of checking if t is close to an integer
+  {
+    Output::info("OUTPUT","Taking particle snapshot at time ", it ," s");
+    interface_->particle_population_snapshot(outflow_particles_file_,t);
+  }
+
+  // use this for the Eder flow crystallizer example
+  //interface_->write_outlet_particle_list(outflow_particles_file_);
 
 }
