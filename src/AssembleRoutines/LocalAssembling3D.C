@@ -1209,9 +1209,9 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->Needs2ndDerivatives[0] = false;
               this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 13;
-              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+              this->N_Matrices = 15;
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
               
@@ -1229,9 +1229,9 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->Needs2ndDerivatives[0] = false;
               this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 16;
-              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->N_Matrices = 18;
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 1};
               
