@@ -1303,8 +1303,8 @@ void Time_NSE2D::update_matrices_lps(System_per_grid &s)
     sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
     if(TDatabase::ParamDB->LP_FULL_GRADIENT)
     {
-      UltraLocalProjection(sqMat[0], FALSE);
-      UltraLocalProjection(sqMat[1], FALSE);    
+      UltraLocalProjection(sqMat[0], false);
+      UltraLocalProjection(sqMat[1], false);    
     }
     if(TDatabase::ParamDB->LP_STREAMLINE)
     {
@@ -1317,7 +1317,7 @@ void Time_NSE2D::update_matrices_lps(System_per_grid &s)
     {
       std::vector< TSquareMatrix2D* > sqMat(1);
       sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-      UltraLocalProjection(sqMat[0], TRUE);
+      UltraLocalProjection(sqMat[0], true);
     }
   }
   else
@@ -1325,7 +1325,7 @@ void Time_NSE2D::update_matrices_lps(System_per_grid &s)
     std::vector< TSquareMatrix2D* > sqMat(1);
     sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
     if(TDatabase::ParamDB->LP_FULL_GRADIENT)
-      UltraLocalProjection(sqMat[0], FALSE);
+      UltraLocalProjection(sqMat[0], false);
     if(TDatabase::ParamDB->LP_STREAMLINE)
       AddStreamlineTerm(sqMat[0], s.u.GetComponent(0),s.u.GetComponent(1),
                         lpcoeff, lpexpon,lporddif);
