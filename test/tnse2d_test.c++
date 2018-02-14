@@ -99,8 +99,6 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   
   tnse2d.assemble_initial_time();
   
-  int step=0;
-  
   while(TDatabase::TimeDB->CURRENTTIME < 
     TDatabase::TimeDB->ENDTIME-1e-10)
   {
@@ -127,13 +125,14 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
       tnse2d.assemble_matrices_rhs(i+1);
     }
     // post processing: error computations
+    Output::print("TIME DISC FOR ME: ", time_disc);
     tnse2d.output(tnse2d.get_time_stepping_scheme().current_step_);
     // check the errors
-    if(step==1)
+    if(tnse2d.get_time_stepping_scheme().current_step_==1)
       compare(tnse2d, errors[0]);
-    else if(step ==2)
+    else if(tnse2d.get_time_stepping_scheme().current_step_ ==2)
       compare(tnse2d, errors[1]);
-    else if(step ==20)
+    else if(tnse2d.get_time_stepping_scheme().current_step_ ==20)
       compare(tnse2d, errors[2]);    
   }
   
@@ -261,8 +260,8 @@ int main(int argc, char* argv[])
     Output::print<1>("LAPLACETYPE: ", 0, " NSTYPE's: ",1,", ",2,", ",3,", ",4, 
     " TIME_DISC: ", time_disc );
     errors[0] = {{0.001123315065, 0.01452798821, 0.008151783113, 0.07430027476}};
-    errors[1] = {{0.002257854029, 0.02900402091, 0.01381823763,0.1459569354}};
-    errors[2] = {{0.0191888938, 0.2444304958, 0.1000448675, 1.21617188}};
+    errors[1] = {{0.00225621577, 0.02900533136, 0.01401455865,0.1462434268}};
+    errors[2] = {{0.01917397891, 0.2444306295, 0.1023554738, 1.219801748}};
     laplace_type = 0;
     check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
     check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);

@@ -1293,8 +1293,8 @@ void Time_NSE2D::output(int m)
       Output::print<1>(t, " L2(u) : ", setprecision(10), sqrt(this->errors[1]));
       Output::print<1>(t, " H1-semi(u) : ", setprecision(10), sqrt(this->errors[3]));
       
-      Output::print<1>(t, " L2(0,t,L2(u)) : ", sqrt(this->errors[0]));
-      Output::print<1>(t, " L2(0,t,H1-semi(u)) : ", sqrt(this->errors[2]));
+      Output::print<1>(t, " L2(0,t,L2(u)) : ", setprecision(10), sqrt(this->errors[0]));
+      Output::print<1>(t, " L2(0,t,H1-semi(u)) : ", setprecision(10), sqrt(this->errors[2]));
       
       s.p.GetErrors(example.get_exact(2), 3, allderiv, 2, L2H1Errors,
                     nullptr, &aux, 1, &p_sp, locerr);
@@ -1304,11 +1304,11 @@ void Time_NSE2D::output(int m)
       
       errors[4] += (locerr[0]*locerr[0] + this->errors[5])*tau*0.5;
       errors[5] = locerr[0]*locerr[0];
-      Output::print<1>(t, " L2(0,t,L2(p)) : ", sqrt(errors[4]) );
+      Output::print<1>(t, " L2(0,t,L2(p)) : ", setprecision(10), sqrt(errors[4]) );
       
       errors[6] += (locerr[1]*locerr[1] + this->errors[7])*tau*0.5;
       errors[7] = locerr[1]*locerr[1];
-      Output::print<1>(t, " L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
+      Output::print<1>(t, " L2(0,t,H1-semi(p)) : ", setprecision(10), sqrt(errors[6]) );
     }
   }
 
