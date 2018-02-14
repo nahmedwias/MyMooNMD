@@ -29,7 +29,7 @@ ParameterDatabase get_default_Darcy_Example_parameters(int example)
   {
     case 3: // obstacle example
     {
-      db.add("obstacle_type", (size_t)0, "choose different obstacles:"
+      db.add("obstacle_type", 0u, "choose different obstacles:"
              "0 - circle in center, 1 - rectangle in center, "
              "2 - diamond in center, "
              "3 - two boxes, one at the top, one at the bottom, "
@@ -39,7 +39,7 @@ ParameterDatabase get_default_Darcy_Example_parameters(int example)
              "6 - two half ellipsoids with an offset, one at the top, one at "
              "the bottom, "
              "7 - continuous change in permeability in form of a hump",
-             (size_t)0, (size_t)7);
+             0u, 7u);
       db.add("permeability_factor", 0.1, 
              "The permeability within the obstacle is multiplied by this "
              "factor. So a factor of 1 makes the entire domain uniform. "
