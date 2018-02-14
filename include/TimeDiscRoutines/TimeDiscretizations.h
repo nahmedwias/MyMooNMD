@@ -37,9 +37,8 @@ class TimeDiscretization
     /// @brief time step legth 
     double current_time_step_length;
     
-    /// @brief return a default TimeDiscretization parameter database
-    /// Using the TimeDiscretization class requires these parameters.
-    static ParameterDatabase default_TimeDiscretization_database();
+    /// @brief end time 
+    double end_time;
 
 public:
     // 
@@ -50,6 +49,10 @@ public:
     /// in the main code and increment is done within the 
     /// the time iteration. 
     unsigned int current_step_;
+    
+    /// @brief return a default TimeDiscretization parameter database
+    /// Using the TimeDiscretization class requires these parameters.
+    static ParameterDatabase default_TimeDiscretization_database();
     
     /// @brief This parameter is to be set for scaling and descaling 
     /// of the pressure-velocity blocks: this is set in the main class
@@ -135,6 +138,10 @@ public:
     double get_step_length()
     {
       return current_time_step_length;
+    }
+    double get_end_time()
+    {
+      return end_time;
     }
 };
 

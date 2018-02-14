@@ -50,7 +50,7 @@ double bound = 0;
 double timeC = 0;
 #endif
 
-void compare(const Time_NSE3D& tnse3d, std::array<double, int(4)> errors, double tol)
+void compare(const Time_NSE3D_Merged& tnse3d, std::array<double, int(4)> errors, double tol)
 {
   std::array<double, int(6)> computed_errors;
   computed_errors = tnse3d.get_errors();
@@ -102,14 +102,16 @@ void compute(std::list<TCollection* > grid_collections, ParameterDatabase& db,
 
   // Construct example object
   Example_TimeNSE3D example(db);
-  // Construct Time_NSE3D object
+  // Construct Time_NSE3D_Merged object
 #ifdef _MPI
-  Time_NSE3D tnse3d(grid_collections, db, example, maxSubDomainPerDof);
+  Time_NSE3D_Merged tnse3d(grid_collections, db, example, maxSubDomainPerDof);
 #else
-  Time_NSE3D tnse3d(grid_collections, db, example);
+  Time_NSE3D_Merged tnse3d(grid_collections, db, example);
 #endif
+  
+  tnse3d.get_time_stepping_scheme().current_step_ =0;
+  tnse3d.get_time_stepping_scheme().set_time_disc_parameters();
 
-  int step = 0;
   int image = 0;
 
   tnse3d.assemble_initial_time();
@@ -118,10 +120,12 @@ void compute(std::list<TCollection* > grid_collections, ParameterDatabase& db,
   //======================================================================
   while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME-1e-10)
   {
-    step++;
+    tnse3d.get_time_stepping_scheme().current_step_++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-    SetTimeDiscParameters(1);
-    double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+    // SetTimeDiscParameters(1);
+    tnse3d.get_time_stepping_scheme().set_time_disc_parameters();
+    double tau = tnse3d.get_time_stepping_scheme().get_step_length();
+    //TODO: set also the current_time in the main class
     TDatabase::TimeDB->CURRENTTIME += tau;
     if (my_rank==0)
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
@@ -138,13 +142,16 @@ void compute(std::list<TCollection* > grid_collections, ParameterDatabase& db,
       tnse3d.assemble_nonlinear_term();
       tnse3d.assemble_system();
     }  // end of nonlinear loop
-    tnse3d.output(step,image);
+    cout<<" current step : " << tnse3d.get_time_stepping_scheme().current_step_<<endl;
+    
+    tnse3d.output(tnse3d.get_time_stepping_scheme().current_step_,image);
+    cout<<" current step : " << tnse3d.get_time_stepping_scheme().current_step_<<endl;
     // check the errors
-    if(step==1)
+    if(tnse3d.get_time_stepping_scheme().current_step_==1)
       compare(tnse3d, errors[0],tol);
-    else if(step ==2)
+    else if(tnse3d.get_time_stepping_scheme().current_step_ ==2)
       compare(tnse3d, errors[1],tol);
-    else if(step ==20)
+    else if(tnse3d.get_time_stepping_scheme().current_step_ ==20)
       compare(tnse3d, errors[2],tol);
   } // end of time loop
 }
@@ -164,6 +171,22 @@ void check(ParameterDatabase& db, std::list<TCollection* > grid_collections,
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlineartype;
   TDatabase::ParamDB->LAPLACETYPE = laplacetype;
   TDatabase::TimeDB->TIME_DISC = time_discretizationtype;
+  
+  // rough check
+  if(time_discretizationtype == 1)
+    db["time_discretization"] = "backward_euler";
+  else if(time_discretizationtype == 2)
+    db["time_discretization"] = "crank_nicolson";
+  else if(time_discretizationtype == 3)
+    db["time_discretization"]= "bdf_two";    
+  
+  db["time_start"]= 0.;
+  db["time_end"]= 1.;
+  db["time_step_length"]= 0.05;
+  
+  db["imex_scheme_"] = false;
+  
+  Output::print("============Time Discretization===============", db["time_discretization"]);
 
 #ifdef _MPI
   compute(grid_collections,db,errors,tol,maxSubDomainPerDof);
@@ -305,6 +328,7 @@ int main(int argc, char* argv[])
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
   db.merge(Example3D::default_example_database());
+  db.merge(TimeDiscretization::default_TimeDiscretization_database());
   db["problem_type"].set<size_t>(6);
   db["nonlinloop_slowfactor"]=1.;
   db.add("boundary_file", "Default_UnitCube", "");
@@ -494,15 +518,15 @@ int main(int argc, char* argv[])
                  std::string(argv[1]),0, errors);
       check(db, grid_collections, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+
+     check(db, grid_collections, 12, -4711, 2, laplacetype, nonlineartype,
+           timediscretizationtype, errors, tol);
+
+     check(db, grid_collections, 12, -4711, 3, laplacetype, nonlineartype,
+           timediscretizationtype, errors, tol);
+
+     check(db, grid_collections, 12, -4711, 4, laplacetype, nonlineartype,
+           timediscretizationtype, errors, tol);
 #else
       set_errors(db["example"], 12, 1, timediscretizationtype,
                  std::string(argv[1]),0, errors);
@@ -546,14 +570,14 @@ int main(int argc, char* argv[])
 #ifndef _MPI // solve with umfpack in SEQ case
       set_errors(db["example"], 12, 1, timediscretizationtype,
                  std::string(argv[1]),0, errors);
-//      check(db, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+     check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
+           timediscretizationtype, errors, tol);
 //
 //      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
 
-      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
-            timediscretizationtype, errors, tol);
+     check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
+           timediscretizationtype, errors, tol);
 //
 //      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
 //            timediscretizationtype, errors, tol);
@@ -614,6 +638,7 @@ int main(int argc, char* argv[])
     db.merge(Solver<>::default_solver_database());
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(Example3D::default_example_database());
+    db.merge(TimeDiscretization::default_TimeDiscretization_database());
     db["problem_type"].set<size_t>(6);
     db["nonlinloop_slowfactor"]=1.;
     db.add("boundary_file", "Default_UnitCube", "");
