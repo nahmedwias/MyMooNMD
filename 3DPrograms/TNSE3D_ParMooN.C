@@ -14,6 +14,7 @@
 #include <TetGenMeshLoader.h>
 #include <Output3D.h>
 #include <LoopInfo.h>
+#include <TimeDiscretizations.h>
 
 #include <sys/stat.h>
 
@@ -125,11 +126,13 @@ int main(int argc, char* argv[])
   Time_NSE3D tnse3d(gridCollections, parmoon_db, example);
 #endif
   
+  TimeDiscretization& tss = tnse3d.get_time_stepping_scheme();
+  tss.current_step_ = 0;
+  tss.set_time_disc_parameters();
+  
   tnse3d.assemble_initial_time();
 
-  double end_time = TDatabase::TimeDB->ENDTIME;
-  tnse3d.current_step_ = 0;
-
+  double end_time = tss.get_end_time();
   int n_substeps = GetN_SubSteps();
 
   int image = 0;
@@ -149,7 +152,8 @@ int main(int argc, char* argv[])
     // time measuring during every time iteration
     Chrono timer_timeit;
 
-    tnse3d.current_step_++;
+    //tnse3d.current_step_++;
+    tss.current_step_++;
 
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
