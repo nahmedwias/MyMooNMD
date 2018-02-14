@@ -915,25 +915,25 @@ void Time_NSE3D::output(int m, int &image)
    delete u3;
 
    // do post-processing step depending on what the example implements, if needed
-//    example_.do_post_processing(*this);
-//    
-//    if(db_["write_solution_binary"].is(true))
-//    { size_t interval = db_["write_solution_binary_all_n_steps"];
-//     if(m % interval == 0)
-//     {//write solution to a binary file
-//       std::string file = db_["write_solution_binary_file"];
-//       if(!db_["overwrite_solution_binary"]) //create a new file every time
-//       {
-//     	  file += ".";
-//     	  file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
-// #ifdef _MPI
-//     	  file += ".proc" + std::to_string(my_rank);
-// #endif
-//       }
-//       Output::info("output", "Writing current solution to file ", file);
-//       systems_.front().solution_.write_to_file(file);
-//     }
-//   }
+   example_.do_post_processing(*this);
+   
+   if(db_["write_solution_binary"].is(true))
+   { size_t interval = db_["write_solution_binary_all_n_steps"];
+    if(m % interval == 0)
+    {//write solution to a binary file
+      std::string file = db_["write_solution_binary_file"];
+      if(!db_["overwrite_solution_binary"]) //create a new file every time
+      {
+    	  file += ".";
+    	  file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
+#ifdef _MPI
+    	  file += ".proc" + std::to_string(my_rank);
+#endif
+      }
+      Output::info("output", "Writing current solution to file ", file);
+      systems_.front().solution_.write_to_file(file);
+    }
+  }
 }
 
 /**************************************************************************** */
