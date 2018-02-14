@@ -89,7 +89,7 @@ class TAuxParam3D
      * 
      * If you don't need values of a finite element function in your assembling,
      * choose this constructor. This is equivalent to calling 
-     * TAuxParam3D(0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+     * TAuxParam3D(0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
      */
 
     TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d);

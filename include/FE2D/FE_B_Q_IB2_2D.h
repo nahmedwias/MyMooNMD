@@ -9,7 +9,7 @@ static int B_Q_IB2_2D_NDOF = 1;
 static int B_Q_IB2_2D_JointDOF = 0;
 
 // which local dofs are on the joints
-static int *B_Q_IB2_2D_J[3] = { NULL, NULL, NULL };
+static int *B_Q_IB2_2D_J[3] = { nullptr, nullptr, nullptr };
 
 // number of inner dofs
 static int B_Q_IB2_2D_NInner = 1;

@@ -405,7 +405,7 @@ double **parameters, double **coeffs)
 //  {
 //    //OutPut(TDatabase::TimeDB->CURRENTTIME << " mass of solution " <<
 //    //ComputeBilinearFormOfTwoFEFunctions2D_SameCells(ConcentrationSpaces->GetCollection(),
-//    //                SolArray, SolArray, NULL, 101) << endl);
+//    //                SolArray, SolArray, nullptr, 101) << endl);
 //  }
 //}
 //

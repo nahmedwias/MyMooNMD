@@ -12,7 +12,7 @@
 
 static double NF_B_Q_IB2_2D_Xi[] = { 0 };
 static double NF_B_Q_IB2_2D_Eta[] = { 0 };
-static double *NF_B_Q_IB2_2D_T = NULL;
+static double *NF_B_Q_IB2_2D_T = nullptr;
 
 void NF_B_Q_IB2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)

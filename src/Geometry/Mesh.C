@@ -316,7 +316,7 @@ void Mesh::hashTriFaces()
   {
     int hash = triangle[i].nodes[0]+triangle[i].nodes[1]+triangle[i].nodes[2];
 
-    if(meshTrifaceHash.at(hash) == NULL)
+    if(meshTrifaceHash.at(hash) == nullptr)
     {
       meshTrifaceHash.at(hash) = new int[BucketCount.at(hash)+1];
       meshTrifaceHash.at(hash)[0] = 1;
@@ -335,7 +335,7 @@ void Mesh::hashTriFaces()
   {
     int hash = triangle[i].nodes[0]+triangle[i].nodes[1]+triangle[i].nodes[2];
     cout << "hash = " << hash;
-    if (meshTrifaceHash.at(hash)==NULL) {
+    if (meshTrifaceHash.at(hash)==nullptr) {
       cout << " no faces " << endl;
     } else {
       cout << " total: " << meshTrifaceHash.at(hash)[0] << " -> "; 
@@ -416,7 +416,7 @@ int Mesh::findTriFace(int a, int b, int c)
     this->hashTriFaces();
   }
 
-  assert(meshTrifaceHash[hash] != NULL);
+  assert(meshTrifaceHash[hash] != nullptr);
   int count = meshTrifaceHash[hash][0];
 
   for(int i=1;i<=count;++i)

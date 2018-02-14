@@ -44,7 +44,7 @@ class TJointEqN : public TJoint
       return new TJointEqN(Me);
     }
     virtual TJoint *NewInst()
-    { return new TJointEqN(NULL); }
+    { return new TJointEqN(nullptr); }
 
     /** return whether this is an interior joint */
     virtual bool InnerJoint() const

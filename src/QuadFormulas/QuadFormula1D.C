@@ -15,7 +15,7 @@
 
 TQuadFormula1D::TQuadFormula1D() : TQuadFormula()
 {
-  Xi=NULL;
+  Xi=nullptr;
 }
 
 TQuadFormula1D::TQuadFormula1D(int n_points, double* weights, 
@@ -44,7 +44,7 @@ void TQuadFormula1D::InitObject(int n, double* w, double* xi, int acc)
 
 double *TQuadFormula1D::GetCoords(int i)
 {
-  double *ret=NULL;
+  double *ret=nullptr;
   if(i==0) 
     ret=Xi;
 
@@ -61,7 +61,7 @@ void TQuadFormula1D::
 
 void TQuadFormula1D::Gauss1()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[]={2};
   double x[]={0};
   InitObject(1,w,x, 1);
@@ -69,7 +69,7 @@ void TQuadFormula1D::Gauss1()
 
 void TQuadFormula1D::Gauss2()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[]={1, 1};
   double x[]={0.21132486540518711774, 0.78867513459481288226};
   for(int i=0;i<2;i++)
@@ -79,7 +79,7 @@ void TQuadFormula1D::Gauss2()
 
 void TQuadFormula1D::Gauss3()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[]={0.2777777777777778,0.4444444444444444,0.2777777777777778};
   double x[]={0.11270166537925831149, 0.5, 0.88729833462074168851};
   for(int i=0;i<3;i++)
@@ -92,7 +92,7 @@ void TQuadFormula1D::Gauss3()
 
 void TQuadFormula1D::Gauss4()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                -0.86113631159405257522394649,
                -0.33998104358485626480266576,
@@ -113,7 +113,7 @@ void TQuadFormula1D::Gauss4()
 
 void TQuadFormula1D::Gauss5()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                -0.906179845938663992797626878,
                -0.538469310105683091036314421,
@@ -134,7 +134,7 @@ void TQuadFormula1D::Gauss5()
 
 void TQuadFormula1D::Gauss6()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                -0.932469514203152027812301554495,
                -0.661209386466264513661399595021,
@@ -159,7 +159,7 @@ void TQuadFormula1D::Gauss6()
 
 void TQuadFormula1D::Gauss7()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                -0.949107912342758524526189684048,
                -0.741531185599394439863864773281,
@@ -186,7 +186,7 @@ void TQuadFormula1D::Gauss7()
 
 void TQuadFormula1D::Gauss8()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                 -0.960289856497536231683560868569,
                 -0.796666477413626739591553936476,
@@ -215,7 +215,7 @@ void TQuadFormula1D::Gauss8()
 
 void TQuadFormula1D::Gauss9()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                -0.968160239507626089835576202904,
                -0.836031107326635794299429788070,
@@ -246,7 +246,7 @@ void TQuadFormula1D::Gauss9()
 
 void TQuadFormula1D::Gauss10()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                -0.973906528517171720077964012084, 
                -0.865063366688984510732096688423, 
@@ -277,7 +277,7 @@ void TQuadFormula1D::Gauss10()
 
 void TQuadFormula1D::Gauss11()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                -0.978228658146056992803938001123, 
                -0.887062599768095299075157769304, 
@@ -310,7 +310,7 @@ void TQuadFormula1D::Gauss11()
 
 void TQuadFormula1D::Gauss12()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                -0.981560634246719250690549090149, 
                -0.904117256370474856678465866119, 
@@ -346,7 +346,7 @@ void TQuadFormula1D::Gauss12()
 /** 2-Points-Gauss with ln(1/x) as the weighting function on the interval [0;1] */
 void TQuadFormula1D::Gauss2W1()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                0.112008806166976,
                0.602276908118738
@@ -362,7 +362,7 @@ void TQuadFormula1D::Gauss2W1()
 /** 4-Points-Gauss with ln(1/x) as the weighting function on the interval [0;1] */
 void TQuadFormula1D::Gauss4W1()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                0.041448480199383,
                0.245474914320602,
@@ -382,7 +382,7 @@ void TQuadFormula1D::Gauss4W1()
 /** 6-Points-Gauss with ln(1/x) as the weighting function on the interval [0;1] */
 void TQuadFormula1D::Gauss6W1()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                0.021634005844117,
                0.129583391154950,
@@ -406,7 +406,7 @@ void TQuadFormula1D::Gauss6W1()
 /** 8-Points-Gauss with ln(1/x) as the weighting function on the interval [0;1] */
 void TQuadFormula1D::Gauss8W1()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
                0.013320244160892,
                0.079750429013895,
@@ -434,7 +434,7 @@ void TQuadFormula1D::Gauss8W1()
 /** 16-Points-Gauss for strongly singular integral of order O(1/x) on the interval [-1;1] */
 void TQuadFormula1D::Gauss16W2()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[]={
               -0.977454378379800,
               -0.884983053370117,

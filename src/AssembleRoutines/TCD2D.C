@@ -884,7 +884,7 @@ double *sold_param)
       ys = (y1+y0)/2;
       // NO ADAPTIVE MESHES ALLOWED
       neigh=joint->GetNeighbour(cell);            // neighbour cell
-      if (neigh!=NULL)
+      if (neigh!=nullptr)
       {
         ii =  neigh->GetClipBoard();
         //OutPut("ii " << ii << endl);

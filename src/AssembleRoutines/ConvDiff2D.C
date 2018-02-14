@@ -868,7 +868,7 @@ double ***LocMatrices, double **LocRhs)
   c5 = coeff[5];                                  // \|b\|_infty
 
   delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
-  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, delta, NULL, 0, 0, 0);
+  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, delta, nullptr, 0, 0, 0);
 
   // current finite element solution of equation
   u[0] = param[0];                                // u
@@ -1245,7 +1245,7 @@ double ***LocMatrices, double **LocRhs)
 
     // update array for rhs
     val = u[1]*test10 + u[2]*test01;
-    if (fabs(norm_grad>1e-30))
+    if(std::abs(norm_grad) > 1e-30)
       val /= norm_grad;
     else
     {
@@ -1468,7 +1468,7 @@ double ***LocMatrices, double **LocRhs)
     valdres = 2 * residual * test;
     val = TDatabase::ParamDB->WEIGHT_RESIDUAL_L2_ADJOINT * valdres;
     val += TDatabase::ParamDB->WEIGHT_GRADIENT_L2_ADJOINT * 2 * (u[1]*test10 + u[2]*test01);
-    if (fabs(norm_grad>1e-30))
+    if(std::abs(norm_grad) > 1e-30)
       val += TDatabase::ParamDB->WEIGHT_GRADIENT_L1_ADJOINT * (u[1]*test10 + u[2]*test01)/norm_grad;
     val += TDatabase::ParamDB->WEIGHT_STREAM_DER_L1_ADJOINT*(c1*test10 + c2*test01)*sig_b_gradu;
     val += TDatabase::ParamDB->WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT*(-c2_norm*test10+c1_norm*test01)* sig_borth_gradu;

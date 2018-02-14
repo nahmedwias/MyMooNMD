@@ -23,7 +23,7 @@ static int *P2B_P2B_Pairs[3] = { (int *)P2B_P2B_Pairs0, (int *)P2B_P2B_Pairs1,
 static int P2B_P2B_NNodes = 14;
 
 static int P2B_P2B_NNoOpposite = 0;
-static int **P2B_P2B_NoOpposite = NULL;
+static int **P2B_P2B_NoOpposite = nullptr;
 
 TFE3DMapper *P2B_P2B = new TFE3DMapper(P2B_P2B_Name, P2B_P2B_Desc,
                              P2B_P2B_N0, P2B_P2B_N1,

@@ -12,7 +12,7 @@ TAuxParam2D3D::TAuxParam2D3D (int n_fefunctions, TFEFunction3D **fefunctions,
   int ivar;
   
   mN_FEFunctions = n_fefunctions;
-  mFEFunctions = NULL;
+  mFEFunctions = nullptr;
   
   if ( n_fefunctions )
   {
@@ -23,7 +23,7 @@ TAuxParam2D3D::TAuxParam2D3D (int n_fefunctions, TFEFunction3D **fefunctions,
   }
   
   mN_FEVectFuncts = n_fevectfuncts;
-  mFEVectFuncts = NULL;
+  mFEVectFuncts = nullptr;
   
   if ( n_fevectfuncts )
   {

@@ -24,7 +24,7 @@ static int *N_T_BDM1_2D_J[3] = { N_T_BDM1_2D_J0,
 static int N_T_BDM1_2D_NInner = 0;
 
 // array containing the numbers for the inner dofs
-static int *N_T_BDM1_2D_Inner = NULL;
+static int *N_T_BDM1_2D_Inner = nullptr;
 
 // number of outer dofs (dofs on edges)
 static int N_T_BDM1_2D_NOuter = 6;

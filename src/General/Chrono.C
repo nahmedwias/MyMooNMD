@@ -54,7 +54,7 @@ double get_wall_time()
 #endif
   //wall time
   struct timeval wall_time;
-  if (gettimeofday(&wall_time,NULL))
+  if (gettimeofday(&wall_time,nullptr))
     ErrThrow("Error in gettimeofday!");
   return wall_time.tv_sec + wall_time.tv_usec/(double)1000000;
 }
@@ -140,8 +140,8 @@ void print_times(std::array<double, 2> times, const std::string& program_part)
 
 void Chrono::print_total_time(const std::string& program_part) const
 {
-  std::array<double, 2> times = { this->elapsed_time(),       // CPU time
-                                  this->elapsed_wall_time()}; // wall time
+  std::array<double, 2> times = {{this->elapsed_time(),        // CPU time
+                                  this->elapsed_wall_time()}}; // wall time
   print_times(times, program_part);
 }
 
@@ -153,8 +153,8 @@ void Chrono::restart_and_print(const std::string& program_part)
 
 void Chrono::stop_and_print(const std::string& program_part)
 {
-  std::array<double, 2> times = { time_since_last_start(),       // CPU
-                                  wall_time_since_last_start()}; // wall
+  std::array<double, 2> times = {{time_since_last_start(),        // CPU
+                                  wall_time_since_last_start()}}; // wall
   stop();
   print_times(times, program_part);
 }

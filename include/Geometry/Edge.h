@@ -92,7 +92,7 @@ class TEdge
    {return SubDomainEdge;}
 
 //   void SetAsSubDomainCrossEdge()
-//   {SubDomainCrossEdge = TRUE;}
+//   {SubDomainCrossEdge = true;}
 
   bool IsSubDomainCrossEdge()
    {return SubDomainCrossEdge;}

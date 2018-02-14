@@ -21,6 +21,17 @@ LoopInfo::LoopInfo(const char* name)
   
 }
 
+LoopInfo::LoopInfo(std::string name,
+                   bool print_time_every_step_in,
+                   bool print_reduction_rates_in,
+                   size_t verbosity_threshold_in)
+  : LoopInfo(name)
+{
+  print_time_every_step = print_time_every_step_in;
+  print_reduction_rates = print_reduction_rates_in;
+  verbosity_threshold   = verbosity_threshold_in;
+}
+
 void LoopInfo::restart(std::string name, double initial_residual)
 {
   this->name = name;

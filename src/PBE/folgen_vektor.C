@@ -7,7 +7,7 @@ folgen_vektor_p0_new() {
 	back = (folgen_vektor_p0_p) malloc(sizeof(folgen_vektor_p0_t));
 
 	back->vektor = folge_new(0);
-	ASSERT(back->vektor != NULL);
+	ASSERT(back->vektor != nullptr);
 
 	return back;
 }
@@ -25,7 +25,7 @@ folgen_matrix_p0_new() {
 	folge_p0_p  matrix;
 
 	back = (folgen_matrix_p0_p) malloc(sizeof(folgen_matrix_p0_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	matrix = folge_new(0);
 
@@ -117,9 +117,9 @@ folgen_vektor_p1_new() {
 	back = (folgen_vektor_p1_p) malloc(sizeof(folgen_vektor_p1_t));
 
 	back->vektor0 = folge_p1_new(0);
-	ASSERT(back->vektor0 != NULL);
+	ASSERT(back->vektor0 != nullptr);
 	back->vektor1 = folge_p1_new(0);
-	ASSERT(back->vektor1 != NULL);
+	ASSERT(back->vektor1 != nullptr);
 
 	return back;
 }
@@ -140,9 +140,9 @@ folgen_matrix_p1_new() {
 
 
 	back = (folgen_matrix_p1_p) malloc(sizeof(folgen_matrix_p1_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 	matrix = (folge_p1_p**) malloc(sizeof(folge_p1_p*) * 2);
-	ASSERT(matrix != NULL);
+	ASSERT(matrix != nullptr);
 
 	matrix[0] = (folge_p1_p*) malloc(4 * sizeof(folge_p1_p));
 	matrix[1] = matrix[0] + 2;

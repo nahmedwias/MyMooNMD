@@ -101,8 +101,8 @@ protected:
 public:
     /** constructor: maximum number of these things */
     TOutput3D(int maxn_fespaces, int maxn_scalar, int maxn_vect,
-              int maxn_parameters, TDomain *domain, TCollection *coll=NULL,
-              const char *name=NULL);
+              int maxn_parameters, TDomain *domain, TCollection *coll=nullptr,
+              const char *name=nullptr);
     
     /** destructor: freeing all allocated space */
     ~TOutput3D();

@@ -25,7 +25,7 @@ TMortarBaseJoint::TMortarBaseJoint(TBaseCell *neighb0,
 int TMortarBaseJoint::CheckMatchingRef(TBaseCell *Me, int J_i,
                     struct StoreGeom &Tmp)
 {
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
   return 0;
 }
 
@@ -33,7 +33,7 @@ int TMortarBaseJoint::CheckMatchingRef(TBaseCell *Me, int J_i,
 int TMortarBaseJoint::CheckMatchingRef(TBaseCell *Me, int J_i,
                     StoreGeomMortar &Tmp)
 {
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
   return 0;
 }
 

@@ -1488,7 +1488,7 @@ void ComputeSizeOfSmallScales(TMatrix3D *matG11,
   N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
 
   for(i=0;i<2;i++)
-    SecondDer[i] = FALSE;
+    SecondDer[i] = false;
 
   // this gives the large scales
   ComputeVMSProjection(matG11, matG22, matG33, MatrixL,
@@ -1889,7 +1889,7 @@ void ComputeSizeOfSmallScales_ori(TMatrix3D *matG11,
   N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
 
   for(i=0;i<2;i++)
-    SecondDer[i] = FALSE;
+    SecondDer[i] = false;
 
   // this gives the large scales
   ComputeVMSProjection(matG11, matG22, matG33, MatrixL,

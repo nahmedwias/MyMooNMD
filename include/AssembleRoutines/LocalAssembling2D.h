@@ -99,7 +99,7 @@ class LocalAssembling2D
     std::vector<int> RhsSpace;
 
     /** function for calculating the coefficients */
-    CoeffFct2D *Coeffs;
+    CoeffFct2D Coeffs;
 
     /** @brief function doing the real assembling using parameters from 
      *         argument list */
@@ -172,7 +172,7 @@ class LocalAssembling2D
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
-                      CoeffFct2D *coeffs, int disctype = 1);
+                      CoeffFct2D coeffs, int disctype = 1);
     
     /** @brief constructor for backward compatibility
      * 
@@ -268,7 +268,7 @@ class LocalAssembling2D
     LocalAssembling2D(int myN_Terms,
     		 std::vector<MultiIndex2D> myDerivatives, std::vector<int> myFESpaceNumber,
 			 std::vector<int> myRowSpace, std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
-			 CoeffFct2D* myCoeffs, AssembleFctParam2D* myAssembleParam, ManipulateFct2D* myManipulate,
+			 CoeffFct2D myCoeffs, AssembleFctParam2D* myAssembleParam, ManipulateFct2D* myManipulate,
 			 int myN_Matrices, int myN_Rhs,
 			 int myN_ParamFct, std::vector<ParamFct*> myParameterFct, std::vector<int> myBeginParameter, int myN_Parameters,
 			 TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
@@ -367,7 +367,7 @@ class LocalAssembling2D
     { return Needs2ndDerivatives; }
 
     /** function for calculating the coefficients */
-    CoeffFct2D *GetCoeffFct() const
+    const CoeffFct2D& GetCoeffFct() const
     { return Coeffs; }
     
     /** return the index of the row space of the i-th matrix */

@@ -7,15 +7,15 @@ static int C6_2_C6_2_NPairs = 7;
 static int C6_2_C6_2_Pairs[][2] = { {0,13}, {1,12}, {2,11}, {3,10},
                                     {4,9}, {5,8}, {6,7}};
 static int C6_2_C6_2_NHanging = 0;
-static int *C6_2_C6_2_Hanging = NULL;
-static HNDesc *C6_2_C6_2_HangingTypes = NULL;
-static int **C6_2_C6_2_Coupling = NULL;
+static int *C6_2_C6_2_Hanging = nullptr;
+static HNDesc *C6_2_C6_2_HangingTypes = nullptr;
+static int **C6_2_C6_2_Coupling = nullptr;
 static int C6_2_C6_2_NFarHanging = 0;
-static int *C6_2_C6_2_FarHanging = NULL;
-static HNDesc *C6_2_C6_2_FarHangingTypes = NULL;
-static int ****C6_2_C6_2_FarCoupling = NULL;
+static int *C6_2_C6_2_FarHanging = nullptr;
+static HNDesc *C6_2_C6_2_FarHangingTypes = nullptr;
+static int ****C6_2_C6_2_FarCoupling = nullptr;
 static int C6_2_C6_2_NNoopposite = 0;
-static int *C6_2_C6_2_Nopposite = NULL;
+static int *C6_2_C6_2_Nopposite = nullptr;
 static int C6_2_C6_2_NNodes = 14;
 
 TFE2DMapper *C6_2_C6_2 = new TFE2DMapper(C6_2_C6_2_Name, C6_2_C6_2_Desc,

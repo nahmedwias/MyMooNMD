@@ -20,7 +20,7 @@ static int *N_T_P1MOD_2D_J[3] = { N_T_P1MOD_2D_J0, N_T_P1MOD_2D_J1,
 static int N_T_P1MOD_2D_NInner = 0;
 
 // array containing the numbers for the inner dofs (here is no inner dof)
-static int *N_T_P1MOD_2D_Inner = NULL;
+static int *N_T_P1MOD_2D_Inner = nullptr;
 
 static char N_T_P1MOD_2D_String[] = "N_T_P1MOD_2D";
 

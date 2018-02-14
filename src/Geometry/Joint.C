@@ -18,8 +18,8 @@ TJoint::TJoint()
 {
   ID = Joint;
 
-  Neighb0 = NULL;
-  Neighb1 = NULL;
+  Neighb0 = nullptr;
+  Neighb1 = nullptr;
 
   NeibSubDomainLocalJointNo = -1;
 #ifdef __3D__
@@ -109,9 +109,9 @@ TBaseCell *TJoint::GetNeighbour(int i) const
 void TJoint::Delete(TBaseCell *Me)
 {
   if (Neighb0 == Me)
-    Neighb0 = NULL;
+    Neighb0 = nullptr;
   else
-    Neighb1 = NULL;
+    Neighb1 = nullptr;
 }
 
 #ifdef __3D__
@@ -254,10 +254,10 @@ int TJoint::GetNeighbourEdgeIndex(TBaseCell* me, int LocEdge)
 TJoint::~TJoint()
 {
   if(Neighb0)
-  { Neighb0 = NULL;}
+  { Neighb0 = nullptr;}
   
   if(Neighb1)
-  { Neighb1 = NULL;}
+  { Neighb1 = nullptr;}
   
 }
 

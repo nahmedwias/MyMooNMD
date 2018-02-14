@@ -2451,7 +2451,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   }                                               // endif N_AllMatrices
 
   SecondDer = new bool[n_fespaces];
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   // ########################################################################
   // loop over all cells
@@ -3229,6 +3229,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     // this could provide values of FE functions during the local assemble
     // routine, not yet supported.
     //la.GetParameters(N_Points,Coll, cell,icell, xi,eta, X,Y, Param);
+    la.compute_parameters(N_Points, Coll, cell, icell, X, Y);
 
     // ########################################################################
     // assemble local matrices and right hand sides
@@ -3237,7 +3238,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     //int max_n_BF = *max_element(LocN_BF.begin(),LocN_BF.end()); 
     // for every matrix we allocate a local matrix with corresponding number of 
     // rows and columns
-    double ***LocMatrices = NULL;
+    double ***LocMatrices = nullptr;
     if(N_AllMatrices)
     {
       LocMatrices = new double**[N_AllMatrices];
@@ -3254,9 +3255,9 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       }
     }                                               // endif N_AllMatrices
     
-    la.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, &LocN_BF[0], &LocBF[0],
-                     cell, LocMatrices, LocRhs);
-    
+    la.get_local_forms(N_Points, weights, AbsDetjk, X, Y, &LocN_BF[0],
+                       &LocBF[0], cell, N_AllMatrices, n_rhs, LocMatrices, 
+                       LocRhs);
     
     // ########################################################################
     // add local matrices to global matrices (ansatz == test)
@@ -3460,7 +3461,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                 double *JointValue = JointValues[ilinePoint];
                 TFEDatabase2D::GetOrigValues(
                     fe->GetRefTransID(), zeta[ilinePoint], BaseFunct, ijoint,
-                    JointValue, NULL,NULL, JointValuesTransformed, NULL,NULL); 
+                    JointValue, nullptr,nullptr, JointValuesTransformed, nullptr,nullptr); 
                 // get quadrature point on the boundary
                 double t = t0 + 0.5*(t1-t0)*(zeta[ilinePoint]+1);
                 double s;
@@ -4987,7 +4988,7 @@ double *rhs_for_stress_other)
 //
 // =======================================================================
 
-void Assemble2D_DG(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_DG(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 int n_matrices, TMatrix2D **matrices,
 int n_rhs, double **rhs, TFESpace2D **ferhs,
@@ -5143,7 +5144,7 @@ TAuxParam2D *Parameters)
   }                                               // endif N_AllMatrices
 
   SecondDer = new bool[n_fespaces];
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   if(n_rhs)
   {
@@ -5466,7 +5467,7 @@ TAuxParam2D *Parameters)
       DOF = GlobalNumbers[n] + BeginIndex[n][i];  // dof of current mesh cell
 
       LocalUsedElements[0] = CurrentElement;
-      SecondDer[0] = FALSE;
+      SecondDer[0] = false;
       RefTrans = TFEDatabase2D::GetOrig(1, LocalUsedElements,
         Coll, cell, SecondDer,
         N_Points, xi, eta, weights, X, Y, AbsDetjk);
@@ -6338,22 +6339,22 @@ TAuxParam2D *Parameters)
     {
       for(m=0; m < MaxN_QuadPoints_1D; m++)
       {
-        delete xietaval_ref1D[i][j][m];
-        delete xideriv_ref1D[i][j][m];
-        delete etaderiv_ref1D[i][j][m];
+        delete [] xietaval_ref1D[i][j][m];
+        delete [] xideriv_ref1D[i][j][m];
+        delete [] etaderiv_ref1D[i][j][m];
       }
-      delete xietaval_ref1D[i][j];
-      delete xideriv_ref1D[i][j];
-      delete etaderiv_ref1D[i][j];
+      delete [] xietaval_ref1D[i][j];
+      delete [] xideriv_ref1D[i][j];
+      delete [] etaderiv_ref1D[i][j];
     }
-    delete xietaval_ref1D[i];
-    delete xideriv_ref1D[i];
-    delete  etaderiv_ref1D[i];
+    delete [] xietaval_ref1D[i];
+    delete [] xideriv_ref1D[i];
+    delete [] etaderiv_ref1D[i];
   }
 
-  delete xietaval_ref1D;
-  delete xideriv_ref1D;
-  delete etaderiv_ref1D;
+  delete [] xietaval_ref1D;
+  delete [] xideriv_ref1D;
+  delete [] etaderiv_ref1D;
 
   for (i=0;i<4;i++)
   {
@@ -6382,18 +6383,18 @@ TAuxParam2D *Parameters)
   {
     for (j=0;j<ref_n;j++)
     {
-      delete value_basefunct_ref1D[i][j];
-      delete xderiv_basefunct_ref1D[i][j];
-      delete yderiv_basefunct_ref1D[i][j];
+      delete [] value_basefunct_ref1D[i][j];
+      delete [] xderiv_basefunct_ref1D[i][j];
+      delete [] yderiv_basefunct_ref1D[i][j];
     }
-    delete value_basefunct_ref1D[i];
-    delete xderiv_basefunct_ref1D[i];
-    delete yderiv_basefunct_ref1D[i];
+    delete [] value_basefunct_ref1D[i];
+    delete [] xderiv_basefunct_ref1D[i];
+    delete [] yderiv_basefunct_ref1D[i];
   }
 
-  delete value_basefunct_ref1D;
-  delete xderiv_basefunct_ref1D;
-  delete yderiv_basefunct_ref1D;
+  delete [] value_basefunct_ref1D;
+  delete [] xderiv_basefunct_ref1D;
+  delete [] yderiv_basefunct_ref1D;
 
 
   /*for (n=0;n<N_BaseFuncts2D;n++)
@@ -6403,9 +6404,9 @@ TAuxParam2D *Parameters)
 
   for (i=0;i<N_Points1D;i++)
   {
-    delete xyval_refNeigh1D[i];
-    delete  xderiv_refNeigh1D[i];
-    delete   yderiv_refNeigh1D[i];
+    delete [] xyval_refNeigh1D[i];
+    delete [] xderiv_refNeigh1D[i];
+    delete [] yderiv_refNeigh1D[i];
   }
   /*        delete xderiv_Neigh1D;
           delete  yderiv_Neigh1D;
@@ -6481,7 +6482,7 @@ TAuxParam2D *Parameters)
 //
 // =======================================================================
 
-void Assemble2D_CIP(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_CIP(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 int n_matrices, TMatrix2D **matrices,
 int n_rhs, double **rhs, TFESpace2D **ferhs,
@@ -6663,7 +6664,7 @@ TAuxParam2D *Parameters)
   }                                               // endif N_AllMatrices
 
   SecondDer = new bool[n_fespaces];
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   for (i=0;i<N_BaseFuncts2D;i++)
   {
@@ -6969,7 +6970,7 @@ TAuxParam2D *Parameters)
       DOF = GlobalNumbers[n] + BeginIndex[n][i];  // dof of current mesh cell
 
       LocalUsedElements[0] = CurrentElement;
-      SecondDer[0] = FALSE;
+      SecondDer[0] = false;
       RefTrans = TFEDatabase2D::GetOrig(1, LocalUsedElements,
         Coll, cell, SecondDer,
         N_Points, xi, eta, weights, X, Y, AbsDetjk);
@@ -8035,13 +8036,13 @@ TAuxParam2D *Parameters)
   {
       for (j=0;j<ref_n;j++)
       {
-	  delete value_basefunct_ref1D[i][j];
-	  delete xderiv_basefunct_ref1D[i][j];
-	  delete yderiv_basefunct_ref1D[i][j];
+	  delete [] value_basefunct_ref1D[i][j];
+	  delete [] xderiv_basefunct_ref1D[i][j];
+	  delete [] yderiv_basefunct_ref1D[i][j];
       }
-      delete value_basefunct_ref1D[i];
-      delete xderiv_basefunct_ref1D[i];
-      delete yderiv_basefunct_ref1D[i];
+      delete [] value_basefunct_ref1D[i];
+      delete [] xderiv_basefunct_ref1D[i];
+      delete [] yderiv_basefunct_ref1D[i];
   }
 
   for (i=0;i<N_Points1D;i++)
@@ -8069,26 +8070,26 @@ TAuxParam2D *Parameters)
       {
 	for(m=0; m < MaxN_QuadPoints_1D; m++)
           {
-	    delete xietaval_ref1D[i][j][m];
-	    delete xideriv_ref1D[i][j][m];
-	    delete etaderiv_ref1D[i][j][m];
+	    delete [] xietaval_ref1D[i][j][m];
+	    delete [] xideriv_ref1D[i][j][m];
+	    delete [] etaderiv_ref1D[i][j][m];
 	  }
-	delete xietaval_ref1D[i][j];
-	delete xideriv_ref1D[i][j];
-	delete etaderiv_ref1D[i][j];
+	delete [] xietaval_ref1D[i][j];
+	delete [] xideriv_ref1D[i][j];
+	delete [] etaderiv_ref1D[i][j];
       }
-    delete xietaval_ref1D[i];
-    delete xideriv_ref1D[i];
-    delete  etaderiv_ref1D[i];
+    delete [] xietaval_ref1D[i];
+    delete [] xideriv_ref1D[i];
+    delete [] etaderiv_ref1D[i];
   }
 
-  delete value_basefunct_ref1D;
-  delete xderiv_basefunct_ref1D;
-  delete yderiv_basefunct_ref1D;
+  delete [] value_basefunct_ref1D;
+  delete [] xderiv_basefunct_ref1D;
+  delete [] yderiv_basefunct_ref1D;
 
-  delete xietaval_ref1D;
-  delete xideriv_ref1D;
-  delete etaderiv_ref1D;
+  delete [] xietaval_ref1D;
+  delete [] xideriv_ref1D;
+  delete [] etaderiv_ref1D;
 
   if (weak>=1) // ???
   {

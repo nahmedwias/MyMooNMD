@@ -119,7 +119,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   FE2D LocalUsedElements[2], CurrentElement;
   int *DOF;
   double **OrigFEValues, *Orig;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   double *u1, *u2, *p;
   const TFESpace2D *USpace, *PSpace;
   int *UGlobalNumbers, *UBeginIndex;

@@ -317,5 +317,5 @@ void NF_D_T_P4_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double
 
 TNodalFunctional2D *NF_D_T_P4_2D_Obj = new TNodalFunctional2D
         (NF_D_T_P4_2D, 15, 0, 15, 0, NF_D_T_P4_2D_Xi, NF_D_T_P4_2D_Eta,
-         NULL, NF_D_T_P4_2D_EvalAll, NF_D_T_P4_2D_EvalEdge);
+         nullptr, NF_D_T_P4_2D_EvalAll, NF_D_T_P4_2D_EvalEdge);
 

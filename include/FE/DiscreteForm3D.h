@@ -58,7 +58,7 @@ class TDiscreteForm3D
     int *RhsSpace;
 
     /** function for calculating the coefficients */
-    CoeffFct3D *Coeffs;
+    CoeffFct3D Coeffs;
 
     /** function doing the real assembling */
     AssembleFct3D *Assemble;
@@ -82,7 +82,7 @@ class TDiscreteForm3D
                     MultiIndex3D *derivatives, int *fespacenumber,
                     int n_matrices, int n_rhs,
                     int *rowspace, int *columnspace, int *rhsspace,
-                    AssembleFct3D *assemble, CoeffFct3D *coeffs,
+                    AssembleFct3D *assemble, CoeffFct3D coeffs,
                     ManipulateFct3D *manipulate);
 
     /** constructor with assembling using parameters */
@@ -90,7 +90,7 @@ class TDiscreteForm3D
                     MultiIndex3D *derivatives, int *fespacenumber,
                     int n_matrices, int n_rhs,
                     int *rowspace, int *columnspace, int *rhsspace,
-                    AssembleFctParam3D *assembleparam, CoeffFct3D *coeffs,
+                    AssembleFctParam3D *assembleparam, CoeffFct3D coeffs,
                     ManipulateFct3D *manipulate);
 
     /** destructor */
@@ -119,7 +119,7 @@ class TDiscreteForm3D
     { return Needs2ndDerivatives; };
 
     /** function for calculating the coefficients */
-    [[deprecated]] CoeffFct3D *GetCoeffFct()
+    [[deprecated]] CoeffFct3D GetCoeffFct()
     { return Coeffs; }
 
     //Getter methods.
@@ -136,7 +136,7 @@ class TDiscreteForm3D
 		return AssembleParam;
 	}
 
-	CoeffFct3D* getCoeffs() const {
+	const CoeffFct3D& getCoeffs() const {
 		return Coeffs;
 	}
 

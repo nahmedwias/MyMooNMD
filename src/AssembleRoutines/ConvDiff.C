@@ -595,7 +595,7 @@ int time_dependent_problem)
     res = residual;
 
   // parameters are provided
-  if (param!=NULL)
+  if (param!=nullptr)
   {
     u_x = param[1];
     u_y = param[2];
@@ -1179,9 +1179,9 @@ int time_dependent_problem)
 /*************************************************************************/
 double EstimateCoercivityConstant(TCollection *Coll,
 #ifdef __2D__
-                                  CoeffFct2D *Coeffs
+                                  CoeffFct2D Coeffs
 #else // 3D
-                                  CoeffFct3D *Coeffs
+                                  CoeffFct3D Coeffs
 #endif
                                   )
 {
@@ -1215,10 +1215,10 @@ double EstimateCoercivityConstant(TCollection *Coll,
       vertex = cell->GetVertex(j);
       #ifdef __2D__
       vertex->GetCoords(x, y);
-      Coeffs(1, &x, &y, NULL, &coeff);
+      Coeffs(1, &x, &y, nullptr, &coeff);
       #else
       vertex->GetCoords(x, y, z);
-      Coeffs(1, &x, &y, &z, NULL, &coeff);
+      Coeffs(1, &x, &y, &z, nullptr, &coeff);
       #endif
       // assuming that convection is divergence-free
       if (coeff[reac_index] < coerc)
@@ -1236,9 +1236,9 @@ double EstimateCoercivityConstant(TCollection *Coll,
     #endif
     
     #ifdef __2D__
-    Coeffs(1, &xs, &ys, NULL, &coeff);
+    Coeffs(1, &xs, &ys, nullptr, &coeff);
     #else
-    Coeffs(1, &xs, &ys, &zs, NULL, &coeff);
+    Coeffs(1, &xs, &ys, &zs, nullptr, &coeff);
     #endif
     // assuming that convection is divergence-free
     if (coeff[reac_index] < coerc)
@@ -1337,7 +1337,7 @@ void SetSoldParameters(int i)
 
 #ifdef __2D__
 void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u, 
-                       CoeffFct2D *Coeffs, double *rhs, int time_dependent,
+                       CoeffFct2D Coeffs, double *rhs, int time_dependent,
                        double *time_step, TFEFunction2D *old_u)
 {
   int i, j, ii, N_Cells, *GlobalNumbers, *BeginIndex;
@@ -1491,7 +1491,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
         // from point of view of neighbour mesh cell
         // NO ADAPTIVE MESHES ALLOWED
         neigh=joint->GetNeighbour(cell);          // neighbour cell
-        if (neigh!=NULL)
+        if (neigh!=nullptr)
         {
           ii =  neigh->GetClipBoard();
           u->FindGradientLocal(neigh, ii, xs, ys, val_neigh);
@@ -1538,7 +1538,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
       // from point of view of neighbour mesh cell
       // NO ADAPTIVE MESHES ALLOWED
       neigh=joint->GetNeighbour(cell);            // neighbour cell
-      if (neigh!=NULL)
+      if (neigh!=nullptr)
       {
         ii =  neigh->GetClipBoard();
         //OutPut("ii " << ii << endl);
@@ -1574,7 +1574,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
       {
         case BH04:
           // compute coefficients in (xs,ys)
-          Coeffs(1, &xs, &ys, NULL, &coeff);
+          Coeffs(1, &xs, &ys, nullptr, &coeff);
           fac1 = coeff[0] * TDatabase::ParamDB->SOLD_CONST;
           if (time_dependent)
             fac1 *= time_step[0];
@@ -1583,7 +1583,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
           break;
         case BE05_1:
           // compute coefficients in (xs,ys)
-          Coeffs(1, &xs, &ys, NULL, &coeff);
+          Coeffs(1, &xs, &ys, nullptr, &coeff);
           // norm of convection
           fac1 = sqrt(coeff[1]*coeff[1]+coeff[2]*coeff[2]);
           if (time_dependent)
@@ -1612,7 +1612,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
           // this case does not depend from formerly computed values
           // Simpson rule
           // compute coefficients in (x0,y0)
-          Coeffs(1, &x0, &y0, NULL, &coeff);
+          Coeffs(1, &x0, &y0, nullptr, &coeff);
           // pw_linear_rhs
           if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 100)
           {
@@ -1633,7 +1633,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
               - time_step[2] * coeff[5]
               - time_step[3] * coeff[4];
           }
-          Coeffs(1, &xs, &ys, NULL, &coeff);
+          Coeffs(1, &xs, &ys, nullptr, &coeff);
           // pw_linear_rhs
           if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 100)
           {
@@ -1655,7 +1655,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
               - time_step[3] * coeff[4]);
           }
           // compute coefficients in (x1,y1)
-          Coeffs(1, &x1, &y1, NULL, &coeff);
+          Coeffs(1, &x1, &y1, nullptr, &coeff);
           // pw_linear_rhs
           if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 100)
           {

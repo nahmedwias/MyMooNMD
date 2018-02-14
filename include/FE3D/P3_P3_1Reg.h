@@ -75,7 +75,7 @@ static int *P3_P3_1Reg_TwistPerm[3] = { P3_P3_1Reg_TwistPerm0,
                                         P3_P3_1Reg_TwistPerm2 };
 
 static int P3_P3_1Reg_NNoOpposite = 0;
-static int **P3_P3_1Reg_NoOpposite = NULL;
+static int **P3_P3_1Reg_NoOpposite = nullptr;
         
 TFE3DMapper1Reg *P3_P3_1Reg = new TFE3DMapper1Reg(
         P3_P3_1Reg_Name, P3_P3_1Reg_Desc,

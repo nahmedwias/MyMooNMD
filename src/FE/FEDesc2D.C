@@ -37,7 +37,7 @@ TFEDesc2D::TFEDesc2D(char *description, int n_dof, int n_jointdof,
   N_InnerDOF = n_innerdof;
   InnerDOF = innerdof;
   N_OuterDOF = 0;
-  OuterDOF = NULL;
+  OuterDOF = nullptr;
 }
 
 /** return joint on which the i-th local degree of freedom is   

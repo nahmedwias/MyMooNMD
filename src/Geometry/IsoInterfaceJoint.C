@@ -21,7 +21,7 @@ TIsoInterfaceJoint::TIsoInterfaceJoint(TBoundComp2D *bdcomp, double t_0,
   ID = IsoInterfaceJoint;
 
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
 }
 
 TIsoInterfaceJoint::TIsoInterfaceJoint(TBoundComp2D *bdcomp, double t_0,
@@ -31,7 +31,7 @@ TIsoInterfaceJoint::TIsoInterfaceJoint(TBoundComp2D *bdcomp, double t_0,
   ID = IsoInterfaceJoint;
 
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
 }
 
 // Methods
@@ -43,7 +43,7 @@ TJoint *TIsoInterfaceJoint::NewInst(double newT_0, double newT_1, TBaseCell *Me)
 
 TJoint *TIsoInterfaceJoint::NewInst()
 {
-  return new TIsoInterfaceJoint(BoundComp, T_0, T_1, NULL);
+  return new TIsoInterfaceJoint(BoundComp, T_0, T_1, nullptr);
 }
 
 void TIsoInterfaceJoint::SetVertices(int n_vertices, TVertex **vertices)
@@ -84,11 +84,11 @@ void TIsoInterfaceJoint::GenerateVertices(int n_vertices)
 
 void TIsoInterfaceJoint::GeneratemidVert(int n_vertices, double*X, double*Y)
 {
-   if(Vertices)
-     delete Vertices;
+  if(Vertices)
+    delete Vertices;
 
-     N_Vertices = n_vertices;
-     Vertices = new TVertex*[N_Vertices];
+  N_Vertices = n_vertices;
+  Vertices = new TVertex*[N_Vertices];
 
 #ifdef __2D__
   int i;

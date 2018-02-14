@@ -58,7 +58,7 @@ class TDiscreteForm2D
     int *RhsSpace;
 
     /** function for calculating the coefficients */
-    CoeffFct2D *Coeffs;
+    CoeffFct2D Coeffs;
 
     /** function doing the real assembling */
     AssembleFct2D *Assemble;
@@ -82,7 +82,7 @@ class TDiscreteForm2D
         MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFct2D *assemble, CoeffFct2D *coeffs,
+        AssembleFct2D *assemble, CoeffFct2D coeffs,
         ManipulateFct2D *manipulate);
 
     /** constructor with assembling using parameters */
@@ -90,7 +90,7 @@ class TDiscreteForm2D
         MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFctParam2D *assembleparam, CoeffFct2D *coeffs,
+        AssembleFctParam2D *assembleparam, CoeffFct2D coeffs,
         ManipulateFct2D *manipulate);
 
     /** destructor */
@@ -127,7 +127,7 @@ class TDiscreteForm2D
     { return Needs2ndDerivatives; };
 
     /** function for calculating the coefficients */
-    CoeffFct2D *GetCoeffFct() const
+    const CoeffFct2D& GetCoeffFct() const
     { return Coeffs; }
     
     /** return the index of the row space of the i-th matrix */

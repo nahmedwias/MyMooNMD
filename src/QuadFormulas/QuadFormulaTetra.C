@@ -25,7 +25,7 @@ TQuadFormulaTetra::TQuadFormulaTetra(int n_points, double* weights,
 
 void TQuadFormulaTetra::BaryCenter()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[1]={0.16666666666666666666666667};
   double x[1]={0.25};
   double e[1]={0.25};
@@ -36,7 +36,7 @@ void TQuadFormulaTetra::BaryCenter()
 
 void TQuadFormulaTetra::Vertex()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[4]={0.04166666666666666666666667, 0.04166666666666666666666667,
                0.04166666666666666666666667, 0.04166666666666666666666667};
   double x[4]={0.0, 1.0, 0.0, 0.0};
@@ -48,7 +48,7 @@ void TQuadFormulaTetra::Vertex()
 
 void TQuadFormulaTetra::P2Exact()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[4]={0.04166666666666666666666667, 0.04166666666666666666666667,
                0.04166666666666666666666667, 0.04166666666666666666666667};
   
@@ -72,7 +72,7 @@ void TQuadFormulaTetra::P2Exact()
 
 void TQuadFormulaTetra::P4Exact()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[11] = { -.0131555555555555555555555555556,
                     .00762222222222222222222222222222,
                     .00762222222222222222222222222222,
@@ -125,7 +125,7 @@ void TQuadFormulaTetra::P4Exact()
 
 void TQuadFormulaTetra::P5Exact()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[15] = { 0.333333333333333333333333333333333,
                    0.333333333333333333333333333333333,
                    0,
@@ -195,7 +195,7 @@ void TQuadFormulaTetra::P5Exact()
 
 void TQuadFormulaTetra::P8Exact()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double x[43] = { 0.25,
                    0.206829931610673204083980900024961,
                    0.206829931610673204083980900024961,

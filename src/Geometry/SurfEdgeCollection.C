@@ -114,7 +114,7 @@ void TSurfEdgeCollection::IncreaseBucket(int a, int b, int &counter)
     
   hash = Flip(a,b);
   
-  if ( mEdgeHash[hash] == NULL )
+  if ( mEdgeHash[hash] == nullptr )
   {
     mEdgeHash[hash] = new int [4];
     Bucket = mEdgeHash[hash];
@@ -152,7 +152,7 @@ int TSurfEdgeCollection::FindEdge(int *Bucket, int a, int b)
 {
   int len;
   
-  if ( Bucket == NULL) return -1;
+  if ( Bucket == nullptr) return -1;
   
   len = Bucket[0];
   

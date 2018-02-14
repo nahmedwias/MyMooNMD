@@ -446,17 +446,17 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
  /** Master DOF verification by other ranks completed  **/
  //-----------------------------------------------------//
   
-  delete [] verrecvbuf;                       verrecvbuf = NULL;
-  delete [] versendbuf;                       versendbuf = NULL; 
-  delete [] N_DOFtobeverified_otherRank;      N_DOFtobeverified_otherRank = NULL;
-  delete [] N_DOFtobeverified_thisRank;       N_DOFtobeverified_thisRank  = NULL;
+  delete [] verrecvbuf;                       verrecvbuf = nullptr;
+  delete [] versendbuf;                       versendbuf = nullptr; 
+  delete [] N_DOFtobeverified_otherRank;      N_DOFtobeverified_otherRank = nullptr;
+  delete [] N_DOFtobeverified_thisRank;       N_DOFtobeverified_thisRank  = nullptr;
   
   for(i=0;i<2;i++){
-    delete [] sendbuf[i];                     sendbuf[i] = NULL;
-    delete [] recvbuf[i];                     recvbuf[i] = NULL;
+    delete [] sendbuf[i];                     sendbuf[i] = nullptr;
+    delete [] recvbuf[i];                     recvbuf[i] = nullptr;
   }
-  delete [] sendbuf;                          sendbuf = NULL;
-  delete [] recvbuf;                          recvbuf = NULL;  
+  delete [] sendbuf;                          sendbuf = nullptr;
+  delete [] recvbuf;                          recvbuf = nullptr;  
   
   end_time = MPI_Wtime();
   if(rank == 0)
@@ -725,14 +725,14 @@ if(TDatabase::ParamDB->Par_P4){
   delete [] N_Dof_Slave;
   
   for(i=0;i<2;i++){
-    delete [] MasterPos[i];                    MasterPos[i] = NULL;
-    delete [] SlavePos[i];                     SlavePos[i]  = NULL;
+    delete [] MasterPos[i];                    MasterPos[i] = nullptr;
+    delete [] SlavePos[i];                     SlavePos[i]  = nullptr;
   }
-  delete [] MasterPos;                         MasterPos = NULL;
-  delete [] SlavePos;                          SlavePos  = NULL;  
+  delete [] MasterPos;                         MasterPos = nullptr;
+  delete [] SlavePos;                          SlavePos  = nullptr;  
   
-  delete [] masterInfo;                        masterInfo = NULL;
-  delete [] slaveInfo;                         slaveInfo  = NULL;
+  delete [] masterInfo;                        masterInfo = nullptr;
+  delete [] slaveInfo;                         slaveInfo  = nullptr;
 
   MPI_Allgather(&N_interface_dofs, 1, MPI_INT, all_T_interface_dofs_info, 1, MPI_INT, Comm);
   
@@ -877,14 +877,14 @@ if(TDatabase::ParamDB->Par_P4){
 //      //break;
 //   }
   
-  delete [] all_GlobalDofNo;                  all_GlobalDofNo            = NULL;
-  delete [] GlobalDofNo;                      GlobalDofNo                = NULL;
-  delete [] GlobalDofNo_interface;            GlobalDofNo_interface      = NULL;
+  delete [] all_GlobalDofNo;                  all_GlobalDofNo            = nullptr;
+  delete [] GlobalDofNo;                      GlobalDofNo                = nullptr;
+  delete [] GlobalDofNo_interface;            GlobalDofNo_interface      = nullptr;
   for(i=0;i<size;i++) 
-    delete [] Master_Table[i];                Master_Table[i]            = NULL;
-  delete [] N_ranks_per_interface_dofs;       N_ranks_per_interface_dofs = NULL;     
-  delete [] N_allocated_masters;              N_allocated_masters        = NULL;
-  delete [] temp_arr;                         temp_arr                   = NULL;
+    delete [] Master_Table[i];                Master_Table[i]            = nullptr;
+  delete [] N_ranks_per_interface_dofs;       N_ranks_per_interface_dofs = nullptr;     
+  delete [] N_allocated_masters;              N_allocated_masters        = nullptr;
+  delete [] temp_arr;                         temp_arr                   = nullptr;
   
   end_time = MPI_Wtime();
   if(rank == 0)
@@ -1372,16 +1372,16 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   for(i=0;i<2;i++){
     if(N_InterfaceS>0){
       delete [] SlaveBuf[i];
-      SlaveBuf[i] = NULL;
+      SlaveBuf[i] = nullptr;
     }
     if(N_SendDofMS>0){
       delete [] MasterBuf[i];
-      MasterBuf[i] = NULL;
+      MasterBuf[i] = nullptr;
     }
   }
-  delete [] SlaveBuf;    SlaveBuf  = NULL;
-  delete [] MasterBuf;   MasterBuf = NULL;
-  delete [] temp_arr;    temp_arr  = NULL;  
+  delete [] SlaveBuf;    SlaveBuf  = nullptr;
+  delete [] MasterBuf;   MasterBuf = nullptr;
+  delete [] temp_arr;    temp_arr  = nullptr;  
   
  //*********************************************************************************************************************************//
  //                                                  Mapper for Halo Dof are set                                              //
@@ -1463,16 +1463,16 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   for(i=0;i<2;i++){
     if(N_Halo1>0){
       delete [] SlaveBufH1[i];
-      SlaveBufH1[i] = NULL;
+      SlaveBufH1[i] = nullptr;
     }
     if(N_SendDofH1>0){
       delete [] MasterBufH1[i];
-      MasterBufH1[i] = NULL;
+      MasterBufH1[i] = nullptr;
     }
   }
-  delete [] SlaveBufH1;    SlaveBufH1  = NULL;
-  delete [] MasterBufH1;   MasterBufH1 = NULL;
-  delete [] temp_arrH1;    temp_arrH1  = NULL;
+  delete [] SlaveBufH1;    SlaveBufH1  = nullptr;
+  delete [] MasterBufH1;   MasterBufH1 = nullptr;
+  delete [] temp_arrH1;    temp_arrH1  = nullptr;
   
   MPI_Alltoallv(SlaveBufH2[GLOBAL_NO], N_DofRecvH2, rdisplH2, MPI_INT, MasterBufH2[GLOBAL_NO], N_DofSendH2, sdisplH2, MPI_INT, Comm);	
   MPI_Alltoallv(SlaveBufH2[DOF_NO],    N_DofRecvH2, rdisplH2, MPI_INT, MasterBufH2[DOF_NO],    N_DofSendH2, sdisplH2, MPI_INT, Comm);
@@ -1488,16 +1488,16 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   for(i=0;i<2;i++){
     if(N_Halo2>0){
       delete [] SlaveBufH2[i];
-      SlaveBufH2[i] = NULL;
+      SlaveBufH2[i] = nullptr;
     }
     if(N_SendDofH2>0){
        delete [] MasterBufH2[i];
-       MasterBufH2[i] = NULL;
+       MasterBufH2[i] = nullptr;
     }
   }
-  delete [] SlaveBufH2;    SlaveBufH2  = NULL;
-  delete [] MasterBufH2;   MasterBufH2 = NULL;
-  delete [] temp_arrH2;    temp_arrH2  = NULL;
+  delete [] SlaveBufH2;    SlaveBufH2  = nullptr;
+  delete [] MasterBufH2;   MasterBufH2 = nullptr;
+  delete [] temp_arrH2;    temp_arrH2  = nullptr;
   
   if(N_Dim>1)
   {

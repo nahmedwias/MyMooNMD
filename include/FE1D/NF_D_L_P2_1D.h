@@ -3,7 +3,7 @@ static double NF_D_L_P2_1D_Xi[] = { -0.77459666924148337703585307995647992,
                                      0,
                                      0.77459666924148337703585307995647992 };
 static double NF_D_L_P2_1D_Eta[] = { 0, 0, 0 };
-static double *NF_D_L_P2_1D_T = NULL;
+static double *NF_D_L_P2_1D_T = nullptr;
 
 void NF_D_L_P2_1D_EvalAll(double *PointValues, double *Functionals)
 {

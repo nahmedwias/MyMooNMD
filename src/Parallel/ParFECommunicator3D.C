@@ -54,7 +54,7 @@ TParFECommunicator3D::TParFECommunicator3D(TParFEMapper3D *mapper)
 
 TParFECommunicator3D::TParFECommunicator3D()
 {
-  Mapper = NULL;
+  Mapper = nullptr;
   
   Comm = TDatabase::ParamDB->Comm;
 

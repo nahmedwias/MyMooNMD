@@ -10,7 +10,7 @@ static char NP1_NP1_1Reg_Desc[] = "conforming NP1 element, 1-regular";
 static int NP1_NP1_1Reg_NFine = 1;
 static int NP1_NP1_1Reg_NCoarse = 1;
 static int NP1_NP1_1Reg_N_Pairs = 0;
-static int *NP1_NP1_1Reg_Pairs0 = NULL;
+static int *NP1_NP1_1Reg_Pairs0 = nullptr;
 static int *NP1_NP1_1Reg_Pairs[1] = { (int *)NP1_NP1_1Reg_Pairs0 };
 
 static int NP1_NP1_1Reg_NNodes = 5;

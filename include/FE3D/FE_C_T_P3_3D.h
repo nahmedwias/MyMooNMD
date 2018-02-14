@@ -21,7 +21,7 @@ static int *C_T_P3_3D_J[4] = { C_T_P3_3D_J0, C_T_P3_3D_J1,
 static int C_T_P3_3D_NInner = 0;
 
 // array containing the numbers for the inner dofs (here is no inner dof)
-static int *C_T_P3_3D_Inner = NULL;
+static int *C_T_P3_3D_Inner = nullptr;
 
 static char C_T_P3_3D_String[] = "C_T_P3_3D";
 

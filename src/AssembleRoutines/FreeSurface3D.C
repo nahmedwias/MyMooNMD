@@ -389,7 +389,7 @@ double GetVolume(TCollection *Coll)
   {
     cell = Coll->GetCell(i);
     N_Joints = cell->GetN_Joints();
-    IsIsoparametric = FALSE;
+    IsIsoparametric = false;
     for(j=0;j<N_Joints;j++)
     {
       joint = cell->GetJoint(j);
@@ -418,23 +418,23 @@ double GetVolume(TCollection *Coll)
       if(jointtype == BoundaryFace)
       {
         if( ((TBoundFace*)joint)->GetBoundComp()->GetType() != Plane)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
 
       if(jointtype == InterfaceJoint3D)
       {
         if( ((TInterfaceJoint3D*)joint)->GetBoundComp()->GetType() != Plane)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
 
       if(jointtype == IsoInterfaceJoint3D)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
 
       if(jointtype == IsoBoundFace)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
 
       if(jointtype == IsoJointEqN)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
     } // endfor j
 
     if(IsIsoparametric)
@@ -1109,8 +1109,8 @@ void FindFreeSurfaceFromJointType(TCollection *Coll, JointType type,
   
   if ( k == 0 ) 
   {
-    CellNumbers = NULL;
-    JointNumbers = NULL;
+    CellNumbers = nullptr;
+    JointNumbers = nullptr;
     N_SurfaceJoints = 0;
     return;
   }
@@ -1168,7 +1168,7 @@ void CalculateNormals(TCollection *Coll,
   int *GlobalNumbers, *BeginIndex, *DOF, *LocalJointDOF;
   int N_UsedElements = 1;
   BaseFunct3D BaseFuncts[1];
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
   TFEDesc3D *fedesc;
   int N_JointDOF, JointDOF[MaxN_BaseFunctions3D];
   double **AllDerivX, **AllDerivY, **AllDerivZ, **AllValues;
@@ -1184,7 +1184,7 @@ void CalculateNormals(TCollection *Coll,
   GlobalNumbers = fespace->GetGlobalNumbers();
   BeginIndex = fespace->GetBeginIndex();
 
-  if(n1 == NULL)
+  if(n1 == nullptr)
   {
     n1 = new double[N_DOF];
     n2 = new double[N_DOF];
@@ -1655,7 +1655,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   int addlhs = (int) TDatabase::ParamDB->P2;
   int sphere = (int) TDatabase::ParamDB->P3;
 //  int normal_change_count=0;
-  bool Isoparametric = FALSE;
+  bool Isoparametric = false;
   
   if ( sphere == 1 ) addlhs = 0;
   
@@ -1721,7 +1721,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
     
     if ( Joint->GetType() == IsoBoundFace )
     {
-      Isoparametric = TRUE;
+      Isoparametric = true;
 //       cout << "iso" << endl;
     }
     
@@ -2015,7 +2015,7 @@ void FreeSurfInt_new(TCollection *Coll, int N_BoundFaces, int *CellNumbers, int 
   TBaseFunct3D *bf;
   TTetraAffin *F_aff;
 //  TTetraIsoparametric *F_iso;
-//  bool iso = FALSE;
+//  bool iso = false;
   TQuadFormula2D *qf2d;
 //  TNodalFunctional3D *nf;
   double invWe = TDatabase::ParamDB->WB_NR;
@@ -2153,7 +2153,7 @@ void FreeSurfInt_Sphere(TFESpace3D *fespace, double dt,
   BaseFunct3D *BaseFuncts;
   double invWe = TDatabase::ParamDB->WB_NR;
   double vol=0;
-  bool iso = FALSE;
+  bool iso = false;
   
   if ( invWe == 0.0) 
   {
@@ -2195,7 +2195,7 @@ void FreeSurfInt_Sphere(TFESpace3D *fespace, double dt,
     {
       if ( Cell->GetJoint(j)->GetType() == IsoBoundFace )
       {
-	iso = TRUE;
+	iso = true;
 	break;
       }
     }

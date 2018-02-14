@@ -53,7 +53,7 @@ TAuxParam2D::TAuxParam2D(
 
 //   !!!! Error in Mac Compiler - Sashikumaar !!!!!!!
 // empty aux class
-TAuxParam2D::TAuxParam2D() : TAuxParam2D(0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL)
+TAuxParam2D::TAuxParam2D() : TAuxParam2D(0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr)
 {
 }
 

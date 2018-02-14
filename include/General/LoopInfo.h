@@ -11,6 +11,11 @@ public:
   LoopInfo(std::string name);
   /// @brief Constructor for convenience, this calls the other constructor
   LoopInfo(const char* name);
+  /// @brief Constructor which allows setting some of the member variables.
+  LoopInfo(std::string name,
+           bool print_time_every_step,
+           bool print_reduction_rates,
+           size_t verbosity_threshold);
   
   /// @brief use this object again in another iteration. This resets the 
   /// initial_time as well.

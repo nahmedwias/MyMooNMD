@@ -218,7 +218,7 @@ void CD3D::output(int i)
   if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
-    TOutput3D Output(1, 1, 0, 0, NULL);
+    TOutput3D Output(1, 1, 0, 0, nullptr);
     Output.AddFEFunction(&syst.feFunction_);
 #ifdef _MPI
     char SubID[] = "";
@@ -246,7 +246,7 @@ void CD3D::output(int i)
   if(db["output_compute_errors"])
   {
     double errors[5];
-    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+    TAuxParam3D aux(1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
     MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
     const TFESpace3D* space = syst.feFunction_.GetFESpace3D();
 
@@ -322,7 +322,7 @@ void CD3D::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_as
   s.rhs_.reset();
   block[0]->reset();
   //and call the method
-  Assemble3D(1, &fe_space, N_Matrices, block, 0, NULL, 1, &rhs_entries,
+  Assemble3D(1, &fe_space, N_Matrices, block, 0, nullptr, 1, &rhs_entries,
              &fe_space, &boundary_conditions, non_const_bound_value, local_assem);
 
 }

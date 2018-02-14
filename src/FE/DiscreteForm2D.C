@@ -25,7 +25,7 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
         int n_terms, MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFct2D *assemble, CoeffFct2D *coeffs,
+        AssembleFct2D *assemble, CoeffFct2D coeffs,
         ManipulateFct2D *manipulate)
 {
   int i, j, max;
@@ -47,7 +47,7 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
   Coeffs = coeffs;
 
   Assemble = assemble;
-  AssembleParam = NULL;
+  AssembleParam = nullptr;
 
   Manipulate = manipulate;
 
@@ -66,14 +66,14 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
 
   Needs2ndDerivatives = new bool[N_Spaces];
   for(i=0;i<N_Spaces;i++)
-    Needs2ndDerivatives[i] = FALSE;
+    Needs2ndDerivatives[i] = false;
 
   for(i=0;i<N_Terms;i++)
   {
     alpha = Derivatives[i];
     j = FESpaceNumber[i];
     if(alpha == D20 || alpha == D11 || alpha == D02)
-      Needs2ndDerivatives[j] = TRUE;
+      Needs2ndDerivatives[j] = true;
   }
 
   #ifdef _MPI
@@ -94,7 +94,7 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
         int n_terms, MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFctParam2D *assembleparam, CoeffFct2D *coeffs,
+        AssembleFctParam2D *assembleparam, CoeffFct2D coeffs,
         ManipulateFct2D *manipulate)
 {
   int i, j, max;
@@ -115,7 +115,7 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
 
   Coeffs = coeffs;
 
-  Assemble = NULL;
+  Assemble = nullptr;
   AssembleParam = assembleparam;
 
   Manipulate = manipulate;
@@ -135,14 +135,14 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
 
   Needs2ndDerivatives = new bool[N_Spaces];
   for(i=0;i<N_Spaces;i++)
-    Needs2ndDerivatives[i] = FALSE;
+    Needs2ndDerivatives[i] = false;
 
   for(i=0;i<N_Terms;i++)
   {
     alpha = Derivatives[i];
     j = FESpaceNumber[i];
     if(alpha == D20 || alpha == D11 || alpha == D02)
-      Needs2ndDerivatives[j] = TRUE;
+      Needs2ndDerivatives[j] = true;
   }
 
 #ifdef _MPI
@@ -262,10 +262,10 @@ void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights,
     Coefficients[j] = aux + j*20;
   
   if(Coeffs)
-    Coeffs(N_Points, X, Y, NULL, Coefficients);
+    Coeffs(N_Points, X, Y, nullptr, Coefficients);
 
   if(Manipulate)
-    Manipulate(N_Points, Coefficients, NULL, Cell);
+    Manipulate(N_Points, Coefficients, nullptr, Cell);
   for(int j=0;j<N_Terms;j++)
   {
     AllOrigValues[j] = 
@@ -288,7 +288,7 @@ void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights,
       Assemble(Mult, Coefficients[i], hK, OrigValues, N_BaseFuncts, 
                LocMatrix, LocRhs);
     if(AssembleParam)
-      AssembleParam(Mult, Coefficients[i], NULL, hK, OrigValues, N_BaseFuncts, 
+      AssembleParam(Mult, Coefficients[i], nullptr, hK, OrigValues, N_BaseFuncts, 
                     LocMatrix, LocRhs);
   } // endfor i
   delete [] aux;

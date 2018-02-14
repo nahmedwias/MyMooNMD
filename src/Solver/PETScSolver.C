@@ -564,7 +564,7 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
     }
     
     // This is the PETSc way of having a BlockMatrix, direct solvers wont work
-    MatCreateNest(PETSC_COMM_WORLD, 2, NULL, 2, NULL, &sub_petsc_mats[0],
+    MatCreateNest(PETSC_COMM_WORLD, 2, nullptr, 2, nullptr, &sub_petsc_mats[0],
                   &petsc_mat);
   }
   else

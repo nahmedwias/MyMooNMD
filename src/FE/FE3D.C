@@ -72,7 +72,7 @@ void TFE3D::CheckNFandBF() const
       for(i = 0; i< baseVectDim; i++)
         PointValues[l+N_Points*i] = AllPointValues[l][k+n_basis_functions*i];
 
-    NodalFunctional->GetAllFunctionals(NULL, NULL, PointValues,
+    NodalFunctional->GetAllFunctionals(nullptr, nullptr, PointValues,
                           FunctionalValues);
 
     for(i=0;i<N_DOF;i++)

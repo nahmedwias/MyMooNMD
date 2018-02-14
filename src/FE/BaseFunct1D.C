@@ -99,7 +99,7 @@ void TBaseFunct1D::MakeRefElementData(QuadFormula1D QuadFormula)
 
   // D0
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D0);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [MaxN_QuadPoints_1D];
     AllValues = new double [MaxN_QuadPoints_1D*MaxN_BaseFunctions1D];
@@ -113,7 +113,7 @@ void TBaseFunct1D::MakeRefElementData(QuadFormula1D QuadFormula)
 
   // D1
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D1);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [MaxN_QuadPoints_1D];
     AllValues = new double [MaxN_QuadPoints_1D*MaxN_BaseFunctions1D];
@@ -126,7 +126,7 @@ void TBaseFunct1D::MakeRefElementData(QuadFormula1D QuadFormula)
 
   // D2
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D2);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [MaxN_QuadPoints_1D];
     AllValues = new double [MaxN_QuadPoints_1D*MaxN_BaseFunctions1D];

@@ -397,7 +397,7 @@ void Brinkman2D::assemble()
     for (int k = 0; k < TDatabase::ParamDB->n_neumann_boundary; k++)
     {
       bi.rhs_g_v_n(s.rhs, v_space,
-          NULL,                                                  // g = 1
+          nullptr,                                                  // g = 1
           TDatabase::ParamDB->neumann_boundary_id[k],            // boundary component
           -1.*TDatabase::ParamDB->neumann_boundary_value[k]);       // mult
     }

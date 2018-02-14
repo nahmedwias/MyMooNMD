@@ -9,10 +9,10 @@ folge_new(int lang) {
 	folge_p0_p back;
 
 	back = (folge_p0_p) malloc(sizeof(folge_p0_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	back->glied = (fepc_real_t*) malloc(sizeof(fepc_real_t)*MAX_POSSIBLE_FOLGE_LENGTH);
-	ASSERT(back->glied != NULL);
+	ASSERT(back->glied != nullptr);
 
 	for (int k = 0; k < MAX_POSSIBLE_FOLGE_LENGTH; k++) {
 		back->glied[k] = 0.0;
@@ -129,10 +129,10 @@ folge_p1_new(int lang) {
 	folge_p1_p back;
 
 	back = (folge_p1_p) malloc(sizeof(folge_p1_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	back->glied = (fepc_real_t*) malloc(sizeof(fepc_real_t)*MAX_POSSIBLE_FOLGE_LENGTH);
-	ASSERT(back->glied != NULL);
+	ASSERT(back->glied != nullptr);
 
 	for (int k = 0; k < MAX_POSSIBLE_FOLGE_LENGTH; k++) {
 		back->glied[k] = 0.0;

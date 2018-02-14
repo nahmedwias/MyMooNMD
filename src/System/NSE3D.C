@@ -765,7 +765,7 @@ void NSE3D::compute_residuals()
 
   // This is the calculation of the residual, given the defect.
   BlockVector defect_impuls({n_u_dof,n_u_dof,n_u_dof});
-  BlockVector defect_mass({n_p_dof});
+  BlockVector defect_mass{n_p_dof};
   //copy the entries (BlockVector offers no functionality to do this more nicely)
   for(size_t i = 0; i<3*n_u_dof ;++i)
     defect_impuls.get_entries()[i] = defect_.get_entries()[i];
@@ -862,7 +862,7 @@ void NSE3D::output(int i)
   if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
-    TOutput3D Output(5, 5, 2, 1, NULL);
+    TOutput3D Output(5, 5, 2, 1, nullptr);
     Output.AddFEFunction(&s.p_);
     Output.AddFEVectFunct(&s.u_);
 #ifdef _MPI
@@ -896,7 +896,7 @@ void NSE3D::output(int i)
     double err_p[4];
 
 
-    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+    TAuxParam3D aux(1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
     MultiIndex3D nsAllDerivs[4] = {D000, D100, D010, D001};
     const TFESpace3D *velocity_space = &this->get_velocity_space();
     const TFESpace3D *pressure_space = &this->get_pressure_space();

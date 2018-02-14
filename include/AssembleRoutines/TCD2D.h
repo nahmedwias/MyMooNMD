@@ -57,7 +57,7 @@ int ColumnSpace_Matrices_VMM[3] = { 1, 1, 0 };
 int N_Rhs_Matrices_VMM = 0;
 
 // fe space which determines the length of the rhs vector
-int *RhsSpace_Matrices_VMM = NULL;
+int *RhsSpace_Matrices_VMM = nullptr;
 
 // routine to assemble the matrices and the rhs
 void MatricesAssemble_VMM(double Mult, double *coeff, double *param,
@@ -110,7 +110,7 @@ int ColumnSpace_Matrices_VMM_KL02[5] = { 1, 1, 1, 0, 0 };
 int N_Rhs_Matrices_VMM_KL02 = 0;
 
 // fe space which determines the length of the rhs vector
-int *RhsSpace_Matrices_VMM_KL02 = NULL;
+int *RhsSpace_Matrices_VMM_KL02 = nullptr;
 
 // routine to assemble the matrices and the rhs
 void MatricesAssemble_VMM_KL02(double Mult, double *coeff, double *param,
@@ -130,7 +130,7 @@ int N_Matrices_MatrixM_Bulk = 1;
 int RowSpace_MatrixM_Bulk[1] = { 0 };
 int ColumnSpace_MatrixM_Bulk[1] = { 0 };
 int N_Rhs_MatrixM_Bulk = 0;
-int *RhsSpace_MatrixM_Bulk = NULL;
+int *RhsSpace_MatrixM_Bulk = nullptr;
 
 void MatrixMAssemble_Bulk(double Mult, double *coeff, double *param,
 			  double hK, 
@@ -148,7 +148,7 @@ int N_Matrices_MatricesA_SUPG_Bulk = 2;
 int RowSpace_MatricesA_SUPG_Bulk[2] = { 0, 0 };
 int ColumnSpace_MatricesA_SUPG_Bulk[2] = { 0, 0 };
 int N_Rhs_MatricesA_SUPG_Bulk = 0;
-int *RhsSpace_MatricesA_SUPG_Bulk = NULL;
+int *RhsSpace_MatricesA_SUPG_Bulk = nullptr;
 
 void MatricesA_Assemble_SUPG_Bulk(double Mult, double *coeff, double *param,
 				  double hK, 
@@ -183,8 +183,8 @@ int N_Terms_Rhs_SUPG_Bulk = 3;
 MultiIndex2D Derivatives_Rhs_SUPG_Bulk[3] = { D10, D01, D00 };
 int SpacesNumbers_Rhs_SUPG_Bulk[3] = { 0, 0, 0  };
 int N_Matrices_Rhs_SUPG_Bulk = 0;
-int *RowSpace_Rhs_SUPG_Bulk = NULL;
-int *ColumnSpace_Rhs_SUPG_Bulk = NULL;
+int *RowSpace_Rhs_SUPG_Bulk = nullptr;
+int *ColumnSpace_Rhs_SUPG_Bulk = nullptr;
 int N_Rhs_Rhs_SUPG_Bulk = 1;
 int RhsSpace_Rhs_SUPG_Bulk[1] = { 0 };
 
@@ -344,7 +344,7 @@ int N_Matrices_MatrixM_Urea = 1;
 int RowSpace_MatrixM_Urea[1] = { 0 };
 int ColumnSpace_MatrixM_Urea[1]= { 0 };
 int N_Rhs_MatrixM_Urea = 0;
-int *RhsSpace_MatrixM_Urea = NULL;
+int *RhsSpace_MatrixM_Urea = nullptr;
 
 // ======================================================================
 // definitions for assembling the matrices A for urea problem
@@ -357,7 +357,7 @@ int N_Matrices_MatricesA_SUPG_Urea = 2;
 int RowSpace_MatricesA_SUPG_Urea[2] = { 0, 0 };
 int ColumnSpace_MatricesA_SUPG_Urea[2] = { 0, 0 };
 int N_Rhs_MatricesA_SUPG_Urea = 0;
-int *RhsSpace_MatricesA_SUPG_Urea = NULL;
+int *RhsSpace_MatricesA_SUPG_Urea = nullptr;
 
 int N_Matrices_MatricesA_Galerkin_Urea = 1;
 int RowSpace_MatricesA_Galerkin_Urea[1] = { 0 };
@@ -371,8 +371,8 @@ int N_Terms_Rhs_SUPG_Urea = 3;
 MultiIndex2D Derivatives_Rhs_SUPG_Urea[3]  = { D10, D01, D00 };
 int SpacesNumbers_Rhs_SUPG_Urea[3] = { 0, 0, 0 };
 int N_Matrices_Rhs_SUPG_Urea = 0;
-int *RowSpace_Rhs_SUPG_Urea = NULL;
-int *ColumnSpace_Rhs_SUPG_Urea = NULL;
+int *RowSpace_Rhs_SUPG_Urea = nullptr;
+int *ColumnSpace_Rhs_SUPG_Urea = nullptr;
 int N_Rhs_Rhs_SUPG_Urea = 1;
 int RhsSpace_Rhs_SUPG_Urea[1] = { 0 };
 // assembling routine same as in BULK

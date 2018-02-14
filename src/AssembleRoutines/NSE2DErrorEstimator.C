@@ -54,7 +54,7 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
                                          MultiIndex2D *NeededDerivatives,
                                          int N_DerivativesP,
                                          MultiIndex2D *NeededDerivativesP,
-                                         CoeffFct2D *Coeff, 
+                                         CoeffFct2D Coeff, 
                                          BoundCondFunct2D **BoundaryConds,
                                          BoundValueFunct2D **BoundaryValues,
                                          TAuxParam2D *Aux,
@@ -346,9 +346,9 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
 //      LocN_BF[j] = N_BaseFunct[CurrentElement]; // local basis functions
 //      LocBF[j] = BaseFuncts[CurrentElement];
       if (j==0)
-        SecondDer[j] = TRUE;                      // with 2nd derivative
+        SecondDer[j] = true;                      // with 2nd derivative
       else                                        // for velo
-        SecondDer[j] = FALSE;
+        SecondDer[j] = false;
     }
     N_LocalUsedElements = n_fespaces;
 
@@ -883,11 +883,11 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                   while(neigh->GetJoint(neigh_edge)->GetNeighbour(neigh)!=parent) neigh_edge ++;
                   ver2 = neigh->GetVertex(TmpEdVerParent[2*neigh_edge]);          // vertices of edge
                   ver3 = neigh->GetVertex(TmpEdVerParent[2*neigh_edge+1]);
-                  if ((ver1==ver2))                               // first part of long edge
+                  if(ver1 == ver2)                               // first part of long edge
                     {
                       part = -1;
                     }
-                  else if ((ver0==ver3))                          // second part of long edge
+                  else if(ver0 == ver3)                          // second part of long edge
                     {
                       part = 1;
                     }

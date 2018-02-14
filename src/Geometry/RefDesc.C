@@ -46,45 +46,45 @@ TRefDesc::TRefDesc(TShapeDesc *shape)
   MaxN_nVpoE = 0;
   MaxN_nEpoE = 0;
 
-  ChildType = NULL;
-  EdgeType = NULL;
+  ChildType = nullptr;
+  EdgeType = nullptr;
 
-  ChildVertex = NULL;
-  ChildVertexLen = NULL;
-  VertexChild = NULL;
-  VertexChildIndex = NULL;
-  VertexChildLen = NULL;
+  ChildVertex = nullptr;
+  ChildVertexLen = nullptr;
+  VertexChild = nullptr;
+  VertexChildIndex = nullptr;
+  VertexChildLen = nullptr;
 
-  ChildEdge = NULL;
-  EdgeChild = NULL;
-  EdgeChildIndex = NULL;
-  EdgeChildLen = NULL;
+  ChildEdge = nullptr;
+  EdgeChild = nullptr;
+  EdgeChildIndex = nullptr;
+  EdgeChildLen = nullptr;
 
-  EdgeVertex = NULL;
-  VertexEdge = NULL;
-  VertexEdgeIndex = NULL;
-  VertexEdgeLen = NULL;
+  EdgeVertex = nullptr;
+  VertexEdge = nullptr;
+  VertexEdgeIndex = nullptr;
+  VertexEdgeLen = nullptr;
 
-  NewVertexEqOldVertex = NULL;
-  NewVertexEqOldVertexIndex = NULL;
+  NewVertexEqOldVertex = nullptr;
+  NewVertexEqOldVertexIndex = nullptr;
 
-  InteriorVertexOfCell = NULL;
-  PositionOfIntVert = NULL;
+  InteriorVertexOfCell = nullptr;
+  PositionOfIntVert = nullptr;
 
-  NewEdgeEqOldEdge = NULL;
-  NewEdgeEqOldEdgeIndex = NULL;
+  NewEdgeEqOldEdge = nullptr;
+  NewEdgeEqOldEdgeIndex = nullptr;
 
-  InteriorEdgeOfCell = NULL;
-  InteriorVertexOfEdge = NULL;
-  InteriorVertexOfEdgeLen = NULL;
+  InteriorEdgeOfCell = nullptr;
+  InteriorVertexOfEdge = nullptr;
+  InteriorVertexOfEdgeLen = nullptr;
 
-  OldEdgeNewVertex = NULL;
-  OldEdgeNewVertexLen = NULL;
-  OldEdgeNewLocEdge = NULL;
+  OldEdgeNewVertex = nullptr;
+  OldEdgeNewVertexLen = nullptr;
+  OldEdgeNewLocEdge = nullptr;
   
-  OldEdgeNewEdge = NULL;
-  OldEdgeNewEdgeLen = NULL;
-  NewEdgeOldEdge = NULL;
+  OldEdgeNewEdge = nullptr;
+  OldEdgeNewEdgeLen = nullptr;
+  NewEdgeOldEdge = nullptr;
 
   #ifdef __3D__
   MaxN_VpF = 0;
@@ -101,52 +101,52 @@ TRefDesc::TRefDesc(TShapeDesc *shape)
   MaxN_niVpoF = 0;
   MaxN_nFpoF = 0;
 
-  FaceType = NULL;
+  FaceType = nullptr;
 
-  ChildFace = NULL;
-  FaceChild = NULL;
-  FaceChildIndex = NULL;
-  FaceChildLen = NULL;
+  ChildFace = nullptr;
+  FaceChild = nullptr;
+  FaceChildIndex = nullptr;
+  FaceChildLen = nullptr;
 
-  FaceVertex = NULL;
-  VertexFace = NULL;
-  VertexFaceIndex = NULL;
-  VertexFaceLen = NULL;
+  FaceVertex = nullptr;
+  VertexFace = nullptr;
+  VertexFaceIndex = nullptr;
+  VertexFaceLen = nullptr;
 
-  FaceEdge = NULL;
-  EdgeFace = NULL;
-  EdgeFaceIndex = NULL;
-  EdgeFaceLen = NULL;
+  FaceEdge = nullptr;
+  EdgeFace = nullptr;
+  EdgeFaceIndex = nullptr;
+  EdgeFaceLen = nullptr;
 
-  InteriorFaceOfCell = NULL;
-  InteriorVertexOfFace = NULL;
-  InteriorVertexOfFaceLen = NULL;
-  InteriorEdgeOfFace = NULL;
-  InteriorEdgeOfFaceLen = NULL;
+  InteriorFaceOfCell = nullptr;
+  InteriorVertexOfFace = nullptr;
+  InteriorVertexOfFaceLen = nullptr;
+  InteriorEdgeOfFace = nullptr;
+  InteriorEdgeOfFaceLen = nullptr;
 
-  OldFaceNewInnerVertices = NULL;
-  OldFaceNewInnerVerticesLen = NULL;
+  OldFaceNewInnerVertices = nullptr;
+  OldFaceNewInnerVerticesLen = nullptr;
   
   N_NewFaceEqOldFace = 0;
-  NewFaceEqOldFace = NULL;
-  NewFaceEqOldFaceIndex = NULL;
+  NewFaceEqOldFace = nullptr;
+  NewFaceEqOldFaceIndex = nullptr;
   
-  N_NewVertsOnOldFace = NULL;
-  NewVertsOnOldFace = NULL;
-  NewVertsOnOldFacePos = NULL;
+  N_NewVertsOnOldFace = nullptr;
+  NewVertsOnOldFace = nullptr;
+  NewVertsOnOldFacePos = nullptr;
   
-  NewFaceOldFace = NULL;
+  NewFaceOldFace = nullptr;
 
-  OldFaceNewVertex = NULL;
-  OldFaceNewVertexPos = NULL;
-  OldFaceNewVertexLen = NULL;
-  OldFaceNewEdge = NULL;
-  OldFaceNewEdgeLen = NULL;
-  OldFaceNewFace = NULL;
-  OldFaceNewFaceLen = NULL;
+  OldFaceNewVertex = nullptr;
+  OldFaceNewVertexPos = nullptr;
+  OldFaceNewVertexLen = nullptr;
+  OldFaceNewEdge = nullptr;
+  OldFaceNewEdgeLen = nullptr;
+  OldFaceNewFace = nullptr;
+  OldFaceNewFaceLen = nullptr;
 
-  OldFaceNewLocFace = NULL;
-  ChildTwistIndex = NULL;
+  OldFaceNewLocFace = nullptr;
+  ChildTwistIndex = nullptr;
 
   #endif
 }

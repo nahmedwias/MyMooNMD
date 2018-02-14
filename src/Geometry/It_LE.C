@@ -27,7 +27,7 @@ TBaseCell *TIt_LE::Next(int &info)
       Status[ActiveLevel].CurrentChild = 0;
     }
     else
-      return NULL;
+      return nullptr;
   }
 
   if (!(ActiveCell->ExistChildren()))

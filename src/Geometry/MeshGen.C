@@ -154,49 +154,49 @@ void TDomain::TriMeshGen(struct triangulateio  *In)
 //   opts<<'Y'; // Supress adding vertices on boundary edges
   opts<<ends;  
   
-  Out.pointlist = NULL;
-  Out.pointattributelist = NULL;
-  Out.pointmarkerlist = NULL;
-  Out.trianglelist = NULL;
-  Out.triangleattributelist = NULL;
-  Out.trianglearealist = NULL;
-  Out.neighborlist = NULL;
-  Out.segmentlist = NULL;
-  Out.segmentmarkerlist = NULL;
-  Out.holelist = NULL;
-  Out.regionlist = NULL;
-  Out.edgelist = NULL;
-  Out.edgemarkerlist = NULL;
-  Out.normlist = NULL;
+  Out.pointlist = nullptr;
+  Out.pointattributelist = nullptr;
+  Out.pointmarkerlist = nullptr;
+  Out.trianglelist = nullptr;
+  Out.triangleattributelist = nullptr;
+  Out.trianglearealist = nullptr;
+  Out.neighborlist = nullptr;
+  Out.segmentlist = nullptr;
+  Out.segmentmarkerlist = nullptr;
+  Out.holelist = nullptr;
+  Out.regionlist = nullptr;
+  Out.edgelist = nullptr;
+  Out.edgemarkerlist = nullptr;
+  Out.normlist = nullptr;
 
-if(Out.pointlist!=NULL) {
-    free(Out.pointlist); Out.pointlist = NULL;}
-  if(Out.pointattributelist!=NULL) {
-    free(Out.pointattributelist); Out.pointattributelist = NULL;}
-  if(Out.pointmarkerlist!=NULL) {
-    free(Out.pointmarkerlist); Out.pointmarkerlist = NULL;}
-  if(Out.trianglelist!=NULL) {
-    free(Out.trianglelist); Out.trianglelist = NULL;}
-  if(Out.triangleattributelist!=NULL) {
-    free(Out.triangleattributelist); Out.triangleattributelist = NULL;}
-  if(Out.trianglearealist!=NULL) {
-    free(Out.trianglearealist); Out.trianglearealist = NULL;}
-  if(Out.neighborlist!=NULL) {
-    free(Out.neighborlist); Out.neighborlist = NULL;}
-  if(Out.segmentlist!=NULL) {
-    free(Out.segmentlist); Out.segmentlist = NULL;}
-  if(Out.segmentmarkerlist!=NULL) {
-    free(Out.segmentmarkerlist); Out.segmentmarkerlist = NULL;}
-  if(Out.holelist!=NULL) {
-    free(Out.holelist); Out.holelist = NULL;}
-  if(Out.regionlist!=NULL) {
-    free(Out.regionlist); Out.regionlist = NULL;}
-  if(Out.edgelist!=NULL) {
-    free(Out.edgelist); Out.edgelist = NULL;}
-  if(Out.edgemarkerlist!=NULL) {
-    free(Out.edgemarkerlist); Out.edgemarkerlist = NULL;}
-  if(Out.normlist!=NULL) {
-    free(Out.normlist); Out.normlist = NULL;}
+if(Out.pointlist!=nullptr) {
+    free(Out.pointlist); Out.pointlist = nullptr;}
+  if(Out.pointattributelist!=nullptr) {
+    free(Out.pointattributelist); Out.pointattributelist = nullptr;}
+  if(Out.pointmarkerlist!=nullptr) {
+    free(Out.pointmarkerlist); Out.pointmarkerlist = nullptr;}
+  if(Out.trianglelist!=nullptr) {
+    free(Out.trianglelist); Out.trianglelist = nullptr;}
+  if(Out.triangleattributelist!=nullptr) {
+    free(Out.triangleattributelist); Out.triangleattributelist = nullptr;}
+  if(Out.trianglearealist!=nullptr) {
+    free(Out.trianglearealist); Out.trianglearealist = nullptr;}
+  if(Out.neighborlist!=nullptr) {
+    free(Out.neighborlist); Out.neighborlist = nullptr;}
+  if(Out.segmentlist!=nullptr) {
+    free(Out.segmentlist); Out.segmentlist = nullptr;}
+  if(Out.segmentmarkerlist!=nullptr) {
+    free(Out.segmentmarkerlist); Out.segmentmarkerlist = nullptr;}
+  if(Out.holelist!=nullptr) {
+    free(Out.holelist); Out.holelist = nullptr;}
+  if(Out.regionlist!=nullptr) {
+    free(Out.regionlist); Out.regionlist = nullptr;}
+  if(Out.edgelist!=nullptr) {
+    free(Out.edgelist); Out.edgelist = nullptr;}
+  if(Out.edgemarkerlist!=nullptr) {
+    free(Out.edgemarkerlist); Out.edgemarkerlist = nullptr;}
+  if(Out.normlist!=nullptr) {
+    free(Out.normlist); Out.normlist = nullptr;}
 /*
   for(i=0;i<In->numberofpoints;i++)
     OutPut(i<<" IN "<<In->pointmarkerlist[i]<<' '<< In->pointlist[2*i]<<" " <<In->pointlist[2*i+1]<<endl);
@@ -204,7 +204,7 @@ cout<<endl;
 exit(0);
 */
 
-  triangulate((char*)opts.str().c_str(), In, &Out, (struct triangulateio *)NULL);
+  triangulate((char*)opts.str().c_str(), In, &Out, (struct triangulateio *)nullptr);
 /*
   for(i=0;i<Out.numberofpoints;i++)
      OutPut(i<<' '<<Out.pointmarkerlist[i]<<' '<<
@@ -424,34 +424,34 @@ if (Out.edgemarkerlist[i]) // 0 for inner edges and Boundcomp+1 for Boundedge re
   delete [] In->pointmarkerlist;
   delete [] In->segmentlist;
   delete [] In->segmentmarkerlist; 
-  if(Out.pointlist!=NULL) {
-    free(Out.pointlist); Out.pointlist = NULL;}
-  if(Out.pointattributelist!=NULL) { 
-    free(Out.pointattributelist); Out.pointattributelist = NULL;}
-  if(Out.pointmarkerlist!=NULL) {
-    free(Out.pointmarkerlist); Out.pointmarkerlist = NULL;}
-  if(Out.trianglelist!=NULL) {
-    free(Out.trianglelist); Out.trianglelist = NULL;}
-  if(Out.triangleattributelist!=NULL) {
-    free(Out.triangleattributelist); Out.triangleattributelist = NULL;}
-  if(Out.trianglearealist!=NULL) {
-    free(Out.trianglearealist); Out.trianglearealist = NULL;}
-  if(Out.neighborlist!=NULL) {
-    free(Out.neighborlist); Out.neighborlist = NULL;}
-  if(Out.segmentlist!=NULL) {
-    free(Out.segmentlist); Out.segmentlist = NULL;}
-  if(Out.segmentmarkerlist!=NULL) {
-    free(Out.segmentmarkerlist); Out.segmentmarkerlist = NULL;}
-  if(Out.holelist!=NULL) {
-    free(Out.holelist); Out.holelist = NULL;}
-  if(Out.regionlist!=NULL) {
-    free(Out.regionlist); Out.regionlist = NULL;}
-  if(Out.edgelist!=NULL) {
-    free(Out.edgelist); Out.edgelist = NULL;}
-  if(Out.edgemarkerlist!=NULL) {
-    free(Out.edgemarkerlist); Out.edgemarkerlist = NULL;}
-  if(Out.normlist!=NULL) {
-    free(Out.normlist); Out.normlist = NULL;} 
+  if(Out.pointlist!=nullptr) {
+    free(Out.pointlist); Out.pointlist = nullptr;}
+  if(Out.pointattributelist!=nullptr) { 
+    free(Out.pointattributelist); Out.pointattributelist = nullptr;}
+  if(Out.pointmarkerlist!=nullptr) {
+    free(Out.pointmarkerlist); Out.pointmarkerlist = nullptr;}
+  if(Out.trianglelist!=nullptr) {
+    free(Out.trianglelist); Out.trianglelist = nullptr;}
+  if(Out.triangleattributelist!=nullptr) {
+    free(Out.triangleattributelist); Out.triangleattributelist = nullptr;}
+  if(Out.trianglearealist!=nullptr) {
+    free(Out.trianglearealist); Out.trianglearealist = nullptr;}
+  if(Out.neighborlist!=nullptr) {
+    free(Out.neighborlist); Out.neighborlist = nullptr;}
+  if(Out.segmentlist!=nullptr) {
+    free(Out.segmentlist); Out.segmentlist = nullptr;}
+  if(Out.segmentmarkerlist!=nullptr) {
+    free(Out.segmentmarkerlist); Out.segmentmarkerlist = nullptr;}
+  if(Out.holelist!=nullptr) {
+    free(Out.holelist); Out.holelist = nullptr;}
+  if(Out.regionlist!=nullptr) {
+    free(Out.regionlist); Out.regionlist = nullptr;}
+  if(Out.edgelist!=nullptr) {
+    free(Out.edgelist); Out.edgelist = nullptr;}
+  if(Out.edgemarkerlist!=nullptr) {
+    free(Out.edgemarkerlist); Out.edgemarkerlist = nullptr;}
+  if(Out.normlist!=nullptr) {
+    free(Out.normlist); Out.normlist = nullptr;} 
   
   
 //======================================================================

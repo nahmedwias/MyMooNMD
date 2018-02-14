@@ -612,7 +612,7 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     std::vector<int> row_space(1, 0); // 1 matrix 
     std::vector<int> column_space(1, 0); // 1 matrix
     std::vector<int> rhs_space(1, 0); // not needed
-    CoeffFct * coeff = nullptr; // no coefficients
+    CoeffFct coeff; // no coefficients
     AssembleFctParam* local_assembling_function = 
       local_assembling_velocity_mass;
     ManipulateFct * manipulate = nullptr; // not needed
