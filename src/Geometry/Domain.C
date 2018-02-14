@@ -55,17 +55,17 @@ ParameterDatabase TDomain::default_domain_parameters()
 {
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
-  db.add("refinement_n_initial_steps", (size_t)0,
+  db.add("refinement_n_initial_steps", 0u,
          "This is the number of refinement steps before any computation "
          "starts. Usually the mesh is uniformly refined. In a multigrid "
          "program, this determines the number of uniform refinements until the "
-         "finest mesh.", (size_t)0, (size_t)20);
+         "finest mesh.", 0u, 20u);
 
-  db.add("refinement_max_n_adaptive_steps", (size_t) 0,
+  db.add("refinement_max_n_adaptive_steps", 0u,
          "A maximum number of adaptive refinement steps"
          "which may be applied to this domain."
          "THIS IS UNUSED AT THE MOMENT!",
-         (size_t) 0, size_t (10));
+         0u, 10u);
   
    db.add("boundary_file", "Default_UnitSquare",
         "This is a file describing the boundary of the computational domain. "
