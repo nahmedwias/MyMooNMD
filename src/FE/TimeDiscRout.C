@@ -2413,7 +2413,7 @@ int mg_type, int mg_level, int N_U, int N_Unknowns)
 
   DiscreteForm = DiscreteFormRHS;
 
-  aux = new TAuxParam2D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL);
+  aux = new TAuxParam2D(1, 0, 0, 0, fesp, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
   // initialize array
   N_Rhs = 2;
   memset(RHSs[0], 0, N_Unknowns*SizeOfDouble);
@@ -2424,8 +2424,8 @@ int mg_type, int mg_level, int N_U, int N_Unknowns)
 
   N_FESpaces = 1;
   Assemble2D(N_FESpaces, fesp,
-    0, NULL,
-    0, NULL,
+    0, nullptr,
+    0, nullptr,
     N_Rhs, RHSs, ferhs,
     DiscreteForm,
     BoundaryConditions,

@@ -41,4 +41,4 @@ TBaseFunct2D *BF_B_Q_IB2_2D_Obj = new TBaseFunct2D
          B_Q_IB2_2D_Funct, B_Q_IB2_2D_DeriveXi,
          B_Q_IB2_2D_DeriveEta, B_Q_IB2_2D_DeriveXiXi,
          B_Q_IB2_2D_DeriveXiEta, B_Q_IB2_2D_DeriveEtaEta, 2, 2,
-         0, NULL);
+         0, nullptr);

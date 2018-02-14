@@ -392,7 +392,7 @@ double *rhs)
       // iterate until converged or restart
       for(i=0; i<restart && j<=maxite; i++, j++)
       {
-        if (prec==NULL)
+        if (prec==nullptr)
           memcpy(zv[i],v[i],N_DOF*SizeOfDouble);
         else
         {
@@ -679,7 +679,7 @@ double *rhs)
       s[0]=beta;
       for (i=0;i<restart && j<=maxit;i++, j++)
       {
-        if (prec==NULL)
+        if (prec==nullptr)
           /* d=A*v; */
           matvec(sqmat, mat, v[i], defect);
         else
@@ -722,7 +722,7 @@ double *rhs)
           UpdateGmresIterate(zv[0],N_DOF, i, H, s, v);
           //TODO
           //  OutPut("norm z[0] " << sqrt(Ddot(N_DOF, zv[0], zv[0])) << endl);
-          if (prec==NULL)                         /* preconditioner should be applied */
+          if (prec==nullptr)                         /* preconditioner should be applied */
           {
             Daxpy(N_DOF, 1.0, zv[0], sol);
           }
@@ -776,7 +776,7 @@ double *rhs)
       memset(zv[0],0,N_DOF*SizeOfDouble);
       //TODO                       /* set solution to zero */
       UpdateGmresIterate(zv[0], N_DOF, restart-1, H, s, v);
-      if (prec==NULL)                             /* preconditioner should be applied */
+      if (prec==nullptr)                             /* preconditioner should be applied */
       {
         Dcopy(N_DOF, zv[0],r);
       }

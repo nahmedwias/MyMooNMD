@@ -67,7 +67,7 @@ public:
   Example_NonStationary3D(std::vector <DoubleFunct3D*> exact,
                           std::vector <BoundCondFunct3D*> bc,
                           std::vector <BoundValueFunct3D*> bd, 
-                          CoeffFct3D *coeffs,
+                          CoeffFct3D coeffs,
                           bool timedependentrhs = true, bool timedependentcoeffs=true,
                           std::vector <DoubleFunct3D*> init_cond=std::vector<DoubleFunct3D*>());
   // getters

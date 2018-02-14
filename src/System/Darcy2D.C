@@ -239,8 +239,7 @@ void Darcy2D::output(int i)
     MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
     const TFESpace2D * pointer_to_p_space = &s.pressure_space;
     s.p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
-                  example.get_coeffs(), &aux, 1, &pointer_to_p_space,
-                  errors.data() + 3);
+                  nullptr, &aux, 1, &pointer_to_p_space, errors.data() + 3);
 
     Output::print<1>(" L2(u):      ", setprecision(14), errors[0]);
     Output::print<1>(" L2(div(u)): ", setprecision(14), errors[1]);

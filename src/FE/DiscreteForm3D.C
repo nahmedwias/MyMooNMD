@@ -21,7 +21,7 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
         MultiIndex3D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFct3D *assemble, CoeffFct3D *coeffs,
+        AssembleFct3D *assemble, CoeffFct3D coeffs,
         ManipulateFct3D *manipulate)
 {
   int i, j, max;
@@ -43,7 +43,7 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
   Coeffs = coeffs;
 
   Assemble = assemble;
-  AssembleParam = NULL;
+  AssembleParam = nullptr;
 
   Manipulate = manipulate;
 
@@ -91,7 +91,7 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
         MultiIndex3D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFctParam3D *assembleparam, CoeffFct3D *coeffs,
+        AssembleFctParam3D *assembleparam, CoeffFct3D coeffs,
         ManipulateFct3D *manipulate)
 {
   int i, j, max;
@@ -112,7 +112,7 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
 
   Coeffs = coeffs;
 
-  Assemble = NULL;
+  Assemble = nullptr;
   AssembleParam = assembleparam;
 
   Manipulate = manipulate;

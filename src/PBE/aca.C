@@ -15,7 +15,7 @@ compute_row(const double *A, const double *B, int rows, int cols,
   
   assert(i >= 0);
   assert(i < rows);
-  assert(entry != NULL);
+  assert(entry != nullptr);
 
   for(j = 0; j < cols; j++)
 	  row[j] = entry(row_start + i, col_start + j, data);
@@ -47,7 +47,7 @@ compute_column(const double *A, const double *B, int rows, int cols,
   
   assert(j >= 0);
   assert(j < cols);
-  assert(entry != NULL);
+  assert(entry != nullptr);
 
   for(i = 0; i < rows; i++)
 	  col[i] = entry(row_start + i, col_start + j, data);
@@ -92,7 +92,7 @@ aca_fill_block(double *A, double *B, int rows, int cols,
     col = A + k*rows;
     row = B + k*cols;
 
-    compute_column(A, B, rows, cols, row_start, col_start, k, j, NULL, col, entry, data);
+    compute_column(A, B, rows, cols, row_start, col_start, k, j, nullptr, col, entry, data);
 
     maxval = fabs(col[0]);
     i = 0;
@@ -104,7 +104,7 @@ aca_fill_block(double *A, double *B, int rows, int cols,
 
     if(maxval < ACA_EPS) {
 /*      if(k==0) {
-	compute_row(A, B, rows, cols, row_start, col_start, k, 0, NULL, row, entry, data);
+	compute_row(A, B, rows, cols, row_start, col_start, k, 0, nullptr, row, entry, data);
 	maxval = fabs(row[0]);
 	j = 0;
 	for(jtmp = 1; jtmp < cols; jtmp++)
@@ -118,7 +118,7 @@ aca_fill_block(double *A, double *B, int rows, int cols,
       break;
     }
 
-    compute_row(A, B, rows, cols, row_start, col_start, k, i, NULL, row, entry, data);
+    compute_row(A, B, rows, cols, row_start, col_start, k, i, nullptr, row, entry, data);
 
     invmax = 1.0 / col[i];
     dscal(&rows, &invmax, col, &eins);
@@ -203,7 +203,7 @@ newcompute_row(const double *A, const double *B, int rows, int cols, int k,
   assert(i < rows);
 
   for(j=0; j<cols; j++)
-    if(col_done == NULL || col_done[j] == 0)
+    if(col_done == nullptr || col_done[j] == 0)
       row[j] = entry(row_off+i, col_off+j, data);
 
   if(k > 0)
@@ -216,7 +216,7 @@ newcompute_row(const double *A, const double *B, int rows, int cols, int k,
 	   row, &eins);
  
   for(j=0; j<cols; j++)
-    if(col_done != NULL && col_done[j] != 0)
+    if(col_done != nullptr && col_done[j] != 0)
       row[j] = 0.0;
  
 }
@@ -234,7 +234,7 @@ newcompute_column(const double *A, const double *B, int rows, int cols, int k,
   assert(j < cols);
 
   for(i=0; i<rows; i++)
-    if(row_done == NULL || row_done[i] == 0)
+    if(row_done == nullptr || row_done[i] == 0)
       col[i] = entry(row_off+i, col_off+j, data);
 
   if(k > 0)
@@ -247,7 +247,7 @@ newcompute_column(const double *A, const double *B, int rows, int cols, int k,
 	   col, &eins);
 
   for(i=0; i<rows; i++)
-    if(row_done != NULL && row_done[i] != 0)
+    if(row_done != nullptr && row_done[i] != 0)
       col[i] = 0.0;
 }
 
@@ -274,13 +274,13 @@ newaca_fill_block(double *A, double *B, int rows, int cols,
   tries_col = 2;
 
   row_done = (int *) malloc((size_t) sizeof(int) * rows);
-  assert(row_done != NULL);
+  assert(row_done != nullptr);
   col_done = (int *) malloc((size_t) sizeof(int) * cols);
-  assert(col_done != NULL);
+  assert(col_done != nullptr);
   row_illicit = (int *) malloc((size_t) sizeof(int) * rows);
-  assert(row_illicit != NULL);
+  assert(row_illicit != nullptr);
   col_illicit = (int *) malloc((size_t) sizeof(int) * cols);
-  assert(col_illicit != NULL);
+  assert(col_illicit != nullptr);
 
   k = 0;
   for(i=0; i<rows; i++){
@@ -296,14 +296,14 @@ newaca_fill_block(double *A, double *B, int rows, int cols,
   j_ref = 0;        /* reference column and row */
   col_ref = A + (kmax-1)*rows;
   newcompute_column(A, B, rows, cols, k, j_ref, col_ref, row_off, col_off,
-		    entry, data, NULL);
+		    entry, data, nullptr);
   colnorm = dnrm2(&rows, col_ref, &eins);
   /*
   if(colnorm<ACA_EPS){
     for(j=j_ref; j!=(j_ref+cols-1)%cols && colnorm<ACA_EPS &&tries_col>0; 
 	j=(j+1)%cols,tries_col--){
       newcompute_column(A, B, rows, cols, k, j, col_ref, row_off, col_off,
-			entry, data, NULL);
+			entry, data, nullptr);
       colnorm = dnrm2(&rows, col_ref, &eins);
       if(colnorm<ACA_EPS) col_done[j] = 1;
     }
@@ -323,21 +323,21 @@ newaca_fill_block(double *A, double *B, int rows, int cols,
     }
     row_ref = B + (kmax-1)*cols;
     newcompute_row(A, B, rows, cols, k, i_ref, row_ref, row_off, col_off,
-		   entry, data, NULL);
+		   entry, data, nullptr);
     rownorm = dnrm2(&cols, row_ref, &eins);
     if(fabs(col_ref[i_ref]) < ACA_EPS) col_zeros = 1;
   }else{
     row_ref = B + (kmax-1)*cols;
     i_ref = 0; 
     newcompute_row(A, B, rows, cols, k, i_ref, row_ref, row_off, col_off,
-		   entry, data, NULL);
+		   entry, data, nullptr);
     rownorm = dnrm2(&cols, row_ref, &eins);
     
     if(rownorm<ACA_EPS){
       for(i=i_ref; i!=(i_ref+rows-1)%rows && rownorm<ACA_EPS && tries_row>0; 
 	  i=(i+1)%rows,tries_row--){
 	newcompute_row(A, B, rows, cols, k, i, row_ref, row_off, col_off,
-		       entry, data, NULL);
+		       entry, data, nullptr);
 	rownorm = dnrm2(&cols, row_ref, &eins);
 	if(rownorm<ACA_EPS) row_done[i] = 1;
       }

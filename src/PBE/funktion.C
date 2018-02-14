@@ -9,10 +9,10 @@ func_p0_new(int maxlevel) {
 
 	ASSERT(maxlevel >= 0);
 	back = (func_p0_p) malloc(sizeof(func_p0_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	hierarchie = (folgen_vektor_p0_p*) malloc(sizeof(folgen_vektor_p0_p)*(maxlevel+1));
-	ASSERT(hierarchie != NULL);
+	ASSERT(hierarchie != nullptr);
 
 	for(k=0;k<=maxlevel;k++) {
 		hierarchie[k] = folgen_vektor_p0_new();
@@ -30,10 +30,10 @@ func_p0_new(func_p0_p f, func2_p0_p G, int maxlevel) {
 	int  k;
 
 	back = (func_p0_p) malloc(sizeof(func_p0_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	hierarchie = (folgen_vektor_p0_p*) malloc(sizeof(folgen_vektor_p0_p)*(maxlevel+1));
-	ASSERT(hierarchie != NULL);
+	ASSERT(hierarchie != nullptr);
 
 	for(k=0;k<=maxlevel;k++) {
 		hierarchie[k] = folgen_vektor_p0_new();
@@ -48,7 +48,7 @@ func_p0_new(func_p0_p f, func2_p0_p G, int maxlevel) {
 
 void
 func_p0_del(func_p0_p f) {
-    if (f && f != NULL) {
+    if (f && f != nullptr) {
         int  k;
 
 	    for(k=0;k<=f->maxlevel;k++) {
@@ -68,10 +68,10 @@ func2_p0_new(int maxlevel) {
 
 	ASSERT(maxlevel >= 0);
 	back = (func2_p0_p) malloc(sizeof(func2_p0_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	hierarchie = (folgen_matrix_p0_p*) malloc(sizeof(folgen_matrix_p0_p)*(maxlevel+1));
-	ASSERT(hierarchie != NULL);
+	ASSERT(hierarchie != nullptr);
 
 	for(k=0;k<=maxlevel;k++) {
 		hierarchie[k] = folgen_matrix_p0_new();
@@ -184,10 +184,10 @@ func_p1_new(int maxlevel) {
 
 	ASSERT(maxlevel >= 0);
 	back = (func_p1_p) malloc(sizeof(func_p1_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	hierarchie = (folgen_vektor_p1_p*) malloc(sizeof(folgen_vektor_p1_p)*(maxlevel+1));
-	ASSERT(hierarchie != NULL);
+	ASSERT(hierarchie != nullptr);
 
 	for(k=0;k<=maxlevel;k++) {
 		hierarchie[k] = folgen_vektor_p1_new();
@@ -205,10 +205,10 @@ func_p1_new(func_p1_p f, func2_p1_p G, int maxlevel) {
 	int  k;
 
 	back = (func_p1_p) malloc(sizeof(func_p1_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	hierarchie = (folgen_vektor_p1_p*) malloc(sizeof(folgen_vektor_p1_p)*(maxlevel+1));
-	ASSERT(hierarchie != NULL);
+	ASSERT(hierarchie != nullptr);
 
 	for(k=0;k<=maxlevel;k++) {
 		hierarchie[k] = folgen_vektor_p1_new();
@@ -226,7 +226,7 @@ func_p1_new(func_p1_p f, func2_p1_p G, int maxlevel) {
 
 void
 func_p1_del(func_p1_p f) {
-    if (f && f != NULL) {
+    if (f && f != nullptr) {
         int  k;
 
 	    for(k=0;k<=f->maxlevel;k++) {
@@ -246,10 +246,10 @@ func2_p1_new(int maxlevel) {
 
 	ASSERT(maxlevel >= 0);
 	back = (func2_p1_p) malloc(sizeof(func2_p1_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	hierarchie = (folgen_matrix_p1_p*) malloc(sizeof(folgen_matrix_p1_p)*(maxlevel+1));
-	ASSERT(hierarchie != NULL);
+	ASSERT(hierarchie != nullptr);
 
 	for(k=0;k<=maxlevel;k++) {
 		hierarchie[k] = folgen_matrix_p1_new();

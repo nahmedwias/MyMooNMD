@@ -352,7 +352,7 @@ void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
 
   QuadFormula = quadformula;
 
-  SecondDer = FALSE;
+  SecondDer = false;
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
@@ -360,7 +360,7 @@ void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
       
     refvaluesD000=TFEDatabase3D::GetRefElementValues
                         (BaseFunct, QuadFormula, D000);
-    if(refvaluesD000==NULL)
+    if(refvaluesD000==nullptr)
     {
       TFEDatabase3D::GetBaseFunct3D(BaseFunct)
                 ->MakeRefElementData(QuadFormula);
@@ -369,7 +369,7 @@ void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     }
       
     origvaluesD000=TFEDatabase3D::GetOrigElementValues(BaseFunct, D000);
-    if(origvaluesD000==NULL)
+    if(origvaluesD000==nullptr)
     {
       origvaluesD000 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -390,7 +390,7 @@ void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     refvaluesD100=TFEDatabase3D::GetRefElementValues
                         (BaseFunct, QuadFormula, D100);
     origvaluesD100=TFEDatabase3D::GetOrigElementValues(BaseFunct, D100);
-    if(origvaluesD100==NULL)
+    if(origvaluesD100==nullptr)
     {
       origvaluesD100 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -403,7 +403,7 @@ void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     refvaluesD010=TFEDatabase3D::GetRefElementValues
                         (BaseFunct, QuadFormula, D010);
     origvaluesD010=TFEDatabase3D::GetOrigElementValues(BaseFunct, D010);
-    if(origvaluesD010==NULL)
+    if(origvaluesD010==nullptr)
     {
       origvaluesD010 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -416,7 +416,7 @@ void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     refvaluesD001=TFEDatabase3D::GetRefElementValues
                         (BaseFunct, QuadFormula, D001);
     origvaluesD001=TFEDatabase3D::GetOrigElementValues(BaseFunct, D001);
-    if(origvaluesD001==NULL)
+    if(origvaluesD001==nullptr)
     {
       origvaluesD001 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];

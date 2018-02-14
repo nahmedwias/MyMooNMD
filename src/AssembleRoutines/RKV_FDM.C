@@ -1391,7 +1391,7 @@ void FDM2FEM(int N, double *fdm_array, double *fem_array, int *dof_conversion)
 //  for ( i=0 ; i<N2 ; i++ )
 //  {
 //    // coefficients of the equation
-//    Coeffs(1, &x_coord[i], &y_coord[i], NULL, &coeff);
+//    Coeffs(1, &x_coord[i], &y_coord[i], nullptr, &coeff);
 //    // compute the diffusive term
 //    if (( i%(N_x1)!=0 )&&( (i+1)%(N_x1)!=0 )&&(i<= N_x1*N_y)&&(i>N_x))
 //    {
@@ -2756,7 +2756,7 @@ void FDM2FEM(int N, double *fdm_array, double *fem_array, int *dof_conversion)
 //  double *sol_curr, coeff_array[20], *coeff, *current_stage_fdm, *sol_help;
 //  double d1, d2, d3, d4, uhx[3], omega[3], alpha[3], d[3], beta[3], av[5], c_e = 1e-6;
 //  double *coordinates[3];
-//  int *offset_ = NULL, *offset1_;
+//  int *offset_ = nullptr, *offset1_;
 //  BoundCond cond;
 //
 //  // set time of the stage, in main already new time level
@@ -2794,7 +2794,7 @@ void FDM2FEM(int N, double *fdm_array, double *fem_array, int *dof_conversion)
 //  for ( i=0 ; i<N3 ; i++ )
 //  {
 //    // coefficients of the equation
-//    Coeffs(1, &x_coord[i], &y_coord[i], &z_coord[i], NULL, &coeff);
+//    Coeffs(1, &x_coord[i], &y_coord[i], &z_coord[i], nullptr, &coeff);
 //    // compute the coefficients corresponding to the 3d finite-difference-method (9-point)
 //    if (( i%(N_x1)!=0 )&&( (i+1)%(N_x1)!=0 )&&
 //      ((i%((N_x1)*(N_y1)))>N_x ) && (((i+N_x1)%((N_x1)*(N_y1)))>N_x) &&
@@ -5075,7 +5075,7 @@ double *y_coord, int N_x, int N_y)
 {
   int i, j, index;
   FILE* out = fopen(name,"w");
-  if (out==NULL)
+  if (out==nullptr)
   {
     OutPut("cannot write gnuplot fdm data" << endl);
     return;
@@ -5101,7 +5101,7 @@ double *y_coord, int N_x, int N_y)
 {
   int i, j, N2, index;
   FILE* out = fopen(name,"w");
-  if (out==NULL)
+  if (out==nullptr)
   {
     OutPut("cannot write vtk fdm data" << endl);
     return;
@@ -5171,7 +5171,7 @@ void InitializeConvectiveTermFDM(int dim, int* &offset_, int* &offset1_, int *N1
 {
   int l;
 
-  if (offset_==NULL)
+  if (offset_==nullptr)
   {
     offset_ = new int[2*dim];
     offset1_ = offset_+dim;
@@ -5190,7 +5190,7 @@ void InitializeConvectiveTermFDM(int dim, int* &offset_, int* &offset1_, int *N1
 void ClearConvectiveTermFDM(int* &offset)
 {
   delete[] offset;
-  offset = NULL;
+  offset = nullptr;
 }
 
 
@@ -5958,7 +5958,7 @@ double *y_coord, double *z_coord, int N_x, int N_y, int N_z)
 {
   int i, j, k, N2, N3, index;
   FILE* out = fopen(name,"w");
-  if (out==NULL)
+  if (out==nullptr)
   {
     OutPut("cannot write vtk fdm data" << endl);
     return;

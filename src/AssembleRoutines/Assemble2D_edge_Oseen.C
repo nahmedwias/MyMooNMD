@@ -35,7 +35,7 @@
 //
 /******************************************************************************/
 #ifdef __2D__
-void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_edge_Oseen(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
 			   int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 			   int n_matrices, TMatrix2D **matrices,
 			   int n_rhs, double **rhs, TFESpace2D **ferhs,
@@ -249,7 +249,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
   }                                               // endif N_AllMatrices
 
   SecondDer = new bool[n_fespaces];
-  SecondDer[0] = FALSE;
+  SecondDer[0] = false;
 
   // allocate arrays for storing information for the integration on the edges
   // for all basis functions 
@@ -584,7 +584,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
       LocalUsedElements[0] = CurrentElement;
 //      LocN_BF[0] = N_BaseFunct[CurrentElement];   // local basis functions
 //      LocBF[0] = BaseFuncts[CurrentElement];
-      SecondDer[0] = FALSE;
+      SecondDer[0] = false;
       RefTrans = TFEDatabase2D::GetOrig(1, LocalUsedElements,
 					Coll, cell, SecondDer,
 					N_Points, xi, eta, weights, X, Y, AbsDetjk);

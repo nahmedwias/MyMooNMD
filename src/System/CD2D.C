@@ -224,7 +224,7 @@ void CD2D::assemble()
       matrix->reset();
 
       // assemble
-      Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
+      Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, nullptr, 1, &rhs_entries,
                  &fe_space, &boundary_conditions, non_const_bound_value, la);
 
       // apply local projection stabilization method
@@ -287,7 +287,7 @@ void CD2D::output(int i)
   // implementation with the old class TOutput2D
   {
     // last argument in the following is domain, but is never used in this class
-    TOutput2D Output(1, 1, 0, 0, NULL);
+    TOutput2D Output(1, 1, 0, 0, nullptr);
     Output.AddFEFunction(&fe_function);
 
     // Create output directory, if not already existing.

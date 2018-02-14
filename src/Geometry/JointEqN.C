@@ -34,10 +34,10 @@ TJointEqN::TJointEqN(TBaseCell *neighb0, TBaseCell *neighb1) : TJoint()
 TJointEqN::~TJointEqN()
    {
     if(Neighb0)
-     { Neighb0 = NULL;}
+     { Neighb0 = nullptr;}
   
     if(Neighb1)
-     { Neighb1 = NULL;}   
+     { Neighb1 = nullptr;}   
    }
    
    
@@ -45,7 +45,7 @@ TJointEqN::~TJointEqN()
 
 int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
 {
-  TBaseCell *Neighb, *Parent = NULL;
+  TBaseCell *Neighb, *Parent = nullptr;
   int i, J_j, N_, MaxLen1, MaxLen2, auxi, aux;
   const int *TmpValues1, *TmpValues2;
   TRefDesc *NeighbRefDesc, *ParRefDesc;
@@ -62,7 +62,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
   int MaxLen3;
 #endif
 
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
 
   if (Neighb0 == Me)
     Neighb = Neighb1;
@@ -152,7 +152,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
     if (NeibEdgeRef != MyEdgeRef)
       return -2;
    
-    Tmp.Filled = TRUE;
+    Tmp.Filled = true;
 
     NeighbRefDesc = Neighb->GetRefDesc();
 
@@ -220,7 +220,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
     }
 
 
-    Tmp.Filled = TRUE;
+    Tmp.Filled = true;
 
     NeighbRefDesc = Neighb->GetRefDesc();
 
@@ -279,7 +279,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, StoreGeomMortar &Tmp)
   TRefDesc *NeighbRefDesc;
   Refinements NeibEdgeRef, MyEdgeRef;
 
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
 
   if (Neighb0 == Me)
     Neighb = Neighb1;
@@ -300,7 +300,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, StoreGeomMortar &Tmp)
     if (NeibEdgeRef != MyEdgeRef)
       return -2;
 
-    Tmp.Filled = TRUE;
+    Tmp.Filled = true;
 
     NeighbRefDesc = Neighb->GetRefDesc();
 

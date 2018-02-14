@@ -468,7 +468,7 @@ void TimeNSType4VMSProjectionDD(double Mult, double *coeff,
 //int TimeNSType1NLRowSpace[1] = { 0 };
 //int TimeNSType1NLColumnSpace[1] = { 0 };
 //int TimeNSType1NLN_Rhs = 0;
-//int *TimeNSType1NLRhsSpace = NULL;
+//int *TimeNSType1NLRhsSpace = nullptr;
 
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 2
@@ -484,7 +484,7 @@ void TimeNSType4VMSProjectionDD(double Mult, double *coeff,
 //int TimeNSType2NLRowSpace[1] = { 0 };
 //int TimeNSType2NLColumnSpace[1] = { 0 };
 //int TimeNSType2NLN_Rhs = 0;
-//int *TimeNSType2NLRhsSpace = NULL;
+//int *TimeNSType2NLRhsSpace = nullptr;
 
 // ======================================================================
 // Type 1, Standard Galerkin, only nonlinear part
@@ -539,7 +539,7 @@ void TimeNSType1_2NLSmagorinsky(double Mult, double *coeff,
 //int TimeNSType3NLRowSpace[2] = { 0, 0 };
 //int TimeNSType3NLColumnSpace[2] = { 0, 0 };
 //int TimeNSType3NLN_Rhs = 0;
-//int *TimeNSType3NLRhsSpace = NULL;
+//int *TimeNSType3NLRhsSpace = nullptr;
 
 // ======================================================================
 // declaration for all Navier-Stokes problems of type 4
@@ -555,7 +555,7 @@ void TimeNSType1_2NLSmagorinsky(double Mult, double *coeff,
 //int TimeNSType4NLRowSpace[2] = { 0, 0 };
 //int TimeNSType4NLColumnSpace[2] = { 0, 0 };
 //int TimeNSType4NLN_Rhs = 0;
-//int *TimeNSType4NLRhsSpace = NULL;
+//int *TimeNSType4NLRhsSpace = nullptr;
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v), only nonlinear part
@@ -670,8 +670,8 @@ void TimeNSType3_4NLVMSProjectionDD(double Mult, double *coeff,
 //MultiIndex2D TimeNSRHSDerivatives[1] = { D00 };
 //int TimeNSRHSSpaceNumbers[1] = { 0 };
 //int TimeNSRHSN_Matrices = 0;
-//int *TimeNSRHSRowSpace = NULL;
-//int *TimeNSRHSColumnSpace = NULL;
+//int *TimeNSRHSRowSpace = nullptr;
+//int *TimeNSRHSColumnSpace = nullptr;
 //int TimeNSRHSN_Rhs = 2;
 //int TimeNSRHSRhsSpace[2] = { 0, 0 };
 
@@ -688,8 +688,8 @@ void TimeNSRHS(double Mult, double *coeff,
 //MultiIndex2D TimeNSRHSDerivativesSUPG[3] = { D10, D01, D00 };
 //int TimeNSRHSSpaceNumbersSUPG[3] = { 0, 0, 0 };
 //int TimeNSRHSN_MatricesSUPG = 0;
-//int *TimeNSRHSRowSpaceSUPG = NULL;
-//int *TimeNSRHSColumnSpaceSUPG = NULL;
+//int *TimeNSRHSRowSpaceSUPG = nullptr;
+//int *TimeNSRHSColumnSpaceSUPG = nullptr;
 //int TimeNSRHSN_RhsSUPG = 4;
 //int TimeNSRHSRhsSpaceSUPG[4] = { 0, 0, 0, 0 };
 
@@ -707,8 +707,8 @@ void TimeNSRHSAuxProblemU(double Mult, double *coeff,
 //MultiIndex2D TimeNSRHSColDerivatives[3] = { D10, D01, D00 };
 //int TimeNSRHSColSpaceNumbers[3] = { 0, 0, 0 };
 //int TimeNSRHSColN_Matrices = 0;
-//int *TimeNSRHSColRowSpace = NULL;
-//int *TimeNSRHSColColumnSpace = NULL;
+//int *TimeNSRHSColRowSpace = nullptr;
+//int *TimeNSRHSColColumnSpace = nullptr;
 //int TimeNSRHSColN_Rhs = 2;
 //int TimeNSRHSColRhsSpace[2] = { 0, 0 };
 
@@ -747,8 +747,8 @@ void TimeNSRHSGL00AuxProblemPaper2(double Mult, double *coeff,
 //MultiIndex2D TimeNSGL00AuxProblemRHSDerivatives[1] = { D00 };
 //int TimeNSGL00AuxProblemRHSSpaceNumbers[1] = { 0 };
 //int TimeNSGL00AuxProblemRHSN_Matrices = 0;
-//int *TimeNSGL00AuxProblemRHSRowSpace = NULL;
-//int *TimeNSGL00AuxProblemRHSColumnSpace = NULL;
+//int *TimeNSGL00AuxProblemRHSRowSpace = nullptr;
+//int *TimeNSGL00AuxProblemRHSColumnSpace = nullptr;
 //int TimeNSGL00AuxProblemRHSN_Rhs = 3;
 //int TimeNSGL00AuxProblemRHSRhsSpace[3] = { 0, 0, 0 };
 
@@ -823,7 +823,7 @@ int TimeNSGL00AuxProblemN_Matrices = 1;
 int TimeNSGL00AuxProblemRowSpace[2] = { 0 };
 int TimeNSGL00AuxProblemColumnSpace[2] = { 0 };
 int TimeNSGL00AuxProblemN_Rhs = 0;
-int *TimeNSGL00AuxProblemRhsSpace = NULL;
+int *TimeNSGL00AuxProblemRhsSpace = nullptr;
 
 void TimeNSAuxMatrixGL00AuxProblem(double Mult, double *coeff,
                double *param, double hK,
@@ -841,7 +841,7 @@ void TimeNSAuxMatrixGL00AuxProblem(double Mult, double *coeff,
 //int MatrixAuxiliaryProblemRowSpace[1] = { 0 };
 //int MatrixAuxiliaryProblemColumnSpace[1] = { 0 };
 //int MatrixAuxiliaryProblemN_Rhs = 0;
-//int *MatrixAuxiliaryProblemRhsSpace = NULL;
+//int *MatrixAuxiliaryProblemRhsSpace = nullptr;
 
 void MatrixAuxiliaryProblem(double Mult, double *coeff, 
                             double *param, double hK, 
@@ -858,8 +858,8 @@ void MatrixAuxiliaryProblem(double Mult, double *coeff,
 //static MultiIndex2D TimeNS_ho_RHSDerivatives[4] = {  D10, D01, D00};
 //static int TimeNS_ho_RHSSpaceNumbers[1] = { 0 };
 //static int TimeNS_ho_RHSN_Matrices = 0;
-//static int *TimeNS_ho_RHSRowSpace = NULL;
-//static int *TimeNS_ho_RHSColumnSpace = NULL;
+//static int *TimeNS_ho_RHSRowSpace = nullptr;
+//static int *TimeNS_ho_RHSColumnSpace = nullptr;
 //static int TimeNS_ho_RHSN_Rhs = 2;
 //static int TimeNS_ho_RHSRhsSpace[2] = { 0, 0 };
 

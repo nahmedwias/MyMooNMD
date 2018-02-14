@@ -11,7 +11,7 @@ static char NP2_NP2_1Reg_Desc[] = "conforming NP2 element, 1-regular";
 static int NP2_NP2_1Reg_NFine = 3;
 static int NP2_NP2_1Reg_NCoarse = 3;
 static int NP2_NP2_1Reg_N_Pairs = 0;
-static int *NP2_NP2_1Reg_Pairs0 = NULL;
+static int *NP2_NP2_1Reg_Pairs0 = nullptr;
 static int *NP2_NP2_1Reg_Pairs[1] = { (int *)NP2_NP2_1Reg_Pairs0 };
 
 static int NP2_NP2_1Reg_NNodes = 15;

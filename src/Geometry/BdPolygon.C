@@ -21,7 +21,7 @@ TBdPolygon::TBdPolygon(int id, int n_points) : TBoundComp2D(id)
   Type = Polygon;
 
   N_Points = n_points;
-  Coords = NULL;
+  Coords = nullptr;
 }
 
 // Methods

@@ -9,7 +9,7 @@ int main()
 	int n = 9;
 	int nx = 1, ny = 1, nz = 1, na = ((n - 1) / 2.0) * (cLevel + 1) + 1;
 
-	srand(time(NULL));
+	srand(time(nullptr));
 
 	double* v;
 	v = allocate_vector(nx * ny * nz * 3);

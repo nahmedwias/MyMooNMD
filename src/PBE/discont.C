@@ -59,7 +59,7 @@ linear_function_set_del(linear_function_set_p function_set) {
     
 
     for (n = 0; n < function_set->count; n++) {
-    	if (function_set->functions[n] != NULL) {
+    	if (function_set->functions[n] != nullptr) {
     		free(function_set->functions[n]);
     	}
     }
@@ -78,7 +78,7 @@ discont_function_setup_points(discont_function_p function, int step, fepc_real_t
     
     count = iround((end-start)/h_l); // this has to be equal to the array sizes of y1 and y2
 
-    if (y1 != NULL && y2 != NULL) {
+    if (y1 != nullptr && y2 != nullptr) {
         for (n = 0; n < count; n++) {
 			fepc_real_t slope = (y2[n]-y1[n]) / h_l;
 
@@ -87,7 +87,7 @@ discont_function_setup_points(discont_function_p function, int step, fepc_real_t
         }
     } else {
     	for (n = 0; n < count; n++) {
-            function->function_sets[step]->functions[n] = NULL;
+            function->function_sets[step]->functions[n] = nullptr;
         }
     }
 }

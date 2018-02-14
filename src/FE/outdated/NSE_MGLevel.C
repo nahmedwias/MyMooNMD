@@ -46,7 +46,7 @@ TNSE_MGLevel::TNSE_MGLevel(int level,
   VelocitySpace = velocity_space;
   PressureSpace = pressure_space;
 
-  Additional = NULL;
+  Additional = nullptr;
 
   alpha = al[0];
   beta = al[1];
@@ -77,7 +77,7 @@ double *TNSE_MGLevel::GetAuxVector(int i)
   {
     cerr << "Not enough aux vectors in NSE_MGLevel!" << endl;
     exit(-1);
-    ret = NULL;
+    ret = nullptr;
   }
 
   return ret;

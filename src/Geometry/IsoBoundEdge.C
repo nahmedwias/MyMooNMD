@@ -20,14 +20,14 @@ TIsoBoundEdge::TIsoBoundEdge(TBoundComp2D *bdcomp, double t_0, double t_1)
   ID = IsoBoundEdge;
 
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
 }
 
 // Methods
 int TIsoBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
                   struct StoreGeom &Tmp)
 {
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
   return 0;
 }
 
@@ -36,7 +36,7 @@ int TIsoBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
 int TIsoBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
                   StoreGeomMortar &Tmp)
 {
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
   return 0;
 }
 
@@ -115,7 +115,7 @@ void TIsoBoundEdge::DeleteVertices()
   if(Vertices)
     delete Vertices;
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
  }
  
  

@@ -15,24 +15,24 @@ static double NF_C_T_P0_3D_Eta[]  = {  0.25 };
 static double NF_C_T_P0_3D_Zeta[] = {  0.25 };
 
 /* face 0                               0 */
-static double *NF_C_T_P0_3D_F0_Xi = NULL;
-static double *NF_C_T_P0_3D_F0_Eta = NULL;
-static double *NF_C_T_P0_3D_F0_Zeta = NULL;
+static double *NF_C_T_P0_3D_F0_Xi = nullptr;
+static double *NF_C_T_P0_3D_F0_Eta = nullptr;
+static double *NF_C_T_P0_3D_F0_Zeta = nullptr;
 
 /* face 1                               1 */
-static double *NF_C_T_P0_3D_F1_Xi = NULL;
-static double *NF_C_T_P0_3D_F1_Eta = NULL;
-static double *NF_C_T_P0_3D_F1_Zeta = NULL;
+static double *NF_C_T_P0_3D_F1_Xi = nullptr;
+static double *NF_C_T_P0_3D_F1_Eta = nullptr;
+static double *NF_C_T_P0_3D_F1_Zeta = nullptr;
 
 /* face 2                               2 */
-static double *NF_C_T_P0_3D_F2_Xi = NULL;
-static double *NF_C_T_P0_3D_F2_Eta = NULL;
-static double *NF_C_T_P0_3D_F2_Zeta = NULL;
+static double *NF_C_T_P0_3D_F2_Xi = nullptr;
+static double *NF_C_T_P0_3D_F2_Eta = nullptr;
+static double *NF_C_T_P0_3D_F2_Zeta = nullptr;
 
 /* face 3                               3 */
-static double *NF_C_T_P0_3D_F3_Xi = NULL;
-static double *NF_C_T_P0_3D_F3_Eta = NULL;
-static double *NF_C_T_P0_3D_F3_Zeta = NULL;
+static double *NF_C_T_P0_3D_F3_Xi = nullptr;
+static double *NF_C_T_P0_3D_F3_Eta = nullptr;
+static double *NF_C_T_P0_3D_F3_Zeta = nullptr;
 
 static double *NF_C_T_P0_3D_XiArray[4] = { 
                         NF_C_T_P0_3D_F0_Xi,
@@ -52,8 +52,8 @@ static double *NF_C_T_P0_3D_ZetaArray[4] = {
                         NF_C_T_P0_3D_F2_Zeta,
                         NF_C_T_P0_3D_F3_Zeta };
 
-static double *NF_C_T_P0_3D_T = NULL;
-static double *NF_C_T_P0_3D_S = NULL;
+static double *NF_C_T_P0_3D_T = nullptr;
+static double *NF_C_T_P0_3D_S = nullptr;
 
 void NF_C_T_P0_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
                           double *PointValues, double *Functionals)

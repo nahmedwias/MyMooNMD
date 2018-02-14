@@ -24,9 +24,9 @@
 TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string description) :
      TFESpace(coll, name, description)
 {
-  UsedElements = NULL;
-  AllElements = NULL;
-  ElementForShape = NULL;
+  UsedElements = nullptr;
+  AllElements = nullptr;
+  ElementForShape = nullptr;
 }
 
 // =====================================================================
@@ -38,8 +38,8 @@ TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string descript
 TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string description,
                        int ord) : TFESpace(coll, name, description)
 {
-  UsedElements = NULL;
-  AllElements = NULL;
+  UsedElements = nullptr;
+  AllElements = nullptr;
 
   ElementForShape = new FE1D[N_SHAPES];
 
@@ -90,8 +90,8 @@ TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string descript
 TFESpace1D::TFESpace1D(TCollection *coll, std::string name, std::string description,
                FE1D *fes) : TFESpace(coll, name, description)
 {
-  UsedElements = NULL;
-  ElementForShape = NULL;
+  UsedElements = nullptr;
+  ElementForShape = nullptr;
 
   AllElements = fes;
 

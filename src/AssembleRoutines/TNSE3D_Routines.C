@@ -447,7 +447,7 @@ double frobeniusNormTensor(double* u, double* gradu, double* uConv, int proj_spa
     case 2:
       // deformation tensor of small scales
       // compute (grad(u)+grad(u)^T)/2 - G^H works only with VMS methods
-      if (uConv == NULL)
+      if (uConv == nullptr)
       {
         OutPut("TURBULENT_VISCOSITY_TENSOR 2 works only with VMS methods !!!" << endl);
         exit(4711);
@@ -483,7 +483,7 @@ double turbulentViscosity3D(double hK, double* u, double* gradu,
     delta = filter_constant*pow(hK,filter_power);
   
   // compute the frobenius norm tensor
-  double frobenius_norm_tensor=frobeniusNormTensor(u, gradu, NULL);
+  double frobenius_norm_tensor=frobeniusNormTensor(u, gradu, nullptr);
   
   int viscosityType = TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE;
   switch(viscosityType)

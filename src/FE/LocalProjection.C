@@ -2648,7 +2648,7 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
 
 void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A, 
                 TFEFunction2D *uh,
-                CoeffFct2D *Coeff)
+                CoeffFct2D Coeff)
 {
   int i,j,k,l,m;
   int N_Cells;
@@ -2714,7 +2714,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   Entries = A->GetEntries();
 
   // get values of fe function if available
-  if (uh != NULL)
+  if (uh != nullptr)
   {
       Values = uh->GetValues();     
   }
@@ -3322,7 +3322,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
 
 void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
          TFEFunction2D *uh_proj,
-               CoeffFct2D *Coeff,
+               CoeffFct2D Coeff,
                int convection_flag)
 {
   int i, j, iq, index;
@@ -3434,7 +3434,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
     if (cell->GetClipBoard()>=0)
     {
       parent_cell = cell->GetParent();
-      if (parent_cell == NULL)
+      if (parent_cell == nullptr)
       {
   OutPut("no coarse grid to project !!!" << endl);
         delete params;
@@ -3474,7 +3474,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
 void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
             TFEFunction2D *uh,
             TFEFunction2D *uh_proj,
-            CoeffFct2D *Coeff,
+            CoeffFct2D Coeff,
             double *rhs,
                         int convection_flag) 
 {
@@ -3509,7 +3509,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
    OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);
   // get coarse grid
   // FIXME that parameter is gone! coll_coarse=Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR-1);
-//  if (coll_coarse == NULL)
+//  if (coll_coarse == nullptr)
 //  {
 //    OutPut("No coarse grid !!!" << endl);
 //    return;
@@ -4761,7 +4761,7 @@ void UltraLocalProjection(TSquareMatrix3D* A,
 //  checked: Volker John 08/02/19
 //**************************************************************
 #ifdef __2D__
-void UltraLocalProjection(void* A, bool ForPressure, CoeffFct2D *Coeff)
+void UltraLocalProjection(void* A, bool ForPressure, CoeffFct2D Coeff)
 {
   int i,j,k,l,m,n;
   int N_Cells;

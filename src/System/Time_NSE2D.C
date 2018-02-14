@@ -1123,14 +1123,14 @@ void Time_NSE2D::update_matrices_lps(System_per_grid &s)
     std::vector< TSquareMatrix2D* > sqMat(2);
     sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
     sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-    UltraLocalProjection(sqMat[0], FALSE);
-    UltraLocalProjection(sqMat[1], FALSE);
+    UltraLocalProjection(sqMat[0], false);
+    UltraLocalProjection(sqMat[1], false);
   }
   else
   {
     std::vector< TSquareMatrix2D* > sqMat(1);
     sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-    UltraLocalProjection(sqMat[0], FALSE);
+    UltraLocalProjection(sqMat[0], false);
   }
   
 }

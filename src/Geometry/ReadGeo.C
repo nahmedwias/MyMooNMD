@@ -149,7 +149,7 @@ int TDomain::ReadGeo(std::istream& dat, bool readXgeo)
       } // endfor i
     } // endif N_Interfaces
     else
-      InterfaceParam = NULL;
+      InterfaceParam = nullptr;
 
   #endif
 
@@ -331,7 +331,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   // generate edges
   KMT = new TJoint*[N_RootCells*4];
   for (int i=0; i<N_RootCells*4; i++)
-    KMT[i] = NULL;
+    KMT[i] = nullptr;
 
   for (int i=0;i<N_RootCells;i++)
   {
@@ -743,7 +743,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
   // generate edges
   KMT = new TJoint*[N_RootCells*4];
   for (i=0;i<N_RootCells*4;i++)
-    KMT[i] = NULL;
+    KMT[i] = nullptr;
   
   for (i=0;i<N_RootCells;i++)
   {
@@ -1579,7 +1579,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
       
       j=N_RootCells*4*N_Layers;
       for(i=0;i<j;i++)
-        KMT[i] = NULL;
+        KMT[i] = nullptr;
     
       Bottom = new TBdPlane(1000);
       Bottom->SetParams(0,0,Zmin, 1,0,0, 0,0,-1);
@@ -1819,7 +1819,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
               for (k=0;k<4;k++)
               {
                 Joint = KMT[Neib*4 + k];
-                if (Joint != NULL)
+                if (Joint != nullptr)
                 {
                   aux1 = Neib*4 + k;
                   JNeib1 = KMT[aux1]->GetNeighbour(0);
@@ -2601,7 +2601,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
     {
       // cout << i << " --  " << j;
       // cout << " " << (int)(CurrCell->GetJoint(j)) << endl;
-      if( CurrCell->GetJoint(j) != NULL )
+      if( CurrCell->GetJoint(j) != nullptr )
         CurrCell->GetJoint(j)->SetMapType();
     }
 

@@ -60,7 +60,7 @@ TMGLevel2D::TMGLevel2D(int level, TSquareMatrix2D *a,
   for(i=0;i<N_Aux;i++)
     Aux[i] = aux+i*N_DOF;
 
-  Additional = NULL;
+  Additional = nullptr;
 
   Permutation = permutation;
 }
@@ -107,7 +107,7 @@ TMGLevel2D::TMGLevel2D(int level, TSquareMatrix2D *a, double *rhs, double *sol,
   for(i=0;i<N_Aux;i++)
     Aux[i] = aux+i*N_DOF;
 
-  Additional = NULL;
+  Additional = nullptr;
 
   Permutation = permutation;
   
@@ -613,7 +613,7 @@ void TMGLevel2D::ILU(double *sol, double *f, double *aux,
   int i,j,k, begin, end;
   double diag;
 
-  if (Additional==NULL)
+  if (Additional==nullptr)
   {
     cout << "do ILU decomposition" << endl;
     ILUDecomposition();

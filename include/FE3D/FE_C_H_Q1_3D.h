@@ -56,7 +56,7 @@ static int C_H_Q1_3D_Vert[8] =  {0, 1, 3, 2, 4, 5, 7, 6};
 static int C_H_Q1_3D_NInner = 0;
 
 // array containing the numbers for the inner dofs (here is no inner dof)
-static int *C_H_Q1_3D_Inner = NULL;
+static int *C_H_Q1_3D_Inner = nullptr;
 
 static char C_H_Q1_3D_String[] = "C_H_Q1_3D";
 

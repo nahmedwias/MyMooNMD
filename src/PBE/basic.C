@@ -10,10 +10,10 @@ vec_new(int dim) {
 	int  k;
 
 	back = (vec_p) malloc(sizeof(vec_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 	ASSERT(dim > 0);
 	back->array = (int*) malloc(sizeof(int)*dim);
-	ASSERT(back->array != NULL);
+	ASSERT(back->array != nullptr);
 	for(k=0;k<dim;k++) {
 		back->array[k] = 0;
 	}
@@ -28,10 +28,10 @@ vec_real_new(int dim) {
 	int  k;
 
 	back = (vec_real_p) malloc(sizeof(vec_real_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 	ASSERT(dim > 0);
 	back->array = (fepc_real_t*) malloc(sizeof(fepc_real_t)*dim);
-	ASSERT(back->array != NULL);
+	ASSERT(back->array != nullptr);
 	for(k=0;k<dim;k++) {
 		back->array[k] = 1.0;
 	}
@@ -47,10 +47,10 @@ vec_one(int dim) {
 	int  k;
 
 	back = (vec_p) malloc(sizeof(vec_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 	ASSERT(dim > 0);
 	back->array = (int*) malloc(sizeof(int)*dim);
-	ASSERT(back->array != NULL);
+	ASSERT(back->array != nullptr);
 	for(k=0;k<dim;k++) {
 		back->array[k] = 1;
 	}
@@ -432,7 +432,7 @@ vec_zerlegung(vec_p n) {
 		}
 	}
 	back = (vec_p*) malloc(sizeof(vec_p) * 2);
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	back[0] = s;
 	back[1] = r;

@@ -20,7 +20,7 @@ static int *C_T_P2_2D_J[3]={ C_T_P2_2D_J0, C_T_P2_2D_J1,
 static int C_T_P2_2D_NInner = 0;
 
 // array containing the numbers for the inner dofs
-static int *C_T_P2_2D_Inner = NULL;
+static int *C_T_P2_2D_Inner = nullptr;
 
 // array containing the numbers for the inner dofs
 static char C_T_P2_2D_String[] = "C_T_P2_2D";

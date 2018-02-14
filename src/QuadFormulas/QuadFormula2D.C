@@ -20,8 +20,8 @@
 
 TQuadFormula2D::TQuadFormula2D() : TQuadFormula()
 {
-  Xi=NULL;
-  Eta=NULL;
+  Xi=nullptr;
+  Eta=nullptr;
 }
 
 TQuadFormula2D::TQuadFormula2D(int n_points, double* weights, 
@@ -53,7 +53,7 @@ void TQuadFormula2D::InitObject(int n, double* w, double* xi,
 
 double *TQuadFormula2D::GetCoords(int i)
 {
-  double *ret=NULL;
+  double *ret=nullptr;
   if(i==0) 
     ret=Xi;
   else

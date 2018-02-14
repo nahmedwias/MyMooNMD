@@ -40,7 +40,7 @@ class Example_Darcy2D : public Example2D
      */
     Example_Darcy2D(std::vector <DoubleFunct2D*> exact,
                     std::vector <BoundCondFunct2D*> bc,
-                    std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
+                    std::vector <BoundValueFunct2D*> bd, CoeffFct2D coeffs)
     : Example2D(exact, bc, bd, coeffs) {};
 
     /// Apply the function stored as post processing routine.

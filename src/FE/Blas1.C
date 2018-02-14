@@ -13,9 +13,9 @@
 /** return inner product (x,y) */
 double Ddot(int n, const double *x, const double *y)
 {
-  register double r;
-  register int i;
-  register const double *a, *b;
+  double r;
+  int i;
+  const double *a, *b;
 
   r = 0.0;
   a = x;
@@ -33,10 +33,10 @@ double Ddot(int n, const double *x, const double *y)
 /** y := alpha*x + y */
 void Daxpy(int n, double alpha, const double *x, double *y)
 {
-  register int i;
-  register const double *a;
-  register double *b;
-  register double scal;
+  int i;
+  const double *a;
+  double *b;
+  double scal;
 
   a = x;
   b = y;
@@ -53,9 +53,9 @@ void Daxpy(int n, double alpha, const double *x, double *y)
 /** z := alpha*x + beta*y */
 void Dsum(int n, double alpha, double beta, double *x, double *y, double *z)
 {
-  register int i;
-  register double *a, *b, *c;
-  register double scal1, scal2;
+  int i;
+  double *a, *b, *c;
+  double scal1, scal2;
 
   a = x;
   b = y;
@@ -81,9 +81,9 @@ void Dcopy(int n, const double *a, double *b)
 /** x := alpha*x */
 void Dscal(int n, double alpha, double *x)
 {
-  register int i;
-  register double scal;
-  register double *a;
+  int i;
+  double scal;
+  double *a;
 
   scal = alpha;
   a = x;
@@ -97,10 +97,10 @@ void Dscal(int n, double alpha, double *x)
 /** return Euclidian norm of x */
 double Dnorm(int n, const double *x)
 {
-  register double r;
-  register int i;
-  register const double *a;
-  register double z;
+  double r;
+  int i;
+  const double *a;
+  double z;
 
   a = x;
   r = 0.0;

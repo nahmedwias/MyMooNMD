@@ -24,7 +24,7 @@ TIsoBoundFace::TIsoBoundFace(TBoundComp3D *bdcomp, double *param1,
 {
   ID = IsoBoundFace;
 
-  Vertices = NULL;
+  Vertices = nullptr;
   N_Vertices = 0;
 }
 
@@ -33,7 +33,7 @@ TIsoBoundFace::TIsoBoundFace(TBoundComp3D *bdcomp)
 {
   ID = IsoBoundFace;
 
-  Vertices = NULL;
+  Vertices = nullptr;
   N_Vertices = 0;
 }
 
@@ -41,7 +41,7 @@ TIsoBoundFace::TIsoBoundFace(TBoundComp3D *bdcomp)
 int TIsoBoundFace::CheckMatchingRef(TBaseCell *Me, int J_i,
                   struct StoreGeom &Tmp)
 {
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
   return 0;
 }
 

@@ -41,7 +41,7 @@ inline fepc_real_t get_h_l(int step, fepc_real_t& stepping) {
  * Returns true if the vector is in the latter interval of the folge.
  */
 inline bool_t is_in_latter_interval(int& v, folge_p0_p folge) {
-	return v >= folge->lang / 2. ? FEPC_FALSE : FEPC_TRUE;
+	return v >= folge->lang / 2. ? FEPC_false : FEPC_true;
 }
 
 fepc_real_t get_value_at_step(func_p0_p function, fepc_real_t& x, int& step, fepc_real_t& stepping, int* count);
@@ -50,7 +50,7 @@ fepc_real_t get_value_at_step(func_p0_p function, fepc_real_t& x, int& step, fep
  * Returns true if the vector is in the latter interval of the folge.
  */
 inline bool_t is_in_latter_interval(int& v, folge_p1_p folge) {
-	return v >= folge->lang / 2. ? FEPC_FALSE : FEPC_TRUE;
+	return v >= folge->lang / 2. ? FEPC_false : FEPC_true;
 }
 
 fepc_real_t get_value_at_step(func_p1_p function, fepc_real_t& x, int& step, fepc_real_t& stepping, int* count);

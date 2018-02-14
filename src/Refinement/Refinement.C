@@ -401,7 +401,7 @@ int TGridCell::Refine(int reflevel)
 
   // initialize NewVertices
   for (i=0;i<MAXN_NEWVERTICES;i++)
-    NewVertices[i] = NULL;
+    NewVertices[i] = nullptr;
 
   // create children
   N_1 = RefDesc->GetN_Children();
@@ -529,7 +529,7 @@ int TGridCell::Refine(int reflevel)
         LocFace1 = TmpValues2[auxi];
         CurrJoint = Joints[LocFace1];
         CurrCell = CurrJoint->GetNeighbour(this);
-        StopCell = NULL;
+        StopCell = nullptr;
       }
       
       // Get Local Index of Edge at Face
@@ -541,7 +541,7 @@ int TGridCell::Refine(int reflevel)
           break;
       LocEdge1 = k;
         
-      while ((CurrCell != StopCell) && (CurrCell != NULL))
+      while ((CurrCell != StopCell) && (CurrCell != nullptr))
       {
         CurrJoint->GetMapperOrig(MapOrigVert,MapOrigEdge);
         // Get Local Index of Joint at Cell
@@ -595,7 +595,7 @@ int TGridCell::Refine(int reflevel)
         CurrCell = CurrJoint->GetNeighbour(CurrCell);
       }
       if ((StopCell != CurrCell) && (!NewVertices[LocVertex])
-                                 && (StopCell != NULL) )
+                                 && (StopCell != nullptr) )
       {
           RefDesc->GetShapeDesc()->GetFaceEdge(TmpValues3, TmpLen2, MaxLen3);
           auxj = LocFace1tmp * MaxLen3;
@@ -606,7 +606,7 @@ int TGridCell::Refine(int reflevel)
           LocEdge1 = k;
           CurrCell = StopCell;
           CurrJoint = Joints[LocFace1tmp];
-          while ((CurrCell != NULL))
+          while ((CurrCell != nullptr))
           {
               CurrJoint->GetMapperOrig(MapOrigVert,MapOrigEdge);
               N_Faces = CurrCell->GetN_Faces();
@@ -1049,7 +1049,7 @@ int TGridCell::Derefine()
     }
 
     delete [] Children;
-    Children = NULL;
+    Children = nullptr;
 
     RefDesc = TDatabase::RefDescDB[RefDesc->GetShapeDesc()->GetType()];
   }
@@ -1117,7 +1117,7 @@ int TGridCell::Derefine()
     }
 
     delete Children;
-    Children = NULL;
+    Children = nullptr;
 
     RefDesc = TDatabase::RefDescDB[RefDesc->GetShapeDesc()->GetType()];
   }
@@ -1131,7 +1131,7 @@ int TGridCell::Derefine()
       delete (TGridCell *) Children[i];
     }
     delete [] Children;
-    Children = NULL;
+    Children = nullptr;
   }
   return 0;
 }

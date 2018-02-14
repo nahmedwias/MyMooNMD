@@ -190,7 +190,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   }
  
   refvaluesD000=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D000);
-  if(refvaluesD000==NULL)
+  if(refvaluesD000==nullptr)
     {
       TFEDatabase3D::GetBaseFunct3D(BaseFunct)->MakeRefElementData(QuadFormula);
       refvaluesD000=TFEDatabase3D::GetRefElementValues(BaseFunct, 
@@ -198,7 +198,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
     }
   
   origvaluesD000=TFEDatabase3D::GetOrigElementValues(BaseFunct, D000);
-  if(origvaluesD000==NULL)
+  if(origvaluesD000==nullptr)
     {
       origvaluesD000 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -209,7 +209,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   
   refvaluesD100=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D100);
   origvaluesD100=TFEDatabase3D::GetOrigElementValues(BaseFunct, D100);
-  if(origvaluesD100==NULL)
+  if(origvaluesD100==nullptr)
     {
       origvaluesD100 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -220,7 +220,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   
   refvaluesD010=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D010);
   origvaluesD010=TFEDatabase3D::GetOrigElementValues(BaseFunct, D010);
-  if(origvaluesD010==NULL)
+  if(origvaluesD010==nullptr)
     {
       origvaluesD010 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -231,7 +231,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   
   refvaluesD001=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D001);
   origvaluesD001=TFEDatabase3D::GetOrigElementValues(BaseFunct, D001);
-  if(origvaluesD001==NULL)
+  if(origvaluesD001==nullptr)
     { 
       origvaluesD001 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -242,7 +242,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   
 //  refvaluesD200=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
   origvaluesD200=TFEDatabase3D::GetOrigElementValues(BaseFunct, D200);
-  if(origvaluesD200==NULL)
+  if(origvaluesD200==nullptr)
     { 
       origvaluesD200 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -253,7 +253,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   
 //  refvaluesD110=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D110);
   origvaluesD110=TFEDatabase3D::GetOrigElementValues(BaseFunct, D110);
-  if(origvaluesD110==NULL)
+  if(origvaluesD110==nullptr)
     { 
       origvaluesD110 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -264,7 +264,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   
 //  refvaluesD101=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D101);
   origvaluesD101=TFEDatabase3D::GetOrigElementValues(BaseFunct, D101);
-  if(origvaluesD101==NULL)
+  if(origvaluesD101==nullptr)
     { 
       origvaluesD101 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -275,7 +275,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   
 //  refvaluesD011=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D011);
   origvaluesD011=TFEDatabase3D::GetOrigElementValues(BaseFunct, D011);
-  if(origvaluesD011==NULL)
+  if(origvaluesD011==nullptr)
     { 
       origvaluesD011 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -286,7 +286,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   
 //  refvaluesD020=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D020);
   origvaluesD020=TFEDatabase3D::GetOrigElementValues(BaseFunct, D020);
-  if(origvaluesD020==NULL)
+  if(origvaluesD020==nullptr)
     {
       origvaluesD020 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -297,7 +297,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   
 //  refvaluesD002=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D002);
   origvaluesD002=TFEDatabase3D::GetOrigElementValues(BaseFunct, D002);
-  if(origvaluesD002==NULL)
+  if(origvaluesD002==nullptr)
     {
       origvaluesD002 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
@@ -451,14 +451,14 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
   
-  SecondDer = FALSE;
+  SecondDer = false;
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
     N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
       
     refvaluesD000=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D000);
-    if(refvaluesD000==NULL)
+    if(refvaluesD000==nullptr)
     {
       TFEDatabase3D::GetBaseFunct3D(BaseFunct)->MakeRefElementData(QuadFormula);
       refvaluesD000=TFEDatabase3D::GetRefElementValues(BaseFunct, 
@@ -466,7 +466,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     }
       
     origvaluesD000=TFEDatabase3D::GetOrigElementValues(BaseFunct, D000);
-    if(origvaluesD000==NULL)
+    if(origvaluesD000==nullptr)
     {
       origvaluesD000 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*N_Functs];
@@ -485,7 +485,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
       
     refvaluesD100=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D100);
     origvaluesD100=TFEDatabase3D::GetOrigElementValues(BaseFunct, D100);
-    if(origvaluesD100==NULL)
+    if(origvaluesD100==nullptr)
     {
       origvaluesD100 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*N_Functs];
@@ -496,7 +496,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
       
     refvaluesD010=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D010);
     origvaluesD010=TFEDatabase3D::GetOrigElementValues(BaseFunct, D010);
-    if(origvaluesD010==NULL)
+    if(origvaluesD010==nullptr)
     {
       origvaluesD010 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*N_Functs];
@@ -507,7 +507,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
       
     refvaluesD001=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D001);
     origvaluesD001=TFEDatabase3D::GetOrigElementValues(BaseFunct, D001);
-    if(origvaluesD001==NULL)
+    if(origvaluesD001==nullptr)
     {
       origvaluesD001 = new double* [MaxN_QuadPoints_3D];
       aux = new double [MaxN_QuadPoints_3D*N_Functs];
@@ -519,11 +519,11 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
       /*
       if(Needs2ndDer[i])
         {
-          SecondDer = TRUE;
+          SecondDer = true;
           
           refvaluesD200=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
           origvaluesD200=TFEDatabase3D::GetOrigElementValues(BaseFunct, D200);
-          if(origvaluesD200==NULL)
+          if(origvaluesD200==nullptr)
             {
               origvaluesD200 = new double* [MaxN_QuadPoints_3D];
               aux = new double [MaxN_QuadPoints_3D*N_Functs];
@@ -534,7 +534,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           
           refvaluesD110=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D110);
           origvaluesD110=TFEDatabase3D::GetOrigElementValues(BaseFunct, D110);
-          if(origvaluesD110==NULL)
+          if(origvaluesD110==nullptr)
             {
               origvaluesD110 = new double* [MaxN_QuadPoints_3D];
               aux = new double [MaxN_QuadPoints_3D*N_Functs];
@@ -545,7 +545,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           
           refvaluesD101=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D101);
           origvaluesD101=TFEDatabase3D::GetOrigElementValues(BaseFunct, D101);
-          if(origvaluesD101==NULL)
+          if(origvaluesD101==nullptr)
             {
               origvaluesD101 = new double* [MaxN_QuadPoints_3D];
               aux = new double [MaxN_QuadPoints_3D*N_Functs];
@@ -556,7 +556,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           
           refvaluesD011=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D011);
           origvaluesD011=TFEDatabase3D::GetOrigElementValues(BaseFunct, D011);
-          if(origvaluesD011==NULL)
+          if(origvaluesD011==nullptr)
             {
               origvaluesD011 = new double* [MaxN_QuadPoints_3D];
               aux = new double [MaxN_QuadPoints_3D*N_Functs];
@@ -567,7 +567,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           
           refvaluesD020=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D020);
           origvaluesD020=TFEDatabase3D::GetOrigElementValues(BaseFunct, D020);
-          if(origvaluesD020==NULL)
+          if(origvaluesD020==nullptr)
             {
               origvaluesD020 = new double* [MaxN_QuadPoints_3D];
               aux = new double [MaxN_QuadPoints_3D*N_Functs];
@@ -578,7 +578,7 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           
           refvaluesD002=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D002);
           origvaluesD002=TFEDatabase3D::GetOrigElementValues(BaseFunct, D002);
-          if(origvaluesD002==NULL)
+          if(origvaluesD002==nullptr)
             {
               origvaluesD002 = new double* [MaxN_QuadPoints_3D];
               aux = new double [MaxN_QuadPoints_3D*N_Functs];

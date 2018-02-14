@@ -17,7 +17,7 @@
 //   Bound.BoundY = bound->BoundY;
 //   Bound.BoundZ = bound->BoundZ;
 //   
-//   Head = new TNode (NULL, &Bound, Coll->GetN_Cells(), Coll->GetCells());
+//   Head = new TNode (nullptr, &Bound, Coll->GetN_Cells(), Coll->GetCells());
 // }
 // 
 // TOctTree::TNode::TNode (TNode *parent, TBoundBox *box, int n_cells, TBaseCell **cells)
@@ -33,7 +33,7 @@
 //   Box.BoundZ = box->BoundZ + 2*EPS;
 //   
 //   N_Cells = 0;
-//   Cells = NULL;
+//   Cells = nullptr;
 //   Depth = 0;
 //   Parent = parent;
 //   
@@ -53,7 +53,7 @@
 // 	Cell->SetClipBoard(0);
 //       }
 //       
-//       if ( Parent == NULL )
+//       if ( Parent == nullptr )
 // 	Cell->SetCellIndex(i);
 //     }
 //     
@@ -151,7 +151,7 @@
 //   Childs[7] = new TNode (this, &box, N_Cells, Cells);
 //   
 //   delete [] Cells;
-//   Cells = NULL;
+//   Cells = nullptr;
 //   N_Cells = 0;
 // }
 // 
@@ -216,7 +216,7 @@
 //   else 
 //   {
 //     N_Cells = 0;
-//     Cells = NULL;
+//     Cells = nullptr;
 //   }
 // }
 // 
@@ -249,7 +249,7 @@
 //     }
 //   }
 //   
-//   else return NULL;
+//   else return nullptr;
 // }
 // 
 // void TOctTree::TNode::GetCells(int &n_cells, TBaseCell **&cells)

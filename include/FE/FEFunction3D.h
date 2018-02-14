@@ -87,7 +87,7 @@ class TFEFunction3D
     void GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
                    int N_Errors, ErrorMethod3D *ErrorMeth, 
-                   CoeffFct3D *Coeff, TAuxParam3D *Aux,
+                   CoeffFct3D Coeff, TAuxParam3D *Aux,
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors) const;
     
@@ -99,7 +99,7 @@ class TFEFunction3D
     void GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
                    int N_Errors, ErrorMethod3D *ErrorMeth, 
-                   CoeffFct3D *Coeff, TAuxParam3D *Aux,
+                   CoeffFct3D Coeff, TAuxParam3D *Aux,
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors, double *cell_parameters);
 

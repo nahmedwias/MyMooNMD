@@ -1558,7 +1558,7 @@ static double NF_D_Q_P6_2D_W28[49] = {
 0.0096354591779572123969
 };
 
-static double *NF_D_Q_P6_2D_T = NULL;
+static double *NF_D_Q_P6_2D_T = nullptr;
 
 void NF_D_Q_P6_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)
@@ -1609,5 +1609,5 @@ void NF_D_Q_P6_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double
 
 TNodalFunctional2D *NF_D_Q_P6_2D_Obj = new TNodalFunctional2D
         (NF_D_Q_P6_2D, 28, 0, 49, 0, NF_D_Q_P6_2D_Xi, NF_D_Q_P6_2D_Eta,
-         NF_D_Q_P6_2D_T, NF_D_Q_P6_2D_EvalAll, NULL);
+         NF_D_Q_P6_2D_T, NF_D_Q_P6_2D_EvalAll, nullptr);
 

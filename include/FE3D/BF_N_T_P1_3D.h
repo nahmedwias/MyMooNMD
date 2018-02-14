@@ -100,4 +100,4 @@ new TBaseFunct3D(4, BF_N_T_P1_3D, BFUnitTetrahedron,
                  N_T_P1_3D_DeriveXiZeta, N_T_P1_3D_DeriveEtaEta,
                  N_T_P1_3D_DeriveEtaZeta, N_T_P1_3D_DeriveZetaZeta,
                  1, 1,
-                 0, NULL);
+                 0, nullptr);

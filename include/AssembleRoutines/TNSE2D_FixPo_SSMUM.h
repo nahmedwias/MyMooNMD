@@ -154,5 +154,5 @@ double **OrigValues, int *N_BaseFuncts,
 //int TimeNSType4_SSMUM_NLRowSpace[4] = { 0, 0, 0, 0 };
 //int TimeNSType4_SSMUM_NLColumnSpace[4] = { 0, 0, 0, 0 };
 //int TimeNSType4_SSMUM_NLN_Rhs = 0;
-//int *TimeNSType4_SSMUM_NLRhsSpace = NULL;
+//int *TimeNSType4_SSMUM_NLRhsSpace = nullptr;
 

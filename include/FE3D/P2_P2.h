@@ -16,7 +16,7 @@ static int *P2_P2_Pairs[3] = { (int *)P2_P2_Pairs0, (int *)P2_P2_Pairs1,
 static int P2_P2_NNodes = 12;
 
 static int P2_P2_NNoOpposite = 0;
-static int **P2_P2_NoOpposite = NULL;
+static int **P2_P2_NoOpposite = nullptr;
 
 TFE3DMapper *P2_P2 = new TFE3DMapper(P2_P2_Name, P2_P2_Desc,
                              P2_P2_N0, P2_P2_N1,

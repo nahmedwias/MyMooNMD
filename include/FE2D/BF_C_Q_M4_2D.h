@@ -385,4 +385,4 @@ TBaseFunct2D *BF_C_Q_M4_2D_Obj = new TBaseFunct2D
          C_Q_M4_2D_Funct, C_Q_M4_2D_DeriveXi,
          C_Q_M4_2D_DeriveEta, C_Q_M4_2D_DeriveXiXi,
          C_Q_M4_2D_DeriveXiEta, C_Q_M4_2D_DeriveEtaEta, 4, 4,
-         0, NULL);
+         0, nullptr);

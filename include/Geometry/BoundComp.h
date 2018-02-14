@@ -37,7 +37,7 @@ class TBoundComp
   ///@ (geometrical) type of component
   BoundTypes Type;
   
-  /** TRUE if component is on free boundary */
+  /** true if component is on free boundary */
   bool FreeBoundaryStatus;
   
  public:

@@ -80,7 +80,7 @@ TFEFunction2D::~TFEFunction2D()
 void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
                               MultiIndex2D *NeededDerivatives,
                               int N_Errors, ErrorMethod2D *ErrorMeth, 
-                              CoeffFct2D *Coeff, 
+                              CoeffFct2D Coeff, 
                               TAuxParam2D *Aux,
                               int n_fespaces, const TFESpace2D **fespaces,
                               double *errors, bool is_SDFEM, std::function<bool(const TBaseCell*, int)>funct) const
@@ -894,7 +894,7 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
 void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives, 
                                       MultiIndex2D* NeededDerivatives,
                                       int N_Errors, ErrorMethod2D* ErrorMeth,
-                                      CoeffFct2D* Coeff, TAuxParam2D* Aux,
+                                      CoeffFct2D Coeff, TAuxParam2D* Aux,
                                       int n_fespaces,
                                       const TFESpace2D** fespaces,
                                       double* errors, double* parameters)
@@ -1339,7 +1339,7 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
                  // ErrorMeth=L2H1Errors
     double LocError[3]; // L^2 error in value, divergence and first derivative
     ErrorMeth(n_points, X, Y, AbsDetjk, weights, hK, Derivatives, 
-              ExactVal, NULL, LocError);
+              ExactVal, nullptr, LocError);
     for(int j = 0; j < 3; j++) 
     {
       errors[j] += LocError[j];
@@ -1348,8 +1348,8 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
     // otherwise one would get (many) memory leaks
     for (int j = 0; j < n_points; j++)
     {
-      delete [] ExactVal[j]; ExactVal[j] = NULL;
-      delete [] Derivatives[j]; Derivatives[j] = NULL;
+      delete [] ExactVal[j]; ExactVal[j] = nullptr;
+      delete [] Derivatives[j]; Derivatives[j] = nullptr;
     }
   } // end loop over all cells
   

@@ -26,7 +26,7 @@ fepc_real_t phi_l(int& step, int& v, int p, fepc_real_t& x, fepc_real_t& steppin
 }
 
 fepc_real_t get_value_at_step(func_p0_p function, fepc_real_t& x, int& step, fepc_real_t& stepping, int* count) {
-    ASSERT(function != NULL && step <= function->maxlevel);
+    ASSERT(function != nullptr && step <= function->maxlevel);
     
     int n, r;
 	int lang = function->hierarchie[step]->vektor->lang;
@@ -68,7 +68,7 @@ void set_gridstructure(func_p0_p function, interval_p* intervals, fepc_real_t st
         pow *= 0.5;
         h_l = pow*stepping;
             
-		if (intervals[n] != NULL) {
+		if (intervals[n] != nullptr) {
             start = iround(intervals[n]->start / h_l);
             lang = iround(intervals[n]->end / h_l) - start;  // lang = length (integer), see p. 68; round() is needed to correct error
 		}
@@ -79,7 +79,7 @@ void set_gridstructure(func_p0_p function, interval_p* intervals, fepc_real_t st
 }
 
 fepc_real_t get_value_at_step(func_p1_p function, fepc_real_t& x, int& step, fepc_real_t& stepping, int* count) {
-    ASSERT(function != NULL && step <= function->maxlevel);
+    ASSERT(function != nullptr && step <= function->maxlevel);
     
     int n, r;
 	int lang = function->hierarchie[step]->vektor0->lang;
@@ -123,7 +123,7 @@ void set_gridstructure(func_p1_p function, interval_p* intervals, fepc_real_t st
         pow *= 0.5;
         h_l = pow*stepping;
         
-		if (intervals[n] != NULL) {
+		if (intervals[n] != nullptr) {
             start = iround(intervals[n]->start / h_l);
             lang = iround(intervals[n]->end / h_l) - start;  // lang = length (integer), see p. 68; round() is needed to correct error
 		}

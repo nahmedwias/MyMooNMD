@@ -25,7 +25,7 @@ TQuadFormulaHexa::TQuadFormulaHexa(int n_points, double* weights,
 
 void TQuadFormulaHexa::Vertex()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[8]={ 1.0, 1.0, 1.0, 1.0,
                 1.0, 1.0, 1.0, 1.0 };
   double x[8]={ -1.0,  1.0, -1.0,  1.0,
@@ -40,7 +40,7 @@ void TQuadFormulaHexa::Vertex()
 
 void TQuadFormulaHexa::Gauss2()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[8]={ 1.0, 1.0, 1.0, 1.0, 
                 1.0, 1.0, 1.0, 1.0 };
   double x[8]={-0.5773502691896257645091489,  0.5773502691896257645091489,
@@ -61,7 +61,7 @@ void TQuadFormulaHexa::Gauss2()
 
 void TQuadFormulaHexa::Gauss3()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
 
   double oneweight[3]={ 0.5555555555555555555555558,
                         0.8888888888888888888888888, 
@@ -89,7 +89,7 @@ void TQuadFormulaHexa::Gauss3()
 
 void TQuadFormulaHexa::Gauss4()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
 
   double oneweight[4]={ 0.652145154862546142626936051,
                         0.347854845137453857373063949,
@@ -120,7 +120,7 @@ void TQuadFormulaHexa::Gauss4()
 
 void TQuadFormulaHexa::Gauss5()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double onexi[]={
                 0,
                 0.538469310105683091036314421,
@@ -155,7 +155,7 @@ void TQuadFormulaHexa::Gauss5()
 
 void TQuadFormulaHexa::Gauss6()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double onexi[]={
                -0.238619186083196908630501721681, 
                 0.238619186083196908630501721681,
@@ -192,7 +192,7 @@ void TQuadFormulaHexa::Gauss6()
 
 void TQuadFormulaHexa::Gauss7()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double onexi[]={
                -0.405845151377397166906606412077, 
                 0,
@@ -231,7 +231,7 @@ void TQuadFormulaHexa::Gauss7()
 
 void TQuadFormulaHexa::Gauss8()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double onexi[]={
                 -0.525532409916328985817739049189, 
                 -0.183434642495649804939476142360,
@@ -272,7 +272,7 @@ void TQuadFormulaHexa::Gauss8()
 
 void TQuadFormulaHexa::Gauss9()
 {
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double onexi[]={
                -0.613371432700590397308702039341, 
                -0.324253423403808929038538014644, 
@@ -317,7 +317,7 @@ void TQuadFormulaHexa::VerticesAndOrigin()
 {
   double t = 1.0/3.0;
   
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[9]={ t, t, t, t,
                 t, t, t, t, 16.0/3.0 };
   double x[9]={ -1.0,  1.0, -1.0,  1.0,
@@ -333,7 +333,7 @@ void TQuadFormulaHexa::VerticesAndOrigin15()
 {
   double t = 1.0/9.0, s= 20.0/9;
   
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[15]={ t, t, t, t,
                 t, t, t, t, - 56.0/9.0,
                 s, s, s, s, s, s};
@@ -362,7 +362,7 @@ void TQuadFormulaHexa::VerticesAndOrigin57()
   double x3 = 0.87103917604353433, x4 = 0.53081040829645735;
   double x5 = 0.87906774032385155;
   
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[57]={ t0, t0, t0, t0,
                  t0, t0, t0, t0, 
                  -1.2276013348603214,
@@ -415,7 +415,7 @@ void TQuadFormulaHexa::Degree7_Points38()
   double t2 =0.12485075967894408; 
   double c0,c1,c2, c3;
   
-  if(Weights!=NULL) return;
+  if(Weights!=nullptr) return;
   double w[38]={ t0, t0, t0, t0, t0, t0,
                  t1, t1, t1, t1, t1, t1, t1, t1,
                  t2, t2, t2, t2, t2, t2, t2, t2, t2, t2,

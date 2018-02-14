@@ -419,35 +419,35 @@ class TBaseCell
        {return SubDomainNumber;}
 
     void SetAsOwnCell()
-     { OwnCell=TRUE; }
+     { OwnCell=true; }
 
     void SetAsDependentCell()
-     { DependentCell=TRUE; }
+     { DependentCell=true; }
 
     void SetAsHaloCell()
      { 
-      OwnCell=FALSE;
-      HaloCell=TRUE;
+      OwnCell=false;
+      HaloCell=true;
      }
 
     bool IsHaloCell() const
      {  return HaloCell; }
 
     void SetAsSubDomainInterfaceCell()
-     { SubDomainInterfaceCell=TRUE; }
+     { SubDomainInterfaceCell=true; }
 
     bool IsSubDomainInterfaceCell() const
      {  return SubDomainInterfaceCell; }
 
     void SetAsCrossEdgeCell()
-     { CrossEdgeCell=TRUE; }
+     { CrossEdgeCell=true; }
 
     bool IsCrossEdgeCell() const
      {  return CrossEdgeCell; }
 
 
     void SetAsCrossVertexCell()
-     { CrossVertexCell=TRUE; }
+     { CrossVertexCell=true; }
 
     bool IsCrossVertexCell() const
      {  return CrossVertexCell; }

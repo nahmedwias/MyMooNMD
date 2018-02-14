@@ -631,7 +631,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
         y[1] = cell->GetVertex(TmpEdVer[2*j+1])->GetY();
         // neighbour cell
         cell_n= joint->GetNeighbour(cell);
-        if (cell_n == NULL)
+        if (cell_n == nullptr)
           continue;
         if (verbosity>1)
         {
@@ -650,7 +650,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
           joint_n = cell_n->GetJoint(k);
           // neighbour cell of neighbour
           cell_nn = joint_n->GetNeighbour(cell_n);
-          if (cell_nn == NULL)
+          if (cell_nn == nullptr)
             continue;
           if (verbosity>1)
             OutPut(" " << k << " : " <<  -cell_nn->GetClipBoard()-1 << " ");
@@ -910,7 +910,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
       y[1] = cell->GetVertex(TmpEdVer[2*j+1])->GetY();
       // neighbour cell
       cell_n= joint->GetNeighbour(cell);
-      if (cell_n == NULL)
+      if (cell_n == nullptr)
         continue;
       if (verbosity>1)
       {
@@ -929,7 +929,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
         joint_n = cell_n->GetJoint(k);
         // neighbour cell of neighbour
         cell_nn = joint_n->GetNeighbour(cell_n);
-        if (cell_nn == NULL)
+        if (cell_nn == nullptr)
           continue;
         // this is the original joint
         if (cell_nn == cell)
@@ -1358,7 +1358,7 @@ double *values)
         continue;
       index = DOF[k];
 
-      cell1 = NULL;
+      cell1 = nullptr;
       // get argument of the vertex
       phi = atan2(y-mp_y,x-mp_x);
       //OutPut(x << " " << y << " " << phi << endl);
@@ -1379,7 +1379,7 @@ double *values)
           // neighbour cell
           cell_n=cell->GetJoint(jj)->GetNeighbour(cell);
           // boundary
-          if (cell_n ==  NULL)
+          if (cell_n ==  nullptr)
             continue;
           if (PointInCell(cell_n,x,y))
           {
@@ -1388,20 +1388,20 @@ double *values)
           }
         }
         // check the neighbours of the neighbours
-        if (cell1 == NULL)
+        if (cell1 == nullptr)
         {
           for (jj=0;jj<N_V;jj++)
           {
             // neighbour cell
             cell_n=cell->GetJoint(jj)->GetNeighbour(cell);
             // boundary
-            if (cell_n ==  NULL)
+            if (cell_n ==  nullptr)
               continue;
             for (kk=0;kk<N_V;kk++)
             {
               cell_nk=cell_n->GetJoint(kk)->GetNeighbour(cell_n);
               // boundary
-              if (cell_nk ==  NULL)
+              if (cell_nk ==  nullptr)
                 continue;
               if (PointInCell(cell_nk,x,y))
               {
@@ -1409,7 +1409,7 @@ double *values)
                 break;
               }
             }
-            if (cell1 != NULL)
+            if (cell1 != nullptr)
               break;
           }                                       // end jj
           // brute force
@@ -1427,7 +1427,7 @@ double *values)
 
       // some points on the slit boundary do not find a mesh cell on their
       // new position
-      if (cell1!=NULL)
+      if (cell1!=nullptr)
       {
         u1->FindValueLocal(cell1,cell1->GetClipBoard(),x,y,val);
         //OutPut("v " << val[0] << " " << sol[index] << endl);

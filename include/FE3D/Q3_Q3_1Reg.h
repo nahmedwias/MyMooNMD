@@ -117,7 +117,7 @@ static int *Q3_Q3_1Reg_TwistPerm[4] = { Q3_Q3_1Reg_TwistPerm0,
                                    Q3_Q3_1Reg_TwistPerm3 };
 
 static int Q3_Q3_1Reg_NNoOpposite = 0;
-static int **Q3_Q3_1Reg_NoOpposite = NULL;
+static int **Q3_Q3_1Reg_NoOpposite = nullptr;
 
 TFE3DMapper1Reg *Q3_Q3_1Reg = new TFE3DMapper1Reg(
         Q3_Q3_1Reg_Name, Q3_Q3_1Reg_Desc,

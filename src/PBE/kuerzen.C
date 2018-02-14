@@ -488,12 +488,12 @@ support_new( int maxlevel, int dim ) {
 	ASSERT( dim > 0 );
 
 	back = (support_p) malloc(sizeof(support_t));
-	ASSERT(back != NULL);
+	ASSERT(back != nullptr);
 
 	a = (vec_p*) malloc( sizeof(vec_p) * (maxlevel+1) );
-	ASSERT(a != NULL);
+	ASSERT(a != nullptr);
 	b = (vec_p*) malloc( sizeof(vec_p) * (maxlevel+1) );
-	ASSERT(b != NULL);
+	ASSERT(b != nullptr);
 
 	for(k=0;k<=maxlevel;k++) {
 		a[k] = vec_new( dim );

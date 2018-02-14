@@ -11,13 +11,8 @@
 #ifndef __CONSTANTS__
 #define __CONSTANTS__
 
-#ifdef NULL
-  #undef NULL
-#endif
-
-#define NULL 0
-
 #include <cmath>
+#include <functional>
 
 #ifdef __2D__
 #define GEO_DIM 2
@@ -39,21 +34,11 @@
 #define SizeOfFloat    ((long) 4)
 #define SizeOfDouble   ((long) 8)
 
-
-#ifdef FALSE
-#undef FALSE
-#endif
-#ifdef TRUE
-#undef TRUE
-#endif
-
 #ifdef _MPI
   #define BYADD 0
   #define BYMASTER 1
   #define BYOWN 2
 #endif
-
-enum boolean {FALSE, TRUE};
 
 #define N_BOUNDCOND 10
 enum BoundCond { DIRICHLET, NEUMANN, ROBIN, SLIP, FREESURF, 
@@ -94,14 +79,11 @@ typedef void ErrorMethod3D(int, double *, double *, double *,
 
 typedef DoubleFunctVect ParamFct;
 
-typedef void CoeffFct2D(int n_points, double *X, double *Y,
-                        double **param, double **coeffs);
+typedef std::function<void(int, double*, double*, double**, double**)> 
+  CoeffFct2D;
 
-typedef void CoeffFct3D(int n_points, double *X, double *Y, double *Z,
-                        double **param, double **coeffs);
-                        
-typedef void CoeffFctND(int n_points, int N_Dim, double **Coords,
-                        double **param, double **coeffs);  
+typedef std::function<void(int, double*, double*, double*, double**, double**)>
+  CoeffFct3D;
 
 typedef void AssembleFct2D(double, double *, double, double **, 
                            int *, double ***, double **);

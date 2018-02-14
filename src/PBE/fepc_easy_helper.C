@@ -4,7 +4,7 @@
 
 func_p
 func_multi(func_p f, func_p g) {
-    ASSERT(f != NULL && g != NULL);
+    ASSERT(f != nullptr && g != nullptr);
     ASSERT(f->dim == g->dim);
     
     folgen_vektor_p  temp;
@@ -16,7 +16,7 @@ func_multi(func_p f, func_p g) {
     func_p result = func_new(steps-1, f->dim);
     
     for (n = 0; n < steps; n++) {
-        temp = folgen_vektor_multi( f->maxlevel < n ? NULL : f->hierarchie[n], g->maxlevel < n ? NULL : g->hierarchie[n], n );
+        temp = folgen_vektor_multi( f->maxlevel < n ? nullptr : f->hierarchie[n], g->maxlevel < n ? nullptr : g->hierarchie[n], n );
 		folgen_vektor_del(result->hierarchie[n]);
 		result->hierarchie[n] = temp;
     }
@@ -25,7 +25,7 @@ func_multi(func_p f, func_p g) {
 
 func_p
 func_div(func_p f, func_p g) {
-    ASSERT(f != NULL && g != NULL);
+    ASSERT(f != nullptr && g != nullptr);
     ASSERT(f->dim == g->dim);
     
     folgen_vektor_p  temp;
@@ -37,7 +37,7 @@ func_div(func_p f, func_p g) {
     func_p result = func_new(steps-1, f->dim);
     
     for (n = 0; n < steps; n++) {
-        temp = folgen_vektor_div( f->maxlevel < n ? NULL : f->hierarchie[n], g->maxlevel < n ? NULL : g->hierarchie[n], n );
+        temp = folgen_vektor_div( f->maxlevel < n ? nullptr : f->hierarchie[n], g->maxlevel < n ? nullptr : g->hierarchie[n], n );
 		folgen_vektor_del(result->hierarchie[n]);
 		result->hierarchie[n] = temp;
     }

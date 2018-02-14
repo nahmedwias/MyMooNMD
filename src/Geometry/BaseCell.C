@@ -26,7 +26,7 @@ TBaseCell::TBaseCell(TRefDesc *refdesc)
   Joints = new TJoint*[N_];
 
   for (i=0;i<N_;i++)
-   Joints[i] = NULL;
+   Joints[i] = nullptr;
 
   ClipBoard = 0;
   Phase_ID = 0;
@@ -35,13 +35,13 @@ TBaseCell::TBaseCell(TRefDesc *refdesc)
   region = 0;
   LayerCell = 0;  
   
-  normalOrientation = NULL;
+  normalOrientation = nullptr;
 
 #ifdef __3D__   
   N_ = RefDesc->GetN_OrigEdges();
   Edges = new TEdge*[N_];
   for (i=0;i<N_;i++)
-   Edges[i] = NULL;
+   Edges[i] = nullptr;
 #endif
 
 #ifdef  _MPI
@@ -50,12 +50,12 @@ TBaseCell::TBaseCell(TRefDesc *refdesc)
   GlobalCellNo = -1;
   SubDomainLocalCellNo = -1;
 
-  OwnCell=FALSE;
-  HaloCell=FALSE;
-  SubDomainInterfaceCell=FALSE;
-  DependentCell=FALSE;
+  OwnCell=false;
+  HaloCell=false;
+  SubDomainInterfaceCell=false;
+  DependentCell=false;
   N_NeibProcesses = 0;
-  NeibProcessesIds = NULL;
+  NeibProcessesIds = nullptr;
 #endif
 }
 
@@ -179,7 +179,7 @@ void TBaseCell::SetNormalOrientation()
   #ifdef __3D__
   nEdges = RefDesc->GetN_OrigFaces();
   #endif
-  if(normalOrientation != NULL) // nothing more to do
+  if(normalOrientation != nullptr) // nothing more to do
     return;
   normalOrientation = new int[nEdges];
   for (int i=0; i<nEdges;i++)

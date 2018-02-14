@@ -5,9 +5,9 @@ static int N5_2_N5_2_1Reg_N0 = 5;
 static int N5_2_N5_2_1Reg_N1 = 5;
 static int N5_2_N5_2_1Reg_N2 = 5;
 static int N5_2_N5_2_1Reg_NMid = 0;
-static int *N5_2_N5_2_1Reg_Mid = NULL;
+static int *N5_2_N5_2_1Reg_Mid = nullptr;
 static int N5_2_N5_2_1Reg_NPairs = 0;
-static int *N5_2_N5_2_1Reg_Pairs = NULL;
+static int *N5_2_N5_2_1Reg_Pairs = nullptr;
 static int N5_2_N5_2_1Reg_NHanging = 5;
 static int N5_2_N5_2_1Reg_Hanging[] = { 0, 1, 2, 3, 4  };
 static HNDesc N5_2_N5_2_1Reg_HangingTypes[] = { HN_N_P1_2D_0, HN_N_P2_2D_0,
@@ -24,9 +24,9 @@ static int *N5_2_N5_2_1Reg_Coupling[] = { N5_2_N5_2_1Reg_Coupling_0,
                                           N5_2_N5_2_1Reg_Coupling_3,
                                           N5_2_N5_2_1Reg_Coupling_4 };
 static int N5_2_N5_2_1Reg_NFarHanging = 0;
-static int *N5_2_N5_2_1Reg_FarHanging = NULL;
-static HNDesc *N5_2_N5_2_1Reg_FarHangingTypes = NULL;
-static int ****N5_2_N5_2_1Reg_FarCoupling = NULL;
+static int *N5_2_N5_2_1Reg_FarHanging = nullptr;
+static HNDesc *N5_2_N5_2_1Reg_FarHangingTypes = nullptr;
+static int ****N5_2_N5_2_1Reg_FarCoupling = nullptr;
 static int N5_2_N5_2_1Reg_NNoopposite = 10;
 static int N5_2_N5_2_1Reg_Nopposite[] = { 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
 static int N5_2_N5_2_1Reg_NNodes = 15;

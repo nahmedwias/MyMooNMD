@@ -16,14 +16,14 @@
 TQuadFormula::TQuadFormula()
 {
   N_QuadPoints=0;
-  Weights=NULL;
+  Weights=nullptr;
 
   Accuracy = -1;
 }
 
 double *TQuadFormula::GetCoords(int i)
 {
-  return NULL;
+  return nullptr;
 }
 
 std::ostream& operator << (std::ostream &s, TQuadFormula *qf)

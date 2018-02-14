@@ -52,7 +52,7 @@ void GetUpwindValue(double UPWIND_ORDER,double t,double *phi)
 // =======================================================================
 // do upwind assembling for first order nonconforming elements
 // =======================================================================
-void UpwindForNavierStokes(CoeffFct2D *Coeff, TSquareMatrix2D *sqmatrix,
+void UpwindForNavierStokes(CoeffFct2D Coeff, TSquareMatrix2D *sqmatrix,
 TFEFunction2D *u1, TFEFunction2D *u2)
 {
   double RE;
@@ -321,7 +321,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 }                                                 // end of UpwindForNavierStokes
 
 
-void UpwindForConvDiff(CoeffFct2D *Coeff, TSquareMatrix2D *sqmatrix, 
+void UpwindForConvDiff(CoeffFct2D Coeff, TSquareMatrix2D *sqmatrix, 
                        double *RHS, const TFESpace2D *fespace, 
                        const TFEFunction2D *u1, const TFEFunction2D *u2, 
                        bool ConvIsVelo)
@@ -722,8 +722,8 @@ void UpwindForConvDiff(CoeffFct2D *Coeff, TSquareMatrix2D *sqmatrix,
       }
     }                                             // endfor m
   }                                               // endfor i
-  delete param;
-  delete coeff;
+  delete [] param;
+  delete [] coeff;
 }                                                 // UpwindForConvDiff
 
 /******************************************************************************/
@@ -733,7 +733,7 @@ void UpwindForConvDiff(CoeffFct2D *Coeff, TSquareMatrix2D *sqmatrix,
 /******************************************************************************/
 
 void ComputeParametersMizukamiHughes(TBaseCell *cell, int cell_no,
-TFEFunction2D *u, CoeffFct2D *Coeffs,
+TFEFunction2D *u, CoeffFct2D Coeffs,
 BoundCondFunct2D *BoundaryCondition,
 int *dof, int ActiveBound,
 double *c_mh)
@@ -771,7 +771,7 @@ double *c_mh)
   sx /= N_Edges;
   sy /= N_Edges;
   // get coefficients, are assumed to be constant on the triangle
-  Coeffs(1, &sx, &sy, NULL, &coeff);
+  Coeffs(1, &sx, &sy, nullptr, &coeff);
   b1 = coeff[1];
   b2 = coeff[2];
 
@@ -1177,7 +1177,7 @@ void MizukamiHughes(TSquareMatrix2D *sqmatrix,
 double *RHS,
 TFESpace2D *fespace,
 TFEFunction2D *u,
-CoeffFct2D *Coeffs,
+CoeffFct2D Coeffs,
 BoundCondFunct2D *BoundaryCondition)
 {
   TBaseCell *cell;
@@ -1256,7 +1256,7 @@ BoundCondFunct2D *BoundaryCondition)
     sx /= N_Vertices;
     sy /= N_Vertices;
     // get coefficients
-    Coeffs(1, &sx, &sy, NULL, &coeff);
+    Coeffs(1, &sx, &sy, nullptr, &coeff);
     b1 = coeff[1];
     b2 = coeff[2];
 
@@ -1346,7 +1346,7 @@ BoundCondFunct2D *BoundaryCondition)
         {
           x = (xcoords[jj]+xcoords[(jj+1)%3])/2;
           y = (ycoords[jj]+ycoords[(jj+1)%3])/2;
-          Coeffs(1, &x, &y, NULL, &coeff);
+          Coeffs(1, &x, &y, nullptr, &coeff);
           val += coeff[4];
         }
         val *= area * c_mh[ii] / 3.0;

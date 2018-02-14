@@ -21,7 +21,7 @@ static int *N_T_RT0_3D_J[4] = { N_T_RT0_3D_J0, N_T_RT0_3D_J1,
 static int N_T_RT0_3D_NInner = 0;
 
 // array containing the numbers for the inner dofs (here is no inner dof)
-static int *N_T_RT0_3D_Inner = NULL;
+static int *N_T_RT0_3D_Inner = nullptr;
 
 // number of outer dofs
 static int N_T_RT0_3D_NOuter = 4;

@@ -23,7 +23,7 @@ TIsoJointEqN::TIsoJointEqN(TBaseCell *neighb0) : TJointEqN(neighb0)
   ID = IsoJointEqN;
 
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
 }
 
 TIsoJointEqN::TIsoJointEqN(TBaseCell *neighb0, TBaseCell *neighb1) 
@@ -32,7 +32,7 @@ TIsoJointEqN::TIsoJointEqN(TBaseCell *neighb0, TBaseCell *neighb1)
   ID = IsoJointEqN;
 
   N_Vertices = 0;
-  Vertices = NULL;
+  Vertices = nullptr;
 }
 
 // Methods

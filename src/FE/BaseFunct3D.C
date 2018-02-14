@@ -333,7 +333,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
   for(i=0;i<N_Joints;i++)
   {
     Values=TFEDatabase3D::GetJointValues3D(BaseFunct, FaceQF, i);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -346,7 +346,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     }
 
     Values=TFEDatabase3D::GetJointDerivatives3D(BaseFunct, FaceQF, i, D100);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -359,7 +359,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     } // endif
 
     Values=TFEDatabase3D::GetJointDerivatives3D(BaseFunct, FaceQF, i, D010);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -372,7 +372,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     } // endif
 
     Values=TFEDatabase3D::GetJointDerivatives3D(BaseFunct, FaceQF, i, D001);
-    if(Values == NULL)
+    if(Values == nullptr)
     {
       // data not generated yet
       Values = new double* [N_Points];
@@ -398,7 +398,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
 
   // D000
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D000);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension];
@@ -411,7 +411,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
 
   // D100
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D100);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension];
@@ -424,7 +424,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
 
  // D010
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D010);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension];
@@ -437,7 +437,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
 
   // D001
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D001);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension];
@@ -450,7 +450,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   
   // D200
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension*BaseVectDim];
@@ -463,7 +463,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
 
   // D110
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D110);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension*BaseVectDim];
@@ -476,7 +476,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
 
   // D101
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D101);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension*BaseVectDim];
@@ -489,7 +489,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   
   // D020
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D020);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension*BaseVectDim];
@@ -502,7 +502,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   
   // D011
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D011);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension*BaseVectDim];
@@ -515,7 +515,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   
   // D002
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D002);
-  if( Values==NULL)
+  if( Values==nullptr)
   {
     Values = new double* [n_points];
     AllValues = new double [n_points*Dimension*BaseVectDim];
@@ -591,7 +591,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
   TJoint *joint;
   TBaseCell *neigh;
 
-  if(BF2Change == NULL) return;
+  if(BF2Change == nullptr) return;
 
   switch(RefElement)
   {
@@ -606,7 +606,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
         if(maptype == 1 || maptype == 2)
         {
           neigh = (TGridCell *)(joint->GetNeighbour(Cell));
-          if(neigh != NULL && neigh-Cell < 0)
+          if(neigh != nullptr && neigh-Cell < 0)
           {
             JointArray = BF2Change[0][i];
             for(j=0;j<N_BF2Change;j++)
@@ -619,7 +619,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
         if(maptype == 2 || maptype == 3)
         {
           neigh = (TGridCell *)(joint->GetNeighbour(Cell));
-          if(neigh != NULL && neigh-Cell < 0)
+          if(neigh != nullptr && neigh-Cell < 0)
           {
             JointArray = BF2Change[1][i];
             for(j=0;j<N_BF2Change;j++)
@@ -641,7 +641,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
 //   int i, j, k, *JointArray;
 //   TBaseCell *neigh;
 // 
-//   if(BF2Change == NULL) return;
+//   if(BF2Change == nullptr) return;
 // 
 //   switch(RefElement)
 //   {
@@ -656,7 +656,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
 //         if(maptype == 1 || maptype == 2)
 //         {
 //           neigh = (TGridCell *)(joint->GetNeighbour(Cell));
-//           if(neigh != NULL && neigh-Cell < 0)
+//           if(neigh != nullptr && neigh-Cell < 0)
 //           {
 //             JointArray = BF2Change[0][i];
 //             for(j=0;j<N_BF2Change;j++)
@@ -669,7 +669,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
 //         if(maptype == 2 || maptype == 3)
 //         {
 //           neigh = (TGridCell *)(joint->GetNeighbour(Cell));
-//           if(neigh != NULL && neigh-Cell < 0)
+//           if(neigh != nullptr && neigh-Cell < 0)
 //           {
 //             JointArray = BF2Change[1][i];
 //             for(j=0;j<N_BF2Change;j++)
@@ -693,7 +693,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, do
   TBaseCell *neigh;
   double *Array;
 
-  if(BF2Change == NULL) return;
+  if(BF2Change == nullptr) return;
 
   switch(RefElement)
   {
@@ -708,7 +708,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, do
         if(maptype == 1 || maptype == 2)
         {
           neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
-          if(neigh != NULL && neigh-Cell < 0)
+          if(neigh != nullptr && neigh-Cell < 0)
           {
             JointArray = BF2Change[0][i];
             for(l=0;l<N_Points;l++)
@@ -725,7 +725,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, do
         if(maptype == 2 || maptype == 3)
         {
           neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
-          if(neigh != NULL && neigh-Cell < 0)
+          if(neigh != nullptr && neigh-Cell < 0)
           {
             JointArray = BF2Change[1][i];
             for(l=0;l<N_Points;l++)

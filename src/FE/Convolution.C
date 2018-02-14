@@ -112,10 +112,10 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
 
   // say that we don't need second derivatives
   // first: allocate memory for an array of length n_fespaces 
-  // second: set all entries to FALSE
+  // second: set all entries to false
   SecondDer = new bool[n_fespaces];
   for(i=0;i<n_fespaces;i++)
-    SecondDer[i] = FALSE;
+    SecondDer[i] = false;
 
   // get information of the numbering of the degrees of freedom
   // first: get pointer to array where a global numbering is stored
@@ -598,10 +598,10 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
 
   // say that we don't need second derivatives
   // first: allocate memory for an array of length n_fespaces 
-  // second: set all entries to FALSE
+  // second: set all entries to false
   SecondDer = new bool[n_fespaces];
   for(i=0;i<n_fespaces;i++)
-    SecondDer[i] = FALSE;
+    SecondDer[i] = false;
 
   // get information of the numbering of the degrees of freedom
   // first: get pointer to array where a global numbering is stored
@@ -1099,7 +1099,7 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   TJoint *joint;
   const TFESpace2D *fespace, *fespaceConv; 
 
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
   int N_Derivatives = 2;
   MultiIndex2D NeededDerivatives[2] = { D10, D01 };
 
@@ -1611,7 +1611,7 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   TJoint *joint;
   const TFESpace2D *fespace, *fespaceConv; 
 
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
   int N_Derivatives = 2;
   MultiIndex2D NeededDerivatives[2] = { D10, D01 };
 
@@ -2120,7 +2120,7 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   TVertex *vertex0;
   double x_vertex, y_vertex;
 
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
   int N_Derivatives = 2;
   MultiIndex2D NeededDerivatives[2] = { D10, D01 };
 
@@ -2656,7 +2656,7 @@ void  ConvoluteSymmetricTensorFullBoundary(TFEVectFunct2D *u, TFEVectFunct2D *du
   TVertex *vertex0;
   double x_vertex, y_vertex;
 
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
   int N_Derivatives = 2;
   MultiIndex2D NeededDerivatives[2] = { D10, D01 };
 
@@ -3235,10 +3235,10 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
 
   // say that we don't need second derivatives
   // first: allocate memory for an array of length n_fespaces 
-  // second: set all entries to FALSE
+  // second: set all entries to false
   SecondDer = new bool[n_fespaces];
   for(i=0;i<n_fespaces;i++)
-    SecondDer[i] = FALSE;
+    SecondDer[i] = false;
 
   // get information of the numbering of the degrees of freedom
   // first: get pointer to array where a global numbering is stored
@@ -3732,10 +3732,10 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
 
   // say that we don't need second derivatives
   // first: allocate memory for an array of length n_fespaces 
-  // second: set all entries to FALSE
+  // second: set all entries to false
   SecondDer = new bool[n_fespaces];
   for(i=0;i<n_fespaces;i++)
-    SecondDer[i] = FALSE;
+    SecondDer[i] = false;
 
   // get information of the numbering of the degrees of freedom
   // first: get pointer to array where a global numbering is stored
@@ -4227,7 +4227,7 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   TJoint *joint;
   const TFESpace3D *fespace, *fespaceConv; 
 
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
   int N_Derivatives = 3;
   MultiIndex3D NeededDerivatives[3] = { D100, D010, D001 };
   //TDatabase::ParamDB->INTERNAL_QUAD_RULE=1; there is something wrong !!!!
@@ -4832,7 +4832,7 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   TVertex *vertex0;
   double x_vertex, y_vertex, z_vertex;
 
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
   int N_Derivatives = 3;
   MultiIndex3D NeededDerivatives[3] = { D100, D010, D001 };
   TDatabase::ParamDB->INTERNAL_QUAD_RULE=1;
@@ -5387,10 +5387,10 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
 
   // say that we don't need second derivatives
   // first: allocate memory for an array of length n_fespaces 
-  // second: set all entries to FALSE
+  // second: set all entries to false
   SecondDer = new bool[n_fespaces];
   for(i=0;i<n_fespaces;i++)
-    SecondDer[i] = FALSE;
+    SecondDer[i] = false;
 
   // get information of the numbering of the degrees of freedom
   // first: get pointer to array where a global numbering is stored

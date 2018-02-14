@@ -24,7 +24,7 @@ TBoundEdge::TBoundEdge(TBoundComp2D *bdcomp, double t_0, double t_1)
 int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
                   struct StoreGeom &Tmp)
 {
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
   return 0;
 }
 
@@ -57,7 +57,7 @@ void TBoundEdge::UpdateParameters(TVertex *Begin, TVertex *End)
 int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
                   StoreGeomMortar &Tmp)
 {
-  Tmp.Filled = FALSE;
+  Tmp.Filled = false;
   return 0;
 }
 

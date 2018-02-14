@@ -46,9 +46,9 @@ void print_registered_message_3D(std::string entities)
 // =======================================================================
 // initialize static members
 // =======================================================================
-TQuadFormula1D *TFEDatabase3D::QuadFormulas1D[N_QuadFormulas_1D] =  { NULL };
-TQuadFormula2D *TFEDatabase3D::QuadFormulas2D[N_QuadFormulas_2D] =  { NULL };
-TQuadFormula3D *TFEDatabase3D::QuadFormulas3D[N_QuadFormulas_3D] = { NULL };
+TQuadFormula1D *TFEDatabase3D::QuadFormulas1D[N_QuadFormulas_1D] =  { nullptr };
+TQuadFormula2D *TFEDatabase3D::QuadFormulas2D[N_QuadFormulas_2D] =  { nullptr };
+TQuadFormula3D *TFEDatabase3D::QuadFormulas3D[N_QuadFormulas_3D] = { nullptr };
 
 QuadFormula1D TFEDatabase3D::QFLineFromDegree[MAXDEGREE] = { Gauss1Line };
 int TFEDatabase3D::HighestAccuracyLine = 0;
@@ -56,40 +56,40 @@ int TFEDatabase3D::HighestAccuracyLine = 0;
 QuadFormula2D TFEDatabase3D::QFTriaFromDegree[MAXDEGREE] = { BaryCenterTria };
 QuadFormula2D TFEDatabase3D::QFQuadFromDegree[MAXDEGREE] = { VertexQuad };
 
-TFE3D *TFEDatabase3D::FEs3D[N_FEs3D] = { NULL };
-TFEDesc3D *TFEDatabase3D::FEDescs3D[N_FEDescs3D] = { NULL };
-TBaseFunct3D *TFEDatabase3D::BaseFuncts3D[N_BaseFuncts3D] = { NULL };
+TFE3D *TFEDatabase3D::FEs3D[N_FEs3D] = { nullptr };
+TFEDesc3D *TFEDatabase3D::FEDescs3D[N_FEDescs3D] = { nullptr };
+TBaseFunct3D *TFEDatabase3D::BaseFuncts3D[N_BaseFuncts3D] = { nullptr };
 TNodalFunctional3D *TFEDatabase3D::NodalFunctionals3D[N_NodalFunctionals3D] 
-   = { NULL };
+   = { nullptr };
 
-TFE3DMapper *TFEDatabase3D::FE3DMapper[N_FEDescs3D][N_FEDescs3D] = { NULL };
+TFE3DMapper *TFEDatabase3D::FE3DMapper[N_FEDescs3D][N_FEDescs3D] = {{ nullptr }};
 TFE3DMapper1Reg *TFEDatabase3D::FE3DMapper1Reg[N_FEDescs3D][N_FEDescs3D]
-   = { NULL };
+   = {{ nullptr }};
 
-THNDesc *TFEDatabase3D::HNDescs3D[N_HNDescs] = { NULL };
+THNDesc *TFEDatabase3D::HNDescs3D[N_HNDescs] = { nullptr };
 
-TRefTrans3D *TFEDatabase3D::ReferenceTrans3D[N_RefTrans3D] = { NULL };
+TRefTrans3D *TFEDatabase3D::ReferenceTrans3D[N_RefTrans3D] = { nullptr };
 
 double **TFEDatabase3D::RefElementValues3D[N_BaseFuncts3D][N_QuadFormulas_3D]
-        [N_MultiIndices3D] = { NULL };
+        [N_MultiIndices3D] = {{{ nullptr }}};
 double **TFEDatabase3D::OrigElementValues3D[N_BaseFuncts3D]
-        [N_MultiIndices3D] = { NULL };
+        [N_MultiIndices3D] = {{ nullptr }};
 double **TFEDatabase3D::JointValues3D[N_BaseFuncts3D][N_QuadFormulas_2D]
-        [MAXN_JOINTS] = { NULL };
+        [MAXN_JOINTS] = {{{ nullptr }}};
 double **TFEDatabase3D::JointDerivatives3D[N_BaseFuncts3D][N_QuadFormulas_2D]
-        [MAXN_JOINTS][N_MultiIndices3D] = { NULL };
+        [MAXN_JOINTS][N_MultiIndices3D] = {{{{ nullptr }}}};
 
 double *TFEDatabase3D::ProlongationMatrix3D[MaxN_BaseFunctions3D]
-        [N_REFDESC][MaxN_BaseFunctions3D][MAXN_CHILDREN] = { NULL };
+        [N_REFDESC][MaxN_BaseFunctions3D][MAXN_CHILDREN] = {{{{ nullptr }}}};
 
 double *TFEDatabase3D::RestrictionMatrix3D[MaxN_BaseFunctions3D]
-        [N_REFDESC][MaxN_BaseFunctions3D][MAXN_CHILDREN] = { NULL };
+        [N_REFDESC][MaxN_BaseFunctions3D][MAXN_CHILDREN] = {{{{ nullptr }}}};
 
 /** Id of FEDesc from FE Id */ 
 FEDesc3D TFEDatabase3D::FEDesc3D_IDFromFE3D[N_FEs3D] = { FE_C_T_P1_3D };
 
 /** TFEDesc3D object from FE Id */ 
-TFEDesc3D *TFEDatabase3D::FEDesc3DFromFE3D[N_FEs3D] = { NULL };
+TFEDesc3D *TFEDatabase3D::FEDesc3DFromFE3D[N_FEs3D] = { nullptr };
 
 /** Id of BaseFunct3D from FE Id */ 
 BaseFunct3D TFEDatabase3D::BaseFunct3D_IDFromFE3D[N_FEs3D] = { BF_C_T_P1_3D };
@@ -104,14 +104,14 @@ int TFEDatabase3D::PolynomialDegreeFromFE3D[N_FEs3D] = { 0 };
 int TFEDatabase3D::AccuracyFromFE3D[N_FEs3D] = { 0 };
 
 /** TBaseFunct3DFEDesc object from FE Id */ 
-TBaseFunct3D *TFEDatabase3D::BaseFunct3DFromFE3D[N_FEs3D] = { NULL };
+TBaseFunct3D *TFEDatabase3D::BaseFunct3DFromFE3D[N_FEs3D] = { nullptr };
 
 /** Id of NodalFunctional3D from FE Id */ 
 NodalFunctional3D TFEDatabase3D::NodalFunctional3D_IDFromFE3D[N_FEs3D] = {
 NF_C_T_P1_3D };
 
 /** TNodalFunctional3D object from FE Id */ 
-TNodalFunctional3D *TFEDatabase3D::NodalFunctional3DFromFE3D[N_FEs3D] = { NULL };
+TNodalFunctional3D *TFEDatabase3D::NodalFunctional3DFromFE3D[N_FEs3D] = { nullptr };
 
 /** Id of RefTrans3D from FE Id */ 
 RefTrans3D TFEDatabase3D::RefTrans3D_IDFromFE3D[N_FEs3D] = { TetraAffin };
@@ -1267,7 +1267,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
    } //if(cell->IsLayerCell())
 // =================================================================
 
-  IsIsoparametric = FALSE;
+  IsIsoparametric = false;
   if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
   {
     for(i=0;i<N_Faces;i++)
@@ -1278,22 +1278,22 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
       {
         bdtype = ((TBoundFace *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Plane)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
       if(jointtype == InterfaceJoint3D)
       {
         bdtype = ((TInterfaceJoint3D *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Plane)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
       if(jointtype == IsoInterfaceJoint3D)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
 
       if(jointtype == IsoJointEqN)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
 
       if(jointtype == IsoBoundFace)
-        IsIsoparametric = TRUE;
+        IsIsoparametric = true;
     } // endfor
     
     if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY==1)
@@ -1312,7 +1312,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
             vertex++;
         }
         if (vertex>=2)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
     } // endif  
         
@@ -1623,9 +1623,9 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
 
   ret = ProlongationMatrix3D[Coarse][refine][Fine][childnumber]; 
 
-  if(ret == NULL)
+  if(ret == nullptr)
   {
-    // cerr << "ret == NULL" << endl;
+    // cerr << "ret == nullptr" << endl;
     // prolongation matrix was not generated yet
 
     BaseFunctions = CoarseElement->GetBaseFunct3D();
@@ -1672,7 +1672,8 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
         for(l=0;l<N_Points;l++)
           PointValues[l] = AllPointValues[l][k];
 
-        nf->GetAllFunctionals(NULL, NULL, PointValues, ret2+k*MaxN_BaseFunctions3D);
+        nf->GetAllFunctionals(nullptr, nullptr, PointValues,
+                              ret2+k*MaxN_BaseFunctions3D);
       }
 
       for(k=0;k<MaxN_BaseFunctions3D;k++)
@@ -1735,7 +1736,8 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
           for(l=0;l<N_Points;l++)
             PointValues[l] = AllPointValues[l][k];
   
-          nf->GetAllFunctionals(NULL, NULL, PointValues, ret2+k*MaxN_BaseFunctions3D);
+          nf->GetAllFunctionals(nullptr, nullptr, PointValues,
+                                ret2+k*MaxN_BaseFunctions3D);
         }
 
         for(k=0;k<MaxN_BaseFunctions3D;k++)
@@ -1795,7 +1797,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
 
   ret = RestrictionMatrix3D[Coarse][refine][Fine][childnumber]; 
 
-  if(ret == NULL)
+  if(ret == nullptr)
   {
     // restriction matrix was not generated yet
 

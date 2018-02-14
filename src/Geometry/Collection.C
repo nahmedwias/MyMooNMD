@@ -31,8 +31,8 @@ TCollection::TCollection(int n_cells, TBaseCell **cells)
   N_Cells = n_cells;
   Cells = cells;
 
-  SortedCells = NULL;
-  Index = NULL;
+  SortedCells = nullptr;
+  Index = nullptr;
 
   #ifdef  _MPI
   N_OwnCells = 0;
@@ -369,7 +369,7 @@ TJointCollection *TCollection::GetJointCollection()
   Sort(joints, N);
   N++;
 
-  Last=NULL;
+  Last=nullptr;
   N_RootJoints=0;
   for(i=0;i<N;i++)
    {
@@ -382,7 +382,7 @@ TJointCollection *TCollection::GetJointCollection()
    }
 
   RootJoints =  new TJoint*[N_RootJoints];
-  Last=NULL;
+  Last=nullptr;
   N_RootJoints=0;
   for(i=0;i<N;i++)
    {
@@ -433,7 +433,7 @@ void TCollection::GenerateCellVertNeibs()
   // sort the Vertices array based on vertices pointer values
   Sort(Vertices, N);
 
-  Last=NULL;
+  Last=nullptr;
   N_RootVertices=-1;
   for(i=0;i<N_LocVertices;i++)
    {

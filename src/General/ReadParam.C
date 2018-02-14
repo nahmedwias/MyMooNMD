@@ -2809,7 +2809,7 @@ void TDomain::ReadBdParam(std::istream& dat, bool& sandwich_flag)
     }
   }
   else
-    PointInHole = NULL;
+    PointInHole = nullptr;
 
   dat.getline (line, 99);
   N_Regions = -12345;
@@ -2838,7 +2838,7 @@ void TDomain::ReadBdParam(std::istream& dat, bool& sandwich_flag)
     }
   }
   else
-    PointInRegion = NULL;
+    PointInRegion = nullptr;
 }
 
 int TDomain::ReadMapFile(char *MapFile, TDatabase *Database)

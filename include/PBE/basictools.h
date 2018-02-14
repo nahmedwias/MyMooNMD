@@ -63,7 +63,7 @@ inline double* allocate_vector(int size) {
 	return (double*)malloc(size * sizeof(double)); 
 }
 inline void free_vector(double* v) {
-	if(v != NULL) free((void*)v);
+	if(v != nullptr) free((void*)v);
 }
 inline void fill_vector(double* v, int n, double value) {
 	for(int i = 0; i < n; i++) v[i] = value;

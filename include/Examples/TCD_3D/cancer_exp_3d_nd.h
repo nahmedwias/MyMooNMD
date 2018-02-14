@@ -436,7 +436,7 @@ void ReadMeditMeshWithCells(char *SMESH, tetgenio &In)
       F->numberofpolygons = 1;
       F->polygonlist = new tetgenio::polygon[F->numberofpolygons];
       F->numberofholes = 0;
-      F->holelist = NULL;
+      F->holelist = nullptr;
       P = &F->polygonlist[0];
       tetgenio::init(P);
       P->numberofvertices = N_FVert;
@@ -613,7 +613,7 @@ void ReadMeditMesh(char *SMESH, tetgenio &In)
       F->numberofpolygons = 1;
       F->polygonlist = new tetgenio::polygon[F->numberofpolygons];
       F->numberofholes = 0;
-      F->holelist = NULL;
+      F->holelist = nullptr;
       P = &F->polygonlist[0];
       tetgenio::init(P);
       P->numberofvertices = N_FVert;
@@ -1010,7 +1010,7 @@ void TetrameshCreate(TDomain *&Domain)
       
       
        for(jj=0;jj<N_Faces;jj++)
-         if(cell->GetJoint(jj) == NULL)
+         if(cell->GetJoint(jj) == nullptr)
           {
            N_Points = TmpLen[jj];
    
@@ -2016,7 +2016,7 @@ void TetraGen(TDomain *&Domain)
     Tetrahedrals_loc = Tetrahedrals+4*i;
            
     for(jj=0;jj<N_Faces;jj++)
-     if(cell->GetJoint(jj) == NULL)
+     if(cell->GetJoint(jj) == nullptr)
       {
        N_G++;    
        N_Points = TmpLen[jj];
@@ -2208,7 +2208,7 @@ void TetraGen(TDomain *&Domain)
       else 
        if (Joint->GetType() == JointEqN)
            Joint->SetMapType();
-   } // if(cell->GetJoint(jj) == NULL)
+   } // if(cell->GetJoint(jj) == nullptr)
   } //    for (i=0;i<N_Cells;i++)
 
   
@@ -2513,7 +2513,7 @@ void TetraGenWithInputCells(TDomain *&Domain)
     Tetrahedrals_loc = Tetrahedrals+4*i;
            
     for(jj=0;jj<N_Faces;jj++)
-     if(cell->GetJoint(jj) == NULL)
+     if(cell->GetJoint(jj) == nullptr)
       {
        N_G++;    
        N_Points = TmpLen[jj];
@@ -2705,7 +2705,7 @@ void TetraGenWithInputCells(TDomain *&Domain)
       else 
        if (Joint->GetType() == JointEqN)
            Joint->SetMapType();
-   } // if(cell->GetJoint(jj) == NULL)
+   } // if(cell->GetJoint(jj) == nullptr)
   } //    for (i=0;i<N_Cells;i++)
 
   

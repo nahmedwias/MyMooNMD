@@ -28,7 +28,7 @@ void fullmatrix_times_matrix(pfullmatrix f, EvalMode mode, double* B, int n, dou
 
 void fullmatrix_times_vector(pfullmatrix f, EvalMode mode, double* b, double* c, double alpha, double beta)
 {
-	double* Ab = NULL;
+	double* Ab = nullptr;
 	int eins = 1;
 	switch(mode)
 	{
