@@ -26,6 +26,9 @@
 #include <Residuals.h>
 #include <FESpace3D.h>
 #include <Example_TimeNSE3D.h>
+#include <TimeDiscretizations.h>
+#include <LocalAssembling3D.h>
+
 
 #include <ParameterDatabase.h>
 #include <Solver.h>
@@ -167,8 +170,9 @@ class Time_NSE3D
     /** @brief right hand side vector from previous time step (on finest mesh)*/
     BlockVector old_rhs_;
 
-    /** @brief solution vector from previous time step (on finest mesh)*/
-    BlockVector old_solution_;
+    /** @brief solution vectors from previous time steps (on finest mesh)*/
+    BlockVector solution_m1;
+    BlockVector solution_m2;
 
     /** @brief constructs a solution vector extrapolated from previous steps
      * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
@@ -176,6 +180,20 @@ class Time_NSE3D
 
     /** @brief old time step length used to scale the pressure blocks */
     double oldtau_;
+    
+    /// @brief time stepping scheme object to access everything
+    TimeDiscretization time_stepping_scheme;
+    
+    /// @brief is the mass matrix and right hand side is solution
+    /// dependent: for example the SUPG method
+    bool is_rhs_and_mass_matrix_nonlinear;
+    /// @brief system right hand side which passes to the solver
+    BlockVector rhs_from_time_disc;
+    
+    /// this is for setting the discretization type globally, since the DISCTYPE 
+    /// is removed fromt the global database but it's not simple/possible to use
+    /// different space discretization in the LocalAssembling2D
+    int space_disc_global;
 
     /** @brief set the velocity and pressure orders
      *
@@ -228,7 +246,7 @@ class Time_NSE3D
     * If some parameters are set to unsupported values, an error occurs and
     * throws an exception.
     */
-    void check_parameters();
+    void check_and_set_parameters();
 
     /** @brief Assemble all the matrices and rhs before the time iterations
     *
@@ -237,6 +255,7 @@ class Time_NSE3D
     * This assembling occurs just once, before entering any loop. It assembles
     * linear terms only.
     */
+    void assemble_initial_time_m();
     void assemble_initial_time();
 
     /** @brief Assemble the rhs only
@@ -246,12 +265,7 @@ class Time_NSE3D
     * discretization but should be outside the nonlinear loop.
     */
     void assemble_rhs();
-
-    /** @brief Descale matrices
-     * This function will descale all A-blocks which were scaled
-     * during the function call time Time_NSE3D::assemble_system().
-     */
-    void descale_matrices();
+    void assemble_rhs_m();
 
     /** @brief Assemble the nonlinear terms
      * Assemble the nonlinear terms. Need not be used when this is
@@ -356,7 +370,10 @@ class Time_NSE3D
     /// Get number of degrees of freedom.
     const int get_size() const
     { return this->systems_.front().solution_.length(); }
-
+    
+    /// @brief get the space discretization type
+    int get_space_disc_global() {return space_disc_global;}
+    
     /// Get the stored database.
     const ParameterDatabase & get_db() const
     { return db_; }
@@ -372,6 +389,30 @@ class Time_NSE3D
 
     /** @brief return the computed errors (computed in output()) */
     std::array<double, int(6)> get_errors() const;
+    
+    /// @brief get the time stepping object
+    TimeDiscretization& get_time_stepping_scheme()
+    {return time_stepping_scheme;}
+    const TimeDiscretization& get_time_stepping_scheme() const
+    {return time_stepping_scheme;}
+    
+private:
+  
+  /// @brief this routines wraps up the call to Assemble3D
+  void call_assembling_routine(Time_NSE3D::System_per_grid& s, 
+                          LocalAssembling3D_type type);
+  /// @brief set the matrices and right hand side depending on the
+  /// assemling routines, nstypes and the methods
+  void set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling3D_type type,
+        std::vector<TSquareMatrix3D*> &sqMat, std::vector<TMatrix3D*> &reMat,
+        std::vector<double*> &rhs_array);
+  /// @brief set the spaces depending on disc types
+  void set_arrays(Time_NSE3D::System_per_grid& s, 
+        std::vector<const TFESpace3D*> &spaces, std::vector< const TFESpace3D* >& spaces_rhs,
+        std::vector< TFEFunction3D*> &functions);  
+  
+  /// @brief
+  void restrict_function();
 };
 
 

@@ -285,15 +285,6 @@ target_compile_definitions(tnse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(tnse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
-### TNSE3D ###
-# Standard executable target.
-add_executable(tnse3d_merg ${PROJECT_SOURCE_DIR}/3DPrograms/TNSE3D_ParMooN_Merged.C)
-set_target_properties(tnse3d_merg PROPERTIES OUTPUT_NAME parMooN_tnse3d_merge_${PARMOON_PARALLEL_TYPE})
-# Add the correct geometry flag to the target.
-target_compile_definitions(tnse3d_merg PUBLIC -D__3D__)
-# Link in the required libraries.
-target_link_libraries(tnse3d_merg parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-
 ### MESH(3D) ###
 # Standard executable target.
 add_executable(mesh3d ${PROJECT_SOURCE_DIR}/3DPrograms/mesh3d_ParMooN.C)

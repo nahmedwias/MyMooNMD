@@ -250,18 +250,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   #lsc 
   add_test(NAME tnse3d_seq_lsc COMMAND ParMooN_test_tnse3d_seq lsc)
   
-  
-  #tnse3d tests
-  set(_EXEC_NAME ParMooN_test_tnse3d_seq_m)
-  set(_FILE_NAME tnse3d_test_merged.c++)
-  register_executable(${_EXEC_NAME} ${_FILE_NAME})
-  #umfpack
-  add_test(NAME tnse3d_seq_umfpack_m COMMAND ParMooN_test_tnse3d_seq_m umfpack)
-  #multigrid
-  add_test(NAME tnse3d_seq_multigrid_m COMMAND ParMooN_test_tnse3d_seq_m multigrid)
-  #lsc 
-  add_test(NAME tnse3d_seq_lsc_m COMMAND ParMooN_test_tnse3d_seq_m lsc)
-  
+    
   #multigrid tests
   set(_EXEC_NAME ParMooN_test_multigrid_2d)
   set(_FILE_NAME multigrid_test.c++)
@@ -372,7 +361,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   
   #tnse3d tests
   set(_EXEC_NAME ParMooN_test_tnse3d_mpi)
-  set(_FILE_NAME tnse3d_test_merged.c++)
+  set(_FILE_NAME tnse3d_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
   add_test(NAME tnse3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_tnse3d_mpi mumps)
