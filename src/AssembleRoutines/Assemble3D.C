@@ -1317,7 +1317,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
 	  if(N_Parameters)
 	  {
-	    aux = new double [MaxN_QuadPoints_3D*N_Parameters];
+	    aux = new double [MaxN_QuadPoints_3D*N_Parameters]();
 	    for(j=0;j<MaxN_QuadPoints_3D;j++)
 	      Param[j] = aux + j*N_Parameters;
 	  }

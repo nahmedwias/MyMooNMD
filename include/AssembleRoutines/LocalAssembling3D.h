@@ -263,5 +263,50 @@ class LocalAssembling3D
 
     const int get_disctype() const
     { return discretization_type; }
+
+    /**
+     * All methods to follow are setter methods which deal with data members
+     * which focus on gaining coefficients from given fe functions.
+     */
+    void setBeginParameter(const std::vector<int>& beginParameter)
+    {
+      BeginParameter = beginParameter;
+    }
+
+    void setFeFunctions3D(TFEFunction3D** feFunctions3D)
+    {
+      FEFunctions3D = feFunctions3D;
+    }
+
+    void setFeValueFctIndex(const std::vector<int>& feValueFctIndex)
+    {
+      FEValue_FctIndex = feValueFctIndex;
+    }
+
+    void setFeValueMultiIndex(
+        const std::vector<MultiIndex3D>& feValueMultiIndex)
+    {
+      FEValue_MultiIndex = feValueMultiIndex;
+    }
+
+    void setN_FeValues(int N_feValues)
+    {
+      N_FEValues = N_feValues;
+    }
+
+    void setN_Parameters(int N_parameters)
+    {
+      N_Parameters = N_parameters;
+    }
+
+    void setN_ParamFct(int N_paramFct)
+    {
+      N_ParamFct = N_paramFct;
+    }
+
+    void setParameterFct(const std::vector<ParamFct*>& parameterFct)
+    {
+      ParameterFct = parameterFct;
+    }
 };
 #endif

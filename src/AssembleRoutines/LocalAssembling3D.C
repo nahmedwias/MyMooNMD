@@ -610,6 +610,17 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
 
     orig_values[j] = TFEDatabase3D::GetOrigElementValues
                       (BaseFunct_Id, FEValue_MultiIndex[j]);
+
+    if(orig_values[j]==NULL)
+    {
+      orig_values[j] = new double* [MaxN_QuadPoints_3D]();
+      int N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct_Id)->GetDimension();
+      int BaseVectDim = TFEDatabase3D::GetBaseFunct3D(BaseFunct_Id)->GetBaseVectDim();
+      double* aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim]();
+      for(int k=0;k<MaxN_QuadPoints_3D;k++)
+        orig_values[j][k] = aux+j*N_Functs*BaseVectDim;
+      TFEDatabase3D::RegisterOrigElementValues(BaseFunct_Id, FEValue_MultiIndex[j], orig_values[j]);
+    }
  
     GlobalNumbers = fespace->GetGlobalNumbers();
     BeginIndex = fespace->GetBeginIndex();
