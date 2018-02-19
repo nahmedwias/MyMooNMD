@@ -195,14 +195,21 @@ class Time_CD3D
      * This includes the assembling of: Stiff_matrix, Mass_Matrix, 
      * (additional matrixK in case of SUPG stabilization), rhs
      */
-    void assemble_initial_time();
+    void assemble_initial_time(
+        TFEFunction3D* velo1 = nullptr,
+        TFEFunction3D* velo2 = nullptr,
+        TFEFunction3D* velo3 = nullptr);
     
     /** @brief assemble the matrices
      * this function will assemble the stiffness matrix and rhs
      * In addition the system matrix and the rhs which passes to the solver 
      * are also prepared within the function
      */
-    void assemble();
+    void assemble(
+        TFEFunction3D* velo1 = nullptr,
+        TFEFunction3D* velo2 = nullptr,
+        TFEFunction3D* velo3 = nullptr,
+        TFEFunction3D* sources_and_sinks = nullptr);
     
     /**
      * Descales the stiffness matrices from the modifications due to time
@@ -298,6 +305,15 @@ class Time_CD3D
      */
     void call_assembling_routine(Time_CD3D::SystemPerGrid& system,
                                  LocalAssembling3D& la_stiff, bool assemble_both);
+
+    void modify_and_call_assembling_routine(
+        SystemPerGrid& s,
+        LocalAssembling3D& la,
+        bool assemble_both,
+        TFEFunction3D* velo1 = nullptr,
+        TFEFunction3D* velo2 = nullptr,
+        TFEFunction3D* velo3 = nullptr,
+        TFEFunction3D* sources_and_sinks = nullptr);
 };
 
 #endif
