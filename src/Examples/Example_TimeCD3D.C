@@ -17,6 +17,13 @@ namespace concentration
 #include "TCD_3D/concentrationOfSpecies_3d.h"
 }
 
+//CB PROJECT include the wiedmeyer fluidized bed crystallizer example here
+namespace batch_crystallizer
+{
+#include "TNSE_3D/WiedmeyerBatchCrystallizer.h"
+}
+//END PROJECT
+
 Example_TimeCD3D::Example_TimeCD3D(
   const ParameterDatabase& user_input_parameter_db)
  : Example_NonStationary3D(user_input_parameter_db)
@@ -58,6 +65,30 @@ Example_TimeCD3D::Example_TimeCD3D(
       concentration::PECLET_NUMBER = this->get_nu();
       ExampleFile();
       break;
+
+    //CB PROJECT
+    case 71:
+    {// c: mass balance in batch crystallizer
+      using namespace batch_crystallizer;
+      exact_solution.push_back(Exact_cALUM);
+      boundary_conditions.push_back(BoundCondition_cALUM);
+      boundary_data.push_back(BoundValue_cALUM);
+      problem_coefficients = BilinearCoeffs_cALUM;
+      initialCondtion.push_back(InitialCondition_cALUM);
+      break;
+    }
+    case 72:
+    {// T: energy balance in batch crystallizer
+      using namespace batch_crystallizer;
+      exact_solution.push_back(Exact_T);
+      boundary_conditions.push_back(BoundCondition_T);
+      boundary_data.push_back(BoundValue_T);
+      problem_coefficients = BilinearCoeffs_T;
+      initialCondtion.push_back(InitialCondition_T);
+      break;
+    }
+    //END PROJECT
+
     default:
       ErrThrow("Unknown Example_TimeCD3D example!");
   }

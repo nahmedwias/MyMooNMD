@@ -26,6 +26,20 @@ double u_avg_in  = 0; //0.047157;   //m/s
 double u_max_in  = 0; //m/s, assuming HP-inflow
 double u_avg_out  = 0; //m/s
 
+double diffusion_ALUM = 5.4e-10; //m^2/s, from Volker's kali alaun paper stub
+double M_ALUM = 0.4743884; //kg/mol, the molar mass of potash alum dodecahydrate
+
+double lambda = 0.6;  // W/(m  * K), thermal  conductivity  (of the fluid), from Volker's kali alaun paper stub
+double c_p = 3841;    // J/(kg * K), specific heat capacity (of the fluid), from Volker's kali alaun paper stub
+
+// This is an intermediate state of affairs. Concentration and
+// temperature at the inlet are somewhat higher than in the bulk. Just to see what happens.
+double T_inlet = 289.15;   //16 Celsius
+double T_initial = 288.15; //15 Celsius
+double T_wall = 287.15;    //14 Celsius
+double cALUM_inlet =  1000; //mol/m^3, just a stupid guess
+double cALUM_initial = 500; //mol/m^3, just a stupid guess
+
 void set_r_out(double new_r_out)
 {
   r_out = new_r_out;
@@ -74,6 +88,40 @@ std::string out_condition_string()
 //      eps = (eta/rho) / (u_infty*l_infty);
 }
 
+
+// This computes the "concentration" of alum supersaturation, which is needed
+// by Brush in order to compute the growth rate. The growth model we use here
+// was communicated by V.Wiedmeyer, and it is formulated in terms of the
+// relative mass-fraction supersaturation. To be precise, the model requires
+// the term:
+// \( \frac{w_\text{alum} - w_\text{alum,eq}}{w_\text{alum,eq}} \) ^ 2.1
+// This dimensionless number is computed by this function, and then handed over
+// to Brush by the somewhat misleading name "PAL_SUPSAT_POW2".
+// w_\text{alum} [kg/kg]is the mass fraction of potash alum,
+// w_\text{alum,eq} [kg/kg] is the equilibrium mass fraction, which is given by
+// a fitted quadratic polynomial (in temperature T) here.
+double derived_concentration_PAL_SUPSAT_POW2(const std::vector<double>& data)
+{
+  if(data.size() != 7)
+    throw std::runtime_error("derived_concentration_PAL_SUPSAT_POW2: "
+        "expected 7 data points. ux, uy, uz, p, T, POTASHALUM, 0(PAL_SUPSAT_POW2)");
+
+  std::cout << "TODO implement me, derived_concentration_PAL_SUPSAT_POW2, please!" << std::endl;
+
+  double T = data[4];     // grab temperature [K]
+  double c_alum = data[5]; // grab alum concentration [mol/m^3]
+
+  double w_alum = c_alum * FluidProperties::M_ALUM / FluidProperties::rho; //this is the alum mass fraction [kg/kg]
+  double a = 4.6608e-5;
+  double b = -0.025716;   //three coefficients of the following polynomial,
+  double c = 3.5886;      //they were experimentally determined by the colleagues from MD
+  double w_alum_eq = a * T * T + b * T + c;
+
+  double rel_sup_sat = (w_alum - w_alum_eq) / w_alum_eq;
+
+  return rel_sup_sat > 0 ? pow(rel_sup_sat, 2.1) : 0; // return the supersaturation to the power of 2.1, as the model requires
+
+}
 //! Some information that is necessary to set up the BrushWrapper for this example.
 namespace BrushInfo
 {
@@ -81,18 +129,20 @@ namespace BrushInfo
   size_t parameter_spatial_dimension = 3;
   //! There are two "species" to be communicated: temperature and dissolved potash alum conc
   size_t parameter_n_specs_primary = 2;
-  // TODO Maybe later we have to add potash alum saturation concentration here
-  size_t parameter_n_specs_derived = 0;
+  // Potash alum saturation concentration "to the power of 2.1" is a derived quantity.
+  size_t parameter_n_specs_derived = 1;
   // Names of the parameters to be sent to Brush, just for double-checking.
-  std::vector<std::string> parameter_term_names = {"ux","uy","uz","p","T","POTASHALUM"};
-  // TODO Maybe later we have to add a function computing potash alum saturation concentration here
-  std::vector<std::function<double(const std::vector<double>&)>> parameter_specs_derived_fcts = {};
+  std::vector<std::string> parameter_term_names = {"ux","uy","uz","p","T","POTASHALUM","PAL_SUPSAT_POW2"};
+  // Function to compute potash alum saturation concentration "to the power of 2.1" is a derived quantity.
+  std::vector<std::function<double(const std::vector<double>&)>> parameter_specs_derived_fcts =
+  {derived_concentration_PAL_SUPSAT_POW2};
   //! Names of the functions that are requested from Brush.
   std::vector<Exmpl::SourceAndSinkTerms> source_and_sink_fct_requests =
     { Exmpl::SourceAndSinkTerms::PotashAlumCrystEnergyRelease,
       Exmpl::SourceAndSinkTerms::PotashAlumCrystConcConsumption };
   //! Names of the functions that are expected from Brush in return.
   std::vector<std::string> source_and_sink_term_names = {"T_sources", "c_POTASHALUM_sinks" };
+
 
 }
 
@@ -262,7 +312,6 @@ void ExactP(double x, double y,  double z, double *values)
   values[4] = 0;
 }
 
-// In case this should be instationary.
 void InitialU1(double x, double y,  double z, double *values)
 {
   values[0] = 0;
@@ -281,4 +330,161 @@ void InitialU3(double x, double y,  double z, double *values)
 void InitialP(double x, double y,  double z, double *values)
 {
   values[0] = 0;
+}
+
+// ========================================================================
+// ALUM mass balance equation
+// ========================================================================
+// exact solution is unknown
+void Exact_cALUM(double x, double y, double z, double *values)
+{
+//  double t=TDatabase::TimeDB->CURRENTTIME;
+  values[0] = 0;
+  values[1] = 0;
+  values[2] = 0;
+  values[3] = 0;
+  values[4] = 0;
+}
+
+// kind of boundary condition (for FE space needed)
+void BoundCondition_cALUM(double x, double y, double z, BoundCond &cond)
+{
+  if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM)
+  {
+    cond=DIRICHLET;
+  }
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
+  {
+    cond=NEUMANN;
+  }
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::TOP)
+  {
+    cond=NEUMANN;
+  }
+}
+
+// value of boundary condition
+void BoundValue_cALUM(double x, double y, double z, double &value)
+{
+  using namespace FluidProperties;
+  if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM)
+  {
+    value=cALUM_inlet;
+  }
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
+  {
+    value=0;
+  }
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::TOP)
+  {
+    value=0;
+  }
+}
+
+// initial conditon
+void InitialCondition_cALUM(double x, double y, double z, double *values)
+{
+  using namespace FluidProperties;
+  values[0] = cALUM_initial;
+}
+
+void BilinearCoeffs_cALUM(int n_points, double *X, double *Y, double *Z,
+        double **parameters, double **coeffs)
+{
+  double *coeff;
+//  double t=TDatabase::TimeDB->CURRENTTIME;
+
+  for(int i=0;i<n_points;i++)
+  {
+    coeff = coeffs[i];
+//    double x = X[i];
+//    double y = Y[i];
+//    double z = Z[i];
+
+    coeff[0] = FluidProperties::diffusion_ALUM; //diffusion coefficient
+    coeff[1] = parameters[i][0];   // ux
+    coeff[2] = parameters[i][1];   // uy
+    coeff[3] = parameters[i][2];   // uz
+    coeff[4] = 0;                  // no reaction in this system
+    coeff[5] = parameters[i][3];   //rhs, interpolated sources and sinks from Brush
+  }
+}
+
+// ========================================================================
+// (Thermal) Energy balance equation
+// ========================================================================
+// exact solution is unknown
+void Exact_T(double x, double y, double z, double *values)
+{
+//  double t=TDatabase::TimeDB->CURRENTTIME;
+  values[0] = 0;
+  values[1] = 0;
+  values[2] = 0;
+  values[3] = 0;
+  values[4] = 0;
+}
+
+// kind of boundary condition (for FE space needed)
+void BoundCondition_T(double x, double y, double z, BoundCond &cond)
+{
+  if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM)
+  {
+    cond=DIRICHLET;
+  }
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
+  {
+    cond=DIRICHLET;
+  }
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::TOP)
+  {
+    cond=NEUMANN;
+  }
+}
+
+// value of boundary condition
+void BoundValue_T(double x, double y, double z, double &value)
+{
+  using namespace FluidProperties;
+  if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM)
+  {
+    value=T_inlet;
+  }
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
+  {
+    value=T_wall;
+  }
+  else if (determine_boundary_part(x,y,z) == BoundaryPart::TOP)
+  {
+    value=0;
+  }
+}
+
+// initial conditon
+void InitialCondition_T(double x, double y, double z, double *values)
+{
+  using namespace FluidProperties;
+  values[0] = T_initial;
+}
+
+void BilinearCoeffs_T(int n_points, double *X, double *Y, double *Z,
+        double **parameters, double **coeffs)
+{
+  using namespace FluidProperties;
+  double *coeff;
+//  double t=TDatabase::TimeDB->CURRENTTIME;
+
+  for(int i=0;i<n_points;i++)
+  {
+    coeff = coeffs[i];
+//    double x = X[i];
+//    double y = Y[i];
+//    double z = Z[i];
+
+    coeff[0] = lambda/(rho * c_p); //TODO heat diffusion should be sth. like lambda_E / (rho_susp * C_E); (this is 2d case)
+    coeff[1] = parameters[i][0];   // ux
+    coeff[2] = parameters[i][1];   // uy
+    coeff[3] = parameters[i][2];   // uz
+    coeff[4] = 0;                  // no reaction in this system
+    coeff[5] = parameters[i][3];   //rhs, interpolated sources and sinks from Brush
+  }
 }
