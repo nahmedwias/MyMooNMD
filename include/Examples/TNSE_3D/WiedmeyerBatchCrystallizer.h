@@ -37,8 +37,8 @@ double c_p = 3841;    // J/(kg * K), specific heat capacity (of the fluid), from
 double T_inlet = 289.15;   //16 Celsius
 double T_initial = 288.15; //15 Celsius
 double T_wall = 287.15;    //14 Celsius
-double cALUM_inlet =  1000; //mol/m^3, just a stupid guess
-double cALUM_initial = 500; //mol/m^3, just a stupid guess
+double cALUM_inlet =  110; //mol/m^3, only slight supersaturation (nach Gefuehl...)
+double cALUM_initial = 110; //mol/m^3, only slight supersaturation (nach Gefuehl...)
 
 void set_r_out(double new_r_out)
 {
@@ -116,6 +116,12 @@ double derived_concentration_PAL_SUPSAT_POW2(const std::vector<double>& data)
   double w_alum_eq = a * T * T + b * T + c;
 
   double rel_sup_sat = (w_alum - w_alum_eq) / w_alum_eq;
+
+//  //CB DEBUG
+//  std::cout << "c_alum_eq:" << w_alum_eq * FluidProperties::rho / FluidProperties::M_ALUM << std::endl;
+//  std::cout << "w_alum: " << w_alum << std::endl;
+//  std::cout << "w_alum_eq: " << w_alum_eq << std::endl;
+//  //END DEBUG
 
   return rel_sup_sat > 0 ? pow(rel_sup_sat, 2.1) : 0; // return the supersaturation to the power of 2.1, as the model requires
 
