@@ -238,8 +238,8 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   );
 
   Output::print("Setting up Brush::InterfacePM SUCCESS.");
-  Output::print("Performing cell checks");
-
+//  Output::print("Performing cell checks");
+//
 //  // check if the numbering of cells in the brush grid is the same in Brush and ParMooN
 //  // This scales quadratically in the number of cells,
 //  // and should therefore only run in test scenarios.
