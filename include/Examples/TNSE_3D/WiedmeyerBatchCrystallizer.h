@@ -106,8 +106,6 @@ double derived_concentration_PAL_SUPSAT_POW2(const std::vector<double>& data)
     throw std::runtime_error("derived_concentration_PAL_SUPSAT_POW2: "
         "expected 7 data points. ux, uy, uz, p, T, POTASHALUM, 0(PAL_SUPSAT_POW2)");
 
-  std::cout << "TODO implement me, derived_concentration_PAL_SUPSAT_POW2, please!" << std::endl;
-
   double T = data[4];     // grab temperature [K]
   double c_alum = data[5]; // grab alum concentration [mol/m^3]
 
