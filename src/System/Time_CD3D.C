@@ -306,7 +306,10 @@ void Time_CD3D::check_and_set_parameters()
 }
 
 //==============================================================================
-void Time_CD3D::assemble_initial_time()
+void Time_CD3D::assemble_initial_time(
+    TFEFunction3D* velo1,
+    TFEFunction3D* velo2,
+    TFEFunction3D* velo3)
 {
   LocalAssembling3D_type allMatrices = LocalAssembling3D_type::TCD3D;
   for(auto &s : this->systems_)
@@ -314,10 +317,11 @@ void Time_CD3D::assemble_initial_time()
     TFEFunction3D *feFunction = {&s.feFunction_};
     LocalAssembling3D la(allMatrices, &feFunction, example_.get_coeffs(),
                          this->disctype);
-    // Assemble stiffness, mass matrices and the rhs. Initially it is independent
-    // that which method is used. 
-    // 
-    call_assembling_routine(s, la, true);
+    // Assemble stiffness, mass matrices and the rhs.
+    if (velo1 && velo2 && velo3)
+      modify_and_call_assembling_routine(s, la, true, velo1, velo2, velo3);
+    else
+      call_assembling_routine(s, la, true);
    
     // initialize old_Au
     s.update_old_Au();
@@ -327,7 +331,11 @@ void Time_CD3D::assemble_initial_time()
 }
 
 //==============================================================================
-void Time_CD3D::assemble()
+void Time_CD3D::assemble(
+    TFEFunction3D* velo1,
+    TFEFunction3D* velo2,
+    TFEFunction3D* velo3,
+    TFEFunction3D* sources_and_sinks)
 {
   // In the case of SUPG: local assemble function itself take care of the 
   // number of matrices. One have to assemble also the weighted mass matrix 
@@ -341,14 +349,16 @@ void Time_CD3D::assemble()
     LocalAssembling3D la(stiffMatrixRhs, &feFunction, example_.get_coeffs(),
                          this->disctype);
     // call assembling routine 
-    if(db["space_discretization_type"].is("galerkin"))
-    {
-      call_assembling_routine(s, la, false);
-    }
-    else if(db["space_discretization_type"].is("supg"))
-    {
-      call_assembling_routine(s, la, true);
-    }
+    bool call_both = false;
+    if(db["space_discretization_type"].is("galerkin")){call_both = false;}
+    if(db["space_discretization_type"].is("supg"))    {call_both = true;}
+
+    if (velo1 && velo2 && velo3 && sources_and_sinks)
+      modify_and_call_assembling_routine(s, la, call_both, velo1, velo2, velo3, sources_and_sinks);
+    else if (velo1 && velo2 && velo3)
+      modify_and_call_assembling_routine(s, la, call_both, velo1, velo2, velo3);
+    else
+      call_assembling_routine(s, la, call_both);
   }
   
   // here the modifications due to time discretization begin
@@ -704,5 +714,114 @@ void Time_CD3D::do_algebraic_flux_correction()
   {
     ErrThrow("The chosen algebraic flux correction scheme ",
              db["algebraic_flux_correction"]," is unknown to class Time_CD3D.");
+  }
+}
+
+// Used as a "ParamFunction" (a MooNMD specific oddity
+// of the assembling process) in the following.
+// ...shears away the first three parameters (x,y,z) and passes on the three next parameters
+void ThreeFEParametersFunction3D(double *in, double *out)
+{
+  out[0] = in[3];
+  out[1] = in[4];
+  out[2] = in[5];
+}
+// ...shears away the first three parameters (x,y,z) and passes on the four next parameters
+void FourFEParametersFunction3D(double *in, double *out)
+{
+  out[0] = in[3];
+  out[1] = in[4];
+  out[2] = in[5];
+  out[3] = in[6];
+}
+
+void Time_CD3D::modify_and_call_assembling_routine(
+    SystemPerGrid& s,
+    LocalAssembling3D& la,
+    bool assemble_both,
+    TFEFunction3D* velo1,
+    TFEFunction3D* velo2,
+    TFEFunction3D* velo3,
+    TFEFunction3D* sources_and_sinks)
+{
+  // NOTE: velo1 to velo3 and sources_and_sinks must be defined on the right grid
+  // - but currently there is no way to check that...
+
+  // set up the input...
+  std::vector<int> beginParameter = {0};
+
+  TFEFunction3D* fe_funct[5]; //fill up the new fe function array (4th entry is optional, see below)
+  fe_funct[0] = &s.feFunction_;
+  fe_funct[1] = velo1;
+  fe_funct[2] = velo2;
+  fe_funct[3] = velo3;
+
+  std::vector<int> feValueFctIndex = {1,2,3}; // to produce first fe value use fe function 1,
+                                            // for second fe value use function 2 and for third value function 3
+  std::vector<MultiIndex3D> feValueMultiIndex = {D000, D000, D000}; //for all three fe value use 0th derivative,
+
+  int N_parameters = 3; // three parameters (AFTER application of parameterFct...)
+  int N_feValues = 3;   // ...all of them stem from the evaluation of fe fcts
+  int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+
+  // chose the parameter function ("in-out function") which shears away
+  // the first three "in" values (x,y,z) and passes u_x, u_y and u_z
+  std::vector<ParamFct*> parameterFct = {ThreeFEParametersFunction3D};
+
+  if(sources_and_sinks) // rhs source and sink terms are given
+  {
+    // NOTE: sources and sinks must be defined on the right grid
+    // - but currently there is no way to check that...
+
+    fe_funct[4] = sources_and_sinks;
+
+    feValueFctIndex = {1,2,3,4}; // to produce first fe value use fe function 1,
+                               // for second fe value use function 2,
+                               // for third fe value use function 3 and for fourth value use function 4
+
+    feValueMultiIndex = {D000,D000,D000,D000}; //for all four fe value use 0th derivative,
+    N_parameters = 4; // four parameters (AFTER application of parameterFct...)
+    N_feValues = 4;   // ...all four of them stem from the evaluation of fe fcts
+    N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+    // chose the parameter function ("in-out function") which shears away
+    // the first three "in" values (x,y,z) and passes u_x, u_y, u_z and f
+    parameterFct = {FourFEParametersFunction3D};
+
+
+    //THIS IS DOUBLE CODE, but this stuff must be performed before
+    // interpolated_sources_and_sinks and entries_source_and_sinks
+    // go out of scope...
+    // ...and call the corresponding setters
+    la.setBeginParameter(beginParameter);
+    la.setFeFunctions3D(fe_funct); //reset - now velo comp included
+    la.setFeValueFctIndex(feValueFctIndex);
+    la.setFeValueMultiIndex(feValueMultiIndex);
+    la.setN_Parameters(N_parameters);
+    la.setN_FeValues(N_feValues);
+    la.setN_ParamFct(N_paramFct);
+    la.setParameterFct(parameterFct);
+    //...I expect that to do the trick.
+
+    // step 4 - the assembling must be done before the velo functions
+    // run out of scope
+    call_assembling_routine(s, la, assemble_both);
+  }
+  else
+  {
+
+  // ...and call the corresponding setters
+    la.setBeginParameter(beginParameter);
+    la.setFeFunctions3D(fe_funct); //reset - now velo comp included
+    la.setFeValueFctIndex(feValueFctIndex);
+    la.setFeValueMultiIndex(feValueMultiIndex);
+    la.setN_Parameters(N_parameters);
+    la.setN_FeValues(N_feValues);
+    la.setN_ParamFct(N_paramFct);
+    la.setParameterFct(parameterFct);
+  //...I expect that to do the trick.
+
+  // step 4 - the assembling must be done before the velo functions
+  // run out of scope
+  call_assembling_routine(s, la, assemble_both);
   }
 }

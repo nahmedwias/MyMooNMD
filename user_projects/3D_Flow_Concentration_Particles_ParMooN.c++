@@ -18,6 +18,7 @@
 #include <FEDatabase3D.h>
 #include <LoopInfo.h>
 #include <Output3D.h>
+#include <Time_CD3D.h>
 #include <Time_NSE3D.h>
 #include <TimeDiscRout.h>
 
@@ -61,9 +62,16 @@ int main(int argc, char* argv[])
     ParameterDatabase flow_database("Flow Database");
     flow_database.read(fs);
     fs.close();
+
     ParameterDatabase particle_database = flow_database.get_nested_database("Particle Database");
     //enrich the particle database by some general parameters from the flow database
     particle_database.add(flow_database["output_vtk_directory"]);
+
+    ParameterDatabase conc_database = flow_database.get_nested_database("Concentration Database");
+    conc_database.add(flow_database["output_vtk_directory"]);
+
+    ParameterDatabase temp_database = flow_database.get_nested_database("Temperature Database");
+    temp_database.add(flow_database["output_vtk_directory"]);
 
     //This has to do with the old database
     TDatabase Database;
@@ -200,18 +208,26 @@ int main(int argc, char* argv[])
     // set some parameters for time stepping
     SetTimeDiscParameters(0);
 
-    // Choose and construct the flow example.
+    // Construct an object of the Time_NSE3D-problem type.
     Example_TimeNSE3D flow_example(flow_database);
     check_parameters_consistency_NSE(flow_database);
 
-    // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
     Time_NSE3D flow_object(flow_grids, flow_database, flow_example, maxSubDomainPerDof);
 #else
     Time_NSE3D flow_object(flow_grids, flow_database, flow_example);
 #endif
 
-    // the particles object which wraps up Brush
+    // Construct both convection-diffusion objects
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1; //CB THIS IS A PITIFUL REMNANT OF OLD DATABASE
+    Example_TimeCD3D conc_example(conc_database);
+    Time_CD3D conc_object(flow_grids, conc_database, conc_example);
+
+    Example_TimeCD3D temp_example(temp_database);
+    Time_CD3D temp_object(flow_grids, temp_database, temp_example);
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 0; //CB THIS IS A PITIFUL REMNANT OF OLD DATABASE
+
+    // Construct the particles object which wraps up Brush
     BrushWrapper part_object(brush_grid, domain.GetCollection(It_Finest, 0), particle_database);
 
     // PARTS: SET UP INITIAL STATES /////////////////////////////////////////////
@@ -220,15 +236,22 @@ int main(int argc, char* argv[])
     //first assembling of the flow object
     if(!flow_database["force_stationary"])
       flow_object.assemble_initial_time();
+    //get references to the flow components for later use
+    TFEFunction3D& ux = *flow_object.get_velocity_component(0);
+    TFEFunction3D& uy = *flow_object.get_velocity_component(1);
+    TFEFunction3D& uz = *flow_object.get_velocity_component(2);
+    TFEFunction3D& pressure = flow_object.get_pressure();
+
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1; //CB THIS IS A PITIFUL REMNANT OF OLD DATABASE
+    conc_object.assemble_initial_time(&ux,&uy,&uz);
+    temp_object.assemble_initial_time(&ux,&uy,&uz);
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 0; //CB THIS IS A PITIFUL REMNANT OF OLD DATABASE
 
     //set fluid phase in the particle object
-    const TFEFunction3D& ux = *flow_object.get_velocity_component(0);
-    const TFEFunction3D& uy = *flow_object.get_velocity_component(1);
-    const TFEFunction3D& uz = *flow_object.get_velocity_component(2);
-    const TFEFunction3D& pressure = flow_object.get_pressure();
-    TFEFunction3D* dummy_T    = &flow_object.get_pressure();    //TODO Currently the pressure will be our replacement for temperature and concentration
-    TFEFunction3D* dummy_conc = &flow_object.get_pressure();    //TODO Currently the pressure will be our replacement for temperature and concentration
-    std::vector<TFEFunction3D*> fcts = {dummy_T, dummy_conc};
+    TFEFunction3D& T    = temp_object.get_function();
+    TFEFunction3D& c = conc_object.get_function();
+
+    std::vector<TFEFunction3D*> fcts = {&T, &c};
     part_object.reset_fluid_phase(ux, uy, uz, pressure, fcts);
 
     timer.restart_and_print("setting up spaces, matrices and initial assembling");
@@ -239,20 +262,29 @@ int main(int argc, char* argv[])
     double end_time = TDatabase::TimeDB->ENDTIME;
     flow_object.current_step_ = 0;
 
-    // Those two variables are used for the .VTK output filename control
+    // Those four variables are used for the .VTK output filename control
     int flow_image = 0;
     int part_image = 0;
+    int temp_image = 0;
+    int conc_image = 0;
 
     if(flow_database["force_stationary"]) //put it out just once
-      flow_object.output(flow_object.current_step_,flow_image);
+      flow_object.output(flow_object.current_step_, flow_image);
 
     LoopInfo loop_info_time("time loop", true, true, 1);
     int linear_iterations = 0;
     TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
 
     int output_steps_parts = particle_database["output_all_k_steps"];
-    int output_steps_flow = flow_database["output_all_k_steps"];
+    int output_steps_flow  = flow_database["output_all_k_steps"];
+    int output_steps_temp  = temp_database["output_all_k_steps"];
+    int output_steps_conc  = conc_database["output_all_k_steps"];
     int step = 0;
+
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1; //CB THIS IS A PITIFUL REMNANT OF OLD DATABASE
+    temp_object.output(flow_object.current_step_,temp_image);
+    conc_object.output(flow_object.current_step_,conc_image );
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 0; //CB THIS IS A PITIFUL REMNANT OF OLD DATABASE
 
     //======================================================================
     // time iteration
@@ -269,10 +301,13 @@ int main(int argc, char* argv[])
       part_object.reset_fluid_phase(ux,uy,uz, pressure, fcts);
       Output::print(" resetting complete");
       part_object.solve(TDatabase::TimeDB->CURRENTTIME, TDatabase::TimeDB->CURRENTTIME + TDatabase::TimeDB->CURRENTTIMESTEPLENGTH);
+      std::vector<TFEFunction3D*> sources_and_sinks = part_object.sources_and_sinks();
       Output::print(" solving complete");
+
 
       if(!flow_database["force_stationary"])
         flow_object.current_step_++;
+
 
       // setting the time discretization parameters
       SetTimeDiscParameters(1);
@@ -283,10 +318,20 @@ int main(int argc, char* argv[])
 
       Output::root_info("CURRENT TIME", TDatabase::TimeDB->CURRENTTIME);
 
+      //////////////////// THE CONCENTRATIONS //////////////////////
+      Output::print(" CONCENTRATIONS - UPDATE AND SOLVE");
+      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1; //CB THIS IS A PITIFUL REMNANT OF OLD DATABASE
+      temp_object.assemble(&ux,&uy,&uz,sources_and_sinks.at(0));
+      conc_object.assemble(&ux,&uy,&uz,sources_and_sinks.at(1));
+      temp_object.solve();
+      conc_object.solve();
+      TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 0; //CB THIS IS A PITIFUL REMNANT OF OLD DATABASE
+      Output::print(" solving complete");
+
       if(!flow_database["force_stationary"])
       {
         ////////////////////   THE FLOW   //////////////////////
-        Output::print(" PARMOON - UPDATE AND SOLVE");
+        Output::print(" FLOW - UPDATE AND SOLVE");
         // prepare the right hand side vector - needed only once per time step
         flow_object.assemble_rhs();
 
@@ -338,8 +383,15 @@ int main(int argc, char* argv[])
 
       if(step %  output_steps_parts == 0)
         part_object.output(part_image,TDatabase::TimeDB->CURRENTTIME);
+
       if(step % output_steps_flow == 0 && !flow_database["force_stationary"])
         flow_object.output(flow_object.current_step_,flow_image);
+
+      if(step % output_steps_temp == 0)
+        temp_object.output(flow_object.current_step_,temp_image);
+
+      if(step % output_steps_conc == 0)
+        conc_object.output(flow_object.current_step_,conc_image );
 
       timer_timeit.print_total_time(
           "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
