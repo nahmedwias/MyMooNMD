@@ -293,6 +293,12 @@ int TDomain::ReadParam(const char *ParamFile)
       N_Param++;
     }
 
+    if (!strcmp(line, "L_0:"))
+    {
+      dat >> TDatabase::ParamDB->L_0;
+      N_Param++;
+    }
+  
     if (!strcmp(line, "USE_ISOPARAMETRIC:"))
     {
       dat >> TDatabase::ParamDB->USE_ISOPARAMETRIC;

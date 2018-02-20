@@ -132,6 +132,8 @@ class TCollection
    ///@todo it is better to return the vector?
    // std::vector<TBoundEdge*> get_edge_list_on_component(int i);
    // ------------------------------------------------
+   
+   void get_boundary_edge_list(std::vector<TBoundEdge*> &edges);
 
  private:
     /** @brief provide additional arrays */

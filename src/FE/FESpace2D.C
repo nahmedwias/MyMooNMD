@@ -2214,7 +2214,7 @@ void TFESpace2D::GetDOFPosition(double *x, double *y)
 } // end GetDOFPosition
 
 /** return position of one given dof */
-void TFESpace2D::GetDOFPosition(int dof, double &x, double &y)
+void TFESpace2D::GetDOFPosition(int dof, double &x, double &y) const
 {
   int i,j,k;
   TBaseCell *cell;

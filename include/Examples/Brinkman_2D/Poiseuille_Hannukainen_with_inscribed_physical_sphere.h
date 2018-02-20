@@ -18,7 +18,6 @@ void ExampleFile()
 // exact solution
 // ========================================================================
 
-
 void ExactU1(double x, double y, double *values)
 {
     double K = TDatabase::ParamDB->PERMEABILITY;
