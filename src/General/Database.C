@@ -394,12 +394,13 @@ void TDatabase::SetDefaultParameters()
 
   ParamDB->VISCOSITY = 1;
   ParamDB->EFFECTIVE_VISCOSITY = 1;
-  ParamDB->PERMEABILITY = 1;  
+  ParamDB->PERMEABILITY = 1;
   ParamDB->equal_order_stab_weight_PkPk = 0;
   ParamDB->grad_div_stab_weight = 0;
   ParamDB->SIGN_MATRIX_BI = 1;
   ParamDB->l_T = 1;
-
+  ParamDB->L_0 = 1;
+  
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
   ParamDB->VMM_COARSE_LEVEL = 4711;
@@ -1088,6 +1089,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("GRAD_DIV_STAB_WEIGHT: ", ParamDB->grad_div_stab_weight); 
   printToFile("SIGN_MATRIX_BI: ", ParamDB->SIGN_MATRIX_BI);
   printToFile("l_T: ", ParamDB->l_T);
+  printToFile("L_0: ", ParamDB->L_0); 
 
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);
