@@ -12,7 +12,7 @@ OutCondition out_condition;
 namespace FluidProperties
 {
 double eta = 0.0014;     // ( kg /(m*s) ) the dynamic viscosity, (of a Kalialaun solution, VW)
-double rho = 1050; // ( kg / m^3  ) the density (of a Kalialaun solution, VW)
+double rho = 1050; // ( kg / m^3  ) the density (of a Kalialaun solution, VW) (assumed to be constant)
 
 double u_infty = 1;    // (m/s) the characteristic velocity of the fluid
 double l_infty = 1;    // (m) the characteristic length scale of the tube
@@ -22,12 +22,15 @@ double r_out = 0.075; //m the radius of the outlet
 double z_out = 0.5;   //m the distance from inflow to outflow
 
 double mass_flow_rate = 0; // (kg/s) the mass flow rate at in- and outflow
-double u_avg_in  = 0; //0.047157;   //m/s
-double u_max_in  = 0; //m/s, assuming HP-inflow
-double u_avg_out  = 0; //m/s
+double u_avg_in  = 0;      //m/s Those quantitites are computed according
+double u_max_in  = 0;      //m/s to the entered mass flow, assuming HP-inflow.
+double u_avg_out  = 0;     //m/s
 
-double diffusion_ALUM = 5.4e-10; //m^2/s, from Volker's kali alaun paper stub
-double M_ALUM = 0.4743884; //kg/mol, the molar mass of potash alum dodecahydrate
+double diffusion_ALUM = 5.4e-10; // m^2/s, from Volker's kali alaun paper stub
+double M_ALUM = 0.4743884;       // kg/mol, the molar mass of potash alum dodecahydrate
+double M_A = 0.258205;           // kg/mol, the molar mass of potash alum anhydrate
+double beta_A = 0.54429029;      // 0.258205 kg/mol / 0.4743884 kg/mol - the mass fraction
+                                 // of KAL(SO_4)_2 (anhydrate) in the potash alum dodecahydrate
 
 double lambda = 0.6;  // W/(m  * K), thermal  conductivity  (of the fluid), from Volker's kali alaun paper stub
 double c_p = 3841;    // J/(kg * K), specific heat capacity (of the fluid), from Volker's kali alaun paper stub
@@ -37,8 +40,8 @@ double c_p = 3841;    // J/(kg * K), specific heat capacity (of the fluid), from
 double T_inlet = 289.15;   //16 Celsius
 double T_initial = 288.15; //15 Celsius
 double T_wall = 287.15;    //14 Celsius
-double cALUM_inlet =  110; //mol/m^3, only slight supersaturation (nach Gefuehl...)
-double cALUM_initial = 110; //mol/m^3, only slight supersaturation (nach Gefuehl...)
+double cALUM_inlet =  200;  //mol anhydrate/m^3, only slight supersaturation (nach Gefuehl...)
+double cALUM_initial = 200; //mol anhydrate/m^3, only slight supersaturation (nach Gefuehl...)
 
 void set_r_out(double new_r_out)
 {
@@ -92,38 +95,48 @@ std::string out_condition_string()
 // This computes the "concentration" of alum supersaturation, which is needed
 // by Brush in order to compute the growth rate. The growth model we use here
 // was communicated by V.Wiedmeyer, and it is formulated in terms of the
-// relative mass-fraction supersaturation. To be precise, the model requires
-// the term:
-// \( \frac{w_\text{alum} - w_\text{alum,eq}}{w_\text{alum,eq}} \) ^ 2.1
-// This dimensionless number is computed by this function, and then handed over
-// to Brush by the somewhat misleading name "PAL_SUPSAT_POW2".
-// w_\text{alum} [kg/kg]is the mass fraction of potash alum,
-// w_\text{alum,eq} [kg/kg] is the equilibrium mass fraction, which is given by
+// relative mass-fraction supersaturation. The growth model comes from
+//    Temmel et.al.(2016): A Short-Cut Method for the Quantification of
+//    Crystallization Kinetics. 1. Method Development. Crystal Growth &
+//    Design, 16 (12), 6743-6755,
+// and it is formulated in a different supersaturation measure, i.e.,
+// in kg hydrate / kg added solvent.
+// To be precise, the model requires the term:
+//    (S-1)^g
+// with exponent g = 1.4 and the supersaturation measure
+//    S = w_A/w_eq,A (=m_A/m_eq,A = c_A/c_eq,A ... these ratios are all the same!)
+// w_A [kg/kg]is the mass fraction of anhydrate
+// w_eq,A [kg/kg] is the equilibrium anhydrate mass fraction, which is given by
 // a fitted quadratic polynomial (in temperature T) here.
-double derived_concentration_PAL_SUPSAT_POW2(const std::vector<double>& data)
+// This dimensionless number is computed by this function, and then handed over
+// to Brush by the name "PAL_SUPSAT_POWG".
+
+double derived_concentration_PAL_SUPSAT_POWG(const std::vector<double>& data)
 {
   if(data.size() != 7)
-    throw std::runtime_error("derived_concentration_PAL_SUPSAT_POW2: "
-        "expected 7 data points. ux, uy, uz, p, T, POTASHALUM, 0(PAL_SUPSAT_POW2)");
+    throw std::runtime_error("derived_concentration_PAL_SUPSAT_POWG: "
+        "expected 7 data points. ux, uy, uz, p, T, POTASHALUM, 0(PAL_SUPSAT_POWG)");
 
   double T = data[4];     // grab temperature [K]
-  double c_alum = data[5]; // grab alum concentration [mol/m^3]
+  double c_A = data[5];   // grab alum anhydrate concentration [mol/m^3]
 
-  double w_alum = c_alum * FluidProperties::M_ALUM / FluidProperties::rho; //this is the alum mass fraction [kg/kg]
+  double w_A = c_A * FluidProperties::M_A / FluidProperties::rho; //this is the alum anhydrate mass fraction [kg/kg]
   double a = 4.6608e-5;
   double b = -0.025716;   //three coefficients of the following polynomial,
   double c = 3.5886;      //they were experimentally determined by the colleagues from MD
-  double w_alum_eq = a * T * T + b * T + c;
+  double w_A_eq = a * T * T + b * T + c;
 
-  double rel_sup_sat = (w_alum - w_alum_eq) / w_alum_eq;
+  double rel_sup_sat = w_A/w_A_eq - 1;
 
 //  //CB DEBUG
-//  std::cout << "c_alum_eq:" << w_alum_eq * FluidProperties::rho / FluidProperties::M_ALUM << std::endl;
-//  std::cout << "w_alum: " << w_alum << std::endl;
-//  std::cout << "w_alum_eq: " << w_alum_eq << std::endl;
+//  std::cout << "c_A:" << c_A << std::endl;
+//  std::cout << "c_A_eq:" << w_A_eq * FluidProperties::rho / FluidProperties::M_A << std::endl;
+//  std::cout << "w_A: " << w_A << std::endl;
+//  std::cout << "w_A_eq: " << w_A_eq << std::endl;
 //  //END DEBUG
 
-  return rel_sup_sat > 0 ? pow(rel_sup_sat, 2.1) : 0; // return the supersaturation to the power of 2.1, as the model requires
+  // return the supersaturation to the power of 1.4, as the model requires, or 0 if there is no supersaturation
+  return rel_sup_sat > 0 ? pow(rel_sup_sat, 1.4) : 0;
 
 }
 //! Some information that is necessary to set up the BrushWrapper for this example.
@@ -136,17 +149,16 @@ namespace BrushInfo
   // Potash alum saturation concentration "to the power of 2.1" is a derived quantity.
   size_t parameter_n_specs_derived = 1;
   // Names of the parameters to be sent to Brush, just for double-checking.
-  std::vector<std::string> parameter_term_names = {"ux","uy","uz","p","T","POTASHALUM","PAL_SUPSAT_POW2"};
+  std::vector<std::string> parameter_term_names = {"ux","uy","uz","p","T","POTASHALUM","PAL_SUPSAT_POWG"};
   // Function to compute potash alum saturation concentration "to the power of 2.1" is a derived quantity.
   std::vector<std::function<double(const std::vector<double>&)>> parameter_specs_derived_fcts =
-  {derived_concentration_PAL_SUPSAT_POW2};
+  {derived_concentration_PAL_SUPSAT_POWG};
   //! Names of the functions that are requested from Brush.
   std::vector<Exmpl::SourceAndSinkTerms> source_and_sink_fct_requests =
     { Exmpl::SourceAndSinkTerms::PotashAlumCrystEnergyRelease,
       Exmpl::SourceAndSinkTerms::PotashAlumCrystConcConsumption };
   //! Names of the functions that are expected from Brush in return.
   std::vector<std::string> source_and_sink_term_names = {"T_sources", "c_POTASHALUM_sinks" };
-
 
 }
 
