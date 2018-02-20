@@ -104,7 +104,7 @@ std::string out_condition_string()
 // To be precise, the model requires the term:
 //    (S-1)^g
 // with exponent g = 1.4 and the supersaturation measure
-//    S = w_A/w_eq,A (=m_A/m_eq,A = c_A/c_eq,A ... these ratios are all the same!)
+//    S = ... TODO describe the reformulation due to different concentration measures here
 // w_A [kg/kg]is the mass fraction of anhydrate
 // w_eq,A [kg/kg] is the equilibrium anhydrate mass fraction, which is given by
 // a fitted quadratic polynomial (in temperature T) here.
@@ -126,7 +126,8 @@ double derived_concentration_PAL_SUPSAT_POWG(const std::vector<double>& data)
   double c = 3.5886;      //they were experimentally determined by the colleagues from MD
   double w_A_eq = a * T * T + b * T + c;
 
-  double rel_sup_sat = w_A/w_A_eq - 1;
+  double rel_sup_sat = w_A*(FluidProperties::beta_A - w_A_eq) /
+                       (w_A_eq * (FluidProperties::beta_A - w_A)) - 1;
 
 //  //CB DEBUG
 //  std::cout << "c_A:" << c_A << std::endl;
