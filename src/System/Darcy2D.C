@@ -210,10 +210,6 @@ void Darcy2D::solve()
 /** ************************************************************************ */
 void Darcy2D::output(int i)
 {
-	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
-	if(no_output)
-		return;
-
   System_per_grid & s = this->systems.front();
   if((size_t)db["verbosity"]> 1)
   {
@@ -221,10 +217,10 @@ void Darcy2D::output(int i)
     s.p.PrintMinMax();
   }
   
-  if(db["output_write_vtk"])
-  {
+  if(i < 0)
+    outputWriter.write();
+  else
     outputWriter.write(i);
-  }
   if(db["output_compute_errors"])
   {
     DoubleFunct2D *const *Exact = &(example.get_exact())[0];

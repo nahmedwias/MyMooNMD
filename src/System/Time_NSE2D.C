@@ -1241,14 +1241,10 @@ void Time_NSE2D::output(int m)
 {
   System_per_grid& s = this->systems.front();
 
-  bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
-  if(no_output)
-    return;
-
   TFEFunction2D * u1 = s.u.GetComponent(0);
   TFEFunction2D * u2 = s.u.GetComponent(1);
 
-  if((size_t)db["verbosity"]> 1)
+  if((size_t)db["verbosity"] > 1)
   {
     u1->PrintMinMax();
     u2->PrintMinMax();
@@ -1332,14 +1328,7 @@ void Time_NSE2D::output(int m)
   delete u1;
   delete u2;
 
-  if(time_stepping_scheme.current_step_ % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-  {
-    if(db["output_write_vtk"])
-    {
-      int m = time_stepping_scheme.current_step_/TDatabase::TimeDB->STEPS_PER_IMAGE;
-      outputWriter.write(m);
-    }
-  }
+  outputWriter.write(TDatabase::TimeDB->CURRENTTIME);
 
   if(db["write_solution_binary"].is(true))
   {

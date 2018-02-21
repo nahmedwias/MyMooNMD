@@ -9,8 +9,9 @@
 using namespace std;
 
 PostProcessing2D::PostProcessing2D(const ParameterDatabase& param_db)
- : testcaseDir(), testcaseName(), period(1), FEFunctionArray(),
-   FEVectFunctArray(), Coll(nullptr), timeValues()
+ : testcaseDir(), testcaseName(), n_steps_per_output(1), 
+   n_steps_until_next_output(0), FEFunctionArray(), FEVectFunctArray(),
+   Coll(nullptr), timeValues()
 {
   // set the variables depending on input parameters
   ParameterDatabase db = ParameterDatabase::default_output_database();
@@ -26,7 +27,7 @@ PostProcessing2D::PostProcessing2D(const ParameterDatabase& param_db)
 
   testcaseName = db["output_basename"].get<std::string>();
   testcaseDir = db["output_vtk_directory"].get<std::string>();
-  //period = db["steps_per_output"];
+  n_steps_per_output = std::max<size_t>(1, db["steps_per_output"]); // avoid 0
 };
 
 
@@ -81,52 +82,50 @@ void PostProcessing2D::add_fe_vector_function(
 
 void PostProcessing2D::write(double current_time)
 {
-  if(writeVTK)
+  if(n_steps_until_next_output != 0)
   {
-    std::string name;
-    name += testcaseDir + "/" + testcaseName;
-    name += std::to_string(timeValues.size());
-    name += ".vtk";
-    Output::print<2>(" PostProcessing2D:: writing ", name);
-    writeVtk(name);
+    n_steps_until_next_output--;
   }
-  if(writeCASE)
+  else
   {
+    n_steps_until_next_output = n_steps_per_output-1;
     timeValues.push_back(current_time);
-    if(timeValues.size() == 1) // first call to this method
+    // index of current time step in 'timeValues'
+    auto index = timeValues.size() - 1;
+    if(writeVTK)
     {
-      // write geometry only in the first iteration
-      writeCaseGeo();
+      std::string name;
+      name += testcaseDir + "/" + testcaseName;
+      name += std::to_string(index*n_steps_per_output);
+      name += ".vtk";
+      Output::print<2>(" PostProcessing2D:: writing ", name);
+      writeVtk(name);
     }
-    writeCaseVars(timeValues.size()-1);
-    writeCaseFile();
+    if(writeCASE)
+    {
+      if(index == 0) // first call to this method
+      {
+        // write geometry only in the first iteration
+        writeCaseGeo();
+      }
+      writeCaseVars(index*n_steps_per_output);
+      writeCaseFile();
+    }
   }
 }
 
-void PostProcessing2D::write(int i)
+void PostProcessing2D::write()
 {
   if(writeVTK)
   {
-    std::string name;
-    name += testcaseDir + "/" + testcaseName;
-    if(i>=0)
-    {
-      name += std::to_string(i);
-    }
-    name += ".vtk";
+    std::string name = testcaseDir + "/" + testcaseName + ".vtk";
     Output::print<2>(" PostProcessing2D:: writing ", name);
     writeVtk(name);
   }
   if(writeCASE)
   {
-    // we reuse (slightly abuse) the variable 'timeValues' here
-    timeValues.push_back(i);
-    if(timeValues.size() == 1) // first call to this method
-    {
-      // write geometry only in the first iteration
-      writeCaseGeo();
-    }
-    writeCaseVars(timeValues.size()-1);
+    writeCaseGeo();
+    writeCaseVars(0);
     writeCaseFile();
   }
 }
@@ -656,8 +655,6 @@ int N_LocVertices, TVertex **Vertices)
   int i,j,k,l;               // loop variables
   const TFEFunction2D *fefunction; // this function, which is discontinuous
   TBaseCell *current_cell;
-  double **allValues;        // in case of vector valued basis functions, store
-                             // all values of all components
   // copy the file name add a string to the output file name
   std::string disc = fileName + std::string("_disc.vtk");
 
@@ -682,7 +679,8 @@ int N_LocVertices, TVertex **Vertices)
   for(i=0;i<N_LocVertices;i++)
   {
 #ifdef __3D__
-    //Vertices[i]->GetCoords(x,y,z);
+    double z;
+    Vertices[i]->GetCoords(x,y,z);
     OutPut("writeVtkDiscontinuous has to be checked for 3D"<<endl);
     exit(4711);
 #else
@@ -746,9 +744,10 @@ int N_LocVertices, TVertex **Vertices)
         for(j=0;j<N_CellVertices;j++)
         {
 #ifdef __3D__
-          ;
+          double z;
+          current_cell->GetVertex(j)->GetCoords(x, y, z);
 #else
-          current_cell->GetVertex(j)->GetCoords(x,y);
+          current_cell->GetVertex(j)->GetCoords(x, y);
 #endif
           fefunction->FindValueLocal(current_cell,i,x,y, &function_value);
           dat << function_value << endl;
@@ -760,9 +759,9 @@ int N_LocVertices, TVertex **Vertices)
     {
       // find values for all components
       double function_value[BaseVectDim]; // function values at a vertex
-      allValues = new double*[BaseVectDim];
-      for(l=0; l<BaseVectDim; l++)
-        allValues[l] = new double[N_LocVertices];
+      // store all values of all components
+      std::vector<std::vector<double>> 
+          allValues(BaseVectDim, std::vector<double>(N_LocVertices));
       k=0;
       for(i=0;i<N_Elements;i++)
       {
@@ -801,9 +800,6 @@ int N_LocVertices, TVertex **Vertices)
           }
         }
       }
-      for(l=0; l<BaseVectDim; l++)
-        delete [] allValues[l];
-      delete [] allValues;
     }
     else
       Output::print("TOutput2D::writeVtkDiscontinuous: Basis functions of "
@@ -858,7 +854,7 @@ void PostProcessing2D::writeCaseFile()
   casf << "time set: 1\n";
   casf << "number of steps: " << std::max(1U, n_time_steps) << endl;
   casf << "filename start number: 0\n";
-  casf << "filename increment: " << period << "\n";  
+  casf << "filename increment: " << n_steps_per_output << "\n";  
   casf << "time values:\n";
   for(unsigned int i = 0; i < n_time_steps; i++)
   {
@@ -1151,13 +1147,13 @@ void PostProcessing2D::writeCaseVars(int iter)
 void PostProcessing2D::sort(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, *rr, len;
+  int i, j, len;
   TVertex *Mid, *Temp;
   double lend = length;
 
   len=(int)(2*log(lend)/log((double) 2.0)+2);
 
-  rr=new int[2*len];
+  std::vector<int> rr(2 * len);
   do
   {
     do
@@ -1194,8 +1190,6 @@ void PostProcessing2D::sort(TVertex **Array, int length)
     if (i<r) l=i;
 
   } while (i<r);
-
-  delete [] rr;
 }
 
 

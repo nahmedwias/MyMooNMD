@@ -40,8 +40,10 @@ class PostProcessing2D
   bool writeVTK;
   bool writeCASE;
 
-  ///@brief number of iterations between two outputs 
-  size_t period;
+  /// @brief number of iterations between two outputs 
+  size_t n_steps_per_output;
+  /// @brief counting the steps until next output is written
+  mutable int n_steps_until_next_output;
 
   // -------------------------------------------------------------------------
 
@@ -83,19 +85,14 @@ class PostProcessing2D
   /**
      @brief write data to files during time dependent problems.
      You need to have added at least one fe function or fe vector function.
-     @param[in] t: the physical time
+     @param[in] t the physical time
   */
   void write(double t);
   /**
      @brief write data a file (mainly for stationary problems).
      You need to have added at least one fe function or fe vector function.
-     If i is negative, it will not be used for the filename.
-     
-     If you want to write more than one case file with this function, I am not 
-     sure if it works correctly.
-     @param[in] i: an integer used for the naming of the file
   */
-  void write(int i=-1);
+  void write();
   
   // -------------------------------------------------------------------------
  protected:

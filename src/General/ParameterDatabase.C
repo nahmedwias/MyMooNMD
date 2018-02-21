@@ -1380,7 +1380,7 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	         "This string is prepended to most files written by ParMooN. "
 	         "This includes also vtk- and case-files");
 
-	  db.add("steps_per_output", 1,
+	  db.add("steps_per_output", (size_t)1,
 	         "This integer specifies how many (time) steps are performed "
 		 "before writing the results ");
 

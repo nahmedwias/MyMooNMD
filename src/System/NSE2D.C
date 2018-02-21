@@ -707,7 +707,10 @@ void NSE2D::output(int i)
 
   outputWriter.add_fe_function(&s.p);
   outputWriter.add_fe_vector_function(&s.u);
-  outputWriter.write(i);
+  if(i < 0)
+    outputWriter.write();
+  else
+    outputWriter.write(i);
   
   /*
   // write solution to a vtk file
