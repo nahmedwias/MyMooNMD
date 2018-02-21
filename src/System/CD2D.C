@@ -281,7 +281,10 @@ void CD2D::output(int i)
   fe_function.PrintMinMax();
   
   // write solution to a vtk file or in case-format
-  outputWriter.write(i);
+  if(i < 0)
+    outputWriter.write();
+  else
+    outputWriter.write(i);
 
   /*
   // implementation with the old class TOutput2D
