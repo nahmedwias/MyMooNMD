@@ -31,6 +31,11 @@ namespace mixing_layer_us
 #include "TNSE_2D/MixingLayerSlipSmallSquares.h"
 }
 
+namespace backward_facing_step
+{
+#include "TNSE_2D/backward_facing_step.h"
+}
+
 Example_TimeNSE2D::Example_TimeNSE2D(
   const ParameterDatabase& user_input_parameter_db)
  : Example_NonStationary2D(user_input_parameter_db)
@@ -141,6 +146,30 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       post_processing_stat = flow_around_cylinder_steady_inflow::compute_drag_lift_pdiff;
 
       flow_around_cylinder_steady_inflow::ExampleFile();
+      break;
+    case 4:
+      exact_solution.push_back( backward_facing_step::ExactU1 );
+      exact_solution.push_back( backward_facing_step::ExactU2 );
+      exact_solution.push_back( backward_facing_step::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( backward_facing_step::BoundCondition );
+      boundary_conditions.push_back( backward_facing_step::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( backward_facing_step::U1BoundValue );
+      boundary_data.push_back( backward_facing_step::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = backward_facing_step::LinCoeffs;
+      
+      initialCondition.push_back(backward_facing_step::InitialU1);
+      initialCondition.push_back(backward_facing_step::InitialU2);
+      
+      backward_facing_step::ExampleFile();
+      backward_facing_step::DIMENSIONLESS_VISCOSITY = this->get_nu();
       break;
     case 6:
       exact_solution.push_back( mixing_layer_us::ExactU1 );
