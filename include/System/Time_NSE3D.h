@@ -277,7 +277,6 @@ class Time_NSE3D
     * This assembling occurs just once, before entering any loop. It assembles
     * linear terms only.
     */
-    void assemble_initial_time_m();
     void assemble_initial_time();
 
     /** @brief Assemble the rhs only
@@ -434,6 +433,10 @@ private:
   
   /// @brief
   void restrict_function();
+  
+  /// @brief do upwinding for the multigrid multilevel method
+  void do_upwinding_for_mdml(std::vector<TSquareMatrix3D*> &sqMat, 
+	std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type);
 };
 
 

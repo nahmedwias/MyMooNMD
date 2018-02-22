@@ -1849,6 +1849,11 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
       Output::info("Pressure Projection","BlockFEMatrix identified as enclosed-flow saddle point matrix. "
                    "Pressure projection enabled.");
 
-  return needs_prc;
+  //TODO: Fix me please
+  if(TDatabase::ParamDB->RE_NR == 180.)
+    return false;
+  else
+    return needs_prc;
+  
 
 }
