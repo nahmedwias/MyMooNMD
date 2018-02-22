@@ -50,6 +50,9 @@ public:
     /// the time iteration. 
     unsigned int current_step_;
     
+    /// @brief 
+    double current_time_;
+    
     /// @brief return a default TimeDiscretization parameter database
     /// Using the TimeDiscretization class requires these parameters.
     static ParameterDatabase default_TimeDiscretization_database();

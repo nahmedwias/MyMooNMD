@@ -84,6 +84,21 @@ class Time_NSE3D
       TFEVectFunct3D u_;
       /** @brief Finite Element function for pressure */
       TFEFunction3D p_;
+      
+      /** @brief old solution vectors for BDF and 
+       * residual stabilized methods 
+       */
+      BlockVector solution_m1_;
+      /** @brief Finite Element function for velocity */
+      TFEVectFunct3D um1_;
+      /** @brief Finite Element function for pressure */
+      TFEFunction3D pm1_;
+      /** @brief solution vector from previous two time steps */
+      BlockVector solution_m2_;
+      /** @brief Finite Element function for velocity */
+      TFEVectFunct3D um2_;
+      /** @brief Finite Element function for pressure */
+      TFEFunction3D pm2_;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -209,6 +224,23 @@ class Time_NSE3D
     
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
+    
+    /** @brief projection space used for VMS method*/
+    std::shared_ptr<TFESpace3D> projection_space_;
+    
+    /** @brief finite element function for vms projection*/
+    // can we rename it to large scales?? also check BlockVector!! currently just vector
+    std::vector<double> vms_small_resolved_scales; 
+    std::shared_ptr<TFEVectFunct3D> vms_small_resolved_scales_fefct;
+    /** matrices for turbulence model*/
+    std::array<std::shared_ptr<FEMatrix>, int(7)> matrices_for_turb_mod;
+    
+    // piecewise constant space containing the labels of the local projection space
+    std::shared_ptr<TFESpace3D> label_for_local_projection_space_;
+    // vector used for indicating local projection space 
+    std::vector<double> label_for_local_projection;
+    // finite element function for local projection space
+    std::shared_ptr<TFEFunction3D> label_for_local_projection_fefct;
 
  public:
 
@@ -229,16 +261,6 @@ class Time_NSE3D
     Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
                const Example_TimeNSE3D& example);
 #endif
-    
-// ======================================================================
-    /** @brief This returns the number of the current time step.
-     * This counter is set at 0 before the time loop and is incremented at each
-     * time step (but not at each sub-step) in the main program.
-     * It can be useful to give info to the members of the class. It is for example
-     * used in IMEX scheme to detect when we passed 2 time steps, so that we
-     * are guaranteed to have saved both old_solution_ and old_solution2_ correctly.    */
-    int current_step_;
-
 // ======================================================================
     /** @brief check parameters in database
     *
@@ -265,7 +287,6 @@ class Time_NSE3D
     * discretization but should be outside the nonlinear loop.
     */
     void assemble_rhs();
-    void assemble_rhs_m();
 
     /** @brief Assemble the nonlinear terms
      * Assemble the nonlinear terms. Need not be used when this is

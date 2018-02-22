@@ -27,5 +27,5 @@ double frobeniusNormTensor(double* u, double* gradu,double *uConv,  int proj_spa
 /// compute turbulence viscosity using Smagorinsky model
 // ======================================================================
 double turbulentViscosity3D(double hK, double* u, double* gradu, double* uConv, 
-                            double* x, double* y, double* z);
+                            double* x, double* y, double* z, double proj_space);
 #endif

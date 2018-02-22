@@ -34,6 +34,11 @@ namespace flow_around_cylinder_instationary
 #include "TNSE_3D/FlowAroundCylinder_instat.h"   // 6
 }
 
+namespace channel_rey180    // 7
+{
+#include "TNSE_3D/ChannelTau180.h"
+}
+
 //=========================================================
 Example_TimeNSE3D::Example_TimeNSE3D(
   const ParameterDatabase& user_input_parameter_db)
@@ -286,6 +291,43 @@ Example_TimeNSE3D::Example_TimeNSE3D(
 
       /** some variables to change values in the example */
       flow_around_cylinder_instationary::DIMENSIONLESS_VISCOSITY = this->get_nu();
+
+      ExampleFile();
+      break;
+    }
+    case 7:
+    {
+      using namespace channel_rey180;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** initial conditions */
+      initialCondtion.push_back( InitialU1 );
+      initialCondtion.push_back( InitialU2 );
+      initialCondtion.push_back( InitialU3 );
+      
+      //setCoordinates = channel_rey180::SetZCoordinates;
+      //checkCoordinates = channel_rey180::CheckZCoordinates;
+      
+      channel_rey180::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ExampleFile();
       break;
