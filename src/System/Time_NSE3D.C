@@ -1199,32 +1199,10 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
 	     sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
              rhs_array.size(), rhs_array.data(), space_rhs.data(),
              boundary_conditions, boundary_values.data(), localAssembling);
-  
+
+  // do upwinding for the mdml case
   if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
-  {
-    double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
-    switch(TDatabase::ParamDB->NSTYPE)
-    {
-      case 1:
-      case 2:
-        UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
-                                fefunctions[2], one_over_nu);
-        Output::print<3>("UPWINDING DONE with 1 square matrices.");
-      break;
-      case 3:
-      case 4:
-      case 14:
-        UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
-                                fefunctions[2], one_over_nu);
-        UpwindForNavierStokes3D(sqMat[1], fefunctions[0], fefunctions[1],
-                                fefunctions[2], one_over_nu);
-        UpwindForNavierStokes3D(sqMat[2], fefunctions[0], fefunctions[1],
-                                fefunctions[2], one_over_nu);
-        Output::print<3>("UPWINDING DONE with 3 square matrices.");
-        break;
-    }
-  }
-  
+    this->do_upwinding_for_mdml(sqMat, fefunctions, type);
 }
 /**************************************************************************** */
 void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s, 
@@ -1473,4 +1451,57 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
     rm->reset();
 }
 /**************************************************************************** */
+void Time_NSE3D::do_upwinding_for_mdml(std::vector<TSquareMatrix3D*> &sqMat, 
+std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type)
+{
+  double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+    case 2:
+      UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
+			      fefunctions[2], one_over_nu);
+      Output::print<3>("UPWINDING DONE with 1 square matrices.");
+    break;
+    case 3:
+    case 4:
+    case 14:
+      if(type == LocalAssembling3D_type::TNSE3D_LinGAL)
+      {
+	UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[5], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[10], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+      }
+      else if(!db_["space_discretization_type"].is("galerkin") 
+	      && type == LocalAssembling3D_type::TNSE3D_NLGAL)
+      {
+	UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[4], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[8], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+      }
+      else if(db_["space_discretization_type"].is("galerkin") 
+	      && type == LocalAssembling3D_type::TNSE3D_NLGAL)
+      {
+	UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[1], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[2], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+      }
+      else
+      {
+	ErrThrow("UPWINDING for the method ", db_["space_discretization_type"], " is not supported so far!!");
+      }
+      Output::print<3>("UPWINDING DONE with 3 square matrices.");
+      break;
+  }
+}
+
 /** ************************************************************************ */

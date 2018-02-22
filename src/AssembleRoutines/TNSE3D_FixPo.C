@@ -3958,8 +3958,10 @@ void TimeNSType3_4NLGalerkinDD3D(double Mult, double *coeff,
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
-      
-      val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
+	val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      else
+	val1 = 0.;
       val1 += (test100*ansatz100+test010*ansatz010 +test001*ansatz001);
       Matrix11Row[j] += test100*ansatz100+val1;
       Matrix22Row[j] += test010*ansatz010+val1;
