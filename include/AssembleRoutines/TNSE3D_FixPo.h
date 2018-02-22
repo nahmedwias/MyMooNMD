@@ -369,13 +369,6 @@ void TimeNSType4GL00AuxProblemDD3D(double Mult, double *coeff,
 //                                                 0, 0, 0, 0, 0, 0,
 //                                                 2, 0, 0, 0, 1, 1, 1,
 //                                                 2, 2, 2, 0, 0, 0};
-                                                 
-void TimeNSType4VMS_ProjectionDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
-
-
 // ======================================================================
 // Type 4, VMS_Projection with streamline formulation D(u):D(v)
 // ======================================================================
@@ -657,11 +650,6 @@ void TimeNSType3_4NLGalerkin3D(double Mult, double *coeff,
 //                                                0, 0, 0, 0, 0, 0};
 //static int TimeNSType3_4NLVMS_ProjectionColumnSpace[12] = { 0, 0, 0, 0, 0, 0,
 //                                                   0, 0, 0, 2, 2, 2};
-
-void TimeNSType3_4NLVMS_ProjectionDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
-                double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
 // Type 3, VMS_Projection, D(u):D(v), adaptive coarse space

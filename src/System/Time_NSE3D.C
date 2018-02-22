@@ -13,6 +13,7 @@
 #include <Multigrid.h>
 
 #include <LocalAssembling3D.h>
+#include <Variational_MultiScale3D.h>
 
 #include <sys/stat.h>
 
@@ -97,6 +98,18 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
                      solution_.length(0), 3);
   p_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_.block(3),
                     solution_.length(3));
+  //
+  solution_m1_=BlockVector(matrix_, false);
+  um1_ = TFEVectFunct3D(&velocitySpace_, "u", "u", solution_m1_.block(0),
+                     solution_m1_.length(0), 3);
+  pm1_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_m1_.block(3),
+                    solution_m1_.length(3));
+  //
+  solution_m2_=BlockVector(matrix_, false);
+  um2_ = TFEVectFunct3D(&velocitySpace_, "u", "u", solution_m2_.block(0),
+                     solution_m1_.length(0), 3);
+  pm2_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_m2_.block(3),
+                    solution_m2_.length(3));
 
 #ifdef _MPI
   velocitySpace_.initialize_parallel(maxSubDomainPerDof);
@@ -117,8 +130,7 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
    solver_(param_db), defect_(), old_residual_(), 
    initial_residual_(1e10), errors_(), oldtau_(), 
-   time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false),
-   current_step_(0)
+   time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false)
 {
   db_.merge(param_db);
   this->check_and_set_parameters();
@@ -149,6 +161,73 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 #else
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
 #endif
+  // projection-based VMS, only on the finest level 
+  if(db_["space_discretization_type"].is("vms_projection"))
+  {
+    // VMS projection order 
+    int projection_order = db_["vms_projection_space_order"];
+    if(projection_order < 0)
+      projection_order = 0;
+    
+    // projection space
+    projection_space_ = 
+       std::make_shared<TFESpace3D>(collections_.front(), (char*)"L",  
+                           (char*)"vms projection space", example_.get_bc(2), 
+                           DiscP_PSpace, projection_order);
+    int ndofP = projection_space_->GetN_DegreesOfFreedom();
+   
+    // create vector for vms projection, used if small resolved scales are needed
+    this->vms_small_resolved_scales.resize(6*ndofP);
+    // finite element vector function for vms projection
+    this->vms_small_resolved_scales_fefct = 
+       std::make_shared<TFEVectFunct3D>(projection_space_.get(), (char*)"v", (char*)"v", 
+                                        &vms_small_resolved_scales[0], ndofP, 6);
+
+ 
+    // create the label space, used in the adaptive method   
+    int n_cells = collections_.front()->GetN_Cells();
+    // initialize the piecewise constant vector
+    if(projection_order == 0)
+      this->label_for_local_projection.resize(n_cells, 0);
+    else if(projection_order == 1)
+      this->label_for_local_projection.resize(n_cells, 1);
+    else
+      ErrThrow("local projection space is not defined");
+    
+    // create fefunction for the labels such that they can be passed to the assembling routines
+    label_for_local_projection_space_ = 
+      std::make_shared<TFESpace3D>(collections_.front(), (char*)"label_for_local_projection", 
+                                   (char*)"label_for_local_projection", example_.get_bc(2), DiscP_PSpace, 0);
+    // finite element function for local projection space
+    this->label_for_local_projection_fefct = 
+      std::make_shared<TFEFunction3D>(label_for_local_projection_space_.get(), (char*)"vms_local_projection_space_fefct", 
+                                      (char*)"vms_local_projection_space_fefct", &label_for_local_projection[0], 
+                                      n_cells);
+   
+    // matrices for the vms method needs to assemble only on the 
+    // finest grid. On the coarsest grids, the SMAGORINSKY model 
+    // is used and for that matrices are available on all grids:
+    switch(TDatabase::ParamDB->NSTYPE)
+    {
+      case 1: case 2:
+        ErrThrow("VMS projection cannot be supported for NSTYPE  ", 
+                 TDatabase::ParamDB->NSTYPE);
+        break;
+      case 3: case 4: case 14:
+        const TFESpace3D& velocity_space = this->get_velocity_space();
+        // matrices G_tilde
+        matrices_for_turb_mod.at(0) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        matrices_for_turb_mod.at(1) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        matrices_for_turb_mod.at(2) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        // matrices G
+        matrices_for_turb_mod.at(3) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        matrices_for_turb_mod.at(4) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        matrices_for_turb_mod.at(5) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        // mass matrix 
+        matrices_for_turb_mod.at(6) = std::make_shared<FEMatrix>(projection_space_.get(), projection_space_.get());
+        break;
+    }
+  }
   if(usingMultigrid)
   {
     auto mg = this->solver_.get_multigrid();
@@ -263,16 +342,16 @@ void Time_NSE3D::check_and_set_parameters()
          << " does not supported");
    throw("TIME_DISC: 0 is not supported");
  }
+ // Pressure blocks are linear for all methods except for 
+ // Residual Based stabilization methods
+ // set scaling number of blocks that will be scaled by the 
+ // factor times the time step length for each time discretization
+ // shceme, e.g., 0.5*tau in Crank-Nicolson scheme
+ time_stepping_scheme.n_scale_block = 6;
+ time_stepping_scheme.b_bt_linear_nl = "linear";
  // standard method
  if(db_["space_discretization_type"].is("galerkin"))
- {
    space_disc_global = 1;
-   // set scaling number of blocks that will be scaled by the 
-   // factor times the time step length for each time discretization
-   // shceme, e.g., 0.5*tau in Crank-Nicolson scheme
-   time_stepping_scheme.n_scale_block = 6;
-   time_stepping_scheme.b_bt_linear_nl = "linear";
- }
  // the supg case 
  if(db_["space_discretization_type"].is("supg"))
  {
@@ -294,12 +373,11 @@ void Time_NSE3D::check_and_set_parameters()
  }
  // Smagorinsky
  if(db_["space_discretization_type"].is("smagorinsky"))
- {
    space_disc_global = 4;
-   
-   time_stepping_scheme.n_scale_block = 6;
-   time_stepping_scheme.b_bt_linear_nl = "linear";
- }
+ 
+ // projection based VMS 
+ if(db_["space_discretization_type"].is("vms_projection"))
+   space_disc_global = 9;
  
  // the only case where one have to re-assemble the right hand side
   if(db_["space_discretization_type"].is("supg") && db_["time_discretization"].is("bdf_two"))
@@ -402,6 +480,26 @@ void Time_NSE3D::assemble_initial_time()
     call_assembling_routine(s,LocalAssembling3D_type::TNSE3D_LinGAL);
     // manage dirichlet condition by copying non-actives DoFsfrom rhs to solution
     s.solution_.copy_nonactive(s.rhs_);
+
+    if(db_["space_discretization_type"].is("vms_projection"))
+    {
+      std::vector<std::shared_ptr<FEMatrix>> blocks
+                      = s.matrix_.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix3D(matrices_for_turb_mod.at(6));
+      // update stiffness matrix
+      VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
+      // reset flag for projection-based VMS method such that Smagorinsky LES method
+      // is used on coarser grids
+      space_disc_global = -4;      
+      db_["space_discretization_type"] = "smagorinsky_coarse";
+    }
+  } // end for system per grid - the last system is the finer one (front)
+  // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
+  if(space_disc_global == -4)
+  {
+    space_disc_global = 9;
+    db_["space_discretization_type"] = "vms_projection";
   }
   
   /** After copy_nonactive, the solution vectors needs to be Comm-updated
@@ -429,6 +527,7 @@ void Time_NSE3D::assemble_initial_time()
   #endif
   // copy the last right hand side and solution vectors to the old ones
   this->old_rhs_      = this->systems_.front().rhs_;
+  this->solution_m2 = this->systems_.front().solution_;
   this->solution_m1 = this->systems_.front().solution_;
 }
 /**************************************************************************** */
@@ -488,21 +587,17 @@ void Time_NSE3D::assemble_rhs()
   // If all B-blocks are linear, we have to scale them only once. So it's done only
   // at the first time. In the case of nonlinearity, one have to do this in 
   // each nonlinear iteration. For example, the SUPG case.
-  if(time_stepping_scheme.current_step_==1 && (time_stepping_scheme.b_bt_linear_nl.compare("linear")==0))
+  if(time_stepping_scheme.b_bt_linear_nl.compare("linear")==0 )
   {
     for(System_per_grid &s : this->systems_)
       time_stepping_scheme.scale_descale_all_b_blocks(s.matrix_, "scale");
-    if(time_stepping_scheme.current_step_ >1)
-    {
-      ErrThrow("wrong time stepping");
-    }
   }
   
   // retrieve the non active from "temporary" into rhs vector
   rhs_from_time_disc.copy_nonactive(temp);
   old_rhs_.copy_nonactive(temp);
   // copy the non active to the solution vector
-  s.solution_.copy_nonactive(temp);
+  s.solution_.copy_nonactive(s.rhs_);
 
   /** After copy_nonactive, the solution vectors needs to be Comm-updated
    * in MPI-case in order to be consistently saved. It is necessary that
@@ -536,6 +631,26 @@ void Time_NSE3D::assemble_nonlinear_term()
   for(System_per_grid &s : this->systems_)
   {
     call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
+    
+    if(db_["space_discretization_type"].is("vms_projection"))
+    {
+      std::vector<std::shared_ptr<FEMatrix>> blocks
+         = s.matrix_.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix3D(matrices_for_turb_mod.at(6));
+      // update stiffness matrix
+      VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
+      // reset flag for projection-based VMS method such that Smagorinsky LES method
+      // is used on coarser grids 
+      space_disc_global = -4;
+      db_["space_discretization_type"].set("smagorinsky_coarse");
+    }
+  }
+  // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
+  if(db_["space_discretization_type"].is("smagorinsky_coarse"))
+  {
+    space_disc_global = 9;
+    db_["space_discretization_type"].set("vms_projection");
   }
 }
 
@@ -640,8 +755,8 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
                     "\t\t", "Reduction: ", normOfResidual/initial_residual_);
     }
     // copy solution for the next time step: BDF2 needs two previous solutions 
-    solution_m2 = solution_m1;
-    solution_m1 = s.solution_;
+    s.solution_m2_ = solution_m1;
+    s.solution_m1_ = s.solution_;
     // descale the matrices, since only the diagonal A block will
     // be reassembled in the next time step
     if (this->imex_scheme(0) && iteration_counter>0)
@@ -1134,6 +1249,16 @@ void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s,
   functions[1] = s.u_.GetComponent(1);
   functions[2] = s.u_.GetComponent(2);
   functions[3] = &s.p_;
+  if(db_["space_discretization_type"].is("vms_projection"))
+  {
+    spaces.resize(4);
+    // projection space
+    spaces[2]=projection_space_.get();
+    // label space that indicates local projection space
+    spaces[3]=label_for_local_projection_space_.get();
+      // append function for the labels of the local projection
+    functions[4] = label_for_local_projection_fefct.get();
+  }
 }
 /**************************************************************************** */
 void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling3D_type type,
@@ -1239,6 +1364,12 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
           sqMat[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
 	  sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
 	  sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	  
+	  if(db_["space_discretization_type"].is("vms_projection"))
+	  {
+	    sqMat.resize(13);
+	    sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(matrices_for_turb_mod.at(6).get());;
+	  }
           
           // rectangular matrices
           reMat.resize(6);
@@ -1248,10 +1379,25 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
           reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  //than the standing B blocks
           reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
           reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+	  if(db_["space_discretization_type"].is("vms_projection"))
+	  {
+	    reMat.resize(12);
+	    // matrices  \tilde G_11, \tilde G_24, \tilde G_36
+            reMat[6]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
+            reMat[7]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
+            reMat[8]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
+            // matrices G_11, G_42, G_63
+            reMat[9]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(3).get());
+            reMat[10]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(4).get());
+            reMat[11]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(5).get());
+	  }
 	  break;
+	default:
+	  ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
+		   " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
       }// endswitch NSTYPE
+      break;// case LocalAssembling3D_type::TNSE3D_LinGAL
     }
-    break;// case LocalAssembling3D_type::TNSE3D_LinGAL
     //===============================================
     case LocalAssembling3D_type::TNSE3D_NLGAL:
     {
@@ -1265,23 +1411,30 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 	  break;
 	case 3:
 	case 4:
-	  if(db_["space_discretization_type"].is("smagorinsky"))
+	  if(db_["space_discretization_type"].is("smagorinsky")    ||
+	     db_["space_discretization_type"].is("vms_projection") ||
+	     db_["space_discretization_type"].is("smagorinsky_coarse")
+	  )
           {
             sqMat.resize(9);
-            blocks = s.matrix_.get_blocks_uniquely({{0,0}, {0,1}, {0,2}, 
-                                                    {1,0}, {1,1}, {1,2},
-                                                    {2,0}, {2,1}, {2,2}});
-            sqMat[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-            sqMat[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-            sqMat[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
-            sqMat[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(3).get());
-            sqMat[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
-            sqMat[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
-            sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
-            sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(7).get());
-            sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+	    sqMat[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+	    sqMat[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+	    sqMat[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+	    sqMat[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+	    sqMat[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+	    sqMat[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+	    sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+	    sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+	    sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+	    if(db_["space_discretization_type"].is("vms_projection"))
+	    {
+	      reMat.resize(3);
+	      reMat[0]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
+	      reMat[1]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
+	      reMat[2]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
+	    }
           }
-          else
+          if(db_["space_discretization_type"].is("galerkin"))
           {
             sqMat.resize(3); 
             blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});

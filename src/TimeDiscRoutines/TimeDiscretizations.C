@@ -86,6 +86,8 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
   
   b_bt_linear_nl= "linear";
 
+  // set the current time to start time
+  current_time_ = db["time_start"];
   Output::print<5>("Time discretization is initialized with ",
                 db["time_discretization"]);
 }

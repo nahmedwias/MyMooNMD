@@ -145,6 +145,7 @@ typedef void EvaluateSolutionFunct2D(TFEFunction2D **, TFEVectFunct2D **,
 #define RBVMS            20
 #define UPWIND           3
 #define SMAGORINSKY      4
+#define SMAGORINSKY_COARSE -4
 #define SMAGORINSKY_EXPL 5
 #define CLASSICAL_LES    6
 #define GL00_CONVOLUTION 7

@@ -2589,7 +2589,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
                "Only 3 (triangles) and 4 (quads) are allowed!");
   } // endswitch(NVE)
 
-//   cout << "N_RootCells: " << N_RootCells << endl;
+  cout << "N_RootCells: " << N_RootCells << endl;
   for(i=0;i<N_RootCells;i++)
     CellTree[i]->SetClipBoard(i);
 
