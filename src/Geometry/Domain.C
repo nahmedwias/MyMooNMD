@@ -157,7 +157,7 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
   }
 
   // get the relevant parameters from the new database
-  db.merge(param_db, false);
+  db.merge(param_db, true);
   
 #ifdef __3D__
   //Check if this should be a sandwich grid
