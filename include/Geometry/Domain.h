@@ -598,6 +598,8 @@ class TDomain
   /// channel flow example only
   bool is_turbulent_channel_example()
   {
+    if(!db["problem_type"].is(6))
+      return false;
     if(db["example"].is(7))
       return true;
     else

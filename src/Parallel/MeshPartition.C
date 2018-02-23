@@ -429,44 +429,44 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   bool write_metis = Domain->get_database()["write_metis"];
   // if 'read_metis' is true, than a file is read which contains the 
   // partitioning of the cells on the processors
+  
   if(read_metis)
+  {
+    MeshPartitionInOut::read_file(*Domain, size,  N_Cells, Cell_Rank);
+  }
+  else if(Domain->is_turbulent_channel_example())
   {
     // This is project specific - manual mesh partitioning, avoiding call to metis.
     // The aim is to hav apartitinoing, where periodic boundaries are not split between ranks.
-    if(Domain->is_turbulent_channel_example())
-    {
-      if(size % 7 !=0) 
-        ErrThrow("sorry for this particular example we use an a priori partitioning "
-                 "and are restricted to integer multiple of 7 for number of processors");
+    if(size % 7 !=0) 
+      ErrThrow("sorry for this particular example we use an a priori partitioning "
+      "and are restricted to integer multiple of 7 for number of processors");
     
-      for(int cell =0; cell < N_Cells ; ++cell)
-      {
-        Cell_Rank[cell] = manual_cell_rank(Domain, coll, cell);
-      }
+    for(int cell =0; cell < N_Cells ; ++cell)
+    {
+      Cell_Rank[cell] = manual_cell_rank(Domain, coll, cell);
     }
-    else
-      MeshPartitionInOut::read_file(*Domain, size,  N_Cells, Cell_Rank);
   }
   else
   {
-  t1 = MPI_Wtime();
-   if(type == 0)
+    t1 = MPI_Wtime();
+    if(type == 0)
     {
-     METIS_PartMeshNodal(&ne, &nn, eptr, MetisVertexNumbers, nullptr, nullptr, &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
+      METIS_PartMeshNodal(&ne, &nn, eptr, MetisVertexNumbers, nullptr, nullptr, &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
     }
-   else if(type == 1)
+    else if(type == 1)
     {
-     METIS_PartMeshDual(&ne, &nn,  eptr, MetisVertexNumbers,  nullptr, nullptr,  &ncommon,
+      METIS_PartMeshDual(&ne, &nn,  eptr, MetisVertexNumbers,  nullptr, nullptr,  &ncommon,
                        &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
     }
-   else
-   {
-     cout<<" Error METIS_PartMesh implemented for Par_P2 = 0 or 1 !!" <<endl;
-     MPI_Abort(comm, 0);
-   }
-   std:: cout << Cell_Rank;
-   t2 = MPI_Wtime();
-   Output::root_info("Domain Decomposition","Time taken for METIS mesh partitioning ", t2-t1, " sec");
+    else
+    {
+      cout<<" Error METIS_PartMesh implemented for Par_P2 = 0 or 1 !!" <<endl;
+      MPI_Abort(comm, 0);
+    }
+    std:: cout << Cell_Rank;
+    t2 = MPI_Wtime();
+    Output::root_info("Domain Decomposition","Time taken for METIS mesh partitioning ", t2-t1, " sec");
   }
   //if 'wrtie_metis' is true, than a file is created which contains the partitioning of the cells on the processors.
   if(write_metis)
