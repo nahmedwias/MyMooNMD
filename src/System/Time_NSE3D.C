@@ -502,6 +502,9 @@ void Time_NSE3D::assemble_initial_time()
     db_["space_discretization_type"] = "vms_projection";
   }
   
+  // copy solution from previous time steps
+  this->systems_.front().solution_m1_ = this->systems_.front().solution_;
+  this->systems_.front().solution_m2_ = this->systems_.front().solution_;
   /** After copy_nonactive, the solution vectors needs to be Comm-updated
    * in MPI-case in order to be consistently saved. It is necessary that
    * the vector is consistently saved because it is the only way to
@@ -524,11 +527,21 @@ void Time_NSE3D::assemble_initial_time()
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
     this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
+    
+    if(db_["time_discretization"].is("bdf_two"))
+    {
+      double *u1m2  = this->systems_.front().solution_m2_.block(0);
+      double *u2m2  = this->systems_.front().solution_.block(1);
+      double *u3m2  = this->systems_.front().solution_.block(2);
+      double *pm2   = this->systems_.front().solution_.block(3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1m2, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2m2, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3m2, 3);
+      this->systems_.front().pressureSpace_.get_communicator().consistency_update(pm2, 3);
+    }
   #endif
   // copy the last right hand side and solution vectors to the old ones
   this->old_rhs_      = this->systems_.front().rhs_;
-  this->solution_m2 = this->systems_.front().solution_;
-  this->solution_m1 = this->systems_.front().solution_;
 }
 /**************************************************************************** */
 void Time_NSE3D::restrict_function()
@@ -567,7 +580,7 @@ void Time_NSE3D::assemble_rhs()
   old_sols[0] = s.solution_;
   // this is needed for the BDF2 method
   if(old_sols.size() == 2)
-    old_sols[1] = solution_m2;
+    old_sols[1] = s.solution_m2_;
   // the right hand side vectors: old rhs is needed for the 
   // Crank-Nicolson and Fractional Step schemes
   std::vector<BlockVector> all_rhs(2);
@@ -621,6 +634,18 @@ void Time_NSE3D::assemble_rhs()
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
     this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
+    
+    if(db_["time_discretization"].is("bdf_two"))
+    {
+      double *u1m2 = this->systems_.front().solution_m2_.block(0);
+      double *u2m2 = this->systems_.front().solution_m2_.block(1);
+      double *u3m2 = this->systems_.front().solution_m2_.block(2);
+      double *pm2  = this->systems_.front().solution_m2_.block(3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1m2, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2m2, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3m2, 3);
+      this->systems_.front().pressureSpace_.get_communicator().consistency_update(pm2, 3);
+    }
   #endif
 }
 /**************************************************************************** */
@@ -713,7 +738,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
     initial_residual_ = normOfResidual;
 
     // saves the solution from previous time step with nonActive of current step
-    this->solution_m1 = this->systems_.front().solution_;
+    this->systems_.front().solution_m1_ = this->systems_.front().solution_;
   }
   // check if minimum number of iterations was performed already
   size_t min_it = db_["nonlinloop_minit"];
@@ -755,7 +780,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
                     "\t\t", "Reduction: ", normOfResidual/initial_residual_);
     }
     // copy solution for the next time step: BDF2 needs two previous solutions 
-    s.solution_m2_ = solution_m1;
+    s.solution_m2_ = s.solution_m1_;
     s.solution_m1_ = s.solution_;
     // descale the matrices, since only the diagonal A block will
     // be reassembled in the next time step
@@ -1111,7 +1136,7 @@ void Time_NSE3D::output_problem_size_info() const
 void Time_NSE3D::construct_extrapolated_solution()
 {
   this->extrapolated_solution_.reset();
-  this->extrapolated_solution_ = this->solution_m1;
+  this->extrapolated_solution_ = this->systems_.front().solution_m1_;
   this->extrapolated_solution_.scale(-1.);
   this->extrapolated_solution_.add_scaled(this->systems_.front().solution_,2.);
   this->extrapolated_solution_.copy_nonactive(this->systems_.front().rhs_);
