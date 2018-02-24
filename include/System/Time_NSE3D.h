@@ -185,9 +185,6 @@ class Time_NSE3D
     /** @brief right hand side vector from previous time step (on finest mesh)*/
     BlockVector old_rhs_;
 
-    /** @brief solution vectors from previous time steps (on finest mesh)*/
-    BlockVector solution_m1;
-    BlockVector solution_m2;
 
     /** @brief constructs a solution vector extrapolated from previous steps
      * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
