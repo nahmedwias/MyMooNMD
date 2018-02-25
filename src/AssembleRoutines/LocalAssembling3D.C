@@ -1732,15 +1732,28 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
     ErrThrow("SUPG method is only supported for NSTYPE 4 and 14 ", 
              TDatabase::ParamDB->NSTYPE);
   }
-  this->N_Parameters = 9;
-  this->N_ParamFct = 1;
-  this->ParameterFct =  { TimeNSType4Params_SUPG };
-  this->N_FEValues = 6;
-  this->FEValue_MultiIndex = { D000, D000, D000, 
-                               D000, D000, D000 };
-  this->FEValue_FctIndex = { 0, 1, 2, 
-                             3, 4, 5 };
-  this->BeginParameter = { 0 };
+  if(TDatabase::ParamDB->NSTYPE==4)
+  {
+    this->N_Parameters = 5;
+    this->N_ParamFct = 1;
+    this->ParameterFct =  { TimeNSType4Params_SUPG };
+    this->N_FEValues = 3;
+    this->FEValue_MultiIndex = { D000, D000, D000};
+    this->FEValue_FctIndex = { 0, 1, 2};
+    this->BeginParameter = { 0 };
+  }
+  if(TDatabase::ParamDB->NSTYPE==14)
+  {
+    this->N_Parameters = 9;
+    this->N_ParamFct = 1;
+    this->ParameterFct =  { TimeNSType14Params_SUPG };
+    this->N_FEValues = 6;
+    this->FEValue_MultiIndex = { D000, D000, D000, 
+                                 D000, D000, D000 };
+    this->FEValue_FctIndex = { 0, 1, 2, 
+                               3, 4, 5 };
+    this->BeginParameter = { 0 };
+  }
   
   switch(type)
   {
@@ -1757,13 +1770,19 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
           this->Needs2ndDerivatives[1] = true;
           this->Needs2ndDerivatives[2] = true;
           this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 }; // 0: velocity, 1: pressure
-          this->N_Matrices = 16;
-          this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+          this->N_Matrices = 18;
+          this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, // A-Block
+	                        0, 0, 0, // Mass matrices
+		                1, 1, 1, // BT Blocks
+				0, 0, 0 };
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, // A blocks
+		                0, 0, 0, // Mass matrices
+				0, 0, 0, // BT Blocks
+				1, 1, 1};
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 0 };
           this->AssembleParam = TimeNSType4SUPGDD3D;
-          this->Manipulate = NULL;
+          this->Manipulate = nullptr;
           break; // NSTYPE4
         case 14:
           // TODO 
@@ -1775,21 +1794,22 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 4:
-          this->N_Terms = 7;
+          this->N_Terms = 11;
           this->Derivatives = {D100, D010, D001, D000, // u_x, u_y, u_z, u
-                               D200, D020, D002};      // u_xx, u_yy, u_zz
+                               D000, D100, D010, D001, // p, p_x, p_y, p_z
+	                      D200, D020, D002};      // u_xx, u_yy, u_zz
           this->Needs2ndDerivatives = new bool[3];
           this->Needs2ndDerivatives[0] = true;
           this->Needs2ndDerivatives[1] = true;
           this->Needs2ndDerivatives[2] = true;
-          this->FESpaceNumber = { 0, 0, 0, 0, 0, 0, 0 }; // 0: velocity, 1: pressure
-          this->N_Matrices = 3;
-          this->RowSpace    = { 0, 0, 0};//, 0, 0, 0, 0, 0, 0};
-          this->ColumnSpace = { 0, 0, 0};//, 0, 0, 0, 0, 0, 0};
-          this->N_Rhs = 0;
-          this->RhsSpace = { };
+          this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 15;
+          this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1};
+          this->N_Rhs = 3;
+          this->RhsSpace = {0, 0, 0 };
           this->AssembleParam = TimeNSType4NLSUPGDD3D;
-          this->Manipulate = NULL;
+          this->Manipulate = nullptr;
           break; // NSTYPE4
         case 14:
           // TODO 
@@ -1814,7 +1834,7 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 0 };
           this->AssembleParam = TimeNSType4RHSSUPG3D;
-          this->Manipulate = NULL;
+          this->Manipulate = nullptr;
           break; // NSTYPE4
         case 14:
           // TODO 

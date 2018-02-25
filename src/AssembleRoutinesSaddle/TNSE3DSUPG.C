@@ -161,7 +161,7 @@ void TimeNSType4SUPGDD3D(double Mult, double *coeff, double *param, double hK,
       Matrix33Row[j] += Mult * val;
       
       // weighted mass matrix
-      val = ansatz001 * (test000 + ugradv);
+      val = ansatz000 * (test000 + ugradv);
       MatrixM11Row[j] += Mult * val;
       MatrixM22Row[j] += Mult * val;
       MatrixM33Row[j] += Mult * val;
@@ -366,7 +366,7 @@ void TimeNSType4NLSUPGDD3D(double Mult, double *coeff, double *param, double hK,
       Matrix33Row[j] += Mult * val;
       
       // weighted mass matrix
-      val = ansatz001 * (test000 + ugradv);
+      val = ansatz000 * (test000 + ugradv);
       MatrixM11Row[j] += Mult * val;
       MatrixM22Row[j] += Mult * val;
       MatrixM33Row[j] += Mult * val;
@@ -457,6 +457,13 @@ void TimeNSType14RHSSUPGDD3D(double Mult, double* coeff, double* param, double h
 }
 
 void TimeNSType4Params_SUPG(double *in, double *out)
+{
+  out[0] = in[3];
+  out[1] = in[4];
+  out[2] = in[5];
+}
+
+void TimeNSType14Params_SUPG(double *in, double *out)
 {
   out[0] = in[3];
   out[1] = in[4];
