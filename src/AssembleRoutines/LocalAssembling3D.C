@@ -22,6 +22,7 @@
 
 #include <TNSE3DSmagorinsky.h>
 #include <TNSE3DProjBasedVMS.h>
+#include <TNSE3DSUPG.h>
 /**
  * TODO There is still a lot of cases where the array "Needs2ndDerivatives" is
  * constructed with length 1 only although there are two spaces available
@@ -337,6 +338,9 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           break;
 	case VMS_PROJECTION:
 	  this->set_parameters_for_tnse_vms_projection(type);
+	  break;
+	case SUPG:
+	  this->set_parameters_for_tnse_supg(type);
 	  break;
         default:
           ErrThrow("DISCTYPE", this->discretization_type , "is not supported yet!!");
@@ -1717,5 +1721,108 @@ void LocalAssembling3D::set_parameters_for_tnse_vms_projection(LocalAssembling3D
       break;
     default:
       ErrThrow("Unknown LocalAssembling3D_type");
+  }
+}
+
+void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type)
+{
+  
+  if(TDatabase::ParamDB->NSTYPE < 4 )
+  { 
+    ErrThrow("SUPG method is only supported for NSTYPE 4 and 14 ", 
+             TDatabase::ParamDB->NSTYPE);
+  }
+  this->N_Parameters = 9;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { TimeNSType4Params_SUPG };
+  this->N_FEValues = 6;
+  this->FEValue_MultiIndex = { D000, D000, D000, 
+                               D000, D000, D000 };
+  this->FEValue_FctIndex = { 0, 1, 2, 
+                             3, 4, 5 };
+  this->BeginParameter = { 0 };
+  
+  switch(type)
+  {
+    case LocalAssembling3D_type::TNSE3D_LinGAL:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 11;
+          this->Derivatives = {D100, D010, D001, D000, // u_x, u_y, u_z, u
+                               D000, D100, D010, D001, // p, p_x, p_y, p_z
+                               D200, D020, D002};      // u_xx, u_yy, u_zz
+          this->Needs2ndDerivatives = new bool[3];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          this->Needs2ndDerivatives[2] = true;
+          this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 16;
+          this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+          this->N_Rhs = 3;
+          this->RhsSpace = { 0, 0, 0 };
+          this->AssembleParam = TimeNSType4SUPGDD3D;
+          this->Manipulate = NULL;
+          break; // NSTYPE4
+        case 14:
+          // TODO 
+          ErrThrow("NSTYPE 14 for SUPG is not supported yet");
+          break; // NSTYPE14 
+      }
+      break; // LocalAssembling3D_type::TNSE3D_LinGAL:
+    case LocalAssembling3D_type::TNSE3D_NLGAL:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 7;
+          this->Derivatives = {D100, D010, D001, D000, // u_x, u_y, u_z, u
+                               D200, D020, D002};      // u_xx, u_yy, u_zz
+          this->Needs2ndDerivatives = new bool[3];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          this->Needs2ndDerivatives[2] = true;
+          this->FESpaceNumber = { 0, 0, 0, 0, 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 3;
+          this->RowSpace    = { 0, 0, 0};//, 0, 0, 0, 0, 0, 0};
+          this->ColumnSpace = { 0, 0, 0};//, 0, 0, 0, 0, 0, 0};
+          this->N_Rhs = 0;
+          this->RhsSpace = { };
+          this->AssembleParam = TimeNSType4NLSUPGDD3D;
+          this->Manipulate = NULL;
+          break; // NSTYPE4
+        case 14:
+          // TODO 
+          ErrThrow("NSTYPE 14 for SUPG is not supported yet");
+          break; // NSTYPE14 
+      }
+      break; // LocalAssembling3D_type::TNSE3D_NLGAL:
+    case LocalAssembling3D_type::TNSE3D_Rhs:
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 4;
+          this->Derivatives = {D100, D010, D001, D000}; // u_x, u_y, u_z, u
+          this->Needs2ndDerivatives = new bool[3];
+          this->Needs2ndDerivatives[0] = false;
+          this->Needs2ndDerivatives[1] = false;
+          this->Needs2ndDerivatives[2] = false;
+          this->FESpaceNumber = {0, 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0; // 3BT matrices and 1 mass matrix
+          this->RowSpace    = { };
+          this->ColumnSpace = { };
+          this->N_Rhs = 3;
+          this->RhsSpace = { 0, 0, 0 };
+          this->AssembleParam = TimeNSType4RHSSUPG3D;
+          this->Manipulate = NULL;
+          break; // NSTYPE4
+        case 14:
+          // TODO 
+          ErrThrow("NSTYPE 14 for SUPG is not supported yet");
+          break; // NSTYPE14 
+      }
+      break; // LocalAssembling3D_type::TNSE3D_Rhs:
+      default:
+      ErrThrow("Wrong LocalAssembling3D_type for set_parameters_for_tnse.");
   }
 }
