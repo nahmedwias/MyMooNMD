@@ -281,8 +281,13 @@ class Time_NSE3D
     * 2. Scaling of the B-Blocks due to time stepping
     * This function will prepare the right hand side during the time
     * discretization but should be outside the nonlinear loop.
+    * 
+    * The argument is false only for the case SUPG and residual based VMS 
+    * methods. Because, the right-hand side is assembled together with the 
+    * nonlinear matrices. Therefore the system right hand side needs to be 
+    * be assembled.
     */
-    void assemble_rhs();
+    void assemble_rhs(bool ass_rhs=true);
 
     /** @brief Assemble the nonlinear terms
      * Assemble the nonlinear terms. Need not be used when this is

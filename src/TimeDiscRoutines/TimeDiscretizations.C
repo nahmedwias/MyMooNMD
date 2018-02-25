@@ -330,6 +330,10 @@ void TimeDiscretization::scale_nl_b_blocks(BlockFEMatrix& matrix)
       ErrThrow("No of blocks are out of range");
 #endif
   }
+  else
+  {
+    ErrThrow("B-blocks are linear and that were already scaled ");
+  }
   matrix.scale_blocks(factor, cells);
 }
 
