@@ -341,7 +341,7 @@ void Time_NSE3D::check_and_set_parameters()
  // the supg case 
  if(db_["space_discretization_type"].is("supg"))
  {
-   if(db_["time_discretization"].is("bdf_two"))
+   if(!db_["time_discretization"].is("bdf_two"))
    {
      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
    }
@@ -1497,6 +1497,12 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 	      reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks
 	      reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
 	      reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+	      
+	      rhs_array.resize(3);
+	      rhs_array[0] = s.rhs_.block(0);
+	      rhs_array[1] = s.rhs_.block(1);
+	      rhs_array[2] = s.rhs_.block(2);
+	      s.rhs_.reset();
 	    }
           }
           if(db_["space_discretization_type"].is("galerkin"))
@@ -1548,7 +1554,7 @@ std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type)
     case 2:
       UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
 			      fefunctions[2], one_over_nu);
-      Output::print<3>("UPWINDING DONE with 1 square matrices.");
+      Output::print<5>("UPWINDING DONE with 1 square matrices.");
     break;
     case 3:
     case 4:
@@ -1586,7 +1592,7 @@ std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type)
       {
 	ErrThrow("UPWINDING for the method ", db_["space_discretization_type"], " is not supported so far!!");
       }
-      Output::print<3>("UPWINDING DONE with 3 square matrices.");
+      Output::print<5>("UPWINDING DONE with 3 square matrices.");
       break;
   }
 }
