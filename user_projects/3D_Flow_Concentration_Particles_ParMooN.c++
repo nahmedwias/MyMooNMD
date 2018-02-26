@@ -207,6 +207,7 @@ int main(int argc, char* argv[])
 
     // set some parameters for time stepping
     SetTimeDiscParameters(0);
+    TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
 
     // Construct an object of the Time_NSE3D-problem type.
     Example_TimeNSE3D flow_example(flow_database);
@@ -273,7 +274,6 @@ int main(int argc, char* argv[])
 
     LoopInfo loop_info_time("time loop", true, true, 1);
     int linear_iterations = 0;
-    TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
 
     int output_steps_parts = particle_database["output_all_k_steps"];
     int output_steps_flow  = flow_database["output_all_k_steps"];

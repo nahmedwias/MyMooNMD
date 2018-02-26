@@ -80,6 +80,11 @@ Example_TimeCD3D::Example_TimeCD3D(
     case 72:
     {// T: energy balance in batch crystallizer
       using namespace batch_crystallizer;
+      TemperatureConditions::set_T_start(user_input_parameter_db["T_start"]);
+      TemperatureConditions::set_T_end(user_input_parameter_db["T_end"]);
+      TemperatureConditions::set_t_start( TDatabase::TimeDB->STARTTIME );
+      TemperatureConditions::set_t_end(TDatabase::TimeDB->ENDTIME);
+
       exact_solution.push_back(Exact_T);
       boundary_conditions.push_back(BoundCondition_T);
       boundary_data.push_back(BoundValue_T);

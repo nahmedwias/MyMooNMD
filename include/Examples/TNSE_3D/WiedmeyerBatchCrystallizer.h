@@ -32,14 +32,6 @@ double M_A = 0.258205;           // kg/mol, the molar mass of potash alum anhydr
 double beta_A = 0.54429029;      // 0.258205 kg/mol / 0.4743884 kg/mol - the mass fraction
                                  // of KAL(SO_4)_2 (anhydrate) in the potash alum dodecahydrate
 
-double lambda = 0.6;  // W/(m  * K), thermal  conductivity  (of the fluid), from Volker's kali alaun paper stub
-double c_p = 3841;    // J/(kg * K), specific heat capacity (of the fluid), from Volker's kali alaun paper stub
-
-// This is an intermediate state of affairs. Concentration and
-// temperature at the inlet are somewhat higher than in the bulk. Just to see what happens.
-double T_inlet = 289.15;   //16 Celsius
-double T_initial = 288.15; //15 Celsius
-double T_wall = 287.15;    //14 Celsius
 double cALUM_inlet =  200;  //mol anhydrate/m^3, only slight supersaturation (nach Gefuehl...)
 double cALUM_initial = 200; //mol anhydrate/m^3, only slight supersaturation (nach Gefuehl...)
 
@@ -89,6 +81,21 @@ std::string out_condition_string()
 // note: in the coefficients function the de-dimensionalized diffusion
 // coefficient will be calculated as:
 //      eps = (eta/rho) / (u_infty*l_infty);
+}
+
+namespace TemperatureConditions{
+  double T_start;
+  double T_end;
+  double t_start;
+  double t_end;
+
+  void set_T_start(double new_T_start){T_start = new_T_start;}
+  void set_T_end(double new_T_end){T_end = new_T_end;}
+  void set_t_start(double new_t_start){t_start = new_t_start;}
+  void set_t_end(double new_t_end){t_end = new_t_end;}
+
+  double lambda = 0.6;  // W/(m  * K), thermal  conductivity  (of the fluid), from Volker's kali alaun paper stub
+  double c_p = 3841;    // J/(kg * K), specific heat capacity (of the fluid), from Volker's kali alaun paper stub
 }
 
 
@@ -444,11 +451,8 @@ void Exact_T(double x, double y, double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition_T(double x, double y, double z, BoundCond &cond)
 {
-  if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM)
-  {
-    cond=DIRICHLET;
-  }
-  else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
+  if (   determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM
+      || determine_boundary_part(x,y,z) == BoundaryPart::WALL)
   {
     cond=DIRICHLET;
   }
@@ -461,14 +465,13 @@ void BoundCondition_T(double x, double y, double z, BoundCond &cond)
 // value of boundary condition
 void BoundValue_T(double x, double y, double z, double &value)
 {
-  using namespace FluidProperties;
-  if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM)
+  using namespace TemperatureConditions;
+  if (   determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM
+      || determine_boundary_part(x,y,z) == BoundaryPart::WALL)
   {
-    value=T_inlet;
-  }
-  else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
-  {
-    value=T_wall;
+    double t = TDatabase::TimeDB->CURRENTTIME;
+    //current 'value' is a linear interpolation of start and end temperature
+    value = (T_start * (t_end - t) + T_end * (t- t_start)) / (t_end - t_start);
   }
   else if (determine_boundary_part(x,y,z) == BoundaryPart::TOP)
   {
@@ -479,14 +482,14 @@ void BoundValue_T(double x, double y, double z, double &value)
 // initial conditon
 void InitialCondition_T(double x, double y, double z, double *values)
 {
-  using namespace FluidProperties;
-  values[0] = T_initial;
+  using namespace TemperatureConditions;
+  values[0] = T_start;
 }
 
 void BilinearCoeffs_T(int n_points, double *X, double *Y, double *Z,
         double **parameters, double **coeffs)
 {
-  using namespace FluidProperties;
+  using namespace TemperatureConditions;
   double *coeff;
 //  double t=TDatabase::TimeDB->CURRENTTIME;
 
@@ -497,7 +500,7 @@ void BilinearCoeffs_T(int n_points, double *X, double *Y, double *Z,
 //    double y = Y[i];
 //    double z = Z[i];
 
-    coeff[0] = lambda/(rho * c_p); //TODO heat diffusion should be sth. like lambda_E / (rho_susp * C_E); (this is 2d case)
+    coeff[0] = TemperatureConditions::lambda/(FluidProperties::rho * TemperatureConditions::c_p);
     coeff[1] = parameters[i][0];   // ux
     coeff[2] = parameters[i][1];   // uy
     coeff[3] = parameters[i][2];   // uz
