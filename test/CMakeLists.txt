@@ -110,6 +110,19 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(boundary_data3d ParMooN_test_boundary_data3d)
   list(APPEND parmoon_tests ParMooN_test_boundary_data3d)
   
+  add_executable(ParMooN_test_domain_refinement_2d domain_refinement_test.c++)
+  target_link_libraries(ParMooN_test_domain_refinement_2d
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(domain_refinement_2d ParMooN_test_domain_refinement_2d)
+  list(APPEND parmoon_tests ParMooN_test_domain_refinement_2d)
+  add_executable(ParMooN_test_domain_refinement_3d domain_refinement_test.c++)
+  target_link_libraries(ParMooN_test_domain_refinement_3d
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(domain_refinement_3d ParMooN_test_domain_refinement_3d)
+  list(APPEND parmoon_tests ParMooN_test_domain_refinement_3d)
+  
   # function evaluation test
   add_executable(ParMooN_test_function_evaluation function_evaluation_test.c++)
   target_link_libraries(ParMooN_test_function_evaluation

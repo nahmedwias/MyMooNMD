@@ -40,6 +40,7 @@
 #include <RefQuadToTri0Desc.h>
 #include <RefQuadToTri1Desc.h>
 #include <RefTriRegDesc.h>
+#include <RefTriBaryDesc.h>
 #include <RefTriBis0Desc.h>
 #include <RefTriBis1Desc.h>
 #include <RefTriBis2Desc.h>
@@ -71,6 +72,7 @@
   #include <Hexahedron.h>
   #include <Brick.h>
   #include <RefTetraRegDesc.h>
+  #include <RefTetraBaryDesc.h>
   #include <RefTetraReg0Desc.h>
   #include <RefTetraReg1Desc.h>
   #include <RefTetraReg2Desc.h>
@@ -155,6 +157,7 @@ TDatabase::TDatabase()
   // initialize refinement descriptors
   RefDescDB[N_SHAPES + LineReg] = new TRefLineDesc(ShapeDB[S_Line]);
   RefDescDB[N_SHAPES + TriReg]  = new TRefTriRegDesc(ShapeDB[Triangle]);
+  RefDescDB[N_SHAPES + TriBary]  = new TRefTriBaryDesc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis0] = new TRefTriBis0Desc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis1] = new TRefTriBis1Desc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis2] = new TRefTriBis2Desc(ShapeDB[Triangle]);
@@ -185,6 +188,8 @@ TDatabase::TDatabase()
   #ifdef __3D__
     RefDescDB[N_SHAPES + TetraReg] =
          new TRefTetraRegDesc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBary] =
+         new TRefTetraBaryDesc(ShapeDB[Tetrahedron]);
     RefDescDB[N_SHAPES + TetraReg0] =
          new TRefTetraReg0Desc(ShapeDB[Tetrahedron]);
     RefDescDB[N_SHAPES + TetraReg1] =
