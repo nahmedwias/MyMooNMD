@@ -679,6 +679,8 @@ void Time_NSE3D::assemble_rhs(bool ass_rhs)
 /**************************************************************************** */
 void Time_NSE3D::assemble_nonlinear_term()
 {
+  if(imex_scheme(0))
+    this->construct_extrapolated_solution();
   if(systems_.size()>1)
     this->restrict_function();
   for(System_per_grid &s : this->systems_)
@@ -1177,8 +1179,8 @@ void Time_NSE3D::construct_extrapolated_solution()
 {
   if(db_["extrapolate_velocity"])
   {
-    if(!db_["space_discretization_type"].is("supg") || 
-       !db_["space_discretization_type"].is("residual_based_vms"))
+    if(!db_["space_discretization_type"].is("residual_based_vms") &&
+      TDatabase::ParamDB->NSTYPE != 14)
     {
       if(db_["extrapolation_type"].is("linear_extrapolate"))
       {
@@ -1187,6 +1189,10 @@ void Time_NSE3D::construct_extrapolated_solution()
 	s.solution_ = s.solution_m1_;
 	s.solution_.scale(2.);
 	s.solution_.add_scaled(s.solution_m2_,-1.);
+      }
+      else
+      {
+	ErrThrow("Extrapolation type ", db_["extrapolation_type"], " is not supported yet");
       }
     }
   }
