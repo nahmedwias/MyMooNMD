@@ -2263,6 +2263,33 @@ int TDomain::ConvertQuadToTri(int type)
   return 0;
 }
 
+void TDomain::barycentric_refinement()
+{
+  RefLevel++;
+  TDatabase::IteratorDB[It_Finest]->Init(0);
+  int info;
+  // loop over all cells
+  while(auto current_cell = TDatabase::IteratorDB[It_Finest]->Next(info))
+  {
+    auto cell_type = current_cell->GetType();
+    if(cell_type == Triangle)
+    {
+      current_cell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TriBary]);
+    }
+    else if(cell_type == Tetrahedron)
+    {
+      current_cell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBary]);
+    }
+    else
+    {
+      ErrThrow("unable to do barycentric refinement on a cell of type ",
+               cell_type);
+    }
+    current_cell->Refine(RefLevel);
+  }
+}
+
+
 /*
  Extract a subcollection from a collection object:
 */

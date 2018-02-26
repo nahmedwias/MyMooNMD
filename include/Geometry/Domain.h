@@ -357,6 +357,10 @@ class TDomain
     /** @brief convert all finest quadrangles into two triangles */
     int ConvertQuadToTri(int type);
     
+    /// @brief do a barycentric refinement for triangles/tetrahedra
+    /// @note this throws an exception whenever a quadrangle/hexahedron is found
+    void barycentric_refinement();
+    
     int get_ref_level() const
     { return RefLevel; }
 
