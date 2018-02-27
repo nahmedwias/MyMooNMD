@@ -17,12 +17,10 @@ namespace concentration
 #include "TCD_3D/concentrationOfSpecies_3d.h"
 }
 
-//CB PROJECT include the wiedmeyer fluidized bed crystallizer example here
-namespace batch_crystallizer
-{
-#include "TNSE_3D/WiedmeyerBatchCrystallizer.h"
-}
-//END PROJECT
+
+////CB PROJECT include the wiedmeyer fluidized bed crystallizer example here
+#include <WiedmeyerBatchCrystallizer.h>
+////END PROJECT
 
 Example_TimeCD3D::Example_TimeCD3D(
   const ParameterDatabase& user_input_parameter_db)
@@ -69,7 +67,7 @@ Example_TimeCD3D::Example_TimeCD3D(
     //CB PROJECT
     case 71:
     {// c: mass balance in batch crystallizer
-      using namespace batch_crystallizer;
+      using namespace wiedmeyer_batch_crystallizer;
       exact_solution.push_back(Exact_cALUM);
       boundary_conditions.push_back(BoundCondition_cALUM);
       boundary_data.push_back(BoundValue_cALUM);
@@ -79,7 +77,7 @@ Example_TimeCD3D::Example_TimeCD3D(
     }
     case 72:
     {// T: energy balance in batch crystallizer
-      using namespace batch_crystallizer;
+      using namespace wiedmeyer_batch_crystallizer;
       TemperatureConditions::set_T_start(user_input_parameter_db["T_start"]);
       TemperatureConditions::set_T_end(user_input_parameter_db["T_end"]);
       TemperatureConditions::set_t_start( TDatabase::TimeDB->STARTTIME );
