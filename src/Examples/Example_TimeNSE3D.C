@@ -4,6 +4,10 @@
 #include <Database.h>
 #include <MainUtilities.h>
 
+////CB PROJECT include the wiedmeyer fluidized bed crystallizer example here
+#include <WiedmeyerBatchCrystallizer.h>
+////END PROJECT
+
 namespace lin_space_time
 {
   #include "TNSE_3D/linear_space_time.h"  // 0
@@ -32,11 +36,6 @@ namespace Bsp3
 namespace flow_around_cylinder_instationary
 {
 #include "TNSE_3D/FlowAroundCylinder_instat.h"   // 6
-}
-
-namespace wiedmeyer_batch_crystallizer //7
-{
-#include "TNSE_3D/WiedmeyerBatchCrystallizer.h"
 }
 
 //=========================================================

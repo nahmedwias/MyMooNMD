@@ -23,10 +23,7 @@ namespace Axisymmetric_ASA_crystallizer
   #include <Axisymmetric_ASA_Crystallizer.h>
 }
 
-namespace Wiedmeyer_Batch_crystallizer
-{
-#include "TNSE_3D/WiedmeyerBatchCrystallizer.h"
-}
+#include <WiedmeyerBatchCrystallizer.h>
 
 // Hashing function for strings, allows switch over string.
 // https://stackoverflow.com/questions/16388510/evaluate-a-string-with-a-switch-in-c
@@ -118,19 +115,19 @@ void BrushWrapper::pick_example(const std::string& exmpl_name,
     }
     case string_hash("wiedmeyer_crystallizer"):
     {
-      using namespace Wiedmeyer_Batch_crystallizer;
+      using namespace wiedmeyer_batch_crystallizer;
 
-      parameter_spatial_dimension_ = BrushInfo::parameter_spatial_dimension;
-      parameter_n_specs_primary_ = BrushInfo::parameter_n_specs_primary;
-      parameter_n_specs_derived_ = BrushInfo::parameter_n_specs_derived;
-      parameter_function_names_ = BrushInfo::parameter_term_names;
-      parameter_specs_derived_fcts_ = BrushInfo::parameter_specs_derived_fcts;
+      parameter_spatial_dimension_ = BrushInfo::get_parameter_spatial_dimension();
+      parameter_n_specs_primary_ = BrushInfo::get_parameter_n_specs_primary();
+      parameter_n_specs_derived_ = BrushInfo::get_parameter_n_specs_derived();
+      parameter_function_names_ = BrushInfo::get_parameter_term_names();
+      parameter_specs_derived_fcts_ = BrushInfo::get_parameter_specs_derived_fcts();
       //source and sink information ('from Brush')
-      source_and_sink_function_names_ = BrushInfo::source_and_sink_term_names;
-      source_and_sink_requests_ = BrushInfo::source_and_sink_fct_requests;
+      source_and_sink_function_names_ = BrushInfo::get_source_and_sink_term_names();
+      source_and_sink_requests_ = BrushInfo::get_source_and_sink_fct_requests();
 
       //TODO this might change in case of de-dimensionalization
-      viscosity = FluidProperties::eta/FluidProperties::rho;
+      viscosity = FluidProperties::get_eta()/FluidProperties::get_rho();
 
       break;
     }
