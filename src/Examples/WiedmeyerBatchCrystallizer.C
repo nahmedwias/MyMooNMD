@@ -170,8 +170,15 @@ double derived_concentration_PAL_SUPSAT_POWG(const std::vector<double>& data)
     throw std::runtime_error("derived_concentration_PAL_SUPSAT_POWG: "
         "expected 7 data points. ux, uy, uz, p, T, POTASHALUM, 0(PAL_SUPSAT_POWG)");
 
+
+
   double T = data[4];     // grab temperature [K]
   double c_A = data[5];   // grab alum anhydrate concentration [mol/m^3]
+
+  //CB use this code to determine saturation concentration at some T in C
+  // T = 17;       // in deg C
+  // T += 273.15; // now it's K
+  //END CB
 
   double w_A = c_A * FluidProperties::M_A / FluidProperties::rho; //this is the alum anhydrate mass fraction [kg/kg]
   double a = 4.6608e-5;
@@ -182,12 +189,13 @@ double derived_concentration_PAL_SUPSAT_POWG(const std::vector<double>& data)
   double rel_sup_sat = w_A*(FluidProperties::beta_A - w_A_eq) /
       (w_A_eq * (FluidProperties::beta_A - w_A)) - 1;
 
-  //  //CB DEBUG
+  //  CB use this code to determine saturation concentration at some T in C
   //  std::cout << "c_A:" << c_A << std::endl;
-  //  std::cout << "c_A_eq:" << w_A_eq * FluidProperties::rho / FluidProperties::M_A << std::endl;
+  //  std::cout << "c_A_eq at " << T << " deg C: " << w_A_eq * FluidProperties::rho / FluidProperties::M_A << std::endl;
+  //  exit(0);
   //  std::cout << "w_A: " << w_A << std::endl;
   //  std::cout << "w_A_eq: " << w_A_eq << std::endl;
-  //  //END DEBUG
+  //  END CB
 
   // return the supersaturation to the power of 1.4, as the model requires, or 0 if there is no supersaturation
   return rel_sup_sat > 0 ? pow(rel_sup_sat, 1.4) : 0;
