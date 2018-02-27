@@ -68,6 +68,10 @@ Example_TimeCD3D::Example_TimeCD3D(
     case 71:
     {// c: mass balance in batch crystallizer
       using namespace wiedmeyer_batch_crystallizer;
+      ConcentrationProperties::initialise_inlet_values(
+          user_input_parameter_db["initial_concentration"],
+          user_input_parameter_db["fluid_cycle_time"],
+          TDatabase::TimeDB->TIMESTEPLENGTH);
       exact_solution.push_back(Exact_cALUM);
       boundary_conditions.push_back(BoundCondition_cALUM);
       boundary_data.push_back(BoundValue_cALUM);

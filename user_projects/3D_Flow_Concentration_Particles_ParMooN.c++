@@ -21,6 +21,7 @@
 #include <Time_CD3D.h>
 #include <Time_NSE3D.h>
 #include <TimeDiscRout.h>
+#include <WiedmeyerBatchCrystallizer.h>
 
 #include <math.h>
 
@@ -327,6 +328,23 @@ int main(int argc, char* argv[])
       conc_object.solve();
       TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 0; //CB THIS IS A PITIFUL REMNANT OF OLD DATABASE
       Output::print(" solving complete");
+
+      //CB EXAMPLE -  The inlet boundary conditions for the
+      //              dissolved species concentration get updated
+      {
+        using namespace wiedmeyer_batch_crystallizer;
+
+        double integral = 0;
+        double measure = 0;
+        sources_and_sinks.at(1)->compute_integral_and_measure(integral,measure);
+        double u_max_in = FluidProperties::get_u_max_in();
+        double R = FluidProperties::get_r_in();
+        double delta_c = std::abs(integral) /
+            (2*M_PI * u_max_in * (R * R) / 4);
+        ConcentrationProperties::subtract_material(delta_c);
+        ConcentrationProperties::update_index();
+      }
+      //END EXAMPLE
 
       if(!flow_database["force_stationary"])
       {

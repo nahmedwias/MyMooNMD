@@ -30,21 +30,18 @@ double u_avg_in  = 0;      //m/s Those quantitites are computed according
 double u_max_in  = 0;      //m/s to the entered mass flow, assuming HP-inflow.
 double u_avg_out  = 0;     //m/s
 
-double diffusion_ALUM = 5.4e-10; // m^2/s, from Volker's kali alaun paper stub
 double M_ALUM = 0.4743884;       // kg/mol, the molar mass of potash alum dodecahydrate
 double M_A = 0.258205;           // kg/mol, the molar mass of potash alum anhydrate
 double beta_A = 0.54429029;      // 0.258205 kg/mol / 0.4743884 kg/mol - the mass fraction
 // of KAL(SO_4)_2 (anhydrate) in the potash alum dodecahydrate
 
-double cALUM_inlet =  200;  //mol anhydrate/m^3, only slight supersaturation (nach Gefuehl...)
-double cALUM_initial = 200; //mol anhydrate/m^3, only slight supersaturation (nach Gefuehl...)
-
 double eta = 0.0014;     // ( kg /(m*s) ) the dynamic viscosity, (of a Kalialaun solution, VW)
 double rho = 1050; // ( kg / m^3  ) the density (of a Kalialaun solution, VW) (assumed to be constant)
 
+double get_r_in(){return r_in;};
 double get_eta(){return eta;};
 double get_rho(){return rho;};
-
+double get_u_max_in(){return u_max_in;};
 
 void set_r_out(double new_r_out)
 {
@@ -94,7 +91,8 @@ std::string out_condition_string()
 //      eps = (eta/rho) / (u_infty*l_infty);
 }
 
-namespace TemperatureConditions{
+namespace TemperatureConditions
+{
 double T_start;
 double T_end;
 double t_start;
@@ -106,6 +104,44 @@ void set_t_end(double new_t_end){t_end = new_t_end;}
 
 double lambda = 0.6;  // W/(m  * K), thermal  conductivity  (of the fluid), from Volker's kali alaun paper stub
 double c_p = 3841;    // J/(kg * K), specific heat capacity (of the fluid), from Volker's kali alaun paper stub
+}
+
+namespace ConcentrationProperties
+{
+double diffusion_ALUM = 5.4e-10; // m^2/s, from Volker's kali alaun paper stub
+double cALUM_start = 0;  //mol anhydrate/m^3 This will be set from the outside.
+
+std::vector<double> inlet_values;
+size_t current_index; // The place in the vector 'inlet_values' were
+                      //   a) the current inflow is read from and
+                      //   b) the current use of concentration is substracted from
+
+void subtract_material(double delta_c)
+{
+  inlet_values.at(current_index) -= delta_c;
+//  Output::print("new value at ",current_index," is ", std::setprecision(16),
+//                inlet_values.at(current_index),". (Subtracted ",delta_c,").");
+}
+
+void update_index()
+{
+  ++current_index;
+  current_index = current_index % inlet_values.size();
+}
+
+void initialise_inlet_values(double c_start, double t_cycle, double delta_t)
+{
+  cALUM_start = c_start;
+  int n_values = t_cycle/delta_t;
+  inlet_values = std::vector<double>(n_values, cALUM_start);
+  current_index = 0;
+
+  Output::info("INLET CONCENTRATIONS LIST", "cALUM_start was set to ",
+               cALUM_start, " mol anhydrate/m^3.");
+  Output::info("INLET CONCENTRATIONS LIST",
+               "Initialized ", n_values, " values , cycle time is ",
+               t_cycle, " s and delta_t is ", delta_t," s.");
+}
 }
 
 
@@ -379,7 +415,6 @@ void InitialP(double x, double y,  double z, double *values)
 // exact solution is unknown
 void Exact_cALUM(double x, double y, double z, double *values)
 {
-  //  double t=TDatabase::TimeDB->CURRENTTIME;
   values[0] = 0;
   values[1] = 0;
   values[2] = 0;
@@ -410,7 +445,7 @@ void BoundValue_cALUM(double x, double y, double z, double &value)
   using namespace FluidProperties;
   if (determine_boundary_part(x,y,z) == BoundaryPart::BOTTOM)
   {
-    value=cALUM_inlet;
+    value=ConcentrationProperties::inlet_values.at(ConcentrationProperties::current_index);
   }
   else if (determine_boundary_part(x,y,z) == BoundaryPart::WALL)
   {
@@ -425,24 +460,19 @@ void BoundValue_cALUM(double x, double y, double z, double &value)
 // initial conditon
 void InitialCondition_cALUM(double x, double y, double z, double *values)
 {
-  using namespace FluidProperties;
-  values[0] = cALUM_initial;
+  values[0] = ConcentrationProperties::cALUM_start;
 }
 
 void BilinearCoeffs_cALUM(int n_points, double *X, double *Y, double *Z,
                           double **parameters, double **coeffs)
 {
   double *coeff;
-  //  double t=TDatabase::TimeDB->CURRENTTIME;
 
   for(int i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-    //    double x = X[i];
-    //    double y = Y[i];
-    //    double z = Z[i];
 
-    coeff[0] = FluidProperties::diffusion_ALUM; //diffusion coefficient
+    coeff[0] = ConcentrationProperties::diffusion_ALUM; //diffusion coefficient
     coeff[1] = parameters[i][0];   // ux
     coeff[2] = parameters[i][1];   // uy
     coeff[3] = parameters[i][2];   // uz
@@ -513,9 +543,6 @@ void BilinearCoeffs_T(int n_points, double *X, double *Y, double *Z,
   for(int i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-    //    double x = X[i];
-    //    double y = Y[i];
-    //    double z = Z[i];
 
     coeff[0] = TemperatureConditions::lambda/(FluidProperties::rho * TemperatureConditions::c_p);
     coeff[1] = parameters[i][0];   // ux
