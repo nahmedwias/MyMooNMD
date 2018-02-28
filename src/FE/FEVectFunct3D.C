@@ -434,6 +434,78 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
 } // TFEFunction3D::GetDeformationTensorErrors
 
 
+double TFEVectFunct3D::GetL2NormDivergenceError(DoubleFunct3D* Exact_u1,
+                                                DoubleFunct3D* Exact_u2,
+                                                DoubleFunct3D* Exact_u3)
+{
+  auto Coll = FESpace3D->GetCollection();
+  int N_Cells = Coll->GetN_Cells();
+
+  double FEFunctValues0[MaxN_BaseFunctions3D];
+  double FEFunctValues1[MaxN_BaseFunctions3D];
+  double FEFunctValues2[MaxN_BaseFunctions3D];
+  double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
+  double AbsDetJK[MaxN_QuadPoints_3D];
+  bool SecondDer = false;
+
+  double div_error = 0.;
+  // loop over all cells
+  for(int i = 0; i < N_Cells; i++)
+  {
+    TBaseCell *cell = Coll->GetCell(i);
+    FE3D FEid = FESpace3D->GetFE3D(i, cell);
+    TFE3D * fe = TFEDatabase3D::GetFE3D(FEid);
+    fe->GetBaseFunct3D_ID();
+
+    // compute transformation to reference cell
+    double *xi, *eta, *zeta, *weights;
+    int N_Points;
+    TFEDatabase3D::GetOrig(1, &FEid, Coll, cell, &SecondDer,
+        N_Points, xi, eta, zeta, weights, X, Y, Z, AbsDetJK);
+
+    // calculate all needed derivatives of this FE function
+    int N_Bf = fe->GetN_DOF();
+    int *DOF = FESpace3D->GetGlobalDOF(i);
+    for(int jj = 0; jj < N_Bf; jj++)
+    {
+      int k = DOF[jj];
+      FEFunctValues0[jj] = Values[k];
+      FEFunctValues1[jj] = Values[k+Length];
+      FEFunctValues2[jj] = Values[k+2*Length];
+    }
+    BaseFunct3D BaseFunct = fe->GetBaseFunct3D_ID();
+    auto OrigFEValuesX = TFEDatabase3D::GetOrigElementValues(BaseFunct, D100);
+    auto OrigFEValuesY = TFEDatabase3D::GetOrigElementValues(BaseFunct, D010);
+    auto OrigFEValuesZ = TFEDatabase3D::GetOrigElementValues(BaseFunct, D001);
+
+    // loop over all quadrature points
+    for(int j = 0; j < N_Points; j++)
+    {
+      double local_divergence_fe = 0;
+      for(int l = 0; l < N_Bf; l++)
+      {
+        local_divergence_fe += FEFunctValues0[l] * OrigFEValuesX[j][l];
+        local_divergence_fe += FEFunctValues1[l] * OrigFEValuesY[j][l];
+        local_divergence_fe += FEFunctValues2[l] * OrigFEValuesZ[j][l];
+      }
+      double local_divergence_exact = 0;
+      double exact_val[5];
+      Exact_u1(X[j], Y[j], Z[i], exact_val);
+      local_divergence_exact += exact_val[1];
+      Exact_u2(X[j], Y[j], Z[i], exact_val);
+      local_divergence_exact += exact_val[2];
+      Exact_u3(X[j], Y[j], Z[i], exact_val);
+      local_divergence_exact += exact_val[3];
+      
+      auto local_div_error = local_divergence_fe - local_divergence_exact;
+      div_error += AbsDetJK[j] * weights[j] * local_div_error * local_div_error;
+    } // endfor j
+  } // endfor i
+  div_error = std::sqrt(div_error);
+  return div_error;
+} // TFEVectFunct3D::GetL2NormDivergenceError
+
+
 /** write the solution into a data file - written by Sashi **/
 void TFEVectFunct3D::WriteSol(double t,
 				   std::string directory, std::string basename)
