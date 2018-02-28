@@ -66,6 +66,11 @@ class TFEVectFunct3D : public TFEFunction3D
         CoeffFct3D Coeff, TAuxParam3D *Aux,
         int n_fespaces, TFESpace3D **fespaces,
         double *errors);
+    
+    /// @brief calculate L2-norm of divergence error */
+    double GetL2NormDivergenceError(DoubleFunct3D *Exact_u1,
+                                    DoubleFunct3D *Exact_u2,
+                                    DoubleFunct3D *Exact_u3);
         
     /** write the solution into a data file **/
     void WriteSol(double t,
