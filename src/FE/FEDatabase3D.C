@@ -603,13 +603,13 @@ void TFEDatabase3D::RegisterAllFEs()
 
   ele3D = new TFE3D(BF_D_T_P1_3D, NF_D_T_P1_3D, TetraAffin, FE_D_T_P1_3D, 0);
   RegisterFE3D(D_P1_3D_T_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_D_T_P2_3D, NF_D_T_P2_3D, TetraAffin, FE_D_T_P2_3D, 0);
   RegisterFE3D(D_P2_3D_T_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_D_T_P3_3D, NF_D_T_P3_3D, TetraAffin, FE_D_T_P3_3D, 0);
   RegisterFE3D(D_P3_3D_T_A, ele3D);
-  //ele3D->CheckNFandBF();
+  
 
 
   // ======================================================================
@@ -652,18 +652,17 @@ void TFEDatabase3D::RegisterAllFEs()
   RegisterFE3D(N_Q3_3D_H_M, ele3D);
   ele3D = new TFE3D(BF_N_H_Q4_3D, NF_N_H_Q4_3D, HexaTrilinear, FE_N_H_Q4_3D, 0);
   RegisterFE3D(N_Q4_3D_H_M, ele3D);
-  ele3D->CheckNFandBF();
   
   //========LOCALPROJECTION==============
   ele3D = new TFE3D(BF_C_H_UL1_3D, NF_C_H_UL1_3D, HexaTrilinear, FE_C_H_UL1_3D, 0);
   RegisterFE3D(C_UL1_3D_H_M, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_C_H_UL2_3D, NF_C_H_UL2_3D, HexaTrilinear, FE_C_H_UL2_3D, 0);
   RegisterFE3D(C_UL2_3D_H_M, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_C_H_UL3_3D, NF_C_H_UL3_3D, HexaTrilinear, FE_C_H_UL3_3D, 0);
   RegisterFE3D(C_UL3_3D_H_M, ele3D);
-  ele3D->CheckNFandBF();
+  
   //=====================================
   
   // ======================================================================
@@ -687,20 +686,20 @@ void TFEDatabase3D::RegisterAllFEs()
 
   ele3D = new TFE3D(BF_D_H_P1_3D, NF_D_H_P1_3D, HexaAffin, FE_D_H_P1_3D, 0);
   RegisterFE3D(D_P1_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_D_H_P2_3D, NF_D_H_P2_3D, HexaAffin, FE_D_H_P2_3D, 0);
   RegisterFE3D(D_P2_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_D_H_P3_3D, NF_D_H_P3_3D, HexaAffin, FE_D_H_P3_3D, 0);
   RegisterFE3D(D_P3_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   
   ele3D = new TFE3D(BF_D_H_Q1_3D, NF_D_H_Q1_3D, HexaAffin, FE_D_H_Q1_3D, 0);
   RegisterFE3D(D_Q1_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_D_H_Q2_3D, NF_D_H_Q2_3D, HexaAffin, FE_D_H_Q2_3D, 0);
   RegisterFE3D(D_Q2_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
 
   ele3D = new TFE3D(BF_B_H_IB2_3D, NF_B_H_IB2_3D, HexaAffin, FE_B_H_IB2_3D, 0);
   RegisterFE3D(B_IB2_3D_H_A, ele3D);
@@ -711,7 +710,6 @@ void TFEDatabase3D::RegisterAllFEs()
   RegisterFE3D(N_Q3_3D_H_A, ele3D);
   ele3D = new TFE3D(BF_N_H_Q4_3D, NF_N_H_Q4_3D, HexaAffin, FE_N_H_Q4_3D, 0);
   RegisterFE3D(N_Q4_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
 
   ele3D = new TFE3D(BF_C_H_UL1_3D, NF_C_H_UL1_3D, HexaTrilinear, FE_C_H_UL1_3D, 0);
   RegisterFE3D(C_UL1_3D_H_M, ele3D);
@@ -719,57 +717,55 @@ void TFEDatabase3D::RegisterAllFEs()
   //========LOCALPROJECTION==============
   ele3D = new TFE3D(BF_C_H_UL1_3D, NF_C_H_UL1_3D, HexaAffin, FE_C_H_UL1_3D, 0);
   RegisterFE3D(C_UL1_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_C_H_UL2_3D, NF_C_H_UL2_3D, HexaAffin, FE_C_H_UL2_3D, 0);
   RegisterFE3D(C_UL2_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_C_H_UL3_3D, NF_C_H_UL3_3D, HexaAffin, FE_C_H_UL3_3D, 0);
   RegisterFE3D(C_UL3_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   //=====================================
   
   // for mixed problems
   ele3D = new TFE3D(BF_N_T_RT0_3D, NF_N_T_RT0_3D, TetraAffin, FE_N_T_RT0_3D, 0);
   RegisterFE3D(N_RT0_3D_T_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_N_T_RT1_3D, NF_N_T_RT1_3D, TetraAffin, FE_N_T_RT1_3D, 0);
   RegisterFE3D(N_RT1_3D_T_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_N_T_RT2_3D, NF_N_T_RT2_3D, TetraAffin, FE_N_T_RT2_3D, 0);
   RegisterFE3D(N_RT2_3D_T_A, ele3D);
-  //ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_N_T_RT3_3D, NF_N_T_RT3_3D, TetraAffin, FE_N_T_RT3_3D, 0);
   RegisterFE3D(N_RT3_3D_T_A, ele3D);
-  //ele3D->CheckNFandBF();
 
   ele3D = new TFE3D(BF_N_T_BDDF1_3D, NF_N_T_BDDF1_3D, TetraAffin, FE_N_T_BDDF1_3D, 0);
   RegisterFE3D(N_BDDF1_3D_T_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_N_T_BDDF2_3D, NF_N_T_BDDF2_3D, TetraAffin, FE_N_T_BDDF2_3D, 0);
   RegisterFE3D(N_BDDF2_3D_T_A, ele3D);
-  //ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_N_T_BDDF3_3D, NF_N_T_BDDF3_3D, TetraAffin, FE_N_T_BDDF3_3D, 0);
   RegisterFE3D(N_BDDF3_3D_T_A, ele3D);
-  //ele3D->CheckNFandBF();
+  
 
   ele3D = new TFE3D(BF_N_H_RT0_3D, NF_N_H_RT0_3D, HexaAffin, FE_N_H_RT0_3D, 0);
   RegisterFE3D(N_RT0_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_N_H_RT1_3D, NF_N_H_RT1_3D, HexaAffin, FE_N_H_RT1_3D, 0);
   RegisterFE3D(N_RT1_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_N_H_RT2_3D, NF_N_H_RT2_3D, HexaAffin, FE_N_H_RT2_3D, 0);
   RegisterFE3D(N_RT2_3D_H_A, ele3D);
   
   ele3D = new TFE3D(BF_N_H_BDDF1_3D, NF_N_H_BDDF1_3D, HexaAffin, FE_N_H_BDDF1_3D, 0);
   RegisterFE3D(N_BDDF1_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_N_H_BDDF2_3D, NF_N_H_BDDF2_3D, HexaAffin, FE_N_H_BDDF2_3D, 0);
   RegisterFE3D(N_BDDF2_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
+  
   ele3D = new TFE3D(BF_N_H_BDDF3_3D, NF_N_H_BDDF3_3D, HexaAffin, FE_N_H_BDDF3_3D, 0);
   RegisterFE3D(N_BDDF3_3D_H_A, ele3D);
-  ele3D->CheckNFandBF();
 
     print_registered_message_3D(std::string("Finite elements"));
 }

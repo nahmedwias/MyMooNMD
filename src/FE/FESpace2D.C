@@ -143,6 +143,12 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
              ElementForShape[Parallelogram] = C_Q4_2D_Q_A;
              ElementForShape[Rectangle] = C_Q4_2D_Q_A;
         break;
+    case 25: ElementForShape[Triangle] = C_P5_2D_T_A;
+             ElementForShape[Quadrangle] = C_Q5_2D_Q_M;
+             ElementForShape[Parallelogram] = C_Q5_2D_Q_A;
+             ElementForShape[Rectangle] = C_Q5_2D_Q_A;
+             cout << "there are no elements P5 with bubbles for triangles\n";
+        break;
 //===============================================================================
     // P1//PQ1 nonconforming
     case -1: ElementForShape[Triangle] = N_P1_2D_T_A;
@@ -547,9 +553,9 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
              ElementForShape[Rectangle] = C_EL1_2D_Q_A;
              break;     
   
-    default: cerr << "unknown order" << endl;
-             exit(-1);
-             break;
+    default:
+      ErrThrow("unknown order ", ord);
+      break;
   } // endswitch
 
   // find out all used elements
