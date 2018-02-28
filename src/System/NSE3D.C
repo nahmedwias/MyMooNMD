@@ -283,12 +283,21 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
   int order = 0;
   switch(velocity_order)
   {
-    case 1: case 2: case 3: case 4: case 5:
-    case 12: case 13: case 14: case 15:
-      if(velocity_order > 10)
-        order = velocity_order-10;
-      else
-        order = velocity_order;
+    case 1: case 2: case 3: case 4: case 5: // P_k/Q_k
+      order = velocity_order;
+      break;
+    case 12:
+      ErrThrow("Scott-Vogelius P2/P1disc is not stable in 3D even if the final "
+               "refinement step is barycentric.");
+      break;
+    case 13: case 14: case 15:
+      // P_k/P_{k-1}^{disc}, k>=3, elements are in general not inf-sup stable on 
+      // tetrahedra. If the last refinement step was barycentric refinement, 
+      // then these elements are inf-sup stable.  
+      Output::warn("You chose to use Scott-Vogelius finite elements, make sure "
+                   "that the final refinement step is barycentric, see the "
+                   "parameter 'refinement_final_step_barycentric'.");
+      order = velocity_order-10;
       break;
     case -1: case -2: case -3: case -4: case -5:
     case -101:
@@ -327,11 +336,11 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
         // standard conforming velo and continuous pressure
           pressure_order = velocity_order-1;
           break;
-          // discontinuous pressure spaces 
-          // standard conforming velo and discontinuous pressure
-          // this is not stable on triangles !!!
+          // Scott-Vogelius: discontinuous pressure spaces with standard 
+          // conforming velocity space. This is not stable on general triangles,
+          // be sure to use barycentric refinement.
         case 12: case 13: case 14: case 15:
-          pressure_order = -(velocity_order-1)*10;
+          pressure_order = -velocity_order+1;
           break;
         case 22: case 23: case 24:
           pressure_order = -(velocity_order-11)*10;
@@ -349,6 +358,9 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
   }
   TDatabase::ParamDB->PRESSURE_SPACE  = pressure_order;
   velocity_pressure_orders.second = pressure_order;
+  
+  Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
 
 void NSE3D::assemble_linear_terms()
@@ -910,24 +922,28 @@ void NSE3D::output(int i)
     // errors in third velocity component
     u3->GetErrors(example_.get_exact(2), 4, nsAllDerivs, 2,
                   L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u3);
+    double div_error = s.u_.GetL2NormDivergenceError(example_.get_exact(0),
+                                                     example_.get_exact(1), 
+                                                     example_.get_exact(2));
     // errors in pressure
     s.p_.GetErrors(example_.get_exact(3), 4, nsAllDerivs, 2, L2H1Errors,
                    nullptr, &aux, 1, &pressure_space, err_p);
     
 #ifdef _MPI
-    double err_red[8]; //memory for global (across all processes) error
-    double err_send[8]; //fill send buffer
+    double err_red[9]; //memory for global (across all processes) error
+    double err_send[9]; //fill send buffer
     err_send[0]=err_u1[0];
     err_send[1]=err_u1[1];
     err_send[2]=err_u2[0];
     err_send[3]=err_u2[1];
     err_send[4]=err_u3[0];
     err_send[5]=err_u3[1];
-    err_send[6]=err_p[0];
-    err_send[7]=err_p[1];
+    err_send[6]=div_error;
+    err_send[7]=err_p[0];
+    err_send[8]=err_p[1];
 
-    MPI_Allreduce(err_send, err_red, 8, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    for(i=0;i<8;i++)
+    MPI_Allreduce(err_send, err_red, 9, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    for(i=0;i<9;i++)
     {//MPI: sqrt was skipped in GetErrors function - do it here globally!
       err_red[i] = sqrt(err_red[i]);
     }
@@ -938,16 +954,18 @@ void NSE3D::output(int i)
     err_u2[1] = err_red[3];
     err_u3[0] = err_red[4];
     err_u3[1] = err_red[5];
-    err_p[0] = err_red[6];
-    err_p[1] = err_red[7];
+    div_error = err_red[6];
+    err_p[0] = err_red[7];
+    err_p[1] = err_red[8];
 #else
     int my_rank =0;
 #endif
 
     errors_.at(0) = sqrt(err_u1[0]*err_u1[0] + err_u2[0]*err_u2[0] + err_u3[0]*err_u3[0]);//L2
     errors_.at(1) = sqrt(err_u1[1]*err_u1[1] + err_u2[1]*err_u2[1] + err_u3[1]*err_u3[1]);//H1-semi
-    errors_.at(2) = err_p[0];
-    errors_.at(3) = err_p[1];
+    errors_.at(2) = div_error;
+    errors_.at(3) = err_p[0];
+    errors_.at(4) = err_p[1];
 
     //print errors
     if(my_rank == 0)
@@ -955,8 +973,9 @@ void NSE3D::output(int i)
       Output::stat("NSE3D", "Measured errors");
       Output::dash("L2(u)     : ", setprecision(10), errors_.at(0));
       Output::dash("H1-semi(u): ", setprecision(10), errors_.at(1));
-      Output::dash("L2(p)     : ", setprecision(10), errors_.at(2));
-      Output::dash("H1-semi(p): ", setprecision(10), errors_.at(3));
+      Output::dash("L2(div(u)): ", setprecision(10), errors_.at(2));
+      Output::dash("L2(p)     : ", setprecision(10), errors_.at(3));
+      Output::dash("H1-semi(p): ", setprecision(10), errors_.at(4));
     }
   } // if(this->db["compute_errors"])
   delete u1;
@@ -999,7 +1018,7 @@ double NSE3D::get_full_residual() const
   return old_residuals_.back().fullResidual;
 }
 
-std::array<double, int(4)> NSE3D::get_errors() const
+std::array<double, int(5)> NSE3D::get_errors() const
 {
   return errors_;
 }

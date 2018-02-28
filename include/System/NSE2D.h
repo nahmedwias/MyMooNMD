@@ -137,9 +137,9 @@ class NSE2D
     /** @brief Errors to be accesed from outside the class
      * The array is filled during the function call NSE2D::output()
      * Currently, the errors store the L2 and H1 errors of the velocity
-     * and pressure
+     * and pressure and the L2 error of the divergence.
      */
-    std::array<double, int(4)> errors;
+    std::array<double, int(5)> errors;
     
     /** @brief set parameters in database
      * 
@@ -288,7 +288,7 @@ class NSE2D
     double getFullResidual() const;
     /// @brief return the computed errors
     /// @details updated in NSE2D::stopIt
-    std::array<double, int(4)> get_errors() const;
+    std::array<double, int(5)> get_errors() const;
 };
 
 

@@ -67,6 +67,14 @@ ParameterDatabase TDomain::default_domain_parameters()
          "THIS IS UNUSED AT THE MOMENT!",
          0u, 10u);
   
+  db.add("refinement_final_step_barycentric", false,
+         "If this is set to true, the domain will be refined as usual except "
+         "the last refinement step is not uniform but barycentric. Then the "
+         "Scott-Vogelius finite element pair is inf-sup stable. If "
+         "'refinement_n_initial_steps' is zero, this parameter has no effect. "
+         " NOTE: This is not yet correctly implemented, you have to do this by "
+         "hand.");
+  
    db.add("boundary_file", "Default_UnitSquare",
         "This is a file describing the boundary of the computational domain. "
         "You probably want to adjust this to be the path to some file which "
@@ -146,7 +154,6 @@ bool ends_with (std::string const &fullString, std::string const &ending) {
 TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
   Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
 {
-
   if(ParamFile)
   {//read the param file and fil the old database
 	  Output::info<4>("READ-IN","Constructing old database from file ", ParamFile);
@@ -3757,9 +3764,14 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
       this->get_n_initial_refinement_steps(),
       n_ref_before, n_ref_after);
   }
-
+  bool final_barycentric = this->db["refinement_final_step_barycentric"];
   for(int i = 0; i < n_ref_before; i++)
-    this->RegRefineAll();
+  {
+    if(final_barycentric && i+1 == n_ref_before && n_ref_after == 0)
+      this->barycentric_refinement();
+    else
+      this->RegRefineAll();
+  }
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -3790,9 +3802,12 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   gridCollections.push_front(this->GetCollection(It_Finest, 0));
 
   //this is only relevant for multigrid
-  for(int level=0; level <  n_ref_after; ++level)
+  for(int level=0; level < n_ref_after; ++level)
   {
-    this->RegRefineAll();
+    if(final_barycentric && level+1 == n_ref_after)
+      this->barycentric_refinement();
+    else
+      this->RegRefineAll();
 #ifdef _MPI
     this->GenerateEdgeInfo();  // has to be called anew after every refinement step
     Domain_Crop(MPI_COMM_WORLD, this); // remove unwanted cells in the halo after refinement
