@@ -216,8 +216,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
         ElementForShape[Tetrahedron] = N_BDDF3_3D_T_A;
         break;
 
-    default: Error("unknown order" << endl);
-             exit(-1);
+    default: ErrThrow("unknown order ", ord);
              break;
   } // endswitch
 
