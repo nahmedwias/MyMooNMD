@@ -48,10 +48,9 @@ double bound = 0;
 double timeC = 0;
 #endif
 
-void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
+void compare(const NSE3D& nse3d, std::array<double, int(5)> errors, double tol)
 {
-  std::array<double, int(4)> computed_errors;
-  computed_errors = nse3d.get_errors();
+  std::array<double, int(5)> computed_errors = nse3d.get_errors();
 
   // check the L2-error of the velcoity
   if( fabs(computed_errors[0]-errors[0]) > tol ||
@@ -65,24 +64,24 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
     ErrThrow("H1 norm of velocity: ", computed_errors[1], "  ", errors[1]);
   }
   // check the L2-error of the pressure
-  if( fabs(computed_errors[2] - errors[2]) > tol)
+  if( fabs(computed_errors[3] - errors[3]) > tol)
   {
-    ErrThrow("L2 norm of pressure: ", computed_errors[2], "  ", errors[2]);
+    ErrThrow("L2 norm of pressure: ", computed_errors[3], "  ", errors[3]);
   }
   // check the H1-error of the pressure
-  if(fabs(computed_errors[3] - errors[3]) > tol )
+  if(fabs(computed_errors[4] - errors[4]) > tol )
   {
-    ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
+    ErrThrow("H1 norm of pressure: ", computed_errors[4], "  ", errors[4]);
   }
 }
 #ifndef _MPI
 void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int velocity_order,
-           int pressure_order, int nstype, std::array<double, int(4)> errors,
+           int pressure_order, int nstype, std::array<double, int(5)> errors,
            double tol)
 #else
 void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int maxSubDomainPerDof,
            int velocity_order, int pressure_order, int nstype,
-           std::array<double, int(4)> errors, double tol)
+           std::array<double, int(5)> errors, double tol)
 #endif
 {
 #ifdef _MPI
@@ -318,8 +317,8 @@ int main(int argc, char* argv[])
     Output::print<1>(">>>>> Starting computations with solver: <<<<<"
         , std::string(argv[1]), ".");
   //===========================================================
-  std::array<double, int(4)> errors;
-  errors = {{0.0, 0.0, 0.0, 0.0}};
+  std::array<double, int(5)> errors;
+  errors = {{0.0, 0.0, 0.0, 0.0, 0.0}};
 
   //============= Tests on hexa grid ==========================
   if(my_rank==0)
@@ -351,9 +350,9 @@ int main(int argc, char* argv[])
       db["example"] = -1;
       size_t nstype = 4; //nstype should not matter much here
 #ifndef _MPI
-      check(db, grid_collections, 12, -4711, nstype, errors, tol);
+      check(db, grid_collections, 22, -4711, nstype, errors, tol);
 #else
-      check(db, grid_collections, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
+      check(db, grid_collections, maxSubDomainPerDof, 22, -4711, nstype, errors, tol);
       MPI_Finalize();
 #endif
       return 0;
@@ -380,9 +379,9 @@ int main(int argc, char* argv[])
       db["example"] = -3;
       size_t nstype = 2;
 #ifndef _MPI
-      check(db, grid_collections, 12, -4711, nstype, errors, tol);
+      check(db, grid_collections, 22, -4711, nstype, errors, tol);
 #else
-      check(db, grid_collections, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
+      check(db, grid_collections, maxSubDomainPerDof, 22, -4711, nstype, errors, tol);
 #endif
     }
 #ifndef _MPI//only for seq, 3rd order elements are not yet adapted for parallel

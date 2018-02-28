@@ -150,10 +150,11 @@ class NSE3D
     /** @brief Errors, held in ready to be accessed from outside the class
      * The array is filled during the function call NSE3D::output()
      * Currently, the errors store the L2 and H1-semi errors of the velocity
-     * (errors.at(0) is L2 and errors.at(1) is H1-semi)
-     * and the pressure (errors.at(2) is L2 and errors.at(3) is H1-semi).
+     * (errors.at(0) is L2 and errors.at(1) is H1-semi), the L2 error in the 
+     * divergence (errors.at(2)), and the pressure (errors.at(3) is L2 and 
+     * errors.at(4) is H1-semi).
      */
-    std::array<double, int(4)> errors_;
+    std::array<double, int(5)> errors_;
 
     /** @brief set the velocity and pressure orders
      *
@@ -319,7 +320,7 @@ class NSE3D
     double get_full_residual() const;
     
     /// @brief return the computed errors (computed in output())
-    std::array<double, int(4)> get_errors() const;
+    std::array<double, int(5)> get_errors() const;
 
  private:
     void output_problem_size_info() const;
