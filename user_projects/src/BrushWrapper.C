@@ -406,7 +406,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   myfile << "z" << ",";
   myfile << "Volume [m^3]" << ",";
   myfile << "POTASHALUM crys [kg/m^3]" << ",";
-  //myfile << "ASA diss [kg/m^3]" << ",";
+  myfile << "ASA diss [kg/m^3]" << ",";
   myfile << "x velo [m/s] " << ",";
   myfile << "y velo [m/s] " << ",";
   myfile << "z velo [m/s] " << "\n";
@@ -602,10 +602,14 @@ void BrushWrapper::output(int &image, double t)
     output_writer_.WriteVtk(filename.c_str());
     //output_writer_.WriteVtkDiscontinuous(filename.c_str(), disc_output_n_loc_verts ,disc_output_loc_verts);
     //END EXPERIMENTAL
+    image++;
+#endif
+	}
 
-    //CB DEBUG - Total mass control file, output every 1s
-    //double del = fabs(t - std::round(t));
-    //if(del < 1e-3)
+#ifdef __3D__
+    //CB DEBUG - Total mass control file, output only at full seconds
+    double del = fabs(t - std::round(t));
+    if(del < 1e-3)
     {
       std::ofstream myfile;
       std::string out_dir(db_["output_vtk_directory"].value_as_string());
@@ -633,12 +637,12 @@ void BrushWrapper::output(int &image, double t)
           myfile << brush_grid_->GetCell(c)->GetMeasure() << ",";
           //Brush POTASHALUM mass (kg/m^3)
           myfile << br_grid_psdmom_fcts_values_[1].at(dof) << ",";
-//          //ParMooN dissolved POTASHALUM values
-//          bgn_ind= br_grid_param_fcts_[4]->GetFESpaceXD()->GetBeginIndex();
-//          dofs = br_grid_param_fcts_[4]->GetFESpaceXD()->GetGlobalNumbers();
-//          dof = dofs[bgn_ind[c]];
-//          double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * density;
-//          myfile << val_in_kg << ",";
+          //ParMooN dissolved POTASHALUM values
+          bgn_ind= br_grid_param_fcts_[4]->GetFESpaceXD()->GetBeginIndex();
+          dofs = br_grid_param_fcts_[4]->GetFESpaceXD()->GetGlobalNumbers();
+          dof = dofs[bgn_ind[c]];
+          double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * density;
+          myfile << val_in_kg << ",";
           //velocity in the current ambient
           bgn_ind= br_grid_param_fcts_[0]->GetFESpaceXD()->GetBeginIndex();
           dofs = br_grid_param_fcts_[0]->GetFESpaceXD()->GetGlobalNumbers();
@@ -657,19 +661,13 @@ void BrushWrapper::output(int &image, double t)
       myfile.close();
     }
     //END DEBUG
-
-    image++;
 #endif
-	}
 
-  interface_->write_particle_stats(t, moment_stats_file_);
+    interface_->write_particle_stats(t, moment_stats_file_);
 
-  interface_->write_inlet_particle_list(inflow_particles_file_);
+    interface_->write_inlet_particle_list(inflow_particles_file_);
 
-  double it = 0;
-  if(std::abs(std::modf(t,&it)) < 1e-10 || std::abs(std::modf(t,&it) -1 ) < 1e-10) //this is a very inelegant way of checking if t is close to an integer
-  {
-    Output::info("OUTPUT","Taking particle snapshot at time ", it ," s");
+    Output::info("OUTPUT","Taking particle snapshot at time ", t, "s");
     interface_->particle_population_snapshot(outflow_particles_file_,t);
   }
 
