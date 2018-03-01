@@ -109,12 +109,15 @@ double c_p = 3841;    // J/(kg * K), specific heat capacity (of the fluid), from
 namespace ConcentrationProperties
 {
 double diffusion_ALUM = 5.4e-10; // m^2/s, from Volker's kali alaun paper stub
+double M_ALUManhydrate = 0.258192; // [kg/mol]
 double cALUM_start = 0;  //mol anhydrate/m^3 This will be set from the outside.
 
 std::vector<double> inlet_values;
 size_t current_index; // The place in the vector 'inlet_values' were
                       //   a) the current inflow is read from and
                       //   b) the current use of concentration is substracted from
+
+double get_M_ALUManhydrate(){return M_ALUManhydrate;}
 
 void subtract_material(double delta_c)
 {
