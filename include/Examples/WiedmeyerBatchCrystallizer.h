@@ -43,6 +43,7 @@ namespace ConcentrationProperties
 void subtract_material(double delta_c);
 void update_index();
 void initialise_inlet_values(double c_start, double t_cycle, double delta_t);
+double get_M_ALUManhydrate();
 }
 
 double derived_concentration_PAL_SUPSAT_POWG(const std::vector<double>& data);

@@ -406,7 +406,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   myfile << "z" << ",";
   myfile << "Volume [m^3]" << ",";
   myfile << "POTASHALUM crys [kg/m^3]" << ",";
-  myfile << "ASA diss [kg/m^3]" << ",";
+  myfile << "POTASHALUM diss [kg/m^3]" << ",";
   myfile << "x velo [m/s] " << ",";
   myfile << "y velo [m/s] " << ",";
   myfile << "z velo [m/s] " << "\n";
@@ -641,8 +641,9 @@ void BrushWrapper::output(int &image, double t)
           bgn_ind= br_grid_param_fcts_[4]->GetFESpaceXD()->GetBeginIndex();
           dofs = br_grid_param_fcts_[4]->GetFESpaceXD()->GetGlobalNumbers();
           dof = dofs[bgn_ind[c]];
-          double val_in_kg = br_grid_param_fcts_[4]->GetValues()[dof] * density;
-          myfile << val_in_kg << ",";
+          double val_in_kg_m3 = br_grid_param_fcts_[4]->GetValues()[dof]
+                              * wiedmeyer_batch_crystallizer::ConcentrationProperties::get_M_ALUManhydrate();
+          myfile << val_in_kg_m3 << ",";
           //velocity in the current ambient
           bgn_ind= br_grid_param_fcts_[0]->GetFESpaceXD()->GetBeginIndex();
           dofs = br_grid_param_fcts_[0]->GetFESpaceXD()->GetGlobalNumbers();
@@ -669,7 +670,6 @@ void BrushWrapper::output(int &image, double t)
 
     Output::info("OUTPUT","Taking particle snapshot at time ", t, "s");
     interface_->particle_population_snapshot(outflow_particles_file_,t);
-  }
 
   // use this for the Eder flow crystallizer example
   //interface_->write_outlet_particle_list(outflow_particles_file_);
