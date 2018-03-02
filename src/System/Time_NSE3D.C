@@ -490,7 +490,7 @@ void Time_NSE3D::assemble_initial_time()
   
   if(systems_.size() > 1)
   {
-    this->restrict_function();
+    //this->restrict_function();
   }
   
   for(auto &s : this->systems_)
@@ -681,8 +681,8 @@ void Time_NSE3D::assemble_nonlinear_term()
 {
   if(imex_scheme(0))
     this->construct_extrapolated_solution();
-  if(systems_.size()>1)
-    this->restrict_function();
+  //if(systems_.size()>1)
+  //  this->restrict_function();
   for(System_per_grid &s : this->systems_)
   {
     call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
@@ -944,6 +944,8 @@ void Time_NSE3D::solve()
 /**************************************************************************** */
 void Time_NSE3D::output(int m, int &image)
 {
+    System_per_grid& s = this->systems_.front();
+  cout<<"norm of solution: " << s.solution_.norm()<<endl;
 #ifdef _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -954,7 +956,8 @@ void Time_NSE3D::output(int m, int &image)
 	if(no_output)
 		return;
 
-  System_per_grid& s = this->systems_.front();
+ // System_per_grid& s = this->systems_.front();
+  
   TFEFunction3D* u1 = s.u_.GetComponent(0);
   TFEFunction3D* u2 = s.u_.GetComponent(1);
   TFEFunction3D* u3 = s.u_.GetComponent(2);
@@ -1248,15 +1251,15 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   bool do_upwinding = false;
   if(type != LocalAssembling3D_type::TNSE3D_Rhs)
   {
-      bool mdml =  solver_.is_using_multigrid()
-                  && solver_.get_multigrid()->is_using_mdml();
-      bool on_finest_grid = &systems_.front() == &s;
-      do_upwinding = (db_["space_discretization_type"].is("upwind")
-                     || (mdml && !on_finest_grid));
-    
-    if(do_upwinding)  //HOTFIX: Check the documentation!
-      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
-    else
+//       bool mdml =  solver_.is_using_multigrid()
+//                   && solver_.get_multigrid()->is_using_mdml();
+//       bool on_finest_grid = &systems_.front() == &s;
+//       do_upwinding = (db_["space_discretization_type"].is("upwind")
+//                      || (mdml && !on_finest_grid));
+//     
+//     if(do_upwinding)  //HOTFIX: Check the documentation!
+//       assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+//     else
       assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
   }
   // Boundary conditions and value
@@ -1281,8 +1284,8 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
              boundary_conditions, boundary_values.data(), localAssembling);
 
   // do upwinding for the mdml case
-  if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
-    this->do_upwinding_for_mdml(sqMat, fefunctions, type);
+//   if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
+//     this->do_upwinding_for_mdml(sqMat, fefunctions, type);
 }
 /**************************************************************************** */
 void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s, 

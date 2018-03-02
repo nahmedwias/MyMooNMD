@@ -166,6 +166,8 @@ int main(int argc, char* argv[])
   timer.restart_and_print("setting up spaces, matrices and initial assembling");
   TDatabase::TimeDB->CURRENTTIME = 0.0;
   
+  tnse3d.output(tss.current_step_,image);
+  
   if(parmoon_db["example"].is(7))
   {
     ChannelTau180::set_up_memory();
