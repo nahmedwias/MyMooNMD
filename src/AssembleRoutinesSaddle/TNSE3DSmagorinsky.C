@@ -1,6 +1,5 @@
 #include <TNSE3DSmagorinsky.h>
 #include <CommonRoutineTNSE3D.h>
-#include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 
 // ======================================================================
 // Type 1, Smagorinsky
@@ -79,9 +78,7 @@ void TimeNSType1Smagorinsky3D(double Mult, double *coeff,
 
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                       test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       
       MatrixRow[j] += Mult * val;
 
@@ -196,9 +193,8 @@ void TimeNSType2Smagorinsky3D(double Mult, double *coeff,
 
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                       test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       
       MatrixRow[j] += Mult * val;
 
@@ -339,9 +335,8 @@ void TimeNSType3Smagorinsky3D(double Mult, double *coeff,
       
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       val *= Mult;
       Matrix11Row[j] += val;
       Matrix22Row[j] += val;
@@ -488,9 +483,8 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
       
       val  = viscosity*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       
       Matrix11Row[j] += Mult * val;
 
@@ -505,9 +499,8 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
 
       val  = viscosity*(test100*ansatz100+2*test010*ansatz010
                    +test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       
       Matrix22Row[j] += Mult * val;
 
@@ -522,9 +515,8 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
 
       val  = viscosity*(test100*ansatz100+test010*ansatz010
                    +2*test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       
       Matrix33Row[j] += Mult * val;
 
@@ -655,9 +647,8 @@ void TimeNSType4Smagorinsky3D(double Mult, double *coeff,
       
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix11Row[j] += Mult * val;
       Matrix22Row[j] += Mult * val;
       Matrix33Row[j] += Mult * val;
@@ -822,9 +813,7 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
       
       val  = viscosity*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix11Row[j] += Mult * val;
 
       val  = viscosity*(test010*ansatz100);
@@ -838,9 +827,7 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
 
       val  = viscosity*(test100*ansatz100+2*test010*ansatz010
                    +test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix22Row[j] += Mult * val;
 
       val  = viscosity*(test001*ansatz010);
@@ -854,9 +841,8 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
 
       val  = viscosity*(test100*ansatz100+test010*ansatz010
                    +2*test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       Matrix33Row[j] += Mult * val;
 
       val = Mult*(ansatz000*test000);
@@ -967,9 +953,8 @@ void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff,
       
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       MatrixRow[j] += Mult * val;
     } // endfor j
   } // endfor i
@@ -1038,9 +1023,8 @@ void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff,
       
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+
+      val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       val *= Mult;
       Matrix11Row[j] += val;
       Matrix22Row[j] += val;
@@ -1128,11 +1112,7 @@ void TimeNSType3_4NLSmagorinskyDD3D(double Mult, double *coeff,
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
 
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      else
-	val1 = 0.;
+      val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       
       val2 = test100*ansatz100;
       val3 = test010*ansatz010;

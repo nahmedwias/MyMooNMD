@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <TNSE3D_Routines.h>
 #include <MainUtilities.h>
-#include <Hotfixglobal_AssembleNSE.h>
 
 void TimeNSType4VMS_ProjectionDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -127,12 +126,9 @@ void TimeNSType4VMS_ProjectionDD3D(double Mult, double *coeff,
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      else
-	val1 = 0.;
-
+      
+      val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
+      
       val  = viscosity*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001);
       val += val1;
@@ -353,13 +349,8 @@ void TimeNSType3_4NLVMS_ProjectionDD3D(double Mult, double *coeff,
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
 
-      //val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-	val1 = valu1*ansatz100+valu2*ansatz010+valu3*ansatz001;
-      else
-	val1 = 0.;
-
+      val1 = valu1*ansatz100+valu2*ansatz010+valu3*ansatz001;
+      
       val2 = test100*ansatz100;
       val3 = test010*ansatz010;
       val4 = test001*ansatz001;

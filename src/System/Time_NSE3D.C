@@ -490,7 +490,7 @@ void Time_NSE3D::assemble_initial_time()
   
   if(systems_.size() > 1)
   {
-    //this->restrict_function();
+    this->restrict_function();
   }
   
   for(auto &s : this->systems_)
@@ -681,8 +681,8 @@ void Time_NSE3D::assemble_nonlinear_term()
 {
   if(imex_scheme(0))
     this->construct_extrapolated_solution();
-  //if(systems_.size()>1)
-  //  this->restrict_function();
+  if(systems_.size()>1)
+   this->restrict_function();
   for(System_per_grid &s : this->systems_)
   {
     call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
@@ -1248,18 +1248,18 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   
   set_matrices_rhs(s, type, sqMat, reMat, rhs_array);
   // find out if we have to do upwinding
-  bool do_upwinding = false;
-  if(type != LocalAssembling3D_type::TNSE3D_Rhs)
+  bool do_upwinding = false;  
+  if(type != LocalAssembling3D_type::TNSE3D_Rhs && db_["space_discretization_type"].is("galerkin"))
   {
-//       bool mdml =  solver_.is_using_multigrid()
-//                   && solver_.get_multigrid()->is_using_mdml();
-//       bool on_finest_grid = &systems_.front() == &s;
-//       do_upwinding = (db_["space_discretization_type"].is("upwind")
-//                      || (mdml && !on_finest_grid));
-//     
-//     if(do_upwinding)  //HOTFIX: Check the documentation!
-//       assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
-//     else
+      bool mdml =  solver_.is_using_multigrid()
+                  && solver_.get_multigrid()->is_using_mdml();
+      bool on_finest_grid = &systems_.front() == &s;
+      do_upwinding = (db_["space_discretization_type"].is("upwind")
+                     || (mdml && !on_finest_grid));
+    
+    if(do_upwinding)  //HOTFIX: Check the documentation!
+      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
+    else
       assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
   }
   // Boundary conditions and value
@@ -1284,8 +1284,8 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
              boundary_conditions, boundary_values.data(), localAssembling);
 
   // do upwinding for the mdml case
-//   if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
-//     this->do_upwinding_for_mdml(sqMat, fefunctions, type);
+  if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
+    this->do_upwinding_for_mdml(sqMat, fefunctions, type);
 }
 /**************************************************************************** */
 void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s, 
@@ -1556,6 +1556,10 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 void Time_NSE3D::do_upwinding_for_mdml(std::vector<TSquareMatrix3D*> &sqMat, 
 std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type)
 {
+  if(!db_["space_discretization_type"].is("galerkin"))
+  {
+    ErrThrow("upwinding needs only for the standard method");
+  }
   double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
   switch(TDatabase::ParamDB->NSTYPE)
   {
