@@ -357,7 +357,8 @@ void TimeNSType3_4NLVMS_ProjectionDD3D(double Mult, double *coeff,
       //HOTFIX: Check the documentation!
       if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
 	val1 = valu1*ansatz100+valu2*ansatz010+valu3*ansatz001;
-      val1 = 0.;
+      else
+	val1 = 0.;
 
       val2 = test100*ansatz100;
       val3 = test010*ansatz010;
