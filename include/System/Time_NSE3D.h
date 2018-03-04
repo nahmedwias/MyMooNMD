@@ -99,6 +99,18 @@ class Time_NSE3D
       TFEVectFunct3D um2_;
       /** @brief Finite Element function for pressure */
       TFEFunction3D pm2_;
+      
+      /** @brief Extrapolated solution
+       * 
+       */
+      /** @brief constructs a solution vector extrapolated from previous steps
+       * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
+      BlockVector extrapolated_solution_;
+      /** @brief the corresponding finite element functions for 
+       * velocity and pressure 
+       */
+      TFEVectFunct3D extrapolated_u_;
+      TFEFunction3D extrapolated_p_;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -184,11 +196,6 @@ class Time_NSE3D
 
     /** @brief right hand side vector from previous time step (on finest mesh)*/
     BlockVector old_rhs_;
-
-
-    /** @brief constructs a solution vector extrapolated from previous steps
-     * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
-    BlockVector extrapolated_solution_;
 
     /** @brief old time step length used to scale the pressure blocks */
     double oldtau_;

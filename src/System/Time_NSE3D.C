@@ -110,6 +110,12 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
                      solution_m1_.length(0), 3);
   pm2_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_m2_.block(3),
                     solution_m2_.length(3));
+  // for extrapolation
+  extrapolated_solution_=BlockVector(matrix_, false);
+  extrapolated_u_ = TFEVectFunct3D(&velocitySpace_, "u", "u", extrapolated_solution_.block(0),
+                     extrapolated_solution_.length(0), 3);
+  extrapolated_p_ = TFEFunction3D(&pressureSpace_, "p", "p", extrapolated_solution_.block(3),
+                    extrapolated_solution_.length(3));
 
 #ifdef _MPI
   velocitySpace_.initialize_parallel(maxSubDomainPerDof);
@@ -484,10 +490,6 @@ void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pr
 /**************************************************************************** */
 void Time_NSE3D::assemble_initial_time()
 {
-  bool is_imex = imex_scheme(0);
-  if(is_imex)
-    this->construct_extrapolated_solution();
-  
   if(systems_.size() > 1)
   {
     this->restrict_function();
@@ -547,12 +549,22 @@ void Time_NSE3D::assemble_initial_time()
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
     this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
     
+    
     if(db_["time_discretization"].is("bdf_two") || db_["imex_scheme_"])
     {
-      double *u1m2  = this->systems_.front().solution_m2_.block(0);
-      double *u2m2  = this->systems_.front().solution_.block(1);
-      double *u3m2  = this->systems_.front().solution_.block(2);
-      double *pm2   = this->systems_.front().solution_.block(3);
+      double *u1m1 = this->systems_.front().solution_m1_.block(0);
+      double *u2m1 = this->systems_.front().solution_m1_.block(1);
+      double *u3m1 = this->systems_.front().solution_m1_.block(2);
+      double *pm1  = this->systems_.front().solution_m1_.block(3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1m1, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2m1, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3m1, 3);
+      this->systems_.front().pressureSpace_.get_communicator().consistency_update( pm1, 3);
+      
+      double *u1m2 = this->systems_.front().solution_m2_.block(0);
+      double *u2m2 = this->systems_.front().solution_m2_.block(1);
+      double *u3m2 = this->systems_.front().solution_m2_.block(2);
+      double *pm2  = this->systems_.front().solution_m2_.block(3);
       this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1m2, 3);
       this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2m2, 3);
       this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3m2, 3);
@@ -577,6 +589,23 @@ void Time_NSE3D::restrict_function()
       u_ns_dofs.push_back(s.solution_.length(block));
     }
     GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+  }
+  // only for the extrapolation
+  if(imex_scheme(0))
+  {
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.extrapolated_solution_.block(block));
+        u_ns_dofs.push_back(s.extrapolated_solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
   }
 }
 
@@ -662,8 +691,18 @@ void Time_NSE3D::assemble_rhs(bool ass_rhs)
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
     this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
     
+    
     if(db_["time_discretization"].is("bdf_two") || db_["imex_scheme_"])
     {
+      double *u1m1 = this->systems_.front().solution_m1_.block(0);
+      double *u2m1 = this->systems_.front().solution_m1_.block(1);
+      double *u3m1 = this->systems_.front().solution_m1_.block(2);
+      double *pm1  = this->systems_.front().solution_m1_.block(3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1m1, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2m1, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3m1, 3);
+      this->systems_.front().pressureSpace_.get_communicator().consistency_update( pm1, 3);
+      
       double *u1m2 = this->systems_.front().solution_m2_.block(0);
       double *u2m2 = this->systems_.front().solution_m2_.block(1);
       double *u3m2 = this->systems_.front().solution_m2_.block(2);
@@ -679,10 +718,13 @@ void Time_NSE3D::assemble_rhs(bool ass_rhs)
 /**************************************************************************** */
 void Time_NSE3D::assemble_nonlinear_term()
 {
+  // extrapolated solution
   if(imex_scheme(0))
     this->construct_extrapolated_solution();
+  // grid restriction
   if(systems_.size()>1)
    this->restrict_function();
+  // assemble the system
   for(System_per_grid &s : this->systems_)
   {
     call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
@@ -822,8 +864,11 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
                     "\t\t", "Reduction: ", normOfResidual/initial_residual_);
     }
     // copy solution for the next time step: BDF2 needs two previous solutions 
-    s.solution_m2_ = s.solution_m1_;
-    s.solution_m1_ = s.solution_;
+    for(System_per_grid& ispg: this->systems_)
+    {
+      ispg.solution_m2_ = ispg.solution_m1_;
+      ispg.solution_m1_ = ispg.solution_;
+    }
     // descale the matrices, since only the diagonal A block will
     // be reassembled in the next time step
     if (this->imex_scheme(0) && iteration_counter>0)
@@ -945,7 +990,6 @@ void Time_NSE3D::solve()
 void Time_NSE3D::output(int m, int &image)
 {
     System_per_grid& s = this->systems_.front();
-  cout<<"norm of solution: " << s.solution_.norm()<<endl;
 #ifdef _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -1188,10 +1232,11 @@ void Time_NSE3D::construct_extrapolated_solution()
       if(db_["extrapolation_type"].is("linear_extrapolate"))
       {
 	System_per_grid &s = this->systems_.front();
-	s.solution_.reset();
-	s.solution_ = s.solution_m1_;
-	s.solution_.scale(2.);
-	s.solution_.add_scaled(s.solution_m2_,-1.);
+	s.extrapolated_solution_.reset();
+	s.extrapolated_solution_ = s.solution_m1_;
+	s.extrapolated_solution_.scale(2.);
+	s.extrapolated_solution_.add_scaled(s.solution_m2_,-1.);
+	s.extrapolated_solution_.copy_nonactive(s.rhs_);
       }
       else
       {
@@ -1221,10 +1266,20 @@ bool Time_NSE3D::imex_scheme(bool print_info)
   if((db_["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3))
   {
     db_["nonlinloop_maxit"] = 1;
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if(time_stepping_scheme.current_step_ == 3 && my_rank==0)
+      Output::info<1>("Nonlinear Loop MaxIteration",
+                    "The parameter 'nonlinloop_maxit' was changed to 1."
+                    " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+#else
     if(print_info) // condition is here just to print it once
       Output::info<1>("Nonlinear Loop MaxIteration",
                     "The parameter 'nonlinloop_maxit' was changed to 1."
                     " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+#endif
+
     return true;
   }
   else
@@ -1310,6 +1365,14 @@ void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s,
   functions[1] = s.u_.GetComponent(1);
   functions[2] = s.u_.GetComponent(2);
   functions[3] = &s.p_;
+  
+  if(imex_scheme(0))
+  {
+    functions[0] = s.extrapolated_u_.GetComponent(0);
+    functions[1] = s.extrapolated_u_.GetComponent(1);
+    functions[2] = s.extrapolated_u_.GetComponent(2);
+    functions[3] = &s.extrapolated_p_;
+  }
   if(db_["space_discretization_type"].is("vms_projection"))
   {
     spaces.resize(4);
