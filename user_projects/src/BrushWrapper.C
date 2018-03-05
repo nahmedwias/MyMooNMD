@@ -184,8 +184,9 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   parameter_n_specs_derived_(0),   // gets reset by pick_example
   //output files and vtk object
   moment_stats_file_(db_["out_part_moments_file"].get<std::string>()),
-  outflow_particles_file_(db_["out_part_lists_file"].get<std::string>()),
-  inflow_particles_file_(db_["in_part_lists_file"].get<std::string>())
+  inflow_particles_file_(db_["in_part_lists_file"].get<std::string>()),
+  snapshot_particles_file_(db_["snapshot_part_lists_file"].get<std::string>()),
+  outflow_particles_file_(db_["out_part_lists_file"].get<std::string>())
 #ifdef __2D__
   ,output_writer_(db_)
 #elif defined(__3D__)
@@ -668,10 +669,8 @@ void BrushWrapper::output(int &image, double t)
 
     interface_->write_inlet_particle_list(inflow_particles_file_);
 
-    Output::info("OUTPUT","Taking particle snapshot at time ", t, "s");
-    interface_->particle_population_snapshot(outflow_particles_file_,t);
+    interface_->particle_population_snapshot(snapshot_particles_file_,t);
 
-  // use this for the Eder flow crystallizer example
-  //interface_->write_outlet_particle_list(outflow_particles_file_);
+    interface_->write_outlet_particle_list(outflow_particles_file_);
 
 }

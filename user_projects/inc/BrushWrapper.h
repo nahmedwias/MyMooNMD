@@ -170,8 +170,9 @@ class BrushWrapper
     // OBJECTS FOR PROGRAM OUTPUT (their sole purpose is post-processing.)
     // Files into which Brush writes its output.
     std::ofstream moment_stats_file_;
-    std::ofstream outflow_particles_file_;
     std::ofstream inflow_particles_file_;
+    std::ofstream snapshot_particles_file_;
+    std::ofstream outflow_particles_file_;
     // Moments of the PSD which can be calculated by Brush. Used only for visual-
     // ization with paraview, which is performed by the output_writer_.
 #ifdef __2D__
