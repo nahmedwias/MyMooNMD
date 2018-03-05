@@ -385,16 +385,22 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   if(moment_stats_file_.is_open())
     moment_stats_file_.close();
   moment_stats_file_.open(db_["out_part_moments_file"].get<std::string>(), std::ofstream::out);
-  if(outflow_particles_file_.is_open())
-    outflow_particles_file_.close();
-  outflow_particles_file_.open(db_["out_part_lists_file"].get<std::string>(), std::ofstream::out);
   if(inflow_particles_file_.is_open())
     inflow_particles_file_.close();
   inflow_particles_file_.open(db_["in_part_lists_file"].get<std::string>(), std::ofstream::out);
+  if(outflow_particles_file_.is_open())
+    outflow_particles_file_.close();
+  outflow_particles_file_.open(db_["out_part_lists_file"].get<std::string>(), std::ofstream::out);
+  if(snapshot_particles_file_.is_open())
+    snapshot_particles_file_.close();
+  snapshot_particles_file_.open(db_["snap_part_lists_file"].get<std::string>(), std::ofstream::out);
 
   // Finally write a nice header into the particle stats file,
   // so that it can be filled with data from now on.
-  interface_->write_headers(moment_stats_file_, outflow_particles_file_, inflow_particles_file_);
+  interface_->write_headers(moment_stats_file_,
+                            inflow_particles_file_,
+                            snapshot_particles_file_,
+                            outflow_particles_file_);
 
   //CB DEBUG - Total mass control file, write header.
   std::string mass_bal_file = out_dir + "mass_balance.csv";
