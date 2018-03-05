@@ -393,7 +393,7 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
   outflow_particles_file_.open(db_["out_part_lists_file"].get<std::string>(), std::ofstream::out);
   if(snapshot_particles_file_.is_open())
     snapshot_particles_file_.close();
-  snapshot_particles_file_.open(db_["snap_part_lists_file"].get<std::string>(), std::ofstream::out);
+  snapshot_particles_file_.open(db_["snapshot_part_lists_file"].get<std::string>(), std::ofstream::out);
 
   // Finally write a nice header into the particle stats file,
   // so that it can be filled with data from now on.
