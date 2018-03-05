@@ -232,7 +232,8 @@ BrushWrapper::BrushWrapper(TCollection* brush_grid,
       db_["max_sp_per_cell"], db_["max_m0_per_cell"],
       db_["example"],
       viscosity,
-      db_["coagulation_parameter"]
+      db_["coagulation_parameter"],
+      db_["sedimentation_damping"]
   );
 
   Output::print("Setting up Brush::InterfacePM SUCCESS.");
