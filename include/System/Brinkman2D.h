@@ -143,6 +143,10 @@ public:
     double getL2DivergenceError() const;
     /// @brief return the computed H1-semi error of the velocity
     double getH1SemiVelocityError() const;
+    /// @brief return the computed L2-error of the velocity at the boundary
+    double getL2BoundaryError() const;
+    /// @brief return the computed L2-error of the normal velocity at the boundary
+    double getL2NormNormalComponentError() const;
     /// @brief return the computed L2 error of the pressure
     double getL2PressureError() const;
     /// @brief return the computed L2 error of the pressure
