@@ -33,7 +33,7 @@ class TFEVectFunct2D : public TFEFunction2D
 
     /** constructor with vector initialization */
     TFEVectFunct2D(const TFESpace2D *fespace2D, std::string name, std::string description,
-                  double *values, int length, int n_components);
+        double *values, int length, int n_components);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.
@@ -50,7 +50,7 @@ class TFEVectFunct2D : public TFEFunction2D
       std::string fct_name(Name);
       fct_name += std::to_string(i);
       return new TFEFunction2D(FESpace2D, fct_name, Description,
-                               Values+i*Length, Length);
+          Values+i*Length, Length);
     }
 
     /** convert current grid to vector-values FE function */
@@ -69,31 +69,34 @@ class TFEVectFunct2D : public TFEFunction2D
         int n_fespaces, TFESpace2D **fespaces,
         double *errors);
 
-    /** calculate L2-nrom of divergence */
+    /** calculate L2-norm of divergence */
     double GetL2NormDivergence();
 
-   /** calculate L2-norm of divergence error */
+    /** calculate L2-norm of divergence error */
     double GetL2NormDivergenceError(DoubleFunct2D *Exact_u1, DoubleFunct2D *Exact_u2);
 
-  /** write the solution into a data file **/
-   void WriteSol(double t,
-		   std::string directory=std::string("."),
-		   std::string basename=std::string("parmoon_solution"));
+    /** calculate L2-norm of (u \cdot n)-error at the boundary */
+    double GetL2NormNormalComponentError(BoundValueFunct2D *Exact_u1, BoundValueFunct2D *Exact_u2, bool rescale_by_h_E = false);
 
-  /** Read the solution from a given data file - written by Sashi **/
-   void ReadSol(std::string BaseName);
-   
-   /** determine the value of a vect function and its first derivatives at
-    the given point */
-   void FindVectGradient(double x, double y, double *val1, double *val2);
+    /** write the solution into a data file **/
+    void WriteSol(double t,
+        std::string directory=std::string("."),
+        std::string basename=std::string("parmoon_solution"));
 
-   /** interpolate the old vect value to the new function */
-   void Interpolate(TFEVectFunct2D *OldVectFunct);
-   
-   /** @brief multiply function with a scalar alpha. Only non-Dirichlet dofs are 
-    *         multiplied! */
+    /** Read the solution from a given data file - written by Sashi **/
+    void ReadSol(std::string BaseName);
+
+    /** determine the value of a vect function and its first derivatives at
+      the given point */
+    void FindVectGradient(double x, double y, double *val1, double *val2);
+
+    /** interpolate the old vect value to the new function */
+    void Interpolate(TFEVectFunct2D *OldVectFunct);
+
+    /** @brief multiply function with a scalar alpha. Only non-Dirichlet dofs are 
+     *         multiplied! */
     TFEVectFunct2D& operator*=(double alpha);
-   
+
     /** @brief add one TFEVectFunct2D to another one. Both have to be defined on
      *         the same space. Only non-Dirichlet dofs are added!  */
     TFEVectFunct2D & operator+=(const TFEVectFunct2D & rhs);
