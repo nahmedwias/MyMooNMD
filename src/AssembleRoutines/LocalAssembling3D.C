@@ -1746,7 +1746,7 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
   {
     this->N_Parameters = 9;
     this->N_ParamFct = 1;
-    this->ParameterFct =  { TimeNSType14Params_SUPG };
+    this->ParameterFct =  { TimeNSType14Params_SUPG3D };
     this->N_FEValues = 6;
     this->FEValue_MultiIndex = { D000, D000, D000, 
                                  D000, D000, D000 };
