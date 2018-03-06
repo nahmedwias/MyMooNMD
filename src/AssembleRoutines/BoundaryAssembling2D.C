@@ -61,13 +61,13 @@ void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
 
     // get a quadrature formula good enough for the argument of the integral
     int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     // compute values of all basis functions and their first partial derivatives at all quadrature points
     std::vector< std::vector<double> > uorig, u_dx_orig ,u_dy_orig;
-    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig);
+    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig, LineQuadFormula);
 
     double x_0, x_1, y_0, y_1;
     boundedge->get_vertices(x_0, y_0, x_1, y_1);
@@ -168,13 +168,13 @@ void BoundaryAssembling2D::rhs_uD_v(BlockVector &rhs,
 
     // get a quadrature formula good enough for the velocity FE space (here exact to 2*fe_degree)
     int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
-    // compute values of all basis functions at all quadrature points
+// compute values of all basis functions at all quadrature points
     std::vector< std::vector<double> > uorig, u_dx_orig, u_dy_orig;
-    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig);
+    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig, LineQuadFormula);
 
     double x_0, x_1, y_0, y_1;
     boundedge->get_vertices(x_0, y_0, x_1, y_1);
@@ -293,13 +293,13 @@ void BoundaryAssembling2D::rhs_gradv_n_uD(BlockVector &rhs,
 
     // get a quadrature formula good enough for the velocity FE space (here exact to 2*fe_degree)
     int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     // compute values of all basis functions at all quadrature points
     std::vector< std::vector<double> > uorig, u_dx_orig, u_dy_orig;
-    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig);
+    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig, LineQuadFormula);
 
     double x_0, x_1, y_0, y_1;
     boundedge->get_vertices(x_0, y_0, x_1, y_1);
@@ -415,15 +415,15 @@ void BoundaryAssembling2D::matrix_u_n_v_n(BlockFEMatrix &M,
 
     // get a quadrature formula good enough for the velocity FE space
     int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
 
     // compute values of all basis functions at all quadrature points
     std::vector< std::vector<double> > uorig, uxorig, uyorig;
-    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig);
+    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig, LineQuadFormula);
 
     double x0, x1, y0, y1;
     boundedge->get_vertices(x0, y0, x1, y1);
@@ -560,17 +560,17 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                 {
                   xc.push_back(x0_E1);
                   yc.push_back(y0_E1);
-                  Output::print("HIER!!!!!!");
-                  Output::print("lenght xc: ", xc.size());
-                  Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
-                  Output::print("Detected a pair of corner edges.");
-                  Output::print("num boundary edges: ", boundaryEdgeList.size());
-                  Output::print("OK, (m,k) = ", m ,",",k);
+                  //Output::print("HIER!!!!!!");
+                  //Output::print("lenght xc: ", xc.size());
+                  //Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
+                  //Output::print("Detected a pair of corner edges.");
+                  //Output::print("num boundary edges: ", boundaryEdgeList.size());
+                  //Output::print("OK, (m,k) = ", m ,",",k);
 
                   int locdof_corner_1, locdof_corner_2;
                   find_cornerDofs_in_boundarycells(xc, yc, U_Space, boundedge_1, boundedge_2, locdof_corner_1, locdof_corner_2);
 
-                  Output::print("locdof_corner_1, locdof_corner_2: ", locdof_corner_1, locdof_corner_2);
+                  //Output::print("locdof_corner_1, locdof_corner_2: ", locdof_corner_1, locdof_corner_2);
 
                   // mapping from local(cell) DOF to global DOF
                   TBaseCell *cell_1 = boundedge_1->GetNeighbour(0);
@@ -578,7 +578,7 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                   int test_DOF = DOF[locdof_corner_1];
                   int ansatz_DOF = test_DOF;
 
-                  Output::print("test_Dof: ", test_DOF);
+                  //Output::print("test_Dof: ", test_DOF);
                   //see the note about blocks at the beginning of the function)
                   // In each corner point, there is exactly one basis function which is nonzero at (xc,yc).
                   // In fact it has the value (1,1) in (xc,yc).
@@ -586,23 +586,23 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                   blocks[1]->add( test_DOF, ansatz_DOF, mult * (n2_E1 - n2_E2) * (n1_E1 - n1_E2) ); // A12
                   blocks[3]->add( test_DOF, ansatz_DOF, mult * (n1_E1 - n1_E2) * (n2_E1 - n2_E2) ); // A21
                   blocks[4]->add( test_DOF, ansatz_DOF, mult * (n2_E1 - n2_E2) * (n2_E1 - n2_E2)  ); // (0,1)^T * (n_E1-n_E2) --> A22
-                  Output::print("Here something was added due to corner stab!!!!!!!!!!!!!!!!!!");
+                  Output::print("Here, something was added due to corner stabilization.");
                 }
                 else if ( ( (x1_E1 == x1_E2) & (y1_E1 == y1_E2)) || (( x1_E1 == x0_E2) & (y1_E1 == y0_E2) ) )
                 {
                   xc.push_back(x1_E1);
                   yc.push_back(y1_E1);
-                  Output::print("HIER!!!!!!");
-                  Output::print("lenght xc: ", xc.size());
-                  Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
-                  Output::print("Detected a pair of corner edges.");
-                  Output::print("num boundary edges: ", boundaryEdgeList.size());
-                  Output::print("OK, (m,k) = ", m ,",",k);
+                  //Output::print("HIER!!!!!!");
+                  //Output::print("lenght xc: ", xc.size());
+                  //Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
+                  //Output::print("Detected a pair of corner edges.");
+                  //Output::print("num boundary edges: ", boundaryEdgeList.size());
+                  //Output::print("OK, (m,k) = ", m ,",",k);
 
                   int locdof_corner_1, locdof_corner_2;
                   find_cornerDofs_in_boundarycells(xc, yc, U_Space, boundedge_1, boundedge_2, locdof_corner_1, locdof_corner_2);
 
-                  Output::print("locdof_corner_1, locdof_corner_2: ", locdof_corner_1, locdof_corner_2);
+                  //Output::print("locdof_corner_1, locdof_corner_2: ", locdof_corner_1, locdof_corner_2);
 
                   // mapping from local(cell) DOF to global DOF
                   TBaseCell *cell_1 = boundedge_1->GetNeighbour(0);
@@ -610,7 +610,7 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                   int test_DOF = DOF[locdof_corner_1];
                   int ansatz_DOF = test_DOF;
 
-                  Output::print("test_Dof: ", test_DOF);
+                  //Output::print("test_Dof: ", test_DOF);
                   //see the note about blocks at the beginning of the function)
                   // In each corner point, there is exactly one basis function which is nonzero at (xc,yc).
                   // In fact it has the value (1,1) in (xc,yc).
@@ -618,12 +618,12 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                   blocks[1]->add( test_DOF, ansatz_DOF, mult * (n2_E1 - n2_E2) * (n1_E1 - n1_E2) ); // A12
                   blocks[3]->add( test_DOF, ansatz_DOF, mult * (n1_E1 - n1_E2) * (n2_E1 - n2_E2) ); // A21
                   blocks[4]->add( test_DOF, ansatz_DOF, mult * (n2_E1 - n2_E2) * (n2_E1 - n2_E2) ); // (0,1)^T * (n_E1-n_E2) --> A22
-                  Output::print("Here something was added due to corner stab!!!!!!!!!!!!!!!!!!");
+                  Output::print("Here, something was added due to corner stabilization.");
                 }
                 else
                 { 
-                  Output::print("x0_E1, y0_E1, x1_E1, y1_E1: ", x0_E1 ,",", y0_E1,",", x1_E1,",", y1_E1);
-                  Output::print("x0_E2, y0_E2, x1_E2, y1_E2: ", x0_E2 ,",", y0_E2,",", x1_E2,",", y1_E2);
+                  //Output::print("x0_E1, y0_E1, x1_E1, y1_E1: ", x0_E1 ,",", y0_E1,",", x1_E1,",", y1_E1);
+                  //Output::print("x0_E2, y0_E2, x1_E2, y1_E2: ", x0_E2 ,",", y0_E2,",", x1_E2,",", y1_E2);
                 }
               }
             }
@@ -668,12 +668,12 @@ void BoundaryAssembling2D::find_cornerDofs_in_boundarycells(std::vector<double> 
       }
     }
   }
-  Output::print("number of cell_1: ", cell_1->GetCellIndex());
-  Output::print("number of cell_2: ", cell_2->GetCellIndex());
+  //Output::print("number of cell_1: ", cell_1->GetCellIndex());
+  //Output::print("number of cell_2: ", cell_2->GetCellIndex());
 
   if (cell_1->GetCellIndex()  == cell_2->GetCellIndex() )
   {
-    Output::print("Detected a single corner cell.");
+    //Output::print("Detected a single corner cell.");
     locdof_corner_2 = locdof_corner_1;
   }
   else
@@ -749,15 +749,15 @@ void BoundaryAssembling2D::matrix_gradu_n_t_gradv_n_t(BlockFEMatrix &M,
 
     // get a quadrature formula good enough for the velocity FE space
     int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
 
     // compute values of all basis functions at all quadrature points
     std::vector< std::vector<double> > uorig, uxorig, uyorig;
-    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig);
+    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig, LineQuadFormula);
 
     double x0, x1, y0, y1;
     boundedge->get_vertices(x0, y0, x1, y1);
@@ -886,10 +886,10 @@ void BoundaryAssembling2D::matrix_gradu_n_v(BlockFEMatrix &M,
 
     // get a quadrature formula good enough for the velocity FE space
     int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
 
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     //LB Debug start
     //Output::print("num_quadPoints_per_edge: ",quadPoints.size());
@@ -899,7 +899,7 @@ void BoundaryAssembling2D::matrix_gradu_n_v(BlockFEMatrix &M,
 
     // compute values of all basis functions at all quadrature points
     std::vector< std::vector<double> > uorig, uxorig, uyorig;
-    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig);
+    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig, LineQuadFormula);
 
     double x0, x1, y0, y1;
     boundedge->get_vertices(x0,  y0, x1, y1);
@@ -1020,15 +1020,15 @@ void BoundaryAssembling2D::matrix_gradv_n_u(BlockFEMatrix &M,
 
     // get a quadrature formula good enough for the velocity FE space
     int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
 
     // compute values of all basis functions at all quadrature points
     std::vector< std::vector<double> > uorig, uxorig, uyorig;
-    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig);
+    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig, LineQuadFormula);
 
     double x0, x1, y0, y1;
     boundedge->get_vertices(x0, y0, x1, y1);
@@ -1129,15 +1129,15 @@ void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
 
     // get a quadrature formula good enough for the velocity FE space
     int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
 
     // compute values of all basis functions at all quadrature points
     std::vector< std::vector<double> > uorig, uxorig, uyorig;
-    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig);
+    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig, LineQuadFormula);
 
     double x0, x1, y0, y1;
     boundedge->get_vertices(x0, y0, x1, y1);
@@ -1237,21 +1237,21 @@ void BoundaryAssembling2D::matrix_q_u_n(BlockFEMatrix &M,
     // get a quadrature formula good enough for the velocity FE space
     int fe_degree_U = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId_U);
     int fe_degree_P = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId_P);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(fe_degree_P+fe_degree_U);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(fe_degree_P+fe_degree_U);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
 
     // compute values of all basis functions at all quadrature points
     std::vector<std::vector<double>> uorig, uxorig, uyorig;
-    get_original_values(FEId_U, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig);
+    get_original_values(FEId_U, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig, LineQuadFormula);
 
     int BaseVectDim_P = 1; // we assume only scalar FE; nur bei Raviart-Thomas & BDM \neq 1
 
     // compute values of all basis functions at all quadrature points
     std::vector<std::vector<double>> porig, pxorig, pyorig;
-    get_original_values(FEId_P, joint_id, cell, quadPoints, BaseVectDim_P, porig, pxorig, pyorig);
+    get_original_values(FEId_P, joint_id, cell, quadPoints, BaseVectDim_P, porig, pxorig, pyorig, LineQuadFormula);
 
     double x0, x1, y0, y1;
     boundedge->get_vertices(x0, y0, x1, y1);
@@ -1343,13 +1343,13 @@ void BoundaryAssembling2D::rhs_q_uD_n(BlockVector &rhs,
     int fe_degree_U = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId_U);
     int fe_degree_P = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId_P);
 
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(fe_degree_U+fe_degree_P);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(fe_degree_U+fe_degree_P);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     // compute values of all basis functions at all quadrature points
     std::vector< std::vector<double> > porig, pxorig, pyorig;
-    get_original_values(FEId_P, joint_id, cell, quadPoints, BaseVectDim_P, porig, pxorig, pyorig);
+    get_original_values(FEId_P, joint_id, cell, quadPoints, BaseVectDim_P, porig, pxorig, pyorig, LineQuadFormula);
 
     double x_0, x_1, y_0, y_1;
     boundedge->get_vertices(x_0, y_0, x_1, y_1);
@@ -1457,21 +1457,21 @@ void BoundaryAssembling2D::matrix_p_v_n(BlockFEMatrix &M,
     // get a quadrature formula good enough for the velocity FE space
     int fe_degree_U = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId_U);
     int fe_degree_P = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId_P);
-    this->LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(fe_degree_P*fe_degree_U);
+    QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(fe_degree_P*fe_degree_U);
     std::vector<double> quadWeights, quadPoints;
-    get_quadrature_formula_data(quadPoints, quadWeights);
+    get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
     //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
 
     // compute values of all basis functions at all quadrature points
     std::vector< std::vector<double> > uorig, uxorig, uyorig;
-    get_original_values(FEId_U, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig);
+    get_original_values(FEId_U, joint_id, cell, quadPoints, BaseVectDim, uorig, uxorig, uyorig, LineQuadFormula);
 
     int BaseVectDim_P = 1; // we assume only scalar FE; nur bei Raviart-Thomas & BDM \neq 1
 
     // compute values of all basis functions at all quadrature points
     std::vector< std::vector<double>> porig, pxorig, pyorig;
-    get_original_values(FEId_P, joint_id, cell, quadPoints, BaseVectDim_P, porig, pxorig, pyorig);
+    get_original_values(FEId_P, joint_id, cell, quadPoints, BaseVectDim_P, porig, pxorig, pyorig, LineQuadFormula);
 
     double x0, x1, y0, y1;
     boundedge->get_vertices(x0, y0, x1, y1);
@@ -1525,12 +1525,12 @@ void BoundaryAssembling2D::matrix_p_v_n(BlockFEMatrix &M,
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 void BoundaryAssembling2D::get_quadrature_formula_data(std::vector<double> &P,
-    std::vector<double> &W)
+    std::vector<double> &W, const QuadFormula1D& LineQuadFormula) 
 {
   // get the type of required quadrature (include/FE/Enumerations.h)
   // initialize points and weights of quadrature
   ///@attention LineQuadFormula has to be set before calling the function GetQuadFormulaData
-  TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(this->LineQuadFormula);
+  TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
 
   int nQuadPoints;
   double *quadWeights, *quadPoints;
@@ -1552,14 +1552,15 @@ void BoundaryAssembling2D::get_original_values(FE2D FEId, int joint_id,
     int BaseVectDim,
     std::vector< std::vector<double> > &originalValues,
     std::vector< std::vector<double> > &originalValues_x,
-    std::vector< std::vector<double> > &originalValues_y)
+    std::vector< std::vector<double> > &originalValues_y,
+    const QuadFormula1D& LineQuadFormula)
 {
   BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
   BF2DRefElements RefElement = TFEDatabase2D::GetRefElementFromFE2D(FEId);
   int *N_BaseFuncts = TFEDatabase2D::GetN_BaseFunctFromFE2D();
   int N_BaseFunct = N_BaseFuncts[FEId];
 
-  TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
+  TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(LineQuadFormula);
 
   originalValues.resize(quadPoints.size());
   originalValues_x.resize(quadPoints.size());
