@@ -13,79 +13,80 @@
 // Create a Brinkman specific database
 ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
 {
-    Output::print<5>("creating a default Brinkman2D parameter database");
+  Output::print<5>("creating a default Brinkman2D parameter database");
 
-    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-    db.set_name("Brinkman2D parameter database");
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("Brinkman2D parameter database");
 
-    db.add("Galerkin_type", "symmetric Galerkin formulation", 
-           "This string enables to choose between symmetry and non-symmetry of the standard Galerkin scheme."
-           "This might be irrelevant for direct solvers as long as no addiditional terms (stabilization) are apparent.",
-           {"symmetric Galerkin formulation", "nonsymmetric Galerkin formulation"});
+  db.add("Galerkin_type", "symmetric Galerkin formulation", 
+      "This string enables to choose between symmetry and non-symmetry of the standard Galerkin scheme."
+      "This might be irrelevant for direct solvers as long as no addiditional terms (stabilization) are apparent.",
+      {"symmetric Galerkin formulation", "nonsymmetric Galerkin formulation"});
 
-    db.add("PkPk_stab", false,
-           "Use a Brinkman specific assembling routine corresponding to a "
-           "residual-based equal-order stabilization for the Brinkman problem."
-           "This only works in two space dimensions and is currently only " 
-           "meaningfull for the finite element pair P1/P1."
-           "Usually this is used in the main program.",
-           {true,false});
+  db.add("PkPk_stab", false,
+      "Use a Brinkman specific assembling routine corresponding to a "
+      "residual-based equal-order stabilization for the Brinkman problem."
+      "This only works in two space dimensions and is currently only " 
+      "meaningfull for the finite element pair P1/P1."
+      "Usually this is used in the main program.",
+      {true,false});
 
-     db.add("EqualOrder_PressureStab_type", "symmetric GLS", 
-           "This string sets the type of residual-based momentum stabilization," 
-           "usually used for the stabilization of P_k/P_k finite elements, for the" 
-           "Brinkman problem in 2D. For stability of the method, the chosen "
-           "equal-order stabilization has to fit the other chosen stabilizations and "
-           "variants of the standard Galerkin scheme (symmetry or non-symmetry).",
-           {"symmetric GLS", "nonsymmetric GLS"});
+  db.add("EqualOrder_PressureStab_type", "symmetric GLS", 
+      "This string sets the type of residual-based momentum stabilization," 
+      "usually used for the stabilization of P_k/P_k finite elements, for the" 
+      "Brinkman problem in 2D. For stability of the method, the chosen "
+      "equal-order stabilization has to fit the other chosen stabilizations and "
+      "variants of the standard Galerkin scheme (symmetry or non-symmetry).",
+      {"symmetric GLS", "nonsymmetric GLS"});
 
-     db.add("GradDiv_stab", false,
-            "Use an assembling routine for the stabilization of the "
-            "divergence constraint.This only works in two space dimensions and"
-            " is meaningfull for the finite elemnt space P1/P1 only."
-            "Usually this is used in the main program.",
-            {true,false});
-    db.add("equal_order_stab_scaling", "by h_T",
-           "This string enables to switch between the prefactor h_T^2/(mueff + sigma h_T^2) and h_T^2/(mueff + sigma L_0^2) for some characteristic length of the domain.",
-            {"by h_T", "by L_0"});
+  db.add("GradDiv_stab", false,
+      "Use an assembling routine for the stabilization of the "
+      "divergence constraint.This only works in two space dimensions and"
+      " is meaningfull for the finite elemnt space P1/P1 only."
+      "Usually this is used in the main program.",
+      {true,false});
+  db.add("equal_order_stab_scaling", "by h_T",
+      "This string enables to switch between the prefactor h_T^2/(mueff + sigma h_T^2) and h_T^2/(mueff + sigma L_0^2) for some characteristic length of the domain.",
+      {"by h_T", "by L_0"});
       db.add("equal_order_stab_weight_PkPk", 0., "", -1000., 1000. );
 
-      db.add("refinement_n_initial_steps", 2u , "", 0u, 10000u);
+  db.add("equal_order_stab_weight_PkPk", (double) 0., "", (double) -1000, (double) 1000 );
 
-    db.add("corner_stab_weight", (double)  0.0, "This quantity is the weight of the corner stabilization used for Nitsche corners of the domain", (double) -1000.0 , (double) 1000.0 );
+  db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
+  db.add("corner_stab_weight", (double)  0.0, "This quantity is the weight of the corner stabilization used for Nitsche corners of the domain", (double) -1000.0 , (double) 1000.0 );
 
 
 
-/* // Possible candidates for own database (maybe also a boundary assembling database, or into the assembling 2d database)
-    db.add("s1", 0.0,
-           "Use an assembling routine corresponding to a residual-based "
-           "equal-order stabilization for the Brinkman problem."
-           "This only works in two space "
-           "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
-           "Usually this is used in the main program.",
-           {-1.0, 0.0, 1.0});
+  /* // Possible candidates for own database (maybe also a boundary assembling database, or into the assembling 2d database)
+     db.add("s1", 0.0,
+     "Use an assembling routine corresponding to a residual-based "
+     "equal-order stabilization for the Brinkman problem."
+     "This only works in two space "
+     "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
+     "Usually this is used in the main program.",
+     {-1.0, 0.0, 1.0});
 
-    db.add("s2", 0.0,
-           "Use an assembling routine corresponding to a residual-based "
-           "equal-order stabilization for the Brinkman problem."
-           "This only works in two space "
-           "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
-           "Usually this is used in the main program.",
-           {-1.0, 0.0, 1.0});
+     db.add("s2", 0.0,
+     "Use an assembling routine corresponding to a residual-based "
+     "equal-order stabilization for the Brinkman problem."
+     "This only works in two space "
+     "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
+     "Usually this is used in the main program.",
+     {-1.0, 0.0, 1.0});
 
-    db.add("equal_order_stab_weight_PkPk", 0.0,
-           "Use an assembling routine corresponding to a residual-based "
-           "equal-order stabilization for the Brinkman problem."
-           "This only works in two space "
-           "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
-           "Usually this is used in the main program.",-1000.0,1000.0);
-*/
-    ParameterDatabase out_db = ParameterDatabase::default_output_database();
-    db.merge(out_db, true); // merge the database 'db' with the database out_db
-   
-   //Output::print("!!!!!!!!!!Solver type: ", db["solver_type"]);
-   
-   return db;
+     db.add("equal_order_stab_weight_PkPk", 0.0,
+     "Use an assembling routine corresponding to a residual-based "
+     "equal-order stabilization for the Brinkman problem."
+     "This only works in two space "
+     "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
+     "Usually this is used in the main program.",-1000.0,1000.0);
+   */
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true); // merge the database 'db' with the database out_db
+
+  //Output::print("!!!!!!!!!!Solver type: ", db["solver_type"]);
+
+  return db;
 }
 
 
@@ -93,110 +94,110 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
 /** ************************************************************************ */
 // Constructor of a Brinkman2D::System_per_grid object
 Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
-                                              TCollection& coll, std::pair<int,int> velocity_pressure_orders,
-                                              Brinkman2D::Matrix type)
-: velocity_space(&coll, "u", "Brinkman velocity", example.get_bc(0),
-                       velocity_pressure_orders.first, nullptr),
+    TCollection& coll, std::pair<int,int> velocity_pressure_orders,
+    Brinkman2D::Matrix type)
+  : velocity_space(&coll, "u", "Brinkman velocity", example.get_bc(0),
+      velocity_pressure_orders.first, nullptr),
   pressure_space(&coll, "p", "Brinkman pressure", example.get_bc(2),
-                       velocity_pressure_orders.second, nullptr)
+      velocity_pressure_orders.second, nullptr)
 {
-    // Note that at the moment only Matrix::Type14 is allowed
-    // (see the constructor the of a Brinkman2D object below)
-    switch (type)
-    {
-        case Brinkman2D::Matrix::Type1:
-            matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
-            break;
-        case Brinkman2D::Matrix::Type2:
-            matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
-            break;
-        case Brinkman2D::Matrix::Type3:
-            matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
-            break;
-        case Brinkman2D::Matrix::Type4:
-            matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
-            break;
-        case Brinkman2D::Matrix::Type14:
-            matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
-            break;
-        default:
-            ErrThrow("Unknown Brinkman type given to constructor of Brinkman2D::System_per_grid.");
-    }
+  // Note that at the moment only Matrix::Type14 is allowed
+  // (see the constructor the of a Brinkman2D object below)
+  switch (type)
+  {
+    case Brinkman2D::Matrix::Type1:
+      matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
+      break;
+    case Brinkman2D::Matrix::Type2:
+      matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
+      break;
+    case Brinkman2D::Matrix::Type3:
+      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
+      break;
+    case Brinkman2D::Matrix::Type4:
+      matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
+      break;
+    case Brinkman2D::Matrix::Type14:
+      matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
+      break;
+    default:
+      ErrThrow("Unknown Brinkman type given to constructor of Brinkman2D::System_per_grid.");
+  }
 
-    rhs = BlockVector(matrix, true);
-    solution = BlockVector(matrix, false);
+  rhs = BlockVector(matrix, true);
+  solution = BlockVector(matrix, false);
 
-    u = TFEVectFunct2D(&velocity_space, "u", "u", solution.block(0),
-        solution.length(0), 2);
-    p = TFEFunction2D(&pressure_space, "p", "p", solution.block(2),
-        solution.length(2));
+  u = TFEVectFunct2D(&velocity_space, "u", "u", solution.block(0),
+      solution.length(0), 2);
+  p = TFEFunction2D(&pressure_space, "p", "p", solution.block(2),
+      solution.length(2));
 }
 
 /** ************************************************************************ */
 Brinkman2D::Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
-                       int reference_id)
+    int reference_id)
 : Brinkman2D(domain, param_db, Example_Brinkman2D(param_db),reference_id)
 {
-    // note that the way we construct the example above will produce a memory
-    // leak, but that class is small.
-    // FIXME Find a workaround - we do not like memory leaks at all,
-    // because they pollute our valgrind tests.
+  // note that the way we construct the example above will produce a memory
+  // leak, but that class is small.
+  // FIXME Find a workaround - we do not like memory leaks at all,
+  // because they pollute our valgrind tests.
 }
 
 /** ************************************************************************ */
 Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db,
-                       const Example_Brinkman2D & e,
-                       unsigned int reference_id)
+    const Example_Brinkman2D & e,
+    unsigned int reference_id)
 : db(Brinkman2D::get_default_Brinkman2D_parameters()), solver(param_db),
   outputWriter(param_db),
   systems(), example(e), defect(), oldResiduals(), 
   initial_residual(1e10), errors()
 {
-    this->db.merge(param_db,true);   
-   // db.info(true); 
+  this->db.merge(param_db,true);   
+  // db.info(true); 
 
-// TODO LB 13.11.17    check_and_set_assemble_type(db["EqualOrder_PressureStab_type"], db["brinkman_assemble_option"]);
+  // TODO LB 13.11.17    check_and_set_assemble_type(db["EqualOrder_PressureStab_type"], db["brinkman_assemble_option"]);
 
-   // set the velocity and preesure spaces
-   std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
-                                                TDatabase::ParamDB->PRESSURE_SPACE);
+  // set the velocity and preesure spaces
+  std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
+      TDatabase::ParamDB->PRESSURE_SPACE);
 
-    // this function outputs the velocity and pressure order
-    this->get_velocity_pressure_orders(velocity_pressure_orders);
-    
-    // create the collection of cells from the domain (finest grid)
-    TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-    
-    // Here the constructor of Brinkman2D::System_per_grid is hidden in the so-called double-ended queue 'systems'. This reduces e.g. the amount of copies.
-    // We always use Matrix Type 14 such that we can handle pressure stabilizations (Matrix C).
-    // TODO LB: implement case distiction for diffrerent matrix types according to input parameters.
-    //if (PkPk_stab)
-    this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
-    //else 
-    //this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type4);
+  // this function outputs the velocity and pressure order
+  this->get_velocity_pressure_orders(velocity_pressure_orders);
 
-    // the defect has the same structure as the rhs (and as the solution)
-    this->defect.copy_structure(this->systems.front().rhs);
-    
-    outputWriter.add_fe_vector_function(&this->get_velocity());
-    outputWriter.add_fe_function(&this->get_pressure());
-    
-    // print out some information
-    int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
-    int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
-    int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
-    int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
-    
-    double h_min, h_max;
-    coll->GetHminHmax(&h_min, &h_max);
-    Output::print("------------------------------------------------------");
-    Output::print<1>("N_Cells            : ", setw(10), coll->GetN_Cells());
-    Output::print<1>("h (min,max)        : ", setw(10), h_min, " ", setw(12), h_max);
-    Output::print<1>("dof velocity       : ", setw(10), 2* n_u);
-    Output::print<1>("dof velocity active: ", setw(10), 2* n_u_active);
-    Output::print<1>("dof pressure       : ", setw(10), n_p);
-    Output::print<1>("dof all            : ", setw(10), n_dof);
-    Output::print("------------------------------------------------------");
+  // create the collection of cells from the domain (finest grid)
+  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+
+  // Here the constructor of Brinkman2D::System_per_grid is hidden in the so-called double-ended queue 'systems'. This reduces e.g. the amount of copies.
+  // We always use Matrix Type 14 such that we can handle pressure stabilizations (Matrix C).
+  // TODO LB: implement case distiction for diffrerent matrix types according to input parameters.
+  //if (PkPk_stab)
+  this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
+  //else 
+  //this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type4);
+
+  // the defect has the same structure as the rhs (and as the solution)
+  this->defect.copy_structure(this->systems.front().rhs);
+
+  outputWriter.add_fe_vector_function(&this->get_velocity());
+  outputWriter.add_fe_function(&this->get_pressure());
+
+  // print out some information
+  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
+  int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
+  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
+  int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
+
+  double h_min, h_max;
+  coll->GetHminHmax(&h_min, &h_max);
+  Output::print("------------------------------------------------------");
+  Output::print<1>("N_Cells            : ", setw(10), coll->GetN_Cells());
+  Output::print<1>("h (min,max)        : ", setw(10), h_min, " ", setw(12), h_max);
+  Output::print<1>("dof velocity       : ", setw(10), 2* n_u);
+  Output::print<1>("dof velocity active: ", setw(10), 2* n_u_active);
+  Output::print<1>("dof pressure       : ", setw(10), n_p);
+  Output::print<1>("dof all            : ", setw(10), n_dof);
+  Output::print("------------------------------------------------------");
 }
 
 /** ************************************************************************ */
@@ -206,10 +207,10 @@ Brinkman2D::~Brinkman2D()
 
 /** ************************************************************************ */
 void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>
-                                              &velocity_pressure_orders)
+    &velocity_pressure_orders)
 {
-    Output::print<1>("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
-    Output::print<1>("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
+  Output::print<1>("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print<1>("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
 
 /** ************************************************************************ */
@@ -220,12 +221,12 @@ void Brinkman2D::set_parameters()
 /** ************************************************************************ */
 void Brinkman2D::check_input_parameters()
 {
- // if (db["EqualOrder_PressureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") || db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation")  )
- // { 
- //   Output::print("Warning, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability.");
- //   //getch();
- //   //system("pause");
- // }
+  // if (db["EqualOrder_PressureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") || db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation")  )
+  // { 
+  //   Output::print("Warning, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability.");
+  //   //getch();
+  //   //system("pause");
+  // }
 }
 
 /** ************************************************************************ */
@@ -410,11 +411,10 @@ void Brinkman2D::assemble()
     //===========================================================================//
     // Weakly Imposing Essential Boundary Conditions - Boundary Integrals
 
-    BoundaryAssembling2D bi;
 
     for (int k = 0; k < TDatabase::ParamDB->n_neumann_boundary; k++)
     {
-      bi.rhs_g_v_n(s.rhs, v_space,
+      BoundaryAssembling2D::rhs_g_v_n(s.rhs, v_space,
           nullptr,                                                  // g = 1
           TDatabase::ParamDB->neumann_boundary_id[k],            // boundary component
           -1.*TDatabase::ParamDB->neumann_boundary_value[k]);       // mult
@@ -422,7 +422,7 @@ void Brinkman2D::assemble()
 
     for (int k = 0; k < TDatabase::ParamDB->n_g_v_boundary; k++)
     {
-      bi.rhs_uD_v(s.rhs, v_space,
+      BoundaryAssembling2D::rhs_uD_v(s.rhs, v_space,
           this->example.get_bd(0),                                 // access to U1BoundValue in the current example
           this->example.get_bd(1),                                 // access to U2BoundValue in the current example
           TDatabase::ParamDB->g_v_boundary_id[k],                  // boundary component
@@ -431,11 +431,11 @@ void Brinkman2D::assemble()
     }
 
     // test: (in the true case, this function should be assembled on "DIRICHLET" boundaries
-    // bi.matrix_v_n_v_n(s.matrix,v_space,1,1.);
+    // BoundaryAssembling2D::matrix_v_n_v_n(s.matrix,v_space,1,1.);
 
     for (int k = 0; k < TDatabase::ParamDB->n_unvn_boundary; k++)
     {
-      bi.matrix_u_n_v_n(s.matrix, v_space,
+      BoundaryAssembling2D::matrix_u_n_v_n(s.matrix, v_space,
           TDatabase::ParamDB->unvn_boundary_id[k],          // boundary component
           TDatabase::ParamDB->unvn_boundary_value[k],      // mult
           false);
@@ -443,14 +443,14 @@ void Brinkman2D::assemble()
 
     for (int k = 0; k < TDatabase::ParamDB->n_gradunv_boundary; k++)
     {
-      bi.matrix_gradu_n_v(s.matrix, v_space,
+      BoundaryAssembling2D::matrix_gradu_n_v(s.matrix, v_space,
           TDatabase::ParamDB->gradunv_boundary_id[k],     // boundary component
           TDatabase::ParamDB->gradunv_boundary_value[k]); // mult
     }
 
     for (int k = 0; k < TDatabase::ParamDB->n_u_v_boundary; k++)
     {
-      bi.matrix_u_v(s.matrix, v_space,
+      BoundaryAssembling2D::matrix_u_v(s.matrix, v_space,
           TDatabase::ParamDB->u_v_boundary_id[k],               // boundary component
           TDatabase::ParamDB->u_v_boundary_value[k],            // mult
           false);                                               // rescale local integral by edge values
@@ -458,7 +458,7 @@ void Brinkman2D::assemble()
 
     for (int k = 0; k < TDatabase::ParamDB->n_p_v_n_boundary; k++)
     {
-      bi.matrix_p_v_n(s.matrix, v_space, p_space,
+      BoundaryAssembling2D::matrix_p_v_n(s.matrix, v_space, p_space,
           TDatabase::ParamDB->p_v_n_boundary_id[k],           // boundary component
           TDatabase::ParamDB->p_v_n_boundary_value[k]);       // mult
     }
@@ -483,41 +483,41 @@ void Brinkman2D::assemble()
             " with Nitsche parameter: ", TDatabase::ParamDB->nitsche_penalty[k], " .");
       }
 
-      bi.matrix_gradu_n_v(s.matrix, v_space,
+      BoundaryAssembling2D::matrix_gradu_n_v(s.matrix, v_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
           -1. * TDatabase::ParamDB->EFFECTIVE_VISCOSITY);      // mult  ; if all is in t^2, then mult = -1.*t*t is appropriate with t^2 matches TDatabase::ReadParam->EFFECTIVE_VISCOSITY
 
-      bi.matrix_gradv_n_u(s.matrix, v_space,
+      BoundaryAssembling2D::matrix_gradv_n_u(s.matrix, v_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
           -1. * TDatabase::ParamDB->s1 * TDatabase::ParamDB->EFFECTIVE_VISCOSITY);                   // mult ; if all is in t^2, then mult =-1.*TDatabase::ParamDB->s1*t*t is appropriate
 
-      bi.rhs_gradv_n_uD(s.rhs, v_space,
+      BoundaryAssembling2D::rhs_gradv_n_uD(s.rhs, v_space,
           this->example.get_bd(0),                                 // access to U1BoundValue in the example,
           this->example.get_bd(1),                                 // access to U2BoundValue in the example,
           TDatabase::ParamDB->nitsche_boundary_id[k],    // boundary component
           -1. * TDatabase::ParamDB->s1 * TDatabase::ParamDB->EFFECTIVE_VISCOSITY);   // mult ; if all is in t^2, then mult =-1.*TDatabase::ParamDB->s1*t*t is appropriate
 
-      bi.matrix_p_v_n(s.matrix, v_space, p_space,
+      BoundaryAssembling2D::matrix_p_v_n(s.matrix, v_space, p_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
           1.);                                                // mult
 
-      bi.matrix_q_u_n(s.matrix, v_space, p_space,
+      BoundaryAssembling2D::matrix_q_u_n(s.matrix, v_space, p_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
           1. * TDatabase::ParamDB->s2);
 
-      bi.rhs_q_uD_n(s.rhs, v_space, p_space,
+      BoundaryAssembling2D::rhs_q_uD_n(s.rhs, v_space, p_space,
           this->example.get_bd(0),                                 // access to U1BoundValue in the example,
           this->example.get_bd(1),                                 // access to U2BoundValue in the example,
           TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
           1. * TDatabase::ParamDB->s2);
 
-      bi.matrix_u_v(s.matrix, v_space,
+      BoundaryAssembling2D::matrix_u_v(s.matrix, v_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
           //t*t*TDatabase::ParamDB->nitsche_penalty[k],   //t*TDatabase::ParamDB->nitsche_penalty[k],             // mult
           TDatabase::ParamDB->nitsche_penalty[k]* TDatabase::ParamDB->EFFECTIVE_VISCOSITY,   //mueff*TDatabase::ParamDB->nitsche_penalty[k],             // mult
           true);                                                // rescale local integral by edge values
 
-      bi.rhs_uD_v(s.rhs, v_space,
+      BoundaryAssembling2D::rhs_uD_v(s.rhs, v_space,
           this->example.get_bd(0),                                 // access to U1BoundValue in the example,
           this->example.get_bd(1),                                 // access to U2BoundValue in the example,
           TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
@@ -526,13 +526,13 @@ void Brinkman2D::assemble()
           true);            // rescale local integral by edge values 
 
       // LB TEST 19.01.18
-      bi.matrix_u_n_v_n(s.matrix, v_space, 
-                        TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component↲
-                        TDatabase::ParamDB->nitsche_penalty[k]* (TDatabase::ParamDB->VISCOSITY/TDatabase::ParamDB->PERMEABILITY) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0, true);
+      BoundaryAssembling2D::matrix_u_n_v_n(s.matrix, v_space, 
+          TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component↲
+          TDatabase::ParamDB->nitsche_penalty[k]* (TDatabase::ParamDB->VISCOSITY/TDatabase::ParamDB->PERMEABILITY) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0, true);
       //LB TEST 19.01.18^
     }
     //New LB 15.01.18
-    bi.matrix_cornerjump_u_n_cornerjump_v_n(s.matrix, v_space, // TDatabase::ParamDB->nitsche_boundary_id[k], 
+    BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(s.matrix, v_space, // TDatabase::ParamDB->nitsche_boundary_id[k], 
         1, // nBoundaryParts
         (double) db["corner_stab_weight"] * (TDatabase::ParamDB->EFFECTIVE_VISCOSITY + (TDatabase::ParamDB->VISCOSITY/TDatabase::ParamDB->PERMEABILITY) * ( TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0 )));
     //NewLB 15.01.18^
@@ -558,93 +558,93 @@ void Brinkman2D::assemble()
 /** ************************************************************************ */
 bool Brinkman2D::stopIt(unsigned int iteration_counter)
 {
-    // compute the residuals with the current matrix and solution
-    this->computeNormsOfResiduals();
-    // the current norm of the residual
-    const double normOfResidual = this->getFullResidual();
-    // store initial residual, so later we can print the overall reduction
-    if(iteration_counter == 0)
-    {
-        initial_residual = normOfResidual;
-    }
-    // the residual from 10 iterations ago
-    const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
-    
-    const unsigned int Max_It = db["nonlinloop_maxit"];
-    const double convergence_speed = db["nonlinloop_slowfactor"];
-    bool slow_conv = false;
-    
-    if( normOfResidual >= convergence_speed*oldNormOfResidual )
-    {
-        slow_conv = true;
-    }
-    
-    double limit = db["nonlinloop_epsilon"];
-    if ( db["nonlinloop_scale_epsilon_with_size"] )
-    {
-        limit *= sqrt(this->get_size());
-        Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
-    }
-    
-    // check if the iteration has converged, or reached the maximum number of
-    // iterations or if convergence is too slow. Then return true otherwise false
-    if( ( normOfResidual<=limit) || (iteration_counter==Max_It ) || ( slow_conv ) )
-    {
-        if( slow_conv )
-            Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
-        // stop iteration
-        Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
-                         " RES : ", normOfResidual, " Reduction : ",
-                         normOfResidual/initial_residual);
-        return true;
-    }
-    else
-        return false;
+  // compute the residuals with the current matrix and solution
+  this->computeNormsOfResiduals();
+  // the current norm of the residual
+  const double normOfResidual = this->getFullResidual();
+  // store initial residual, so later we can print the overall reduction
+  if(iteration_counter == 0)
+  {
+    initial_residual = normOfResidual;
+  }
+  // the residual from 10 iterations ago
+  const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
+
+  const unsigned int Max_It = db["nonlinloop_maxit"];
+  const double convergence_speed = db["nonlinloop_slowfactor"];
+  bool slow_conv = false;
+
+  if( normOfResidual >= convergence_speed*oldNormOfResidual )
+  {
+    slow_conv = true;
+  }
+
+  double limit = db["nonlinloop_epsilon"];
+  if ( db["nonlinloop_scale_epsilon_with_size"] )
+  {
+    limit *= sqrt(this->get_size());
+    Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
+  }
+
+  // check if the iteration has converged, or reached the maximum number of
+  // iterations or if convergence is too slow. Then return true otherwise false
+  if( ( normOfResidual<=limit) || (iteration_counter==Max_It ) || ( slow_conv ) )
+  {
+    if( slow_conv )
+      Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
+    // stop iteration
+    Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
+        " RES : ", normOfResidual, " Reduction : ",
+        normOfResidual/initial_residual);
+    return true;
+  }
+  else
+    return false;
 }
 
 
 /** ************************************************************************ */
 void Brinkman2D::computeNormsOfResiduals()
 {
-    System_per_grid& s = this->systems.front();
-    unsigned int n_u_dof = s.solution.length(0);
-    unsigned int n_p_dof = s.solution.length(2);
-    
-    // copy rhs to defect
-    this->defect = s.rhs;
-    s.matrix.apply_scaled_add(s.solution, defect,-1.);
-    
-    if( s.matrix.pressure_projection_enabled() )
-    {
-        IntoL20FEFunction(&defect[2*n_u_dof], n_p_dof, &this->get_pressure_space(),
-                          TDatabase::ParamDB->VELOCITY_SPACE,
-                          TDatabase::ParamDB->PRESSURE_SPACE);
-    }
-    
-    // square of the norms of the residual components
-    double impuls_Residual = Ddot(2*n_u_dof, &this->defect[0],&this->defect[0]);
-    double mass_residual = Ddot(n_p_dof, &this->defect[2*n_u_dof],
-                                &this->defect[2*n_u_dof]);
-    
-    Residuals currentResiduals(impuls_Residual, mass_residual);
-    oldResiduals.add(currentResiduals);
+  System_per_grid& s = this->systems.front();
+  unsigned int n_u_dof = s.solution.length(0);
+  unsigned int n_p_dof = s.solution.length(2);
+
+  // copy rhs to defect
+  this->defect = s.rhs;
+  s.matrix.apply_scaled_add(s.solution, defect,-1.);
+
+  if( s.matrix.pressure_projection_enabled() )
+  {
+    IntoL20FEFunction(&defect[2*n_u_dof], n_p_dof, &this->get_pressure_space(),
+        TDatabase::ParamDB->VELOCITY_SPACE,
+        TDatabase::ParamDB->PRESSURE_SPACE);
+  }
+
+  // square of the norms of the residual components
+  double impuls_Residual = Ddot(2*n_u_dof, &this->defect[0],&this->defect[0]);
+  double mass_residual = Ddot(n_p_dof, &this->defect[2*n_u_dof],
+      &this->defect[2*n_u_dof]);
+
+  Residuals currentResiduals(impuls_Residual, mass_residual);
+  oldResiduals.add(currentResiduals);
 }
 
 /** ************************************************************************ */
 void Brinkman2D::solve()
 {
-    System_per_grid& s = this->systems.front();
-   this->solver.solve(s.matrix, s.rhs, s.solution);
+  System_per_grid& s = this->systems.front();
+  this->solver.solve(s.matrix, s.rhs, s.solution);
 
-   // /// @todo consider storing an object of DirectSolver in this class
-   //DirectSolver direct_solver(s.matrix,
-	//		       DirectSolver::DirectSolverTypes::umfpack);
-   // direct_solver.solve(s.rhs, s.solution);
-   // 
-   // //Output::print("coefficients of solution for basis", s.solution);
-    
-    if(s.matrix.pressure_projection_enabled())
-      s.p.project_into_L20();
+  // /// @todo consider storing an object of DirectSolver in this class
+  //DirectSolver direct_solver(s.matrix,
+  //		       DirectSolver::DirectSolverTypes::umfpack);
+  // direct_solver.solve(s.rhs, s.solution);
+  // 
+  // //Output::print("coefficients of solution for basis", s.solution);
+
+  if(s.matrix.pressure_projection_enabled())
+    s.p.project_into_L20();
 }
 
 /** ************************************************************************ */
@@ -724,35 +724,34 @@ void Brinkman2D::output(int level, int i)
     u2->GetErrors(example.get_exact(1), 3, AllDerivatives, 2, L2H1Errors,
         nullptr, &aux_error, 1, &velocity_space, err + 2, newfunction);
 
+
     errors_temporary.at(0) = sqrt(err[0]*err[0] + err[2]*err[2]);     // err[0]=L2-Error in u1, err[2]=L2-Error in u2
     errors_temporary.at(2) = sqrt(err[1]*err[1] + err[3]*err[3]);     // err[1]=H1-Error in u1, err[3]=H1-Error in u2
 
+    // compute the L2-norm of the velocity error at the Nitsche boundaries
+    double boundary_error_l2_u1[1];
+    double boundary_error_l2_u2[1];
+    u1->GetL2BoundaryError(example.get_bd(0),
+        &aux_error, 1, &velocity_space, 
+        boundary_error_l2_u1);
+    u2->GetL2BoundaryError(example.get_bd(1),
+        &aux_error, 1, &velocity_space, 
+        boundary_error_l2_u2);
+
+    double boundary_error_l2 = sqrt( boundary_error_l2_u1[0] + boundary_error_l2_u2[0] );
+
+    // compute the L2-norm of the normal velocity error at the Nitsche boundaries
+    double un_boundary_error = s.u.GetL2NormNormalComponentError(example.get_bd(0), example.get_bd(1));
+
+    // compute the L2-norm of the pressure errors
     TAuxParam2D aux;
     const TFESpace2D * pointer_to_p_space = &s.pressure_space;
     s.p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
         example.get_coeffs(), &aux, 1, &pointer_to_p_space,
         errors_temporary.data() + 3);
 
-    /* LB 14.11. OLD  (alternative computation of the pressure errors)
-       TAuxParam2D aux_error;
-    // errors in pressure
-    const TFESpace2D *pressure_space = &this->get_pressure_space();
-    s.p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
-    nullptr, &aux_error, 1, &pressure_space, err, newfunction);
-
-    errors_temporary.at(2) = err[0];    // L2(p): errors[2]
-    errors_temporary.at(3) = err[1];    // H1-semi(p):  errors[3]
-    //        double tsquare=(TDatabase::ParamDB->VISCOSITY/TDatabase::ParamDB->EFFECTIVE_VISCOSITY)*TDatabase::ParamDB->PERMEABILITY;
-    //        errors_temporary.at(4) = sqrt(tsquare * errors_temporary[1]*errors_temporary[1] + errors_temporary[0]*errors_temporary[0]);
-    //        Output::print<1>("t^2 * H1-semi(u) + L2(u): ", setprecision(14),  errors_temporary[4]);
-    // Output::print<1>( setprecision(5),  "$",errors_temporary[0], "$ & $", errors_temporary[1], "$ & $", errors_temporary[2], "$ & $", errors_temporary[3], "$"& $", errors_temporary[4], "$");
-     */ //LB 14.11.17 OLD ^
-
-
-//New LB Start 05.02.18
-// Here, the error in the L^2-norm at the boundary is computed.
-//Therefore, a FEMatrix containing the necessary terms and the approximate xolution Blockvector have to be used
-    BoundaryAssembling2D bi2;
+    // Here, the error in the L^2-norm at the boundary is computed.
+    //Therefore, a FEMatrix containing the necessary terms and the approximate xolution Blockvector have to be used
     const TFESpace2D * v_space = &s.velocity_space;
     BlockFEMatrix Boundary_matrix_u, Boundary_matrix_u_n;
     Boundary_matrix_u = BlockFEMatrix::NSE2D_Type14(s.velocity_space, s.pressure_space);
@@ -761,17 +760,15 @@ void Brinkman2D::output(int level, int i)
     for (int k = 0; k < TDatabase::ParamDB->n_nitsche_boundary; k++)
     {
       Output::print("k = ", k);
-      bi2.matrix_u_v(Boundary_matrix_u, v_space,
+      BoundaryAssembling2D::matrix_u_v(Boundary_matrix_u, v_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
-          //t*t*TDatabase::ParamDB->nitsche_penalty[k],   //t*TDatabase::ParamDB->nitsche_penalty[k],             // mult
-          TDatabase::ParamDB->nitsche_penalty[k]* TDatabase::ParamDB->EFFECTIVE_VISCOSITY,   //mueff*TDatabase::ParamDB->nitsche_penalty[k],             // mult
-          true);                                                // rescale local integral by edge values
+          1,                                                    // scale factor
+          false);                                               // rescale local integral by edge values
 
-      bi2.matrix_u_n_v_n(Boundary_matrix_u_n, v_space, 
+      BoundaryAssembling2D::matrix_u_n_v_n(Boundary_matrix_u_n, v_space, 
           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component↲
-          TDatabase::ParamDB->nitsche_penalty[k]* (TDatabase::ParamDB->VISCOSITY/TDatabase::ParamDB->PERMEABILITY) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0,
-          true);
-
+          1,                                                    // scale factor
+          false);                                               // rescale local integral by edge values
     }
 
     std::vector< double > boundary_errors;
@@ -783,14 +780,13 @@ void Brinkman2D::output(int level, int i)
 
     Boundary_matrix_u.print_matrix_info("Boundary_matrix_u Infos");
     Boundary_matrix_u.apply(s.solution, Au);
-    boundary_errors[0]=dot(s.solution, Au);
+    boundary_errors[0]=sqrt(dot(s.solution, Au));
     Boundary_matrix_u_n.print_matrix_info("Boundary_matrix_u_n Infos");
     Boundary_matrix_u_n.apply(s.solution, Au_n);
-    boundary_errors[1]=dot(s.solution, Au_n);
+    boundary_errors[1]=sqrt(dot(s.solution, Au_n));
 
-    Output::print("The value of the boundary norm \sum \gamma* 1/h_E* || u ||_E^2 is: ", boundary_errors[0]);
-    Output::print("The value of the boundary norm \sum \gamma* 1/h_E* || u.n ||_E^2", boundary_errors[1]);
-    //New LB END 05.02.18^
+    //Output::print("The value of the boundary norm \sum  || u ||_E is: ", boundary_errors[0]);
+    //Output::print("The value of the boundary norm \sum  || u.n ||_E is: is: ", boundary_errors[1]);
 
     Output::print("------------------------------------------------------");
     Output::print<1>(" L2(u):      ", setprecision(14), errors_temporary[0]);
@@ -798,6 +794,12 @@ void Brinkman2D::output(int level, int i)
     Output::print<1>(" H1-semi(u): ", setprecision(14), errors_temporary[2]);
     Output::print<1>(" L2(p):      ", setprecision(14), errors_temporary[3]);
     Output::print<1>(" H1-semi(p): ", setprecision(14), errors_temporary[4]);
+    //Output::print<1>(" L2(u)_boundary OLD: ", setprecision(14), boundary_errors[0]);
+    //New
+    Output::print<1>(" L2(u)_boundary: ", setprecision(14), boundary_error_l2);
+    //Output::print<1>(" L2(u.n)_boundary OLD: ", setprecision(14), boundary_errors[1]);
+    //New
+    Output::print<1>(" L2(u.n)_boundary: ", setprecision(14), un_boundary_error);
     Output::print("------------------------------------------------------");
 
     // copy: This is necessary to save the calculated errors (errors_temporary) in the member variable errors.
@@ -808,10 +810,10 @@ void Brinkman2D::output(int level, int i)
   delete u2;
 }
 
-  /** ************************************************************************ */
+/** ************************************************************************ */
 double Brinkman2D::getL2VelocityError() const
 {
-    return this->errors[0];
+  return this->errors[0];
 }
 
 /** ************************************************************************ */
@@ -823,68 +825,68 @@ double Brinkman2D::getL2DivergenceError() const
 /** ************************************************************************ */
 double Brinkman2D::getH1SemiVelocityError() const
 {
-    return this->errors[2];
+  return this->errors[2];
 }
 
 /** ************************************************************************ */
 double Brinkman2D::getL2PressureError() const
 {
-    return this->errors[3];
+  return this->errors[3];
 }
 
 /** ************************************************************************ */
 double Brinkman2D::getH1SemiPressureError() const
 {
-    return this->errors[4];
+  return this->errors[4];
 }
 
 
 /** ************************************************************************ */
 std::array< double, int(6) > Brinkman2D::get_errors()
 {
-    return errors;
+  return errors;
 }
 
 /** ************************************************************************ */
 const Brinkman2D::Residuals& Brinkman2D::getResiduals() const
 {
-    return this->oldResiduals.back();
+  return this->oldResiduals.back();
 }
 
 /** ************************************************************************ */
 double Brinkman2D::getImpulsResidual() const
 {
-    return this->oldResiduals.back().impulsResidual;
+  return this->oldResiduals.back().impulsResidual;
 }
 
 /** ************************************************************************ */
 double Brinkman2D::getMassResidual() const
 {
-    return this->oldResiduals.back().massResidual;
+  return this->oldResiduals.back().massResidual;
 }
 
 /** ************************************************************************ */
 double Brinkman2D::getFullResidual() const
 {
-    return this->oldResiduals.back().fullResidual;
+  return this->oldResiduals.back().fullResidual;
 }
 
 /** ************************************************************************ */
-Brinkman2D::Residuals::Residuals()
+  Brinkman2D::Residuals::Residuals()
 : impulsResidual(1e10), massResidual(1e10), fullResidual(1e10)
 {}
 
 /** ************************************************************************ */
-Brinkman2D::Residuals::Residuals(double imR, double maR)
+  Brinkman2D::Residuals::Residuals(double imR, double maR)
 : impulsResidual(sqrt(imR)), massResidual(sqrt(maR)),
-fullResidual(sqrt(imR + maR))
+  fullResidual(sqrt(imR + maR))
 {}
 
 /** ************************************************************************ */
 std::ostream& operator<<(std::ostream& s, const Brinkman2D::Residuals& n)
 {
-    s << setw(14) << n.impulsResidual << "\t" << setw(14)
+  s << setw(14) << n.impulsResidual << "\t" << setw(14)
     << n.massResidual << "\t" << setw(14) << n.fullResidual;
-    return s;
+  return s;
 }
 
