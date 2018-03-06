@@ -704,7 +704,7 @@ void Brinkman2D::output(int level, int i)
   // in such a case here only integrals of the solution are computed.
   if(db["output_compute_errors"])
   {
-    std::array<double, 6> errors_temporary;
+    std::array<double, 8> errors_temporary;
     errors_temporary.fill(0);
     errors_temporary[1] = s.u.GetL2NormDivergenceError(example.get_exact(0), example.get_exact(1));
 
@@ -738,16 +738,20 @@ void Brinkman2D::output(int level, int i)
         boundary_error_l2_u2);
 
     double boundary_error_l2 = sqrt( boundary_error_l2_u1[0] + boundary_error_l2_u2[0] );
-
+    
     // compute the L2-norm of the normal velocity error at the Nitsche boundaries
     double un_boundary_error = s.u.GetL2NormNormalComponentError(example.get_bd(0), example.get_bd(1));
-
+    
     // compute the L2-norm of the pressure errors
     TAuxParam2D aux;
     const TFESpace2D * pointer_to_p_space = &s.pressure_space;
     s.p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
         example.get_coeffs(), &aux, 1, &pointer_to_p_space,
         errors_temporary.data() + 3);
+    
+    errors_temporary.at(5) = boundary_error_l2;
+    errors_temporary.at(6) = un_boundary_error;
+
 
     // Here, the error in the L^2-norm at the boundary is computed.
     //Therefore, a FEMatrix containing the necessary terms and the approximate xolution Blockvector have to be used
@@ -804,10 +808,11 @@ void Brinkman2D::output(int level, int i)
     // copy: This is necessary to save the calculated errors (errors_temporary) in the member variable errors.
     //       The vector errors_temporary is deleted with the end of the current scope and cannot be accessed from outside.
     std::copy(errors_temporary.begin(), errors_temporary.end()-1, this->errors.begin());
-  }
+ }
   delete u1;
   delete u2;
 }
+
 
 /** ************************************************************************ */
 double Brinkman2D::getL2VelocityError() const
@@ -831,6 +836,17 @@ double Brinkman2D::getH1SemiVelocityError() const
 double Brinkman2D::getL2PressureError() const
 {
   return this->errors[3];
+}
+
+/** ************************************************************************ */
+double Brinkman2D::getL2BoundaryError() const
+{
+  return this->errors[5];
+}
+/** ************************************************************************ */
+double Brinkman2D::getL2NormNormalComponentError() const
+{
+  return this->errors[6];
 }
 
 /** ************************************************************************ */
