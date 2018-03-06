@@ -463,8 +463,8 @@ void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
     test20 = Orig6[i];          // v_xx
     test02 = Orig7[i];          // v_yy
 
-    Rhs_u1[i] -= Mult * PSPGStab * mu_eff * (c1 * test20 + c2 * test02);  // - Mult * PSPGStab * mu_eff * c1 * (test20 + test02);
-    Rhs_u2[i] -= Mult * PSPGStab * mu_eff * (c1 * test20 + c2 * test02);  // - Mult * PSPGStab * mu_eff * c2 * (test20 + test02);
+    Rhs_u1[i] -= Mult * PSPGStab * mu_eff * c1 * (test20 + test02);  // - Mult * PSPGStab * mu_eff * c1 * (test20 + test02);
+    Rhs_u2[i] -= Mult * PSPGStab * mu_eff * c2 * (test20 + test02);  // - Mult * PSPGStab * mu_eff * c2 * (test20 + test02);
 
     for(int j = 0; j < N_U; j++)
     {
