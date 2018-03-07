@@ -201,7 +201,7 @@ public:
     /// @brief get the current residual (updated in Brinkman2D::normOfResidual)
     double getFullResidual() const;
     /// @brief return the computed errors
-    std::array<double, int(6)> get_errors();
+    std::array<double, int(8)> get_errors();
 
 protected:
     
@@ -332,7 +332,7 @@ protected:
      * Currently, the errors store the L2 and H1 errors of the velocity
      * and pressure
      */
-    std::array<double, int(6)> errors;
+    std::array<double, int(8)> errors;
     
 };
 
