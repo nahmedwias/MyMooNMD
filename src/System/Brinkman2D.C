@@ -857,7 +857,7 @@ double Brinkman2D::getH1SemiPressureError() const
 
 
 /** ************************************************************************ */
-std::array< double, int(6) > Brinkman2D::get_errors()
+std::array< double, int(8) > Brinkman2D::get_errors()
 {
   return errors;
 }
