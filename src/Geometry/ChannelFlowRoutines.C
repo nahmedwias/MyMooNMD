@@ -525,7 +525,7 @@ void ChannelTau180::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
     TBaseCell *cell=feSpace.GetCollection()->GetCell(i);
     FE3D cE=feSpace.GetFE3D(i, cell);
 
-    if(cE != C_Q2_3D_H_A && cE != C_Q2_3D_H_M)
+    if((cE != C_Q2_3D_H_A && cE != C_Q2_3D_H_M) && (cE != C_Q1_3D_H_A && cE != C_Q1_3D_H_M))
     {
       ErrThrow("coordinates of dofs are not tested for the"
                "fini element ", cE, " yet");

@@ -644,9 +644,9 @@ void TimeNSType14L_NL_SUPGDD3D(double Mult, double *coeff, double *param, double
     test001 = Orig7[i];
     
     // 
-    val = (u1_old_time/dt + c1)*test100;
-    val += (u2_old_time+c2)*test010;
-    val += (u3_old_time+c3)*test001;
+    val  = (u1_old_time/dt + c1)*test100;
+    val += (u2_old_time/dt+c2)*test010;
+    val += (u3_old_time/dt+c3)*test001;
     Rhs4[i] += Mult * tau_m * val;
     
     // velocity-pressure block
@@ -703,13 +703,12 @@ void TimeNSType14RHSSUPGDD3D(double Mult, double* coeff, double* param, double h
   double *Orig2 = OrigValues[2]; // u_z
   double *Orig3 = OrigValues[3]; // u
   double *Orig4 = OrigValues[4]; // px
-  double *Orig5 = OrigValues[5]; // px
-  double *Orig6 = OrigValues[6]; // py
+  double *Orig5 = OrigValues[5]; // py
+  double *Orig6 = OrigValues[6]; // pz
     
   int N_U = N_BaseFuncts[0];
   int N_P = N_BaseFuncts[1];
   
-  double c0=coeff[0];
   double c1=coeff[1];
   double c2=coeff[2];
   double c3=coeff[3];
@@ -746,8 +745,6 @@ void TimeNSType14RHSSUPGDD3D(double Mult, double* coeff, double* param, double h
     Rhs3[i] += Mult*(test000+ugradv)*c3;
   }
   double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH; 
-  double t1 = TDatabase::TimeDB->THETA1;
-  double factor = 1./(dt*t1);
   // pressure test functions
   for(int i=0; i<N_P; ++i)
   {
@@ -757,9 +754,9 @@ void TimeNSType14RHSSUPGDD3D(double Mult, double* coeff, double* param, double h
     test001 = Orig6[i];
     
     // 
-    val = (u1_old_time/dt + c1)*test100;
-    val += (u2_old_time+c2)*test010;
-    val += (u3_old_time+c3)*test001;
+    val  = (u1_old_time/dt + c1)*test100;
+    val += (u2_old_time/dt +c2)*test010;
+    val += (u3_old_time/dt +c3)*test001;
     Rhs4[i] += Mult * tau_m * val;
   }
 }

@@ -3917,7 +3917,7 @@ void TimeNSType3_4NLGalerkinDD3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
-  double val1;
+  double val, val1;
   double *Matrix11Row, *Matrix22Row,  *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
@@ -3937,7 +3937,7 @@ void TimeNSType3_4NLGalerkinDD3D(double Mult, double *coeff,
   Orig2 = OrigValues[2]; // u_z
   Orig3 = OrigValues[3]; // u
 
-  c0 = Mult*coeff[0]; // nu
+  c0 = coeff[0]; // nu
 
   u1 = param[0]; // u1old
   u2 = param[1]; // u2old
@@ -3948,10 +3948,10 @@ void TimeNSType3_4NLGalerkinDD3D(double Mult, double *coeff,
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
     Matrix33Row = MatrixA33[i];
-    test100 = c0*Orig0[i];
-    test010 = c0*Orig1[i];
-    test001 = c0*Orig2[i];
-    test000 = Mult*Orig3[i];
+    test100 = Orig0[i];
+    test010 = Orig1[i];
+    test001 = Orig2[i];
+    test000 = Orig3[i];
 
     for(j=0;j<N_U;j++)
     {
@@ -3962,10 +3962,15 @@ void TimeNSType3_4NLGalerkinDD3D(double Mult, double *coeff,
 	val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
       else
 	val1 = 0.;
-      val1 += (test100*ansatz100+test010*ansatz010 +test001*ansatz001);
-      Matrix11Row[j] += test100*ansatz100+val1;
-      Matrix22Row[j] += test010*ansatz010+val1;
-      Matrix33Row[j] += test001*ansatz001+val1;
+      
+      val = c0*(2.*test100*ansatz100+test010*ansatz010 +test001*ansatz001);
+      Matrix11Row[j] += Mult*(val+val1);
+      
+      val = c0*(test100*ansatz100+2.*test010*ansatz010 +test001*ansatz001);
+      Matrix22Row[j] += Mult*(val + val1);
+      
+      val  = c0*(test100*ansatz100+test010*ansatz010 +2.*test001*ansatz001);
+      Matrix33Row[j] += Mult*(val + val1);
     } // endfor j
   } // endfor i
 }

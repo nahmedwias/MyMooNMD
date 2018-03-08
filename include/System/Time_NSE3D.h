@@ -111,6 +111,16 @@ class Time_NSE3D
        */
       TFEVectFunct3D extrapolated_u_;
       TFEFunction3D extrapolated_p_;
+      
+      /** @brief constructs a solution vector combined the old 
+       * solutions used for the assembly of the terms appears 
+       * after space time discretization using supg method
+       */
+      BlockVector combined_old_solution_;
+      /** @brief the corresponding finite element functions for 
+       * velocity 
+       */
+      TFEVectFunct3D combined_old_u_;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -295,6 +305,7 @@ class Time_NSE3D
     * be assembled.
     */
     void assemble_rhs(bool ass_rhs=true);
+    void assemble_rhs_supg(Time_NSE3D::System_per_grid& s);
 
     /** @brief Assemble the nonlinear terms
      * Assemble the nonlinear terms. Need not be used when this is
