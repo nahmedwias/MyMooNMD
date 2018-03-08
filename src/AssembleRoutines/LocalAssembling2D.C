@@ -1787,8 +1787,18 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
           // total number of matrices 
           this->N_Matrices = 11;
           // in the lower right corner
-          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
+          this->RowSpace =    { 0, 0, 0, 0, // A-Blocks
+	                        0, 0, // M-Blocks
+				1, // C-Block
+				1, 1, // B-Blocks
+				0, 0 // BT-Blocks
+				};
+          this->ColumnSpace = { 0, 0, 0, 0, // A-Blocks
+	                        0, 0, // M-Blocks
+				1, // C Block
+				0, 0, // B-Blocks
+				1, 1  // BT-Blocks
+				};
           this->N_Rhs = 3; // only stabilization terms 
           this->RhsSpace = {0, 0, 1 };
           this->AssembleParam = TimeNSType14NLSUPG;
@@ -1995,8 +2005,16 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
       switch(TDatabase::ParamDB->NSTYPE){
         case 4:
           this->N_Matrices = 12;
-          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0};
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->RowSpace =    { 0, 0, 0, 0, // A-Blocks
+	                        0, 0, 0, 0, //M-Blocks
+				1, 1, //B-Blocks
+				0, 0 // BT-Blocks
+				};
+          this->ColumnSpace = { 0, 0, 0, 0, //A-Blocks
+                                0, 0, 0, 0, //M-Blocks
+				0, 0, //B-Blocks
+				1, 1 //BT-Blocks
+				};
           this->N_Rhs = 2; 
           this->RhsSpace = { 0, 0 };
           this->AssembleParam = TimeNSType4Residual_VMS;
@@ -2004,8 +2022,18 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
           break;
         case 14:
           this->N_Matrices = 13;
-          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
+          this->RowSpace =    { 0, 0, 0, 0, // A-Blocks
+	                        0, 0, 0, 0, //M-Blocks
+				1, // C-Block
+				1, 1, // B-Blocks
+				0, 0 //BT-Blocks
+				};
+          this->ColumnSpace = { 0, 0, 0, 0, // A-Blocks
+	                        0, 0, 0, 0, //M-Blocks
+				1, // C-Block
+				0, 0, // B-Blocks
+				1, 1 // BT-Blocks
+				};
           this->N_Rhs = 3; 
           this->RhsSpace = { 0, 0, 1 };
           this->AssembleParam = TimeNSType14Residual_VMS;
@@ -2018,8 +2046,14 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
       switch(TDatabase::ParamDB->NSTYPE){
         case 4:
           this->N_Matrices = 10;
-          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
+          this->RowSpace =    { 0, 0, 0, 0, // A-Blocks
+	                        0, 0, 0, 0, //M-Blocks
+				0, 0
+				};
+          this->ColumnSpace = { 0, 0, 0, 0, // A-Blocks
+	                        0, 0, 0, 0, //M-Blocks
+				1, 1
+				};
           this->N_Rhs = 2; 
           this->RhsSpace = { 0, 0 };
           this->AssembleParam = TimeNSType4NLResidual_VMS;
@@ -2027,8 +2061,18 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
           break;
         case 14:
           this->N_Matrices = 13;
-          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
+          this->RowSpace =    { 0, 0, 0, 0, // A-Blocks
+	                        0, 0, 0, 0, //M-Blocks
+				1, // C-Block
+				1, 1, // B-Blocks
+				0, 0 // BT-Blocks
+				};
+          this->ColumnSpace = { 0, 0, 0, 0, // A-Blocks
+	                        0, 0, 0, 0, //M-Blocks
+				1, // C-Block
+				0, 0, // B-Blocks
+				1, 1 // BT-Blocks
+				};
           this->N_Rhs = 3; 
           this->RhsSpace = { 0, 0, 1 };
           this->AssembleParam = TimeNSType14Residual_VMS;
