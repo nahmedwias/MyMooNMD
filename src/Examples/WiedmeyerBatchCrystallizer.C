@@ -173,32 +173,24 @@ double derived_concentration_PAL_SUPSAT_POWG(const std::vector<double>& data)
     throw std::runtime_error("derived_concentration_PAL_SUPSAT_POWG: "
         "expected 7 data points. ux, uy, uz, p, T, POTASHALUM, 0(PAL_SUPSAT_POWG)");
 
-
-
-  double T = data[4];     // grab temperature [K]
+  double T = data[4] - 273.15;     // grab temperature, convert to degree C
   double c_A = data[5];   // grab alum anhydrate concentration [mol/m^3]
 
-  //CB use this code to determine saturation concentration at some T in C
-  // T = 17;       // in deg C
-  // T += 273.15; // now it's K
-  //END CB
+  double m_A = c_A * FluidProperties::M_A; // anhydrate, [kg/m^3]
+  double m_W = FluidProperties::rho - m_A; // water    , [kg/m^3]
 
-  double w_A = c_A * FluidProperties::M_A / FluidProperties::rho; //this is the alum anhydrate mass fraction [kg/kg]
-  double a = 4.6608e-5;
-  double b = -0.025716;   //three coefficients of the following polynomial,
-  double c = 3.5886;      //they were experimentally determined by the colleagues from MD
-  double w_A_eq = a * T * T + b * T + c;
+  //Just hack in Viktorias formula.
+  double w_A = m_A / (FluidProperties::beta_A * m_W - m_A * (1 - FluidProperties::beta_A ));
+  // Temmel model for solubility.
+  double A = 5.06;
+  double B = 0.23;
+  double C = 7.76e-3;
+  double D = -2.43e-4;
+  double E = 4.86e-6;
+  double w_A_eq = (A + B * T + C * T * T
+      + D * T *T * T + E * T * T * T * T) / 100 ;
 
-  double rel_sup_sat = w_A*(FluidProperties::beta_A - w_A_eq) /
-      (w_A_eq * (FluidProperties::beta_A - w_A)) - 1;
-
-  //  CB use this code to determine saturation concentration at some T in C
-  //  std::cout << "c_A:" << c_A << std::endl;
-  //  std::cout << "c_A_eq at " << T << " deg C: " << w_A_eq * FluidProperties::rho / FluidProperties::M_A << std::endl;
-  //  exit(0);
-  //  std::cout << "w_A: " << w_A << std::endl;
-  //  std::cout << "w_A_eq: " << w_A_eq << std::endl;
-  //  END CB
+  double rel_sup_sat = (w_A / w_A_eq) - 1;
 
   // return the supersaturation to the power of 1.4, as the model requires, or 0 if there is no supersaturation
   return rel_sup_sat > 0 ? pow(rel_sup_sat, 1.4) : 0;
