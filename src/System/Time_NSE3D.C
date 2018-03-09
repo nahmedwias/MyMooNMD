@@ -1586,9 +1586,9 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 	      sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
 	      sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
 	      reMat.resize(3);
-	      reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //than the standing B blocks (B-Blocks)
-	      reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
-	      reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
+	      reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks (B-Blocks)
+	      reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+	      reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
 	      
 	      rhs_array.resize(3);
 	      rhs_array[0] = s.rhs_.block(0);
@@ -1601,9 +1601,9 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 		sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
 		
 		reMat.resize(6);
-		reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //first the lying B blocks (BT-Blocks)
-		reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
-		reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+		reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //first the lying B blocks (BT-Blocks)
+		reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
+		reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
 		
 		rhs_array.resize(4);
 		rhs_array[3] = s.rhs_.block(3);
