@@ -790,7 +790,12 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   System_per_grid& s = this->systems_.front();
   size_t nu=s.solution_.length(0);
   size_t np=s.solution_.length(3);
-  
+/*  
+  //BEGIN DEBUG
+  cout <<" rhs: " << rhs_from_time_disc.norm()<<endl;
+  cout <<" sol: " << s.solution_.norm() << endl;exit(0);
+  //END DEBUG
+  */
   Output::print<5>("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
                 Ddot(3*nu,rhs_from_time_disc.get_entries(),rhs_from_time_disc.get_entries()) , " "  , 
                 Ddot(np,rhs_from_time_disc.get_entries()+3*nu,rhs_from_time_disc.get_entries()+3*nu)," ",
@@ -1601,9 +1606,12 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 		sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
 		
 		reMat.resize(6);
-		reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //first the lying B blocks (BT-Blocks)
-		reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
-		reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
+		reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //first the lying B blocks (BT-Blocks)
+		reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
+		reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
+		reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks (B-Blocks)
+		reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+		reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
 		
 		rhs_array.resize(4);
 		rhs_array[3] = s.rhs_.block(3);
