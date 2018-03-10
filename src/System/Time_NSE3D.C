@@ -348,14 +348,19 @@ void Time_NSE3D::check_and_set_parameters()
  // standard method
  if(db_["space_discretization_type"].is("galerkin"))
    space_disc_global = 1;
- // the supg case 
- if(db_["space_discretization_type"].is("supg"))
+ // For the supg and residual based VMS 
+ if(db_["space_discretization_type"].is("supg") 
+   ||db_["space_discretization_type"].is("residual_based_vms") )
  {
    if(!db_["time_discretization"].is("bdf_two"))
    {
      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
    }
-   space_disc_global = 2;
+   // set the global space discretizations
+   if(db_["space_discretization_type"].is("supg"))
+     space_disc_global = 2;
+   else
+     space_disc_global = 20;
    
    /// set scaling factor for B, BT's block
     // depends on how to deal the nonlinearity in the 
@@ -591,6 +596,22 @@ void Time_NSE3D::restrict_function()
       GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
     }
   }
+  if(TDatabase::ParamDB->NSTYPE == 14)
+  {
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.combined_old_solution_.block(block));
+        u_ns_dofs.push_back(s.combined_old_solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
 }
 
 /**************************************************************************** */
@@ -730,9 +751,14 @@ void Time_NSE3D::assemble_nonlinear_term()
     }
     // case: supg, right hand side and mass matrices are nonlinear
     // needs to be assemble during nonlinear iteration
-    if(db_["space_discretization_type"].is("supg") 
-      && db_["time_discretization"].is("bdf_two"))
+    if( db_["space_discretization_type"].is("supg") || 
+        db_["space_discretization_type"].is("residual_based_vms") )
     {
+      if(!db_["time_discretization"].is("bdf_two"))
+      {
+	ErrThrow("space discretizations, ", db_["space_discretization_type"], 
+		 " only implemented for ", db_["time_discretization"]);
+      }
       // pressure blocks that are nonlinear were already assembled
       // during the nonlinear asembly. We just have to scale them 
       // with the right factor
@@ -1219,23 +1245,35 @@ void Time_NSE3D::construct_extrapolated_solution()
 {
   if(db_["extrapolate_velocity"])
   {
-    if(!db_["space_discretization_type"].is("residual_based_vms") &&
-      TDatabase::ParamDB->NSTYPE != 14)
+    if(!db_["extrapolation_type"].is("linear_extrapolate"))
     {
-      if(db_["extrapolation_type"].is("linear_extrapolate"))
-      {
-	System_per_grid &s = this->systems_.front();
-	s.extrapolated_solution_.reset();
-	s.extrapolated_solution_ = s.solution_m1_;
-	s.extrapolated_solution_.scale(2.);
-	s.extrapolated_solution_.add_scaled(s.solution_m2_,-1.);
-	s.extrapolated_solution_.copy_nonactive(s.rhs_);
-      }
-      else
-      {
-	ErrThrow("Extrapolation type ", db_["extrapolation_type"], " is not supported yet");
-      }
+      ErrThrow("Only linear extrapolation is supported");
     }
+    System_per_grid &s = this->systems_.front();
+    // For inf-sup stable elements and SUPG method,
+    // we only need the extrapolation solution 
+    // However, in the case of equal-order elements, there
+    // is a combination of time-derivative and pressure test
+    // occurs for which we need the solution from previous two times.
+    // Only BDF2 is considered so far
+    s.extrapolated_solution_.reset();
+    s.extrapolated_solution_ = s.solution_m1_;
+    s.extrapolated_solution_.scale(2.);
+    s.extrapolated_solution_.add_scaled(s.solution_m2_,-1.);
+    s.extrapolated_solution_.copy_nonactive(s.rhs_);
+    
+    if(TDatabase::ParamDB->NSTYPE == 14 && db_["space_discretization_type"].is("supg"))
+    {
+      s.combined_old_solution_.reset();
+      s.combined_old_solution_ = s.solution_m1_;
+      s.combined_old_solution_.scale(2.);
+      s.combined_old_solution_.add_scaled(s.solution_m2_,-1./2.);
+      s.combined_old_solution_.copy_nonactive(s.rhs_);
+    }
+  }
+  else
+  {
+    ErrThrow("Supposed to be extrapolation but something is set wrong!!!! ");
   }
 }
 
@@ -1353,12 +1391,14 @@ void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s,
     spaces_rhs.resize(4);
     spaces_rhs[3] = &s.pressureSpace_;
   }
-  functions.resize(4);  
+  functions.resize(4);
   functions[0] = s.u_.GetComponent(0);
   functions[1] = s.u_.GetComponent(1);
   functions[2] = s.u_.GetComponent(2);
   functions[3] = &s.p_;
   
+  //TODO: At the moment, everything is in pieces. 
+  //      Later should be combined.
   if(imex_scheme(0))
   {
     functions.resize(4);
@@ -1501,14 +1541,40 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
           sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
           sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
           sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
-          // mass matrices
-          sqMat[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-	  sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
-	  sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	  
+	  if(db_["space_discretization_type"].is("residual_based_vms"))
+	  {
+	    sqMat.resize(18);
+	    sqMat[9] =  reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+	    sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(1).get());
+	    sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(2).get());
+	    sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(4).get());
+	    sqMat[13] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
+	    sqMat[14] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(6).get());
+	    sqMat[15] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(8).get());
+	    sqMat[16] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(9).get());
+	    sqMat[17] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	    
+	    if(TDatabase::ParamDB->NSTYPE == 14)
+	    {
+	      sqMat.resize(19);
+	      sqMat[18] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
+	    }
+	  }
+	  else
+	  {
+	    // mass matrices
+	    sqMat[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+	    sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
+	    sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	    if(TDatabase::ParamDB->NSTYPE == 14 && db_["space_discretization_type"].is("supg"))
+	    {
+	      sqMat.resize(13);
+	      sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
+	    }
+	  }
 	  if(TDatabase::ParamDB->NSTYPE == 14)
 	  {
-	    sqMat.resize(13);
-	    sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
 	    rhs_array.resize(4);
 	    rhs_array[3] = s.rhs_.block(3);
 	  }
@@ -1527,6 +1593,8 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
           reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  //than the standing B blocks
           reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
           reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+	  
+	  // additional matrices for the projection based VMS method
 	  if(db_["space_discretization_type"].is("vms_projection"))
 	  {
 	    reMat.resize(12);
@@ -1563,7 +1631,8 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 	  if(db_["space_discretization_type"].is("smagorinsky")    ||
 	     db_["space_discretization_type"].is("vms_projection") ||
 	     db_["space_discretization_type"].is("supg") ||
-	     db_["space_discretization_type"].is("smagorinsky_coarse")
+	     db_["space_discretization_type"].is("smagorinsky_coarse") ||
+	     db_["space_discretization_type"].is("residual_based_vms")
 	  )
           {
             sqMat.resize(9);
@@ -1576,6 +1645,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 	    sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
 	    sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
 	    sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+	    // additional nonlinear matrices for the projection based VMS method
 	    if(db_["space_discretization_type"].is("vms_projection"))
 	    {
 	      reMat.resize(3);
@@ -1583,6 +1653,27 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 	      reMat[1]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
 	      reMat[2]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
 	    }
+	    // residual based VMS
+	    if(db_["space_discretization_type"].is("residual_based_vms"))
+	    {
+	      sqMat.resize(18);
+	      sqMat[9] =  reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+	      sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(1).get());
+	      sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(2).get());
+	      sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(4).get());
+	      sqMat[13] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
+	      sqMat[14] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(6).get());
+	      sqMat[15] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(8).get());
+	      sqMat[16] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(9).get());
+	      sqMat[17] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	      
+	      if(TDatabase::ParamDB->NSTYPE == 14)
+	      {
+		sqMat.resize(19);
+		sqMat[18] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
+	      }
+	    }
+	    // supg matrices
 	    if(db_["space_discretization_type"].is("supg"))
 	    {
 	      // mass matrices
@@ -1590,35 +1681,42 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 	      sqMat[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
 	      sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
 	      sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
-	      reMat.resize(3);
-	      reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks (B-Blocks)
-	      reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
-	      reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
-	      
-	      rhs_array.resize(3);
-	      rhs_array[0] = s.rhs_.block(0);
-	      rhs_array[1] = s.rhs_.block(1);
-	      rhs_array[2] = s.rhs_.block(2);
-	      
 	      if(TDatabase::ParamDB->NSTYPE == 14)
 	      {
 		sqMat.resize(13);
 		sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
-		
-		reMat.resize(6);
-		reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //first the lying B blocks (BT-Blocks)
-		reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
-		reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
-		reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks (B-Blocks)
-		reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
-		reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
-		
-		rhs_array.resize(4);
-		rhs_array[3] = s.rhs_.block(3);
 	      }
-	      s.rhs_.reset();
 	    }
-          }
+	  }
+	  // common nonlinear matrices and rhs for the SUPG and RBVMS methods
+	  if( db_["space_discretization_type"].is("supg")
+	    ||db_["space_discretization_type"].is("residual_based_vms") )
+	  {
+	    reMat.resize(3);
+	    reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks (B-Blocks)
+	    reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+	    reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+	    
+	    rhs_array.resize(3);
+	    rhs_array[0] = s.rhs_.block(0);
+	    rhs_array[1] = s.rhs_.block(1);
+	    rhs_array[2] = s.rhs_.block(2);
+	    if(TDatabase::ParamDB->NSTYPE == 14)
+	    {
+	      reMat.resize(6);
+	      reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //first the lying B blocks (B-Blocks)
+	      reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
+	      reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
+	      reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks (BT-Blocks)
+	      reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+	      reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+	      
+	      rhs_array.resize(4);
+	      rhs_array[3] = s.rhs_.block(3);
+	    }
+	    s.rhs_.reset();
+	  }
+	  
           if(db_["space_discretization_type"].is("galerkin"))
           {
             sqMat.resize(3); 

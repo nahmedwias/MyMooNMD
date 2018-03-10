@@ -1734,7 +1734,7 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
   }
   if(TDatabase::ParamDB->NSTYPE==4)
   {
-    this->N_Parameters = 5;
+    this->N_Parameters = 6;
     this->N_ParamFct = 1;
     this->ParameterFct =  { TimeNSType4Params_SUPG };
     this->N_FEValues = 3;
