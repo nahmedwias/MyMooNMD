@@ -656,6 +656,7 @@ void TimeNSType14L_NL_SUPGDD3D(double Mult, double *coeff, double *param, double
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
 
       // divergence constraint
       val = -test000*ansatz100;
