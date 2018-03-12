@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
    
   //=========================================================================
   CD2D cd2d(domain, parmoon_db);
-  cd2d.assemble();
+  cd2d.assemble(0);
   cd2d.solve(0);
   
   if( cd2d.get_db()["algebraic_flux_correction"].is("afc") )
@@ -61,7 +61,6 @@ int main(int argc, char* argv[])
     for(unsigned int k = 1;; k++)
     {
       bool converged;
-      cd2d.assemble();
       
       converged = cd2d.solve(k);
 
