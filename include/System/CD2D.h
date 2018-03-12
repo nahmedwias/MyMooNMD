@@ -179,7 +179,7 @@ class CD2D
      * assembling routines are used. Also in case of multigrid the matrices
      * on all grids are assembled.
      */
-    void assemble();
+    void assemble(const int iteration);
     
     /** @brief solve the system 
      * 
@@ -267,22 +267,42 @@ class CD2D
      * ALGEBRAIC_FLUX_CORRECTION.
      */
     
-    /*eps: The current residue r_k+1
-     * eps_old: The previous residue r_k
-     * t: Time taken to complete one iteration
+    /* residual: norm of current residual r_k+1
+     * residual_old: norm of previous residue r_k */
+     double residual, residual_old; 
+   
+    /* t: time taken to complete one iteration */
+     double t;
+    /*
      * rhs_flag: Use to denote when one it takes one iteration of Newton as well as one iteration of Fixed_point_RHS more than 2 seconds
      * newton_flag: Use to denote when iteration moves from Newton to Fixed_point_RHS and hence increase the tolerance
      * up_param: The tolerance taken to change fron one schem to another
      * 
      */
-    void do_algebraic_flux_correction();
-    double eps,t, eps_old; 
-    double omega_min, omega, omega_max;
-    double c1, c2, c3, c4;
-    double time_newton, time_rhs;
-    int rhs_flag, newton_flag, first_damp;
+    void do_algebraic_flux_correction(const int iteration);
+    /*
+     * time_total: time taken to compute solve the problem
+     * time_rhs: Time taken to compute one Fixed_point_RHS iteration
+     */    
+    double time_total, time_rhs, time_newton;
+    
+    /*
+     * rejected_steps: rejected iteration steps
+     */
+    int rejected_steps;
+        
+    /*
+     * rhs_flag, newton_flag: Used for finding if time taken by one step of Newton as well as one step of Fixed_point_RHS is same
+     * newton_iterate: Count the number of Newton iteration
+     *rhs_iterate: Count the number of Fixed_point_RHS iteration     
+     */
+    int rhs_flag, newton_flag;
     int newton_iterate, rhs_iterate;
+    /*
+     * up_param: Tolerance limit of the residual which decides when to switch the iteration technique
+     */
     double up_param;
+     
     BlockVector old_solution;
 };
 

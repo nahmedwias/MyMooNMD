@@ -30,7 +30,7 @@ namespace AlgebraicFluxCorrection {
  */
 enum class Limiter
 {
-    ZALESAK, LINEAR_PRESERVE_BJK17
+    ZALESAK, BJK17
 };
 
 /**
@@ -170,7 +170,7 @@ void correct_dirichlet_rows(FEMatrix& MatrixA);
  * the new iterate if there is no damping
  * Output: new iterate 
  */
- void AFC_Compute_New_Iterate(const BlockVector& old_solution, BlockVector& new_solution, const double omega);
+ void AFC_Compute_New_Iterate(const BlockVector& old_solution, BlockVector& new_solution, const ParameterDatabase& db);
   //const ParameterDatabase& db);
 
 }
