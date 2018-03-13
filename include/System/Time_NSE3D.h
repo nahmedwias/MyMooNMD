@@ -121,6 +121,16 @@ class Time_NSE3D
        * velocity 
        */
       TFEVectFunct3D combined_old_u_;
+      
+      /** @brief constructs a solution vector combined the old 
+       * solutions used for the assembly of the terms appears 
+       * after space time discretization using supg method
+       */
+      BlockVector time_der_old_sol_;
+      /** @brief the corresponding finite element functions for 
+       * velocity 
+       */
+      TFEVectFunct3D time_der_old_u_;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.

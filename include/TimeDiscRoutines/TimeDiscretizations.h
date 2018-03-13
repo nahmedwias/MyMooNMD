@@ -138,10 +138,12 @@ public:
     }
    
     //getters
+    /// returns the current time step length
     double get_step_length()
     {
       return current_time_step_length;
     }
+    /// returns the end time
     double get_end_time()
     {
       return end_time;

@@ -120,6 +120,11 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
   combined_old_solution_=BlockVector(matrix_, false);
   combined_old_u_ = TFEVectFunct3D(&velocitySpace_, "u", "u", combined_old_solution_.block(0),
                      combined_old_solution_.length(0), 3);
+  // time derivative solution
+  time_der_old_sol_=BlockVector(matrix_, false);
+  time_der_old_u_ = TFEVectFunct3D(&velocitySpace_, "u", "u", time_der_old_sol_.block(0),
+                     time_der_old_sol_.length(0), 3);
+  
 #ifdef _MPI
   velocitySpace_.initialize_parallel(maxSubDomainPerDof);
   pressureSpace_.initialize_parallel(maxSubDomainPerDof);
@@ -355,6 +360,11 @@ void Time_NSE3D::check_and_set_parameters()
    if(!db_["time_discretization"].is("bdf_two"))
    {
      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
+   }
+   if(db_["space_discretization_type"].is("residual_based_vms") 
+     && !db_["imex_scheme_"])
+   {
+     ErrThrow("Space discretization: ", db_["space_discretization_type"]);
    }
    // set the global space discretizations
    if(db_["space_discretization_type"].is("supg"))
@@ -1262,13 +1272,41 @@ void Time_NSE3D::construct_extrapolated_solution()
     s.extrapolated_solution_.add_scaled(s.solution_m2_,-1.);
     s.extrapolated_solution_.copy_nonactive(s.rhs_);
     
-    if(TDatabase::ParamDB->NSTYPE == 14 && db_["space_discretization_type"].is("supg"))
+    if(TDatabase::ParamDB->NSTYPE == 14 && 
+      (db_["space_discretization_type"].is("supg") || 
+      db_["space_discretization_type"].is("residual_based_vms")) )
     {
       s.combined_old_solution_.reset();
       s.combined_old_solution_ = s.solution_m1_;
       s.combined_old_solution_.scale(2.);
       s.combined_old_solution_.add_scaled(s.solution_m2_,-1./2.);
       s.combined_old_solution_.copy_nonactive(s.rhs_);
+    }
+    if(db_["space_discretization_type"].is("residual_based_vms"))
+    {
+      if(time_stepping_scheme.current_step_==1)
+      {
+	s.time_der_old_sol_.reset();
+	s.time_der_old_sol_=s.solution_;
+	double dt = time_stepping_scheme.get_step_length();
+	dt = 1./dt;
+	s.time_der_old_sol_.scaleActive(dt);
+	s.time_der_old_sol_.addScaledActive(s.solution_m1_, -dt);
+	s.time_der_old_sol_.copy_nonactive(s.rhs_);
+      }
+      else
+      {
+	// old residual 
+	// unbdf = 2 solm1 - 0.5*solm2
+	// td = 1./dt *( 1.5*usigma - unbdf) 
+	s.time_der_old_sol_.reset();
+	s.time_der_old_sol_ = s.extrapolated_solution_;
+	s.time_der_old_sol_.scaleActive(1.5);
+	s.time_der_old_sol_.addScaledActive(s.solution_m1_, -2.0);
+	s.time_der_old_sol_.addScaledActive(s.solution_m2_, 0.5);
+	double dt = time_stepping_scheme.get_step_length();
+	s.time_der_old_sol_.scale(1./dt);
+      }
     }
   }
   else
@@ -1294,7 +1332,8 @@ TFEFunction3D* Time_NSE3D::get_velocity_component(int i)
 bool Time_NSE3D::imex_scheme(bool print_info)
 {
   // change maximum number of nonlin_iterations to 1 in IMEX case
-  if((db_["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3))
+  if(db_["imex_scheme_"] && (time_stepping_scheme.current_step_ >= 3 ||
+    db_["space_discretization_type"].is("residual_based_vms") ) )
   {
     db_["nonlinloop_maxit"] = 1;
 #ifdef _MPI
@@ -1411,17 +1450,25 @@ void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s,
   // resulted from the combination of bdf2 and supg method
   if(db_["space_discretization_type"].is("supg") && TDatabase::ParamDB->NSTYPE==14)
   {
-    s.combined_old_solution_.reset();
-    // copy and scale the solution at previous time step with factor 2
-    s.combined_old_solution_ = s.solution_m1_;
-    s.combined_old_solution_.scale(2.);
-    // subtract with right factor the solution at pre-previous solution
-    s.combined_old_solution_.add_scaled(s.solution_m2_, -1./2.);
-    
     functions.resize(6);
     functions[3] = s.combined_old_u_.GetComponent(0);
     functions[4] = s.combined_old_u_.GetComponent(1);
     functions[5] = s.combined_old_u_.GetComponent(2);
+  }
+  // terms that are used for the RBVMS
+  if(db_["space_discretization_type"].is("residual_based_vms"))
+  {
+    functions.resize(7);
+    functions[4] = s.time_der_old_u_.GetComponent(0);
+    functions[5] = s.time_der_old_u_.GetComponent(1);
+    functions[6] = s.time_der_old_u_.GetComponent(2);
+    if( TDatabase::ParamDB->NSTYPE==14)
+    {
+      functions.resize(10);
+      functions[7] = s.combined_old_u_.GetComponent(0);
+      functions[8] = s.combined_old_u_.GetComponent(1);
+      functions[9] = s.combined_old_u_.GetComponent(2);
+    }
   }
   if(db_["space_discretization_type"].is("vms_projection"))
   {
