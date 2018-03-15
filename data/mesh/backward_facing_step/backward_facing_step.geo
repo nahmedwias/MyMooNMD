@@ -6,7 +6,7 @@ Mesh.Algorithm=1;//delquad mesher
 h = 1; // height of step
 l_left = 4*h; // legnth left of step
 l_right = 36*h; // length right of step
-h_i = 2*h; // height at inflow
+h_i = 1*h; // height at inflow
 
 //  __________________________     
 //  |                         |     y=h_i
