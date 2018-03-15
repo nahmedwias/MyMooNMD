@@ -250,6 +250,18 @@ void Mesh::readFromFile(std::string filename)
   ifile.clear();
   ifile.seekg(current_line_number);
   ifile.close();
+  
+  if(numberOfTetra + numberOfHexa == 0 && dimension == 3)
+  {
+    // this should be 2D and is reset here after a check.
+    // All vertices should have the same z-component
+    // we don't support 2D meshes embedded in 3D (yet)
+    for (unsigned int i=1; i<numberOfNodes; i++) {
+      if(vertex[i].z != vertex[0].x)
+        ErrThrow("Cannot read a 3D mesh with no tetrahedra and no hexahedra.");
+    }
+    dimension = 2;
+  }
 }
 
 
