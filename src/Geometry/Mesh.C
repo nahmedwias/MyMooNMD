@@ -257,7 +257,7 @@ void Mesh::readFromFile(std::string filename)
     // All vertices should have the same z-component
     // we don't support 2D meshes embedded in 3D (yet)
     for (unsigned int i=1; i<numberOfNodes; i++) {
-      if(vertex[i].z != vertex[0].x)
+      if(vertex[i].z != vertex[0].z)
         ErrThrow("Cannot read a 3D mesh with no tetrahedra and no hexahedra.");
     }
     dimension = 2;
