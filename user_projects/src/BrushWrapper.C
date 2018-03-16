@@ -680,4 +680,5 @@ void BrushWrapper::output(int &image, double t)
 
     interface_->write_outlet_particle_list(outflow_particles_file_);
 
+    interface_->reflection_statistics(Output::get_outfile());
 }
