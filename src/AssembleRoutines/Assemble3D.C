@@ -1446,8 +1446,9 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    //OutPut("params " << TDatabase::ParamDB->INTERNAL_LEVEL << endl);
 	    la.GetParameters(N_Points, Coll, cell, i,X, Y, Z, Param);
 	    bool is_sdfem = (la.get_disctype() == SDFEM);
+	    bool is_rbvms = (la.get_disctype() == RBVMS);
 
-	    if ( is_sdfem
+	    if ( is_sdfem || is_rbvms
 	        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
 	        || (TDatabase::ParamDB->CELL_MEASURE == 4)
 	        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 105)

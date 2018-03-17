@@ -826,12 +826,13 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   System_per_grid& s = this->systems_.front();
   size_t nu=s.solution_.length(0);
   size_t np=s.solution_.length(3);
-/*  
+/*
   //BEGIN DEBUG
   cout <<" rhs: " << rhs_from_time_disc.norm()<<endl;
-  cout <<" sol: " << s.solution_.norm() << endl;exit(0);
+  cout <<" sol: " << s.solution_.norm() << endl;
   //END DEBUG
   */
+
   Output::print<5>("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
                 Ddot(3*nu,rhs_from_time_disc.get_entries(),rhs_from_time_disc.get_entries()) , " "  , 
                 Ddot(np,rhs_from_time_disc.get_entries()+3*nu,rhs_from_time_disc.get_entries()+3*nu)," ",
@@ -1266,11 +1267,21 @@ void Time_NSE3D::construct_extrapolated_solution()
     // is a combination of time-derivative and pressure test
     // occurs for which we need the solution from previous two times.
     // Only BDF2 is considered so far
-    s.extrapolated_solution_.reset();
-    s.extrapolated_solution_ = s.solution_m1_;
-    s.extrapolated_solution_.scale(2.);
-    s.extrapolated_solution_.add_scaled(s.solution_m2_,-1.);
-    s.extrapolated_solution_.copy_nonactive(s.rhs_);
+    if(db_["space_discretization_type"].is("residual_based_vms") && time_stepping_scheme.current_step_==1)
+    {
+      // constant extrapolation in the RBVMS methods for only first 
+      // time step where we are using BDF1 scheme
+      s.extrapolated_solution_.reset();
+      s.extrapolated_solution_ = s.solution_m1_;
+    }
+    else
+    {
+      s.extrapolated_solution_.reset();
+      s.extrapolated_solution_ = s.solution_m1_;
+      s.extrapolated_solution_.scale(2.);
+      s.extrapolated_solution_.add_scaled(s.solution_m2_,-1.);
+      s.extrapolated_solution_.copy_nonactive(s.rhs_);
+    }
     
     if(TDatabase::ParamDB->NSTYPE == 14 && 
       (db_["space_discretization_type"].is("supg") || 
