@@ -1845,7 +1845,7 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
 
   bool needs_prc = is_saddle_point_problem && is_enclosed_flow;
   
-  if(TDatabase::ParamDB->RE_NR == 180)
+  if(TDatabase::ParamDB->RE_NR == 180 || TDatabase::ParamDB->RE_NR == 395.)
   {
     needs_prc = false;
   }
@@ -1856,7 +1856,7 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
                    "Pressure projection enabled.");
 
   //TODO: Fix me please
-  if(TDatabase::ParamDB->RE_NR == 180.)
+  if(TDatabase::ParamDB->RE_NR == 180. || TDatabase::ParamDB->RE_NR == 395.)
     return false;
   else
     return needs_prc;
