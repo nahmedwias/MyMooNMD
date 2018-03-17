@@ -119,6 +119,25 @@ void ChannelTau180::setParameters(ParameterDatabase &db)
   {
     TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY=180;
     TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION=0;
+    //
+    if (TDatabase::ParamDB->RE_NR==180)
+    {
+      TDatabase::ParamDB->INTERNAL_BULK_MEAN = 15.6803;
+      TDatabase::ParamDB->INTERNAL_BULK_SIMULATION = 15.6803;
+    }
+    if (TDatabase::ParamDB->RE_NR==395)
+    {
+      TDatabase::ParamDB->INTERNAL_BULK_MEAN = 17.5452;
+      TDatabase::ParamDB->INTERNAL_BULK_SIMULATION = 17.5452;
+    }
+    if (TDatabase::ParamDB->CELL_MEASURE==0)
+    {
+      TDatabase::ParamDB->CELL_MEASURE = 2;
+      OutPut("CELL_MEASURE changed to " <<
+      TDatabase::ParamDB->CELL_MEASURE << endl);
+    }
+    //parameter = 2 for using Gauss3
+    //
     TDatabase::ParamDB->INTERNAL_QUAD_RULE=2;
 
     Output::print("INTERNAL_QUAD_RULE: ",
