@@ -1666,13 +1666,14 @@ void check_parameters_consistency_NSE(ParameterDatabase& db)
   // equal order
   if (TDatabase::ParamDB->NSTYPE == 14)
   {
-    if (!(db["space_discretization_type"].is("sdfem")))
+    if (!(db["space_discretization_type"].is("sdfem")) &&
+        !(db["space_discretization_type"].is("supg"))  && 
+        !(db["space_discretization_type"].is("local_projection")))
     {
-      db["space_discretization_type"].set("sdfem");
       if(my_rank==0)
       {
-        Output::warn<1>("NSE Parameter Consistency","discretization_type changed to SDFEM "
-            "because NSTYPE 14!!!");
+        ErrThrow("NSE Parameter Consistency","discretization_type is not feasible for for NSTYPE ", 
+                 TDatabase::ParamDB->NSTYPE);
       }
     }
 /*
