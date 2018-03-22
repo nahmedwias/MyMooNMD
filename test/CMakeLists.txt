@@ -267,6 +267,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #umfpack
   add_test(NAME mesh3d COMMAND ParMooN_test_mesh3d_seq umfpack)
+    
+  #sandwich test (sandwish grid)
+  add_executable(ParMooN_test_sandwich sandwich_test.c++)
+  target_link_libraries(ParMooN_test_sandwich parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(sandwich ParMooN_test_sandwich)
+  list(APPEND parmoon_tests ParMooN_test_sandwich)
+  
 
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
   
