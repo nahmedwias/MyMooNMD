@@ -141,6 +141,7 @@ void TJoint::SetMapType()
 
     N_ = TmpLen[LocJoint1];
     aux = LocJoint1 * MaxLen;
+
     for (MapType=0;MapType<N_;MapType++)
       if (Neighb1->GetVertex(TmpFV[aux + MapType]) == Vert) break;
 
@@ -159,9 +160,7 @@ void TJoint::SetMapType()
                 Neighb1->GetVertex(i) << endl;
       */
 
-      cerr << "Error in SetMapType: could not find vertex" << endl;
-      exit (-1);
-      return ;
+      ErrThrow("Error in SetMapType: could not find vertex");
     }
   }
 }
