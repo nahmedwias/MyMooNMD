@@ -14,7 +14,6 @@
 
 
 
-
 // Constructor
 TBaseCell::TBaseCell(TRefDesc *refdesc)
 {
@@ -253,3 +252,203 @@ void TBaseCell::SetNeibProcessesIds(int *Neiblist)
 
 }
 #endif
+
+double norm(double x,double y, double z)
+{
+	return std::sqrt(x*x+y*y+z*z);
+}
+#ifdef __3D__
+//Returns normed triple product
+double triple_product(const TVertex * vert0, const TVertex * vert1, const TVertex * vert2, const TVertex * vert3)
+{
+	double x0,x1,x2,x3,y0,y1,y2,y3,z0,z1,z2,z3;
+	vert0->GetCoords(x0,y0,z0);
+	vert1->GetCoords(x1,y1,z1);
+	vert2->GetCoords(x2,y2,z2);
+	vert3->GetCoords(x3,y3,z3);
+
+	//calculate the triple product (volume of the hexahedron)
+	//TODO: Normiere den Spass, damit sich ablesen laesst, ob Zelle entartet ist.
+	double product =((x2-x0)*(y3-y0)-(x3-x0)*(y2-y0))*(z1-z0)
+			+((x3-x0)*(y1-y0)-(x1-x0)*(y3-y0))*(z2-z0)
+			+((x1-x0)*(y2-y0)-(x2-x0)*(y1-y0))*(z3-z0);
+	//double norm = norm(x1-x0,y1-0,z1-z0)*norm(x2-x0,y2-y0,z2-z0)*norm(x3-x0,y3-y0,z3-z0);
+	//if (norm==0)
+	//	ErrThrow("Two vertices");
+	return product;
+}
+
+//Check if the edge between vert0 and vert1 and the edge between vert2 and vert3 cross
+//Solve LGS
+/*{ (x0-x1)  (x2-x3)	{ s		(x3-x1)
+ *  (y0-y1)  (y2-y3)	  t}  =	(y3-y1)
+ *  (z0-z1)  (z2-z3) }	  		(z3-z1)
+ * */
+//This method may be numerical instable.
+bool find_cross_point(const TVertex * vert0, const TVertex * vert1,
+		const TVertex * vert2, const TVertex * vert3)
+		//double s,double t
+{
+	//Input check: Are the vertices pairwise different
+	const TVertex* Vertices[4]={vert0 , vert1 , vert2 , vert3};
+	for (int iter1 =0; iter1 <4; iter1++)
+	{
+		for (int iter2=iter1+1; iter2 <4; iter2++)
+		{
+			//Operator < (actually <=) compares vertices coordinate-wise.
+			if ((!(*Vertices[iter1] < *Vertices[iter2])) && (!(*Vertices[iter2] < *Vertices[iter1])))
+				{
+				Output::print(vert0);
+				Output::print(vert1);
+				Output::print(vert2);
+				Output::print(vert3);
+				ErrThrow("Two vertices are the same");
+				}
+		}
+	}
+
+	//Compute cross point (Solve LGS)
+	double s,t;
+
+	double x0,x1,x2,x3,y0,y1,y2,y3,z0,z1,z2,z3;
+	vert0->GetCoords(x0,y0,z0);
+	vert1->GetCoords(x1,y1,z1);
+	vert2->GetCoords(x2,y2,z2);
+	vert3->GetCoords(x3,y3,z3);
+
+	double a = (x0-x1);
+	double b = (x2-x3);
+	double x = (x3-x1);
+	double c = (y0-y1);
+	double d = (y2-y3);
+	double y = (y3-y1);
+	double e = (z0-z1);
+	double f = (z2-z3);
+	double z = (z3-z1);
+
+	double det = a*d-c*b;
+	if (det!=0)
+	{
+		s=(d*x-b*y)/det;
+		t=(a*y-c*x)/det;
+
+		if (std::abs(e*s+f*t-z)>1e-10)
+			return false; //Edges are parallel
+	}
+	else
+	{
+		det = c*f-e*d;
+			if (det!=0)
+			{
+				s=(f*y-d*z)/det;
+				t=(c*z-e*y)/det;
+
+				if (std::abs(a*s+b*t-x)>1e-10)
+					return false; //Edges are parallel
+			}
+			else
+				return false; //Edges are parallel or Vertices are the same...
+
+	}
+	if (0<=s && s<=1 && 0<=t && t<=1)
+		{
+		Output::print("s ",s, " t ", t);
+		return true;
+		}
+
+	return false;
+}
+
+
+
+bool TBaseCell::check_orientation() const
+{
+	#ifdef __3D__
+	if (this->GetShapeDesc()->GetType()==Tetrahedron)
+	{
+
+		//calculate the triple product (volume of the hexahedron)
+		double product =triple_product(
+				this->GetVertex(0),this->GetVertex(1),
+				this->GetVertex(2),this->GetVertex(3));
+		return (product>0);
+	}
+	else if(this->GetShapeDesc()->GetType()==Hexahedron || this->GetShapeDesc()->GetType()==Brick)
+	{
+		//calculate the triple product (volume of the hexahedron)
+		double product =triple_product(
+				this->GetVertex(0),this->GetVertex(1),
+				this->GetVertex(2),this->GetVertex(4));
+		return (product>0);
+	}
+	else
+	{
+		Output::print("cell shape: ", this->GetShapeDesc()->GetType());
+		ErrThrow("check_orientation: This cell shape is not implemented!");
+		return false;
+	}
+    #endif
+
+}
+
+bool TBaseCell::check_shape() const
+{
+	if (this->GetShapeDesc()->GetType()==Tetrahedron)
+	{
+		//calculate the triple product (volume of the hexahedron)
+		//if it is not equal 0 then the vertices are not in a plane
+		double product =triple_product(
+				this->GetVertex(0),this->GetVertex(1),
+				this->GetVertex(2),this->GetVertex(3));
+		return (std::abs(product)>1e-10);
+	}
+	else if(this->GetShapeDesc()->GetType()==Hexahedron|| this->GetShapeDesc()->GetType()==Brick)
+	//TODO: Bricks have still more properties to be checked... use CheckHexa()
+	{
+		const int *vert_per_face;
+		const int *n_vert_per_face;
+	    int max_n;
+		this->GetShapeDesc()->GetFaceVertex(vert_per_face, n_vert_per_face, max_n);
+
+		for(int face_id=0; face_id<6; face_id++)
+		{
+			int vert0_id =vert_per_face[max_n*face_id +0];
+			int vert1_id =vert_per_face[max_n*face_id +1];
+			int vert2_id =vert_per_face[max_n*face_id +2];
+			int vert3_id =vert_per_face[max_n*face_id +3];
+
+			double product =triple_product(
+				this->GetVertex(vert0_id),this->GetVertex(vert1_id),
+				this->GetVertex(vert2_id),this->GetVertex(vert3_id));
+			if(std::abs(product) >1e-10)
+			{
+				Output::print("Computing errors may cause that the cell is considered degenerated.");//TODO:
+				return false;
+			}
+
+			//check if opposite edges cross
+			if (find_cross_point(
+					this->GetVertex(vert0_id),this->GetVertex(vert1_id),
+					this->GetVertex(vert2_id),this->GetVertex(vert3_id)))
+				ErrThrow("Opposite edges of a face cross.");
+
+			if (find_cross_point(
+					this->GetVertex(vert0_id),this->GetVertex(vert3_id),
+					this->GetVertex(vert1_id),this->GetVertex(vert2_id)))
+				ErrThrow("Opposite edges of a face cross.");
+
+		} //end face
+	}
+	else
+	{
+		ErrThrow("check_shape: For this cell shape has not implemented a check method!");
+		return false;
+	}
+
+	return true;
+}
+
+#endif //__3D__
+
+
+
