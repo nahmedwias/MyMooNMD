@@ -52,6 +52,8 @@ class TBdCircle : public TBoundComp2D
     virtual int GenInitVerts(double *&points, int I_points,
                              int *&edges, int I_edges);
 
+    bool is_full_circle() const;
+
   protected:
     int GetN_InitVertsSub(double Phi_a, double Phi_b, int Level);
     int GenInitVertsSub(double Phi_a, double Phi_b, int Level,

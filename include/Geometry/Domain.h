@@ -156,6 +156,11 @@ class TDomain
     void MakeBdParamsConsistent(TCollection *coll);
     
     int CloseGrid(int level);
+
+
+    /** @brief Checks if the given Domain consists of  valid cells*/
+    bool check() const;
+
 #endif
 
 #ifdef __2D__
@@ -616,11 +621,14 @@ class TDomain
                    int N_Vertices, int NVE, int *BoundFaces, int *FaceParam,
                    int NBF, int NVpF,
                    int *Interfaceparam, int N_Interfaces);
+
       /** @brief make initial sandwich grid */
-      int MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
-                           int N_Vertices, int NVE,
-                           double DriftX, double DriftY, double DriftZ,
-                           const std::vector<double>& Lambda);
+      void MakeSandwichGrid(
+    		  double *DCORVG, int *KVERT, int *KNPR,
+    		  int N_Vertices, int NVE,
+    		  double DriftX, double DriftY, double DriftZ,
+    		  const std::vector<double>& Lambda);
+
      #endif
 
 };
@@ -669,6 +677,6 @@ void determine_n_refinement_steps_multigrid(
   int n_initial_refinement_steps,
   int& n_ref_before, int& n_ref_after);
 
-
-
 #endif
+
+
