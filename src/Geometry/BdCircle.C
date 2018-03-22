@@ -230,3 +230,8 @@ int  TBdCircle::GenInitVerts(double *&points, int I_points,
 
   return GenInitVertsSub(Phi1, Phi2, 0, points, I_points, edges, I_edges);
 }
+
+bool TBdCircle::is_full_circle() const
+{
+	return (std::abs((std::abs(Phi1-Phi2)-2*M_PI))<1e-6);
+}
