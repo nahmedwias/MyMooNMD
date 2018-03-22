@@ -471,7 +471,20 @@ class TBaseCell
      
 #endif
 
+
+#ifdef __3D__
     virtual void check() const = 0;
+
+   /** @brief the vertices of a 3D cell have a specific order
+    * (for tets the right hand rule holds; for hexas it holds using vert (0,1,2,4) )
+    * check the sign of the triple product of three vectors - for the right hand rule it has to be positive*/
+   bool check_orientation() const;
+
+   /** @brief check whether the ShapeDesc actually describes the shape of the cell
+    * (does the cell have a volume?)*/
+   bool check_shape() const;
+#endif
+
 };
 
 #endif
