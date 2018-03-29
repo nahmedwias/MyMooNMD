@@ -303,6 +303,8 @@ void Time_NSE2D::set_parameters()
     else
       is_rhs_and_mass_matrix_nonlinear = false;
   }  
+  
+  counter_for_time_scale=0;
 }
 
 /**************************************************************************** */
@@ -1453,6 +1455,13 @@ void Time_NSE2D::output(int m)
     s.p.PrintMinMax();
   }
 
+  size_t interval = db["write_solution_binary_all_n_steps"];
+  bool w_t_f=false;
+  if(time_stepping_scheme.current_step_ % interval == 0)
+  {
+    w_t_f = true;
+    counter_for_time_scale++;
+  }
   if(db["output_compute_errors"])
   {
     double locerr[8];
@@ -1470,7 +1479,8 @@ void Time_NSE2D::output(int m)
       u2->GetErrors(ExactNull,3, allderiv, 2, L2H1Errors, nullptr,
                   &aux,1, &v_sp,locerr+2);
       
-      Output::print( t, " kinetic energy ", (locerr[0]*locerr[0] + locerr[2]*locerr[2])/2 );
+      if(w_t_f)
+	Output::print( setprecision(10), t, " ", counter_for_time_scale, " kinetic energy ", (locerr[0]*locerr[0] + locerr[2]*locerr[2])/2 );
     }
     else
     {
@@ -1520,12 +1530,13 @@ void Time_NSE2D::output(int m)
   {
     ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
                               vorticity_funct->GetValues(), divergence->GetValues());
-    example.do_post_processing(*this, zero_vorticity);
+    if(w_t_f)
+      example.do_post_processing(*this, zero_vorticity, counter_for_time_scale);
   }
   else
   {
     double dummy = 0;
-    example.do_post_processing(*this, dummy);
+    example.do_post_processing(*this, dummy, counter_for_time_scale);
   }
 
   delete u1;
@@ -1542,7 +1553,6 @@ void Time_NSE2D::output(int m)
 
   if(db["write_solution_binary"].is(true))
   {
-    size_t interval = db["write_solution_binary_all_n_steps"];
     if(m % interval == 0)
     {//write solution to a binary file
       std::string file = db["write_solution_binary_file"];

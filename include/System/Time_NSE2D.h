@@ -202,6 +202,10 @@ class Time_NSE2D
 
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
+    
+    /// this parameter is used to write the solution after the number of time 
+    /// steps: 
+    int counter_for_time_scale;
 public:
     Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
                int reference_id = -4711);

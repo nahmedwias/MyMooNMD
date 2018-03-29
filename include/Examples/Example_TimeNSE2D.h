@@ -46,7 +46,7 @@ public:
   };
 
   /// Apply the function stored as post processing routine.
-  void do_post_processing(Time_NSE2D& tnse2d, double& val) const;
+  void do_post_processing(Time_NSE2D& tnse2d, double& val, int count=0) const;
 
   /// Return kinematic viscosity, if set.
   double get_nu() const;
@@ -54,7 +54,7 @@ public:
   private:
   /// Function doing the post processing for a stationary example.
   /// TODO put Time_NSE2D argument const as soon as FEFunctions can be copied properly!
-  std::function<void(Time_NSE2D&, double& val)> post_processing_stat;
+  std::function<void(Time_NSE2D&, double& val, int count)> post_processing_stat;
   
   std::function<void(Time_NSE2D &)> post_processing_stat_old;
   /// TODO Function doing the post processing for a time dependent example.
