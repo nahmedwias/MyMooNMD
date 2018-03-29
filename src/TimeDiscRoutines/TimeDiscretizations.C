@@ -94,6 +94,8 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
   current_time_ = db["time_start"];
   Output::print<5>("Time discretization is initialized with ",
                 db["time_discretization"]);
+  
+  total_time_steps = end_time/current_time_step_length;
 }
 
 /* ****************************************************************************/

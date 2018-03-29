@@ -39,6 +39,9 @@ class TimeDiscretization
     
     /// @brief end time 
     double end_time;
+    
+    /// @brief total number of time steps
+    int total_time_steps;
 
 public:
     // 
@@ -147,6 +150,11 @@ public:
     double get_end_time()
     {
       return end_time;
+    }
+    /// return total number of time steps
+    int n_time_steps()
+    {
+      return total_time_steps;
     }
 };
 

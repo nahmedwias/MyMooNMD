@@ -202,13 +202,13 @@ void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
   return;
 }
 
-void EvaluateSolution(const Time_NSE2D &tnse2d, double & zero_vort)
+void EvaluateSolution(const Time_NSE2D &tnse2d, double & zero_vort, int t)
 {
   const TFEFunction2D& vorticity(tnse2d.get_vorticity_funct());
   double thickness;
   ComputeVorticiyThickness(&vorticity, thickness);
 
-  double t=TDatabase::TimeDB->CURRENTTIME;
+  double ct=TDatabase::TimeDB->CURRENTTIME;
   const TFESpace2D * sp = vorticity.GetFESpace2D();
   MultiIndex2D allderiv[3]= {D00, D10, D01};
   TAuxParam2D aux;
@@ -216,11 +216,11 @@ void EvaluateSolution(const Time_NSE2D &tnse2d, double & zero_vort)
   vorticity.GetErrors(ExactNull, 3, allderiv, 2, L2H1Errors, nullptr, &aux, 1, 
                                &sp, locerr);
   
-  Output::print(t, " " , "enstrophy ", (locerr[0]*locerr[0])/2, " ", (locerr[1]*locerr[1])/2);
+  Output::print(setprecision(10), ct, " ", t, " " , "enstrophy ", (locerr[0]*locerr[0])/2, " ", (locerr[1]*locerr[1])/2);
   
   if(zero_vort < 0)
     zero_vort = thickness;
-  Output::print( t, " ", "vorticity thickness: ", thickness,
+  Output::print(setprecision(10), ct," ", t, " ", "vorticity thickness: ", thickness,
                  " ", thickness/zero_vort);
   
   /// computation of the mean velocity profile

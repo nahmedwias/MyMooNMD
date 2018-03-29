@@ -175,11 +175,11 @@ Example_TimeNSE2D::Example_TimeNSE2D(
   }
 }
 
-void Example_TimeNSE2D::do_post_processing(Time_NSE2D& tnse2d, double& val) const
+void Example_TimeNSE2D::do_post_processing(Time_NSE2D& tnse2d, double& val, int count) const
 {
   if(post_processing_stat)
   {
-    post_processing_stat(tnse2d, val);
+    post_processing_stat(tnse2d, val, count);
   }
   else
   {

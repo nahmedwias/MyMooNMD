@@ -70,7 +70,7 @@ int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
   {
     length_x = 6.2831853071;
     xt = 3.1415926535;
-    Output::print("here i am ", length_x, "  ", xt);
+    //Output::print("here i am ", length_x, "  ", xt);
   }
   else
   {
