@@ -137,7 +137,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
    name(LocalAssembling2D_type_to_string(type, disctype)), Coeffs(coeffs),
    FEFunctions2D(fefunctions2d)
 {
-    Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
+    Output::print<5>("Constructor of LocalAssembling2D: using type ", name);
     
     // the values below only matter if you need an existing finite element
     // function during your assembly. Change them in such a case
@@ -419,13 +419,11 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
     // some consistency checks
     if(Coeffs == nullptr)
     {
-        ErrMsg("You need to specify a valid function for the coefficients");
-        exit(1);
+        ErrThrow("You need to specify a valid function for the coefficients");
     }
     if(AssembleParam == nullptr)
     {
-        ErrMsg("a local assembling routine was not set!");
-        exit(1);
+        ErrThrow("a local assembling routine was not set!");
     }
     parameter_functions_values.resize(0);
 
@@ -548,7 +546,7 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 
   name = std::string("CUSTOMIZED");
   //Inform the world of what's going on.
-  Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
+  Output::print<5>("Constructor of LocalAssembling2D: using type ", name);
 
 	//Dynamically allocate space for auxiliary arrays
 	AllOrigValues = new double** [N_Terms];
