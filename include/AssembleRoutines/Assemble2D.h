@@ -37,7 +37,8 @@ void Assemble2D(int n_fespaces,
 #ifdef __3D__
                 , TAux2D3D *Aux2D3D
 #endif
-                , int AssemblePhaseID = -1
+                , int AssemblePhaseID = -1,
+                bool ignore_boundary_for_rhs = false
                 );
 
 //Hier/////////////////////////////////////////////////

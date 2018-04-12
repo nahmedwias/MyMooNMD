@@ -8169,7 +8169,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
                 TMatrix2D** matrices, int n_rhs, double** rhs,
                 const TFESpace2D** ferhs, BoundCondFunct2D** BoundaryConditions,
                 BoundValueFunct2D** BoundaryValues, LocalAssembling2D& la,
-                int AssemblePhaseID)
+                int AssemblePhaseID, bool ignore_boundary_for_rhs)
 {
     FE2D LocalUsedElements[N_FEs2D];
     int **GlobalNumbers, **BeginIndex;
@@ -8697,7 +8697,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     
         int l=DOF[m];
         //cout << "DOF: " << l << endl;
-        if(l<ActiveBound)
+        if(l<ActiveBound || TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
         {
           // node l is inner or Neumann node
           RHS[l] += local_rhs[m];
@@ -8742,6 +8742,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       // setting Dirichlet boundary condition
       N_Joints = cell->GetN_Edges();
 
+      if(!ignore_boundary_for_rhs)
       for(int m=0;m<N_Joints;m++)
       {
         TJoint *joint = cell->GetJoint(m);
