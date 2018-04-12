@@ -421,94 +421,99 @@ void TFEVectFunct2D::GetDeformationTensorErrors(
 } // TFEVectFunct2D::GetDeformationTensorErrors
 
 //================================================================
-/** calculate L2-nrom of divergence */
-double TFEVectFunct2D::GetL2NormDivergence()
+std::pair<double, double> TFEVectFunct2D::get_L2_norm_divergence_curl() const
 {
-  int i,j,k,l;
-  int N_Cells;
-  TCollection *Coll;
-  TBaseCell *cell;
-  FE2D UsedElements[1], FEid;
-  int N_UsedElements = 1;
-  BaseFunct2D BaseFunct, *BaseFuncts;
-  int *N_BaseFunct, N_Bf;
+  std::vector<double> values(2);
+  auto f = [](std::vector<double>& v, std::array<double, 8> e)
+           {
+             v[0] += e[4] + e[7]; // divergence
+             v[1] += e[5] - e[6]; // curl
+           };
+  this->get_functional_value(values, f);
+  return {values[0], values[1]};
+
+} // TFEVectFunct2D::GetL2NormDivergence
+
+//================================================================
+void TFEVectFunct2D::get_functional_value(std::vector<double>& values,
+                              std::function<void(std::vector<double>&, std::array<double, 8>)> functional) const
+{
+  BaseFunct2D *BaseFuncts;
+  int *N_BaseFunct;
   bool SecondDer[1] = { false };
-  double diverror, locdiv;
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetJK[MaxN_QuadPoints_2D];
-  double *Values0, *Values1;
-  double FEFunctValues0[MaxN_BaseFunctions2D];
-  double FEFunctValues1[MaxN_BaseFunctions2D];
-  int *GlobalNumbers, *BeginIndex, *DOF;
-  double **OrigFEValuesX, *OrigX, value;
-  double **OrigFEValuesY, *OrigY;
+  double FEValues0[MaxN_BaseFunctions2D];
+  double FEValues1[MaxN_BaseFunctions2D];
   
-  diverror = 0.0;
+  auto n_values = values.size();
+  std::fill(values.begin(), values.end(), 0.0);
 
   BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
   N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
-  Values0 = Values;
-  Values1 = Values+Length;
+  double *Values0 = Values;
+  double *Values1 = Values+Length;
 
-  GlobalNumbers = FESpace2D->GetGlobalNumbers();
-  BeginIndex = FESpace2D->GetBeginIndex();
+  auto Coll = FESpace2D->GetCollection();
+  auto N_Cells = Coll->GetN_Cells();
 
-  Coll = FESpace2D->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-
-  for(i=0;i<N_Cells;i++)
+  for(int i = 0; i < N_Cells; i++)
   {
-    cell = Coll->GetCell(i);
-    FEid = FESpace2D->GetFE2D(i, cell);
-    UsedElements[0] = FEid;
-
-    TFEDatabase2D::GetOrig(N_UsedElements, UsedElements, 
-                         Coll, cell, SecondDer,
-                         N_Points, xi, eta, weights, X, Y, AbsDetJK);
+    auto cell = Coll->GetCell(i);
+    auto FEid = FESpace2D->GetFE2D(i, cell);
+    TFEDatabase2D::GetOrig(1, &FEid, Coll, cell, SecondDer, N_Points, xi, eta,
+                           weights, X, Y, AbsDetJK);
 
     // calculate all needed derivatives of this FE function
-    BaseFunct = BaseFuncts[FEid];
-    N_Bf = N_BaseFunct[FEid];
+    auto BaseFunct = BaseFuncts[FEid];
+    auto N_Bf = N_BaseFunct[FEid];
 
-    DOF = GlobalNumbers + BeginIndex[i];
-    for(j=0;j<N_Bf;j++)
+    auto DOF = FESpace2D->GetGlobalDOF(i);
+    
+    for(int j = 0; j < N_Bf; j++)
     {
-      k = DOF[j];
-      FEFunctValues0[j] = Values0[k];
-      FEFunctValues1[j] = Values1[k];
+      int k = DOF[j];
+      FEValues0[j] = Values0[k];
+      FEValues1[j] = Values1[k];
     }
 
-    OrigFEValuesX = TFEDatabase2D::GetOrigElementValues(BaseFunct, D10);
-    OrigFEValuesY = TFEDatabase2D::GetOrigElementValues(BaseFunct, D01);
-
-    locdiv = 0;
+    auto OrigFEValues = TFEDatabase2D::GetOrigElementValues(BaseFunct, D00);
+    auto OrigFEValuesX = TFEDatabase2D::GetOrigElementValues(BaseFunct, D10);
+    auto OrigFEValuesY = TFEDatabase2D::GetOrigElementValues(BaseFunct, D01);
 
     // for all quadrature points
-    for(j=0;j<N_Points;j++)
+    for(int j = 0; j < N_Points; j++)
     {
-      OrigX = OrigFEValuesX[j];
-      OrigY = OrigFEValuesY[j];
-      value = 0;
-      for(l=0;l<N_Bf;l++)
+      double * Orig = OrigFEValues[j];
+      double * OrigX = OrigFEValuesX[j];
+      double * OrigY = OrigFEValuesY[j];
+      std::vector<double> local_values(n_values, 0.0);
+      std::array<double, 8> evaluations{{X[j], Y[j], 0., 0., 0., 0., 0., 0.}};
+      for(int l = 0; l < N_Bf; l++)
       {
-        value += FEFunctValues0[l] * OrigX[l] + FEFunctValues1[l] * OrigY[l];
+        evaluations[2] += Orig[l] * FEValues0[l];
+        evaluations[3] += Orig[l] * FEValues1[l];
+        evaluations[4] += OrigX[l] * FEValues0[l];
+        evaluations[5] += OrigX[l] * FEValues1[l];
+        evaluations[6] += OrigY[l] * FEValues0[l];
+        evaluations[7] += OrigY[l] * FEValues1[l];
       } // endfor l
-      locdiv += AbsDetJK[j]*weights[j]*(value*value); 
-
-     } // endfor j
-
-    diverror += locdiv;
-
+      functional(local_values, evaluations);
+      double local_weight = AbsDetJK[j] * weights[j];
+      for(auto k = 0ul; k < n_values; ++k)
+      {
+        values[k] += local_weight * (local_values[k] * local_values[k]);
+      }
+    } // endfor j
   } // endfor i
-
-  diverror = sqrt(diverror);
-
-  return diverror;
-
-} // TFEVectFunct2D::GetL2NormDivergence
+  for(auto k = 0ul; k < n_values; ++k)
+  {
+    values[k] = std::sqrt(values[k]);
+  }
+} // TFEVectFunct2D::get_functional_value
 
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

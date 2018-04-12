@@ -225,6 +225,11 @@ class TFEFunction2D
         double *final_boundary_error_l2,
         bool rescale_by_h_E = false);
 
-
+    /// @brief compute the L^2 norm on a particular boundary component.
+    /// Negative values mean that all components are considered.
+    double get_L2_norm_on_boundary(int boundary_component = -1) const;
+    
+    /// @brief compute the L^2 norm.
+    double get_L2_norm() const;
 };
 #endif

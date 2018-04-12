@@ -69,8 +69,25 @@ class TFEVectFunct2D : public TFEFunction2D
         int n_fespaces, TFESpace2D **fespaces,
         double *errors);
 
-    /** calculate L2-norm of divergence */
-    double GetL2NormDivergence();
+    /// @brief calculate L2-norm of divergence and curl
+    std::pair<double,double> get_L2_norm_divergence_curl() const;
+    
+    /// @brief compute the integral of (almost) arbitrary functionals for this
+    /// fe vector function.
+    /// the length of the std::vector 'values' determines the number of 
+    /// functional values you wish to compute. You can compute functionals of
+    /// the form \f$ \| S(u) \|_{L^2(\Omega)} \f$ with \f$S\f$ mapping the 
+    /// vector \f$u\f$ to some scalar function whose \f$L^2\f$-norm is computed.
+    /// The provided 'functional' represents \f$S\f$ and computes the local 
+    /// contributions for each quadrature point. Its arguments are a 
+    /// std::vector with the same size as 'values' and a std::array which 
+    /// conists of the coordinates of the quadrature points and the values and
+    /// derivatives of this fe vector function (u1,u2), the order is: 
+    /// x, y, u1, u2, u1_x, u2_x, u1_y, u2_y.
+    /// Check the implementation of TFEVectFunct2D::get_L2_norm_divergence_curl
+    /// to see an example.
+    void get_functional_value(std::vector<double>& values,
+                              std::function<void(std::vector<double>&, std::array<double, 8>)> functional) const;
 
     /** calculate L2-norm of divergence error */
     double GetL2NormDivergenceError(DoubleFunct2D *Exact_u1, DoubleFunct2D *Exact_u2);

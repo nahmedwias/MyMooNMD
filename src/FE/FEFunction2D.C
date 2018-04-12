@@ -473,6 +473,128 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 }                                                 // TFEFunction2D::GetErrors
 
 
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+double TFEFunction2D::get_L2_norm_on_boundary(int boundary_component) const
+{
+  auto collection = FESpace2D->GetCollection();
+  auto n_cells = collection->GetN_Cells();
+  double l2_norm_on_boundary = 0.;
+  for(int i_cell = 0; i_cell < n_cells; ++i_cell)
+  {
+    auto cell = collection->GetCell(i_cell);
+    auto n_joints = cell->GetN_Joints();
+    for(int i_joint = 0; i_joint < n_joints; ++i_joint)
+    {
+      auto joint = cell->GetJoint(i_joint);
+      if(joint->GetType() == BoundaryEdge)
+      {
+        auto *boundary_joint = dynamic_cast<TBoundEdge*>(joint);
+        auto component = boundary_joint->GetBoundComp();
+        if(boundary_component < 0 || component->GetID() == boundary_component)
+        {
+          // found a joint which is on the desired boundary
+          auto fe = FESpace2D->get_fe(i_cell);
+          FE2D fe_id = FESpace2D->GetFE2D(0, cell); // why is this not in 'fe'?
+          auto basis_functions = fe.GetBaseFunct2D();
+          auto fe_degree = basis_functions->GetPolynomialDegree();
+          auto n_local_basis_functions = basis_functions->GetDimension();
+          auto LineQuadFormula_id = TFEDatabase2D::GetQFLineFromDegree(fe_degree);
+          std::vector<double> quadWeights, quadPoints;
+          BoundaryAssembling2D::get_quadrature_formula_data(
+            quadPoints, quadWeights, LineQuadFormula_id);
+          std::vector<std::vector<double>> uorig, u_dx_orig ,u_dy_orig;
+          BoundaryAssembling2D::get_original_values(
+            fe_id, i_joint, cell, quadPoints, basis_functions->GetBaseVectDim(), 
+            uorig, u_dx_orig, u_dy_orig, LineQuadFormula_id);
+          
+          auto local_to_global_dof = FESpace2D->GetGlobalDOF(i_cell);
+          double FEFunctValues[n_local_basis_functions];
+          for(int l = 0; l < n_local_basis_functions; l++)
+          {
+            FEFunctValues[l] = Values[local_to_global_dof[l]];
+          }
+          double edge_length = boundary_joint->get_length();
+          double reference_edge_length = 2; // [-1,1] is the reference edge
+          
+          for(auto j = 0u; j < quadPoints.size(); j++)
+          {
+            double value = 0;
+            for(int l = 0; l < n_local_basis_functions; l++)
+            { 
+              value += FEFunctValues[l] * uorig[j][l]; // compute u_h|T = \sum \alpha_i \Phi_i
+            }
+            l2_norm_on_boundary += quadWeights[j] * (value * value) 
+                                   * edge_length/reference_edge_length;
+          }
+        }
+      }
+    }
+  }
+  return std::sqrt(l2_norm_on_boundary);
+}
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+double TFEFunction2D::get_L2_norm() const
+{
+  auto collection = FESpace2D->GetCollection();
+  auto n_cells = collection->GetN_Cells();
+  double l2_norm = 0.;
+  for(int i_cell = 0; i_cell < n_cells; ++i_cell)
+  {
+    auto cell = collection->GetCell(i_cell);
+    auto fe = FESpace2D->get_fe(i_cell);
+    FE2D fe_id = FESpace2D->GetFE2D(0, cell); // why is this not in 'fe'?
+    auto basis_functions = fe.GetBaseFunct2D();
+    auto fe_degree = basis_functions->GetPolynomialDegree();
+    auto n_local_basis_functions = basis_functions->GetDimension();
+    basis_functions->GetRefElement();
+    BF2DRefElements ref_element = basis_functions->GetRefElement();
+    QuadFormula2D qf_id = TFEDatabase2D::GetQFFromDegree(2*fe_degree, 
+                                                         ref_element);
+    TQuadFormula2D *quad_formula = TFEDatabase2D::GetQuadFormula2D(qf_id);
+    int N_QuadPoints;
+    double *weights, *xi, *eta;
+    quad_formula->GetFormulaData(N_QuadPoints, weights, xi, eta);
+    // get quadrature coordinates on original cell (also AbsDetjk is filled)
+    double X[N_QuadPoints], Y[N_QuadPoints], AbsDetjk[N_QuadPoints];
+    // Compute quadrature points on original element (X, Y) according to RefTrans
+    TFEDatabase2D::GetOrigFromRef(fe.GetRefTransID(), N_QuadPoints, xi, eta,
+                                  X, Y, AbsDetjk);
+    bool SecondDer = false;
+
+    // Compute transformation of basis functions (and their derivatives) to 
+    // original cell and the evaluation for all quadrature points 
+    TFEDatabase2D::GetOrig(1, &fe_id, collection, cell, &SecondDer, 
+                           N_QuadPoints, xi, eta, weights, X, Y, AbsDetjk);
+
+    // calculate all needed derivatives of this FE function
+    double FEFunctValues[n_local_basis_functions];
+    int *DOF = FESpace2D->GetGlobalDOF(i_cell);
+    for(int l = 0; l < n_local_basis_functions; l++)
+    {
+      FEFunctValues[l] = Values[DOF[l]];
+    }
+
+    // create a pointer to the QuadPoint-values of the basis on original element and its derivatives
+    double **OrigFEValues = TFEDatabase2D::GetOrigElementValues(
+        basis_functions->GetID(), D00);
+    for(int j = 0; j < N_QuadPoints; j++)
+    {
+      double *Orig = OrigFEValues[j];
+      double value = 0;
+
+      for(int l = 0; l < n_local_basis_functions; l++)
+      {
+        value += FEFunctValues[l] * Orig[l];
+      }
+      l2_norm += value * value * weights[j] * AbsDetjk[j];
+    }
+  }
+  return l2_norm;
+}
+
+
+
 //==========================================================================
 
 /** determine the value of function and its first derivatives at
