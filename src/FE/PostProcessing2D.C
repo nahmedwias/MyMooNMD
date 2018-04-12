@@ -230,7 +230,6 @@ void PostProcessing2D::writeVtk(std::string name)
     for(int j=0;j<cell->GetN_Vertices(); j++)
     {
       Current=cell->GetVertex(j);
-      // cout << (int)(Current) << endl;
       int l=getIndex(Vertices, N_LocVertices, Current);
       VertexNumbers[m]=NumberVertex[l];
       m++;
@@ -501,7 +500,6 @@ void PostProcessing2D::writeVtk(std::string name)
     const int * GlobalNumbers = fespace->GetGlobalNumbers();
     const int * BeginIndex = fespace->GetBeginIndex();
 
-    // cout << "N_Comp  " << N_Comp << endl;
     std::fill(DoubleArray.begin(), DoubleArray.end(), 0.0);
     std::fill(WArray.begin(), WArray.end(), 0.0);
     
@@ -1034,7 +1032,7 @@ void PostProcessing2D::writeCaseVars(int iter)
     sclname << filename << "_" << FEFunctionArray[i]->GetName() <<  "."
             << number << ".scl";
     std::string fname = sclname.str();
-    cout << " ** PostProcessing2D::write File - write " << sclname.str() << endl;
+    Output::print<3>(" ** PostProcessing2D::write File - write ", fname);
     sclf.open(fname);
     sclf << FEFunctionArray[i]->GetName() << " step = " << iter << endl; 
   
@@ -1077,8 +1075,7 @@ void PostProcessing2D::writeCaseVars(int iter)
     vctname << filename << "_" << FEVectFunctArray[i]->GetName()
             <<  "." << number << ".vct";
     std::string fname = vctname.str();
-    Output::print<2>(" ** PostProcessing2D::write File - write ",
-                     vctname.str());
+    Output::print<3>(" ** PostProcessing2D::write File - write ", fname);
     vctf.open(fname.c_str());
     vctf <<  FEVectFunctArray[i]->GetName() << " step = " << iter << endl; 
   
