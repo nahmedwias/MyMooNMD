@@ -44,28 +44,28 @@ ParameterDatabase get_default_NSE2D_parameters()
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders,
                NSE2D::Matrix type)
- : velocity_space(&coll, "u", "Navier--Stokes velocity", example.get_bc(0),
-                  velocity_pressure_orders.first, nullptr),
-   pressure_space(&coll, "p", "Navier--Stokes pressure", example.get_bc(2),
-                  velocity_pressure_orders.second, nullptr)
+ : velocity_space(new TFESpace2D(&coll, "u", "Navier--Stokes velocity", example.get_bc(0),
+                  velocity_pressure_orders.first, nullptr)),
+   pressure_space(new TFESpace2D(&coll, "p", "Navier--Stokes pressure", example.get_bc(2),
+                  velocity_pressure_orders.second, nullptr))
 {
   // build the matrix due to NSE type
   switch (type)
   {
     case NSE2D::Matrix::Type1:
-      matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type1(*velocity_space, *pressure_space);
     break;
     case NSE2D::Matrix::Type2:
-      matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type2(*velocity_space, *pressure_space);
     break;
     case NSE2D::Matrix::Type3:
-      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type3(*velocity_space, *pressure_space);
     break;
     case NSE2D::Matrix::Type4:
-      matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type4(*velocity_space, *pressure_space);
     break;
     case NSE2D::Matrix::Type14:
-      matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type14(*velocity_space, *pressure_space);
       break;
     default:
       ErrThrow("Unknown NSE type given to constructor of NSE2D::System_per_grid.");
@@ -74,11 +74,24 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
   rhs = BlockVector(matrix, true);
   solution = BlockVector(matrix, false);
 
-  u = TFEVectFunct2D(&velocity_space, "u", "u", solution.block(0),
-    solution.length(0), 2);
-  p = TFEFunction2D(&pressure_space, "p", "p", solution.block(2),
-    solution.length(2));
+  u = TFEVectFunct2D(velocity_space.get(), "u", "u", solution.block(0),
+                     solution.length(0), 2);
+  p = TFEFunction2D(pressure_space.get(), "p", "p", solution.block(2),
+                    solution.length(2));
 
+}
+
+/** ************************************************************************ */
+NSE2D::System_per_grid::System_per_grid(const System_per_grid& other)
+ : velocity_space(other.velocity_space), pressure_space(other.pressure_space),
+   matrix(other.matrix), rhs(other.rhs), solution(other.solution)
+{
+  // the fe functions must be newly created, because copying would mean 
+  // referencing the BlockVectors in 'other'.
+  u = TFEVectFunct2D(velocity_space.get(), "u", "u", solution.block(0),
+                     solution.length(0), 2);
+  p = TFEFunction2D(pressure_space.get(), "p", "p", solution.block(2),
+                    solution.length(2));
 }
 
 /** ************************************************************************ */
@@ -287,8 +300,8 @@ void NSE2D::assemble()
     s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
     s.matrix.reset(); // reset matrix (needed for mdml where this is called)
 
-    const TFESpace2D * v_space = &s.velocity_space;
-    const TFESpace2D * p_space = &s.pressure_space;
+    const TFESpace2D * v_space = s.velocity_space.get();
+    const TFESpace2D * p_space = s.pressure_space.get();
 
     // declare the variables which Assemble2D needs and each nstype has to fill
     size_t N_FESpaces = 2;
@@ -436,7 +449,7 @@ void NSE2D::assemble_nonlinear_term()
       std::vector<size_t> u_ns_dofs;
       for(auto &s : systems )
       {
-        spaces.push_back(&s.velocity_space);
+        spaces.push_back(s.velocity_space.get());
         u_entries.push_back(s.solution.block(block));
         u_ns_dofs.push_back(s.solution.length(block));
       }
@@ -461,7 +474,7 @@ void NSE2D::assemble_nonlinear_term()
   for(System_per_grid& s : this->systems)
   {
     //hold the velocity space, we'll need it...
-    const TFESpace2D * v_space = &s.velocity_space;
+    const TFESpace2D * v_space = s.velocity_space.get();
 
     //the variables we will have to fill for the call to Assemble2D
     size_t n_fe_spaces = 1;
@@ -687,10 +700,6 @@ void NSE2D::solve()
 /** ************************************************************************ */
 void NSE2D::output(int i)
 {
-	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
-	if(no_output)
-		return;
-  
   System_per_grid& s = this->systems.front();
   TFEFunction2D* u1 = s.u.GetComponent(0);
   TFEFunction2D* u2 = s.u.GetComponent(1);
@@ -704,20 +713,10 @@ void NSE2D::output(int i)
     s.p.PrintMinMax();
   }
 
-  outputWriter.add_fe_function(&s.p);
-  outputWriter.add_fe_vector_function(&s.u);
   if(i < 0)
     outputWriter.write();
   else
     outputWriter.write(i);
-  
-  /*
-  // write solution to a vtk file
-  if(db["output_write_vtk"])
-  {
-    outputWriter.write(i);
-  }
-  */
     
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
@@ -811,4 +810,9 @@ double NSE2D::getFullResidual() const
   return this->oldResiduals.back().fullResidual;
 }
 
+/** ************************************************************************ */
+void NSE2D::reset_residuals()
+{
+  this->oldResiduals = FixedSizeQueue<10, Residuals>();
+}
 
