@@ -24,7 +24,15 @@ if(NLOPT_DIR STREQUAL "")
   message("This should be it.")
   message(FATAL_ERROR "Missing NLOPT_DIR")
 endif(NLOPT_DIR STREQUAL "")
-include("${NLOPT_DIR}/lib/cmake/nlopt/NLoptConfig.cmake")
+if(EXISTS "${NLOPT_DIR}/lib/cmake/nlopt/NLoptConfig.cmake")
+  include("${NLOPT_DIR}/lib/cmake/nlopt/NLoptConfig.cmake")
+elseif(EXISTS "${NLOPT_DIR}/lib64/cmake/nlopt/NLoptConfig.cmake")
+  include("${NLOPT_DIR}/lib64/cmake/nlopt/NLoptConfig.cmake")
+else()
+  message("Note: You can set 'INSTALL_LIB_DIR' when building nlopt.")
+  message(FATAL_ERROR "Could not find file NLoptConfig.cmake")
+endif()
+
 include_directories(${NLOPT_INCLUDE_DIRS})
 
 
