@@ -26,6 +26,9 @@ ParameterDatabase BoundaryControlledOptimization::default_BCO_database()
          "Switch between a few possible cost functionals via weights. The "
          "order of the functionals is: L2_norm_of_curl, backward_facing_step, " 
          "L2_norm_diff_stokes", 0., 1.);
+  db.add("restricted_curl_functional", false, 
+         "The L2_norm_of_curl functional can be restricted such the the "
+         "integral is taken only on a subdomain Omega intersected with x<10 ");
   
   return db;
 }
@@ -277,15 +280,22 @@ double BoundaryControlledOptimization::compute_functional() const
   
   auto compute_L2_norm_of_curl = 
   [&](){
-//     std::vector<double> values(1);
-//     auto f = [](std::vector<double>& v, std::array<double, 8> e)
-//              {
-//                double curl = e[0] < 10. ? -e[6] + e[5] : 0.;
-//                v[0] += curl;
-//              };
-//     u.get_functional_value(values, f);
-    auto div_curl = u.get_L2_norm_divergence_curl();
-    return std::get<1>(div_curl)*std::get<1>(div_curl);
+    if(db["restricted_curl_functional"])
+    {
+      std::vector<double> values(1);
+      auto f = [](std::vector<double>& v, std::array<double, 8> e)
+               {
+                 double curl = (e[0] < 8. && e[0] > 4.) ? -e[6] + e[5] : 0.;
+                 v[0] += curl;
+               };
+      u.get_functional_value(values, f);
+      return values[0] * values[0];
+    }
+    else
+    {
+      auto div_curl = u.get_L2_norm_divergence_curl();
+      return std::get<1>(div_curl)*std::get<1>(div_curl);
+    }
   };
   auto compute_backward_facing_step = 
   [&](){
@@ -317,16 +327,16 @@ double BoundaryControlledOptimization::compute_functional() const
     return l2_norm_diff;
   };
   
-  auto curl = cost_functional[0] * compute_L2_norm_of_curl();
-  auto min_max_bfs = cost_functional[1] * compute_backward_facing_step();
-  auto l2_norm_diff = cost_functional[2] * compute_L2_norm_diff_stokes();
+  auto curl = compute_L2_norm_of_curl();
+  auto min_max_bfs = compute_backward_facing_step();
+  auto l2_norm_diff = compute_L2_norm_diff_stokes();
   double functional_value = 0.5 * alpha * l2_norm_on_boundary;
-  functional_value += 0.5 * curl;
-  functional_value += 0.5 * min_max_bfs;
-  functional_value += 0.5 * l2_norm_diff;
-  Output::print("functional parts: curl ", 0.5 * curl, ",   min_max ",
-                0.5 * min_max_bfs, ",   l2_norm_diff ", 0.5 * l2_norm_diff,
-                ",   cost ", 0.5 * alpha * l2_norm_on_boundary);
+  functional_value += 0.5 * curl * cost_functional[0];
+  functional_value += 0.5 * min_max_bfs * cost_functional[1];
+  functional_value += 0.5 * l2_norm_diff * cost_functional[2];
+  Output::print("functional parts: curl ", curl, ",   min_max ", min_max_bfs,
+                ",   l2_norm_diff ", l2_norm_diff, ",   cost ",
+                alpha * l2_norm_on_boundary);
   if(n_calls > 1)
   {
     Output::print("difference to previous functional ", 
@@ -344,9 +354,11 @@ void BoundaryControlledOptimization::solve_adjoint_equation()
   auto u = nse_primal.get_velocity();
   auto p = nse_primal.get_pressure();
   std::vector<double> cost_functional_weights = db["cost_functional"];
+  bool restricted_curl_functional = db["restricted_curl_functional"];
   
   Output::print<2>("adjoint solve ", n_computation_derivative);
-  nse_adjoint.assemble(u, p, *stokes_sol, cost_functional_weights);
+  nse_adjoint.assemble(u, p, *stokes_sol, cost_functional_weights,
+                       restricted_curl_functional);
   nse_adjoint.solve();
   nse_adjoint.output(n_calls);
 }
