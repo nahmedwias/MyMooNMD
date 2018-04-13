@@ -12,7 +12,8 @@ class NSE2D_Adjoint : public NSE2D
     /// contain the primal solutions u or p.
     void assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
                   const TFEVectFunct2D& stokes_u, 
-                  std::vector<double> cost_functional_weights);
+                  std::vector<double> cost_functional_weights, 
+                  bool restricted_curl_functional);
     
     /// @brief solve the system.
     /// This is essentially a call to NSE2D::solve, however afterwards scaling
