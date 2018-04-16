@@ -149,6 +149,7 @@ include(cmake/sources_solver.cmake)
 include(cmake/sources_system.cmake)
 include(cmake/sources_matrix.cmake)
 include(cmake/sources_timediscroutines.cmake)
+include(cmake/sources_prepostprocessing.cmake)
 # include(cmake/sources_pbe.cmake)
 
 # Define two static libraries. Each has its own precompiler flag (2D/3D).

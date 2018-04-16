@@ -369,6 +369,8 @@ class Time_NSE3D
 
     /** */
     bool imex_scheme(bool print_info);
+    
+    void modify_slip_bc(bool BT_Mass, bool slip_A_nl);
 
 /* ******************************************************************************/
     // Declaration of special member functions - delete all but destructor.
@@ -408,6 +410,12 @@ class Time_NSE3D
 
     TFEVectFunct3D& get_velocity()
     { return this->systems_.front().u_; }
+    
+    const TFEVectFunct3D& get_old_velocity() const
+    {return this->systems_.front().um1_;}
+    
+    TFEVectFunct3D& get_old_velocity()
+    { return this->systems_.front().um1_; }
 
     TFEFunction3D *get_velocity_component(int i);
 
@@ -445,6 +453,9 @@ class Time_NSE3D
     {return time_stepping_scheme;}
     const TimeDiscretization& get_time_stepping_scheme() const
     {return time_stepping_scheme;}
+    
+    BlockFEMatrix get_system_matrix_()
+    {return this->systems_.front().matrix_;}
     
 private:
   

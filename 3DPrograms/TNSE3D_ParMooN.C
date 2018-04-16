@@ -16,6 +16,7 @@
 #include <LoopInfo.h>
 #include <TimeDiscretizations.h>
 #include <ChannelFlowRoutines.h>
+#include <PrePost_Cylinder_Square.h>
 
 #include <sys/stat.h>
 

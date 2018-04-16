@@ -142,6 +142,10 @@ public:
    
     //getters
     /// returns the current time step length
+    const double get_step_length() const
+    {
+      return current_time_step_length;
+    }
     double get_step_length()
     {
       return current_time_step_length;
