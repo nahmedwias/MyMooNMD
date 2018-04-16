@@ -13,7 +13,178 @@
 #include <BoundFace.h>
 #include <BaseCell.h>
 
+// ===========================================================================
 
+// int_{Gamma} mult*given_boundary_data(x,y,z)*<v,normal>
+void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
+                                     const TFESpace3D *U_Space,
+                                     BoundValueFunct3D *given_boundary_data,
+                                     std::vector<TBaseCell*> &boundaryCells,
+                                     int componentID,
+                                     double mult)
+{
+
+  /// @todo: create a boundary cell list for each boundary component
+  
+  // now we loop always over the whole collection: inefficient!
+  TCollection* coll = U_Space->GetCollection();
+  
+  for(size_t i=0; i< coll->GetN_Cells(); i++) {
+        
+    TBaseCell* cell = coll->GetCell(i); //boundaryCells[i];
+        
+    // mapping from local (cell) DOF to global DOF
+    int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
+        
+    for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
+      TJoint* joint = cell->GetJoint(joint_id);
+            
+      if (joint->GetType() == BoundaryFace ||
+	  joint->GetType() == IsoBoundFace) {
+                
+	// convert the joint to an object of BoundFace type
+	TBoundFace *boundface = (TBoundFace *)joint;
+
+	if (boundface->GetBoundComp()->get_physical_id()==componentID) {
+      
+	  // get all data necessary for computing the integral:
+	  // quadrature weights, points, functions values, normal, determinant
+	  std:: vector<double> qWeights,qPointsT,qPointsS;
+	  std::vector< std::vector<double> > basisFunctionsValues;
+	  //this->getQuadratureData(U_Space,cell,joint_id,qWeights,
+	  //			  qPointsT,qPointsS,basisFunctionsValues);
+	  U_Space->getFaceQuadratureData(cell,joint_id,
+					 qWeights,qPointsT,qPointsS,
+					 basisFunctionsValues);
+	  
+	  std::vector<double> normal;
+	  double transformationDeterminant;
+	  cell->computeNormalAndTransformationData(joint_id,normal,
+						   transformationDeterminant);
+
+	  double x,y,z;
+	  normal.resize(3);
+	  boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
+	  boundface->get_normal_vector(x,y,z,normal[0],normal[1],normal[2]);
+	  
+	  // loop over Gauss points
+	  for(size_t l=0;l<qWeights.size();l++) {
+	    double value;
+	    if(given_boundary_data != nullptr)
+	    {
+	      ///@todo GetXYZofTS(...)
+	      double t = qPointsT[l];
+	      double s = qPointsS[l];
+	      double x,y,z;
+	      // 
+	      // given_boundary_data(x,y,z,value);
+	      value = 1.;
+	    }
+	    else
+	    {
+	      value = 1.;
+	    }  
+
+	    double commonFactor = mult * qWeights[l] * transformationDeterminant;
+                        
+	    for(size_t k=0;k<basisFunctionsValues[l].size();k++) {
+	      int global_dof_from_local = DOF[k];
+                            
+	      if(global_dof_from_local < U_Space->GetActiveBound()) {
+		double v_x = basisFunctionsValues[l][k]; // value of test function (vtest = vx = vy =vz)
+		double v_y = v_x;
+		double v_z = v_x;
+                                
+		// add for both components
+		rhs.block(0)[global_dof_from_local] += commonFactor * value * (v_x*normal[0]);
+		rhs.block(1)[global_dof_from_local] += commonFactor * value * (v_y*normal[1]);
+		rhs.block(2)[global_dof_from_local] += commonFactor * value * (v_z*normal[2]);
+	      }
+	    } // endfor k (n. basis fcts)	    
+	  } // endfor l (Gauss points)
+	  // --------------------------------------------------------------
+	} // if on componentID
+      } // if boundary face
+    } // for n. of cells
+  } // loop over cells
+}
+
+// ===========================================================================
+void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace,TBaseCell *cell, int m,
+					     std::vector<double>& qWeights,std::vector<double>& qPointsT,
+					     std::vector<double>& qPointsS,
+					     std::vector< std::vector<double> >& basisFunctionsValues)
+{
+  int nFaceVertices = cell->getNumberOfFaceVertices(m);
+  
+  // set quadrature formula and compute quadrature info
+  FE3D FEId = fespace->GetFE3D(cell->GetCellIndex(),cell);
+  int fe_degree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
+                        
+  QuadFormula2D FaceQuadFormula; //=BaryCenterTria;
+  switch(nFaceVertices) {
+  case 3:
+    // triangular face
+    FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*fe_degree);
+    FaceQuadFormula = Gauss3Tria;
+    break;
+  case 4:
+    // quadrilateral face
+    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*fe_degree);
+    break;
+  }
+  
+  int N_Points;
+  double* faceWeights;
+  double *t,*s;
+  // get a quadrature formula good enough for the velocity FE space
+  TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
+  qf2->GetFormulaData(N_Points, faceWeights, t, s);
+
+  // ====================================
+  // generate data on reference mesh cell for the 2d face of 3d cell
+  TFEDatabase3D::GetBaseFunct3DFromFE3D(FEId)
+    ->MakeRefElementData(FaceQuadFormula);
+                        
+  BaseFunct3D *BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
+  int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+                        
+  // values of base functions in all quadrature points on face
+  double **JointValues = TFEDatabase3D::GetJointValues3D
+    (BaseFuncts[FEId], FaceQuadFormula, m);
+                        
+  TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])->ChangeBF(fespace->GetCollection(),
+							    cell, N_Points, JointValues);
+
+  // ====================================
+  // convert the double* to vectors
+  
+  qWeights.resize(N_Points);
+  qPointsT.resize(N_Points);
+  qPointsS.resize(N_Points);
+  for (size_t k=0; k<(size_t)N_Points; k++) {
+    qWeights[k] = faceWeights[k];
+    qPointsT[k] = t[k];
+    qPointsS[k] = s[k];
+  }
+
+  
+  basisFunctionsValues.resize(qWeights.size());                       
+  for (unsigned int l=0; l<qWeights.size(); l++) {
+    basisFunctionsValues[l].resize(N_BaseFunct[FEId]);                          
+    for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
+      basisFunctionsValues[l][k]=JointValues[l][k];
+    }
+  }
+  // ====================================
+  
+}
+
+
+
+
+// ------------------------------
+// NOT TESTED //
 
 // ===========================================================================
 // int_{Gamma} p v n
@@ -436,7 +607,11 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
                     std:: vector<double> qWeights,qPointsT,qPointsS; // S,T for parametrization in 3D
                     std::vector< std::vector<double> > basisFunctionsValues,basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z ;
                     this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell,joint_id,
-                                                                     qWeights,qPointsT,qPointsS,basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z );
+                                                                     qWeights,qPointsT,qPointsS,
+								     basisFunctionsValues,
+								     basisFunctionsValues_derivative_x,
+								     basisFunctionsValues_derivative_y,
+								     basisFunctionsValues_derivative_z );
                     std::vector<double> normal;
                     double transformationDeterminant;
                     this->computeNormalAndTransformationData(cell, joint_id, normal,
@@ -788,145 +963,7 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
 }
 
 
-// ===========================================================================
-
-// int_{Gamma} mult*given_boundary_data(x,y,z)*<v,normal>
-void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
-                                     const TFESpace3D *U_Space,
-                                     BoundValueFunct3D *given_boundary_data,
-                                     std::vector<TBaseCell*> &boundaryCells,
-                                     int componentID,
-                                     double mult)
-{
-    // Todo: create a boundary cell list
-    // loop over all boundary cells (at the moment it consists of all cells!!)
-    for(size_t i=0; i< boundaryCells.size(); i++) {
-        
-        TBaseCell* cell = boundaryCells[i];
-        
-        // mapping from local (cell) DOF to global DOF
-        int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
-        
-        for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
-            TJoint* joint = cell->GetJoint(joint_id);
-            
-            if (joint->GetType() == BoundaryFace ||
-                joint->GetType() == IsoBoundFace) {
-                
-                // convert the joint to an object of BoundFace type
-                TBoundFace *boundface = (TBoundFace *)joint;
-
-                if (boundface->GetBoundComp()->get_physical_id()==componentID) {
-      
-                    // get all data necessary for computing the integral:
-                    // quadrature weights, points, functions values, normal, determinant
-                    std:: vector<double> qWeights,qPointsT,qPointsS;
-                    std::vector< std::vector<double> > basisFunctionsValues;
-                    this->getQuadratureData(U_Space,cell,joint_id,qWeights,
-                                            qPointsT,qPointsS,basisFunctionsValues);
                     
-                    std::vector<double> normal;
-                    double transformationDeterminant;
-                    this->computeNormalAndTransformationData(cell,joint_id,normal,
-                                                             transformationDeterminant);
-
-                    // loop over Gauss points
-                    for(size_t l=0;l<qWeights.size();l++) {
-                        double value;
-                        if(given_boundary_data != nullptr)
-                            value = 1.;//given_boundary_data(...);
-                        else
-                            value = 1;
-                        
-
-                        double commonFactor = mult * qWeights[l] * transformationDeterminant;
-                        
-                        for(size_t k=0;k<basisFunctionsValues[l].size();k++) {
-                            int global_dof_from_local = DOF[k];
-                            
-                            if(global_dof_from_local < U_Space->GetActiveBound()) {
-                                double v_x = basisFunctionsValues[l][k]; // value of test function (vtest = vx = vy =vz)
-                                double v_y = v_x;
-                                double v_z = v_x;
-                                
-                                // add for both components
-                                rhs.block(0)[global_dof_from_local] += commonFactor * value * (v_x*normal[0]);
-                                rhs.block(1)[global_dof_from_local] += commonFactor * value * (v_y*normal[1]);
-                                rhs.block(2)[global_dof_from_local] += commonFactor * value * (v_z*normal[2]);
-                            }
-                           } // endfor k (n. basis fcts)
-                    } // endfor l (Gauss points)
-                } // if on componentID
-            } // if boundary face
-        } // for n. of cells
-    } // loop over cells
-}
-                    
-                    // ===========================================================================
-                    void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace,TBaseCell *cell, int m,
-                                                                 std::vector<double>& qWeights,std::vector<double>& qPointsT,
-                                                                 std::vector<double>& qPointsS,
-                                                                 std::vector< std::vector<double> >& basisFunctionsValues)
-                    {
-                        int nFaceVertices = getNumberOfFaceVertices(cell,m);
-                        // set quadrature formula and compute quadrature info
-                        FE3D FEId = fespace->GetFE3D(cell->GetCellIndex(),cell);
-                        int fe_degree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
-                        
-                        QuadFormula2D FaceQuadFormula; //=BaryCenterTria;
-                        switch(nFaceVertices) {
-                            case 3:
-                                // triangular face
-                                FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*fe_degree);
-                                FaceQuadFormula = Gauss3Tria;
-                                break;
-                            case 4:
-                                // quadrilateral face
-                                FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*fe_degree);
-                                break;
-                        }
-                        int N_Points;
-                        double* faceWeights;
-                        double *t,*s;
-                        // get a quadrature formula good enough for the velocity FE space
-                        TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
-                        qf2->GetFormulaData(N_Points, faceWeights, t, s);
-                        // ====================================
-                        qWeights.resize(N_Points);
-                        qPointsT.resize(N_Points);
-                        qPointsS.resize(N_Points);
-                        for (size_t k=0; k<(size_t)N_Points; k++) {
-                            qWeights[k] = faceWeights[k];
-                            qPointsT[k] = t[k];
-                            qPointsS[k] = s[k];
-                        }
-                        
-                        // ====================================
-                        // generate data on reference mesh cell for the 2d face of 3d cell
-                        TFEDatabase3D::GetBaseFunct3DFromFE3D(FEId)
-                        ->MakeRefElementData(FaceQuadFormula);
-                        
-                        BaseFunct3D *BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
-                        int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
-                        
-                        
-                        // values of base functions in all quadrature points on face
-                        double **JointValues = TFEDatabase3D::GetJointValues3D
-                        (BaseFuncts[FEId], FaceQuadFormula, m);
-                        
-                        TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])->ChangeBF(fespace->GetCollection(), cell, qWeights.size(), JointValues);
-                        
-                        // convert the double** to a vector
-                        basisFunctionsValues.resize(qWeights.size());
-                        
-                        for (unsigned int l=0; l<qWeights.size(); l++) {
-                            basisFunctionsValues[l].resize(N_BaseFunct[FEId]);
-                            
-                            for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
-                                basisFunctionsValues[l][k]=JointValues[l][k];
-                            }
-                        }
-                    }
 
 
 // ===========================================================================

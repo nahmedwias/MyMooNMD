@@ -547,7 +547,7 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
             {
               boundedge_2->get_normal(n2_E1, n2_E2);
 
-              if ( abs(n1_E1 * n2_E1 + n1_E2 * n2_E2) != 1 )  // a.b=|a||b|cos(alpha)
+              if ( fabs(n1_E1 * n2_E1 + n1_E2 * n2_E2) != 1 )  // a.b=|a||b|cos(alpha)
               {
                 // get coordinates of relevant (Nitsche) corners xc,yc
                 double x0_E1, y0_E1, x1_E1, y1_E1, x0_E2, y0_E2, x1_E2, y1_E2;

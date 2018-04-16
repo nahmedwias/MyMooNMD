@@ -142,6 +142,14 @@ class TFESpace3D : public TFESpace
      */
     bool CheckMesh() const;
 
+    /**
+     * @brief get quadrature data on the m-th face of a given cell
+    **/
+    void getFaceQuadratureData(TBaseCell *cell, int m,
+			   std::vector<double>& qWeights,std::vector<double>& qPointsT,
+			   std::vector<double>& qPointsS,
+			   std::vector< std::vector<double> >& basisFunctionsValues) const;
+
 #ifdef  _MPI
     /**
      * As soon as the maxSubDomainPerDof is known, the parallel infrastructure

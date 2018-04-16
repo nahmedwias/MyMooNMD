@@ -752,7 +752,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
 		    */
                     // cout << xf << " " << yf << " " << zf << endl;
                     BoundaryValue(xf, yf, zf, t0);
-                    // cout << "PV: " << t0 << endl;
                     // cout << t1 << endl;
                     t0 *= FaceWeights[l]*t2;
                     for(k=0;k<N_;k++)
@@ -1826,6 +1825,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	            case NEUMANN:
 	            case ROBIN:  // lhs of robin will be assembled in main program
 	              // cout << "Neumann condition in Assemble3D" << endl;
+		      
 	              l = TFEDatabase3D::GetPolynomialDegreeFromFE3D
 	                (CurrentElement);
 	              switch(TmpLen[m])
@@ -1892,9 +1892,8 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	                                             X, Y, Z, Param1, Param2,
 	                                             xf, yf, zf, t0, t1);
 			    */
-	                    // cout << xf << " " << yf << " " << zf << endl;
+	                    
 	                    BoundaryValue(xf, yf, zf, t0);
-	                    // cout << "PV: " << t0 << endl;
 	                    // cout << t1 << endl;
 	                    t0 *= FaceWeights[l]*t2;
 	                    for(k=0;k<N_;k++)
