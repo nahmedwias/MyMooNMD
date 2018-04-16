@@ -175,6 +175,8 @@ class TFEFunction3D
      */
     void compute_integral_and_measure(double& integral, double& measure) const;
 
+    
+    
   /** @brief Set Dirichlet values according to boundary conditions */
     void SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
                                    BoundValueFunct3D *BoudaryValue);

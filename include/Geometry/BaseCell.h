@@ -18,6 +18,7 @@
 
 class TBaseCell;
 
+#include <vector>
 #include <Edge.h>
 #include <Joint.h>
 #include <RefDesc.h>
@@ -399,6 +400,28 @@ class TBaseCell
 //        return IsBoundaryCellOnBoundComp;
 //    }
     //LB ====================================================
+
+#ifdef __3D__
+
+    /** @brief 
+	compute normal to m-th face and transformation (for face integral) 
+	@attention The normal to boundary faces might not be directed outward. For this, use
+	the function get_normal_vector for TBoundFace objects.	
+     */
+    void computeNormalAndTransformationData(int m,
+					    std::vector<double>& normal,
+					    double &transformationDeterminant) const;
+    
+    /** @brief get number of vertices on m-th face */
+    int getNumberOfFaceVertices(int m) const
+    {
+      const int *faceVertexMap, *faceVertexMapLength;
+      int maxNVerticesPerFace;
+      GetShapeDesc()->GetFaceVertex(faceVertexMap,faceVertexMapLength,maxNVerticesPerFace);
+      // simplify: number of vertices on face m
+      return faceVertexMapLength[ m ];
+    }
+#endif
     
 #ifdef  _MPI
 

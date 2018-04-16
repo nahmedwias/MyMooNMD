@@ -1605,6 +1605,7 @@ void TFEFunction3D::compute_integral_and_measure(double& integral,
 #endif
 }
 
+
 /** project function into the space L20 (having zero mean value, or in general a mean value) */
 void TFEFunction3D::project_into_L20(double a)
 {

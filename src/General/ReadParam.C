@@ -2417,7 +2417,7 @@ int TDomain::ReadParam(const char *ParamFile)
     if (!strcmp(line, "neumann_boundary_id:")) {
       for (int ib=0; ib< TDatabase::ParamDB->n_neumann_boundary; ib++) {
         dat >> TDatabase::ParamDB->neumann_boundary_id[ib];
-      }
+	}
     }
 
     if (!strcmp(line, "neumann_boundary_value:")) {

@@ -12,7 +12,7 @@
 #include <MainUtilities.h>
 #include <Multigrid.h>
 
-#include <LocalAssembling3D.h>
+#include <BoundaryAssembling3D.h>
 
 #include <sys/stat.h>
 
@@ -777,6 +777,12 @@ void Time_NSE3D::output(int m, int &image)
   TFEFunction3D* u2 = s.u_.GetComponent(1);
   TFEFunction3D* u3 = s.u_.GetComponent(2);
 
+  Output::print("** COMPUTING FLUX **");
+  double flux;
+  s.u_.compute_flux(3, flux);
+  Output::print("** FLUX ON 3 = ", flux,
+		" ** Expected: ", 2*3.1415*TDatabase::TimeDB->CURRENTTIME);
+  
   if((size_t)db_["verbosity"]> 1)
   {
     u1->PrintMinMax();
@@ -1078,12 +1084,48 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   const LocalAssembling3D
               localAssembling(type,
                               fefunctions.data(),this->example_.get_coeffs(),
-                              this->get_space_disc_global()); 
+                              this->get_space_disc_global());
+
+  if (type == LocalAssembling3D_type::TNSE3D_Rhs) {
+    Output::print(" ** START ASSEMBLE PRESSURE BC ON RHS **");
+
+    const TFESpace3D *v_space = &s.velocitySpace_;
+    const TFESpace3D *p_space = &s.pressureSpace_;
+    // get all cells: this is at the moment needed for the boundary assembling
+    /// @todo get only the (relevant) boundary cells
+    /// e.g., bdCells = coll->get_cells_on_component(i)
+    TCollection* coll = v_space->GetCollection();
+    std::vector<TBaseCell*> allCells;
+    for (int i=0 ; i < coll->GetN_Cells(); i++)
+    {
+      allCells.push_back(coll->GetCell(i));
+    }
+	
+    BoundaryAssembling3D bi;
+    for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+    {
+      
+      double t=TDatabase::TimeDB->CURRENTTIME;
+      double PI = acos(-1.0);
+      double pressure_of_t = TDatabase::ParamDB->neumann_boundary_value[k]*sin(2*PI*t);
+
+      Output::print(" ** set value ", pressure_of_t,
+		    " on boundary ",TDatabase::ParamDB->neumann_boundary_id[k]);
+      
+      bi.rhs_g_v_n(s.rhs_,v_space,nullptr,
+		   allCells,
+		   TDatabase::ParamDB->neumann_boundary_id[k],
+		   pressure_of_t);
+    }
+
+  }
+  
   // assemble all the matrices and right hand side 
   Assemble3D(space_mat.size(), space_mat.data(),
 	     sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
              rhs_array.size(), rhs_array.data(), space_rhs.data(),
              boundary_conditions, boundary_values.data(), localAssembling);
+  
   
   if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
   {

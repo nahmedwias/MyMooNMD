@@ -56,6 +56,21 @@ class TFEVectFunct3D : public TFEFunction3D
     /** use current data for grid replacement */
     void DataToGrid();
 
+    /**
+     * @brief compute the integral \int_{Gamma_i} u.n (flux) over a given surface
+     *
+     * In MPI case it returns the global flux, summed up over
+     * the own domains of all processes.
+     * To use this function it is necessary to mark the surface cell first 
+     * (e.g., reading a .mesh file)
+     * @todo give a list of boundary faces as input (instead of an int)
+     *
+     * @param[in] flux through surface i of this TFEFunction3D
+     * @param[out] flux through surface i of this TFEFunction3D
+     */
+    void compute_flux(int surface_id, double& flux) const;
+
+    
     /** calculate errors to given vector function */
     void GetDeformationTensorErrors( 
         DoubleFunct3D *Exact, DoubleFunct3D *Exact1,
