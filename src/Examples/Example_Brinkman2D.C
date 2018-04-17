@@ -106,7 +106,12 @@ Example_Brinkman2D::Example_Brinkman2D(
             
             /** coefficients */
             problem_coefficients = Poiseuille_Hannukainen::LinCoeffs;
-            
+
+	    // read parameters from global database
+	    Poiseuille_Hannukainen::viscosity = get_viscosity();
+	    Poiseuille_Hannukainen::effective_viscosity = get_effective_viscosity();
+	    Poiseuille_Hannukainen::permeability = get_permeablity();
+	    
             Poiseuille_Hannukainen::ExampleFile();
             break;
         case 2:
@@ -282,6 +287,25 @@ void Example_Brinkman2D::do_post_processing(Brinkman2D& brinkman2d) const
   }
 }
 
+// functions to avoid global parameters (TDatabase) in the example file
+double Example_Brinkman2D::get_viscosity() const
+{
+  return TDatabase::ParamDB->VISCOSITY;
+}
+
+double Example_Brinkman2D::get_effective_viscosity() const
+{
+  return TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+}
+
+double Example_Brinkman2D::get_permeablity() const
+{
+  double K = TDatabase::ParamDB->PERMEABILITY;
+  /*if (this->example_database["read_permeability_from_file"])
+    K = -1;
+  */
+  return K;
+}
 
 //double Example_Brinkman2D::get_stab() const
 //{
