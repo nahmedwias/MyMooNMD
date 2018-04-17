@@ -30,6 +30,13 @@
  */
 
 
+// physical parameter
+// These should be reset when constructing the Example class
+
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
+
 void ExampleFile()
 {
   Output::print<1>("Example: Poiseuille_Hannukainen.h");
@@ -168,34 +175,50 @@ void U2BoundValue(int BdComp, double Param, double &value)
 
 // ========================================================================
 // coefficients for Brinkman problem: viscosity, effective viscosity, permeability, f1, f2, g
-// (the lhs of the Brinkman problem computed at quadrature points - for the error norms)
+// (lhs and rhs of the Brinkman problem computed at quadrature points - for the error norms)
 // ========================================================================
 void LinCoeffs(int n_points, double *x, double *y,
     double **parameters, double **coeffs)
 {
+
   double val_u1[4];
   double val_u2[4];
   double val_p[4];
 
-  double *coeff;
-
   for(int i = 0; i < n_points; i++)
   {
+    
+    // physical parameters
+    coeffs[i][4] = viscosity; //TDatabase::ParamDB->VISCOSITY;
+    coeffs[i][5] = effective_viscosity; //TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+    coeffs[i][6] = permeability; //TDatabase::ParamDB->PERMEABILITY;
+
+    if (coeffs[i][6]==-1) {
+      Output::print(" ... we should now set the permeability using an external function ...");
+      //coeff[6] = parameters[i][0];
+    }
+
+    // Adimensional parameter t^2 = mue/mu*K
+    coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
+
+
+    // (f1,f2)(x,y): RHS for momentum equation
     ExactU1(x[i], y[i], val_u1);
     ExactU2(x[i], y[i], val_u2);
     ExactP(x[i], y[i], val_p);
-
-    coeff = coeffs[i];
-
-    coeff[4] = TDatabase::ParamDB->VISCOSITY;
-    coeff[5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    coeff[6] = TDatabase::ParamDB->PERMEABILITY;
-    coeff[0] = (coeff[5] / coeff[4]) * coeff[6];
-    coeff[1] = 0;//-coeff[5] * val_u1[3] - val_p[1] + (coeff[4]/coeff[6]) * val_u1[0];  //(coeff[4]/coeff[6])-1;   // f1 (rhs of Brinkman problem for u1)
-    coeff[2] = 0;                                                                        // f2 (rhs of Brinkman problem for u2)
-    coeff[3] = val_u1[1] + val_u2[2]; //0;                                               // g (divergence term=u1_x+u2_y)
-    coeff[7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
-    coeff[8] = TDatabase::ParamDB->grad_div_stab_weight;
+    
+    coeffs[i][1] = 0;
+    //-coeff[5] * val_u1[3] - val_p[1] + (coeff[4]/coeff[6]) * val_u1[0];
+    //(coeff[4]/coeff[6])-1;   // f1 (rhs of Brinkman problem for u1)
+    
+    coeffs[i][2] = 0;
+    
+    //g(x,y):  RHS for mass conservation equation
+    coeffs[i][3] = val_u1[1] + val_u2[2]; //0;
+    
+    // stabilization parameters
+    coeffs[i][7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+    coeffs[i][8] = TDatabase::ParamDB->grad_div_stab_weight;
   }
 }
 
