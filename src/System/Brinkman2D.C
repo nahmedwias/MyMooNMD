@@ -10,6 +10,14 @@
 #include <memory>
 #include <BlockFEMatrix.h>
 
+void Coefficient_Function(double *in, double *out);
+ void Coefficient_Function(double *in, double *out) 
+  {
+  // coordinates:  x at in[0], y at in[1]
+  // value of conductivity at in[2]
+   out[0] = in[2]; 
+}
+
 // Create a Brinkman specific database
 ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
 {
@@ -54,7 +62,7 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
   db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
   db.add("corner_stab_weight", (double)  0.0, "This quantity is the weight of the corner stabilization used for Nitsche corners of the domain", (double) -1000.0 , (double) 1000.0 );
 
-
+db.add("coefficient_function_type", (unsigned int) 0, "Set the parameter equal to 0 is the coefficients are constant, if you want to use a coefficient function that is spatially varying, set this parameter equal to 1 and hand in a function in the example file and then in coeffs via parameters", (unsigned int) 0,(unsigned int) 1);
 
   /* // Possible candidates for own database (maybe also a boundary assembling database, or into the assembling 2d database)
      db.add("s1", 0.0,
@@ -229,7 +237,15 @@ void Brinkman2D::check_input_parameters()
 }
 
 /** ************************************************************************ */
+// LB NEW 16.04.18 start
+void Brinkman2D::assemble(TFEFunction2D* coefficient_function)
+// LB NEW 16.04.18 end
+
+/*
+// LB OLD 16.04.18 start
 void Brinkman2D::assemble()
+// LB OLD 16.04.18 end
+*/
 {
   //Valgrind test start
   //std::vector<int> testvector(5,1);
@@ -252,58 +268,79 @@ void Brinkman2D::assemble()
     non_const_bound_values[2] = example.get_bd()[2];
 
     //same for all: the local asembling object
-    TFEFunction2D *fe_functions[3] =
-    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
+    TFEFunction2D *fe_functions[4] =
+    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, NULL };
 
-    if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") )
-    {
-      TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
-    }
-    else if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("symmetric Galerkin formulation") )
-    {
-      TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
-    }
-    else if ( db["PkPk_stab"].is(true) )
-    {
-      if ( db["Galerkin_type"].is("nonsymmetric Galerkin formulation") && db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") )
-      {
-        TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
-      }
-      else if ( db["PkPk_stab"].is(true)  && db["Galerkin_type"].is("symmetric Galerkin formulation")  && db["EqualOrder_PressureStab_type"].is("symmetric GLS") )
-      {
-        TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
-      }
-      else if (db["EqualOrder_PressureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation"))
-      {
-        Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Therefore, both were set to be symmetric. Are you sure you want to continue?");
-        TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
-        //double tmp;
-        //std::cin>>tmp;
-      }
-      else if (db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation"))
-      {
-        Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Therefore, both were set to be nonsymmetric. Are you sure you want to continue?");
-        TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
-      }
-      else
-      { 
-        Output::print("WARNING: Please specify the discrete formulation you wish to use via the" 
-            " parameters EqualOrder_PressureStab_type and Galerkin_type. ");
-      }
-    } 
-
-    LocalAssembling2D_type type;
-    // use a list of LocalAssembling2D objects
-    std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
-
-    type = Brinkman2D_Galerkin1;
-    std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, fe_functions,
-          this->example.get_coeffs()));
-    la_list.push_back(la);
-    Output::print<>("The ", db["Galerkin_type"].value_as_string(), " has been used.");
+// LB NEW 16.04.18 start
+fe_functions[3] = coefficient_function;
+// LB NEW 16.04.18 end
 
 
-    if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE >= 1)
+if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") )
+{
+  TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
+}
+else if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("symmetric Galerkin formulation") )
+{
+  TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
+}
+else if ( db["PkPk_stab"].is(true) )
+{
+  if ( db["Galerkin_type"].is("nonsymmetric Galerkin formulation") && db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") )
+  {
+    TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
+  }
+  else if ( db["PkPk_stab"].is(true)  && db["Galerkin_type"].is("symmetric Galerkin formulation")  && db["EqualOrder_PressureStab_type"].is("symmetric GLS") )
+  {
+    TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
+  }
+  else if (db["EqualOrder_PressureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation"))
+  {
+    Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Therefore, both were set to be symmetric. Are you sure you want to continue?");
+    TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
+    //double tmp;
+    //std::cin>>tmp;
+  }
+  else if (db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation"))
+  {
+    Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Therefore, both were set to be nonsymmetric. Are you sure you want to continue?");
+    TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
+  }
+  else
+  { 
+    Output::print("WARNING: Please specify the discrete formulation you wish to use via the" 
+        " parameters EqualOrder_PressureStab_type and Galerkin_type. ");
+  }
+} 
+
+LocalAssembling2D_type type;
+// use a list of LocalAssembling2D objects
+std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
+
+type = Brinkman2D_Galerkin1;
+std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, fe_functions,
+      this->example.get_coeffs()));
+
+// LB NEW 16.04.18 start
+if (coefficient_function != false)
+{
+// modify la such that it includes the TFEFunction2D coefficient_function
+la->setBeginParameter({0});
+la->setN_ParamFct(1);
+la->setParameterFct({Coefficient_Function});
+//ToDo: Define Coefficient_Function as Darcy_Parameter_Function
+la->setN_FeValues(1);
+la->setFeValueFctIndex({3});
+la->setFeValueMultiIndex({D00});
+}
+// LB NEW 16.04.18 end
+
+
+la_list.push_back(la);
+Output::print<>("The ", db["Galerkin_type"].value_as_string(), " has been used.");
+
+
+if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE >= 1)
     {
       if (db["equal_order_stab_scaling"].is("by h_T"))
       {
@@ -904,4 +941,5 @@ std::ostream& operator<<(std::ostream& s, const Brinkman2D::Residuals& n)
     << n.massResidual << "\t" << setw(14) << n.fullResidual;
   return s;
 }
+
 
