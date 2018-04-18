@@ -300,7 +300,7 @@ double Example_Brinkman2D::get_effective_viscosity() const
 
 double Example_Brinkman2D::get_permeablity() const
 {
-  double K = TDatabase::ParamDB->PERMEABILITY;
+  double K = TDatabase::ParamDB->PERMEABILITY; //this->example_database["permeability"];
   /*if (this->example_database["read_permeability_from_file"])
     K = -1;
   */

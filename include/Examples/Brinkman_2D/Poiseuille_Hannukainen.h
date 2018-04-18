@@ -195,7 +195,7 @@ void LinCoeffs(int n_points, double *x, double *y,
 
     if (coeffs[i][6]==-1) {
       Output::print(" ... we should now set the permeability using an external function ...");
-      //coeff[6] = parameters[i][0];
+      //coeffs[i][6] = parameters[i][0];
     }
 
     // Adimensional parameter t^2 = mue/mu*K
