@@ -21,6 +21,15 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+ void analytic_coefficient_function(double x, double y, double * values)
+    {
+      if ( (x < 0.5 && y<0.5) || (x > 0.5 && y>0.5) )
+        values[0] = 2.0;
+      else 
+        values[0] = 200.0;
+    }
+
+
 // =======================================================================
 // main program
 // =======================================================================
@@ -77,7 +86,36 @@ int main(int argc, char* argv[])
   timer.restart_and_print("constructing the Brinkman2D object: ");
   Output::print<>("Database info: ");
   parmoon_db.info();
+  // LB NEW 17.04.18 start
+  // TO DO define Brinkman or Example parameter in database spacially_varying_coefficient_function default false
+  //bool use_spatially_varying_coefficient_function = true;
+  if (parmoon_db["coefficient_function_type"] == 1)
+  {
+    // create a FEFunction which will serve as the coefficient_function:
+    auto coll = brinkman2d.get_pressure_space().GetCollection();
+    // fe space of piecewise constant functions
+    TFESpace2D coefficient_function_FEspace(coll, "coefficient_function_FEspace", "s",
+        BoundConditionNoBoundCondition, 0, nullptr);
+    BlockVector coefficient_function_vector(coefficient_function_FEspace.GetN_DegreesOfFreedom());
+    TFEFunction2D coefficient_function(
+        &coefficient_function_FEspace, "coefficient_function", "coefficient_function",
+        &coefficient_function_vector.at(0), coefficient_function_FEspace.GetN_DegreesOfFreedom());
+
+   
+    coefficient_function.Interpolate(analytic_coefficient_function);
+    //coefficient_function_vector.print("coefficient_function");
+TFEFunction2D *coefficient_function_ptr;
+coefficient_function_ptr = &coefficient_function;
+    brinkman2d.assemble(coefficient_function_ptr);
+  }
+  else 
+    brinkman2d.assemble( );
+  // LB NEW 17.04.18 end
+/*
+  // LB OLD 17.04.18 start
   brinkman2d.assemble();
+  // LB OLD 17.04.18 end
+  */
   timer.restart_and_print("assembling: ");
   brinkman2d.solve();
   timer.restart_and_print("solving: ");
@@ -125,7 +163,36 @@ int main(int argc, char* argv[])
     timer.restart_and_print("constructing the Brinkman2D object: ");
     Output::print<>("Database info: ");
     parmoon_db.info();
+    // LB NEW 16.04.18 start
+    // TO DO define Brinkman or Example parameter in database spacially_varying_coefficient_function default false
+    if (parmoon_db["coefficient_function_type"] == 1)
+    {
+      // create a FEFunction which will serve as the coefficient_function:
+      auto coll = brinkman2d.get_pressure_space().GetCollection();
+      // fe space of piecewise constant functions
+      TFESpace2D coefficient_function_FEspace(coll, "coefficient_function_FEspace", "s",
+          BoundConditionNoBoundCondition, 0, nullptr);
+      BlockVector coefficient_function_vector(coefficient_function_FEspace.GetN_DegreesOfFreedom());
+      TFEFunction2D coefficient_function(
+          &coefficient_function_FEspace, "coefficient_function", "coefficient_function",
+          &coefficient_function_vector.at(0), coefficient_function_FEspace.GetN_DegreesOfFreedom());
+
+      coefficient_function.Interpolate(analytic_coefficient_function);
+      //coefficient_function_vector.print("coefficient_function");
+
+TFEFunction2D *coefficient_function_ptr;
+coefficient_function_ptr = &coefficient_function;
+    brinkman2d.assemble(coefficient_function_ptr);
+     }
+    else 
+      brinkman2d.assemble( );
+    // LB NEW 16.04.18 end
+
+    /*
+    // LB OLD 16.04.18 start
     brinkman2d.assemble();
+    // LB OLD 16.04.18 start
+     */
     timer.restart_and_print("assembling: ");
     brinkman2d.solve();
     timer.restart_and_print("solving: ");

@@ -27,6 +27,8 @@
 #include <array>
 #include <FEFunction2D.h>
 
+
+
 class Brinkman2D
 {
 // This is only interesting if we consider different matrix types, see "todo" in Brinkman2D.C
@@ -99,8 +101,15 @@ public:
      * This assembles everything which is not related to the nonlinear term.
      * I.e. it assembles a Stokes matrix.
      */
+
+// LB NEW 16.04.18 start
+void assemble(TFEFunction2D* coefficient_function = nullptr);
+// LB NEW 16.04.18 end
+/*
+// LB OLD 16.04.18 start
     void assemble();
-    
+// LB OLD 16.04.18 end
+*/
     /** @brief solve the system */
     void solve();
     
@@ -333,7 +342,10 @@ protected:
      * and pressure
      */
     std::array<double, int(8)> errors;
-    
+   
+
+
+
 };
 
 
