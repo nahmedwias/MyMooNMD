@@ -14,12 +14,14 @@ namespace Cylinder_Square
   void setParameters(ParameterDatabase& db_);
   
   /// computation of drag, lift coefficient
-  void get_Drag_Lift(const Time_NSE3D& tnse3d, double& cdrag, double& clift);
+  void get_Drag_Lift(TFEFunction3D *u1, TFEFunction3D *u2,
+             TFEFunction3D *u3, TFEFunction3D *p,
+             TFEFunction3D *u1old, TFEFunction3D *u2old,
+             double &cdrag, double &clift, const double dt);
   // compute pressure difference
-  double get_p_diff(const std::array< double, int(3) >& point_A, 
-	const std::array< double, int(3) >& point_B, const TFEFunction3D& p);
+  double get_p_diff(const std::array< double, int(3) >& point_A, const std::array< double, int(3) >& point_B, const TFEFunction3D& p);
 
-  void compute_drag_lift_pdiff(const Time_NSE3D& tnse3d);
+  void compute_drag_lift_pdiff(Time_NSE3D& tnse3d);
   
   /// variable used to compute the ..???
   static size_t n_center_velo;
@@ -40,7 +42,7 @@ namespace Cylinder_Square
   
   static size_t n_pres_nodes;
   static std::vector<double> press_cyl;
-  void PreparePressureAtCylinder(TCollection* coll);
+  void PreparePressureAtCylinder(const TCollection* coll);
   // compute pressure at cylinder 
   static int counter_av_pres;
   void PressureAtCylinder(Time_NSE3D& tnse3d);
@@ -51,7 +53,7 @@ namespace Cylinder_Square
   /// compute fraction velocities
   static int count_fric_vel;
   static std::vector<double> velo_friction;
-  void ComputeFrictionVelocities(Time_NSE3D& tnse3d);
+  void ComputeFrictionVelocities(const Time_NSE3D& tnse3d);
 }
 
 #endif // _PrePost_Cylinder_Square_

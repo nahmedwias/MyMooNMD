@@ -329,9 +329,6 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       initialCondtion.push_back( InitialU2 );
       initialCondtion.push_back( InitialU3 );
       
-      //setCoordinates = channel_rey180::SetZCoordinates;
-      //checkCoordinates = channel_rey180::CheckZCoordinates;
-      
       channel_rey180::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ExampleFile();
@@ -365,9 +362,6 @@ Example_TimeNSE3D::Example_TimeNSE3D(
       initialCondtion.push_back( InitialU1 );
       initialCondtion.push_back( InitialU2 );
       initialCondtion.push_back( InitialU3 );
-      
-      //setCoordinates = channel_rey180::SetZCoordinates;
-      //checkCoordinates = channel_rey180::CheckZCoordinates;
       
       cylinder_square::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
