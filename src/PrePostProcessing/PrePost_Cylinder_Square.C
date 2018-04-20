@@ -161,7 +161,7 @@ void velocit_at_cylinder(int &count, double* x )
 void Cylinder_Square::setParameters(ParameterDatabase& db_)
 {
   double renr = db_["reynolds_number"];
-  reynolds_number = renr;
+  reynolds_number = 1./renr;
 }
 
 void Cylinder_Square::get_Drag_Lift(TFEFunction3D *u1, TFEFunction3D *u2,
@@ -169,23 +169,13 @@ void Cylinder_Square::get_Drag_Lift(TFEFunction3D *u1, TFEFunction3D *u2,
              TFEFunction3D *u1old, TFEFunction3D *u2old,
              double &cdrag, double &clift, const double dt)
 {
-  #ifdef _MPI
-  MPI_Comm comm = MPI_COMM_WORLD;
-  int my_rank;
-  MPI_Comm_rank(comm, &my_rank);
-#else
-  int my_rank = 0;
-#endif
-
   const double *pval = p->GetValues();
-  
   double* valu1 = u1->GetValues();
   double* valu2 = u2->GetValues();
   double* valu3 = u3->GetValues();
   
   double* oldvalu1 = u1old->GetValues();
   double* oldvalu2 = u2old->GetValues();
-  //double reynolds_number = DIMENSIONLESS_VISCOSITY;
   
   if ( dt < 1e-8)
   {
@@ -382,11 +372,11 @@ void Cylinder_Square::get_Drag_Lift(TFEFunction3D *u1, TFEFunction3D *u2,
   //communicate the values of cd and cl and sum them up
   MPI_Comm comm = MPI_COMM_WORLD;
 
-  double sendbuf[2] = {cd, cl};
+  double sendbuf[2] = {cdrag, clift};
   double recvbuf[2] = {0.0, 0.0};
   MPI_Allreduce(sendbuf, recvbuf, 2, MPI_DOUBLE, MPI_SUM, comm);
-  cd = recvbuf[0];
-  cl = recvbuf[1];
+  cdrag = recvbuf[0];
+  clift = recvbuf[1];
 #endif
   
   cdrag *= -50;
