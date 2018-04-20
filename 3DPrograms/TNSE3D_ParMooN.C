@@ -81,6 +81,10 @@ int main(int argc, char* argv[])
   {
     ChannelTau180::setParameters(parmoon_db);
   }
+  if(parmoon_db["example"].is(8))
+  {
+    Cylinder_Square::setParameters(parmoon_db);
+  }
 
   // Do the parameter check of the Database.
   check_parameters_consistency_NSE(parmoon_db);
