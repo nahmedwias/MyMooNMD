@@ -24,6 +24,10 @@ The boundary condition is treated as an essential boundary condition.
    }
  */
 
+ double viscosity = -1;
+ double effective_viscosity = -1;
+ double permeability = -1;
+
 void ExampleFile()
 {
   Output::print<1>("Example: SinCos_BadiaCodina_DarcyFlow_Test.h");
@@ -50,7 +54,9 @@ void ExactU2(double x, double y, double *values)
 
 void ExactP(double x, double y, double *values)
 {
-  double sigma = TDatabase::ParamDB->VISCOSITY / TDatabase::ParamDB->PERMEABILITY;
+  //double sigma = TDatabase::ParamDB->VISCOSITY / TDatabase::ParamDB->PERMEABILITY;
+  double sigma= viscosity/permeability;
+
   values[0] = sigma * sin(2 * Pi * x) * sin(2 * Pi * y);                    //p
   values[1] = sigma * 2 * Pi * cos(2 * Pi * x) * sin(2 * Pi * y);           //p_x
   values[2] = sigma * 2 * Pi * sin(2 * Pi * x) * cos(2 * Pi * y);           //p_y
@@ -129,9 +135,14 @@ void LinCoeffs(int n_points, double *X, double *Y,
 
   for(int i = 0; i < n_points; i++)
   {
-    coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
-    coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+    //coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
+    //coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+    //coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+
+    coeffs[i][4] = viscosity;
+    coeffs[i][5] = effective_viscosity;
+    coeffs[i][6] = permeability;
+
 
     ExactU1(X[i], Y[i], val_u1);
     ExactU2(X[i], Y[i], val_u2);

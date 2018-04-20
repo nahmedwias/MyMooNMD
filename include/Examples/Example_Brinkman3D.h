@@ -44,6 +44,11 @@ public:
     /// Apply the function stored as post processing routine.
     void do_post_processing(Brinkman3D& brinkman3d) const;
 
+    /// Get physical parameter from the database
+    double get_viscosity() const;
+    double get_effective_viscosity() const;
+    double get_permeablity() const;
+
     /// Get residual-based equal-order stabilization weight, if set in the .dat-file.
     double get_stab() const;
 

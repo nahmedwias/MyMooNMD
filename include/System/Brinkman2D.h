@@ -200,7 +200,7 @@ void assemble(TFEFunction2D* coefficient_function = nullptr);
     const Example_Brinkman2D & get_example() const
     { return example; }
     const ParameterDatabase & get_db() const
-    { return db; }
+    { return brinkman2d_db; }
     /// @brief get the current residuals  (updated in Brinkman2D::normOfResidual)
     const Residuals& getResiduals() const;
     /// @brief get the current impuls residual (updated in Brinkman2D::normOfResidual)
@@ -270,7 +270,14 @@ protected:
      * other parameters such as solver parameters. Those are only in the
      * Solver object.
      */
-    ParameterDatabase db;
+
+     // LB NEW 19.04.18 start
+    ParameterDatabase brinkman2d_db;
+    // LB NEW 19.04.18 end
+/*      // LB OLD 19.04.18 start
+    ParameterDatabase brinkman2d_db;
+    // LB OLD 19.04.18 end
+*/
     
     /** @brief a solver object which will solve the linear system
      *

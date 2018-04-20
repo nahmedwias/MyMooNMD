@@ -295,11 +295,7 @@ struct TParaDB
   // function LinCoeffs(), the following parameters can not be set in the 
   // new 'local' Brinkman database.
   //======================================================================
-  double VISCOSITY;
-  double EFFECTIVE_VISCOSITY;
-  double PERMEABILITY;
-
-  /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
+   /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
   double equal_order_stab_weight_PkPk;
 
   /** Parameter for Grad-Div stabilization of Brinkman problems                  */

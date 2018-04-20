@@ -199,18 +199,18 @@ void check_brinkman2d_New(TDomain & domain, ParameterDatabase& db, int velocityC
 //    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
 //    
 //    //    //------------------------------------------------------------------------------------------------------------
-//    //    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.01;
-//    //    TDatabase::ParamDB->VISCOSITY=10;
-//    //    TDatabase::ParamDB->PERMEABILITY=2;
+//    //    db["effective_viscosity"]=0.01;
+//    //    db["viscosity"]=10;
+//    //    db["permeability"]=2;
 //    //
 //    //    Output::print("\nStarting with P2/P1 on quads for Poiseuille flow with visc_eff=0.01, visc=10, perm=2");
 //    //    reference_errors = {{1.9508695699745e-16,3.6646227316896e-15,1.3277195222811e-16,1.0734187033819e-15}};
 //    //
 //    //    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
 //    //
-//    //    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=1;
-//    //    TDatabase::ParamDB->VISCOSITY=1;
-//    //    TDatabase::ParamDB->PERMEABILITY=1;
+//    //    db["effective_viscosity"]=1;
+//    //    db["viscosity"]=1;
+//    //    db["permeability"]=1;
 //    
 //    //------------------------------------------------------------------------------------------------------------
 //    db["example"] = 1; // Poiseuille_Hannukainen
@@ -223,18 +223,18 @@ void check_brinkman2d_New(TDomain & domain, ParameterDatabase& db, int velocityC
 //    
 //    //------------------------------------------------------------------------------------------------------------
 //    db["example"] = 1; // Poiseuille_Hannukainen
-//    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.001;
-//    TDatabase::ParamDB->VISCOSITY=1;
-//    TDatabase::ParamDB->PERMEABILITY=1;
+//    db["effective_viscosity"]=0.001;
+//    db["viscosity"]=1;
+//    db["permeability"]=1;
 //    
 //    Output::print("\nStarting with P2/P1 on quads for Poiseuille flow with visc_eff=0.001, visc=1, perm=2 for example ",db["example"] );
 //    reference_errors = {{0.097304080869912,2.9931806337455,0.00323505572483,0.027631651143564}};
 //    
 //    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
 //    
-//    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=1;
-//    TDatabase::ParamDB->VISCOSITY=1;
-//    TDatabase::ParamDB->PERMEABILITY=1;
+//    db["effective_viscosity"]=1;
+//    db["viscosity"]=1;
+//    db["permeability"]=1;
 //    db["example"] = 0; // Poiseuille
 //    
 //    //------------------------------------------------------------------------------------------------------------
@@ -364,9 +364,9 @@ void check_brinkman2d_New(TDomain & domain, ParameterDatabase& db, int velocityC
 //    TDatabase::ParamDB->n_neumann_boundary=2;
 //    TDatabase::ParamDB->neumann_boundary_id={1,3};
 //    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.001;
-//    TDatabase::ParamDB->VISCOSITY=10;
-//    TDatabase::ParamDB->PERMEABILITY=1;
+//    db["effective_viscosity"]=0.001;
+//    db["viscosity"]=10;
+//    db["permeability"]=1;
 //    Output::print("\nstarting with Nitsche (parameter 1000)  on P2/P1 on quads with Neumann and visc_eff=0.001, visc=10, perm= 1");
 //    reference_errors = {{4.8144012875101e-05,0.0010541202262723, 0.5,1.184219258062e-15}};
 //    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
@@ -378,9 +378,9 @@ void check_brinkman2d_New(TDomain & domain, ParameterDatabase& db, int velocityC
 //    TDatabase::ParamDB->n_neumann_boundary=2;
 //    TDatabase::ParamDB->neumann_boundary_id={1,3};
 //    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.001;
-//    TDatabase::ParamDB->VISCOSITY=10;
-//    TDatabase::ParamDB->PERMEABILITY=1;
+//    db["effective_viscosity"]=0.001;
+//    db["viscosity"]=10;
+//    db["permeability"]=1;
 //    db["example"] = 1; // Poiseuille_Hannukainen
 //    Output::print("\nstarting with Nitsche (parameter 1000) on P2/P1 on quads with Neumann and visc_eff=0.001, visc=10, perm= 1");
 //    reference_errors = {{ 0.19394824424421,3.8205668689833,0.5,1.0532389294782e-15}};
@@ -395,9 +395,9 @@ void check_brinkman2d_New(TDomain & domain, ParameterDatabase& db, int velocityC
 //    TDatabase::ParamDB->n_neumann_boundary=2;
 //    TDatabase::ParamDB->neumann_boundary_id={1,3};
 //    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.001;
-//    TDatabase::ParamDB->VISCOSITY=10;
-//    TDatabase::ParamDB->PERMEABILITY=1;
+//    db["effective_viscosity"]=0.001;
+//    db["viscosity"]=10;
+//    db["permeability"]=1;
 //    db["example"] = 1; // Poiseuille_Hannukainen
 //    Output::print("\nstarting with Nitsche (parameter 1000) on P2/P2 on quads with Neumann and visc_eff=0.001, visc=10, perm= 1");
 //    reference_errors = {{0.19394824424421,3.8205668689833,2.8822850639982,87.950352486737}};
@@ -412,9 +412,9 @@ void check_brinkman2d_New(TDomain & domain, ParameterDatabase& db, int velocityC
 //    TDatabase::ParamDB->n_neumann_boundary=2;
 //    TDatabase::ParamDB->neumann_boundary_id={1,3};
 //    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.001;
-//    TDatabase::ParamDB->VISCOSITY=10;
-//    TDatabase::ParamDB->PERMEABILITY=1;
+//    db["effective_viscosity"]=0.001;
+//    db["viscosity"]=10;
+//    db["permeability"]=1;
 //    db["PkPk_stab"]=true;
 //    TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.4;
 //    db["example"] = 1; // Poiseuille_Hannukainen
@@ -432,9 +432,9 @@ void check_brinkman2d_New(TDomain & domain, ParameterDatabase& db, int velocityC
 //    TDatabase::ParamDB->n_neumann_boundary=2;
 //    TDatabase::ParamDB->neumann_boundary_id={1,3};
 //    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    TDatabase::ParamDB->EFFECTIVE_VISCOSITY=0.001;
-//    TDatabase::ParamDB->VISCOSITY=10;
-//    TDatabase::ParamDB->PERMEABILITY=1;
+//    db["effective_viscosity"]=0.001;
+//    db["viscosity"]=10;
+//    db["permeability"]=1;
 //    db["PkPk_stab"]=true;
 //    TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.4;
 //    db["example"] = 1; // Poiseuille_Hannukainen
@@ -464,9 +464,10 @@ void tests_on_triangles_P2P1_Example1(unsigned int nRefinements, ParameterDataba
   std::array<double, 5>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 1.;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
-  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["permeability"] = 1.;
+  db["effective_viscosity"] = 0.004;
+   
+  db["viscosity"] = 0.004;
   db["PkPk_stab"] = false;
   db["equal_order_stab_scaling"] = "by h_T";
   db["Galerkin_type"] = "symmetric Galerkin formulation";
@@ -504,9 +505,9 @@ void tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche_Example1(unsigned in
   std::array<double, 5>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 1.;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
-  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["permeability"] = 1.;
+  db["effective_viscosity"] = 0.004;
+  db["viscosity"] = 0.004;
   db["PkPk_stab"] = false;
   db["equal_order_stab_scaling"] = "by h_T";
   db["Galerkin_type"] = "symmetric Galerkin formulation";
@@ -539,9 +540,9 @@ void tests_on_triangles_P1P1_GLSStab_Example1(unsigned int nRefinements, Paramet
   std::array<double, 5>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 1.;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
-  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["permeability"] = 1.;
+  db["effective_viscosity"] = 0.004;
+  db["viscosity"] = 0.004;
 
   //Note that the parameters below have to be set in db AND TDatabase
   db["PkPk_stab"] = true;
@@ -583,9 +584,9 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_Example1(uns
   std::array<double, 5>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 1.;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
-  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["permeability"] = 1.;
+  db["effective_viscosity"] = 0.004;
+  db["viscosity"] = 0.004;
 
   //Note that the parameters below have to be set in db AND TDatabase↲ 
   db["PkPk_stab"] = true;
@@ -628,9 +629,9 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab1
   std::array<double, 5>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 1.;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
-  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["permeability"] = 1.;
+  db["effective_viscosity"] = 0.004;
+  db["viscosity"] = 0.004;
 
   //Note that the parameters below have to be set in db AND TDatabase↲ 
   db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
@@ -676,9 +677,9 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_
   std::array<double, 5>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 1.;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.004;
-  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["permeability"] = 1.;
+  db["effective_viscosity"] = 0.004;
+  db["viscosity"] = 0.004;
 
   //Note that the parameters below have to be set in db AND TDatabase↲ 
   db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
@@ -727,9 +728,9 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_
   std::array<double, 5>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 8; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 1;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.;
-  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["permeability"] = 1;
+  db["effective_viscosity"] = 0.;
+  db["viscosity"] = 0.004;
 
   //Note that the parameters below have to be set in db AND TDatabase↲ 
   db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
@@ -775,9 +776,9 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_
   std::array<double, 5>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 8; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 0.00001;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.;
-  TDatabase::ParamDB->VISCOSITY = 0.004;
+  db["permeability"] = 0.00001;
+  db["effective_viscosity"] = 0.;
+  db["viscosity"] = 0.004;
 
   //Note that the parameters below have to be set in db AND TDatabase↲ 
   db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
@@ -864,7 +865,7 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_
 
 
 
-  TDatabase::ParamDB->PERMEABILITY = 0.01;
+  db["permeability"] = 0.01;
   //l_T=-1
   TDatabase::ParamDB->l_T = -1;
 
@@ -941,9 +942,9 @@ void tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
   std::array<double, 8>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 8; // SinCos BadiaCodina
-  TDatabase::ParamDB->PERMEABILITY = 0.001;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.;
-  TDatabase::ParamDB->VISCOSITY = 1;
+  db["permeability"] = 0.001;
+  db["effective_viscosity"] = 0.;
+  db["viscosity"] = 1;
 
   //Note that the parameters below have to be set in db AND TDatabase↲ 
   db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
@@ -990,9 +991,9 @@ void tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
   std::array<double, 8>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 10;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.00001;
-  TDatabase::ParamDB->VISCOSITY = 1;
+  db["permeability"] = 10;
+  db["effective_viscosity"] = 0.00001;
+  db["viscosity"] = 1;
 
   //Note that the parameters below have to be set in db AND TDatabase↲ 
   db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
@@ -1039,9 +1040,9 @@ void tests_on_triangles_P2P2_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
   std::array<double, 8>  reference_errors;
   //--------------------------------------------------------------------------------------------------------------------↲
   db["example"] = 1; // Poiseuille_Hannukainen
-  TDatabase::ParamDB->PERMEABILITY = 10;
-  TDatabase::ParamDB->EFFECTIVE_VISCOSITY = 0.00001;
-  TDatabase::ParamDB->VISCOSITY = 1;
+  db["permeability"] = 10;
+  db["effective_viscosity"] = 0.00001;
+  db["viscosity"] = 1;
 
   //Note that the parameters below have to be set in db AND TDatabase↲ 
   db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
@@ -1099,6 +1100,7 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(ParameterDatabase::default_output_database(),true);
   db.merge(Example2D::default_example_database(),true);
+  
   db.merge(Brinkman2D::get_default_Brinkman2D_parameters(),true);
 
   db["example"] = 1;

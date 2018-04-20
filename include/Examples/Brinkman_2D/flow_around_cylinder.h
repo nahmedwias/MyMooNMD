@@ -3,6 +3,10 @@
 // u(x,y) = unknown
 // p(x,y) = unknown
 
+double viscosity = -1;                                                        
+double effective_viscosity = -1;                                              
+double permeability = -1;
+
 void ExampleFile()
 {
   OutPut("Example: Benchmark_Neum.h" << endl) ;

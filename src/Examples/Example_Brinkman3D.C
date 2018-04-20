@@ -65,7 +65,12 @@ Example_Brinkman3D::Example_Brinkman3D(
         
         //            /** some variables to change values in the example */
         //            ansatz_lin_const::DIMENSIONLESS_VISCOSITY = this->get_nu();
-        
+       
+       // read parameters from local database
+       ansatz_lin_const::viscosity = get_viscosity();
+       ansatz_lin_const::effective_viscosity = get_effective_viscosity();
+       ansatz_lin_const::permeability = get_permeablity();
+
         ansatz_lin_const::ExampleFile();
         break;
         
@@ -93,7 +98,12 @@ Example_Brinkman3D::Example_Brinkman3D(
         
         //            /** some variables to change values in the example */
         //            ansatz_lin_const::DIMENSIONLESS_VISCOSITY = this->get_nu();
-        
+       
+       // read parameters from local database
+       ansatz_quad_lin::viscosity = get_viscosity();
+       ansatz_quad_lin::effective_viscosity = get_effective_viscosity();
+       ansatz_quad_lin::permeability = get_permeablity();
+
         ansatz_quad_lin::ExampleFile();
         break;
         
@@ -123,6 +133,11 @@ Example_Brinkman3D::Example_Brinkman3D(
             //            /** some variables to change values in the example */
             //            ansatz_lin_const::DIMENSIONLESS_VISCOSITY = this->get_nu();
             
+            // read parameters from local database
+            poiseuille::viscosity = get_viscosity();
+            poiseuille::effective_viscosity = get_effective_viscosity();
+            poiseuille::permeability = get_permeablity();
+
             poiseuille::ExampleFile();
             break;
 
@@ -323,6 +338,27 @@ void Example_Brinkman3D::do_post_processing(Brinkman3D& brinkman3d) const
   }
 }
 
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+// functions to avoid global parameters (TDatabase) in the example file
+
+double Example_Brinkman3D::get_viscosity() const
+{
+  double viscosity = this->example_database["viscosity"];
+  return viscosity;
+}
+double Example_Brinkman3D::get_effective_viscosity() const
+{
+  double effective_viscosity = this->example_database["effective_viscosity"];
+  return effective_viscosity;
+}
+double Example_Brinkman3D::get_permeablity() const
+{
+  double K = this->example_database["permeability"];
+  /*if (this->example_database["read_permeability_from_file"])
+    K = -1;
+   */
+  return K;
+}
 
 //double Example_Brinkman3D::get_stab() const
 //{

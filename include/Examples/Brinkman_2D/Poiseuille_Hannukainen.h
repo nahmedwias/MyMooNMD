@@ -48,9 +48,9 @@ void ExampleFile()
 
 void ExactU1(double x, double y, double *values)
 {
-  double K = TDatabase::ParamDB->PERMEABILITY;
-  double mu = TDatabase::ParamDB->VISCOSITY;
-  double mu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+  double K = permeability; // OLD: = TDatabase::ParamDB->PERMEABILITY;
+  double mu = viscosity; // OLD: = TDatabase::ParamDB->VISCOSITY;
+  double mu_eff = effective_viscosity; // OLD = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
   double t = fabs(sqrt((mu_eff/mu) * K));
 
   if (K == 0)
@@ -123,10 +123,19 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  double K = TDatabase::ParamDB->PERMEABILITY;
-  double mu = TDatabase::ParamDB->VISCOSITY;
-  double mu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+/* LB Old 18.04.18 start
+  //double K = TDatabase::ParamDB->PERMEABILITY;
+  //double mu = TDatabase::ParamDB->VISCOSITY;
+  //double mu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+  //double t = fabs(sqrt((mu_eff/mu) * K));
+// LB Old 18.04.18 end
+*/ 
+//LB NEW 18.04.18 start
+  double K = permeability;
+  double mu = viscosity;
+  double mu_eff = effective_viscosity;
   double t = fabs(sqrt((mu_eff/mu) * K));
+// LB NEW 18.04.18 end
 
   // loop to impose Neumann boundary conditions
   // Since we are using the Neumann boundary condition via boundaryAssembling, the boundvalue here has to be alway zero!!!!
@@ -192,6 +201,7 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeffs[i][4] = viscosity; //TDatabase::ParamDB->VISCOSITY;
     coeffs[i][5] = effective_viscosity; //TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
     coeffs[i][6] = permeability; //TDatabase::ParamDB->PERMEABILITY;
+
 
     if (coeffs[i][6]==-1) {
       Output::print(" ... we should now set the permeability using an external function ...");

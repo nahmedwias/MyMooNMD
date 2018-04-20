@@ -7,6 +7,10 @@
 // This example is adapted to the geometry cylinder_short_18Ktetra.mesh
 // The pressure solution is set according to the Hagen-Poiseuille law (https://en.wikipedia.org/wiki/Hagen–Poiseuille_equation): DP= (8*mu*L)/(r^2) * v
 
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
+
 void ExampleFile()
 {
   Output::info<1>("EXAMPLE","Poiseuille.h");
@@ -48,8 +52,8 @@ void ExactP(double x, double y,  double z, double *values)
     double Length = 1.;
     double Radius = 1.;
     double Umax = 1.;
-    double DP = 4*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
-    //  double DP = 8*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
+    double DP = 4 * effective_viscosity * Length/(Radius * Radius) * Umax;
+    //  double DP = 8*effective_viscosity*Length/(Radius*Radius)*Umax;
     //double Pinlet = DP/2;
     //double Poutlet = -DP/2;
     double zInlet = 1.;
@@ -157,8 +161,8 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
     //double Length = 1;
     //double Radius = 1.;
     //double Umax = 1.;
-    //double DP = 4*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
-    //  double DP = 8*TDatabase::ParamDB->EFFECTIVE_VISCOSITY*Length/(Radius*Radius)*Umax;
+    //double DP = 4* effective_viscosity * Length/(Radius*Radius)*Umax;
+    //  double DP = 8 * effective_viscosity * Length/(Radius*Radius)*Umax;
 
     
     for(int i=0;i<n_points;i++)
@@ -166,9 +170,9 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
         coeff = coeffs[i];
         // Note: Setting f3=0, and PERMEABILITY=100000 gives the Stokes case. Here Delta u and nabla p balance each other for the functions chosen in the example;
         //coeff[0] = eps;
-        coeff[5]= TDatabase::ParamDB->VISCOSITY;//0.;
-        coeff[6]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-        coeff[7]= TDatabase::ParamDB->PERMEABILITY;
+        coeff[5] = viscosity;//0.;
+        coeff[6] = effective_viscosity;
+        coeff[7] = permeability;
         coeff[1] = 0;//coeff[6]*(-12)+(-1)+(coeff[5]/coeff[7])*(3*(1-(Y[i]*Y[i]+Z[i]*Z[i]))); // f1
         coeff[2] = 0; // f2
         //coeff[3] = -coeff[6]*(-4)- DP/Length +(coeff[5]/coeff[7])*(1-(Y[i]*Y[i]+X[i]*X[i])); // 0; // f3
