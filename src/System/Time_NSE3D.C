@@ -759,11 +759,12 @@ void Time_NSE3D::assemble_nonlinear_term()
   {
     call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
     
-    if(!db_["space_discretization_type"].is("supg") &&
-       !db_["space_discretization_type"].is("residual_based_vms") &&
-       TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1)
+    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1)
     {
-      this->modify_slip_bc(false, false, s);
+      if(db_["space_discretization_type"].is("supg") || db_["space_discretization_type"].is("residual_based_vms") )
+        this->modify_slip_bc(true, true, s);
+      else
+        this->modify_slip_bc(false, false, s);
     }
     if(db_["space_discretization_type"].is("vms_projection"))
     {
