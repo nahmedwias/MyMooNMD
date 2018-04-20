@@ -370,7 +370,7 @@ class Time_NSE3D
     /** */
     bool imex_scheme(bool print_info);
     
-    void modify_slip_bc(bool BT_Mass, bool slip_A_nl);
+    void modify_slip_bc(bool BT_Mass, bool slip_A_nl, Time_NSE3D::System_per_grid& s);
 
 /* ******************************************************************************/
     // Declaration of special member functions - delete all but destructor.

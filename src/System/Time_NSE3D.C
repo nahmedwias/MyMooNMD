@@ -177,12 +177,6 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 #else
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
 #endif
-  if(db_["example"].is(8))
-  {
-    Cylinder_Square::PrepareVelocityAtCylinder(coll);
-    Cylinder_Square::PrepareCenterlineVelocities(coll);
-    Cylinder_Square::PreparePressureAtCylinder(coll);
-  }
   // projection-based VMS, only on the finest level 
   if(db_["space_discretization_type"].is("vms_projection"))
   {
@@ -662,6 +656,17 @@ void Time_NSE3D::assemble_rhs(bool ass_rhs)
   std::vector<BlockVector> all_rhs(2);
   all_rhs[0] = s.rhs_;
   all_rhs[1] = old_rhs_;
+  // this update is only done once for the Mass matrices
+  // and the pressure blocks, if both are linear
+  // In the nonlinearity case, the matrices are updated
+  // during the nonlinear loop (special cases are SUPG
+  // and RBVMS methods)
+  if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION==1 && 
+     time_stepping_scheme.current_step_==1)
+  {
+    for(System_per_grid &ss : this->systems_)
+      this->modify_slip_bc(true, true, ss);
+  }
   
   // prepare the right hand side vector
   time_stepping_scheme.prepare_rhs_from_time_disc(s.matrix_, s.massMatrix_, 
@@ -754,6 +759,12 @@ void Time_NSE3D::assemble_nonlinear_term()
   {
     call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
     
+    if(!db_["space_discretization_type"].is("supg") &&
+       !db_["space_discretization_type"].is("residual_based_vms") &&
+       TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1)
+    {
+      this->modify_slip_bc(false, false, s);
+    }
     if(db_["space_discretization_type"].is("vms_projection"))
     {
       std::vector<std::shared_ptr<FEMatrix>> blocks
@@ -774,8 +785,8 @@ void Time_NSE3D::assemble_nonlinear_term()
     {
       if(!db_["time_discretization"].is("bdf_two"))
       {
-	ErrThrow("space discretizations, ", db_["space_discretization_type"], 
-		 " only implemented for ", db_["time_discretization"]);
+        ErrThrow("space discretizations, ", db_["space_discretization_type"], 
+                 " only implemented for ", db_["time_discretization"]);
       }
       // pressure blocks that are nonlinear were already assembled
       // during the nonlinear asembly. We just have to scale them 
@@ -792,13 +803,6 @@ void Time_NSE3D::assemble_nonlinear_term()
   {
     space_disc_global = 9;
     db_["space_discretization_type"].set("vms_projection");
-  }
-  
-  if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1)
-  {
-    // for standard methods, we only need to update only one per time steps
-    if(time_stepping_scheme.current_step_ == 1)
-      this->modify_slip_bc(true, true);
   }
 }
 
@@ -1039,11 +1043,13 @@ void Time_NSE3D::output(int m, int &image)
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-  	bool no_output = !db_["output_write_vtk"] &&
- 	                 !db_["output_compute_errors"] &&
- 	                 !db_["write_solution_binary"];
-	if(no_output)
-		return;
+    bool no_output = !db_["output_write_vtk"] &&
+                     !db_["output_compute_errors"] &&
+                     !db_["write_solution_binary"] &&
+                     !db_["example"].is(6) &&
+                     !db_["example"].is(8);
+    if(no_output)
+      return;
 
  // System_per_grid& s = this->systems_.front();
   
@@ -1184,36 +1190,29 @@ void Time_NSE3D::output(int m, int &image)
       Output::print<1>("L2(0,t,H1-semi(p)) : ", setprecision(10), sqrt(errors_.at(10)) );
     }
   }
-   delete u1;
-   delete u2;
-   delete u3;
+  delete u1;
+  delete u2;
+  delete u3;
 
-   // do post-processing step depending on what the example implements, if needed
-   example_.do_post_processing(*this);
-   if(db_["example"].is(6))
-   {
-     // drag lift and pressure difference computation
-     Cylinder_Square::compute_drag_lift_pdiff(*this);
-     // compute friction velocity
-     Cylinder_Square::ComputeFrictionVelocities(*this);
-     // compute pressure at cylinder 
-     Cylinder_Square::PressureAtCylinder(*this);
-     // compute velocities at centerline
-     Cylinder_Square::CenterlineVelocities(*this);
-     Cylinder_Square::VelocityAtCylinder(*this);
-   }
+  // do post-processing step depending on what the example implements, if needed
+  //example_.do_post_processing(*this);
+  if(db_["example"].is(8))
+  {
+    // drag lift and pressure difference computation
+    Cylinder_Square::compute_drag_lift_pdiff(*this);
+  }
    
-   if(db_["write_solution_binary"].is(true))
-   { size_t interval = db_["write_solution_binary_all_n_steps"];
+  if(db_["write_solution_binary"].is(true))
+  { size_t interval = db_["write_solution_binary_all_n_steps"];
     if(m % interval == 0)
     {//write solution to a binary file
       std::string file = db_["write_solution_binary_file"];
       if(!db_["overwrite_solution_binary"]) //create a new file every time
       {
-    	  file += ".";
-    	  file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
+        file += ".";
+        file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
 #ifdef _MPI
-    	  file += ".proc" + std::to_string(my_rank);
+        file += ".proc" + std::to_string(my_rank);
 #endif
       }
       Output::info("output", "Writing current solution to file ", file);
@@ -1934,7 +1933,8 @@ void Time_NSE3D::assemble_rhs_supg(Time_NSE3D::System_per_grid& s)
 }
 
 /** ************************************************************************ */
-void Time_NSE3D::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
+void Time_NSE3D::modify_slip_bc(bool BT_Mass, bool slip_A_nl, 
+                                Time_NSE3D::System_per_grid& s)
 {
   // modification of the matrices due to the
   // slip type boundary conditions: If the mass matrices,
@@ -1955,91 +1955,90 @@ void Time_NSE3D::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
   std::vector<double*> rhs_array(3);
   std::vector<const TFESpace3D*> rhs_space(3);
   
-  for(System_per_grid& s: this->systems_)
+  spaces_mat[0] = &s.velocitySpace_;
+  rhs_space[0] = spaces_mat[0];
+  rhs_space[1] = spaces_mat[0];
+  rhs_space[2] = spaces_mat[0];
+
+  rhs_array[0] = s.rhs_.block(0);
+  rhs_array[1] = s.rhs_.block(1);
+  rhs_array[2] = s.rhs_.block(2);
+
+  std::vector<std::shared_ptr<FEMatrix>> blocks;
+  blocks = s.matrix_.get_blocks_uniquely();
+  std::vector<std::shared_ptr<FEMatrix>> mass_blocks;
+  mass_blocks = s.massMatrix_.get_blocks_uniquely(true);
+  
+  BoundCondFunct3D* bc[4] = {
+  s.velocitySpace_.getBoundCondition(),
+  s.velocitySpace_.getBoundCondition(),
+  s.velocitySpace_.getBoundCondition(),
+  s.pressureSpace_.getBoundCondition()};
+  // boundary values:
+  std::vector<BoundValueFunct3D*>bv(4);
+  bv[0]=example_.get_bd(0);
+  bv[1]=example_.get_bd(1);
+  bv[2]=example_.get_bd(2);
+  bv[3]=example_.get_bd(3);
+  
+  std::vector<TSquareMatrix3D*> sqMat;
+  std::vector<TMatrix3D*> reMat;
+  sqMat.resize(3);
+  
+  // all 4 A blocks at the first time step
+  //------------------
+  // a11 a12 a12 b1t
+  // a21 a22 a23 b2t
+  // a31 a32 a33 b3t
+  // b1  b2  b3  c
+  // and only the first 2 within the nonlinear loop
+  sqMat[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get()); //a11
+  sqMat[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get()); //a22
+  sqMat[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());//a33
+  
+  // if the off-diagonal are not changing within the non-linear loop
+  // then dont need to assemble them again
+  if(slip_A_nl)
   {
-    spaces_mat[0] = &s.velocitySpace_;
-    rhs_space[0] = spaces_mat[0];
-    rhs_space[1] = spaces_mat[0];
-    rhs_space[2] = spaces_mat[0];
-
-    rhs_array[0] = s.rhs_.block(0);
-    rhs_array[1] = s.rhs_.block(1);
-    rhs_array[2] = s.rhs_.block(2);
-
-    std::vector<std::shared_ptr<FEMatrix>> blocks;
-    blocks = s.matrix_.get_blocks_uniquely();
-    std::vector<std::shared_ptr<FEMatrix>> mass_blocks;
-    mass_blocks = s.massMatrix_.get_blocks_uniquely(true);
+    sqMat.resize(9);
+    sqMat[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());//a12
+    sqMat[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());//a13
+    sqMat[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());//a21
+    sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());//a13
+    sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());//a31
+    sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());//a32
+  }
+  
+  // either at the first time step
+  // or every time step if M and B's are changing
+  reMat.resize(0);
+  if(BT_Mass)
+  {
+    sqMat.resize(18);
+    sqMat[9]  = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get()); //m11
+    sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get()); //m22
+    sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());//m33
     
-    BoundCondFunct3D* bc[4] = {
-    s.velocitySpace_.getBoundCondition(),
-    s.velocitySpace_.getBoundCondition(),
-    s.velocitySpace_.getBoundCondition(),
-    s.pressureSpace_.getBoundCondition()};
-    // boundary values:
-    std::vector<BoundValueFunct3D*>bv(4);
-    bv[0]=example_.get_bd(0);
-    bv[1]=example_.get_bd(1);
-    bv[2]=example_.get_bd(2);
-    bv[3]=example_.get_bd(3);
-    
-    std::vector<TSquareMatrix3D*> sqMat;
-    std::vector<TMatrix3D*> reMat;
-    sqMat.resize(3);
-    
-    // all 4 A blocks at the first time step
-    //------------------
-    // a11 a12 a12 b1t
-    // a21 a22 a23 b2t
-    // a31 a32 a33 b3t
-    // b1  b2  b3  c
-    // and only the first 2 within the nonlinear loop
-    sqMat[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get()); //a11
-    sqMat[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get()); //a22
-    sqMat[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());//a33
-    
-    // if the off-diagonal are not changing within the non-linear loop
-    // then dont need to assemble them again
-    if(slip_A_nl)
-    {
-      sqMat.resize(9);
-      sqMat[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());//a12
-      sqMat[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());//a13
-      sqMat[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());//a21
-      sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());//a13
-      sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());//a31
-      sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());//a32
-    }
-    
-    // either at the first time step
-    // or every time step if M and B's are changing
-    reMat.resize(0);
-    if(BT_Mass)
-    {
-      sqMat.resize(18);
-      sqMat[9]  = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get()); //m11
-      sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get()); //m22
-      sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());//m33
-      
-      sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(1).get());//m12
-      sqMat[13] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(2).get());//m13
-      sqMat[14] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(4).get());//m21
-      sqMat[15] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(6).get());//m13
-      sqMat[16] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(8).get());//m31
-      sqMat[17] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(9).get());//m32
-      reMat.resize(3);
-      reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); // b1t
-      reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get()); // b2t
-      reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());// b3t
-    }
-    // modify slip type boundary conditions, in case of supg all A, M and B blocks 
-    // have to be modified
-    Assemble3DSlipBC(spaces_mat.size(), spaces_mat.data(), sqMat.size(), sqMat.data(), 
-		     reMat.size(), reMat.data(), rhs_array.size(), rhs_array.data(), 
-		     rhs_space.data(), bc, bv.data());
-    if(db_["example"].is(8))
-    {
-      Cylinder_Square::SetNoPenetrationValues(*this);
-    }
+    sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(1).get());//m12
+    sqMat[13] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(2).get());//m13
+    sqMat[14] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(4).get());//m21
+    sqMat[15] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(6).get());//m13
+    sqMat[16] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(8).get());//m31
+    sqMat[17] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(9).get());//m32
+    reMat.resize(3);
+    reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); // b1t
+    reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get()); // b2t
+    reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());// b3t
+  }
+  // modify slip type boundary conditions, in case of supg all A, M and B blocks 
+  // have to be modified
+  Assemble3DSlipBC(spaces_mat.size(), spaces_mat.data(), sqMat.size(), sqMat.data(),
+                   reMat.size(), reMat.data(), rhs_array.size(), rhs_array.data(), 
+                   rhs_space.data(), bc, bv.data());
+  
+  if(time_stepping_scheme.current_step_ <= 3)
+  {
+    Output::print<5>("updates slip b.c, no square matrices: ", 
+                     sqMat.size(), " no of rect matrices: ", reMat.size());
   }
 }

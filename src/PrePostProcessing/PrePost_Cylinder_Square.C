@@ -24,54 +24,104 @@ void print_(const std::string name, std::vector<double> vec)
   Output::print("------------------------\n");
 }
 
-void sort_front_back(int press_nodes, int &count1, double* &press_cyl_x, double* &press_cyl_y,
-     double* press_cyl_x_temp, double* press_cyl_y_temp, double val)
+void sort_front(size_t n_pres_nodes, int &count1, double* &press_cyl_x, double* &press_cyl_y,
+     double* press_cyl_x_tmp, double* press_cyl_y_tmp)
 {
-  int count = count1;
-  for(int i=count; i< press_nodes; i++)
+  for(size_t i=0;i<n_pres_nodes;i++)
   {
-    if (fabs(press_cyl_x_temp[i]-val) < 1e-5)
+    if (fabs(press_cyl_x_tmp[i]-0.45) < 1e-5)
     {
-      press_cyl_x[count1] = press_cyl_x_temp[i];
-      press_cyl_y[count1] = press_cyl_y_temp[i];
+      press_cyl_x[count1] = press_cyl_x_tmp[i];
+      press_cyl_y[count1] = press_cyl_y_tmp[i];
       // correct order
-      for (int j=0;j<count1;j++)
+      for(int j=0;j<count1;j++)
       {
-	if (press_cyl_y[count1] < press_cyl_y[j] ||
-	    press_cyl_y[count1] > press_cyl_y[j] )
-	{
-	  for(int k=count1-1;k>=j;k--)
-	    press_cyl_y[k+1] = press_cyl_y[k];
-	  press_cyl_y[j] = press_cyl_y_temp[i];
-	  break;
-	}
+        if (press_cyl_y[count1] < press_cyl_y[j])
+        {
+          for(int k=count1-1;k>=j;k--)
+            press_cyl_y[k+1] = press_cyl_y[k];
+          press_cyl_y[j] = press_cyl_y_tmp[i];
+          break;
+        }
       }
       count1++;
     }
   }
 }
 
-void sort_left_right(int press_nodes, int &count1, double* &press_cyl_x, double* &press_cyl_y,
-     double *press_cyl_x_temp, double *press_cyl_y_temp, double val)
+void sort_back(size_t n_pres_nodes, int &count1, double* &press_cyl_x, double* &press_cyl_y,
+     double *press_cyl_x_tmp, double *press_cyl_y_tmp)
 {
   int count = count1;
-  for(int i=0; i< press_nodes; i++)
+  for(size_t i=0;i<n_pres_nodes;i++)
   {
-    if(fabs(press_cyl_y_temp[i]-val) < 1e-5)
+    // back side
+    if (fabs(press_cyl_x_tmp[i]-0.55) < 1e-5)
     {
-      press_cyl_x[count1] = press_cyl_x_temp[i];
-      press_cyl_y[count1] = press_cyl_y_temp[i];
+      press_cyl_x[count1] = press_cyl_x_tmp[i];
+      press_cyl_y[count1] = press_cyl_y_tmp[i];
       // correct order
-      for (int j=count;j<count1;j++)
+      for(int j=count;j<count1;j++)
       {
-	if (press_cyl_x[count1] < press_cyl_x[j] ||
-	    press_cyl_x[count1] > press_cyl_x[j] )
-	{
-	  for(int k=count1-1;k>=j;k--)
-	    press_cyl_x[k+1] = press_cyl_x[k];
-	  press_cyl_x[j] = press_cyl_x_temp[i];
-	  break;
-	}
+        if (press_cyl_y[count1] > press_cyl_y[j])
+        {
+          for(int k=count1-1;k>=j;k--)
+            press_cyl_y[k+1] = press_cyl_y[k];
+          press_cyl_y[j] = press_cyl_y_tmp[i];
+          break;
+        }
+      }
+      count1++;
+    }
+  }
+}
+
+void sort_right(size_t n_pres_nodes, int &count1, double* &press_cyl_x, double* &press_cyl_y,
+     double *press_cyl_x_tmp, double *press_cyl_y_tmp)
+{
+  int count = count1;
+  for(size_t i=0;i<n_pres_nodes;i++)
+  {
+    if (fabs(press_cyl_y_tmp[i]-0.65) < 1e-5)
+    {
+      press_cyl_x[count1] = press_cyl_x_tmp[i];
+      press_cyl_y[count1] = press_cyl_y_tmp[i];
+      // correct order
+      for(int j=count;j<count1;j++)
+      {
+        if (press_cyl_x[count1] > press_cyl_x[j])
+        {
+          for(int k=count1-1;k>=j;k--)
+            press_cyl_x[k+1] = press_cyl_x[k];
+          press_cyl_x[j] = press_cyl_x_tmp[i];
+          break;
+        }
+      }
+      count1++;
+    }
+  }
+}
+
+void sort_left(size_t n_pres_nodes, int &count1, double* &press_cyl_x, double* &press_cyl_y,
+     double *press_cyl_x_tmp, double *press_cyl_y_tmp)
+{
+  int count = count1;
+  for(size_t i=0;i<n_pres_nodes;i++)
+  {
+    if (fabs(press_cyl_y_tmp[i]-0.75) < 1e-5)
+    {
+      press_cyl_x[count1] = press_cyl_x_tmp[i];
+      press_cyl_y[count1] = press_cyl_y_tmp[i];
+      // correct order
+      for(int j=count;j<count1;j++)
+      {
+        if (press_cyl_x[count1] < press_cyl_x[j])
+        {
+          for(int k=count1-1;k>=j;k--)
+            press_cyl_x[k+1] = press_cyl_x[k];
+          press_cyl_x[j] = press_cyl_x_tmp[i];
+          break;
+        }
       }
       count1++;
     }
@@ -81,7 +131,7 @@ void sort_left_right(int press_nodes, int &count1, double* &press_cyl_x, double*
 void sort_velo(size_t n_center_velo, double* center_velo, double* center_velo_tmp)
 {
   int count=0;
-  for (size_t i=0;i<n_center_velo;i++)
+  for(size_t i=0;i<n_center_velo;i++)
   {
     center_velo[count] = center_velo_tmp[i];
     // correct order
@@ -89,7 +139,7 @@ void sort_velo(size_t n_center_velo, double* center_velo, double* center_velo_tm
     {
       if (center_velo[count] < center_velo[j])
       {
-	for (int k=count-1;k>=j;k--)
+	for(int k=count-1;k>=j;k--)
 	  center_velo[k+1] = center_velo[k];
 	center_velo[j] = center_velo_tmp[i];
 	break;
@@ -114,9 +164,12 @@ void Cylinder_Square::setParameters(ParameterDatabase& db_)
   reynolds_number = renr;
 }
 
-void Cylinder_Square::get_Drag_Lift(const Time_NSE3D& tnse3d, double &cdrag, double & clift)
+void Cylinder_Square::get_Drag_Lift(TFEFunction3D *u1, TFEFunction3D *u2,
+             TFEFunction3D *u3, TFEFunction3D *p,
+             TFEFunction3D *u1old, TFEFunction3D *u2old,
+             double &cdrag, double &clift, const double dt)
 {
-#ifdef _MPI
+  #ifdef _MPI
   MPI_Comm comm = MPI_COMM_WORLD;
   int my_rank;
   MPI_Comm_rank(comm, &my_rank);
@@ -124,38 +177,32 @@ void Cylinder_Square::get_Drag_Lift(const Time_NSE3D& tnse3d, double &cdrag, dou
   int my_rank = 0;
 #endif
 
-  const TFEFunction3D& p(tnse3d.get_pressure()); 
-  const double *pval = p.GetValues();
+  const double *pval = p->GetValues();
   
-  TFEFunction3D* u1 = tnse3d.get_velocity().GetComponent(0);
   double* valu1 = u1->GetValues();
-  TFEFunction3D* u2 = tnse3d.get_velocity().GetComponent(1);
   double* valu2 = u2->GetValues();
-  TFEFunction3D* u3 = tnse3d.get_velocity().GetComponent(2);
   double* valu3 = u3->GetValues();
   
-  TFEFunction3D* u1old = tnse3d.get_old_velocity().GetComponent(0);
   double* oldvalu1 = u1old->GetValues();
-  TFEFunction3D* u2old = tnse3d.get_old_velocity().GetComponent(1);
   double* oldvalu2 = u2old->GetValues();
+  //double reynolds_number = DIMENSIONLESS_VISCOSITY;
   
-  const double dt = tnse3d.get_time_stepping_scheme().get_step_length();
   if ( dt < 1e-8)
   {
     OutPut("time step to small " << endl);
     exit(4711);
   }
   
-  const TFESpace3D vel_space = tnse3d.get_velocity_space();
-  TCollection *coll = vel_space.GetCollection();
+  const TFESpace3D* vel_space = u1->GetFESpace3D();
+  TCollection *coll = vel_space->GetCollection();
   size_t nCells=coll->GetN_Cells();
   TBaseCell* cell;
   TJoint* joint;
   TBoundFace* boundface;
   TBoundComp3D *BoundComp;
   
-  int* UGlobalNumbers = vel_space.GetGlobalNumbers();
-  int* UBeginIndex = vel_space.GetBeginIndex();
+  int* UGlobalNumbers = vel_space->GetGlobalNumbers();
+  int* UBeginIndex = vel_space->GetBeginIndex();
   std::vector<double> v(u1->GetLength(), 0.);
   
   for(size_t i=0; i<nCells; i++)
@@ -167,26 +214,26 @@ void Cylinder_Square::get_Drag_Lift(const Time_NSE3D& tnse3d, double &cdrag, dou
       joint = cell->GetJoint(j);
       if ((joint->GetType() == BoundaryFace)) //(joint->GetType() == IsoBoundface)) // boundary edge 
       {
-	boundface = (TBoundFace *)joint;  
+        boundface = (TBoundFace *)joint;  
         BoundComp = boundface->GetBoundComp();  // get boundary component
         int comp=BoundComp->GetID();              // boundary id 
         if ((comp>=4)&&(comp<=7)) 
-	{
-	  FE3D FEEle = vel_space.GetFE3D(i,cell);   // finite element of cell
-	  TFE3D* eleCell =  TFEDatabase3D::GetFE3D(FEEle); 
-	  TFEDesc3D* FEDesc = eleCell->GetFEDesc3D();   // fe descriptor
-	  int N_DOF_Circ = FEDesc->GetN_JointDOF(); // # local dofs on joints
-	  int* DOF_Circ = FEDesc->GetJointDOF(j); // local dofs on joint j
-	  int* DOF = UGlobalNumbers + UBeginIndex[i]; // pointer to global dofs
-	  for (int k=0;k<N_DOF_Circ;k++)         // set fe on circle to 1 
-	    v[DOF[DOF_Circ[k]]] = 1.;
-	}
+        {
+          FE3D FEEle = vel_space->GetFE3D(i,cell);   // finite element of cell
+          TFE3D* eleCell =  TFEDatabase3D::GetFE3D(FEEle); 
+          TFEDesc3D* FEDesc = eleCell->GetFEDesc3D();   // fe descriptor
+          int N_DOF_Circ = FEDesc->GetN_JointDOF(); // # local dofs on joints
+          int* DOF_Circ = FEDesc->GetJointDOF(j); // local dofs on joint j
+          int* DOF = UGlobalNumbers + UBeginIndex[i]; // pointer to global dofs
+          for(int k=0;k<N_DOF_Circ;k++)         // set fe on circle to 1 
+            v[DOF[DOF_Circ[k]]] = 1.;
+        }
       }
     }
   }
   cdrag = 0.; clift = 0.;
   FE3D LocalUsedElements[2];
-  const TFESpace3D pres_space = tnse3d.get_pressure_space();
+  const TFESpace3D* pres_space = p->GetFESpace3D();;
   bool SecondDer[2] = { false, false};
   int N_Points;
   double *weights, *xi, *eta, *zeta;
@@ -199,8 +246,8 @@ void Cylinder_Square::get_Drag_Lift(const Time_NSE3D& tnse3d, double &cdrag, dou
   BaseFunct3D* BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
   int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
   
-  int* PGlobalNumbers = pres_space.GetGlobalNumbers();
-  int* PBeginIndex = pres_space.GetBeginIndex();
+  int* PGlobalNumbers = pres_space->GetGlobalNumbers();
+  int* PBeginIndex = pres_space->GetBeginIndex();
   
   int tmp = MaxN_BaseFunctions3D;
   std::vector<double> FEFVal(tmp);
@@ -234,8 +281,8 @@ void Cylinder_Square::get_Drag_Lift(const Time_NSE3D& tnse3d, double &cdrag, dou
     // find local used elements on this cell
     // ####################################################################
     int N_LocalUsedElements = 2;
-    LocalUsedElements[0] = vel_space.GetFE3D(i, cell);
-    LocalUsedElements[1] = pres_space.GetFE3D(i, cell);
+    LocalUsedElements[0] = vel_space->GetFE3D(i, cell);
+    LocalUsedElements[1] = pres_space->GetFE3D(i, cell);
     
     TFEDatabase3D::GetOrig(N_LocalUsedElements, LocalUsedElements, coll, cell, SecondDer,
           N_Points, xi, eta, zeta, weights, X.data(), Y.data(), Z.data(), AbsDetjk.data());
@@ -255,7 +302,7 @@ void Cylinder_Square::get_Drag_Lift(const Time_NSE3D& tnse3d, double &cdrag, dou
       double *Orig = OrigVals[j];
       double value = 0.;
       for(int l=0; l<N_; l++)
-	value += FEFVal[l] * Orig[l];
+        value += FEFVal[l] * Orig[l];
       
       Derivatives[j][0] = value;
     }
@@ -283,7 +330,7 @@ void Cylinder_Square::get_Drag_Lift(const Time_NSE3D& tnse3d, double &cdrag, dou
         double value2 = 0.;
         double value3 = 0.;
         double value4 = 0.;
-	for(int l=0;l<N_;l++)
+        for(int l=0;l<N_;l++)
         {
           value1 += FEFVal1[l] * Orig[l];
           value2 += FEFVal2[l] * Orig[l];
@@ -294,18 +341,18 @@ void Cylinder_Square::get_Drag_Lift(const Time_NSE3D& tnse3d, double &cdrag, dou
         Derivatives[j][k+5] = value2;
         Derivatives[j][k+9] = value3;
         Derivatives[j][k+13] = value4;
-	if(k==0)
-	{
-	  value1 = 0.;
-	  value2 = 0.;
-	  for(int l=0;l<N_;l++)
-	  {
-	    value1 += FEFVal5[l] * Orig[l];
-	    value2 += FEFVal6[l] * Orig[l];
-	  }// endfor l
-	  Derivatives[j][17] = value1;
-	  Derivatives[j][18] = value2;
-	}//endif 
+        if(k==0)
+        {
+          value1 = 0.;
+          value2 = 0.;
+          for(int l=0;l<N_;l++)
+          {
+            value1 += FEFVal5[l] * Orig[l];
+            value2 += FEFVal6[l] * Orig[l];
+          }// endfor l
+          Derivatives[j][17] = value1;
+          Derivatives[j][18] = value2;
+        }//endif 
       }//endfor j
     }//endfor k
     // calculation
@@ -315,14 +362,14 @@ void Cylinder_Square::get_Drag_Lift(const Time_NSE3D& tnse3d, double &cdrag, dou
 
       // nu * (u1_x*v_x+ u1_y*v_y + u1_z*v_z), v= (v,0,0)
       double value1  = (Der[1]-Der[17])*Der[13]/dt 
-	+ reynolds_number*(Der[2]*Der[14]+Der[3]*Der[15]+Der[4]*Der[16]);
+        + reynolds_number*(Der[2]*Der[14]+Der[3]*Der[15]+Der[4]*Der[16]);
       // (u1 * u1_x + u2* u1_y + u3* u1_z) * (1,0,0)
       value1 += (Der[1]*Der[2]+Der[5]*Der[3]+Der[9]*Der[4])*Der[13];
       // pressure times divergence of test function (1,0,0)
       value1 -= Der[0]*Der[14];
 
       double value2  = (Der[5]-Der[18])*Der[13]/dt  + 
-	reynolds_number*(Der[6]*Der[14]+Der[7]*Der[15]+Der[8]*Der[16]);
+        reynolds_number*(Der[6]*Der[14]+Der[7]*Der[15]+Der[8]*Der[16]);
       value2 += (Der[1]*Der[6]+Der[5]*Der[7]+Der[9]*Der[8])*Der[13];
       value2 -= Der[0]*Der[15];
 
@@ -362,9 +409,9 @@ double Cylinder_Square::get_p_diff(const std::array< double, int(3) >& point_A,
 
 #ifdef _MPI
   {//this whole scope is only of interest in mpi case
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int my_rank;
-    MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank;
+  MPI_Comm_rank(comm, &my_rank);
 
     //find out two processes which contain the points of interest
     int proc_A = p.GetFESpace3D()->GetCollection()->find_process_of_point(0.45, 0.2, 0.205);
@@ -403,19 +450,46 @@ double Cylinder_Square::get_p_diff(const std::array< double, int(3) >& point_A,
   return pdiff;
 }
 
-void Cylinder_Square::compute_drag_lift_pdiff(const Time_NSE3D& tnse3d)
+void Cylinder_Square::compute_drag_lift_pdiff(Time_NSE3D& tnse3d)
 {
-  // compute drag, lift
-  double cd, cl;
-  get_Drag_Lift(tnse3d, cd, cl);
-  // compute pressure difference
+  #ifdef _MPI
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank;
+  MPI_Comm_rank(comm, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+  //compute drag and lift and print them
+  double drag, lift;
+
+  const TFEVectFunct3D& u(tnse3d.get_velocity());
+  TFEFunction3D& p(tnse3d.get_pressure()); //I want this const!!!
+  
+  const TFEVectFunct3D& uold (tnse3d.get_old_velocity());
+
+  TFEFunction3D* u1 = u.GetComponent(0);
+  TFEFunction3D* u2 = u.GetComponent(1);
+  TFEFunction3D* u3 = u.GetComponent(2);
+  
+  TFEFunction3D* u1old = uold.GetComponent(0);
+  TFEFunction3D* u2old = uold.GetComponent(1);
+
+  const double dt = tnse3d.get_time_stepping_scheme().get_step_length();
+  // compute drag lift
+  get_Drag_Lift(u1, u2, u3, &p, 
+                  u1old, u2old, drag, lift, dt);
+
+
   std::array<double,3> point_A = {{0.45, 0.2, 0.205}};
   std::array<double,3> point_B = {{0.55, 0.2, 0.205}};
-  const TFEFunction3D& p(tnse3d.get_pressure()); 
-  
+
   double pdiff = get_p_diff(point_A, point_B, p);
-  double ct = tnse3d.get_time_stepping_scheme().current_time_;
-  Output::print<1>(ct, " Drag: ", setprecision(16), cd, " ", cl, " ", pdiff);
+
+  if(my_rank == 0)
+  {
+    double ct = tnse3d.get_time_stepping_scheme().current_time_;
+    Output::print<1>(ct, " Drag: ", setprecision(16), drag, " ", lift, " ", pdiff);
+  }
 }
 
 
@@ -443,7 +517,7 @@ void Cylinder_Square::PrepareCenterlineVelocities(TCollection* coll)
 	found = 0;
 	found1 = 1;
 	xc += x[j];
-	for (int k=0;k<=count;k++)
+	for(int k=0;k<=count;k++)
 	{
 	  if((fabs(center_velo_tmp[k]-x[j]) < 1e-5))
 	  {
@@ -466,7 +540,7 @@ void Cylinder_Square::PrepareCenterlineVelocities(TCollection* coll)
     {
       found = 0;
       xc/=4;
-      for (int k=0;k<=count;k++)
+      for(int k=0;k<=count;k++)
       {
 	if ((fabs(center_velo_tmp[k]-xc)<1e-5))
 	{
@@ -546,14 +620,14 @@ void Cylinder_Square::CenterlineVelocities(Time_NSE3D& tnse3d)
     // coordiante in the center
     if(found)
     {
-      for (int j=0;j<nv;j++)
+      for(int j=0;j<nv;j++)
       {
-	for (int j1=j+1;j1<nv;j1++)
+	for(int j1=j+1;j1<nv;j1++)
 	{
 	  if ((fabs(y[j]-0.7)<1e-5)&&(fabs(y[j1]-0.7)<1e-5) && (fabs(z[j]-z[j1])<1e-5))
 	  {
 	    double xc = (x[j]+x[j1])/2.0;
-	    for (size_t k=0;k<n_center_velo;k++)
+	    for(size_t k=0;k<n_center_velo;k++)
 	    {
 	      if (fabs(center_velo[k]-xc)<1e-5)
 	      {
@@ -577,7 +651,7 @@ void Cylinder_Square::CenterlineVelocities(Time_NSE3D& tnse3d)
     }
   }
   double ct = tnse3d.get_time_stepping_scheme().current_time_;
-  for (size_t i=0;i<n_center_velo;i++)
+  for(size_t i=0;i<n_center_velo;i++)
   {
     center_velo_x[i]/=center_velo_num[i];
     center_velo_y[i]/=center_velo_num[i];
@@ -615,7 +689,7 @@ void Cylinder_Square::PrepareVelocityAtCylinder(TCollection* coll)
 	found = 0;
 	found1 = 1;
 	yc += y[j];
-	for (int k=0;k<=count;k++)
+	for(int k=0;k<=count;k++)
 	{
 	  if((fabs(center_velo_tmp[k]-y[j]) < 1e-5))
 	  {
@@ -638,7 +712,7 @@ void Cylinder_Square::PrepareVelocityAtCylinder(TCollection* coll)
     {
       found = 0;
       yc/=4;
-      for (int k=0;k<=count;k++)
+      for(int k=0;k<=count;k++)
       {
 	if ((fabs(center_velo_tmp[k]-yc)<1e-5))
 	{
@@ -707,14 +781,14 @@ void Cylinder_Square::VelocityAtCylinder(Time_NSE3D& tnse3d)
     // coordiante in the center
     if(found)
     {
-      for (int j=0;j<nv;j++)
+      for(int j=0;j<nv;j++)
       {
-        for (int j1=j+1;j1<nv;j1++)
+        for(int j1=j+1;j1<nv;j1++)
         {
           if ((fabs(x[j]-0.5)<1e-5)&&(fabs(x[j1]-0.5)<1e-5) && (fabs(z[j]-z[j1])<1e-5))
           {
             double yc = (y[j]+y[j1])/2.0;
-            for (size_t k=0;k<n_cyl_velo;k++)
+            for(size_t k=0;k<n_cyl_velo;k++)
             {
               if (fabs(cyl_velo[k]-yc)<1e-5)
               {
@@ -733,110 +807,107 @@ void Cylinder_Square::VelocityAtCylinder(Time_NSE3D& tnse3d)
     }
   }
   double ct = tnse3d.get_time_stepping_scheme().current_time_;
-  for (size_t i=0;i<n_cyl_velo;i++)
+  for(size_t i=0;i<n_cyl_velo;i++)
   {
     cyl_velo_x[i] /= cyl_velo_num[i];
     cyl_velo[n_cyl_velo+i] = counter_av_single * cyl_velo[n_cyl_velo+i]/(counter_av_single+1)
                                    + cyl_velo_x[i]/(counter_av_single+1);
-    Output::print(ct, " c_vel ", cyl_velo[i], " ", cyl_velo_x[i], " ", cyl_velo[n_cyl_velo+i]);
+    Output::print(ct, " cyl_v ", cyl_velo[i], " ", cyl_velo_x[i], " ", cyl_velo[n_cyl_velo+i]);
   }
   counter_av_single++;
 }
 
 
-void Cylinder_Square::PreparePressureAtCylinder(TCollection* coll)
+void Cylinder_Square::PreparePressureAtCylinder(const TCollection* coll)
 {
   const int max_entries = 257;
-  size_t nCells = coll->GetN_Cells();
-  TBaseCell* cell;
-  TJoint* joint;
-  TBoundFace* boundface;
-  TBoundComp3D* boundcomp;
-  int count=0, found;
-  double sx=0., sy=0.;
-  double press_cyl_x_tmp[max_entries];
-  double press_cyl_y_tmp[max_entries];
-  for(size_t i=0; i<nCells; i++)
+  int found;
+  double press_cyl_x_tmp[max_entries], press_cyl_y_tmp[max_entries];
+  TBaseCell *cell;
+  TJoint *joint;
+  TBoundFace *boundface;
+  TBoundComp3D *BoundComp;
+  TVertex *vertex;
+  
+  size_t N_Cells = coll->GetN_Cells();
+  double sx, sy;
+  int count = 0;
+  for(size_t i=0;i<N_Cells;i++)
   {
     cell = coll->GetCell(i);
-    int n_faces  = cell->GetN_Faces();
-    for(int j=0; j<n_faces; j++)
+    int N_Faces=cell->GetN_Faces();
+    for(int j=0;j<N_Faces;j++)              // loop over all edges of cell
     {
-      joint = cell->GetJoint(j);
-      if((joint->GetType() == BoundaryFace))
+      joint=cell->GetJoint(j);
+      if ((joint->GetType() == BoundaryFace))
       {
-	boundface = (TBoundFace *)joint;  
-	boundcomp = boundface->GetBoundComp();  // get boundary component
-	int comp=boundcomp->GetID();              // boundary id 
-	if ((comp>=4)&&(comp<=7)) 
-	{
-	  int nv = cell->GetN_Vertices();
-	  double sx0 = 0.; double sy0 =0.; 
-	  double sx1 = 0.; double sy1 =0.;
-	  int nodesx = 0; int nodesy = 0;
-	  // find vertices on the boundary, compute barycenter of boundary faces
-	  for (int k=0;k<nv;k++)
-	  {
-	    double x, y, z;
-	    cell->GetVertex(k)->GetCoords(x,y,z);
-	    if ((fabs(x-0.45)<1e-5)||(fabs(x-0.55)<1e-5))
-	    {
-	      sx0 += x; sy0 += y; nodesx++;
-	    }
-	    if ((fabs(y-0.65)<1e-5)||(fabs(y-0.75)<1e-5))
-	    {
-	      sx1 += x; sy1 += y; nodesy++;
-	    }
-	  }
-	  if (nodesx==4)
-	  {
-	    sx = sx0/4; sy = sy0/4;
-	  }
-	  if (nodesy==4)
-	  {
-	    sx = sx1/4;sy = sy1/4;
-	  }
-	  found = 0;
-	  for (int k=0;k<=count;k++)
-	  {
-	    if ((fabs(press_cyl_x_tmp[k]-sx)<1e-5) && (fabs(press_cyl_y_tmp[k]-sy)<1e-5))
-	    {
-	      found++; break;
-	    }
-	  }
-	  // new entry
-	  if (!found)
-	  {
-	    press_cyl_x_tmp[count] = sx;
-	    press_cyl_y_tmp[count] = sy;
-	    count++;
-	    if (count >= max_entries)
-	      ErrThrow("PreparePressureAtCylinder: max_entries too small ", max_entries);
-	  }
-	}//endif comp>=4
-      }//endif joint type
+        boundface = (TBoundFace *)joint;  
+        BoundComp = boundface->GetBoundComp();  // get boundary component
+        int comp=BoundComp->GetID();              // boundary id 
+        if ((comp>=4)&&(comp<=7)) 
+        {
+          int nv = cell->GetN_Vertices();
+          double sx0=0.; double sy0 =0.; double sx1 =0.; double sy1 = 0.0;
+          int nodesx = 0; int nodesy = 0;
+          // find vertices on the boundary
+          // compute barycenter of boundary faces
+          for(int k=0;k<nv;k++)
+          {
+            double x, y, z;
+            cell->GetVertex(k)->GetCoords(x,y,z);
+            if ((fabs(x-0.45)<1e-5)||(fabs(x-0.55)<1e-5))
+            {
+              sx0 += x; sy0 += y; nodesx++;
+            }
+            if ((fabs(y-0.65)<1e-5)||(fabs(y-0.75)<1e-5))
+            {
+              sx1 += x; sy1 += y; nodesy++;
+            }
+          }
+          if (nodesx==4)
+          {
+            sx = sx0/4; sy = sy0/4;
+          }
+          if (nodesy==4)
+          {
+            sx = sx1/4; sy = sy1/4;
+          }
+          found = 0;
+          for(int k=0;k<=count;k++)
+          {
+            if ((fabs(press_cyl_x_tmp[k]-sx)<1e-5) && (fabs(press_cyl_y_tmp[k]-sy)<1e-5))
+            {
+              found++; break;
+            }
+          }
+          // new entry
+          if (!found)
+          {
+            press_cyl_x_tmp[count] = sx;
+            press_cyl_y_tmp[count] = sy;
+            count++;
+            if (count >= max_entries)
+              ErrThrow("PreparePressureAtCylinder: max_entries too small ", max_entries );
+          }
+        }
+      }
     }
-  }//endfor cells
-  
+  }
+  // allocate array and initialize
   n_pres_nodes = count;
-  press_cyl.resize(3*count, 0.);
-  
+  press_cyl.resize(3*count);// = new double[3*count];
   double* press_cyl_x = press_cyl.data();
   double* press_cyl_y = press_cyl.data() + count;
-  
-  int count1 = 0;
+  memset(press_cyl_y+count, 0, count*sizeof(double));
+  count = 0;
   // sort front 
-  double val = 0.45;
-  sort_front_back(n_pres_nodes, count1, press_cyl_x, press_cyl_y, press_cyl_x_tmp, press_cyl_y_tmp, val);
-  // sorting left
-  val  = 0.75;
-  sort_left_right(n_pres_nodes, count1, press_cyl_x, press_cyl_y, press_cyl_x_tmp, press_cyl_y_tmp, val);
-  // sorting back
-  val = 0.55;
-  sort_front_back(n_pres_nodes, count1, press_cyl_x, press_cyl_y, press_cyl_x_tmp, press_cyl_y_tmp, val);
-  // sorting right
-  val = 0.65;
-  sort_left_right(n_pres_nodes, count1, press_cyl_x, press_cyl_y, press_cyl_x_tmp, press_cyl_y_tmp, val);
+  sort_front(n_pres_nodes, count, press_cyl_x, press_cyl_y, press_cyl_x_tmp, press_cyl_y_tmp);
+  // sort left 
+  sort_left(n_pres_nodes, count, press_cyl_x, press_cyl_y, press_cyl_x_tmp, press_cyl_y_tmp);
+  // sort back 
+  sort_back(n_pres_nodes, count, press_cyl_x, press_cyl_y, press_cyl_x_tmp, press_cyl_y_tmp);
+  // sort right
+  sort_right(n_pres_nodes, count, press_cyl_x, press_cyl_y, press_cyl_x_tmp, press_cyl_y_tmp);
   //print_("a", press_cyl);
   //exit(0);
   //print_("x", press_cyl);
@@ -878,7 +949,7 @@ void Cylinder_Square::PressureAtCylinder(Time_NSE3D& tnse3d)
           double sx1 = 0.; double sy1 =0.; double sz1=0.;
           int nodesx = 0; int nodesy = 0;
           // find vertices on the boundary, compute barycenter of boundary faces
-          for (int k=0;k<nv;k++)
+          for(int k=0;k<nv;k++)
           {
             double x, y, z;
             cell->GetVertex(k)->GetCoords(x,y,z);
@@ -899,7 +970,7 @@ void Cylinder_Square::PressureAtCylinder(Time_NSE3D& tnse3d)
           {
             sx = sx1/4;sy = sy1/4; sz = sz1/4;
           }
-          for (size_t k=0;k<=n_pres_nodes;k++)
+          for(size_t k=0;k<=n_pres_nodes;k++)
           {
             if ((fabs(press_cyl_x[k]-sx)<1e-5) && (fabs(press_cyl_y[k]-sy)<1e-5))
             {
@@ -913,36 +984,45 @@ void Cylinder_Square::PressureAtCylinder(Time_NSE3D& tnse3d)
       }//endif joint type
     }
   }//endfor cells
-  
+  /*
+   cout<<"no of " <<counter_av_pres<< "  " << count_pres_num.size()<<" " << n_pres_nodes<<endl;
+  for(int i=0; i<n_pres_nodes;i++)
+    cout<<"i " <<count_pres_num[i]<< " " << press_cyl_tmp[i] <<" " << press_cyl_val[i]<<endl;
+  */
   for(size_t i=0; i<n_pres_nodes; i++)
     press_cyl_tmp[i] /= count_pres_num[i];
   double ct = tnse3d.get_time_stepping_scheme().current_time_;
 
-  for (size_t i=0; i<n_pres_nodes; i++)
+  for(size_t i=0; i<n_pres_nodes; i++)
   {
       press_cyl_val[i] = counter_av_pres *(press_cyl_val[i]) /(counter_av_pres+1)  
                            + press_cyl_tmp[i]/ (counter_av_pres+1);
       Output::print<1>(ct, " p_cyl ", press_cyl_tmp[i], " ", press_cyl_val[i]);
   }
-  counter_av_pres++;  
+  counter_av_pres++;
 }
 
 
 void Cylinder_Square::SetNoPenetrationValues(Time_NSE3D& tnse3d)
 {
+  cout<<"setting No SetNoPenetrationValues"<<endl;
   TFEFunction3D* u2 = tnse3d.get_velocity().GetComponent(1);
   double* valu2 = u2->GetValues();
   // diagonal matrices only A11, A22, A33
-  const int *rowPtr = tnse3d.get_system_matrix_().get_blocks().at(5)->GetRowPtr();
-  const int *kCol = tnse3d.get_system_matrix_().get_blocks().at(5)->GetKCol();
-  const double *entries = tnse3d.get_system_matrix_().get_blocks().at(5)->GetEntries();
-  const int nrows = tnse3d.get_system_matrix_().get_blocks().at(5)->GetN_Rows();
+  std::vector<std::shared_ptr<FEMatrix>> blocks 
+         = tnse3d.get_system_matrix_().get_blocks_uniquely();
+         
+  int *rowPtr = blocks.at(5)->GetRowPtr();
+  int *kCol = blocks.at(5)->GetKCol();
+  double *entries = blocks.at(5)->GetEntries();
+  int nrows = blocks.at(5)->GetN_Rows();
   
   const double dt = tnse3d.get_time_stepping_scheme().get_step_length();
   TCollection * coll = tnse3d.get_velocity_space().GetCollection();
   double hmin, hmax;
   coll->GetHminHmax(&hmin, &hmax);
   double comp = TDatabase::ParamDB->PENETRATION_CONSTANT * hmin * dt/8.;
+
   for(int i=0; i<nrows; i++)
   {
     for(int j=rowPtr[i]; j<rowPtr[i+1]; j++)
@@ -957,12 +1037,11 @@ void Cylinder_Square::SetNoPenetrationValues(Time_NSE3D& tnse3d)
   TFEFunction3D* u3 = tnse3d.get_velocity().GetComponent(2);
   double* valu3 = u3->GetValues();  
   
-  rowPtr = tnse3d.get_system_matrix_().get_blocks().at(10)->GetRowPtr();
-  kCol = tnse3d.get_system_matrix_().get_blocks().at(10)->GetKCol();
-  entries = tnse3d.get_system_matrix_().get_blocks().at(10)->GetEntries();
-  tnse3d.get_system_matrix_().get_blocks().at(10)->GetN_Rows();
-  
-  comp = TDatabase::ParamDB->PENETRATION_CONSTANT * hmin * dt/8.;
+  rowPtr = blocks.at(10)->GetRowPtr();
+  kCol = blocks.at(10)->GetKCol();
+  entries = blocks.at(10)->GetEntries();
+  nrows = blocks.at(10)->GetN_Rows();
+
   for(int i=0; i<nrows; i++)
   {
     for(int j=rowPtr[i]; j<rowPtr[i+1]; j++)
@@ -977,7 +1056,7 @@ void Cylinder_Square::SetNoPenetrationValues(Time_NSE3D& tnse3d)
 
 
 
-void Cylinder_Square::ComputeFrictionVelocities(Time_NSE3D& tnse3d)
+void Cylinder_Square::ComputeFrictionVelocities(const Time_NSE3D& tnse3d)
 {
   TCollection * coll = tnse3d.get_velocity_space().GetCollection();
   size_t nCells = coll->GetN_Cells();
@@ -989,6 +1068,9 @@ void Cylinder_Square::ComputeFrictionVelocities(Time_NSE3D& tnse3d)
   double val[4], no[4];
   val[0]=val[1]=val[2]=val[3]=0.;
   no[0]=no[1]=no[2]=no[3]=0.;
+  
+  TFEFunction3D* u1 = tnse3d.get_velocity().GetComponent(0);
+  TFEFunction3D* u2 = tnse3d.get_velocity().GetComponent(1);
   
   for(size_t i=0; i<nCells; i++)
   {
@@ -1015,22 +1097,22 @@ void Cylinder_Square::ComputeFrictionVelocities(Time_NSE3D& tnse3d)
               switch(comp)
               {
                 case 4:
-                  tnse3d.get_velocity().GetComponent(0)->FindGradientLocal(cell, i, x, y, z, values);
+                  u1->FindGradientLocal(cell, i, x, y, z, values);
                   val[0] -= values[1];
                   no[0] +=1;
                   break;
                 case 5:
-                  tnse3d.get_velocity().GetComponent(1)->FindGradientLocal(cell, i, x, y, z, values);
+                  u2->FindGradientLocal(cell, i, x, y, z, values);
                   val[1] -= values[2];
                   no[1] +=1;
                   break;
                 case 6:
-                  tnse3d.get_velocity().GetComponent(0)->FindGradientLocal(cell, i, x, y, z, values);
+                  u1->FindGradientLocal(cell, i, x, y, z, values);
                   val[2] -= values[1];
                   no[2] +=1;
                   break;
                 case 7:
-                  tnse3d.get_velocity().GetComponent(1)->FindGradientLocal(cell, i, x, y, z, values);
+                  u2->FindGradientLocal(cell, i, x, y, z, values);
                   val[3] -= values[2];
                   no[3] +=1;
                   break;
