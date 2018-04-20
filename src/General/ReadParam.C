@@ -263,24 +263,6 @@ int TDomain::ReadParam(const char *ParamFile)
       N_Param++;  
     }
 
-    if (!strcmp(line, "VISCOSITY:"))
-    {
-      dat >> TDatabase::ParamDB->VISCOSITY;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "EFFECTIVE_VISCOSITY:"))
-    {
-      dat >> TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "PERMEABILITY:"))
-    {
-      dat >> TDatabase::ParamDB->PERMEABILITY;
-      N_Param++;
-    }
-
     if (!strcmp(line, "equal_order_stab_weight_PkPk:"))
     {
       dat >> TDatabase::ParamDB->equal_order_stab_weight_PkPk;

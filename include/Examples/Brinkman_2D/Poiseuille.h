@@ -8,6 +8,9 @@
    u(x,y) = (4y(1-y),0),
    p(x,y) = 0.5-x
  */
+double viscosity = -1;                                             
+double effective_viscosity = -1;                                               
+double permeability = -1;
 
 void ExampleFile()
 {
@@ -135,9 +138,9 @@ void LinCoeffs(int n_points, double *x, double *y,
   {
     coeff = coeffs[i];
 
-    coeff[4] = TDatabase::ParamDB->VISCOSITY;
-    coeff[5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    coeff[6] = TDatabase::ParamDB->PERMEABILITY;
+    coeff[4] = viscosity;
+    coeff[5] = effective_viscosity;
+    coeff[6] = permeability;
     coeff[0] = (coeff[5] / coeff[4]) * coeff[6];
     // if f1=coeff[1] is set to zero, we can see the effect of a change in the parameter t^2 in the solution,
     // but convergence rates are no longer meaningful since we do not know the analytical solution

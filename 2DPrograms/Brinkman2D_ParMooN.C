@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
   // LB NEW 17.04.18 start
   // TO DO define Brinkman or Example parameter in database spacially_varying_coefficient_function default false
   //bool use_spatially_varying_coefficient_function = true;
-  if (parmoon_db["coefficient_function_type"] == 1)
+  if (parmoon_db["coefficient_function_type"].is(1))
   {
     // create a FEFunction which will serve as the coefficient_function:
     auto coll = brinkman2d.get_pressure_space().GetCollection();
@@ -133,7 +133,6 @@ coefficient_function_ptr = &coefficient_function;
   //      Output::print("example: ",TDatabase::ParamDB->example);
   //      Output::print(": ",TDatabase::ParamDB->VELOCITY_SPACE);
   //      Output::print(": ",TDatabase::ParamDB->PRESSURE_SPACE);
-  //      Output::print("PERMEABILITY: ",TDatabase::ParamDB->PERMEABILITY);
   //      Output::print("n_neumann_boundary: ",TDatabase::ParamDB->n_neumann_boundary);
   //      Output::print("n_g_v_boundary: ",TDatabase::ParamDB->n_g_v_boundary);
   //      Output::print("n_u_v_boundary: ",TDatabase::ParamDB->n_u_v_boundary);
@@ -165,7 +164,7 @@ coefficient_function_ptr = &coefficient_function;
     parmoon_db.info();
     // LB NEW 16.04.18 start
     // TO DO define Brinkman or Example parameter in database spacially_varying_coefficient_function default false
-    if (parmoon_db["coefficient_function_type"] == 1)
+    if (parmoon_db["coefficient_function_type"].is(1))
     {
       // create a FEFunction which will serve as the coefficient_function:
       auto coll = brinkman2d.get_pressure_space().GetCollection();
@@ -208,7 +207,6 @@ coefficient_function_ptr = &coefficient_function;
     //      Output::print("example: ",TDatabase::ParamDB->example);
     //      Output::print(": ",TDatabase::ParamDB->VELOCITY_SPACE);
     //      Output::print(": ",TDatabase::ParamDB->PRESSURE_SPACE);
-    //      Output::print("PERMEABILITY: ",TDatabase::ParamDB->PERMEABILITY);
     //      Output::print("n_neumann_boundary: ",TDatabase::ParamDB->n_neumann_boundary);
     //      Output::print("n_g_v_boundary: ",TDatabase::ParamDB->n_g_v_boundary);
     //      Output::print("n_u_v_boundary: ",TDatabase::ParamDB->n_u_v_boundary);

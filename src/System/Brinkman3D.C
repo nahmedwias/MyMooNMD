@@ -25,13 +25,13 @@ ParameterDatabase get_default_Brinkman3D_parameters()
 {
     Output::print<5>("Creating a default Brinkman3D parameter database");
     
-    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-    db.set_name("Brinkman3D parameter database");
+    ParameterDatabase brinkman3d_db = ParameterDatabase::parmoon_default_database();
+    brinkman3d_db.set_name("Brinkman3D parameter database");
     
     ParameterDatabase out_db = ParameterDatabase::default_output_database();
-    db.merge(out_db, true);
+    brinkman3d_db.merge(out_db, true);
     
-    db.add("PkPk_stab", false,
+    brinkman3d_db.add("PkPk_stab", false,
            "Use an assembling routine corresponding to a residual-based "
            "equal-order stabilization for the Brinkman problem."
            "This only works in two space "
@@ -39,14 +39,14 @@ ParameterDatabase get_default_Brinkman3D_parameters()
            "Usually this is used in the main program.",
            {true,false});
     
-        db.add("equal_order_stab_weight_PkPk", 0,
+        brinkman3d_db.add("equal_order_stab_weight_PkPk", 0,
                "Use an assembling routine corresponding to a residual-based "
                "equal-order stabilization for the Brinkman problem."
                "This only works in two space "
                "dimensions and is meaningfull for the finite elemnt spaces P1/P1 and P2/P2 only."
                "Usually this is used in the main program.",-1000,1000);
     
-    return db;
+    return brinkman3d_db;
 }
 
 
@@ -162,15 +162,15 @@ Brinkman3D::Brinkman3D(const TDomain & domain,
 #endif
 int reference_id
 )
-: systems(), example(e), db(get_default_Brinkman3D_parameters()),
+: systems(), example(e), brinkman3d_db(get_default_Brinkman3D_parameters()),
 solver(param_db), defect(), initial_residual(1e10), norms_of_old_residuals(),
 errors()
 
 {
-    this->db.merge(param_db,true);
+    this->brinkman3d_db.merge(param_db, true);
     
     // more detailed output on the console:
-    // db.info(true);
+    // brinkman3d_db.info(true);
     
     std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                                  TDatabase::ParamDB->PRESSURE_SPACE);
@@ -250,15 +250,15 @@ Brinkman3D::Brinkman3D(std::list<TCollection* > collections,
 #endif
                         int reference_id
                        )
-: systems(), example(e), db(get_default_Brinkman3D_parameters()),
+: systems(), example(e), brinkman3d_db(get_default_Brinkman3D_parameters()),
 solver(param_db), defect(), initial_residual(1e10), norms_of_old_residuals(),
 errors()
 
 {
-    this->db.merge(param_db,false);
+    this->brinkman3d_db.merge(param_db, false);
     
     // set the argument to false for more detailed output on the console
-    // db.info(true);
+    // brinkman3d_db.info(true);
     
     std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                                  TDatabase::ParamDB->PRESSURE_SPACE);
@@ -481,7 +481,7 @@ void Brinkman3D::assemble()
         rect_matrices[5]->write("b3t.out");
         
         //----- Stabilizations
-        if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE==TDatabase::ParamDB->PRESSURE_SPACE)
+        if (brinkman3d_db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE==TDatabase::ParamDB->PRESSURE_SPACE)
         { 
             if (TDatabase::ParamDB->NSTYPE == 14)
               { 
@@ -517,7 +517,7 @@ void Brinkman3D::assemble()
             }
             else ErrThrow("WARNING: You have switched on Pk/Pk-stabilization, but therefore NSTYPE 14 has to be chosen - the matrix block C is needed.");
         }
-        else if(db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE != TDatabase::ParamDB->PRESSURE_SPACE)
+        else if(brinkman3d_db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE != TDatabase::ParamDB->PRESSURE_SPACE)
             ErrThrow("WARNING: You have switched on Pk/Pk-stabilization, but therefore velocity space order and pressure space order should be equal.");
         
         //delete the temorary feFunctions gained by GetComponent
@@ -571,9 +571,9 @@ void Brinkman3D::assemble()
         // Nitsche combination - weak Dirichlet
         for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
         {
-            double K = TDatabase::ParamDB->PERMEABILITY;
-            double nu = TDatabase::ParamDB->VISCOSITY;
-            double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+            double K = (double) brinkman3d_db["permeability"];
+            double nu = (double) brinkman3d_db["viscosity"];
+            double nu_eff = (double) brinkman3d_db["effective_viscosity"];
             double t = fabs(sqrt((nu_eff/nu)*K));
             if (nu/K < 1e-6) t = nu_eff;
             
@@ -581,7 +581,7 @@ void Brinkman3D::assemble()
                                 v_space,
                                 allCells,
                                 TDatabase::ParamDB->nitsche_boundary_id[k],     // boundary component
-                                -TDatabase::ParamDB->EFFECTIVE_VISCOSITY);
+                                -(double) brinkman3d_db["effective_viscosity"]);
             
             bi.matrix_u_v(s.matrix,
                           v_space,
@@ -604,7 +604,7 @@ void Brinkman3D::assemble()
                                 v_space,
                                 allCells,
                                 TDatabase::ParamDB->nitsche_boundary_id[k],
-                                -TDatabase::ParamDB->s1*TDatabase::ParamDB->EFFECTIVE_VISCOSITY);
+                                -TDatabase::ParamDB->s1 * (double) brinkman3d_db["effective_viscosity"]);
             
             bi.rhs_gradv_n_uD(s.rhs,
                               v_space,
@@ -613,7 +613,7 @@ void Brinkman3D::assemble()
                               nullptr, //this->example.get_bd(2),
                               allCells,
                               TDatabase::ParamDB->nitsche_boundary_id[k],
-                              -TDatabase::ParamDB->s1*TDatabase::ParamDB->EFFECTIVE_VISCOSITY);
+                              -TDatabase::ParamDB->s1 * (double) brinkman3d_db["effective_viscosity"]);
             
             bi.matrix_p_v_n(s.matrix,
                             v_space,
@@ -746,7 +746,7 @@ void Brinkman3D::solve()
     this->solver.solve(s.matrix, s.rhs, s.solution);
 #endif
 #ifdef _MPI
-    if(this->solver.get_db()["solver_type"].is("direct"))
+    if(this->solver.get_brinkman3d_db.)["solver_type"].is("direct"))
     {
         //set up a MUMPS wrapper
         MumpsWrapper mumps_wrapper(s.matrix);
@@ -786,7 +786,7 @@ void Brinkman3D::solve_with_Petsc(ParameterDatabase parmoon_db)
 //    this->solver.solve(s.matrix, s.rhs, s.solution);
 //#endif
 //#ifdef _MPI
-//    if(this->solver.get_db()["solver_type"].is("direct"))
+//    if(this->solver.get_brinkman3d_db.)["solver_type"].is("direct"))
 //    {
 //        //set up a MUMPS wrapper
 //        MumpsWrapper mumps_wrapper(s.matrix);
@@ -815,7 +815,7 @@ void Brinkman3D::output(int i)
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
     
-    bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+    bool no_output = !brinkman3d_db["output_write_vtk"] && !brinkman3d_db["output_compute_errors"];
     if( no_output )
         return;
     
@@ -825,7 +825,7 @@ void Brinkman3D::output(int i)
     TFEFunction3D* u3 = s.u.GetComponent(2);
     
     // print the value of the largest and smallest entry in the finite element vector
-    if( (size_t)db["verbosity"]> 1 )
+    if( (size_t)brinkman3d_db["verbosity"]> 1 )
     {
         u1->PrintMinMax(std::string("u1"));
         u2->PrintMinMax(std::string("u2"));
@@ -834,7 +834,7 @@ void Brinkman3D::output(int i)
     }
     
     // write solution to a vtk file
-    if(db["output_write_vtk"])
+    if(brinkman3d_db["output_write_vtk"])
     {
         // last argument in the following is domain, but is never used in this class
         TOutput3D Output(5, 5, 2, 1, nullptr);
@@ -843,15 +843,15 @@ void Brinkman3D::output(int i)
 #ifdef _MPI
         char SubID[] = "";
         if(my_rank == 0)
-            mkdir(db["output_vtk_directory"], 0777);
-        std::string dir = db["output_vtk_directory"];
-        std::string base = db["output_basename"];
+            mkdir(brinkman3d_db["output_vtk_directory"], 0777);
+        std::string dir = brinkman3d_db["output_vtk_directory"];
+        std::string base = brinkman3d_db["output_basename"];
         Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
 #else
         // Create output directory, if not already existing.
-        mkdir(db["output_vtk_directory"], 0777);
-        std::string filename = this->db["output_vtk_directory"];
-        filename += "/" + this->db["output_basename"].value_as_string();
+        mkdir(brinkman3d_db["output_vtk_directory"], 0777);
+        std::string filename = this->brinkman3d_db["output_vtk_directory"];
+        filename += "/" + this->brinkman3d_db["output_basename"].value_as_string();
         
         if(i >= 0)
             filename += "_" + std::to_string(i);
@@ -863,7 +863,7 @@ void Brinkman3D::output(int i)
     // measure errors to known solution
     // If an exact solution is not known, it is usually set to be zero, so that
     // in such a case here only integrals of the solution are computed.
-    if( db["output_compute_errors"] )
+    if( brinkman3d_db["output_compute_errors"] )
     {
         double err_u1[4]; // of these arrays only the two first entries are used,
         double err_u2[4]; // but the evil GetErrors() will corrupt memory if these
@@ -932,7 +932,7 @@ void Brinkman3D::output(int i)
             Output::dash("L2(p)     : ", setprecision(10), errors.at(2));
             Output::dash("H1-semi(p): ", setprecision(10), errors.at(3));
         }
-    }// if(this->db["compute_errors"])
+    }// if(this->brinkman3d_db["compute_errors"])
     delete u1;
     delete u2;
     delete u3;

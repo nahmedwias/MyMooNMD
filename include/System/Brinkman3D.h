@@ -117,7 +117,7 @@ protected:
      * other parameters such as solver parameters. Those are only in the
      * Solver object.
      */
-    ParameterDatabase db;
+    ParameterDatabase brinkman3d_db;
     
     /** @brief a solver object which will solve the linear system
      *
@@ -305,7 +305,7 @@ public:
     const int get_size(){return this->systems.front().solution.length();}
     
     const ParameterDatabase & get_db() const
-    { return db; }
+    { return brinkman3d_db; }
     
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;
