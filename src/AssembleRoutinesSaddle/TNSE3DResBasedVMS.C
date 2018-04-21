@@ -52,9 +52,9 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
   double *Orig6 = OrigValues[6]; // py
   double *Orig7 = OrigValues[7]; // pz
   
-  double *Orig8 = OrigValues[8];
-  double *Orig9 = OrigValues[9];
-  double *Orig10 = OrigValues[10];
+  // double *Orig8 = OrigValues[8];
+  // double *Orig9 = OrigValues[9];
+  // double *Orig10 = OrigValues[10];
     
   int N_U = N_BaseFuncts[0];
   int N_P = N_BaseFuncts[1];
@@ -82,31 +82,19 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
   double u2z=param[10];
   double u3z=param[11];
   
-  double u1xx=param[12];
-  double u2xx=param[13];
-  double u3xx=param[14];
+  //double p= param[12];
+  double px=param[13];
+  double py=param[14];
+  double pz=param[15];
   
-  double u1yy=param[15];
-  double u2yy=param[16];
-  double u3yy=param[17];
-  
-  double u1zz=param[18];
-  double u2zz=param[19];
-  double u3zz=param[20];
-  
-  //double p= param[21];
-  double px=param[22];
-  double py=param[23];
-  double pz=param[24];
-  
-  double u1td=param[25];
-  double u2td=param[26];
-  double u3td=param[27];
+  double u1td=param[16];
+  double u2td=param[17];
+  double u3td=param[18];
   
   
   double test100, test010, test001, test000;
   double ansatz100, ansatz010, ansatz001, ansatz000;
-  double ansatz200, ansatz020, ansatz002;
+  // double ansatz200, ansatz020, ansatz002;
   // stabilization parameters
   double tau_m, tau_c;
   
@@ -115,9 +103,9 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
   
   
   // old residual to be used Eq(51)
-  double res1 = tau_m *(c1 - u1td + c0*(u1xx + u1yy + u1zz) - (u1*u1x + u2*u1y + u3*u1z) - px );
-  double res2 = tau_m *(c2 - u2td + c0*(u2xx + u2yy + u2zz) - (u1*u2x + u2*u2y + u3*u2z) - py );
-  double res3 = tau_m *(c3 - u3td + c0*(u3xx + u3yy + u3zz) - (u1*u3x + u2*u3y + u3*u3z) - pz );
+  double res1 = tau_m *(c1 - u1td  - (u1*u1x + u2*u1y + u3*u1z) - px );
+  double res2 = tau_m *(c2 - u2td  - (u1*u2x + u2*u2y + u3*u2z) - py );
+  double res3 = tau_m *(c3 - u3td  - (u1*u3x + u2*u3y + u3*u3z) - pz );
   
   double *Matrix11Row, *Matrix12Row, *Matrix13Row; 
   double *Matrix21Row, *Matrix22Row, *Matrix23Row;
@@ -182,10 +170,10 @@ void TimeNSType4Residual_VMSDD3D(double Mult, double* coeff, double* param, doub
       // supg contribution
       val +=  ugradu * ugradv;
       // second cross term and subgrid term
-      ansatz200 = Orig8[j];
-      ansatz020 = Orig9[j];
-      ansatz002 = Orig10[j];
-      double laplacian = -c0*(ansatz200 + ansatz020 + ansatz002);
+      //ansatz200 = Orig8[j];
+      //ansatz020 = Orig9[j];
+      //ansatz002 = Orig10[j];
+      double laplacian = 0.;//-c0*(ansatz200 + ansatz020 + ansatz002);
       val += tau_m * (laplacian + ugradu)*(u1+res1)*test100;
       // grad div contribution
       val += tau_c*test100*ansatz100;
@@ -397,9 +385,9 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double* coeff, double* param, do
   double *Orig6 = OrigValues[6]; // py
   double *Orig7 = OrigValues[7]; // pz
   
-  double *Orig8 = OrigValues[8];
-  double *Orig9 = OrigValues[9];
-  double *Orig10 = OrigValues[10];
+  // double *Orig8 = OrigValues[8];
+  // double *Orig9 = OrigValues[9];
+  // double *Orig10 = OrigValues[10];
     
   int N_U = N_BaseFuncts[0];
   int N_P = N_BaseFuncts[1];
@@ -427,31 +415,19 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double* coeff, double* param, do
   double u2z=param[10];
   double u3z=param[11];
   
-  double u1xx=param[12];
-  double u2xx=param[13];
-  double u3xx=param[14];
+  //double p= param[12];
+  double px=param[13];
+  double py=param[14];
+  double pz=param[15];
   
-  double u1yy=param[15];
-  double u2yy=param[16];
-  double u3yy=param[17];
-  
-  double u1zz=param[18];
-  double u2zz=param[19];
-  double u3zz=param[20];
-  
-  //double p= param[21];
-  double px=param[22];
-  double py=param[23];
-  double pz=param[24];
-  
-  double u1td=param[25];
-  double u2td=param[26];
-  double u3td=param[27];
+  double u1td=param[16];
+  double u2td=param[17];
+  double u3td=param[18];
   
   
   double test100, test010, test001, test000;
   double ansatz100, ansatz010, ansatz001, ansatz000;
-  double ansatz200, ansatz020, ansatz002;
+  // double ansatz200, ansatz020, ansatz002;
   // stabilization parameters
   double tau_m, tau_c;
   
@@ -460,9 +436,9 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double* coeff, double* param, do
   
   
   // old residual to be used Eq(51)
-  double res1 = tau_m *(c1 - u1td + c0*(u1xx + u1yy + u1zz) - (u1*u1x + u2*u1y + u3*u1z) - px );
-  double res2 = tau_m *(c2 - u2td + c0*(u2xx + u2yy + u2zz) - (u1*u2x + u2*u2y + u3*u2z) - py );
-  double res3 = tau_m *(c3 - u3td + c0*(u3xx + u3yy + u3zz) - (u1*u3x + u2*u3y + u3*u3z) - pz );
+  double res1 = tau_m *(c1 - u1td - (u1*u1x + u2*u1y + u3*u1z) - px );
+  double res2 = tau_m *(c2 - u2td - (u1*u2x + u2*u2y + u3*u2z) - py );
+  double res3 = tau_m *(c3 - u3td - (u1*u3x + u2*u3y + u3*u3z) - pz );
   
   double *Matrix11Row, *Matrix12Row, *Matrix13Row; 
   double *Matrix21Row, *Matrix22Row, *Matrix23Row;
@@ -526,10 +502,10 @@ void TimeNSType4NLResidual_VMSDD3D(double Mult, double* coeff, double* param, do
       
       // supg contribution
       val +=  ugradu * ugradv;
-      ansatz200 = Orig8[j];
-      ansatz020 = Orig9[j];
-      ansatz002 = Orig10[j];
-      double laplacian = -c0*(ansatz200 + ansatz020 + ansatz002);
+      // ansatz200 = Orig8[j];
+      // ansatz020 = Orig9[j];
+      // ansatz002 = Orig10[j];
+      double laplacian = 0.;//-c0*(ansatz200 + ansatz020 + ansatz002);
       // second cross term and subgrid term
       val += tau_m * (laplacian + ugradu)*(u1+res1)*test100;
       // grad div contribution
@@ -691,7 +667,6 @@ void TimeNSType4RHS_Residual_VMS(double Mult, double* coeff, double* param, doub
   double *Orig2 = OrigValues[2]; // u_z
   double *Orig3 = OrigValues[3]; // u
   
-  double c0=coeff[0];
   double c1=coeff[1];
   double c2=coeff[2];
   double c3=coeff[3];
@@ -712,26 +687,14 @@ void TimeNSType4RHS_Residual_VMS(double Mult, double* coeff, double* param, doub
   double u2z=param[10];
   double u3z=param[11];
   
-  double u1xx=param[12];
-  double u2xx=param[13];
-  double u3xx=param[14];
+  //double p= param[12];
+  double px=param[13];
+  double py=param[14];
+  double pz=param[15];
   
-  double u1yy=param[15];
-  double u2yy=param[16];
-  double u3yy=param[17];
-  
-  double u1zz=param[18];
-  double u2zz=param[19];
-  double u3zz=param[20];
-  
-  //double p= param[21];
-  double px=param[22];
-  double py=param[23];
-  double pz=param[24];
-  
-  double u1td=param[25];
-  double u2td=param[26];
-  double u3td=param[27];
+  double u1td=param[16];
+  double u2td=param[17];
+  double u3td=param[18];
 
   double tau_m =  TDatabase::ParamDB->DELTA0*hK*hK;
   
@@ -739,9 +702,9 @@ void TimeNSType4RHS_Residual_VMS(double Mult, double* coeff, double* param, doub
   int N_U = N_BaseFuncts[0];
   
   
-  double res1 = tau_m *(c1 - u1td + c0*(u1xx + u1yy + u1zz) - (u1*u1x + u2*u1y + u3*u1z) - px );
-  double res2 = tau_m *(c2 - u2td + c0*(u2xx + u2yy + u2zz) - (u1*u2x + u2*u2y + u3*u2z) - py );
-  double res3 = tau_m *(c3 - u3td + c0*(u3xx + u3yy + u3zz) - (u1*u3x + u2*u3y + u3*u3z) - pz );
+  double res1 = tau_m *(c1 - u1td - (u1*u1x + u2*u1y + u3*u1z) - px );
+  double res2 = tau_m *(c2 - u2td - (u1*u2x + u2*u2y + u3*u2z) - py );
+  double res3 = tau_m *(c3 - u3td - (u1*u3x + u2*u3y + u3*u3z) - pz );
   
   for(int i=0; i<N_U; ++i)
   {
@@ -815,9 +778,9 @@ void TimeNSType14L_NL_Residual_VMS3D(double Mult, double *coeff, double *param, 
   double *Orig6 = OrigValues[6]; // py
   double *Orig7 = OrigValues[7]; // pz
   
-  double *Orig8 = OrigValues[8];
-  double *Orig9 = OrigValues[9];
-  double *Orig10 = OrigValues[10];
+  // double *Orig8 = OrigValues[8];
+  // double *Orig9 = OrigValues[9];
+  // double *Orig10 = OrigValues[10];
     
   int N_U = N_BaseFuncts[0];
   int N_P = N_BaseFuncts[1];
@@ -845,37 +808,25 @@ void TimeNSType14L_NL_Residual_VMS3D(double Mult, double *coeff, double *param, 
   double u2z=param[10];
   double u3z=param[11];
   
-  double u1xx=param[12];
-  double u2xx=param[13];
-  double u3xx=param[14];
+  //double p= param[12];
+  double px=param[13];
+  double py=param[14];
+  double pz=param[15];
   
-  double u1yy=param[15];
-  double u2yy=param[16];
-  double u3yy=param[17];
-  
-  double u1zz=param[18];
-  double u2zz=param[19];
-  double u3zz=param[20];
-  
-  //double p= param[21];
-  double px=param[22];
-  double py=param[23];
-  double pz=param[24];
-  
-  double u1td=param[25];
-  double u2td=param[26];
-  double u3td=param[27];
+  double u1td=param[16];
+  double u2td=param[17];
+  double u3td=param[18];
   
   // combined old solution which is used for the pressure 
   // right hand side assembly
-  double u1com = param[28];
-  double u2com = param[29];
-  double u3com = param[30];
+  double u1com = param[19];
+  double u2com = param[20];
+  double u3com = param[21];
   
   
   double test100, test010, test001, test000;
   double ansatz100, ansatz010, ansatz001, ansatz000;
-  double ansatz200, ansatz020, ansatz002;
+  // double ansatz200, ansatz020, ansatz002;
   // stabilization parameters
   double stab_params[2];
   stabilization_parameters_equal_order3D(Mult, param, coeff, stab_params);
@@ -883,9 +834,9 @@ void TimeNSType14L_NL_Residual_VMS3D(double Mult, double *coeff, double *param, 
   double tau_c = stab_params[1];
   
   // old residual to be used Eq(51)
-  double res1 = tau_m *(c1 - u1td + c0*(u1xx + u1yy + u1zz) - (u1*u1x + u2*u1y + u3*u1z) - px );
-  double res2 = tau_m *(c2 - u2td + c0*(u2xx + u2yy + u2zz) - (u1*u2x + u2*u2y + u3*u2z) - py );
-  double res3 = tau_m *(c3 - u3td + c0*(u3xx + u3yy + u3zz) - (u1*u3x + u2*u3y + u3*u3z) - pz );
+  double res1 = tau_m *(c1 - u1td - (u1*u1x + u2*u1y + u3*u1z) - px );
+  double res2 = tau_m *(c2 - u2td - (u1*u2x + u2*u2y + u3*u2z) - py );
+  double res3 = tau_m *(c3 - u3td - (u1*u3x + u2*u3y + u3*u3z) - pz );
   
   double *Matrix11Row, *Matrix12Row, *Matrix13Row; 
   double *Matrix21Row, *Matrix22Row, *Matrix23Row;
@@ -950,10 +901,10 @@ void TimeNSType14L_NL_Residual_VMS3D(double Mult, double *coeff, double *param, 
       // supg contribution
       val +=  ugradu * ugradv;
       // second cross term and subgrid term
-      ansatz200 = Orig8[j];
-      ansatz020 = Orig9[j];
-      ansatz002 = Orig10[j];
-      double laplacian = -c0*(ansatz200 + ansatz020 + ansatz002);
+      // ansatz200 = Orig8[j];
+      // ansatz020 = Orig9[j];
+      // ansatz002 = Orig10[j];
+      double laplacian = 0.;//-c0*(ansatz200 + ansatz020 + ansatz002);
       val += tau_m * (laplacian + ugradu) * (u1+res1) * test100;
       // grad div contribution
       val += tau_c*test100*ansatz100;
@@ -1130,10 +1081,10 @@ void TimeNSType14L_NL_Residual_VMS3D(double Mult, double *coeff, double *param, 
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
 
-      ansatz200 = Orig8[j];
-      ansatz020 = Orig9[j];
-      ansatz002 = Orig10[j];
-      double laplacian = -c0*(ansatz200 + ansatz020 + ansatz002);
+      // ansatz200 = Orig8[j];
+      // ansatz020 = Orig9[j];
+      // ansatz002 = Orig10[j];
+      double laplacian = 0.;// -c0*(ansatz200 + ansatz020 + ansatz002);
       double ugradu = u1*ansatz100 + u2 * ansatz010 + u2*ansatz001;
       // divergence constraint
       val = -test000*ansatz100;
@@ -1183,7 +1134,6 @@ void TimeNSType14RHS_Residual_VMS3D(double Mult, double *coeff, double *param, d
   double *Orig5 = OrigValues[5]; // py
   double *Orig6 = OrigValues[6]; // pz
   
-  double c0=coeff[0];
   double c1=coeff[1];
   double c2=coeff[2];
   double c3=coeff[3];
@@ -1204,32 +1154,20 @@ void TimeNSType14RHS_Residual_VMS3D(double Mult, double *coeff, double *param, d
   double u2z=param[10];
   double u3z=param[11];
   
-  double u1xx=param[12];
-  double u2xx=param[13];
-  double u3xx=param[14];
+  //double p= param[12];
+  double px=param[13];
+  double py=param[14];
+  double pz=param[15];
   
-  double u1yy=param[15];
-  double u2yy=param[16];
-  double u3yy=param[17];
-  
-  double u1zz=param[18];
-  double u2zz=param[19];
-  double u3zz=param[20];
-  
-  //double p= param[21];
-  double px=param[22];
-  double py=param[23];
-  double pz=param[24];
-  
-  double u1td=param[25];
-  double u2td=param[26];
-  double u3td=param[27];
+  double u1td=param[16];
+  double u2td=param[17];
+  double u3td=param[18];
   
   // combined old solution which is used for the pressure 
   // right hand side assembly
-  double u1com = param[28];
-  double u2com = param[29];
-  double u3com = param[30];
+  double u1com = param[19];
+  double u2com = param[20];
+  double u3com = param[21];
 
   // stabilization parameters
   double stab_params[2];
@@ -1241,9 +1179,9 @@ void TimeNSType14RHS_Residual_VMS3D(double Mult, double *coeff, double *param, d
   int N_P = N_BaseFuncts[1];
   
   
-  double res1 = tau_m *(c1 - u1td + c0*(u1xx + u1yy + u1zz) - (u1*u1x + u2*u1y + u3*u1z) - px );
-  double res2 = tau_m *(c2 - u2td + c0*(u2xx + u2yy + u2zz) - (u1*u2x + u2*u2y + u3*u2z) - py );
-  double res3 = tau_m *(c3 - u3td + c0*(u3xx + u3yy + u3zz) - (u1*u3x + u2*u3y + u3*u3z) - pz );
+  double res1 = tau_m *(c1 - u1td - (u1*u1x + u2*u1y + u3*u1z) - px );
+  double res2 = tau_m *(c2 - u2td - (u1*u2x + u2*u2y + u3*u2z) - py );
+  double res3 = tau_m *(c3 - u3td - (u1*u3x + u2*u3y + u3*u3z) - pz );
   
   for(int i=0; i<N_U; ++i)
   {
@@ -1298,27 +1236,15 @@ void TimeNSParams_Type4Residual_VMS3D(double* in, double* out)
   out[10]= in[13]; //  u2z
   out[11]= in[14]; //  u3z
       
-  out[12]= in[15]; //  u1xx
-  out[13]= in[16]; //  u2xx
-  out[14]= in[17]; //  u3xx
-      
-  out[15]= in[18]; // u1yy
-  out[16]= in[19]; // u2yy
-  out[17]= in[20]; // u3yy
-  
-  out[18]= in[21]; //  u1zz
-  out[19] = in[22]; // u2zz
-  out[20] = in[23]; // u3zz
-  
-  out[21] = in[24]; // p      
-  out[22] = in[25]; // px
-  out[23] = in[26]; // py
-  out[24] = in[27]; // pz
+  out[12]= in[15]; //  
+  out[13]= in[16]; //  
+  out[14]= in[17]; //  
+  out[15]= in[18]; // 
   // combined old time for bdf 2: this is used in the right hand side computation
   // for the right hand side computation      
-  out[25] = in[28]; // u1'
-  out[26] = in[29]; // u2'
-  out[27] = in[30]; // u3'
+  out[16]= in[19]; // 
+  out[17]= in[20]; // 
+  out[18]= in[21]; //
 }
 
 void TimeNSParams_Type14Residual_VMS3D(double* in, double* out)
@@ -1339,30 +1265,18 @@ void TimeNSParams_Type14Residual_VMS3D(double* in, double* out)
   out[10]= in[13]; //  u2z
   out[11]= in[14]; //  u3z
       
-  out[12]= in[15]; //  u1xx
-  out[13]= in[16]; //  u2xx
-  out[14]= in[17]; //  u3xx
-      
-  out[15]= in[18]; // u1yy
-  out[16]= in[19]; // u2yy
-  out[17]= in[20]; // u3yy
-  
-  out[18]= in[21]; //  u1zz
-  out[19] = in[22]; // u2zz
-  out[20] = in[23]; // u3zz
-  
-  out[21] = in[24]; // p      
-  out[22] = in[25]; // px
-  out[23] = in[26]; // py
-  out[24] = in[27]; // pz
-  // combined old time for bdf 2: this is used in the right hand side computation
-  // for the right hand side computation      
-  out[25] = in[28]; // u1'
-  out[26] = in[29]; // u2'
-  out[27] = in[30]; // u3'
+  out[12]= in[15]; // 
+  out[13]= in[16]; // 
+  out[14]= in[17]; // 
+  out[15]= in[18]; // 
 
+  // combined old time for bdf 2: this is used in the right hand side computation
+  // for the right hand side computation        
+  out[16]= in[19]; 
+  out[17]= in[20];  
+  out[18]= in[21]; 
   // computation of old solution for supg term
-  out[28] = in[31]; // u1-combined
-  out[29] = in[32]; // u2-combined
-  out[30] = in[33]; // u3-combined
+  out[19] = in[22]; 
+  out[20] = in[23]; 
+  out[21] = in[24];  
 }
