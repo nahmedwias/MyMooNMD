@@ -9,7 +9,7 @@ class TCollection;
 namespace Cylinder_Square
 {
   /// needed data
-  static double reynolds_number;
+  static double dimensionless_viscosity;
   /// set parameters used in the corresponding example
   void setParameters(ParameterDatabase& db_);
   
