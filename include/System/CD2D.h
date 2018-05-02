@@ -41,7 +41,7 @@ class CD2D
     struct System_per_grid
     {
       /** @brief Finite Element space */
-      TFESpace2D fe_space;
+      std::shared_ptr<const TFESpace2D> fe_space;
       /** @brief the system matrix */
       BlockFEMatrix matrix;
       /** @brief the right hand side vector */
@@ -218,7 +218,7 @@ class CD2D
     { return this->systems.front().fe_function; }
     
     const TFESpace2D & get_space() const
-    { return this->systems.front().fe_space; }
+    { return *this->systems.front().fe_space; }
     
     const BlockVector & get_solution() const
     { return this->systems.front().solution; }
