@@ -123,19 +123,10 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-/* LB Old 18.04.18 start
-  //double K = TDatabase::ParamDB->PERMEABILITY;
-  //double mu = TDatabase::ParamDB->VISCOSITY;
-  //double mu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-  //double t = fabs(sqrt((mu_eff/mu) * K));
-// LB Old 18.04.18 end
-*/ 
-//LB NEW 18.04.18 start
   double K = permeability;
   double mu = viscosity;
   double mu_eff = effective_viscosity;
   double t = fabs(sqrt((mu_eff/mu) * K));
-// LB NEW 18.04.18 end
 
   // loop to impose Neumann boundary conditions
   // Since we are using the Neumann boundary condition via boundaryAssembling, the boundvalue here has to be alway zero!!!!
@@ -166,10 +157,12 @@ void U1BoundValue(int BdComp, double Param, double &value)
     case 0: value = 0;
             break;
     case 1: value = K/mu * (1+exp(1/t)-exp((1-Param)/t) - exp(Param/t)) / (1+exp(1/t));
+            //value = 0; // TEST:sources/sinks,
             break;
-    case 2: value= 0;
+    case 2: value = 0;
             break;
     case 3: value = K/mu * (1+exp(1/t)-exp((Param)/t) - exp((1-Param)/t)) / (1+exp(1/t));
+            //value = 0; // TEST: sources/sinks,
             break;
     default: cout << "No boundary component with this number." << endl;
              break;
@@ -196,17 +189,36 @@ void LinCoeffs(int n_points, double *x, double *y,
 
   for(int i = 0; i < n_points; i++)
   {
-    
+
     // physical parameters
     coeffs[i][4] = viscosity; //TDatabase::ParamDB->VISCOSITY;
     coeffs[i][5] = effective_viscosity; //TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
     coeffs[i][6] = permeability; //TDatabase::ParamDB->PERMEABILITY;
 
-
-    if (coeffs[i][6]==-1) {
-      Output::print(" ... we should now set the permeability using an external function ...");
-      //coeffs[i][6] = parameters[i][0];
+    /*
+       if (x[i] < 0.5 && y[i] < 0.5)
+       {
+       coeffs[i][6] = 0.001;
+       }
+     */
+    /* ****************************************** */
+    // Use an analytic_coefficient_function or input sol+mesh for the permeability field
+    if (permeability == -1) 
+    { 
+      coeffs[i][6] = parameters[i][0];
     }
+
+    /* ***************************************** */
+    // if sources and sinks via analytic_coefficient_function (delta distr.), then \neq 0
+    coeffs[i][9]=0;
+    /*
+       double use_source_term = 1;
+       if (use_source_term == 1)
+       {
+       coeffs[i][9]= parameters[i][0];
+       }
+     */
+
 
     // Adimensional parameter t^2 = mue/mu*K
     coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
@@ -216,16 +228,16 @@ void LinCoeffs(int n_points, double *x, double *y,
     ExactU1(x[i], y[i], val_u1);
     ExactU2(x[i], y[i], val_u2);
     ExactP(x[i], y[i], val_p);
-    
+
     coeffs[i][1] = 0;
     //-coeff[5] * val_u1[3] - val_p[1] + (coeff[4]/coeff[6]) * val_u1[0];
     //(coeff[4]/coeff[6])-1;   // f1 (rhs of Brinkman problem for u1)
-    
+
     coeffs[i][2] = 0;
-    
+
     //g(x,y):  RHS for mass conservation equation
     coeffs[i][3] = val_u1[1] + val_u2[2]; //0;
-    
+
     // stabilization parameters
     coeffs[i][7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
     coeffs[i][8] = TDatabase::ParamDB->grad_div_stab_weight;
