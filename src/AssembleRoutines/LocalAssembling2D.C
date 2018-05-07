@@ -908,93 +908,86 @@ void LocalAssembling2D::GetParameters(int n_points,
 
 //-------------------------------------------------------------------------------
 void LocalAssembling2D::compute_parameters(int n_points,
-                                           TCollection *Coll,
-                                           TBaseCell *cell,
-                                           int cellnum,
-                                           double *x,
-                                           double *y)
+    TCollection *Coll,
+    TBaseCell *cell,
+    int cellnum,
+    double *x,
+    double *y)
 {
   //std::vector<std::vector<double>> parameter_functions_values;
   this->parameter_functions_values.resize(n_points);
-  
-  for (unsigned int i=0; i<parameter_functions_values.size(); i++)
+
+  for (unsigned int i = 0; i < parameter_functions_values.size(); i++)
   {
     parameter_functions_values[i].resize(this->N_FEValues);
   }
 
   ///@todo check the case N_ParamFct > 1
-  if (N_ParamFct>1)
+  if (N_ParamFct > 1)
   {
     Output::print(" ** WARNING: the function should not work for N_ParamFct > 1");
   }
-    
-  int *N_BaseFunct = new int[N_FEValues];
-  double **Values = new double* [N_FEValues];
-  double ***orig_values = new double** [N_FEValues];
-  int **Index = new int* [N_FEValues];
-  double Temp[2 + N_FEValues];
-  
+
+  int *N_BaseFunct = new int[this->N_FEValues];
+  double **Values = new double* [this->N_FEValues];
+  double ***orig_values = new double** [this->N_FEValues]; // create an array of doublepointers (pointers to pointers) to doubles
+
+  int **Index = new int* [this->N_FEValues];
+  double Temp[this->N_FEValues + 2];
+
   // collect information
-  for(int j=0; j<this->N_FEValues; j++)
+  for(int j = 0; j < this->N_FEValues; j++)
   {
-    
-    TFEFunction2D *fefunction = this->FEFunctions2D[this->FEValue_FctIndex[j]];
+   TFEFunction2D *fefunction = this->FEFunctions2D[this->FEValue_FctIndex[j]];
 
     // get all values (and derivatives) of basis function at given Gauss point
     Values[j] = fefunction->GetValues();
-    
     const TFESpace2D *fespace = fefunction->GetFESpace2D();
     FE2D FE_Id = fespace->GetFE2D(cellnum, cell);
     BaseFunct2D BaseFunct_Id = TFEDatabase2D::GetFE2D(FE_Id)->GetBaseFunct2D_ID();
-
-    N_BaseFunct[j]=TFEDatabase2D::GetBaseFunct2D(BaseFunct_Id)->GetDimension();
     
-    orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id, 
-                                                         FEValue_MultiIndex[j]);
+    N_BaseFunct[j]=TFEDatabase2D::GetBaseFunct2D(BaseFunct_Id)->GetDimension();
+
+    orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id, FEValue_MultiIndex[j]);
+
     Index[j] = fespace->GetGlobalDOF(cellnum);
   } // endfor j
 
   // loop over all quadrature points
   if(N_ParamFct != 0)
   {
-    for(int i=0; i<n_points; ++i)
+    for(int i = 0; i < n_points; i++)
     {
       // all values at quadrature point i
       //double *param = Parameters[i];
-
       Temp[0] = x[i];
       Temp[1] = y[i];
-
       // loop to calculate all FE values
-      for(int k=2,j=0; j<N_FEValues; j++,k++)
+      for(int j = 0; j < N_FEValues; j++)
       {
         double s = 0;
         int n = N_BaseFunct[j];
         double  *CurrValues = Values[j];
         double  *CurrOrigValues = orig_values[j][i];
         int *CurrIndex = Index[j];
-        for(int l=0;l<n;l++)
-          s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
-        Temp[k] = s;
+        for(int l = 0; l < n; l++)
+          s += CurrValues[CurrIndex[l]] * CurrOrigValues[l];
+        Temp[2+j] = s;
       }  // endfor j
 
       // loop to calculate all parameters
-      for(int j=0; j<N_ParamFct; j++)
+      for(int j = 0; j < N_ParamFct; j++)
       {
         double *currparam = new double[N_FEValues];// = param + this->BeginParameter[j];
         this->ParameterFct[j](Temp, currparam);
 
-	
-	for (unsigned int l=0; l<parameter_functions_values[i].size(); l++)
-	{
-	  parameter_functions_values[i][l] = currparam[l];
-	} 
-      
+        for (unsigned int l = 0; l < parameter_functions_values[i].size(); l++)
+        {
+          parameter_functions_values[i][l] = currparam[l];
+        } 
       }// endfor j
-      
     } // endfor i
   }
-    
   delete [] N_BaseFunct;
   delete [] Values;
   delete [] orig_values;

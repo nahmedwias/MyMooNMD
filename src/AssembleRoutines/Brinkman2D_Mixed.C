@@ -46,7 +46,9 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
   //double ** MatrixA12 = LocMatrices[1];
   //double ** MatrixA21 = LocMatrices[2];
   double ** MatrixA22 = LocMatrices[3];
-  //double ** MatrixC = LocMatrices[4];
+ //LB Debug 25.04.18 start
+ double ** MatrixC = LocMatrices[4];
+  //LB Debug 25.04.18 end
   double ** MatrixB1 = LocMatrices[5];
   double ** MatrixB2 = LocMatrices[6];
   double ** MatrixB1T = LocMatrices[7];
@@ -76,7 +78,12 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
   double mu_eff = coeff[5];               // effective viscosity
   double K = coeff[6];                    // permeability
 
-  double val;
+// LB Debug New 25.04.18 start:
+double approximate_delta_distribution_function = 0;//coeff[9];
+//cout<< "K::: "<< K << endl;
+//cout<< "mueff::: "<< mu_eff << endl;
+// LB Debug 25.04.18 end
+double val;
   for(int i = 0; i < N_U; i++)
   {
     test10 = Orig0[i];
@@ -115,9 +122,15 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
 
   for(int i = 0; i < N_P; i++)
   {
-    test00 = Orig3[i];      // p
+    test00 = Orig3[i];      // q
 
     Rhs_p[i] += Mult * (TDatabase::ParamDB->SIGN_MATRIX_BI) * test00 * c3;        // (g, q) (sign chosen according to stabilization)
+
+
+    //introduce sources and sinks
+    double P = 1;
+    Rhs_p[i] += Mult  * (TDatabase::ParamDB->SIGN_MATRIX_BI) * test00 * approximate_delta_distribution_function * P;
+
 
     for(int j = 0; j < N_U; j++)
     {
@@ -130,6 +143,18 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
       val = TDatabase::ParamDB->SIGN_MATRIX_BI * test00 * ansatz01;                       // +/- (q, div u) --> +/- q * u2_y
       MatrixB2[i][j] += Mult * val;
     }
+   
+   /*
+   // consider sources and sinks impacts on the matrix as well 
+    for(int j = 0; j < N_P; j++)
+    {
+      ansatz00 = Orig3[j];   // p
+
+      val = approximate_delta_distribution_function * (ansatz00 * test00);               // source term  delta_fct * ( ph,  qh) 
+      MatrixC[i][j] += Mult * val;
+    }
+  */
+
   }
 }
 
@@ -559,6 +584,10 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
   double mu = coeff[4];                   // viscosity
   double mu_eff = coeff[5];               // effective viscosity
   double K = coeff[6];                    // permeability
+  //LB Debug 25.04.18 start: 
+  cout << "Permeability in GradDiv routine is: " << K << endl;
+  //LB Debug 25.04.18 end
+  
   //double grad_div_stab_weight = coeff[8]; // without considering the units
   //double grad_div_stab_weight = coeff[8] * (mu/K) * hK * hK; // units are fine
   //double grad_div_stab_weight = coeff[8] * mu_eff;  // units are fine
