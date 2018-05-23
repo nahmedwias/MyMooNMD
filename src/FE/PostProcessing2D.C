@@ -1,10 +1,9 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <PostProcessing2D.h>
-#include <QuadAffin.h>
-#include <TriaAffin.h>
-#include <QuadBilinear.h>
+
 #include <algorithm>
+#include <type_traits>
 
 using namespace std;
 
@@ -139,11 +138,6 @@ void PostProcessing2D::write()
 */
 void PostProcessing2D::writeVtk(std::string name)
 {
-  double BFValues[MaxN_BaseFunctions2D];
-  double BFValuesOrig[MaxN_BaseFunctions2D];
-  double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
-  double TriaCoords[] = { 0, 0, 1, 0,  0, 1};
-
   std::ofstream dat(name);
   if (!dat)
   {
@@ -151,92 +145,31 @@ void PostProcessing2D::writeVtk(std::string name)
   }
   dat.setf(std::ios::fixed);
   dat << setprecision(12);
-
-
+  
   // determine data for vtk file
-  int N_Elements = Coll->GetN_Cells();
-  // number of vertices, counting each vertex n times where n is the number of 
-  // cells this vertex belongs to.
-  int N_LocVertices = 0;
-  for(int i=0;i<N_Elements;i++)
-  {
-    TBaseCell *cell = Coll->GetCell(i);
-    N_LocVertices += cell->GetN_Vertices();
-  }
-  TVertex **Vertices =new TVertex*[N_LocVertices];
-  int N_=0;
-  for(int i=0;i<N_Elements;i++)
-  {
-    TBaseCell *cell = Coll->GetCell(i);
-    for(int j=0;j< cell->GetN_Vertices(); j++)
-    {
-      Vertices[N_]=cell->GetVertex(j);
-      N_++;
-    }
-  }
+  unsigned int N_Elements = Coll->GetN_Cells();
 
   // check for discontinuous scalar variables. In such a case write a new file
   // for this variable. ParaView will really display a discontinuous function
   // instead of projecting it onto P1/Q1 space. However there are some
   // drawbacks.
+  std::vector <TVertex *> Vertices;
+  for(unsigned int ncell = 0; ncell<N_Elements; ncell++)
+  {
+      TBaseCell* cell = Coll->GetCell(ncell);
+      unsigned int N_Loc = cell->GetN_Vertices(); 
+      for(unsigned int nvert =0; nvert < N_Loc; nvert++)
+          Vertices.push_back(cell->GetVertex(nvert));
+  }
+  
   for(unsigned int i=0;i<FEFunctionArray.size();i++)
   {
-    if ( FEFunctionArray[i]->GetFESpace2D()->IsDGSpace() ) {
-      writeVtkDiscontinuous(name,N_LocVertices,Vertices);
-      break;
-    }
+    if ( FEFunctionArray[i]->GetFESpace2D()->IsDGSpace() ) 
+   {
+    writeVtkDiscontinuous(name,Vertices.size(),Vertices);
+     break;
+   }
   }
-
-  sort(Vertices, N_);
-  TVertex *Last, *Current;
-
-  Last=nullptr;
-  int N_Vertices=0;
-  for(int i=0;i<N_LocVertices;i++)
-    if((Current=Vertices[i])!=Last)
-  {
-    N_Vertices++;
-    Last=Current;
-  }
-
-  std::vector<double> Coords(2*N_Vertices);
-  std::vector<int> VertexNumbers(N_LocVertices);
-  std::vector<int> NumberVertex(N_LocVertices);
-  Last=nullptr;
-  N_=0; 
-  int k1=-1;
-#ifdef __3D__
-  double z = 0.;
-#endif
-  for(int i=0;i<N_LocVertices;i++)
-  {
-    if((Current=Vertices[i])!=Last)
-    {
-#ifdef __3D__
-      Vertices[i]->GetCoords(Coords[N_],Coords[N_+1], z);
-#else
-      Vertices[i]->GetCoords(Coords[N_],Coords[N_+1]);
-#endif
-       k1++;
-      N_ += 2;
-      Last=Current;
-    }
-    NumberVertex[i]=k1;
-  }
-
-  for(int i = 0, m = 0; i < N_Elements; i++)
-  {
-    TBaseCell *cell = Coll->GetCell(i);
-    for(int j=0;j<cell->GetN_Vertices(); j++)
-    {
-      Current=cell->GetVertex(j);
-      int l=getIndex(Vertices, N_LocVertices, Current);
-      VertexNumbers[m]=NumberVertex[l];
-      m++;
-    }                                             // endfor j
-  }                                               //endfor i
-
-
 
   dat << "# vtk DataFile Version 4.0" << endl;
   dat << "file created by ParMooN"
@@ -244,30 +177,28 @@ void PostProcessing2D::writeVtk(std::string name)
 
   dat << "ASCII" << endl;
   dat << "DATASET UNSTRUCTURED_GRID" << endl;
-  dat << "POINTS " << N_Vertices << " float" << endl;
-  N_=0;
-  for(int i=0;i<N_Vertices;i++)
-  {
-    dat << Coords[N_] << " " <<  Coords[N_+1] << " ";
-    dat << double(0) << endl;
-    N_ +=2;
-  }
-  dat << endl;
-  dat << "CELLS " << N_Elements << " " <<  N_Elements+N_LocVertices << endl;
-  for(int i = 0, l = 0; i < N_Elements; i++)
+  dat << "POINTS " << Coll->GetN_Vertices() << " double" << endl;
+
+  writeCoord(dat, 2);
+
+  unsigned int N_Vertices=Coll->GetN_Vertices();
+  unsigned int N_LocVertices=Coll->GetNLocVertices();
+  
+  dat << "CELLS " << N_Elements << " " <<  N_Elements+ N_LocVertices<< endl;
+  for(unsigned int i = 0; i < N_Elements; i++)
   {
     int N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
     dat <<  N_CellVertices << " ";
     for(int j=0;j<N_CellVertices;j++)
     {
-      dat << VertexNumbers[l] << " ";
-      l++;
+      dat << this->Coll->GetGlobalVerNo(i,j) << " "; 
     }
     dat << endl;
   }
   dat << endl;
+
   dat << "CELL_TYPES " << N_Elements << endl;
-  for(int i=0;i<N_Elements;i++)
+  for(unsigned int i=0;i<N_Elements;i++)
   {
     int N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
     switch(N_CellVertices)
@@ -281,330 +212,38 @@ void PostProcessing2D::writeVtk(std::string name)
   dat << endl << endl;
   dat << "POINT_DATA " << N_Vertices << endl;
 
-  // function values
-  std::vector<double> DoubleArray(2*N_Vertices);
-  std::vector<double> WArray(N_Vertices);
-
-  // write scalar variables into file
-  for(unsigned int k=0;k<FEFunctionArray.size();k++)
-  {
-    const TFESpace2D *fespace = FEFunctionArray[k]->GetFESpace2D();
-    const double *Coeffs = FEFunctionArray[k]->GetValues();
-    const int *GlobalNumbers = fespace->GetGlobalNumbers();
-    const int *BeginIndex = fespace->GetBeginIndex();
-
-    // get dimension of basis functions
-    TBaseCell *cell = Coll->GetCell(0);
-    FE2D FE_ID = fespace->GetFE2D(0, cell);
-    TBaseFunct2D *bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
-    //this is needed to handle vector fields approximated with vector FE 
-    // (scalar unknown postprocessed as vectors)
-    int BaseVectDim = bf->GetBaseVectDim();
-    int N_Comp = BaseVectDim;
-
-    std::fill(DoubleArray.begin(), DoubleArray.end(), 0.0);
-    std::fill(WArray.begin(), WArray.end(), 0.0);
-
-    // set to true if basis functions are vectors
-    bool VectOutput = false;
-    if (BaseVectDim>1) VectOutput = true;
-    
-    for(int i = 0, m = 0; i < N_Elements; i++)
-    {
-      TBaseCell *cell = Coll->GetCell(i);
-      N_ = cell->GetN_Vertices();
-
-      // find FE data for this element
-      FE2D FE_ID = fespace->GetFE2D(i, cell);
-      TBaseFunct2D *bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
-      const int *DOF = GlobalNumbers+BeginIndex[i];
-      int N_LocDOF = bf->GetDimension();
-      RefTrans2D RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(FE_ID);
-      TRefTrans2D *F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
-      switch(RefTrans)
-      {
-        case TriaAffin:
-          ((TTriaAffin*)F_K)->SetCell(cell);
-          break;
-        case QuadAffin:
-          ((TQuadAffin*)F_K)->SetCell(cell);
-          break;
-        case QuadBilinear:
-          ((TQuadBilinear*)F_K)->SetCell(cell);
-          break;
-        default: 
-          ErrThrow("no such reference transformation allowed ", RefTrans);
-          break;
-      }                                           // endswitch
-
-      for(int j=0;j<N_;j++)
-      {
-        double xi, eta;
-        switch(cell->GetN_Vertices())
-        {
-          case 3:
-            xi = TriaCoords[2*j];
-            eta = TriaCoords[2*j+1];
-            break;
-
-          case 4:
-            xi = QuadCoords[2*j];
-            eta = QuadCoords[2*j+1];
-            break;
-        }
-        bf->GetDerivatives(D00, xi, eta, BFValues);
-
-        double value = 0;
-        double value_y = 0;
-        if (VectOutput)
-        {
-          // apply Piola transform 
-          switch(RefTrans)
-          {
-            case TriaAffin:
-            case QuadAffin:
-              F_K->PiolaMapOrigFromRef(N_LocDOF,BFValues,BFValuesOrig);
-              break;
-            case QuadBilinear: 
-              // for non affine reference transformations one needs to know the 
-              // point, because the determinant is not constant in this case.
-              ((TQuadBilinear*)F_K)->PiolaMapOrigFromRefNotAffine(
-                                        N_LocDOF,BFValues,BFValuesOrig,xi,eta);
-              break;
-            default:
-              cout << "Output2D():: no such reference transformation allowed" 
-               << endl;
-          }
-          for(int l=0;l<N_LocDOF;l++)
-          {
-            // change sign of basis functions according to global normal
-            int edge = 
-             TFEDatabase2D::GetFE2D(FE_ID)->GetFEDesc2D()->GetJointOfThisDOF(l);
-            int nsign = 1;
-            if(edge != -1)
-            {
-              nsign = cell->GetNormalOrientation(edge);
-            }
-            value += BFValuesOrig[l] * Coeffs[DOF[l]]*nsign;
-            value_y += BFValuesOrig[N_LocDOF+l] * Coeffs[DOF[l]]*nsign;
-          }
-          DoubleArray[N_Comp*VertexNumbers[m] + 0] += value;
-          DoubleArray[N_Comp*VertexNumbers[m] + 1] += value_y;
-        }
-        else
-        {                                         // standard
-          for(int l=0;l<N_LocDOF;l++)
-          {
-            value += BFValues[l] * Coeffs[DOF[l]];
-          }
-          DoubleArray[VertexNumbers[m]] += value;
-        }
-        WArray[VertexNumbers[m]] +=1.;
-        m++;
-      }                                           // endfor j
-    }                                             // endfor i
-
-    // non conforming
-    if (VectOutput)
-    {
-      for(int i = 0, l = 0; i < N_Vertices; i++)
-      {
-        for(int j=0;j<N_Comp;j++)
-        {
-          if(WArray[i]!=0.)
-            DoubleArray[l] /= WArray[i];
-          l++;
-        }
-      }                                           // endfor i
-    }
-    else
-    {
-      for(int i=0;i<N_Vertices;i++)
-      {
-        if(WArray[i]!=0.)
-        {
-          DoubleArray[i] /= WArray[i];
-        }
-      }
-    }
-
-    if (!VectOutput)
-    {
-      // standard output writing
-      dat << "SCALARS " << FEFunctionArray[k]->GetName();
-      dat << " float"<< endl;
-      dat << "LOOKUP_TABLE " << "default" << endl;
-      for(int j=0;j<N_Vertices;j++)
-      {
-        dat << DoubleArray[j] << endl;
-      }
-      dat << endl;
-      dat << endl;
-    }
-
-    // write output as vector
-    if (VectOutput)
-    {
-      // scalar components
-      for(int j=0;j<N_Comp;j++)
-      {
-        dat << "SCALARS " << FEFunctionArray[k]->GetName() << j;
-        dat << " float"<< endl;
-        dat << "LOOKUP_TABLE " << "default" << endl;
-        for(int i=0;i<N_Vertices;i++)
-        {
-          dat << DoubleArray[i*N_Comp+j] << endl;
-        }
-        dat << endl << endl;
-      }
-
-      // absolute value
-      dat << "SCALARS " << "|" << FEFunctionArray[k]->GetName() << "|";
-      dat << " float"<< endl;
-      dat << "LOOKUP_TABLE " << "default" << endl;
-      for(int i = 0, l = 0; i < N_Vertices; i++)
-      {
-        double t=0;
-        for(int j=0;j<N_Comp;j++)
-        {
-          t+=DoubleArray[l]*DoubleArray[l];
-          l++;
-        }
-        dat << sqrt(t)<< endl;
-      }
-      dat << endl << endl;
-
-      dat << "VECTORS " << FEFunctionArray[k]->GetName();
-      dat << " float"<< endl;
-
-      for(int i = 0; i < N_Vertices; i++)
-      {
-        for(int j=0;j<N_Comp;j++)
-        {
-          dat << DoubleArray[N_Comp*i+j] << " ";
-        }
-        dat << double(0) << " " << endl;
-      }
-      dat << endl;
-
-      VectOutput = false;
-    }
-  }                                               // endfor k
-
-  for(unsigned int k=0;k<FEVectFunctArray.size();k++)
-  {
-    const TFESpace2D *fespace = FEVectFunctArray[k]->GetFESpace2D();
-    int N_Comp = FEVectFunctArray[k]->GetN_Components();
-    int Length = FEVectFunctArray[k]->GetLength();
-    const double * Coeffs = FEVectFunctArray[k]->GetValues();
-    const int * GlobalNumbers = fespace->GetGlobalNumbers();
-    const int * BeginIndex = fespace->GetBeginIndex();
-
-    std::fill(DoubleArray.begin(), DoubleArray.end(), 0.0);
-    std::fill(WArray.begin(), WArray.end(), 0.0);
-    
-    for(int i = 0, m = 0; i < N_Elements; i++)
-    {
-      TBaseCell *cell = Coll->GetCell(i);
-      N_ = cell->GetN_Vertices();
-
-      // find FE data for this element
-      FE2D FE_ID = fespace->GetFE2D(i, cell);
-      TBaseFunct2D *bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
-      const int * DOF = GlobalNumbers+BeginIndex[i];
-      int N_LocDOF = bf->GetDimension();
-      for(int j=0;j<N_;j++)
-      {
-        double xi, eta;
-        switch(cell->GetN_Vertices())
-        {
-          case 3:
-            xi = TriaCoords[2*j];
-            eta = TriaCoords[2*j+1];
-            break;
-          case 4:
-            xi = QuadCoords[2*j];
-            eta = QuadCoords[2*j+1];
-            break;
-        }
-        bf->GetDerivatives(D00, xi, eta, BFValues);
-
-        for(int n=0;n<N_Comp;n++)
-        {
-          double value = 0;
-          for(int l = 0; l < N_LocDOF; l++)
-            value += BFValues[l] * Coeffs[DOF[l]+n*Length];
-          DoubleArray[N_Comp*VertexNumbers[m] + n] += value;
-        }
-        WArray[VertexNumbers[m]] +=1.;
-        m++;
-      }                                           // endfor j
-    }                                             // endfor i
-
-    // mean value
-    for(int i = 0, l = 0; i < N_Vertices; i++)
-    {
-      for(int j=0;j<N_Comp;j++)
-      {
-        if(WArray[i]!=0.)
-          DoubleArray[l] /= WArray[i];
-        l++;
-      }
-    }                                             // endfor l
-
-    for(int j=0;j<N_Comp;j++)
-    {
-      dat << "SCALARS " << FEVectFunctArray[k]->GetName() << j;
-      dat << " float"<< endl;
-      dat << "LOOKUP_TABLE " << "default" << endl;
-      for(int i=0;i<N_Vertices;i++)
-      {
-        dat << DoubleArray[i*N_Comp+j] << endl;
-      }
-      dat << endl << endl;
-    }
-
-    // ***************
-    // absolute value of vector variables
-    // ***************
-    dat << "SCALARS " << "|" << FEVectFunctArray[k]->GetName() << "|";
-    dat << " float"<< endl;
-    dat << "LOOKUP_TABLE " << "default" << endl;
-    for(int i = 0, l = 0; i < N_Vertices; i++)
-    {
-      double t=0;
-      for(int j=0;j<N_Comp;j++)
-      {
-        t+=DoubleArray[l]*DoubleArray[l];
-        l++;
-      }
-      dat << sqrt(t)<< endl;
-    }
-    dat << endl << endl;
-
-    // ***************
-    // VECTORS
-    // ***************
-    dat << "VECTORS " << FEVectFunctArray[k]->GetName();
-    dat << " float"<< endl;
-    for(int i = 0; i < N_Vertices; i++)
-    {
-      for(int j=0;j<N_Comp;j++)
-      {
-        dat << DoubleArray[N_Comp*i+j] << " ";
-      }
-      dat << double(0) << " " << endl;
-    }
-    dat << endl;
-  }                                               // endfor k
-  dat << endl;
+  unsigned int dimension;
+  std::vector<double> solutionAtNode;
   
-  delete [] Vertices;
+  for(unsigned int nfunction =0; nfunction< FEFunctionArray.size(); nfunction++)
+  {   
+    computeNodeValues<TFEFunction2D>(FEFunctionArray.at(nfunction), solutionAtNode, dimension);
+    
+    std::string name =FEFunctionArray.at(nfunction)->GetName();
+   
+    printVectCompwise(dat, name, N_Vertices, dimension, solutionAtNode); 
+      
+    if (dimension > 1)
+    {     
+      printVectAbsValue(dat, name, N_Vertices, dimension, solutionAtNode);
+      printVectPointwise(dat, name, N_Vertices, dimension, solutionAtNode);      
+    }
+  }
+  
+  for(unsigned int nfunction =0; nfunction< FEVectFunctArray.size(); nfunction++)
+  {    
+    computeNodeValues<TFEVectFunct2D>(FEVectFunctArray.at(nfunction), solutionAtNode, dimension);
+    
+    std::string name =FEVectFunctArray.at(nfunction)->GetName();
+    
+    printVectCompwise(dat, name, N_Vertices, dimension, solutionAtNode);
+    printVectAbsValue(dat, name, N_Vertices, dimension, solutionAtNode);
+    printVectPointwise(dat, name, N_Vertices, dimension, solutionAtNode);
+  } 
+  
+  dat << endl;
   dat.close();
 }
-
-
-
 
 /** @brief
     writes an extra vtk-file for (scalar) discontinuous functions. ParaView can
@@ -645,7 +284,7 @@ void PostProcessing2D::writeVtk(std::string name)
     
 */
 void PostProcessing2D::writeVtkDiscontinuous(std::string fileName,
-int N_LocVertices, TVertex **Vertices)
+int N_LocVertices, std::vector<TVertex *> Vertices)
 {
   double x,y;                // coordinates of a vertex
   int N_Elements;            // number of all elements in this mesh
@@ -672,7 +311,7 @@ int N_LocVertices, TVertex **Vertices)
 
   dat << "ASCII" << endl;
   dat << "DATASET UNSTRUCTURED_GRID" << endl;
-  dat << "POINTS " << N_LocVertices << " float" << endl;
+  dat << "POINTS " << N_LocVertices << " double" << endl;
 
   for(i=0;i<N_LocVertices;i++)
   {
@@ -732,7 +371,7 @@ int N_LocVertices, TVertex **Vertices)
     {
       dat << endl << endl;
       dat << "SCALARS " << fefunction->GetName();
-      dat << " float" << endl;
+      dat << " double" << endl;
       dat << "LOOKUP_TABLE " << "default" << endl;
       double function_value;    // value of function at a particular vertex
       for(i=0;i<N_Elements;i++)
@@ -785,7 +424,7 @@ int N_LocVertices, TVertex **Vertices)
       {
         dat << endl << endl;
         dat << "SCALARS " << fefunction->GetName() << l;
-        dat << " float" << endl;
+        dat << " double" << endl;
         dat << "LOOKUP_TABLE " << "default" << endl;
         k=0;
         for(i=0;i<N_Elements;i++)
@@ -804,8 +443,6 @@ int N_LocVertices, TVertex **Vertices)
                     "dimension ", BaseVectDim, " are not supported.");
   }
 }
-
-
 
 
 /** @brief Output in .case format
@@ -835,10 +472,22 @@ void PostProcessing2D::writeCaseFile()
   casf << "VARIABLE\n";
   for (unsigned int j=0; j<FEFunctionArray.size(); j++)
   {
-    string sclname =  "scalar";
-    casf << "scalar per node: 1 " << FEFunctionArray[j]->GetName() << " "
-         << testcaseName << "_" << FEFunctionArray[j]->GetName() 
-         << ".****.scl\n";
+    unsigned int dimension = TFEDatabase2D::GetFE2D(
+      FEFunctionArray[j]->GetFESpace2D()->GetFE2D(0,Coll->GetCell(0)))
+      ->GetBaseFunct2D()->GetBaseVectDim();
+    
+    if (dimension==1)
+    {
+      casf << "scalar per node: 1 " << FEFunctionArray[j]->GetName() << " "
+           << testcaseName << "_" << FEFunctionArray[j]->GetName()
+	   << ".****.scl\n";
+    }
+    else
+    {
+      casf << "vector per node: 1 "<< FEFunctionArray[j]->GetName() << " "
+	   << testcaseName << "_" << FEFunctionArray[j]->GetName() 
+	   << ".****.vct\n";
+    }
   }
   for (unsigned int j=0; j<FEVectFunctArray.size(); j++)
   {
@@ -873,8 +522,7 @@ void PostProcessing2D::writeCaseGeo()
 {
   int dimension=2;
   
-  Coll->createElementLists();
-  unsigned int N_Vertices = Coll->NodesReferences.size();
+  unsigned int N_Vertices = Coll->GetN_Vertices();
   
   // write geo file
   ofstream f;
@@ -888,31 +536,10 @@ void PostProcessing2D::writeCaseGeo()
   f << "element id assign" << "\n";
   f << "coordinates" << "\n";
   f.width(8);
-  // write points
+  // write points 
   f << N_Vertices << endl;
-  for(unsigned int i=0;i<N_Vertices;i++)
-  {
-    f.setf(ios_base::scientific);
-    f.precision(5);
-    f.width(12);
-    f <<  Coll->NodesCoords[i*dimension];
-    f.setf(ios_base::scientific);
-    f.precision(5);
-    f.width(12);
-    f  << Coll->NodesCoords[i*dimension+1];
-    f.setf(ios_base::scientific);
-    f.precision(5);
-    f.width(12);
-    if (dimension==2)
-    {
-      f << 0.;
-    }
-    else
-    {
-      f  << Coll->NodesCoords[i*dimension+2]; 
-    }
-    f << endl;
-  }
+  
+  writeCoord(f, dimension);
 
   // write elements
   int nVE = Coll->GetCell(0)->GetN_Vertices();
@@ -921,6 +548,8 @@ void PostProcessing2D::writeCaseGeo()
   /// @warning this works now only for a single (bulk) domain
   unsigned int nParts = 1; // number of (bulk) subdomains
   string partName = "inner"; // name of collection subdomain
+  
+  unsigned int VERTEX_OFFSET =1; //index change for the output
   
   for(unsigned int ifig=1;ifig<=nParts;ifig++)
   { 
@@ -964,7 +593,7 @@ void PostProcessing2D::writeCaseGeo()
       for(int i=0;i<nVE;i++)
       {
         f.width(8);
-        f << Coll->ElementNodes[k][i];
+        f << Coll->GetGlobalVerNo(k,i)+VERTEX_OFFSET;
       }
       f << endl;
     }// k
@@ -986,20 +615,19 @@ void PostProcessing2D::writeCaseGeo()
     f << ensight_type << endl;
     
     f.width(8);
-    f << Coll->BdFacesReferences.size() << endl;
-    for(unsigned int k=0;k<Coll->BdFacesReferences.size();k++)
+    f << Coll->GetN_BdFaces() << endl;
+    for(unsigned int k=0;k<Coll->GetN_BdFaces();k++)
     {
       for(int i=0;i<nVertexPerFace;i++)
       {
         f.width(8);
-        f << Coll->BdFacesNodes[nVertexPerFace*k+i];
+        f << Coll->GetBdFacesNode(nVertexPerFace*k+i);
       }
       f << endl;
     }// k
   }//ifig
 
 }
-
 
 void PostProcessing2D::writeCaseVars(int iter)
 {
@@ -1015,60 +643,46 @@ void PostProcessing2D::writeCaseVars(int iter)
     number = string(numstr);
 
   std::string ensight_type;
-  int nParts = 1;
-  int n;
-  ///@todo do not recreate lists if they exist already
-  this->Coll->createElementLists();
+  
+  unsigned int N_Vertices = Coll->GetN_Vertices();
+  unsigned int dimension;
 
   // scalars
   for (unsigned int i=0;i<FEFunctionArray.size(); i++)
   {
-   std::vector<double> uP1;
-   FEFunctionArray[i]->computeNodeValues(uP1);
+    std::vector<double> solutionAtNode;
+    computeNodeValues(FEFunctionArray[i], solutionAtNode, dimension);
 
     // write scalars
     std::ofstream sclf;
     std::ostringstream sclname;
-    sclname << filename << "_" << FEFunctionArray[i]->GetName() <<  "."
-            << number << ".scl";
+    
+    if(dimension==1)
+    {    
+      sclname << filename << "_" << FEFunctionArray[i]->GetName() <<  "."
+	      << number << ".scl";    
+    }
+    else
+    {
+      sclname << filename << "_" << FEFunctionArray[i]->GetName() <<  "."
+	      << number << ".vct"; 
+    }
+	      
     std::string fname = sclname.str();
+
     Output::print<3>(" ** PostProcessing2D::write File - write ", fname);
     sclf.open(fname);
     sclf << FEFunctionArray[i]->GetName() << " step = " << iter << endl; 
   
-    for(int ifig=1;ifig<=nParts;ifig++)
-    {
-      n = 0;
-      for(unsigned int k=0;k< Coll->NodesReferences.size(); k++)
-      {
-        double x = uP1[k];
-        sclf.setf(ios_base::scientific);	
-        sclf.precision(5);	
-        sclf.width(12);
-        if(fabs(x)<1e-18)
-          x = 0.;
-        sclf << x;
-        ++n;
-        if( n == 6 )
-        {
-          sclf << std::endl;
-          n=0;
-        }
-      }// k
-     
-     sclf << endl;
-    }//ifig
+    writeVectCase(sclf, N_Vertices, dimension, solutionAtNode);
   }
 
   // vectors
   for(unsigned int i=0;i<FEVectFunctArray.size();i++)
   {
-    int nComp = FEVectFunctArray[i]->GetN_Components();
-    std::vector< std::vector<double> > uP1vect(nComp);
-    for(int j=0;j<nComp;j++)
-    {
-      FEVectFunctArray[i]->GetComponent(j)->computeNodeValues(uP1vect[j]);
-    }
+    //int nComp = FEVectFunctArray[i]->GetN_Components();
+    std::vector<double > solutionAtNode;
+    computeNodeValues(FEVectFunctArray[i], solutionAtNode, dimension); 
     
     std::ofstream vctf;
     std::ostringstream vctname;
@@ -1079,135 +693,226 @@ void PostProcessing2D::writeCaseVars(int iter)
     vctf.open(fname.c_str());
     vctf <<  FEVectFunctArray[i]->GetName() << " step = " << iter << endl; 
   
-    for(int ifig=1;ifig<=nParts;ifig++)
-    {
-      n = 0;
-      for(unsigned int k=0;k<Coll->NodesReferences.size();k++)
-      {
-        double x,y,z;
-        x = uP1vect[0][k];
-        vctf.setf(ios_base::scientific);	
-        vctf.precision(5);	
-        vctf.width(12);
-        if(fabs(x)<1e-18)
-          x = 0.;
-        vctf << x;
-        ++n;
-        if( n == 6 )
-        {
-          vctf << std::endl;
-          n=0;
-        }
-        
-        y = 0.;
-        if (nComp>1)
-        {
-          y = uP1vect[1][k];
-        }
-        vctf.setf(ios_base::scientific);	
-        vctf.precision(5);	
-        vctf.width(12);
-        if(fabs(y)<1e-18)
-          y = 0.;
-        vctf << y;
-        ++n;
-        if( n == 6 )
-        {
-          vctf << std::endl;
-          n=0;
-        }
-        
-        z = 0.;
-        if(nComp>2)
-        {
-          z = uP1vect[2][k];
-        }
-        vctf.setf(ios_base::scientific);	
-        vctf.precision(5);	
-        vctf.width(12);
-        if(fabs(z) < 1e-18)
-          z = 0.;
-        vctf << z;
-        ++n;
-        if( n == 6 )
-        {
-          vctf << std::endl;
-          n=0;
-        }
-      }// k
-      vctf << endl;
-    }//ifig
+    writeVectCase(vctf, N_Vertices, dimension, solutionAtNode);
   }
 }
 
-
-void PostProcessing2D::sort(TVertex **Array, int length)
+//Check, if PostProcessing object should be generalized
+void PostProcessing2D::writeCoord(ofstream & f, int dimension)
 {
-  int n=0, l=0, r=length-1, m;
-  int i, j, len;
-  TVertex *Mid, *Temp;
-  double lend = length;
-
-  len=(int)(2*log(lend)/log((double) 2.0)+2);
-
-  std::vector<int> rr(2 * len);
-  do
+  unsigned int N_Vertices = Coll->GetN_Vertices();
+  for(unsigned int i=0;i<N_Vertices;i++)
   {
-    do
+    //f.setf(ios_base::scientific);
+    f.precision(12);
+    f.width(12);
+    f <<  Coll->GetCoord(i*dimension);
+    f << " ";
+    //f.setf(ios_base::scientific);
+    f.precision(12);
+    f.width(12);
+    f << Coll->GetCoord(i*dimension+1);
+    f << " ";
+    //f.setf(ios_base::scientific);
+    f.precision(12);
+    f.width(12);
+    if (dimension==2)
     {
-      i=l;
-      j=r;
-
-      m=(l+r)/2;
-      Mid=Array[m];
-      do
-      {
-        while(Array[i] > Mid) i++;
-
-        while(Array[j] < Mid) j--;
-
-        if (i<=j)
-        {
-          Temp=Array[i];
-          Array[i]=Array[j];
-          Array[j]=Temp;
-          i++; j--;
-        }
-      } while (i<=j);
-
-      if (l<j)
-      {
-        rr[++n]=r;
-        r=j;
-      }
-    } while (l<j);
-
-    if (n>0) r=rr[n--];
-
-    if (i<r) l=i;
-
-  } while (i<r);
-}
-
-
-int PostProcessing2D::getIndex(TVertex **Array, int Length, TVertex *Element)
-{
-  int l,r,m;
-  l=0;
-  r=Length;
-  TVertex *Mid;
-
-  m=Length/2;
-  Mid=Array[m];
-  while(Mid!=Element)
-  {
-    if(Mid>Element) {
-      l=m;
-    } else {
-      r=m;
+      f << 0.;
     }
-    m=(r+l)/2;
-    Mid=Array[m];
+    else
+    {
+      f  << Coll->GetCoord(i*dimension+2); 
+    }
+    f << endl;
   }
-  return m;
+  f << endl;
+}
+
+template <class T>
+void PostProcessing2D::computeNodeValues(const T* function, 
+					 std::vector< double >& solutionAtNode,
+					 unsigned int & dimension)
+{
+  auto FESpace2D = function->GetFESpace2D();
+  TCollection* coll = FESpace2D->GetCollection();
+  int nPoints = coll->GetN_Vertices();
+
+  // compute FE type on first cell
+  TBaseCell *cell = coll->GetCell(0);
+  FE2D FE_ID = FESpace2D->GetFE2D(0, cell);
+  TBaseFunct2D *bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+  
+  // get function type of T
+  bool IsVect = std::is_same< T, TFEVectFunct2D >::value;  
+  dimension=1;
+  if (IsVect || bf->GetBaseVectDim()>1)
+    dimension = 2;
+
+  solutionAtNode.assign(dimension*nPoints, 0.0);
+  std::vector<double> WArray(nPoints, 0.);
+  
+  for(int ncell=0;ncell<coll->GetN_Cells();ncell++) 
+  {
+    cell = coll->GetCell(ncell);
+    unsigned int nLocalVertices = cell->GetN_Vertices();
+
+    bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+
+    for(unsigned int nvert=0; nvert<nLocalVertices; nvert++) 
+    {   
+      unsigned int globalVert_index = coll->GetGlobalVerNo(ncell,nvert);
+      
+      double x,y;
+#ifdef __3D__
+          ;
+#else
+      cell->GetVertex(nvert)->GetCoords(x,y);
+#endif
+      double function_value[dimension];
+    
+      if (dimension>1) //computations for "vector valued scalar functions"
+      {
+	function->FindValueLocal(cell,ncell,x,y,function_value);	
+	    
+	solutionAtNode[dimension*globalVert_index + 0 ] += function_value[0];
+	solutionAtNode[dimension*globalVert_index + 1 ] += function_value[1];
+      }  
+      else	// compute nodal value of FE function
+      {
+	function->FindValueLocal(cell, ncell, x,y, function_value); 
+	solutionAtNode.at(dimension *globalVert_index)+=function_value[0];
+      }
+      WArray.at(globalVert_index)+=1.;
+
+    } // endfor nvert
+  }  // endfor ncell
+
+  for(int nvert=0;nvert<nPoints;nvert++) 
+  {
+    if(WArray[nvert]!=0.) 
+    {
+      solutionAtNode[dimension*nvert] /= WArray[nvert];
+      if (dimension>1) //dimension==2
+      {
+	solutionAtNode[dimension*nvert+1]/= WArray[nvert];
+      }
+    }
+  }
+}
+
+// ****************
+// scalar components of vector variables
+// ****************
+void PostProcessing2D::printVectCompwise(ofstream& dat,  std::string name,
+					 unsigned int N_Vertices, unsigned int N_Comp,
+					 vector< double > solutionAtNode)
+{
+  for(unsigned int ncomp=0;ncomp<N_Comp;ncomp++)
+    {
+      if(N_Comp==1)
+	dat << "SCALARS " << name;
+      else
+	dat << "SCALARS " << name << ncomp;
+      dat << " double"<< endl;
+      dat << "LOOKUP_TABLE " << "default" << endl;
+      for(unsigned int nvert=0;nvert<N_Vertices;nvert++)
+      {
+        double value =solutionAtNode[nvert*N_Comp+ncomp];
+	if(fabs(value)<1e-18)
+	  value = 0.;
+	dat <<  value << endl;
+      }
+      dat << endl << endl;
+    }
+}
+
+// ***************
+// absolute value of vector variables
+// ***************
+void PostProcessing2D::printVectAbsValue(ofstream& dat, std::string name,
+		        unsigned int N_Vertices, unsigned int N_Comp,
+					 vector< double > solutionAtNode)
+{
+  dat << "SCALARS " << "|" << name << "|";
+  dat << " double"<< endl;
+  dat << "LOOKUP_TABLE " << "default" << endl;
+  for(unsigned int nvert = 0, l = 0; nvert < N_Vertices; nvert++)
+  {
+    double t=0;
+    for(unsigned int ncomp=0;ncomp<N_Comp;ncomp++)
+    {
+      t+=solutionAtNode[l]*solutionAtNode[l];
+      l++;
+    }
+    dat << sqrt(t)<< endl;
+  }
+  dat << endl << endl;
+}
+
+// ***************
+// VECTORS
+// ***************
+void PostProcessing2D::printVectPointwise(ofstream& dat, std::string name,
+		        unsigned int N_Vertices, unsigned int N_Comp,
+					  vector< double > solutionAtNode)
+{
+  dat << "VECTORS " << name;
+  dat << " double"<< endl;
+  for(unsigned int nvert = 0; nvert < N_Vertices; nvert++)
+  {
+    for(unsigned int ncomp=0;ncomp<N_Comp;ncomp++)
+    {
+        double value =solutionAtNode[nvert*N_Comp+ncomp];
+	if(fabs(value)<1e-18)
+	  value = 0.;
+	dat <<  value << " ";
+    }
+    dat << double(0) << " " << endl;
+  }
+  dat << endl;
+}
+
+//auxiliary function for writeVectCase
+void PostProcessing2D::printEntry(ofstream & dat, double value, int counter)
+{
+    dat.setf(ios_base::scientific);	
+    dat.precision(5);	
+    dat.width(12);
+    if(fabs(value)<1e-18)
+      value = 0.;
+    dat << value;
+
+  // One line contains most six entries.    
+    if( (counter+1) % 6 == 0 )
+      dat << std::endl;
+}
+
+void PostProcessing2D::writeVectCase(ofstream& dat, 
+				     unsigned int N_Vertices, unsigned int N_Comp, 
+				     vector< double > solutionAtNode)
+{
+  for (unsigned int nvert =0; nvert < N_Vertices; nvert++)
+  {
+    unsigned int entry = N_Comp*nvert;
+    
+    double value_x = solutionAtNode.at(entry);
+    
+    if (N_Comp==1)
+      printEntry(dat, value_x, entry);
+    else
+    {
+      int counter = 3*nvert;
+      
+      printEntry(dat,value_x,counter);
+      
+      double value_y = solutionAtNode.at(entry+1);
+      printEntry(dat,value_y,counter+1);
+    
+      double value_z = 0.;
+      if (N_Comp>2)
+	value_z = solutionAtNode.at(entry+2);  
+      printEntry(dat,value_z,counter+2);    
+    } 
+  }
 }

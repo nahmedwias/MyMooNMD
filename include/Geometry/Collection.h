@@ -42,6 +42,19 @@ class TCollection
     /** @brief array for Globalcell number in Cells */
     int *GlobalIndex;
     
+   // ------------------------------------------------
+   ///@brief create a list of nodes, vertices, elements
+   int createElementLists();
+   std::vector<double> NodesCoords;
+   std::vector<unsigned int> NodesReferences;
+   std::vector< std::vector<unsigned int> > ElementNodes;
+   std::vector<unsigned int> ElementReferences;
+   std::vector<unsigned int> BdFacesNodes;
+   std::vector<unsigned int> BdFacesReferences;
+   std::vector<unsigned int> DomainVertexNumbers;
+   unsigned int NLocVertices;
+   //----- used in PostProcessing ----
+    
   public:
     /** @brief constructor */
     TCollection(int n_cells, TBaseCell **cells);
@@ -111,16 +124,6 @@ class TCollection
       Cells = cells;
      }
    
-   // ------------------------------------------------
-   ///@brief create a list of nodes, vertices, elements
-   int createElementLists();
-   std::vector<double> NodesCoords;
-   std::vector<int> NodesReferences;
-   std::vector< std::vector<int> > ElementNodes;
-   std::vector<int> ElementReferences;
-   std::vector<int> BdFacesNodes;
-   std::vector<int> BdFacesReferences;
-   std::vector<int> DomainVertexNumbers;
    int getIndexInCollection(TBaseCell *cell);
 
    ///@brief write the geometry in .mesh format
@@ -134,6 +137,24 @@ class TCollection
    // ------------------------------------------------
    
    void get_boundary_edge_list(std::vector<TBoundEdge*> &edges);
+   
+   //####################################################
+   //------------- used in PostProcessing ---------------
+   //####################################################
+   
+   unsigned int GetN_Vertices();
+   
+   unsigned int GetN_BdFaces();
+   
+   double GetCoord(unsigned int vert);
+   
+   unsigned int GetBdFacesNode(unsigned int face);
+   
+   unsigned int GetGlobalVerNo(unsigned int cell, unsigned int locvert);
+   
+   unsigned int GetNLocVertices();
+   
+   //####################################################
 
  private:
     /** @brief provide additional arrays */
