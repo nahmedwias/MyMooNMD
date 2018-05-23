@@ -59,27 +59,29 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 #ifdef _MPI
                                     , int maxSubDomainPerDof
 #endif
-) :  velocitySpace_(&coll, "u", "nse3d velocity", example.get_bc(0), //bd cond at 0 is x velo bc
-                    order.first),
-     pressureSpace_(&coll, "p", "nse3d pressure", example.get_bc(3), //bd condition at 3 is pressure bc
-                    order.second)
+) :  velocitySpace_(new TFESpace3D(&coll, "u", "nse3d velocity", 
+                                   example.get_bc(0), //bd cond at 0 is x velo bc
+                                   order.first)),
+     pressureSpace_(new TFESpace3D(&coll, "p", "nse3d pressure", 
+                                   example.get_bc(3), //bd condition at 3 is pressure bc
+                                   order.second))
 {
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      matrix_ = BlockFEMatrix::NSE3D_Type1(velocitySpace_, pressureSpace_);
+      matrix_ = BlockFEMatrix::NSE3D_Type1(*velocitySpace_, *pressureSpace_);
       break;                                               
     case 2:                                                
-      matrix_ = BlockFEMatrix::NSE3D_Type2(velocitySpace_, pressureSpace_);
+      matrix_ = BlockFEMatrix::NSE3D_Type2(*velocitySpace_, *pressureSpace_);
       break;                                               
     case 3:                                                
-      matrix_ = BlockFEMatrix::NSE3D_Type3(velocitySpace_, pressureSpace_);
+      matrix_ = BlockFEMatrix::NSE3D_Type3(*velocitySpace_, *pressureSpace_);
       break;                                               
     case 4:                                                
-      matrix_ = BlockFEMatrix::NSE3D_Type4(velocitySpace_, pressureSpace_);
+      matrix_ = BlockFEMatrix::NSE3D_Type4(*velocitySpace_, *pressureSpace_);
       break;                                               
     case 14:                                               
-      matrix_ = BlockFEMatrix::NSE3D_Type14(velocitySpace_, pressureSpace_);
+      matrix_ = BlockFEMatrix::NSE3D_Type14(*velocitySpace_, *pressureSpace_);
       break;
     default:
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
@@ -88,19 +90,19 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
   rhs_ = BlockVector(matrix_, true);
   solution_ = BlockVector(matrix_, false);
 
-  u_ = TFEVectFunct3D(&velocitySpace_, "u", "u", solution_.block(0),
+  u_ = TFEVectFunct3D(velocitySpace_.get(), "u", "u", solution_.block(0),
      solution_.length(0), 3);
-  p_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_.block(3),
+  p_ = TFEFunction3D(pressureSpace_.get(), "p", "p", solution_.block(3),
      solution_.length(3));
 
 #ifdef _MPI
 
-  velocitySpace_.initialize_parallel(maxSubDomainPerDof);
-  pressureSpace_.initialize_parallel(maxSubDomainPerDof);
+  velocitySpace_->initialize_parallel(maxSubDomainPerDof);
+  pressureSpace_->initialize_parallel(maxSubDomainPerDof);
 
   //print some information
-  velocitySpace_.get_communicator().print_info();
-  pressureSpace_.get_communicator().print_info();
+  velocitySpace_->get_communicator().print_info();
+  pressureSpace_->get_communicator().print_info();
 
 #endif
 }
@@ -109,8 +111,8 @@ void NSE3D::output_problem_size_info() const
 {
   int my_rank = 0;
 #ifndef _MPI
-    const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
-    const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
+    auto & velocity_space = *this->systems_.front().velocitySpace_;
+    auto & pressure_space = *this->systems_.front().pressureSpace_;
 
     size_t nDofu  = velocity_space.GetN_DegreesOfFreedom();
     size_t nDofp  = pressure_space.GetN_DegreesOfFreedom();
@@ -124,8 +126,8 @@ void NSE3D::output_problem_size_info() const
 
 #else
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    auto velocity_comm = systems_.front().velocitySpace_.get_communicator();
-    auto pressure_comm = systems_.front().pressureSpace_.get_communicator();
+    auto velocity_comm = systems_.front().velocitySpace_->get_communicator();
+    auto pressure_comm = systems_.front().pressureSpace_->get_communicator();
     int nDofu  = velocity_comm.get_n_global_dof();
     int nDofp  = pressure_comm.get_n_global_dof();
     int nTotal = 3*nDofu + nDofp;
@@ -378,8 +380,8 @@ void NSE3D::assemble_linear_terms()
   for(auto &s : this->systems_)
   {
 
-    const TFESpace3D *v_space = &s.velocitySpace_;
-    const TFESpace3D *p_space = &s.pressureSpace_;
+    const TFESpace3D *v_space = s.velocitySpace_.get();
+    const TFESpace3D *p_space = s.pressureSpace_.get();
 
     // spaces for matrices
     const TFESpace3D *spaces[2] = {v_space, p_space};
@@ -550,10 +552,10 @@ void NSE3D::assemble_linear_terms()
   double *u2 = this->systems_.front().solution_.block(1);
   double *u3 = this->systems_.front().solution_.block(2);
   double *p  = this->systems_.front().solution_.block(3);
-  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1, 3);
-  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
-  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
-  this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
+  this->systems_.front().velocitySpace_->get_communicator().consistency_update(u1, 3);
+  this->systems_.front().velocitySpace_->get_communicator().consistency_update(u2, 3);
+  this->systems_.front().velocitySpace_->get_communicator().consistency_update(u3, 3);
+  this->systems_.front().pressureSpace_->get_communicator().consistency_update(p, 3);
 #endif
 }
 
@@ -579,7 +581,7 @@ void NSE3D::assemble_non_linear_term()
       std::vector<size_t> u_ns_dofs;
       for(auto &s : systems_ )
       {
-        spaces.push_back(&s.velocitySpace_);
+        spaces.push_back(s.velocitySpace_.get());
         u_entries.push_back(s.solution_.block(block));
         u_ns_dofs.push_back(s.solution_.length(block));
       }
@@ -611,7 +613,7 @@ void NSE3D::assemble_non_linear_term()
 #endif
 
     // spaces for matrices
-    const TFESpace3D* spaces[1] = {&s.velocitySpace_};
+    const TFESpace3D* spaces[1] = {s.velocitySpace_.get()};
     
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
 
@@ -769,7 +771,7 @@ void NSE3D::compute_residuals()
 
   if(s.matrix_.pressure_projection_enabled())
   {
-    TFEFunction3D defect_fctn(&s.pressureSpace_,
+    TFEFunction3D defect_fctn(s.pressureSpace_.get(),
                               "p_def","pressure defect function",
                               &defect_[3*n_u_dof], n_p_dof);
     defect_fctn.project_into_L20();

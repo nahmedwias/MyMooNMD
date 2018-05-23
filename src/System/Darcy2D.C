@@ -28,25 +28,28 @@ ParameterDatabase get_default_Darcy2D_parameters()
 /** ************************************************************************ */
 Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
                                           TCollection& coll)
- : velocity_space(&coll, "u", "Darcy velocity", example.get_bc(0),
-                  TDatabase::ParamDB->VELOCITY_SPACE, nullptr),
-   pressure_space(&coll, "p", "Darcy pressure", example.get_bc(1),
-                  TDatabase::ParamDB->PRESSURE_SPACE, nullptr)
+ : velocity_space(new TFESpace2D(&coll, "u", "Darcy velocity",
+                                 example.get_bc(0), 
+                                 TDatabase::ParamDB->VELOCITY_SPACE, nullptr)),
+   pressure_space(new TFESpace2D(&coll, "p", "Darcy pressure",
+                                 example.get_bc(1),
+                                 TDatabase::ParamDB->PRESSURE_SPACE, nullptr))
 
 {
-  velocity_space.SetAsDGSpace();
-  pressure_space.SetAsDGSpace();
+  /// @note witout this call, we could switch save the FESpaces as const, ie, 
+  /// we could use std::shared_ptr<const TFESpace2D>.
+  velocity_space->SetAsDGSpace();
+  pressure_space->SetAsDGSpace();
   
-  matrix = BlockFEMatrix::Darcy2D(this->velocity_space,
-                                  this->pressure_space);
+  matrix = BlockFEMatrix::Darcy2D(*this->velocity_space, *this->pressure_space);
 
   rhs = BlockVector(this->matrix, true);
   solution = BlockVector(this->matrix, false);
 
-  u = TFEFunction2D(&this->velocity_space, "u", "u", this->solution.block(0),
-      this->solution.length(0));
-  p = TFEFunction2D(&this->pressure_space, "p", "p", this->solution.block(1),
-      this->solution.length(1));
+  u = TFEFunction2D(this->velocity_space.get(), "u", "u",
+                    this->solution.block(0), this->solution.length(0));
+  p = TFEFunction2D(this->pressure_space.get(), "p", "p",
+                    this->solution.block(1), this->solution.length(1));
 }
 
 /** ************************************************************************ */
@@ -80,8 +83,8 @@ Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db,
   outputWriter.add_fe_function(&this->get_pressure());
   
   // print out some information on the finite element space
-  const TFESpace2D& v_space = this->systems.front().velocity_space;
-  const TFESpace2D& p_space = this->systems.front().pressure_space;
+  auto& v_space = *this->systems.front().velocity_space;
+  auto& p_space = *this->systems.front().pressure_space;
   int n_u = v_space.GetN_DegreesOfFreedom();
   int n_u_active = v_space.GetActiveBound();
   int n_p = p_space.GetN_DegreesOfFreedom();
@@ -98,7 +101,7 @@ Darcy2D::~Darcy2D()
 {
   // delete the collections created during the contructor
   for(auto & s : this->systems)
-    delete s.velocity_space.GetCollection();
+    delete s.velocity_space->GetCollection();
 }
 
 /** ************************************************************************ */
@@ -155,8 +158,8 @@ void Darcy2D::assemble()
     
     // everything which follows within this for loop only has the goal to call
     // Assemble2D_VectFE at the end. 
-    const TFESpace2D * v_space = &s.velocity_space;
-    const TFESpace2D * p_space = &s.pressure_space;
+    const TFESpace2D * v_space = s.velocity_space.get();
+    const TFESpace2D * p_space = s.pressure_space.get();
 
     const size_t n_fe_spaces = 2;
 
@@ -233,7 +236,7 @@ void Darcy2D::output(int i)
     
     TAuxParam2D aux;
     MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
-    const TFESpace2D * pointer_to_p_space = &s.pressure_space;
+    const TFESpace2D * pointer_to_p_space = s.pressure_space.get();
     s.p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
                   nullptr, &aux, 1, &pointer_to_p_space, errors.data() + 3);
 

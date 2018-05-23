@@ -30,15 +30,15 @@ ParameterDatabase get_default_CD2D_parameters()
 /** ************************************************************************ */
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
                                        TCollection& coll, int ansatz_order)
-: fe_space(&coll, "space", "cd2d fe_space", example.get_bc(0),
-           ansatz_order, nullptr)
+: fe_space(new TFESpace2D(&coll, "space", "cd2d fe_space", example.get_bc(0),
+                          ansatz_order, nullptr))
 {
-  matrix = BlockFEMatrix::CD2D(fe_space);
+  matrix = BlockFEMatrix::CD2D(*fe_space);
 
   rhs = BlockVector(this->matrix, true);
   solution = BlockVector(this->matrix, false);
 
-  fe_function = TFEFunction2D(&this->fe_space, "c", "c",
+  fe_function = TFEFunction2D(this->fe_space.get(), "c", "c",
                 this->solution.get_entries(), this->solution.length());
 
 }
@@ -68,7 +68,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   
 
   // print out some information
-  TFESpace2D & space = this->systems.front().fe_space;
+  auto& space = *this->systems.front().fe_space;
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
   Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
@@ -151,7 +151,7 @@ CD2D::~CD2D()
 {
   // delete the collections created during the contructor
   for(auto & s : this->systems)
-    delete s.fe_space.GetCollection();
+    delete s.fe_space->GetCollection();
 }
 
 /** ************************************************************************ */
@@ -209,7 +209,7 @@ void CD2D::assemble()
     LocalAssembling2D la(t, &pointer_to_function, example.get_coeffs());
 
     // assemble the system matrix with given local assembling, solution and rhs
-    const TFESpace2D * fe_space = &s.fe_space;
+    const TFESpace2D * fe_space = s.fe_space.get();
     BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
     int N_Matrices = 1;
     double * rhs_entries = s.rhs.get_entries();
@@ -345,7 +345,7 @@ void CD2D::do_algebraic_flux_correction()
         db["algebraic_flux_correction"].is("fem-tvd"))
     {
       //get pointers/references to the relevant objects
-      TFESpace2D& feSpace = s.fe_space;
+      auto& feSpace = *s.fe_space;
       FEMatrix& one_block = *s.matrix.get_blocks_uniquely().at(0).get();
       const std::vector<double>& solEntries = s.solution.get_entries_vector();
       std::vector<double>& rhsEntries = s.rhs.get_entries_vector();

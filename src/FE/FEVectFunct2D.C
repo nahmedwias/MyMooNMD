@@ -436,7 +436,8 @@ std::pair<double, double> TFEVectFunct2D::get_L2_norm_divergence_curl() const
 
 //================================================================
 void TFEVectFunct2D::get_functional_value(std::vector<double>& values,
-                              std::function<void(std::vector<double>&, std::array<double, 8>)> functional) const
+  std::function<void(std::vector<double>&, std::array<double, 8>)> functional)
+const
 {
   BaseFunct2D *BaseFuncts;
   int *N_BaseFunct;
