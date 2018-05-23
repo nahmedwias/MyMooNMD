@@ -41,38 +41,38 @@ ParameterDatabase get_default_CD3D_parameters()
 #ifdef _MPI
   CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example,
                                      TCollection& coll, int maxSubDomainPerDof)
-   : feSpace_(&coll, "space", "cd3d fe_space", example.get_bc(0),
-              TDatabase::ParamDB->ANSATZ_ORDER)
+   : feSpace_(new TFESpace3D(&coll, "space", "cd3d fe_space", example.get_bc(0),
+              TDatabase::ParamDB->ANSATZ_ORDER))
   {
     //inform the fe space about the maximum number of subdomains per dof
-    feSpace_.initialize_parallel(maxSubDomainPerDof);
-    feSpace_.get_communicator().print_info();
+    feSpace_->initialize_parallel(maxSubDomainPerDof);
+    feSpace_->get_communicator().print_info();
 
     // set the matrix with named constructor
-    matrix_ = BlockFEMatrix::CD3D(feSpace_);
+    matrix_ = BlockFEMatrix::CD3D(*feSpace_);
 
     rhs_ = BlockVector(matrix_, true);
     solution_ = BlockVector(matrix_, false);
 
-    feFunction_ = TFEFunction3D(&feSpace_, "c", "c", solution_.get_entries(),
-                solution_.length());
+    feFunction_ = TFEFunction3D(feSpace_.get(), "c", "c",
+                                solution_.get_entries(), solution_.length());
 
   }
 #else
   /* ************************************************************************ */
   CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example,
                                      TCollection& coll)
-   : feSpace_(&coll, "space", "cd3d fe_space", example.get_bc(0),
-              TDatabase::ParamDB->ANSATZ_ORDER)
+   : feSpace_(new TFESpace3D(&coll, "space", "cd3d fe_space", example.get_bc(0),
+              TDatabase::ParamDB->ANSATZ_ORDER))
   {
     // set the matrix with named constructor
-    matrix_ = BlockFEMatrix::CD3D(feSpace_);
+    matrix_ = BlockFEMatrix::CD3D(*feSpace_);
 
     rhs_ = BlockVector(matrix_, true);
     solution_ = BlockVector(matrix_, false);
 
-    feFunction_ = TFEFunction3D(&feSpace_, "c", "c", solution_.get_entries(),
-                solution_.length());
+    feFunction_ = TFEFunction3D(feSpace_.get(), "c", "c", 
+                                solution_.get_entries(), solution_.length());
   }
 #endif
 
@@ -141,7 +141,7 @@ ParameterDatabase get_default_CD3D_parameters()
 void CD3D::output_problem_size_info() const
 {
   // print some useful information
-  const TFESpace3D& space = this->systems_.front().feSpace_;
+  auto& space = *this->systems_.front().feSpace_;
   double hMin, hMax;
   TCollection *coll = space.GetCollection();
   coll->GetHminHmax(&hMin, &hMax);
@@ -210,7 +210,7 @@ void CD3D::output(int i)
 #ifdef _MPI
   // computing errors as well as writing vtk files requires a minimum 
   // consistency level of 1
-  syst.feSpace_.get_communicator().consistency_update(
+  syst.feSpace_->get_communicator().consistency_update(
     syst.solution_.get_entries(), 1);
 #endif // _MPI
   
@@ -305,7 +305,7 @@ void CD3D::checkParameters()
 void CD3D::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_assem)
 {//FIXME the body of this function was copy and paste
 
-  const TFESpace3D * fe_space = &s.feSpace_;
+  const TFESpace3D * fe_space = s.feSpace_.get();
   BoundCondFunct3D * boundary_conditions = fe_space->getBoundCondition();
   int N_Matrices = 1;
   double * rhs_entries = s.rhs_.get_entries();

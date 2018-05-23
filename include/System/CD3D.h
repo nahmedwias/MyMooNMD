@@ -51,7 +51,7 @@ class CD3D
     struct SystemPerGrid
     {
       /** @brief Finite Element space */
-      TFESpace3D feSpace_;
+      std::shared_ptr<TFESpace3D> feSpace_;
       /** @brief the system matrix */
       BlockFEMatrix matrix_;
       /** @brief the right hand side vector */
@@ -256,7 +256,7 @@ class CD3D
     /** @brief Get the fe space on the currently finest grid.*/
     const TFESpace3D & getSpace() const
     {
-      return systems_.front().feSpace_;
+      return *systems_.front().feSpace_;
     }
 
     /** @brief Get the solution vector on the currently finest grid.*/

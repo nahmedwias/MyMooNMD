@@ -545,21 +545,12 @@ double TFEFunction2D::get_L2_norm() const
     auto fe = FESpace2D->get_fe(i_cell);
     FE2D fe_id = FESpace2D->GetFE2D(0, cell); // why is this not in 'fe'?
     auto basis_functions = fe.GetBaseFunct2D();
-    auto fe_degree = basis_functions->GetPolynomialDegree();
     auto n_local_basis_functions = basis_functions->GetDimension();
-    basis_functions->GetRefElement();
-    BF2DRefElements ref_element = basis_functions->GetRefElement();
-    QuadFormula2D qf_id = TFEDatabase2D::GetQFFromDegree(2*fe_degree, 
-                                                         ref_element);
-    TQuadFormula2D *quad_formula = TFEDatabase2D::GetQuadFormula2D(qf_id);
     int N_QuadPoints;
     double *weights, *xi, *eta;
-    quad_formula->GetFormulaData(N_QuadPoints, weights, xi, eta);
     // get quadrature coordinates on original cell (also AbsDetjk is filled)
-    double X[N_QuadPoints], Y[N_QuadPoints], AbsDetjk[N_QuadPoints];
-    // Compute quadrature points on original element (X, Y) according to RefTrans
-    TFEDatabase2D::GetOrigFromRef(fe.GetRefTransID(), N_QuadPoints, xi, eta,
-                                  X, Y, AbsDetjk);
+    double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+    double AbsDetjk[MaxN_QuadPoints_2D];
     bool SecondDer = false;
 
     // Compute transformation of basis functions (and their derivatives) to 
