@@ -1202,6 +1202,14 @@ void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *
    }
 }
 
+void TFEVectFunct2D::FindValueLocal(TBaseCell* cell, int cell_no, double x, double y, double* values) const
+{
+ this->TFEFunction2D::FindValueLocal(cell, cell_no, x, y, values);
+ auto u2 = this->GetComponent(1);
+ u2->FindValueLocal(cell, cell_no, x, y, values+1);
+ delete u2;
+}
+
 
 TFEVectFunct2D& TFEVectFunct2D::operator*=(double alpha)
 {
