@@ -2,6 +2,7 @@
 #include <FEDatabase2D.h>
 #include <PostProcessing2D.h>
 
+#include <sys/stat.h>
 #include <algorithm>
 #include <type_traits>
 
@@ -93,6 +94,7 @@ void PostProcessing2D::write(double current_time)
     auto index = timeValues.size() - 1;
     if(writeVTK)
     {
+      mkdir(testcaseDir.c_str(), 0777);
       std::string name;
       name += testcaseDir + "/" + testcaseName;
       name += std::to_string(index*n_steps_per_output);
@@ -117,6 +119,7 @@ void PostProcessing2D::write()
 {
   if(writeVTK)
   {
+    mkdir(testcaseDir.c_str(),0777);
     std::string name = testcaseDir + "/" + testcaseName + ".vtk";
     Output::print<2>(" PostProcessing2D:: writing ", name);
     writeVtk(name);
