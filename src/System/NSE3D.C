@@ -5,7 +5,6 @@
 #include <MainUtilities.h>
 #include <LinAlg.h>
 #include <DirectSolver.h>
-#include <Output3D.h>
 
 #include <GridTransfer.h>
 #include <Multigrid.h>
@@ -154,7 +153,7 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
 #ifdef _MPI
              , int maxSubDomainPerDof
 #endif
-) : systems_(), example_(example), db(get_default_NSE3D_parameters()),
+) : systems_(), example_(example), db(get_default_NSE3D_parameters()), outputWriter(param_db),
     solver(param_db), defect_(), old_residuals_(), initial_residual_(1e10), 
     errors_()
 {
@@ -873,7 +872,12 @@ void NSE3D::output(int i)
   }
   
   // write solution to a vtk file
-  if(db["output_write_vtk"])
+  outputWriter.add_fe_function(&s.p_);
+  outputWriter.add_fe_vector_function(&s.u_);
+  outputWriter.write();
+  
+  //TODO: Delete this 
+  /*if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput3D Output(5, 5, 2, 1, nullptr);
@@ -897,7 +901,7 @@ void NSE3D::output(int i)
     filename += ".vtk";
     Output.WriteVtk(filename.c_str());
 #endif
-  }
+  }*/
   
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that

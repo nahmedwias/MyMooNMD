@@ -27,6 +27,7 @@
 
 #include <ParameterDatabase.h>
 #include <Solver.h>
+#include <PostProcessing3D.h>
 
 #include <MainUtilities.h> // FixedSizeQueu
 
@@ -129,6 +130,9 @@ class NSE3D
      * Solver object.
      */
     ParameterDatabase db;
+    
+    /** @brief output object */
+    PostProcessing3D outputWriter;
     
     /** @brief a solver object which will solve the linear system
      * 

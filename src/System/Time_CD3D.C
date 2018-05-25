@@ -85,7 +85,8 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
 #endif
                      )
 :  db(get_default_TCD3D_parameters()),
-  solver(param_db), systems_(), example_(_example), errors_({})
+  solver(param_db), systems_(), example_(_example), errors_({}), 
+  outputWriter(param_db)
 {
   this->db.merge(param_db,false); // update this database with given values
   this->check_and_set_parameters();
@@ -453,8 +454,12 @@ void Time_CD3D::output(int m, int& image)
   s.feSpace_.get_communicator().consistency_update(s.solution_.get_entries(),1);
 #endif // _MPI
   
-  //write solution for visualization
-   if(m==0 || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
+  //write solution for visualization 
+  outputWriter.add_fe_function(&s.feFunction_);
+  outputWriter.write(image);
+  
+  //TODO: replace that with write(t) -method
+  /* if(m==0 || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
    {
      if(db["output_write_vtk"])
      {
@@ -482,7 +487,7 @@ void Time_CD3D::output(int m, int& image)
 #endif
       image++;
      }
-   }
+   }*/
   
   // compute errors 
   if(db["output_compute_errors"])

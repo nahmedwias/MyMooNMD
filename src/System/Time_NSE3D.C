@@ -114,7 +114,7 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 , int maxSubDomainPerDof
 #endif  
 )
-: db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
+: db_(get_default_TNSE3D_parameters()), outputWriter(param_db),systems_(), example_(ex),
    solver_(param_db), defect_(), old_residual_(), 
    initial_residual_(1e10), errors_(), oldtau_(), 
    time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false),
@@ -785,7 +785,13 @@ void Time_NSE3D::output(int m, int &image)
     s.p_.PrintMinMax();
   }
 
-  if((m==0) || (m % TDatabase::TimeDB->STEPS_PER_IMAGE == 0) )
+  // write solution to a vtk file
+  outputWriter.add_fe_function(&s.p_);
+  outputWriter.add_fe_vector_function(&s.u_);
+  outputWriter.write(image);
+  
+  //TODO: delete this 
+  /*if((m==0) || (m % TDatabase::TimeDB->STEPS_PER_IMAGE == 0) )
   {
     if(db_["output_write_vtk"])
     {
@@ -817,7 +823,7 @@ void Time_NSE3D::output(int m, int &image)
       image++;
 #endif
     }
-  }
+  }*/
 
   // Measure errors to known solution
   // if an exact solution is not known, it is usually set to be zero, so that
