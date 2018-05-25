@@ -820,7 +820,7 @@ void TFEFunction3D::FindGradientLocal(TBaseCell *cell, int cell_no,
 
 void TFEFunction3D::FindValueLocal(TBaseCell *cell, int cell_no, 
                                       double x, double y, double z, 
-                                      double *values)
+                                      double *values) const
 {
   double xi, eta, zeta;
   FE3D FE_ID;

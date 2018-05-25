@@ -1,24 +1,27 @@
 /** ***************************************************************************
  *
- * @class      PostProcessing2D
+ * @class      PostProcessing3D
  * @brief      store given data and write output
  *             Supported formats: VTK, CASE
- *             (Note: temporary class to eventually replace Output2D)
+ *             (Note: temporary class to eventually replace Output3D,
+ * 		similar to PostProcessing2D)
  *
- * @author     Alfonso Caiazzo
- * @date       01.03.16
+ * @author     Claudia Wohlgemuth
+ * @date       18.05.18
  *
  ******************************************************************************/
-#ifndef __POSTPROCESSING2D__
-#define __POSTPROCESSING2D__
+#ifndef __POSTPROCESSING3D__
+#define __POSTPROCESSING3D__
 
 #include <vector>
 
 
-#include <FEVectFunct2D.h>
+#include <FEVectFunct3D.h>
 #include <Vertex.h>
 #include <ParameterDatabase.h>
-class PostProcessing2D
+
+
+class PostProcessing3D
 {
  protected:
 
@@ -48,10 +51,10 @@ class PostProcessing2D
   // -------------------------------------------------------------------------
 
   ///@brief array of stored FE functions
-  std::vector< const TFEFunction2D* > FEFunctionArray;
+  std::vector< const TFEFunction3D* > FEFunctionArray;
 
   ///@brief array of stored vector-valued variables
-  std::vector< const TFEVectFunct2D*> FEVectFunctArray;
+  std::vector< const TFEVectFunct3D*> FEVectFunctArray;
 
   ///@brief geometry (collection of cells)
   TCollection* Coll;
@@ -76,9 +79,6 @@ class PostProcessing2D
   template <class T>
   void computeNodeValues(const T* function,
 			 std::vector<double>& solutionAtNode, unsigned int &dimension);
-  
-  /** @brief auxiliary function for writeVectCase */
-  void printEntry(std::ofstream & dat, double value, int counter);
    
   /** @brief writes function values in an suitable output for case */
   void writeVectCase(std::ofstream & dat,
@@ -103,13 +103,13 @@ class PostProcessing2D
 
  public:
   ///@brief default constructor: parameter are copied from Database
-  PostProcessing2D(const ParameterDatabase& param_db);
+  PostProcessing3D(const ParameterDatabase& param_db);
   
   /// @brief add a FEFunction into this output object
-  void add_fe_function(const TFEFunction2D *fefunction);
+  void add_fe_function(const TFEFunction3D *fefunction);
 
   /// @brief add a FEVectFunct into this output object
-  void add_fe_vector_function(const TFEVectFunct2D *fevectfunct);
+  void add_fe_vector_function(const TFEVectFunct3D *fevectfunct);
   
   /**
      @brief write data to files during time dependent problems.
@@ -123,6 +123,11 @@ class PostProcessing2D
   */
   void write();
   
+  /**
+   * @brief Write mesh in VTK format 
+   */
+  void writeMesh(std::string name);
+
   // -------------------------------------------------------------------------
  protected:
   /// @brief VTK output
@@ -131,6 +136,17 @@ class PostProcessing2D
   ///@brief writes an extra vtk-file for (scalar) discontinuous functions
   void writeVtkDiscontinuous(std::string fileName, int N_LocVertices,
                              std::vector<TVertex *> Vertices);
+  
+    
+  /** write stored PARALLEL data into a pvtu and vtu files (XML files for paraview) */
+  int Write_ParVTK(
+#ifdef _MPI
+                     MPI_Comm comm,
+#endif
+                     int img, char *subID,
+                     std::string directory = std::string("."),
+                     std::string basename = std::string("parmoon_solution"));
+  
 
   // -------------------------------------------------------------------------
   /** @brief: .case output, suitable for time-depending problems.
