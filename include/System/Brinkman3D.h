@@ -27,6 +27,7 @@
 #include <FEFunction3D.h>
 #include <Residuals.h>
 #include <FESpace3D.h>
+#include <PostProcessing3D.h>
 #include <vector>
 #include <deque>
 #include <list>
@@ -145,6 +146,9 @@ protected:
      * and the pressure (errors.at(2) is L2 and errors.at(3) is H1-semi).
      */
     std::array<double, int(4)> errors;
+    
+    /** @brief output object*/
+    PostProcessing3D outputWriter;
     
 protected:
     
