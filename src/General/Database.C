@@ -565,9 +565,21 @@ void TDatabase::SetDefaultParameters()
   // parameters for nonlinear iteration
   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
 
-
+  // number of boundary components where backflow stabilization should be applied
+  ParamDB->n_stab_backflow_boundary = 1;
+  // ids
+  ParamDB->stab_backflow_boundary_id.clear();
+  // stabilization parameter
+  ParamDB->stab_backflow_boundary_beta.clear();
     
   /** parameters for weakly imposing boundary/interface conditions */
+  // SLIP
+  ParamDB->n_slip_boundary = 0;
+  // ids
+  ParamDB->slip_boundary_id.clear();
+  // stabilization parameter
+  ParamDB->slip_boundary_constant.clear();
+  
   ParamDB->n_neumann_boundary = 0.;
   ParamDB->neumann_boundary_id.clear();
   ParamDB->neumann_boundary_value.clear();
