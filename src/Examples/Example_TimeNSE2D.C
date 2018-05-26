@@ -31,6 +31,12 @@ namespace mixing_layer_us
 #include "TNSE_2D/MixingLayerSlipSmallSquares.h"
 }
 
+namespace house
+{
+#include "TNSE_2D/House.h"
+}
+
+
 Example_TimeNSE2D::Example_TimeNSE2D(
   const ParameterDatabase& user_input_parameter_db)
  : Example_NonStationary2D(user_input_parameter_db)
@@ -169,6 +175,31 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       
       /**post processing - drag and lift calculation and output */
       post_processing_stat = mixing_layer_us::EvaluateSolution;
+      break;
+    case 7:
+      exact_solution.push_back( house::ExactU1 );
+      exact_solution.push_back( house::ExactU2 );
+      exact_solution.push_back( house::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( house::BoundCondition );
+      boundary_conditions.push_back( house::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( house::U1BoundValue );
+      boundary_data.push_back( house::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = house::LinCoeffs;
+      
+      initialCondition.push_back(house::InitialU1);
+      initialCondition.push_back(house::InitialU2);
+      
+      house::ExampleFile();
+      
+      house::DIMENSIONLESS_VISCOSITY = this->get_nu();
       break;
     default:
       ErrThrow("Unknown time-dependent Example_TimeNSE2D example!");

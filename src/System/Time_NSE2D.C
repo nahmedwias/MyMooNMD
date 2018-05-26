@@ -582,6 +582,45 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
         break;
     } // endswitch
   }
+  
+  if(db["example"].is(7))
+  {
+    // add boundary integrals to stabilize backflow at open boundaries
+    const TFESpace2D * v_space = &s.velocity_space;
+    std::vector< TFEFunction2D* > u_conv;
+    u_conv.resize(2);
+    u_conv[0] = s.u.GetComponent(0);
+    u_conv[1] = s.u.GetComponent(1);
+    
+    for (int k=0;k<TDatabase::ParamDB->n_stab_backflow_boundary;k++)
+    {
+      
+      BoundaryAssembling2D boundary_integral;
+      int neumann_boundary_component = TDatabase::ParamDB->stab_backflow_boundary_id[k];
+      double beta_backflow_stab = TDatabase::ParamDB->stab_backflow_boundary_beta[k];
+      switch (TDatabase::ParamDB->type_stab_backflow_boundary) 
+      {
+        case 1:
+          Output::print(" Backflow stab (inertial) on boundary ",
+                        TDatabase::ParamDB->stab_backflow_boundary_id[k],
+                        " beta = ", TDatabase::ParamDB->stab_backflow_boundary_beta[k]);
+          boundary_integral.matrix_u_v_backflow_stab(s.matrix,
+                              v_space, u_conv, 
+                              neumann_boundary_component,
+                              beta_backflow_stab);
+          break;
+        case 2:
+          Output::print(" Backflow stab (tgt reg) on boundary ",
+                        TDatabase::ParamDB->stab_backflow_boundary_id[k],
+                        " beta = ", TDatabase::ParamDB->stab_backflow_boundary_beta[k]);
+          boundary_integral.matrix_dtu_dtv_backflow_stab(s.matrix,
+                               v_space, u_conv,
+                               neumann_boundary_component,   
+                               beta_backflow_stab);
+          break;
+      }
+    }
+  }
   // we are assembling only one mass matrix M11, but in general we need the
   // diagonal block M22 to be the same
   // For SUPG method, mass matrix is non-linear and will be changed during 
