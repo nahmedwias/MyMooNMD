@@ -93,7 +93,7 @@ void PostProcessing3D::write()
      int my_rank;
      MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
      if(my_rank==0)
-       mkdir(testcaseDir.c_str, 0777);
+       mkdir(testcaseDir.c_str(), 0777);
      Write_ParVTK(MPI_COMM_WORLD, 0, SubID, testcaseDir, testcaseName);
 #else    
     mkdir(testcaseDir.c_str(), 0777);
@@ -106,8 +106,7 @@ void PostProcessing3D::write()
   if(writeCASE)
   {
 #ifdef _MPI
-    Output::print(" A parallel option for CASE-output is not implemented, yet.");
-    Output::print(" Instead nonparallel writeCase() is used.");
+    ErrThrow(" A parallel option for CASE-output is not implemented, yet.");
 #endif
     writeCaseGeo();
     writeCaseVars(0);
@@ -149,8 +148,7 @@ void PostProcessing3D::write(double current_time)
     if(writeCASE)
     {
 #ifdef _MPI
-      Output::print(" A parallel option for CASE-output is not implemented, yet.");
-      Output::print(" Instead nonparallel writeCase() is used.");
+      ErrThrow(" A parallel option for CASE-output is not implemented, yet.");
 #endif      
       if(index == 0) // first call to this method
       {
@@ -501,8 +499,8 @@ int PostProcessing3D::Write_ParVTK(
 							   std::string basename)
 {
   int i, j, k,l,m,n, rank, size, N_, N_Elements, N_LocVertices;
-  int N_Vertices, N_CellVertices, N_Comps;
-  int *FESpaceNumber, N_LocDOF, Length, N_Comp, *GlobalNumbers, *BeginIndex, *DOF;
+  int N_Vertices, N_CellVertices;
+  int N_LocDOF, Length, N_Comp, *GlobalNumbers, *BeginIndex, *DOF;
   int *VertexNumbers=nullptr, *NumberVertex=nullptr, begin, ID;
 
   double xi=0, eta=0, zeta=0, value;
@@ -516,8 +514,6 @@ int PostProcessing3D::Write_ParVTK(
   
   int N_ScalarVar = FEFunctionArray.size();
   int N_VectorVar = FEVectFunctArray.size();
-
-  char Dquot;
 
 #ifdef _MPI
   MPI_Comm_rank(comm, &rank);
@@ -547,7 +543,6 @@ int PostProcessing3D::Write_ParVTK(
   TBaseFunct3D *bf;
   FE3D FE_ID;
 
-  Dquot = 34; //  see ASCII Chart
   const char* VtkBaseName = basename.c_str();
   const char* output_directory = directory.c_str();
 
@@ -591,7 +586,7 @@ int PostProcessing3D::Write_ParVTK(
 #endif
      }
 
-    dat <<  "<?xml version="<<Dquot<<"1.0"<<Dquot<<"?>"<< endl;
+    dat <<  "<?xml version=\"1.0\"?>"<< endl;
     dat << endl;
     dat <<  "<!--" << endl;
     dat <<  "      Title: Master file for parallel vtk data" << endl;
@@ -604,57 +599,57 @@ int PostProcessing3D::Write_ParVTK(
     dat << endl;
 
 
-    dat <<  "<VTKFile type="<<Dquot<<"PUnstructuredGrid"<<Dquot<<" version="<<Dquot<<"0.1"
-             <<Dquot<<" byte_order="<<Dquot<<"LittleEndian"<<Dquot<<">"<<endl;
-    dat <<  "<PUnstructuredGrid GhostLevel="<<Dquot<<0<<Dquot<<">"<<endl;
+    dat <<  "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1"
+             <<"\" byte_order=\"LittleEndian\">"<<endl;
+    dat <<  "<PUnstructuredGrid GhostLevel=\""<<0<<"\">"<<endl;
     dat << endl;
 
     dat <<  " <PPoints>"<<endl;
-    dat <<  "   <PDataArray type="<<Dquot<<"Float32"<<Dquot<<" Name="<<Dquot
-        <<"Position"<<Dquot<<" NumberOfComponents="<<Dquot<<"3"<<Dquot<<"/>"<<endl;
+    dat <<  "   <PDataArray type=\"Float32\" Name=\""
+        <<"Position\" NumberOfComponents=\"3\"/>"<<endl;
     dat <<   "</PPoints>"<<endl;
     dat << endl;
 
     dat <<   "<PCells>"<<endl;
-    dat <<   "  <PDataArray type="<<Dquot<<"Int32"<<Dquot<<" Name="<<Dquot<<"connectivity"<<Dquot
-        <<" NumberOfComponents="<<Dquot<<"1"<<Dquot<<"/>"<<endl;
-    dat <<   "  <PDataArray type="<<Dquot<<"Int32"<<Dquot<<" Name="<<Dquot<<"offsets"<<Dquot
-        <<"      NumberOfComponents="<<Dquot<<"1"<<Dquot<<"/>"<<endl;
-    dat <<   "  <PDataArray type="<<Dquot<<"UInt8"<<Dquot<<" Name="<<Dquot<<"types"<<Dquot
-        <<"        NumberOfComponents="<<Dquot<<"1"<<Dquot<<"/>"<<endl;
+    dat <<   "  <PDataArray type=\"Int32\" Name=\"connectivity\""
+        <<" NumberOfComponents=\"1\"/>"<<endl;
+    dat <<   "  <PDataArray type=\"Int32\" Name=\"offsets\""
+        <<"      NumberOfComponents=\"1\"/>"<<endl;
+    dat <<   "  <PDataArray type=\"UInt8\" Name=\"types\""
+        <<"        NumberOfComponents=\"1\"/>"<<endl;
     dat <<   "</PCells>"<<endl;
     dat << endl;
 
-    dat <<   "<PPointData Vectors="<<Dquot<<"Vectors"<<Dquot<<" "<<"Scalars="<<Dquot<<"Scalars"<<Dquot<<">"<<endl;
+    dat <<   "<PPointData Vectors=\"Vectors\" Scalars=\"Scalars\">"<<endl;
     for(i=0;i<N_VectorVar;i++)
-    dat <<   "  <PDataArray type="<<Dquot<<"Float32"<<Dquot<<" Name="<<Dquot<<FEVectFunctArray[i]->GetName()<<Dquot
-        <<" NumberOfComponents="<<Dquot<<"3"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<"/>"<<endl;
+    dat <<   "  <PDataArray type=\"Float32\" Name=\""<<FEVectFunctArray[i]->GetName()<<"\""
+        <<" NumberOfComponents=\"3\" format=\"ascii\"/>"<<endl;
       dat << endl;
 
     for(i=0;i<N_VectorVar;i++)
     {
     for(j=0;j<FEVectFunctArray[i]->GetN_Components();j++)
      {
-      dat <<  "  <DataArray type="<<Dquot<<"Float32"<<Dquot<<" Name="<<Dquot
-          <<FEVectFunctArray[i]->GetName()<<j<<Dquot<<" NumberOfComponents="<<Dquot
-          <<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<"/>"<<endl;
+      dat <<  "  <DataArray type=\"Float32\" Name=\""
+          <<FEVectFunctArray[i]->GetName()<<j<<"\" NumberOfComponents=\""
+          <<"1\" format=\"ascii\"/>"<<endl;
       dat << endl;
      }
     }
 
     for(i=0;i<N_ScalarVar;i++)
-    dat <<   "  <PDataArray type="<<Dquot<<"Float32"<<Dquot<<" Name="<<Dquot<<FEFunctionArray[i]->GetName()<<Dquot
-        <<" NumberOfComponents="<<Dquot<<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<"/>"<<endl;
+    dat <<   "  <PDataArray type=\"Float32\" Name=\""<<FEFunctionArray[i]->GetName()<<"\""
+        <<" NumberOfComponents=\"1\" format=\"ascii\"/>"<<endl;
     dat <<   "</PPointData>"<<endl;
     dat << endl;
 
-    dat <<   "<PCellData Scalars="<<Dquot<<"SubDomainAndRegionID"<<Dquot<<">"<<endl;
+    dat <<   "<PCellData Scalars=\"SubDomainAndRegionID\">"<<endl;
 #ifdef _MPI    
-    dat <<   "  <PDataArray type="<<Dquot<<"Int32"<<Dquot<<"   Name="<<Dquot<<"SubDomain"<<Dquot
-        <<"  NumberOfComponents="<<Dquot<<"1"<<Dquot<<"/>"<<endl;
+    dat <<   "  <PDataArray type=\"Int32\"   Name=\"SubDomain\""
+        <<"  NumberOfComponents=\"1\"/>"<<endl;
 #endif
-    dat <<   "  <PDataArray type="<<Dquot<<"Int32"<<Dquot<<"   Name="<<Dquot<<"RegionID"<<Dquot
-        <<"  NumberOfComponents="<<Dquot<<"1"<<Dquot<<"/>"<<endl;
+    dat <<   "  <PDataArray type=\"Int32\"   Name=\"RegionID\""
+        <<"  NumberOfComponents=\"1\"/>"<<endl;
 
     dat <<   "</PCellData>"<<endl;
     dat << endl; 
@@ -670,38 +665,38 @@ int PostProcessing3D::Write_ParVTK(
 
       if(img<10)
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".0000"<<img<<".vtu\"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".0000"<<img<<".vtu\"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".0000"<<img<<".vtu\"/>"<<endl;
+        else            dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".0000"<<img<<".vtu\"/>"<<endl;
        }
       else if(img<100)
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".000"<<img<<".vtu\"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".000"<<img<<".vtu\"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".000"<<img<<".vtu\"/>"<<endl;
+        else            dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".000"<<img<<".vtu\"/>"<<endl;
        }
       else if(img<1000)
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".00"<<img<<".vtu\"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".00"<<img<<".vtu\"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".00"<<img<<".vtu\"/>"<<endl;
+        else            dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".00"<<img<<".vtu\"/>"<<endl;
        }
       else if(img<10000)
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".0"<<img<<".vtu\"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".0"<<img<<".vtu\"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".0"<<img<<".vtu\"/>"<<endl;
+        else            dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".0"<<img<<".vtu\"/>"<<endl;
        }
       else
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".000"<<ID<<"."<<img<<".vtu\"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".00" <<ID<<"."<<img<<".vtu\"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<"."<<img<<".vtu\"/>"<<endl;
+        else            dat <<   "  <Piece Source=\""<<vtu<<VtkBaseName<<subID<<"."   <<ID<<"."<<img<<".vtu\"/>"<<endl;
        }
      }
     dat << endl;
@@ -714,46 +709,6 @@ int PostProcessing3D::Write_ParVTK(
   // root take part in computation 
 //   else
    {
-     
-     //Construct FESpaceArray as it was in the Output3D class
-     std::vector<const TFESpace3D*> FESpaceArray;
-     for(const TFEFunction3D * &function : FEFunctionArray)
-     {
-       if(std::find(FESpaceArray.begin(), FESpaceArray.end(), function->GetFESpace3D())
-	 ==FESpaceArray.end() )
-	 FESpaceArray.push_back(function->GetFESpace3D());
-    }
-    for(const TFEVectFunct3D * &function : FEVectFunctArray)
-     {
-       if(std::find(FESpaceArray.begin(), FESpaceArray.end(), function->GetFESpace3D())
-	 == FESpaceArray.end()
-      )
-	 FESpaceArray.push_back(function->GetFESpace3D());
-    }
-
-    // determine data for vtu file of each processor
-    FESpaceNumber = new int[N_ScalarVar+N_VectorVar];
-    //cout << "N_ScalarVar: " <<  N_ScalarVar << endl;
-    N_Comps = 0;
-    for(i=0;i<N_ScalarVar;i++)
-    {
-     N_Comps++;
-     fespace=FEFunctionArray[i]->GetFESpace3D();
-     j=0;
-     while(FESpaceArray[j]!=fespace) j++;
-     FESpaceNumber[i]=j;
-    }
-
-    k = N_ScalarVar;
-    for(i=0;i<N_VectorVar;i++,k++)
-    {
-     N_Comps += FEVectFunctArray[i]->GetN_Components();
-     fespace=FEVectFunctArray[i]->GetFESpace3D();
-     j=0;
-     while(FESpaceArray[j]!=fespace) j++;
-     FESpaceNumber[k]=j;
-    }
-
 
 #ifdef _MPI
   N_Elements=Coll->GetN_OwnCells();
@@ -830,10 +785,6 @@ int PostProcessing3D::Write_ParVTK(
     } // endfor j
   } //endfor i
 
-
-  // additional column for absolute values of velocity
-  N_Comps++;
-
   // to check
   //cout << "MaxN_VerticesPerCell*N_Comps" << MaxN_VerticesPerCell*N_Comps << endl;
   //cout << "MaxN_VerticesPerCell" << MaxN_VerticesPerCell << endl;
@@ -896,7 +847,7 @@ int PostProcessing3D::Write_ParVTK(
      }
     dat << setprecision(8);
 
-    dat <<  "<?xml version="<<Dquot<<"1.0"<<Dquot<<"?>" << endl;
+    dat <<  "<?xml version=\"1.0\"?>" << endl;
     dat << endl;
     dat <<  "<!--" << endl;
     dat <<  "      Title: SubDomain data for master ptvu file" << endl;
@@ -906,15 +857,15 @@ int PostProcessing3D::Write_ParVTK(
     dat <<  "  -->" << endl;
     dat << endl;
 
-    dat <<  "<VTKFile type="<<Dquot<<"UnstructuredGrid"<<Dquot<<" version="<<Dquot<<"0.1"
-             <<Dquot<<" byte_order="<<Dquot<<"LittleEndian"<<Dquot<<">"<<endl;
+    dat <<  "<VTKFile type=\"UnstructuredGrid\" version=\"0.1"
+             <<"\" byte_order=\"LittleEndian\">"<<endl;
     dat <<  "<UnstructuredGrid>"<<endl;
     dat << endl;
 
-    dat <<  "<Piece NumberOfPoints="<<Dquot<<N_Vertices<<Dquot<<" NumberOfCells="<<Dquot<<N_Elements<<Dquot<<">"<<endl;
+    dat <<  "<Piece NumberOfPoints=\""<<N_Vertices<<"\" NumberOfCells=\""<<N_Elements<<"\">"<<endl;
     dat <<  "<Points>"<<endl;
-    dat <<  "  <DataArray type="<<Dquot<<"Float32"<<Dquot<<" Name="<<Dquot<<"Position"<<Dquot
-        <<" NumberOfComponents="<<Dquot<<"3"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+    dat <<  "  <DataArray type=\"Float32\" Name=\"Position\""
+        <<" NumberOfComponents=\"3\" format=\"ascii\">"<<endl;
     N_=0;
     for(i=0;i<N_Vertices;i++)
     {
@@ -926,8 +877,8 @@ int PostProcessing3D::Write_ParVTK(
 
 
     dat <<  "<Cells>"<<endl;
-    dat <<  "  <DataArray type="<<Dquot<<"Int32"<<Dquot<<" Name="<<Dquot<<"connectivity"<<Dquot
-        <<" NumberOfComponents="<<Dquot<<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+    dat <<  "  <DataArray type=\"Int32\" Name=\"connectivity\""
+        <<" NumberOfComponents=\"1\" format=\"ascii\">"<<endl;
     l=0;
     for(i=0;i<N_Elements;i++)
      {
@@ -943,8 +894,8 @@ int PostProcessing3D::Write_ParVTK(
     dat <<  "  </DataArray>"<<endl;
     dat << endl;
 
-    dat <<  "  <DataArray type="<<Dquot<<"Int32"<<Dquot<<" Name="<<Dquot<<"offsets"<<Dquot
-        <<" NumberOfComponents="<<Dquot<<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+    dat <<  "  <DataArray type=\"Int32\" Name=\"offsets\""
+        <<" NumberOfComponents=\"1\" format=\"ascii\">"<<endl;
     for(i=1;i<=N_Elements;i++)
       {
         N_CellVertices=Coll->GetCell(i-1)->GetN_Vertices();
@@ -953,8 +904,8 @@ int PostProcessing3D::Write_ParVTK(
     dat <<  "   </DataArray>"<<endl;
     dat << endl;
 
-    dat <<  "  <DataArray type="<<Dquot<<"UInt8"<<Dquot<<"  Name="<<Dquot<<"types"<<Dquot
-        <<" NumberOfComponents="<<Dquot<<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+    dat <<  "  <DataArray type=\"UInt8\"  Name=\"types\""
+        <<" NumberOfComponents=\"1\" format=\"ascii\">"<<endl;
     for(i=0;i<N_Elements;i++)
      {
       N_CellVertices=Coll->GetCell(i)->GetN_Vertices();
@@ -969,7 +920,7 @@ int PostProcessing3D::Write_ParVTK(
     dat <<  "  </DataArray>"<<endl;
     dat <<  "</Cells>"<<endl;
     dat <<endl;
-    dat <<  "<PointData Vectors="<<Dquot<<"Velocity"<<Dquot<<" "<<"Scalars="<<Dquot<<"Scalars"<<Dquot<<">"<<endl;
+    dat <<  "<PointData Vectors=\"Velocity\" Scalars=\"Scalars\">"<<endl;
     dat << endl;
 
 
@@ -1047,9 +998,9 @@ int PostProcessing3D::Write_ParVTK(
 //         cout << "Do[" << i << "]" << DoubleArray[i] << endl;
 
 
-      dat <<  "  <DataArray type="<<Dquot<<"Float32"<<Dquot<<" Name="<<Dquot
-          <<FEVectFunctArray[k]->GetName()<<Dquot<<" NumberOfComponents="<<Dquot
-          <<"3"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+      dat <<  "  <DataArray type=\"Float32\" Name=\""
+          <<FEVectFunctArray[k]->GetName()<<"\" NumberOfComponents=\""
+          <<"3\" format=\"ascii\">"<<endl;
       l=0;
       l=0;
       for(i=0;i<N_Vertices;i++)
@@ -1064,9 +1015,9 @@ int PostProcessing3D::Write_ParVTK(
 
       for(j=0;j<N_Comp;j++)
        {
-        dat <<  "  <DataArray type="<<Dquot<<"Float32"<<Dquot<<" Name="<<Dquot
-          <<FEVectFunctArray[k]->GetName()<<j<<Dquot<<" NumberOfComponents="<<Dquot
-          <<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+        dat <<  "  <DataArray type=\"Float32\" Name=\""
+          <<FEVectFunctArray[k]->GetName()<<j<<"\" NumberOfComponents=\""
+          <<"1\" format=\"ascii\">"<<endl;
         for(i=0;i<N_Vertices;i++)
 	 dat << DoubleArray[i*N_Comp+j] << " ";
 
@@ -1135,9 +1086,9 @@ int PostProcessing3D::Write_ParVTK(
          DoubleArray[i] /= WArray[i];
        }
 
-      dat <<  "  <DataArray type="<<Dquot<<"Float32"<<Dquot<<" Name="<<Dquot
-          <<FEFunctionArray[k]->GetName()<<Dquot<<" NumberOfComponents="<<Dquot
-          <<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+      dat <<  "  <DataArray type=\"Float32\" Name=\""
+          <<FEFunctionArray[k]->GetName()<<"\" NumberOfComponents=\""
+          <<"1\" format=\"ascii\">"<<endl;
       for(j=0;j<N_Vertices;j++)
         dat << DoubleArray[j]<< " ";
        dat << endl;
@@ -1151,9 +1102,9 @@ int PostProcessing3D::Write_ParVTK(
 //     dat <<  "</PointData>"<<endl;
 //     dat << endl;
 // 
-//     dat <<  "<CellData Scalars="<<Dquot<<"SubDomain"<<Dquot<<">"<<endl;
-//     dat <<  "  <DataArray type="<<Dquot<<"Int32"<<Dquot<<" Name="<<Dquot<<"Region"<<Dquot
-//         <<" NumberOfComponents="<<Dquot<<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+//     dat <<  "<CellData Scalars=\"SubDomain\">"<<endl;
+//     dat <<  "  <DataArray type=\"Int32\" Name=\"Region\""
+//         <<" NumberOfComponents=\"1\" format=\"ascii\">"<<endl;
 //     for(i=0;i<N_Elements;i++)
 //       dat << (Coll->GetCell(i))->GetRegionID()   << " ";
 //     dat <<  "  </DataArray>"<<endl;
@@ -1164,16 +1115,16 @@ int PostProcessing3D::Write_ParVTK(
     dat <<  "</PointData>"<<endl;
     dat << endl;
 
-    dat <<  "<CellData Scalars="<<Dquot<<"SubDomain"<<Dquot<<">"<<endl;
+    dat <<  "<CellData Scalars=\"SubDomain\">"<<endl;
 #ifdef _MPI    
-    dat <<  "  <DataArray type="<<Dquot<<"Int32"<<Dquot<<" Name="<<Dquot<<"SubDomain"<<Dquot
-        <<" NumberOfComponents="<<Dquot<<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+    dat <<  "  <DataArray type=\"Int32\" Name=\"SubDomain\""
+        <<" NumberOfComponents=\"1\" format=\"ascii\">"<<endl;
     for(i=0;i<N_Elements;i++)     
       dat << (Coll->GetCell(i))->GetSubDomainNo() << " ";
     dat <<  "  </DataArray>"<<endl;
 #endif    
-    dat <<  "  <DataArray type="<<Dquot<<"Int32"<<Dquot<<" Name="<<Dquot<<"RegionID"<<Dquot
-        <<" NumberOfComponents="<<Dquot<<"1"<<Dquot<<" format="<<Dquot<<"ascii"<<Dquot<<">"<<endl;
+    dat <<  "  <DataArray type=\"Int32\" Name=\"RegionID\""
+        <<" NumberOfComponents=\"1\" format=\"ascii\">"<<endl;
      for(i=0;i<N_Elements;i++)
       dat << (Coll->GetCell(i))->GetRegionID() << " ";       
     dat <<  "  </DataArray>"<<endl;    
@@ -1185,10 +1136,6 @@ int PostProcessing3D::Write_ParVTK(
     dat <<  "</VTKFile>"<<endl;
 
     dat.close();
-
-
-
-    delete [] FESpaceNumber;
 
   if(N_LocVertices)
    {
@@ -1639,7 +1586,7 @@ void PostProcessing3D::printVectPointwise(ofstream& dat, std::string name,
 	dat << scientific;
 	dat <<  value << " ";
     }
-    dat << double(0) << " " << endl;
+    dat << endl;
   }
   dat << endl;
 }

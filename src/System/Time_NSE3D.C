@@ -3,7 +3,6 @@
 #include <Assemble3D.h>
 #include <LocalAssembling3D.h>
 #include <LinAlg.h>
-#include <Output3D.h>
 #include <DirectSolver.h>
 #include <GridTransfer.h>
 #include <Upwind3D.h>
@@ -789,41 +788,6 @@ void Time_NSE3D::output(int m, int &image)
   outputWriter.add_fe_function(&s.p_);
   outputWriter.add_fe_vector_function(&s.u_);
   outputWriter.write(image);
-  
-  //TODO: delete this 
-  /*if((m==0) || (m % TDatabase::TimeDB->STEPS_PER_IMAGE == 0) )
-  {
-    if(db_["output_write_vtk"])
-    {
-      // last argument in the following is domain but is never used in this class
-      TOutput3D output(5, 5, 2, 1, NULL);
-      output.AddFEFunction(&s.p_);
-      output.AddFEVectFunct(&s.u_);
-#ifdef _MPI
-      char SubID[] = "";
-      if(my_rank == 0)
-        mkdir(db_["output_vtk_directory"], 0777);
-      std::string dir = db_["output_vtk_directory"];
-      std::string base = db_["output_basename"];
-      output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);
-      image++;
-#else
-    // Create output directory, if not already existing.
-    mkdir(db_["output_vtk_directory"], 0777);
-    std::string filename = db_["output_vtk_directory"];
-    filename += "/" + db_["output_basename"].value_as_string();
-
-      if(image<10) filename += ".0000";
-      else if(image<100) filename += ".000";
-      else if(image<1000) filename += ".00";
-      else if(image<10000) filename += ".0";
-      else filename += ".";
-      filename += std::to_string(image) + ".vtk";
-      output.WriteVtk(filename.c_str());
-      image++;
-#endif
-    }
-  }*/
 
   // Measure errors to known solution
   // if an exact solution is not known, it is usually set to be zero, so that

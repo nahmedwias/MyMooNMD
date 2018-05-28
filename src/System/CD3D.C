@@ -2,7 +2,6 @@
 #include <Example_CD3D.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
-#include <Output3D.h>
 #include <LinAlg.h>
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>

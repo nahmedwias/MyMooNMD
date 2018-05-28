@@ -4,7 +4,6 @@
 #include <Assemble3D.h>
 #include <LinAlg.h>
 #include <Multigrid.h>
-#include <Output3D.h>
 #include <AlgebraicFluxCorrection.h>
 
 #include <MainUtilities.h>
@@ -458,36 +457,6 @@ void Time_CD3D::output(int m, int& image)
   outputWriter.add_fe_function(&s.feFunction_);
   outputWriter.write(image);
   
-  //TODO: replace that with write(t) -method
-  /* if(m==0 || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
-   {
-     if(db["output_write_vtk"])
-     {
-       TOutput3D output(1, 1, 0, 0, nullptr);
-       output.AddFEFunction(&s.feFunction_);
-#ifdef _MPI
-       char SubID[] = "";
-       if(i_am_root)
-         mkdir(db["output_vtk_directory"], 0777);
-       std::string dir = db["output_vtk_directory"];
-       std::string base = db["output_basename"];
-       output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);
-#else
-       mkdir(db["output_vtk_directory"], 0777);
-    std::string filename = db["output_vtk_directory"];
-    filename += "/" + db["output_basename"].value_as_string();
-
-      if(image<10) filename += ".0000";
-      else if(image<100) filename += ".000";
-      else if(image<1000) filename += ".00";
-      else if(image<10000) filename += ".0";
-      else filename += ".";
-      filename += std::to_string(image) + ".vtk";
-      output.WriteVtk(filename.c_str());
-#endif
-      image++;
-     }
-   }*/
   
   // compute errors 
   if(db["output_compute_errors"])
