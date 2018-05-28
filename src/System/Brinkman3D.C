@@ -5,7 +5,6 @@
 #include <Assemble3D.h> ///#include <Assembler4.h>
 #include <Database.h>
 #include <LocalAssembling3D.h>
-#include <Output3D.h>
 #include <sys/stat.h>
 #include <PETScSolver.h>
 #include <BoundaryAssembling3D.h>

@@ -876,32 +876,6 @@ void NSE3D::output(int i)
   outputWriter.add_fe_vector_function(&s.u_);
   outputWriter.write();
   
-  //TODO: Delete this 
-  /*if(db["output_write_vtk"])
-  {
-    // last argument in the following is domain, but is never used in this class
-    TOutput3D Output(5, 5, 2, 1, nullptr);
-    Output.AddFEFunction(&s.p_);
-    Output.AddFEVectFunct(&s.u_);
-#ifdef _MPI
-    char SubID[] = "";
-    if(my_rank == 0)
-  	  mkdir(db["output_vtk_directory"], 0777);
-    std::string dir = db["output_vtk_directory"];
-    std::string base = db["output_basename"];
-    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
-#else
-    // Create output directory, if not already existing.
-    mkdir(db["output_vtk_directory"], 0777);
-    std::string filename = this->db["output_vtk_directory"];
-    filename += "/" + this->db["output_basename"].value_as_string();
-
-    if(i >= 0)
-      filename += "_" + std::to_string(i);
-    filename += ".vtk";
-    Output.WriteVtk(filename.c_str());
-#endif
-  }*/
   
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
