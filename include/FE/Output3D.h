@@ -35,7 +35,7 @@ protected:
     int MaxN_FESpaces;
     
     /** array of stored FESpaces */
-    const TFESpace3D **FESpaceArray;
+    const TFESpace3D **FESpaceArray; 
     
     /** number of stored scalar variables = TFEFunction */
     int N_ScalarVar;

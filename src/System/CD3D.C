@@ -2,11 +2,10 @@
 #include <Example_CD3D.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
-#include <Output3D.h>
 #include <LinAlg.h>
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>
-//#include <PostProcessing3D.h>
+#include <PostProcessing3D.h>
 
 #include <DirectSolver.h>
 
@@ -84,7 +83,7 @@ ParameterDatabase get_default_CD3D_parameters()
 #endif
   )
   : systems_(), example_(example), db(get_default_CD3D_parameters()),
-    solver(param_db), errors_()
+    outputWriter(param_db), solver(param_db), errors_()
   {
     this->db.merge(param_db, false); // update this database with given values
     this->checkParameters();
@@ -215,30 +214,8 @@ void CD3D::output(int i)
 #endif // _MPI
   
   // write solution to a vtk file
-  if(db["output_write_vtk"])
-  {
-    // last argument in the following is domain, but is never used in this class
-    TOutput3D Output(1, 1, 0, 0, nullptr);
-    Output.AddFEFunction(&syst.feFunction_);
-#ifdef _MPI
-    char SubID[] = "";
-    if(my_rank == 0)
-      mkdir(db["output_vtk_directory"], 0777);
-    std::string dir = db["output_vtk_directory"];
-    std::string base = db["output_basename"];
-    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
-#else
-    // Create output directory, if not already existing.
-    mkdir(db["output_vtk_directory"], 0777);
-    std::string filename = this->db["output_vtk_directory"];
-    filename += "/" + this->db["output_basename"].value_as_string();
-
-    if(i >= 0)
-      filename += "_" + std::to_string(i);
-    filename += ".vtk";
-    Output.WriteVtk(filename.c_str());
-#endif
-  }
+  outputWriter.add_fe_function(&syst.feFunction_);
+  outputWriter.write();
 
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that

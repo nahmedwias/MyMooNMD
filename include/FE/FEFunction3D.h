@@ -57,7 +57,7 @@ class TFEFunction3D
     ~TFEFunction3D();
 
     /** return name */
-    std::string GetName()
+    std::string GetName() const
     { return Name; }
 
     /** return description */
@@ -73,12 +73,17 @@ class TFEFunction3D
     { return FESpace3D; }
 
     /** return length */
-    int GetLength()
+    int GetLength() const
     { return Length; }
 
     /** return vector of data */
+    const double *GetValues() const
+    { return Values; }
+    
+    /** return vector of data */
     double *GetValues()
     { return Values; }
+
 
     /** @brief calculate errors to given function 
      * 
@@ -133,7 +138,7 @@ class TFEFunction3D
         the given point */
     void FindValueLocal(TBaseCell *cell, int cell_no, 
                            double x, double y, double z, 
-                           double *values);
+                           double *values) const;
 
     /** calculate the interpolation of an exact function */
     void Interpolate(DoubleFunct3D *Exact);
