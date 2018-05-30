@@ -37,7 +37,7 @@ class TFEVectFunct3D : public TFEFunction3D
     TFEVectFunct3D& operator=( const TFEVectFunct3D & );
 
     /** return number of components */
-    int GetN_Components()
+    int GetN_Components() const
     { return N_Components; }
 
     /** return i-th component as FEFunction3D */
@@ -71,6 +71,12 @@ class TFEVectFunct3D : public TFEFunction3D
     double GetL2NormDivergenceError(DoubleFunct3D *Exact_u1,
                                     DoubleFunct3D *Exact_u2,
                                     DoubleFunct3D *Exact_u3);
+    
+        /** determine the value of function
+        the given point */
+    void FindValueLocal(TBaseCell *cell, int cell_no, 
+                           double x, double y, double z, 
+                           double *values) const;
         
     /** write the solution into a data file **/
     void WriteSol(double t,

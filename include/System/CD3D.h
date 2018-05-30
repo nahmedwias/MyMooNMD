@@ -27,6 +27,8 @@
 #include <ParameterDatabase.h>
 #include <Solver.h>
 
+#include <PostProcessing3D.h>
+
 #include <FEFunction3D.h>
 #include <Example_CD3D.h>
 
@@ -117,11 +119,15 @@ class CD3D
      * 
      * The database given to the constructor will be merged into this one. Only 
      * parameters which are of interest to this class are stored (and the 
-     * defualt ParMooN parameters). Note that this usually does not include 
+     * default ParMooN parameters). Note that this usually does not include 
      * other parameters such as solver parameters. Those are only in the 
      * CD3D::solver object.
      */
     ParameterDatabase db;
+    
+    /** @brief class for output handling */
+    PostProcessing3D outputWriter;
+
     
     /** @brief a solver object which will solve the linear system
      * 
