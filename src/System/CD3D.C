@@ -3,9 +3,14 @@
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <Output3D.h>
+#include <AlgebraicFluxCorrection.h>
 #include <LinAlg.h>
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>
+#include <LocalProjection.h>
+#include <Upwind3D.h>
+#include <Multigrid.h>
+#include <MainUtilities.h>
 //#include <PostProcessing3D.h>
 
 #include <DirectSolver.h>
@@ -27,7 +32,7 @@ ParameterDatabase get_default_CD3D_parameters()
 {
   Output::print<5>("creating a default CD3D parameter database");
   // we use a parmoon default database because this way these parameters are
-  // available in the default CD2D database as well.
+  // available in the default CD3D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.set_name("CD3D parameter database");
   
@@ -35,6 +40,10 @@ ParameterDatabase get_default_CD3D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
+  // a default afc database
+  ParameterDatabase afc_db = AlgebraicFluxCorrection::default_afc_database();
+  db.merge(afc_db, true);
+  
   return db;
 }
 
@@ -134,6 +143,11 @@ ParameterDatabase get_default_CD3D_parameters()
       }
       // print useful information
       this->output_problem_size_info();
+      time_newton=0, time_rhs=0;
+      rhs_flag=0, newton_flag=0;
+      newton_iterate=0, rhs_iterate=0;
+      up_param=1e-25;
+      rejected_steps = 0;
   }
 
 /** ************************************************************************ */
@@ -151,44 +165,271 @@ void CD3D::output_problem_size_info() const
   Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
 }
 /** ************************************************************************ */
-void CD3D::assemble()
+void CD3D::assemble(const int iteration)
 {
   //determine the local assembling type to be CD3D
-  LocalAssembling3D_type laType = LocalAssembling3D_type::CD3D;
+  LocalAssembling3D_type t = LocalAssembling3D_type::CD3D;
+  bool mdml = this->solver.is_using_multigrid()
+             && this->solver.get_multigrid()->is_using_mdml();
   // this loop has more than one iteration only in case of multigrid
+  if(iteration==0)
+    time_total=GetTime();
+  
   for(auto & s : systems_)
   {
-    TFEFunction3D * feFunctionPtr = &s.feFunction_;
+    TFEFunction3D * pointer_to_function = &s.feFunction_;
+    int afc_ini_supg = 0;
+    int disc_type_code = 0;
+ 
+    std::shared_ptr<LocalAssembling3D> la;
+    
+    if (db["space_discretization_type"].is("galerkin"))
+    {
+      disc_type_code = GALERKIN;   
+    }
+    else if (db["space_discretization_type"].is("supg"))
+    {
+      disc_type_code = SUPG;
+    }
+    else if (db["space_discretization_type"].is("upwind"))
+    {
+      disc_type_code = GALERKIN;   
+    }
+    else
+      ErrThrow("space_discretization_type ", db["space_discretization_type"].get_name(), " not implemented !");
+    
+    if(!db["algebraic_flux_correction"].is("none") && iteration==0 
+     && db["afc_initial_iterate"].is("supg"))
+    {
+      disc_type_code = SUPG;
+      afc_ini_supg = 1; 
+      // create a local assembling object which is needed to assemble the matrix
+      la = std::make_shared<LocalAssembling3D>(t, &pointer_to_function, example_.get_coeffs(), disc_type_code);
+    }
+    else
+    {
+      // create a local assembling object which is needed to assemble the matrix
+      //LocalAssembling3D la(t, &pointer_to_function, example.get_coeffs(),disc_type_code);
+      //disc_type_code = (int) db["space_discretization_type"];
+      Output::print<2>("assembling discretization ",disc_type_code);
+      la = std::make_shared<LocalAssembling3D>(t, &pointer_to_function, example_.get_coeffs(),disc_type_code);
+    }
+    if(!db["algebraic_flux_correction"].is("none") && iteration==0 )
+    {
+      if (db["afc_limiter"].is("zalesak"))
+      {
+	db["afc_nonlinloop_zalesak_first"].set<>("no");
+      }
+      else
+      {
+        if (db["afc_nonlinloop_zalesak_first"].is("yes"))
+	{
+          db["afc_limiter"].set<>("zalesak");
+	  Output::print<2>("limiter set to zalesak");
+	}
+      }
+    }
+    // assemble the system matrix with given local assembling, solution and rhs
+    const TFESpace3D * fe_space = &s.feSpace_;
+    BoundCondFunct3D * boundary_conditions = fe_space->getBoundCondition();
+    int N_Matrices = 1;
+    double * rhs_entries = s.rhs_.get_entries();
+
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
+    TSquareMatrix3D * matrix = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+    
+    BoundValueFunct3D * non_const_bound_value[1] {example_.get_bd()[0]};
+
+      // reset right hand side and matrix to zero (just in case)
+      s.rhs_.reset();
+      matrix->reset();
+      Output::print<4>("call assemble");
+      // assemble
+      Assemble3D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
+                 &fe_space, &boundary_conditions, non_const_bound_value, *la);
+
+      // apply local projection stabilization method
+      if(db["space_discretization_type"].is("local_projection")
+         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
+      {
+        if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
+        {
+          UltraLocalProjection3D((void *)&matrix, false);
+        }
+        else
+        {
+          ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
+        }
+      }
+      
+      bool finest_grid = &systems_.front() == &s;
+      if ((mdml && !finest_grid) || (db["space_discretization_type"].is("upwind")))
+      {
+	Output::print<2>("upwind for convection-diffusion equation");
+        UpwindForConvDiff(matrix, rhs_entries, fe_space, 
+                          *la);
+      }
+      if (!db["algebraic_flux_correction"].is("none")&&(iteration==0)&&
+	db["afc_initial_iterate"].is("upwind"))
+      {
+	Output::print<2>("upwind for convection-diffusion equation");
+        UpwindForConvDiff(matrix, rhs_entries, fe_space, 
+                          *la);
+      }
+      if (afc_ini_supg == 1)
+	db["space_discretization_type"].set<>("galerkin");
+      // copy Dirichlet values from rhs to solution vector (this is not really
+      // necessary in case of a direct solver)
+      s.solution_.copy_nonactive(s.rhs_);
 
     // create a local assembling object which is needed to assemble the matrix
-    LocalAssembling3D laObject(laType, &feFunctionPtr, example_.get_coeffs());
+    LocalAssembling3D laObject(t, &pointer_to_function, example_.get_coeffs());
 
     // assemble the system matrix with given local assembling, solution and rhs
     //s.matrix_.assemble(laObject, s.solution_, s.rhs_);
     call_assembling_routine(s, laObject);
   }
 
+  // when using afc, do it now
+  if(!db["algebraic_flux_correction"].is("none"))
+  {
+    do_algebraic_flux_correction(iteration);
+  }
+  
 }
 
 /** ************************************************************************ */
-void CD3D::solve()
+bool CD3D::solve(const int iteration)
 {
-    SystemPerGrid& s = this->systems_.front();
-    #ifndef _MPI
-    this->solver.solve(s.matrix_, s.rhs_, s.solution_);
-    #endif
-    #ifdef _MPI
-    if(this->solver.get_db()["solver_type"].is("direct"))
+  double t = GetTime();
+  SystemPerGrid& s = this->systems_.front();
+  BlockVector res = s.rhs_;
+  BlockVector current_rhs = s.rhs_;
+  BlockVector current_sol = s.solution_;
+  double omega = db["afc_nonlinloop_damping_factor"];
+
+  // special treatment of linear discretization or first iteration
+  if (iteration==0)
+  {
+    // compute residual vector
+     s.matrix_.apply_scaled_add(s.solution_ , res ,-1.0); 
+     
+     //s.matrix.get_combined_matrix()->Print("mat");
+     //s.rhs.print("rhs");
+     //s.solution.print("sol");
+     //exit(1);
+     
+     // compute the norm of the residual vector, residual_old is the norm of residual r_k
+     residual_old = res.norm();
+     old_solution = s.solution_;
+     this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+     
+     t = GetTime() - t;
+     Output::print("  solving of a CD3D problem done in ", t, " seconds");
+     if(db["algebraic_flux_correction"].is("none"))
+     {
+       // THIS STATEMENT ASSUMES THAT THE SOLVING PROCESS WAS SUFFICIENTLY ACCURATE
+       return(true);
+     }
+     else
+     {
+       Output::print<2>("nonlinear step ", iteration, " residual: ", residual_old);
+       return(false);
+     }
+  }
+  
+  if(!db["algebraic_flux_correction"].is("none"))
+  {
+    int first_damp=1;
+    while(1)
     {
-      //set up a MUMPS wrapper
-      MumpsWrapper mumps_wrapper(s.matrix_);
-      //kick off the solving process
-      mumps_wrapper.solve(s.rhs_, s.solution_);
+      // compute proposal for the next solution 
+      AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, s.solution_, db);
+      // assemble might change matrix and rhs
+      assemble(iteration);
+      // calculation of residual r_k+1
+      res = s.rhs_;
+      s.matrix_.apply_scaled_add(s.solution_ , res ,-1.0); 
+      // compute the norm of the residual vector, residual_old is the norm of residual r_k
+      residual = res.norm();     
+      Output::print<4>("  residual for proposed new iterate ", residual);
+      // accept the first damping parameter
+      if (iteration==1)
+	break;
+      // fixed damping parameter
+      if (db["afc_nonlinloop_damping_factor_constant"].is("yes"))
+	break;
+      // if the norm of the residual vector decreases or if the damping parameter is already very small
+      // then accept the new iterate 
+      if (residual<residual_old || omega<=(double)db["afc_nonlinloop_damping_factor_min_tol"]*(double)db["afc_nonlinloop_damping_factor_min"])
+      {
+	// if the norm of the residual decreases without having decreased the damping 
+	// parameter in this step, then increase the damping parameter if possible
+	if(residual<residual_old &&first_damp==1)
+	{
+	  db["afc_nonlinloop_damping_factor_max"]=std::min((double)db["afc_nonlinloop_damping_factor_max_global"],
+							     (double)db["afc_nonlinloop_damping_factor_max_increase"]
+	                                                      *(double)db["afc_nonlinloop_damping_factor_max"]);
+	  omega=std::min((double)db["afc_nonlinloop_damping_factor_max"],(double)db["afc_nonlinloop_damping_factor_increase"]*omega);   
+	}
+	Output::print<2>("  iterate accepted, damping factor ", omega, " ", db["afc_nonlinloop_damping_factor_max"]);
+	db["afc_nonlinloop_damping_factor"] = omega;
+	break;
+      }
+      else
+      {
+	rejected_steps++;
+	// get starting situation back 
+	s.solution_ = current_sol;
+	s.rhs_ = current_rhs;
+	// reduce damping factor  
+	omega=std::max((double)db["afc_nonlinloop_damping_factor_min"],
+		       omega*(double)db["afc_nonlinloop_damping_factor_decrease"]);
+	// reduce maximal value for damping factor
+	if(first_damp==1)
+	{
+	  db["afc_nonlinloop_damping_factor_max"]=std::max((double)db["afc_nonlinloop_damping_factor_min"],
+							   (double)db["afc_nonlinloop_damping_factor_max_decrease"]*(double)db["afc_nonlinloop_damping_factor_max"]);
+	  first_damp=0;	  
+	}
+	Output::print<2>("  iterate rejected, res old ", residual_old, " res new: ", residual, " damping factor :", omega);
+	db["afc_nonlinloop_damping_factor"] = omega;
+      }
     }
-    else
-      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
-    #endif
- }
+  }
+
+  old_solution.add_scaled(s.solution_,-1.0); 
+  Output::print<2>("nonlinear step ", iteration, " residual: ", residual, " change of sol ", old_solution.norm());
+  // stopping criterion satisfied
+  if ((residual < (double)db["afc_nonlinloop_epsilon"])&&(iteration >1))
+  {
+    if (db["afc_limiter"].is("zalesak") && db["afc_nonlinloop_zalesak_first"].is("yes"))
+    {
+      db["afc_limiter"].set<>("BJK17");
+      Output::print<2>("ite ", iteration, " limiter set to BJK17");
+      return(false);
+    }
+    time_total = GetTime()-time_total;
+    Output::print<1>("NONLINEAR ITERATION: ite ", iteration, " res ", residual, " rejections ", rejected_steps, " time ", time_total, " t/it ", time_total/(iteration+rejected_steps));
+    return(true);
+  }
+  //maximal number of iterations
+  if (iteration == (int)db["afc_nonlinloop_maxit"])
+  {
+    time_total = GetTime()-time_total;
+    Output::print<1>("MAX_NONLINEAR ITERATION: ite ", iteration, " res ", residual, " rejections ", rejected_steps, " time ", time_total, " t/it ", time_total/(iteration+rejected_steps));
+    return(true);    
+  }
+  // storage of old solution
+  old_solution = s.solution_;
+  residual_old=residual;  
+ 
+  // solve the linear system
+  this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+  t = GetTime() - t;
+  Output::print<4>("  iteration done in ", t, " seconds");
+  return(false);   
+}
 
 /** ************************************************************************ */
 void CD3D::output(int i)
@@ -276,6 +517,191 @@ void CD3D::output(int i)
     }
   } // if(this->db["compute_errors"]S)
 }
+
+/**************************************************************************************/
+AlgebraicFluxCorrection::Limiter string_to_limiter(std::string afc_limiter);
+AlgebraicFluxCorrection::Iteration_Scheme string_to_it_scheme(std::string afc_iteration_scheme);
+/**************************************************************************************/
+
+void CD3D::do_algebraic_flux_correction(const int iteration)
+{
+  Output::print<4>("AFC: enter do_algebraic_flux_correction");
+  for(auto & s : this->systems_) // do it on all levels.
+  {
+    bool compute_D_and_gamma = false;
+    
+    //determine which kind of afc to use
+    if(db["algebraic_flux_correction"].is("default") ||
+        db["algebraic_flux_correction"].is("afc"))
+    {
+      // determine which kind of afc to use
+      AlgebraicFluxCorrection::Limiter limiter = string_to_limiter(db["afc_limiter"]);  
+      // determine which kind of iteration scheme is active
+      AlgebraicFluxCorrection::Iteration_Scheme it_scheme = string_to_it_scheme(db["afc_iteration_scheme"]);
+      
+      //USE OF NEWTON METHOD WHEN RESIDUE BECOMES LESS THAN E-05
+      /*There is change of scheme when time taken by the scheme exceeds 2 secomds
+       * When the time step is approximated to 2 seconds in Newton we bring back the time for FIXED_POINT_RHS to 0 seconds
+       * For FIXED_POINT_RHS we used a different method because as soon as we have time_rhs>1 and if we used ceiling function
+       * we would have moved back to newton method and hence we use floor function. As soon as we get time_rhs>2 
+       * we reset time_newton to 0 and hence we move back to NEWTON method.
+       */
+      
+      //CONDITION WHEN ONE ITERATE OF NEWTON AS WELL AS FIXED POINT RHS TAKES MORE THAN 2 SECONDS
+      /*There can be cases when one iterate of Newton as well as Fixed point RHS takes more than 2 seconds. For that
+       *case we are using newton_iterate and rhs_iterate which will count the number of iterations that happened while
+       *running that scheme. If newton as well as rhs takes 2 seconds for one iteration then we make rhs_flag as 1, which will help
+       * us to identify that both the iterations are slow and hence we move to Newton Method as it takes less number of steps. 
+       */
+      
+      //CHANGE IN TOLERANCE WHEN NEWTON MOVES BACK TO FIXED_POINT_RHS
+      /*When the iteration changes from newton to fixed_point_rhs we increase the tolerance limit by a factor of 1e-02 
+       */
+      /*
+      if(residual<up_param && time_newton<=2.0 && rhs_flag==0 && db["afc_iteration_scheme_automatic"]=="yes")
+      {
+	it_scheme=AlgebraicFluxCorrection::Iteration_Scheme::NEWTON;
+	time_newton+=t;
+	newton_iterate++;
+	if(std::ceil(time_newton)==2.0)
+	{
+	  time_rhs=0.0;
+	  rhs_iterate=0; 
+	}
+	newton_flag=1;
+      }
+      else if(residual<up_param && time_rhs<=2.5 && rhs_flag==0&& db["afc_iteration_scheme_automatic"]=="yes")
+      {
+	it_scheme=AlgebraicFluxCorrection::Iteration_Scheme::FIXEDPOINT_RHS;
+	time_rhs+=t;
+	rhs_iterate++;
+	if(std::floor(time_rhs)==2.0 && rhs_iterate==1 && newton_iterate==1)
+	  rhs_flag=1;
+	if(std::floor(time_rhs)==2.0)
+	{
+	  newton_iterate=0;
+	  time_newton=0.0;
+	}
+      }
+      if(residual<up_param && rhs_flag==1&& db["afc_iteration_scheme_automatic"]=="yes")
+      {
+	it_scheme=AlgebraicFluxCorrection::Iteration_Scheme::NEWTON;
+      }
+      if(residual>=up_param && newton_flag==1&& db["afc_iteration_scheme_automatic"]=="yes")
+      {
+	up_param*=1e-02;
+	newton_flag=0;
+      }
+      Output::print<4>("Iterate RHS: ", rhs_iterate);
+      Output::print<4>("Time RHS: ", time_rhs);
+      Output::print<4>("Iterate Newton: ", newton_iterate);
+      Output::print<4>("Time NEWTON: ", time_newton);
+      */
+      
+     // automatic choice of the scheme for the next iterate
+      if (db["afc_iteration_scheme_automatic"].is("yes"))
+      {
+	if (db["afc_iteration_scheme"].is("newton") 
+	  && (double)db["afc_nonlinloop_damping_factor"] <=  
+	  (double)db["afc_nonlinloop_switch_newton_to_fprhs"] * (double)db["afc_nonlinloop_damping_factor_min"])
+	{
+	  db["afc_iteration_scheme"].set<>("fixed_point_rhs");
+	  Output::print<2>("afc_iteration_scheme changed to fixed_point_rhs");
+	}
+	if (db["afc_iteration_scheme"].is("fixed_point_rhs") 
+	  && (double)db["afc_nonlinloop_damping_factor"]  > (double)db["afc_nonlinloop_switch_fprhs_to_newton"] 
+	  * (double)db["afc_nonlinloop_damping_factor_min"])
+	{
+	  db["afc_iteration_scheme"].set<>("newton");
+	  Output::print<2>("afc_iteration_scheme changed to newton");
+	}
+	if (db["afc_iteration_scheme"].is("fixed_point_rhs") && residual<1.0e-05)
+	{
+	  db["afc_iteration_scheme"].set<>("newton");
+	  Output::print<2>("afc_iteration_scheme is NEWTON");
+	  db["afc_nonlinloop_damping_factor_constant"].set<>("yes");
+	}
+      }
+      
+      //get pointers/references to the relevant objects
+      TFESpace3D& feSpace = s.feSpace_;
+      FEMatrix& one_block = *s.matrix_.get_blocks_uniquely().at(0).get();
+      const std::vector<double>& solEntries = s.solution_.get_entries_vector();
+      std::vector<double>& rhsEntries = s.rhs_.get_entries_vector();
+
+      // fill a vector "neumannToDirichlet" with those rows that got
+      // internally treated as Neumann although they are Dirichlet
+      int firstDiriDof = feSpace.GetActiveBound();
+      int nDiri = feSpace.GetN_Dirichlet();
+
+      std::vector<int> neumToDiri(nDiri, 0);
+      std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
+      
+      
+      if (iteration >0 || db["afc_initial_iterate"].is("afc_zero"))
+      {
+        // if necessary, set up vector gamma and matrix D
+        if(s.afc_matrix_D_entries.empty())
+        {
+  	  Output::print<4>("AFC: allocate matrix D");
+	  s.afc_matrix_D_entries.resize(one_block.GetN_Entries(),0.0);
+	  compute_D_and_gamma = true;
+        }
+        if ((limiter== AlgebraicFluxCorrection::Limiter::BJK17) && (s.afc_gamma.empty()))
+        {
+	  Output::print<4>("AFC: vector gamma");
+	  s.afc_gamma.resize(feSpace.GetN_DegreesOfFreedom(),0.0);
+        }
+      
+        // apply FEM-TVD
+        AlgebraicFluxCorrection::steady_state_algorithm(
+          one_block,
+          solEntries,rhsEntries,
+          neumToDiri, 
+	  s.afc_matrix_D_entries, s.afc_gamma, compute_D_and_gamma,
+	  limiter, it_scheme);
+      }
+      //...and finally correct the entries in the Dirchlet rows
+      AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
+      //...and in the right hand side, too, assum correct in solution vector
+      s.rhs_.copy_nonactive(s.solution_);
+    }
+    else
+    {
+      ErrThrow("The chosen algebraic flux correction scheme is unknown "
+          "to class CD3D.");
+    }
+  }
+}
+
+/** ************************************************************************ */
+AlgebraicFluxCorrection::Limiter string_to_limiter(std::string afc_limiter)
+{
+  if (afc_limiter == std::string("zalesak"))
+    return AlgebraicFluxCorrection::Limiter::ZALESAK;
+  else if (afc_limiter == std::string("BJK17"))
+    return AlgebraicFluxCorrection::Limiter::BJK17;
+  else 
+  {
+    ErrThrow("afc_limiter ", afc_limiter, " not implemented!!!"); 
+  }
+}
+
+/** ************************************************************************ */
+AlgebraicFluxCorrection::Iteration_Scheme string_to_it_scheme(std::string afc_iteration_scheme)
+{
+  if (afc_iteration_scheme == std::string("fixed_point_rhs"))
+    return AlgebraicFluxCorrection::Iteration_Scheme::FIXEDPOINT_RHS;
+  else if (afc_iteration_scheme == std::string("fixed_point_matrix"))
+    return AlgebraicFluxCorrection::Iteration_Scheme::FIXEDPOINT_MATRIX;
+  else if (afc_iteration_scheme == std::string("newton"))
+    return AlgebraicFluxCorrection::Iteration_Scheme::NEWTON;
+  else 
+  {
+    ErrThrow("afc_iteration_scheme ", afc_iteration_scheme, " not implemented!!!"); 
+  }
+}
+/* *************************************************************************** */
 
 void CD3D::checkParameters()
 {

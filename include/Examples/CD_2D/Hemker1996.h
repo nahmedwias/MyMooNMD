@@ -99,7 +99,7 @@ void BilinearCoeffs(int n_points, double *x, double *y,
   }
 }
 
-void ComputeExtremalValues(int N, double *sol, double  *values)
+void ComputeExtremalValues(int N, const double *sol, double  *values)
 {
    int i;
    double max, min;
@@ -704,7 +704,7 @@ void ComputeDifferenceToCoarseLevel(TCollection *Coll_fine,
     OutPut("C1 error f "<<" & " << c1err  << " &  ( " << x_err <<"," << y_err << ")"<< "\\\\\\hline" << endl);
     OutPut("C1 error c "<< " & "<< c1err_coarse  << " &  ( " << x_err_c <<"," << y_err_c << ")" << "\\\\\\hline"<< endl);
 }
-void ComputeCutLines_X(TCollection *Coll, TFEFunction2D *ufct, int level)
+void ComputeCutLines_X(TCollection *Coll, const TFEFunction2D *ufct, int level)
 {
     double h, val[3], x, y, *cutvalues, y0=0;
   int i, j, N_Cells, bound_points = 10001;
@@ -774,13 +774,13 @@ void ComputeCutLines_X(TCollection *Coll, TFEFunction2D *ufct, int level)
 
   for (j=0;j<bound_points;j++)
   {
-      OutPut("cutx"<< level << " " << cutvalues[j] << " " << cutvalues[j+bound_points] 
+      OutPut("cutx "<< level << " " << cutvalues[j] << " " << cutvalues[j+bound_points] 
 	      << " " << cutvalues[j+2*bound_points]  << " " << cutvalues[j+3*bound_points]  << " " 
-	     << cutvalues[j+4*bound_points]  << " " << cutvalues[j+5*bound_points] << endl);
+	     << cutvalues[j+4*bound_points]  << " " << cutvalues[j+5*bound_points]);
   }
 }
 
-void ComputeCutLines_Y(TCollection *Coll, TFEFunction2D *ufct, int level)
+void ComputeCutLines_Y(TCollection *Coll, const TFEFunction2D *ufct, int level)
 {
     double h, val[3], x, y, *cutvalues;
   int i, j, N_Cells, bound_points = 20001;
@@ -826,8 +826,8 @@ void ComputeCutLines_Y(TCollection *Coll, TFEFunction2D *ufct, int level)
 
   for (j=0;j<bound_points;j++)
   {
-      OutPut("cuty"<< level << " " << cutvalues[j] << " " << cutvalues[j+bound_points] 
-	      << " " << cutvalues[j+2*bound_points] << endl);
+      OutPut("cuty "<< level << " " << cutvalues[j] << " " << cutvalues[j+bound_points] 
+	      << " " << cutvalues[j+2*bound_points]);
   }
 }
 
@@ -945,4 +945,99 @@ void ComputeCutLines_eps_radial(TCollection *Coll, TFEFunction2D *ufct, int leve
 	     << " " << cutvalues[j+6*bound_points] << " " << cutvalues[j+7*bound_points] 
 	     << " " << cutvalues[j+8*bound_points] << " " << cutvalues[j+9*bound_points]  << endl);
   }
+}
+
+/** compute solution at x=0.5 and y=0.5 */
+void ComputeBdLayer(int level, const TFEFunction2D *ufct, double xcut, double *errors)
+{
+  double h, val[3],y, y0=0, x;
+  int j, bound_points = 100001;
+  double valmin = 0.1;
+  double valmax = 0.9;
+  double ystart = 0.0, yend = 0.0, ustart = 0.0, uend = 0.0;
+  int jstart = 0;
+  double Width = 6;
+ // double xcutval[2]={2,4};
+
+  ystart = y0;
+  yend= Width;
+
+  h = (Width/2.)/(bound_points-1);
+  
+  x = xcut;
+
+  for (j=0;j<bound_points;j++)
+    {
+      y = y0 + h * j;
+      ufct->FindGradient(x, y, val);
+      if (val[0] < valmax) {
+	ustart = val[0];
+	ystart=y;
+	jstart=j;
+	break;
+      }
+    }
+
+  for (j=jstart+1;j<bound_points;j++)
+    {
+      y = y0 + h * j;
+      ufct->FindGradient(x, y, val);
+      if (val[0] < valmin) {
+	uend = val[0];
+	yend=y;
+	break;
+      }
+    }
+  
+  errors[0] = ystart;
+  errors[1] = ustart;
+  errors[2] = yend;
+  errors[3] = uend;
+  errors[4] = ystart-yend;
+  
+ }
+
+/*******************************************************************************/
+// computes the data for the evaluation of the solution 
+/*******************************************************************************/
+void ComputeDataForEvaluationOfSolution(const TFEFunction2D *u)
+//					ofstream &errfile,ofstream &layerfile)
+{
+  double errors[5], xcut = 4.0;
+  
+  auto coll = u->GetFESpace2D()->GetCollection();
+  auto n_dof = u->GetLength();
+  const double * sol = u->GetValues();
+
+  // over and undershoots
+  ComputeExtremalValues(n_dof,sol,errors);
+  OutPut(setprecision(8)); 
+  OutPut("undershoots " << errors[0] << " overshoots " << errors[1] << endl);
+  return;
+
+  //OutPut(" *** cutlines are not computed ***" << endl);
+  // cut lines along x and y
+  //OutPut(" computing cutlines.." << endl);
+  ComputeCutLines_X(coll, u,n_dof);
+  ComputeCutLines_Y(coll, u,n_dof);
+    
+  OutPut(" computing layer..");
+  ComputeBdLayer(n_dof,u,xcut,errors);
+  //layerfile << level << " " << xcut << " " << errors[0] << " " 
+//	      << errors[1] << " " << errors[2] << " " 
+//	      << errors[3] << " " << errors[4]
+//	      << endl;
+  OutPut(n_dof << " layer width " << xcut << " " << errors[0] << " "
+              << errors[1] << " " << errors[2] << " "
+              << errors[3] << " width " << -errors[4]);
+}
+
+void hemker_postprocessing(CD2D & cd2d)
+{
+  auto & u = cd2d.get_function();
+  //auto coll = u.GetFESpace2D()->GetCollection();
+  //auto n_dof = u.GetLength();
+  // it is unclear how the level information can be passed into this function
+  // level is only needed for output
+  ComputeDataForEvaluationOfSolution(&u);
 }
