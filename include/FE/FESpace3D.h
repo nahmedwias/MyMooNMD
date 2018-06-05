@@ -95,6 +95,9 @@ class TFESpace3D : public TFESpace
 
     /** construct space */
     void ConstructSpace(BoundCondFunct3D *BoundaryCondition);
+        
+    /** @brief get dimension of the vector basis function */
+    virtual int GetBaseVectDim() const; 
 
    /** @return The boundary condition function pointer. */
    BoundCondFunct3D* getBoundCondition() const
@@ -125,7 +128,7 @@ class TFESpace3D : public TFESpace
     { return HangingNodeArray; }
 
     /** return the FE Id for element i, corresponding to cell */
-    FE3D GetFE3D(int i, TBaseCell *cell) const;
+    FE3D GetFE3D(int i, const TBaseCell *cell) const;
     
     /** @brief return the Finite Element on a given cell */
     const TFE3D& get_fe(unsigned int cell_number) const;

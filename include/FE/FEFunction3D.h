@@ -65,11 +65,11 @@ class TFEFunction3D
     { return Description; }
 
     /** return fe space */
-    const TFESpace3D *GetFESpace3D()
-    { return FESpace3D; }
-
-    /** return fe space */
     const TFESpace3D *GetFESpace3D() const
+    { return FESpace3D; }
+    
+    /** return fe space */
+    const TFESpace *GetFESpace() const
     { return FESpace3D; }
 
     /** return length */
@@ -130,15 +130,15 @@ class TFEFunction3D
 
     /** determine the value of function and its first derivatives at
         the given point */
-    void FindGradientLocal(TBaseCell *cell, int cell_no, 
+    void FindGradientLocal(const TBaseCell *cell, int cell_no, 
                            double x, double y, double z, 
                            double *values);
 
     /** determine the value of function
         the given point */
-    void FindValueLocal(TBaseCell *cell, int cell_no, 
-                           double x, double y, double z, 
-                           double *values) const;
+    void FindValueLocal(const TBaseCell *cell, int cell_no, 
+                        double x, double y, double z, 
+                        double *values) const;
 
     /** calculate the interpolation of an exact function */
     void Interpolate(DoubleFunct3D *Exact);

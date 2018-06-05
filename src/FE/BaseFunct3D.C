@@ -585,11 +585,11 @@ TGridCell *TBaseFunct3D::GenerateRefElement()
 }
 
 /** change basis functions on cell if needed */
-void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
+void TBaseFunct3D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
+                            double *Values)
 {
   int i, j, k, maptype, *JointArray;
-  TJoint *joint;
-  TBaseCell *neigh;
+  const TBaseCell *neigh;
 
   if(BF2Change == nullptr) return;
 
@@ -601,7 +601,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
     case BFUnitHexahedron:
       for(i=0;i<6;i++)
       {
-        joint = Cell->GetJoint(i);
+        auto joint = Cell->GetJoint(i);
         maptype = joint->GetMapType();
         if(maptype == 1 || maptype == 2)
         {
@@ -686,10 +686,11 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
 // #endif
 
 /** change basis functions on cell in all points if needed */
-void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, double **Values)
+void TBaseFunct3D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
+                            int N_Points, double **Values)
 {
   int i, j, k, l, maptype, *JointArray;
-  TJoint *joint;
+  const TJoint *joint;
   TBaseCell *neigh;
   double *Array;
 

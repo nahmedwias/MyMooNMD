@@ -506,7 +506,7 @@ double TFEVectFunct3D::GetL2NormDivergenceError(DoubleFunct3D* Exact_u1,
 } // TFEVectFunct3D::GetL2NormDivergenceError
 
 
-void TFEVectFunct3D::FindValueLocal(TBaseCell* cell, int cell_no, 
+void TFEVectFunct3D::FindValueLocal(const TBaseCell* cell, int cell_no, 
 				    double x, double y, double z, 
 				    double* values) const
 {

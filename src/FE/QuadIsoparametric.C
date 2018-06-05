@@ -461,13 +461,10 @@ void TQuadIsoparametric::GetOrigValues(int joint, double zeta,
   } // endfor i
 }
 
-void TQuadIsoparametric::SetCell(TBaseCell *cell)
+void TQuadIsoparametric::SetCell(const TBaseCell *cell)
 {
   int i, j;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TBoundComp2D *comp;
-  TInterfaceJoint *interface;
+  const TBoundComp2D *comp;
   JointType type;
   double t0, t1, t, dt;
   double xa, ya, xe, ye, xm, ym, xp, yp, dx, dy;
@@ -515,7 +512,7 @@ void TQuadIsoparametric::SetCell(TBaseCell *cell)
   for(i=0;i<4;i++)
   {
     // check whether the joint i is curved
-    joint = Cell->GetJoint(i);
+    auto joint = Cell->GetJoint(i);
     type = joint->GetType();
     if(type == BoundaryEdge || type == InterfaceJoint)
     {
@@ -527,13 +524,13 @@ void TQuadIsoparametric::SetCell(TBaseCell *cell)
 
       if(type == BoundaryEdge)
       {
-        boundedge = (TBoundEdge *)(joint);
+        auto boundedge = (const TBoundEdge *)(joint);
         comp = boundedge->GetBoundComp();
         boundedge->GetParameters(t0, t1);
       }
       else
       {
-        interface = (TInterfaceJoint *)(joint);
+        auto interface = (const TInterfaceJoint *)(joint);
         comp = interface->GetBoundComp();
         if(Cell == interface->GetNeighbour(0))
           interface->GetParameters(t0, t1); // correct order

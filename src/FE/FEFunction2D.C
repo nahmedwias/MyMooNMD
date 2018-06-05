@@ -700,8 +700,8 @@ void TFEFunction2D::FindGradient(double x, double y, double *values) const
 /** determine the value of function and its first derivatives at
   the given point which lies within !! the cell *cell (not on the boundary
   of that cell !!) */
-void TFEFunction2D::FindGradientLocal(TBaseCell *cell, int cell_no, double x,
-    double y, double *values) const
+void TFEFunction2D::FindGradientLocal(const TBaseCell *cell, int cell_no, 
+                                      double x, double y, double *values) const
 {
   int j,k;
   double xi, eta, eps = 1e-20;
@@ -819,8 +819,8 @@ void TFEFunction2D::FindGradientLocal(TBaseCell *cell, int cell_no, double x,
   cell *cell. This also works for vector valued basis functions as are used 
   for Raviart-Thomas elements.
  */
-void TFEFunction2D::FindValueLocal(TBaseCell *cell, int cell_no, double x,
-    double y, double *values) const
+void TFEFunction2D::FindValueLocal(const TBaseCell *cell, int cell_no, double x,
+                                   double y, double *values) const
 {
   int i, j, k;
   double xi, eta;
@@ -2003,7 +2003,7 @@ void TFEFunction2D::SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
   TBoundEdge *boundedge;
   TIsoBoundEdge *isoboundedge;
   TNodalFunctional2D *nf;
-  TBoundComp2D* BoundComp;
+  const TBoundComp2D* BoundComp;
   BoundCond Cond0, Cond1;
   double PointValues[MaxN_PointsForNodal2D];
   double FunctionalValues[MaxN_BaseFunctions2D];

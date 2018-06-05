@@ -1485,7 +1485,7 @@ void TFEDatabase3D::GetOrigFromRef(RefTrans3D RefTrans, int n_points,
     on the original element */
 void TFEDatabase3D::GetOrigValues(RefTrans3D RefTrans,
                 double xi, double eta, double zeta,
-                TBaseFunct3D *bf, TCollection *Coll, TBaseCell *cell,
+                TBaseFunct3D *bf, TCollection *Coll, const TBaseCell *cell,
                 double *uref, double *uxiref, double *uetaref, double *uzetaref,
                 double *uorig, double *uxorig, double *uyorig, double *uzorig)
 {
@@ -1530,7 +1530,7 @@ void TFEDatabase3D::GetOrigValues(RefTrans3D RefTrans,
 }
 
 /** set cell for reference transformation */
-void TFEDatabase3D::SetCellForRefTrans(TBaseCell *cell, 
+void TFEDatabase3D::SetCellForRefTrans(const TBaseCell *cell, 
                                      RefTrans3D reftrans)
 {
   TRefTrans3D *rt;
