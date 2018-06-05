@@ -18,7 +18,7 @@
 #include <BlockVector.h>
 #include <Example_TimeCD3D.h>
 #include <Solver.h>
-#include <PostProcessing3D.h>
+#include <DataWriter.h>
 
 #include <vector>
 #include <array>
@@ -141,7 +141,7 @@ class Time_CD3D
     std::array<double, 5> errors_;
     
     /** @brief output object */
-    PostProcessing3D outputWriter;
+    DataWriter3D outputWriter;
 
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;

@@ -19,7 +19,7 @@
 #include <BlockVector.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 
 #include <deque>
 #include <array>
@@ -97,7 +97,7 @@ class Darcy2D
      * 
      * @warning case output for vector valued functions is not correctly working
      */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
     
     /** @brief a solver object which will solve the linear system
      * 

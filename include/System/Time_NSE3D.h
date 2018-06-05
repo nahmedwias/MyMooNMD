@@ -32,7 +32,7 @@
 
 #include <ParameterDatabase.h>
 #include <Solver.h>
-#include <PostProcessing3D.h>
+#include <DataWriter.h>
 
 #include <MainUtilities.h> // FixedSizeQueu
 
@@ -133,7 +133,7 @@ class Time_NSE3D
     ParameterDatabase db_;
     
     /** @brief output object */
-    PostProcessing3D outputWriter;
+    DataWriter3D outputWriter;
 
     /** @brief A complete system on each involved grid.
      *
