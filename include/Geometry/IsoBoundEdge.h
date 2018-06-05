@@ -36,22 +36,15 @@ class TIsoBoundEdge : public TBoundEdge
     virtual int CheckMatchingRef(TBaseCell *Me, int J_i,
                   struct StoreGeom &Tmp);
 
-    #ifdef __MORTAR__
-      /** check the refinement pattern on both sides for matching,
-          special version for moratr cells */
-      virtual int CheckMatchingRef(TBaseCell *Me, int J_i,
-                    StoreGeomMortar &Tmp);
-    #endif
-
     /** create a new instance of this class */
     virtual TJoint *NewInst(double T_0, double T_1, TBaseCell *Me);
     virtual TJoint *NewInst();
 
     /** return number of additional vertices */
-    int GetN_Vertices()
+    int GetN_Vertices() const
     { return N_Vertices; }
 
-    TVertex **GetVertices()
+    TVertex **GetVertices() const
     { return Vertices; }
 
     void SetVertices(int n_vertices, TVertex **vertices);
