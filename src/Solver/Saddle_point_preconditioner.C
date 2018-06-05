@@ -27,11 +27,12 @@ constexpr char Saddle_point_preconditioner::required_database_name[];
 
 /* ************************************************************************** */
 Saddle_point_preconditioner::Saddle_point_preconditioner(
-  const BlockFEMatrix& m, type t,  const ParameterDatabase& db)
-  : spp_type(t), M(&m), velocity_block(), gradient_block(nullptr),
+  const BlockFEMatrix& m, type t,  const ParameterDatabase& db, const BlockVector& rhs)
+  : spp_type(t), M(&m), velocity_block(), pressure_block(), 
+    pressure_mass(), gradient_block(nullptr),
     divergence_block(nullptr), velocity_solver(nullptr), inverse_diagonal(), 
     velocity_space(&m.get_row_space(0)), pressure_space(nullptr),
-    damping_factor(1.0), Poisson_solver_matrix(nullptr),
+    damping_factor(1.0), gamma(0.001), Poisson_solver_matrix(nullptr),
     Poisson_solver(nullptr), up_star(m), bdryCorrectionMatrix_(),
     poissonMatrixBdry_(nullptr), poissonSolverBdry_(nullptr)
 {
@@ -47,7 +48,8 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   // number of block columns and rows
   size_t n_rows = this->M->get_n_cell_rows();
   size_t n_cols = this->M->get_n_cell_columns();
-  pressure_space = &m.get_row_space(n_rows - 1);
+
+   pressure_space = &m.get_row_space(n_rows - 1);
   if(n_rows < 2 || n_cols != n_rows)
     ErrThrow("can not create a Saddle_point_preconditioner with this matrix");
   if(n_rows == 2 && this->spp_type == Saddle_point_preconditioner::type::bd_lsc)
@@ -60,9 +62,22 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   // take all blocks except from last row and last column
   this->velocity_block = M->get_sub_blockfematrix(0, n_rows-2);
   this->fill_inverse_diagonal();
-  
 
+/*****************************************************************************************/
+  if (this->spp_type == Saddle_point_preconditioner::type::AL)
   {
+  	// get the pressure-pressure block C of the given matrix
+  	this->pressure_block = M->get_sub_blockfematrix(n_rows-1, n_rows-1);
+
+  	// assemble a pressure mass matrix (p_h, q_h)
+  	this->fill_pressure_mass_matrix();
+  	this->fill_inverse_diagonal();
+
+  	this->fill_augmented_matrix_and_rhs();
+ }
+
+
+		  {
     // velocity solver database
     ParameterDatabase vs_db = Solver<>::default_solver_database();
     auto db_name = 
@@ -72,11 +87,12 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     if(db.get_name() == db_name)
     {//...the input database has the required name
       vs_db.merge(db, false);
-    }
+    } 
     else if(db.has_nested_database(db_name))
     {//...the input database has a nested database of the required name
       vs_db.merge(db.get_nested_database(db_name), false);
     }
+
     if(vs_db["solver_type"].is("iterative"))
     {
       Output::root_info<2>("Saddle_point_preconditioner",
@@ -105,7 +121,9 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     else
       ErrThrow("What kind of solver should that be???");
 #endif
-  }
+
+
+     }
   
   //gradient block B^T
   // take last column without last block (which would be pressure-pressure)
@@ -115,14 +133,17 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   this->divergence_block = this->M->get_combined_submatrix({n_rows-1,0}, 
                                                            {n_rows-1,n_cols-2});
   
+  /*****************************************************************************************/
   if(this->spp_type == Saddle_point_preconditioner::type::simple)
   {
     // scale the gradient block B^T with the approximation of the mass-matrix
     this->gradient_block->scale(&inverse_diagonal[0], true);
   }
-  // construct an approximation to the Schur complement matrix
+
+// construct an approximation to the Schur complement matrix
   this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
-  #ifdef _SEQ
+
+#ifdef _SEQ
       this->Poisson_solver.reset(new DirectSolver(*Poisson_solver_matrix,
                                                   DirectSolver::DirectSolverTypes::umfpack));
   #endif
@@ -137,6 +158,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   u_tmp = BlockVector(u_star);
   p_tmp = BlockVector(p_star);
   
+  /*****************************************************************************************/
   if(this->spp_type == Saddle_point_preconditioner::type::bd_lsc)
   {
     //boundary corrected LSC
@@ -158,6 +180,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     this->M->enable_pressure_projection();
 
   time_measuring.stop_and_print("Setting up a Saddle_point_preconditioner");
+
 }
 
 /* ************************************************************************** */
@@ -296,7 +319,7 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
   {
     r.reset(); // set all entries to zero
   }
-  up_star = 0.;
+  up_star = 0.; // ToDo: Check if this can be deleted
   
   switch(this->spp_type)
   {
@@ -310,7 +333,7 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       solve_velocity(u_tmp, u_star);
       
       // ----------------------------------------------------------------------
-      // solve ^S dp* = r_p - B du*
+      // solve S dp* = r_p - B du*
       // use BlockVector r to store the right hand side for the system 
       // involving the Schur approximation
       unsigned int n_blocks = z.n_blocks();
@@ -461,7 +484,49 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       //                  TDatabase::ParamDB->PRESSURE_SPACE);
       break;
     }
-    default:
+   case Saddle_point_preconditioner::type::AL:
+   {
+   /*** The purpose of this function is to solve P^{-1}*z = r via P*r = z for r. ***/
+   /*** Here, z = (z_u, z_p) is given. ***/
+   /*** P:=  (A_gamma          B    ) ***/
+   /***      (0           1/gamma W ) ***/
+   
+   // Step 1: 'Poisson solver': solve S_p * p_star = p_tmp = z_p for p_star, where 
+   // S_p^{-1} := - \nu * M_p^{-1} - gamma * W^{-1}
+   // with M_p being the pressure mass matrix or its diagonal, 
+   // W is any SPD matrix, e.g., W = diag(A)^{-1} or even M_p or its diagonal
+
+
+      unsigned int n_blocks = z.n_blocks();  
+
+      p_tmp = z.block(n_blocks - 1);
+      p_tmp.scale(this->gamma); // p_tmp *= this->gamma;
+      this->Poisson_solver->solve(p_tmp, p_star); //REWRITE POISSON SOLVER FOR AL: 1/gamma * W * p_star = p_temp, W:=Mp -->Use local_assembling_pressure_mass_matrix()
+ 
+
+     //Step 2: solve A_gamma * u_star = z_u - B^T * p_star for u_star
+     //Substep 2.1 Update u_star = z_u - B^T * p_star
+      u_star = z.get_entries();  // u_star = z_u //REWRITE for AL: A has to be augmented
+      gradient_block->multiply(p_star.get_entries(), u_star.get_entries(), -1.) ; // z_u - B^T * p_star
+      
+      //Substep 2.2 Solve A_gamma * u_tmp = u_star
+      solve_velocity(u_star, u_tmp);
+      
+      r.reset();
+      // copy u_tmp and p_star back to r
+      for(unsigned int i = 0; i < n_blocks - 1; i++)
+        r.add(u_tmp.block(i), i);
+        r.copy(p_star.block(0), n_blocks-1);
+      
+      if(this->damping_factor != 1.0)
+      {
+        r.scale(this->damping_factor);
+        r.add_scaled(z, 1 - this->damping_factor);
+      }
+ 
+break;
+   }
+   default:
       ErrThrow("unknown saddle point preconditioner type");
       break;
   }
@@ -503,6 +568,10 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
       }
 #endif
       break;
+  case Saddle_point_preconditioner::type::AL:
+ret = pressure_mass.get_combined_matrix();
+
+     break;
     default:
       ErrThrow("unknown preconditioner for saddle point problems ");
       break;
@@ -512,8 +581,35 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
   // create a BlockMatrix and return it
   return std::make_shared<BlockMatrix>(1, 1, ret_as_vector);
 }
-/* === LSC */
 
+/* ************************************************************************** */
+// local assembling routine to assemble a pressure mass matrix
+// This needs to go into some assembling class!
+void local_assembling_pressure_mass_matrix(double Mult, double *coeff, double *param,
+                                    double hK, double **OrigValues, 
+                                    int *N_BaseFuncts, double ***LocMatrices, 
+                                    double **LocRhs)
+{
+  // assemble (p,q) at a specific quadrature point in a specific cell
+  double **Mp = LocMatrices[0];
+  const double *p_values = OrigValues[0]; // the values of p (and q)
+  
+  const int N_P = N_BaseFuncts[0];
+  for(int i = 0; i < N_P; i++)
+  {
+    double test00 = p_values[i];
+    
+    for(int j = 0; j < N_P; j++)
+    {
+      double ansatz00 = p_values[j];
+      Mp[i][j] += Mult * (ansatz00 * test00);
+    }                            // endfor j
+  }                              // endfor i
+}
+
+
+
+/* === LSC */
 /* ************************************************************************** */
 // local assembling routine to assemble a mass velocity matrix
 // This needs to go into some assembling class!
@@ -554,13 +650,119 @@ void local_assembling_velocity_mass(double Mult, double *coeff, double *param,
     }                              // endfor i
   }
 }
+/* ****************************************************** */
 
+void Saddle_point_preconditioner::fill_pressure_mass_matrix()
+{
+  // number of entries on diagonal in pressure_block
+  size_t n_diagonal_entries_pressure_block = this->pressure_block.get_n_total_rows();
+
+  this->scaled_inverse_diagonal_of_pressure_mass_matrix.resize(n_diagonal_entries_pressure_block, 0.);
+
+  //mass-matrix Q and its approximation
+  if (this->spp_type == Saddle_point_preconditioner::type::AL)
+  {
+
+    //first: assemble a pressure mass matrix
+#ifdef __2D__
+    typedef MultiIndex2D MultiIndex;
+    MultiIndex p = D00; // value, no derivatives
+    typedef CoeffFct2D CoeffFct;
+    typedef AssembleFctParam2D AssembleFctParam;
+    typedef ManipulateFct2D ManipulateFct;
+    typedef TFEFunction2D FEFunction;
+    typedef LocalAssembling2D LocalAssembling;
+    typedef TSquareMatrix2D SqMat;
+    typedef TMatrix2D RectMat;
+    typedef TFESpace2D FESpace;
+    typedef BoundCondFunct2D BoundCondFunct;
+    typedef BoundValueFunct2D BoundValueFunct;
+
+    // create an approriate LocalAssembling2D object:
+    // We will assemble a pressure block and then create a BlockMatrix
+    int n_terms = 1; // only 1 term (p,q)
+    std::vector<MultiIndex> derivatives(1, p); // that one term is the value
+    std::vector<int> fe_space_numbers(1, 0); // only 1 space with index 1
+    std::vector<int> row_space(1, 0); // 1 matrix
+    std::vector<int> column_space(1, 0); // 1 matrix
+    std::vector<int> rhs_space(1, 0); // not needed
+    CoeffFct coeff; // no coefficients
+    AssembleFctParam* local_assembling_function = 
+      local_assembling_pressure_mass_matrix;
+    ManipulateFct * manipulate = nullptr; // not needed
+    int n_matrices = 1; // assemble only one matrix
+    int n_rhs = 0; // no right hand side
+    int n_parameter = 0; // not needed
+    std::vector<ParamFct*> parameter_functions; // no parameter functions
+    std::vector<int> begin_parameter; // not needed
+    int n_parameters = 0; // not needed
+    FEFunction ** fe_functions = nullptr;
+    int n_fe_values = 0; // no other fe values are needed
+    std::vector<int> fe_value_function_index; // not needed
+    std::vector<MultiIndex> fe_value_multi_index; // not needed
+    
+    LocalAssembling la(n_terms, derivatives, fe_space_numbers, row_space, 
+        column_space, rhs_space, coeff, 
+        local_assembling_function, manipulate, n_matrices,
+        n_rhs, n_parameter, parameter_functions, 
+        begin_parameter, n_parameters, fe_functions, 
+        n_fe_values, fe_value_function_index, 
+        fe_value_multi_index);
+
+    // prepare a call to Assemble2D
+    int n_fe_spaces = 1;
+    SqMat *sq_matrices[1];
+
+    //FESpace* neumann_velocity_space = 
+    //  this->velocity_space->copy_with_all_Neumann_boundary();
+    //const FESpace* v_space = neumann_velocity_space;
+    const FESpace* q_space = this->pressure_space;
+
+    SqMat one_block_of_mass_matrix(q_space);
+
+    sq_matrices[0] =  &one_block_of_mass_matrix;
+    int n_rect_mat = 0; // only square matrices
+    RectMat *rect_matrices[0];
+    double **rhs = nullptr; // right hand sides
+    const FESpace ** fe_spaces_rhs = nullptr;
+    // which boundary conditions are correct here? We could as well use the ones
+    // from the velocity_space. We use three even in 2D, where two would be ok.
+    BoundCondFunct * boundary_conditions[3] = {
+      BoundConditionNoBoundCondition, BoundConditionNoBoundCondition, 
+      BoundConditionNoBoundCondition };
+    BoundValueFunct* non_const_bound_values[3] = {
+      BoundaryValueHomogenous, BoundaryValueHomogenous, 
+      BoundaryValueHomogenous };
+
+    Assemble2D(n_fe_spaces, &q_space, n_matrices, sq_matrices,
+        n_rect_mat, rect_matrices, n_rhs, rhs, fe_spaces_rhs,
+        boundary_conditions, non_const_bound_values, la);
+
+    BlockFEMatrix pressure_mass_matrix({q_space});
+    pressure_mass_matrix.replace_blocks(one_block_of_mass_matrix,
+        {{0,0}}, {false});
+
+    //number of entries on diagonal in mass matrix
+    for(unsigned int d = 0; d < n_diagonal_entries_pressure_block; ++d)
+    {
+      this->scaled_inverse_diagonal_of_pressure_mass_matrix[d] = this->gamma * (1.0 / pressure_mass_matrix.get(d, d));
+   }
+       this->pressure_mass = pressure_mass_matrix;
+
+# endif
+  }
+}
+/* **************************************************************** */
 void Saddle_point_preconditioner::fill_inverse_diagonal()
 {
   // number of entries on diagonal in velocity_block
   size_t n_diagonal_entries = this->velocity_block.get_n_total_rows();
+  size_t n_diagonal_entries_pressure_block = this->pressure_block.get_n_total_rows();
+
   this->inverse_diagonal.resize(n_diagonal_entries, 0.);
-  
+  this->scaled_inverse_diagonal_of_pressure_mass_matrix.resize(n_diagonal_entries_pressure_block, 0.);
+  this->scaled_inverse_diagonal_of_lumped_pressure_mass_matrix.resize(n_diagonal_entries_pressure_block, 0.);
+
   //mass-matrix Q and its approximation
   if(this->spp_type == Saddle_point_preconditioner::type::simple)
   {
@@ -570,9 +772,17 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
       this->inverse_diagonal[d] = 1.0 / this->velocity_block.get(d, d);
     }
   }
-  else
+else if (this->spp_type == Saddle_point_preconditioner::type::AL)
+{
+	for(unsigned int d = 0; d < n_diagonal_entries_pressure_block; ++d)
+	    {
+	      this->scaled_inverse_diagonal_of_pressure_mass_matrix[d] = this->gamma * (1.0 / this->pressure_mass.get(d, d));
+	    }
+	//ToDo Write a routine which computes the scaled_inverse_diagonal_of_lumped_pressure_mass_matrix using the CRS
+}
+ else if ( (this->spp_type == Saddle_point_preconditioner::type::lsc)
+		 || (this->spp_type == Saddle_point_preconditioner::type::bd_lsc) )
   {
-    // either lsc or bd_lsc
     // first: assemble a velocity mass matrix
     
 #ifdef __2D__
@@ -794,6 +1004,7 @@ void Saddle_point_preconditioner::computeBdryCorrectionMatrix(
     } //end loop over joints
   } //end loop over cells
   
+
   //to store the correct matrix "H^{-1}= D*D_Q^{-1}" we have to scale with the
   // diagonal mass inverse
   std::transform(bdryCorrectionMatrix_.begin(), bdryCorrectionMatrix_.end(),
@@ -956,5 +1167,97 @@ void Saddle_point_preconditioner::computePoissonMatrixBdry()
     ErrThrow("Call of Saddle_point_preconditioner::setUpPoissonSolverBdry() "
              "for wrong preconditioner.");
 }
-
 /* End extra methods for boundary corrected LSC */
+
+/* Start extra methods for augmented Lagrangian based preconditioner */
+
+void Saddle_point_preconditioner::fill_augmented_matrix_and_rhs()
+{
+	// number of block columns and rows
+	size_t n_rows = this->M->get_n_cell_rows();
+	size_t n_cols = this->M->get_n_cell_columns();
+
+	const TMatrix diag_matrix(this->scaled_inverse_diagonal_of_pressure_mass_matrix.size(), this->scaled_inverse_diagonal_of_pressure_mass_matrix.size());
+
+	std::vector< std::shared_ptr< const TMatrix >> aug_blocks;
+	aug_blocks.resize((n_rows-1)*(n_rows-1));
+
+	std::shared_ptr<TStructure> Structure = std::make_shared<TStructure>(pressure_mass.get_combined_matrix()->GetStructure());
+	cout<< "N_entries in pressure_mass: "<< pressure_mass.get_combined_matrix()->GetStructure().GetN_Entries() << endl;
+	std::shared_ptr<TMatrix> ptr_to_diag_matrix = std::make_shared<TMatrix>(this->scaled_inverse_diagonal_of_pressure_mass_matrix, Structure);
+
+	// form the blocks B_i^T*W^{-1}*B_j
+	std::shared_ptr< const FEMatrix >  grad_block_M, div_block_M;
+	bool transp;
+
+//Test
+//	const char *divblock;
+//	std::string augmented_matrix_out;
+
+	this->augmented_matrix = BlockMatrix(M->BlockMatrix::get_sub_blockmatrix({0,0},{n_rows-1, n_rows-1 }));
+	for (unsigned long block_col = 0; block_col < n_rows-1; block_col++)
+	{
+		div_block_M = M->get_block(n_rows-1, block_col, transp );// B1 or B2 or B3 (in 3D)
+
+		// Test
+		//div_block_M->Print(divblock);
+		//cout << "Norm of divblock: "<< div_block_M->GetNorm() <<endl;
+
+		for (unsigned long block_row = 0; block_row < n_rows-1; block_row++)
+		{
+			grad_block_M = M->get_block(block_row, n_rows-1, transp );
+
+			///std::shared_ptr< TMatrix > aux_ptr((grad_block_M->multiply(ptr_to_diag_matrix.get(), 3))->multiply(div_block_M.get(),1));
+			std::shared_ptr< TMatrix > aux_ptr(grad_block_M->multiply(div_block_M.get(), this->scaled_inverse_diagonal_of_pressure_mass_matrix ));
+			aux_ptr->add_scaled(*M->BlockMatrix::get_block(block_row, block_col, transp), 1.);
+
+			aug_blocks[block_col*(n_rows-1) + block_row] = aux_ptr;
+
+			this->augmented_matrix.replace_blocks(*aug_blocks[block_col*(n_rows-1) + block_row], {{block_row,block_col}}, {false});
+
+		}
+
+	}
+
+	std::vector< std::shared_ptr< TMatrix >>  aug_blocks_for_rhs;
+	aug_blocks_for_rhs.resize((n_rows));
+
+	//form the matrices gamma*B_i^TW^{-1} for the augmentation of the rhs
+	for (int block_row = 0; block_row < n_rows-1; block_row++)
+	{
+		grad_block_M = M->get_block(block_row, n_rows-1, transp );
+
+		/*TMatrix* test = grad_block_M->multiply(ptr_to_diag_matrix.get(), 1);
+		int vas1 = test->GetN_Columns();
+		int vas2 = test->GetN_Rows();
+		cout<< "************* jooo: " << vas1 << "    "<<vas2 << endl;
+		 */
+
+		std::shared_ptr< TMatrix > aux_ptr_for_rhs((grad_block_M->multiply(ptr_to_diag_matrix.get(), 1)));
+		aug_blocks_for_rhs[block_row] = aux_ptr_for_rhs;
+	}
+
+	//set the last block equal to zero
+	std::shared_ptr< TMatrix > aux_ptr_for_rhs((grad_block_M->multiply(ptr_to_diag_matrix.get(), 0)));
+	aug_blocks_for_rhs[n_rows-1] = aux_ptr_for_rhs;
+
+	this->augmentation_matrix_for_rhs = BlockMatrix(n_rows, 1, aug_blocks_for_rhs);
+}
+
+
+BlockVector Saddle_point_preconditioner::get_augmented_blockvector(const BlockVector right_hand_side)
+{
+	BlockVector aug_right_hand_side(right_hand_side);//BlockVector(this->M);
+	const double* g = right_hand_side.block(2);
+	bool transp2;
+	for (int k= 0; k < right_hand_side.n_blocks(); k++ )
+	{
+		std::shared_ptr< const TMatrix > ptr_to_aug_blocks = this->augmentation_matrix_for_rhs.get_block (k, 0, transp2);
+		ptr_to_aug_blocks->multiply(g, aug_right_hand_side.block(k), 1.);
+	}
+	return aug_right_hand_side;
+}
+
+
+/* End extra methods for augmented Lagrangian based preconditioner */
+
