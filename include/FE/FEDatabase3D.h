@@ -449,7 +449,7 @@ class TFEDatabase3D
                                        TFE3DMapper1Reg *mapper)
      { FE3DMapper1Reg[FE1][FE2] = mapper; };
 
-    static void SetCellForRefTrans(TBaseCell *cell, RefTrans3D reftrans);
+    static void SetCellForRefTrans(const TBaseCell *cell, RefTrans3D reftrans);
 
 //======================================================================
 //      HNDesc
@@ -568,7 +568,7 @@ class TFEDatabase3D
         to original element */
     static void GetOrigValues(RefTrans3D RefTrans,
                 double xi, double eta, double zeta,
-                TBaseFunct3D *bf, TCollection *Coll, TBaseCell *cell,
+                TBaseFunct3D *bf, TCollection *Coll, const TBaseCell *cell,
                 double *uref, double *uxiref, double *uetaref, double *uzetaref,
                 double *uorig, double *uxorig, double *uyorig, double *uzorig);
 

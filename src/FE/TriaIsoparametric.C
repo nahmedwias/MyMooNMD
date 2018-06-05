@@ -596,13 +596,10 @@ void TTriaIsoparametric::GetOrigValues(int joint, double zeta,
   } // endfor i
 }
 
-void TTriaIsoparametric::SetCell(TBaseCell *cell)
+void TTriaIsoparametric::SetCell(const TBaseCell *cell)
 {
   int i, j;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TBoundComp2D *comp;
-  TInterfaceJoint *interface;
+  const TBoundComp2D *comp;
   JointType type;
   double t0, t1, t, dt;
   double xa, ya, xe, ye, xm, ym, xp, yp, dx, dy;
@@ -647,7 +644,7 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
   for(i=0;i<3;i++)
   {
     // check whether the joint i is curved
-    joint = Cell->GetJoint(i);
+    auto joint = Cell->GetJoint(i);
     type = joint->GetType();
     if(type == BoundaryEdge || type == InterfaceJoint)
     {
@@ -658,14 +655,14 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
       ye = y[(i+1) % 3];
       if(type == BoundaryEdge)
       {
-        boundedge = (TBoundEdge *)(joint);
+        auto boundedge = (const TBoundEdge *)(joint);
         comp = boundedge->GetBoundComp();
 //        compid = comp->GetID();
         boundedge->GetParameters(t0, t1);
       }
       else
       {
-        interface = (TInterfaceJoint *)(joint);
+        auto interface = (const TInterfaceJoint *)(joint);
         comp = interface->GetBoundComp();
 //        compid = comp->GetID();
 
@@ -710,18 +707,18 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
         switch(type)
         {
           case IsoInterfaceJoint:
-            N_Vertices = ((TIsoInterfaceJoint *)joint)->GetN_Vertices();
-            Vertices = ((TIsoInterfaceJoint *)joint)->GetVertices();
+            N_Vertices = ((const TIsoInterfaceJoint *)joint)->GetN_Vertices();
+            Vertices = ((const TIsoInterfaceJoint *)joint)->GetVertices();
           break;
 
           case IsoBoundEdge:
-            N_Vertices = ((TIsoBoundEdge *)joint)->GetN_Vertices();
-            Vertices = ((TIsoBoundEdge *)joint)->GetVertices();
+            N_Vertices = ((const TIsoBoundEdge *)joint)->GetN_Vertices();
+            Vertices = ((const TIsoBoundEdge *)joint)->GetVertices();
           break;
 
           case IsoJointEqN:
-            N_Vertices = ((TIsoJointEqN *)joint)->GetN_Vertices();
-            Vertices = ((TIsoJointEqN *)joint)->GetVertices();
+            N_Vertices = ((const TIsoJointEqN *)joint)->GetN_Vertices();
+            Vertices = ((const TIsoJointEqN *)joint)->GetVertices();
           break;
 	  default:
 	    break;

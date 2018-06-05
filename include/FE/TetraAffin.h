@@ -102,7 +102,7 @@ class TTetraAffin : public TRefTrans3D
           double *uorig, double *uxorig, double *uyorig, double *uzorig);
 		
     /** set element to cell */
-    void SetCell(TBaseCell * cell);
+    void SetCell(const TBaseCell * cell);
 
     /** return outer normal unit vector */
     void GetOuterNormal(int j, double s, double t,

@@ -735,7 +735,7 @@ void TQuadBilinear::GetOrigValues(int joint, double zeta, int N_BaseFunct,
 }
 
 
-void TQuadBilinear::SetCell(TBaseCell *cell)
+void TQuadBilinear::SetCell(const TBaseCell *cell)
 {
 
 #ifdef __3D__

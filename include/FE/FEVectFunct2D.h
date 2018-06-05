@@ -112,7 +112,7 @@ class TFEVectFunct2D : public TFEFunction2D
     
     /** determine the value of function at
     the given point componentwise */
-    void FindValueLocal(TBaseCell *cell, int cell_no, double x, double y, 
+    void FindValueLocal(const TBaseCell *cell, int cell_no, double x, double y, 
         double *values) const;
 
     /** @brief multiply function with a scalar alpha. Only non-Dirichlet dofs are 

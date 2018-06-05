@@ -74,9 +74,9 @@ class TFEVectFunct3D : public TFEFunction3D
     
         /** determine the value of function
         the given point */
-    void FindValueLocal(TBaseCell *cell, int cell_no, 
-                           double x, double y, double z, 
-                           double *values) const;
+    void FindValueLocal(const TBaseCell *cell, int cell_no, 
+                        double x, double y, double z, 
+                        double *values) const;
         
     /** write the solution into a data file **/
     void WriteSol(double t,
