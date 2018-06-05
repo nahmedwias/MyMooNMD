@@ -76,7 +76,6 @@ void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
     // normal vector to this boundary (normalized)
     double n1, n2;
     boundedge->get_normal(n1, n2);
-
     // quadrature
     for(unsigned int k = 0; k < quadPoints.size(); k++)
     {
@@ -93,6 +92,7 @@ void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
 
       // get the value of (\nabla u - pI) on the boundary component (here denoted by g) from the example, if possible
       double value;
+
       if(given_boundary_data != nullptr)
       {
         given_boundary_data(BDComponent, T, value);
@@ -116,11 +116,16 @@ void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
         // updating rhs: int_gamma rhsval v \cdot n
         double v1 = uorig[k][l]; // value of test function (vtest = v1 = v2)
         double v2 = v1;
+
         // add for both components
         rhs.block(0)[global_dof_from_local] += mult * quadWeights[k] * value * (v1 * n1) *
           (joint_length/reference_joint_length);
+
+  if (rhs.n_blocks() == 2)
+  {
         rhs.block(1)[global_dof_from_local] += mult * quadWeights[k] * value * (v2 * n2) *
           (joint_length/reference_joint_length);
+  }
       } //for(l=0;l<N_BaseFunct;l++)
     }
   } // endif

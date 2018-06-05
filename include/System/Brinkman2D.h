@@ -104,6 +104,8 @@ public:
 
 // LB NEW 16.04.18 start
 void assemble(TFEFunction2D* coefficient_function = nullptr);
+TFEFunction2D* u1;
+TFEFunction2D* u2;
 // LB NEW 16.04.18 end
 /*
 // LB OLD 16.04.18 start
@@ -211,6 +213,7 @@ void assemble(TFEFunction2D* coefficient_function = nullptr);
     double getFullResidual() const;
     /// @brief return the computed errors
     std::array<double, int(8)> get_errors();
+
 
 protected:
     

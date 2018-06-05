@@ -61,7 +61,12 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
   brinkman2d_db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
   brinkman2d_db.add("corner_stab_weight", (double)  0.0, "This quantity is the weight of the corner stabilization used for Nitsche corners of the domain", (double) -1000.0 , (double) 1000.0 );
 
-  brinkman2d_db.add("coefficient_function_type", (size_t) 0., "Set the parameter equal to 0 if the coefficients are constant, if you want to use a coefficient function that is spatially varying and analytically defined in ParMooN_Brinkman2D.C, set this parameter equal to 1 and then adjust coeffs via parameters in the example file; if you want to use a coefficient function that is spatially varying and defined by a .mesh-file combined with a file describing a corresponding FEFunction2D, set this parameter equal to 2 ", (size_t) 0.,(size_t) 2.);
+  brinkman2d_db.add("coefficient_function_type", (size_t) 0., "Set the parameter equal to 0 if the"
+		  " coefficients are constant, if you want to use a coefficient function that is spatially "
+		  "varying and analytically defined in ParMooN_Brinkman2D.C, set this parameter equal to 1 "
+		  "and then adjust coeffs via parameters in the example file; if you want to use a coefficient "
+		  "function that is spatially varying and defined by a .mesh-file combined with a file describing "
+		  "a corresponding FEFunction2D, set this parameter equal to 2 ", (size_t) 0.,(size_t) 2.);
 
   /* // Possible candidates for own database (maybe also a boundary assembling database, or into the assembling 2d database)
      brinkman2d_db.add("s1", 0.0,
@@ -236,15 +241,8 @@ void Brinkman2D::check_input_parameters()
 }
 
 /** ************************************************************************ */
-// LB NEW 16.04.18 start
 void Brinkman2D::assemble(TFEFunction2D* coefficient_function)
-  // LB NEW 16.04.18 end
 
-  /*
-  // LB OLD 16.04.18 start
-  void Brinkman2D::assemble()
-  // LB OLD 16.04.18 end
-   */
 {
   //Valgrind test start
   //std::vector<int> testvector(5,1);
@@ -268,18 +266,15 @@ const TFESpace2D *coefficient_function_space;
     non_const_bound_values[1] = example.get_bd()[1];
     non_const_bound_values[2] = example.get_bd()[2];
 
-    //same for all: the local asembling object
+    //same for all: the local assembling object
     TFEFunction2D *fe_functions[4] =
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, NULL };
 
-    // LB NEW 16.04.18 start
-    if (coefficient_function != false)
+    if (coefficient_function)
     {
       coefficient_function_space = coefficient_function->GetFESpace2D();
       fe_functions[3] = coefficient_function;
     }
-    // LB NEW 16.04.18 end
-
 
     if ( brinkman2d_db["PkPk_stab"].is(false) && brinkman2d_db["Galerkin_type"].is("nonsymmetric Galerkin formulation") )
     {
@@ -326,24 +321,19 @@ const TFESpace2D *coefficient_function_space;
     std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, fe_functions,
           this->example.get_coeffs()));
 
-    // LB NEW 16.04.18 start
-    if (coefficient_function != false)
+       if (coefficient_function)
     {
       // modify la such that it includes the TFEFunction2D coefficient_function
       la->setBeginParameter({0});
       la->setN_ParamFct(1);
       la->setParameterFct({Coefficient_Function});
-      //ToDo: Define Coefficient_Function as Darcy_Parameter_Function
       la->setN_FeValues(1);
       la->setFeValueFctIndex({3});
       la->setFeValueMultiIndex({D00});
     }
-    // LB NEW 16.04.18 end
-
 
     la_list.push_back(la);
     Output::print<>("The ", brinkman2d_db["Galerkin_type"].value_as_string(), " has been used.");
-
 
     if (brinkman2d_db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE >= 1)
     {
@@ -358,22 +348,18 @@ const TFESpace2D *coefficient_function_space;
       type = Brinkman2D_Galerkin1ResidualStabP1;
       std::shared_ptr <LocalAssembling2D> la_P1P1stab(new LocalAssembling2D(type, fe_functions,
             this->example.get_coeffs()));
-       // LB NEW 25.04.18 start
-    if (coefficient_function != false)
+
+if (coefficient_function)
     {
       // modify la such that it includes the TFEFunction2D coefficient_function
       la_P1P1stab->setBeginParameter({0});
       la_P1P1stab->setN_ParamFct(1);
       la_P1P1stab->setParameterFct({Coefficient_Function});
-      //ToDo: Define Coefficient_Function as Darcy_Parameter_Function
       la_P1P1stab->setN_FeValues(1);
       la_P1P1stab->setFeValueFctIndex({3});
       la_P1P1stab->setFeValueMultiIndex({D00});
     }
-    // LB NEW 25.04.18 end
-
-
-      
+     
       la_list.push_back(la_P1P1stab);
       Output::print<>("The ", brinkman2d_db["EqualOrder_PressureStab_type"].value_as_string(), " stabilization for P1/P1 has been applied.");
     }
@@ -391,22 +377,18 @@ const TFESpace2D *coefficient_function_space;
       std::shared_ptr <LocalAssembling2D> la_P2P2stab(new LocalAssembling2D(type, fe_functions,
             this->example.get_coeffs()));
       
- // LB NEW 25.04.18 start
-    if (coefficient_function != false)
+    if (coefficient_function)
     {
       // modify la such that it includes the TFEFunction2D coefficient_function
       la_P2P2stab->setBeginParameter({0});
       la_P2P2stab->setN_ParamFct(1);
       la_P2P2stab->setParameterFct({Coefficient_Function});
-      //ToDo: Define Coefficient_Function as Darcy_Parameter_Function
       la_P2P2stab->setN_FeValues(1);
       la_P2P2stab->setFeValueFctIndex({3});
       la_P2P2stab->setFeValueMultiIndex({D00});
     }
-    // LB NEW 25.04.18 end
 
-
-      la_list.push_back(la_P2P2stab);
+la_list.push_back(la_P2P2stab);
       Output::print<>("The ", brinkman2d_db["EqualOrder_PressureStab_type"].value_as_string(), " stabilization for Pk/Pk, k>=2,  has been applied.");
 
     }
@@ -418,20 +400,16 @@ const TFESpace2D *coefficient_function_space;
       std::shared_ptr <LocalAssembling2D> la_graddiv(new LocalAssembling2D(type, fe_functions,
             this->example.get_coeffs()));
    
-    // LB NEW 25.04.18 start
-    if (coefficient_function != false)
+        if (coefficient_function)
     {
       // modify la such that it includes the TFEFunction2D coefficient_function
       la_graddiv->setBeginParameter({0});
       la_graddiv->setN_ParamFct(1);
       la_graddiv->setParameterFct({Coefficient_Function});
-      //ToDo: Define Coefficient_Function as Darcy_Parameter_Function
       la_graddiv->setN_FeValues(1);
       la_graddiv->setFeValueFctIndex({3});
       la_graddiv->setFeValueMultiIndex({D00});
     }
-    // LB NEW 25.04.18 end
-
 
    la_list.push_back(la_graddiv);
     }
@@ -484,7 +462,7 @@ const TFESpace2D *coefficient_function_space;
     std::vector<const TFESpace2D*> spaces_for_matrix;
     spaces_for_matrix.resize(2);
 
-    if (coefficient_function != false)
+    if (coefficient_function)
     { spaces_for_matrix.resize(3);
       spaces_for_matrix[2] = coefficient_function_space;
     }
@@ -751,8 +729,13 @@ void Brinkman2D::output(int level, int i)
     return;
 
   System_per_grid& s = this->systems.front();
-  TFEFunction2D* u1 = s.u.GetComponent(0);
-  TFEFunction2D* u2 = s.u.GetComponent(1);
+  this->u1 = s.u.GetComponent(0);
+  this->u2 = s.u.GetComponent(1);
+
+  /* For Thermohydraulic_Brinkman2D */
+  u1->WriteSol("/Users/blank/ParMooN/Tests/Thermohydraulic_Brinkman2D", "Brinkman_ux");
+  u2->WriteSol("/Users/blank/ParMooN/Tests/Thermohydraulic_Brinkman2D", "Brinkman_uy");
+
 
   //----------------------------------------------------------------------------------
   // The following output is made for the geometry channel.mesh or channel_simple.mesh
