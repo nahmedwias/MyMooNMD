@@ -25,7 +25,7 @@
 #include <BlockVector.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 
 class Multigrid;
 
@@ -96,7 +96,7 @@ class CD2D
     ParameterDatabase db;
 
     /** @brief class for output handling */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
 
     /** @brief a solver object which will solve the linear system
      * 

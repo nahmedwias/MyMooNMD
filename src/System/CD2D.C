@@ -3,7 +3,6 @@
 #include <Multigrid.h>
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
-#include <PostProcessing2D.h>
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 #include <Upwind.h>

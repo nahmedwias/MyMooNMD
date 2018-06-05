@@ -53,7 +53,7 @@ class TCollection
    std::vector<unsigned int> BdFacesReferences;
    std::vector<unsigned int> DomainVertexNumbers;
    unsigned int NLocVertices;
-   //----- used in PostProcessing ----
+   //----- used in DataWriter ----
     
   public:
     /** @brief constructor */
@@ -139,7 +139,7 @@ class TCollection
    void get_boundary_edge_list(std::vector<TBoundEdge*> &edges);
    
    //####################################################
-   //------------- used in PostProcessing ---------------
+   //--------------- used in DataWriter -----------------
    //####################################################
    
    unsigned int GetN_Vertices();

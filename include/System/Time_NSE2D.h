@@ -28,7 +28,7 @@
 #include <MainUtilities.h>
 
 #include <ParameterDatabase.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 #include <Residuals.h>
 #include <LocalAssembling2D.h>
 #include <TimeDiscretizations.h>
@@ -110,7 +110,7 @@ class Time_NSE2D
      */
     ParameterDatabase db;
     /** @brief class for output handling */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
 
     /** @brief a complete system on each grid
      *

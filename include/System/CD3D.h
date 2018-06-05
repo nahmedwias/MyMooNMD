@@ -27,7 +27,7 @@
 #include <ParameterDatabase.h>
 #include <Solver.h>
 
-#include <PostProcessing3D.h>
+#include <DataWriter.h>
 
 #include <FEFunction3D.h>
 #include <Example_CD3D.h>
@@ -126,7 +126,7 @@ class CD3D
     ParameterDatabase db;
     
     /** @brief class for output handling */
-    PostProcessing3D outputWriter;
+    DataWriter3D outputWriter;
 
     
     /** @brief a solver object which will solve the linear system

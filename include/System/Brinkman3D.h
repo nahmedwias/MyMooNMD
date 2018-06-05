@@ -27,7 +27,7 @@
 #include <FEFunction3D.h>
 #include <Residuals.h>
 #include <FESpace3D.h>
-#include <PostProcessing3D.h>
+#include <DataWriter.h>
 #include <vector>
 #include <deque>
 #include <list>
@@ -148,7 +148,7 @@ protected:
     std::array<double, int(4)> errors;
     
     /** @brief output object*/
-    PostProcessing3D outputWriter;
+    DataWriter3D outputWriter;
     
 protected:
     
