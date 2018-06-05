@@ -95,7 +95,7 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          {"no_preconditioner", "jacobi", "sor", "ssor", "multigrid", 
           "semi_implicit_method_for_pressure_linked_equations",
           "least_squares_commutator", "least_squares_commutator_boundary",
-          "vanka_cell", "vanka_nodal", "vanka_cell_jacobi"}); //TODO maybe these vanka preconditioner types should be controlled by another db parameter
+          "vanka_cell", "vanka_nodal", "vanka_cell_jacobi", "augmented_Lagrangian_based"}); //TODO maybe these vanka preconditioner types should be controlled by another db parameter
   
   db.add("sor_omega", 1.5, "The overrelaxation parameter (typically called "
          "omega). This is only used for the (symmetric) successive "
@@ -106,7 +106,12 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "smaller values make iterations slower. This can still be necessary "
          "in cases where the iterations does not converge at all with larger "
          "values.", 0.0, 1.0);
+
+  db.add("gamma", 1.0, "This is the augmentation factor (scalar) for the augmented Lagrangian ased preconditioner."
+         "0.0 means no augmentation."
+         "values.", -1.0e10, 1.0e10);
   
+
   return db;
 }
 
@@ -162,6 +167,11 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
   {
     return std::make_shared<Preconditioner_vanka<V>>(
         matrix, VankaType::CELL_JACOBI, 0.8);
+  }
+  else if(preconditioner_name == "augmented_Lagrangian_based")
+  {
+      return std::make_shared<Saddle_point_preconditioner>(
+      matrix, Saddle_point_preconditioner::type::AL, db);
   }
   else
   {
@@ -231,8 +241,10 @@ Solver<L, V>::Solver(const ParameterDatabase& param_db)
    direct_solver(nullptr), iterative_method(nullptr), preconditioner(nullptr),
    multigrid(nullptr), petsc_solver(nullptr)
 {
-  this->db.merge(param_db, false, true);
-  if(this->is_using_multigrid())
+
+this->db.merge(param_db, false, true);
+
+ if(this->is_using_multigrid())
     multigrid = std::make_shared<Multigrid>(param_db);
 }
 
@@ -339,28 +351,43 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
 #endif
   };
   (void)compute_residual; // silence the unused variable warning when not used
- 
- // compute_residual();
+
+  // compute_residual();
 
   if(this->linear_operator == nullptr)
-    ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
-             "Solver::update_matrix first. Otherwise it's not clear which "
-             "system is supposed to be solved");
+	  ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
+			  "Solver::update_matrix first. Otherwise it's not clear which "
+			  "system is supposed to be solved");
   if(db["solver_type"].is("direct"))
   {
-    this->direct_solver->solve(rhs, solution);
+	  this->direct_solver->solve(rhs, solution);
   }
   else if(db["solver_type"].is("iterative")) // ParMooN internal iterative 
   {
-    this->iterative_method->iterate(*this->linear_operator, rhs, solution);
+	  if (db["preconditioner"].is("augmented_Lagrangian_based"))
+	  {
+		 		  auto p = std::dynamic_pointer_cast <  Saddle_point_preconditioner > ( this->preconditioner );
+		  //this->iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
+		  std::shared_ptr<IterativeMethod<BlockMatrix, BlockVector>> iterative_method = get_iterative_method<BlockMatrix, BlockVector>( db["iterative_solver_type"] ,
+				  this->db,  *this->linear_operator,  this->preconditioner);
+		  //use augmented matrix and rhs in case of AL
+		  iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
+
+		  this->iterative_method->iterate(*this->linear_operator, rhs, solution);
+	  }
+	  else
+	  {
+		  this->iterative_method->iterate(*this->linear_operator, rhs, solution);
+	 }
+
   }
   else if(db["solver_type"].is("petsc"))
   {
-    this->petsc_solver->solve(rhs, solution);
+	  this->petsc_solver->solve(rhs, solution);
   }
   else
   {
-    ErrThrow("unknown solver type ", db["solver_type"]);
+	  ErrThrow("unknown solver type ", db["solver_type"]);
   }
   compute_residual();
 }

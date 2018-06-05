@@ -23,7 +23,8 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     /// simple - semi-implicit method for pressure-linked equations
     /// lsc - least squares commutator
     /// bd_lsc - boundary corrected least squares commutator
-    enum class type {simple, lsc, bd_lsc};
+    /// AL - augmented Lagrangian based preconditioner
+    enum class type {simple, lsc, bd_lsc, AL};
     /// The database passed to the constuctor should be named this or have a 
     /// nested database with this name. Otherwise a default solver database is 
     /// used to initialize a solver object for the velocity subsystem.
@@ -32,7 +33,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     
     /** @brief constructor for a given system matrix */
     explicit Saddle_point_preconditioner(const BlockFEMatrix & m,
-                                         type t, const ParameterDatabase& db);
+                                         type t, const ParameterDatabase& db, const BlockVector& rhs = BlockVector());
     /** @brief don't use this constuctor. It is here only for compatability 
      * in the Solver class.
      * 
@@ -70,6 +71,17 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     {
       this->apply(z,r);
     }
+
+    /* @brief get the augmentated system matrix in case of augmented Lagrangian preconditioner:
+     * A_ij -> A_ij + gamma * B_i^T * W^{-1} * B_j */
+    BlockMatrix& get_augmented_matrix()
+    {
+    	return this->augmented_matrix;
+    }
+
+    /* @brief get the augmentated rhs in case of augmented Lagrangian preconditioner:
+     * (f_1,f_2,f_3,g) -> (f_1 + gamma * B_1^T * W^{-1} g, f_2 + gamma * B_2^T * W^{-1} g, g) */
+    BlockVector get_augmented_blockvector(BlockVector right_hand_side);
   
   protected:
     // saddle point preconditioner (spp) type
@@ -85,6 +97,19 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     
     /** @brief all velocity blocks as one TMatrix */
     BlockFEMatrix velocity_block;
+   
+  /** @brief pressure block (C) as one BlockFEMatrix copied from the system matrix*/
+    BlockFEMatrix pressure_block;
+   
+    /** @brief pressure mass matrix (p_h,q_h) (for W in the augmented Lagrangian based preconditioner) */
+    BlockFEMatrix pressure_mass;
+
+    /** @brief the augmentation for the augmented Lagrangian based preconditioner: gamma * B^T * W^{-1} * B   */
+    BlockMatrix augmented_matrix;
+
+    /** rectangular matrix which has to be applied to the pressure block in rhs in case of augmented Lagrangian (see Solver.C) */
+    BlockMatrix augmentation_matrix_for_rhs;
+
     /** @brief the block which represents the gradient of the pressure 
      * 
      * It is scaled by the 'inverse_diagonal' during the constructor in case of
@@ -109,7 +134,11 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     
     /** @brief the inverse of the diagonal of the system matrix */
     std::vector<double> inverse_diagonal;
-    
+   
+    /** @brief the scaled (with this->gamma) inverse of the diagonal of the system matrix */
+    std::vector<double> scaled_inverse_diagonal_of_pressure_mass_matrix;
+    std::vector<double> scaled_inverse_diagonal_of_lumped_pressure_mass_matrix;
+
     /** @brief references to the fe spaces 
      * 
      * These are really needed only for the boundary corrected LSC. I think 
@@ -129,7 +158,10 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * Currently this is always 1.0, i.e., no damping.
      */
     double damping_factor;
-    
+   
+/** @brief gamma: augmentation parameter; gamma = 0 means no augmentation is used */
+    double gamma;
+
     /* LSC === */
     /** @brief the Poisson solver matrix (the part of the approximation of the
      * Schur complement)
@@ -187,7 +219,16 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * This involves assembling of a mass matrix.
      */
     void fill_inverse_diagonal();
-    
+   
+    /** @brief fill the member Saddle_point_preconditioner::pressure_mass.
+       *
+       * This involves assembling of a mass matrix.
+       */
+    void fill_pressure_mass_matrix();
+
+    void fill_augmented_matrix_and_rhs();
+
+
     /** @brief Sets up bdryCorrectionMatrix_. This is 2D specific and must be redone for 3D.
      *  @param m A const reference to the whole system matrix.
      */
@@ -206,6 +247,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * velocity_mumps_wrapper must be used.
      */
     void solve_velocity(const BlockVector& rhs, BlockVector& sol) const;
+
 };
 
 
