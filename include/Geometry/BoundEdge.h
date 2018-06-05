@@ -116,7 +116,7 @@ class TBoundEdge : public TJoint
     { BoundComp->GetTofXY(X, Y, T); }
 
     /** return boundary component */
-    TBoundComp2D *GetBoundComp() const
+    const TBoundComp2D *GetBoundComp() const
     { return BoundComp; }
 
     /** return whether this is an interior joint */

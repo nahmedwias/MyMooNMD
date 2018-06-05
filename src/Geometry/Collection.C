@@ -166,7 +166,6 @@ int TCollection::MarkBoundaryVertices()
   TVertex *vertex0, *vertex1;
   TRefDesc *refdesc;
   TBoundEdge *boundedge;
-  TBoundComp *BoundComp;
   TJoint *joint;
 
   // initialization 
@@ -201,7 +200,7 @@ int TCollection::MarkBoundaryVertices()
 	    joint->GetType() == IsoBoundEdge)
 	{
 	  boundedge=(TBoundEdge *)joint;
-	  BoundComp=boundedge->GetBoundComp();      // get boundary component
+	  auto BoundComp=boundedge->GetBoundComp(); // get boundary component
 	  comp=BoundComp->GetID();                  // boundary id
 	  boundedge->GetParameters(t0, t1);         // parameter interval
 	  vertex0 = cell->GetVertex(TmpEdVer[2*j]);
@@ -988,7 +987,7 @@ void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &ed
     if (joint->GetType()==BoundaryEdge)
             {
         TBoundEdge *boundedge = (TBoundEdge *)joint;
-        TBoundComp *BoundComp = boundedge->GetBoundComp();
+        const TBoundComp *BoundComp = boundedge->GetBoundComp();
      if (BoundComp->GetID() == id)
                 {
     ///@todo set the boundedge properties in the function MakeGrid
