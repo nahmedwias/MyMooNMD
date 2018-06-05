@@ -42,6 +42,7 @@ class CD2D
     {
       /** @brief Finite Element space */
       TFESpace2D fe_space;
+
       /** @brief the system matrix */
       BlockFEMatrix matrix;
       /** @brief the right hand side vector */
@@ -175,7 +176,8 @@ class CD2D
      * assembling routines are used. Also in case of multigrid the matrices
      * on all grids are assembled.
      */
-    void assemble();
+
+    void assemble(TFEFunction2D* coefficient_function1 = nullptr, TFEFunction2D* coefficient_function2 = nullptr);
     
     /** @brief solve the system */
     void solve();

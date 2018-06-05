@@ -54,6 +54,10 @@ class TCollection
     TBaseCell *GetCell(int i) const
     { return Cells[i]; }
 
+    /** @brief return Cell array */
+    TBaseCell **GetCells() const
+    {  return Cells; }
+
     /** @brief destructor: delete arrays */
     ~TCollection();
 

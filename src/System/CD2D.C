@@ -9,6 +9,17 @@
 #include <Upwind.h>
 #include <LocalProjection.h>
 
+#include <Assembler4.h>
+#include <BoundaryAssembling2D.h>
+
+
+void Coefficient_Function_CD2D(double *in, double *out)
+{
+	// coordinates:  x at in[0], y at in[1]
+	out[0] = in[2];
+	out[1] = in[3];
+}
+
 ParameterDatabase get_default_CD2D_parameters()
 {
   Output::print<5>("creating a default CD2D parameter database");
@@ -17,6 +28,15 @@ ParameterDatabase get_default_CD2D_parameters()
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.set_name("CD2D parameter database");
   
+  db.add("coefficient_function_type", (size_t) 0., "Set the parameter equal to 0 if the"
+		  " coefficients are constant, if you want to use a coefficient function that is spatially "
+		  "varying and analytically defined in ParMooN_Brinkman2D.C, set this parameter equal to 1 "
+		  "and then adjust coeffs via parameters in the example file; if you want to use a coefficient "
+		  "function that is spatially varying and defined by a .mesh-file combined with a file describing "
+		  "a corresponding FEFunction2D, set this parameter equal to 2; if you want to use two coefficient "
+		  "function that are spatially varying and analytically defined, set this parameter equal to 3; if you want to use two coefficient "
+		  "functions from files ... .Sol, set this parameter equal to 4 ", (size_t) 0.,(size_t) 4.);
+
   // a default output database - needed here as long as there's no class handling the output
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
@@ -72,9 +92,9 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
   Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
-  Output::print<2>("h (min,max): ", setw(12), h_min, " ", setw(12), h_max);
+  Output::print<1>("h (min,max): ", setw(12), h_min, " ", setw(12), h_max);
   Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
-  Output::print<2>("dof active : ", setw(12), space.GetN_ActiveDegrees());
+  Output::print<1>("dof active : ", setw(12), space.GetN_ActiveDegrees());
 
   
   // done with the constructor in case we're not using multigrid
@@ -193,9 +213,17 @@ void CD2D::set_parameters()
 }
 
 /** ************************************************************************ */
-void CD2D::assemble()
+void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coefficient_function2)
 {
-  LocalAssembling2D_type t = LocalAssembling2D_type::ConvDiff;
+	const TFESpace2D *coefficient_function1_space;
+	const TFESpace2D *coefficient_function2_space;
+
+ LocalAssembling2D_type type;
+ // use a list of LocalAssembling2D objects
+ std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
+
+
+type = LocalAssembling2D_type::ConvDiff;
   bool mdml = this->solver.is_using_multigrid()
              && this->solver.get_multigrid()->is_using_mdml();
   // in case of mdml, we need to change the local assembling, (not yet 
@@ -204,13 +232,53 @@ void CD2D::assemble()
   // this loop has more than one iteration only in case of multigrid
   for(auto & s : this->systems)
   {
-    TFEFunction2D * pointer_to_function = &s.fe_function;
-    // create a local assembling object which is needed to assemble the matrix
-    LocalAssembling2D la(t, &pointer_to_function, example.get_coeffs());
+	  TFEFunction2D * pointer_to_fe_functions[3] = {&s.fe_function, NULL, NULL};
+
+	  if ((coefficient_function1) && (coefficient_function2))
+	  {
+	  	coefficient_function1_space = coefficient_function1->GetFESpace2D();
+	  	pointer_to_fe_functions[1] = coefficient_function1;
+	  	coefficient_function2_space = coefficient_function2->GetFESpace2D();
+	  	pointer_to_fe_functions[2] = coefficient_function2;
+	  }
+	  else if (coefficient_function1)
+	  {
+	  	coefficient_function1_space = coefficient_function1->GetFESpace2D();
+	  	pointer_to_fe_functions[1] = coefficient_function1;
+	  }
+
+	  std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, pointer_to_fe_functions,
+	  		this->example.get_coeffs()));
+
+	  if  ((coefficient_function1) && (coefficient_function2))
+	  {
+	  	la->setBeginParameter({0});
+	  	la->setN_ParamFct(1);
+	  	la->setParameterFct({Coefficient_Function_CD2D});
+	  	la->setN_FeValues(2);
+	  	la->setFeValueFctIndex({1,2});
+	  	la->setFeValueMultiIndex({D00, D00});
+	  }
+	  else if (coefficient_function1)
+	  {
+	  	// modify la such that it includes the TFEFunction2D coefficient_function
+	  	la->setBeginParameter({0});
+	  	la->setN_ParamFct(1);
+	  	la->setParameterFct({Coefficient_Function_CD2D});
+	  	la->setN_FeValues(1);
+	  	la->setFeValueFctIndex({1});
+	  	la->setFeValueMultiIndex({D00});
+	  }
+
+	  la_list.push_back(la);
 
     // assemble the system matrix with given local assembling, solution and rhs
+    std::vector<const TFESpace2D*> fe_spaces;
+    fe_spaces.resize(2);
+    fe_spaces[0] =  &s.fe_space;
     const TFESpace2D * fe_space = &s.fe_space;
-    BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
+
+    BoundCondFunct2D * boundary_conditions = fe_spaces[0]->GetBoundCondition();
     int N_Matrices = 1;
     double * rhs_entries = s.rhs.get_entries();
 
@@ -219,44 +287,86 @@ void CD2D::assemble()
 
     BoundValueFunct2D * non_const_bound_value[1] {example.get_bd()[0]};
 
-      // reset right hand side and matrix to zero (just in case)
-      s.rhs.reset();
-      matrix->reset();
+    // reset right hand side and matrix to zero (just in case)
+    s.rhs.reset();
+    matrix->reset();
+    //New LB 15.06.18 start
+    std::vector<const TFESpace2D*> spaces_for_matrix;
+    spaces_for_matrix.resize(1);
 
-      // assemble
-      Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, nullptr, 1, &rhs_entries,
-                 &fe_space, &boundary_conditions, non_const_bound_value, la);
 
-      // apply local projection stabilization method
-      if(db["space_discretization_type"].is("local_projection")
-         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
-      {
-        if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
-        {
-          UltraLocalProjection((void *)&matrix, false);
-        }
-        else
-        {
-          ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
-        }
-      }
-      
-      bool finest_grid = &systems.front() == &s;
-      if(mdml && !finest_grid)
-      {
-        UpwindForConvDiff(la.GetCoeffFct(), matrix, rhs_entries, fe_space, 
-                          nullptr, nullptr, false);
-      }
+    if (coefficient_function1 && coefficient_function2)
+    {
+    	spaces_for_matrix.resize(3);
+    	spaces_for_matrix[1] = coefficient_function1_space;
+    	spaces_for_matrix[2] = coefficient_function2_space;
+    }
+    else if (coefficient_function1)
+    {
+    	spaces_for_matrix.resize(2);
+    	spaces_for_matrix[1] = coefficient_function1_space;
+    }
 
-      // copy Dirichlet values from rhs to solution vector (this is not really
-      // necessary in case of a direct solver)
-      s.solution.copy_nonactive(s.rhs);
+    spaces_for_matrix[0] = &s.fe_space;
+
+    std::vector<const TFESpace2D*> spaces_for_rhs;
+    spaces_for_rhs.resize(1);
+    spaces_for_rhs[0] =  &s.fe_space;
+
+    //Todo: Assembler4 does not produce the same errors as the old Assemble2D(), therefore I added the if else case. Find the reason therefore
+    if (coefficient_function1)
+    {
+    	Assembler4 Ass;
+    	Ass.Assemble2D(s.matrix,s.rhs,
+    			spaces_for_matrix, spaces_for_rhs,
+					example,la_list);
+    }
+    else
+    {
+    	// assemble
+    	Assemble2D(1, &fe_spaces[0], N_Matrices, &matrix, 0, nullptr, 1, &rhs_entries,
+    			&fe_spaces[0], &boundary_conditions, non_const_bound_value, *la);
+    }
+
+
+    for (int k = 0; k < TDatabase::ParamDB->n_neumann_boundary; k++)
+    {
+    	BoundaryAssembling2D::rhs_g_v_n(s.rhs, &s.fe_space,
+    			this->example.get_bd(0), //nullptr,                       // g = 1
+					TDatabase::ParamDB->neumann_boundary_id[k],               // boundary component
+					-1.*TDatabase::ParamDB->neumann_boundary_value[k]);       // mult
+    }
+
+    // apply local projection stabilization method
+    if(db["space_discretization_type"].is("local_projection")
+    		&& TDatabase::ParamDB->LP_FULL_GRADIENT>0)
+    {
+    	if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
+    	{
+    		UltraLocalProjection((void *)&matrix, false);
+    	}
+    	else
+    	{
+    		ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
+    	}
+    }
+
+    bool finest_grid = &systems.front() == &s;
+    if(mdml && !finest_grid)
+    {
+    	UpwindForConvDiff(la->GetCoeffFct(), matrix, rhs_entries, fe_space,
+    			nullptr, nullptr, false);
+    }
+
+    // copy Dirichlet values from rhs to solution vector (this is not really
+    // necessary in case of a direct solver)
+    s.solution.copy_nonactive(s.rhs);
   }
 
   // when using afc, do it now
   if(!db["algebraic_flux_correction"].is("none"))
   {
-    do_algebraic_flux_correction();
+  	do_algebraic_flux_correction();
   }
 
 }
@@ -304,7 +414,7 @@ void CD2D::output(int i)
     Output.WriteVtk(filename.c_str());
   }
   */
-  
+
 
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
@@ -345,7 +455,7 @@ void CD2D::do_algebraic_flux_correction()
         db["algebraic_flux_correction"].is("fem-tvd"))
     {
       //get pointers/references to the relevant objects
-      TFESpace2D& feSpace = s.fe_space;
+      const TFESpace2D& feSpace = s.fe_space;
       FEMatrix& one_block = *s.matrix.get_blocks_uniquely().at(0).get();
       const std::vector<double>& solEntries = s.solution.get_entries_vector();
       std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
