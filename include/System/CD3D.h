@@ -62,6 +62,14 @@ class CD3D
       BlockVector solution_;
       /** @brief Finite Element function */
       TFEFunction3D feFunction_;
+      /** @brief vector of weights for an AFC scheme */
+      std::vector<double> afc_gamma;
+      /** @brief entries of correction matrix for AFC schemes */
+      std::vector<double> afc_matrix_D_entries;
+      
+      /** @brief constructor */
+      SystemPerGrid( const Example_CD3D& example, TCollection& coll, 
+                       int ansatz_order );
 
 
       /** @brief constructor in mpi case
@@ -189,14 +197,14 @@ class CD3D
      * assembling routines are supposed to be used - so far only standard
      * "galerkin" ("1") is supported.
      */
-    void assemble();
+    void assemble(const int iteration);
     
     /** @brief Solve the system.
      *
      * Have a look at the code to see which solvers are already enabled.
      * More are to come.
      */
-    void solve();
+    bool solve(const int iteration);
     
     /** 
      * @brief Measure errors and write nice pictures.
@@ -322,6 +330,50 @@ class CD3D
      * @param s The sytem where rhs and stiffness matrix are to be assembled.
      * @param la_stiff The local assembling object of choice.
      */
+    /* residual: norm of current residual r_k+1
+     * residual_old: norm of previous residue r_k */
+     double residual, residual_old; 
+   
+    /* t: time taken to complete one iteration */
+     double t;
+    /*
+     * rhs_flag: Use to denote when one it takes one iteration of Newton as well as one iteration of Fixed_point_RHS more than 2 seconds
+     * newton_flag: Use to denote when iteration moves from Newton to Fixed_point_RHS and hence increase the tolerance
+     * up_param: The tolerance taken to change fron one schem to another
+     * 
+     */
+    void do_algebraic_flux_correction(const int iteration, const int check_fpr);
+    /*
+     * time_total: time taken to compute solve the problem
+     * time_rhs: Time taken to compute one Fixed_point_RHS iteration
+     */    
+    double time_total, time_rhs, time_newton;
+    
+    /*
+     * rejected_steps: rejected iteration steps
+     */
+    int rejected_steps;
+        
+    /*
+     * rhs_flag, newton_flag: Used for finding if time taken by one step of Newton as well as one step of Fixed_point_RHS is same
+     * newton_iterate: Count the number of Newton iteration
+     *rhs_iterate: Count the number of Fixed_point_RHS iteration     
+     */
+    int rhs_flag, newton_flag;
+    int newton_iterate, rhs_iterate;
+    /*
+     * up_param: Tolerance limit of the residual which decides when to switch the iteration technique
+     */
+    double up_param;
+     
+    BlockVector old_solution;
+    //Copy the RHS after the first iteration is done so that it can be used for Fixed_point_RHS
+    BlockVector rhs_copy;
+    //checks whether we have Fixed_point_RHS and iteration>1
+    int is_not_afc_fixed_point_rhs;
+    //copy for the AFC steady state function
+    BlockFEMatrix matrix_copy;   
+    
     void call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& la);
 
 };

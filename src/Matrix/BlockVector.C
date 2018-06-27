@@ -147,12 +147,25 @@ void BlockVector::scale(const double a, const unsigned int i)
 void BlockVector::scaleActive(const double a)
 {
   if(a==0)
-    this->reset();
+    this->reset(); /// @todo only reset active or all dofs?
   else if(a != 1.0)
     for(unsigned int i=0; i<this->n_blocks(); ++i)  
     {
       Dscal(actives.at(i), a, this->block(i));
     }
+}
+/** ************************************************************************* */
+void BlockVector::scaleNonActive(const double a)
+{
+  if(a==0)
+    this->ResetNonActive();
+  else if(a != 1.0)
+    for(unsigned int i=0; i<this->n_blocks(); ++i)
+    {
+      // do the dscal for the nonactives only (includes pointer arithmetic...)
+      int n_non_actives = this->lengths.at(i)- this->actives.at(i);
+      Dscal(n_non_actives, a, this->block(i) + this->actives.at(i));
+  }
 }
 
 /** ************************************************************************ */
