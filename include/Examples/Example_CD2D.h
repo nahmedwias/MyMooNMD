@@ -13,6 +13,8 @@
 * 	1 - Two interior Layers  (Knopp, Lube, Rapin, CMAME 2002)
 * 	2 - Hemker Rotating Body (Hemker 1996)
 * 	3 - Sharp Boundary Layer (Kuzmin & Moeller 2005)
+*       4 - Smooth Solution (BJK16 SIAM, 2016)
+*       5 - Hughes, Mallet, Mizukami 1986
 *
 * Time dependent examples
 * 	101 - Exponential Function (analytical example)

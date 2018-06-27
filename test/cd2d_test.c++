@@ -69,8 +69,8 @@ void check_cd2d(TDomain & domain, ParameterDatabase& db, int element_code,
   TDatabase::ParamDB->ANSATZ_ORDER = element_code;
   
   CD2D cd2d(domain, db);
-  cd2d.assemble();
-  cd2d.solve();
+  cd2d.assemble(0);
+  cd2d.solve(0);
   cd2d.output();
   // compare computed with given errors
   compareErrors(cd2d, errors); // throws upon a difference
@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
     db.add("multigrid_n_levels", (size_t) 0, "");
 
     db.merge(AlgebraicFluxCorrection::default_afc_database(), true);
-    db["algebraic_flux_correction"].set("fem-tvd");
+    db["algebraic_flux_correction"].set("afc");
 
     // default construct a domain object
     db.add("boundary_file", "Default_UnitSquare", "");
@@ -316,8 +316,8 @@ int main(int argc, char* argv[])
     //Here the actual computations take place
     //=========================================================================
     CD2D cd2d(domain, db);
-    cd2d.assemble();
-    cd2d.solve();
+    cd2d.assemble(0);
+    cd2d.solve(0);
     cd2d.output();
     std::array<double,4> errors = {{ 0.50027303740007, 1.9014330185425, 
                                      0.27525625829906, 0.99990856127083 }};
