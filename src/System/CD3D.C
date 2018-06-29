@@ -150,7 +150,7 @@ ParameterDatabase get_default_CD3D_parameters()
       is_not_afc_fixed_point_rhs=1;
   }
 
-/** ************************************************************************ */
+/** ************************************************************************ **/
 //==============================================================================
 void CD3D::output_problem_size_info() const
 {
@@ -164,7 +164,7 @@ void CD3D::output_problem_size_info() const
   Output::print<1>("dofs all   : ", setw(13), space.GetN_DegreesOfFreedom());
   Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
 }
-/** ************************************************************************ */
+/** ************************************************************************ **/
 void CD3D::assemble(const int iteration)
 {
   //determine the local assembling type to be CD3D
@@ -241,15 +241,13 @@ void CD3D::assemble(const int iteration)
     BoundValueFunct3D * non_const_bound_value[1] {example_.get_bd()[0]};
     
     //Previous Implementation
-    {
-      s.rhs_.reset();
-      matrix->reset();
-      Output::print<4>("call assemble");
-      // assemble
-      Assemble3D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
-                 &fe_space, &boundary_conditions, non_const_bound_value, *la);
-    }
-    /*if(is_not_afc_fixed_point_rhs==1)  
+    /*s.rhs_.reset();
+    matrix->reset();
+    Output::print<4>("call assemble");
+    // assemble
+    Assemble3D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
+	       &fe_space, &boundary_conditions, non_const_bound_value, *la);*/
+    if(is_not_afc_fixed_point_rhs==1)  
     {
       // reset right hand side and matrix to zero (just in case)
       s.rhs_.reset();
@@ -262,8 +260,10 @@ void CD3D::assemble(const int iteration)
 	rhs_copy=s.rhs_;  
     }
     //for FIXED_POINT_RHS and iteration>1
-    else 
-      s.rhs_=rhs_copy;*/
+    else
+    {
+      s.rhs_=rhs_copy;
+    }
     // apply local projection stabilization method
     if(db["space_discretization_type"].is("local_projection")
       && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
@@ -278,18 +278,21 @@ void CD3D::assemble(const int iteration)
       }  
     }
     bool finest_grid = &systems_.front() == &s;
-    if ((mdml && !finest_grid) || (db["space_discretization_type"].is("upwind")))
+    if(is_not_afc_fixed_point_rhs==1)
     {
-      Output::print<2>("upwind for convection-diffusion equation");
-      UpwindForConvDiff(matrix, rhs_entries, fe_space, 
-			*la);  
-    }
-    if (!db["algebraic_flux_correction"].is("none")&&(iteration==0)&&
-      db["afc_initial_iterate"].is("upwind"))
-    {
-      Output::print<2>("upwind for convection-diffusion equation");
-      UpwindForConvDiff(matrix, rhs_entries, fe_space, 
-			*la);  
+      if ((mdml && !finest_grid) || (db["space_discretization_type"].is("upwind")))
+      {
+	Output::print<2>("upwind for convection-diffusion equation");
+	UpwindForConvDiff(matrix, rhs_entries, fe_space, 
+			  *la);  
+      }
+      if (!db["algebraic_flux_correction"].is("none")&&(iteration==0)&&
+	db["afc_initial_iterate"].is("upwind"))
+      {
+	Output::print<2>("upwind for convection-diffusion equation");
+	UpwindForConvDiff(matrix, rhs_entries, fe_space, 
+			  *la);  
+      }
     }
     if (afc_ini_supg == 1)
       db["space_discretization_type"].set<>("galerkin");
@@ -301,7 +304,7 @@ void CD3D::assemble(const int iteration)
 
     // assemble the system matrix with given local assembling, solution and rhs
     //s.matrix_.assemble(laObject, s.solution_, s.rhs_);
-    call_assembling_routine(s, laObject);
+    //call_assembling_routine(s, laObject);
   }
 
   if (iteration == 0)
@@ -315,9 +318,9 @@ void CD3D::assemble(const int iteration)
     do_algebraic_flux_correction(iteration);*/
   
 }
-/**********************************************************************************************************/
+/** ***************************************************************************************************** **/
 AlgebraicFluxCorrection::Iteration_Scheme string_to_it_scheme(std::string afc_iteration_scheme);
-/** ************************************************************************ */
+/** ***************************************************************************************************** **/
 
 bool CD3D::solve(const int iteration)
 {
@@ -470,11 +473,11 @@ bool CD3D::solve(const int iteration)
   
   // solve the linear system
   //matrix is factorised only once and then stored in the system
-  /*if(is_not_afc_fixed_point_rhs==1)
+  if(is_not_afc_fixed_point_rhs==1)
     this->solver.update_matrix(s.matrix_);
-  this->solver.solve(s.rhs_, s.solution_);*/
+  this->solver.solve(s.rhs_, s.solution_);
   //Previous Implementation
-  this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+  //this->solver.solve(s.matrix_, s.rhs_, s.solution_);
   t = GetTime() - t;
   Output::print<4>("  iteration done in ", t, " seconds");
   
@@ -575,9 +578,9 @@ void CD3D::output(int i)
   } // if(this->db["compute_errors"]S)
 }
 
-/**************************************************************************************/
+/** ******************************************************************************** **/
 AlgebraicFluxCorrection::Limiter string_to_limiter(std::string afc_limiter);
-/**************************************************************************************/
+/** ******************************************************************************** **/
 
 void CD3D::do_algebraic_flux_correction(const int iteration, const int is_not_afc_fixed_point_rhs)
 {
@@ -687,6 +690,7 @@ void CD3D::do_algebraic_flux_correction(const int iteration, const int is_not_af
       std::vector<int> neumToDiri(nDiri, 0);
       std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
       
+
       
       if (iteration >0 || db["afc_initial_iterate"].is("afc_zero"))
       {
@@ -704,7 +708,7 @@ void CD3D::do_algebraic_flux_correction(const int iteration, const int is_not_af
         }
       
         // apply AFC 
-        /*if(is_not_afc_fixed_point_rhs==1)
+        if(is_not_afc_fixed_point_rhs==1)
 	{
 	  AlgebraicFluxCorrection::steady_state_algorithm(
 	    one_block,
@@ -717,7 +721,7 @@ void CD3D::do_algebraic_flux_correction(const int iteration, const int is_not_af
 	  {
 	    //matrix_copy=A+D 
 	    matrix_copy=s.matrix_;
-	  }	  
+	  }	 
 	}
 	//case for fixed point rhs and iteration>1
 	else
@@ -726,26 +730,27 @@ void CD3D::do_algebraic_flux_correction(const int iteration, const int is_not_af
 	   * the matrix that is used for the AFC scheme needs to have the correct Dirichlet entries
 	   * and hence after the first iteration sending these values.
 	   */
-	 /* FEMatrix& one_block1 = *matrix_copy.get_blocks_uniquely().at(0).get();
+	  FEMatrix& one_block1 = *matrix_copy.get_blocks_uniquely().at(0).get();
 	  AlgebraicFluxCorrection::steady_state_algorithm(
 	    one_block1,
 	    solEntries,rhsEntries,
 	    neumToDiri, 
 	    s.afc_matrix_D_entries, s.afc_gamma, compute_D_and_gamma, db, 
 	    limiter, it_scheme, is_not_afc_fixed_point_rhs);
-	}*/
-        // apply FEM-TVD
-        AlgebraicFluxCorrection::steady_state_algorithm(
+	}
+        // Previous Implementation
+         /*AlgebraicFluxCorrection::steady_state_algorithm(
           one_block,
           solEntries,rhsEntries,
           neumToDiri, 
 	  s.afc_matrix_D_entries, s.afc_gamma, compute_D_and_gamma, db,
-	  limiter, it_scheme);
+	  limiter, it_scheme, is_not_afc_fixed_point_rhs);
+	Output::print<1>("Matrix Norm: ",s.matrix_.get_blocks_uniquely({{0,0}})[0]->GetNorm());*/
       }
       //Previous Implementation
-      AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
-      /*if (is_not_afc_fixed_point_rhs)
-	AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);*/
+      //AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
+      if (is_not_afc_fixed_point_rhs)
+	AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
       //...and in the right hand side, too, assum correct in solution vector
       s.rhs_.copy_nonactive(s.solution_);
     }
@@ -829,6 +834,7 @@ void CD3D::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_as
 
   // Do the Assembling!
 
+  
   // reset right hand side and matrix to zero
   s.rhs_.reset();
   block[0]->reset();
@@ -837,4 +843,3 @@ void CD3D::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_as
              &fe_space, &boundary_conditions, non_const_bound_value, local_assem);
 
 }
-

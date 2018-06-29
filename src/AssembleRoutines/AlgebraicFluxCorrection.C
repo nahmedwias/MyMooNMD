@@ -2069,13 +2069,8 @@ const int is_not_afc_fixed_point_rhs)
   // add this matrix to A giving \tilde A (Entries)
   // this is the matrix with the properties of an M matrix
   //for fixed_point_rhs and iteration>1 we don't need to add matrix D again.
-#ifdef __2D__
   if (is_not_afc_fixed_point_rhs)
     Daxpy(N_Entries, 1.0, &afc_matrix_D_entries[0], Entries);
-#endif
-#ifdef __3D__
-  Daxpy(N_Entries, 1.0, &afc_matrix_D_entries[0], Entries);
-#endif
   /*Previous Implementation
     Daxpy(N_Entries, 1.0, &afc_matrix_D_entries[0], Entries);*/
   // allocate and fill arrays for linearity preserving limiter
