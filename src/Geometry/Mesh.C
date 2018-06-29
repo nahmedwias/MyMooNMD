@@ -251,6 +251,12 @@ void Mesh::readFromFile(std::string filename)
   ifile.seekg(current_line_number);
   ifile.close();
   
+  if(numberOfHexa != 0)
+  {
+    // why is this not implemented???
+    ErrThrow("Missing implementation for reading mesh files with Hexahedra");
+  }
+  
   if(numberOfTetra + numberOfHexa == 0 && dimension == 3)
   {
     // this should be 2D and is reset here after a check.
