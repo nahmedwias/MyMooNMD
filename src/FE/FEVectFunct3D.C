@@ -604,11 +604,11 @@ double TFEVectFunct3D::GetL2NormDivergenceError(DoubleFunct3D* Exact_u1,
       }
       double local_divergence_exact = 0;
       double exact_val[5];
-      Exact_u1(X[j], Y[j], Z[i], exact_val);
+      Exact_u1(X[j], Y[j], Z[j], exact_val);
       local_divergence_exact += exact_val[1];
-      Exact_u2(X[j], Y[j], Z[i], exact_val);
+      Exact_u2(X[j], Y[j], Z[j], exact_val);
       local_divergence_exact += exact_val[2];
-      Exact_u3(X[j], Y[j], Z[i], exact_val);
+      Exact_u3(X[j], Y[j], Z[j], exact_val);
       local_divergence_exact += exact_val[3];
       
       auto local_div_error = local_divergence_fe - local_divergence_exact;
