@@ -37,6 +37,10 @@ namespace poiseuille// 5
 {
 #include "NSE_3D/Poiseuille.h"
 }
+namespace simple_coriolis // 6
+{
+#include "NSE_3D/Coriolis_simple.h"
+}
 
 //test examples
 namespace test_u_0_p_0 //-1
@@ -214,35 +218,68 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       ExampleFile();
       break;
     }
-      case 5:
-      {
-          /** exact_solution */
-          exact_solution.push_back( poiseuille::ExactU1 );
-          exact_solution.push_back( poiseuille::ExactU2 );
-          exact_solution.push_back( poiseuille::ExactU3 );
-          exact_solution.push_back( poiseuille::ExactP );
-          
-          /* boundary condition */
-          boundary_conditions.push_back( poiseuille::BoundCondition );
-          boundary_conditions.push_back( poiseuille::BoundCondition );
-          boundary_conditions.push_back( poiseuille::BoundCondition );
-          boundary_conditions.push_back( BoundConditionNoBoundCondition );
-          
-          /* boundary values */
-          boundary_data.push_back( poiseuille::U1BoundValue );
-          boundary_data.push_back( poiseuille::U2BoundValue );
-          boundary_data.push_back( poiseuille::U3BoundValue );
-          boundary_data.push_back( BoundaryValueHomogenous );
-          
-          /* coefficients */
-          problem_coefficients = poiseuille::LinCoeffs;
-          
-          /** some variables to change values in the example */
-          poiseuille::DIMENSIONLESS_VISCOSITY = this->get_nu();
-          
-          poiseuille::ExampleFile();
-          break;
-      }
+    case 5:
+    {
+      /** exact_solution */
+      exact_solution.push_back( poiseuille::ExactU1 );
+      exact_solution.push_back( poiseuille::ExactU2 );
+      exact_solution.push_back( poiseuille::ExactU3 );
+      exact_solution.push_back( poiseuille::ExactP );
+      
+      /* boundary condition */
+      boundary_conditions.push_back( poiseuille::BoundCondition );
+      boundary_conditions.push_back( poiseuille::BoundCondition );
+      boundary_conditions.push_back( poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /* boundary values */
+      boundary_data.push_back( poiseuille::U1BoundValue );
+      boundary_data.push_back( poiseuille::U2BoundValue );
+      boundary_data.push_back( poiseuille::U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /* coefficients */
+      problem_coefficients = poiseuille::LinCoeffs;
+      
+      /** some variables to change values in the example */
+      poiseuille::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      
+      poiseuille::ExampleFile();
+      break;
+    }
+    case 6:
+    {
+      /** exact_solution */
+      exact_solution.push_back(simple_coriolis::ExactU1 );
+      exact_solution.push_back(simple_coriolis::ExactU2 );
+      exact_solution.push_back(simple_coriolis::ExactU3 );
+      exact_solution.push_back(simple_coriolis::ExactP );
+      
+      /* boundary condition */
+      boundary_conditions.push_back(simple_coriolis::BoundCondition );
+      boundary_conditions.push_back(simple_coriolis::BoundCondition );
+      boundary_conditions.push_back(simple_coriolis::BoundCondition );
+      boundary_conditions.push_back(BoundConditionNoBoundCondition );
+      
+      /* boundary values */
+      boundary_data.push_back(simple_coriolis::U1BoundValue );
+      boundary_data.push_back(simple_coriolis::U2BoundValue );
+      boundary_data.push_back(simple_coriolis::U3BoundValue );
+      boundary_data.push_back(BoundaryValueHomogenous );
+      
+      /* coefficients */
+      problem_coefficients = simple_coriolis::LinCoeffs;
+      
+      /** some variables to change values in the example */
+      simple_coriolis::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      simple_coriolis::alpha = 0.05;
+      simple_coriolis::v_0 = 1.;
+      simple_coriolis::omega = 1.;
+      simple_coriolis::include_nonlinear_term = false;
+      simple_coriolis::include_coriolis_term = true;
+      simple_coriolis::ExampleFile();
+      break;
+    }
     case -1:
     {
       using namespace test_u_0_p_0;

@@ -35,6 +35,8 @@ ParameterDatabase get_default_NSE3D_parameters()
   // a default output database - needed here as long as there's no class handling the output
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
+  
+  db.merge(LocalAssembling3D::default_local_assembling_database(), true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
   if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
@@ -515,7 +517,7 @@ void NSE3D::assemble_linear_terms()
     feFunction[3]=&s.p_;
 
     // local assembling object    
-    const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_Linear, 
+    const LocalAssembling3D la(this->db, LocalAssembling3D_type::NSE3D_Linear, 
                          feFunction.data(), example_.get_coeffs());
     
     //HOTFIX: Check the documentation - this ensures that in Galerkin disc,
@@ -528,7 +530,7 @@ void NSE3D::assemble_linear_terms()
                nReMatrices, reMatrices.data(), 
                nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
-
+    
     Output::print(" ** START ASSEMBLE PRESSURE BC ON RHS **");
 
     // get all cells: this is at the moment needed for the boundary assembling
@@ -560,7 +562,6 @@ void NSE3D::assemble_linear_terms()
     //delete the temorary feFunctions gained by GetComponent
     for(int i = 0; i<3; ++i)
       delete feFunction[i];
-
   }// endfor auto grid
 
   //copy non-actives from rhs to solution on finest grid
@@ -688,7 +689,8 @@ void NSE3D::assemble_non_linear_term()
         mat->reset();
       }
       // local assembling object    
-      const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
+      const LocalAssembling3D la(this->db, 
+                                 LocalAssembling3D_type::NSE3D_NonLinear, 
                                  feFunction.data(), example_.get_coeffs());
       
       //HOTFIX: Check the documentation!

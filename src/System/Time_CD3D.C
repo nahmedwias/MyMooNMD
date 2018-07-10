@@ -312,8 +312,8 @@ void Time_CD3D::assemble_initial_time()
   for(auto &s : this->systems_)
   {
     TFEFunction3D *feFunction = {&s.feFunction_};
-    LocalAssembling3D la(allMatrices, &feFunction, example_.get_coeffs(),
-                         this->disctype);
+    LocalAssembling3D la(this->db, allMatrices, &feFunction,
+                         example_.get_coeffs(), this->disctype);
     // Assemble stiffness, mass matrices and the rhs. Initially it is independent
     // that which method is used. 
     // 
@@ -338,8 +338,8 @@ void Time_CD3D::assemble()
   for(auto &s : this->systems_)
   {
     TFEFunction3D *feFunction = {&s.feFunction_};
-    LocalAssembling3D la(stiffMatrixRhs, &feFunction, example_.get_coeffs(),
-                         this->disctype);
+    LocalAssembling3D la(this->db, stiffMatrixRhs, &feFunction,
+                         example_.get_coeffs(), this->disctype);
     // call assembling routine 
     if(db["space_discretization_type"].is("galerkin"))
     {
