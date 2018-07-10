@@ -25,6 +25,7 @@ DataWriter<d>::DataWriter(const ParameterDatabase& param_db)
   db.merge(param_db, false);
 
   writeVTK = db["output_write_vtk"];
+  writeVTU = db["output_write_vtu"];
   writeCASE = db["output_write_case"];
   if(writeCASE)
   {
@@ -88,21 +89,30 @@ void DataWriter<d>::add_fe_vector_function(const FEVectFunct* fevectfunction)
 template <int d>
 void DataWriter<d>::write()
 {
+  int my_rank = 0;
+#ifdef _MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+  if(my_rank == 0 && (writeVTK || writeVTU || writeCASE))
+  {
+    mkdir(testcaseDir.c_str(), 0777);
+  }
+  std::string name = testcaseDir + "/" + testcaseName;
+  
   if(writeVTK)
   {
 #ifdef _MPI
     char SubID[] = "";
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    if(my_rank == 0)
-      mkdir(testcaseDir.c_str(), 0777);
     Write_ParVTK(MPI_COMM_WORLD, 0, SubID, testcaseDir, testcaseName);
 #else
-    mkdir(testcaseDir.c_str(), 0777);
-    std::string name = testcaseDir + "/" + testcaseName + ".vtk";
-    Output::print<2>(" DataWriter:: writing ", name);
-    writeVtk(name);
+    Output::print<2>(" DataWriter:: writing ", name + ".vtk");
+    writeVtk(name + ".vtk");
 #endif
+  }
+  if(writeVTU)
+  {
+    Output::print<2>(" DataWriter:: writing ", name + ".vtu");
+    writeVtu(name + ".vtu");
   }
   if(writeCASE)
   {
@@ -128,25 +138,31 @@ void DataWriter<d>::write(double current_time)
     timeValues.push_back(current_time);
     // index of current time step in 'timeValues'
     auto index = timeValues.size() - 1;
+    int my_rank = 0;
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+    if(my_rank == 0 && (writeVTK || writeVTU || writeCASE))
+    {
+      mkdir(testcaseDir.c_str(), 0777);
+    }
+    std::string name;
+    name += testcaseDir + "/" + testcaseName;
+    name += std::to_string(index * n_steps_per_output);  
     if(writeVTK)
     {
 #ifdef _MPI
       char SubID[] = "";
-      int my_rank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-      if(my_rank == 0)
-        mkdir(testcaseDir.c_str(), 0777);
       Write_ParVTK(MPI_COMM_WORLD, index * n_steps_per_output, SubID,
                    testcaseDir, testcaseName);
 #else
-      mkdir(testcaseDir.c_str(), 0777);
-      std::string name;
-      name += testcaseDir + "/" + testcaseName;
-      name += std::to_string(index * n_steps_per_output);
-      name += ".vtk";
-      Output::print<2>(" DataWriter:: writing ", name);
-      writeVtk(name);
+      Output::print<2>(" DataWriter:: writing ", name + ".vtk");
+      writeVtk(name + ".vtk");
 #endif
+    }
+    if(writeVTU)
+    {
+      writeVtu(name + ".vtu");
     }
     if(writeCASE)
     {
@@ -162,6 +178,29 @@ void DataWriter<d>::write(double current_time)
       writeCaseFile();
     }
   }
+}
+
+template <int d>
+int n_local_vertices_to_type(int n_loc_vert)
+{
+  switch(d)
+  {
+    case 2:
+      switch(n_loc_vert)
+      {
+        case 4: return 9; break;
+        case 3: return 5; break;
+      }
+      break;
+    case 3:
+      switch(n_loc_vert)
+      {
+        case 4: return 10; break;
+        case 8: return 12; break;
+      }
+      break;
+  }
+  ErrThrow("a ", d, "D cell with ", n_loc_vert, " vertices is not supported");
 }
 
 template <int d>
@@ -203,31 +242,7 @@ void DataWriter<d>::writeMesh(std::string name)
   for(unsigned int i = 0; i < N_Elements; i++)
   {
     int N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
-    switch(d)
-    {
-      case 2:
-        switch(N_CellVertices)
-        {
-          case 4:
-            dat << 9 << " ";
-            break;
-          case 3:
-            dat << 5 << " ";
-            break;
-        }
-        break;
-      case 3:
-        switch(N_CellVertices)
-        {
-          case 4:
-            dat << 10 << " ";
-            break;
-          case 8:
-            dat << 12 << " ";
-            break;
-        }
-        break;
-    }
+    dat << n_local_vertices_to_type<d>(N_CellVertices) << " ";
   }
 }
 
@@ -393,31 +408,7 @@ void DataWriter<d>::writeVtkDiscontinuous(std::string fileName,
   for(int i = 0; i < N_Elements; i++)
   {
     int N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
-    switch(d)
-    {
-      case 2:
-        switch(N_CellVertices)
-        {
-          case 4:
-            dat << 9 << " ";
-            break;
-          case 3:
-            dat << 5 << " ";
-            break;
-        }
-        break;
-      case 3:
-        switch(N_CellVertices)
-        {
-          case 4:
-            dat << 10 << " ";
-            break;
-          case 8:
-            dat << 12 << " ";
-            break;
-        }
-        break;
-    }
+    dat << n_local_vertices_to_type<d>(N_CellVertices) << " ";
   }
   dat << "\n\n";
 
@@ -425,10 +416,9 @@ void DataWriter<d>::writeVtkDiscontinuous(std::string fileName,
   // vector valued basis functions (such as Raviart-Thomas), because these
   // are handled like scalar basis functions
   dat << "POINT_DATA " << N_LocVertices << "\n";
-  for(unsigned int space_number = 0; space_number < FEFunctionArray.size();
-      space_number++)
+  for(unsigned int i = 0; i < FEFunctionArray.size(); ++i)
   {
-    const auto* fefunction = FEFunctionArray[space_number];
+    const auto* fefunction = FEFunctionArray[i];
     const int BaseVectDim = fefunction->GetFESpace()->GetBaseVectDim();
 
     // scalar valued basis functions (normal case)
@@ -461,9 +451,9 @@ void DataWriter<d>::writeVtkDiscontinuous(std::string fileName,
     {
       // find values for all components
       double function_value[BaseVectDim];
-      // store function values at all vertices (three components)
-      std::vector<std::vector<double>> allValues(
-          BaseVectDim, std::vector<double>(N_LocVertices));
+      dat << "\n\n";
+      dat << "VECTORS " << fefunction->GetName();
+      dat << " double\n";
       for(int i = 0, k = 0; i < N_Elements; i++)
       {
         TBaseCell* current_cell = Coll->GetCell(i);
@@ -477,22 +467,8 @@ void DataWriter<d>::writeVtkDiscontinuous(std::string fileName,
 #else
           fefunction->FindValueLocal(current_cell, i, x, y, function_value);
 #endif
-          for(int l = 0; l < BaseVectDim; l++)
-            allValues[l][k] = function_value[l];
-          k++;
-        }
-      }
-      // write the function values to the vtk-file
-      dat << "\n\n";
-      dat << "VECTORS " << fefunction->GetName();
-      dat << " double\n";
-      for(int i = 0, k = 0; i < N_Elements; i++)
-      {
-        int N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
-        for(int j = 0; j < N_CellVertices; j++)
-        {
           for(int l = 0; l < BaseVectDim; ++l)
-            dat << allValues[l][k] << "\t";
+            dat << function_value[l] << "\t";
           if(BaseVectDim == 2)
             dat << double(0.);
           dat << "\n";
@@ -508,6 +484,208 @@ void DataWriter<d>::writeVtkDiscontinuous(std::string fileName,
     }
   }
   dat.close();
+}
+
+template<int d>
+void DataWriter<d>::writeVtu(std::string name) const
+{
+  std::ofstream f(name);
+  
+  const std::string byte_order = "LittleEndian"; // "BigEndian"
+  std::string ascii_or_binary = "ascii"; // "binary"
+  bool compression = false;
+  if(!f)
+  {
+    ErrThrow("cannot open file for output. ", name);
+  }
+  f << std::fixed << std::scientific << std::setprecision(16);
+  f << "<?xml version=\"1.0\" ?>"             << "\n"
+    << "<!--"                                 << "\n"
+    << "# This file was generated by ParMooN" << "\n"
+    << "-->"                                  << "\n"
+    << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\"";
+  if(compression)
+    f << " compressor=\"vtkZLibDataCompressor\"";
+  f << " byte_order=\""  << byte_order << "\"";
+  f << ">"                        << "\n"
+    << "  <UnstructuredGrid>"     << "\n";
+  unsigned int N_LocVertices = Coll->GetNLocVertices();
+  unsigned int n_cells = Coll->GetN_Cells();
+  f << "  <Piece NumberOfPoints=\"" << N_LocVertices
+    << "\" NumberOfCells=\""      << n_cells << "\" >" << "\n";
+  
+  
+  // write the vertices of the grid
+  f << "  <Points>\n";
+  f << "    <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\""
+    << ascii_or_binary << "\">\n";
+  
+  std::vector<const TVertex*> Vertices;
+  for(unsigned int icell = 0; icell < n_cells; icell++)
+  {
+    const TBaseCell* cell = Coll->GetCell(icell);
+    unsigned int n_Loc_vert = cell->GetN_Vertices();
+    for(unsigned int ivert = 0; ivert < n_Loc_vert; ++ivert)
+    {
+      const TVertex * v = cell->GetVertex(ivert);
+      Vertices.push_back(v);
+      double x, y, z;
+      v->GetCoords(x, y, z);
+      f << setw(16) << x << " " << setw(16) << y << " " << setw(16) << z 
+        << "\n";
+    }
+  }
+  f << "    </DataArray>\n";
+  f << "  </Points>\n";
+  
+  // Write cell connectivity
+  f << "  <Cells>" << "\n";
+  f << "    <DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\""
+    << ascii_or_binary << "\">" << "\n";
+  for(unsigned int icell = 0, loc_vert = 0; icell < n_cells; icell++)
+  {
+    const TBaseCell* cell = Coll->GetCell(icell);
+    unsigned int n_Loc_vert = cell->GetN_Vertices();
+    f << loc_vert;
+    for(unsigned int ivert = 1; ivert < n_Loc_vert; ++ivert)
+    {
+      f << " " << loc_vert + ivert;
+    }
+    loc_vert += n_Loc_vert;
+    f << "\n";
+  }
+  f << "    </DataArray>" << "\n";
+  // Write offset into connectivity array for the end of each cell
+  f << "    <DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" 
+    << ascii_or_binary << "\">" << "\n";
+  for(unsigned int icell = 0, loc_vert = 0; icell < n_cells; icell++)
+  {
+    const TBaseCell* cell = Coll->GetCell(icell);
+    unsigned int n_Loc_vert = cell->GetN_Vertices();
+    loc_vert += n_Loc_vert;
+    f << loc_vert << ((icell !=0 && icell%10 == 0) ? "\n" : " ");
+  }
+  f << "\n" << "    </DataArray>" << "\n";
+  // Write cell type
+  f << "    <DataArray  type=\"UInt32\"  Name=\"types\"  format=\"" 
+    << ascii_or_binary << "\">" << "\n";
+  for(unsigned int icell = 0; icell < n_cells; icell++)
+  {
+    const TBaseCell* cell = Coll->GetCell(icell);
+    unsigned int n_Loc_vert = cell->GetN_Vertices();
+    f << n_local_vertices_to_type<d>(n_Loc_vert);
+    f << ((icell !=0 && icell%10 == 0) ? "\n" : " ");
+  }
+  f << "\n" << "    </DataArray>" << "\n";
+  f << "  </Cells>" << "\n";
+  
+  // writing data
+  std::string name_default; // paraview will show this data at first
+  if(!FEFunctionArray.empty())
+    name_default = FEFunctionArray[0]->GetName();
+  else if(!FEVectFunctArray.empty())
+    name_default = FEVectFunctArray[0]->GetName();
+  
+  f << "  <PointData Scalars=\"" << name_default << "\">" << "\n";
+  for(unsigned int i = 0; i < FEFunctionArray.size(); ++i)
+  {
+    const auto* fefunction = FEFunctionArray[i];
+    const int BaseVectDim = fefunction->GetFESpace()->GetBaseVectDim();
+    if(BaseVectDim == 1)
+    {
+      f << "    <DataArray  type=\"Float64\"  Name=\"" << fefunction->GetName()
+        << "\" format=\"" << ascii_or_binary << "\">" << "\n";
+      for(unsigned int icell = 0; icell < n_cells; icell++)
+      {
+        const TBaseCell* cell = Coll->GetCell(icell);
+        unsigned int n_Loc_vert = cell->GetN_Vertices();
+        double function_value;
+        for(unsigned int j = 0; j < n_Loc_vert; j++)
+        {
+          double x, y, z;
+          cell->GetVertex(j)->GetCoords(x, y, z);
+#ifdef __2D__
+          fefunction->FindValueLocal(cell, icell, x, y, &function_value);
+#else
+          fefunction->FindValueLocal(cell, icell, x, y, z, &function_value);
+#endif
+          f << function_value << "\n";
+        }
+      }
+      f << "    </DataArray> "     << "\n";
+    }
+    // vector valued basis functions (e.g. Raviart-Thomas)
+    else if(BaseVectDim == d)
+    {
+      f << "    <DataArray  type=\"Float64\"  Name=\"" << fefunction->GetName()
+        << "\" NumberOfComponents=\"" << d << "\" format=\"" 
+        << ascii_or_binary << "\">" << "\n";
+      // find values for all components
+      double function_value[BaseVectDim];
+      for(unsigned int icell = 0; icell < n_cells; icell++)
+      {
+        const TBaseCell* cell = Coll->GetCell(icell);
+        unsigned int n_Loc_vert = cell->GetN_Vertices();
+        for(unsigned int j = 0; j < n_Loc_vert; j++)
+        {
+          double x, y, z;
+          cell->GetVertex(j)->GetCoords(x, y, z);
+#ifdef __3D__
+          fefunction->FindValueLocal(cell, icell, x, y, z, function_value);
+#else
+          fefunction->FindValueLocal(cell, icell, x, y, function_value);
+#endif
+          for(int l = 0; l < BaseVectDim; l++)
+          {
+            f << function_value[l] << " ";
+          }
+          f << "\n";
+        }
+      }
+      f << "    </DataArray> "     << "\n";
+    }
+    else
+    {
+      ErrThrow("DataWriter::WriteVtkDiscontinuous: Basis functions of "
+               "dimension ",
+               BaseVectDim, " are not supported");
+    }
+  }
+  
+  for(unsigned int i = 0; i < FEVectFunctArray.size(); i++)
+  {
+    const auto* fe_vect = FEVectFunctArray[i];
+    f << "    <DataArray  type=\"Float64\"  Name=\"" << fe_vect->GetName()
+      << "\" NumberOfComponents=\""<< d << "\" format=\"" 
+      << ascii_or_binary << "\">" << "\n";
+    for(unsigned int icell = 0; icell < n_cells; icell++)
+    {
+      const TBaseCell* cell = Coll->GetCell(icell);
+      unsigned int n_Loc_vert = cell->GetN_Vertices();
+      for(unsigned int j = 0; j < n_Loc_vert; j++)
+      {
+        double x, y, z;
+        cell->GetVertex(j)->GetCoords(x, y, z);
+        double function_value[d];
+#ifdef __2D__
+        fe_vect->FindValueLocal(cell, icell, x, y, function_value);
+#else
+        fe_vect->FindValueLocal(cell, icell, x, y, z, function_value);
+#endif
+        for(unsigned int dim = 0; dim < d; ++dim)
+        {
+          f << function_value[dim] << " ";
+        }
+        f << "\n";
+      }
+    }
+    f << "    </DataArray> "     << "\n";
+  }
+  
+  f << "  </PointData>" << "\n";
+  f << "  </Piece>"            << "\n";
+  f << "  </UnstructuredGrid>" << "\n";
+  f << "</VTKFile>\n";
 }
 
 // TODO: alter Write_ParVTK
@@ -998,15 +1176,7 @@ void DataWriter<d>::Write_ParVTK(MPI_Comm comm, int img, char* subID,
   for(i = 0; i < N_Elements; i++)
   {
     N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
-    switch(N_CellVertices)
-    {
-      case 4:
-        dat << 10 << " ";
-        break;
-      case 8:
-        dat << 12 << " ";
-        break;
-    }
+    dat << n_local_vertices_to_type<d>(N_CellVertices) << " ";
   }
   dat << "  </DataArray>\n";
   dat << "</Cells>\n";

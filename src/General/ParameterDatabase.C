@@ -1368,6 +1368,11 @@ ParameterDatabase ParameterDatabase::default_output_database()
 			  "This parameter can control, whether an output method"
 			  "of a system class will produce VTK output or not.",
 			  {true,false});
+    
+    db.add("output_write_vtu", false,
+			  "This parameter can control, whether an output method"
+			  "of a system class will produce VTU output or not.",
+			  {true,false});
 
 	  db.add("output_write_case", false,
 			  "This parameter can control, whether an output method"
