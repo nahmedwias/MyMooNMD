@@ -49,18 +49,26 @@ class TFEDatabase3D
 
     /** get triangle quadrature formula for given acuracy */
     static QuadFormula2D QFTriaFromDegree[MAXDEGREE];
+    /** highest accuracy for which a quadrature formula is available */
+    static int HighestAccuracyTria;
 
     /** get quadrilateral quadrature formula for given acuracy */
     static QuadFormula2D QFQuadFromDegree[MAXDEGREE];
+    /** highest accuracy for which a quadrature formula is available */
+    static int HighestAccuracyQuad;
 
 //======================================================================
 //      3D arrays for easier access of information
 //======================================================================
      /** get tetrahedron quadrature formula for given acuracy */
      static QuadFormula3D QFTetraFromDegree[MAXDEGREE];
+     /** highest accuracy for which a quadrature formula is available */
+     static int HighestAccuracyTetra;
 
      /** get hexahedron quadrature formula for given acuracy */
      static QuadFormula3D QFHexaFromDegree[MAXDEGREE];
+     /** highest accuracy for which a quadrature formula is available */
+     static int HighestAccuracyHexa;
 
      /** get hexahedron quadrature formula for given acuracy */
      static QuadFormula3D QFConvolutionHexaFromDegree[MAXDEGREE];
@@ -227,11 +235,21 @@ class TFEDatabase3D
 
     /** get triangle quadrature formula for given acuracy */
     static QuadFormula2D GetQFTriaFromDegree(int accuracy)
-       { return QFTriaFromDegree[accuracy]; };
+    {
+      if(accuracy<=HighestAccuracyTria)
+         return QFTriaFromDegree[accuracy];
+      else
+        return QFTriaFromDegree[HighestAccuracyTria];
+    };
 
     /** get quadrilateral quadrature formula for given acuracy */
     static QuadFormula2D GetQFQuadFromDegree(int accuracy)
-       { return QFQuadFromDegree[accuracy]; };
+    {
+      if(accuracy<=HighestAccuracyQuad)
+         return QFQuadFromDegree[accuracy];
+      else
+        return QFQuadFromDegree[HighestAccuracyQuad];
+    };
 
 //======================================================================
 //      QuadFormula3D
@@ -247,11 +265,21 @@ class TFEDatabase3D
 
      /** get tetrahedron quadrature formula for given acuracy */
      static QuadFormula3D GetQFTetraFromDegree(int accuracy)
-       { return QFTetraFromDegree[accuracy]; };
+     {
+       if(accuracy<=HighestAccuracyTetra)
+         return QFTetraFromDegree[accuracy];
+       else
+        return QFTetraFromDegree[HighestAccuracyTetra];
+     };
      
      /** get hexahedron quadrature formula for given acuracy */
      static QuadFormula3D GetQFHexaFromDegree(int accuracy)
-       { return QFHexaFromDegree[accuracy]; };   
+     {
+       if(accuracy<=HighestAccuracyHexa)
+         return QFHexaFromDegree[accuracy];
+       else
+        return QFHexaFromDegree[HighestAccuracyHexa];
+     };
 
      /** get hexahedron quadrature formula for convolution */
      static QuadFormula3D GetQFConvolutionHexaFromDegree(int accuracy)
