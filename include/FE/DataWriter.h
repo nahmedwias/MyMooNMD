@@ -16,30 +16,10 @@
 #ifdef _MPI
 #include "mpi.h"
 #endif
+#include "templateNames.h"
 
 class TVertex;
 class TCollection;
-class TFEFunction2D;
-class TFEFunction3D;
-class TFEVectFunct2D;
-class TFEVectFunct3D;
-
-template <int d>
-struct Function_names
-{
-};
-template <>
-struct Function_names<2>
-{
-  typedef TFEFunction2D FEFunction;
-  typedef TFEVectFunct2D FEVectFunct;
-};
-template <>
-struct Function_names<3>
-{
-  typedef TFEFunction3D FEFunction;
-  typedef TFEVectFunct3D FEVectFunct;
-};
 
 template <int d>
 class DataWriter
@@ -48,8 +28,8 @@ class DataWriter
   ///@brief default constructor: parameter are copied from Database
   DataWriter(const ParameterDatabase& param_db);
 
-  using FEFunction = typename Function_names<d>::FEFunction;
-  using FEVectFunct = typename Function_names<d>::FEVectFunct;
+  using FEFunction = typename Template_names<d>::FEFunction;
+  using FEVectFunct = typename Template_names<d>::FEVectFunct;
 
   /// @brief add a FEFunction into this output object
   void add_fe_function(const FEFunction* fefunction);
@@ -91,6 +71,7 @@ class DataWriter
      Both formats are supported by Paraview
   */
   bool writeVTK;
+  bool writeVTU;
   bool writeCASE;
 
   /// @brief number of iterations between two outputs
@@ -157,6 +138,10 @@ class DataWriter
   void writeVtkDiscontinuous(std::string fileName, int N_LocVertices,
                              std::vector<const TVertex*> Vertices);
 
+  /// @brief write vtu file, ie, unstructured grids in xml format
+  /// @note It is possible to write compressed data in xml. This can be
+  /// implemented in the future
+  void writeVtu(std::string name) const;
 
 /** write stored PARALLEL data into a pvtu and vtu files (XML files for
  * paraview) */
