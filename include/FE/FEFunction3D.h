@@ -96,7 +96,7 @@ class TFEFunction3D
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors) const;
     
-    void GetErrorsForVectorValuedFunction(DoubleFunct3D ** const Exact,
+    void GetErrorsForVectorValuedFunction(DoubleFunct3D * const * const Exact,
                                           ErrorMethod3D * const ErrMeth,
                                           double * const errors);
 

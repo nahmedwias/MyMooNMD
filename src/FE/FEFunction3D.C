@@ -261,7 +261,7 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
 } // TFEFunction3D::GetErrors
 
 void TFEFunction3D::GetErrorsForVectorValuedFunction(
-    DoubleFunct3D ** const Exact, ErrorMethod3D * const ErrMeth,
+    DoubleFunct3D * const * const Exact, ErrorMethod3D * const ErrMeth,
   double * const errors)
 {
   // write zeros into the array "errors"
