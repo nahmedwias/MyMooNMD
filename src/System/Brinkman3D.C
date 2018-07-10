@@ -455,7 +455,7 @@ void Brinkman3D::assemble()
         //        }
         
         // local assembling object
-        const LocalAssembling3D la(type,
+        const LocalAssembling3D la(this->db, type,
                                    feFunction.data(),
                                    example.get_coeffs());
         
@@ -492,7 +492,7 @@ void Brinkman3D::assemble()
                 else ErrThrow("WARNING: You have switched on Pk/Pk-stabilization, but therefore velocity space order and pressure space order should be either 1 or 2.");
                 
                 // local assembling object
-                const LocalAssembling3D la2(type,
+                const LocalAssembling3D la2(this->db, type,
                                             feFunction.data(),
                                             example.get_coeffs());
                 

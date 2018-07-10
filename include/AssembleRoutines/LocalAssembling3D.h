@@ -23,6 +23,7 @@
 
 #include <Enumerations.h>
 #include <Constants.h>
+#include <ParameterDatabase.h>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,7 @@ enum class LocalAssembling3D_type {
     ResidualStabPkPk_for_Brinkman3D_Galerkin1,
     GradDivStab_for_Brinkman3D_Galerkin1,
     CD3D, /// Stationary convection diffusion reaction in 3D
+    Darcy3D_Galerkin, // stationary Darcy problem (mixed form)
     TCD3D, // mass matrix (+ matrix comming from time discretization SUPG case)
     TCD3DStiffRhs, // stiffness matrix and right hand side
     NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
@@ -59,6 +61,9 @@ class TDiscreteForm3D;
 class LocalAssembling3D
 {
   protected:
+    /// @brief a local parameter database
+    ParameterDatabase db;
+    
     /** @brief The type of problem this assembling objects is made for. */
     const LocalAssembling3D_type type;
 
@@ -102,7 +107,7 @@ class LocalAssembling3D
 
     /** @brief function doing the real assembling using parameters from 
      *         argument list */
-    AssembleFctParam3D *AssembleParam;
+    std::vector<AssembleFctParam3D*> local_assemblings_routines;
 
     /** function for manipulating the coefficients */
     ManipulateFct3D *Manipulate;
@@ -164,6 +169,7 @@ class LocalAssembling3D
     /** Constructs a Local Assembling object of a certain type from an array
      *  of fe functions and coefficient functions.
      *
+     * @param[in] param_db controlling various parts of this class
      * @param[in] type The type of problem this assembling object can be used
      *            for. Must not be "Custom" - program terminates.
      * @param fefunctions3d The fe  functions to be evaluated.
@@ -171,8 +177,9 @@ class LocalAssembling3D
      * be hard-coded somewhere, usually in the used example file.
      *
      */
-    LocalAssembling3D(LocalAssembling3D_type type, TFEFunction3D **fefunctions3d,
-                      CoeffFct3D coeffs, int disctype = 1);
+    LocalAssembling3D(ParameterDatabase param_db, LocalAssembling3D_type type,
+                      TFEFunction3D **fefunctions3d, CoeffFct3D coeffs,
+                      int disctype = 1);
     
     /** @brief Constructor for backward compatibility
      * 
@@ -212,6 +219,8 @@ class LocalAssembling3D
     
     /** destructor */
     ~LocalAssembling3D();
+    
+    static ParameterDatabase default_local_assembling_database();
     
     /** return local stiffness matrix */
     void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,

@@ -17,6 +17,10 @@
 
 double RFB_Parameter3D(double hK, double eps, double* b);
 
+// local assembling routine which assembes the coriolis force for (T)NSE3D
+void mat_coriolis(double Mult, double *coeff, double *param, double hK, 
+                  double **OrigValues, int *N_BaseFuncts, double ***LocMatrices,
+                  double **LocRhs);
 
 // ======================================================================
 // Type 1, Standard Galerkin

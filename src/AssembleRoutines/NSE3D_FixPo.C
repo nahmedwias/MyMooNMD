@@ -2063,6 +2063,55 @@ void NSType4Galerkin3D(double Mult, double *coeff,
 
 }
 
+void mat_coriolis(double Mult, double *coeff, double *param, double hK, 
+                  double **OrigValues, int *N_BaseFuncts, double ***LocMatrices,
+                  double **LocRhs)
+{
+  //double** MatrixA11 = LocMatrices[0];
+  double** MatrixA12 = LocMatrices[1];
+  double** MatrixA13 = LocMatrices[2];
+  double** MatrixA21 = LocMatrices[3];
+  //double** MatrixA22 = LocMatrices[4];
+  double** MatrixA23 = LocMatrices[5];
+  double** MatrixA31 = LocMatrices[6];
+  double** MatrixA32 = LocMatrices[7];
+  //double** MatrixA33 = LocMatrices[8];
+
+  int N_U = N_BaseFuncts[0];
+  //int N_P = N_BaseFuncts[1];
+
+  //double* Orig0 = OrigValues[0]; // u_x
+  //double* Orig1 = OrigValues[1]; // u_y
+  //double* Orig2 = OrigValues[2]; // u_y
+  double* Orig3 = OrigValues[3]; // u
+  //double* Orig4 = OrigValues[4]; // p
+
+  //double c0 = coeff[0]; // nu
+  //double c1 = coeff[1]; // f1
+  //double c2 = coeff[2]; // f2
+  //double c3 = coeff[3]; // f3
+  //double g = coeff[4]; // divergence
+  double Omega1 = coeff[5];
+  double Omega2 = coeff[6];
+  double Omega3 = coeff[7];
+
+  for(int i=0;i<N_U;i++)
+  {
+    const double test000 = Orig3[i];
+    for(int j=0;j<N_U;j++)
+    {
+      const double ansatz000 = Orig3[j];
+      const double val1 = Mult * ansatz000 * test000;
+      MatrixA12[i][j] -= Omega3 * val1;
+      MatrixA13[i][j] += Omega2 * val1;
+      MatrixA21[i][j] += Omega3 * val1;
+      MatrixA23[i][j] -= Omega1 * val1;
+      MatrixA31[i][j] -= Omega2 * val1;
+      MatrixA32[i][j] += Omega1 * val1;
+    } // endfor j
+  } // endfor i
+}
+
 // ======================================================================
 // Type 4, Standard Galerkin, D(u):D(v)
 // ======================================================================

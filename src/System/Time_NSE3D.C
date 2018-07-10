@@ -1052,7 +1052,7 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   boundary_values[3] = example_.get_bd(3);
   
   const LocalAssembling3D
-              localAssembling(type,
+              localAssembling(this->db_, type,
                               fefunctions.data(),this->example_.get_coeffs(),
                               this->get_space_disc_global());
 

@@ -159,7 +159,8 @@ void CD3D::assemble()
     TFEFunction3D * feFunctionPtr = &s.feFunction_;
 
     // create a local assembling object which is needed to assemble the matrix
-    LocalAssembling3D laObject(laType, &feFunctionPtr, example_.get_coeffs());
+    LocalAssembling3D laObject(this->db, laType, &feFunctionPtr,
+                               example_.get_coeffs());
 
     // assemble the system matrix with given local assembling, solution and rhs
     //s.matrix_.assemble(laObject, s.solution_, s.rhs_);

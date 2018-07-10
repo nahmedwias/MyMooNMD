@@ -9,7 +9,7 @@
 #include <Brinkman2D_Mixed.h>// local assembling routines for 2D Navier-Stokes
 #include <ConvDiff.h>
 #include <ConvDiff2D.h> // local assembling routines for 2D convection-diffusion
-#include <Darcy2DMixed.h> // local assembling routines for 2D Darcy problems
+#include <DarcyMixed.h> // local assembling routines for 2D Darcy problems
 #include <NSE2D_EquOrd_FixPo.h> // local assembling routines for equal order elements
 #include <NSE2D_FixPo.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoRot.h>// local assembling routines for 2D Navier-Stokes
@@ -385,7 +385,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 1, 1, 0};
             this->N_Rhs = 2;
             this->RhsSpace = { 0, 1 };
-            this->AssembleParam = BilinearAssembleDarcyGalerkin;
+            this->AssembleParam = BilinearAssembleDarcyGalerkin<2>;
             this->Manipulate = nullptr;
             break;
             ////////////////////////////////////////////////////////////////////////////
