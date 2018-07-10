@@ -91,6 +91,7 @@ class TAuxParam3D
      * choose this constructor. This is equivalent to calling 
      * TAuxParam3D(0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
      */
+    TAuxParam3D();
 
     TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d);
     
