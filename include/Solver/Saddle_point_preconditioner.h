@@ -24,7 +24,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     /// lsc - least squares commutator
     /// bd_lsc - boundary corrected least squares commutator
     /// AL - augmented Lagrangian based preconditioner
-    enum class type {simple, lsc, bd_lsc, AL};
+    enum class type {simple, lsc, bd_lsc, AL, mod_AL};
     /// The database passed to the constuctor should be named this or have a 
     /// nested database with this name. Otherwise a default solver database is 
     /// used to initialize a solver object for the velocity subsystem.
@@ -136,8 +136,8 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     std::vector<double> inverse_diagonal;
    
     /** @brief the scaled (with this->gamma) inverse of the diagonal of the system matrix */
-    std::vector<double> scaled_inverse_diagonal_of_pressure_mass_matrix;
-    std::vector<double> scaled_inverse_diagonal_of_lumped_pressure_mass_matrix;
+    std::vector<double> scaled_inverse_diagonal_of_W;
+    std::vector<double> diagonal_of_W;
 
     /** @brief references to the fe spaces 
      * 
@@ -220,8 +220,13 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      */
     void fill_inverse_diagonal();
    
+
+        /** @brief fill the member Saddle_point_preconditioner::scaled_inverse_diagonal_of_W and
+         * Saddle_point_preconditioner::diagonal_of_W
+       */
+        void fill_AL_weight_W();
+
     /** @brief fill the member Saddle_point_preconditioner::pressure_mass.
-       *
        * This involves assembling of a mass matrix.
        */
     void fill_pressure_mass_matrix();

@@ -708,7 +708,17 @@ void Brinkman2D::computeNormsOfResiduals()
 void Brinkman2D::solve()
 {
   System_per_grid& s = this->systems.front();
+
+
+  /* if (brinkman2d_db["preconditioner"].is("augmented_Lagrangian_based"))
+     {
+     this->solver.solve_augmented(s.matrix, s.rhs, s.solution);
+     }
+     else
+     {*/
   this->solver.solve(s.matrix, s.rhs, s.solution);
+  //}
+
 
   // /// @todo consider storing an object of DirectSolver in this class
   //DirectSolver direct_solver(s.matrix,
