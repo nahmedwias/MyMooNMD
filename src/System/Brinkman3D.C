@@ -455,7 +455,7 @@ void Brinkman3D::assemble()
         //        }
         
         // local assembling object
-        const LocalAssembling3D la(this->db, type,
+        const LocalAssembling3D la(this->brinkman3d_db, type,
                                    feFunction.data(),
                                    example.get_coeffs());
         
@@ -492,7 +492,7 @@ void Brinkman3D::assemble()
                 else ErrThrow("WARNING: You have switched on Pk/Pk-stabilization, but therefore velocity space order and pressure space order should be either 1 or 2.");
                 
                 // local assembling object
-                const LocalAssembling3D la2(this->db, type,
+                const LocalAssembling3D la2(this->brinkman3d_db, type,
                                             feFunction.data(),
                                             example.get_coeffs());
                 
@@ -745,7 +745,7 @@ void Brinkman3D::solve()
     this->solver.solve(s.matrix, s.rhs, s.solution);
 #endif
 #ifdef _MPI
-    if(this->solver.get_brinkman3d_db.)["solver_type"].is("direct"))
+    if(this->brinkman3d_db["solver_type"].is("direct"))
     {
         //set up a MUMPS wrapper
         MumpsWrapper mumps_wrapper(s.matrix);

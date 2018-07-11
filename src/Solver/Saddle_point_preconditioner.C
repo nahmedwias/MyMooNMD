@@ -347,11 +347,13 @@ else
   else if(velocity_mumps_wrapper)
   {if ( (this->spp_type == Saddle_point_preconditioner::type::AL) || (this->spp_type == Saddle_point_preconditioner::type::mod_AL) )
   {
-  	velocity_mumps_wrapper->->solve_augmented(rhs, sol);
+    ErrThrow("no augmented Lagrangian possible with a direct velocity solver "
+               "yet.");
+  	//velocity_mumps_wrapper->solve_augmented(rhs, sol);
   }
   else
   {
-  	velocity_mumps_wrapper->->solve(rhs, sol);
+  	velocity_mumps_wrapper->solve(rhs, sol);
   }
   }
   else

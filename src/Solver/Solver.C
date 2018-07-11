@@ -371,16 +371,20 @@ void Solver<L, V>::solve_augmented(const V& rhs, V& solution)
   }
   else if(db["solver_type"].is("iterative")) // ParMooN internal iterative
   {
-// augmented Lagrangian stuff:
-		 		  auto p = std::dynamic_pointer_cast <  Saddle_point_preconditioner > ( this->preconditioner );
-		  //this->iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
-		  std::shared_ptr<IterativeMethod<BlockMatrix, BlockVector>> iterative_method = get_iterative_method<BlockMatrix, BlockVector>( db["iterative_solver_type"] ,
-				  this->db,  *this->linear_operator,  this->preconditioner);
-		  //use augmented matrix and rhs in case of AL
-		  iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
-
-		  this->iterative_method->iterate(*this->linear_operator, rhs, solution);
-
+#ifndef _MPI
+    // augmented Lagrangian stuff:
+    auto p = std::dynamic_pointer_cast<Saddle_point_preconditioner>(
+      this->preconditioner);
+    std::shared_ptr<IterativeMethod<L, V>> iterative_method =
+      get_iterative_method<L, V>(db["iterative_solver_type"], this->db,
+                                 *this->linear_operator, this->preconditioner);
+    //use augmented matrix and rhs in case of AL
+    iterative_method->iterate(p->get_augmented_matrix(),
+                              p->get_augmented_blockvector(rhs), solution);
+    this->iterative_method->iterate(*this->linear_operator, rhs, solution);
+#else
+    ErrThrow("no augmented Lagrangian implemented in parallel mode yet.");
+#endif
   }
   else if(db["solver_type"].is("petsc"))
   {
@@ -439,9 +443,9 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
   }
   else if(db["solver_type"].is("iterative")) // ParMooN internal iterative 
   {
-//NEW 13.06.18
   	if (db["preconditioner"].is("augmented_Lagrangian_based"))
 	  {
+#ifndef _MPI
 		 		  auto p = std::dynamic_pointer_cast <  Saddle_point_preconditioner > ( this->preconditioner );
 		  //this->iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
 		 		  std::shared_ptr<IterativeMethod<BlockMatrix, BlockVector>> iterative_method = get_iterative_method<BlockMatrix, BlockVector>( db["iterative_solver_type"] ,
@@ -450,6 +454,9 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
 		 		  iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
 
 		 		  this->iterative_method->iterate(*this->linear_operator, rhs, solution);
+#else
+          ErrThrow("augmented Lagrangian not available in parallel mode yet.")
+#endif // not MPI
 	  }
   	else
   	{
