@@ -337,8 +337,8 @@ void Parameter::impose(const Parameter& p)
       }
       else if(p.int_range.size() == 1) // single element range
       {
-        this->double_min = (double) p.int_value;
-        this->double_max = (double) p.int_value;
+        this->double_min = std::min(this->double_min, (double) p.int_value);
+        this->double_max = std::max(this->double_max, (double) p.int_value);
         this->double_value = (double) p.int_value;
       }
       else
@@ -364,8 +364,8 @@ void Parameter::impose(const Parameter& p)
       }
       else if(p.unsigned_range.size() == 1) // single element range
       {
-        this->double_min = (double) p.unsigned_value;
-        this->double_max = (double) p.unsigned_value;
+        this->double_min = std::min(this->double_min, (double)p.unsigned_value);
+        this->double_max = std::max(this->double_max, (double)p.unsigned_value);
         this->double_value = (double) p.unsigned_value;
       }
       else

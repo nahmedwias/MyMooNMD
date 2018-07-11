@@ -144,7 +144,7 @@ class THexaIsoparametric : public TRefTrans3D
           double *uorig, double *uxorig, double *uyorig, double *uzorig);
 
     /** set element to cell */
-    void SetCell(TBaseCell * cell);
+    void SetCell(const TBaseCell * cell);
 
     /** set order of approximation */
     void SetApproximationOrder(int order)

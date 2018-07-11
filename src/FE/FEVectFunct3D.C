@@ -620,6 +620,20 @@ double TFEVectFunct3D::GetL2NormDivergenceError(DoubleFunct3D* Exact_u1,
 } // TFEVectFunct3D::GetL2NormDivergenceError
 
 
+void TFEVectFunct3D::FindValueLocal(const TBaseCell* cell, int cell_no, 
+				    double x, double y, double z, 
+				    double* values) const
+{
+ this->TFEFunction3D::FindValueLocal(cell, cell_no, x, y, z, values);
+ auto u2 = this->GetComponent(1);
+ u2->FindValueLocal(cell, cell_no, x, y, z, values+1);
+ auto u3 = this->GetComponent(2);
+ u3->FindValueLocal(cell, cell_no, x, y, z, values+2);
+ delete u2;
+ delete u3;
+}
+
+
 /** write the solution into a data file - written by Sashi **/
 void TFEVectFunct3D::WriteSol(double t,
 				   std::string directory, std::string basename)

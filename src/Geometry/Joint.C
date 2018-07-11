@@ -61,7 +61,7 @@ int TJoint::SetNeighbour(TBaseCell *Neighb)
     }
 }
 
-TBaseCell *TJoint::GetNeighbour(TBaseCell *Me) const
+TBaseCell *TJoint::GetNeighbour(const TBaseCell *Me) const
 {
   if (Neighb0 == Me)
     return Neighb1;

@@ -5,7 +5,6 @@
 #include <Assemble3D.h> ///#include <Assembler4.h>
 #include <Database.h>
 #include <LocalAssembling3D.h>
-#include <Output3D.h>
 #include <sys/stat.h>
 #include <PETScSolver.h>
 #include <BoundaryAssembling3D.h>
@@ -164,7 +163,7 @@ int reference_id
 )
 : systems(), example(e), brinkman3d_db(get_default_Brinkman3D_parameters()),
 solver(param_db), defect(), initial_residual(1e10), norms_of_old_residuals(),
-errors()
+errors(), outputWriter(param_db)
 
 {
     this->brinkman3d_db.merge(param_db, true);
@@ -252,7 +251,7 @@ Brinkman3D::Brinkman3D(std::list<TCollection* > collections,
                        )
 : systems(), example(e), brinkman3d_db(get_default_Brinkman3D_parameters()),
 solver(param_db), defect(), initial_residual(1e10), norms_of_old_residuals(),
-errors()
+errors(), outputWriter(param_db)
 
 {
     this->brinkman3d_db.merge(param_db, false);
@@ -834,31 +833,9 @@ void Brinkman3D::output(int i)
     }
     
     // write solution to a vtk file
-    if(brinkman3d_db["output_write_vtk"])
-    {
-        // last argument in the following is domain, but is never used in this class
-        TOutput3D Output(5, 5, 2, 1, nullptr);
-        Output.AddFEFunction(&s.p);
-        Output.AddFEVectFunct(&s.u);
-#ifdef _MPI
-        char SubID[] = "";
-        if(my_rank == 0)
-            mkdir(brinkman3d_db["output_vtk_directory"], 0777);
-        std::string dir = brinkman3d_db["output_vtk_directory"];
-        std::string base = brinkman3d_db["output_basename"];
-        Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
-#else
-        // Create output directory, if not already existing.
-        mkdir(brinkman3d_db["output_vtk_directory"], 0777);
-        std::string filename = this->brinkman3d_db["output_vtk_directory"];
-        filename += "/" + this->brinkman3d_db["output_basename"].value_as_string();
-        
-        if(i >= 0)
-            filename += "_" + std::to_string(i);
-        filename += ".vtk";
-        Output.WriteVtk(filename.c_str());
-#endif
-    }
+    outputWriter.add_fe_function(&s.p); 
+    outputWriter.add_fe_vector_function(&s.u);   
+    outputWriter.write();
     
     // measure errors to known solution
     // If an exact solution is not known, it is usually set to be zero, so that

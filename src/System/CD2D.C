@@ -3,7 +3,6 @@
 #include <Multigrid.h>
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
-#include <PostProcessing2D.h>
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 #include <Upwind.h>
@@ -50,15 +49,15 @@ ParameterDatabase get_default_CD2D_parameters()
 /** ************************************************************************ */
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
                                        TCollection& coll, int ansatz_order)
-: fe_space(&coll, "space", "cd2d fe_space", example.get_bc(0),
-           ansatz_order, nullptr)
+: fe_space(new TFESpace2D(&coll, "space", "cd2d fe_space", example.get_bc(0),
+                          ansatz_order, nullptr))
 {
-  matrix = BlockFEMatrix::CD2D(fe_space);
+  matrix = BlockFEMatrix::CD2D(*fe_space);
 
   rhs = BlockVector(this->matrix, true);
   solution = BlockVector(this->matrix, false);
 
-  fe_function = TFEFunction2D(&this->fe_space, "c", "c",
+  fe_function = TFEFunction2D(this->fe_space.get(), "c", "c",
                 this->solution.get_entries(), this->solution.length());
 
 }
@@ -88,7 +87,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   
 
   // print out some information
-  TFESpace2D & space = this->systems.front().fe_space;
+  auto& space = *this->systems.front().fe_space;
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
   Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
@@ -171,7 +170,7 @@ CD2D::~CD2D()
 {
   // delete the collections created during the contructor
   for(auto & s : this->systems)
-    delete s.fe_space.GetCollection();
+    delete s.fe_space->GetCollection();
 }
 
 /** ************************************************************************ */
@@ -275,8 +274,8 @@ type = LocalAssembling2D_type::ConvDiff;
     // assemble the system matrix with given local assembling, solution and rhs
     std::vector<const TFESpace2D*> fe_spaces;
     fe_spaces.resize(2);
-    fe_spaces[0] =  &s.fe_space;
-    const TFESpace2D * fe_space = &s.fe_space;
+    fe_spaces[0] =  s.fe_space.get();
+    const TFESpace2D * fe_space = s.fe_space.get();
 
     BoundCondFunct2D * boundary_conditions = fe_spaces[0]->GetBoundCondition();
     int N_Matrices = 1;
@@ -307,11 +306,11 @@ type = LocalAssembling2D_type::ConvDiff;
     	spaces_for_matrix[1] = coefficient_function1_space;
     }
 
-    spaces_for_matrix[0] = &s.fe_space;
+    spaces_for_matrix[0] = s.fe_space.get();
 
     std::vector<const TFESpace2D*> spaces_for_rhs;
     spaces_for_rhs.resize(1);
-    spaces_for_rhs[0] =  &s.fe_space;
+    spaces_for_rhs[0] =  s.fe_space.get();
 
     //Todo: Assembler4 does not produce the same errors as the old Assemble2D(), therefore I added the if else case. Find the reason therefore
     if (coefficient_function1)
@@ -331,42 +330,46 @@ type = LocalAssembling2D_type::ConvDiff;
 
     for (int k = 0; k < TDatabase::ParamDB->n_neumann_boundary; k++)
     {
-    	BoundaryAssembling2D::rhs_g_v_n(s.rhs, &s.fe_space,
+    	BoundaryAssembling2D::rhs_g_v_n(s.rhs, s.fe_space.get(),
     			this->example.get_bd(0), //nullptr,                       // g = 1
 					TDatabase::ParamDB->neumann_boundary_id[k],               // boundary component
 					-1.*TDatabase::ParamDB->neumann_boundary_value[k]);       // mult
     }
 
-    // apply local projection stabilization method
-    if(db["space_discretization_type"].is("local_projection")
-    		&& TDatabase::ParamDB->LP_FULL_GRADIENT>0)
-    {
-    	if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
-    	{
-    		UltraLocalProjection((void *)&matrix, false);
-    	}
-    	else
-    	{
-    		ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
-    	}
-    }
-
-    bool finest_grid = &systems.front() == &s;
-    if(mdml && !finest_grid)
-    {
-    	UpwindForConvDiff(la->GetCoeffFct(), matrix, rhs_entries, fe_space,
-    			nullptr, nullptr, false);
-    }
+      // apply local projection stabilization method
+      if(db["space_discretization_type"].is("local_projection")
+         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
+      {
+        if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
+        {
+          UltraLocalProjection((void *)&matrix, false);
+        }
+        else
+        {
+          ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
+        }
+      }
+      
+      bool finest_grid = &systems.front() == &s;
+      if(mdml && !finest_grid)
+      {
+        UpwindForConvDiff(la->GetCoeffFct(), matrix, rhs_entries, fe_space, 
+                          nullptr, nullptr, false);
+      }
 
     // copy Dirichlet values from rhs to solution vector (this is not really
     // necessary in case of a direct solver)
     s.solution.copy_nonactive(s.rhs);
+      // copy Dirichlet values from rhs to solution vector (this is not really
+      // necessary in case of a direct solver)
+      s.solution.copy_nonactive(s.rhs);
   }
 
   // when using afc, do it now
   if(!db["algebraic_flux_correction"].is("none"))
   {
   	do_algebraic_flux_correction();
+    do_algebraic_flux_correction();
   }
 
 }
@@ -415,6 +418,7 @@ void CD2D::output(int i)
   }
   */
 
+  
 
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
@@ -455,7 +459,7 @@ void CD2D::do_algebraic_flux_correction()
         db["algebraic_flux_correction"].is("fem-tvd"))
     {
       //get pointers/references to the relevant objects
-      const TFESpace2D& feSpace = s.fe_space;
+      auto& feSpace = *s.fe_space;
       FEMatrix& one_block = *s.matrix.get_blocks_uniquely().at(0).get();
       const std::vector<double>& solEntries = s.solution.get_entries_vector();
       std::vector<double>& rhsEntries = s.rhs.get_entries_vector();

@@ -27,6 +27,7 @@
 
 #include <ParameterDatabase.h>
 #include <Solver.h>
+#include <DataWriter.h>
 
 #include <MainUtilities.h> // FixedSizeQueu
 
@@ -69,9 +70,9 @@ class NSE3D
 #endif
 
       /** @brief Finite Element space for the velocity */
-      TFESpace3D velocitySpace_;
+      std::shared_ptr<TFESpace3D> velocitySpace_;
       /** @brief Finite Element space for the pressure */
-      TFESpace3D pressureSpace_;
+      std::shared_ptr<TFESpace3D> pressureSpace_;
 
       /** @brief the system matrix (depends strongly on
        *         TDatabase::ParamDB->NSTYPE)
@@ -129,6 +130,9 @@ class NSE3D
      * Solver object.
      */
     ParameterDatabase db;
+    
+    /** @brief output object */
+    DataWriter3D outputWriter;
     
     /** @brief a solver object which will solve the linear system
      * 
@@ -300,10 +304,10 @@ class NSE3D
     { return this->systems_.front().p_; }
 
     const TFESpace3D& get_velocity_space() const
-    { return this->systems_.front().velocitySpace_; }
+    { return *this->systems_.front().velocitySpace_; }
 
     const TFESpace3D& get_pressure_space() const
-    { return this->systems_.front().pressureSpace_; }
+    { return *this->systems_.front().pressureSpace_; }
     
     const int get_size(){return this->systems_.front().solution_.length();}
 

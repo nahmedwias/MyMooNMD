@@ -141,7 +141,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   double *Der, *aux;
   TJoint *joint;
   TBoundEdge *boundedge;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   TFE2D *eleCell;
   FE2D FEEle;
   TFEDesc2D *FEDesc;

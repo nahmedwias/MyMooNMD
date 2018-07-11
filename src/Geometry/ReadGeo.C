@@ -1481,10 +1481,11 @@ void set_tetrahedron(int index, TBaseCell *tet, TVertex* vert0, TVertex* vert1,
   }
 }
 
-// Eine Funktion, die drei Elemente bekommt (die ein Prisma formen) und zwei Vertices,
-// und dann zurueckgeben soll: zu welchem der Elemente gehoert das untere Dreieck,
-// zu welchem das obere? Mit welcher ID soll der anzulegende Joint hinzugefuegt werden?
-// Joint ID has to match with the face ID (ShapeDesc) for later use (SetMaptype)
+/* A function recieving three cells forming one prism and an edge (two vertices)
+ * and returns which (two) cells contain the edge and which of them is the top 
+ * cell which is the bottom cell as well as the correct joint IDs.
+ * Joint ID has to match with the face ID (ShapeDesc) for later use (SetMaptype)
+ */
 void find_low_and_high_face_element(bool orientation_low, bool orientation_mid,
                                     TGridCell* const low_element,
                                     TGridCell* const mid_element,
@@ -1724,6 +1725,9 @@ int find_joint_face(TGridCell* const hexa_cell, TVertex* const first_bot,
   return -1;
 }
 
+/**@brief constructs a 3D grid from a given 2D grid
+ * \ref page_sandwich_grid , provides further information on this method
+ */
 void TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
                                   int N_Vertices, int NVE, double drift_x,
                                   double drift_y, double drift_z,

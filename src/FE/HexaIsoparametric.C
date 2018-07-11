@@ -674,10 +674,10 @@ void THexaIsoparametric::GetOrigValues(double xi, double eta, double zeta,
   } // endfor i
 }
 
-void THexaIsoparametric::SetCell(TBaseCell *cell)
+void THexaIsoparametric::SetCell(const TBaseCell *cell)
 {
   int i, j, k, l;
-  TJoint *joint;
+  const TJoint *joint;
   JointType type;
 
   TShapeDesc *ShapeDesc;

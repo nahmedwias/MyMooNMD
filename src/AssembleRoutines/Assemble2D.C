@@ -107,7 +107,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
   HNDesc HNDescr;
   THNDesc *HNDescr_Obj;
   double *Coupling, v;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   double t0, t1, t, s;
   int comp;
   BoundCond Cond0, Cond1;
@@ -1286,7 +1286,7 @@ double factor
   HNDesc HNDescr;
   THNDesc *HNDescr_Obj;
   double *Coupling, v;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   double t0, t1, t, s;
   int comp;
   BoundCond Cond0, Cond1;
@@ -2340,7 +2340,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   double *RHS;
   double **HangingEntries = nullptr;
   double **HangingRhs = nullptr;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   double t0, t1, s,integral[2];
   int comp, dof_ii,dof_jj, found;
   BoundCond Cond0, Cond1;
@@ -3620,7 +3620,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   HNDesc HNDescr;
   THNDesc *HNDescr_Obj;
   double *Coupling, v;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   double t0, t1, t, s;
   int comp;
   BoundCond Cond0, Cond1;
@@ -5034,7 +5034,7 @@ TAuxParam2D *Parameters)
   const int *ColInd1, *RowPtr1;
   double *RHS;
   double **HangingEntries, **HangingRhs;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   double t0, t1, t, s,integral;
   int comp, dof_ii,dof_jj, found;
   BoundCond Cond0, Cond1;
@@ -6529,7 +6529,7 @@ TAuxParam2D *Parameters)
   const int *ColInd, *RowPtr;
   const int *ColInd1, *RowPtr1;
   double *RHS;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   double t0, t1, t, s,integral;
   int comp, dof_ii,dof_jj, found;
   BoundCond Cond0, Cond1;
@@ -8718,7 +8718,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       BoundValueFunct2D *BoundaryValue = BoundaryValues[j];
       TFE2D *ele = TFEDatabase2D::GetFE2D(CurrentElement);
       double t0,t1;
-      TBoundComp *BoundComp;
+      const TBoundComp *BoundComp;
       int N_EdgePoints;
       double *EdgePoints;
       double eps=1e-4;
