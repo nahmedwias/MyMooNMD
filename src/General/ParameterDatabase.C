@@ -89,6 +89,11 @@ void ParameterDatabase::add(std::string name, T value, std::string description)
 template void ParameterDatabase::add(std::string n, bool v,      std::string d);
 template void ParameterDatabase::add(std::string n, int v,       std::string d);
 template void ParameterDatabase::add(std::string n, size_t v,    std::string d);
+template<> void ParameterDatabase::add(std::string n, unsigned int v,
+                                       std::string d)
+{
+  this->add(n, static_cast<size_t>(v), d);
+}
 template void ParameterDatabase::add(std::string n, double v,    std::string d);
 template void ParameterDatabase::add(std::string n,std::string v,std::string d);
 template<> void ParameterDatabase::add(std::string n,const char* v,
@@ -863,6 +868,8 @@ void add_range_to_parameter(Parameter& p,
         {
           long min = stol(min_string);
           long max = stol(max_string);
+          if(min > max)
+            std::swap(min, max);
           if(p.get_type() == Parameter::types::_size_t 
             || p.get_type() == Parameter::types::_size_t_vec)
           {
@@ -926,11 +933,14 @@ void add_range_to_parameter(Parameter& p,
       {
         double min = stod(min_string);
         double max = stod(max_string);
+        if(min > max)
+          std::swap(min, max);
         p.set_range(min, max);
       }
       catch(...)
       {
-        ErrThrow("could not read range for double parameter");
+        ErrThrow("could not read range for double parameter ", min_string,
+                 ",", max_string);
       }
       break;
     }

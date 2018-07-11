@@ -213,10 +213,10 @@ bool TBaseCell::IsBoundaryCell( int BoundComp_id ) const
             {
 #ifdef __2D__
                const TBoundEdge *boundedge = (const TBoundEdge *)joint;
-                TBoundComp *BoundComp = boundedge->GetBoundComp();
+                const TBoundComp *BoundComp = boundedge->GetBoundComp();
 #elif __3D__
                const TBoundFace *boundface = (const TBoundFace *)joint;
-                TBoundComp *BoundComp = boundface->GetBoundComp();
+                const TBoundComp *BoundComp = boundface->GetBoundComp();
 #endif //__3D__
                 if (BoundComp->GetID() == BoundComp_id)
                 {

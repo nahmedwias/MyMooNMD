@@ -3476,7 +3476,7 @@ TStructure::TStructure(int nRows, int nCols, int nActive, int nEntries,
 
 TStructure::TStructure(int nRows, int nCols)
  : nRows(nRows), nColumns(nCols), nEntries(0), columns(), 
-   rows(nRows+1, 0), ActiveBound(0), ColOrder(0), nHangingEntries(0),
+   rows(nRows+1, 0), ActiveBound(nRows), ColOrder(0), nHangingEntries(0),
    hangingColums(), HangingRows()
 {
 }

@@ -351,7 +351,7 @@ void Assembler4::impose_boundary_conditions(int i_cell,
       BoundValueFunct2D *BoundaryValue = example.get_bd()[j];
       TFE2D *ele = TFEDatabase2D::GetFE2D(CurrentElement);
       double t0,t1;
-      TBoundComp *BoundComp;
+      const TBoundComp *BoundComp;
       int N_EdgePoints;
       double *EdgePoints;
       double eps=1e-4;
@@ -482,7 +482,7 @@ void Assembler4::impose_boundary_conditions_old(const TFESpace2D *fespace,
     BoundValueFunct2D *BoundaryValue = example.get_bd()[j];
     TFE2D *ele = TFEDatabase2D::GetFE2D(CurrentElement);
     double t0,t1;
-    TBoundComp *BoundComp;
+    const TBoundComp *BoundComp;
     int N_EdgePoints;
     double *EdgePoints;
     double eps=1e-4;

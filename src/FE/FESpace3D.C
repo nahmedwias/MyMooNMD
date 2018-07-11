@@ -426,7 +426,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell) const
+FE3D TFESpace3D::GetFE3D(int i, const TBaseCell *cell) const
 {
   FE3D ret;
 
@@ -444,7 +444,7 @@ const TFE3D& TFESpace3D::get_fe(unsigned int cell_number) const
   if((int)cell_number >= this->N_Cells)
     ErrThrow("unable to find the finite element for cell ", cell_number, 
              ". There are only ", this->N_Cells, " cells");
-  TBaseCell * cell = this->Collection->GetCell(cell_number);
+  const TBaseCell * cell = this->Collection->GetCell(cell_number);
   // find finite element id
   FE3D fe_id = this->GetFE3D(cell_number, cell);
   // get the finite element from the database
@@ -455,7 +455,7 @@ const TFE3D& TFESpace3D::get_fe(unsigned int cell_number) const
 
 void TFESpace3D::FindUsedElements()
 {
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int i, j, N_;
   int Used[N_FEs3D];
 
@@ -2080,6 +2080,13 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 //   OutPut("SUBDOMAIN_HALOBOUND: " << N_BoundaryNodes[SUBDOMAIN_HALOBOUND-1] << endl);
 //   END_SEQ
 //   #endif
+}
+
+int TFESpace3D::GetBaseVectDim() const
+{
+  // the desired information is stored in the BasisFunction2D object. We take 
+  // the one on the first cell, on all other cells it should be the same
+  return this->get_fe(0).GetBaseFunct3D()->GetBaseVectDim();
 }
 
 TFESpace3D::~TFESpace3D()

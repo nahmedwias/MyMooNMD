@@ -436,7 +436,8 @@ std::pair<double, double> TFEVectFunct2D::get_L2_norm_divergence_curl() const
 
 //================================================================
 void TFEVectFunct2D::get_functional_value(std::vector<double>& values,
-                              std::function<void(std::vector<double>&, std::array<double, 8>)> functional) const
+  std::function<void(std::vector<double>&, std::array<double, 8>)> functional)
+const
 {
   BaseFunct2D *BaseFuncts;
   int *N_BaseFunct;
@@ -1200,6 +1201,15 @@ void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *
     cout<<"("<<x<<" , " <<y<<" ) Point not found !!!!!"<<endl;
     exit(0);
    }
+}
+
+void TFEVectFunct2D::FindValueLocal(const TBaseCell* cell, int cell_no, 
+				    double x, double y, double* values) const
+{
+ this->TFEFunction2D::FindValueLocal(cell, cell_no, x, y, values);
+ auto u2 = this->GetComponent(1);
+ u2->FindValueLocal(cell, cell_no, x, y, values+1);
+ delete u2;
 }
 
 

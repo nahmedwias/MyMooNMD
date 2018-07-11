@@ -599,7 +599,7 @@ void TQuadAffin::GetOrigValues(int joint, double zeta,
                        uorig, uxorig, uyorig, _BaseVectDim);
 }
 
-void TQuadAffin::SetCell(TBaseCell *cell)
+void TQuadAffin::SetCell(const TBaseCell *cell)
 {
 
 #ifdef __3D__

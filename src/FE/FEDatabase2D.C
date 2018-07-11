@@ -2234,7 +2234,7 @@ void TFEDatabase2D::GetRefFromOrig(RefTrans2D RefTrans,
 }
 
 /** set cell for reference transformation */
-void TFEDatabase2D::SetCellForRefTrans(TBaseCell *cell, 
+void TFEDatabase2D::SetCellForRefTrans(const TBaseCell *cell, 
                                      RefTrans2D reftrans)
 {
   TRefTrans2D *rt;

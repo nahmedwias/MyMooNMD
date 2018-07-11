@@ -25,7 +25,7 @@
 #include <BlockVector.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 
 class Multigrid;
 
@@ -41,7 +41,7 @@ class CD2D
     struct System_per_grid
     {
       /** @brief Finite Element space */
-      TFESpace2D fe_space;
+      std::shared_ptr<const TFESpace2D> fe_space;
 
       /** @brief the system matrix */
       BlockFEMatrix matrix;
@@ -97,7 +97,7 @@ class CD2D
     ParameterDatabase db;
 
     /** @brief class for output handling */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
 
     /** @brief a solver object which will solve the linear system
      * 
@@ -220,7 +220,7 @@ class CD2D
     { return this->systems.front().fe_function; }
     
     const TFESpace2D & get_space() const
-    { return this->systems.front().fe_space; }
+    { return *this->systems.front().fe_space; }
     
     const BlockVector & get_solution() const
     { return this->systems.front().solution; }

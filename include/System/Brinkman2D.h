@@ -22,7 +22,7 @@
 #include <BlockVector.h>
 #include <Solver.h>
 #include <ParameterDatabase.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 #include <utility>
 #include <array>
 #include <FEFunction2D.h>
@@ -290,7 +290,7 @@ protected:
     Solver<BlockFEMatrix, BlockVector> solver;
 
     /** @brief class for output handling (vtk and case files) */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
     
     /** @brief a complete system on each grid
      *

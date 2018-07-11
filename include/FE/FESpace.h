@@ -130,6 +130,9 @@ class TFESpace
     /** return the collection of this space */
     TCollection *GetCollection() const
     { return Collection; }
+    
+    /** @brief get dimension of the vector basis function */
+    virtual int GetBaseVectDim() const = 0;
 
     /** return global numbers of local degrees of freedom */
     int *GetGlobalNumbers() const

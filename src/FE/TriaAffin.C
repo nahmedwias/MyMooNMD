@@ -547,7 +547,7 @@ void TTriaAffin::GetOrigValues(int joint, double zeta,
 }
 
 
-void TTriaAffin::SetCell(TBaseCell *cell)
+void TTriaAffin::SetCell(const TBaseCell *cell)
 {
 
 #ifdef __3D__
