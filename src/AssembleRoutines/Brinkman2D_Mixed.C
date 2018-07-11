@@ -46,10 +46,8 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
   //double ** MatrixA12 = LocMatrices[1];
   //double ** MatrixA21 = LocMatrices[2];
   double ** MatrixA22 = LocMatrices[3];
- //LB Debug 25.04.18 start
- double ** MatrixC = LocMatrices[4];
-  //LB Debug 25.04.18 end
-  double ** MatrixB1 = LocMatrices[5];
+ // double ** MatrixC = LocMatrices[4];
+   double ** MatrixB1 = LocMatrices[5];
   double ** MatrixB2 = LocMatrices[6];
   double ** MatrixB1T = LocMatrices[7];
   double ** MatrixB2T = LocMatrices[8];
@@ -584,10 +582,7 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
   double mu = coeff[4];                   // viscosity
   double mu_eff = coeff[5];               // effective viscosity
   double K = coeff[6];                    // permeability
-  //LB Debug 25.04.18 start: 
-  cout << "Permeability in GradDiv routine is: " << K << endl;
-  //LB Debug 25.04.18 end
-  
+    
   //double grad_div_stab_weight = coeff[8]; // without considering the units
   //double grad_div_stab_weight = coeff[8] * (mu/K) * hK * hK; // units are fine
   //double grad_div_stab_weight = coeff[8] * mu_eff;  // units are fine

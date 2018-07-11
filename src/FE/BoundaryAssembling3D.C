@@ -73,10 +73,10 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 	    if(given_boundary_data != nullptr)
 	    {
 	      ///@todo GetXYZofTS(...)
-	      double t = qPointsT[l];
-	      double s = qPointsS[l];
-	      double x,y,z;
-	      // 
+	      //double t = qPointsT[l];
+	      //double s = qPointsS[l];
+	      //double x,y,z;
+	       
 	      // given_boundary_data(x,y,z,value);
 	      value = 1.;
 	    }
