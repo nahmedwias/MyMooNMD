@@ -1088,6 +1088,38 @@ void TMatrix::scale(const double * const factor, bool from_left)
   }
 }
 
+/*//New LB 11.06.18
+void TMatrix::scale(std::vector<double> factor, bool from_left)
+{
+  const int *rowPtr = GetRowPtr();
+  const int *colIndex = GetKCol();
+
+  if(from_left)
+  {
+    for(int i = 0, nrows = GetN_Rows(); i < nrows; i++)
+    {
+      int end = rowPtr[i+1];
+      // scale entire row with the same factor
+      for(int j = rowPtr[i]; j < end; j++)
+      {
+        entries[j] *= factor[i];
+      }
+    }
+  }
+  else
+  {
+    for(int i = 0, nrows = GetN_Rows(); i < nrows; i++)
+    {
+      int end = rowPtr[i+1];
+      for(int j = rowPtr[i]; j < end; j++)
+      {
+        // scale columnwise
+        entries[j] *= factor[colIndex[j]];
+      }
+    }
+  }
+}*/
+
 TMatrix & TMatrix::operator*=(const double a)
 {
   this->scale(a);
