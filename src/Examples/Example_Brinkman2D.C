@@ -54,6 +54,12 @@ namespace SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D
 }
 
 
+namespace Discacciati_Flow
+{
+#include "Brinkman_2D/Discacciati_Flow.h"
+}
+
+
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Example_Brinkman2D::Example_Brinkman2D(
     const ParameterDatabase& user_input_parameter_db) 
@@ -295,6 +301,33 @@ Example_Brinkman2D::Example_Brinkman2D(
       SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::permeability = get_permeablity();
 
       SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D::ExampleFile();
+      break;
+
+    case 9:
+      /** exact_solution */
+      exact_solution.push_back( Discacciati_Flow::ExactU1 );
+      exact_solution.push_back( Discacciati_Flow::ExactU2 );
+      exact_solution.push_back( Discacciati_Flow::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( Discacciati_Flow::BoundCondition );
+      boundary_conditions.push_back( Discacciati_Flow::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( Discacciati_Flow::U1BoundValue );
+      boundary_data.push_back( Discacciati_Flow::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = Discacciati_Flow::LinCoeffs;
+
+      // read parameters from local database
+      Discacciati_Flow::viscosity = get_viscosity();
+      Discacciati_Flow::effective_viscosity = get_effective_viscosity();
+      Discacciati_Flow::permeability = get_permeablity();
+
+      Discacciati_Flow::ExampleFile();
       break;
 
     default:
