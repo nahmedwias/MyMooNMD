@@ -7,10 +7,6 @@
 double TurbulentViscosity3D(double hK, double* gradU, double* u, 
 			    double* uConv, double* x, double* y, double* z,
                             double proj_space);
-// ========================================================================
-void stabilization_parameters_equal_order(double Mult, double* u, double* coeff, 
-                                          double* params);
-
 // ======================================================================
 // compute stabilization for div--div term
 // ======================================================================
@@ -25,5 +21,9 @@ double frobeniusNormTensor(double* u, double* gradu,double *uConv,  int proj_spa
 // ======================================================================
 double turbulentViscosity3D(double hK, double* u, double* gradu, double* uConv, 
                             double* x, double* y, double* z, double proj_space);
+
+// ========================================================================
+void stabilization_parameters_equal_order3D(double Mult, double* u, double* coeff, 
+                                          double* params);
 
 #endif // COMMONROUTINETNSE3D_H

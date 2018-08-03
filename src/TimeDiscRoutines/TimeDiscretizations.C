@@ -39,12 +39,6 @@ ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
          "time adaptivity, it only corresponds to the initial value.",
          0., 0.5);
 
-  db.add("ansatz_test_extrapolate", "no_extrapolation",
-         "This is the parameter for deciding the extrapolation in test"
-         " or ansatz functions. This is due to the non-linear terms appearing"
-        "in the SUPG or Residual Based VMS methods",
-         {"only_velocity_test", "no_extrapolation"});
-
   db.add("time_discretization", "backward_euler",
          "Determine the time stepping scheme: currently supported are",
          {"backward_euler", "crank_nicolson", "bdf_two", "fractional_step"});
@@ -53,6 +47,16 @@ ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
          "This parameter can control, whether an implcit-explicit"
          "scheme is used for the nonlinear problem.",
          {true,false});
+
+  db.add("extrapolate_velocity", false,
+         "This is the parameter for deciding the extrapolation in test"
+	 " or ansatz functions. This is due to the non-linear terms appearing"
+	 "in the SUPG or Residual Based VMS methods",
+         {true,false});
+  
+  db.add("extrapolation_type", "linear_extrapolate",
+         "Determine the time stepping scheme: currently supported are",
+         {"constant_extrapolate", "linear_extrapolate"});
 
   return db;
 }
@@ -86,8 +90,12 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
   
   b_bt_linear_nl= "linear";
 
+  // set the current time to start time
+  current_time_ = db["time_start"];
   Output::print<5>("Time discretization is initialized with ",
                 db["time_discretization"]);
+  
+  total_time_steps = end_time/current_time_step_length;
 }
 
 /* ****************************************************************************/
@@ -327,6 +335,10 @@ void TimeDiscretization::scale_nl_b_blocks(BlockFEMatrix& matrix)
     else
       ErrThrow("No of blocks are out of range");
 #endif
+  }
+  else
+  {
+    ErrThrow("B-blocks are linear and that were already scaled ");
   }
   matrix.scale_blocks(factor, cells);
 }

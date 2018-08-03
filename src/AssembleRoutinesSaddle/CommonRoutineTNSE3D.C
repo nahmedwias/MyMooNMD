@@ -577,3 +577,101 @@ double DivDivStab3D(double u1, double u2, double u3, double hK, double eps)
   }
   return(tau);
 }
+
+
+void stabilization_parameters_equal_order3D(double Mult, double* u, double* coeff, 
+                                          double* params)
+{
+  double eps  = 1e-12;
+  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double C_I = TDatabase::ParamDB->DELTA0;
+  
+  double x0 = TDatabase::ParamDB->INTERNAL_VERTEX_X[0];
+  double y0 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[0];
+  double z0 = TDatabase::ParamDB->INTERNAL_VERTEX_Z[0];
+  
+  double x1 = TDatabase::ParamDB->INTERNAL_VERTEX_X[1];
+  double y1 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[1];
+  double z1 = TDatabase::ParamDB->INTERNAL_VERTEX_Z[1];
+  
+  double x2 = TDatabase::ParamDB->INTERNAL_VERTEX_X[2];
+  double y2 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[2];
+  double z2 = TDatabase::ParamDB->INTERNAL_VERTEX_Z[2];
+  
+  
+  double nu = coeff[0];
+  double rec_detjk = coeff[19];
+  rec_detjk = 1/rec_detjk;
+  double d11, d12, d13, d21, d22, d23, d31, d32, d33;
+  // tetrahedron
+  if (TDatabase::ParamDB->INTERNAL_VERTEX_X[4] == -4711)
+  {
+    double x3 = TDatabase::ParamDB->INTERNAL_VERTEX_X[3];
+    double y3 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[3];
+    double z3 = TDatabase::ParamDB->INTERNAL_VERTEX_Z[3];
+    
+    d11 = ((y2-y0)*(z3-z0)+(y3-y0)*(z0-z2)) * rec_detjk;  //dxi/dx
+    d12 = ((x3-x0)*(z2-z0)+(x2-x0)*(z0-z3)) * rec_detjk;  //dxi/dy
+    d13 = ((x2-x0)*(y3-y0)+(x3-x0)*(y0-y2)) * rec_detjk;  //dxi/dz
+    
+    d21 = ((y3-y0)*(z1-z0)+(y1-y0)*(z0-z3)) * rec_detjk;  //deta/dx
+    d22 = ((x1-x0)*(z3-z0)+(x3-x0)*(z0-z1)) * rec_detjk;  //deta/dy
+    d23 = ((x3-x0)*(y1-y0)+(x1-x0)*(y0-y3)) * rec_detjk;  //deta/dz
+    
+    d31 = ((y1-y0)*(z2-z0)+(y2-y0)*(z0-z1)) * rec_detjk;  //dzeta/dx
+    d32 = ((x2-x0)*(z1-z0)+(x1-x0)*(z0-z2)) * rec_detjk;  //dzeta/dy
+    d33 = ((x1-x0)*(y2-y0)+(x2-x0)*(y0-y1)) * rec_detjk;  //dzeta/dz	
+  }
+  else // hexahedron
+  {
+    double x4 = TDatabase::ParamDB->INTERNAL_VERTEX_X[4];
+    double y4 = TDatabase::ParamDB->INTERNAL_VERTEX_Y[4];
+    double z4 = TDatabase::ParamDB->INTERNAL_VERTEX_Z[4];
+    
+    d11 = ((y1-y0)*(z4-z0)+(y0-y4)*(z1-z0)) * 0.5 * rec_detjk;  //dxi/dx
+    d12 = ((x4-x0)*(z1-z0)+(x1-x0)*(z0-z4)) * 0.5 * rec_detjk;  //dxi/dy
+    d13 = ((x1-x0)*(y4-y0)+(x0-x4)*(y1-y0)) * 0.5 * rec_detjk;  //dxi/dz
+    
+    d21 = ((y4-y0)*(z1-z2)+(y1-y2)*(z0-z4)) * 0.5 * rec_detjk;  //deta/dx
+    d22 = ((x1-x2)*(z4-z0)+(x0-x4)*(z1-z2)) * 0.5 * rec_detjk;  //deta/dy
+    d23 = ((x4-x0)*(y1-y2)+(x1-x2)*(y0-y4)) * 0.5 * rec_detjk;  //deta/dz
+    
+    d31 = ((y1-y2)*(z1-z0)+(y1-y0)*(z2-z1)) * 0.5 * rec_detjk;  //dzeta/dx
+    d32 = ((x1-x0)*(z1-z2)+(x1-x2)*(z0-z1)) * 0.5 * rec_detjk;  //dzeta/dy
+    d33 = ((x1-x2)*(y1-y0)+(x1-x0)*(y2-y1)) * 0.5 * rec_detjk;  //dzeta/dz
+  }
+  
+  double g11 = d11*d11 + d21*d21 + d31*d31;
+  double g12 = d11*d12 + d21*d22 + d31*d32;
+  double g13 = d11*d13 + d21*d23 + d31*d33;
+  double g22 = d12*d12 + d22*d22 + d32*d32;
+  double g23 = d12*d13 + d22*d23 + d32*d33;
+  double g33 = d13*d13 + d23*d23 + d33*d33;
+  
+  // G : G
+  double tau_m = g11*g11 + 2*g12*g12 + 2*g13*g13 + g22*g22 + 2*g23*g23 + g33*g33; 
+  
+  tau_m *= C_I*nu*nu;
+  tau_m +=  4/(time_step*time_step); 
+  tau_m += u[0] * (g11*u[0]+g12*u[1]+g13*u[2]) + u[1]*(g12*u[0]+g22*u[1]+g23*u[2])
+           + u[2]*(g13*u[0]+g23*u[1]+g33*u[2]);
+  if (tau_m < eps)
+  {
+    params[0] = 0;
+    params[1] = 0;
+    return;
+  }
+  
+  // parameter for the mementum equation
+  tau_m = 1./sqrt(tau_m);
+  double tau_c;
+  tau_c  = (d11+d21+d31)*(d11+d21+d31);
+  tau_c += (d12+d22+d32)*(d12+d22+d32);
+  tau_c += (d13+d23+d33)*(d13+d23+d33);
+  
+  tau_c *= tau_m;
+  tau_c = 1./tau_c;
+  
+  params[0] = tau_m;
+  params[1] = tau_c;
+}

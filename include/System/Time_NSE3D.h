@@ -84,6 +84,53 @@ class Time_NSE3D
       TFEVectFunct3D u_;
       /** @brief Finite Element function for pressure */
       TFEFunction3D p_;
+      
+      /** @brief old solution vectors for BDF and 
+       * residual stabilized methods 
+       */
+      BlockVector solution_m1_;
+      /** @brief Finite Element function for velocity */
+      TFEVectFunct3D um1_;
+      /** @brief Finite Element function for pressure */
+      TFEFunction3D pm1_;
+      /** @brief solution vector from previous two time steps */
+      BlockVector solution_m2_;
+      /** @brief Finite Element function for velocity */
+      TFEVectFunct3D um2_;
+      /** @brief Finite Element function for pressure */
+      TFEFunction3D pm2_;
+      
+      /** @brief Extrapolated solution
+       * 
+       */
+      /** @brief constructs a solution vector extrapolated from previous steps
+       * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
+      BlockVector extrapolated_solution_;
+      /** @brief the corresponding finite element functions for 
+       * velocity and pressure 
+       */
+      TFEVectFunct3D extrapolated_u_;
+      TFEFunction3D extrapolated_p_;
+      
+      /** @brief constructs a solution vector combined the old 
+       * solutions used for the assembly of the terms appears 
+       * after space time discretization using supg method
+       */
+      BlockVector combined_old_solution_;
+      /** @brief the corresponding finite element functions for 
+       * velocity 
+       */
+      TFEVectFunct3D combined_old_u_;
+      
+      /** @brief constructs a solution vector combined the old 
+       * solutions used for the assembly of the terms appears 
+       * after space time discretization using supg method
+       */
+      BlockVector time_der_old_sol_;
+      /** @brief the corresponding finite element functions for 
+       * velocity 
+       */
+      TFEVectFunct3D time_der_old_u_;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -170,14 +217,6 @@ class Time_NSE3D
     /** @brief right hand side vector from previous time step (on finest mesh)*/
     BlockVector old_rhs_;
 
-    /** @brief solution vectors from previous time steps (on finest mesh)*/
-    BlockVector solution_m1;
-    BlockVector solution_m2;
-
-    /** @brief constructs a solution vector extrapolated from previous steps
-     * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
-    BlockVector extrapolated_solution_;
-
     /** @brief old time step length used to scale the pressure blocks */
     double oldtau_;
     
@@ -209,6 +248,23 @@ class Time_NSE3D
     
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
+    
+    /** @brief projection space used for VMS method*/
+    std::shared_ptr<TFESpace3D> projection_space_;
+    
+    /** @brief finite element function for vms projection*/
+    // can we rename it to large scales?? also check BlockVector!! currently just vector
+    std::vector<double> vms_small_resolved_scales; 
+    std::shared_ptr<TFEVectFunct3D> vms_small_resolved_scales_fefct;
+    /** matrices for turbulence model*/
+    std::array<std::shared_ptr<FEMatrix>, int(7)> matrices_for_turb_mod;
+    
+    // piecewise constant space containing the labels of the local projection space
+    std::shared_ptr<TFESpace3D> label_for_local_projection_space_;
+    // vector used for indicating local projection space 
+    std::vector<double> label_for_local_projection;
+    // finite element function for local projection space
+    std::shared_ptr<TFEFunction3D> label_for_local_projection_fefct;
 
  public:
 
@@ -229,16 +285,6 @@ class Time_NSE3D
     Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
                const Example_TimeNSE3D& example);
 #endif
-    
-// ======================================================================
-    /** @brief This returns the number of the current time step.
-     * This counter is set at 0 before the time loop and is incremented at each
-     * time step (but not at each sub-step) in the main program.
-     * It can be useful to give info to the members of the class. It is for example
-     * used in IMEX scheme to detect when we passed 2 time steps, so that we
-     * are guaranteed to have saved both old_solution_ and old_solution2_ correctly.    */
-    int current_step_;
-
 // ======================================================================
     /** @brief check parameters in database
     *
@@ -255,7 +301,6 @@ class Time_NSE3D
     * This assembling occurs just once, before entering any loop. It assembles
     * linear terms only.
     */
-    void assemble_initial_time_m();
     void assemble_initial_time();
 
     /** @brief Assemble the rhs only
@@ -263,9 +308,14 @@ class Time_NSE3D
     * 2. Scaling of the B-Blocks due to time stepping
     * This function will prepare the right hand side during the time
     * discretization but should be outside the nonlinear loop.
+    * 
+    * The argument is false only for the case SUPG and residual based VMS 
+    * methods. Because, the right-hand side is assembled together with the 
+    * nonlinear matrices. Therefore the system right hand side needs to be 
+    * be assembled.
     */
-    void assemble_rhs();
-    void assemble_rhs_m();
+    void assemble_rhs(bool ass_rhs=true);
+    void assemble_rhs_supg(Time_NSE3D::System_per_grid& s);
 
     /** @brief Assemble the nonlinear terms
      * Assemble the nonlinear terms. Need not be used when this is
@@ -319,6 +369,8 @@ class Time_NSE3D
 
     /** */
     bool imex_scheme(bool print_info);
+    
+    void modify_slip_bc(bool BT_Mass, bool slip_A_nl, Time_NSE3D::System_per_grid& s);
 
 /* ******************************************************************************/
     // Declaration of special member functions - delete all but destructor.
@@ -358,6 +410,12 @@ class Time_NSE3D
 
     TFEVectFunct3D& get_velocity()
     { return this->systems_.front().u_; }
+    
+    const TFEVectFunct3D& get_old_velocity() const
+    {return this->systems_.front().um1_;}
+    
+    TFEVectFunct3D& get_old_velocity()
+    { return this->systems_.front().um1_; }
 
     TFEFunction3D *get_velocity_component(int i);
 
@@ -396,6 +454,9 @@ class Time_NSE3D
     const TimeDiscretization& get_time_stepping_scheme() const
     {return time_stepping_scheme;}
     
+    BlockFEMatrix get_system_matrix_()
+    {return this->systems_.front().matrix_;}
+    
 private:
   
   /// @brief this routines wraps up the call to Assemble3D
@@ -413,6 +474,10 @@ private:
   
   /// @brief
   void restrict_function();
+  
+  /// @brief do upwinding for the multigrid multilevel method
+  void do_upwinding_for_mdml(std::vector<TSquareMatrix3D*> &sqMat, 
+	std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type);
 };
 
 

@@ -12,7 +12,10 @@
 #include <MainUtilities.h>
 #include <Multigrid.h>
 
+#include <PrePost_Cylinder_Square.h>
+
 #include <LocalAssembling3D.h>
+#include <Variational_MultiScale3D.h>
 
 #include <sys/stat.h>
 
@@ -97,7 +100,33 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
                      solution_.length(0), 3);
   p_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_.block(3),
                     solution_.length(3));
-
+  //
+  solution_m1_=BlockVector(matrix_, false);
+  um1_ = TFEVectFunct3D(&velocitySpace_, "u", "u", solution_m1_.block(0),
+                     solution_m1_.length(0), 3);
+  pm1_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_m1_.block(3),
+                    solution_m1_.length(3));
+  //
+  solution_m2_=BlockVector(matrix_, false);
+  um2_ = TFEVectFunct3D(&velocitySpace_, "u", "u", solution_m2_.block(0),
+                     solution_m1_.length(0), 3);
+  pm2_ = TFEFunction3D(&pressureSpace_, "p", "p", solution_m2_.block(3),
+                    solution_m2_.length(3));
+  // for extrapolation
+  extrapolated_solution_=BlockVector(matrix_, false);
+  extrapolated_u_ = TFEVectFunct3D(&velocitySpace_, "u", "u", extrapolated_solution_.block(0),
+                     extrapolated_solution_.length(0), 3);
+  extrapolated_p_ = TFEFunction3D(&pressureSpace_, "p", "p", extrapolated_solution_.block(3),
+                    extrapolated_solution_.length(3));
+  // used equal-order FE in the SUPG and RBVMS methods
+  combined_old_solution_=BlockVector(matrix_, false);
+  combined_old_u_ = TFEVectFunct3D(&velocitySpace_, "u", "u", combined_old_solution_.block(0),
+                     combined_old_solution_.length(0), 3);
+  // time derivative solution
+  time_der_old_sol_=BlockVector(matrix_, false);
+  time_der_old_u_ = TFEVectFunct3D(&velocitySpace_, "u", "u", time_der_old_sol_.block(0),
+                     time_der_old_sol_.length(0), 3);
+  
 #ifdef _MPI
   velocitySpace_.initialize_parallel(maxSubDomainPerDof);
   pressureSpace_.initialize_parallel(maxSubDomainPerDof);
@@ -117,8 +146,7 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
    solver_(param_db), defect_(), old_residual_(), 
    initial_residual_(1e10), errors_(), oldtau_(), 
-   time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false),
-   current_step_(0)
+   time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false)
 {
   db_.merge(param_db);
   this->check_and_set_parameters();
@@ -149,6 +177,73 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 #else
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
 #endif
+  // projection-based VMS, only on the finest level 
+  if(db_["space_discretization_type"].is("vms_projection"))
+  {
+    // VMS projection order 
+    int projection_order = db_["vms_projection_space_order"];
+    if(projection_order < 0)
+      projection_order = 0;
+    
+    // projection space
+    projection_space_ = 
+       std::make_shared<TFESpace3D>(collections_.front(), (char*)"L",  
+                           (char*)"vms projection space", example_.get_bc(2), 
+                           DiscP_PSpace, projection_order);
+    int ndofP = projection_space_->GetN_DegreesOfFreedom();
+   
+    // create vector for vms projection, used if small resolved scales are needed
+    this->vms_small_resolved_scales.resize(6*ndofP);
+    // finite element vector function for vms projection
+    this->vms_small_resolved_scales_fefct = 
+       std::make_shared<TFEVectFunct3D>(projection_space_.get(), (char*)"v", (char*)"v", 
+                                        &vms_small_resolved_scales[0], ndofP, 6);
+
+ 
+    // create the label space, used in the adaptive method   
+    int n_cells = collections_.front()->GetN_Cells();
+    // initialize the piecewise constant vector
+    if(projection_order == 0)
+      this->label_for_local_projection.resize(n_cells, 0);
+    else if(projection_order == 1)
+      this->label_for_local_projection.resize(n_cells, 1);
+    else
+      ErrThrow("local projection space is not defined");
+    
+    // create fefunction for the labels such that they can be passed to the assembling routines
+    label_for_local_projection_space_ = 
+      std::make_shared<TFESpace3D>(collections_.front(), (char*)"label_for_local_projection", 
+                                   (char*)"label_for_local_projection", example_.get_bc(2), DiscP_PSpace, 0);
+    // finite element function for local projection space
+    this->label_for_local_projection_fefct = 
+      std::make_shared<TFEFunction3D>(label_for_local_projection_space_.get(), (char*)"vms_local_projection_space_fefct", 
+                                      (char*)"vms_local_projection_space_fefct", &label_for_local_projection[0], 
+                                      n_cells);
+   
+    // matrices for the vms method needs to assemble only on the 
+    // finest grid. On the coarsest grids, the SMAGORINSKY model 
+    // is used and for that matrices are available on all grids:
+    switch(TDatabase::ParamDB->NSTYPE)
+    {
+      case 1: case 2:
+        ErrThrow("VMS projection cannot be supported for NSTYPE  ", 
+                 TDatabase::ParamDB->NSTYPE);
+        break;
+      case 3: case 4: case 14:
+        const TFESpace3D& velocity_space = this->get_velocity_space();
+        // matrices G_tilde
+        matrices_for_turb_mod.at(0) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        matrices_for_turb_mod.at(1) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        matrices_for_turb_mod.at(2) = std::make_shared<FEMatrix>(&velocity_space, projection_space_.get());
+        // matrices G
+        matrices_for_turb_mod.at(3) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        matrices_for_turb_mod.at(4) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        matrices_for_turb_mod.at(5) = std::make_shared<FEMatrix>(projection_space_.get(), &velocity_space);
+        // mass matrix 
+        matrices_for_turb_mod.at(6) = std::make_shared<FEMatrix>(projection_space_.get(), projection_space_.get());
+        break;
+    }
+  }
   if(usingMultigrid)
   {
     auto mg = this->solver_.get_multigrid();
@@ -164,7 +259,8 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
     {
       // change the discretization on the coarse grids to lowest order 
       // non-conforming(-1). The pressure space is chosen automatically(-4711).
-      velocity_pressure_orders={-1, -4711};
+      if(db_["space_discretization_type"].is("galerkin"))
+	velocity_pressure_orders={-1, -4711};
       this->get_velocity_pressure_orders(velocity_pressure_orders);
     }
     else
@@ -243,44 +339,40 @@ void Time_NSE3D::check_and_set_parameters()
    }
  }
 
- // Tell the user he is using IMEX
-//  if(db_["time_discretization"].is(4))
-//  {
-//    if(solver_.is_using_multigrid())
-//    {
-//      ErrThrow("Multigrid with IMEX-scheme is not implemented yet");
-//    }
-//    else
-//    {
-//      Output::info<1>("check_and_set_parameters",
-//                      "The IMEX scheme has been chosen as a time discretization scheme!\n");
-//    }
-//  }
-
  if(TDatabase::TimeDB->TIME_DISC == 0)
  {
    ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC
          << " does not supported");
    throw("TIME_DISC: 0 is not supported");
  }
+ // Pressure blocks are linear for all methods except for 
+ // Residual Based stabilization methods
+ // set scaling number of blocks that will be scaled by the 
+ // factor times the time step length for each time discretization
+ // shceme, e.g., 0.5*tau in Crank-Nicolson scheme
+ time_stepping_scheme.n_scale_block = 6;
+ time_stepping_scheme.b_bt_linear_nl = "linear";
  // standard method
  if(db_["space_discretization_type"].is("galerkin"))
- {
    space_disc_global = 1;
-   // set scaling number of blocks that will be scaled by the 
-   // factor times the time step length for each time discretization
-   // shceme, e.g., 0.5*tau in Crank-Nicolson scheme
-   time_stepping_scheme.n_scale_block = 6;
-   time_stepping_scheme.b_bt_linear_nl = "linear";
- }
- // the supg case 
- if(db_["space_discretization_type"].is("supg"))
+ // For the supg and residual based VMS 
+ if(db_["space_discretization_type"].is("supg") 
+   ||db_["space_discretization_type"].is("residual_based_vms") )
  {
-   if(db_["time_discretization"].is("bdf_two"))
+   if(!db_["time_discretization"].is("bdf_two"))
    {
      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
    }
-   space_disc_global = 2;
+   if(db_["space_discretization_type"].is("residual_based_vms") 
+     && !db_["imex_scheme_"])
+   {
+     ErrThrow("Space discretization: ", db_["space_discretization_type"]);
+   }
+   // set the global space discretizations
+   if(db_["space_discretization_type"].is("supg"))
+     space_disc_global = 2;
+   else
+     space_disc_global = 20;
    
    /// set scaling factor for B, BT's block
     // depends on how to deal the nonlinearity in the 
@@ -294,11 +386,19 @@ void Time_NSE3D::check_and_set_parameters()
  }
  // Smagorinsky
  if(db_["space_discretization_type"].is("smagorinsky"))
- {
    space_disc_global = 4;
+ 
+ // projection based VMS 
+ if(db_["space_discretization_type"].is("vms_projection"))
+   space_disc_global = 9;
+ 
+  // Tell the user he is using IMEX
+ if(db_["imex_scheme_"])
+ {
+   db_["extrapolate_velocity"] = true;
    
-   time_stepping_scheme.n_scale_block = 6;
-   time_stepping_scheme.b_bt_linear_nl = "linear";
+   Output::info<1>("check_and_set_parameters",
+		   "The IMEX scheme has been chosen as a time discretization scheme!\n");
  }
  
  // the only case where one have to re-assemble the right hand side
@@ -374,7 +474,7 @@ void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pr
     // discontinuous spaces
     case 1:case 2: case 3: case 4: case 5:
       // TODO CHECK IF THIS IS CORRECT!!! IN NSE3D,pressure_order=1  ?!!
-      pressure_order = -(velocity_order-1)*10;
+      // pressure_order = -(velocity_order-1)*10;
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
@@ -402,8 +502,31 @@ void Time_NSE3D::assemble_initial_time()
     call_assembling_routine(s,LocalAssembling3D_type::TNSE3D_LinGAL);
     // manage dirichlet condition by copying non-actives DoFsfrom rhs to solution
     s.solution_.copy_nonactive(s.rhs_);
+
+    if(db_["space_discretization_type"].is("vms_projection"))
+    {
+      std::vector<std::shared_ptr<FEMatrix>> blocks
+                      = s.matrix_.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix3D(matrices_for_turb_mod.at(6));
+      // update stiffness matrix
+      VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
+      // reset flag for projection-based VMS method such that Smagorinsky LES method
+      // is used on coarser grids
+      space_disc_global = -4;      
+      db_["space_discretization_type"] = "smagorinsky_coarse";
+    }
+  } // end for system per grid - the last system is the finer one (front)
+  // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
+  if(space_disc_global == -4)
+  {
+    space_disc_global = 9;
+    db_["space_discretization_type"] = "vms_projection";
   }
   
+  // copy solution from previous time steps
+  this->systems_.front().solution_m1_ = this->systems_.front().solution_;
+  this->systems_.front().solution_m2_ = this->systems_.front().solution_;
   /** After copy_nonactive, the solution vectors needs to be Comm-updated
    * in MPI-case in order to be consistently saved. It is necessary that
    * the vector is consistently saved because it is the only way to
@@ -426,10 +549,31 @@ void Time_NSE3D::assemble_initial_time()
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
     this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
+    
+    
+    if(db_["time_discretization"].is("bdf_two") || db_["imex_scheme_"])
+    {
+      double *u1m1 = this->systems_.front().solution_m1_.block(0);
+      double *u2m1 = this->systems_.front().solution_m1_.block(1);
+      double *u3m1 = this->systems_.front().solution_m1_.block(2);
+      double *pm1  = this->systems_.front().solution_m1_.block(3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1m1, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2m1, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3m1, 3);
+      this->systems_.front().pressureSpace_.get_communicator().consistency_update( pm1, 3);
+      
+      double *u1m2 = this->systems_.front().solution_m2_.block(0);
+      double *u2m2 = this->systems_.front().solution_m2_.block(1);
+      double *u3m2 = this->systems_.front().solution_m2_.block(2);
+      double *pm2  = this->systems_.front().solution_m2_.block(3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1m2, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2m2, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3m2, 3);
+      this->systems_.front().pressureSpace_.get_communicator().consistency_update(pm2, 3);
+    }
   #endif
   // copy the last right hand side and solution vectors to the old ones
   this->old_rhs_      = this->systems_.front().rhs_;
-  this->solution_m1 = this->systems_.front().solution_;
 }
 /**************************************************************************** */
 void Time_NSE3D::restrict_function()
@@ -447,33 +591,82 @@ void Time_NSE3D::restrict_function()
     }
     GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
   }
+  // only for the extrapolation
+  if(imex_scheme(0))
+  {
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.extrapolated_solution_.block(block));
+        u_ns_dofs.push_back(s.extrapolated_solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
+  if(TDatabase::ParamDB->NSTYPE == 14)
+  {
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.combined_old_solution_.block(block));
+        u_ns_dofs.push_back(s.combined_old_solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
 }
 
 /**************************************************************************** */
-void Time_NSE3D::assemble_rhs()
+void Time_NSE3D::assemble_rhs(bool ass_rhs)
 {
   System_per_grid& s = this->systems_.front();
-  // reset the right hand side of the grid of interest (finest)
-  s.rhs_.reset();
   rhs_from_time_disc.copy_structure(s.rhs_);
-  // preparation of the right hand side for the system solve
   rhs_from_time_disc.reset();
-  // calling assembling routine
-  call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_Rhs);
+  //TODO: remove the "bool ass_rhs", it was used for SUPG case but for now 
+  //it's assembles in a different function "assemble_rhs_supg"
+  if(ass_rhs)
+  {
+    // reset the right hand side of the grid of interest (finest)
+    s.rhs_.reset();
+    // preparation of the right hand side for the system solve
+    // calling assembling routine
+    call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_Rhs);
+  }
   BlockVector temp = s.rhs_;
   // copy right hand side 
   rhs_from_time_disc = s.rhs_;
   unsigned int n_sols = time_stepping_scheme.n_old_solutions();
   std::vector<BlockVector> old_sols (n_sols);
-  old_sols[0] = s.solution_;
+  old_sols[0] = s.solution_m1_;
   // this is needed for the BDF2 method
   if(old_sols.size() == 2)
-    old_sols[1] = solution_m2;
+    old_sols[1] = s.solution_m2_;
   // the right hand side vectors: old rhs is needed for the 
   // Crank-Nicolson and Fractional Step schemes
   std::vector<BlockVector> all_rhs(2);
   all_rhs[0] = s.rhs_;
   all_rhs[1] = old_rhs_;
+  // this update is only done once for the Mass matrices
+  // and the pressure blocks, if both are linear
+  // In the nonlinearity case, the matrices are updated
+  // during the nonlinear loop (special cases are SUPG
+  // and RBVMS methods)
+  if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION==1 && 
+     time_stepping_scheme.current_step_==1)
+  {
+    for(System_per_grid &ss : this->systems_)
+      this->modify_slip_bc(true, true, ss);
+  }
   
   // prepare the right hand side vector
   time_stepping_scheme.prepare_rhs_from_time_disc(s.matrix_, s.massMatrix_, 
@@ -481,28 +674,28 @@ void Time_NSE3D::assemble_rhs()
   // on the way back, the system rhs is stored in all_rhs[0], copy to the 
   // rhs_from_time_disc vector
   rhs_from_time_disc = all_rhs[0];
-  // update the rhs for the next time step
-  old_rhs_ = s.rhs_;
-  
-  // scaling of all B-block is Important:
-  // If all B-blocks are linear, we have to scale them only once. So it's done only
-  // at the first time. In the case of nonlinearity, one have to do this in 
-  // each nonlinear iteration. For example, the SUPG case.
-  if(time_stepping_scheme.current_step_==1 && (time_stepping_scheme.b_bt_linear_nl.compare("linear")==0))
+  if(ass_rhs)
   {
-    for(System_per_grid &s : this->systems_)
-      time_stepping_scheme.scale_descale_all_b_blocks(s.matrix_, "scale");
-    if(time_stepping_scheme.current_step_ >1)
+    // update the rhs for the next time step
+    old_rhs_ = s.rhs_;
+    
+    // scaling of all B-block is Important:
+    // If all B-blocks are linear, we have to scale them only once. So it's done only
+    // at the first time. In the case of nonlinearity, one have to do this in 
+    // each nonlinear iteration. For example, the SUPG case.
+    // TODO: FIX ME 
+    if(time_stepping_scheme.current_step_ <= 2)
     {
-      ErrThrow("wrong time stepping");
+      for(System_per_grid &s : this->systems_)
+	time_stepping_scheme.scale_descale_all_b_blocks(s.matrix_, "scale");
     }
+    // copy the nonActive dofs for the old rhs
+    old_rhs_.copy_nonactive(temp);
+    // copy the non active to the solution vector
+    s.solution_.copy_nonactive(s.rhs_);
   }
-  
   // retrieve the non active from "temporary" into rhs vector
   rhs_from_time_disc.copy_nonactive(temp);
-  old_rhs_.copy_nonactive(temp);
-  // copy the non active to the solution vector
-  s.solution_.copy_nonactive(temp);
 
   /** After copy_nonactive, the solution vectors needs to be Comm-updated
    * in MPI-case in order to be consistently saved. It is necessary that
@@ -517,6 +710,7 @@ void Time_NSE3D::assemble_rhs()
    * actually active.
    * That's why we have to update the values so that the vector becomes consistent again.
    */
+  if(ass_rhs){
   #ifdef _MPI
     double *u1 = this->systems_.front().solution_.block(0);
     double *u2 = this->systems_.front().solution_.block(1);
@@ -526,16 +720,90 @@ void Time_NSE3D::assemble_rhs()
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
     this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
     this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
+    
+    
+    if(db_["time_discretization"].is("bdf_two") || db_["imex_scheme_"])
+    {
+      double *u1m1 = this->systems_.front().solution_m1_.block(0);
+      double *u2m1 = this->systems_.front().solution_m1_.block(1);
+      double *u3m1 = this->systems_.front().solution_m1_.block(2);
+      double *pm1  = this->systems_.front().solution_m1_.block(3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1m1, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2m1, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3m1, 3);
+      this->systems_.front().pressureSpace_.get_communicator().consistency_update( pm1, 3);
+      
+      double *u1m2 = this->systems_.front().solution_m2_.block(0);
+      double *u2m2 = this->systems_.front().solution_m2_.block(1);
+      double *u3m2 = this->systems_.front().solution_m2_.block(2);
+      double *pm2  = this->systems_.front().solution_m2_.block(3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1m2, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2m2, 3);
+      this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3m2, 3);
+      this->systems_.front().pressureSpace_.get_communicator().consistency_update(pm2, 3);
+    }
   #endif
+  }
 }
 /**************************************************************************** */
 void Time_NSE3D::assemble_nonlinear_term()
 {
+  // extrapolated solution
+  if(imex_scheme(0))
+    this->construct_extrapolated_solution();
+  // grid restriction
   if(systems_.size()>1)
-    this->restrict_function();
+   this->restrict_function();
+  // assemble the system
   for(System_per_grid &s : this->systems_)
   {
     call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
+    
+    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1)
+    {
+      if(db_["space_discretization_type"].is("supg") || db_["space_discretization_type"].is("residual_based_vms") )
+        this->modify_slip_bc(true, true, s);
+      else
+        this->modify_slip_bc(false, false, s);
+    }
+    if(db_["space_discretization_type"].is("vms_projection"))
+    {
+      std::vector<std::shared_ptr<FEMatrix>> blocks
+         = s.matrix_.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix3D(matrices_for_turb_mod.at(6));
+      // update stiffness matrix
+      VMS_ProjectionUpdateMatrices3D(blocks, matrices_for_turb_mod);
+      // reset flag for projection-based VMS method such that Smagorinsky LES method
+      // is used on coarser grids 
+      space_disc_global = -4;
+      db_["space_discretization_type"].set("smagorinsky_coarse");
+    }
+    // case: supg, right hand side and mass matrices are nonlinear
+    // needs to be assemble during nonlinear iteration
+    if( db_["space_discretization_type"].is("supg") || 
+        db_["space_discretization_type"].is("residual_based_vms") )
+    {
+      if(!db_["time_discretization"].is("bdf_two"))
+      {
+        ErrThrow("space discretizations, ", db_["space_discretization_type"], 
+                 " only implemented for ", db_["time_discretization"]);
+      }
+      // pressure blocks that are nonlinear were already assembled
+      // during the nonlinear asembly. We just have to scale them 
+      // with the right factor
+      time_stepping_scheme.scale_nl_b_blocks(s.matrix_);
+      // assemble the right hand side
+      bool on_finest_grid = &systems_.front() == &s;
+      if(on_finest_grid)
+	this->assemble_rhs_supg(s);
+    }
+  }
+  // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
+  if(db_["space_discretization_type"].is("smagorinsky_coarse"))
+  {
+    space_disc_global = 9;
+    db_["space_discretization_type"].set("vms_projection");
   }
 }
 
@@ -578,7 +846,13 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   System_per_grid& s = this->systems_.front();
   size_t nu=s.solution_.length(0);
   size_t np=s.solution_.length(3);
-  
+/*
+  //BEGIN DEBUG
+  cout <<" rhs: " << rhs_from_time_disc.norm()<<endl;
+  cout <<" sol: " << s.solution_.norm() << endl;
+  //END DEBUG
+  */
+
   Output::print<5>("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
                 Ddot(3*nu,rhs_from_time_disc.get_entries(),rhs_from_time_disc.get_entries()) , " "  , 
                 Ddot(np,rhs_from_time_disc.get_entries()+3*nu,rhs_from_time_disc.get_entries()+3*nu)," ",
@@ -598,7 +872,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
     initial_residual_ = normOfResidual;
 
     // saves the solution from previous time step with nonActive of current step
-    this->solution_m1 = this->systems_.front().solution_;
+    this->systems_.front().solution_m1_ = this->systems_.front().solution_;
   }
   // check if minimum number of iterations was performed already
   size_t min_it = db_["nonlinloop_minit"];
@@ -640,8 +914,11 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
                     "\t\t", "Reduction: ", normOfResidual/initial_residual_);
     }
     // copy solution for the next time step: BDF2 needs two previous solutions 
-    solution_m2 = solution_m1;
-    solution_m1 = s.solution_;
+    for(System_per_grid& ispg: this->systems_)
+    {
+      ispg.solution_m2_ = ispg.solution_m1_;
+      ispg.solution_m1_ = ispg.solution_;
+    }
     // descale the matrices, since only the diagonal A block will
     // be reassembled in the next time step
     if (this->imex_scheme(0) && iteration_counter>0)
@@ -718,6 +995,7 @@ void Time_NSE3D::compute_residuals()
 void Time_NSE3D::solve()
 {
   System_per_grid& s = systems_.front();
+  
   // store previous solution for damping, it is a pointer so that we can avoid
   // the copy in case of no damping
   double damping = this->db_["nonlinloop_damping_factor"];
@@ -740,7 +1018,6 @@ void Time_NSE3D::solve()
   else
     solver_.solve(s.matrix_, rhs_from_time_disc, s.solution_); // same as sequential
 #endif
-
   // apply damping if prescribed
   if(damping != 1.0)
   {
@@ -762,17 +1039,21 @@ void Time_NSE3D::solve()
 /**************************************************************************** */
 void Time_NSE3D::output(int m, int &image)
 {
+    System_per_grid& s = this->systems_.front();
 #ifdef _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-  	bool no_output = !db_["output_write_vtk"] &&
- 	                 !db_["output_compute_errors"] &&
- 	                 !db_["write_solution_binary"];
-	if(no_output)
-		return;
+    bool no_output = !db_["output_write_vtk"] &&
+                     !db_["output_compute_errors"] &&
+                     !db_["write_solution_binary"] &&
+                     !db_["example"].is(6) &&
+                     !db_["example"].is(8);
+    if(no_output)
+      return;
 
-  System_per_grid& s = this->systems_.front();
+ // System_per_grid& s = this->systems_.front();
+  
   TFEFunction3D* u1 = s.u_.GetComponent(0);
   TFEFunction3D* u2 = s.u_.GetComponent(1);
   TFEFunction3D* u3 = s.u_.GetComponent(2);
@@ -910,24 +1191,29 @@ void Time_NSE3D::output(int m, int &image)
       Output::print<1>("L2(0,t,H1-semi(p)) : ", setprecision(10), sqrt(errors_.at(10)) );
     }
   }
-   delete u1;
-   delete u2;
-   delete u3;
+  delete u1;
+  delete u2;
+  delete u3;
 
-   // do post-processing step depending on what the example implements, if needed
-   example_.do_post_processing(*this);
+  // do post-processing step depending on what the example implements, if needed
+  //example_.do_post_processing(*this);
+  if(db_["example"].is(8))
+  {
+    // drag lift and pressure difference computation
+    Cylinder_Square::compute_drag_lift_pdiff(*this);
+  }
    
-   if(db_["write_solution_binary"].is(true))
-   { size_t interval = db_["write_solution_binary_all_n_steps"];
+  if(db_["write_solution_binary"].is(true))
+  { size_t interval = db_["write_solution_binary_all_n_steps"];
     if(m % interval == 0)
     {//write solution to a binary file
       std::string file = db_["write_solution_binary_file"];
       if(!db_["overwrite_solution_binary"]) //create a new file every time
       {
-    	  file += ".";
-    	  file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
+        file += ".";
+        file += std::to_string(TDatabase::TimeDB->CURRENTTIME);
 #ifdef _MPI
-    	  file += ".proc" + std::to_string(my_rank);
+        file += ".proc" + std::to_string(my_rank);
 #endif
       }
       Output::info("output", "Writing current solution to file ", file);
@@ -995,12 +1281,76 @@ void Time_NSE3D::output_problem_size_info() const
 /**************************************************************************** */
 void Time_NSE3D::construct_extrapolated_solution()
 {
-  this->extrapolated_solution_.reset();
-  this->extrapolated_solution_ = this->solution_m1;
-  this->extrapolated_solution_.scale(-1.);
-  this->extrapolated_solution_.add_scaled(this->systems_.front().solution_,2.);
-  this->extrapolated_solution_.copy_nonactive(this->systems_.front().rhs_);
-  // Now extrapolated_solution_ = 2*u(t-1)-u(t-2), only on the finest mesh
+  if(db_["extrapolate_velocity"])
+  {
+    if(!db_["extrapolation_type"].is("linear_extrapolate"))
+    {
+      ErrThrow("Only linear extrapolation is supported");
+    }
+    System_per_grid &s = this->systems_.front();
+    // For inf-sup stable elements and SUPG method,
+    // we only need the extrapolation solution 
+    // However, in the case of equal-order elements, there
+    // is a combination of time-derivative and pressure test
+    // occurs for which we need the solution from previous two times.
+    // Only BDF2 is considered so far
+    if(db_["space_discretization_type"].is("residual_based_vms") && time_stepping_scheme.current_step_==1)
+    {
+      // constant extrapolation in the RBVMS methods for only first 
+      // time step where we are using BDF1 scheme
+      s.extrapolated_solution_.reset();
+      s.extrapolated_solution_ = s.solution_m1_;
+    }
+    else
+    {
+      s.extrapolated_solution_.reset();
+      s.extrapolated_solution_ = s.solution_m1_;
+      s.extrapolated_solution_.scale(2.);
+      s.extrapolated_solution_.add_scaled(s.solution_m2_,-1.);
+      s.extrapolated_solution_.copy_nonactive(s.rhs_);
+    }
+    
+    if(TDatabase::ParamDB->NSTYPE == 14 && 
+      (db_["space_discretization_type"].is("supg") || 
+      db_["space_discretization_type"].is("residual_based_vms")) )
+    {
+      s.combined_old_solution_.reset();
+      s.combined_old_solution_ = s.solution_m1_;
+      s.combined_old_solution_.scale(2.);
+      s.combined_old_solution_.add_scaled(s.solution_m2_,-1./2.);
+      s.combined_old_solution_.copy_nonactive(s.rhs_);
+    }
+    if(db_["space_discretization_type"].is("residual_based_vms"))
+    {
+      if(time_stepping_scheme.current_step_==1)
+      {
+	s.time_der_old_sol_.reset();
+	s.time_der_old_sol_=s.solution_;
+	double dt = time_stepping_scheme.get_step_length();
+	dt = 1./dt;
+	s.time_der_old_sol_.scaleActive(dt);
+	s.time_der_old_sol_.addScaledActive(s.solution_m1_, -dt);
+	s.time_der_old_sol_.copy_nonactive(s.rhs_);
+      }
+      else
+      {
+	// old residual 
+	// unbdf = 2 solm1 - 0.5*solm2
+	// td = 1./dt *( 1.5*usigma - unbdf) 
+	s.time_der_old_sol_.reset();
+	s.time_der_old_sol_ = s.extrapolated_solution_;
+	s.time_der_old_sol_.scaleActive(1.5);
+	s.time_der_old_sol_.addScaledActive(s.solution_m1_, -2.0);
+	s.time_der_old_sol_.addScaledActive(s.solution_m2_, 0.5);
+	double dt = time_stepping_scheme.get_step_length();
+	s.time_der_old_sol_.scale(1./dt);
+      }
+    }
+  }
+  else
+  {
+    ErrThrow("Supposed to be extrapolation but something is set wrong!!!! ");
+  }
 }
 
 /**************************************************************************** */
@@ -1020,13 +1370,24 @@ TFEFunction3D* Time_NSE3D::get_velocity_component(int i)
 bool Time_NSE3D::imex_scheme(bool print_info)
 {
   // change maximum number of nonlin_iterations to 1 in IMEX case
-  if((db_["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3))
+  if(db_["imex_scheme_"] && (time_stepping_scheme.current_step_ >= 3 ||
+    db_["space_discretization_type"].is("residual_based_vms") ) )
   {
     db_["nonlinloop_maxit"] = 1;
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if(time_stepping_scheme.current_step_ == 3 && my_rank==0)
+      Output::info<1>("Nonlinear Loop MaxIteration",
+                    "The parameter 'nonlinloop_maxit' was changed to 1."
+                    " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+#else
     if(print_info) // condition is here just to print it once
       Output::info<1>("Nonlinear Loop MaxIteration",
                     "The parameter 'nonlinloop_maxit' was changed to 1."
                     " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+#endif
+
     return true;
   }
   else
@@ -1050,13 +1411,13 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   
   set_matrices_rhs(s, type, sqMat, reMat, rhs_array);
   // find out if we have to do upwinding
-  bool do_upwinding = false;
-  if(type != LocalAssembling3D_type::TNSE3D_Rhs)
+  bool do_upwinding = false;  
+  if(type != LocalAssembling3D_type::TNSE3D_Rhs && db_["space_discretization_type"].is("galerkin"))
   {
-      bool mdml =  solver_.is_using_multigrid()
-                  && solver_.get_multigrid()->is_using_mdml();
-      bool on_finest_grid = &systems_.front() == &s;
-      do_upwinding = (db_["space_discretization_type"].is("upwind")
+    bool mdml =  solver_.is_using_multigrid()
+                 && solver_.get_multigrid()->is_using_mdml();
+    bool on_finest_grid = &systems_.front() == &s;
+    do_upwinding = (db_["space_discretization_type"].is("upwind")
                      || (mdml && !on_finest_grid));
     
     if(do_upwinding)  //HOTFIX: Check the documentation!
@@ -1084,32 +1445,10 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
 	     sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
              rhs_array.size(), rhs_array.data(), space_rhs.data(),
              boundary_conditions, boundary_values.data(), localAssembling);
-  
-  if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
-  {
-    double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
-    switch(TDatabase::ParamDB->NSTYPE)
-    {
-      case 1:
-      case 2:
-        UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
-                                fefunctions[2], one_over_nu);
-        Output::print<3>("UPWINDING DONE with 1 square matrices.");
-      break;
-      case 3:
-      case 4:
-      case 14:
-        UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
-                                fefunctions[2], one_over_nu);
-        UpwindForNavierStokes3D(sqMat[1], fefunctions[0], fefunctions[1],
-                                fefunctions[2], one_over_nu);
-        UpwindForNavierStokes3D(sqMat[2], fefunctions[0], fefunctions[1],
-                                fefunctions[2], one_over_nu);
-        Output::print<3>("UPWINDING DONE with 3 square matrices.");
-        break;
-    }
-  }
-  
+
+  // do upwinding for the mdml case
+ if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
+   this->do_upwinding_for_mdml(sqMat, fefunctions, type);
 }
 /**************************************************************************** */
 void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s, 
@@ -1129,11 +1468,56 @@ void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s,
     spaces_rhs.resize(4);
     spaces_rhs[3] = &s.pressureSpace_;
   }
-  functions.resize(4);  
+  functions.resize(4);
   functions[0] = s.u_.GetComponent(0);
   functions[1] = s.u_.GetComponent(1);
   functions[2] = s.u_.GetComponent(2);
   functions[3] = &s.p_;
+  
+  //TODO: At the moment, everything is in pieces. 
+  //      Later should be combined.
+  if(imex_scheme(0))
+  {
+    functions.resize(4);
+    functions[0] = s.extrapolated_u_.GetComponent(0);
+    functions[1] = s.extrapolated_u_.GetComponent(1);
+    functions[2] = s.extrapolated_u_.GetComponent(2);
+    functions[3] = &s.extrapolated_p_;
+  }
+  // extra terms that are combined with the pressure terms
+  // resulted from the combination of bdf2 and supg method
+  if(db_["space_discretization_type"].is("supg") && TDatabase::ParamDB->NSTYPE==14)
+  {
+    functions.resize(6);
+    functions[3] = s.combined_old_u_.GetComponent(0);
+    functions[4] = s.combined_old_u_.GetComponent(1);
+    functions[5] = s.combined_old_u_.GetComponent(2);
+  }
+  // terms that are used for the RBVMS
+  if(db_["space_discretization_type"].is("residual_based_vms"))
+  {
+    functions.resize(7);
+    functions[4] = s.time_der_old_u_.GetComponent(0);
+    functions[5] = s.time_der_old_u_.GetComponent(1);
+    functions[6] = s.time_der_old_u_.GetComponent(2);
+    if( TDatabase::ParamDB->NSTYPE==14)
+    {
+      functions.resize(10);
+      functions[7] = s.combined_old_u_.GetComponent(0);
+      functions[8] = s.combined_old_u_.GetComponent(1);
+      functions[9] = s.combined_old_u_.GetComponent(2);
+    }
+  }
+  if(db_["space_discretization_type"].is("vms_projection"))
+  {
+    spaces.resize(4);
+    // projection space
+    spaces[2]=projection_space_.get();
+    // label space that indicates local projection space
+    spaces[3]=label_for_local_projection_space_.get();
+      // append function for the labels of the local projection
+    functions[4] = label_for_local_projection_fefct.get();
+  }
 }
 /**************************************************************************** */
 void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling3D_type type,
@@ -1221,9 +1605,16 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
           reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
 	  break;
 	case 4:
-	  if(blocks.size() != 15)
+	case 14:
+	  if(TDatabase::ParamDB->NSTYPE==14)
+	  {
+	    if(blocks.size() != 16)
+	      ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 16.");
+	  }
+	  else  
           {
-            ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 15.");
+	    if(blocks.size() != 15)
+	      ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 15.");
           }
           sqMat.resize(12);
           sqMat[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
@@ -1235,10 +1626,49 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
           sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
           sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
           sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
-          // mass matrices
-          sqMat[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-	  sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
-	  sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	  
+	  if(db_["space_discretization_type"].is("residual_based_vms"))
+	  {
+	    sqMat.resize(18);
+	    sqMat[9] =  reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+	    sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(1).get());
+	    sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(2).get());
+	    sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(4).get());
+	    sqMat[13] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
+	    sqMat[14] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(6).get());
+	    sqMat[15] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(8).get());
+	    sqMat[16] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(9).get());
+	    sqMat[17] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	    
+	    if(TDatabase::ParamDB->NSTYPE == 14)
+	    {
+	      sqMat.resize(19);
+	      sqMat[18] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
+	    }
+	  }
+	  else
+	  {
+	    // mass matrices
+	    sqMat[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+	    sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
+	    sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	    if(TDatabase::ParamDB->NSTYPE == 14 && db_["space_discretization_type"].is("supg"))
+	    {
+	      sqMat.resize(13);
+	      sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
+	    }
+	  }
+	  if(TDatabase::ParamDB->NSTYPE == 14)
+	  {
+	    rhs_array.resize(4);
+	    rhs_array[3] = s.rhs_.block(3);
+	  }
+	  
+	  if(db_["space_discretization_type"].is("vms_projection"))
+	  {
+	    sqMat.resize(13);
+	    sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(matrices_for_turb_mod.at(6).get());;
+	  }
           
           // rectangular matrices
           reMat.resize(6);
@@ -1248,10 +1678,27 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
           reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  //than the standing B blocks
           reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
           reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+	  
+	  // additional matrices for the projection based VMS method
+	  if(db_["space_discretization_type"].is("vms_projection"))
+	  {
+	    reMat.resize(12);
+	    // matrices  \tilde G_11, \tilde G_24, \tilde G_36
+            reMat[6]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
+            reMat[7]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
+            reMat[8]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
+            // matrices G_11, G_42, G_63
+            reMat[9]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(3).get());
+            reMat[10]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(4).get());
+            reMat[11]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(5).get());
+	  }
 	  break;
+	default:
+	  ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
+		   " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
       }// endswitch NSTYPE
+      break;// case LocalAssembling3D_type::TNSE3D_LinGAL
     }
-    break;// case LocalAssembling3D_type::TNSE3D_LinGAL
     //===============================================
     case LocalAssembling3D_type::TNSE3D_NLGAL:
     {
@@ -1265,23 +1712,97 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 	  break;
 	case 3:
 	case 4:
-	  if(db_["space_discretization_type"].is("smagorinsky"))
+	case 14:
+	  if(db_["space_discretization_type"].is("smagorinsky")    ||
+	     db_["space_discretization_type"].is("vms_projection") ||
+	     db_["space_discretization_type"].is("supg") ||
+	     db_["space_discretization_type"].is("smagorinsky_coarse") ||
+	     db_["space_discretization_type"].is("residual_based_vms")
+	  )
           {
             sqMat.resize(9);
-            blocks = s.matrix_.get_blocks_uniquely({{0,0}, {0,1}, {0,2}, 
-                                                    {1,0}, {1,1}, {1,2},
-                                                    {2,0}, {2,1}, {2,2}});
-            sqMat[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-            sqMat[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-            sqMat[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
-            sqMat[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(3).get());
-            sqMat[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
-            sqMat[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
-            sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
-            sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(7).get());
-            sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
-          }
-          else
+	    sqMat[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+	    sqMat[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+	    sqMat[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+	    sqMat[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+	    sqMat[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+	    sqMat[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+	    sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+	    sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+	    sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+	    // additional nonlinear matrices for the projection based VMS method
+	    if(db_["space_discretization_type"].is("vms_projection"))
+	    {
+	      reMat.resize(3);
+	      reMat[0]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(0).get());
+	      reMat[1]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(1).get());
+	      reMat[2]=reinterpret_cast<TMatrix3D*>(matrices_for_turb_mod.at(2).get());
+	    }
+	    // residual based VMS
+	    if(db_["space_discretization_type"].is("residual_based_vms"))
+	    {
+	      sqMat.resize(18);
+	      sqMat[9] =  reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+	      sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(1).get());
+	      sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(2).get());
+	      sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(4).get());
+	      sqMat[13] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
+	      sqMat[14] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(6).get());
+	      sqMat[15] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(8).get());
+	      sqMat[16] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(9).get());
+	      sqMat[17] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	      
+	      if(TDatabase::ParamDB->NSTYPE == 14)
+	      {
+		sqMat.resize(19);
+		sqMat[18] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
+	      }
+	    }
+	    // supg matrices
+	    if(db_["space_discretization_type"].is("supg"))
+	    {
+	      // mass matrices
+	      sqMat.resize(12);
+	      sqMat[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
+	      sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get());
+	      sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());
+	      if(TDatabase::ParamDB->NSTYPE == 14)
+	      {
+		sqMat.resize(13);
+		sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
+	      }
+	    }
+	  }
+	  // common nonlinear matrices and rhs for the SUPG and RBVMS methods
+	  if( db_["space_discretization_type"].is("supg")
+	    ||db_["space_discretization_type"].is("residual_based_vms") )
+	  {
+	    reMat.resize(3);
+	    reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks (B-Blocks)
+	    reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+	    reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+	    
+	    rhs_array.resize(3);
+	    rhs_array[0] = s.rhs_.block(0);
+	    rhs_array[1] = s.rhs_.block(1);
+	    rhs_array[2] = s.rhs_.block(2);
+	    if(TDatabase::ParamDB->NSTYPE == 14)
+	    {
+	      reMat.resize(6);
+	      reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(12).get()); //first the lying B blocks (B-Blocks)
+	      reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
+	      reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
+	      reMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); //than the standing B blocks (BT-Blocks)
+	      reMat[4] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+	      reMat[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+	      
+	      rhs_array.resize(4);
+	      rhs_array[3] = s.rhs_.block(3);
+	    }
+	    s.rhs_.reset();
+	  }
+	  
+          if(db_["space_discretization_type"].is("galerkin"))
           {
             sqMat.resize(3); 
             blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
@@ -1320,4 +1841,205 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
     rm->reset();
 }
 /**************************************************************************** */
+void Time_NSE3D::do_upwinding_for_mdml(std::vector<TSquareMatrix3D*> &sqMat, 
+std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type)
+{
+  if(!db_["space_discretization_type"].is("galerkin"))
+  {
+    ErrThrow("upwinding needs only for the standard method");
+  }
+  double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+    case 2:
+      UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
+			      fefunctions[2], one_over_nu);
+      Output::print<5>("UPWINDING DONE with 1 square matrices.");
+    break;
+    case 3:
+    case 4:
+    case 14:
+      if(type == LocalAssembling3D_type::TNSE3D_LinGAL)
+      {
+	UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[5], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[10], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+      }
+      else if(!db_["space_discretization_type"].is("galerkin") 
+	      && type == LocalAssembling3D_type::TNSE3D_NLGAL)
+      {
+	UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[4], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[8], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+      }
+      else if(db_["space_discretization_type"].is("galerkin") 
+	      && type == LocalAssembling3D_type::TNSE3D_NLGAL)
+      {
+	UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[1], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+	UpwindForNavierStokes3D(sqMat[2], fefunctions[0], fefunctions[1],
+				fefunctions[2], one_over_nu);
+      }
+      else
+      {
+	ErrThrow("UPWINDING for the method ", db_["space_discretization_type"], " is not supported so far!!");
+      }
+      Output::print<5>("UPWINDING DONE with 3 square matrices.");
+      break;
+  }
+}
+
 /** ************************************************************************ */
+void Time_NSE3D::assemble_rhs_supg(Time_NSE3D::System_per_grid& s)
+{
+  if(!db_["time_discretization"].is("bdf_two") && 
+    (!db_["space_discretization_type"].is("supg") || !db_["space_discretization_type"].is("residual_based_vms")) )
+  {
+    ErrThrow("This only works for SUPG and RBVMS in combination with bdf_two");
+  }
+  rhs_from_time_disc.copy_structure(s.rhs_);
+  rhs_from_time_disc.reset();
+
+  BlockVector temp = s.rhs_;
+  // copy right hand side 
+  rhs_from_time_disc = s.rhs_;
+  unsigned int n_sols = time_stepping_scheme.n_old_solutions();
+  std::vector<BlockVector> old_sols (n_sols);
+  old_sols[0] = s.solution_m1_;
+  // this is needed for the BDF2 method
+  if(old_sols.size() == 2)
+    old_sols[1] = s.solution_m2_;
+  // the right hand side vectors: old rhs is needed for the 
+  std::vector<BlockVector> all_rhs(1);
+  all_rhs[0] = s.rhs_;
+  
+  // prepare the right hand side vector
+  time_stepping_scheme.prepare_rhs_from_time_disc(s.matrix_, s.massMatrix_, 
+						  all_rhs, old_sols);
+  // on the way back, the system rhs is stored in all_rhs[0], copy to the 
+  // rhs_from_time_disc vector
+  rhs_from_time_disc = all_rhs[0];
+  // retrieve the non active from "temporary" into rhs vector
+  rhs_from_time_disc.copy_nonactive(temp);
+  s.solution_.copy_nonactive(temp);
+}
+
+/** ************************************************************************ */
+void Time_NSE3D::modify_slip_bc(bool BT_Mass, bool slip_A_nl, 
+                                Time_NSE3D::System_per_grid& s)
+{
+  // modification of the matrices due to the
+  // slip type boundary conditions: If the mass matrices,
+  // the off-diagonal A-blocks , and the BT's block,
+  // are unchanged during the time iteration, then this modification
+  // is done only once in the time loop. However, in the SUPG
+  // and residual based VMS method these matrices are also
+  // updated during the time steps, so modification of all
+  // of them including the right-hand side is necessary.The
+  // modification of the diagonal A-blocks are necessary
+  // in any case.
+  if(TDatabase::ParamDB->NSTYPE < 4)
+  {
+    ErrThrow("For slip with friction bc NSTYPE 4 or 14 is necessary !!!!!" );
+  }
+  
+  std::vector<const TFESpace3D*> spaces_mat(1);
+  std::vector<double*> rhs_array(3);
+  std::vector<const TFESpace3D*> rhs_space(3);
+  
+  spaces_mat[0] = &s.velocitySpace_;
+  rhs_space[0] = spaces_mat[0];
+  rhs_space[1] = spaces_mat[0];
+  rhs_space[2] = spaces_mat[0];
+
+  rhs_array[0] = s.rhs_.block(0);
+  rhs_array[1] = s.rhs_.block(1);
+  rhs_array[2] = s.rhs_.block(2);
+
+  std::vector<std::shared_ptr<FEMatrix>> blocks;
+  blocks = s.matrix_.get_blocks_uniquely();
+  std::vector<std::shared_ptr<FEMatrix>> mass_blocks;
+  mass_blocks = s.massMatrix_.get_blocks_uniquely(true);
+  
+  BoundCondFunct3D* bc[4] = {
+  s.velocitySpace_.getBoundCondition(),
+  s.velocitySpace_.getBoundCondition(),
+  s.velocitySpace_.getBoundCondition(),
+  s.pressureSpace_.getBoundCondition()};
+  // boundary values:
+  std::vector<BoundValueFunct3D*>bv(4);
+  bv[0]=example_.get_bd(0);
+  bv[1]=example_.get_bd(1);
+  bv[2]=example_.get_bd(2);
+  bv[3]=example_.get_bd(3);
+  
+  std::vector<TSquareMatrix3D*> sqMat;
+  std::vector<TMatrix3D*> reMat;
+  sqMat.resize(3);
+  
+  // all 4 A blocks at the first time step
+  //------------------
+  // a11 a12 a12 b1t
+  // a21 a22 a23 b2t
+  // a31 a32 a33 b3t
+  // b1  b2  b3  c
+  // and only the first 2 within the nonlinear loop
+  sqMat[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get()); //a11
+  sqMat[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get()); //a22
+  sqMat[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());//a33
+  
+  // if the off-diagonal are not changing within the non-linear loop
+  // then dont need to assemble them again
+  if(slip_A_nl)
+  {
+    sqMat.resize(9);
+    sqMat[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());//a12
+    sqMat[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());//a13
+    sqMat[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());//a21
+    sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());//a13
+    sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());//a31
+    sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());//a32
+  }
+  
+  // either at the first time step
+  // or every time step if M and B's are changing
+  reMat.resize(0);
+  if(BT_Mass)
+  {
+    sqMat.resize(18);
+    sqMat[9]  = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get()); //m11
+    sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get()); //m22
+    sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());//m33
+    
+    sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(1).get());//m12
+    sqMat[13] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(2).get());//m13
+    sqMat[14] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(4).get());//m21
+    sqMat[15] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(6).get());//m13
+    sqMat[16] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(8).get());//m31
+    sqMat[17] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(9).get());//m32
+    reMat.resize(3);
+    reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); // b1t
+    reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get()); // b2t
+    reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());// b3t
+  }
+  // modify slip type boundary conditions, in case of supg all A, M and B blocks 
+  // have to be modified
+  Assemble3DSlipBC(spaces_mat.size(), spaces_mat.data(), sqMat.size(), sqMat.data(),
+                   reMat.size(), reMat.data(), rhs_array.size(), rhs_array.data(), 
+                   rhs_space.data(), bc, bv.data());
+  
+  if(time_stepping_scheme.current_step_ <= 3)
+  {
+    Output::print<5>("updates slip b.c, no square matrices: ", 
+                     sqMat.size(), " no of rect matrices: ", reMat.size());
+  }
+}

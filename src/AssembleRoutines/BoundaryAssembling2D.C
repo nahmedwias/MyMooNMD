@@ -19,6 +19,7 @@
 #include <BoundaryAssembling2D.h>
 #include <BoundEdge.h>
 #include <Collection.h>
+#include <FEFunction2D.h>
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // ToDo: the edge list could be generated outside this class
@@ -1388,5 +1389,385 @@ void BoundaryAssembling2D::get_original_values(FE2D FEId, int joint_id,
             originalValues_y[k][ib] = uyorig[ib];
         }
     }
+}
+
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
+                                      const TFESpace2D *U_Space,
+                                      std::vector< TFEFunction2D* >& u_conv,
+                                      int boundary_component_id,
+                                      double mult)
+{
+    std::vector<TBoundEdge*> boundaryEdgeList;
+    TCollection *coll= U_Space->GetCollection();
+    coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
+    matrix_u_v_backflow_stab(M,U_Space,u_conv,boundaryEdgeList,mult);
+}
+
+/**
+ * @attention this functions assumes implicitely Matrix Type 14.
+ * This means that the blocks are ordered like: A11,A12,B1t,A21,A22,B2t,B1,B2,C)
+ * hence we need: blocks[0], blocks[1], blocks[3], blocks[4]
+ * for A11, A12, A21, A22
+ **/
+void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
+                                   const TFESpace2D *U_Space,
+                                   std::vector< TFEFunction2D* >& u_conv,
+                                   std::vector<TBoundEdge*> &boundaryEdgeList,
+                                   double beta)
+{
+    int *BeginIndex = U_Space->GetBeginIndex();
+    int *GlobalNumbers = U_Space->GetGlobalNumbers();
+    int ActiveBound = U_Space->GetActiveBound();
+    
+    std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
+    /**
+     * @todo: check if the matrix structure is correct:
+     * we need 4 square matrices with the same FE spaces
+     */
+    
+    for(size_t m=0;m< boundaryEdgeList.size(); m++)
+    {
+        TBoundEdge *boundedge = boundaryEdgeList[m];
+        TBaseCell *cell = boundedge->GetNeighbour(0);
+        // get basis dimension and FE space data of cell i
+        FE2D FEId = U_Space->GetFE2D(0,cell );
+        
+        int BaseVectDim = 1; // we assume only scalar FE
+        int joint_id = boundedge->get_index_in_neighbour(cell);
+        
+        // get a quadrature formula good enough for the velocity FE space
+        int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+        this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+        std::vector<double> quadWeights,quadPoints;
+        get_quadrature_formula_data(quadPoints,quadWeights);
+        
+        
+        // compute values of all basis functions at all quadrature points
+        std::vector< std::vector<double> > uorig,uxorig,uyorig;
+        get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig);
+        
+        double x0, x1, y0, y1;
+        boundedge->get_vertices(x0,  y0, x1, y1);
+        // compute length of the edge
+        double joint_length = boundedge->get_length();
+        // normal vector to this boundary (normalized)
+        double nx,ny;
+        boundedge->get_normal(nx, ny);
+        
+        // quadrature
+        for(unsigned int k=0;k<quadPoints.size();k++)
+        {
+            ///@attention in 1D the reference joint is [-1,1] => length = 2
+            double reference_joint_length = 2;
+            
+            // mapping from local(cell) DOF to global DOF
+            int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
+            
+            double scale_factor = quadWeights[k]*(joint_length/reference_joint_length);
+ 
+            ///@todo add absneg_u_n = absneg(|uconv.n|) to each gauss_point
+            double absneg_u_n = 0.;
+            double x_middle = (x0 + x1)/2.;
+            double y_middle = (y0 + y1)/2.;
+            //double *ux_values,*uy_values;
+            //u_conv[0]->FindGradient(x_middle,y_middle,ux_values);
+            //u_conv[1]->FindGradient(x_middle,y_middle,uy_values);
+            double ux_values[3], uy_values[3];
+            u_conv[0]->FindGradient(x_middle,y_middle,ux_values);
+            u_conv[1]->FindGradient(x_middle,y_middle,uy_values);
+            
+            if ( (ux_values[0]*nx + uy_values[0]*ny)<0 )
+            {
+              absneg_u_n = 1.;
+              /*Output::print(" u(",x_middle,",",y_middle,") = ",
+                            ux_values[0],",",uy_values[0], ", normal = ",nx, "," , ny);*/
+            }
+            scale_factor = beta/2.0*absneg_u_n*scale_factor;
+ 
+            
+            // loop on test functions
+            for(unsigned int l1=0;l1< uorig[k].size();l1++)
+            {
+                int test_DOF = DOF[l1];
+                
+                // if the DOF is Dirichlet, continue
+                if(test_DOF >= ActiveBound)
+                    continue;
+                
+                double vx = uorig[k][l1];
+                double vy = vx; // x and y component have the same FE space
+                
+                // loop on ansatz functions
+                for(unsigned int l2=0; l2<uorig[k].size(); l2++)
+                {
+                    int ansatz_DOF = DOF[l2];
+                    double ux = uorig[k][l2];
+                    double uy = ux; // x and y component have the same FE space
+                    
+                    blocks[0]->add(test_DOF, ansatz_DOF, scale_factor*vx*ux ); // A11
+                    blocks[4]->add(test_DOF, ansatz_DOF, scale_factor*vy*uy ); // A22
+                }
+            } //for(l=0;l<N_BaseFunct;l++)
+        }
+    } // endif
+}
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+void BoundaryAssembling2D::matrix_gradv_n_v_tangential(BlockFEMatrix &M,
+                                                       const TFESpace2D *U_Space,
+                                                       int boundary_component_id,
+                                                       double mult
+                                                       )
+{
+    std::vector<TBoundEdge*> boundaryEdgeList;
+    TCollection *coll= U_Space->GetCollection();
+    coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
+    matrix_gradv_n_v_tangential(M,U_Space,boundaryEdgeList,mult);
+}
+
+/**
+ * @attention this functions assumes implicitely Matrix Type 14.
+ * This means that the blocks are ordered like: A11,A12,B1t,A21,A22,B2t,B1,B2,C)
+ * hence we need: blocks[0], blocks[1], blocks[3], blocks[4]
+ * for A11, A12, A21, A22
+ **/
+void BoundaryAssembling2D::matrix_gradv_n_v_tangential(BlockFEMatrix &M,
+                                                       const TFESpace2D *U_Space,
+                                                       std::vector<TBoundEdge*> &boundaryEdgeList,
+                                                       double mult)
+{
+  int *BeginIndex = U_Space->GetBeginIndex();
+  int *GlobalNumbers = U_Space->GetGlobalNumbers();
+  int ActiveBound = U_Space->GetActiveBound();
+    
+  std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
+  /**
+   * @todo: check if the matrix structure is correct:
+   * we need 4 square matrices with the same FE spaces
+   */
+    
+  for(size_t m=0;m< boundaryEdgeList.size(); m++)
+    {
+      TBoundEdge *boundedge = boundaryEdgeList[m];
+      TBaseCell *cell = boundedge->GetNeighbour(0);
+      // get basis dimension and FE space data of cell i
+      FE2D FEId = U_Space->GetFE2D(0,cell );
+        
+      int BaseVectDim = 1; // we assume only scalar FE
+      int joint_id = boundedge->get_index_in_neighbour(cell);
+        
+      // get a quadrature formula good enough for the velocity FE space
+      int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+      this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+      std::vector<double> quadWeights,quadPoints;
+      get_quadrature_formula_data(quadPoints,quadWeights);
+        
+      //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
+        
+      // compute values of all basis functions at all quadrature points
+      std::vector< std::vector<double> > uorig,uxorig,uyorig;
+      get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig);
+        
+      double x0, x1, y0, y1;
+      boundedge->get_vertices(x0,  y0, x1, y1);
+      // compute length of the edge
+      double joint_length = boundedge->get_length();
+      // normal vector to this boundary (normalized)
+      double nx,ny;
+      boundedge->get_normal(nx, ny);
+      // tangential vevtor
+      double tgx,tgy;
+      tgx = -ny;
+      tgy = nx;
+      
+      // quadrature
+      for(unsigned int k=0;k<quadPoints.size();k++)
+      {
+        ///@attention in 1D the reference joint is [-1,1] => length = 2
+        double reference_joint_length = 2;
+        
+        // mapping from local(cell) DOF to global DOF
+        int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
+        
+        // loop on test functions
+        double scale_factor = mult*quadWeights[k]*(joint_length/reference_joint_length);
+        for(unsigned int l1=0;l1< uorig[k].size();l1++)
+          {
+            int test_DOF = DOF[l1];
+            
+            // if the DOF is Dirichlet, continue
+            if(test_DOF >= ActiveBound)
+              continue;
+                
+            double vx = uorig[k][l1];
+            double vy = vx; // x and y component have the same FE space
+            
+            // loop on ansatz functions
+            for(unsigned int l2=0; l2<uorig[k].size(); l2++)
+              {
+                int ansatz_DOF = DOF[l2];
+                
+                double uxx = uxorig[k][l2];
+                double uyy = uyorig[k][l2]; // x and y component have the same FE space
+                    
+                // (see the note about blocks at the beginning of the function)
+                // v_tangential = vx*tgx + vy*tgy
+                // gradu.n_tangential = (uxx*nx + uyy*ny)*tgx + (uyy*ny + uxx*nx)*tgy
+                /// @attention works only for laplace formulation 
+                blocks[0]->add(test_DOF, ansatz_DOF, -scale_factor*(vx*tgx)*uxx*nx*tgx ); // A11
+                blocks[0]->add(test_DOF, ansatz_DOF, -scale_factor*(vx*tgx)*uyy*ny*tgx ); // A11
+                blocks[4]->add(test_DOF, ansatz_DOF, -scale_factor*(vy*tgy)*uyy*ny*tgy ); // A22
+                blocks[4]->add(test_DOF, ansatz_DOF, -scale_factor*(vy*tgy)*uxx*nx*tgy ); // A22
+                
+              }
+          } //for(l=0;l<N_BaseFunct;l++)
+      }
+    } // endif
+}
+
+
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+void BoundaryAssembling2D::matrix_dtu_dtv_backflow_stab(BlockFEMatrix &M,
+                                                    const TFESpace2D *U_Space,
+                                                    std::vector< TFEFunction2D* >& u_conv,
+                                                    int boundary_component_id,
+                                                    double mult)
+{
+    std::vector<TBoundEdge*> boundaryEdgeList;
+    TCollection *coll= U_Space->GetCollection();
+    coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
+    matrix_dtu_dtv_backflow_stab(M,U_Space,u_conv,boundaryEdgeList,mult);
+}
+
+/**
+ * @attention this functions assumes implicitely Matrix Type 14.
+ * This means that the blocks are ordered like: A11,A12,B1t,A21,A22,B2t,B1,B2,C)
+ * hence we need: blocks[0], blocks[1], blocks[3], blocks[4]
+ * for A11, A12, A21, A22
+ **/
+void BoundaryAssembling2D::matrix_dtu_dtv_backflow_stab(BlockFEMatrix &M,
+                                                    const TFESpace2D *U_Space,
+                                                    std::vector< TFEFunction2D* >& u_conv,
+                                                    std::vector<TBoundEdge*> &boundaryEdgeList,
+                                                    double beta)
+{
+    int *BeginIndex = U_Space->GetBeginIndex();
+    int *GlobalNumbers = U_Space->GetGlobalNumbers();
+    int ActiveBound = U_Space->GetActiveBound();
+    
+    std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
+    /**
+     * @todo: check if the matrix structure is correct:
+     * we need 4 square matrices with the same FE spaces
+     */
+    
+    for(size_t m=0;m< boundaryEdgeList.size(); m++)
+    {
+        TBoundEdge *boundedge = boundaryEdgeList[m];
+        TBaseCell *cell = boundedge->GetNeighbour(0);
+        double h_cell = cell->GetDiameter();
+        // get basis dimension and FE space data of cell i
+        FE2D FEId = U_Space->GetFE2D(0,cell );
+        
+        int BaseVectDim = 1; // we assume only scalar FE
+        int joint_id = boundedge->get_index_in_neighbour(cell);
+        
+        // get a quadrature formula good enough for the velocity FE space
+        int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+        this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+        std::vector<double> quadWeights,quadPoints;
+        get_quadrature_formula_data(quadPoints,quadWeights);
+        
+        // compute values of all basis functions at all quadrature points
+        std::vector< std::vector<double> > uorig,uxorig,uyorig;
+        get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig);
+        
+        double x0, x1, y0, y1;
+        boundedge->get_vertices(x0,  y0, x1, y1);
+        // compute length of the edge
+        double joint_length = boundedge->get_length();
+        // normal vector to this boundary (normalized)
+        double nx,ny;
+        boundedge->get_normal(nx, ny);
+        
+        // quadrature
+        for(unsigned int k=0; k<quadPoints.size(); k++)
+        {
+            ///@attention in 1D the reference joint is [-1,1] => length = 2
+            double reference_joint_length = 2;
+            // mapping from local(cell) DOF to global DOF
+            int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
+            double scale_factor = quadWeights[k]*(joint_length/reference_joint_length);
+
+            ///@todo add absneg_u_n = absneg(|uconv.n|) to each gauss_point
+            double absneg_u_n = 0.;
+            double x_middle = (x0 + x1)/2.;
+            double y_middle = (y0 + y1)/2.;
+            double ux_values[3],uy_values[3];
+            u_conv[0]->FindGradient(x_middle,y_middle,ux_values);
+            u_conv[1]->FindGradient(x_middle,y_middle,uy_values);
+            
+            if ( (ux_values[0]*nx + uy_values[0]*ny)<0 )
+            {
+              absneg_u_n = 1.;
+              /*Output::print(" u(",x_middle,",",y_middle,") = ",
+                            ux_values[0],",",uy_values[0],
+                            ", normal = ",nx, "," , ny);
+              */
+            }
+            //delete ux_values,uy_values;
+            
+            scale_factor = beta/2.0*absneg_u_n*scale_factor*joint_length*joint_length;
+
+            /*
+              tgtDer(u) = ( (-N.y)*dx(u) + N.x*dy(u) ) 
+            */
+            // normal vector to this boundary (normalized)
+            double nx,ny;
+            boundedge->get_normal(nx, ny);
+            double tgx,tgy;
+            tgx = -ny;
+            tgy = nx;
+            // loop on test functions
+            for(unsigned int l1=0;l1< uorig[k].size();l1++)
+              {
+                int test_DOF = DOF[l1];
+                // if the DOF is Dirichlet, continue
+                if(test_DOF >= ActiveBound)
+                  continue;
+
+                // compute tangential derivative of test funcion
+                double vx_x = uxorig[k][l1];
+                double vy_x = vx_x; // x and y component have the same FE space
+                double vx_y = uyorig[k][l1];
+                double vy_y = vx_y; // x and y component have the same FE space
+
+                double tgt_der_vx = tgx*vx_x + tgy*vx_y;
+                double tgt_der_vy = tgx*vy_x + tgy*vy_y;
+                
+                // loop on ansatz functions
+                for(unsigned int l2=0; l2<uorig[k].size(); l2++)
+                {
+                    int ansatz_DOF = DOF[l2];
+                    double ux_x = uxorig[k][l2];
+                    double uy_x = ux_x; // x and y component have the same FE space
+                    double ux_y = uyorig[k][l2];
+                    double uy_y = ux_y; // x and y component have the same FE space
+
+                    double tgt_der_ux = tgx*ux_x + tgy*ux_y;
+                    double tgt_der_uy = tgx*uy_x + tgy*uy_y;
+                
+                    
+                    blocks[0]->add(test_DOF, ansatz_DOF, scale_factor*tgt_der_vx*tgt_der_ux ); // A11
+                    blocks[4]->add(test_DOF, ansatz_DOF, scale_factor*tgt_der_vy*tgt_der_uy ); // A22
+                }
+                
+              } //for(l=0;l<N_BaseFunct;l++)
+            
+        }
+    } 
 }
 

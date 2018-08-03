@@ -592,6 +592,19 @@ class TDomain
       , int& maxSubDomainPerDof
   #endif
       );
+  
+  /// @brief Special for the turbulent flow example
+  /// this boolean is used in the mesh partitioning for 
+  /// channel flow example only
+  bool is_turbulent_channel_example()
+  {
+    if(!db["problem_type"].is(6))
+      return false;
+    if(db["example"].is(7))
+      return true;
+    else
+      return false;
+  }
 
   /// Get a const reference to the database of this domain object.
   const ParameterDatabase& get_database() const {return this->db;};

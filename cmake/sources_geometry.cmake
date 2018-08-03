@@ -85,6 +85,7 @@ list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoInterfaceJoint
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/TetGenMeshLoader.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Tetrahedron.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/ChannelFlowRoutines.C")
 
 
 list(APPEND PARMOON_SOURCES_2D ${GEO_SOURCES} ${GEO_SOURCES_2D})

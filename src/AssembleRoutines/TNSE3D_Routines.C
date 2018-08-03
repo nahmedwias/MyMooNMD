@@ -469,7 +469,7 @@ double frobeniusNormTensor(double* u, double* gradu, double* uConv, int proj_spa
 
 
 double turbulentViscosity3D(double hK, double* u, double* gradu, 
-                            double* uConv, double* x, double* y, double* z)
+                            double* uConv, double* x, double* y, double* z, double proj_space)
 {
   /// compute Characteristic Filter Width
   double filter_constant = TDatabase::ParamDB->FILTER_WIDTH_CONSTANT;
