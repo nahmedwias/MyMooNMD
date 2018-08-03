@@ -47,6 +47,81 @@ extern "C"
 
 #include<algorithm>
 #include<vector>
+// For manual mesh distribution for periodic boundaries channel flow example example.
+int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
+{ 
+  //BRUTE FORCE - find a point in the cell (barycenter)
+ TBaseCell* my_cell = coll->GetCell(cell);
+  double X[8];
+  double Y[8];
+  double Z[8];  
+  // compute coordinates of vertices
+  TVertex *vert;
+  bool silly_flag = false;
+  double re_nr = TDatabase::ParamDB->RE_NR;
+  double xt, length_x;
+  
+  if(re_nr == 180.)
+  {
+    length_x = 12.5663706143;
+    xt = 6.2831853071;
+  }
+  else if(re_nr == 395.)
+  {
+    length_x = 6.2831853071;
+    xt = 3.1415926535;
+    //Output::print("here i am ", length_x, "  ", xt);
+  }
+  else
+  {
+    ErrThrow("manual partition does not work for RE_NR other than 180 && 395 ");
+  }
+    
+  for (int l1=0; l1<my_cell->GetN_Vertices(); l1++)
+  {
+    vert=my_cell->GetVertex(l1);
+    X[l1] = vert->GetX();
+    Y[l1] = vert->GetY();
+    Z[l1] = vert->GetZ();
+    if(fabs(X[l1] - xt) < 1e-6)
+      silly_flag = true;
+  }
+  // compute barycentre
+  double x=0; double y=0; double z=0;
+  for (int l1=0; l1<my_cell->GetN_Vertices(); l1++)
+  {
+    x += X[l1];
+    y += Y[l1];
+    z += Z[l1];
+  }
+  x /= my_cell->GetN_Vertices();
+  y /= my_cell->GetN_Vertices();
+  z /= my_cell->GetN_Vertices();
+  //check it!
+  if (!my_cell->PointInCell(x,y,z))
+    ErrThrow("That point is not in the cell!");
+      
+  // END BRUTE FORCE
+  double my_z = z ;
+  double my_x = x + xt;
+  
+  int x_slices = 8;
+  
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int z_slices = size / 7;
+  
+  double length_z = 2.;
+  int z_part = floor(my_z / length_z * z_slices);
+
+  int x_part = floor(my_x / length_x * x_slices);
+  if (silly_flag)
+    x_part = 0;
+  
+  // Output::print("Cell: ", cell, " x: ", my_x, " i: ", i);
+  //Output::print("return: ",x_part*z_slices + z_part, "  ", x_part, " ", z_part );
+  return x_part*z_slices + z_part;
+}
 
 
 // This is an implementation of quick-sort, sorting an array
@@ -354,30 +429,44 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   bool write_metis = Domain->get_database()["write_metis"];
   // if 'read_metis' is true, than a file is read which contains the 
   // partitioning of the cells on the processors
+  
   if(read_metis)
   {
     MeshPartitionInOut::read_file(*Domain, size,  N_Cells, Cell_Rank);
   }
+  else if(Domain->is_turbulent_channel_example())
+  {
+    // This is project specific - manual mesh partitioning, avoiding call to metis.
+    // The aim is to hav apartitinoing, where periodic boundaries are not split between ranks.
+    if(size % 7 !=0) 
+      ErrThrow("sorry for this particular example we use an a priori partitioning "
+      "and are restricted to integer multiple of 7 for number of processors");
+    
+    for(int cell =0; cell < N_Cells ; ++cell)
+    {
+      Cell_Rank[cell] = manual_cell_rank(Domain, coll, cell);
+    }
+  }
   else
   {
-  t1 = MPI_Wtime();
-   if(type == 0)
+    t1 = MPI_Wtime();
+    if(type == 0)
     {
-     METIS_PartMeshNodal(&ne, &nn, eptr, MetisVertexNumbers, nullptr, nullptr, &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
+      METIS_PartMeshNodal(&ne, &nn, eptr, MetisVertexNumbers, nullptr, nullptr, &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
     }
-   else if(type == 1)
+    else if(type == 1)
     {
-     METIS_PartMeshDual(&ne, &nn,  eptr, MetisVertexNumbers,  nullptr, nullptr,  &ncommon,
+      METIS_PartMeshDual(&ne, &nn,  eptr, MetisVertexNumbers,  nullptr, nullptr,  &ncommon,
                        &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
     }
-   else
-   {
-     cout<<" Error METIS_PartMesh implemented for Par_P2 = 0 or 1 !!" <<endl;
-     MPI_Abort(comm, 0);
-   }
-   std:: cout << Cell_Rank;
-   t2 = MPI_Wtime();
-   Output::root_info("Domain Decomposition","Time taken for METIS mesh partitioning ", t2-t1, " sec");
+    else
+    {
+      cout<<" Error METIS_PartMesh implemented for Par_P2 = 0 or 1 !!" <<endl;
+      MPI_Abort(comm, 0);
+    }
+    std:: cout << Cell_Rank;
+    t2 = MPI_Wtime();
+    Output::root_info("Domain Decomposition","Time taken for METIS mesh partitioning ", t2-t1, " sec");
   }
   //if 'wrtie_metis' is true, than a file is created which contains the partitioning of the cells on the processors.
   if(write_metis)

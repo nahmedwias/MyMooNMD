@@ -39,6 +39,9 @@ class TimeDiscretization
     
     /// @brief end time 
     double end_time;
+    
+    /// @brief total number of time steps
+    int total_time_steps;
 
 public:
     // 
@@ -49,6 +52,9 @@ public:
     /// in the main code and increment is done within the 
     /// the time iteration. 
     unsigned int current_step_;
+    
+    /// @brief 
+    double current_time_;
     
     /// @brief return a default TimeDiscretization parameter database
     /// Using the TimeDiscretization class requires these parameters.
@@ -135,13 +141,24 @@ public:
     }
    
     //getters
+    /// returns the current time step length
+    const double get_step_length() const
+    {
+      return current_time_step_length;
+    }
     double get_step_length()
     {
       return current_time_step_length;
     }
+    /// returns the end time
     double get_end_time()
     {
       return end_time;
+    }
+    /// return total number of time steps
+    int n_time_steps()
+    {
+      return total_time_steps;
     }
 };
 

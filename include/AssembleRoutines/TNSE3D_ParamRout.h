@@ -101,10 +101,6 @@ ParamFct *TimeNSFctGL00AuxProblemPaper2[1] = { TimeNSParamsGL00AuxProblemPaper2 
 int TimeNSBeginParamGL00AuxProblemPaper2[1] = { 0 };
 */
 
-// ========================================================================
-// parameters: u, grad u, G^H
-// ========================================================================
-void TimeNSParamsVelo_GradVelo_LargeScale3D(double *in, double *out);
 
 int TimeNSN_FESpacesVelo_GradVelo_LargeScale = 4;
 int TimeNSN_FctVelo_GradVelo_LargeScale = 10;
@@ -120,7 +116,7 @@ MultiIndex3D TimeNSFEMultiIndexVelo_GradVelo_LargeScale[19] = { D000, D000, D000
 								D000, D000, D000,
 								D000, D000, D000,		
 								D000};
-ParamFct *TimeNSFctVelo_GradVelo_LargeScale[1] = { TimeNSParamsVelo_GradVelo_LargeScale3D };
+// ParamFct *TimeNSFctVelo_GradVelo_LargeScale[1] = { TimeNSParamsVelo_GradVelo_LargeScale3D };
 int TimeNSBeginParamVelo_GradVelo_LargeScale[1] = { 0 };
 
 

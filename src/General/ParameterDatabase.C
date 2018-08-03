@@ -1251,6 +1251,7 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
           "supg","sdfem",  // = old global DISCTYPE = SUPG/SDFEM = 2
           "upwind",        // = old global DISCTYPE = UPWIND = 3
           "smagorinsky",   // = old global DISCTYPE = SMAGORINSKY = 4
+	  "smagorinsky_coarse", // = old global DISCTYPE = SMAGORINSKY_COARSE = -4
           "cip",           // = old global DISCTYPE = CIP = 4
           "dg",           // = old global DISCTYPE = DG  = 5
           "gls",           // = old global DISCTYPE = GLS = 6
