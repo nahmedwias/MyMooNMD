@@ -136,14 +136,20 @@ void U3BoundValue(double x, double y, double z, double &value)
 
   double _R_CYLINDER = 2.;
   double _UMAX = 1.;
-  double _HEIGHT = 10.;
-  double _DELTA_P = 5.;
-  double _OMEGA = 2*3.1415;
-  
-  // parabolic profile
+//  double _HEIGHT = 10.;
+//  double _DELTA_P = 5.;
+//  double _OMEGA = 2*3.1415;
+
+  // set value to 0 for the side walls (Dirichlet)
+  // and outlet on the top (Neumann)
+  value = 0;
+
+  // parabolic profile at inlet (Dirichlet)
   double r2 = x*x+y*y;
   double RC2 = _R_CYLINDER*_R_CYLINDER;
+  if (fabs(z)<1e-8) {
   value = _UMAX*(1-r2/RC2)*t;
+  }
 
   /*
   // plug profile
@@ -167,14 +173,14 @@ double **parameters, double **coeffs)
 {
   double nu = DIMENSIONLESS_VISCOSITY;
 
-  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+//  double dt = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   //Output::print("bulk velocity: mean ", u1, " sim ", u2);
   
-  for(unsigned int i=0;i<n_points;i++)
+  for(int i=0;i<n_points;i++)
   {
     coeffs[i][0] = nu;
     coeffs[i][1] = 0; // f1
     coeffs[i][2] = 0; // f2
-    coeffs[i][3] = 0; // f3      
+    coeffs[i][3] = 0; // f3
   }
 }
