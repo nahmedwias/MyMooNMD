@@ -57,7 +57,10 @@ class TFEFunction3D;
 class TAuxParam3D;
 class TDiscreteForm3D;
 
-/** a function from a finite element space */
+/** a function from a finite element space 
+  @todo LocalAssembling2D and LocalAssembling3D look very similar, 
+  can the two be combined?
+ */
 class LocalAssembling3D
 {
   protected:

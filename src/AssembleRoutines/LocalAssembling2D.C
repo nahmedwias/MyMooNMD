@@ -170,9 +170,15 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                 this->FESpaceNumber = { 0, 0, 0 };
                 
                 if(TDatabase::ParamDB->Axial3D)
-                    this->AssembleParam = BilinearAssemble_Axial3D;
+                {
+                  this->local_assemblings_routines.push_back(
+                      BilinearAssemble_Axial3D);
+                }
                 else
-                    this->AssembleParam = BilinearAssembleGalerkin;
+                {
+                  this->local_assemblings_routines.push_back(
+                    BilinearAssembleGalerkin);
+                }
                 this->Manipulate = nullptr;
                 break;
             case SUPG:
@@ -182,10 +188,18 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                 this->Needs2ndDerivatives = new bool[1];
                 this->Needs2ndDerivatives[0] = true;
                 this->FESpaceNumber = { 0, 0, 0, 0, 0 };
+                this->local_assemblings_routines.push_back(
+                    BilinearAssembleGalerkin);
                 if(this->discretization_type==SUPG)
-                    this->AssembleParam = BilinearAssemble_SD;
+                {
+                  this->local_assemblings_routines.push_back(
+                    BilinearAssemble_SD);
+                }
                 else
-                    this->AssembleParam = BilinearAssemble_GLS;
+                {
+                  this->local_assemblings_routines.push_back(
+                    BilinearAssemble_GLS);
+                }
                 
                 if(TDatabase::ParamDB->SDFEM_NORM_B==0)
                     this->Manipulate = linfb;
@@ -217,8 +231,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                 this->Needs2ndDerivatives = new bool[1];
                 this->Needs2ndDerivatives[0] = false;
                 this->FESpaceNumber = { 0, 0, 0 };
-                
-                this->AssembleParam = LocalMatrixARhs;
+                this->local_assemblings_routines.push_back(LocalMatrixARhs);
                 break;
             case SUPG:
             case GLS:
@@ -229,7 +242,10 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                 this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
                 
                 if(this->discretization_type==SUPG)
-                    this->AssembleParam = LocalMatrixARhs_SUPG;
+                {
+                  this->local_assemblings_routines.push_back(
+                    LocalMatrixARhs_SUPG);
+                }
                 else
                 {
                     ErrMsg("currently DISCTYPE " << this->discretization_type <<
@@ -255,7 +271,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                 this->Needs2ndDerivatives = new bool[1];
                 this->Needs2ndDerivatives[0] = false;
                 this->FESpaceNumber = { 0 };
-                this->AssembleParam = LocalMatrixM;
+                this->local_assemblings_routines.push_back(LocalMatrixM);
                 break;
             case SUPG:
                 this->N_Terms = 3;
@@ -263,7 +279,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                 this->Needs2ndDerivatives = new bool[1];
                 this->Needs2ndDerivatives[0] = false;
                 this->FESpaceNumber = { 0, 0, 0 };
-                this->AssembleParam = LocalMatrixM_SUPG;
+                this->local_assemblings_routines.push_back(LocalMatrixM_SUPG);
                 break;
         }
             break;  //LocalAssembling2D_type::TCD2D_Mass
@@ -284,7 +300,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1}; // A11, A12, A21, A22, C, B1, B2, B1T, B2T ; corresp. to p
             this->N_Rhs = 3;
             this->RhsSpace = { 0, 0, 1 };
-            this->AssembleParam = BrinkmanType1Galerkin;
+            this->local_assemblings_routines.push_back(BrinkmanType1Galerkin);
             this->Manipulate = nullptr;
             break;
             
@@ -302,7 +318,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
             this->N_Rhs = 3;                                                    // f1, f2, g
             this->RhsSpace = { 0, 0, 1 };                                       // corresp. to velocity testspace = 0 / pressure = 1
-            this->AssembleParam = BrinkmanType2Galerkin;
+            this->local_assemblings_routines.push_back(BrinkmanType2Galerkin);
             this->Manipulate = nullptr;
             break;
             
@@ -320,7 +336,8 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
             this->N_Rhs = 3;                                                    // f1, f2, g
             this->RhsSpace = { 0, 0, 1 };                                       // corresp. to velocity testspace = 0 / pressure = 1
-            this->AssembleParam = BrinkmanType1GalerkinResidualStabP1;
+            this->local_assemblings_routines.push_back(
+              BrinkmanType1GalerkinResidualStabP1);
             this->Manipulate = nullptr;
             break;
             
@@ -338,7 +355,8 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
             this->N_Rhs = 3;                                                    // f1, f2, g
             this->RhsSpace = { 0, 0, 1 };                                       // corresp. to velocity testspace = 0 / pressure = 1
-            this->AssembleParam = BrinkmanType1GalerkinResidualStabP2;
+            this->local_assemblings_routines.push_back(
+              BrinkmanType1GalerkinResidualStabP2);
             this->Manipulate = nullptr;
             break;
 
@@ -355,7 +373,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
             this->N_Rhs = 3;                                                    // f1, f2, g
             this->RhsSpace = { 0, 0, 1 };                                       // corresp. to velocity testspace = 0 / pressure = 1
-            this->AssembleParam = BrinkmanGradDivStab;
+            this->local_assemblings_routines.push_back(BrinkmanGradDivStab);
             this->Manipulate = nullptr;
             break;
         
@@ -385,7 +403,8 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
             this->ColumnSpace = { 0, 1, 1, 0};
             this->N_Rhs = 2;
             this->RhsSpace = { 0, 1 };
-            this->AssembleParam = BilinearAssembleDarcyGalerkin<2>;
+            this->local_assemblings_routines.push_back(
+              BilinearAssembleDarcyGalerkin<2>);
             this->Manipulate = nullptr;
             break;
             ////////////////////////////////////////////////////////////////////////////
@@ -421,12 +440,12 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
     {
         ErrThrow("You need to specify a valid function for the coefficients");
     }
-    if(AssembleParam == nullptr)
+    if(this->local_assemblings_routines.empty() 
+     || this->local_assemblings_routines[0] == nullptr)
     {
-        ErrThrow("a local assembling routine was not set!");
+      ErrThrow("A local assembling routine was not set!");
     }
     parameter_functions_values.resize(0);
-
 }
 
 
@@ -439,7 +458,8 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
    ColumnSpace(df.get_N_Matrices(), 0), RhsSpace(df.get_N_Rhs(), 0),
-   Coeffs(df.GetCoeffFct()), AssembleParam(df.get_AssembleParam()),
+   Coeffs(df.GetCoeffFct()), 
+   local_assemblings_routines({df.get_AssembleParam()}),
    Manipulate(df.get_Manipulate()), AllOrigValues(new double** [N_Terms]),
    OrigValues(new double* [N_Terms]), N_Matrices(df.get_N_Matrices()),
    N_Rhs(df.get_N_Rhs()), N_ParamFct(aux.GetN_ParamFct()), 
@@ -487,7 +507,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
     ErrMsg("You need to specify a valid function for the coefficients");
     exit(1);
   }
-  if(this->AssembleParam == nullptr)
+  if(this->local_assemblings_routines[0] == nullptr)
   {
     // this means in the discrete form there was only a pointer to a
     // AssembleFct2D rather than a AssembleFctParam2D.
@@ -513,7 +533,8 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 : type{LocalAssembling2D_type::Custom},
   N_Terms(myN_Terms), Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
   RowSpace(myRowSpace), ColumnSpace(myColumnSpace), RhsSpace(myRhsSpace),
-  Coeffs(myCoeffs), AssembleParam(myAssembleParam), Manipulate(myManipulate),
+  Coeffs(myCoeffs), local_assemblings_routines({myAssembleParam}),
+  Manipulate(myManipulate),
   N_Matrices(myN_Matrices), N_Rhs(myN_Rhs),
   N_ParamFct(myN_ParamFct), ParameterFct(myParameterFct), BeginParameter(myBeginParameter), N_Parameters(myN_Parameters),
   N_FEValues(myN_FEValues), FEFunctions2D(myFEFunctions2D),
@@ -665,8 +686,11 @@ void LocalAssembling2D::GetLocalForms(int N_Points,
         for(int j=0; j<N_Terms; j++)
             OrigValues[j] = AllOrigValues[j][i];
         
-        AssembleParam(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, LocMatrix,
-                      LocRhs);
+        for(auto lar : local_assemblings_routines)
+        {
+          lar(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, LocMatrix,
+              LocRhs);
+        }
     } // end loop over quadrature points 
 }
 
@@ -778,11 +802,11 @@ void LocalAssembling2D::get_local_forms(int N_Points,
     for(int j=0; j<N_Terms; j++)
       OrigValues[j] = AllOrigValues[j][i];
     
-  
-    AssembleParam(Mult, coefficient_values[i], Parameters[i], hK,
-		  OrigValues, N_BaseFuncts,
-		  LocMatrix,
-		  LocRhs);
+    for(auto lar : local_assemblings_routines)
+    {
+      lar(Mult, coefficient_values[i], Parameters[i], hK, OrigValues,
+          N_BaseFuncts, LocMatrix, LocRhs);
+    }
   } // end loop over quadrature points
  
   delete [] Parameters;
@@ -830,8 +854,11 @@ void LocalAssembling2D::GetLocalForms(int N_Points,
             OrigValues[j] = AllOrigValues[j][i];
         }
         
-        AssembleParam(Mult, Coefficients[i], nullptr, hK, OrigValues, N_BaseFuncts,
-                      LocMatrix, LocRhs);
+        for(auto lar : local_assemblings_routines)
+        {
+          lar(Mult, Coefficients[i], nullptr, hK, OrigValues, N_BaseFuncts,
+              LocMatrix, LocRhs);
+        }
     } // endfor i
     delete [] aux;
 }
@@ -1056,22 +1083,26 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
           this->N_Matrices = 3;
           this->RowSpace = { 0, 1, 1 };
           this->ColumnSpace = { 0, 0, 0 };
-          this->AssembleParam = NSType1Galerkin;
+          this->local_assemblings_routines.push_back(NSType1Galerkin);
           break; // nstype 1
         case 2:
           this->N_Matrices = 5;
           this->RowSpace = { 0, 1, 1, 0, 0 };
           this->ColumnSpace = { 0, 0, 0, 1, 1 };
-          this->AssembleParam = NSType2Galerkin;
+          this->local_assemblings_routines.push_back(NSType2Galerkin);
           break; // nstype 2
         case 3:
           this->N_Matrices = 6;
           this->RowSpace = { 0, 0, 0, 0, 1, 1 };
           this->ColumnSpace = { 0, 0, 0, 0, 0, 0 };
           if(TDatabase::ParamDB->LAPLACETYPE==0)
-            this->AssembleParam = NSType3Galerkin; 
+          {
+            this->local_assemblings_routines.push_back(NSType3Galerkin);
+          }
           else
-            this->AssembleParam = NSType3GalerkinDD; 
+          {
+            this->local_assemblings_routines.push_back(NSType3GalerkinDD);
+          }
           break; // nstype 3
         case 4:
           this->N_Matrices = 8;
@@ -1080,9 +1111,13 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 1 };
           if(TDatabase::ParamDB->LAPLACETYPE==0)
-            this->AssembleParam = NSType4Galerkin; 
+          {
+            this->local_assemblings_routines.push_back(NSType4Galerkin);
+          }
           else
-            this->AssembleParam = NSType4GalerkinDD; 
+          {
+            this->local_assemblings_routines.push_back(NSType4GalerkinDD);
+          }
           break; // nstype 4
       }
       break; // NSE2D_ALL
@@ -1095,7 +1130,7 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
           this->N_Matrices = 1;
           this->RowSpace = { 0 };
           this->ColumnSpace = { 0 };
-          this->AssembleParam = NSType1_2NLGalerkin; 
+          this->local_assemblings_routines.push_back(NSType1_2NLGalerkin);
          break; // nstype 1, 2
         case 3:
         case 4:
@@ -1103,9 +1138,11 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
           this->RowSpace = { 0, 0 };
           this->ColumnSpace = { 0, 0 };          
           if(TDatabase::ParamDB->LAPLACETYPE==0)
-            this->AssembleParam = NSType3_4NLGalerkin; 
+          {
+            this->local_assemblings_routines.push_back(NSType3_4NLGalerkin);
+          }
           else
-            this->AssembleParam = NSType3_4NLGalerkinDD;   
+            this->local_assemblings_routines.push_back(NSType3_4NLGalerkinDD);
          break; // nstype 3, 4
       }
       break; // NSE2D_NL
@@ -1148,9 +1185,13 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
           this->RhsSpace = { 0, 0 };
           
           if(nlForm == 0)
-            this->AssembleParam = NSType1SDFEM; 
+          {
+            this->local_assemblings_routines.push_back(NSType1SDFEM);
+          }
           else if(nlForm == 1)
-            this->AssembleParam = NSType1SDFEMSkew; 
+          {
+            this->local_assemblings_routines.push_back(NSType1SDFEMSkew);
+          }
           else
             ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                        " is not supported for SUPG");
@@ -1179,9 +1220,13 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
           this->RhsSpace = { 0, 0 };
           
           if(nlForm==0)
-            this->AssembleParam = NSType2SDFEM; 
+          {
+            this->local_assemblings_routines.push_back(NSType2SDFEM);
+          }
           else if(nlForm == 1)
-            this->AssembleParam = NSType2SDFEMSkew;
+          {
+            this->local_assemblings_routines.push_back(NSType2SDFEMSkew);
+          }
           else
             ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                        " is not supported for SUPG");
@@ -1219,18 +1264,24 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
               if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point iteration
               {
                 if(nlForm==0)
-                  this->AssembleParam = NSType4SDFEM; 
+                {
+                  this->local_assemblings_routines.push_back(NSType4SDFEM);
+                }
                 else if(nlForm == 1)
-                  this->AssembleParam = NSType4SDFEMSkew;
+                {
+                  this->local_assemblings_routines.push_back(NSType4SDFEMSkew);
+                }
                 else if(nlForm == 2)
-                  this->AssembleParam = NSType4SDFEMRot;
+                {
+                  this->local_assemblings_routines.push_back(NSType4SDFEMRot);
+                }
                 else
                   ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                              " is not supported for SUPG");
               }
               else // newton iteration
               {
-                this->AssembleParam = NSType4SDFEMNewton;
+                this->local_assemblings_routines.push_back(NSType4SDFEMNewton);
               }
               this->Manipulate = nullptr;
               
@@ -1257,18 +1308,18 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
               if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point iteration
               {
                 if(nlForm==0)
-                  this->AssembleParam = NSType4SDFEMDD; 
+                  this->local_assemblings_routines.push_back(NSType4SDFEMDD);
                 else if(nlForm == 1)
-                  this->AssembleParam = NSType4SDFEMSkewDD;
+                  this->local_assemblings_routines.push_back(NSType4SDFEMSkewDD);
                 else if(nlForm == 2)
-                  this->AssembleParam = NSType4SDFEMRotDD;
+                  this->local_assemblings_routines.push_back(NSType4SDFEMRotDD);
                 else
                   ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                            " is not supported for SUPG");
               }
               else// newton
               {
-                this->AssembleParam = NSType4SDFEMDDNewton;
+                this->local_assemblings_routines.push_back(NSType4SDFEMDDNewton);
               }
               
               this->Manipulate = nullptr;
@@ -1299,7 +1350,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
             this->RhsSpace = { 0, 0, 1 };
             
             if(nlForm==0)
-              this->AssembleParam = NSType4SDFEMEquOrd;
+              this->local_assemblings_routines.push_back(NSType4SDFEMEquOrd);
             else
               ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                          " is not supported for SUPG");
@@ -1338,9 +1389,9 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
           this->RhsSpace = { };
           
           if(nlForm == 0)
-            this->AssembleParam = NSType1NLSDFEM; 
+            this->local_assemblings_routines.push_back(NSType1NLSDFEM);
           else if(nlForm == 1)
-            this->AssembleParam = NSType1NLSDFEMSkew; 
+            this->local_assemblings_routines.push_back(NSType1NLSDFEMSkew);
           else
             ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                        " is not supported for SUPG");
@@ -1369,9 +1420,9 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
           this->RhsSpace = { 0, 0 };
           
           if(nlForm==0)
-            this->AssembleParam = NSType2NLSDFEM; 
+            this->local_assemblings_routines.push_back(NSType2NLSDFEM);
           else if(nlForm == 1)
-            this->AssembleParam = NSType2NLSDFEMSkew;
+            this->local_assemblings_routines.push_back(NSType2NLSDFEMSkew);
           else
             ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                        " is not supported for SUPG");
@@ -1409,11 +1460,11 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
               if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point iteration
               {
                 if(nlForm==0)
-                  this->AssembleParam = NSType4NLSDFEM; 
+                  this->local_assemblings_routines.push_back(NSType4NLSDFEM);
                 else if(nlForm == 1)
-                  this->AssembleParam = NSType4NLSDFEMSkew;
+                  this->local_assemblings_routines.push_back(NSType4NLSDFEMSkew);
                 else if(nlForm == 2)
-                  this->AssembleParam = NSType4NLSDFEMRot;
+                  this->local_assemblings_routines.push_back(NSType4NLSDFEMRot);
                 else
                   ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                              " is not supported for SUPG");
@@ -1423,7 +1474,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
                 this->N_Matrices = 6;
                 this->RowSpace    = { 0, 0, 0, 0, 0, 0};
                 this->ColumnSpace = { 0, 0, 0, 0, 1, 1 };
-                this->AssembleParam = NSType4NLSDFEMNewton;
+                this->local_assemblings_routines.push_back(NSType4NLSDFEMNewton);
               }
               this->Manipulate = nullptr;
               
@@ -1450,11 +1501,11 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
               if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point iteration
               {
                 if(nlForm==0)
-                  this->AssembleParam = NSType4NLSDFEMDD; 
+                  this->local_assemblings_routines.push_back(NSType4NLSDFEMDD); 
                 else if(nlForm == 1)
-                  this->AssembleParam = NSType4NLSDFEMSkewDD;
+                  this->local_assemblings_routines.push_back(NSType4NLSDFEMSkewDD);
                 else if(nlForm == 2)
-                  this->AssembleParam = NSType4NLSDFEMRotDD;
+                  this->local_assemblings_routines.push_back(NSType4NLSDFEMRotDD);
                 else
                   ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                            " is not supported for SUPG");
@@ -1464,7 +1515,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
                 this->N_Matrices = 6;
                 this->RowSpace    = { 0, 0, 0, 0, 0, 0};
                 this->ColumnSpace = { 0, 0, 0, 0, 1, 1 };
-                this->AssembleParam = NSType4NLSDFEMDDNewton;
+                this->local_assemblings_routines.push_back(NSType4NLSDFEMDDNewton);
               }
               
               this->Manipulate = nullptr;
@@ -1495,7 +1546,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
             this->RhsSpace = { 0, 0, 1 };
             
             if(nlForm==0)
-              this->AssembleParam = NSType4SDFEMEquOrd;
+              this->local_assemblings_routines.push_back(NSType4SDFEMEquOrd);
             else
               ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
                          " is not supported for SUPG");
@@ -1588,31 +1639,31 @@ void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type t
           this->N_Matrices    = 4;
           this->RowSpace      = { 0, 0, 1, 1 };
           this->ColumnSpace   = { 0, 0, 0, 0 };
-          this->AssembleParam = TimeNSType1Galerkin;
+          this->local_assemblings_routines.push_back(TimeNSType1Galerkin);
           break; // nstype 1
         case 2:
           this->N_Matrices    = 6;
           this->RowSpace      = { 0, 0, 1, 1, 0, 0 };
           this->ColumnSpace   = { 0, 0, 0, 0, 1, 1 };
-          this->AssembleParam = TimeNSType2Galerkin;
+          this->local_assemblings_routines.push_back(TimeNSType2Galerkin);
           break; // nstype 2
         case 3:
           this->N_Matrices    = 8;
           this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1 };
           this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0 };
           if(TDatabase::ParamDB->LAPLACETYPE == 0)
-            this->AssembleParam = TimeNSType3Galerkin;
+            this->local_assemblings_routines.push_back(TimeNSType3Galerkin);
           else
-            this->AssembleParam = TimeNSType3GalerkinDD;
+            this->local_assemblings_routines.push_back(TimeNSType3GalerkinDD);
           break; // nstype 3
         case 4:
           this->N_Matrices    = 10;
           this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
           this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
           if(TDatabase::ParamDB->LAPLACETYPE == 0)
-            this->AssembleParam = TimeNSType4Galerkin;
+            this->local_assemblings_routines.push_back(TimeNSType4Galerkin);
           else
-            this->AssembleParam = TimeNSType4GalerkinDD;
+            this->local_assemblings_routines.push_back(TimeNSType4GalerkinDD);
           break; // nstype 4
       }// switch nstype
       break;// case TNSE2D 
@@ -1625,7 +1676,7 @@ void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type t
           this->N_Matrices    = 1;
           this->RowSpace      = { 0 };
           this->ColumnSpace   = { 0 };
-          this->AssembleParam = TimeNSType1_2NLGalerkin;
+          this->local_assemblings_routines.push_back(TimeNSType1_2NLGalerkin);
           break; // nstype 1, 2
         case 3:
         case 4:
@@ -1633,9 +1684,9 @@ void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type t
           this->RowSpace      = { 0, 0 };
           this->ColumnSpace   = { 0, 0 };
           if(TDatabase::ParamDB->LAPLACETYPE==0)
-            this->AssembleParam = TimeNSType3_4NLGalerkin;
+            this->local_assemblings_routines.push_back(TimeNSType3_4NLGalerkin);
           else
-            this->AssembleParam = TimeNSType3_4NLGalerkinDD;
+            this->local_assemblings_routines.push_back(TimeNSType3_4NLGalerkinDD);
           break; // nstype 3, 4
       }// switch nstype
       break; // case TNSE2D_NL
@@ -1651,7 +1702,7 @@ void LocalAssembling2D::set_parameters_for_tnseGalerkin(LocalAssembling2D_type t
       this->ColumnSpace = { };
       this->N_Rhs = 3;
       this->RhsSpace = {0, 0, 0};
-      this->AssembleParam =TimeNSRHS; 
+      this->local_assemblings_routines.push_back(TimeNSRHS);
       this->Manipulate = nullptr;
       break; // case TNSE2D_Rhs
    //==============================

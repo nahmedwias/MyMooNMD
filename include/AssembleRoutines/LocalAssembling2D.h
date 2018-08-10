@@ -103,7 +103,8 @@ class LocalAssembling2D
 
     /** @brief function doing the real assembling using parameters from 
      *         argument list */
-    AssembleFctParam2D *AssembleParam;
+    //AssembleFctParam2D *AssembleParam;
+    std::vector<AssembleFctParam2D*> local_assemblings_routines;
 
     /** function for manipulating the coefficients */
     ManipulateFct2D *Manipulate;
