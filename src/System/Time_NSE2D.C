@@ -138,7 +138,8 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain,
   bool usingMultigrid = this->solver.is_using_multigrid();
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  // create finite element space, functions, matrices, rhs and solution
+
+// create finite element space, functions, matrices, rhs and solution
   // at the finest grid
   this->systems.emplace_back(example, *coll, velo_pres_order, type);
 
@@ -215,6 +216,8 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain,
   
   // copy solution
   this->systems.front().solution_m1 = this->systems.front().solution;
+
+
 }
 
 /**************************************************************************** */
@@ -392,12 +395,15 @@ void Time_NSE2D::get_velocity_pressure_orders(std::pair< int, int > &velo_pres_o
 /**************************************************************************** */
 void Time_NSE2D::assemble_initial_time()
 {
+
+  
   if(systems.size() > 1) //using  multigrid
   {
     this->restrict_function();
   }
   for(auto &s : this->systems)
   {
+
     call_assembling_routine(s, TNSE2D);
     //update matrices for local projection stabilization
     if(db["space_discretization_type"].is("local_projection"))
@@ -508,6 +514,10 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
   std::vector<const TFESpace2D*> spaces_mat;
   std::vector<const TFESpace2D*> spaces_rhs;
   std::vector<TFEFunction2D*> fefunctios;
+
+
+
+
   // call to routine to set arrays
   set_arrays(s, spaces_mat, spaces_rhs, fefunctios);
   
@@ -515,6 +525,8 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
   std::vector<TSquareMatrix2D*> sqMatrices;
   std::vector<TMatrix2D*> rectMatrices;
   std::vector<double*> rhs_array;
+
+
   // call the routine to prepare the matrices
   set_matrices_rhs(s, type, sqMatrices, rectMatrices, rhs_array);
   // boundary conditions and boundary values array
@@ -549,7 +561,8 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
     else
       assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
     
-  // assemble all the matrices and ru_coight hand side
+    //TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+    // assemble all the matrices and ru_coight hand side
   Assemble2D(spaces_mat.size(), spaces_mat.data(),
                sqMatrices.size(), sqMatrices.data(),
                rectMatrices.size(), rectMatrices.data(),
@@ -937,6 +950,9 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
                             std::vector< const TFESpace2D* >& spaces_rhs,
                             std::vector< TFEFunction2D* >& functions)
 {
+
+ 
+
   spaces.resize(2);
   spaces_rhs.resize(2);
 
@@ -952,39 +968,52 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
   }
   // standard for all methods.
   functions.resize(3);  
-  functions[0] = s.u.GetComponent(0);
-  functions[1] = s.u.GetComponent(1);
-  functions[2] = &s.p;
+  functions.at(0) = s.u.GetComponent(0);
+  functions.at(1) = s.u.GetComponent(1);
+  functions.at(2) = &s.p;
+
+ 
   if(!db["space_discretization_type"].is("residual_based_vms"))
   {
+
+
     bool is_imex = imex_scheme(0);
+
     if(is_imex && db["extrapolate_velocity"])
     {
-      if(db["space_discretization_type"].is("galerkin") || db["space_discretization_type"].is("local_projection"))
+
+
+      if(db["space_discretization_type"].is("galerkin") || 
+	 db["space_discretization_type"].is("local_projection"))
       {
+
 	if(db["extrapolation_type"].is("constant_extrapolate"))
 	{
 	  s.extrapolate_sol.reset();
 	  s.extrapolate_sol = s.solution_m1;
 	  
-	  functions[0] = s.extrapolate_u.GetComponent(0);
-	  functions[1] = s.extrapolate_u.GetComponent(1);
+	  functions.at(0) = s.extrapolate_u.GetComponent(0);
+	  functions.at(1) = s.extrapolate_u.GetComponent(1);
 	}
+
 	else if(db["extrapolation_type"].is("linear_extrapolate"))
 	{
+
+
 	  s.extrapolate_sol.reset();
 	  s.extrapolate_sol = s.solution_m1;
 	  s.extrapolate_sol.scale(2.);
 	  s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
 	
-	  functions[0] = s.extrapolate_u.GetComponent(0);
-	  functions[1] = s.extrapolate_u.GetComponent(1);
+	  functions.at(0) = s.extrapolate_u.GetComponent(0);
+	  functions.at(1) = s.extrapolate_u.GetComponent(1);
 	}
 	else
 	{
-	  ErrThrow("Only constant or linear extrapolation of velocity are used ", db["extrapolation_type"]);
+	  ErrThrow("Only constant or linear extrapolation of velocity are used ", 
+		   db["extrapolation_type"]);
 	}
-	functions[2] = &s.p;
+	functions.at(2) = &s.p;
       }
       // supg: NOTE: only tested with BDF2 so far
       if(db["space_discretization_type"].is("supg") && !db["time_discretization"].is("bdf_two"))
@@ -1005,8 +1034,8 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
 	s.extrapolate_sol = s.solution_m1;
 	s.extrapolate_sol.scale(2.);
 	s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
-	functions[0] = s.extrapolate_u.GetComponent(0);
-	functions[1] = s.extrapolate_u.GetComponent(1);
+	functions.at(0) = s.extrapolate_u.GetComponent(0);
+	functions.at(1) = s.extrapolate_u.GetComponent(1);
 	// combination of previous time solutions for assembling the right-hand
 	// side, this is used for the pressure part.
 	s.combined_old_sols.reset();
@@ -1016,8 +1045,10 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
 	// subtract with right factor the solution at pre-previous solution
 	s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
 	
-	functions[2] = s.comb_old_u.GetComponent(0);
-	functions[3] = s.comb_old_u.GetComponent(1);
+	functions.at(2) = s.comb_old_u.GetComponent(0);
+	functions.at(3) = s.comb_old_u.GetComponent(1);
+
+ 
       }    
     }
     else 
@@ -1028,11 +1059,12 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
       // for those schemes.
       if(db["space_discretization_type"].is("supg"))
       {
+
 	if(time_stepping_scheme.pre_stage_bdf)
 	{
 	  functions.resize(4);
-	  functions[2] = s.u_m1.GetComponent(0);
-	  functions[3] = s.u_m1.GetComponent(1);
+	  functions.at(2) = s.u_m1.GetComponent(0);
+	  functions.at(3) = s.u_m1.GetComponent(1);
 	}
 	else
 	{
@@ -1044,12 +1076,14 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
 	  s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
 	  
 	  functions.resize(4);
-	  functions[2] = s.comb_old_u.GetComponent(0);
-	  functions[3] = s.comb_old_u.GetComponent(1);
+	  functions.at(2) = s.comb_old_u.GetComponent(0);
+	  functions.at(3) = s.comb_old_u.GetComponent(1);
 	}
       }
     }//
   }
+  
+
   // residual based vms first step is also extrapolated
   if(db["space_discretization_type"].is("residual_based_vms"))
   {
@@ -1058,17 +1092,17 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
     if(time_stepping_scheme.pre_stage_bdf)
     {
       // backward euler method
-      functions[2] = s.u_m1.GetComponent(0);
-      functions[3] = s.u_m1.GetComponent(1);
+      functions.at(2) = s.u_m1.GetComponent(0);
+      functions.at(3) = s.u_m1.GetComponent(1);
       // old pressure combination
-      functions[4] = &s.p;// extrapolate_p;
+      functions.at(4) = &s.p;// extrapolate_p;
       // time derivative
       s.time_deriv_sol.reset();
       s.time_deriv_sol = s.solution;
       s.time_deriv_sol.scale(1./tau);	
       s.time_deriv_sol.add_scaled(s.solution_m1, -1./tau);
-      functions[5] = s.u_td.GetComponent(0);
-      functions[6] = s.u_td.GetComponent(1);
+      functions.at(5) = s.u_td.GetComponent(0);
+      functions.at(6) = s.u_td.GetComponent(1);
     }
     else
     {
@@ -1079,8 +1113,8 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
       s.extrapolate_sol = s.solution_m1;
       s.extrapolate_sol.scale(2.);
       s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
-      functions[0] = s.extrapolate_u.GetComponent(0);
-      functions[1] = s.extrapolate_u.GetComponent(1);
+      functions.at(0) = s.extrapolate_u.GetComponent(0);
+      functions.at(1) = s.extrapolate_u.GetComponent(1);
       
       // old combination of solutions
       s.combined_old_sols.reset();
@@ -1090,10 +1124,10 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
       // subtract with right factor the solution at pre-previous solution
       s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
       
-      functions[2] = s.comb_old_u.GetComponent(0);
-      functions[3] = s.comb_old_u.GetComponent(1);
+      functions.at(2) = s.comb_old_u.GetComponent(0);
+      functions.at(3) = s.comb_old_u.GetComponent(1);
       // old pressure combination
-      functions[4] = &s.p;
+      functions.at(4) = &s.p;
       // time derivative: BDF 2
       s.time_deriv_sol.reset();
       s.time_deriv_sol = s.solution_m1;
@@ -1102,8 +1136,8 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
       s.time_deriv_sol.add_scaled(s.solution_m1, -2./tau);
       s.time_deriv_sol.add_scaled(s.solution_m2, 1./(2.*tau));
       // time derivatives
-      functions[5] = s.u_td.GetComponent(0);
-      functions[6] = s.u_td.GetComponent(1);
+      functions.at(5) = s.u_td.GetComponent(0);
+      functions.at(6) = s.u_td.GetComponent(1);
     }
   }// endif residual_based_vms
 }

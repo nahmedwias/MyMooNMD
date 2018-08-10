@@ -129,7 +129,6 @@ int TGridCell::Refine(int reflevel)
                           TmpValues4[index * MaxLen3]]);
     }
   }
-
   // create new inner edges
   N_1 = RefDesc->GetN_InnerEdges();
   RefDesc->GetInnerEdges(TmpValues1, TmpValues2, MaxLen1);
@@ -149,9 +148,10 @@ int TGridCell::Refine(int reflevel)
   {
     if (RefDesc->GetEdgeRef(i))
     {
+  
       if (Tmp[i].Filled)
       {
-        N_2 = TmpValues3[i]+1;
+	N_2 = TmpValues3[i]+1;
 
         // change for periodic boundary conditions
         if (Joints[i]->GetType() != PeriodicJoint)
@@ -185,7 +185,7 @@ int TGridCell::Refine(int reflevel)
       }
       else
       {
-        if (Joints[i]->GetType() == InterfaceJoint ||
+	if (Joints[i]->GetType() == InterfaceJoint ||
             Joints[i]->GetType() == IsoInterfaceJoint)
           Inside = ((TInterfaceJoint *) Joints[i])->CheckInside(this);
         else
@@ -195,7 +195,8 @@ int TGridCell::Refine(int reflevel)
 
         auxi = i * MaxLen1;
         for (j=1;j<N_2;j++)
-          if (LineMidXY(i, j, TmpX, TmpY))
+	{
+	  if (LineMidXY(i, j, TmpX, TmpY))
           {
             cerr << "Error in Refinement: can't generate mid point!!!"
                  << endl;
@@ -207,6 +208,7 @@ int TGridCell::Refine(int reflevel)
             else
               NewVertices[TmpValues1[auxi + N_2 - j]] = new
                           TVertex(TmpX, TmpY);
+	}
 
         auxi = i * MaxLen2;
         for (j=0;j<N_2;j++)
@@ -229,7 +231,7 @@ int TGridCell::Refine(int reflevel)
   N_1 = RefDesc->GetN_Children();
   RefDesc->GetChildVertex(TmpValues1, MaxLen1);
   RefDesc->GetChildEdge(TmpValues2, MaxLen2);
-
+ 
   for (i=0;i<N_1;i++)
   {
     N_2 = TDatabase::ShapeDB[RefDesc->GetChildType(i)]->GetN_Vertices();

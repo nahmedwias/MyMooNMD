@@ -959,11 +959,11 @@ int TGridCell::LineMidXY(int J_i, int P_j, double &X, double &Y)
       break;
 
       case BoundaryEdge:
-      T = T_0 * ((TBoundEdge *) Joints[J_i])->GetEndParameter() 
+	T = T_0 * ((TBoundEdge *) Joints[J_i])->GetEndParameter() 
           + (1. - T_0) * ((TBoundEdge *) Joints[J_i])->GetStartParameter();
-
+	
       ((TBoundEdge *) Joints[J_i])->GetXYofT(T, X, Y);
-    break;
+   break;
      default:
           cerr << "Only edges" << endl;
      exit(-1);

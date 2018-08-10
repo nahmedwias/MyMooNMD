@@ -133,6 +133,11 @@ class TCollection
    // std::vector<TBoundEdge*> get_edge_list_on_component(int i);
    // ------------------------------------------------
 
+#ifdef __2D__
+    /** @brief check id the boundary joints are stored correctly */
+    void check_boundary_components() const;
+#endif
+
  private:
     /** @brief provide additional arrays */
     void GenerateSortedArrays();
@@ -143,3 +148,5 @@ class TCollection
 };
 
 #endif
+
+
