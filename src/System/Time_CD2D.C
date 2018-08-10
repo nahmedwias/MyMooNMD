@@ -28,6 +28,9 @@ ParameterDatabase get_default_TCD2D_parameters()
   // a default afc database
   ParameterDatabase afc_db = AlgebraicFluxCorrection::default_afc_database();
   db.merge(afc_db, true);
+  
+  ParameterDatabase rom_db = ParameterDatabase::default_rom_database();
+  db.merge(rom_db, true);
 
   return db;
 }

@@ -62,6 +62,10 @@ class ParameterDatabase
     /// construct a database filled with parameters for 
     /// mesh generation using TetGen
     static ParameterDatabase default_tetgen_database();
+    
+    /// construct a database filled with parameters 
+    /// used for POD ROM
+    static ParameterDatabase default_rom_database();
 
 
     /// @brief delete all parameters from this database

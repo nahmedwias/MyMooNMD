@@ -1450,3 +1450,19 @@ ParameterDatabase ParameterDatabase::default_tetgen_database()
   return db;
 }
 
+ParameterDatabase ParameterDatabase::default_rom_database()
+{
+  ParameterDatabase db("default ParMooN database for POD-ROM "
+                        "parameters database");
+  db.add("snaps_directory", "snaps", " directory is needed to read or right snap shots");
+  db.add("snaps_basename", "tcdr2d", "file named for the snap shots");
+  db.add("pod_directory",  "pod", "directory for the pod basis ");
+  db.add("pod_basename",  "tcdr2d", "base name" );
+  db.add("pod_rank", (size_t) 0, "rank for pod", (size_t) 0, (size_t) 1000);
+  db.add("pod_fluct", false, "", { true, false });
+  db.add("pod_inner_product", "l2" , " ", {"eucl", "l2"});
+  
+  db.add("steps_per_snap", (size_t) 1, " ", (size_t) 0, (size_t) 1);
+  return db;
+}
+
