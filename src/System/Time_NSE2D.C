@@ -1029,14 +1029,15 @@ void Time_NSE2D::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
     if(BT_Mass)
     {
       sqMat.resize(8);
-      sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-      sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
-      sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());
-      sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());
+      sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());//m11
+      sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());//m22
+      sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());//m12
+      sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());//m21
       reMat.resize(2);
       reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
       reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
     }
+
     // update the matrices and right hand side
     Assemble2DSlipBC(spaces_mat.size(), spaces_mat.data(),
                    sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),

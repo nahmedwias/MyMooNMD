@@ -2314,7 +2314,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
-  double *Param[MaxN_QuadPoints_2D];
   double *righthand = nullptr;
   double **Matrices = nullptr;
   double *aux = nullptr;
@@ -2611,7 +2610,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                   default:
                     // linear friction
                     friction_parameter = friction_constant * pow(hE,friction_power);
-                    //OutPut("fric " <<  friction_parameter << endl);
+                    //Output::print(" friction parameter ", friction_parameter);
                     break;
                   case 2:
                     // nonlinear type 1
@@ -2635,8 +2634,8 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                     }
                     friction_parameter = sqrt(RE_NR) * tangential_velo/denominator;
                     friction_parameter = fabs(friction_parameter);
-                    OutPut("x " << x << " y " << y);
-                    OutPut(" friction paramater " << friction_parameter << endl);
+                    Output::print("x ", x, " y ", y);
+                    Output::print(" friction parameter ", friction_parameter);
                     break;
                 }
 
@@ -2656,6 +2655,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                     continue;
 
                   // !!!!!! assumed that A_11 - A_22 are in sqmatrices[0] - [3]
+                  // COMMENT UPDATE (2018-08-10) A_11 - A_22 are in sqmatrices[0] - [4]
                   // first velocity component -> matrices A_11 and A_12 (and M_11)
                   if (j==0)
                   {
@@ -2663,7 +2663,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                     RowPtr1 = sqmatrices[0]->GetRowPtr();
                     ColInd1 = sqmatrices[0]->GetKCol();
 
-                    if (n_sqmatrices>2)
+                    if (n_sqmatrices>2)  //nstype 3 and 4
                     {
                       Entries2 = sqmatrices[2]->GetEntries();
                       RowPtr2 = sqmatrices[2]->GetRowPtr();
@@ -2671,13 +2671,14 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                     }
 
                     // time dependent problem and NSTYPE 4
+                    // entries 3 = M11, entries4 = M12
                     if (n_sqmatrices==8)
                     {
                       Entries3 = sqmatrices[4]->GetEntries();
                       RowPtr3 = sqmatrices[4]->GetRowPtr();
                       ColInd3 = sqmatrices[4]->GetKCol();
                       Entries4 = sqmatrices[6]->GetEntries();
-                      RowPtr4 = sqmatrices[6]->GetRowPtr();                      
+                      RowPtr4 = sqmatrices[6]->GetRowPtr();
                     }
 
                     if (n_matrices==2)
@@ -2690,24 +2691,25 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                   if (j==1)
                   {
                     if (n_sqmatrices>2)
-                    {
+                    { // entries1 = A21
                       Entries1 = sqmatrices[3]->GetEntries();
                       RowPtr1 = sqmatrices[3]->GetRowPtr();
                       ColInd1 = sqmatrices[3]->GetKCol();
                     }
-
+                    // entries 2 = A22
                     Entries2 = sqmatrices[1]->GetEntries();
                     RowPtr2 = sqmatrices[1]->GetRowPtr();
                     ColInd2 = sqmatrices[1]->GetKCol();
 
                     // time dependent problem and NSTYPE 4
+                    // entries 3 = M22, entries4 = M21
                     if (n_sqmatrices==8)
                     {
                       Entries3 = sqmatrices[5]->GetEntries();
                       RowPtr3 = sqmatrices[5]->GetRowPtr();
                       ColInd3 = sqmatrices[5]->GetKCol();
                       Entries4 = sqmatrices[7]->GetEntries();
-                      RowPtr4 = sqmatrices[7]->GetRowPtr();                      
+                      RowPtr4 = sqmatrices[7]->GetRowPtr();
                     }
                     if (n_matrices==2)
                     {
@@ -3027,11 +3029,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     delete [] LocRhs;
     delete [] RhsBeginIndex;
     delete [] RhsGlobalNumbers;
-  }
-
-  if(Param[0])
-  {
-    delete [] Param[0];
   }
 
   if(N_AllMatrices)
