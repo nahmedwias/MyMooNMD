@@ -222,7 +222,13 @@ void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coeffic
  std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
 
 
-type = LocalAssembling2D_type::ConvDiff;
+  type = LocalAssembling2D_type::ConvDiff;
+  int disctype = 1; // Galerkin
+  if(db["space_discretization_type"].is("supg") 
+    || db["space_discretization_type"].is("sdfem"))
+  {
+    disctype = 2;
+  }
   bool mdml = this->solver.is_using_multigrid()
              && this->solver.get_multigrid()->is_using_mdml();
   // in case of mdml, we need to change the local assembling, (not yet 
@@ -246,8 +252,9 @@ type = LocalAssembling2D_type::ConvDiff;
 	  	pointer_to_fe_functions[1] = coefficient_function1;
 	  }
 
-	  std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, pointer_to_fe_functions,
-	  		this->example.get_coeffs()));
+	  std::shared_ptr <LocalAssembling2D> la(
+      new LocalAssembling2D(type, pointer_to_fe_functions, 
+                            this->example.get_coeffs(), disctype));
 
 	  if  ((coefficient_function1) && (coefficient_function2))
 	  {
@@ -440,10 +447,10 @@ void CD2D::output(int i)
                           SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
                           &space, errors.data());
     
-    Output::print<1>("L2     : ", errors[0]);
-    Output::print<1>("H1-semi: ", errors[1]);
-    Output::print<1>("SD     : ", errors[2]);
-    Output::print<1>("L_inf  : ", errors[3]);
+    Output::print<1>("L2     : ", std::setprecision(12), errors[0]);
+    Output::print<1>("H1-semi: ", std::setprecision(12), errors[1]);
+    Output::print<1>("SD     : ", std::setprecision(12), errors[2]);
+    Output::print<1>("L_inf  : ", std::setprecision(12), errors[3]);
     // copy local variable to member variable
     std::copy(errors.begin(), errors.end()-1, this->errors.begin());
   } 
