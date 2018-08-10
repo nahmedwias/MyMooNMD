@@ -341,6 +341,7 @@ class TBaseCell
     int GetCellIndex() const
        {return CellIndex;}
 
+
     /**
      * @brief Set a global cell number to this cell.
      *

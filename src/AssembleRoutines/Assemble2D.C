@@ -8171,6 +8171,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
                 BoundValueFunct2D** BoundaryValues, LocalAssembling2D& la,
                 int AssemblePhaseID)
 {
+ 
     FE2D LocalUsedElements[N_FEs2D];
     int **GlobalNumbers, **BeginIndex;
     int **TestGlobalNumbers, **TestBeginIndex;
@@ -8641,7 +8642,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
         }
       }                                           // endfor m
     }                                             // endfor j  (n_matrices)
-
+  
     // ####################################################################
     // add local right-hand sides to global right-hand side
     // ####################################################################
@@ -8684,7 +8685,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
             // parameter
             t0 -= comp;
             // get boundary condition
-            BoundaryConditions[0](comp, t0, Cond0);
+	    BoundaryConditions[0](comp, t0, Cond0);
             // Dirichlet
             if (Cond0== DIRICHLET)
             {
@@ -8765,6 +8766,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
           }
           // get id of the boundary component
           int comp=BoundComp->GetID();
+	  //Output::print(" Assemble2D.C , line ", __LINE__, " ID = ", comp); 
           // get type of the boundary condition at the beginning
           // and at the end of the current edge
           if (t0 < t1)

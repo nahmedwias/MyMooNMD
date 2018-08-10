@@ -11,91 +11,74 @@
 using namespace std;
 
 
-void get_corrds_cell(TDomain domain, std::vector<double> &xy_coords,  std::vector<TBaseCell *> &cells)
+void get_output_points_inside_cells(TCollection* coll, 
+				    std::vector<double> &xy_coords,  std::vector<TBaseCell *> &cells)
 {
-  // define the list of points where we want to compute velocity
+  
+  xy_coords.resize(0);
+  cells.resize(0);
+
   std::vector<double> xLines;
-  xLines.resize(8);
-  // windtunnel data
-  xLines[0] = -10.;
-  xLines[1] = 0.3;
-  xLines[2] = 5.0;
-  xLines[3] = 10.;
-  xLines[4] = 16.5;
-  xLines[5] = 24.2;
-  xLines[6] = 29.2;
-  // to check open boundary profile
-  xLines[7] = 215.;
-  double ySpacing = 0.5;
-  double yMax = 60.;
-  unsigned int nyPoints = yMax/ySpacing;
-  double x,y;
+  xLines.resize(0);
+
+  // x-coordinates where we look at the solution
+  xLines.push_back(-49.99);
+  xLines.push_back(-10.);
+  xLines.push_back(0.3);
+  xLines.push_back(5.);
+  xLines.push_back(10.);
+  xLines.push_back(16.5);
+  xLines.push_back(24.2);
+  xLines.push_back(29.2);
+  xLines.push_back(34.2);
+  xLines.push_back(39.2);
+  xLines.push_back(250.);
+
+  // define the y-values where velocity is written
+  std::vector< double > yValues;
+  yValues.resize(0);
+  for (unsigned int j=0; j<31; j++) {
+    yValues.push_back(j*0.5);
+  }
+  for (unsigned int j=1; j<=15; j++){
+    yValues.push_back(15+j);
+  }
+  for (unsigned int j=1; j<=35; j++) {
+    yValues.push_back(30+2*j);
+  }
+
+  //double ySpacing = 2.; // space between two sample points
+  //double yMax = 100.;
+  unsigned int nyPoints = yValues.size(); //yMax/ySpacing;
+  
   for (unsigned int k=0; k < xLines.size(); k++)
   {
-    x = xLines[k];
-    for (unsigned int j=0; j <= nyPoints; j++)
+    double x = xLines.at(k);
+    for (unsigned int j=0; j < nyPoints; j++)
     {
-      y = j*ySpacing;
-
-      TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
-      int n_cells = coll->GetN_Cells();
+      double y = yValues.at(j); //j*ySpacing;
+      
+       int n_cells = coll->GetN_Cells();
       int cell_found = -1;
+      
       for(int i=0; i<n_cells; i++)
       {
-        TBaseCell *c = coll->GetCell(i);
-        
-        if(c->PointInCell(x,y))
-        {
-          cells.push_back(c);
-          cell_found = 1;
-          xy_coords.push_back(x);
-          xy_coords.push_back(y);
-        }
+	TBaseCell *c = coll->GetCell(i);
+	
+	if(c->PointInCell(x,y))
+	{
+	  cells.push_back(c);
+	  cell_found = 1;
+	  xy_coords.push_back(x);
+	  xy_coords.push_back(y);
+	}
       }
-      
+	    
       if (cell_found==-1) 
-        Output::print(" *** point: ",x," ",y, " no cell found ***");
-    
-    }
-  }
-
-  /*std::ifstream f("all_data.txt");
-  std::string line;
-  double x, y, u, v, rmsu, rmsv;
-
-  while ((f>> x>> y >> u >>  v >> rmsu >> rmsv) )
-  {
-    
-    TCollection *coll = Domain.GetCollection(It_Finest, 0, -4711);
-    int n_cells = coll->GetN_Cells();
-    int cell_found = -1;
-    for(int i=0; i<n_cells; i++)
-    {
-      TBaseCell *c = coll->GetCell(i);
-      
-      if(c->PointInCell(x,y))
-      {
-        cells.push_back(c);
-        cell_found = 1;
-        xy_coords.push_back(x);
-        xy_coords.push_back(y);
-
-        //Output::print(" point: ",x," ",y);
-      }
+	Output::print(" *** point: ",x," ",y, " no cell found ***");
       
     }
-    if (cell_found==-1) {
-        Output::print(" *** point: ",x," ",y, " no cell found ***");
-      }
   }
-  f.close();
-  if (cells.size() == 0)
-    {
-    Output::print(" *** WARNING: no cell found. Check the input file... ***");
-    Output::print(" *** Note: the file all_data.txt shall be in the     ***");
-    Output::print(" *** directory where the program is started.         ***");
-  }
-  */
 }
 
 int main(int argc, char* argv[])
@@ -153,9 +136,65 @@ int main(int argc, char* argv[])
   std::vector<TBaseCell *> cells;
   if(parmoon_db["example"].is(7))
   {
-    get_corrds_cell(Domain, xy_coords, cells);
-    cout <<"# of cells containing output points"<< cells.size()<<endl;
+    get_output_points_inside_cells(tnse2d.get_velocity_space().GetCollection(), xy_coords, cells);
+    // define the list of points where we want to compute velocity
+    /*
+      xy_coords.resize(0);
+    cells.resize(0);
+
+
+    std::vector<double> xLines;
+    xLines.resize(0);
+
+    // x-coordinates where we look at the solution
+    xLines.push_back(-10.);
+    xLines.push_back(0.3);
+    xLines.push_back(5.);
+    xLines.push_back(10.);
+    xLines.push_back(16.5);
+    xLines.push_back(24.2);
+    xLines.push_back(29.2);
+    xLines.push_back(215.);
+
+    double ySpacing = 1.; // space between two sample points
+    double yMax = 60.;
+    unsigned int nyPoints = yMax/ySpacing;
+
+    for (unsigned int k=0; k < xLines.size(); k++)
+    {
+      double x = xLines.at(k);
+      for (unsigned int j=0; j <= nyPoints; j++)
+      {
+	double y = j*ySpacing;
+	    
+	TCollection *coll = tnse2d.get_velocity_space().GetCollection();
+
+	int n_cells = coll->GetN_Cells();
+	int cell_found = -1;
+	
+	for(int i=0; i<n_cells; i++)
+	{
+	  TBaseCell *c = coll->GetCell(i);
+		
+	  if(c->PointInCell(x,y))
+	  {
+	    cells.push_back(c);
+	    cell_found = 1;
+	    xy_coords.push_back(x);
+	    xy_coords.push_back(y);
+	  }
+	}
+	    
+	if (cell_found==-1) 
+	  Output::print(" *** point: ",x," ",y, " no cell found ***");
+	    
+      }
+    }
+    */
+    cout <<"*** Number of cells containing velocity-output points "<< cells.size()<< " *** " << endl;
   }
+
+
   // assemble everything at the start time
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary

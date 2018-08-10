@@ -52,10 +52,14 @@ void ExactP(double x, double y, double *values)
 void BoundCondition(int i, double t, BoundCond &cond)
 {
   
-  if(i == 17)
+  if(i == 17) {
     cond = NEUMANN;
-  else
-  {
+
+  } else if (i==18) {
+    cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
+    TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+
+  } else {
     cond = DIRICHLET;
     for (int k=0;k<TDatabase::ParamDB->n_slip_boundary;k++)
     {
@@ -96,9 +100,11 @@ void U1BoundValue(int BdComp, double Param, double &value)
   // top open boundary
   if(BdComp == 18)
   {
-    //value = U_REF/log(Z_R/Z_0)*log(HEIGHT/Z_0);
-    // interpolate experimental data (50m downstream)
-    value = A1*log(B1*HEIGHT) + C1;
+    // slip
+    value = 0.;
+
+    // Dirichlet with Windtunned data
+    //value = A1*log(B1*HEIGHT) + C1;
     
   }
   else if(BdComp == 19) // inflow boundary
@@ -111,7 +117,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
       }*/
     
     // interpolate experimental data (50m downstream)
-    std::vector<double> yval(15),uval(15);
+    std::vector<double> yval(19),uval(19);
     yval[0] = 0.; uval[0] = 0.;     
     yval[1] = 1.; uval[1] = 3.52;
     yval[2] = 2.; uval[2] = 3.77;
@@ -127,8 +133,12 @@ void U1BoundValue(int BdComp, double Param, double &value)
     yval[12] = 40.; uval[12] = 5.46;
     yval[13] = 50.; uval[13] = 5.71;
     yval[14] = 60.; uval[14] = 5.96;
+    yval[15] = 70.; uval[15] = 6.23;
+    yval[16] = 80.; uval[16] = 6.38;
+    yval[17] = 90.; uval[17] = 6.57;
+    yval[18] = 100.; uval[18] = 6.81;
     int i_range = -1;
-    for (unsigned int i=0; i<14; i++)
+    for (unsigned int i=0; i<yval.size()-1; i++)
     {
       if ( (y>=yval[i]) && (y<yval[i+1]) )
         i_range = i;
@@ -138,8 +148,11 @@ void U1BoundValue(int BdComp, double Param, double &value)
       value = uval[i_range] +
         (uval[i_range+1]-uval[i_range])*
         (y - yval[i_range])/(yval[i_range+1] - yval[i_range]);
-    } else { // point between 60 and 100
-      value = A1*log(B1*y) + C1;
+    } else {
+      value = uval[18]; // case y = 100;
+      //value = A1*log(B1*y) + C1;
+      //Output::print(" Error in House.h: point y= ",
+      //	    y, " for interpolation of inlet data not found");
       
     }
   }  
@@ -173,7 +186,7 @@ void LinCoeffs(int n_points, double *x, double *y,
   {
     double *coeff = coeffs[i];
 
-    coeff[0] = 1.81*1e-5/1.225; //m^2/s = [kg/(m.s)] / [kg/m^3]
+    coeff[0] = 1.48e-5; //1.81*1e-5/1.225; //m^2/s = [kg/(m.s)] / [kg/m^3]
     coeff[1] = 0.;
     coeff[2] = 0.;
   }

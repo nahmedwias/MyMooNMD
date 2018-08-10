@@ -1680,7 +1680,8 @@ void check_parameters_consistency_NSE(ParameterDatabase& db)
   {
     if (!(db["space_discretization_type"].is("sdfem")) &&
         !(db["space_discretization_type"].is("supg"))  && 
-        !(db["space_discretization_type"].is("local_projection")))
+        !(db["space_discretization_type"].is("local_projection")) &&
+        !(db["space_discretization_type"].is("residual_based_vms")))
     {
       if(my_rank==0)
       {

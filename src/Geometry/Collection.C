@@ -992,3 +992,49 @@ int TCollection::find_process_of_point(double x, double y, double z) const
 
 
 #endif
+
+
+#ifdef __2D__
+void TCollection::check_boundary_components() const {
+
+  int N_Cells = this->GetN_Cells();
+  double t0,t1;
+  TBoundComp *BoundComp;
+
+  for(int i=0;i<N_Cells; i++) {
+    TBaseCell *cell = this->GetCell(i);
+    int N_Joints = cell->GetN_Edges();
+  
+    for(int m=0;m<N_Joints;m++)
+      {
+	TJoint *joint = cell->GetJoint(m);
+	
+	if(joint->GetType() == BoundaryEdge ||
+	   joint->GetType() == IsoBoundEdge ||
+	   joint->GetType() == InterfaceJoint)
+	  {
+          if(joint->GetType() == BoundaryEdge||
+	     joint->GetType() == InterfaceJoint)
+	    {
+	      TBoundEdge *boundedge = (TBoundEdge *)joint;
+	      BoundComp = boundedge->GetBoundComp();
+	      boundedge->GetParameters(t0, t1);
+	    }
+          else
+	    {
+	      TIsoBoundEdge *isoboundedge = (TIsoBoundEdge *)joint;
+	      BoundComp = isoboundedge->GetBoundComp();
+	      isoboundedge->GetParameters(t0, t1);
+	    }
+          // get id of the boundary component
+          int comp=BoundComp->GetID();
+	  Output::print(" TCollection::check_boundary_components, cell ", i, " joint ", m, 
+			" ID = ", comp);
+	  }
+      }
+  }
+
+
+}
+
+#endif

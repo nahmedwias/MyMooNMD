@@ -403,7 +403,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
               }
             }
 
-            comp = (int) DCORVG[2*b];
+	    comp = (int) DCORVG[2*b];
             Part = KNPR[b] - 1;
 
             if(comp > GetLastLocalComp(Part) ) 
@@ -574,8 +574,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
             T_b = DCORVG[2*b] - comp;
             //cout << "comp: " << comp << endl;
           }
-          //cout << "Part = " << Part << endl;
-          //cout << " test = " << BdParts[Part]->GetBdComp(comp)->IsFreeBoundary() << endl;
+          //cout << "Part = " << Part << " Comp = "<< comp << endl;
+          //cout << " test = " << BdParts[Part]->GetBdComp(comp)->GetID() << endl;//->IsFreeBoundary() << endl;
           if (T_b < T_a) 
             T_b = 1.;
           if(BdParts[Part]->GetBdComp(comp)->IsFreeBoundary())
