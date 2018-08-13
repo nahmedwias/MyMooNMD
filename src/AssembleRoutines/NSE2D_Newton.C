@@ -42,10 +42,10 @@ void NSType3GalerkinNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -68,18 +68,18 @@ void NSType3GalerkinNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -105,12 +105,12 @@ void NSType3GalerkinNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -155,10 +155,10 @@ void NSType3GalerkinDDNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -177,18 +177,18 @@ void NSType3GalerkinDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -216,12 +216,12 @@ void NSType3GalerkinDDNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -271,10 +271,10 @@ void NSType3UpwindNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -293,18 +293,18 @@ void NSType3UpwindNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += du1x*ansatz00*test00;
@@ -328,12 +328,12 @@ void NSType3UpwindNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -378,10 +378,10 @@ void NSType3UpwindDDNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -400,18 +400,18 @@ void NSType3UpwindDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += du1x*ansatz00*test00;
@@ -437,12 +437,12 @@ void NSType3UpwindDDNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -488,10 +488,10 @@ void NSType3SmagorinskyNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -514,18 +514,18 @@ void NSType3SmagorinskyNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -551,12 +551,12 @@ void NSType3SmagorinskyNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -602,10 +602,10 @@ void NSType3SmagorinskyDDNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -629,18 +629,18 @@ void NSType3SmagorinskyDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = 2*(c0+mu)*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -668,12 +668,12 @@ void NSType3SmagorinskyDDNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -721,10 +721,10 @@ void NSType4GalerkinNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -743,18 +743,18 @@ void NSType4GalerkinNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -778,7 +778,7 @@ void NSType4GalerkinNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -793,12 +793,12 @@ void NSType4GalerkinNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -846,10 +846,10 @@ void NSType4GalerkinDDNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -868,18 +868,18 @@ void NSType4GalerkinDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
        
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -905,7 +905,7 @@ void NSType4GalerkinDDNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -920,12 +920,12 @@ void NSType4GalerkinDDNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -955,7 +955,7 @@ void NSType4SDFEMNewton(double Mult, double *coeff,
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -979,14 +979,14 @@ void NSType4SDFEMNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // u_xx
-  Orig4 = OrigValues[4]; // u_yy
-  Orig5 = OrigValues[5]; // p_x
-  Orig6 = OrigValues[6]; // p_y
-  Orig7 = OrigValues[7]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
+  Orig4 = OrigValues[4]; // p_x
+  Orig5 = OrigValues[5]; // p_y
+  Orig6 = OrigValues[6]; // u_xx
+  Orig8 = OrigValues[8]; // u_yy
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -1010,9 +1010,9 @@ void NSType4SDFEMNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
 
@@ -1023,11 +1023,11 @@ void NSType4SDFEMNewton(double Mult, double *coeff,
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
+      ansatz00 = Orig0[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1055,9 +1055,9 @@ void NSType4SDFEMNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
 
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -1074,12 +1074,12 @@ void NSType4SDFEMNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig7[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1109,7 +1109,7 @@ void NSType4SDFEMDDNewton(double Mult, double *coeff,
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double u1, u2, du1x, du1y, du2x, du2y;
   double c0, c1, c2;
@@ -1133,14 +1133,14 @@ void NSType4SDFEMDDNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // u_xx
-  Orig4 = OrigValues[4]; // u_yy
-  Orig5 = OrigValues[5]; // p_x
-  Orig6 = OrigValues[6]; // p_y
-  Orig7 = OrigValues[7]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
+  Orig4 = OrigValues[4]; // p_x
+  Orig5 = OrigValues[5]; // p_y
+  Orig6 = OrigValues[6]; // u_xx
+  Orig8 = OrigValues[8]; // u_yy
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -1164,9 +1164,9 @@ void NSType4SDFEMDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
 
@@ -1177,11 +1177,11 @@ void NSType4SDFEMDDNewton(double Mult, double *coeff,
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
+      ansatz00 = Orig0[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1211,9 +1211,9 @@ void NSType4SDFEMDDNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
 
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -1230,12 +1230,12 @@ void NSType4SDFEMDDNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig7[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1283,10 +1283,10 @@ void NSType4UpwindNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -1305,18 +1305,18 @@ void NSType4UpwindNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += du1x*ansatz00*test00;
@@ -1338,7 +1338,7 @@ void NSType4UpwindNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -1353,12 +1353,12 @@ void NSType4UpwindNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1406,10 +1406,10 @@ void NSType4UpwindDDNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -1428,18 +1428,18 @@ void NSType4UpwindDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
        
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += du1x*ansatz00*test00;
@@ -1463,7 +1463,7 @@ void NSType4UpwindDDNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -1478,12 +1478,12 @@ void NSType4UpwindDDNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1532,10 +1532,10 @@ void NSType4SmagorinskyNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -1558,18 +1558,18 @@ void NSType4SmagorinskyNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1593,7 +1593,7 @@ void NSType4SmagorinskyNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -1608,12 +1608,12 @@ void NSType4SmagorinskyNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1662,10 +1662,10 @@ void NSType4SmagorinskyDDNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -1689,18 +1689,18 @@ void NSType4SmagorinskyDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = 2*(c0+mu)*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1726,7 +1726,7 @@ void NSType4SmagorinskyDDNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -1741,12 +1741,12 @@ void NSType4SmagorinskyDDNewton(double Mult, double *coeff,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1771,7 +1771,7 @@ void NSType3NLGalerkinNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -1786,9 +1786,9 @@ void NSType3NLGalerkinNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -1807,18 +1807,18 @@ void NSType3NLGalerkinNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1853,7 +1853,7 @@ void NSType3NLGalerkinDDNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -1868,9 +1868,9 @@ void NSType3NLGalerkinDDNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -1889,18 +1889,18 @@ void NSType3NLGalerkinDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1937,7 +1937,7 @@ void NSType3NLUpwindNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -1952,9 +1952,9 @@ void NSType3NLUpwindNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -1973,18 +1973,18 @@ void NSType3NLUpwindNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += du1x*ansatz00*test00;
@@ -2017,7 +2017,7 @@ void NSType3NLUpwindDDNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2032,9 +2032,9 @@ void NSType3NLUpwindDDNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2053,18 +2053,18 @@ void NSType3NLUpwindDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
   
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
  
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += du1x*ansatz00*test00;
@@ -2100,7 +2100,7 @@ void NSType3NLSmagorinskyNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U; // N_P;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2117,9 +2117,9 @@ void NSType3NLSmagorinskyNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
 //  N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2142,18 +2142,18 @@ void NSType3NLSmagorinskyNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2190,7 +2190,7 @@ void NSType3NLSmagorinskyDDNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2206,9 +2206,9 @@ void NSType3NLSmagorinskyDDNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2232,18 +2232,18 @@ void NSType3NLSmagorinskyDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = 2*(c0+mu)*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2280,7 +2280,7 @@ void NSType4NLGalerkinNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
    double u1, u2, du1x, du1y, du2x, du2y;
@@ -2295,9 +2295,9 @@ void NSType4NLGalerkinNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2316,18 +2316,18 @@ void NSType4NLGalerkinNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2362,7 +2362,7 @@ void NSType4NLGalerkinDDNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2377,9 +2377,9 @@ void NSType4NLGalerkinDDNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2398,18 +2398,18 @@ void NSType4NLGalerkinDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2450,7 +2450,7 @@ void NSType4NLSDFEMNewton(double Mult, double *coeff,
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2472,14 +2472,14 @@ void NSType4NLSDFEMNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // u_xx
-  Orig4 = OrigValues[4]; // u_yy
-  Orig5 = OrigValues[5]; // p_x
-  Orig6 = OrigValues[6]; // p_y
-  Orig7 = OrigValues[7]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
+  Orig4 = OrigValues[4]; // p_x
+  Orig5 = OrigValues[5]; // p_y
+  Orig6 = OrigValues[6]; // u_xx
+  Orig8 = OrigValues[8]; // u_yy
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2503,9 +2503,9 @@ void NSType4NLSDFEMNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
 
@@ -2516,11 +2516,11 @@ void NSType4NLSDFEMNewton(double Mult, double *coeff,
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
      
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2548,9 +2548,9 @@ void NSType4NLSDFEMNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
      
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -2580,7 +2580,7 @@ void NSType4NLSDFEMDDNewton(double Mult, double *coeff,
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2602,14 +2602,14 @@ void NSType4NLSDFEMDDNewton(double Mult, double *coeff,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // u_xx
-  Orig4 = OrigValues[4]; // u_yy
-  Orig5 = OrigValues[5]; // p_x
-  Orig6 = OrigValues[6]; // p_y
-  Orig7 = OrigValues[7]; // p
+  Orig0 = OrigValues[0]; // u
+  Orig1 = OrigValues[1]; // p
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
+  Orig4 = OrigValues[4]; // p_x
+  Orig5 = OrigValues[5]; // p_y
+  Orig6 = OrigValues[6]; // u_xx
+  Orig8 = OrigValues[8]; // u_yy
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2633,9 +2633,9 @@ void NSType4NLSDFEMDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
 
@@ -2646,11 +2646,11 @@ void NSType4NLSDFEMDDNewton(double Mult, double *coeff,
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2681,9 +2681,9 @@ void NSType4NLSDFEMDDNewton(double Mult, double *coeff,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
      
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -2709,7 +2709,7 @@ void NSType4NLUpwindNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2724,9 +2724,9 @@ void NSType4NLUpwindNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2745,18 +2745,18 @@ void NSType4NLUpwindNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
      
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += du1x*ansatz00*test00;
@@ -2789,7 +2789,7 @@ void NSType4NLUpwindDDNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j, N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2804,9 +2804,9 @@ void NSType4NLUpwindDDNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2825,18 +2825,18 @@ void NSType4NLUpwindDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += du1x*ansatz00*test00;
@@ -2872,7 +2872,7 @@ void NSType4NLSmagorinskyNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2888,9 +2888,9 @@ void NSType4NLSmagorinskyNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -2913,18 +2913,18 @@ void NSType4NLSmagorinskyNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2963,7 +2963,7 @@ void NSType4NLSmagorinskyDDNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2979,9 +2979,9 @@ void NSType4NLSmagorinskyDDNewton(double Mult, double *coeff,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u
+  Orig0 = OrigValues[0]; // u
+  Orig2 = OrigValues[2]; // u_x
+  Orig3 = OrigValues[3]; // u_y
 
   c0 = coeff[0]; // nu
   c1 = coeff[1]; // f1
@@ -3005,18 +3005,18 @@ void NSType4NLSmagorinskyDDNewton(double Mult, double *coeff,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*(c1+u1*du1x+u2*du1y);
     Rhs2[i] += Mult*test00*(c2+u1*du2x+u2*du2y);
   
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
     
       val  = 2*(c0+mu)*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;

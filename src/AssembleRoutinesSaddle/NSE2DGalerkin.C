@@ -30,10 +30,10 @@ void NSType1Galerkin(double Mult, double *coeff, double *param, double hK,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -45,17 +45,17 @@ void NSType1Galerkin(double Mult, double *coeff, double *param, double hK,
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
 
@@ -72,12 +72,12 @@ void NSType1Galerkin(double Mult, double *coeff, double *param, double hK,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -117,10 +117,10 @@ void NSType2Galerkin(double Mult, double *coeff, double *param, double hK,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -132,17 +132,17 @@ void NSType2Galerkin(double Mult, double *coeff, double *param, double hK,
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
      //HOTFIX: Check the documentation!
@@ -156,7 +156,7 @@ void NSType2Galerkin(double Mult, double *coeff, double *param, double hK,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -170,12 +170,12 @@ void NSType2Galerkin(double Mult, double *coeff, double *param, double hK,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -196,7 +196,7 @@ void NSType1_2NLGalerkin(double Mult, double *coeff, double *param, double hK,
   double *MatrixRow;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
   double u1, u2;
@@ -205,9 +205,9 @@ void NSType1_2NLGalerkin(double Mult, double *coeff, double *param, double hK,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -217,14 +217,14 @@ void NSType1_2NLGalerkin(double Mult, double *coeff, double *param, double hK,
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -263,10 +263,10 @@ void NSType3Galerkin(double Mult, double *coeff, double *param, double hK,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -281,36 +281,24 @@ void NSType3Galerkin(double Mult, double *coeff, double *param, double hK,
 //    Matrix12Row = MatrixA12[i];
 //    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       //HOTFIX: Check the documentation!
       if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
         val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix11Row[j] += Mult * val;
-
-      // val  = 0;
-      // Matrix12Row[j] += Mult * val;
-
-      // val  = 0;
-      // Matrix21Row[j] += Mult * val;
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-        val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix22Row[j] += Mult * val;
-
     }                            // endfor j
   }                              // endfor i
 
@@ -319,12 +307,12 @@ void NSType3Galerkin(double Mult, double *coeff, double *param, double hK,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -370,10 +358,10 @@ void NSType4Galerkin(double Mult, double *coeff, double *param, double hK,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -388,17 +376,17 @@ void NSType4Galerkin(double Mult, double *coeff, double *param, double hK,
 //    Matrix12Row = MatrixA12[i];
 //    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       //HOTFIX: Check the documentation!
@@ -424,7 +412,7 @@ void NSType4Galerkin(double Mult, double *coeff, double *param, double hK,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -439,12 +427,12 @@ void NSType4Galerkin(double Mult, double *coeff, double *param, double hK,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -465,7 +453,7 @@ void NSType3_4NLGalerkin(double Mult, double *coeff, double *param, double hK,
   double *Matrix11Row, *Matrix22Row;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
   double u1, u2;
@@ -475,9 +463,9 @@ void NSType3_4NLGalerkin(double Mult, double *coeff, double *param, double hK,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -488,14 +476,14 @@ void NSType3_4NLGalerkin(double Mult, double *coeff, double *param, double hK,
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -539,10 +527,10 @@ void NSType3GalerkinDD(double Mult, double *coeff, double *param, double hK,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -557,17 +545,17 @@ void NSType3GalerkinDD(double Mult, double *coeff, double *param, double hK,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -591,12 +579,12 @@ void NSType3GalerkinDD(double Mult, double *coeff, double *param, double hK,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -642,10 +630,10 @@ void NSType4GalerkinDD(double Mult, double *coeff, double *param, double hK,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -660,17 +648,17 @@ void NSType4GalerkinDD(double Mult, double *coeff, double *param, double hK,
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -692,7 +680,7 @@ void NSType4GalerkinDD(double Mult, double *coeff, double *param, double hK,
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -707,12 +695,12 @@ void NSType4GalerkinDD(double Mult, double *coeff, double *param, double hK,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -734,7 +722,7 @@ void NSType3_4NLGalerkinDD(double Mult, double *coeff, double *param, double hK,
   double *Matrix11Row, *Matrix22Row;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
   double u1, u2;
@@ -744,9 +732,9 @@ void NSType3_4NLGalerkinDD(double Mult, double *coeff, double *param, double hK,
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -757,14 +745,14 @@ void NSType3_4NLGalerkinDD(double Mult, double *coeff, double *param, double hK,
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;

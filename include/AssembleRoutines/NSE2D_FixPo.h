@@ -54,6 +54,7 @@ double ***LocMatrices, double **LocRhs);
 // ======================================================================
 // Type 1, VMSProjection, nabla form
 // ======================================================================
+/// @warning you need to check the OrigValues in the implementation here
 void NSType1VMSProjection(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
@@ -220,6 +221,7 @@ double ***LocMatrices, double **LocRhs);
 // Type 1, VMSProjection, nabla form
 // Type 2, VMSProjection, nabla form
 // ======================================================================
+/// @warning you need to check the OrigValues in the implementation here
 void NSType1_2NLVMSProjection(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
