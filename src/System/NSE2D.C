@@ -475,10 +475,11 @@ void NSE2D::assemble_nonlinear_term()
   {
     //hold the velocity space, we'll need it...
     const TFESpace2D * v_space = s.velocity_space.get();
+    const TFESpace2D * p_space = s.pressure_space.get();
 
     //the variables we will have to fill for the call to Assemble2D
-    size_t n_fe_spaces = 1;
-    const TFESpace2D* fe_spaces[1]{v_space};
+    size_t n_fe_spaces = 2;
+    const TFESpace2D* fe_spaces[2]{v_space, p_space};
 
     size_t n_sq_mat;
     TSquareMatrix2D* sq_mat[2]{nullptr};//two pointers maximum
@@ -490,11 +491,13 @@ void NSE2D::assemble_nonlinear_term()
     double** rhs = nullptr;
     const TFESpace2D** fe_rhs = nullptr;
 
-    BoundCondFunct2D * boundary_conditions[1] = { v_space->GetBoundCondition() };
-    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+    BoundCondFunct2D * boundary_conditions[2] = { v_space->GetBoundCondition(),
+                                                  p_space->GetBoundCondition()};
+    std::array<BoundValueFunct2D*, 4> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];
     non_const_bound_values[2] = example.get_bd()[2];
+    non_const_bound_values[3] = example.get_bd()[3];
 
     TFEFunction2D *fe_functions[3] = 
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };

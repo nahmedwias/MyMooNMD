@@ -1046,20 +1046,18 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
   // common for all NSTYPE, Discrete forms, etc
   if(type==NSE2D_All)
   {
-    this->N_Terms = 4;
-    this->Derivatives = { D10, D01, D00, D00 };  
-    this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure    
     this->N_Rhs = 2; // NOTE: check why is this always three??
     this->RhsSpace = { 0, 0 };
   }
   else if(type==NSE2D_NL)
   {
-    this->N_Terms = 3;
-    this->Derivatives = { D10, D01, D00 };    
-    this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure        
     this->N_Rhs = 0;
     this->RhsSpace = {};
   }
+  
+  this->N_Terms = 4;
+  this->Derivatives = { D00, D00, D10, D01};
+  this->FESpaceNumber = { 0, 1, 0, 0 }; // 0: velocity, 1: pressure
   
   this->Needs2ndDerivatives = new bool[2];
   this->Needs2ndDerivatives[0] = false;
@@ -1119,6 +1117,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
             this->local_assemblings_routines.push_back(NSType4GalerkinDD);
           }
           break; // nstype 4
+        default:
+          ErrThrow("nstype ", nstype, " not supported");
+          break;
       }
       break; // NSE2D_ALL
     //========================================
@@ -1144,12 +1145,15 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
           else
             this->local_assemblings_routines.push_back(NSType3_4NLGalerkinDD);
          break; // nstype 3, 4
+        default:
+          ErrThrow("nstype ", nstype, " not supported");
+          break;
       }
       break; // NSE2D_NL
     //========================================
     default:
-      ErrMsg("unknown LocalAssembling2D_type " << type << "  " << this->name);
-      exit(1);
+      ErrThrow("unknown LocalAssembling2D_type ", type, "  ", this->name);
+      break;
   }
 
 }
@@ -1167,23 +1171,22 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
   
   switch(type)
   {
-    case NSE2D_SUPG:      
+    case NSE2D_SUPG:
+      this->N_Terms = 9;
+      this->Derivatives = { D00, D00, D10, D01, D10, D01, D20, D11, D02 };
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = true;
+      this->Needs2ndDerivatives[1] = true;
+      // 0: velocity, 1: pressure
+      this->FESpaceNumber = { 0, 1, 0, 0, 1, 1, 0, 0, 0 };
       switch(nsType)
       {
         case 1:
-          this->N_Terms = 4;
-          //FIXME: Why the second derivatives are not used in the NSTYPE 1??
-          this->Derivatives = { D10, D01, D00, D00 };
-          this->Needs2ndDerivatives = new bool[2];
-          this->Needs2ndDerivatives[0] = false;
-          this->Needs2ndDerivatives[1] = false;
-          this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
           this->N_Matrices = 3;
           this->RowSpace = { 0, 1, 1 };
           this->ColumnSpace = { 0, 0, 0 };
           this->N_Rhs = 2;
           this->RhsSpace = { 0, 0 };
-          
           if(nlForm == 0)
           {
             this->local_assemblings_routines.push_back(NSType1SDFEM);
@@ -1193,8 +1196,8 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
             this->local_assemblings_routines.push_back(NSType1SDFEMSkew);
           }
           else
-            ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
-                       " is not supported for SUPG");
+            ErrThrow("NSE_NONLINEAR_FORM ", nlForm, 
+                     " is not supported for SUPG");
             
           this->Manipulate = nullptr;
           
@@ -1207,18 +1210,11 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
           this->BeginParameter = { 0 };
           break;
         case 2:
-          this->N_Terms = 8;
-          this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
-          this->Needs2ndDerivatives = new bool[2];
-          this->Needs2ndDerivatives[0] = true;
-          this->Needs2ndDerivatives[1] = true;
-          this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
           this->N_Matrices = 5;
           this->RowSpace    = { 0, 1, 1, 0, 0 };
           this->ColumnSpace = { 0, 0, 0, 1, 1 };
           this->N_Rhs = 2;
           this->RhsSpace = { 0, 0 };
-          
           if(nlForm==0)
           {
             this->local_assemblings_routines.push_back(NSType2SDFEM);
@@ -1228,8 +1224,8 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
             this->local_assemblings_routines.push_back(NSType2SDFEMSkew);
           }
           else
-            ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
-                       " is not supported for SUPG");
+            ErrThrow("NSE_NONLINEAR_FORM ", nlForm,
+                     " is not supported for SUPG");
           
           this->Manipulate = nullptr;
           
@@ -1249,12 +1245,6 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
           switch(TDatabase::ParamDB->LAPLACETYPE)
           {
             case 0: // LAPLACETYPE
-              this->N_Terms = 8;
-              this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = true;
-              this->Needs2ndDerivatives[1] = true;
-              this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 8;
               this->RowSpace    = { 0, 0, 0, 0, 1, 1, 0, 0 };
               this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
@@ -1276,8 +1266,8 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
                   this->local_assemblings_routines.push_back(NSType4SDFEMRot);
                 }
                 else
-                  ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
-                             " is not supported for SUPG");
+                  ErrThrow("NSE_NONLINEAR_FORM ", nlForm,
+                           " is not supported for SUPG");
               }
               else // newton iteration
               {
@@ -1294,12 +1284,6 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
               this->BeginParameter = { 0 };          
               break;
             case 1: // LAPLACETYPE
-              this->N_Terms = 8;
-              this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = true;
-              this->Needs2ndDerivatives[1] = true;
-              this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 8;
               this->RowSpace    = { 0, 0, 0, 0, 1, 1, 0, 0 };
               this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
@@ -1314,7 +1298,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
                 else if(nlForm == 2)
                   this->local_assemblings_routines.push_back(NSType4SDFEMRotDD);
                 else
-                  ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                  ErrThrow("NSE_NONLINEAR_FORM ", nlForm,
                            " is not supported for SUPG");
               }
               else// newton
@@ -1337,12 +1321,6 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
         case 14:
           if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point
           {
-            this->N_Terms = 8;
-            this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
-            this->Needs2ndDerivatives = new bool[2];
-            this->Needs2ndDerivatives[0] = true;
-            this->Needs2ndDerivatives[1] = true;
-            this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
             this->N_Matrices = 9;
             this->RowSpace    = { 0, 0, 0, 0, 1, 1, 1, 0, 0 };
             this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
@@ -1352,8 +1330,8 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
             if(nlForm==0)
               this->local_assemblings_routines.push_back(NSType4SDFEMEquOrd);
             else
-              ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
-                         " is not supported for SUPG");
+              ErrThrow("NSE_NONLINEAR_FORM ", nlForm,
+                       " is not supported for SUPG");
             
             this->Manipulate = nullptr;
             

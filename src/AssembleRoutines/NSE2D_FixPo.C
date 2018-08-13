@@ -209,10 +209,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -227,9 +227,9 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = test00 + tau * (u1*test10+u2*test01);
     Rhs1[i] += Mult*ugrad*c1;
@@ -237,8 +237,8 @@ double ***LocMatrices, double **LocRhs)
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*ugrad;
@@ -252,12 +252,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -297,10 +297,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -311,17 +311,17 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = c0*(test10*ansatz10+test01*ansatz01);
       //    val += c3 * Orig2[j] *test00;
@@ -335,12 +335,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -381,10 +381,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -399,17 +399,17 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -423,12 +423,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -626,10 +626,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];                          // u_x
-  Orig1 = OrigValues[1];                          // u_y
-  Orig2 = OrigValues[2];                          // u
-  Orig3 = OrigValues[3];                          // p
+  Orig0 = OrigValues[0];                          // u
+  Orig1 = OrigValues[1];                          // p
+  Orig2 = OrigValues[2];                          // u_x
+  Orig3 = OrigValues[3];                          // u_y
 
   c0 = coeff[0];                                  // nu
   c1 = coeff[1];                                  // f1
@@ -644,18 +644,18 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -669,12 +669,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -709,7 +709,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double c0, c1, c2, c;
   double u1, u2;
@@ -730,14 +730,14 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // u_xx
-  Orig4 = OrigValues[4];         // u_yy
-  Orig5 = OrigValues[5];         // p_x
-  Orig6 = OrigValues[6];         // p_y
-  Orig7 = OrigValues[7];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
+  Orig4 = OrigValues[4];         // p_x
+  Orig5 = OrigValues[5];         // p_y
+  Orig6 = OrigValues[6];         // u_xx
+  Orig8 = OrigValues[8];         // u_yy
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -764,9 +764,9 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
     Rhs1[i] += Mult*(test00+ugrad)*c1;
@@ -774,10 +774,10 @@ double ***LocMatrices, double **LocRhs)
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
       // standard terms
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -787,7 +787,7 @@ double ***LocMatrices, double **LocRhs)
       // for computational comparisons of Oseen problems
       if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
       {
-        ansatz00 = Orig2[j];
+        ansatz00 = Orig0[j];
         val += c * ansatz00 * test00;
         val += c * ansatz00 * ugrad;
       }
@@ -799,9 +799,9 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
 
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -819,12 +819,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig7[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -867,10 +867,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -879,17 +879,17 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
 
@@ -900,7 +900,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -915,12 +915,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -964,10 +964,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -982,17 +982,17 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1004,7 +1004,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -1019,12 +1019,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1067,10 +1067,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];                          // u_x
-  Orig1 = OrigValues[1];                          // u_y
-  Orig2 = OrigValues[2];                          // u
-  Orig3 = OrigValues[3];                          // p
+  Orig0 = OrigValues[0];                          // u
+  Orig1 = OrigValues[1];                          // p
+  Orig2 = OrigValues[2];                          // u_x
+  Orig3 = OrigValues[3];                          // u_y
 
   c0 = coeff[0];                                  // nu
   c1 = coeff[1];                                  // f1
@@ -1085,18 +1085,18 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1109,7 +1109,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -1123,12 +1123,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1185,10 +1185,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -1200,17 +1200,17 @@ double ***LocMatrices, double **LocRhs)
 //    Matrix12Row = MatrixA12[i];
 //    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       Matrix11Row[j] += Mult * val;
@@ -1232,12 +1232,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1282,10 +1282,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -1297,17 +1297,17 @@ double ***LocMatrices, double **LocRhs)
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       Matrix11Row[j] += Mult * val;
@@ -1329,12 +1329,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1381,10 +1381,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -1402,17 +1402,17 @@ double ***LocMatrices, double **LocRhs)
 //    Matrix12Row = MatrixA12[i];
 //    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1436,12 +1436,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1488,10 +1488,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -1510,17 +1510,17 @@ double ***LocMatrices, double **LocRhs)
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = 2*(c0+mu)*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1544,12 +1544,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1595,10 +1595,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];                          // u_x
-  Orig1 = OrigValues[1];                          // u_y
-  Orig2 = OrigValues[2];                          // u
-  Orig3 = OrigValues[3];                          // p
+  Orig0 = OrigValues[0];                          // u
+  Orig1 = OrigValues[1];                          // p
+  Orig2 = OrigValues[2];                          // u_x
+  Orig3 = OrigValues[3];                          // u_y
 
   c0 = coeff[0];                                  // nu
   c1 = coeff[1];                                  // f1
@@ -1616,18 +1616,18 @@ double ***LocMatrices, double **LocRhs)
 //    Matrix12Row = MatrixA12[i];
 //    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1655,12 +1655,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1703,7 +1703,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
@@ -1727,14 +1727,14 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // u_xx
-  Orig4 = OrigValues[4];         // u_yy
-  Orig5 = OrigValues[5];         // p_x
-  Orig6 = OrigValues[6];         // p_y
-  Orig7 = OrigValues[7];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
+  Orig4 = OrigValues[4];         // p_x
+  Orig5 = OrigValues[5];         // p_y
+  Orig6 = OrigValues[6];         // u_xx
+  Orig8 = OrigValues[8];         // u_yy
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -1767,9 +1767,9 @@ double ***LocMatrices, double **LocRhs)
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
 
@@ -1778,10 +1778,10 @@ double ***LocMatrices, double **LocRhs)
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
 
       // viscous term
       val  = c0*(test10*ansatz10+test01*ansatz01);
@@ -1804,9 +1804,9 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
 
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -1823,12 +1823,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig7[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -1859,7 +1859,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
@@ -1883,14 +1883,14 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // u_xx
-  Orig4 = OrigValues[4];         // u_yy
-  Orig5 = OrigValues[5];         // p_x
-  Orig6 = OrigValues[6];         // p_y
-  Orig7 = OrigValues[7];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
+  Orig4 = OrigValues[4];         // p_x
+  Orig5 = OrigValues[5];         // p_y
+  Orig6 = OrigValues[6];         // u_xx
+  Orig8 = OrigValues[8];         // u_yy
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -1910,9 +1910,9 @@ double ***LocMatrices, double **LocRhs)
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
 
@@ -1921,10 +1921,10 @@ double ***LocMatrices, double **LocRhs)
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
 
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -1952,9 +1952,9 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
 
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -1971,12 +1971,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig7[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -2024,10 +2024,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -2039,17 +2039,17 @@ double ***LocMatrices, double **LocRhs)
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       Matrix11Row[j] += Mult * val;
@@ -2069,7 +2069,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -2084,12 +2084,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -2107,10 +2107,10 @@ double ***LocMatrices, double **LocRhs)
     {
       Matrix12Row = MatrixA12[i];
       Matrix21Row = MatrixA21[i];
-      test00 = Orig2[i];
+      test00 = Orig0[i];
       for(j=0;j<N_U;j++)
       {
-        ansatz00 = Orig2[j];
+        ansatz00 = Orig0[j];
         val  = 2*TDatabase::ParamDB->ROSSBY_NR * ansatz00 * test00;
         Matrix12Row[j] -= Mult * val;
         Matrix21Row[j] += Mult * val;
@@ -2155,10 +2155,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -2170,17 +2170,17 @@ double ***LocMatrices, double **LocRhs)
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       Matrix11Row[j] += Mult * val;
@@ -2200,7 +2200,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -2215,12 +2215,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -2237,10 +2237,10 @@ double ***LocMatrices, double **LocRhs)
     {
       Matrix12Row = MatrixA12[i];
       Matrix21Row = MatrixA21[i];
-      test00 = Orig2[i];
+      test00 = Orig0[i];
       for(j=0;j<N_U;j++)
       {
-        ansatz00 = Orig2[j];
+        ansatz00 = Orig0[j];
         val  = 2*TDatabase::ParamDB->ROSSBY_NR * ansatz00 * test00;
         Matrix12Row[j] -= Mult * val;
         Matrix21Row[j] += Mult * val;
@@ -2287,10 +2287,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -2308,17 +2308,17 @@ double ***LocMatrices, double **LocRhs)
 //    Matrix12Row = MatrixA12[i];
 //    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2340,7 +2340,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -2355,12 +2355,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -2410,10 +2410,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -2432,17 +2432,17 @@ double ***LocMatrices, double **LocRhs)
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = 2*(c0+mu)*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2464,7 +2464,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -2479,12 +2479,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -2515,7 +2515,7 @@ double ***LocMatrices, double **LocRhs)
   double *MatrixRow, *Rhs1, *Rhs2;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2;
@@ -2528,9 +2528,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -2544,9 +2544,9 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = test00+tau * (u1*test10+u2*test01);
   
@@ -2555,8 +2555,8 @@ double ***LocMatrices, double **LocRhs)
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*ugrad;
@@ -2580,7 +2580,7 @@ double ***LocMatrices, double **LocRhs)
   double *MatrixRow;
   double ansatz10, ansatz01;
   double test10, test01;  // test00;
-  double *Orig0, *Orig1;  // *Orig2;
+  double *Orig2, *Orig3;  // *Orig0;
   int i,j,N_U;
   double c0;
 
@@ -2588,23 +2588,23 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-//  Orig2 = OrigValues[2];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
+//  Orig0 = OrigValues[0];         // u
 
   c0 = coeff[0];                 // nu
 
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
 //    test00 = Orig2[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = c0*(test10*ansatz10+test01*ansatz01);
 
@@ -2627,7 +2627,7 @@ double ***LocMatrices, double **LocRhs)
   double *MatrixRow;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
   double u1, u2, mu, delta;
@@ -2636,9 +2636,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -2651,14 +2651,14 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2774,7 +2774,7 @@ double ***LocMatrices, double **LocRhs)
   double *MatrixRow;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
   double u1, u2, du1x, du2y, divu;
@@ -2783,9 +2783,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];                          // u_x
-  Orig1 = OrigValues[1];                          // u_y
-  Orig2 = OrigValues[2];                          // u
+  Orig0 = OrigValues[0];                          // u
+  Orig2 = OrigValues[2];                          // u_x
+  Orig3 = OrigValues[3];                          // u_y
 
   c0 = coeff[0];                                  // nu
 
@@ -2798,15 +2798,15 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2834,7 +2834,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
@@ -2853,14 +2853,14 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // u_xx
-  Orig4 = OrigValues[4];         // u_yy
-  Orig5 = OrigValues[5];         // p_x
-  Orig6 = OrigValues[6];         // p_y
-  Orig7 = OrigValues[7];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
+  Orig4 = OrigValues[4];         // p_x
+  Orig5 = OrigValues[5];         // p_y
+  Orig6 = OrigValues[6];         // u_xx
+  Orig8 = OrigValues[8];         // u_yy
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -2877,9 +2877,9 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
 
@@ -2888,10 +2888,10 @@ double ***LocMatrices, double **LocRhs)
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2905,9 +2905,9 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
 
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -2946,7 +2946,7 @@ double ***LocMatrices, double **LocRhs)
   double *Matrix11Row, *Matrix22Row;
   double ansatz10, ansatz01;
   double test10, test01;
-  double *Orig0, *Orig1;
+  double *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
 
@@ -2955,8 +2955,8 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -2964,13 +2964,13 @@ double ***LocMatrices, double **LocRhs)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       Matrix11Row[j] += Mult * val;
@@ -2996,7 +2996,7 @@ double ***LocMatrices, double **LocRhs)
   double *Matrix11Row, *Matrix22Row;
   double ansatz10, ansatz01;
   double test10, test01;
-  double *Orig0, *Orig1;
+  double *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
 
@@ -3005,8 +3005,8 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -3014,13 +3014,13 @@ double ***LocMatrices, double **LocRhs)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       Matrix11Row[j] += Mult * val;
@@ -3046,7 +3046,7 @@ double ***LocMatrices, double **LocRhs)
   double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U; // N_P;
   double c0;
   double u1, u2;
@@ -3060,9 +3060,9 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
 //  N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -3078,14 +3078,14 @@ double ***LocMatrices, double **LocRhs)
 //    Matrix12Row = MatrixA12[i];
 //    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -3119,7 +3119,7 @@ double ***LocMatrices, double **LocRhs)
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
   double u1, u2;
@@ -3132,9 +3132,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -3151,14 +3151,14 @@ double ***LocMatrices, double **LocRhs)
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = 2*(c0+mu)*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -3192,7 +3192,7 @@ double ***LocMatrices, double **LocRhs)
   double *Matrix11Row, *Matrix22Row;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
   double u1, u2, du1x, du2y, divu;
@@ -3202,9 +3202,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];                          // u_x
-  Orig1 = OrigValues[1];                          // u_y
-  Orig2 = OrigValues[2];                          // u
+  Orig0 = OrigValues[0];                          // u
+  Orig2 = OrigValues[2];                          // u_x
+  Orig3 = OrigValues[3];                          // u_y
 
   c0 = coeff[0];                                  // nu
 
@@ -3218,15 +3218,15 @@ double ***LocMatrices, double **LocRhs)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -3262,7 +3262,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
@@ -3282,14 +3282,14 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // u_xx
-  Orig4 = OrigValues[4];         // u_yy
-  Orig5 = OrigValues[5];         // p_x
-  Orig6 = OrigValues[6];         // p_y
-  Orig7 = OrigValues[7];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
+  Orig4 = OrigValues[4];         // p_x
+  Orig5 = OrigValues[5];         // p_y
+  Orig6 = OrigValues[6];         // u_xx
+  Orig8 = OrigValues[8];         // u_yy
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -3320,9 +3320,9 @@ double ***LocMatrices, double **LocRhs)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
 
@@ -3331,10 +3331,10 @@ double ***LocMatrices, double **LocRhs)
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
 
       // viscous term
       val  = c0*(test10*ansatz10+test01*ansatz01);
@@ -3351,9 +3351,9 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
 
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -3383,7 +3383,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
+  double *Orig6, *Orig8;
   int i,j,N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
@@ -3403,14 +3403,14 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // u_xx
-  Orig4 = OrigValues[4];         // u_yy
-  Orig5 = OrigValues[5];         // p_x
-  Orig6 = OrigValues[6];         // p_y
-  Orig7 = OrigValues[7];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
+  Orig4 = OrigValues[4];         // p_x
+  Orig5 = OrigValues[5];         // p_y
+  Orig6 = OrigValues[6];         // u_xx
+  Orig8 = OrigValues[8];         // u_yy
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -3428,9 +3428,9 @@ double ***LocMatrices, double **LocRhs)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     ugrad  = delta * (u1*test10+u2*test01);
 
@@ -3439,10 +3439,10 @@ double ***LocMatrices, double **LocRhs)
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz20 = Orig6[j];
+      ansatz02 = Orig8[j];
 
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -3464,9 +3464,9 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz10 = Orig5[j];
-      ansatz01 = Orig6[j];
-      ansatz00 = Orig7[j];
+      ansatz10 = Orig4[j];
+      ansatz01 = Orig5[j];
+      ansatz00 = Orig1[j];
 
       val  = -ansatz00 * test10;
       val +=  ansatz10 * ugrad;
@@ -3493,7 +3493,7 @@ double ***LocMatrices, double **LocRhs)
   double *AuxMatrixRow;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j, N_U;
   double mu2, delta;
   double u1, u2;
@@ -3506,9 +3506,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
@@ -3523,9 +3523,9 @@ double ***LocMatrices, double **LocRhs)
   {
     AuxMatrixRow = AuxMatrix[i];
 
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*u1;
     Rhs2[i] += Mult*test00*u2;
@@ -3534,9 +3534,9 @@ double ***LocMatrices, double **LocRhs)
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = mu2*(test10*ansatz10+test01*ansatz01);
       val += ansatz00*test00;
@@ -3560,7 +3560,7 @@ double ***LocMatrices, double **LocRhs)
   double *AuxMatrixRow;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j, N_U;
   double delta;
   double u1, u2;
@@ -3572,9 +3572,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
@@ -3587,18 +3587,18 @@ double ***LocMatrices, double **LocRhs)
   {
     AuxMatrixRow = AuxMatrix[i];
 
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*u1;
     Rhs2[i] += Mult*test00*u2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = delta*(test10*ansatz10+test01*ansatz01);
       val += ansatz00*test00;
@@ -3688,7 +3688,7 @@ double ***LocMatrices, double **LocRhs)
   double **MatrixA, *MatrixRow;
   double *Rhs1;
   double test10,test01,ansatz10,ansatz01;
-  double *Orig0, *Orig1;
+  double *Orig2, *Orig3;
   double u1, u2, d1u1, d2u1, d1u2, d2u2;
   int i,j, N_U;
   double c1, c2;
@@ -3698,8 +3698,8 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
+  Orig3 = OrigValues[2];         // u_x
+  Orig2 = OrigValues[3];         // u_y
 
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
@@ -3709,13 +3709,13 @@ double ***LocMatrices, double **LocRhs)
     for(i=0;i<N_U;i++)
     {
       MatrixRow = MatrixA[i];
-      test10 = Orig0[i];
-      test01 = Orig1[i];
+      test10 = Orig2[i];
+      test01 = Orig3[i];
       Rhs1[i] += Mult*(test10*c1+test01*c2);
       for(j=0;j<N_U;j++)
       {
-        ansatz10 = Orig0[j];
-        ansatz01 = Orig1[j];
+        ansatz10 = Orig2[j];
+        ansatz01 = Orig3[j];
         MatrixRow[j] += Mult * (ansatz10*test10+ansatz01*test01);
       }
     }
@@ -3731,14 +3731,14 @@ double ***LocMatrices, double **LocRhs)
     for(i=0;i<N_U;i++)
     {
       MatrixRow = MatrixA[i];
-      test10 = Orig0[i];
-      test01 = Orig1[i];
+      test10 = Orig2[i];
+      test01 = Orig3[i];
       Rhs1[i] += Mult*(test10*(c1-u1*d1u1-u2*d2u1)
         +test01*(c2-u1*d1u2-u2*d2u2));
       for(j=0;j<N_U;j++)
       {
-        ansatz10 = Orig0[j];
-        ansatz01 = Orig1[j];
+        ansatz10 = Orig2[j];
+        ansatz01 = Orig3[j];
         MatrixRow[j] += Mult * (ansatz10*test10+ansatz01*test01);
       }
     }
@@ -3780,10 +3780,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -3798,18 +3798,18 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*(test00*c1 + tau*c1*(u1*test10+u2*test01));
     Rhs2[i] += Mult*(test00*c2 + tau*c2*(u1*test10+u2*test01));
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -3825,12 +3825,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -3855,7 +3855,7 @@ double ***LocMatrices, double **LocRhs)
   double *MatrixRow;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
   double u1, u2,tau;
@@ -3865,9 +3865,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -3879,15 +3879,15 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
