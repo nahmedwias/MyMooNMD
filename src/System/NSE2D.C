@@ -313,9 +313,9 @@ void NSE2D::assemble()
     size_t n_rect_mat;
     TMatrix2D *rect_matrices[4]{nullptr};//it's four pointers maximum (Types 2, 4, 14)
 
-    size_t N_Rhs = 2; //is 3 if NSE type is 4 or 14
-    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; //third place gets only filled
-    const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
+    size_t N_Rhs = 3;
+    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
+    const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
 
     BoundCondFunct2D * boundary_conditions[3] = {
       v_space->GetBoundCondition(), v_space->GetBoundCondition(),
@@ -385,11 +385,6 @@ void NSE2D::assemble()
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
         rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-        RHSs[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
-        fesprhs[2]  = p_space;
-        N_Rhs = 3;
-
         break;
 
       case 14:
@@ -405,11 +400,6 @@ void NSE2D::assemble()
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
         rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-        RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
-        fesprhs[2]  = p_space;
-        N_Rhs = 3;
-
         break;
       default:
         ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
@@ -487,9 +477,9 @@ void NSE2D::assemble_nonlinear_term()
     size_t n_rect_mat = 0;
     TMatrix2D** rect_mat = nullptr;
 
-    size_t n_rhs = 0;
-    double** rhs = nullptr;
-    const TFESpace2D** fe_rhs = nullptr;
+    size_t n_rhs = 3;
+    double *rhs[3] = {nullptr, nullptr, nullptr};
+    const TFESpace2D* fe_rhs[3] = {v_space, v_space, p_space};
 
     BoundCondFunct2D * boundary_conditions[2] = { v_space->GetBoundCondition(),
                                                   p_space->GetBoundCondition()};

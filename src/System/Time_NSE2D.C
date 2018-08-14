@@ -571,9 +571,11 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
 void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssembling2D_type type, std::vector< TSquareMatrix2D* >& sqMat,
                    std::vector< TMatrix2D* >& reMat, std::vector< double* >& rhs_array)
 {
-  rhs_array.resize(0);
   sqMat.resize(0);
   reMat.resize(0);
+  // right hand side: for NSTYPE: 1,2 and 3, size is 2
+  rhs_array.resize(3, nullptr);
+  
 
   std::vector<std::shared_ptr<FEMatrix>> blocks
          = s.matrix.get_blocks_uniquely();
@@ -586,10 +588,9 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
   {
     case TNSE2D:
     {
-      // right hand side: for NSTYPE: 1,2 and 3, size is 2
-      rhs_array.resize(2);
       rhs_array[0] = s.rhs.block(0);
       rhs_array[1] = s.rhs.block(1);
+      rhs_array[2] = s.rhs.block(2);
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
@@ -667,17 +668,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
           reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
           reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-          // right hand side
-          rhs_array.resize(2);
-          rhs_array[0] = s.rhs.block(0);
-          rhs_array[1] = s.rhs.block(1);
-          if(TDatabase::ParamDB->NSTYPE == 14)
-          {
-            // additional right hand sides
-            rhs_array.resize(3);
-            rhs_array[2] = s.rhs.block(2);
-          }
           break;
       }
       // right hand sides are assembled for the initial time step
@@ -689,6 +679,7 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
 // case TNSE2D       
     case TNSE2D_NL:
     {
+      // no right-hand side needs to be assembled here (with a few exceptions)
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
@@ -704,8 +695,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
 
           reMat.resize(0);
-          // right hand side
-          rhs_array.resize(0);
           if(db["space_discretization_type"].is("smagorinsky"))
           {
             sqMat.resize(4);
@@ -724,7 +713,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
             reMat.resize(2); 
             reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); 
             reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-            rhs_array.resize(2);
             rhs_array[0] = s.rhs.block(0);
             rhs_array[1] = s.rhs.block(1);
             s.rhs.reset(); // reset to zero
@@ -757,7 +745,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
           reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
           
-          rhs_array.resize(3);
           rhs_array[0] = s.rhs.block(0);
           rhs_array[1] = s.rhs.block(1);
           rhs_array[2] = s.rhs.block(2);
@@ -773,17 +760,11 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
       // no matrices to be assembled
       sqMat.resize(0);
       reMat.resize(0);
-      // right hand side
-      rhs_array.resize(2);
-      rhs_array[0]=s.rhs.block(0);
-      rhs_array[1]=s.rhs.block(1);     
       
-      if(TDatabase::ParamDB->NSTYPE == 14)
-      {
-        rhs_array.resize(3);
-        rhs_array[2] = s.rhs.block(2); // pressure block
-      }
-      // reset them to zero
+      rhs_array[0] = s.rhs.block(0);
+      rhs_array[1] = s.rhs.block(1);
+      rhs_array[2] = s.rhs.block(2);
+      // reset rhs to zero
       s.rhs.reset();
       break;
     }
@@ -805,18 +786,14 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
                             std::vector< TFEFunction2D* >& functions)
 {
   spaces.resize(2);
-  spaces_rhs.resize(2);
+  spaces_rhs.resize(3);
 
   spaces[0] = &s.velocity_space;
   spaces[1] = &s.pressure_space;
 
   spaces_rhs[0] = &s.velocity_space;
   spaces_rhs[1] = &s.velocity_space;
-  if(TDatabase::ParamDB->NSTYPE == 14)
-  {
-    spaces_rhs.resize(3);
-    spaces_rhs[2] = &s.pressure_space;
-  }
+  spaces_rhs[2] = &s.pressure_space;
   // standard for all methods.
   functions.resize(3);  
   functions[0] = s.u.GetComponent(0);

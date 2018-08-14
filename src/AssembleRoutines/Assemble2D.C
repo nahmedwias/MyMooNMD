@@ -8168,12 +8168,14 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
                 BoundValueFunct2D** BoundaryValues, LocalAssembling2D& la,
                 int AssemblePhaseID, bool ignore_boundary_for_rhs)
 {
+  if(n_rhs != la.get_n_rhs())
+  {
+    ErrThrow("the number of right-hand-sides in Assemble2D does not match that "
+             "in the LocalAssembling2D object, ", n_rhs, " != ",
+             la.get_n_rhs());
+  }
+    
     FE2D LocalUsedElements[N_FEs2D];
-    int **GlobalNumbers, **BeginIndex;
-    int **TestGlobalNumbers, **TestBeginIndex;
-    int **AnsatzGlobalNumbers, **AnsatzBeginIndex;
-    int **RhsBeginIndex, **RhsGlobalNumbers;
-
     
     double *Param[MaxN_QuadPoints_2D];
     for(size_t i=0;i<MaxN_QuadPoints_2D;++i) //initialize Param
@@ -8225,47 +8227,12 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     }
   }
 
-  if(n_sqmatrices)
-  {
-    GlobalNumbers = new int* [n_sqmatrices];
-    BeginIndex = new int* [n_sqmatrices];
-    for(int i=0;i<n_sqmatrices;i++)
-    {
-      const TFESpace2D *fespace = sqmatrices[i]->GetFESpace2D();
-      GlobalNumbers[i] = fespace->GetGlobalNumbers();
-      BeginIndex[i] = fespace->GetBeginIndex();
-    }                                             // endfor
-  }                                               // endif n_sqmatrices
-
-  if(n_matrices)
-  {
-    TestGlobalNumbers = new int* [n_matrices];
-    AnsatzGlobalNumbers = new int* [n_matrices];
-    TestBeginIndex = new int* [n_matrices];
-    AnsatzBeginIndex = new int* [n_matrices];
-    for(int i=0;i<n_matrices;i++)
-    {
-      const TFESpace2D *fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
-      TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
-      TestBeginIndex[i] = fespace->GetBeginIndex();
-
-      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
-      AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
-      AnsatzBeginIndex[i] = fespace->GetBeginIndex();
-    }                                             // endfor
-  }                                               // endif n_matrices
-
   if(n_rhs)
   {
     HangingRhs = new double* [n_rhs];
-    RhsBeginIndex = new int* [n_rhs];
-    RhsGlobalNumbers = new int* [n_rhs];
     for(int i=0;i<n_rhs;i++)
     {
       const TFESpace2D *fespace = ferhs[i];
-      RhsBeginIndex[i] = fespace->GetBeginIndex();
-      RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
-
       int j = fespace->GetN_Hanging();
       HangingRhs[i] = new double [j];
       memset(HangingRhs[i], 0, SizeOfDouble*j);
@@ -8426,7 +8393,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
       int ActiveBound = fespace->GetActiveBound();
       int DirichletBound = fespace->GetHangingBound();
-      int *DOF = GlobalNumbers[j] + BeginIndex[j][i];
+      //int *DOF = GlobalNumbers[j] + BeginIndex[j][i];
+      int * DOF = fespace->GetGlobalDOF(i);
       
       /*
       BoundaryCondition = BoundaryConditions[j];
@@ -8567,10 +8535,10 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     // ####################################################################
     for(int j=0;j<n_matrices;j++)
     {
-      FE2D TestElement = ((TFESpace2D *) matrices[j]->GetTestSpace())
-                    ->GetFE2D(i, cell);
-      FE2D AnsatzElement = ((TFESpace2D *) matrices[j]->GetAnsatzSpace())
-                    ->GetFE2D(i, cell);
+      const TFESpace2D *test_space = matrices[j]->GetTestSpace2D();
+      const TFESpace2D *ansatz_space = matrices[j]->GetAnsatzSpace2D();
+      FE2D TestElement = test_space->GetFE2D(i, cell);
+      FE2D AnsatzElement = ansatz_space->GetFE2D(i, cell);
       // cout << "non square matrix: " << j << endl;
       // cout << "TestElement: " << TestElement << endl;
       // cout << "AnsatzElement: " << AnsatzElement << endl;
@@ -8584,12 +8552,11 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       const int *RowPtr = matrices[j]->GetRowPtr();
       const int *ColInd = matrices[j]->GetKCol();
 
-      int *TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
-      int *AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
+      int *TestDOF = test_space->GetGlobalDOF(i);
+      int *AnsatzDOF = ansatz_space->GetGlobalDOF(i);
 
-      const TFESpace2D *fespace = (TFESpace2D *)(matrices[j]->GetTestSpace2D());
-      int ActiveBound = fespace->GetActiveBound();
-      int DirichletBound = fespace->GetHangingBound();
+      int ActiveBound = test_space->GetActiveBound();
+      int DirichletBound = test_space->GetHangingBound();
 
       double *CurrentHangingEntries = HangingEntries[j+n_sqmatrices];
       const int *HangingRowPtr = matrices[j]->GetHangingRowPtr();
@@ -8651,8 +8618,12 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
       int N_ = N_BaseFunct[CurrentElement];
 
-      double *local_rhs = righthand+j*MaxN_BaseFunctions2D;
+      double *local_rhs = LocRhs[j]; // == righthand+j*MaxN_BaseFunctions2D;
       double *RHS = rhs[j];
+      if(RHS == nullptr)
+      {
+        continue;
+      }
       double *CurrentHangingRhs = HangingRhs[j];
       // find space for this linear form
 
@@ -8660,7 +8631,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       int DirichletBound = fespace->GetHangingBound();
 
       // dof of the rhs nodes connected to this cell
-      int *DOF = RhsGlobalNumbers[j] + RhsBeginIndex[j][i];
+      int * DOF = fespace->GetGlobalDOF(i);
 
       // add local right-hand side to the global one
       for(int m=0;m<N_;m++)
@@ -9141,20 +9112,6 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     }                                             // endfor i
   }
 
-  if(n_sqmatrices)
-  {
-    delete [] GlobalNumbers;
-    delete [] BeginIndex;
-  }
-
-  if(n_matrices)
-  {
-    delete [] AnsatzGlobalNumbers;
-    delete [] AnsatzBeginIndex;
-    delete [] TestGlobalNumbers;
-    delete [] TestBeginIndex;
-  }
-
   if(n_sqmatrices+n_matrices)
   {
     for(int i=0;i<n_sqmatrices+n_matrices;i++)
@@ -9169,8 +9126,6 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     delete [] HangingRhs;
     delete [] righthand;
     delete [] LocRhs;
-    delete [] RhsBeginIndex;
-    delete [] RhsGlobalNumbers;
   }
 
   if(N_Parameters)

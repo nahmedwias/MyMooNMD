@@ -44,4 +44,6 @@ void NSType3_4NLGalerkinDD(double Mult, double *coeff, double *param, double hK,
                          double **OrigValues, int *N_BaseFuncts, double ***LocMatrices,
                          double **LocRhs);
 
+void NSParamsVelo(double *in, double *out);
+
 #endif // NSE2DGALERKIN_H
