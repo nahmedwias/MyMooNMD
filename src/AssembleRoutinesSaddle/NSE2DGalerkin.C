@@ -765,3 +765,10 @@ void NSType3_4NLGalerkinDD(double Mult, double *coeff, double *param, double hK,
     }                            // endfor j
   }                              // endfor i
 }
+
+
+void NSParamsVelo(double *in, double *out)
+{
+  out[0] = in[2];                // u1old
+  out[1] = in[3];                // u2old
+}

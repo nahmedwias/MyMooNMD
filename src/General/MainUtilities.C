@@ -21,8 +21,8 @@
 #include <DiscreteForm2D.h>
 #include <FEDatabase2D.h>
 #include <FEVectFunct2D.h>
-#include <NSE2D_FixPo.h>
 #include <TNSE2D_Routines.h>
+#include <NSE2DSUPG.h>
 #endif
 
 #ifdef __3D__
@@ -1301,50 +1301,7 @@ void DeformationTensorError(int N_Points, double *X, double *Y,
   // cout << "LocError[0]: " << LocError[0] << endl;
   // cout << "LocError[1]: " << LocError[1] << endl;
 }
-// compute the subgrid dissipation 
-void SubGridDissipation(int N_Points, double *X, double *Y,
-                double *AbsDetjk, double *Weights, double hK, 
-                double **Der, double **Exact,
-                double **coeffs, double *LocError)
-{
-  int i;
-  double *deriv_x, *deriv_y, w, t, s;
-  double delta, mu, gradu[4];
 
-  LocError[0] = 0.0;
-  delta =  CharacteristicFilterWidth(hK);
-
-  for(i=0;i<N_Points;i++)
-  {
-    // first component
-    deriv_x = Der[i];
-    // second component
-    deriv_y = Der[i+N_Points];
-
-    gradu[0] = deriv_x[1];
-    gradu[1] = deriv_x[2];
-    gradu[2] = deriv_y[1];
-    gradu[3] = deriv_y[2];    
-    mu = TurbulentViscosity(delta,gradu,nullptr,nullptr);
-    
-    // weight
-    w = Weights[i]*AbsDetjk[i];
-
-    // left upper term
-    t = deriv_x[1];
-    s = w*t*t;
-    // right upper and left lower term
-    t = deriv_x[2]+deriv_y[1];
-    s += w*t*t/2.0;
-    // right lower term
-    t = deriv_y[2];
-    s += w*t*t;
-    LocError[0] -= s*mu;
-  } // endfor i
-
-  // cout << "LocError[0]: " << LocError[0] << endl;
-  // cout << "LocError[1]: " << LocError[1] << endl;
-}
 // determine L2 and H1 error, 2D
 void H1Norm(int N_Points, double *X, double *Y, double *AbsDetjk, 
             double *Weights, double hK, 
@@ -1817,70 +1774,7 @@ void DeformationTensorError(int N_Points, double *X, double *Y, double *Z,
   // cout << "LocError[0]: " << LocError[0] << endl;
   // cout << "LocError[1]: " << LocError[1] << endl;
 }
-// compute the subgrid dissipation 
-void SubGridDissipation(int N_Points, double *X, double *Y, double *Z,
-                double *AbsDetjk, double *Weights, double hK, 
-                double **Der, double **Exact,
-                double **coeffs, double *LocError)
-{
-  int i;
-  double *deriv_x, *deriv_y, *deriv_z, w, t, s;
-  double delta, mu, gradu[9], u[3];
 
-  LocError[0] = 0.0;
-  delta =  CharacteristicFilterWidth(hK);
-
-  for(i=0;i<N_Points;i++)
-  {
-    // first component
-    deriv_x = Der[i];
-    // second component
-    deriv_y = Der[i+N_Points];
-    // third component
-    deriv_z = Der[i+2*N_Points];
-
-    u[0] =  deriv_x[0];
-    u[1] =  deriv_y[0];
-    u[2] =  deriv_z[0];
-    gradu[0] = deriv_x[1];
-    gradu[1] = deriv_x[2];
-    gradu[2] = deriv_x[3];
-    gradu[3] = deriv_y[1];
-    gradu[4] = deriv_y[2];
-    gradu[5] = deriv_y[3];
-    gradu[6] = deriv_z[1];
-    gradu[7] = deriv_z[2];
-    gradu[8] = deriv_z[3];
-    mu = TurbulentViscosity3D(delta,gradu,u,nullptr,nullptr,nullptr,nullptr,-4711);
-    Output::print("change according to the CommonRoutineTNSE3D.h");exit(0);
-    // weight
-    w = Weights[i]*AbsDetjk[i];
-   
-    // left upper term
-    t = deriv_x[1];
-    s = w*t*t;
-    // 12 and 21 term 
-    t = deriv_x[2]+deriv_y[1];
-    s += w*t*t/2.0;
-    // 22 term
-    t = deriv_y[2];
-    s += w*t*t;
-    // 13 and 31 term
-    t = deriv_x[3]+deriv_z[1];
-    s += w*t*t/2.0;
-    // 23 and 32 term
-    t = deriv_y[3]+deriv_z[2];
-    s += w*t*t/2.0;
-    // 33 term
-    t = deriv_z[3];
-    s += w*t*t;
-    LocError[0] -= s*mu;
-
-  } // endfor i
-
-  // cout << "LocError[0]: " << LocError[0] << endl;
-  // cout << "LocError[1]: " << LocError[1] << endl;
-}
 // compute the error in the divergence
 void DivergenceError(int N_Points, double *X, double *Y, double *Z,
 		     double *AbsDetjk, double *Weights, double hK, 

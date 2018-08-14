@@ -161,10 +161,6 @@ class LocalAssembling2D
      */
     void set_parameters_for_nseGalerkin(LocalAssembling2D_type type);
     
-    /** This function creates local variables for the SUPG method.
-     */
-    void set_parameters_for_nseSUPG(LocalAssembling2D_type type);
-    
     /** @brief parameters which are used only for the Galerkin
      * discretization: one can include all other forms, for example
      * the different non-linear forms etc
@@ -393,6 +389,9 @@ class LocalAssembling2D
 
     const int get_disctype() const
     { return discretization_type; }
+    
+    int get_n_rhs() const
+    { return N_Rhs; }
 
     /**
      * All methods to follow are setter methods which deal with data members
