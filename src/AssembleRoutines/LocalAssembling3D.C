@@ -11,10 +11,10 @@
 #include <ConvDiff.h>
 #include <ConvDiff3D.h>
 #include <DarcyMixed.h>
-#include <NSE3D_FixPo.h>
-#include <NSE3D_FixPoSkew.h>
-#include <NSE3D_Param.h>
-#include <NSE3D_ParamRout.h>
+#include <NSE3DGalerkin.h>
+// #include <NSE3D_FixPoSkew.h>
+// #include <NSE3D_Param.h>
+// #include <NSE3D_ParamRout.h>
 
 #include <Brinkman3D_Mixed.h>
 #include <TCD3D.h> // local routines for time convection-diffusion-reaction
@@ -736,546 +736,83 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
 void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
 {
   bool with_coriolis = db["with_coriolis_force"];
+  bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
+  // bool laplace_type_deformation = this->db["laplace_type_deformation"];
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
+  {
+    ErrThrow("Newton method is not supported yet");
+  }
+  if(TDatabase::ParamDB->LAPLACETYPE == 1)
+  {
+    if((nstype==1) || nstype==2)
+    {
+      ErrThrow("LAPLACETYPE is only supported for NSTYPE 3, and 4");
+    }
+  }
+  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM>0)
+  {
+    ErrThrow("Skew symmetric case is not implemented for all NSTYPE");
+  }
+  // common for all NSTYPE, Discrete forms, etc
+  this->N_Rhs = 4;
+  this->RhsSpace = { 0, 0, 0, 1 };
+  this->N_Terms = 5;
+  this->Derivatives = { D000, D000, D100, D010, D001};
+  this->FESpaceNumber = { 0, 1, 0, 0, 0 }; // 0: velocity, 1: pressure
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Manipulate = nullptr;
+  this->N_Parameters = 3;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { NSParamsVelo3D };
+  this->N_FEValues = 3;
+  this->FEValue_FctIndex = { 0, 1, 2 };
+  this->FEValue_MultiIndex = { D000, D000, D000 };
+  this->BeginParameter = { 0 };
+  this->N_Matrices = 16;
+  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};
+  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1 };
+  if(laplace_type_deformation)
+  {
+    this->local_assemblings_routines.push_back(NSLaplaceDeformation);
+  }
+  else
+  {
+    if(nstype == 1 || nstype == 2)
+    {
+      this->local_assemblings_routines.push_back(NSLaplaceGradGradSingle);
+    }
+    else
+    {
+      this->local_assemblings_routines.push_back(NSLaplaceGradGrad);
+    }
+  }
   switch(type)
   {
     case LocalAssembling3D_type::NSE3D_Linear:
-    {
-      if(with_coriolis)
+      this->local_assemblings_routines.push_back(NSDivergenceBlocks);
+      this->local_assemblings_routines.push_back(NSRightHandSide);
+      if(nstype == 2 || nstype == 4 || nstype == 14)
       {
-        if(TDatabase::ParamDB->NSTYPE < 4)
-          ErrThrow("Using coriolis force requires NSTYPE >= 4, ", 
-                   TDatabase::ParamDB->NSTYPE);
-        Output::print("with coriolis force");
-        local_assemblings_routines.push_back(mat_coriolis);
+        this->local_assemblings_routines.push_back(NSGradientBlocks);
       }
-      switch(this->discretization_type)
+      break;
+    case LocalAssembling3D_type::NSE3D_NonLinear:
+      if(nstype == 1 || nstype == 2)
       {
-        case GALERKIN: // GALERKIN 
-          switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) // nonlinear iteration type (fixed point or Newton's type)
-          {
-            case 0: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0
-              switch(TDatabase::ParamDB->NSTYPE)
-              {
-                case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 1
-                  if(TDatabase::ParamDB->LAPLACETYPE != 0)
-                  {
-                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                  }
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 4;
-                  this->RowSpace = { 0, 1, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
-                   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                   {
-                     this->local_assemblings_routines.push_back(
-                       NSType1Galerkin3D);
-                   }
-                   else
-                   {
-                     this->local_assemblings_routines.push_back(
-                       NSType1GalerkinSkew3D);
-                   }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 2: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 2
-                  if(TDatabase::ParamDB->LAPLACETYPE != 0)
-                  {
-                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 2");
-                  }
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 7;
-                  this->RowSpace    = { 0, 1, 1, 1, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 1, 1, 1 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                  {
-                    this->local_assemblings_routines.push_back(
-                      NSType2Galerkin3D);
-                  }
-                  else
-                  {
-                    this->local_assemblings_routines.push_back(
-                      NSType2GalerkinSkew3D);
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 3
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 12;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3Galerkin3D);
-                    }
-                    else
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3GalerkinDD3D);
-                    }
-                  }
-                  else // Skew 
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3GalerkinSkew3D);
-                    }
-                    else
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3GalerkinDDSkew3D);
-                    }
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 4
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 15;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  //this->N_Rhs = 3;
-                  //CB DEBUG
-                  this->N_Rhs = 4;
-                  //END DEBUG
-                  this->RhsSpace = { 0, 0, 0, 1 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType4Galerkin3D);
-                    }
-                    else // LAPLACETYPE != 0
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType4GalerkinDD3D);
-                    }
-                  }
-                  else // Skew 
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType4GalerkinSkew3D);
-                    }
-                    else
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType4GalerkinDDSkew3D);
-                    }
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-              }// endswitch for NSTYPE
-              break;
-            case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1
-              switch(TDatabase::ParamDB->NSTYPE)
-              {
-                case 1:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=1
-                case 2:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=2
-                  ErrThrow("Wrong NSTYPE ", TDatabase::ParamDB->NSTYPE,
-                           " for Newton's method !!! Use NSTYPE 3 or 4 !!!");
-                  break;
-                case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=3
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 12;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE==0)
-                    // else
-                  }
-                  else // Skew 
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE==0)
-                    // else
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  // this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=4
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 15;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  //this->N_Rhs = 3;
-                  //CB DEBUG
-                  this->N_Rhs = 4;
-                  //END DEBUG
-                  this->RhsSpace = { 0, 0, 0, 1 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    // else
-                  }
-                  else // Skew 
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    // else
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  // this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-              }// endswitch for NSTYPE
-              break;
-          }// endswitch of the iteration type (FIXED POINT OR NEWTON'S)
-          break;
-          default:
-            ErrThrow("currently DISCTYPE ", this->discretization_type,
-                     " is not supported by the class NSE3D");
-      }// endswitch for the DISCTYPE 
-      break; // break for the LocalAssembling3D_type NSE3D_Linear
+        this->local_assemblings_routines.push_back(NSNonlinearTermSingle);
+      }
+      else
+      {
+        this->local_assemblings_routines.push_back(NSNonlinearTerm);
+      }
+      break;
+    default:
+      ErrThrow("unknown LocalAssembling2D_type ", this->name);
+      break;
   }
-    case LocalAssembling3D_type :: NSE3D_NonLinear:
-      switch(this->discretization_type)
-      {
-        case GALERKIN:
-          switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) // nonlinear iteration type (fixed point or Newton's type)
-          {
-            case 0: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0
-              switch(TDatabase::ParamDB->NSTYPE)
-              {
-                case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 1
-                  if(TDatabase::ParamDB->LAPLACETYPE != 0)
-                  {
-                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                  }
-                  this->N_Terms = 4;
-                  this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 1;
-                  this->RowSpace = { 0 };
-                  this->ColumnSpace = { 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                  {
-                    this->local_assemblings_routines.push_back(
-                      NSType1_2NLGalerkin3D);
-                  }
-                  else
-                  {
-                    this->local_assemblings_routines.push_back(
-                      NSType1_2NLGalerkinSkew3D);
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 2: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 2
-                  if(TDatabase::ParamDB->LAPLACETYPE != 0)
-                  {
-                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                  }
-                  this->N_Terms = 4;
-                  this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 1;
-                  this->RowSpace = { 0 };
-                  this->ColumnSpace = { 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                  {
-                    this->local_assemblings_routines.push_back(
-                      NSType1_2NLGalerkin3D);
-                  }
-                  else
-                  {
-                    this->local_assemblings_routines.push_back(
-                      NSType1_2NLGalerkinSkew3D);
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 3
-                  this->N_Terms = 4;
-                  this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0}; // 0: velocity, 1: pressure
-                  this->N_Matrices = 3;
-                  this->RowSpace    = { 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3_4NLGalerkin3D);
-                    }
-                    else
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3_4NLGalerkinDD3D);
-                    }
-                  }
-                  else // Skew 
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3_4NLGalerkinSkew3D);
-                    }
-                    else
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3_4NLGalerkinDDSkew3D);
-                    }
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 4
-                  this->N_Terms = 4;
-                  this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 3;
-                  this->RowSpace    = { 0, 0, 0};
-                  this->ColumnSpace = { 0, 0, 0};
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3_4NLGalerkin3D);
-                    }
-                    else
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3_4NLGalerkinDD3D);
-                    }
-                  }
-                  else // Skew 
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3_4NLGalerkinSkew3D);
-                    }
-                    else
-                    {
-                      this->local_assemblings_routines.push_back(
-                        NSType3_4NLGalerkinDDSkew3D);
-                    }
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-              }// endswitch for NSTYPE
-              break;
-            case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1
-              switch(TDatabase::ParamDB->NSTYPE)
-              {
-                case 1:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=1
-                case 2:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=2
-                  ErrThrow("Wrong NSTYPE ", TDatabase::ParamDB->NSTYPE, " for Newton's method !!!", "Use NSTYPE 3 or 4 !!!");
-                  break;
-                case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=3
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 9;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE==0)
-                    // else
-                  }
-                  else // Skew 
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE==0)
-                    // else
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  // this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=4
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 9;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    // else
-                  }
-                  else // Skew 
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    // else
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  // this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-              }// endswitch for NSTYPE
-              break;
-          }// endswitch of the iteration type (FIXED POINT OR NEWTON'S)          
-          break; // break for the GALERKIN
-          default:
-             ErrThrow("currently DISCTYPE ", this->discretization_type,
-                     " is not supported by the class NSE3D");
-      } // endswitch for the DISCTYPE
-      break; // endswitch for the LocalAssembling3D_type NSE3D_NonLinear
-      default:
-        ErrThrow("Wrong LocalAssembling3D_type for set_parameters_for_nse.");
-  } // endswitch (type)
 }
 //========================================================================
 void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)

@@ -275,5 +275,8 @@ class LocalAssembling3D
 
     const int get_disctype() const
     { return discretization_type; }
+    
+    int get_n_rhs() const
+    { return N_Rhs; }
 };
 #endif

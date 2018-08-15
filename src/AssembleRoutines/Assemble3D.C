@@ -1162,6 +1162,12 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
                 const TFESpace3D** ferhs, BoundCondFunct3D** BoundaryConditions,
                 BoundValueFunct3D** BoundaryValues, const LocalAssembling3D& la)
 {
+//   if(n_rhs != la.get_n_rhs())
+//   {
+//     ErrThrow("the number of right-hand-sides in Assemble2D does not match that "
+//              "in the LocalAssembling2D object, ", n_rhs, " != ",
+//              la.get_n_rhs());
+//   }
 	  double hK;
 	  int N_AllMatrices = n_sqmatrices+n_matrices;
 	  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,ij,N_Vertex;
@@ -1178,10 +1184,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  TBaseCell *cell, *neigh;
 	  TJoint *joint;
 	  //  TIsoBoundEdge *isoboundedge;
-	  int **GlobalNumbers=nullptr, **BeginIndex=nullptr;
-	  int **RhsGlobalNumbers=nullptr, **RhsBeginIndex=nullptr;
-	  int **TestGlobalNumbers=nullptr, **TestBeginIndex=nullptr;
-	  int **AnsatzGlobalNumbers=nullptr, **AnsatzBeginIndex=nullptr;
 	  TFE3D *ele;
 	  TFEDesc3D *FEDesc_Obj;
 	  double *weights, *xi, *eta, *zeta;
@@ -1254,14 +1256,14 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
 	  if(n_sqmatrices)
 	  {
-	    GlobalNumbers = new int* [n_sqmatrices];
-	    BeginIndex = new int* [n_sqmatrices];
 	    HangingEntries = new double* [n_sqmatrices];
-	    for(i=0;i<n_sqmatrices;i++)
+	    for(int i=0;i<n_sqmatrices;i++)
 	    {
-	      fespace = sqmatrices[i]->GetFESpace3D();
-	      GlobalNumbers[i] = fespace->GetGlobalNumbers();
-	      BeginIndex[i] = fespace->GetBeginIndex();
+              if(sqmatrices[i] == nullptr)
+              {
+                HangingEntries[i] = nullptr;
+                continue;
+              }
 
 	      j = sqmatrices[i]->GetHangingN_Entries();
 	//       cout << "N_Hanging: " << j << endl;
@@ -1270,37 +1272,14 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    } // endfor
 	  } // endif n_sqmatrices
 
-	  if(n_matrices)
-	  {
-	    TestGlobalNumbers = new int* [n_matrices];
-	    AnsatzGlobalNumbers = new int* [n_matrices];
-	    TestBeginIndex = new int* [n_matrices];
-	    AnsatzBeginIndex = new int* [n_matrices];
-	    for(i=0;i<n_matrices;i++)
-	    {
-	      fespace = (TFESpace3D *) matrices[i]->GetTestSpace3D();
-	      TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
-	      TestBeginIndex[i] = fespace->GetBeginIndex();
-
-	      fespace = (TFESpace3D *) matrices[i]->GetAnsatzSpace3D();
-	      AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
-	      AnsatzBeginIndex[i] = fespace->GetBeginIndex();
-	    } // endfor
-	  } // endif n_matrices
 
 	  if(n_rhs)
 	  {
 	    HangingRhs = new double* [n_rhs];
-	    RhsBeginIndex = new int* [n_rhs];
-	    RhsGlobalNumbers = new int* [n_rhs];
-	    for(i=0;i<n_rhs;i++)
+	    for(int i=0;i<n_rhs;i++)
 	    {
 	      fespace = ferhs[i];
-	      RhsBeginIndex[i] = fespace->GetBeginIndex();
-	      RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
-
 	      j = fespace->GetN_Hanging();
-	//       cout << "N_Hanging: " << j << endl;
 	      HangingRhs[i] = new double [j];
 	      memset(HangingRhs[i], 0, SizeOfDouble*j);
 	    } // endfor
@@ -1378,13 +1357,13 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	#endif
 	  } // endfor i
 
-	  for(i=0;i<N_Cells;i++)
+	  for(int i=0;i<N_Cells;i++)
 	    Coll->GetCell(i)->SetClipBoard(i);
 
 	// ########################################################################
 	// loop over all cells
 	// ########################################################################
-	  for(i=0;i<N_Cells;i++)
+	  for(int i=0;i<N_Cells;i++)
 	  {
 	      //  OutPut(i<<endl);
 	    cell = Coll->GetCell(i);
@@ -1420,7 +1399,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    // ####################################################################
 	    // find local used elements on this cell
 	    // ####################################################################
-	    for(j=0;j<n_fespaces;j++)
+	    for(int j=0;j<n_fespaces;j++)
 	    {
 	      CurrentElement = fespaces[j]->GetFE3D(i, cell);
 	      LocalUsedElements[j] = CurrentElement;
@@ -1482,7 +1461,9 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    // ####################################################################
 	    for(j=0;j<n_sqmatrices;j++)
 	    {
-	      // find space for this bilinear form
+              if(sqmatrices[j] == nullptr)
+                continue;
+             // find space for this bilinear form
 	      fespace = sqmatrices[j]->GetFESpace3D();
 	      CurrentElement = fespace->GetFE3D(i, cell);
 	      N_ = N_BaseFunct[CurrentElement];
@@ -1498,7 +1479,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
 	      ActiveBound = fespace->GetActiveBound();
 	      DirichletBound = fespace->GetHangingBound();
-	      DOF = GlobalNumbers[j] + BeginIndex[j][i];
+              int * DOF = fespace->GetGlobalDOF(i);	      
 	      if (TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
 	      {
 	        ActiveBound = DirichletBound = sqmatrices[j]->GetN_Rows();
@@ -1576,10 +1557,12 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    // ####################################################################
 	    for(j=0;j<n_matrices;j++)
 	    {
-	      TestElement = ((const TFESpace3D *) matrices[j]->GetTestSpace3D())
-                      ->GetFE3D(i, cell);
-	      AnsatzElement = ((const TFESpace3D *) matrices[j]->GetAnsatzSpace3D())
-                        ->GetFE3D(i, cell);
+              if(matrices[j] == nullptr)
+                continue;
+              const TFESpace3D *test_space = matrices[j]->GetTestSpace3D();
+              const TFESpace3D *ansatz_space = matrices[j]->GetAnsatzSpace3D();
+	      TestElement = test_space->GetFE3D(i, cell);
+	      AnsatzElement = ansatz_space->GetFE3D(i, cell);
 
 	      // cout << "non square matrix: " << j << endl;
 	      // cout << "TestElement: " << TestElement << endl;
@@ -1594,8 +1577,8 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	      RowPtr = matrices[j]->GetRowPtr();
 	      ColInd = matrices[j]->GetKCol();
 
-	      TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
-	      AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
+	      TestDOF = test_space->GetGlobalDOF(i);
+	      AnsatzDOF = ansatz_space->GetGlobalDOF(i);
 
 	      // add local matrix to global
 	      for(m=0;m<N_Test;m++)
@@ -1634,12 +1617,16 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
 	      local_rhs = righthand+j*MaxN_BaseFunctions3D;
 	      RHS = rhs[j];
+              if(RHS == nullptr)
+              {
+                continue;
+              }
 	      CurrentHangingRhs = HangingRhs[j];
 	      // find space for this linear form
 
 	      ActiveBound = fespace->GetActiveBound();
 	      DirichletBound = fespace->GetHangingBound();
-	      DOF = RhsGlobalNumbers[j] + RhsBeginIndex[j][i];
+	      int * DOF = fespace->GetGlobalDOF(i);
 
 	      // add local right-hand side to the global one
 	      for(m=0;m<N_;m++)
@@ -2055,6 +2042,8 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  // ####################################################################
 	  for(j=0;j<n_sqmatrices;j++)
 	  {
+            if(sqmatrices[j] == nullptr)
+              continue;
 	    fespace = sqmatrices[j]->GetFESpace3D();
 	    N_ = fespace->GetN_Hanging();
 	    // there are no hanging nodes
@@ -2145,6 +2134,8 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  // ####################################################################
 	  for(j=0;j<n_sqmatrices;j++)
 	  {
+            if(sqmatrices[j] == nullptr)
+              continue;
 	    fespace = sqmatrices[j]->GetFESpace3D();
 	    N_ = fespace->GetN_Hanging();
 	    // there are no hanging nodes
@@ -2183,20 +2174,9 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
 	  if(n_sqmatrices)
 	  {
-	    delete [] GlobalNumbers;
-	    delete [] BeginIndex;
-
 	    for(i=0;i<n_sqmatrices;i++)
 	      delete [] HangingEntries[i];
 	    delete [] HangingEntries;
-	  }
-
-	  if(n_matrices)
-	  {
-	    delete [] AnsatzGlobalNumbers;
-	    delete [] AnsatzBeginIndex;
-	    delete [] TestGlobalNumbers;
-	    delete [] TestBeginIndex;
 	  }
 
 	  if(n_rhs)
@@ -2207,8 +2187,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
 	    delete [] righthand;
 	    delete [] LocRhs;
-	    delete [] RhsBeginIndex;
-	    delete [] RhsGlobalNumbers;
 	  }
 
 	  if(N_Parameters)
