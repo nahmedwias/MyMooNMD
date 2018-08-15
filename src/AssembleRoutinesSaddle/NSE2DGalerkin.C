@@ -170,18 +170,18 @@ void NSNonlinearTermSingle(double Mult, double *coeff, double *param, double hK,
   double test00, ansatz10, ansatz01;
   double ** MatrixA = LocMatrices[0];
   int N_U = N_BaseFuncts[0];
-  double * Orig0 = OrigValues[0];         // u
-  double * Orig2 = OrigValues[2];         // u_x
-  double * Orig3 = OrigValues[3];         // u_y
-  double u1 = param[0];                 // u1old
-  double u2 = param[1];                 // u2old
+  double * u   = OrigValues[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double u1 = param[0];        
+  double u2 = param[1];        
   for(int i = 0; i < N_U; i++)
   {
-    test00 = Orig0[i];
+    test00 = u[i];
     for(int j = 0; j < N_U; j++)
     {
-      ansatz10 = Orig2[j];
-      ansatz01 = Orig3[j];
+      ansatz10 = u_x[j];
+      ansatz01 = u_y[j];
       MatrixA[i][j] += Mult * (u1*ansatz10 + u2*ansatz01) * test00;
     }                            // endfor j
   }                              // endfor i
@@ -195,18 +195,18 @@ void NSNonlinearTerm(double Mult, double *coeff, double *param, double hK,
   double ** MatrixA11 = LocMatrices[0];
   double ** MatrixA22 = LocMatrices[3];
   int N_U = N_BaseFuncts[0];
-  double * Orig0 = OrigValues[0];         // u
-  double * Orig2 = OrigValues[2];         // u_x
-  double * Orig3 = OrigValues[3];         // u_y
-  double u1 = param[0];                 // u1old
-  double u2 = param[1];                 // u2old
+  double * u = OrigValues[0];
+  double * u_x = OrigValues[2];
+  double * u_z = OrigValues[3];
+  double u1 = param[0];
+  double u2 = param[1];
   for(int i = 0; i < N_U; i++)
   {
-    test00 = Orig0[i];
+    test00 = u[i];
     for(int j = 0; j < N_U; j++)
     {
-      ansatz10 = Orig2[j];
-      ansatz01 = Orig3[j];
+      ansatz10 = u_x[j];
+      ansatz01 = u_z[j];
       MatrixA11[i][j] += Mult * (u1*ansatz10 + u2*ansatz01)*test00;
       MatrixA22[i][j] += Mult * (u1*ansatz10 + u2*ansatz01)*test00;
     }

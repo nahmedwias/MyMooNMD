@@ -37,6 +37,8 @@ ParameterDatabase get_default_NSE3D_parameters()
   db.merge(out_db, true);
   
   db.merge(LocalAssembling3D::default_local_assembling_database(), true);
+  
+  db.merge(LocalAssembling3D::default_local_assembling_database(), true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
   if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
@@ -370,9 +372,9 @@ void NSE3D::assemble_linear_terms()
 {
   size_t nFESpace = 2; // spaces used for assembling matrices
   size_t nSqMatrices=10; // maximum no of square matrices (type 14)
-  std::vector<TSquareMatrix3D*> sqMatrices(nSqMatrices);
+  std::vector<TSquareMatrix3D*> sqMatrices(nSqMatrices, nullptr);
   size_t nReMatrices = 6; // maximum no of rectangular matrices (e.g. type 14)
-  std::vector<TMatrix3D*> reMatrices(nReMatrices);
+  std::vector<TMatrix3D*> reMatrices(nReMatrices, nullptr);
   size_t nRhs=4; // maximum number of right hand sides (e.g. type 4)
   std::vector<double*> rhsArray(nRhs); // right hand side 
   // finite element function used for nonlinear term
@@ -393,39 +395,28 @@ void NSE3D::assemble_linear_terms()
     rhsArray[0]=s.rhs_.block(0);
     rhsArray[1]=s.rhs_.block(1);
     rhsArray[2]=s.rhs_.block(2);
-    rhsArray[3]=nullptr; //will be reset for type 4 and 14
+    rhsArray[3]=s.rhs_.block(3);
     
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
-    
     switch(TDatabase::ParamDB->NSTYPE)
     {
       case 1:
-        nSqMatrices = 1;
         sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
         
-        nReMatrices = 3;
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[1].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[2].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
-
-        nRhs = 3;
         break;
       case 2:
-        nSqMatrices = 1;
         sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
-        
-        nReMatrices = 6;
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[4].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[5].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[6].get());
         reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[1].get());
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[2].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
-
-        nRhs = 3;
         break;
       case 3:
-        nSqMatrices = 9;
         sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
         sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks[1].get());
         sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks[2].get());
@@ -435,16 +426,11 @@ void NSE3D::assemble_linear_terms()
         sqMatrices[6]=reinterpret_cast<TSquareMatrix3D*>(blocks[8].get());
         sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
         sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());
-        
-        nReMatrices = 3;
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
-
-        nRhs = 3;
         break;
       case 4:
-        nSqMatrices = 9;
         sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
         sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks[1].get());
         sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks[2].get());
@@ -454,21 +440,14 @@ void NSE3D::assemble_linear_terms()
         sqMatrices[6]=reinterpret_cast<TSquareMatrix3D*>(blocks[8].get());
         sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
         sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());
-        
-        nReMatrices = 6;
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[12].get()); //first the lying B blocks
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[13].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[14].get());
         reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[3].get()); //than the standing B blocks
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
-
-        //right hand side must be adapted
-        nRhs = 4;
-        rhsArray[3]=s.rhs_.block(3);
         break;
       case 14:        
-        nSqMatrices = 10;
         sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
         sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks[1].get());
         sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks[2].get());
@@ -479,25 +458,25 @@ void NSE3D::assemble_linear_terms()
         sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
         sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());
         sqMatrices[9]=reinterpret_cast<TSquareMatrix3D*>(blocks[15].get());
-
-        nReMatrices = 6;
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[12].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[13].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[14].get());
         reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
-        
-        //right hand side must be adapted
-        nRhs = 4;
-        rhsArray[3]=s.rhs_.block(3);
         break;
     }// endswitch nstype
 
     for(unsigned int i=0; i<nSqMatrices; i++)
-      sqMatrices[i]->reset();
+    {
+      if(sqMatrices[i] != nullptr)
+        sqMatrices[i]->reset();
+    }
     for(unsigned int i=0; i<nReMatrices;i++)
-      reMatrices[i]->reset();
+    {
+      if(reMatrices[i] != nullptr)
+        reMatrices[i]->reset();
+    }
 
     // boundary conditions and boundary values
     BoundCondFunct3D * boundContion[4]={
@@ -589,15 +568,14 @@ void NSE3D::assemble_linear_terms()
 
 void NSE3D::assemble_non_linear_term()
 {
-  size_t nFESpace = 1; // space needed for assembling matrices
-  size_t nSqMatrices=3; // no of square matrices (Maximum 3)
-  std::vector<TSquareMatrix3D*> sqMatrices(nSqMatrices);
-  size_t nReMatrices = 0; // no rectangular matrix in nonlinear iteration
-  std::vector<TMatrix3D*> reMatrices{nullptr};
-  size_t nRhs=0; // no right hand side to be assembled
-  std::vector<double*> rhsArray{nullptr};  
+  size_t nFESpace = 2; // space needed for assembling matrices
+  size_t nSqMatrices=10; // no of square matrices (Maximum 3)
+  std::vector<TSquareMatrix3D*> sqMatrices(nSqMatrices, nullptr);
+  size_t nReMatrices = 6; // no rectangular matrix in nonlinear iteration
+  std::vector<TMatrix3D*> reMatrices(nReMatrices, nullptr);
+  size_t nRhs=4; // no right hand side to be assembled
+  std::vector<double*> rhsArray(nRhs, nullptr);  
   std::vector<TFEFunction3D*> feFunction(3);
-  const TFESpace3D** rhsSpaces{nullptr};
   
   //Nonlinear assembling requires an approximate velocity solution on every grid!
   if(systems_.size() > 1)
@@ -632,6 +610,10 @@ void NSE3D::assemble_non_linear_term()
 
   for(auto &s : this->systems_)
   {
+    //hold the velocity space, we'll need it...
+    const TFESpace3D * v_space = s.velocitySpace_.get();
+    const TFESpace3D * p_space = s.pressureSpace_.get();
+    const TFESpace3D* rhsSpaces[4] = {v_space, v_space, v_space, p_space};
 #ifdef _MPI
     //MPI: solution in consistency level 3 (TODO: this might be superfluous here)
     for (size_t bl = 0; bl < s.solution_.n_blocks() ;++bl)
@@ -641,25 +623,28 @@ void NSE3D::assemble_non_linear_term()
 #endif
 
     // spaces for matrices
-    const TFESpace3D* spaces[1] = {s.velocitySpace_.get()};
-    
-    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
+    const TFESpace3D* spaces[2] = {s.velocitySpace_.get(), s.pressureSpace_.get()};
+    std::vector<std::vector<size_t>> cells={{0,0}, {0,1}, {0,2}, {1,0}, {1,1}, {1,2}, {2,0}, {2,1}, {2,2}};
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely(cells);
 
     switch(TDatabase::ParamDB->NSTYPE)
     {
       case 1:
       case 2:
-        nSqMatrices = 1;
-        sqMatrices.resize(nSqMatrices);
         sqMatrices.at(0)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
         break;
-      case 3:
+      case 3: 
       case 4:
       case 14:
-        nSqMatrices = 3;
-        sqMatrices.at(0)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-        sqMatrices.at(1)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-        sqMatrices.at(2)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+        sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
+        sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks[1].get());
+        sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks[2].get());
+        sqMatrices[3]=reinterpret_cast<TSquareMatrix3D*>(blocks[3].get());
+        sqMatrices[4]=reinterpret_cast<TSquareMatrix3D*>(blocks[4].get());
+        sqMatrices[5]=reinterpret_cast<TSquareMatrix3D*>(blocks[5].get());
+        sqMatrices[6]=reinterpret_cast<TSquareMatrix3D*>(blocks[6].get());
+        sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[7].get());
+        sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[8].get());
         break;
     }// endswitch nstype
 
@@ -686,7 +671,8 @@ void NSE3D::assemble_non_linear_term()
     {
       for(auto mat : sqMatrices)
       {
-        mat->reset();
+        if(mat != nullptr)
+          mat->reset();
       }
       // local assembling object    
       const LocalAssembling3D la(this->db, 

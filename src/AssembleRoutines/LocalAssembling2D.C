@@ -1041,22 +1041,18 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
   //bool laplace_type_deformation = this->db["laplace_type_deformation"];
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
-    ErrMsg("Newton method is not supported yet");
-    exit(1);
+    ErrThrow("Newton method is not supported yet");
   }
   if(TDatabase::ParamDB->LAPLACETYPE == 1)
   {
     if((nstype==1) || nstype==2)
     {
-      ErrMsg("LAPLACETYPE is only supported for NSTYPE 3, and 4");
-      exit(1);
+      ErrThrow("LAPLACETYPE is only supported for NSTYPE 3, and 4");
     }
   }
-  
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM>0)
   {
-    ErrMsg("Skew symmetric case is not implemented for all NSTYPE");
-    exit(1);
+    ErrThrow("Skew symmetric case is not implemented for all NSTYPE");
   }
   // common for all NSTYPE, Discrete forms, etc
   this->N_Rhs = 3;
@@ -1098,7 +1094,6 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
       this->local_assemblings_routines.push_back(NSLaplaceGradGrad);
     }
   }
-  
   switch(type)
   {
     case NSE2D_All:
@@ -1109,7 +1104,6 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
         this->local_assemblings_routines.push_back(NSGradientBlocks);
       }
       break; // NSE2D_ALL
-    //========================================
     case NSE2D_NL:
       if(nstype == 1 || nstype == 2)
       {
@@ -1120,7 +1114,6 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
         this->local_assemblings_routines.push_back(NSNonlinearTerm);
       }
       break; // NSE2D_NL
-    //========================================
     default:
       ErrThrow("unknown LocalAssembling2D_type ", type, "  ", this->name);
       break;
