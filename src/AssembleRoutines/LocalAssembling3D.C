@@ -568,6 +568,13 @@ ParameterDatabase LocalAssembling3D::default_local_assembling_database()
          "special local assemblings and the (pde-) coefficients of the example "
          "must include the coriolis force vector Omega.");
   
+  db.add("laplace_type_deformation", false, 
+         "determine the way the laplacian is discretized.");
+  
+  db.add("nse_nonlinear_form", "convective",
+         "Determine how the nonlinear term for Navier--Stokes is assembled.",
+         {"convective", "skew-symmetric", "rotational"});
+  
   return db;
 }
 
