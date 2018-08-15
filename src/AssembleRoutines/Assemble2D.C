@@ -8214,6 +8214,11 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
     for(int i=0 ; i<n_sqmatrices ; i++)
     {
+      if(sqmatrices[i] == nullptr)
+      {
+        HangingEntries[i] = nullptr;
+        continue;
+      }
       int j = sqmatrices[i]->GetHangingN_Entries();
       HangingEntries[i] = new double [j];
       memset(HangingEntries[i], 0, SizeOfDouble*j);
@@ -8221,6 +8226,11 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
     for(int i=0;i<n_matrices;i++)
     {
+      if(matrices[i] == nullptr)
+      {
+        HangingEntries[i+n_sqmatrices] = nullptr;
+        continue;
+      }
       int j = matrices[i]->GetHangingN_Entries();
       HangingEntries[i+n_sqmatrices] = new double [j];
       memset(HangingEntries[i+n_sqmatrices], 0, SizeOfDouble*j);
@@ -8377,6 +8387,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     // ####################################################################
     for(int j=0;j<n_sqmatrices;j++)
     {
+      if(sqmatrices[j] == nullptr)
+        continue;
       // find space for this bilinear form
       const TFESpace2D *fespace = sqmatrices[j]->GetFESpace2D();
       FE2D CurrentElement = fespace->GetFE2D(i, cell);
@@ -8535,6 +8547,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     // ####################################################################
     for(int j=0;j<n_matrices;j++)
     {
+      if(matrices[j] == nullptr)
+        continue;
       const TFESpace2D *test_space = matrices[j]->GetTestSpace2D();
       const TFESpace2D *ansatz_space = matrices[j]->GetAnsatzSpace2D();
       FE2D TestElement = test_space->GetFE2D(i, cell);
@@ -8910,6 +8924,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   // ####################################################################
   for(int j=0;j<n_sqmatrices;j++)
   {
+    if(sqmatrices[j] == nullptr)
+      continue;
     const TFESpace2D *fespace = sqmatrices[j]->GetFESpace2D();
     int N_ = fespace->GetN_Hanging();
     THangingNode **HangingNodes = fespace->GetHangingNodes();
@@ -8959,6 +8975,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
   for(int j=0;j<n_matrices;j++)
   {
+    if(matrices[j] == nullptr)
+      continue;
     // hanging nodes in test space
     const TFESpace2D *fespace = (TFESpace2D *) (matrices[j]->GetTestSpace2D());
     int N_ = fespace->GetN_Hanging();
@@ -9051,6 +9069,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     THangingNode **HangingNodes = fespace->GetHangingNodes();
 
     double *RHS = rhs[j];
+    if(RHS == nullptr)
+      continue;
     double *CurrentHangingRhs = HangingRhs[j];
 
     int ActiveBound = fespace->GetActiveBound();
@@ -9080,6 +9100,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   // ####################################################################
   for(int j=0;j<n_sqmatrices;j++)
   {
+    if(sqmatrices[j] == nullptr)
+      continue;
     const TFESpace2D *fespace = sqmatrices[j]->GetFESpace2D();
     int N_ = fespace->GetN_Hanging();
     THangingNode **HangingNodes = fespace->GetHangingNodes();

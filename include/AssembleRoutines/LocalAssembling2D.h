@@ -23,6 +23,7 @@
 
 #include <Enumerations.h>
 #include <Constants.h>
+#include <ParameterDatabase.h>
 #include <string>
 #include <vector>
 #include <AuxParam2D.h>
@@ -60,6 +61,8 @@ enum LocalAssembling2D_type { ConvDiff,
 class LocalAssembling2D
 {
   protected:
+    /// @brief a local parameter database
+    ParameterDatabase db;
 
     /** @brief The type of problem this assembling objects is made for. */
     const LocalAssembling2D_type type;
@@ -276,7 +279,7 @@ class LocalAssembling2D
     /** destructor */
     ~LocalAssembling2D();
     
-    
+    static ParameterDatabase default_local_assembling_database();
 
     /** return local stiffness matrix */
     void GetLocalForms(int N_Points,

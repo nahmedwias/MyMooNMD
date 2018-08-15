@@ -129,7 +129,8 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                                      TFEFunction2D **fefunctions2d,
                                      CoeffFct2D coeffs,
                                      int disctype)
- : type(type), discretization_type(disctype),
+ : db(default_local_assembling_database()),type(type),
+   discretization_type(disctype),
    name(LocalAssembling2D_type_to_string(type, disctype)), Coeffs(coeffs),
    FEFunctions2D(fefunctions2d)
 {
@@ -444,7 +445,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                                      const TAuxParam2D& aux,
                                      const TDiscreteForm2D& df)
- : type(type),
+ : db(default_local_assembling_database()), type(type),
    name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
@@ -521,7 +522,7 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 		TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
 		std::vector<int> myFEValue_FctIndex, std::vector<MultiIndex2D> myFEValue_MultiIndex)
 
-: type{LocalAssembling2D_type::Custom},
+: db(default_local_assembling_database()), type{LocalAssembling2D_type::Custom},
   N_Terms(myN_Terms), Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
   RowSpace(myRowSpace), ColumnSpace(myColumnSpace), RhsSpace(myRhsSpace),
   Coeffs(myCoeffs), local_assemblings_routines({myAssembleParam}),
@@ -599,6 +600,27 @@ LocalAssembling2D::~LocalAssembling2D()
   delete [] OrigValues;
   delete [] Needs2ndDerivatives;
 }
+
+//==============================================================================
+ParameterDatabase LocalAssembling2D::default_local_assembling_database()
+{
+  ParameterDatabase db("default local assembling database");
+  
+  db.add("with_coriolis_force", false,
+         "include the coriolis force for (Navier--)Stokes in 3D. This requires "
+         "special local assemblings and the (pde-) coefficients of the example "
+         "must include the coriolis force vector Omega.");
+  
+  db.add("laplace_type_deformation", false, 
+         "determine the way the laplacian is discretized.");
+  
+  db.add("nse_nonlinear_form", "convective",
+         "Determine how the nonlinear term for Navier--Stokes is assembled.",
+         {"convective", "skew-symmetric", "rotational"});
+  
+  return db;
+}
+
 
 //==============================================================================
 void LocalAssembling2D::GetLocalForms(int N_Points,
@@ -1015,6 +1037,8 @@ void LocalAssembling2D::compute_parameters(int n_points,
 void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type type)
 {
   int nstype = TDatabase::ParamDB->NSTYPE;
+  bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
+  //bool laplace_type_deformation = this->db["laplace_type_deformation"];
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
     ErrMsg("Newton method is not supported yet");
@@ -1056,85 +1080,44 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
   this->BeginParameter = { 0 };
   
   this->N_Matrices = 9;
-  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
+  this->RowSpace = { 0, 0, 0, 0, 1, 1, 1, 0, 0 };
+  this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1 };
+  
+  if(laplace_type_deformation)
+  {
+    this->local_assemblings_routines.push_back(NSLaplaceDeformation);
+  }
+  else
+  {
+    if(nstype == 1 || nstype == 2)
+    {
+      this->local_assemblings_routines.push_back(NSLaplaceGradGradSingle);
+    }
+    else
+    {
+      this->local_assemblings_routines.push_back(NSLaplaceGradGrad);
+    }
+  }
   
   switch(type)
   {
     case NSE2D_All:
-      switch(nstype)
+      this->local_assemblings_routines.push_back(NSDivergenceBlocks);
+      this->local_assemblings_routines.push_back(NSRightHandSide);
+      if(nstype == 2 || nstype == 4 || nstype == 14)
       {
-        case 1:
-          this->N_Matrices = 3;
-          this->RowSpace = { 0, 1, 1 };
-          this->ColumnSpace = { 0, 0, 0 };
-          this->local_assemblings_routines.push_back(NSType1Galerkin);
-          break; // nstype 1
-        case 2:
-          this->N_Matrices = 5;
-          this->RowSpace = { 0, 1, 1, 0, 0 };
-          this->ColumnSpace = { 0, 0, 0, 1, 1 };
-          this->local_assemblings_routines.push_back(NSType2Galerkin);
-          break; // nstype 2
-        case 3:
-          this->N_Matrices = 6;
-          this->RowSpace = { 0, 0, 0, 0, 1, 1 };
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0 };
-          if(TDatabase::ParamDB->LAPLACETYPE==0)
-          {
-            this->local_assemblings_routines.push_back(NSType3Galerkin);
-          }
-          else
-          {
-            this->local_assemblings_routines.push_back(NSType3GalerkinDD);
-          }
-          break; // nstype 3
-        case 4:
-          this->N_Matrices = 8;
-          this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-          this->N_Rhs = 3;
-          this->RhsSpace = { 0, 0, 1 };
-          if(TDatabase::ParamDB->LAPLACETYPE==0)
-          {
-            this->local_assemblings_routines.push_back(NSType4Galerkin);
-          }
-          else
-          {
-            this->local_assemblings_routines.push_back(NSType4GalerkinDD);
-          }
-          break; // nstype 4
-        default:
-          ErrThrow("nstype ", nstype, " not supported");
-          break;
+        this->local_assemblings_routines.push_back(NSGradientBlocks);
       }
       break; // NSE2D_ALL
     //========================================
     case NSE2D_NL:
-      switch(nstype)
+      if(nstype == 1 || nstype == 2)
       {
-        case 1:
-        case 2:
-          this->N_Matrices = 1;
-          this->RowSpace = { 0 };
-          this->ColumnSpace = { 0 };
-          this->local_assemblings_routines.push_back(NSType1_2NLGalerkin);
-         break; // nstype 1, 2
-        case 3:
-        case 4:
-          this->N_Matrices = 2;
-          this->RowSpace = { 0, 0 };
-          this->ColumnSpace = { 0, 0 };          
-          if(TDatabase::ParamDB->LAPLACETYPE==0)
-          {
-            this->local_assemblings_routines.push_back(NSType3_4NLGalerkin);
-          }
-          else
-            this->local_assemblings_routines.push_back(NSType3_4NLGalerkinDD);
-         break; // nstype 3, 4
-        default:
-          ErrThrow("nstype ", nstype, " not supported");
-          break;
+        this->local_assemblings_routines.push_back(NSNonlinearTermSingle);
+      }
+      else
+      {
+        this->local_assemblings_routines.push_back(NSNonlinearTerm);
       }
       break; // NSE2D_NL
     //========================================
@@ -1142,7 +1125,6 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
       ErrThrow("unknown LocalAssembling2D_type ", type, "  ", this->name);
       break;
   }
-
 }
 
 //=========================================================================

@@ -88,6 +88,7 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[0] = eps;
     coeff[1] = 0; // f1
     coeff[2] = 0; // f2
+    coeff[3] = 0; // divergence
   }
 }
 
