@@ -1680,17 +1680,18 @@ void BoundaryAssembling2D::matrix_u_v_backflow_stab(BlockFEMatrix &M,
         int BaseVectDim = 1; // we assume only scalar FE
         int joint_id = boundedge->get_index_in_neighbour(cell);
         
-        // get a quadrature formula good enough for the velocity FE space
-        int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-        this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
-        std::vector<double> quadWeights,quadPoints;
-        get_quadrature_formula_data(quadPoints,quadWeights);
         
-        
+       // get a quadrature formula good enough for the velocity FE space
+       int fe_degree_U = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+       QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree_U);
+       std::vector<double> quadWeights, quadPoints;
+       get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
+    
         // compute values of all basis functions at all quadrature points
         std::vector< std::vector<double> > uorig,uxorig,uyorig;
-        get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig);
-        
+        get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig, LineQuadFormula);
+
+     
         double x0, x1, y0, y1;
         boundedge->get_vertices(x0,  y0, x1, y1);
         // compute length of the edge
@@ -1802,16 +1803,16 @@ void BoundaryAssembling2D::matrix_gradv_n_v_tangential(BlockFEMatrix &M,
       int joint_id = boundedge->get_index_in_neighbour(cell);
         
       // get a quadrature formula good enough for the velocity FE space
-      int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-      this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
-      std::vector<double> quadWeights,quadPoints;
-      get_quadrature_formula_data(quadPoints,quadWeights);
+       int fe_degree_U = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+       QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree_U);
+       std::vector<double> quadWeights, quadPoints;
+       get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
+    
+        // compute values of all basis functions at all quadrature points
+        std::vector< std::vector<double> > uorig,uxorig,uyorig;
+        get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig, LineQuadFormula);
+
         
-      //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
-        
-      // compute values of all basis functions at all quadrature points
-      std::vector< std::vector<double> > uorig,uxorig,uyorig;
-      get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig);
         
       double x0, x1, y0, y1;
       boundedge->get_vertices(x0,  y0, x1, y1);
@@ -1919,15 +1920,15 @@ void BoundaryAssembling2D::matrix_dtu_dtv_backflow_stab(BlockFEMatrix &M,
         int joint_id = boundedge->get_index_in_neighbour(cell);
         
         // get a quadrature formula good enough for the velocity FE space
-        int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-        this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
-        std::vector<double> quadWeights,quadPoints;
-        get_quadrature_formula_data(quadPoints,quadWeights);
-        
+       int fe_degree_U = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+       QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree_U);
+       std::vector<double> quadWeights, quadPoints;
+       get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
+    
         // compute values of all basis functions at all quadrature points
         std::vector< std::vector<double> > uorig,uxorig,uyorig;
-        get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig);
-        
+        get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig, LineQuadFormula);
+
         double x0, x1, y0, y1;
         boundedge->get_vertices(x0,  y0, x1, y1);
         // compute length of the edge

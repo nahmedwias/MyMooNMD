@@ -36,7 +36,7 @@
 #include <BlockFEMatrix.h>
 #include <FEFunction2D.h>
 #include <BlockVector.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 #include <ParameterDatabase.h>
 #include <Example_TimeCD2D.h>
 #include <TCD2D_POD_LocalAssemble.h>
@@ -65,7 +65,7 @@ class ROM_TCDR2D : public ROM
 	/** @brief Finite Element function */
 	TFEFunction2D fe_function;
 	/** @brief Class for output handling */
-	PostProcessing2D outputWriter;
+	DataWriter2D outputWriter;
 	/** @brief Store errors to compute accumulated error norms */
 	std::vector<double> errors;
 
