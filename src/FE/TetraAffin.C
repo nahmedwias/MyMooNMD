@@ -875,7 +875,7 @@ void TTetraAffin::GetOrigValues(int JointNr, double p1, double p2, int N_BaseFun
  } // endfor i
 }
 
-void TTetraAffin::SetCell(TBaseCell *cell)
+void TTetraAffin::SetCell(const TBaseCell *cell)
 {
 //  int i;
 

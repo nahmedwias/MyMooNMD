@@ -608,7 +608,7 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
   const int  *TmpoEnlE, *TmpEdVer, *TmpECI, *TmpCE, *TmpEdVerParent, *TmpEdVerNeigh;
   TJoint *joint,*parent_joint;
   TBoundEdge *boundedge;
-  TBoundComp2D *BoundComp;
+  const TBoundComp2D *BoundComp;
   BoundCond Cond0;
   TRefDesc *refdesc,*refdesc_child;
   TBaseCell *neigh, *child, *parent;
@@ -2051,7 +2051,7 @@ void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
   const int  *TmpoEnlE, *TmpEdVer, *TmpECI, *TmpCE, *TmpEdVerParent, *TmpEdVerNeigh;
   TJoint *joint,*parent_joint;
   TBoundEdge *boundedge;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   BoundCond Cond0;
   TRefDesc *refdesc,*refdesc_child;
   TBaseCell *neigh, *child, *parent;

@@ -716,10 +716,10 @@ void TTetraIsoparametric::GetOrigValues(int JointNr, double p1, double p2,
 // exit(-1);
 }
 
-void TTetraIsoparametric::SetCell(TBaseCell *cell)
+void TTetraIsoparametric::SetCell(const TBaseCell *cell)
 {
   int i, j, k, N_AuxVertices=0, N_IsoFaces=0;
-  TJoint *joint;
+  const TJoint *joint;
   JointType type;
   TShapeDesc *ShapeDesc;
   const int *TmpFaceVertex, *TmpLen;
@@ -734,7 +734,7 @@ void TTetraIsoparametric::SetCell(TBaseCell *cell)
   
   N_AuxPoints = 0;
 
-  Vertices = ((TGridCell*)cell)->GetVertices();
+  Vertices = ((const TGridCell*)cell)->GetVertices();
   ShapeDesc = cell->GetShapeDesc();
   ShapeDesc->GetFaceVertex(TmpFaceVertex, TmpLen, MaxLen);
 

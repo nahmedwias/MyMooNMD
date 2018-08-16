@@ -58,17 +58,25 @@ ParameterDatabase TDomain::default_domain_parameters()
 {
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
-  db.add("refinement_n_initial_steps", (size_t)0,
+  db.add("refinement_n_initial_steps", 0u,
          "This is the number of refinement steps before any computation "
          "starts. Usually the mesh is uniformly refined. In a multigrid "
          "program, this determines the number of uniform refinements until the "
-         "finest mesh.", (size_t)0, (size_t)20);
+         "finest mesh.", 0u, 20u);
 
-  db.add("refinement_max_n_adaptive_steps", (size_t) 0,
+  db.add("refinement_max_n_adaptive_steps", 0u,
          "A maximum number of adaptive refinement steps"
          "which may be applied to this domain."
          "THIS IS UNUSED AT THE MOMENT!",
-         (size_t) 0, size_t (10));
+         0u, 10u);
+  
+  db.add("refinement_final_step_barycentric", false,
+         "If this is set to true, the domain will be refined as usual except "
+         "the last refinement step is not uniform but barycentric. Then the "
+         "Scott-Vogelius finite element pair is inf-sup stable. If "
+         "'refinement_n_initial_steps' is zero, this parameter has no effect. "
+         " NOTE: This is not yet correctly implemented, you have to do this by "
+         "hand.");
   
    db.add("boundary_file", "Default_UnitSquare",
         "This is a file describing the boundary of the computational domain. "
@@ -149,7 +157,6 @@ bool ends_with (std::string const &fullString, std::string const &ending) {
 TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
   Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
 {
-
   if(ParamFile)
   {//read the param file and fil the old database
 	  Output::info<4>("READ-IN","Constructing old database from file ", ParamFile);
@@ -157,7 +164,7 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
   }
 
   // get the relevant parameters from the new database
-  db.merge(param_db, true);
+  db.merge(param_db, false);
   
 #ifdef __3D__
   //Check if this should be a sandwich grid
@@ -1072,7 +1079,6 @@ void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
       "parameter 'lambda'.");
   }
 
-  // Call the private method which does the actual work.
   MakeSandwichGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE,
                    drift_x, drift_y, drift_z, lambda);
 
@@ -1405,7 +1411,6 @@ int TDomain::RegRefineAll()
   RefLevel++;
 
   TDatabase::IteratorDB[It_Finest]->Init(0);
-
   // loop over all cells
   while ((CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info)))
   {
@@ -2288,6 +2293,33 @@ int TDomain::ConvertQuadToTri(int type)
 
   return 0;
 }
+
+void TDomain::barycentric_refinement()
+{
+  RefLevel++;
+  TDatabase::IteratorDB[It_Finest]->Init(0);
+  int info;
+  // loop over all cells
+  while(auto current_cell = TDatabase::IteratorDB[It_Finest]->Next(info))
+  {
+    auto cell_type = current_cell->GetType();
+    if(cell_type == Triangle)
+    {
+      current_cell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TriBary]);
+    }
+    else if(cell_type == Tetrahedron)
+    {
+      current_cell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBary]);
+    }
+    else
+    {
+      ErrThrow("unable to do barycentric refinement on a cell of type ",
+               cell_type);
+    }
+    current_cell->Refine(RefLevel);
+  }
+}
+
 
 /*
  Extract a subcollection from a collection object:
@@ -3756,10 +3788,13 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
       this->get_n_initial_refinement_steps(),
       n_ref_before, n_ref_after);
   }
-
+  bool final_barycentric = this->db["refinement_final_step_barycentric"];
   for(int i = 0; i < n_ref_before; i++)
   {
-    this->RegRefineAll();
+    if(final_barycentric && i+1 == n_ref_before && n_ref_after == 0)
+      this->barycentric_refinement();
+    else
+      this->RegRefineAll();
 #ifdef __3D__
     if(parmoon_db["problem_type"].is(6)
       && parmoon_db["example"].is(7))
@@ -3802,9 +3837,12 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   gridCollections.push_front(this->GetCollection(It_Finest, 0));
 
   //this is only relevant for multigrid
-  for(int level=0; level <  n_ref_after; ++level)
+  for(int level=0; level < n_ref_after; ++level)
   {
-    this->RegRefineAll();
+    if(final_barycentric && level+1 == n_ref_after)
+      this->barycentric_refinement();
+    else
+      this->RegRefineAll();
 #ifdef __3D__
     if(parmoon_db["problem_type"].is(6)
       && parmoon_db["example"].is(7))
@@ -4432,3 +4470,94 @@ void TDomain::distributeJoints(TTetGenMeshLoader& tgml)
 }
 
 #endif
+//CW DEBUG
+#ifdef  __3D__
+bool TDomain::check() const
+{
+	   for(int cell_id=0;cell_id<N_RootCells;cell_id++)
+	   {
+		   TBaseCell *CurrCell = CellTree[cell_id];
+
+		   //check cells
+		   if(!CurrCell->check_orientation())
+			   ErrThrow("Cell ", cell_id," does not meet the right hand rule.");
+		   if(!CurrCell->check_shape())
+			   ErrThrow("Cell ", cell_id," is not of the given shape.");
+
+		   int n_joints = CurrCell->GetN_Joints();
+
+	     for(int joint_id=0;joint_id<n_joints;joint_id++)
+	     {
+	    	 TJoint* CurrJoint = CurrCell->GetJoint(joint_id);
+
+    		 const int *TmpFV, *TmpLen;
+    		 int MaxLen;
+    		 CurrCell->GetRefDesc()->GetShapeDesc()
+    	         ->GetFaceVertex(TmpFV, TmpLen, MaxLen);
+
+	    	 if ( !CurrJoint )
+	    		 Output::print("Some Joint is not set: Cell ",cell_id, ", Joint ",joint_id);
+
+	    	 //Check outer joints
+	    	 else if(!CurrJoint->InnerJoint())
+	    	 {
+	    		 TBoundFace * CurrFace = dynamic_cast<TBoundFace *>(CurrCell->GetJoint(joint_id));
+	    		 double Param1[4];
+	    		 double Param2[4];
+
+	    	     for(int vert_id=0;vert_id<TmpLen[joint_id];vert_id++)
+	    	     {
+	    	       double X , Y , Z , xp , yp , zp;
+	    	       CurrFace->GetParameters(Param1, Param2);
+	    	       TVertex *Vert = CurrCell->GetVertex(TmpFV[joint_id*MaxLen+vert_id]);
+	    	       Vert->GetCoords(X, Y, Z);
+	    	       CurrFace->GetXYZofTS(Param1[vert_id], Param2[vert_id], xp, yp, zp);
+	    	       //Output::print("Coordinates :", X, " ",Y," ",Z);
+	    	       //Output::print("Parametrization Coordinates :", xp, " ",yp," ",zp);
+	    	       if(-1e-10>X-xp || 1e-10<X-xp)
+	    	    	   ErrThrow("Error in parametrization in Cell ",cell_id, ", Joint ",joint_id);
+	    	       if(-1e-10>Y-yp || 1e-10<Y-yp)
+	    	    	   ErrThrow("Error in parametrization in Cell ",cell_id, ", Joint ",joint_id);
+	    	       if(-1e-10>Z-zp || 1e-10<Z-zp)
+	    	    	   ErrThrow("Error in parametrization in Cell ",cell_id, ", Joint ",joint_id);
+	    	     }
+	    	 }//end outer joints
+
+	    	 //check inner joints
+	    	 else
+	    	 {
+	    		 TBaseCell * NeighCell = CurrJoint->GetNeighbour(CurrCell);
+
+	    		 int neighjoint_id=0;
+	    		 for(int joint=0; joint<n_joints;joint++)
+	    		 {
+	    			 if( NeighCell->GetJoint(joint)==CurrJoint )
+	    			 {
+	    				 neighjoint_id=joint;
+	    				 break;
+	    			 }
+	    		 }
+
+	    		 for(int vert_id=0;vert_id<TmpLen[joint_id];vert_id++)
+	    		 {
+		    		 bool vert_match= false;
+
+	    			 for(int neighvert_id=0; neighvert_id<TmpLen[joint_id]; neighvert_id++)
+	    				 if(CurrCell->GetVertex(TmpFV[joint_id*MaxLen+vert_id])
+	    						 ==NeighCell->GetVertex(TmpFV[neighjoint_id*MaxLen+neighvert_id]))
+	    					 vert_match=true;
+
+	    			 if(!vert_match)
+	    				 ErrThrow("Some Joint does not match: Cell ",cell_id, ", Joint ",joint_id);
+	    		 }
+
+	    	 }//end inner joints
+
+	     }
+	   }
+
+	return true;
+}
+
+#endif
+//END DEBUG

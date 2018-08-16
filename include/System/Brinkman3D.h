@@ -27,6 +27,7 @@
 #include <FEFunction3D.h>
 #include <Residuals.h>
 #include <FESpace3D.h>
+#include <DataWriter.h>
 #include <vector>
 #include <deque>
 #include <list>
@@ -117,7 +118,7 @@ protected:
      * other parameters such as solver parameters. Those are only in the
      * Solver object.
      */
-    ParameterDatabase db;
+    ParameterDatabase brinkman3d_db;
     
     /** @brief a solver object which will solve the linear system
      *
@@ -145,6 +146,9 @@ protected:
      * and the pressure (errors.at(2) is L2 and errors.at(3) is H1-semi).
      */
     std::array<double, int(4)> errors;
+    
+    /** @brief output object*/
+    DataWriter3D outputWriter;
     
 protected:
     
@@ -305,7 +309,7 @@ public:
     const int get_size(){return this->systems.front().solution.length();}
     
     const ParameterDatabase & get_db() const
-    { return db; }
+    { return brinkman3d_db; }
     
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;

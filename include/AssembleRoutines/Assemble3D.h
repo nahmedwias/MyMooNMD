@@ -17,16 +17,6 @@
 
 #include "LocalAssembling3D.h"
 
-/** a function from a finite element space */
-[[deprecated]] void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
-                int n_sqmatrices, TSquareMatrix3D **sqmatrices,
-                int n_matrices, TMatrix3D **matrices,
-                int n_rhs, double **rhs, const TFESpace3D **ferhs,
-                TDiscreteForm3D *DiscreteForm,
-                BoundCondFunct3D **BoundaryConditions,
-                BoundValueFunct3D **BoundaryValues,
-                TAuxParam3D *parameters);
-
 /**
  * @brief Assembling method which takes a LocalAssembling3D object replacing the deprecated
  * DiscreteForm3D and AuxParam3D.

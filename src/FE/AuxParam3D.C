@@ -46,6 +46,12 @@ TAuxParam3D::TAuxParam3D(
   N_BaseFunct = new int[N_FEValues];
 }
 
+TAuxParam3D::TAuxParam3D()
+ : TAuxParam3D(0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0,
+               nullptr)
+{
+}
+
 
 /** set aux parameters giving a keyword*/
 TAuxParam3D::TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d)

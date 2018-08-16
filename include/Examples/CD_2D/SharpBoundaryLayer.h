@@ -61,8 +61,19 @@ void BilinearCoeffs(int n_points, double *x, double *y,
   for(int i = 0; i < n_points; i++)
   {
     coeffs[i][0] = 0.001; //diffusion coefficient
+
+    bool use_spatially_varying_convection = false;
+    if (use_spatially_varying_convection)
+    {
+    coeffs[i][1] = parameters[i][0]; //cos(Pi/18);//convection in x direction: cos(10 deg)
+    coeffs[i][2] = parameters[i][1]; //sin(Pi/18);//convection in y direction: sin(10 deg)
+    }
+    else
+    {
     coeffs[i][1] = cos(Pi/18);//convection in x direction: cos(10 deg)
     coeffs[i][2] = sin(Pi/18);//convection in y direction: sin(10 deg)
+    }
+
     coeffs[i][3] = 0; //reaction coefficient
 
     coeffs[i][4] = 0; //rhs, outer body force coefficients

@@ -89,6 +89,11 @@ void ParameterDatabase::add(std::string name, T value, std::string description)
 template void ParameterDatabase::add(std::string n, bool v,      std::string d);
 template void ParameterDatabase::add(std::string n, int v,       std::string d);
 template void ParameterDatabase::add(std::string n, size_t v,    std::string d);
+template<> void ParameterDatabase::add(std::string n, unsigned int v,
+                                       std::string d)
+{
+  this->add(n, static_cast<size_t>(v), d);
+}
 template void ParameterDatabase::add(std::string n, double v,    std::string d);
 template void ParameterDatabase::add(std::string n,std::string v,std::string d);
 template<> void ParameterDatabase::add(std::string n,const char* v,
@@ -157,6 +162,12 @@ template void ParameterDatabase::add(std::string n, int v,    std::string d,
                                      int min, int max);
 template void ParameterDatabase::add(std::string n, size_t v, std::string d,
                                      size_t min, size_t max);
+template <>
+void ParameterDatabase::add(std::string n, unsigned int v, std::string d,
+                            unsigned int min, unsigned int max)
+{
+  this->add<size_t>(n, v, d, min, max);
+}
 template void ParameterDatabase::add(std::string n, double v, std::string d,
                                      double min, double max);
 
@@ -857,6 +868,8 @@ void add_range_to_parameter(Parameter& p,
         {
           long min = stol(min_string);
           long max = stol(max_string);
+          if(min > max)
+            std::swap(min, max);
           if(p.get_type() == Parameter::types::_size_t 
             || p.get_type() == Parameter::types::_size_t_vec)
           {
@@ -920,11 +933,14 @@ void add_range_to_parameter(Parameter& p,
       {
         double min = stod(min_string);
         double max = stod(max_string);
+        if(min > max)
+          std::swap(min, max);
         p.set_range(min, max);
       }
       catch(...)
       {
-        ErrThrow("could not read range for double parameter");
+        ErrThrow("could not read range for double parameter ", min_string,
+                 ",", max_string);
       }
       break;
     }
@@ -1223,24 +1239,24 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "This files describes the computational mesh in .mesh format. "
          "Set this to the path of your desired mesh file.");
 
-  db.add("problem_type", (size_t)0, 
+  db.add("problem_type", 0u, 
          "Determine which kind of problem you want to solve. A value of 0 "
          "means not set. Other values have the following meanings: "
          "1: stationary convection-diffusion,  2: time-dependent "
          "convection-diffusion,  3: stationary Stokes,  4: time-dependent "
          "Stokes,  5: stationary Navier-Stokes,  6: time-dependent "
          "Navier-Stokes.",
-         (size_t)0, (size_t)6);
+         0u, 6u);
 
   db.add("output_write_ps", false,
 	 "Draw a postscript file of the domain. This only works in two space "
 	 "dimensions. Usually this is used in the main program.",
 	 {true,false});
 
-  db.add("verbosity", (size_t)1,
+  db.add("verbosity", 1u,
          "Set the verbosity of ParMooN. The higher the number, the more will "
          "output you will get. Such output will be written to console and the "
-         "'outfile'.", (size_t)1, (size_t)5);
+         "'outfile'.", 1u, 5u);
   
   db.add("script_mode", false, "Set ParMooN into script mode. This means all "
          "output is written to the outfile and not to console.");
@@ -1285,7 +1301,7 @@ ParameterDatabase ParameterDatabase::default_time_database()
 //          "time adaptivity, it only corresponds to the initial value.",
 //          0., 0.5);
 //   
-//   db.add("time_discretization", (size_t)2,
+//   db.add("time_discretization", 2u,
 //          "This is the time discretization scheme. The following values are "
 //          "implemented :"
 //          "0 -> Forward Euler, "
@@ -1293,7 +1309,7 @@ ParameterDatabase ParameterDatabase::default_time_database()
 //          "2 -> Crank-Nicholson, "
 //          "3 -> Fractional step."
 //          "4 -> Extrapolated Crank_Nicholson (or IMplicit-EXplicit, IMEX)",
-//          (size_t)0 , (size_t)4 );
+//          0u , 4u );
   
   return db;
 }
@@ -1303,13 +1319,13 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
   ParameterDatabase db("default ParMooN nonlinear iteration parameters database");
 
   //TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE, TDatabase::ParamDB->SC_NONLIN_MAXIT_SCALAR;
-  db.add("nonlinloop_maxit", (size_t) 100,
+  db.add("nonlinloop_maxit", 100u,
          "The maximum number of iterations to perform in a non-linear loop.",
-         (size_t) 0, size_t (1000));
+         0u, 1000u);
 
-  db.add("nonlinloop_minit", (size_t) 1,
+  db.add("nonlinloop_minit", 1u,
          "The minimum number of iterations to perform in a non-linear loop.",
-         (size_t) 0, size_t (1000));
+         0u, 1000u);
 
   // TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE, TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR,
   db.add("nonlinloop_epsilon", 1e-10,
@@ -1324,11 +1340,11 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
          0., 1.);
 
   //TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR
-  db.add("nonlinloop_slowfactor", (double) 1e10,
+  db.add("nonlinloop_slowfactor", 1.e10,
          "Determines at which reduction rate over x iterations"
          "(usually x = 10, see system classes) a convergence is interpreted"
          "as too slow and therefore the iteration is stopped.",
-         0., (double) 1e10);
+         0., 1.e10);
 
   //TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE, TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SCALAR
   db.add("nonlinloop_scale_epsilon_with_size", false,
@@ -1353,6 +1369,11 @@ ParameterDatabase ParameterDatabase::default_output_database()
 			  "This parameter can control, whether an output method"
 			  "of a system class will produce VTK output or not.",
 			  {true,false});
+    
+    db.add("output_write_vtu", false,
+			  "This parameter can control, whether an output method"
+			  "of a system class will produce VTU output or not.",
+			  {true,false});
 
 	  db.add("output_write_case", false,
 			  "This parameter can control, whether an output method"
@@ -1375,7 +1396,7 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	         "This string is prepended to most files written by ParMooN. "
 	         "This includes also vtk- and case-files");
 
-	  db.add("steps_per_output", 1,
+	  db.add("steps_per_output", (size_t)1,
 	         "This integer specifies how many (time) steps are performed "
 		 "before writing the results ");
 
@@ -1405,11 +1426,11 @@ ParameterDatabase ParameterDatabase::default_solution_in_out_database()
       " and 'write_solution_binary_file', the file path and name.", {true,false});
 
   // write all n steps
-  db.add("write_solution_binary_all_n_steps",(size_t) 1, "Determine at which interval a "
+  db.add("write_solution_binary_all_n_steps", 1u, "Determine at which interval a "
       "backup solution should be written to the file 'write_solution_binary_file'. "
       "The number refers to the number of timesteps, i.e., at a constant time "
       "step length of 0.01s and this paramter set to 10, the current solution "
-      "will be written into the file each 0.1s.", (size_t) 1, size_t (1000000));
+      "will be written into the file each 0.1s.", 1u, 1000000u);
 
   // into which file to write
   db.add("write_solution_binary_file", "my_solution_out.txt", "If "
@@ -1433,20 +1454,20 @@ ParameterDatabase ParameterDatabase::default_tetgen_database()
   db.add("tetgen_quality", 1.4, " This value is for the aspect ratio", 
          1.0, 1000.);
   
-  db.add("tetgen_steiner", (size_t) 0,
+  db.add("tetgen_steiner", 0u,
          "this parameter 'preserve the mesh on the exterior boundary' ", 
-         (size_t) 0, (size_t) 1);
+         0u, 1u);
   
   // maximum can be anything depending on geometry
   db.add("tetgen_volume", 1.0, "this parameter is for the maximum volume "
           "that depends on the geometry", 0.0, 1000.);
   
-  db.add("tetgen_merge_colplaner", (size_t) 0, 
+  db.add("tetgen_merge_colplaner", 0u, 
          "This parameter is for the coplanar facets to be merge "
-         "or very close vertices", (size_t) 0, (size_t) 1);
+         "or very close vertices", 0u, 1u);
   
-  db.add("tetgen_quiet", (size_t) 1, "Quiet: No terminal output except errors ",
-         (size_t) 0, (size_t) 1);
+  db.add("tetgen_quiet", 1u, "Quiet: No terminal output except errors ",
+         0u, 1u);
   return db;
 }
 

@@ -18,6 +18,7 @@
 
 class TBaseCell;
 
+#include <vector>
 #include <Edge.h>
 #include <Joint.h>
 #include <RefDesc.h>
@@ -399,6 +400,28 @@ class TBaseCell
 //        return IsBoundaryCellOnBoundComp;
 //    }
     //LB ====================================================
+
+#ifdef __3D__
+
+    /** @brief 
+	compute normal to m-th face and transformation (for face integral) 
+	@attention The normal to boundary faces might not be directed outward. For this, use
+	the function get_normal_vector for TBoundFace objects.	
+     */
+    void computeNormalAndTransformationData(int m,
+					    std::vector<double>& normal,
+					    double &transformationDeterminant) const;
+    
+    /** @brief get number of vertices on m-th face */
+    int getNumberOfFaceVertices(int m) const
+    {
+      const int *faceVertexMap, *faceVertexMapLength;
+      int maxNVerticesPerFace;
+      GetShapeDesc()->GetFaceVertex(faceVertexMap,faceVertexMapLength,maxNVerticesPerFace);
+      // simplify: number of vertices on face m
+      return faceVertexMapLength[ m ];
+    }
+#endif
     
 #ifdef  _MPI
 
@@ -471,7 +494,20 @@ class TBaseCell
      
 #endif
 
+
+#ifdef __3D__
     virtual void check() const = 0;
+
+   /** @brief the vertices of a 3D cell have a specific order
+    * (for tets the right hand rule holds; for hexas it holds using vert (0,1,2,4) )
+    * check the sign of the triple product of three vectors - for the right hand rule it has to be positive*/
+   bool check_orientation() const;
+
+   /** @brief check whether the ShapeDesc actually describes the shape of the cell
+    * (does the cell have a volume?)*/
+   bool check_shape() const;
+#endif
+
 };
 
 #endif

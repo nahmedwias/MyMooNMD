@@ -510,7 +510,7 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
   std::vector<TFEFunction2D*> fefunctios;
   // call to routine to set arrays
   set_arrays(s, spaces_mat, spaces_rhs, fefunctios);
-  
+
   // prepare matrices and rhs for assembling
   std::vector<TSquareMatrix2D*> sqMatrices;
   std::vector<TMatrix2D*> rectMatrices;
@@ -637,9 +637,11 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
 void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssembling2D_type type, std::vector< TSquareMatrix2D* >& sqMat,
                    std::vector< TMatrix2D* >& reMat, std::vector< double* >& rhs_array)
 {
-  rhs_array.resize(0);
   sqMat.resize(0);
   reMat.resize(0);
+  // right hand side: for NSTYPE: 1,2 and 3, size is 2
+  rhs_array.resize(3, nullptr);
+  
 
   std::vector<std::shared_ptr<FEMatrix>> blocks
          = s.matrix.get_blocks_uniquely();
@@ -652,10 +654,9 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
   {
     case TNSE2D:
     {
-      // right hand side: for NSTYPE: 1,2 and 3, size is 2
-      rhs_array.resize(2);
       rhs_array[0] = s.rhs.block(0);
       rhs_array[1] = s.rhs.block(1);
+      rhs_array[2] = s.rhs.block(2);
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
@@ -750,18 +751,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
           reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
           reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-          // right hand side
-          rhs_array.resize(2);
-          rhs_array[0] = s.rhs.block(0);
-          rhs_array[1] = s.rhs.block(1);
-          if(TDatabase::ParamDB->NSTYPE == 14 &&
-            !db["space_discretization_type"].is("local_projection"))
-          {
-            // additional right hand sides
-            rhs_array.resize(3);
-            rhs_array[2] = s.rhs.block(2);
-          }
           break;
       }
       // right hand sides are assembled for the initial time step
@@ -773,6 +762,7 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
 // case TNSE2D       
     case TNSE2D_NL:
     {
+      // no right-hand side needs to be assembled here (with a few exceptions)
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
@@ -788,8 +778,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
           sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
 
           reMat.resize(0);
-          // right hand side
-          rhs_array.resize(0);
           if(db["space_discretization_type"].is("smagorinsky") || db["space_discretization_type"].is("supg"))
           {
             sqMat.resize(4);
@@ -832,11 +820,10 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
 	    reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); 
 	    reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
 	    
-	    rhs_array.resize(2);
-	    rhs_array[0] = s.rhs.block(0);
-	    rhs_array[1] = s.rhs.block(1);
-	    s.rhs.reset(); // reset to zero
-	  }
+            rhs_array[0] = s.rhs.block(0);
+            rhs_array[1] = s.rhs.block(1);
+            s.rhs.reset(); // reset to zero
+          }          
           break;
         case 14:
           if(!db["space_discretization_type"].is("supg") 
@@ -889,7 +876,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
             reMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
             reMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
             
-            rhs_array.resize(3);
             rhs_array[0] = s.rhs.block(0);
             rhs_array[1] = s.rhs.block(1);
             rhs_array[2] = s.rhs.block(2);
@@ -906,17 +892,11 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
       // no matrices to be assembled
       sqMat.resize(0);
       reMat.resize(0);
-      // right hand side
-      rhs_array.resize(2);
-      rhs_array[0]=s.rhs.block(0);
-      rhs_array[1]=s.rhs.block(1);     
       
-      if(TDatabase::ParamDB->NSTYPE == 14 && !db["space_discretization_type"].is("local_projection"))
-      {
-        rhs_array.resize(3);
-        rhs_array[2] = s.rhs.block(2); // pressure block
-      }
-      // reset them to zero
+      rhs_array[0] = s.rhs.block(0);
+      rhs_array[1] = s.rhs.block(1);
+      rhs_array[2] = s.rhs.block(2);
+      // reset rhs to zero
       s.rhs.reset();
       break;
     }
@@ -938,18 +918,14 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
                             std::vector< TFEFunction2D* >& functions)
 {
   spaces.resize(2);
-  spaces_rhs.resize(2);
+  spaces_rhs.resize(3);
 
   spaces[0] = &s.velocity_space;
   spaces[1] = &s.pressure_space;
 
   spaces_rhs[0] = &s.velocity_space;
   spaces_rhs[1] = &s.velocity_space;
-  if(TDatabase::ParamDB->NSTYPE == 14)
-  {
-    spaces_rhs.resize(3);
-    spaces_rhs[2] = &s.pressure_space;
-  }
+  spaces_rhs[2] = &s.pressure_space;
   // standard for all methods.
   functions.resize(3);  
   functions[0] = s.u.GetComponent(0);
@@ -1253,6 +1229,7 @@ void Time_NSE2D::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
       reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
       reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
     }
+
     // update the matrices and right hand side
     Assemble2DSlipBC(spaces_mat.size(), spaces_mat.data(),
                    sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
@@ -1480,14 +1457,10 @@ void Time_NSE2D::output(int m)
 {
   System_per_grid& s = this->systems.front();
 
-  bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
-  if(no_output)
-    return;
-
   TFEFunction2D * u1 = s.u.GetComponent(0);
   TFEFunction2D * u2 = s.u.GetComponent(1);
 
-  if((size_t)db["verbosity"]> 1)
+  if((size_t)db["verbosity"] > 1)
   {
     u1->PrintMinMax();
     u2->PrintMinMax();
@@ -1540,8 +1513,8 @@ void Time_NSE2D::output(int m)
       Output::print<1>(t, " L2(u) : ", setprecision(10), sqrt(this->errors[1]));
       Output::print<1>(t, " H1-semi(u) : ", setprecision(10), sqrt(this->errors[3]));
       
-      Output::print<1>(t, " L2(0,t,L2(u)) : ", sqrt(this->errors[0]));
-      Output::print<1>(t, " L2(0,t,H1-semi(u)) : ", sqrt(this->errors[2]));
+      Output::print<1>(t, " L2(0,t,L2(u)) : ", setprecision(10), sqrt(this->errors[0]));
+      Output::print<1>(t, " L2(0,t,H1-semi(u)) : ", setprecision(10), sqrt(this->errors[2]));
       
       s.p.GetErrors(example.get_exact(2), 3, allderiv, 2, L2H1Errors,
                     nullptr, &aux, 1, &p_sp, locerr);
@@ -1551,11 +1524,11 @@ void Time_NSE2D::output(int m)
       
       errors[4] += (locerr[0]*locerr[0] + this->errors[5])*tau*0.5;
       errors[5] = locerr[0]*locerr[0];
-      Output::print<1>(t, " L2(0,t,L2(p)) : ", sqrt(errors[4]) );
+      Output::print<1>(t, " L2(0,t,L2(p)) : ", setprecision(10), sqrt(errors[4]) );
       
       errors[6] += (locerr[1]*locerr[1] + this->errors[7])*tau*0.5;
       errors[7] = locerr[1]*locerr[1];
-      Output::print<1>(t, " L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
+      Output::print<1>(t, " L2(0,t,H1-semi(p)) : ", setprecision(10), sqrt(errors[6]) );
     }
   }
 
@@ -1581,17 +1554,11 @@ void Time_NSE2D::output(int m)
   delete u1;
   delete u2;
 
-  if(time_stepping_scheme.current_step_ % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-  {
-    if(db["output_write_vtk"])
-    {
-      int m = time_stepping_scheme.current_step_/TDatabase::TimeDB->STEPS_PER_IMAGE;
-      outputWriter.write(m);
-    }
-  }
+  outputWriter.write(time_stepping_scheme.current_step_);
 
   if(db["write_solution_binary"].is(true))
   {
+    size_t interval = db["write_solution_binary_all_n_steps"];
     if(m % interval == 0)
     {//write solution to a binary file
       std::string file = db["write_solution_binary_file"];

@@ -87,6 +87,9 @@ class TFESpace2D : public TFESpace
 
     /** construct space */
     void ConstructSpace(BoundCondFunct2D *BoundaryCondition);
+    
+    /** @brief get dimension of the vector basis function */
+    virtual int GetBaseVectDim() const;  
 
     /** return number of active degrees of freedom */
     int GetN_ActiveDegrees() const
@@ -113,13 +116,13 @@ class TFESpace2D : public TFESpace
     { return HangingNodeArray; }
 
     /** return the FE Id for element i, corresponding to cell */
-    FE2D GetFE2D( int i, TBaseCell* cell ) const;
+    FE2D GetFE2D( int i, const TBaseCell* cell ) const;
     
     /** @brief return the Finite Element on a given cell */
     const TFE2D& get_fe(unsigned int cell_number) const;
 
     /** return position of one given DOF */
-    void GetDOFPosition(int dof, double &x, double &y);
+    void GetDOFPosition(int dof, double &x, double &y) const;
 
     /** return position of all dofs */
     void GetDOFPosition(double *x, double *y);

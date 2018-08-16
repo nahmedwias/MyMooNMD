@@ -74,6 +74,25 @@ void FEMatrix::scaleActive(double factor)
                  [factor](double & a){ a = a*factor; } );
 }
 
+void FEMatrix::scale_non_active_diagonals(double factor)
+{
+  const int n_rows = this->GetN_Rows();
+  const int active_bound = this->GetTestSpace()->GetActiveBound();
+  const int * rowPtr = this->GetRowPtr();
+  const int * colIndex = this->GetKCol();
+  for(int i = active_bound; i < n_rows; ++i)
+  {
+    for(int j = rowPtr[i]; j < rowPtr[i+1]; ++j)
+    {
+      if(colIndex[j] == i)
+      {
+        this->entries[j] *= factor;
+      }
+    }
+  }
+}
+
+
 void FEMatrix::addActive(const FEMatrix& m, double factor)
 {
   if(this->GetStructure() != m.GetStructure()) // compare objects

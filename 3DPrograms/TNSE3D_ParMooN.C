@@ -12,7 +12,6 @@
 #include <MeshPartition.h>
 #include <Chrono.h>
 #include <TetGenMeshLoader.h>
-#include <Output3D.h>
 #include <LoopInfo.h>
 #include <TimeDiscretizations.h>
 #include <ChannelFlowRoutines.h>
@@ -133,10 +132,6 @@ int main(int argc, char* argv[])
     }
   }
   
-  TCollection* coll = gridCollections.front();
-  TOutput3D output(0,0,0,0,std::addressof(domain),coll);
-  
-  output.WriteVtk("mesh.vtk");
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
   // set some parameters for time stepping
@@ -157,34 +152,6 @@ int main(int argc, char* argv[])
   
   // assemble the initial matrices 
   tnse3d.assemble_initial_time();
-
-  //CB DEBUG
-  for(int v=0;v<3;++v)
-  {
-    auto velo_func = tnse3d.get_velocity_component(v);
-    auto velo_spac = velo_func->GetFESpace3D();
-    auto velo_vals = velo_func->GetValues();
-    for(int d = 0;d<velo_spac->GetN_DegreesOfFreedom();++d)
-    {
-      double x,y,z;
-      velo_spac->GetDOFPosition(d,x,y,z);
-      // the velocity solution at dof d is set to "v+1" times the norm of the position of dof d.
-      // this is the same in SEQ and MPI and can therefore be used as a test example
-      velo_vals[d] = (v + 1) * sqrt(x*x + y*y + z*z);
-    }
-  }
-  // Call the function which should be parallelized.
-  Cylinder_Square::setParameters(parmoon_db);
-  Cylinder_Square::PrepareVelocityAtCylinder(coll);
-  Cylinder_Square::PrepareCenterlineVelocities(coll);
-  Cylinder_Square::PreparePressureAtCylinder(coll);
-  Cylinder_Square::CenterlineVelocities(tnse3d);
-#ifdef _MPI
-  MPI_Finalize();
-#endif
-  exit(0);
-  //END DEBUG
-
 
   double end_time = tss.get_end_time();
   int n_substeps = GetN_SubSteps();
@@ -251,25 +218,25 @@ int main(int argc, char* argv[])
        
        if (my_rank==0) // some outputs
        {
-	 Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
-	 Output::print<1>("Residuals :", tnse3d.get_residuals());
+         Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
+         Output::print<1>("Residuals :", tnse3d.get_residuals());
        }
        // checking residuals and stop conditions
        if(tnse3d.stop_it(k))
        {
-	 loop_info.finish(k, tnse3d.get_full_residual());
-	 linear_iterations+=k;
-	 /// @todo provide all parts of the residual
-	 /// @todo loop_info restricted to the solver only
-	 loop_info_time.print(linear_iterations, tnse3d.get_full_residual());
-	 break;
+         loop_info.finish(k, tnse3d.get_full_residual());
+         linear_iterations+=k;
+         /// @todo provide all parts of the residual
+         /// @todo loop_info restricted to the solver only
+         loop_info_time.print(linear_iterations, tnse3d.get_full_residual());
+         break;
        }
        else
-	 loop_info.print(k, tnse3d.get_full_residual());
+        loop_info.print(k, tnse3d.get_full_residual());
        
        tnse3d.solve();
        if(tnse3d.imex_scheme(1))
-	 continue;
+        continue;
        // assemble the nonlinear matrices
        tnse3d.assemble_nonlinear_term();
        // prepare the system matrix 
@@ -288,11 +255,11 @@ int main(int argc, char* argv[])
      {
        if (TDatabase::TimeDB->CURRENTTIME>=TDatabase::TimeDB->T0)
        {
-	 if (TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION == 0)
-	 {
-	   TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
-	   TDatabase::TimeDB->T0 = TDatabase::TimeDB->CURRENTTIME;
-	 }
+        if (TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION == 0)
+         {
+           TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
+           TDatabase::TimeDB->T0 = TDatabase::TimeDB->CURRENTTIME;
+         }
        }
        ChannelTau180::computeMeanVelocity(tnse3d);
      }

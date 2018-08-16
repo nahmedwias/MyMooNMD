@@ -19,7 +19,7 @@
 #include <Example_TimeCD2D.h>
 #include <Multigrid.h>
 #include <Domain.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 #include <Solver.h>
 
 #include <vector>
@@ -140,7 +140,7 @@ class Time_CD2D
     std::vector<double> errors;
 
     /// @brief class for handling (time dependent) output 
-    PostProcessing2D timeDependentOutput;
+    DataWriter2D timeDependentOutput;
     
   public:
     /** @brief constructor

@@ -37,26 +37,10 @@ void Assemble2D(int n_fespaces,
 #ifdef __3D__
                 , TAux2D3D *Aux2D3D
 #endif
-                , int AssemblePhaseID = -1
+                , int AssemblePhaseID = -1,
+                bool ignore_boundary_for_rhs = false
                 );
 
-//Hier/////////////////////////////////////////////////
-/** a function from a finite element space */
-void Assemble2D(int n_fespaces,
-                const TFESpace2D** fespaces,
-                int n_sqmatrices,
-                TSquareMatrix2D** sqmatrices,
-                int n_matrices,
-                TMatrix2D** matrices,
-                int n_rhs,
-                double** rhs,
-                const TFESpace2D** ferhs,
-                TDiscreteForm2D* DiscreteForm,
-                BoundCondFunct2D** BoundaryConditions,
-                BoundValueFunct2D** BoundaryValues,
-                TAuxParam2D* Parameters,
-                int AssemblePhaseID = -1
-                );
 
 /** assembling of matrices multiplied by a factor */
 void Assemble2D_FCT(int n_fespaces, TFESpace2D **fespaces, int n_sqmatrices,

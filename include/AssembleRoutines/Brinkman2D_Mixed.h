@@ -1,15 +1,10 @@
 /** ************************************************************************
- *
- * @brief     common declaration for all Brinkman problems
- *
- *
+ * @brief     Modules of Brinkman problems in 2D
  * @author    Alfonso Caiazzo & Laura Blank
  * @date      18.05.16
  ************************************************************************  */
 
-// TO DO:
-// 1) PSPGSTAB mit Nitsche gekoppelt definieren (boundary integrals aus Stabilisierung nicht vergessen)
-// 2) Formulation using the deformation tensor
+// TO DO: Formulation using the deformation tensor
 
 #ifndef __Brinkman2DMixed__
 #define __Brinkman2DMixed__
@@ -17,73 +12,63 @@
 #include <Enumerations.h>
 
 // ======================================================================
-// Type 1, Standard Galerkin for Brinkman in [p div v] formulation
+// Standard Galerkin for Brinkman in (p, div v) formulation
 // ======================================================================
-/** @brief brinkman weak formulation
- effective_viscosity (gradu,gradv)-(p,div v)+\frac{viscosity}{permeability}(u,v)=(f,v)
- (q, div u)=(g,q)
+/** @brief Weak formulation of the Brinkman problem:
+  mueff * (grad u, grad v) - (p, div v) + sigma * (u, v) = (f, v)
+  (q, div u) = (g, q)
  */
 void BrinkmanType1Galerkin(double Mult, double *coeff,
-                           double *param, double hK,
-                           double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs);
-
-
+    double *param, double hK,
+    double **OrigValues, int *N_BaseFuncts,
+    double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
-// // Type 2, Standard Galerkin for Brinkman in [u gradp] formulation (macht nicht wirklich Sinn!!!!!!)
+// Standard Galerkin for Brinkman in (grad p, v) formulation (Check if this function is meaningfull at all)
 // ======================================================================
-/** @brief brinkman weak formulation
- t^2(gradu,gradv)-(grad p,v)+(u,v)=(f,v)
- (u, grad q)=(g,q)
+/** @brief Weak formulation of the Brinkman problem:
+  mueff * (grad u, grad v) - (grad p, v) + sigma * (u, v) = (f, v)
+  (u, grad q) = (g,q)
  */
 void BrinkmanType2Galerkin(double Mult, double *coeff,
-                           double *param, double hK,
-                           double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs);
-
-
+    double *param, double hK,
+    double **OrigValues, int *N_BaseFuncts,
+    double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
-// Type 1.2, Standard Galerkin for Scaled Brinkman in [p div v] formulation with stabilization (PSPG) for P1/P1
+// GLS-stabilization terms restricted to P1/P1 for the Brinkman in [p div v] formulation
 // ======================================================================
-/** @brief brinkman weak formulation
- t^2 (gradu,gradv)-(p,div v)+(u,v)=(f,v)
- (q, div u)=(g,q)
- PSPGStab \frac{h_k^2}{t^2+h_k^2}(-t^2 \Delta u + \nabla p + u,-t^2 \Delta v + \nabla q + v ) = PSPGStab \frac{h_k^2}{t^2+h_k^2} (f,-t^2 \Delta v + \nabla q + v )
+/** @brief GLS method terms for P1/P1 for the Brinkman Problem:
+  alpha * \frac{h_K^2}{mueff + sigma l_K^2} * (-mu_eff \Delta u + \nabla p + sigma u, -mueff \Delta v + \nabla q + sigma v ) = alpha * \frac{h_K^2}{mueff + sigma l_K^2} (f, -mueff \Delta v + \nabla q + sigma v )
  */
-// for P1/P1 Delta u=0
+// for P1/P1 it is Delta u = 0
 void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
-                                       double *param, double hK,
-                                       double **OrigValues, int *N_BaseFuncts,
-                                       double ***LocMatrices, double **LocRhs);
-
-
+    double *param, double hK,
+    double **OrigValues, int *N_BaseFuncts,
+    double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
-// Type 1.3, Standard Galerkin for Scaled Brinkman in [p div v] formulation with stabilization (PSPG) for P2/P2
+// GLS-stabilization terms restricted to P2/P2 without P1/P1 terms for the Brinkman in [p div v] formulation↲
 // ======================================================================
-/** @brief brinkman weak formulation
- t^2(gradu,gradv)-(p,div v)+(u,v)=(f,v)
- (q, div u)=(g,q)
- PSPGStab \frac{h_k^2}{t^2+h_k^2}(-t^2 \Delta u + \nabla p + u,-t^2 \Delta v + \nabla q + v ) = PSPGStab \frac{h_k^2}{t^2+h_k^2} (f,-t^2 \Delta v + \nabla q + v )
+/** @brief GLS method terms for P2/P2 without P1/P1 terms for the Brinkman Problem:
+  alpha * \frac{h_K^2}{mueff + sigma l_K^2} * [ (-mu_eff \Delta u, -mueff \Delta v + \nabla q + sigma v ) + ( \nabla p + sigma u, -mueff \Delta v) ] = alpha * \frac{h_K^2}{mueff + sigma l_K^2} (f, -mueff \Delta v)
  */
+// for Pk/Pk, k>1, it is Delta u != 0
 void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
-                                        double *param, double hK,
-                                        double **OrigValues, int *N_BaseFuncts,
-                                        double ***LocMatrices, double **LocRhs);
+    double *param, double hK,
+    double **OrigValues, int *N_BaseFuncts,
+    double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
-// Type 3, Grad-Div-Stabilization
+// Grad-Div-Stabilization
 // ======================================================================
-/** @brief Grad-Div Stabilization terms
- \zeta (div u, div v)= \zeta (g, div v)
-*/
-
+/** @brief Grad-Div Stabilization terms:
+  \delta * \frac{h_K^2}{mueff + sigma l_K^2} * (div u, div v) = \delta * \frac{h_K^2}{mueff + sigma l_K^2} * (g, div v)
+ */
 void BrinkmanGradDivStab(double Mult, double *coeff,
-                         double *param, double hK,
-                         double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs);
+    double *param, double hK,
+    double **OrigValues, int *N_BaseFuncts,
+    double ***LocMatrices, double **LocRhs);
 
 
 #endif

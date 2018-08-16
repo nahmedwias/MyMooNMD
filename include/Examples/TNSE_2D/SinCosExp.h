@@ -16,6 +16,10 @@ void ExampleFile()
   OutPut(N_OSCILLATIONS << endl) ;
 }
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 // ========================================================================
 // initial solution
 // ========================================================================
@@ -213,7 +217,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
 {
   int i;
   double *coeff;//, x, y;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double eps = DIMENSIONLESS_VISCOSITY;
 
   for(i=0;i<n_points;i++)
   {
@@ -221,7 +225,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
 //    x = X[i];
 //    y = Y[i];
 
-    coeff[0] = nu;
+    coeff[0] = eps;
 
     coeff[1] = 0;
     coeff[2] = 0;

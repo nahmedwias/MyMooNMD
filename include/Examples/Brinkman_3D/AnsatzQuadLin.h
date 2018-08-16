@@ -8,6 +8,10 @@
 // to 1/Reynolds_number and is dimensionless
 //double DIMENSIONLESS_VISCOSITY;
 
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
+
 void ExampleFile()
 {
   Output::info<1>("EXAMPLE","AnsatzQuadLin.h");
@@ -135,9 +139,9 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
       coeff = coeffs[i];
         
         //coeff[0] = eps;
-        coeff[5]=TDatabase::ParamDB->VISCOSITY;
-        coeff[6]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-        coeff[7]=TDatabase::ParamDB->PERMEABILITY;
+        coeff[5] = viscosity;
+        coeff[6] = effective_viscosity;
+        coeff[7] = permeability;
         coeff[1] = -6*coeff[6] + 3 + (coeff[5]/coeff[7])*(x*x+y*y+z*z); // f1
         coeff[2] = -2*coeff[6] + -2 + (coeff[5]/coeff[7])*(x*x+2*x*z+13); // f2
         coeff[3] = -10*coeff[6] + 7 + (coeff[5]/coeff[7])*(-2*x*z+5*y*y); // f3
@@ -157,9 +161,9 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
         coeff = coeffs[i];
         
         //coeff[0] = eps;
-        coeff[5]=TDatabase::ParamDB->VISCOSITY;
-        coeff[6]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-        coeff[7]=TDatabase::ParamDB->PERMEABILITY;
+        coeff[5] = viscosity;
+        coeff[6] = effective_viscosity;
+        coeff[7] = permeability;
         coeff[1] = -6*coeff[6] + 3 + (coeff[5]/coeff[7])*(x*x+y*y+z*z); // f1
         coeff[2] = -2*coeff[6] + -2 + (coeff[5]/coeff[7])*(x*x+2*x*z+13); // f2
         coeff[3] = -10*coeff[6] + 7 + (coeff[5]/coeff[7])*(-2*x*z+5*y*y); // f3

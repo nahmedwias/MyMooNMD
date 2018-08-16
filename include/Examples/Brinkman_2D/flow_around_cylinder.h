@@ -1,7 +1,11 @@
-// Navier-Stokes problem, Benchmark problem
-// 
+// Brinkman problem, Benchmark problem
+//
 // u(x,y) = unknown
 // p(x,y) = unknown
+
+double viscosity = -1;                                                        
+double effective_viscosity = -1;                                              
+double permeability = -1;
 
 void ExampleFile()
 {
@@ -42,7 +46,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  if (i==1)
+  if (i == 1)
   {
     cond = NEUMANN;
   }
@@ -60,9 +64,9 @@ void U1BoundValue(int BdComp, double Param, double &value)
             break;
     case 2: value = 0;
             break;
-    case 3: value=1.2*Param*(1-Param); // 4*0.3
+    case 3: value = 1.2 * Param * (1 - Param); // 4*0.3
             break;
-    case 4: value=0;
+    case 4: value = 0;
             break;
     default: cout << "wrong boundary part number: " << BdComp << endl;
   }  
@@ -71,7 +75,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
 void U2BoundValue(int BdComp, double Param, double &value)
 {
   value = 0;
-  if(BdComp>4) cout << "wrong boundary part number: " << BdComp << endl;
+  if(BdComp > 4) cout << "wrong boundary part number: " << BdComp << endl;
 }
 
 // ========================================================================
@@ -80,27 +84,21 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
-  double eps = 1/TDatabase::ParamDB->RE_NR;
-  int i;
+ // double eps = 1/TDatabase::ParamDB->RE_NR;
   double *coeff;
 
-  for(i=0;i<n_points;i++)
+  for(int i = 0; i < n_points; i++)
   {
     coeff = coeffs[i];
 
-//    coeff[0] = eps;
-//    coeff[1] = 0; // f1
-//    coeff[2] = 0; // f2
-//    coeff[3] = 0; // g (divergence)
-        coeff[4] = TDatabase::ParamDB->VISCOSITY;
-        coeff[5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-        coeff[6] = TDatabase::ParamDB->PERMEABILITY;
-        coeff[0] = (coeff[5] / coeff[4]) * coeff[6];
-        coeff[1] = 0;//-coeff[5] * val_u1[3] - val_p[1] + (coeff[4]/coeff[6]) * val_u1[0];  //(coeff[4]/coeff[6])-1;                       // f1 (rhs of Brinkman problem for u1)
-        coeff[2] = 0;                                               // f2 (rhs of Brinkman problem for u2)
-        coeff[3] = 0;                                               // g (divergence term=u1_x+u2_y)
-        coeff[7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
-        coeff[8] = TDatabase::ParamDB->grad_div_stab_weight;
-    
+    coeff[4] = TDatabase::ParamDB->VISCOSITY;
+    coeff[5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+    coeff[6] = TDatabase::ParamDB->PERMEABILITY;
+    coeff[0] = (coeff[5] / coeff[4]) * coeff[6];
+    coeff[1] = 0;//-coeff[5] * val_u1[3] - val_p[1] + (coeff[4]/coeff[6]) * val_u1[0];  //(coeff[4]/coeff[6])-1; // f1 (rhs of Brinkman problem for u1)
+    coeff[2] = 0;                                               // f2 (rhs of Brinkman problem for u2)
+    coeff[3] = 0;                                               // g (divergence term=u1_x+u2_y)
+    coeff[7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+    coeff[8] = TDatabase::ParamDB->grad_div_stab_weight;
   }
 }

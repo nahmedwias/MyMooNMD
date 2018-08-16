@@ -65,13 +65,12 @@ class TBoundEdge : public TJoint
       t1 = T_1;
     }
     
-    //START
     void get_vertices(double &x0, double &y0, double &x1, double &y1)
     {
         GetXYofT( T_0, x0, y0);
         GetXYofT( T_1, x1, y1);
     }
-    
+
     double get_length()
     {
       double x0, x1, y0, y1;
@@ -79,7 +78,7 @@ class TBoundEdge : public TJoint
       GetXYofT( this->T_1, x1, y1);
       return sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
     }
-    
+
     void get_normal(double &nx, double &ny)
     {
       double x0, x1, y0, y1;
@@ -89,15 +88,21 @@ class TBoundEdge : public TJoint
       nx =  (y1-y0)/length;
       ny = (x0-x1)/length;
     }
-    
-    
+
+    void get_tangent(double &tx, double &ty)
+    {
+      double x0, x1, y0, y1;
+      GetXYofT( this->T_0, x0, y0);
+      GetXYofT( this->T_1, x1, y1);
+      double length = sqrt( (x1-x0) * (x1-x0) + (y1-y0) * (y1-y0) );
+      tx = (x1-x0)/length;
+      ty = (y1-y0)/length;
+    }
+
     void set_index_in_neighbour(TBaseCell *neigh, int index);
     int get_index_in_neighbour(const TBaseCell*const neigh) const;
-    //END
-    
-    
-    
-    
+
+
 #ifdef __2D__
     /** update parameters according to the new vertex positions */
     void UpdateParameters(TVertex *Begin, TVertex *End);
@@ -111,7 +116,7 @@ class TBoundEdge : public TJoint
     { BoundComp->GetTofXY(X, Y, T); }
 
     /** return boundary component */
-    TBoundComp2D *GetBoundComp() const
+    const TBoundComp2D *GetBoundComp() const
     { return BoundComp; }
 
     /** return whether this is an interior joint */

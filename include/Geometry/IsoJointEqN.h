@@ -43,10 +43,10 @@ class TIsoJointEqN : public TJointEqN
     { return new TIsoJointEqN(nullptr); }
 
     /** return number of additional vertices */
-    int GetN_Vertices()
+    int GetN_Vertices() const
     { return N_Vertices; }
 
-    TVertex **GetVertices()
+    TVertex **GetVertices() const
     { return Vertices; }
 
     void SetVertices(int n_vertices, TVertex **vertices);

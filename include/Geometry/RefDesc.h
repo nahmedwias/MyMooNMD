@@ -15,18 +15,18 @@
 
 #include <ShapeDesc.h>
 
-#define N_REFDESC  74
+#define N_REFDESC  76
 // Actually there are some more refinement types (the mortar types).
 // These will be added dynamicly.
 // We use TriBis0 - Quad2Conf3 for generation of closures. Do not
 // put any other descriptors between these.
 enum Refinements {NoRef, LineReg, TriReg, QuadReg, ParallReg, RectReg,
-                  TriBis0, TriBis1, TriBis2, 
+                  TriBary, TriBis0, TriBis1, TriBis2, 
                   TriBis01, TriBis02, TriBis10, TriBis12, TriBis20, TriBis21,
                   QuadBis0, QuadBis1,
                   Quad1Conf0, Quad1Conf1, Quad1Conf2, Quad1Conf3,
                   Quad2Conf0, Quad2Conf1, Quad2Conf2, Quad2Conf3,
-                  QuadToTri0, QuadToTri1, TetraReg, 
+                  QuadToTri0, QuadToTri1, TetraReg, TetraBary, 
                   TetraReg0, TetraReg1, TetraReg2, 
                   TetraBis0, TetraBis1, TetraBis2, TetraBis3, TetraBis4, TetraBis5,
                   TetraBis01, TetraBis02, TetraBis03, TetraBis04, TetraBis05,

@@ -292,14 +292,10 @@ struct TParaDB
   //======================================================================
   /** Parameters for Brinkman problems */
   // Unfortunately, due to the rigidity of the assemble function and the 
-  // function LinCoeffs(), the following 7 parameters can not be set in the 
+  // function LinCoeffs(), the following parameters can not be set in the 
   // new 'local' Brinkman database.
   //======================================================================
-  double VISCOSITY;
-  double EFFECTIVE_VISCOSITY;
-  double PERMEABILITY;
-
-  /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
+   /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
   double equal_order_stab_weight_PkPk;
 
   /** Parameter for Grad-Div stabilization of Brinkman problems                  */
@@ -326,9 +322,10 @@ struct TParaDB
     h_T^2/(mueff+sigma h_T^2) (l_T = 1) or h_T^2/(mueff+sigma L_0^2) (l_T = -1). 
     The quantity L_0 should be chosen as some characteristic length, e.g the 
     diameter of the domain. i
-    However, here it is up to now internally fixed to L_0 = 0.1*1. */
+    By default, L_0 = 1 and can ba set in the inputfile. */
   int l_T;
-
+  double L_0;
+ 
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */
   //======================================================================

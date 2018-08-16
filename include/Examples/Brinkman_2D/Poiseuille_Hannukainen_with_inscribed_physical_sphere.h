@@ -1,5 +1,8 @@
 // Brinkman problem, Poiseuille-Problem from Hannukainen
 
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
 
 void ExampleFile()
 {
@@ -18,12 +21,11 @@ void ExampleFile()
 // exact solution
 // ========================================================================
 
-
 void ExactU1(double x, double y, double *values)
 {
-    double K = TDatabase::ParamDB->PERMEABILITY;
-    double nu = TDatabase::ParamDB->VISCOSITY;
-    double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+    double K = permeability;
+    double nu = viscosity;
+    double nu_eff = effective_viscosity;
     double t = fabs(sqrt((nu_eff/nu)*K));
     
     if (K == 0)
@@ -98,9 +100,9 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-    double K = TDatabase::ParamDB->PERMEABILITY;
-    double nu = TDatabase::ParamDB->VISCOSITY;
-    double nu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+    double K = permeability;
+    double nu = viscosity;
+    double nu_eff = effective_viscosity;
     double t = fabs(sqrt((nu_eff/nu)*K));
 
     // loop to impose Neumann boundary conditions
@@ -163,16 +165,15 @@ void LinCoeffs(int n_points, double *x, double *y,
         // effective viscosity and permeability unsteady 
         if((x[i]-0.5)*(x[i]-0.5)+(y[i]-0.5)*(y[i]-0.5)> 0.09)
         {
-            coeffs[i][5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-            coeffs[i][6] = TDatabase::ParamDB->PERMEABILITY;
+            coeffs[i][5] = effective_viscosity;
+            coeffs[i][6] = permeability;
         }
         else 
         {
-              coeffs[i][5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY/10000;
-              //coeffs[i][5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY ;
-              coeffs[i][6] = TDatabase::ParamDB->PERMEABILITY/10000;
+              coeffs[i][5] = effective_viscosity/10000;
+              coeffs[i][6] = permeability/10000;
         }
-        coeff[4] = TDatabase::ParamDB->VISCOSITY;
+        coeff[4] = viscosity;
         coeff[0] = (coeff[5] / coeff[4]) * coeff[6];
         coeff[1] = (coeff[4]/coeffs[i][6])-1;  //0;                                         // f1 (rhs of Brinkman problem for u1)
         coeff[2] = 0;                                               // f2 (rhs of Brinkman problem for u2)

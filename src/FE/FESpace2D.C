@@ -143,6 +143,12 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
              ElementForShape[Parallelogram] = C_Q4_2D_Q_A;
              ElementForShape[Rectangle] = C_Q4_2D_Q_A;
         break;
+    case 25: ElementForShape[Triangle] = C_P5_2D_T_A;
+             ElementForShape[Quadrangle] = C_Q5_2D_Q_M;
+             ElementForShape[Parallelogram] = C_Q5_2D_Q_A;
+             ElementForShape[Rectangle] = C_Q5_2D_Q_A;
+             cout << "there are no elements P5 with bubbles for triangles\n";
+        break;
 //===============================================================================
     // P1//PQ1 nonconforming
     case -1: ElementForShape[Triangle] = N_P1_2D_T_A;
@@ -547,9 +553,9 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
              ElementForShape[Rectangle] = C_EL1_2D_Q_A;
              break;     
   
-    default: cerr << "unknown order" << endl;
-             exit(-1);
-             break;
+    default:
+      ErrThrow("unknown order ", ord);
+      break;
   } // endswitch
 
   // find out all used elements
@@ -1178,7 +1184,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE2D TFESpace2D::GetFE2D(int i, TBaseCell *cell) const
+FE2D TFESpace2D::GetFE2D(int i, const TBaseCell *cell) const
 {
   FE2D ret;
 
@@ -1238,13 +1244,20 @@ void TFESpace2D::FindUsedElements()
   //   OutPut("UsedElement[" << i << "]: " << UsedElements[i] << endl);
 }
 
+int TFESpace2D::GetBaseVectDim() const 
+{
+  // the desired information is stored in the BasisFunction2D object. We take 
+  // the one on the first cell, on all other cells it should be the same
+  return this->get_fe(0).GetBaseFunct2D()->GetBaseVectDim();
+}
+
 void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 {
   int i, j, k, l, m, n, comp, N_Edges;
   int *v;
   TBaseCell *cell, *neigh, *child1;
   TJoint *joint;
-  TBoundComp2D *BoundComp;
+  const TBoundComp2D *BoundComp;
   TBoundEdge *BoundEdge;
   double t0,t1;
   BoundCond Cond0, Cond1;
@@ -2214,7 +2227,7 @@ void TFESpace2D::GetDOFPosition(double *x, double *y)
 } // end GetDOFPosition
 
 /** return position of one given dof */
-void TFESpace2D::GetDOFPosition(int dof, double &x, double &y)
+void TFESpace2D::GetDOFPosition(int dof, double &x, double &y) const
 {
   int i,j,k;
   TBaseCell *cell;

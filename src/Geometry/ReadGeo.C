@@ -16,10 +16,14 @@
 #include <PeriodicJoint.h>
 #include <Quadrangle.h>
 #include <MooNMD_Io.h>
+#include <algorithm>
 #include <fstream>
 #include <string.h>
 #include <stdlib.h>
 #include <vector>
+#include <functional>
+#include <limits>
+
 
 #include <InnerInterfaceJoint.h>
 #ifdef __2D__
@@ -33,6 +37,7 @@
   #include <BdPlane.h>
   #include <IsoInterfaceJoint3D.h>
   #include <BdNoPRM.h>
+  #include <BdCircle.h>
 #endif
 
 int TDomain::ReadGeo(std::istream& dat, bool readXgeo)
@@ -1370,6 +1375,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   return 0;
 }
 
+enum class ElementShape {TETS, QUADS};
+
 /**
  * Check in which order three given vertices are, according
  * to the alphanumeric order given by the operator < of TVertex.
@@ -1394,1221 +1401,990 @@ int alphanumeric_order(const TVertex& vert0, const TVertex& vert1, const TVertex
     return -1;
   }
 }
-
-int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
-                              int N_Vertices, int NVE,
-                              double DriftX, double DriftY, double DriftZ,
-                              const std::vector<double>& Lambda)
+/*
+ * Given a certain 2D base element by 'current_element_id'
+ * and one of its edges by the ids of its two vertices,
+ * find that other element, if any, which neighbors the current
+ * element, sharing the given vertex with it, and return its ID,
+ * or -1 if no such element was found, indicating we are dealing
+ * with a boundary edge.
+ *
+ * This assumes, as does the entire process of creating a
+ * sandwich grid, NO HANGING NODES.
+ *
+ * Performance is of lesser concern still.
+ */
+size_t find_neighbor_base_element_id(
+		const std::vector<std::vector<int>>& all_elements_verts,
+		size_t first_element_id,
+		size_t vertex_1_id, size_t vertex_2_id)
 {
-  int a, b, i, j, k, l, comp, Part, Neib, N_E, maxElpV = 0;
-  int aux1, aux2, aux3;
-  double T_a, T_b, T, X, Y, Z, Xa, Xb, Ya, Yb, Za, Zb, S;
-  double Xmin = 1e10, Xmax = -1e10, Ymin = 1e10, Ymax = -1e10;
-  double Zmin = 0;
-  int *KVEL;
-  TVertex **NewVertices, *LocVerts[8], *vert;
-  TJoint **KMT, *Joint;
-  TBaseCell *JNeib1, *JNeib2, *CurrCell;
-  Shapes CellType;
-  TBdWall *BdWall;
-  double x, y, z;
-  double Param1[4], Param2[4];
-  TBdPlane *Top, *Bottom;
-  int SortOrder=0, *OrderArray;
-  TVertex *vert0, *vert1, *vert2;
-  int k0=0, k1=0, k2=0, k3=0;
-  int i0=0, i1=0, i2=0;
-  int *KMTupper, *KMTlower;
+	//declare a lambda
+	std::function<bool (const std::vector<int>&, size_t, size_t)> find_two_in_vec = [](
+			const std::vector<int>& vec,
+			int a, int b)
+			{
+				bool both_contained = std::find(vec.begin(),vec.end(),a) != vec.end()
+								   && std::find(vec.begin(),vec.end(),b) != vec.end();
+				return both_contained;
+			};
 
-  double x0, x1, x2; // x3;
-  double y0, y1, y2; // y3;
-  double z0, z1, z2; // z3;
+	//check if input make sense
+	const std::vector<int>& first_element_verts =
+			all_elements_verts.at(first_element_id);
+	if(!find_two_in_vec(first_element_verts, vertex_1_id, vertex_2_id))
+		ErrThrow("Wrong input in find_neighbor_base_element_id, could"
+				" not find vertices in given element.")
 
-  int N_Layers = Lambda.size();
-//  double det;
 
-  // generate vertices, edges and cells
-  // search neighbours
-  KVEL = new int[N_Vertices];
+	size_t elem_id = 0;
+	for(auto e : all_elements_verts)
+	{
 
-  memset(KVEL, 0, N_Vertices * SizeOfInt);
+		if(find_two_in_vec(e, vertex_1_id, vertex_2_id) && // both vertices found...
+				(elem_id != first_element_id))				   // ...in another element
+			return elem_id;
 
-  for (i=0;i<NVE*N_RootCells;i++)
-    if (KVERT[i]) KVEL[KVERT[i]-1]++;
+		elem_id++;
+	}
+	return -1; //the not found case
+}
 
-  for (i=0;i<N_Vertices;i++)
-    if (KVEL[i] > maxElpV) maxElpV = KVEL[i];
+void sort_vertices(TVertex*& A, TVertex*& B, TVertex*& C)
+{
+	// sort the three vertices consistently (alphanumeric)
+	std::function<bool (const TVertex*, const TVertex*)> less_or_eq
+			= [](const TVertex* V, const TVertex*W) { return *V < *W; };
+	std::vector<TVertex*> sorted = {A,B,C};
+	std::sort(sorted.begin(),sorted.end(), less_or_eq);
+	A = sorted[0];
+	B = sorted[1];
+	C = sorted[2];
+}
 
-  delete[] KVEL;
+//For given four vertices and an integer index the method sets the tetrahedron at *tet
+//with positive orientation (positive triple product)
+void set_tetrahedron(int index, TBaseCell *tet, TVertex* vert0, TVertex* vert1,
+                     TVertex* vert2, TVertex* vert3, int &orientation)
+{
+  tet->SetVertex(0, vert0);
+  tet->SetVertex(1, vert1);
+  tet->SetVertex(2, vert2);
+  tet->SetVertex(3, vert3);
+  tet->SetClipBoard(index);
+  //Change cell orientation (positive triple product, right hand rule)
+  orientation = int(tet->check_orientation());
+  if(!orientation)
+  {
+    tet->SetVertex(0, vert1);
+    tet->SetVertex(1, vert0);
+  }
+}
 
-  maxElpV++;
-  KVEL = new int[maxElpV * N_Vertices];
+/* A function recieving three cells forming one prism and an edge (two vertices)
+ * and returns which (two) cells contain the edge and which of them is the top 
+ * cell which is the bottom cell as well as the correct joint IDs.
+ * Joint ID has to match with the face ID (ShapeDesc) for later use (SetMaptype)
+ */
+void find_low_and_high_face_element(bool orientation_low, bool orientation_mid,
+                                    TGridCell* const low_element,
+                                    TGridCell* const mid_element,
+                                    TGridCell* const high_element,
+                                    TVertex* const first_bot,
+                                    TVertex* const second_bot,
+                                    TGridCell*& low_joint_element,
+                                    int& low_joint_id,
+                                    TGridCell*& high_joint_element,
+                                    int& high_joint_id)
+{
 
-  memset(KVEL, 0, maxElpV * N_Vertices * SizeOfInt);
-  
-  // first colomn contains the number of following elements
-  for (i=0;i<NVE*N_RootCells;i++)
-    if (KVERT[i])
+  TVertex* A_bot = low_element->GetVertex(0); //get verts 0,1,2, by creation they should be the bot verts
+  TVertex* B_bot = low_element->GetVertex(1);
+  TVertex* C_bot = low_element->GetVertex(2);
+
+  // just for safety, the verts should still be ordered
+  sort_vertices(A_bot, B_bot, C_bot);
+  // now A < B < C
+
+  if((first_bot == A_bot && second_bot == B_bot) || (first_bot == B_bot
+      && second_bot == A_bot))
+  { //this is the AB - edge
+    low_joint_element = mid_element;
+    low_joint_id = 0;
+    high_joint_element = high_element;
+    high_joint_id = 0;
+    return;
+  }
+  else if((first_bot == B_bot && second_bot == C_bot)
+      || (first_bot == C_bot && second_bot == B_bot))
+  { //this is the BC - edge
+    low_joint_element = low_element;
+    if(orientation_low)
+      low_joint_id = 2;
+    else
+      low_joint_id = 3;
+    high_joint_element = mid_element;
+    if(orientation_mid)
+      high_joint_id = 2;
+    else
+      high_joint_id = 3;
+    return;
+  }
+  else if((first_bot == C_bot && second_bot == A_bot)
+      || (first_bot == A_bot && second_bot == C_bot))
+  { //this is the AC - edge
+    low_joint_element = low_element;
+    if(orientation_low)
+      low_joint_id = 3;
+    else
+      low_joint_id = 2;
+    high_joint_element = high_element;
+    high_joint_id = 1;
+    return;
+  }
+  else
+    ErrThrow("Something is terribly wrong here!");
+}
+
+//Treat the special case of a closed boundary component (closed circle)
+//uses that vert1 and vert2 are part of the bottom plane !!!
+void correct_parameterlist(int n_verts, TBoundComp3D * BdComp, TVertex* vert1,
+                           TVertex * vert2, double *parameterlist)
+{
+  if(BdComp->GetType() == Wall)
+  {
+    TBdWall * BdWall = dynamic_cast<TBdWall *>(BdComp);
+    if(BdWall->GetBdComp2D()->GetType() == Circle)
     {
-      j = (KVERT[i] - 1)*maxElpV;
-      KVEL[j]++;
-      KVEL[j + KVEL[j]] = i / NVE;
+      auto BdCircle = dynamic_cast<TBdCircle *>(BdWall->GetBdComp2D());
+
+      if(BdCircle->is_full_circle())
+      {
+        //uses that vert1 and vert2 are part of the bottom plane
+        double T1, T2;
+        BdCircle->GetTofXY(vert1->GetX(), vert1->GetY(), T1);
+        BdCircle->GetTofXY(vert2->GetX(), vert2->GetY(), T2);
+
+        if(std::abs(T1 - T2) > 0.5)
+        {
+          for(int vert_id = 0; vert_id < 3; vert_id++)
+          {
+            if(1 - parameterlist[vert_id] < 1e-4)
+            {
+              parameterlist[vert_id] = 0;
+            }
+            else if(parameterlist[vert_id] < 1e-4)
+            {
+              parameterlist[vert_id] = 1;
+            }
+          }
+        }
+      }
     }
+  }
+}
 
-  // generate vertices
-  NewVertices = new TVertex*[N_Vertices*N_Layers];
-  
-  for (i=0;i<N_Vertices;i++)
-    if (KNPR[i])
+//Defines boundary joints given the Cell, the face (int joint_id) where the joint is located
+//the correct(!) three vertices of this face and the boundary component matching the joint
+//If the component is a BdWall, then vert1 and vert2 are part of the bottom plane and
+//vert3 and vert4 are part of the top plane (implicitly used)
+void set_bdr_joints(TBaseCell *tet_cell, TVertex *vert1, TVertex *vert2,
+                    TVertex *vert3, int joint_id, TBoundComp3D * BdComp)
+{
+  const int *vert_per_face;
+  const int *n_vert_per_face;
+  int max_n;
+  tet_cell->GetShapeDesc()->GetFaceVertex(vert_per_face, n_vert_per_face,
+                                          max_n);
+
+  double T_parameter[4];
+  double Z_parameter[4];
+  double x, y, z;
+  for(int vert_id = 0; vert_id < 3; vert_id++)
+  {
+    int vert = vert_per_face[max_n * joint_id + vert_id];
+
+    if(tet_cell->GetVertex(vert) == vert1)
     {
-      T = DCORVG[2*i];
-      comp = (int) T;
-      if (GetLastLocalComp(KNPR[i]-1) == comp - 1)
-      {
-        comp--;
-        T = 1.0;
-      }
-      else
-        T -= comp;
-
-      // cout << T << " " << comp << endl;
-      
-      BdWall = (TBdWall *)(BdParts[KNPR[i] - 1]->GetBdComp(comp));
-      BdWall->GetBdComp2D()->GetXYofT(T, X, Y);
-      BdWall->SetParams(DriftX, DriftY, DriftZ);
-
-      if (X > Xmax) Xmax = X;
-      if (X < Xmin) Xmin = X;
-      if (Y > Ymax) Ymax = Y;
-      if (Y < Ymin) Ymin = Y;
-
-      for(j=0;j<N_Layers;j++)
-      {
-        x = X + Lambda[j] * DriftX;
-        y = Y + Lambda[j] * DriftY;
-        z = Lambda[j] * DriftZ;
-        NewVertices[j*N_Vertices+i] = new TVertex(x, y, z);
-      }
+      vert1->GetCoords(x, y, z);
+      BdComp->GetTSofXYZ(x, y, z, T_parameter[vert_id], Z_parameter[vert_id]);
+    }
+    else if(tet_cell->GetVertex(vert) == vert2)
+    {
+      vert2->GetCoords(x, y, z);
+      BdComp->GetTSofXYZ(x, y, z, T_parameter[vert_id], Z_parameter[vert_id]);
+    }
+    else if(tet_cell->GetVertex(vert) == vert3)
+    {
+      vert3->GetCoords(x, y, z);
+      BdComp->GetTSofXYZ(x, y, z, T_parameter[vert_id], Z_parameter[vert_id]);
     }
     else
-    {
-      for(j=0;j<N_Layers;j++)
-      {
-        x = DCORVG[2*i] + Lambda[j] * DriftX;
-        y = DCORVG[2*i+1] + Lambda[j] * DriftY;
-        z = Lambda[j] * DriftZ;
-        NewVertices[j*N_Vertices+i] = new TVertex(x, y, z);
-      }
-    }
-
-  // for(i=0;i<N_Vertices*N_Layers;i++)
-  //   cout << i << NewVertices[i] << endl;
-
-  // set bounding box
-  StartX = Xmin;
-  StartY = Ymin;
-  StartZ = Zmin;
-  BoundX = Xmax - Xmin + DriftX;
-  BoundY = Ymax - Ymin + DriftY;
-  BoundZ = DriftZ-Zmin;
-
-  switch(NVE)
-  {
-    case 4: // quadrilaterals in 2D mesh
-      // generate cells
-      CellTree = new TBaseCell*[N_RootCells*N_Layers];
-    
-      for (i=0;i<N_RootCells;i++)
-      {
-        CellType = Quadrangle;
-        if (NVE == 3)
-          CellType = Triangle;
-        else
-          if (!KVERT[NVE*i + 3]) CellType = Triangle;
-    
-        if (CellType == Quadrangle)
-        {
-          for(j=1;j<N_Layers;j++)
-          {
-            k = (j-1)*N_Vertices + KVERT[NVE*i    ]-1;
-            LocVerts[0] = NewVertices[k];
-            k += N_Vertices;
-            LocVerts[4] = NewVertices[k];
-    
-            k = (j-1)*N_Vertices + KVERT[NVE*i + 1]-1;
-            LocVerts[1] = NewVertices[k];
-            k += N_Vertices;
-            LocVerts[5] = NewVertices[k];
-    
-            k = (j-1)*N_Vertices + KVERT[NVE*i + 2]-1;
-            LocVerts[2] = NewVertices[k];
-            k += N_Vertices;
-            LocVerts[6] = NewVertices[k];
-    
-            k = (j-1)*N_Vertices + KVERT[NVE*i + 3]-1;
-            LocVerts[3] = NewVertices[k];
-            k += N_Vertices;
-            LocVerts[7] = NewVertices[k];
-    
-            CellType = ((THexahedron *) TDatabase::RefDescDB[Hexahedron]->
-                       GetShapeDesc())->CheckHexa(LocVerts);
-    
-            CellTree[(j-1)*N_RootCells + i] =
-                    new TMacroCell(TDatabase::RefDescDB[CellType], RefLevel);
-    
-            for(k=0;k<8;k++) 
-            {
-              CellTree[(j-1)*N_RootCells + i]->SetVertex(k, LocVerts[k]);
-              // cout << (j-1)*N_RootCells + i << ": ";
-              // cout << LocVerts[k]->GetX() << " ";
-              // cout << LocVerts[k]->GetY() << " ";
-              // cout << LocVerts[k]->GetZ() << endl;
-            }
-          } // endfor N_Layers
-        }
-        else
-        {
-          Error("Mixed meshes with triangles AND quadrilaterals are not allowed" << endl);
-          exit(-1);
-        }
-      } // endfor N_RootCells
-    
-      // generate edges
-      KMT = new TJoint*[N_RootCells*4*N_Layers];
-//       memset(KMT, 0, N_RootCells*4*N_Layers * SizeOfInt); //changed by sashi on 7 Nov 2012
-      
-      j=N_RootCells*4*N_Layers;
-      for(i=0;i<j;i++)
-        KMT[i] = nullptr;
-    
-      Bottom = new TBdPlane(1000);
-      Bottom->SetParams(0,0,Zmin, 1,0,0, 0,0,-1);
-      Top = new TBdPlane(1001);
-      Top->SetParams(0,0,DriftZ-Zmin, 1,0,0, 0,0,1); 
-    
-      for (i=0;i<N_RootCells;i++)
-      {
-        switch (CellTree[i]->GetType())
-        {
-          case Tetrahedron: 
-               N_E = 3;
-               break;
-          case Hexahedron: 
-          case Brick: 
-               N_E = 4;
-               break;
-          default:
-               cerr << "Error in ReadGeo" << endl;
-               return -1;
-        }
-    
-        for (j=0;j<N_E;j++)
-        {
-          a = KVERT[NVE*i + j] - 1;
-          b = KVERT[NVE*i + (j+1) % N_E] - 1;
-          Part = KNPR[a] - 1;
-          Neib = -1;
-    
-          aux1 = KVEL[a*maxElpV];
-          aux2 = KVEL[b*maxElpV];
-    
-          for (k=1;k<=aux1;k++)
-          {
-            aux3 = KVEL[a*maxElpV + k];
-            if (aux3 == i) continue;
-    
-            for (l=1;l<=aux2;l++)
-              if (aux3 == KVEL[b*maxElpV + l])
-              {
-                Neib = aux3;
-                break;
-              }
-            if (Neib >= 0) break;
-          }
-          
-          // cout << Neib << "  " << i << endl;
-    
-          if (Neib > i)
-          {
-            if( (KNPR[a]) && (KNPR[b]) )
-            {
-              if( (KNPR[a] == KNPR[b]) && (Interfaces[KNPR[a]-1] < 0) )
-              {
-                comp = (int) DCORVG[2*a];
-                T_a = DCORVG[2*a] - comp;
-                T_b = DCORVG[2*b] - comp;
-
-                BdParts[Part]->GetBdComp(comp)->GetXYZofTS(T_a, Lambda[0], Xa, Ya, Za);
-                BdParts[Part]->GetBdComp(comp)->GetXYZofTS(T_b, Lambda[0], Xb, Yb, Zb);
-
-                X = 0.5*(Xa+Xb);
-                Y = 0.5*(Ya+Yb);
-                Z = 0.5*(Za+Zb);
-                BdParts[Part]->GetBdComp(comp)->GetTSofXYZ(X, Y, Z, T, S);
-
-                if ((T_a - T)*(T - T_b) < 0)
-                {
-                  if (ABS(T_a) < 1e-4)
-                    T_a = 1.0;
-                  else
-                    if (ABS(T_a) > 0.9999)
-                      T_a = 0.0;
-
-                  if (ABS(T_b) < 1e-4)
-                    T_b = 1.0;
-                  else
-                    if (ABS(T_b) > 0.9999)
-                      T_b = 0.0;
-                }
-
-                for(k=0;k<N_Layers-1;k++)
-                {
-                  if(j == N_E-1)
-                  {
-                    Param1[0] = T_b;
-                    Param1[1] = T_a;
-                    Param1[2] = T_a;
-                    Param1[3] = T_b;
-    
-                    Param2[0] = Lambda[k];
-                    Param2[1] = Lambda[k];
-                    Param2[2] = Lambda[k+1];
-                    Param2[3] = Lambda[k+1];
-                  }
-                  else
-                  {
-                    Param1[0] = T_a;
-                    Param1[1] = T_a;
-                    Param1[2] = T_b;
-                    Param1[3] = T_b;
-    
-                    Param2[0] = Lambda[k];
-                    Param2[1] = Lambda[k+1];
-                    Param2[2] = Lambda[k+1];
-                    Param2[3] = Lambda[k];
-                  }
-                  // usual bpoundary joint
-                  Joint = new TInterfaceJoint3D(BdParts[Part]->GetBdComp(comp),
-                            Param1, Param2, CellTree[k*N_RootCells + i],
-                            CellTree[k*N_RootCells + Neib]);
-                  KMT[k*4*N_RootCells + i*4 + j] = Joint;
-                  // cout << "hier" << T_a << "  " << T_b << endl;
-                  // cout << k*N_RootCells + i << " " << j+1 << endl;
-                } // endfor k
-              }
-              else
-              {
-                for(k=0;k<N_Layers-1;k++)
-                {
-                  KMT[k*4*N_RootCells + i*4 + j] =
-                      new TJointEqN(CellTree[k*N_RootCells + i],
-                                    CellTree[k*N_RootCells + Neib]);
-                }
-              }
-            }
-            else
-            {
-              for(k=0;k<N_Layers-1;k++)
-              {
-                KMT[k*4*N_RootCells + i*4 + j] =
-                    new TJointEqN(CellTree[k*N_RootCells + i],
-                                  CellTree[k*N_RootCells + Neib]);
-              }
-              // cout << "KMT2: " << i*4+j << endl;
-            }
-    
-            for(k=0;k<N_Layers-1;k++)
-            {
-              CellTree[k*N_RootCells + i]->SetJoint(j+1,
-                            KMT[k*4*N_RootCells + i*4 + j]);
-            }
-          }
-          else
-          {
-            if (Neib == -1)
-            {
-              if (Interfaces[KNPR[a]-1] < 0)
-              {
-                Error("Error in ReadGeo, line " << __LINE__ << endl);
-                exit(-1);
-              }
-              else
-                if (Interfaces[KNPR[b]-1] < 0)
-                {
-                  Error("Error in ReadGeo, line " << __LINE__ << endl);
-                  exit(-1);
-                }
-                else
-                {
-                  comp = (int) DCORVG[2*a];
-                  T_a = DCORVG[2*a] - comp;
-                  T_b = DCORVG[2*b] - comp;
-                }
-    
-              
-              if (T_b < T_a)
-              {
-                T_b = 1.;
-                // cout << T_a << " ... " << T_b << endl;
-              }
-    
-              if(BdParts[Part]->GetBdComp(comp)->IsFreeBoundary())
-              {
-                Error("Error in ReadGeo, line " << __LINE__ << endl);
-                exit(-1);
-              }
-              else
-              {
-                for(k=0;k<N_Layers-1;k++)
-                {
-                  if(j == N_E-1)
-                  {
-                    Param1[0] = T_b;
-                    Param1[1] = T_a;
-                    Param1[2] = T_a;
-                    Param1[3] = T_b;
-    
-                    Param2[0] = Lambda[k];
-                    Param2[1] = Lambda[k];
-                    Param2[2] = Lambda[k+1];
-                    Param2[3] = Lambda[k+1];
-                  }
-                  else
-                  {
-                    Param1[0] = T_a;
-                    Param1[1] = T_a;
-                    Param1[2] = T_b;
-                    Param1[3] = T_b;
-    
-                    Param2[0] = Lambda[k];
-                    Param2[1] = Lambda[k+1];
-                    Param2[2] = Lambda[k+1];
-                    Param2[3] = Lambda[k];
-                  }
-                  /*
-                  // test for periodic boundary conditions
-                  if(TDatabase::ParamDB->P5 == 1234567)
-                  {
-                    OutPut("cell: " << i << " " << j << endl);
-                    if(! (CellTree[k*N_RootCells + i]->GetJoint(j+1) ) )
-                    {
-                      Joint = new TPeriodicJoint(CellTree[k*N_RootCells+i],
-                                            CellTree[k*N_RootCells+i+3]);
-                      CellTree[k*N_RootCells+i]->SetJoint(j+1, Joint);
-                      CellTree[k*N_RootCells+i+3]->SetJoint(j+1, Joint);
-                      Joint->SetMapType(1);
-                      OutPut("making periodic joint" << endl);
-                    }
-                  }
-                  else
-                  */
-                  {
-                    // usual bpoundary joint
-                    Joint = new TBoundFace(BdParts[Part]->GetBdComp(comp),
-                              Param1, Param2);
-                    CellTree[k*N_RootCells + i]->SetJoint(j+1, Joint);
-                    // cout << "hier" << T_a << "  " << T_b << endl;
-                    // cout << k*N_RootCells + i << " " << j+1 << endl;
-                  }
-                }
-              }
-    
-            }
-            else
-            {
-              for (k=0;k<4;k++)
-              {
-                Joint = KMT[Neib*4 + k];
-                if (Joint != nullptr)
-                {
-                  aux1 = Neib*4 + k;
-                  JNeib1 = KMT[aux1]->GetNeighbour(0);
-                  JNeib2 = KMT[aux1]->GetNeighbour(1);
-    
-                  if ( (JNeib1 == CellTree[Neib] && JNeib2 == CellTree[i]) ||
-                       (JNeib1 == CellTree[i] && JNeib2 == CellTree[Neib])) break;
-                }
-              }
-    
-              for(l=0;l<N_Layers-1;l++)
-              {
-                CellTree[l*N_RootCells + i]->SetJoint(j+1,
-                              KMT[l*4*N_RootCells + Neib*4 + k]);
-              }
-              // cout << "dort" << endl;
-            }
-          }
-        } // endfor N_E
-    
-        // create top and bottom joints
-        Param1[0] = NewVertices[KVERT[NVE*i    ]-1]->GetX();
-        Param1[1] = NewVertices[KVERT[NVE*i + 1]-1]->GetX();
-        Param1[2] = NewVertices[KVERT[NVE*i + 2]-1]->GetX();
-        Param1[3] = NewVertices[KVERT[NVE*i + 3]-1]->GetX();
-        Param2[0] = NewVertices[KVERT[NVE*i    ]-1]->GetY();
-        Param2[1] = NewVertices[KVERT[NVE*i + 1]-1]->GetY();
-        Param2[2] = NewVertices[KVERT[NVE*i + 2]-1]->GetY();
-        Param2[3] = NewVertices[KVERT[NVE*i + 3]-1]->GetY();
-        Joint = new TBoundFace(Bottom, Param1, Param2);
-        CellTree[i]->SetJoint(0, Joint);
-    
-        Param1[0] = NewVertices[KVERT[NVE*i    ]-1]->GetX()+DriftX;
-        Param1[3] = NewVertices[KVERT[NVE*i + 1]-1]->GetX()+DriftX;
-        Param1[2] = NewVertices[KVERT[NVE*i + 2]-1]->GetX()+DriftX;
-        Param1[1] = NewVertices[KVERT[NVE*i + 3]-1]->GetX()+DriftX;
-        Param2[0] = -(NewVertices[KVERT[NVE*i    ]-1]->GetY()+DriftY);
-        Param2[3] = -(NewVertices[KVERT[NVE*i + 1]-1]->GetY()+DriftY);
-        Param2[2] = -(NewVertices[KVERT[NVE*i + 2]-1]->GetY()+DriftY);
-        Param2[1] = -(NewVertices[KVERT[NVE*i + 3]-1]->GetY()+DriftY);
-        Joint = new TBoundFace(Top, Param1, Param2);
-        CellTree[(N_Layers-2)*N_RootCells + i]->SetJoint(5, Joint);
-        
-        // create horizontal joints
-        for(k=1;k<N_Layers-1;k++)
-        {
-          Joint = new TJointEqN(CellTree[(k-1)*N_RootCells+i],
-                                CellTree[ k   *N_RootCells+i]);
-          CellTree[(k-1)*N_RootCells+i]->SetJoint(5, Joint);
-          CellTree[ k   *N_RootCells+i]->SetJoint(0, Joint);
-        }
-      }
-    
-      N_RootCells *= (N_Layers-1);
-      delete[] KMT; // [] added by sashi
-    break;
-
-    case 3: // triangles in 2d mesh
-      // generate cells
-      CellTree = new TBaseCell*[3*N_RootCells*N_Layers];
-      OrderArray = new int[N_RootCells];
-      KMTupper = new int[N_RootCells*N_Layers*3];
-      KMTlower = new int[N_RootCells*N_Layers*3];
-    
-      for (i=0;i<N_RootCells;i++)
-      {
-        // sort bottom vertices according to pointer
-        vert0 = NewVertices[KVERT[NVE*i    ]-1];
-        vert1 = NewVertices[KVERT[NVE*i + 1]-1];
-        vert2 = NewVertices[KVERT[NVE*i + 2]-1];
-
-        SortOrder = alphanumeric_order(*vert0,*vert1,*vert2);
-
-        OrderArray[i] = SortOrder;
-        // cout << "SortOrder: " << SortOrder << endl;
-        for(j=1;j<N_Layers;j++)
-        {
-          switch(SortOrder)
-          {
-            case 0:
-              k = (j-1)*N_Vertices + KVERT[NVE*i    ]-1;
-              LocVerts[0] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[3] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 1]-1;
-              LocVerts[1] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[4] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 2]-1;
-              LocVerts[2] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[5] = NewVertices[k];
-
-              k0 = 0; k1 = 1; k2 = 2; k3 = 3;
-
-              KMTupper[((j-1)*N_RootCells+i)*3 + 0] = 2*32 + 1;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 1] = 1*32 + 2;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 2] = 2*32 + 3;
-
-              KMTlower[((j-1)*N_RootCells+i)*3 + 0] = 1*32 + 1;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 1] = 0*32 + 2;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 2] = 0*32 + 3;
-            break;
-
-            case 1:
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 0]-1;
-              LocVerts[0] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[3] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 2]-1;
-              LocVerts[1] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[4] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 1]-1;
-              LocVerts[2] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[5] = NewVertices[k];
-
-              k0 = 1; k1 = 1; k2 = 3; k3 = 2;
-
-              KMTupper[((j-1)*N_RootCells+i)*3 + 2] = 2*32 + 3;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 1] = 1*32 + 2;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 0] = 2*32 + 1;
-
-              KMTlower[((j-1)*N_RootCells+i)*3 + 2] = 1*32 + 0;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 1] = 0*32 + 3;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 0] = 0*32 + 2;
-            break;
-
-            case 2:
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 1]-1;
-              LocVerts[0] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[3] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i    ]-1;
-              LocVerts[1] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[4] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 2]-1;
-              LocVerts[2] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[5] = NewVertices[k];
-
-              k0 = 1; k1 = 0; k2 = 3; k3 = 2;
-
-              KMTupper[((j-1)*N_RootCells+i)*3 + 0] = 2*32 + 3;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 2] = 1*32 + 2;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 1] = 2*32 + 1;
-
-              KMTlower[((j-1)*N_RootCells+i)*3 + 0] = 1*32 + 0;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 2] = 0*32 + 3;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 1] = 0*32 + 2;
-            break;
-
-            case 3:
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 1]-1;
-              LocVerts[0] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[3] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 2]-1;
-              LocVerts[1] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[4] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i    ]-1;
-              LocVerts[2] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[5] = NewVertices[k];
-
-              k0 = 0; k1 = 1; k2 = 2; k3 = 3;
-
-              KMTupper[((j-1)*N_RootCells+i)*3 + 1] = 2*32 + 1;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 2] = 1*32 + 2;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 0] = 2*32 + 3;
-
-              KMTlower[((j-1)*N_RootCells+i)*3 + 1] = 1*32 + 1;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 2] = 0*32 + 2;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 0] = 0*32 + 3;
-            break;
-
-            case 4:
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 2]-1;
-              LocVerts[0] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[3] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i    ]-1;
-              LocVerts[1] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[4] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 1]-1;
-              LocVerts[2] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[5] = NewVertices[k];
-
-              k0 = 0; k1 = 1; k2 = 2; k3 = 3;
-
-              KMTupper[((j-1)*N_RootCells+i)*3 + 2] = 2*32 + 1;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 0] = 1*32 + 2;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 1] = 2*32 + 3;
-
-              KMTlower[((j-1)*N_RootCells+i)*3 + 2] = 1*32 + 1;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 0] = 0*32 + 2;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 1] = 0*32 + 3;
-            break;
-
-            case 5:
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 2]-1;
-              LocVerts[0] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[3] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i + 1]-1;
-              LocVerts[1] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[4] = NewVertices[k];
-      
-              k = (j-1)*N_Vertices + KVERT[NVE*i    ]-1;
-              LocVerts[2] = NewVertices[k];
-              k += N_Vertices;
-              LocVerts[5] = NewVertices[k];
-
-              k0 = 1; k1 = 0; k2 = 3; k3 = 2;
-
-              KMTupper[((j-1)*N_RootCells+i)*3 + 1] = 2*32 + 3;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 0] = 1*32 + 2;
-              KMTupper[((j-1)*N_RootCells+i)*3 + 2] = 2*32 + 1;
-
-              KMTlower[((j-1)*N_RootCells+i)*3 + 1] = 1*32 + 0;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 0] = 0*32 + 3;
-              KMTlower[((j-1)*N_RootCells+i)*3 + 2] = 0*32 + 2;
-            break;
-
-          }
-  
-          if(SortOrder == 0 || SortOrder == 3 || SortOrder == 4)
-          {
-            k = ((j-1)*N_RootCells +i)*3;
-            CellTree[k] = 
-                 new TMacroCell(TDatabase::RefDescDB[Tetrahedron], RefLevel);
-            CurrCell = CellTree[k];
-            CurrCell->SetVertex(0, LocVerts[0]);
-            CurrCell->SetVertex(1, LocVerts[1]);
-            CurrCell->SetVertex(k2, LocVerts[2]);
-            CurrCell->SetVertex(k3, LocVerts[5]);
-            CurrCell->SetClipBoard(k);
-  
-            /*
-            CurrCell->GetVertex(0)->GetCoords(x0, y0, z0);
-            CurrCell->GetVertex(1)->GetCoords(x1, y1, z1);
-            CurrCell->GetVertex(2)->GetCoords(x2, y2, z2);
-            CurrCell->GetVertex(3)->GetCoords(x3, y3, z3);
-  
-            x1 -= x0; y1 -= y0; z1 -= z0;
-            x2 -= x0; y2 -= y0; z2 -= z0;
-            x3 -= x0; y3 -= y0; z3 -= z0;
-  
-            det =   x1*y2*z3 + y1*z2*x3 + z1*x2*y3
-                 -( z1*y2*x3 + y1*x2*z3 + x1*z2*y3);
-            cout << "cell nr: " << k << " det: " << det << endl,
-            */
-  
-            k++;
-            CellTree[k] = 
-                 new TMacroCell(TDatabase::RefDescDB[Tetrahedron], RefLevel);
-            CurrCell = CellTree[k];
-            CurrCell->SetVertex(0, LocVerts[0]);
-            CurrCell->SetVertex(1, LocVerts[1]);
-            CurrCell->SetVertex(k2, LocVerts[5]);
-            CurrCell->SetVertex(k3, LocVerts[4]);
-            CurrCell->SetClipBoard(k);
-  
-            /*
-            CurrCell->GetVertex(0)->GetCoords(x0, y0, z0);
-            CurrCell->GetVertex(1)->GetCoords(x1, y1, z1);
-            CurrCell->GetVertex(2)->GetCoords(x2, y2, z2);
-            CurrCell->GetVertex(3)->GetCoords(x3, y3, z3);
-  
-            x1 -= x0; y1 -= y0; z1 -= z0;
-            x2 -= x0; y2 -= y0; z2 -= z0;
-            x3 -= x0; y3 -= y0; z3 -= z0;
-  
-            det =   x1*y2*z3 + y1*z2*x3 + z1*x2*y3
-                 -( z1*y2*x3 + y1*x2*z3 + x1*z2*y3);
-            cout << "cell nr: " << k << " det: " << det << endl,
-            */
-  
-            k++;
-            CellTree[k] = 
-                 new TMacroCell(TDatabase::RefDescDB[Tetrahedron], RefLevel);
-            CurrCell = CellTree[k];
-            CurrCell->SetVertex(0, LocVerts[0]);
-            CurrCell->SetVertex(1, LocVerts[4]);
-            CurrCell->SetVertex(k2, LocVerts[5]);
-            CurrCell->SetVertex(k3, LocVerts[3]);
-            CurrCell->SetClipBoard(k);
-  
-            /*
-            CurrCell->GetVertex(0)->GetCoords(x0, y0, z0);
-            CurrCell->GetVertex(1)->GetCoords(x1, y1, z1);
-            CurrCell->GetVertex(2)->GetCoords(x2, y2, z2);
-            CurrCell->GetVertex(3)->GetCoords(x3, y3, z3);
-  
-            x1 -= x0; y1 -= y0; z1 -= z0;
-            x2 -= x0; y2 -= y0; z2 -= z0;
-            x3 -= x0; y3 -= y0; z3 -= z0;
-  
-            det =   x1*y2*z3 + y1*z2*x3 + z1*x2*y3
-                 -( z1*y2*x3 + y1*x2*z3 + x1*z2*y3);
-            cout << "cell nr: " << k << " det: " << det << endl;
-            */
-  
-            Joint = new TJointEqN(CellTree[((j-1)*N_RootCells +i)*3 + 0],
-                                  CellTree[((j-1)*N_RootCells +i)*3 + 1]);
-            CellTree[((j-1)*N_RootCells +i)*3 + 1]->SetJoint(0, Joint);
-            CellTree[((j-1)*N_RootCells +i)*3 + 0]->SetJoint(1, Joint);
-
-            Joint = new TJointEqN(CellTree[((j-1)*N_RootCells +i)*3 + 1],
-                                  CellTree[((j-1)*N_RootCells +i)*3 + 2]);
-            CellTree[((j-1)*N_RootCells +i)*3 + 1]->SetJoint(3, Joint);
-            CellTree[((j-1)*N_RootCells +i)*3 + 2]->SetJoint(0, Joint);
-          }
-          else
-          {
-            k = ((j-1)*N_RootCells +i)*3;
-            CellTree[k] = 
-                 new TMacroCell(TDatabase::RefDescDB[Tetrahedron], RefLevel);
-            CurrCell = CellTree[k];
-            CurrCell->SetVertex(0, LocVerts[1]);
-            CurrCell->SetVertex(1, LocVerts[0]);
-            CurrCell->SetVertex(2, LocVerts[2]);
-            CurrCell->SetVertex(3, LocVerts[5]);
-            CurrCell->SetClipBoard(k);
-  
-            /*
-            CurrCell->GetVertex(0)->GetCoords(x0, y0, z0);
-            CurrCell->GetVertex(1)->GetCoords(x1, y1, z1);
-            CurrCell->GetVertex(2)->GetCoords(x2, y2, z2);
-            CurrCell->GetVertex(3)->GetCoords(x3, y3, z3);
-  
-            x1 -= x0; y1 -= y0; z1 -= z0;
-            x2 -= x0; y2 -= y0; z2 -= z0;
-            x3 -= x0; y3 -= y0; z3 -= z0;
-  
-            det =   x1*y2*z3 + y1*z2*x3 + z1*x2*y3
-                 -( z1*y2*x3 + y1*x2*z3 + x1*z2*y3);
-            cout << "cell nr: " << k << " det: " << det << endl,
-            */
-  
-            k++;
-            CellTree[k] = 
-                 new TMacroCell(TDatabase::RefDescDB[Tetrahedron], RefLevel);
-            CurrCell = CellTree[k];
-            CurrCell->SetVertex(0, LocVerts[0]);
-            CurrCell->SetVertex(1, LocVerts[1]);
-            CurrCell->SetVertex(2, LocVerts[4]);
-            CurrCell->SetVertex(3, LocVerts[5]);
-            CurrCell->SetClipBoard(k);
-  
-            /*
-            CurrCell->GetVertex(0)->GetCoords(x0, y0, z0);
-            CurrCell->GetVertex(1)->GetCoords(x1, y1, z1);
-            CurrCell->GetVertex(2)->GetCoords(x2, y2, z2);
-            CurrCell->GetVertex(3)->GetCoords(x3, y3, z3);
-  
-            x1 -= x0; y1 -= y0; z1 -= z0;
-            x2 -= x0; y2 -= y0; z2 -= z0;
-            x3 -= x0; y3 -= y0; z3 -= z0;
-  
-            det =   x1*y2*z3 + y1*z2*x3 + z1*x2*y3
-                 -( z1*y2*x3 + y1*x2*z3 + x1*z2*y3);
-            cout << "cell nr: " << k << " det: " << det << endl,
-            */
-  
-            k++;
-            CellTree[k] = 
-                 new TMacroCell(TDatabase::RefDescDB[Tetrahedron], RefLevel);
-            CurrCell = CellTree[k];
-            CurrCell->SetVertex(0, LocVerts[0]);
-            CurrCell->SetVertex(1, LocVerts[5]);
-            CurrCell->SetVertex(2, LocVerts[4]);
-            CurrCell->SetVertex(3, LocVerts[3]);
-            CurrCell->SetClipBoard(k);
-  
-            /*
-            CurrCell->GetVertex(0)->GetCoords(x0, y0, z0);
-            CurrCell->GetVertex(1)->GetCoords(x1, y1, z1);
-            CurrCell->GetVertex(2)->GetCoords(x2, y2, z2);
-            CurrCell->GetVertex(3)->GetCoords(x3, y3, z3);
-  
-            x1 -= x0; y1 -= y0; z1 -= z0;
-            x2 -= x0; y2 -= y0; z2 -= z0;
-            x3 -= x0; y3 -= y0; z3 -= z0;
-  
-            det =   x1*y2*z3 + y1*z2*x3 + z1*x2*y3
-                 -( z1*y2*x3 + y1*x2*z3 + x1*z2*y3);
-            cout << "cell nr: " << k << " det: " << det << endl;
-            */
-  
-            Joint = new TJointEqN(CellTree[((j-1)*N_RootCells +i)*3 + 0],
-                                  CellTree[((j-1)*N_RootCells +i)*3 + 1]);
-            CellTree[((j-1)*N_RootCells +i)*3 + 1]->SetJoint(1, Joint);
-            CellTree[((j-1)*N_RootCells +i)*3 + 0]->SetJoint(1, Joint);
-
-            Joint = new TJointEqN(CellTree[((j-1)*N_RootCells +i)*3 + 1],
-                                  CellTree[((j-1)*N_RootCells +i)*3 + 2]);
-            CellTree[((j-1)*N_RootCells +i)*3 + 1]->SetJoint(3, Joint);
-            CellTree[((j-1)*N_RootCells +i)*3 + 2]->SetJoint(0, Joint);
-          }
-
-        } // endfor N_Layers
-      } // endfor N_RootCells
-    
-      Bottom = new TBdPlane(1000);
-      Bottom->SetParams(0,0,0, 1,0,0, 0,0,-1);
-      Top = new TBdPlane(1001);
-      Top->SetParams(0,0,DriftZ, 1,0,0, 0,0,1); 
-    
-      N_E = 3;
-      for (i=0;i<N_RootCells;i++)
-      {
-        SortOrder = OrderArray[i];
-        // cout << "i: " << i << " " << SortOrder << endl;
-        for (j=0;j<N_E;j++)
-        {
-          a = KVERT[NVE*i + j] - 1;
-          b = KVERT[NVE*i + (j+1) % N_E] - 1;
-          Part = KNPR[a] - 1;
-          Neib = -1;
-    
-          aux1 = KVEL[a*maxElpV];
-          aux2 = KVEL[b*maxElpV];
-    
-          for (k=1;k<=aux1;k++)
-          {
-            aux3 = KVEL[a*maxElpV + k];
-            if (aux3 == i) continue;
-    
-            for (l=1;l<=aux2;l++)
-              if (aux3 == KVEL[b*maxElpV + l])
-              {
-                Neib = aux3;
-                break;
-              }
-            if (Neib >= 0) break;
-          }
-
-          // on which local joint of Neib is i
-          if(Neib>=0)
-          {
-            vert = NewVertices[KVERT[3*i+(j+1)%3]];
-            for(l=0;l<3;l++)
-              if(vert == NewVertices[KVERT[3*Neib+l]]) break;
-          }
-          
-          // cout << "Neib: " << Neib << " i: " << i << endl;
-    
-          if (Neib > i)
-          {
-            if( (KNPR[a]) && (KNPR[b]) )
-            {
-              if( (KNPR[a] == KNPR[b]) && (Interfaces[KNPR[a]-1] < 0) )
-              {
-                Error("Error in ReadGeo, line " << __LINE__ << endl);
-                exit(-1);
-              }
-              else
-              {
-                // set neighbours
-                // cout << "hier: ";
-                // cout << i << " " << j << " " << Neib << " " << l << endl;
-                // cout << "upper: " << KMTupper[3*i+j] << " " << KMTupper[3*Neib+l] << endl; 
-                k0 = KMTupper[3*i+j] % 32;
-                k1 = (KMTupper[3*i+j] / 32) + 3*i;
-                k2 = KMTupper[3*Neib+l] % 32;
-                k3 = (KMTupper[3*Neib+l] / 32) + 3*Neib;
-                // cout << k1 << " " << k0 << " ::: " << k3 << " " << k2 << endl;
-                for(k=0;k<N_Layers-1;k++)
-                {
-                  Joint = new TJointEqN(CellTree[k1],CellTree[k3]);
-                  CellTree[k1]->SetJoint(k0, Joint);
-                  CellTree[k3]->SetJoint(k2, Joint);
-                  k1 += 3*N_RootCells;
-                  k3 += 3*N_RootCells;
-                } // endfor k
-
-                // cout << "lower: " << KMTlower[3*i+j] << " " << KMTlower[3*Neib+l] << endl; 
-                k0 = KMTlower[3*i+j] % 32;
-                k1 = (KMTlower[3*i+j] / 32) + 3*i;
-                k2 = KMTlower[3*Neib+l] % 32;
-                k3 = (KMTlower[3*Neib+l] / 32) + 3*Neib;
-                // cout << k1 << " " << k0 << " ::: " << k3 << " " << k2 << endl;
-                for(k=0;k<N_Layers-1;k++)
-                {
-                  Joint = new TJointEqN(CellTree[k1],CellTree[k3]);
-                  CellTree[k1]->SetJoint(k0, Joint);
-                  CellTree[k3]->SetJoint(k2, Joint);
-                  k1 += 3*N_RootCells;
-                  k3 += 3*N_RootCells;
-                } // endfor k
-              }
-            }
-            else
-            {
-              // set neighbours
-              // cout << "KMT2: ";
-              // cout << i << " " << j << " " << Neib << " " << l << endl;
-              // cout << "upper: " << KMTupper[3*i+j] << " " << KMTupper[3*Neib+l] << endl; 
-              k0 = KMTupper[3*i+j] % 32;
-              k1 = (KMTupper[3*i+j] / 32) + 3*i;
-              k2 = KMTupper[3*Neib+l] % 32;
-              k3 = (KMTupper[3*Neib+l] / 32) + 3*Neib;
-              // cout << k1 << " " << k0 << " ::: " << k3 << " " << k2 << endl;
-              for(k=0;k<N_Layers-1;k++)
-              {
-                Joint = new TJointEqN(CellTree[k1],CellTree[k3]);
-                CellTree[k1]->SetJoint(k0, Joint);
-                CellTree[k3]->SetJoint(k2, Joint);
-                k1 += 3*N_RootCells;
-                k3 += 3*N_RootCells;
-              } // endfor k
-
-              // cout << "lower: " << KMTlower[3*i+j] << " " << KMTlower[3*Neib+l] << endl; 
-              k0 = KMTlower[3*i+j] % 32;
-              k1 = (KMTlower[3*i+j] / 32) + 3*i;
-              k2 = KMTlower[3*Neib+l] % 32;
-              k3 = (KMTlower[3*Neib+l] / 32) + 3*Neib;
-              // cout << k1 << " " << k0 << " ::: " << k3 << " " << k2 << endl;
-              for(k=0;k<N_Layers-1;k++)
-              {
-                Joint = new TJointEqN(CellTree[k1],CellTree[k3]);
-                CellTree[k1]->SetJoint(k0, Joint);
-                CellTree[k3]->SetJoint(k2, Joint);
-                k1 += 3*N_RootCells;
-                k3 += 3*N_RootCells;
-              } // endfor k
-            }
-          }
-          else
-          {
-            if (Neib == -1)
-            {
-              if (Interfaces[KNPR[a]-1] < 0 || Interfaces[KNPR[b]-1] < 0)
-              {
-                Error("Error in ReadGeo, line " << __LINE__ << endl);
-                exit(-1);
-              }
-              else
-              {
-                comp = (int) DCORVG[2*a];
-                T_a = DCORVG[2*a] - comp;
-                T_b = DCORVG[2*b] - comp;
-              }
-              
-              if (T_b < T_a)
-              {
-                T_b = 1.;
-                // cout << "AT ";
-              }
-              // cout << T_a << " ... " << T_b << endl;
-
-              if(BdParts[Part]->GetBdComp(comp)->IsFreeBoundary())
-              {
-                Error("Error in ReadGeo, line " << __LINE__ << endl);
-                exit(-1);
-              }
-              else
-              {
-                // upper cells
-                // cout << KMTupper[3*i+j] << endl; 
-                k0 = KMTupper[3*i+j] % 32;
-                k1 = (KMTupper[3*i+j] / 32) + 3*i;
-                // cout << "B:" << k1 << " " << k0 << endl;
-                CurrCell = CellTree[k1];
-                switch(k0)
-                {
-                  case 0:
-                    Error("This case should not appear! " << __LINE__ << endl);
-                    exit(-1);
-                  break;
-
-                  case 1:
-                    Param1[0] = T_a;
-                    Param1[1] = T_a;
-                    Param1[2] = T_b;
-                    i0 = 0; i1 = 1; i2 = 1;
-                  break;
-
-                  case 2:
-                    switch(SortOrder)
-                    {
-                      case 0:
-                      case 3:
-                      case 4:
-                        Param1[0] = T_b;
-                        Param1[1] = T_a;
-                        Param1[2] = T_a;
-                        i0 = 1; i1 = 0; i2 = 1;
-                      break;
-
-                      case 1:
-                      case 2:
-                      case 5:
-                        Param1[0] = T_b;
-                        Param1[1] = T_b;
-                        Param1[2] = T_a;
-                        i0 = 1; i1 = 0; i2 = 1;
-                      break;
-                    }
-                  break;
-
-                  case 3:
-                    Param1[0] = T_b;
-                    Param1[1] = T_a;
-                    Param1[2] = T_b;
-                    i0 = 0; i1 = 1; i2 = 1;
-                  break;
-                }
-                                        
-                for(k=0;k<N_Layers-1;k++)
-                {
-                  Param2[0] = Lambda[k+i0];
-                  Param2[1] = Lambda[k+i1];
-                  Param2[2] = Lambda[k+i2];
-                  Joint = new TBoundFace(BdParts[Part]->GetBdComp(comp),
-                            Param1, Param2);
-                  CellTree[k*N_RootCells*3 + k1]->SetJoint(k0, Joint);
-                  // cout << "upper: " << k*N_RootCells*3 + k1 << " joint: " << k0 << endl;
-                  // cout << Param1[0] << " " << Param2[0] << endl;
-                  // cout << Param1[1] << " " << Param2[1] << endl;
-                  // cout << Param1[2] << " " << Param2[2] << endl;
-                } // endfor k
-
-                // lower cells
-                // cout << KMTlower[3*i+j] << endl; 
-                k2 = KMTlower[3*i+j] % 32;
-                k3 = (KMTlower[3*i+j] / 32) + 3*i;
-                // cout << "B:" << k3 << " " << k2 << endl;
-                CurrCell = CellTree[k3];
-                switch(k2)
-                {
-                  case 0:
-                    switch(SortOrder)
-                    {
-                      case 0:
-                      case 3:
-                      case 4:
-                        Error("This case should not appear! " << __LINE__ << endl);
-                        exit(-1);
-                      break;
-
-                      case 1:
-                      case 2:
-                      case 5:
-                        Param1[0] = T_b;
-                        Param1[1] = T_a;
-                        Param1[2] = T_a;
-                        i0 = 0; i1 = 0; i2 = 1;
-                      break;
-                    }
-                  break;
-
-                  case 1:
-                    switch(SortOrder)
-                    {
-                      case 0:
-                      case 3:
-                      case 4:
-                        Param1[0] = T_a;
-                        Param1[1] = T_b;
-                        Param1[2] = T_b;
-                        i0 = 0; i1 = 1; i2 = 0;
-                      break;
-
-                      case 1:
-                      case 2:
-                      case 5:
-                        Error("This case should not appear! " << __LINE__ << endl);
-                        exit(-1);
-                      break;
-                    }
-                  break;
-
-                  case 2:
-                    Param1[0] = T_b;
-                    Param1[1] = T_a;
-                    Param1[2] = T_b;
-                    i0 = 0; i1 = 0; i2 = 1;
-                  break;
-
-                  case 3:
-                    Param1[0] = T_b;
-                    Param1[1] = T_a;
-                    Param1[2] = T_a;
-                    i0 = 0; i1 = 0; i2 = 1;
-                  break;
-                }
-                                        
-                for(k=0;k<N_Layers-1;k++)
-                {
-                  Param2[0] = Lambda[k+i0];
-                  Param2[1] = Lambda[k+i1];
-                  Param2[2] = Lambda[k+i2];
-                  Joint = new TBoundFace(BdParts[Part]->GetBdComp(comp),
-                            Param1, Param2);
-                  CellTree[k*N_RootCells*3 + k3]->SetJoint(k2, Joint);
-                  // cout << "lower: " << k*N_RootCells*3 + k3 << " joint: " << k2 << endl;
-                  // cout << Param1[0] << " " << Param2[0] << endl;
-                  // cout << Param1[1] << " " << Param2[1] << endl;
-                  // cout << Param1[2] << " " << Param2[2] << endl;
-                } // endfor k
-              } // endif FreeBoundary
-            } // endif Neib == -1
-            // else
-            // {
-            //   cout << "already done" << endl;
-            // }
-          } // endif
-        } // endfor N_E
-    
-        // create top and bottom joints
-        CurrCell = CellTree[i*3];
-        CurrCell->GetVertex(0)->GetCoords(x0, y0, z0);
-        CurrCell->GetVertex(1)->GetCoords(x1, y1, z1);
-        CurrCell->GetVertex(2)->GetCoords(x2, y2, z2);
-        Bottom->GetTSofXYZ(x0, y0, z0, Param1[0], Param2[0]);
-        Bottom->GetTSofXYZ(x1, y1, z1, Param1[1], Param2[1]);
-        Bottom->GetTSofXYZ(x2, y2, z2, Param1[2], Param2[2]);
-        Joint = new TBoundFace(Bottom, Param1, Param2);
-        CellTree[i*3]->SetJoint(0, Joint);
-    
-        CurrCell = CellTree[((N_Layers-2)*N_RootCells + i)*3+2];
-        CurrCell->GetVertex(2)->GetCoords(x0, y0, z0);
-        CurrCell->GetVertex(1)->GetCoords(x1, y1, z1);
-        CurrCell->GetVertex(3)->GetCoords(x2, y2, z2);
-        Top->GetTSofXYZ(x0, y0, z0, Param1[0], Param2[0]);
-        Top->GetTSofXYZ(x1, y1, z1, Param1[1], Param2[1]);
-        Top->GetTSofXYZ(x2, y2, z2, Param1[2], Param2[2]);
-        Joint = new TBoundFace(Top, Param1, Param2);
-        CellTree[((N_Layers-2)*N_RootCells + i)*3+2]->SetJoint(2, Joint);
-        
-        // create horizontal joints
-        for(k=1;k<N_Layers-1;k++)
-        {
-          Joint = new TJointEqN(CellTree[((k-1)*N_RootCells+i)*3+2],
-                                CellTree[( k   *N_RootCells+i)*3+0]);
-          CellTree[((k-1)*N_RootCells+i)*3+2]->SetJoint(2, Joint);
-          CellTree[( k   *N_RootCells+i)*3+0]->SetJoint(0, Joint);
-        }
-      }
-    
-      N_RootCells *= (N_Layers-1)*3;
-      delete[] KMTupper;
-      delete[] KMTlower;
-    break;
-
-    default:
-      ErrThrow("Wrong Number of Vertices per Element ('NVE'). "
-               "Only 3 (triangles) and 4 (quads) are allowed!");
-  } // endswitch(NVE)
-
-  cout << "N_RootCells: " << N_RootCells << endl;
-  for(i=0;i<N_RootCells;i++)
-    CellTree[i]->SetClipBoard(i);
-
-  for(i=0;i<N_RootCells;i++)
-  {
-    CurrCell = CellTree[i];
-    k = CurrCell->GetN_Joints();
-    for(j=0;j<k;j++)
-    {
-      // cout << i << " --  " << j;
-      // cout << " " << (int)(CurrCell->GetJoint(j)) << endl;
-      if( CurrCell->GetJoint(j) != nullptr )
-        CurrCell->GetJoint(j)->SetMapType();
-    }
-
-    // k = CurrCell->GetN_Vertices();
-    // for(j=0;j<k;j++)
-    //   cout << i << " " << j << " " << CurrCell->GetVertex(j) << endl;
+      ErrThrow(
+          "Error in set_bdr_joints (Tetra) in BdWall joint \n  joint does not match face: ",
+          joint_id);
   }
+
+  //Treat the special case of a closed boundary component (closed circle)
+  //uses that vert1 and vert2 are part of the bottom plane
+  correct_parameterlist(3, BdComp, vert1, vert2, T_parameter);
+
+  TJoint* bdry_joint = new TBoundFace(BdComp, T_parameter, Z_parameter);
+  tet_cell->SetJoint(joint_id, bdry_joint);
+  bdry_joint->SetMapType();
+}
+
+//Defines boundary joints given the Cell, the face (int joint_id) where the joint is located
+//the correct(!) four vertices of this face and the boundary component matching the joint
+//If the component is a BdWall, then vert1 and vert2 are part of the bottom plane and
+//vert3 and vert4 are part of the top plane (implicitly used)
+void set_bdr_joints(TBaseCell *hexa_cell, TVertex *vert1, TVertex *vert2,
+                    TVertex *vert3, TVertex *vert4, int joint_id,
+                    TBoundComp3D * BdComp)
+{
+  const int *vert_per_face;
+  const int *n_vert_per_face;
+  int max_n;
+  hexa_cell->GetShapeDesc()->GetFaceVertex(vert_per_face, n_vert_per_face,
+                                           max_n);
+
+  double T_parameter[4];
+  double Z_parameter[4];
+  double x, y, z;
+  for(int vert_id = 0; vert_id < 4; vert_id++)
+  {
+    int vert = vert_per_face[joint_id * max_n + vert_id];
+    if(hexa_cell->GetVertex(vert) == vert1)
+    {
+      vert1->GetCoords(x, y, z);
+      BdComp->GetTSofXYZ(x, y, z, T_parameter[vert_id], Z_parameter[vert_id]);
+    }
+    else if(hexa_cell->GetVertex(vert) == vert2)
+    {
+      vert2->GetCoords(x, y, z);
+      BdComp->GetTSofXYZ(x, y, z, T_parameter[vert_id], Z_parameter[vert_id]);
+    }
+    else if(hexa_cell->GetVertex(vert) == vert3)
+    {
+      vert3->GetCoords(x, y, z);
+      BdComp->GetTSofXYZ(x, y, z, T_parameter[vert_id], Z_parameter[vert_id]);
+    }
+    else if(hexa_cell->GetVertex(vert) == vert4)
+    {
+      vert4->GetCoords(x, y, z);
+      BdComp->GetTSofXYZ(x, y, z, T_parameter[vert_id], Z_parameter[vert_id]);
+    }
+    else
+      ErrThrow(
+          "Error in set_bdr_joints (Hexa) in BdComp joint \n  joint does not match face: ",
+          joint_id)
+  }
+  //Treat the special case of a closed boundary component (closed circle)
+
+  correct_parameterlist(3, BdComp, vert1, vert2, T_parameter);
+
+  TJoint* outer_joint = new TBoundFace(BdComp, T_parameter, Z_parameter);
+  hexa_cell->SetJoint(joint_id, outer_joint);
+  outer_joint->SetMapType();
+}
+
+//Given a GridCell and an edge (first_bot,second_bot) of bottom face
+//this method returns the wall face which contains the edge (both vertices)
+int find_joint_face(TGridCell* const hexa_cell, TVertex* const first_bot,
+                    TVertex* const second_bot)
+{
+  const int* vert_per_face;
+  const int* n_vert_per_face; //={4,4,4,4,4,4}
+  int max_n_vert_per_face;    //=4
+  hexa_cell->GetShapeDesc()->GetFaceVertex(vert_per_face, n_vert_per_face,
+                                           max_n_vert_per_face);
+
+  //face 0 is the bottom face and face 5 is the top face
+  //thus, both faces are not considered
+  for(int face_id = 1; face_id < 5; face_id++)
+  {
+    for(int vert_1_id = 0; vert_1_id < 4; vert_1_id++)
+    {
+      if(hexa_cell->GetVertex(
+          vert_per_face[max_n_vert_per_face * face_id + vert_1_id])
+         == first_bot)
+      {
+        for(int vert_2_id = 0; vert_2_id < 4; vert_2_id++)
+        {
+          if(hexa_cell->GetVertex(
+              vert_per_face[max_n_vert_per_face * face_id + vert_2_id])
+             == second_bot)
+          {
+            return face_id;
+          }
+        }
+      }
+    }
+  }
+  ErrThrow("In find_joint_face the given cell doesn't contain the edge!");
+  return -1;
+}
+
+/**@brief constructs a 3D grid from a given 2D grid
+ * \ref page_sandwich_grid , provides further information on this method
+ */
+void TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
+                                  int N_Vertices, int NVE, double drift_x,
+                                  double drift_y, double drift_z,
+                                  const std::vector<double>& lambda)
+{
+  size_t n_vert_layers = lambda.size();
+  size_t n_elem_layers = lambda.size() - 1;
+  size_t n_base_vertices = N_Vertices;
+  size_t n_base_elements = this->N_RootCells;
+
+  // TODO NVE is superfluous, given KVERT were a 2D vector
+  ElementShape elements_shape;
+  if(NVE == 3)
+    elements_shape = ElementShape::TETS;
+  else if(NVE == 4)
+    elements_shape = ElementShape::QUADS;
+  else
+    ErrThrow(
+        "What kind of element should that be? Enter 3 for TETS or 4 for quads.");
+
+  // put input into more suitable forms
+  // This contains coordinates of the base (i.e., 2D) vertices.
+  // If it is an inner vertex, it contains (x,y) coordinates.
+  // If it is a boundary vertex, it contains (t,0) coordinates,
+  // with t the parameter on the respective boundary. The containing
+  // boundary component is given by the next vector.
+  std::vector<std::pair<double, double>> base_vert_coords(n_base_vertices);
+  for(size_t v = 0; v < n_base_vertices; ++v)
+    base_vert_coords.at(v) =
+    { DCORVG[2*v], DCORVG[2*v + 1]};
+
+    // Contains IDs of the boundary (component!) on which each vertex lies.
+    // For inner vertices, it is 0.
+  std::vector<int> base_vert_bdry(n_base_vertices);
+  for(size_t v = 0; v < n_base_vertices; ++v)
+    base_vert_bdry.at(v) = KNPR[v] - 1; //add 1, input KNPR has "-1" for inner vertex
+
+  // This data structure gathers which base vertices form which base element.
+  std::vector<std::vector<int>> base_verts_per_base_elem(n_base_elements,
+                                                         std::vector<int>(NVE));
+
+  for(size_t e = 0; e < n_base_elements; ++e)
+  {
+    std::vector<int> verts(NVE);
+    for(int v = 0; v < NVE; ++v)
+      verts.at(v) = KVERT[e * NVE + v] - 1;
+
+    base_verts_per_base_elem.at(e) = verts;
+  }
+  
+  double BdBox_xmin = std::numeric_limits<double>::infinity();
+  double BdBox_ymin = std::numeric_limits<double>::infinity();
+  double BdBox_xmax = -std::numeric_limits<double>::infinity();
+  double BdBox_ymax = -std::numeric_limits<double>::infinity();
+
+  std::vector<TVertex*> sandw_vertices(n_base_vertices * n_vert_layers,
+                                       nullptr);
+  for(size_t bv = 0; bv < n_base_vertices; ++bv)
+  {
+    double base_x = 0;
+    double base_y = 0;
+
+    if(base_vert_bdry.at(bv) == -1)
+    { //this is an inner base vertex - coordinates are cartesian (x,y)
+      base_x = base_vert_coords.at(bv).first;
+      base_y = base_vert_coords.at(bv).second;
+    }
+    else
+    { //this is a boundary base vertex - coordinates are (tau, 0),
+      //tau from a parametrization of the boundary given by base_vert_bdry
+      double comp_plus_tau = base_vert_coords.at(bv).first; //second is irrelevant
+      int part = base_vert_bdry.at(bv);
+      int comp = std::floor(comp_plus_tau); //floor tau to the nearest integer
+      double tau = comp_plus_tau - comp;
+
+      //The boundary on which the vertex lies is encoded in the input as follows:
+      // BOUNDARY PART		: base_vert_bdry.at(v)
+      // BOUNDARY COMPONENT : std::floor(comp_plus_tau)
+      // TAU (ON PART, COMP): comp_plus_tau - comp
+
+      if(GetLastLocalComp(part) == comp - 1)
+      {      //the very last vertex - correct "comp" not reached by std::floor
+        comp--;
+        tau = 1.0;
+      }
+
+      TBdWall* BdWall = dynamic_cast<TBdWall*>(BdParts[part]->GetBdComp(comp));
+      BdWall->GetBdComp2D()->GetXYofT(tau, base_x, base_y);
+    }
+
+    //compute parameters for the bounding box
+    if(base_x < BdBox_xmin)
+      BdBox_xmin = base_x;
+    if(base_y < BdBox_ymin)
+      BdBox_ymin = base_y;
+    if(base_x > BdBox_xmax)
+      BdBox_xmax = base_x;
+    if(base_y > BdBox_ymax)
+      BdBox_ymax = base_y;
+    
+    // ...in both cases, create all corresponding 3D vertices
+    for(size_t l = 0; l < n_vert_layers; ++l)
+    {
+      double sandw_x = base_x + drift_x * lambda.at(l);
+      double sandw_y = base_y + drift_y * lambda.at(l);
+      double sandw_z = drift_z * lambda.at(l);
+      // create a new 3D vertex and put it into the list
+      int new_vertex_id = l * n_base_vertices + bv;
+      sandw_vertices.at(new_vertex_id) = new TVertex(sandw_x, sandw_y, sandw_z);
+    }
+  }      //end 2D vertices
+
+         //Set the bounding box.
+  StartX = BdBox_xmin;
+  StartY = BdBox_ymin;
+  StartZ = 0;
+  BoundX = BdBox_xmax - BdBox_xmin + drift_x;
+  BoundY = BdBox_ymax - BdBox_ymin + drift_y;
+  BoundZ = drift_z;
+
+  //Set BdWalls
+  int N_BdWalls = 0;
+  for(int part = 0; part < N_BoundParts; part++)
+  {
+    int N_BoundComp = BdParts[part]->GetN_BdComps();
+    N_BdWalls += N_BoundComp;
+
+    for(int comp = 0; comp < N_BoundComp; comp++)
+    {
+      TBdWall* BdWall = dynamic_cast<TBdWall*>(BdParts[part]->GetBdComp(comp));
+      BdWall->SetParams(drift_x, drift_y, drift_z);
+    }
+  }
+
+  // The BdComp.IDs (N_BdWalls and N_BdWalls+1) may not be important,
+  // probably they aren't used later anyway...
+  TBdPlane* Bottom = new TBdPlane(N_BdWalls);
+  Bottom->SetParams(0, 0, 0, 1, 0, 0, 0, 0, -1);
+  TBdPlane* Top = new TBdPlane(N_BdWalls + 1);
+  Top->SetParams(0, 0, drift_z, 1, 0, 0, 0, 0, 1);
+
+  if(elements_shape == ElementShape::QUADS)
+  {
+    size_t n_sandw_elements = n_base_elements * n_elem_layers;
+    CellTree = new TBaseCell*[n_sandw_elements];
+
+    //Declare Cells (Hexahedrons)
+    //for (size_t c=0; c<n_sandw_elements; c++)
+    //  CellTree[c] = new TMacroCell(TDatabase::RefDescDB[Hexahedron], RefLevel);
+
+    for(size_t e = 0; e < n_base_elements; e++)
+    {
+      int base_vert_1_id = base_verts_per_base_elem.at(e)[0];
+      int base_vert_2_id = base_verts_per_base_elem.at(e)[1];
+      int base_vert_3_id = base_verts_per_base_elem.at(e)[2];
+      int base_vert_4_id = base_verts_per_base_elem.at(e)[3];
+
+      //Set hexahedrons and top-bottom-joints
+      for(size_t l = 0; l < n_elem_layers; l++)
+      {
+        TVertex* A_bot = sandw_vertices.at(
+            l * n_base_vertices + base_vert_1_id);
+        TVertex* B_bot = sandw_vertices.at(
+            l * n_base_vertices + base_vert_2_id);
+        TVertex* C_bot = sandw_vertices.at(
+            l * n_base_vertices + base_vert_3_id);
+        TVertex* D_bot = sandw_vertices.at(
+            l * n_base_vertices + base_vert_4_id);
+
+        TVertex* A_top = sandw_vertices.at(
+            (l + 1) * n_base_vertices + base_vert_1_id);
+        TVertex* B_top = sandw_vertices.at(
+            (l + 1) * n_base_vertices + base_vert_2_id);
+        TVertex* C_top = sandw_vertices.at(
+            (l + 1) * n_base_vertices + base_vert_3_id);
+        TVertex* D_top = sandw_vertices.at(
+            (l + 1) * n_base_vertices + base_vert_4_id);
+
+        TVertex * locVertices[8] = {A_bot, B_bot, C_bot, D_bot, A_top, B_top,
+                                    C_top, D_top};
+
+        auto CellType = ((THexahedron *) TDatabase::RefDescDB[Hexahedron]
+            ->GetShapeDesc())->CheckHexa(locVertices);
+
+        //Set Cell
+        CellTree[l * n_base_elements + e] = new TMacroCell(
+            TDatabase::RefDescDB[CellType], RefLevel);
+        TBaseCell* hexa = CellTree[l * n_base_elements + e];
+        hexa->SetVertex(0, A_bot);
+        hexa->SetVertex(1, B_bot);
+        hexa->SetVertex(2, C_bot);
+        hexa->SetVertex(3, D_bot);
+        hexa->SetVertex(4, A_top);
+        hexa->SetVertex(5, B_top);
+        hexa->SetVertex(6, C_top);
+        hexa->SetVertex(7, D_top);
+
+        //Correct orientation of the grid cell
+        //Should never enter this case...
+        if(!hexa->check_orientation())
+        {
+          Output::print(
+              "Something is wrong with the order of vertices in the given quadrilateral");
+          hexa->SetVertex(0, B_bot);
+          hexa->SetVertex(1, A_bot);
+          hexa->SetVertex(2, D_bot);
+          hexa->SetVertex(3, C_bot);
+          hexa->SetVertex(4, B_top);
+          hexa->SetVertex(5, A_top);
+          hexa->SetVertex(6, D_top);
+          hexa->SetVertex(7, C_top);
+        }
+
+        if(l == 0)
+          set_bdr_joints(hexa, A_bot, B_bot, C_bot, D_bot, 0, Bottom);
+
+        if(l > 0)
+        {
+          TBaseCell *hexa_below = CellTree[(l - 1) * n_base_elements + e];
+          TJointEqN* top_bot_outer_joint = new TJointEqN(hexa, hexa_below);
+          hexa_below->SetJoint(5, top_bot_outer_joint);
+          hexa->SetJoint(0, top_bot_outer_joint);
+          top_bot_outer_joint->SetMapType();
+        }
+
+        if(l == n_elem_layers - 1)
+          set_bdr_joints(hexa, A_top, B_top, C_top, D_top, 5, Top);
+
+      } //end layers
+
+    } //end base_elements
+
+    for(size_t e = 0; e < n_base_elements; e++)
+    {
+      int base_vert_0_id = base_verts_per_base_elem.at(e)[0];
+      int base_vert_1_id = base_verts_per_base_elem.at(e)[1];
+      int base_vert_2_id = base_verts_per_base_elem.at(e)[2];
+      int base_vert_3_id = base_verts_per_base_elem.at(e)[3];
+
+      //treat all three edges, inserting all side joints in all sandwich elements
+      //first edge
+      std::vector<std::pair<int, int>> edges = {
+          {base_vert_0_id, base_vert_1_id}, {base_vert_1_id, base_vert_2_id}, {
+              base_vert_2_id, base_vert_3_id},
+          {base_vert_3_id, base_vert_0_id}};
+
+      //keep track of which elements were treated already
+      std::vector<std::vector<int>> treated_edges(n_base_vertices,
+                                                  std::vector<int>());
+
+      for(int edge = 0; edge < 4; edge++)
+      {
+        int vert_1_id = edges.at(edge).first;
+        int vert_2_id = edges.at(edge).second;
+
+        //Check on the element containing the edge
+        if(std::find(treated_edges.at(vert_1_id).begin(),
+                     treated_edges.at(vert_1_id).end(), vert_2_id)
+           != treated_edges.at(vert_1_id).end())
+          continue;
+
+        treated_edges.at(vert_1_id).push_back(vert_2_id);
+        treated_edges.at(vert_2_id).push_back(vert_1_id);
+
+        int e_neighbor = find_neighbor_base_element_id(base_verts_per_base_elem,
+                                                       e, vert_1_id, vert_2_id);
+
+        //treat boundary edges
+        if(e_neighbor == -1)
+        {
+          // check conditions
+          if(Interfaces[KNPR[vert_1_id] - 1] < 0 || Interfaces[KNPR[vert_2_id]
+              - 1]
+                                                    < 0)
+          {
+            Error("Error in ReadGeo, line " << __LINE__ << endl);
+            exit(-1);
+          }
+
+          //treatment of boundary edges
+          int edge_bdr_part = base_vert_bdry.at(vert_1_id);
+          int edge_bdr_comp = static_cast<int>(base_vert_coords.at(vert_1_id)
+              .first);
+
+          if(BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp)->IsFreeBoundary())
+          {
+            Error("Error in ReadGeo, line " << __LINE__ << endl);
+            exit(-1);
+          }
+
+          for(size_t l = 0; l < n_elem_layers; l++)
+          {
+            TGridCell* my_hexa = dynamic_cast<TGridCell*>(CellTree[l
+                * n_base_elements
+                                                                   + e]);
+
+            TVertex* vert1(sandw_vertices.at(l * n_base_vertices + vert_1_id));
+            TVertex* vert2(sandw_vertices.at(l * n_base_vertices + vert_2_id));
+            TVertex* vert3(
+                sandw_vertices.at((l + 1) * n_base_vertices + vert_1_id));
+            TVertex* vert4(
+                sandw_vertices.at((l + 1) * n_base_vertices + vert_2_id));
+            double T_vert_1 = base_vert_coords.at(vert_1_id).first
+                - edge_bdr_comp;
+            double T_vert_2 = base_vert_coords.at(vert_2_id).first
+                - edge_bdr_comp;
+
+            //prevents confusion in vertices of two different boundary-parts
+            //guarantees 0<=T<=1
+            if(T_vert_2 < T_vert_1)
+              T_vert_2 = 1.;
+
+            int my_joint_id = find_joint_face(my_hexa, vert1, vert2);
+
+            set_bdr_joints(my_hexa, vert1, vert2, vert3, vert4, my_joint_id,
+                           BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp));
+          }
+
+        }	        		  //end boundary treatment
+        else
+        {
+          for(size_t l = 0; l < n_elem_layers; l++)
+          {
+            TGridCell* my_hexa = dynamic_cast<TGridCell*>(CellTree[l
+                * n_base_elements
+                                                                   + e]);
+            TGridCell* yo_hexa =
+                dynamic_cast<TGridCell*>(CellTree[l * n_base_elements
+                    + e_neighbor]);
+            TVertex* vert1(sandw_vertices.at(l * n_base_vertices + vert_1_id));
+            TVertex* vert2(sandw_vertices.at(l * n_base_vertices + vert_2_id));
+
+            int my_joint_id = find_joint_face(my_hexa, vert1, vert2);
+            int yo_joint_id = find_joint_face(yo_hexa, vert1, vert2);
+
+            TJointEqN* inner_joint = new TJointEqN(my_hexa, yo_hexa);
+            my_hexa->SetJoint(my_joint_id, inner_joint);
+            yo_hexa->SetJoint(yo_joint_id, inner_joint);
+            inner_joint->SetMapType();
+          }
+        }
+
+      }
+      // N_RootCells auf die Zahl 3D (nicht: 2D) Zellen setzen
+      this->N_RootCells = n_sandw_elements;
+
+    }
+
+    //ErrThrow("NewMakeSandwichGrid only deals with triangular/"
+    //"tetrehedral meshes so far. ");
+  }
+
+  else if(elements_shape == ElementShape::TETS)
+  {
+    // Allocate the CellTree, i.e., the tree structure of 3D cells.
+    // Each 2D base element will lead to 3 times n_elem_layers cells
+    // in the CellTree (each prism with triangular base area will be split into three tets)
+    size_t n_sandw_elements = 3 * n_base_elements * n_elem_layers;
+    CellTree = new TBaseCell*[n_sandw_elements];
+    for(size_t c = 0; c < n_sandw_elements; ++c)
+      CellTree[c] = new TMacroCell(TDatabase::RefDescDB[Tetrahedron], RefLevel);
+
+    //For further use the orientation (sign of the triple product of the vertices)
+    //has to be positive. If not it has to be changed and the numbering of faces/joints has to be adjusted.
+    std::vector<int> Cell_orientations(n_sandw_elements);
+
+    for(size_t e = 0; e < n_base_elements; e++)
+    {
+
+      int base_vert_1_id = base_verts_per_base_elem.at(e)[0];
+      int base_vert_2_id = base_verts_per_base_elem.at(e)[1];
+      int base_vert_3_id = base_verts_per_base_elem.at(e)[2];
+
+      for(size_t l = 0; l < n_elem_layers; l++)
+      {
+        TVertex* A_bot = sandw_vertices.at(
+            l * n_base_vertices + base_vert_1_id);
+        TVertex* B_bot = sandw_vertices.at(
+            l * n_base_vertices + base_vert_2_id);
+        TVertex* C_bot = sandw_vertices.at(
+            l * n_base_vertices + base_vert_3_id);
+        sort_vertices(A_bot, B_bot, C_bot);
+        TVertex* A_top = sandw_vertices.at(
+            (l + 1) * n_base_vertices + base_vert_1_id);
+        TVertex* B_top = sandw_vertices.at(
+            (l + 1) * n_base_vertices + base_vert_2_id);
+        TVertex* C_top = sandw_vertices.at(
+            (l + 1) * n_base_vertices + base_vert_3_id);
+        sort_vertices(A_top, B_top, C_top);
+
+        size_t my_prism_index = 3 * (l * n_base_elements + e);
+
+        // Set up "low" Tetrahedron
+        TBaseCell* low_tet = CellTree[my_prism_index];
+        set_tetrahedron(my_prism_index, low_tet, A_bot, B_bot, C_bot, C_top,
+                        Cell_orientations.at(my_prism_index));
+
+        // Set up "mid" Tetrahedron
+        TBaseCell* mid_tet = CellTree[my_prism_index + 1];
+        set_tetrahedron(my_prism_index + 1, mid_tet, A_bot, B_bot, B_top, C_top,
+                        Cell_orientations.at(my_prism_index + 1));
+
+        // Set up "high" Tetrahedron
+        TBaseCell* high_tet = CellTree[my_prism_index + 2];
+        set_tetrahedron(my_prism_index + 2, high_tet, A_bot, A_top, B_top,
+                        C_top, Cell_orientations.at(my_prism_index + 2));
+
+        // put both inner joints into place
+        // Joint ID has to match with the face ID (ShapeDesc) for later use (SetMaptype)
+        TJointEqN* low_mid_inner_joint = new TJointEqN(low_tet, mid_tet);
+        low_tet->SetJoint(1, low_mid_inner_joint);
+        mid_tet->SetJoint(1, low_mid_inner_joint);
+
+        low_mid_inner_joint->SetMapType();
+
+        TJointEqN* mid_high_inner_joint = new TJointEqN(mid_tet, high_tet);
+        //Joint face depends on orientation
+        if(Cell_orientations[my_prism_index + 1])
+          mid_tet->SetJoint(3, mid_high_inner_joint);
+        else
+          mid_tet->SetJoint(2, mid_high_inner_joint);
+
+        //Joint face depends on orientation
+        if(Cell_orientations[my_prism_index + 2])
+          high_tet->SetJoint(3, mid_high_inner_joint);
+        else
+          high_tet->SetJoint(2, mid_high_inner_joint);
+
+        mid_high_inner_joint->SetMapType();
+
+        //set bottom plane joint
+        if(l == 0)
+          set_bdr_joints(low_tet, A_bot, B_bot, C_bot, 0, Bottom);
+
+        // put outer joint between layers into place
+        if(l > 0)
+        {
+          TBaseCell *top_tet = CellTree[3 * ((l - 1) * n_base_elements + e) + 2];
+          TJointEqN* top_bot_outer_joint = new TJointEqN(low_tet, top_tet);
+          if(Cell_orientations[3 * ((l - 1) * n_base_elements + e) + 2])
+            top_tet->SetJoint(2, top_bot_outer_joint);
+          else
+            top_tet->SetJoint(3, top_bot_outer_joint);
+          low_tet->SetJoint(0, top_bot_outer_joint);
+          top_bot_outer_joint->SetMapType();
+        }
+
+        //set top plane joint
+        if(l == n_elem_layers - 1)
+        {
+          if(Cell_orientations[my_prism_index + 2])
+            set_bdr_joints(high_tet, A_top, B_top, C_top, 2, Top);
+          else
+            set_bdr_joints(high_tet, A_top, B_top, C_top, 3, Top);
+        }
+      }      //end layers
+    }      //end prisms
+
+           //to keep track of which elements were treated already
+    std::vector<std::vector<int>> treated_edges(n_base_vertices,
+                                                std::vector<int>());
+
+    // set boundary joints
+    for(size_t e = 0; e < n_base_elements; e++)
+    {
+      int base_vert_0_id = base_verts_per_base_elem.at(e)[0];
+      int base_vert_1_id = base_verts_per_base_elem.at(e)[1];
+      int base_vert_2_id = base_verts_per_base_elem.at(e)[2];
+      //treat all three edges, inserting all side joints in all sandwich elements
+      //first edge
+      std::vector<std::pair<int, int>> edges = {
+          {base_vert_0_id, base_vert_1_id}, {base_vert_1_id, base_vert_2_id}, {
+              base_vert_2_id, base_vert_0_id}};
+
+      for(int edge = 0; edge < 3; ++edge)
+      {
+
+        int vert_1_id = edges.at(edge).first;
+        int vert_2_id = edges.at(edge).second;
+
+        //Check on the element containing the edge
+        if(std::find(treated_edges.at(vert_1_id).begin(),
+                     treated_edges.at(vert_1_id).end(), vert_2_id)
+           != treated_edges.at(vert_1_id).end())
+          continue;
+
+        treated_edges.at(vert_1_id).push_back(vert_2_id);
+        treated_edges.at(vert_2_id).push_back(vert_1_id);
+
+        int e_neighbor = find_neighbor_base_element_id(base_verts_per_base_elem,
+                                                       e, vert_1_id, vert_2_id);
+
+        if(e_neighbor == -1)
+        {    //this is a boundary edge, treat it accordingly
+             // check conditions
+          if(Interfaces[KNPR[vert_1_id] - 1] < 0
+              || Interfaces[KNPR[vert_2_id]- 1] < 0)
+          {
+            ErrThrow("Error in ReadGeo" );
+          }
+
+          //treatment of boundary edges
+          int edge_bdr_part = base_vert_bdry.at(vert_1_id);
+          int edge_bdr_comp = static_cast<int>(base_vert_coords.at(vert_1_id)
+              .first);
+
+          if(BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp)->IsFreeBoundary())
+          {
+            ErrThrow("Error in ReadGeo " );
+          }
+
+          double T_vert_1 = base_vert_coords.at(vert_1_id).first
+              - edge_bdr_comp;
+          double T_vert_2 = base_vert_coords.at(vert_2_id).first
+              - edge_bdr_comp;
+
+          //prevents confusion in vertices of two different boundary-parts
+          //guarantees 0<=T<=1
+          //runs without, too, but causes error in BdLine
+          if(T_vert_2 < T_vert_1)
+            T_vert_2 = 1.;
+
+          for(size_t l = 0; l < n_elem_layers; ++l)
+          {
+            size_t my_prism_index = 3 * (l * n_base_elements + e);
+
+            TGridCell* my_low_tet =
+                dynamic_cast<TGridCell*>(CellTree[my_prism_index]);
+            TGridCell* my_mid_tet =
+                dynamic_cast<TGridCell*>(CellTree[my_prism_index + 1]);
+            TGridCell* my_high_tet =
+                dynamic_cast<TGridCell*>(CellTree[my_prism_index + 2]);
+
+            bool orientation_low = Cell_orientations.at(my_prism_index);
+            bool orientation_mid = Cell_orientations.at(my_prism_index + 1);
+
+            TVertex* vert1(sandw_vertices.at(l * n_base_vertices + vert_1_id));
+            TVertex* vert2(sandw_vertices.at(l * n_base_vertices + vert_2_id));
+            TVertex* vert1_high(
+                sandw_vertices.at((l + 1) * n_base_vertices + vert_1_id));
+            TVertex* vert2_high(
+                sandw_vertices.at((l + 1) * n_base_vertices + vert_2_id));
+
+            int my_lower_joint_id, my_upper_joint_id;
+            TGridCell* my_lower_joint_element;
+            TGridCell* my_upper_joint_element;
+
+            find_low_and_high_face_element(orientation_low, orientation_mid,
+                                           my_low_tet, my_mid_tet, my_high_tet,
+                                           vert1, vert2, my_lower_joint_element,
+                                           my_lower_joint_id,
+                                           my_upper_joint_element,
+                                           my_upper_joint_id);
+
+            //there exists an edge between (smaller vertex, low) and (larger vertex, up)
+            if(*vert2 < *vert1)
+            {
+              //Set joint for lower tet
+              set_bdr_joints(my_lower_joint_element, vert1, vert2, vert1_high,
+                             my_lower_joint_id,
+                             BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp));
+              //Set joint for upper tet
+              set_bdr_joints(my_upper_joint_element, vert1_high, vert2_high,
+                             vert2, my_upper_joint_id,
+                             BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp));
+            }
+            else
+            {
+              //Set joint for lower tet
+              set_bdr_joints(my_lower_joint_element, vert1, vert2, vert2_high,
+                             my_lower_joint_id,
+                             BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp));
+              //Set joint for upper tet
+              set_bdr_joints(my_upper_joint_element, vert1_high, vert2_high,
+                             vert1, my_upper_joint_id,
+                             BdParts[edge_bdr_part]->GetBdComp(edge_bdr_comp));
+            }
+          }    		  //end layers
+        }    		  //end set boundary joints
+
+        //set inner joints between prisms
+        else
+        {	  // there are two tets sharing a face to both sides of all sandwich
+          // repetitions of the current edge - create their joints!
+          for(size_t l = 0; l < n_elem_layers; ++l)
+          {
+            size_t my_prism_index = 3 * (l * n_base_elements + e);
+            size_t yo_prism_index = 3 * (l * n_base_elements + e_neighbor);
+
+            TGridCell* my_low_tet =
+                dynamic_cast<TGridCell*>(CellTree[my_prism_index]);
+            TGridCell* my_mid_tet =
+                dynamic_cast<TGridCell*>(CellTree[my_prism_index + 1]);
+            TGridCell* my_high_tet =
+                dynamic_cast<TGridCell*>(CellTree[my_prism_index + 2]);
+
+            bool my_orientation_low = Cell_orientations.at(my_prism_index);
+            bool my_orientation_mid = Cell_orientations.at(my_prism_index + 1);
+
+            TGridCell* yo_low_tet =
+                dynamic_cast<TGridCell*>(CellTree[yo_prism_index]);
+            TGridCell* yo_mid_tet =
+                dynamic_cast<TGridCell*>(CellTree[yo_prism_index + 1]);
+            TGridCell* yo_high_tet =
+                dynamic_cast<TGridCell*>(CellTree[yo_prism_index + 2]);
+
+            bool yo_orientation_low = Cell_orientations.at(yo_prism_index);
+            bool yo_orientation_mid = Cell_orientations.at(yo_prism_index + 1);
+
+            TVertex* vert1(sandw_vertices.at(l * n_base_vertices + vert_1_id)); //global numbering
+            TVertex* vert2(sandw_vertices.at(l * n_base_vertices + vert_2_id));
+
+            { //set the lower of the two joints
+              int my_lower_joint_id, yo_lower_joint_id;
+              TGridCell* my_lower_joint_element;
+              TGridCell* yo_lower_joint_element;
+
+              int my_upper_joint_id, yo_upper_joint_id;
+              TGridCell* my_upper_joint_element;
+              TGridCell* yo_upper_joint_element;
+
+              find_low_and_high_face_element(my_orientation_low,
+                                             my_orientation_mid, my_low_tet,
+                                             my_mid_tet, my_high_tet, vert1,
+                                             vert2, my_lower_joint_element,
+                                             my_lower_joint_id,
+                                             my_upper_joint_element,
+                                             my_upper_joint_id);
+
+              find_low_and_high_face_element(yo_orientation_low,
+                                             yo_orientation_mid, yo_low_tet,
+                                             yo_mid_tet, yo_high_tet, vert1,
+                                             vert2, yo_lower_joint_element,
+                                             yo_lower_joint_id,
+                                             yo_upper_joint_element,
+                                             yo_upper_joint_id);
+
+              TJointEqN* low_joint = new TJointEqN(my_lower_joint_element,
+                                                   yo_lower_joint_element);
+              my_lower_joint_element->SetJoint(my_lower_joint_id, low_joint);
+              yo_lower_joint_element->SetJoint(yo_lower_joint_id, low_joint);
+              low_joint->SetMapType();
+
+              TJointEqN* high_joint = new TJointEqN(my_upper_joint_element,
+                                                    yo_upper_joint_element);
+              my_upper_joint_element->SetJoint(my_upper_joint_id, high_joint);
+              yo_upper_joint_element->SetJoint(yo_upper_joint_id, high_joint);
+              high_joint->SetMapType();
+            }
+          }
+        } //end Set joints between prisms
+      }
+
+    }
+    // N_RootCells auf die Zahl 3D (nicht: 2D) Zellen setzen
+    this->N_RootCells = n_sandw_elements;
+  } //END construct tetrahedral mesh
 
   // initialize iterators
   TDatabase::IteratorDB[It_EQ]->SetParam(this);
@@ -2617,105 +2393,6 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
   TDatabase::IteratorDB[It_Between]->SetParam(this);
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
 
-/*
-  for(i=0;i<N_RootCells;i++)
-  {
-    CurrCell = CellTree[i];
-    cout << "cell number: " << CurrCell->GetClipBoard() << endl;
-    k = CurrCell->GetN_Joints();
-    for(j=0;j<k;j++)
-    {
-      cout << "joint: " << j << "  ";
-      if(CurrCell->GetJoint(j))
-      {
-        if(CurrCell->GetJoint(j)->GetNeighbour(CurrCell))
-        {
-          cout << "N" << 
-          CurrCell->GetJoint(j)->GetNeighbour(CurrCell)->GetClipBoard()
-          << endl;
-        }
-        else
-        {
-          cout << "T" << CurrCell->GetJoint(j)->GetType() << endl;
-        }
-      }
-      else
-      {
-        cout << endl;
-      }
-    }
-  }
-*/
-
-/*
-  for(i=0;i<N_RootCells;i++)
-  {
-    cout << "cell: " << i << endl;
-    CurrCell = CellTree[i];
-    for(j=0;j<4;j++)
-    {
-      cout << "joint: " << j << endl;
-      if(CurrCell->GetJoint(j)->GetType() == BoundaryFace ||
-                CurrCell->GetJoint(j)->GetType() == IsoBoundFace)
-      {
-        cout << "on boundary" << endl;
-        switch(j)
-        {
-          case 0:
-            k0 = 0; k1 = 1; k2 = 2;
-          break;
-
-          case 1:
-            k0 = 0; k1 = 3; k2 = 1;
-          break;
-
-          case 2:
-            k0 = 2; k1 = 1; k2 = 3;
-          break;
-
-          case 3:
-            k0 = 0; k1 = 2; k2 = 3;
-          break;
-        } // endswitch
-        cout << CurrCell->GetVertex(k0) << endl;
-        CurrCell->GetVertex(k0)->GetCoords(x0, y0, z0);
-        ((TBoundFace *)(CurrCell->GetJoint(j)))->GetParameters(Param1, Param2);
-        ((TBoundFace *)(CurrCell->GetJoint(j)))->GetBoundComp()
-                ->GetXYZofTS(Param1[0], Param2[0], x1, y1, z1);
-        cout << x1 << " " << y1 << " " << z1 << endl;
-        if(fabs(x0-x1)+fabs(y0-y1)+fabs(z0-z1) > 1e-8) 
-          cout << "error0" << endl;
-
-        cout << CurrCell->GetVertex(k1) << endl;
-        CurrCell->GetVertex(k1)->GetCoords(x0, y0, z0);
-        ((TBoundFace *)(CurrCell->GetJoint(j)))->GetParameters(Param1, Param2);
-        ((TBoundFace *)(CurrCell->GetJoint(j)))->GetBoundComp()
-                ->GetXYZofTS(Param1[1], Param2[1], x1, y1, z1);
-        cout << x1 << " " << y1 << " " << z1 << endl;
-        if(fabs(x0-x1)+fabs(y0-y1)+fabs(z0-z1) > 1e-8) 
-          cout << "error1" << endl;
-
-        cout << CurrCell->GetVertex(k2) << endl;
-        CurrCell->GetVertex(k2)->GetCoords(x0, y0, z0);
-        ((TBoundFace *)(CurrCell->GetJoint(j)))->GetParameters(Param1, Param2);
-        ((TBoundFace *)(CurrCell->GetJoint(j)))->GetBoundComp()
-                ->GetXYZofTS(Param1[2], Param2[2], x1, y1, z1);
-        cout << x1 << " " << y1 << " " << z1 << endl;
-        if(fabs(x0-x1)+fabs(y0-y1)+fabs(z0-z1) > 1e-8) 
-          cout << "error2" << endl;
-      } // endif
-    } // endfor j
-  } // endfor i
-*/
-
-  // free memory
-  delete[] KVEL;
-
-  delete[] NewVertices;
-
-  // exit(-1);
-
-  return 0;
 }
 
 #endif // __2D__

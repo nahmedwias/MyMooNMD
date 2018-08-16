@@ -7,6 +7,7 @@
 #include <Time_CD2D.h>
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
+#include <AuxParam2D.h>
 #include <list>
 
 

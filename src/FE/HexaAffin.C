@@ -847,7 +847,7 @@ void THexaAffin::GetOrigValues(double xi, double eta, double zeta,
   }
 }
 
-void THexaAffin::SetCell(TBaseCell *cell)
+void THexaAffin::SetCell(const TBaseCell *cell)
 {
 
   Cell = cell;
