@@ -184,20 +184,6 @@ class LocalAssembling3D
                       TFEFunction3D **fefunctions3d, CoeffFct3D coeffs,
                       int disctype = 1);
     
-    /** @brief Constructor for backward compatibility
-     * 
-     * This uses the deprecated classes TAuxParam3D and TDiscreteForm3D to 
-     * construct an object of this class. Use of this is discouraged, because the
-     * user has to manually tune type, aux and df to make the created object funtioning.
-     *
-     * @param[in] type The type of problem this assembling object will be used
-     *            for. It is the users responsibility to match the type and
-     *            the deprecated TAuxParam3D and TDiscreteForm3D object.
-     *
-     */
-    [[ deprecated ]] LocalAssembling3D(LocalAssembling3D_type la_type,
-                      TAuxParam3D& aux, TDiscreteForm3D& df);
-
     /** @brief custom constuctor setting all variables 
      * 
      * Only use this if you know what you are doing. See the respective 

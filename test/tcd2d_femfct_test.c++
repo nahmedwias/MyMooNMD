@@ -13,6 +13,7 @@
 #include <FEDatabase2D.h>
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
+#include <AuxParam2D.h>
 
 
 void testCN(Time_CD2D &tcd, int m)
