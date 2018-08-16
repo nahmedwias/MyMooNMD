@@ -595,7 +595,6 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
     for (int k=0;k<TDatabase::ParamDB->n_stab_backflow_boundary;k++)
     {
       
-      BoundaryAssembling2D boundary_integral;
       int neumann_boundary_component = TDatabase::ParamDB->stab_backflow_boundary_id[k];
       double beta_backflow_stab = TDatabase::ParamDB->stab_backflow_boundary_beta[k];
       switch (TDatabase::ParamDB->type_stab_backflow_boundary) 
@@ -604,7 +603,7 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
           Output::print(" Backflow stab (inertial) on boundary ",
                         TDatabase::ParamDB->stab_backflow_boundary_id[k],
                         " beta = ", TDatabase::ParamDB->stab_backflow_boundary_beta[k]);
-          boundary_integral.matrix_u_v_backflow_stab(s.matrix,
+          BoundaryAssembling2D::matrix_u_v_backflow_stab(s.matrix,
                               v_space, u_conv, 
                               neumann_boundary_component,
                               beta_backflow_stab);
@@ -613,7 +612,7 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
           Output::print(" Backflow stab (tgt reg) on boundary ",
                         TDatabase::ParamDB->stab_backflow_boundary_id[k],
                         " beta = ", TDatabase::ParamDB->stab_backflow_boundary_beta[k]);
-          boundary_integral.matrix_dtu_dtv_backflow_stab(s.matrix,
+          BoundaryAssembling2D::matrix_dtu_dtv_backflow_stab(s.matrix,
                                v_space, u_conv,
                                neumann_boundary_component,   
                                beta_backflow_stab);

@@ -24,7 +24,7 @@
 #include <BlockFEMatrix.h>
 #include <FEFunction2D.h>
 #include <BlockVector.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 #include <ParameterDatabase.h>
 #include <Example_TimeCD2D.h>
 
@@ -51,7 +51,7 @@ class POD_TCDR2D : public POD
 	TFEFunction2D fe_function;
 
 	/** @brief class for output handling */
-	PostProcessing2D outputWriter;
+	DataWriter2D outputWriter;
 
 	/** @brief set parameters in database
 	*

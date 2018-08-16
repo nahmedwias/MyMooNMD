@@ -1314,7 +1314,7 @@ void LocalAssembling3D::set_parameters_for_tnse_vms_projection(LocalAssembling3D
               this->N_Rhs = 3;
               this->RhsSpace = { 0, 0, 0};
               this->Manipulate = NULL;
-              this->AssembleParam=TimeNSType4VMS_ProjectionDD3D;
+              this->local_assemblings_routines.push_back(TimeNSType4VMS_ProjectionDD3D);
               break;
           }
           break; // fixed point iteration
@@ -1345,7 +1345,7 @@ void LocalAssembling3D::set_parameters_for_tnse_vms_projection(LocalAssembling3D
               this->RhsSpace = { };
           
               this->Manipulate = NULL;
-              this->AssembleParam=TimeNSType3_4NLVMS_ProjectionDD3D;
+              this->local_assemblings_routines.push_back(TimeNSType3_4NLVMS_ProjectionDD3D);
               break;
           }
           break;// fixed point iteration 
@@ -1369,7 +1369,7 @@ void LocalAssembling3D::set_parameters_for_tnse_vms_projection(LocalAssembling3D
           this->ColumnSpace = { };
           this->N_Rhs = 3 ; 
           this->RhsSpace = {0, 0, 0};
-          this->AssembleParam = TimeNSRHS3D;
+          this->local_assemblings_routines.push_back(TimeNSRHS3D);
           this->Manipulate = NULL;
          break;
         case 1: // newton iteration 
@@ -1440,7 +1440,7 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
 				};
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 0 };
-          this->AssembleParam = TimeNSType4SUPGDD3D;
+          this->local_assemblings_routines.push_back(TimeNSType4SUPGDD3D);
           this->Manipulate = nullptr;
           break; // NSTYPE4
         case 14:
@@ -1467,7 +1467,7 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
 				};
           this->N_Rhs = 4;
           this->RhsSpace = { 0, 0, 0, 1 };
-          this->AssembleParam = TimeNSType14L_NL_SUPGDD3D;
+          this->local_assemblings_routines.push_back(TimeNSType14L_NL_SUPGDD3D);
           this->Manipulate = nullptr;
           //ErrThrow("NSTYPE 14 for SUPG is not supported yet");
           break; // NSTYPE14 
@@ -1496,7 +1496,7 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
 				};
           this->N_Rhs = 3;
           this->RhsSpace = {0, 0, 0 };
-          this->AssembleParam = TimeNSType4NLSUPGDD3D;
+          this->local_assemblings_routines.push_back(TimeNSType4NLSUPGDD3D);
           this->Manipulate = nullptr;
           break; // NSTYPE4
         case 14:
@@ -1524,7 +1524,7 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
 				};
           this->N_Rhs = 4;
           this->RhsSpace = { 0, 0, 0, 1 };
-          this->AssembleParam = TimeNSType14L_NL_SUPGDD3D;
+          this->local_assemblings_routines.push_back(TimeNSType14L_NL_SUPGDD3D);
           this->Manipulate = nullptr;
 	  //ErrThrow("NSTYPE 14 for SUPG is not supported yet");
           break; // NSTYPE14 
@@ -1546,7 +1546,7 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
           this->ColumnSpace = { };
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 0 };
-          this->AssembleParam = TimeNSType4RHSSUPG3D;
+          this->local_assemblings_routines.push_back(TimeNSType4RHSSUPG3D);
           this->Manipulate = nullptr;
           break; // NSTYPE4
         case 14:
@@ -1563,7 +1563,7 @@ void LocalAssembling3D::set_parameters_for_tnse_supg(LocalAssembling3D_type type
           this->ColumnSpace = { };
           this->N_Rhs = 4;
           this->RhsSpace = { 0, 0, 0, 1 };
-          this->AssembleParam = TimeNSType14RHSSUPGDD3D;
+          this->local_assemblings_routines.push_back(TimeNSType14RHSSUPGDD3D);
           this->Manipulate = nullptr;
           //ErrThrow("NSTYPE 14 for SUPG is not supported yet");
           break; // NSTYPE14 
@@ -1656,7 +1656,7 @@ void LocalAssembling3D::set_parameters_for_tnse_rbvms(LocalAssembling3D_type typ
 				};
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 0 };
-          this->AssembleParam = TimeNSType4Residual_VMSDD3D;
+          this->local_assemblings_routines.push_back(TimeNSType4Residual_VMSDD3D);
           this->Manipulate = nullptr;
           break; // NSTYPE4
         case 14:
@@ -1683,7 +1683,7 @@ void LocalAssembling3D::set_parameters_for_tnse_rbvms(LocalAssembling3D_type typ
 				};
           this->N_Rhs = 4;
           this->RhsSpace = { 0, 0, 0, 1 };
-          this->AssembleParam = TimeNSType14L_NL_Residual_VMS3D;
+          this->local_assemblings_routines.push_back(TimeNSType14L_NL_Residual_VMS3D);
           this->Manipulate = nullptr;
           //ErrThrow("NSTYPE 14 for SUPG is not supported yet");
           break; // NSTYPE14 
@@ -1712,7 +1712,7 @@ void LocalAssembling3D::set_parameters_for_tnse_rbvms(LocalAssembling3D_type typ
 				};
           this->N_Rhs = 3;
           this->RhsSpace = {0, 0, 0 };
-          this->AssembleParam = TimeNSType4NLResidual_VMSDD3D;
+          this->local_assemblings_routines.push_back(TimeNSType4NLResidual_VMSDD3D);
           this->Manipulate = nullptr;
           break; // NSTYPE4
         case 14:
@@ -1739,7 +1739,7 @@ void LocalAssembling3D::set_parameters_for_tnse_rbvms(LocalAssembling3D_type typ
 				};
           this->N_Rhs = 4;
           this->RhsSpace = { 0, 0, 0, 1 };
-          this->AssembleParam = TimeNSType14L_NL_Residual_VMS3D;
+          this->local_assemblings_routines.push_back(TimeNSType14L_NL_Residual_VMS3D);
           this->Manipulate = nullptr;
 	  //ErrThrow("NSTYPE 14 for SUPG is not supported yet");
           break; // NSTYPE14 
@@ -1761,7 +1761,7 @@ void LocalAssembling3D::set_parameters_for_tnse_rbvms(LocalAssembling3D_type typ
           this->ColumnSpace = { };
           this->N_Rhs = 3;
           this->RhsSpace = { 0, 0, 0 };
-          this->AssembleParam = TimeNSType4RHS_Residual_VMS;
+          this->local_assemblings_routines.push_back(TimeNSType4RHS_Residual_VMS);
           this->Manipulate = nullptr;
           break; // NSTYPE4
         case 14:
@@ -1778,7 +1778,7 @@ void LocalAssembling3D::set_parameters_for_tnse_rbvms(LocalAssembling3D_type typ
           this->ColumnSpace = { };
           this->N_Rhs = 4;
           this->RhsSpace = { 0, 0, 0, 1 };
-          this->AssembleParam = TimeNSType14RHS_Residual_VMS3D;
+          this->local_assemblings_routines.push_back(TimeNSType14RHS_Residual_VMS3D);
           this->Manipulate = nullptr;
           //ErrThrow("NSTYPE 14 for SUPG is not supported yet");
           break; // NSTYPE14 

@@ -19,6 +19,7 @@
 #include "NSE2DGalerkin.h"
 #include "TNSE2DSUPG.h"
 #include "TNSE2DResBasedVMS.h"
+#include "TNSE2DSmagorinsky.h"
 
 #include "CommonRoutineTNSE2D.h"
 
@@ -1236,7 +1237,7 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
           this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
           this->N_Rhs = 2; // f1, f2, 
           this->RhsSpace = { 0, 0 };
-          this->AssembleParam = TimeNSType4SUPG;
+          this->local_assemblings_routines.push_back(TimeNSType4SUPG);
           this->Manipulate = NULL;
           break;
         case 14:
@@ -1252,7 +1253,7 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
           this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1};
           this->N_Rhs = 3; // f1, f2, f3 (pressure part)
           this->RhsSpace = { 0, 0, 1 };
-          this->AssembleParam = TimeNSType14SUPG;
+          this->local_assemblings_routines.push_back(TimeNSType14SUPG);
           this->Manipulate = NULL;
          break;
       }
@@ -1274,7 +1275,7 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
           this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1};
           this->N_Rhs = 2; // only stabilization terms 
           this->RhsSpace = {0, 0 };
-          this->AssembleParam = TimeNSType4NLSUPG;
+          this->local_assemblings_routines.push_back(TimeNSType4NLSUPG);
           this->Manipulate = NULL;
          break;
         case 14:
@@ -1300,7 +1301,7 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
 				};
           this->N_Rhs = 3; // only stabilization terms 
           this->RhsSpace = {0, 0, 1 };
-          this->AssembleParam = TimeNSType14NLSUPG;
+          this->local_assemblings_routines.push_back(TimeNSType14NLSUPG);
           this->Manipulate = NULL;
           break;
       }
@@ -1318,7 +1319,7 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
           this->ColumnSpace = { };
           this->N_Rhs = 2 ;
           this->RhsSpace = {0, 0 };
-          this->AssembleParam =TimeNSType4RHSSUPG;
+          this->local_assemblings_routines.push_back(TimeNSType4RHSSUPG);
           this->Manipulate = NULL;
           break;
         case 14:
@@ -1330,7 +1331,7 @@ void LocalAssembling2D::set_parameters_for_tnseSUPG(LocalAssembling2D_type type)
           this->ColumnSpace = { };
           this->N_Rhs = 3 ;
           this->RhsSpace = {0, 0, 1};
-          this->AssembleParam =TimeNSType14RHSSUPG; 
+          this->local_assemblings_routines.push_back(TimeNSType14RHSSUPG);
           this->Manipulate = NULL;
         break;
       }
@@ -1385,31 +1386,31 @@ void LocalAssembling2D::set_parameters_for_tnseSmagorinsky(LocalAssembling2D_typ
           this->N_Matrices    = 4;
           this->RowSpace      = { 0, 0, 1, 1 };
           this->ColumnSpace   = { 0, 0, 0, 0 };
-          this->AssembleParam = TimeNSType1Smagorinsky;
+          this->local_assemblings_routines.push_back(TimeNSType1Smagorinsky);
           break; // nstype 1
         case 2:
           this->N_Matrices    = 6;
           this->RowSpace      = { 0, 0, 1, 1, 0, 0 };
           this->ColumnSpace   = { 0, 0, 0, 0, 1, 1 };
-          this->AssembleParam = TimeNSType2Smagorinsky;
+          this->local_assemblings_routines.push_back(TimeNSType2Smagorinsky);
           break; // nstype 2
         case 3:
           this->N_Matrices    = 8;
           this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1 };
           this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0 };
           if(TDatabase::ParamDB->LAPLACETYPE == 0)
-            this->AssembleParam = TimeNSType3Smagorinsky;
+            this->local_assemblings_routines.push_back(TimeNSType3Smagorinsky);
           else
-            this->AssembleParam = TimeNSType3SmagorinskyDD;
+            this->local_assemblings_routines.push_back(TimeNSType3SmagorinskyDD);
           break; // nstype 3
         case 4:
           this->N_Matrices    = 10;
           this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
           this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
           if(TDatabase::ParamDB->LAPLACETYPE == 0)
-            this->AssembleParam = TimeNSType4Smagorinsky;
+            this->local_assemblings_routines.push_back(TimeNSType4Smagorinsky);
           else
-            this->AssembleParam = TimeNSType4SmagorinskyDD;
+            this->local_assemblings_routines.push_back(TimeNSType4SmagorinskyDD);
           break; // nstype 4
       }// switch nstype
       break;// case TNSE2D 
@@ -1422,7 +1423,7 @@ void LocalAssembling2D::set_parameters_for_tnseSmagorinsky(LocalAssembling2D_typ
           this->N_Matrices    = 1;
           this->RowSpace      = { 0 };
           this->ColumnSpace   = { 0 };
-          this->AssembleParam = TimeNSType1_2NLSmagorinsky;
+          this->local_assemblings_routines.push_back(TimeNSType1_2NLSmagorinsky);
           break; // nstype 1, 2
         case 3:
         case 4:
@@ -1431,14 +1432,14 @@ void LocalAssembling2D::set_parameters_for_tnseSmagorinsky(LocalAssembling2D_typ
 	    this->N_Matrices    = 4;
 	    this->RowSpace      = { 0, 0, 0, 0 };
 	    this->ColumnSpace   = { 0, 0, 0, 0 };
-	    this->AssembleParam = TimeNSType3_4NLSmagorinsky;
+	    this->local_assemblings_routines.push_back(TimeNSType3_4NLSmagorinsky);
 	  }
           else
 	  {
 	    this->N_Matrices    = 4;
 	    this->RowSpace      = { 0, 0, 0, 0 };
 	    this->ColumnSpace   = { 0, 0, 0, 0 };
-	    this->AssembleParam = TimeNSType3_4NLSmagorinskyDD;
+	    this->local_assemblings_routines.push_back(TimeNSType3_4NLSmagorinskyDD);
 	  }
           break; // nstype 3, 4
       }
@@ -1453,7 +1454,7 @@ void LocalAssembling2D::set_parameters_for_tnseSmagorinsky(LocalAssembling2D_typ
       this->ColumnSpace = { };
       this->N_Rhs = 3;
       this->RhsSpace = {0, 0, 0};
-      this->AssembleParam =TimeNSRHS;
+      this->local_assemblings_routines.push_back(TimeNSRHS);
       this->Manipulate = NULL;
      break;
   //==============================
@@ -1499,7 +1500,8 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
   this->Needs2ndDerivatives[0] = true;
   this->Needs2ndDerivatives[1] = true;
   
-  switch(type){
+  switch(type)
+  {
     case TNSE2D:
       switch(TDatabase::ParamDB->NSTYPE){
         case 4:
@@ -1516,7 +1518,7 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
 				};
           this->N_Rhs = 2; 
           this->RhsSpace = { 0, 0 };
-          this->AssembleParam = TimeNSType4Residual_VMS;
+          this->local_assemblings_routines.push_back(TimeNSType4Residual_VMS);
           this->Manipulate = NULL;
           break;
         case 14:
@@ -1535,7 +1537,7 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
 				};
           this->N_Rhs = 3; 
           this->RhsSpace = { 0, 0, 1 };
-          this->AssembleParam = TimeNSType14Residual_VMS;
+          this->local_assemblings_routines.push_back(TimeNSType14Residual_VMS);
           this->Manipulate = NULL;
           break;
       }// switch nstype     
@@ -1555,7 +1557,7 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
 				};
           this->N_Rhs = 2; 
           this->RhsSpace = { 0, 0 };
-          this->AssembleParam = TimeNSType4NLResidual_VMS;
+          this->local_assemblings_routines.push_back(TimeNSType4NLResidual_VMS);
           this->Manipulate = NULL;
           break;
         case 14:
@@ -1574,7 +1576,7 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
 				};
           this->N_Rhs = 3; 
           this->RhsSpace = { 0, 0, 1 };
-          this->AssembleParam = TimeNSType14Residual_VMS;
+          this->local_assemblings_routines.push_back(TimeNSType14Residual_VMS);
           this->Manipulate = NULL;
           break;
       }// switch nstype   
@@ -1594,7 +1596,7 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
           this->ColumnSpace = { };
           this->N_Rhs = 2 ;
           this->RhsSpace = {0, 0 };
-          this->AssembleParam = TimeNSType4RHS_Residual_VMS;
+          this->local_assemblings_routines.push_back(TimeNSType4RHS_Residual_VMS);
           this->Manipulate = NULL;
           break;
         case 14:
@@ -1608,10 +1610,13 @@ void LocalAssembling2D::set_parameters_for_tnseRBVMS(LocalAssembling2D_type type
           this->ColumnSpace = { };
           this->N_Rhs = 3 ;
           this->RhsSpace = {0, 0, 1};
-          this->AssembleParam = TimeNSType14RHS_Residual_VMS;
+          this->local_assemblings_routines.push_back(TimeNSType14RHS_Residual_VMS);
           this->Manipulate = NULL;
           break;
       }// switch nstype   
       break; // case TNSE2D_Rhs
+    default:
+      ErrThrow("unknown LocalAssembling2D_type for tnseRBVMS, ", type);
+      break;
   }
 }

@@ -82,10 +82,7 @@ class TFEFunction3D
     
     /** return vector of data */
     double *GetValues()
-    { return Values; }
-    const double *GetValues() const
-    {return Values;}
-
+    { return Values; }  
 
     /** @brief calculate errors to given function 
      * 
