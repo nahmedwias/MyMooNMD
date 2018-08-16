@@ -103,7 +103,7 @@ public:
      */
 
 // LB NEW 16.04.18 start
-void assemble(TFEFunction2D* coefficient_function = nullptr);
+void assemble(size_t level = 4711, TFEFunction2D* coefficient_function = nullptr);
 TFEFunction2D* u1;
 TFEFunction2D* u2;
 // LB NEW 16.04.18 end

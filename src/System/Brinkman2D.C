@@ -9,6 +9,7 @@
 #include <ParameterDatabase.h>
 #include <memory>
 #include <BlockFEMatrix.h>
+#include <sstream>
 #include <AuxParam2D.h>
 
  void Coefficient_Function(double *in, double *out) 
@@ -242,7 +243,7 @@ void Brinkman2D::check_input_parameters()
 }
 
 /** ************************************************************************ */
-void Brinkman2D::assemble(TFEFunction2D* coefficient_function)
+void Brinkman2D::assemble(size_t level, TFEFunction2D* coefficient_function)
 
 {
   //Valgrind test start
@@ -622,8 +623,15 @@ la_list.push_back(la_P2P2stab);
     s.solution.copy_nonactive(s.rhs);
 
     // create an output file containing the whole FE matrix. This can be read into Matlab using the Matlab function mmread.m
-    s.matrix.get_combined_matrix()->write("Brinkman2D_Matrix_mmread_output");
-    Output::print("Creating output file with FE Matrix");
+    //s.matrix.get_combined_matrix()->write("Brinkman2D_Matrix_mmread_output");
+    // Output::print("Creating output file with FE Matrix");
+
+
+    // create an output file containing the whole FE matrix. This can be read into Matlab using the Matlab function mmread.m
+    /*    std::stringstream matrix_name;
+      matrix_name << "Brinkman2D_Matrix_mmread_output_NSGLS"  << TDatabase::ParamDB->equal_order_stab_weight_PkPk << "_GradDivStab"<< TDatabase::ParamDB->grad_div_stab_weight << "_mueff" << std::scientific << setprecision(2) << brinkman2d_db["effective_viscosity"] << "_K" << setprecision(2) << brinkman2d_db["permeability"] << "_level" << level;
+       s.matrix.get_combined_matrix()->write(matrix_name.str());
+     */  Output::print("Creating output file with FE Matrix");
 
     // TODO Maybe we have to explicitely set non-actives in non-diagonal blocks
     // to zero here, that was done in former code, but maybe we can move it to the solver part
@@ -908,6 +916,13 @@ void Brinkman2D::output(int level, int i)
  }
   delete u1;
   delete u2;
+
+   // create an output file containing the whole FE matrix. This can be read into Matlab using the Matlab function mmread.m
+ std::stringstream matrix_name;
+ matrix_name << "Brinkman2D_Matrix_mmread_output_NSGLS"  << TDatabase::ParamDB->equal_order_stab_weight_PkPk << "_GradDivStab"<< TDatabase::ParamDB->grad_div_stab_weight << "_CornerStab"<< brinkman2d_db["corner_stab_weight"] << "_mueff" << std::scientific << setprecision(2) << brinkman2d_db["effective_viscosity"] << "_K" << setprecision(2) << brinkman2d_db["permeability"] <<"_L0_" <<  TDatabase::ParamDB->L_0 << "_level" << level;
+ s.matrix.get_combined_matrix()->write(matrix_name.str());
+
+
 }
 
 
