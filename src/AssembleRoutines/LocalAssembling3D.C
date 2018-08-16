@@ -403,67 +403,7 @@ LocalAssembling3D::LocalAssembling3D(ParameterDatabase param_db,
     ErrThrow("A local assembling routine was not set!");
   }
 }
-//========================================================================
-LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, TAuxParam3D& aux,
-                                     TDiscreteForm3D& df)
- : db(default_local_assembling_database()), type(type), 
-   discretization_type(0), //default value for custom constructor
-   name(df.getName()), N_Terms(df.getNTerms()), N_Spaces(df.getNSpaces()),
-   Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D000), 
-   FESpaceNumber(this->N_Terms, 0), RowSpace(df.getNMatrices(), 0),
-   ColumnSpace(df.getNMatrices(), 0), RhsSpace(df.getNRhs(), 0),
-   Coeffs(df.getCoeffs()), local_assemblings_routines({df.getAssembleParam()}),
-   Manipulate(df.getManipulate()), AllOrigValues(new double** [N_Terms]),
-   OrigValues(new double* [N_Terms]), N_Matrices(df.getNMatrices()),
-   N_Rhs(df.getNRhs()), N_ParamFct(aux.getNParamFct()),
-   ParameterFct(this->N_ParamFct, nullptr), BeginParameter(this->N_ParamFct, 0),
-   N_Parameters(aux.getNParameters()), N_FEValues(aux.getNFeValues()),
-   FEFunctions3D(aux.getFeFunctions3D()), FEValue_FctIndex(this->N_FEValues,0),
-   FEValue_MultiIndex(this->N_FEValues, D000)
-{
-  this->Needs2ndDerivatives = new bool[this->N_Spaces];
-  for(int i = 0; i < this->N_Spaces; ++i)
-    this->Needs2ndDerivatives[i] = df.GetNeeds2ndDerivatives()[i];
-  
-  for(int i = 0; i < this->N_Terms; ++i)
-  {
-    this->Derivatives.at(i) = df.getDerivative(i);
-    this->FESpaceNumber.at(i) = df.getFeSpaceNumber(i);
-  }
-  
-  for(int i = 0; i < this->N_Matrices; ++i)
-  {
-    this->RowSpace.at(i) = df.rowSpaceOfMat(i);
-    this->ColumnSpace.at(i) = df.colSpaceOfMat(i);
-  }
-  
-  for(int i = 0; i < this->N_Rhs; ++i)
-    this->RhsSpace.at(i) = df.getRhsSpace(i);
-  
-  for(int i = 0; i < this->N_ParamFct; ++i)
-  {
-    this->ParameterFct.at(i) = aux.getParameterFct(i);
-    this->BeginParameter.at(i) = aux.getBeginParameter(i);
-  }
-  
-  for(int i = 0; i < this->N_FEValues; ++i)
-  {
-    this->FEValue_FctIndex.at(i) = aux.getFeValueFctIndex(i);
-    this->FEValue_MultiIndex.at(i) = aux.getFeValueMultiIndex(i);
-  }
-  
-  // some consistency checks
-  if(Coeffs == nullptr)
-  {
-    ErrThrow("You need to specify a valid function for the coefficients");
-  }
-  if(this->local_assemblings_routines.at(0) == nullptr)
-  {
-    // this means in the discrete form there was only a pointer to a
-    // AssembleFct3D rather than a AssembleFctParam3D.
-    ErrThrow("can't create LocalAssembling3D object, missing AssembleFctParam3D");
-  }
-}
+
 //========================================================================
 LocalAssembling3D::LocalAssembling3D(
   int myN_Terms, std::vector<MultiIndex3D> myDerivatives,
