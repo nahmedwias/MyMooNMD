@@ -40,6 +40,7 @@
 #include <RefQuadToTri0Desc.h>
 #include <RefQuadToTri1Desc.h>
 #include <RefTriRegDesc.h>
+#include <RefTriBaryDesc.h>
 #include <RefTriBis0Desc.h>
 #include <RefTriBis1Desc.h>
 #include <RefTriBis2Desc.h>
@@ -71,6 +72,7 @@
   #include <Hexahedron.h>
   #include <Brick.h>
   #include <RefTetraRegDesc.h>
+  #include <RefTetraBaryDesc.h>
   #include <RefTetraReg0Desc.h>
   #include <RefTetraReg1Desc.h>
   #include <RefTetraReg2Desc.h>
@@ -155,6 +157,7 @@ TDatabase::TDatabase()
   // initialize refinement descriptors
   RefDescDB[N_SHAPES + LineReg] = new TRefLineDesc(ShapeDB[S_Line]);
   RefDescDB[N_SHAPES + TriReg]  = new TRefTriRegDesc(ShapeDB[Triangle]);
+  RefDescDB[N_SHAPES + TriBary]  = new TRefTriBaryDesc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis0] = new TRefTriBis0Desc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis1] = new TRefTriBis1Desc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis2] = new TRefTriBis2Desc(ShapeDB[Triangle]);
@@ -185,6 +188,8 @@ TDatabase::TDatabase()
   #ifdef __3D__
     RefDescDB[N_SHAPES + TetraReg] =
          new TRefTetraRegDesc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBary] =
+         new TRefTetraBaryDesc(ShapeDB[Tetrahedron]);
     RefDescDB[N_SHAPES + TetraReg0] =
          new TRefTetraReg0Desc(ShapeDB[Tetrahedron]);
     RefDescDB[N_SHAPES + TetraReg1] =
@@ -392,14 +397,12 @@ void TDatabase::SetDefaultParameters()
     
   ParamDB->SIGMA_PERM = 1;
 
-  ParamDB->VISCOSITY = 1;
-  ParamDB->EFFECTIVE_VISCOSITY = 1;
-  ParamDB->PERMEABILITY = 1;  
   ParamDB->equal_order_stab_weight_PkPk = 0;
   ParamDB->grad_div_stab_weight = 0;
   ParamDB->SIGN_MATRIX_BI = 1;
   ParamDB->l_T = 1;
-
+  ParamDB->L_0 = 1;
+  
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
   ParamDB->VMM_COARSE_LEVEL = 4711;
@@ -1093,13 +1096,11 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("WEAK_BC_SIGMA: ", ParamDB->WEAK_BC_SIGMA);
   printToFile("WEAK_BC: ", ParamDB->WEAK_BC);
 
-  printToFile("EFFECTIVE_VISCOSITY: " ,ParamDB->EFFECTIVE_VISCOSITY);
-  printToFile("VISCOSITY: ", ParamDB->VISCOSITY);
-  printToFile("PERMEABILITY: ", ParamDB->PERMEABILITY);
   printToFile("EQUAL_ORDER_STAB_WEIGHT_PkPk: ", ParamDB->equal_order_stab_weight_PkPk); 
   printToFile("GRAD_DIV_STAB_WEIGHT: ", ParamDB->grad_div_stab_weight); 
   printToFile("SIGN_MATRIX_BI: ", ParamDB->SIGN_MATRIX_BI);
   printToFile("l_T: ", ParamDB->l_T);
+  printToFile("L_0: ", ParamDB->L_0); 
 
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);

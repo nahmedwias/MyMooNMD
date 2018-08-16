@@ -84,6 +84,9 @@ class FEMatrix : public TMatrix
      * unscaled.
      */
     void scaleActive(double factor = 1.0);
+    
+    /// @brief scale the diagonal entries in the nonactive rows
+    void scale_non_active_diagonals(double factor);
 
     /** @brief adding a scaled matrix to this matrix
      * 

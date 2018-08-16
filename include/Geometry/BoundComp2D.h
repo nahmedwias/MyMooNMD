@@ -25,9 +25,9 @@ class TBoundComp2D : public TBoundComp
 
     // Methods
     /** return the coordinates {X,Y} of parameter value T */
-    virtual int GetXYofT(double T, double &X, double &Y) = 0;
+    virtual int GetXYofT(double T, double &X, double &Y) const = 0;
     /** return the parameter value T of coordinates (X, Y) */
-    virtual int GetTofXY(double X, double Y, double &T) = 0;
+    virtual int GetTofXY(double X, double Y, double &T) const = 0;
 
     /** get number of initial vertices on a Comp2Donent */
     virtual int GetN_InitVerts() = 0;

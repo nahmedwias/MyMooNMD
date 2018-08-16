@@ -1,5 +1,9 @@
 // Brinkman problem with sine2-sine2-velocity from Jarle Sogn resp. Mardal, Thai, Winther
 
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
+
 void ExampleFile()
 {
   Output::print<1>("Example: Sin2Sin2.h");
@@ -271,9 +275,9 @@ void LinCoeffs(int n_points, double *X, double *Y,
         ExactU2(X[i], Y[i], val_u2);
         ExactP(X[i], Y[i], val_p);
         
-        coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
-        coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-        coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+        coeffs[i][4] = viscosity;
+        coeffs[i][5] = effective_viscosity;
+        coeffs[i][6] = permeability;
          
         coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
         coeffs[i][1] = -coeffs[i][5]*val_u1[3] + val_p[1] + (coeffs[i][4]/coeffs[i][6])*val_u1[0];//-coeffs[i][5]*val1[3] + val3[1] + (coeffs[i][4]/coeffs[i][6])*val1[0];  //0;// f1

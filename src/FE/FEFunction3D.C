@@ -261,7 +261,7 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
 } // TFEFunction3D::GetErrors
 
 void TFEFunction3D::GetErrorsForVectorValuedFunction(
-    DoubleFunct3D ** const Exact, ErrorMethod3D * const ErrMeth,
+    DoubleFunct3D * const * const Exact, ErrorMethod3D * const ErrMeth,
   double * const errors)
 {
   // write zeros into the array "errors"
@@ -725,7 +725,7 @@ bool TFEFunction3D::FindGradient(double x, double y, double z,
   return false;
 } 
 
-void TFEFunction3D::FindGradientLocal(TBaseCell *cell, int cell_no, 
+void TFEFunction3D::FindGradientLocal(const TBaseCell *cell, int cell_no, 
                                       double x, double y, double z, 
                                       double *values)
 {
@@ -818,9 +818,9 @@ void TFEFunction3D::FindGradientLocal(TBaseCell *cell, int cell_no,
   
 }
 
-void TFEFunction3D::FindValueLocal(TBaseCell *cell, int cell_no, 
-                                      double x, double y, double z, 
-                                      double *values)
+void TFEFunction3D::FindValueLocal(const TBaseCell *cell, int cell_no, 
+                                   double x, double y, double z, 
+                                   double *values) const
 {
   double xi, eta, zeta;
   FE3D FE_ID;
@@ -1604,6 +1604,7 @@ void TFEFunction3D::compute_integral_and_measure(double& integral,
   measure = recvbuf[1];
 #endif
 }
+
 
 /** project function into the space L20 (having zero mean value, or in general a mean value) */
 void TFEFunction3D::project_into_L20(double a)

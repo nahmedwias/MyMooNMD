@@ -32,7 +32,7 @@ int TBdNonUniformSpline::GetN_Splines ()
   return N_Splines;
 }
 
-int TBdNonUniformSpline::GetXYofT(double T, double &X, double &Y)
+int TBdNonUniformSpline::GetXYofT(double T, double &X, double &Y) const
 {
   double phi1, phi2, phi3, phi4;
   int i, ISpline=0;
@@ -66,7 +66,7 @@ int TBdNonUniformSpline::GetXYofT(double T, double &X, double &Y)
   return 0;
 }
 
-int TBdNonUniformSpline::GetTofXY(double X, double Y, double &T)
+int TBdNonUniformSpline::GetTofXY(double X, double Y, double &T) const
 {
   int i,ISpline;
   
@@ -105,7 +105,7 @@ int TBdNonUniformSpline::GetTofXY(double X, double Y, double &T)
   return -1;
 }
 
-double TBdNonUniformSpline::GetLocalXofT(int ISpline, double T)
+double TBdNonUniformSpline::GetLocalXofT(int ISpline, double T) const
 {
   double phi1, phi2, phi3, phi4, X;
 
@@ -122,7 +122,7 @@ double TBdNonUniformSpline::GetLocalXofT(int ISpline, double T)
   return X;
 }
 
-double TBdNonUniformSpline::GetLocalYofT(int ISpline, double T)
+double TBdNonUniformSpline::GetLocalYofT(int ISpline, double T) const
 {
   double phi1, phi2, phi3, phi4, Y;
 
@@ -271,7 +271,7 @@ void TBdNonUniformSpline::Solver_3diag(double *a, double *b, double *c, double *
 
 /** for BEM */
 /**  (x-x_middle)/(t-0.5) */
-double TBdNonUniformSpline::AdXofT(int ISpline, double T)
+double TBdNonUniformSpline::AdXofT(int ISpline, double T) const
 {
   double X;
   ISpline = (ISpline-1)*10;
@@ -287,7 +287,7 @@ double TBdNonUniformSpline::AdXofT(int ISpline, double T)
 
 /** for BEM */
 /** (y-y_middle)/(t-0.5) */
-double TBdNonUniformSpline::AdYofT(int ISpline, double T)
+double TBdNonUniformSpline::AdYofT(int ISpline, double T) const
 {
   double Y;
 
@@ -304,7 +304,7 @@ double TBdNonUniformSpline::AdYofT(int ISpline, double T)
 
 /** for BEM */
 /** x'(t) */
-double TBdNonUniformSpline::GetLocalDXofT(int ISpline, double T)
+double TBdNonUniformSpline::GetLocalDXofT(int ISpline, double T) const
 {
   double dphi1, dphi2, dphi3, dphi4, X;
 
@@ -323,7 +323,7 @@ double TBdNonUniformSpline::GetLocalDXofT(int ISpline, double T)
 
 /** for BEM */
 /** y'(t) */
-double TBdNonUniformSpline::GetLocalDYofT(int ISpline, double T)
+double TBdNonUniformSpline::GetLocalDYofT(int ISpline, double T) const
 {
   double dphi1, dphi2, dphi3, dphi4, Y;
 

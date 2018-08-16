@@ -166,7 +166,6 @@ int TCollection::MarkBoundaryVertices()
   TVertex *vertex0, *vertex1;
   TRefDesc *refdesc;
   TBoundEdge *boundedge;
-  TBoundComp *BoundComp;
   TJoint *joint;
 
   // initialization 
@@ -201,7 +200,7 @@ int TCollection::MarkBoundaryVertices()
 	    joint->GetType() == IsoBoundEdge)
 	{
 	  boundedge=(TBoundEdge *)joint;
-	  BoundComp=boundedge->GetBoundComp();      // get boundary component
+	  auto BoundComp=boundedge->GetBoundComp(); // get boundary component
 	  comp=BoundComp->GetID();                  // boundary id
 	  boundedge->GetParameters(t0, t1);         // parameter interval
 	  vertex0 = cell->GetVertex(TmpEdVer[2*j]);
@@ -467,7 +466,7 @@ void TCollection::GenerateCellVertNeibs()
 /// @brief create lists with vertex coordinates and element ids
 int TCollection::createElementLists()
 {
-
+    
   int nVertexPerFace;
   int nBoundaryFaces;
 
@@ -502,6 +501,7 @@ int TCollection::createElementLists()
       localVertices.push_back(Cells[i]->GetVertex(j));
     }
   }
+  NLocVertices = localVertices.size();
   std::sort(localVertices.begin(),localVertices.end());
   // remove duplicate
   auto it = std::unique(localVertices.begin(), localVertices.end());
@@ -529,12 +529,11 @@ int TCollection::createElementLists()
   }
 #endif
   
-  /**
+  /*
      @attention in the .mesh file, numbering of the vertices within an elements
      starts from 1, i.e. first (see 'VERTEX OFFEST' below)
   */
   // elements array
-  int VERTEX_OFFSET = 1;
   ElementNodes.resize(N_Cells);
   ElementReferences.resize(N_Cells);
   
@@ -548,14 +547,13 @@ int TCollection::createElementLists()
       TVertex *current = Cells[i]->GetVertex(j);
       for (unsigned int s=0; s<localVertices.size(); s++)
       {
-	if(current == localVertices[s])
-	{
-	  ElementNodes[i][j] = s+VERTEX_OFFSET; // VERTEX OFFSET
-	  break;
-	}
-      }
+        if(current == localVertices[s])
+        {
+          ElementNodes[i][j] = s; // VERTEX OFFSET
+          break;
+        }
+      }  
     }
-    
   }
  
 
@@ -729,7 +727,7 @@ int TCollection::createElementLists()
 	    if (v_on_face==localVertices[k])
 	    {
 	      BdFacesNodes[nVertexPerFace*count_boundary_elements + kvertex] =
-		k + VERTEX_OFFSET;
+		k; //+ VERTEX_OFFSET
 	    }
 	  } 
 	}
@@ -745,7 +743,60 @@ int TCollection::createElementLists()
   return 0;
 }
 
+//############################################################
+//access the data which is generated on createElementList
+//############################################################
 
+///@brief Get number of vertices
+unsigned int TCollection::GetN_Vertices()
+{
+  if(this->NodesReferences.size()==0)
+    this->createElementLists();
+  return this->NodesReferences.size();
+}
+
+///@brief Get number of boundary faces
+unsigned int TCollection::GetN_BdFaces()
+{
+    if(this->NodesReferences.size()==0)
+      this->createElementLists();
+    return this->BdFacesReferences.size();  
+}
+
+///@brief direct access to the vector NodesCoords
+double TCollection::GetCoord(unsigned int vert)
+{
+    if(this->NodesReferences.size()==0)
+      this->createElementLists();
+    return this->NodesCoords.at(vert);
+}
+
+///@brief direct access to the vector BdFacesNodes
+unsigned int TCollection::GetBdFacesNode(unsigned int node)
+{
+  if(this->NodesReferences.size()==0)
+    this->createElementLists();
+  return this->BdFacesNodes[node];
+}
+
+///@brief direct access to global number of the jth vertex of the ith cell
+unsigned int TCollection::GetGlobalVerNo(unsigned int cell, unsigned int locvert)
+{
+  if(this->NodesReferences.size()==0)
+    this->createElementLists();
+  return this->ElementNodes[cell][locvert];
+}
+
+///@brief Get the sum of the numbers of local vertices over all cells
+unsigned int TCollection::GetNLocVertices()
+{
+  if(this->NodesReferences.size()==0)
+    this->createElementLists();
+  return this->NLocVertices;
+}
+
+
+//#############################################################
 
 /** @brief return the index of cell in SortedCells-array 
     1.- now during construction the array GlobalIndex[] is filled
@@ -776,6 +827,9 @@ int TCollection::writeMesh(const char *meshFileName)
 #ifdef __2D__
   dim = 2;
 #endif
+  
+  //index change for .geo output
+  unsigned int VERTEX_OFFSET=1;
 
   int nVertexPerFace;
   if (dim==2) {
@@ -838,13 +892,13 @@ int TCollection::writeMesh(const char *meshFileName)
       if (Cells[i]->GetN_Vertices() == 3) {
 
 	for (int j=0;j<3;j++) 
-	  nodesTria.push_back(ElementNodes[i][j]);
+	  nodesTria.push_back(ElementNodes[i][j]+VERTEX_OFFSET);
 	nodesTria.push_back(ElementReferences[i]);
 	
       } else if (Cells[i]->GetN_Vertices() == 4) {
 	
 	for (int j=0;j<4;j++) 
-	  nodesQuad.push_back(ElementNodes[i][j]);
+	  nodesQuad.push_back(ElementNodes[i][j]+VERTEX_OFFSET);
 	nodesQuad.push_back(ElementReferences[i]);
       }
     }
@@ -904,7 +958,7 @@ int TCollection::writeMesh(const char *meshFileName)
     MESHfile << N_Cells << endl;
     for (int i=0; i<N_Cells ; i++) {
       for (int j=0;j<nVertexPerElement;j++) {
-	MESHfile << ElementNodes[i][j] << "  ";
+	MESHfile << ElementNodes[i][j]+VERTEX_OFFSET << "  ";
       }
       MESHfile << ElementReferences[i] << endl;
     } // for (int i=0; i<nElements; i++) {
@@ -929,21 +983,41 @@ void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &ed
       TBaseCell *cell = this->Cells[i];
       for(int j=0;  j < cell->GetN_Joints(); j++)
         {
-	  TJoint *joint= cell->GetJoint(j);
-	  if (joint->GetType()==BoundaryEdge)
+    TJoint *joint= cell->GetJoint(j);
+    if (joint->GetType()==BoundaryEdge)
             {
-	      TBoundEdge *boundedge = (TBoundEdge *)joint;
-	      TBoundComp *BoundComp = boundedge->GetBoundComp();
-	      if (BoundComp->GetID() == id)
+        TBoundEdge *boundedge = (TBoundEdge *)joint;
+        const TBoundComp *BoundComp = boundedge->GetBoundComp();
+     if (BoundComp->GetID() == id)
                 {
-		  ///@todo set the boundedge properties in the function MakeGrid
-		  boundedge->SetNeighbour(cell);
-		  boundedge->set_index_in_neighbour(cell,j);
-		  edges.push_back(boundedge);                 
+    ///@todo set the boundedge properties in the function MakeGrid
+    boundedge->SetNeighbour(cell);
+    boundedge->set_index_in_neighbour(cell,j);
+    edges.push_back(boundedge);                 
                 }
             }
         }
     }
+}
+void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges)
+{
+  edges.clear();
+  for(int i = 0; i < this->N_Cells; i++)
+  {
+    TBaseCell *cell = this->Cells[i];
+    for(int j = 0; j < cell->GetN_Joints(); j++)
+    {
+      TJoint *joint = cell->GetJoint(j);
+      if (joint->GetType() == BoundaryEdge)
+      {
+        TBoundEdge *boundedge = (TBoundEdge *)joint;
+          ///@todo set the boundedge properties in the function MakeGrid
+          boundedge->SetNeighbour(cell);
+          boundedge->set_index_in_neighbour(cell,j);
+          edges.push_back(boundedge);                 
+      }
+    }
+  }
 }
 
 #ifdef _MPI

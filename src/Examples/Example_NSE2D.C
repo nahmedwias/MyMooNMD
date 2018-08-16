@@ -26,6 +26,10 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
+namespace backward_facing_step
+{
+  #include "NSE_2D/backward_facing_step.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -126,6 +130,29 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       post_processing_stat = flow_around_cylinder::compute_drag_lift_pdiff;
 
       flow_around_cylinder::ExampleFile();
+      break;
+    case 4:
+      /** exact_solution */
+      exact_solution.push_back( backward_facing_step::ExactU1 );
+      exact_solution.push_back( backward_facing_step::ExactU2 );
+      exact_solution.push_back( backward_facing_step::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( backward_facing_step::BoundCondition );
+      boundary_conditions.push_back( backward_facing_step::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( backward_facing_step::U1BoundValue );
+      boundary_data.push_back( backward_facing_step::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = backward_facing_step::LinCoeffs;
+      
+      // Set dimensionless viscosity
+      backward_facing_step::DIMENSIONLESS_VISCOSITY = get_nu();
+      backward_facing_step::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");

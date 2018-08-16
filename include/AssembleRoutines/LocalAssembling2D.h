@@ -23,6 +23,7 @@
 
 #include <Enumerations.h>
 #include <Constants.h>
+#include <ParameterDatabase.h>
 #include <string>
 #include <vector>
 #include <AuxParam2D.h>
@@ -60,6 +61,8 @@ enum LocalAssembling2D_type { ConvDiff,
 class LocalAssembling2D
 {
   protected:
+    /// @brief a local parameter database
+    ParameterDatabase db;
 
     /** @brief The type of problem this assembling objects is made for. */
     const LocalAssembling2D_type type;
@@ -103,7 +106,8 @@ class LocalAssembling2D
 
     /** @brief function doing the real assembling using parameters from 
      *         argument list */
-    AssembleFctParam2D *AssembleParam;
+    //AssembleFctParam2D *AssembleParam;
+    std::vector<AssembleFctParam2D*> local_assemblings_routines;
 
     /** function for manipulating the coefficients */
     ManipulateFct2D *Manipulate;
@@ -160,10 +164,6 @@ class LocalAssembling2D
      */
     void set_parameters_for_nseGalerkin(LocalAssembling2D_type type);
     
-    /** This function creates local variables for the SUPG method.
-     */
-    void set_parameters_for_nseSUPG(LocalAssembling2D_type type);
-    
     /** @brief parameters which are used only for the Galerkin
      * discretization: one can include all other forms, for example
      * the different non-linear forms etc
@@ -192,22 +192,6 @@ class LocalAssembling2D
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
                       CoeffFct2D coeffs, int disctype = 1);
     
-    /** @brief constructor for backward compatibility
-     * 
-     * This uses the deprecated classes TAuxParam2D and TDiscreteForm2D to 
-     * construct an object of this class.
-     * 
-     * The member variable 'type' is likely to be wrong using this constructor!
-     * Please do not use it, unless you know what you are doing.
-     * Type, aux and df will need proper tuning for this to work.
-     *
-     * @param[in] type The problem type this assemlbing object will be used for.
-     * @param[in] aux A (deprecated) "aux object".
-     * @param[in] df  A (deprecated) discrete form object.
-     */
-    LocalAssembling2D(LocalAssembling2D_type type,
-                      const TAuxParam2D& aux, const TDiscreteForm2D& df);
-
     /*!
      * @brief Customized constructor.
      *
@@ -297,7 +281,7 @@ class LocalAssembling2D
     /** destructor */
     ~LocalAssembling2D();
     
-    
+    static ParameterDatabase default_local_assembling_database();
 
     /** return local stiffness matrix */
     void GetLocalForms(int N_Points,
@@ -410,6 +394,9 @@ class LocalAssembling2D
 
     const int get_disctype() const
     { return discretization_type; }
+    
+    int get_n_rhs() const
+    { return N_Rhs; }
 
     /**
      * All methods to follow are setter methods which deal with data members

@@ -774,7 +774,7 @@ void THexaTrilinear::GetOrigValues(double xi, double eta, double zeta,
   } // endfor i
 }
 
-void THexaTrilinear::SetCell(TBaseCell *cell)
+void THexaTrilinear::SetCell(const TBaseCell *cell)
 {
 
   Cell = cell;

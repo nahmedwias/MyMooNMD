@@ -22,10 +22,12 @@
 #include <BlockVector.h>
 #include <Solver.h>
 #include <ParameterDatabase.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 #include <utility>
 #include <array>
 #include <FEFunction2D.h>
+
+
 
 class Brinkman2D
 {
@@ -99,8 +101,17 @@ public:
      * This assembles everything which is not related to the nonlinear term.
      * I.e. it assembles a Stokes matrix.
      */
+
+// LB NEW 16.04.18 start
+void assemble(TFEFunction2D* coefficient_function = nullptr);
+TFEFunction2D* u1;
+TFEFunction2D* u2;
+// LB NEW 16.04.18 end
+/*
+// LB OLD 16.04.18 start
     void assemble();
-    
+// LB OLD 16.04.18 end
+*/
     /** @brief solve the system */
     void solve();
     
@@ -143,6 +154,10 @@ public:
     double getL2DivergenceError() const;
     /// @brief return the computed H1-semi error of the velocity
     double getH1SemiVelocityError() const;
+    /// @brief return the computed L2-error of the velocity at the boundary
+    double getL2BoundaryError() const;
+    /// @brief return the computed L2-error of the normal velocity at the boundary
+    double getL2NormNormalComponentError() const;
     /// @brief return the computed L2 error of the pressure
     double getL2PressureError() const;
     /// @brief return the computed L2 error of the pressure
@@ -187,7 +202,7 @@ public:
     const Example_Brinkman2D & get_example() const
     { return example; }
     const ParameterDatabase & get_db() const
-    { return db; }
+    { return brinkman2d_db; }
     /// @brief get the current residuals  (updated in Brinkman2D::normOfResidual)
     const Residuals& getResiduals() const;
     /// @brief get the current impuls residual (updated in Brinkman2D::normOfResidual)
@@ -197,7 +212,8 @@ public:
     /// @brief get the current residual (updated in Brinkman2D::normOfResidual)
     double getFullResidual() const;
     /// @brief return the computed errors
-    std::array<double, int(6)> get_errors();
+    std::array<double, int(8)> get_errors();
+
 
 protected:
     
@@ -257,7 +273,14 @@ protected:
      * other parameters such as solver parameters. Those are only in the
      * Solver object.
      */
-    ParameterDatabase db;
+
+     // LB NEW 19.04.18 start
+    ParameterDatabase brinkman2d_db;
+    // LB NEW 19.04.18 end
+/*      // LB OLD 19.04.18 start
+    ParameterDatabase brinkman2d_db;
+    // LB OLD 19.04.18 end
+*/
     
     /** @brief a solver object which will solve the linear system
      *
@@ -267,7 +290,7 @@ protected:
     Solver<BlockFEMatrix, BlockVector> solver;
 
     /** @brief class for output handling (vtk and case files) */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
     
     /** @brief a complete system on each grid
      *
@@ -328,8 +351,11 @@ protected:
      * Currently, the errors store the L2 and H1 errors of the velocity
      * and pressure
      */
-    std::array<double, int(6)> errors;
-    
+    std::array<double, int(8)> errors;
+   
+
+
+
 };
 
 

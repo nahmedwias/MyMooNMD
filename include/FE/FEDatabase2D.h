@@ -621,7 +621,7 @@ class TFEDatabase2D
                         double &xi, double &eta);
 
      /** set cell for reference transformation */
-     static void SetCellForRefTrans(TBaseCell *cell,
+     static void SetCellForRefTrans(const TBaseCell *cell,
                                     RefTrans2D reftrans);
 
 //======================================================================

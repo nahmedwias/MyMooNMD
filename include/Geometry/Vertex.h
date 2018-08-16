@@ -23,10 +23,8 @@ class TVertex
     double X;
     /** second coordinate */
     double Y;
-#ifdef __3D__
-      /** third coordinate (3D) */
-      double Z;
-#endif
+    /** third coordinate (3D) */
+    double Z = 0;
 
     /** an integer for storing clipboard information*/
     int ClipBoard;
@@ -100,24 +98,24 @@ class TVertex
     /** return the y coordinate */
     double GetY() const
     { return Y; }
-#ifdef __3D__
-      /** return the z coordinate (3D) */
-      double GetZ() const
-      { return Z; }
-      /** return all three coordinates */
-      void GetCoords(double& x, double& y, double& z) const
-      {
-        x = X;
-        y = Y;
-        z = Z;
-      }
-#else
-      /** return all two coordinates */
-      void GetCoords(double& x, double& y) const
-      {
-        x = X;
-        y = Y;
-      }
+
+    /** return the z coordinate (3D) */
+    double GetZ() const
+    { return Z; }
+    /** return all three coordinates */
+    void GetCoords(double& x, double& y, double& z) const
+    {
+      x = X;
+      y = Y;
+      z = Z; // 0 in 2D
+    }
+#ifdef __2D__
+    /** return all two coordinates */
+    void GetCoords(double& x, double& y) const
+    {
+      x = X;
+      y = Y;
+    }
 #endif
 
     /** write some information of the vertex in stream s */

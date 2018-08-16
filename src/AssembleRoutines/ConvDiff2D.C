@@ -96,7 +96,7 @@ void BilinearAssemble_SD(double Mult, double *coeff, double* param, double hK,
 {
   double val, *MatrixRow;
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01;
+  double test10, test01;
   int j;
   double bgradv;
 
@@ -125,11 +125,11 @@ void BilinearAssemble_SD(double Mult, double *coeff, double* param, double hK,
     MatrixRow = Matrix[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
-    test00 = Orig2[i];
+    //double test00 = Orig2[i];
 
     bgradv = c1*test10+c2*test01;
 
-    Rhs[i] += Mult*(test00+delta*bgradv)*c4;
+    Rhs[i] += Mult*delta*bgradv*c4;
 
     for(j=0;j<N_;j++)
     {
@@ -139,14 +139,8 @@ void BilinearAssemble_SD(double Mult, double *coeff, double* param, double hK,
       ansatz20 = Orig3[j];
       ansatz02 = Orig4[j];
       
-      // assemble viscous term
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      // assemble convective term
-      val += (c1*ansatz10+c2*ansatz01)*test00;
-      // assemble reactive term
-      val += c3*ansatz00*test00;
       // assemble stabilization
-      val += delta * ( -c0*(ansatz20 + ansatz02)
+      val = delta * ( -c0*(ansatz20 + ansatz02)
                        +c1*ansatz10 + c2*ansatz01
                        +c3*ansatz00 ) * bgradv;
       
@@ -202,7 +196,7 @@ void BilinearAssemble_GLS(double Mult, double *coeff, double* param, double hK,
     test02 = Orig4[i];
       
     Lu = (-c0*(test20+test02)+c1*test10+c2*test01 +c3*test00);
-    Rhs[i] += Mult*(test00+delta*Lu)*c4;
+    Rhs[i] += Mult*delta*Lu*c4;
 
     for(j=0;j<N_;j++)
     {
@@ -212,13 +206,9 @@ void BilinearAssemble_GLS(double Mult, double *coeff, double* param, double hK,
       ansatz20 = Orig3[j];
       ansatz02 = Orig4[j];
 
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      val += (c1*ansatz10+c2*ansatz01)*test00;
-      val += c3*ansatz00*test00;
-
-      val += delta * (-c0*(ansatz20+ansatz02)
-             +c1*ansatz10+c2*ansatz01
-             +c3*ansatz00) * Lu;
+      val = delta * (-c0*(ansatz20+ansatz02)
+            +c1*ansatz10+c2*ansatz01
+            +c3*ansatz00) * Lu;
 
       val *=Mult;
 

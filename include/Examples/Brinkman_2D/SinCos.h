@@ -3,6 +3,9 @@
 // u(x,y) = (sin(Pi*x) , -Pi*y*cos(Pi*x)) = (u1,u2)
 // p(x,y) = sin(Pi*x)*cos(Pi*y)
 
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
 
 void ExampleFile()
 {
@@ -259,9 +262,9 @@ void LinCoeffs(int n_points, double *X, double *Y,
     
   for(int i = 0; i < n_points; i++)
   {
-   coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
-    coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;  
-    coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+   coeffs[i][4] = viscosity;
+    coeffs[i][5] = effective_viscosity;
+    coeffs[i][6] = permeability;
     
     ExactU1(X[i], Y[i], val1);
     ExactU2(X[i], Y[i], val2);

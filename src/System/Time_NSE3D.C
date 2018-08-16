@@ -3,7 +3,6 @@
 #include <Assemble3D.h>
 #include <LocalAssembling3D.h>
 #include <LinAlg.h>
-#include <Output3D.h>
 #include <DirectSolver.h>
 #include <GridTransfer.h>
 #include <Upwind3D.h>
@@ -13,6 +12,7 @@
 #include <Multigrid.h>
 
 #include <PrePost_Cylinder_Square.h>
+#include <BoundaryAssembling3D.h>
 
 #include <LocalAssembling3D.h>
 #include <Variational_MultiScale3D.h>
@@ -143,7 +143,7 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 , int maxSubDomainPerDof
 #endif  
 )
-: db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
+: db_(get_default_TNSE3D_parameters()), outputWriter(param_db),systems_(), example_(ex),
    solver_(param_db), defect_(), old_residual_(), 
    initial_residual_(1e10), errors_(), oldtau_(), 
    time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false)
@@ -478,7 +478,7 @@ void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pr
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
-      pressure_order = pressure_order*10;
+     // pressure_order = pressure_order*10;
       break;
   }
   TDatabase::ParamDB->PRESSURE_SPACE  = pressure_order;
@@ -846,13 +846,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   System_per_grid& s = this->systems_.front();
   size_t nu=s.solution_.length(0);
   size_t np=s.solution_.length(3);
-/*
-  //BEGIN DEBUG
-  cout <<" rhs: " << rhs_from_time_disc.norm()<<endl;
-  cout <<" sol: " << s.solution_.norm() << endl;
-  //END DEBUG
-  */
-
+  
   Output::print<5>("B " , Ddot(3*nu+np,s.solution_.get_entries(),s.solution_.get_entries()), " ",
                 Ddot(3*nu,rhs_from_time_disc.get_entries(),rhs_from_time_disc.get_entries()) , " "  , 
                 Ddot(np,rhs_from_time_disc.get_entries()+3*nu,rhs_from_time_disc.get_entries()+3*nu)," ",
@@ -995,7 +989,6 @@ void Time_NSE3D::compute_residuals()
 void Time_NSE3D::solve()
 {
   System_per_grid& s = systems_.front();
-  
   // store previous solution for damping, it is a pointer so that we can avoid
   // the copy in case of no damping
   double damping = this->db_["nonlinloop_damping_factor"];
@@ -1058,6 +1051,12 @@ void Time_NSE3D::output(int m, int &image)
   TFEFunction3D* u2 = s.u_.GetComponent(1);
   TFEFunction3D* u3 = s.u_.GetComponent(2);
 
+  Output::print("** COMPUTING FLUX **");
+  double flux;
+  s.u_.compute_flux(3, flux);
+  Output::print("** FLUX ON 3 = ", flux,
+		" ** Expected: ", 2*3.1415*TDatabase::TimeDB->CURRENTTIME);
+  
   if((size_t)db_["verbosity"]> 1)
   {
     u1->PrintMinMax();
@@ -1066,39 +1065,10 @@ void Time_NSE3D::output(int m, int &image)
     s.p_.PrintMinMax();
   }
 
-  if((m==0) || (m % TDatabase::TimeDB->STEPS_PER_IMAGE == 0) )
-  {
-    if(db_["output_write_vtk"])
-    {
-      // last argument in the following is domain but is never used in this class
-      TOutput3D output(5, 5, 2, 1, NULL);
-      output.AddFEFunction(&s.p_);
-      output.AddFEVectFunct(&s.u_);
-#ifdef _MPI
-      char SubID[] = "";
-      if(my_rank == 0)
-        mkdir(db_["output_vtk_directory"], 0777);
-      std::string dir = db_["output_vtk_directory"];
-      std::string base = db_["output_basename"];
-      output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);
-      image++;
-#else
-    // Create output directory, if not already existing.
-    mkdir(db_["output_vtk_directory"], 0777);
-    std::string filename = db_["output_vtk_directory"];
-    filename += "/" + db_["output_basename"].value_as_string();
-
-      if(image<10) filename += ".0000";
-      else if(image<100) filename += ".000";
-      else if(image<1000) filename += ".00";
-      else if(image<10000) filename += ".0";
-      else filename += ".";
-      filename += std::to_string(image) + ".vtk";
-      output.WriteVtk(filename.c_str());
-      image++;
-#endif
-    }
-  }
+  // write solution to a vtk file
+  outputWriter.add_fe_function(&s.p_);
+  outputWriter.add_fe_vector_function(&s.u_);
+  outputWriter.write(image);
 
   // Measure errors to known solution
   // if an exact solution is not known, it is usually set to be zero, so that
@@ -1437,7 +1407,7 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   boundary_values[3] = example_.get_bd(3);
   
   const LocalAssembling3D
-              localAssembling(type,
+              localAssembling(this->db_, type,
                               fefunctions.data(),this->example_.get_coeffs(),
                               this->get_space_disc_global()); 
   // assemble all the matrices and right hand side 
@@ -1445,6 +1415,7 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
 	     sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
              rhs_array.size(), rhs_array.data(), space_rhs.data(),
              boundary_conditions, boundary_values.data(), localAssembling);
+  
 
   // do upwinding for the mdml case
  if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)

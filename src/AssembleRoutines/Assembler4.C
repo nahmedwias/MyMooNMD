@@ -41,9 +41,9 @@ Assembler4::Assembler4()
     square_matrices.resize(0);
     rectangular_matrices.resize(0);
     rhs_blocks.resize(0);
-    n_square_matrices=0;
-    n_rectangular_matrices=0;
-    n_rhs_blocks=0;
+    n_square_matrices = 0;
+    n_rectangular_matrices = 0;
+    n_rhs_blocks = 0;
     n_all_matrices = 0;
 
     maximum_number_base_function = 0;
@@ -85,12 +85,9 @@ void Assembler4::init(BlockFEMatrix &M,
     // set vector of blocks
     std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
     // Note: This class is supposed to work only for NSType 14 at the moment
-    if(blocks.size() != 9)
+    if(blocks.size() == 9)
     {
-        Output::print("Assembler should be only used with NSType 14 Matrices");
-        ErrThrow(" --> Wrong blocks.size() = ", blocks.size());
-    }
-    
+
     this->n_square_matrices = 5;
     square_matrices.resize(n_square_matrices);
     square_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
@@ -105,6 +102,22 @@ void Assembler4::init(BlockFEMatrix &M,
     rectangular_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
     rectangular_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
     rectangular_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+    }
+
+    else if(blocks.size() == 1)
+        {
+    	this->n_square_matrices = 1;
+    	square_matrices.resize(n_square_matrices);
+    	square_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+
+        this->n_rectangular_matrices = 0;
+        //rectangular_matrices.resize(n_rectangular_matrices);
+        }
+    else
+    {
+        Output::print("Assembler should be only used with NSType 14 Matrices");
+        ErrThrow(" --> Wrong blocks.size() = ", blocks.size());
+    }
     
     this->n_rhs_blocks = ferhs.size();
     rhs_blocks.resize(n_rhs_blocks);
@@ -114,7 +127,7 @@ void Assembler4::init(BlockFEMatrix &M,
     }
     
     this->n_all_matrices = this->n_square_matrices + this->n_rectangular_matrices;
-    
+
     // --------------------------------------------------------------------
     // set the vectors for hanging nodes
     
@@ -147,16 +160,16 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
                             std::vector<const TFESpace2D*>& fespaces,
                             std::vector<const TFESpace2D*>& ferhs,
                             const Example2D& example,
-			    std::vector< std::shared_ptr< LocalAssembling2D> > la_list,
+			                std::vector< std::shared_ptr< LocalAssembling2D> > la_list,
                             int AssemblePhaseID)
 {
 #ifdef __3D__
     ErrThrow("Assembler4::Assembler4() not yet working in 3D");
 #endif
-    
+
     // set matrices and rhs blocks
-    this->init(M,b_rhs,fespaces,ferhs);
-    
+    this->init(M, b_rhs, fespaces, ferhs);
+
     // LocRhs: an array of pointers (size: number of rhs)
     double **LocRhs;
     // righthand: a big pointer
@@ -168,7 +181,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
         for(size_t i = 0; i < n_rhs_blocks; i++)
             LocRhs[i] = righthand+i* maximum_number_base_function;
     }                                               // endif n_rhs_blocks
-    
+
     // --------------------------------------------------------------------
     // set pointers to matrices
     double *aux;
@@ -189,41 +202,41 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
         for(int i=0;i<this->n_all_matrices;i++)
             LocMatrices[i] = Matrices+i*maximum_number_base_function;
     }
-    
+
     //================================================================================
     // loop over all cells
     //================================================================================
-    for(int i=0 ; i < this->Coll->GetN_Cells() ; i++)
+    for(int i = 0; i < this->Coll->GetN_Cells(); i++)
     {
         TBaseCell *cell = this->Coll->GetCell(i);
-        
+
         ///@attention the value of INTERNAL_CELL appears to be used somewhere later
         TDatabase::ParamDB->INTERNAL_CELL = i;
-        
+
         // only for multiphase flows
         if ((AssemblePhaseID >= 0) &&
             (AssemblePhaseID != cell->GetPhase_ID()) )
             continue;
          for(size_t num_localAss = 0; num_localAss < la_list.size(); num_localAss++ )
-         { 
+         {
          //assemble the selected local form on the i-th cell
         this->assemble_local_system(fespaces,
                                     i,LocMatrices, LocRhs,la_list[num_localAss]);
-  
+
    // add local/cellwise matrices to global matrices
 	//(ansatz == test: Aii, C; ansatz != test: A12,A12,B1,...)
 	this->add_local_to_global_matrix(i, LocMatrices, Matrices);
-	
+
      // add local/cellwise right-hand sides to global right-hand sides
-	this->add_local_to_global_rhs(i,ferhs,LocRhs,example);
-	
+	this->add_local_to_global_rhs(i, ferhs, LocRhs, example);
 
    // boundary condition part
-	this->impose_boundary_conditions(i,ferhs,example);
+	this->impose_boundary_conditions(i, ferhs, example);
 	
     }
     }
-    
+
+
     // --------------------------------------------------------------------
     // modify matrix according to coupling of hanging nodes
     // this part is only relevant to the case with hanging nodes and
@@ -270,6 +283,7 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
     int LocN_BF[N_BaseFuncts2D];
     BaseFunct2D LocBF[N_BaseFuncts2D];
     int n_fespaces = fespaces.size();
+
     for(int j=0;j<n_fespaces;j++)
     {
         FE2D CurrentElement = fespaces[j]->GetFE2D(i,cell);
@@ -277,7 +291,7 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
         LocN_BF[j] = N_BaseFunct[CurrentElement];
         LocBF[j] = BaseFuncts[CurrentElement];
     }
-    
+
     // --------------------------------------------------------------------
     // calculate values on original element
     
@@ -294,7 +308,7 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
     
     la->compute_parameters(N_Points, this->Coll, cell, i, X, Y);
     bool is_sdfem =(la->get_disctype() == SDFEM);
-    
+
     if( is_sdfem
        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
        || (TDatabase::ParamDB->CELL_MEASURE == 4))
@@ -315,8 +329,6 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
 		       //AuxArray,
 		       cell, n_all_matrices, n_rhs_blocks, LocMatrices,
 		       LocRhs);
-    
-
 }
 
 //================================================================================
@@ -339,7 +351,7 @@ void Assembler4::impose_boundary_conditions(int i_cell,
       BoundValueFunct2D *BoundaryValue = example.get_bd()[j];
       TFE2D *ele = TFEDatabase2D::GetFE2D(CurrentElement);
       double t0,t1;
-      TBoundComp *BoundComp;
+      const TBoundComp *BoundComp;
       int N_EdgePoints;
       double *EdgePoints;
       double eps=1e-4;
@@ -414,7 +426,7 @@ void Assembler4::impose_boundary_conditions(int i_cell,
                         for(int l=0;l<N_EdgePoints;l++)
                         {
                             double s = EdgePoints[l];
-                            double t = 0.5*(t0*(1-s) + t1*(1+s));
+                            double t = 0.5 * (t0 * (1-s) + t1 * (1+s));
                             BoundaryValue(comp, t, PointValues[l]);
                         }                                 // endfor l
                         // compute boundary values for each dof on the
@@ -470,7 +482,7 @@ void Assembler4::impose_boundary_conditions_old(const TFESpace2D *fespace,
     BoundValueFunct2D *BoundaryValue = example.get_bd()[j];
     TFE2D *ele = TFEDatabase2D::GetFE2D(CurrentElement);
     double t0,t1;
-    TBoundComp *BoundComp;
+    const TBoundComp *BoundComp;
     int N_EdgePoints;
     double *EdgePoints;
     double eps=1e-4;

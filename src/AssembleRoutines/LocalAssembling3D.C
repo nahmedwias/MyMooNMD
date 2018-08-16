@@ -10,10 +10,11 @@
 #include <DiscreteForm3D.h>
 #include <ConvDiff.h>
 #include <ConvDiff3D.h>
-#include <NSE3D_FixPo.h>
-#include <NSE3D_FixPoSkew.h>
-#include <NSE3D_Param.h>
-#include <NSE3D_ParamRout.h>
+#include <DarcyMixed.h>
+#include <NSE3DGalerkin.h>
+// #include <NSE3D_FixPoSkew.h>
+// #include <NSE3D_Param.h>
+// #include <NSE3D_ParamRout.h>
 
 #include <Brinkman3D_Mixed.h>
 #include <TCD3D.h> // local routines for time convection-diffusion-reaction
@@ -45,6 +46,7 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type, int di
   switch(type)
   {
     case LocalAssembling3D_type :: CD3D:
+    {
       switch(disctype)
       {
         case GALERKIN:
@@ -52,55 +54,69 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type, int di
           break;
       }
       break;
+    }
+    //////////////////////////////////////////////////
+    case LocalAssembling3D_type::Darcy3D_Galerkin:
+    {
+      return std::string("Darcy3D_Galerkin");
+      break;
+    }
     //////////////////////////////////////////////////
     case LocalAssembling3D_type::TCD3DStiffRhs:
+    {
       switch(disctype)
       {
-	case GALERKIN:
-	  return std::string("TCD3D_Stiff_Rhs");	  
-	  break;
-	case SUPG:
-	  return std::string("TCD3D_Stiff_Rhs_SUPG");
-	  break;
+        case GALERKIN:
+          return std::string("TCD3D_Stiff_Rhs");	  
+          break;
+        case SUPG:
+          return std::string("TCD3D_Stiff_Rhs_SUPG");
+          break;
       }
       break;
+    }
     case LocalAssembling3D_type::TCD3D:
+    {
       switch(disctype)
       {
-	case GALERKIN:
-	  return std::string("TCD3D_AllGalerkin");
-	case SUPG:
-	  return std::string("TCD3D_AllSUPG");
+        case GALERKIN:
+          return std::string("TCD3D_AllGalerkin");
+          break;
+        case SUPG:
+          return std::string("TCD3D_AllSUPG");
+          break;
       }
       break;
-      ///////////////////////////////////////////////////////////////////////////
-      // Brinkman3D: Brinkman problems
-  case LocalAssembling3D_type::Brinkman3D_Galerkin:
+    }
+    ///////////////////////////////////////////////////////////////////////////
+    // Brinkman3D: Brinkman problems
+    case LocalAssembling3D_type::Brinkman3D_Galerkin:
       return std::string("Brinkman3D_Galerkin");
       break;
-  case LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1:
+    case LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1:
       return std::string("ResidualStabPkPk_for_Brinkman3D_Galerkin1");
       break;
-  case LocalAssembling3D_type::GradDivStab_for_Brinkman3D_Galerkin1:
+    case LocalAssembling3D_type::GradDivStab_for_Brinkman3D_Galerkin1:
       return std::string("GradDivStab_for_Brinkman3D_Galerkin1");
       break;
-
     default:
       return std::string();
   }
   return std::string(); //avoid compiler warning
 }
 
-LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, 
+LocalAssembling3D::LocalAssembling3D(ParameterDatabase param_db,
+                                     LocalAssembling3D_type type, 
                                      TFEFunction3D **fefunctions3d,
                                      CoeffFct3D coeffs,
                                      int disctype)
- : type(type), discretization_type(disctype),
+ : db(default_local_assembling_database()), type(type),
+   discretization_type(disctype),
    name(LocalAssembling3D_type_to_string(type,disctype)), Coeffs(coeffs),
    FEFunctions3D(fefunctions3d)
 {
-
   Output::print<5>("Constructor of LocalAssembling3D: using type ", name);
+  db.merge(param_db, false);
   
   // the values below only matter if you need an existing finite element
   // function during your assembly. Change them in such a case
@@ -118,97 +134,106 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
   switch(this->type)
   {
     ///////////////////////////////////////////////////////////////////////////
-        // Brinkman3D: problems and Brinkman problem
-        case LocalAssembling3D_type::Brinkman3D_Galerkin:
-            switch(TDatabase::ParamDB->NSTYPE)
-        {
-            case 4:
-                this->N_Terms = 5;
-                this->Derivatives = {D100, D010, D001, D000, D000};
-                this->Needs2ndDerivatives = new bool[2];
-                this->Needs2ndDerivatives[0] = false;
-                this->Needs2ndDerivatives[1] = false;
-                this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                this->N_Matrices = 15;
-                this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                //this->N_Rhs = 3;
-                //CB DEBUG
-                this->N_Rhs = 4;
-                //END DEBUG
-                this->RhsSpace = { 0, 0, 0, 1 };
-                this->AssembleParam = Brinkman3DType2Galerkin;
-                this->Manipulate = nullptr;
-                break;
-            case 14:
-                //Matrix Type 14
-                this->N_Terms = 5;
-                this->Derivatives = { D100, D010, D001, D000, D000 };
-                this->Needs2ndDerivatives = new bool[2];
-                this->Needs2ndDerivatives[0] = false;
-                this->Needs2ndDerivatives[1] = false;
-                this->FESpaceNumber = { 0, 0, 0, 0, 1 };                               // 0: velocity, 1: pressure
-                this->N_Matrices = 16;
-                this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0}; //u: A11,A12,A13,A21,A22,A23,A31,A32,A33,C,B1T,B2T,B3T,B1,B2,B3 (here the lying B-Blocks come first)
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1}; //p; (here the standing B-Blocks come first)
-                this->N_Rhs = 4;
-                this->RhsSpace = { 0, 0, 0, 1 };
-                this->AssembleParam = Brinkman3DType1Galerkin;
-                this->Manipulate = nullptr;
-                break;
-        }
-            break;
+    // Brinkman3D: problems and Brinkman problem
+    case LocalAssembling3D_type::Brinkman3D_Galerkin:
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 4:
+          this->N_Terms = 5;
+          this->Derivatives = {D100, D010, D001, D000, D000};
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = false;
+          this->Needs2ndDerivatives[1] = false;
+          this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 15;
+          this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+          //this->N_Rhs = 3;
+          //CB DEBUG
+          this->N_Rhs = 4;
+          //END DEBUG
+          this->RhsSpace = { 0, 0, 0, 1 };
+          this->local_assemblings_routines.push_back(
+            Brinkman3DType2Galerkin);
+          this->Manipulate = nullptr;
+          break;
+        case 14:
+          //Matrix Type 14
+          this->N_Terms = 5;
+          this->Derivatives = { D100, D010, D001, D000, D000 };
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = false;
+          this->Needs2ndDerivatives[1] = false;
+          this->FESpaceNumber = { 0, 0, 0, 0, 1 };                               // 0: velocity, 1: pressure
+          this->N_Matrices = 16;
+          this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0}; //u: A11,A12,A13,A21,A22,A23,A31,A32,A33,C,B1T,B2T,B3T,B1,B2,B3 (here the lying B-Blocks come first)
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1}; //p; (here the standing B-Blocks come first)
+          this->N_Rhs = 4;
+          this->RhsSpace = { 0, 0, 0, 1 };
+          this->local_assemblings_routines.push_back(
+            Brinkman3DType1Galerkin);
+          this->Manipulate = nullptr;
+          break;
+      }
+      break;
+    }
+    case LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1:
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 14:
+          //Matrix Type 14
+          this->N_Terms = 11;                                                                             // = #(Derivatives)
+          this->Derivatives = { D100, D010, D001, D000, D000, D100, D010, D001, D200, D020, D002};        // u_x, u_y, u_z, u, p, p_x, p_y, p_z, u_xx, u_yy, u_zz
+          this->Needs2ndDerivatives = new bool[2];                                                        // usually 2nd derivatives are not needed
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 };                                      // 0: velocity space, 1: pressure space
+          this->N_Matrices = 16;                                                                          // here some stabilization is allowed in the matrix C
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};                          //u: A11,A12,A13,A21,A22,A23,A31,A32,A33,C,B1T,B2T,B3T,B1,B2,B3 (here the lying B-Blocks come first)
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1};                          //p; (here the standing B-Blocks come first)
+          this->N_Rhs = 4;                                                                                // f1, f2, g
+          this->RhsSpace = { 0, 0, 0, 1 };                                                                // corresp. to velocity testspace = 0 / pressure = 1
+          this->local_assemblings_routines.push_back(
+            ResidualStabPkPk_for_Brinkman3DType1Galerkin);
+          this->Manipulate = nullptr;
+          break;
+      }
+      break;
+    }
 
-        case LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1:
-            switch(TDatabase::ParamDB->NSTYPE)
-        {
-            case 14:
-                //Matrix Type 14
-                this->N_Terms = 11;                                                                             // = #(Derivatives)
-                this->Derivatives = { D100, D010, D001, D000, D000, D100, D010, D001, D200, D020, D002};        // u_x, u_y, u_z, u, p, p_x, p_y, p_z, u_xx, u_yy, u_zz
-                this->Needs2ndDerivatives = new bool[2];                                                        // usually 2nd derivatives are not needed
-                this->Needs2ndDerivatives[0] = true;
-                this->Needs2ndDerivatives[1] = true;
-                this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 };                                      // 0: velocity space, 1: pressure space
-                this->N_Matrices = 16;                                                                          // here some stabilization is allowed in the matrix C
-                // in the lower right corner
-                this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};                          //u: A11,A12,A13,A21,A22,A23,A31,A32,A33,C,B1T,B2T,B3T,B1,B2,B3 (here the lying B-Blocks come first)
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1};                          //p; (here the standing B-Blocks come first)
-                this->N_Rhs = 4;                                                                                // f1, f2, g
-                this->RhsSpace = { 0, 0, 0, 1 };                                                                // corresp. to velocity testspace = 0 / pressure = 1
-                this->AssembleParam = ResidualStabPkPk_for_Brinkman3DType1Galerkin;
-                this->Manipulate = nullptr;
-                break;
-        }
-            break;
-
-        case LocalAssembling3D_type::GradDivStab_for_Brinkman3D_Galerkin1:
-            switch(TDatabase::ParamDB->NSTYPE)
-        {
-            case 14:
-                //Matrix Type 14
-                this->N_Terms = 11;                                                                             // = #(Derivatives)
-                this->Derivatives = { D100, D010, D001, D000, D000, D100, D010, D001, D200, D020, D002};        // u_x, u_y, u_z, u, p, p_x, p_y, p_z, u_xx, u_yy, u_zz
-                this->Needs2ndDerivatives = new bool[2];                                                        // usually 2nd derivatives are not needed
-                this->Needs2ndDerivatives[0] = true;
-                this->Needs2ndDerivatives[1] = true;
-                this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 };                                      // 0: velocity space, 1: pressure space
-                this->N_Matrices = 16;                                                                          // here some stabilization is allowed in the matrix C
-                // in the lower right corner
-                this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};                          //u: A11,A12,A13,A21,A22,A23,A31,A32,A33,C,B1T,B2T,B3T,B1,B2,B3 (here the lying B-Blocks come first)
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1};                          //p; (here the standing B-Blocks come first)
-                this->N_Rhs = 4;                                                                                // f1, f2, g
-                this->RhsSpace = { 0, 0, 0, 1 };                                                                // corresp. to velocity testspace = 0 / pressure = 1
-                this->AssembleParam = GradDivStab_for_Brinkman3DType1Galerkin;
-                this->Manipulate = nullptr;
-                break;
-        }
-            break;
-
+    case LocalAssembling3D_type::GradDivStab_for_Brinkman3D_Galerkin1:
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 14:
+          //Matrix Type 14
+          this->N_Terms = 11;                                                                             // = #(Derivatives)
+          this->Derivatives = { D100, D010, D001, D000, D000, D100, D010, D001, D200, D020, D002};        // u_x, u_y, u_z, u, p, p_x, p_y, p_z, u_xx, u_yy, u_zz
+          this->Needs2ndDerivatives = new bool[2];                                                        // usually 2nd derivatives are not needed
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          this->FESpaceNumber = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0 };                                      // 0: velocity space, 1: pressure space
+          this->N_Matrices = 16;                                                                          // here some stabilization is allowed in the matrix C
+          // in the lower right corner
+          this->RowSpace =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};                          //u: A11,A12,A13,A21,A22,A23,A31,A32,A33,C,B1T,B2T,B3T,B1,B2,B3 (here the lying B-Blocks come first)
+          this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1};                          //p; (here the standing B-Blocks come first)
+          this->N_Rhs = 4;                                                                                // f1, f2, g
+          this->RhsSpace = { 0, 0, 0, 1 };                                                                // corresp. to velocity testspace = 0 / pressure = 1
+          this->local_assemblings_routines.push_back(
+            GradDivStab_for_Brinkman3DType1Galerkin);
+          this->Manipulate = nullptr;
+          break;
+      }
+      break;
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // CD3D: stationary convection diffusion problems
     case LocalAssembling3D_type::CD3D:
+    {
       switch(this->discretization_type)
       {
         case GALERKIN:
@@ -222,7 +247,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->ColumnSpace = { 0 };
           this->N_Rhs = 1;
           this->RhsSpace = { 0 };
-          this->AssembleParam = BilinearAssembleGalerkin;
+          this->local_assemblings_routines.push_back(BilinearAssembleGalerkin);
           this->Manipulate = nullptr;
           break;
         case SUPG:
@@ -239,7 +264,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->ColumnSpace = { 0 };
           this->N_Rhs = 1;
           this->RhsSpace = { 0 };
-          this->AssembleParam = BilinearAssemble_SD;
+          this->local_assemblings_routines.push_back(BilinearAssemble_SD);
           this->Manipulate = nullptr;
           break;
         default:
@@ -247,13 +272,15 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
                " is not supported by the class CD3D");
       }// endswitch this->discretization_type
       break; // break for the type LocalAssembling3D_type::CD3D 
+    }
     ///////////////////////////////////////////////////////////////////////////
     // TCD3D: nonstationary convection-diffusion-reaction problems
     case LocalAssembling3D_type::TCD3D:
+    {
       switch(this->discretization_type)
       {
-	case GALERKIN:
-	  this->N_Terms = 4;
+        case GALERKIN:
+          this->N_Terms = 4;
           this->Derivatives = { D100, D010, D001, D000 };
           this->Needs2ndDerivatives = new bool[1];
           this->Needs2ndDerivatives[0] = false;
@@ -263,11 +290,11 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->ColumnSpace = { 0, 0 };
           this->N_Rhs = 1;
           this->RhsSpace = { 0 };
-          this->AssembleParam = MatrixMARhsAssemble;
+          this->local_assemblings_routines.push_back(MatrixMARhsAssemble);
           this->Manipulate = nullptr;
-	  break;
-	case SUPG:
-	  this->N_Terms = 4;
+          break;
+        case SUPG:
+          this->N_Terms = 4;
           this->Derivatives = { D100, D010, D001, D000 };
           this->Needs2ndDerivatives = new bool[1];
           this->Needs2ndDerivatives[0] = false;
@@ -277,12 +304,14 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->ColumnSpace = { 0, 0 };
           this->N_Rhs = 1;
           this->RhsSpace = { 0 };
-          this->AssembleParam = MatricesMARhsAssemble_SUPG; 
+          this->local_assemblings_routines.push_back(MatricesMARhsAssemble_SUPG);
           this->Manipulate = nullptr;
-	  break;
+          break;
       }
       break;
+    }
     case LocalAssembling3D_type::TCD3DStiffRhs:      
+    {
       switch(this->discretization_type)
       {
 	case GALERKIN:
@@ -297,8 +326,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
 	  this->N_Rhs = 1;
 	  this->RhsSpace = { 0 };
 	  this->Manipulate = nullptr;
-	  this->Manipulate = nullptr;
-	  this->AssembleParam = MatrixARhsAssemble;
+    this->local_assemblings_routines.push_back(MatrixARhsAssemble);
 	  break;
 	case SUPG:
 	  this->N_Terms = 4;
@@ -312,11 +340,31 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
 	  this->N_Rhs = 1;
 	  this->RhsSpace = { 0 };
 	  this->Manipulate = nullptr;
-	  this->Manipulate = nullptr;
-	  this->AssembleParam = MatricesMARhsAssemble_SUPG;
+    this->local_assemblings_routines.push_back(MatricesMARhsAssemble_SUPG);
 	  break;
       }
       break;
+    }
+    ///////////////////////////////////////////////////////////////////////////
+    case LocalAssembling3D_type::Darcy3D_Galerkin:
+    {
+      // ( A B' )   ( 0 2 )
+      // ( B C  )   ( 3 1 )
+      this->N_Terms = 8;
+      this->Derivatives = {D000, D000, D100, D010, D001, D100, D010, D001};
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = false;
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { 0, 1, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 4;
+      this->RowSpace = { 0, 1, 0, 1 };
+      this->ColumnSpace = { 0, 1, 1, 0 };
+      this->N_Rhs = 2;
+      this->RhsSpace = { 0, 1 };
+      this->local_assemblings_routines.push_back(BilinearAssembleDarcyGalerkin<3>);
+      this->Manipulate = nullptr;
+      break;
+    }
     ///////////////////////////////////////////////////////////////////////////
     // NSE3D: stationary Navier-Stokes problems
     case LocalAssembling3D_type :: NSE3D_Linear:
@@ -362,71 +410,13 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
   {
     ErrThrow("You need to specify a valid function for the coefficients");
   }
-  if(AssembleParam == nullptr)
+  if(local_assemblings_routines.empty() 
+     || local_assemblings_routines[0] == nullptr)
   {
     ErrThrow("A local assembling routine was not set!");
   }
 }
-//========================================================================
-LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, TAuxParam3D& aux,
-                                     TDiscreteForm3D& df)
-  :type(type), discretization_type(0), //default value for custom constructor
-   name(df.getName()), N_Terms(df.getNTerms()), N_Spaces(df.getNSpaces()),
-   Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D000), 
-   FESpaceNumber(this->N_Terms, 0), RowSpace(df.getNMatrices(), 0),
-   ColumnSpace(df.getNMatrices(), 0), RhsSpace(df.getNRhs(), 0),
-   Coeffs(df.getCoeffs()), AssembleParam(df.getAssembleParam()),
-   Manipulate(df.getManipulate()), AllOrigValues(new double** [N_Terms]),
-   OrigValues(new double* [N_Terms]), N_Matrices(df.getNMatrices()),
-   N_Rhs(df.getNRhs()), N_ParamFct(aux.getNParamFct()),
-   ParameterFct(this->N_ParamFct, nullptr), BeginParameter(this->N_ParamFct, 0),
-   N_Parameters(aux.getNParameters()), N_FEValues(aux.getNFeValues()),
-   FEFunctions3D(aux.getFeFunctions3D()), FEValue_FctIndex(this->N_FEValues,0),
-   FEValue_MultiIndex(this->N_FEValues, D000)
-{
-  this->Needs2ndDerivatives = new bool[this->N_Spaces];
-  for(int i = 0; i < this->N_Spaces; ++i)
-    this->Needs2ndDerivatives[i] = df.GetNeeds2ndDerivatives()[i];
-  
-  for(int i = 0; i < this->N_Terms; ++i)
-  {
-    this->Derivatives.at(i) = df.getDerivative(i);
-    this->FESpaceNumber.at(i) = df.getFeSpaceNumber(i);
-  }
-  
-  for(int i = 0; i < this->N_Matrices; ++i)
-  {
-    this->RowSpace.at(i) = df.rowSpaceOfMat(i);
-    this->ColumnSpace.at(i) = df.colSpaceOfMat(i);
-  }
-  
-  for(int i = 0; i < this->N_Rhs; ++i)
-    this->RhsSpace.at(i) = df.getRhsSpace(i);
-  
-  for(int i = 0; i < this->N_ParamFct; ++i)
-  {
-    this->ParameterFct.at(i) = aux.getParameterFct(i);
-    this->BeginParameter.at(i) = aux.getBeginParameter(i);
-  }
-  
-  for(int i = 0; i < this->N_FEValues; ++i)
-  {
-    this->FEValue_FctIndex.at(i) = aux.getFeValueFctIndex(i);
-    this->FEValue_MultiIndex.at(i) = aux.getFeValueMultiIndex(i);
-  }
-  
-  // some consistency checks
-  if(Coeffs == nullptr)
-  {
-    ErrThrow("You need to specify a valid function for the coefficients");
-  }
-  if(this->AssembleParam == nullptr)
-  {
-    // this means in the discrete form there was only a pointer to a
-    // AssembleFct3D rather than a AssembleFctParam3D.
-    ErrThrow("can't create LocalAssembling3D object, missing AssembleFctParam3D");
-  }
-}
+
 //========================================================================
 LocalAssembling3D::LocalAssembling3D(
   int myN_Terms, std::vector<MultiIndex3D> myDerivatives,
@@ -440,11 +430,14 @@ LocalAssembling3D::LocalAssembling3D(
   std::vector<int> myFEValue_FctIndex,
   std::vector<MultiIndex3D> myFEValue_MultiIndex,
   int discretization_type_in)
- : type{LocalAssembling3D_type::Custom}, discretization_type{discretization_type_in},
+ : db(default_local_assembling_database()), 
+   type{LocalAssembling3D_type::Custom},
+   discretization_type{discretization_type_in}, name("CUSTOMIZED"), 
    N_Terms(myN_Terms),
    Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
    RowSpace(myRowSpace), ColumnSpace(myColumnSpace), RhsSpace(myRhsSpace),
-   Coeffs(myCoeffs), AssembleParam(myAssembleParam), Manipulate(myManipulate),
+   Coeffs(myCoeffs), local_assemblings_routines({myAssembleParam}),
+   Manipulate(myManipulate),
    N_Matrices(myN_Matrices), N_Rhs(myN_Rhs), N_ParamFct(myN_ParamFct),
    ParameterFct(myParameterFct), BeginParameter(myBeginParameter),
    N_Parameters(myN_Parameters), N_FEValues(myN_FEValues),
@@ -476,7 +469,6 @@ LocalAssembling3D::LocalAssembling3D(
     Output::print("Error: myBeginParameter.size() != myN_ParamFct.");
   }
 
-  name = std::string("CUSTOMIZED");
   //Inform the world of what's going on.
   Output::print<5>("Constructor of LocalAssembling3D: using type ", name);
 
@@ -517,6 +509,29 @@ LocalAssembling3D::~LocalAssembling3D()
   delete [] OrigValues;
   delete [] Needs2ndDerivatives;
 }
+
+
+//========================================================================
+ParameterDatabase LocalAssembling3D::default_local_assembling_database()
+{
+  ParameterDatabase db("default local assembling database");
+  
+  db.add("with_coriolis_force", false,
+         "include the coriolis force for (Navier--)Stokes in 3D. This requires "
+         "special local assemblings and the (pde-) coefficients of the example "
+         "must include the coriolis force vector Omega.");
+  
+  db.add("laplace_type_deformation", false, 
+         "determine the way the laplacian is discretized.");
+  
+  db.add("nse_nonlinear_form", "convective",
+         "Determine how the nonlinear term for Navier--Stokes is assembled.",
+         {"convective", "skew-symmetric", "rotational"});
+  
+  return db;
+}
+
+
 //========================================================================
 void LocalAssembling3D::GetLocalForms(int N_Points, double *weights,  double *AbsDetjk,
                        double *X, double *Y, double *Z,
@@ -583,8 +598,8 @@ void LocalAssembling3D::GetLocalForms(int N_Points, double *weights,  double *Ab
     for(j=0; j<N_Terms; j++)
       OrigValues[j] = AllOrigValues[j][i];
 
-    AssembleParam(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, LocMatrix,
-                  LocRhs);
+    for(auto lar : local_assemblings_routines)
+      lar(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, LocMatrix, LocRhs);
   } // end loop over quadrature points 
 }
 //========================================================================
@@ -673,482 +688,84 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
 //========================================================================
 void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
 {
+  bool with_coriolis = db["with_coriolis_force"];
+  bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
+  // bool laplace_type_deformation = this->db["laplace_type_deformation"];
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
+  {
+    ErrThrow("Newton method is not supported yet");
+  }
+  if(TDatabase::ParamDB->LAPLACETYPE == 1)
+  {
+    if((nstype==1) || nstype==2)
+    {
+      ErrThrow("LAPLACETYPE is only supported for NSTYPE 3, and 4");
+    }
+  }
+  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM>0)
+  {
+    ErrThrow("Skew symmetric case is not implemented for all NSTYPE");
+  }
+  // common for all NSTYPE, Discrete forms, etc
+  this->N_Rhs = 4;
+  this->RhsSpace = { 0, 0, 0, 1 };
+  this->N_Terms = 5;
+  this->Derivatives = { D000, D000, D100, D010, D001};
+  this->FESpaceNumber = { 0, 1, 0, 0, 0 }; // 0: velocity, 1: pressure
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Manipulate = nullptr;
+  this->N_Parameters = 3;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { NSParamsVelo3D };
+  this->N_FEValues = 3;
+  this->FEValue_FctIndex = { 0, 1, 2 };
+  this->FEValue_MultiIndex = { D000, D000, D000 };
+  this->BeginParameter = { 0 };
+  this->N_Matrices = 16;
+  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};
+  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1 };
+  if(laplace_type_deformation)
+  {
+    this->local_assemblings_routines.push_back(NSLaplaceDeformation);
+  }
+  else
+  {
+    if(nstype == 1 || nstype == 2)
+    {
+      this->local_assemblings_routines.push_back(NSLaplaceGradGradSingle);
+    }
+    else
+    {
+      this->local_assemblings_routines.push_back(NSLaplaceGradGrad);
+    }
+  }
   switch(type)
   {
     case LocalAssembling3D_type::NSE3D_Linear:
-    {
-      switch(this->discretization_type)
+      this->local_assemblings_routines.push_back(NSDivergenceBlocks);
+      this->local_assemblings_routines.push_back(NSRightHandSide);
+      if(nstype == 2 || nstype == 4 || nstype == 14)
       {
-        case GALERKIN: // GALERKIN 
-          switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) // nonlinear iteration type (fixed point or Newton's type)
-          {
-            case 0: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0
-              switch(TDatabase::ParamDB->NSTYPE)
-              {
-                case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 1
-                  if(TDatabase::ParamDB->LAPLACETYPE != 0)
-                  {
-                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                  }
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 4;
-                  this->RowSpace = { 0, 1, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
-                   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                     this->AssembleParam = NSType1Galerkin3D;
-                   else
-                     this->AssembleParam = NSType1GalerkinSkew3D;
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 2: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 2
-                  if(TDatabase::ParamDB->LAPLACETYPE != 0)
-                  {
-                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 2");
-                  }
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 7;
-                  this->RowSpace    = { 0, 1, 1, 1, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 1, 1, 1 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                    this->AssembleParam = NSType2Galerkin3D;
-                  else
-                    this->AssembleParam = NSType2GalerkinSkew3D;
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 3
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 12;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                      this->AssembleParam = NSType3Galerkin3D;
-                    else
-                      this->AssembleParam = NSType3GalerkinDD3D;
-                  }
-                  else // Skew 
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                      this->AssembleParam = NSType3GalerkinSkew3D;
-                    else
-                      this->AssembleParam = NSType3GalerkinDDSkew3D;
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 4
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 15;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  //this->N_Rhs = 3;
-                  //CB DEBUG
-                  this->N_Rhs = 4;
-                  //END DEBUG
-                  this->RhsSpace = { 0, 0, 0, 1 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                      this->AssembleParam = NSType4Galerkin3D;
-                    else
-                      this->AssembleParam = NSType4GalerkinDD3D;
-                  }
-                  else // Skew 
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                      this->AssembleParam = NSType4GalerkinSkew3D;
-                    else
-                      this->AssembleParam = NSType4GalerkinDDSkew3D;
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-              }// endswitch for NSTYPE
-              break;
-            case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1
-              switch(TDatabase::ParamDB->NSTYPE)
-              {
-                case 1:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=1
-                case 2:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=2
-                  ErrThrow("Wrong NSTYPE ", TDatabase::ParamDB->NSTYPE,
-                           " for Newton's method !!! Use NSTYPE 3 or 4 !!!");
-                  break;
-                case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=3
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 12;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE==0)
-                    //   this->AssembleParam = ;
-                    // else
-                    //  this->AssembleParam = ;
-                  }
-                  else // Skew 
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE==0)
-                    //   this->AssembleParam = ;
-                    // else
-                    //   this->AssembleParam = ;
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  // this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=4
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 15;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  //this->N_Rhs = 3;
-                  //CB DEBUG
-                  this->N_Rhs = 4;
-                  //END DEBUG
-                  this->RhsSpace = { 0, 0, 0, 1 };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    //   this->AssembleParam = ;
-                    // else
-                    //  this->AssembleParam = ;
-                  }
-                  else // Skew 
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    //   this->AssembleParam = ;
-                    // else
-                    //   this->AssembleParam = ;
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  // this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-              }// endswitch for NSTYPE
-              break;
-          }// endswitch of the iteration type (FIXED POINT OR NEWTON'S)
-          break;
-          default:
-            ErrThrow("currently DISCTYPE ", this->discretization_type,
-                     " is not supported by the class NSE3D");
-      }// endswitch for the DISCTYPE 
-      break; // break for the LocalAssembling3D_type NSE3D_Linear
+        this->local_assemblings_routines.push_back(NSGradientBlocks);
+      }
+      break;
+    case LocalAssembling3D_type::NSE3D_NonLinear:
+      if(nstype == 1 || nstype == 2)
+      {
+        this->local_assemblings_routines.push_back(NSNonlinearTermSingle);
+      }
+      else
+      {
+        this->local_assemblings_routines.push_back(NSNonlinearTerm);
+      }
+      break;
+    default:
+      ErrThrow("unknown LocalAssembling2D_type ", this->name);
+      break;
   }
-    case LocalAssembling3D_type :: NSE3D_NonLinear:
-      switch(this->discretization_type)
-      {
-        case GALERKIN:
-          switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) // nonlinear iteration type (fixed point or Newton's type)
-          {
-            case 0: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0
-              switch(TDatabase::ParamDB->NSTYPE)
-              {
-                case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 1
-                  if(TDatabase::ParamDB->LAPLACETYPE != 0)
-                  {
-                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                  }
-                  this->N_Terms = 4;
-                  this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 1;
-                  this->RowSpace = { 0 };
-                  this->ColumnSpace = { 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = {};
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                    this->AssembleParam = NSType1_2NLGalerkin3D;
-                  else
-                    this->AssembleParam = NSType1_2NLGalerkinSkew3D;
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 2: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 2
-                  if(TDatabase::ParamDB->LAPLACETYPE != 0)
-                  {
-                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                  }
-                  this->N_Terms = 4;
-                  this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 1;
-                  this->RowSpace = { 0 };
-                  this->ColumnSpace = { 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                    this->AssembleParam = NSType1_2NLGalerkin3D;
-                  else
-                    this->AssembleParam = NSType1_2NLGalerkinSkew3D;
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 3
-                  this->N_Terms = 4;
-                  this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0}; // 0: velocity, 1: pressure
-                  this->N_Matrices = 3;
-                  this->RowSpace    = { 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                      this->AssembleParam = NSType3_4NLGalerkin3D;
-                    else
-                     this->AssembleParam = NSType3_4NLGalerkinDD3D;
-                  }
-                  else // Skew 
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                      this->AssembleParam = NSType3_4NLGalerkinSkew3D;
-                    else
-                      this->AssembleParam = NSType3_4NLGalerkinDDSkew3D;
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 4
-                  this->N_Terms = 4;
-                  this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 3;
-                  this->RowSpace    = { 0, 0, 0};
-                  this->ColumnSpace = { 0, 0, 0};
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                      this->AssembleParam = NSType3_4NLGalerkin3D;
-                    else
-                     this->AssembleParam = NSType3_4NLGalerkinDD3D;
-                  }
-                  else // Skew 
-                  {
-                    if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                      this->AssembleParam = NSType3_4NLGalerkinSkew3D;
-                    else
-                      this->AssembleParam = NSType3_4NLGalerkinDDSkew3D;
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-              }// endswitch for NSTYPE
-              break;
-            case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1
-              switch(TDatabase::ParamDB->NSTYPE)
-              {
-                case 1:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=1
-                case 2:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=2
-                  ErrThrow("Wrong NSTYPE ", TDatabase::ParamDB->NSTYPE, " for Newton's method !!!", "Use NSTYPE 3 or 4 !!!");
-                  break;
-                case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=3
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 9;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE==0)
-                    //   this->AssembleParam = ;
-                    // else
-                    //  this->AssembleParam = ;
-                  }
-                  else // Skew 
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE==0)
-                    //   this->AssembleParam = ;
-                    // else
-                    //   this->AssembleParam = ;
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  // this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-                case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=4
-                  this->N_Terms = 5;
-                  this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[2];
-                  this->Needs2ndDerivatives[0] = false;
-                  this->Needs2ndDerivatives[1] = false;
-                  this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-                  this->N_Matrices = 9;
-                  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                  this->N_Rhs = 0;
-                  this->RhsSpace = { };
-                  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    //   this->AssembleParam = ;
-                    // else
-                    //  this->AssembleParam = ;
-                  }
-                  else // Skew 
-                  {
-                    // if(TDatabase::ParamDB->LAPLACETYPE == 0)
-                    //   this->AssembleParam = ;
-                    // else
-                    //   this->AssembleParam = ;
-                  }
-                  this->Manipulate = nullptr;
-                  
-                  this->N_Parameters = 3;
-                  this->N_ParamFct = 1;
-                  // this->ParameterFct =  { NSParamsVelo3D };
-                  this->N_FEValues = 3;
-                  this->FEValue_FctIndex = { 0, 1, 2 };
-                  this->FEValue_MultiIndex = { D000, D000, D000 };
-                  this->BeginParameter = { 0 };
-                  break;
-              }// endswitch for NSTYPE
-              break;
-          }// endswitch of the iteration type (FIXED POINT OR NEWTON'S)          
-          break; // break for the GALERKIN
-          default:
-             ErrThrow("currently DISCTYPE ", this->discretization_type,
-                     " is not supported by the class NSE3D");
-      } // endswitch for the DISCTYPE
-      break; // endswitch for the LocalAssembling3D_type NSE3D_NonLinear
-      default:
-        ErrThrow("Wrong LocalAssembling3D_type for set_parameters_for_nse.");
-  } // endswitch (type)
 }
 //========================================================================
 void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
@@ -1193,7 +810,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->ColumnSpace = { 0, 0, 0, 0, 0 };
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
-              this->AssembleParam = TimeNSType1Galerkin3D;
+              this->local_assemblings_routines.push_back(TimeNSType1Galerkin3D);
               this->Manipulate = nullptr;              
             }
               break;
@@ -1210,7 +827,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 1, 1 };
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
-              this->AssembleParam = TimeNSType2Galerkin3D;
+              this->local_assemblings_routines.push_back(TimeNSType2Galerkin3D);
               this->Manipulate = nullptr;
             }
               break;
@@ -1228,9 +845,15 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->RhsSpace = { 0, 0, 0, 0 };
               
               if(laplace_type==0)
-                this->AssembleParam = TimeNSType3Galerkin3D;
-              else 
-                this->AssembleParam = TimeNSType3GalerkinDD3D;
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType3Galerkin3D);
+              }
+              else
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType3GalerkinDD3D);
+              }
               
               this->Manipulate = nullptr;
               break;
@@ -1248,9 +871,15 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->RhsSpace = { 0, 0, 0, 1};
               
               if(laplace_type==0)
-                this->AssembleParam = TimeNSType4Galerkin3D;
-              else 
-                this->AssembleParam = TimeNSType4GalerkinDD3D;
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType4Galerkin3D);
+              }
+              else
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType4GalerkinDD3D);
+              }
               
               this->Manipulate = nullptr;
               break;
@@ -1301,7 +930,8 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->ColumnSpace = { 0};
               this->N_Rhs = 0;
               this->RhsSpace = { };
-              this->AssembleParam = TimeNSType1_2NLGalerkin3D;
+              this->local_assemblings_routines.push_back(
+                TimeNSType1_2NLGalerkin3D);
               this->Manipulate = nullptr;    
               break;
             case 3:
@@ -1318,9 +948,15 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->N_Rhs = 0;
               this->RhsSpace = { };
               if(laplace_type==0)
-                this->AssembleParam = TimeNSType3_4NLGalerkin3D;
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType3_4NLGalerkin3D);
+              }
               else
-                this->AssembleParam = TimeNSType3_4NLGalerkinDD3D;
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType3_4NLGalerkinDD3D);
+              }
               this->Manipulate = nullptr;    
               break;
             case 14:
@@ -1365,7 +1001,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
           this->ColumnSpace = { };
           this->N_Rhs = 4 ; // TODO The case NSTYPE4 has to be implemented
           this->RhsSpace = {0, 0, 0, 0};
-          this->AssembleParam =TimeNSRHS3D;
+          this->local_assemblings_routines.push_back(TimeNSRHS3D);
           this->Manipulate = nullptr;
           break;
         case 1: // Newton iteration
@@ -1420,7 +1056,8 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->ColumnSpace = { 0, 0, 0, 0, 0 };
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
-              this->AssembleParam=TimeNSType1Smagorinsky3D;
+              this->local_assemblings_routines.push_back(
+                TimeNSType1Smagorinsky3D);
               this->Manipulate = nullptr;              
               break;
             case 2:
@@ -1435,8 +1072,8 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 1, 1 };
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
-
-              this->AssembleParam=TimeNSType2Smagorinsky3D;
+              this->local_assemblings_routines.push_back(
+                TimeNSType2Smagorinsky3D);
               this->Manipulate = nullptr;
               break;
             case 3:
@@ -1454,9 +1091,15 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
 
               this->Manipulate = nullptr;
               if(TDatabase::ParamDB->LAPLACETYPE==0)
-                this->AssembleParam=TimeNSType3Smagorinsky3D;
-              else 
-                this->AssembleParam=TimeNSType3SmagorinskyDD3D;
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType3Smagorinsky3D);
+              }
+              else
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType3SmagorinskyDD3D);
+              }
               ErrThrow("not tested and adjusted yet: ");
               break;
             case 4:
@@ -1478,9 +1121,15 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
 
               this->Manipulate = nullptr;
               if(TDatabase::ParamDB->LAPLACETYPE==0)
-                this->AssembleParam=TimeNSType4Smagorinsky3D;
-              else 
-                this->AssembleParam=TimeNSType4SmagorinskyDD3D;
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType4Smagorinsky3D);
+              }
+              else
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType4SmagorinskyDD3D);
+              }
               break;
           }
           break;
@@ -1520,7 +1169,8 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->ColumnSpace = { 0};
               this->N_Rhs = 0;
               this->RhsSpace = { };
-              this->AssembleParam = TimeNSType1_2NLSmagorinsky3D;
+              this->local_assemblings_routines.push_back(
+                TimeNSType1_2NLSmagorinsky3D);
               this->Manipulate = nullptr;    
               break;
             case 3:
@@ -1537,13 +1187,17 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->N_Rhs = 0;
               this->RhsSpace = { };
               if(TDatabase::ParamDB->LAPLACETYPE==0)
-                this->AssembleParam = TimeNSType3_4NLSmagorinsky3D;
+              {
+                this->local_assemblings_routines.push_back(
+                  TimeNSType3_4NLSmagorinsky3D);
+              }
               else
               {
                 this->N_Matrices = 9;
                 this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
                 this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                this->AssembleParam = TimeNSType3_4NLSmagorinskyDD3D;
+                this->local_assemblings_routines.push_back(
+                  TimeNSType3_4NLSmagorinskyDD3D);
               }
               
               this->Manipulate = nullptr;    
@@ -1584,7 +1238,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
           this->ColumnSpace = { };
           this->N_Rhs = 4 ; // TODO The case NSTYPE4 has to be implemented
           this->RhsSpace = {0, 0, 0, 0};
-          this->AssembleParam = TimeNSRHS3D;
+          this->local_assemblings_routines.push_back(TimeNSRHS3D);
           this->Manipulate = nullptr;
           break;
         case 1: // Newton iteration

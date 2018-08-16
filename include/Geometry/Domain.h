@@ -114,6 +114,12 @@ class TDomain
      *
      */
      TDomain(const ParameterDatabase& db, const char *ParamFile = nullptr);
+     
+    /** @brief copy constructor, deleted as a precaution */
+    TDomain(const TDomain&) = delete;
+     
+    /** @brief Default copy assignment operator, deleted as a precaution */
+    TDomain& operator=(const TDomain&) = delete;
     
     /** @brief destructor */
     ~TDomain();
@@ -156,6 +162,11 @@ class TDomain
     void MakeBdParamsConsistent(TCollection *coll);
     
     int CloseGrid(int level);
+
+
+    /** @brief Checks if the given Domain consists of  valid cells*/
+    bool check() const;
+
 #endif
 
 #ifdef __2D__
@@ -356,6 +367,10 @@ class TDomain
 
     /** @brief convert all finest quadrangles into two triangles */
     int ConvertQuadToTri(int type);
+    
+    /// @brief do a barycentric refinement for triangles/tetrahedra
+    /// @note this throws an exception whenever a quadrangle/hexahedron is found
+    void barycentric_refinement();
     
     int get_ref_level() const
     { return RefLevel; }
@@ -625,11 +640,14 @@ class TDomain
                    int N_Vertices, int NVE, int *BoundFaces, int *FaceParam,
                    int NBF, int NVpF,
                    int *Interfaceparam, int N_Interfaces);
+
       /** @brief make initial sandwich grid */
-      int MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
-                           int N_Vertices, int NVE,
-                           double DriftX, double DriftY, double DriftZ,
-                           const std::vector<double>& Lambda);
+      void MakeSandwichGrid(
+    		  double *DCORVG, int *KVERT, int *KNPR,
+    		  int N_Vertices, int NVE,
+    		  double DriftX, double DriftY, double DriftZ,
+    		  const std::vector<double>& Lambda);
+
      #endif
 
 };
@@ -678,6 +696,6 @@ void determine_n_refinement_steps_multigrid(
   int n_initial_refinement_steps,
   int& n_ref_before, int& n_ref_after);
 
-
-
 #endif
+
+

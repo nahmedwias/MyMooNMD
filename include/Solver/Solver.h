@@ -68,6 +68,9 @@ class Solver
     /// many times for different right hand sides.
     void solve(const Vector& rhs, Vector& solution);
     
+
+    void solve_augmented(const Vector& rhs, Vector& solution);
+
     /// @brief solve the sytem matrix*solution = rhs
     ///
     /// This is only a wrapper for 

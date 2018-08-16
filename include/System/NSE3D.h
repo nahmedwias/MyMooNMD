@@ -27,6 +27,7 @@
 
 #include <ParameterDatabase.h>
 #include <Solver.h>
+#include <DataWriter.h>
 
 #include <MainUtilities.h> // FixedSizeQueu
 
@@ -69,9 +70,9 @@ class NSE3D
 #endif
 
       /** @brief Finite Element space for the velocity */
-      TFESpace3D velocitySpace_;
+      std::shared_ptr<TFESpace3D> velocitySpace_;
       /** @brief Finite Element space for the pressure */
-      TFESpace3D pressureSpace_;
+      std::shared_ptr<TFESpace3D> pressureSpace_;
 
       /** @brief the system matrix (depends strongly on
        *         TDatabase::ParamDB->NSTYPE)
@@ -130,6 +131,9 @@ class NSE3D
      */
     ParameterDatabase db;
     
+    /** @brief output object */
+    DataWriter3D outputWriter;
+    
     /** @brief a solver object which will solve the linear system
      * 
      * Storing it means that for a direct solver we also store the factorization
@@ -150,10 +154,11 @@ class NSE3D
     /** @brief Errors, held in ready to be accessed from outside the class
      * The array is filled during the function call NSE3D::output()
      * Currently, the errors store the L2 and H1-semi errors of the velocity
-     * (errors.at(0) is L2 and errors.at(1) is H1-semi)
-     * and the pressure (errors.at(2) is L2 and errors.at(3) is H1-semi).
+     * (errors.at(0) is L2 and errors.at(1) is H1-semi), the L2 error in the 
+     * divergence (errors.at(2)), and the pressure (errors.at(3) is L2 and 
+     * errors.at(4) is H1-semi).
      */
-    std::array<double, int(4)> errors_;
+    std::array<double, int(5)> errors_;
 
     /** @brief set the velocity and pressure orders
      *
@@ -299,10 +304,10 @@ class NSE3D
     { return this->systems_.front().p_; }
 
     const TFESpace3D& get_velocity_space() const
-    { return this->systems_.front().velocitySpace_; }
+    { return *this->systems_.front().velocitySpace_; }
 
     const TFESpace3D& get_pressure_space() const
-    { return this->systems_.front().pressureSpace_; }
+    { return *this->systems_.front().pressureSpace_; }
     
     const int get_size(){return this->systems_.front().solution_.length();}
 
@@ -319,7 +324,7 @@ class NSE3D
     double get_full_residual() const;
     
     /// @brief return the computed errors (computed in output())
-    std::array<double, int(4)> get_errors() const;
+    std::array<double, int(5)> get_errors() const;
 
  private:
     void output_problem_size_info() const;

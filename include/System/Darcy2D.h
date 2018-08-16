@@ -19,7 +19,7 @@
 #include <BlockVector.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 
 #include <deque>
 #include <array>
@@ -37,9 +37,9 @@ class Darcy2D
     struct System_per_grid
     {
       /** @brief Finite Element space for the velocity */
-      TFESpace2D velocity_space;
+      std::shared_ptr<TFESpace2D> velocity_space;
       /** @brief Finite Element space for the pressure */
-      TFESpace2D pressure_space;
+      std::shared_ptr<TFESpace2D> pressure_space;
       /** @brief the system matrix (here one block) 
        *  [ A  BT ]
        *  [ B  C  ]
@@ -97,7 +97,7 @@ class Darcy2D
      * 
      * @warning case output for vector valued functions is not correctly working
      */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
     
     /** @brief a solver object which will solve the linear system
      * 
@@ -227,9 +227,9 @@ class Darcy2D
     const TFEFunction2D & get_pressure() const
     { return this->systems.front().p; }
     const TFESpace2D & get_velocity_space() const
-    { return this->systems.front().velocity_space; }
+    { return *this->systems.front().velocity_space; }
     const TFESpace2D & get_pressure_space() const
-    { return this->systems.front().pressure_space; }
+    { return *this->systems.front().pressure_space; }
     const BlockVector & get_solution() const
     { return this->systems.front().solution; }
     BlockVector & get_solution()

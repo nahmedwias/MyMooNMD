@@ -23,6 +23,8 @@ ParameterDatabase get_default_NSE2D_parameters()
   // a default output database - needed here as long as there's no class handling the output
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
+  
+  db.merge(LocalAssembling2D::default_local_assembling_database(), true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
   if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
@@ -44,28 +46,28 @@ ParameterDatabase get_default_NSE2D_parameters()
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders,
                NSE2D::Matrix type)
- : velocity_space(&coll, "u", "Navier--Stokes velocity", example.get_bc(0),
-                  velocity_pressure_orders.first, nullptr),
-   pressure_space(&coll, "p", "Navier--Stokes pressure", example.get_bc(2),
-                  velocity_pressure_orders.second, nullptr)
+ : velocity_space(new TFESpace2D(&coll, "u", "Navier--Stokes velocity", example.get_bc(0),
+                  velocity_pressure_orders.first, nullptr)),
+   pressure_space(new TFESpace2D(&coll, "p", "Navier--Stokes pressure", example.get_bc(2),
+                  velocity_pressure_orders.second, nullptr))
 {
   // build the matrix due to NSE type
   switch (type)
   {
     case NSE2D::Matrix::Type1:
-      matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type1(*velocity_space, *pressure_space);
     break;
     case NSE2D::Matrix::Type2:
-      matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type2(*velocity_space, *pressure_space);
     break;
     case NSE2D::Matrix::Type3:
-      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type3(*velocity_space, *pressure_space);
     break;
     case NSE2D::Matrix::Type4:
-      matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type4(*velocity_space, *pressure_space);
     break;
     case NSE2D::Matrix::Type14:
-      matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type14(*velocity_space, *pressure_space);
       break;
     default:
       ErrThrow("Unknown NSE type given to constructor of NSE2D::System_per_grid.");
@@ -74,11 +76,24 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
   rhs = BlockVector(matrix, true);
   solution = BlockVector(matrix, false);
 
-  u = TFEVectFunct2D(&velocity_space, "u", "u", solution.block(0),
-    solution.length(0), 2);
-  p = TFEFunction2D(&pressure_space, "p", "p", solution.block(2),
-    solution.length(2));
+  u = TFEVectFunct2D(velocity_space.get(), "u", "u", solution.block(0),
+                     solution.length(0), 2);
+  p = TFEFunction2D(pressure_space.get(), "p", "p", solution.block(2),
+                    solution.length(2));
 
+}
+
+/** ************************************************************************ */
+NSE2D::System_per_grid::System_per_grid(const System_per_grid& other)
+ : velocity_space(other.velocity_space), pressure_space(other.pressure_space),
+   matrix(other.matrix), rhs(other.rhs), solution(other.solution)
+{
+  // the fe functions must be newly created, because copying would mean 
+  // referencing the BlockVectors in 'other'.
+  u = TFEVectFunct2D(velocity_space.get(), "u", "u", solution.block(0),
+                     solution.length(0), 2);
+  p = TFEFunction2D(pressure_space.get(), "p", "p", solution.block(2),
+                    solution.length(2));
 }
 
 /** ************************************************************************ */
@@ -189,25 +204,24 @@ void NSE2D::get_velocity_pressure_orders(
   switch(velocity_order)
   {
     case 1: case 2: case 3: case 4: case 5:
-    case 14: case 15:
-      if(velocity_order > 10)
-        order = velocity_order-10;
-      else
-        order = velocity_order;
-      break;
-    // P2/P1disc and P3/P2disc elements are not stable on triangles and not allowed
-    // They are transformed into P2bubbles/P1disc and P3bubbles/P2disc
-    // On quads, it will be Q2/P1disc, Q3/P2disc
-    case 12: case 13:
-      velocity_order += 10;
       order = velocity_order;
+      break;
+    case 12: case 13: case 14: case 15:
+      // P2/P1disc and P3/P2disc elements are in general not inf-sup stable on 
+      // triangles. If the last refinement step was barycentric refinement, then
+      // these elements are inf-sup stable.  
+      Output::warn("You chose to use Scott-Vogelius finite elements, make sure "
+                   "that the final refinement step is barycentric, see the "
+                   "parameter 'refinement_final_step_barycentric'.");
+      order = velocity_order-10;
       break;
     case -1: case -2: case -3: case -4: case -5:
     case -101:
       order = velocity_order;
       break;
-    // conforming fe spaces with bubbles on triangles 
-    case 22: case 23: case 24:
+    // conforming fe spaces, with bubbles on triangles, regular Q_k on quads
+    // (25, ie P5 with bubbles, is not implemented on Triangles)
+    case 22: case 23: case 24: case 25:
       order = velocity_order;
       break;
       // discontinuous spaces 
@@ -237,13 +251,13 @@ void NSE2D::get_velocity_pressure_orders(
         // standard conforming velo and continuous pressure
           pressure_order = velocity_order-1;
           break;
-          // discontinuous pressure spaces 
-          // standard conforming velo and discontinuous pressure
-          // this is not stable on triangles !!!
+          // Scott-Vogelius: discontinuous pressure spaces with standard 
+          // conforming velocity space. This is not stable on general triangles,
+          // be sure to use barycentric refinement.
         case 12: case 13: case 14: case 15:
-          pressure_order = -(velocity_order-1)*10;
+          pressure_order = -velocity_order+1;
           break;
-        case 22: case 23: case 24:
+        case 22: case 23: case 24: case 25:
           pressure_order = -(velocity_order-11)*10;
           break;
       }
@@ -288,8 +302,8 @@ void NSE2D::assemble()
     s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
     s.matrix.reset(); // reset matrix (needed for mdml where this is called)
 
-    const TFESpace2D * v_space = &s.velocity_space;
-    const TFESpace2D * p_space = &s.pressure_space;
+    const TFESpace2D * v_space = s.velocity_space.get();
+    const TFESpace2D * p_space = s.pressure_space.get();
 
     // declare the variables which Assemble2D needs and each nstype has to fill
     size_t N_FESpaces = 2;
@@ -301,9 +315,9 @@ void NSE2D::assemble()
     size_t n_rect_mat;
     TMatrix2D *rect_matrices[4]{nullptr};//it's four pointers maximum (Types 2, 4, 14)
 
-    size_t N_Rhs = 2; //is 3 if NSE type is 4 or 14
-    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; //third place gets only filled
-    const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
+    size_t N_Rhs = 3;
+    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
+    const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
 
     BoundCondFunct2D * boundary_conditions[3] = {
       v_space->GetBoundCondition(), v_space->GetBoundCondition(),
@@ -321,7 +335,8 @@ void NSE2D::assemble()
 
     std::vector<std::shared_ptr<FEMatrix>> blocks =
         s.matrix.get_blocks_uniquely();
-
+    n_sq_mat = 5;
+    n_rect_mat = 4;
     switch(TDatabase::ParamDB->NSTYPE)
     {// switch over known Block Matrix types, treat each one individually,
       // using a priori knowledge about the structure and the way it fits
@@ -330,74 +345,45 @@ void NSE2D::assemble()
       // we have to use reinterpret_casts because dynamic downcasting won't work here
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
-        n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-
-        n_rect_mat = 2;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-
         break;
       case 2:
-        n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-
-        n_rect_mat = 4;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
         rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get()); //than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-
         break;
       case 3:
-        n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
         sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-
-        n_rect_mat = 2;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
         break;
-
       case 4:
-        n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
         sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-
-        n_rect_mat = 4;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
         rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-        RHSs[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
-        fesprhs[2]  = p_space;
-        N_Rhs = 3;
-
         break;
-
       case 14:
-        n_sq_mat = 5;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
         sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
         sq_matrices[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-
-        n_rect_mat = 4;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
         rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-        RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
-        fesprhs[2]  = p_space;
-        N_Rhs = 3;
-
         break;
       default:
         ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
@@ -437,7 +423,7 @@ void NSE2D::assemble_nonlinear_term()
       std::vector<size_t> u_ns_dofs;
       for(auto &s : systems )
       {
-        spaces.push_back(&s.velocity_space);
+        spaces.push_back(s.velocity_space.get());
         u_entries.push_back(s.solution.block(block));
         u_ns_dofs.push_back(s.solution.length(block));
       }
@@ -462,27 +448,30 @@ void NSE2D::assemble_nonlinear_term()
   for(System_per_grid& s : this->systems)
   {
     //hold the velocity space, we'll need it...
-    const TFESpace2D * v_space = &s.velocity_space;
+    const TFESpace2D * v_space = s.velocity_space.get();
+    const TFESpace2D * p_space = s.pressure_space.get();
 
     //the variables we will have to fill for the call to Assemble2D
-    size_t n_fe_spaces = 1;
-    const TFESpace2D* fe_spaces[1]{v_space};
+    size_t n_fe_spaces = 2;
+    const TFESpace2D* fe_spaces[2]{v_space, p_space};
 
-    size_t n_sq_mat;
-    TSquareMatrix2D* sq_mat[2]{nullptr};//two pointers maximum
+    size_t n_sq_mat = 5;
+    TSquareMatrix2D* sq_mat[5]{nullptr};//two pointers maximum
 
-    size_t n_rect_mat = 0;
-    TMatrix2D** rect_mat = nullptr;
+    size_t n_rect_mat = 4;
+    TMatrix2D* rect_mat[4]{nullptr};
 
-    size_t n_rhs = 0;
-    double** rhs = nullptr;
-    const TFESpace2D** fe_rhs = nullptr;
+    size_t n_rhs = 3;
+    double *rhs[3] = {nullptr, nullptr, nullptr};
+    const TFESpace2D* fe_rhs[3] = {v_space, v_space, p_space};
 
-    BoundCondFunct2D * boundary_conditions[1] = { v_space->GetBoundCondition() };
-    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+    BoundCondFunct2D * boundary_conditions[2] = { v_space->GetBoundCondition(),
+                                                  p_space->GetBoundCondition()};
+    std::array<BoundValueFunct2D*, 4> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];
     non_const_bound_values[2] = example.get_bd()[2];
+    non_const_bound_values[3] = example.get_bd()[3];
 
     TFEFunction2D *fe_functions[3] = 
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
@@ -500,15 +489,16 @@ void NSE2D::assemble_nonlinear_term()
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
       case 2:
-        n_sq_mat = 1;
         sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         break;
       case 3:
       case 4:
       case 14:
-        n_sq_mat = 2;
+        blocks = s.matrix.get_blocks_uniquely({{0,0},{0,1},{1,0},{1,1}});
         sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        sq_mat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(2).get());
+        sq_mat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         break;
       default:
         ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
@@ -526,7 +516,8 @@ void NSE2D::assemble_nonlinear_term()
       for(size_t i =0; i < n_sq_mat; ++i)
       {
         //reset the matrices, linear part is assembled anew
-        sq_mat[i]->reset();
+        if(sq_mat[i] != nullptr)
+          sq_mat[i]->reset();
       }
 
       //HOTFIX: Check the documentation!
@@ -688,10 +679,6 @@ void NSE2D::solve()
 /** ************************************************************************ */
 void NSE2D::output(int i)
 {
-	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
-	if(no_output)
-		return;
-  
   System_per_grid& s = this->systems.front();
   TFEFunction2D* u1 = s.u.GetComponent(0);
   TFEFunction2D* u2 = s.u.GetComponent(1);
@@ -705,17 +692,10 @@ void NSE2D::output(int i)
     s.p.PrintMinMax();
   }
 
-  outputWriter.add_fe_function(&s.p);
-  outputWriter.add_fe_vector_function(&s.u);
-  outputWriter.write(i);
-  
-  /*
-  // write solution to a vtk file
-  if(db["output_write_vtk"])
-  {
+  if(i < 0)
+    outputWriter.write();
+  else
     outputWriter.write(i);
-  }
-  */
     
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
@@ -734,19 +714,22 @@ void NSE2D::output(int i)
     // errors in second velocity component
     u2->GetErrors(example.get_exact(1), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &velocity_space, err + 2);
+    errors[1] = s.u.GetL2NormDivergenceError(example.get_exact(0), 
+                                             example.get_exact(1));
     
     errors.at(0) = sqrt(err[0]*err[0] + err[2]*err[2]);
-    errors.at(1) = sqrt(err[1]*err[1] + err[3]*err[3]);    
-    Output::print<1>("L2(u)     : ", setprecision(10), errors[0]);
-    Output::print<1>("H1-semi(u): ", setprecision(10),errors[1]);
+    errors.at(2) = sqrt(err[1]*err[1] + err[3]*err[3]);    
+    Output::print<1>("L2(u)     : ", setprecision(14), errors[0]);
+    Output::print<1>("L2(div(u)): ", setprecision(14), errors[1]);
+    Output::print<1>("H1-semi(u): ", setprecision(14), errors[2]);
     // errors in pressure
     s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &pressure_space, err);
     
-    errors.at(2) = err[0];
-    errors.at(3) = err[1];    
-    Output::print<1>("L2(p)     : ", setprecision(10), errors[2]);
-    Output::print<1>("H1-semi(p): ", setprecision(10), errors[3]);    
+    errors.at(3) = err[0];
+    errors.at(4) = err[1];    
+    Output::print<1>("L2(p)     : ", setprecision(14), errors[3]);
+    Output::print<1>("H1-semi(p): ", setprecision(14), errors[4]);    
     
   } // if(this->db["compute_errors"])
   delete u1;
@@ -777,7 +760,7 @@ void NSE2D::output_problem_size_info() const
 }
 
 /** ************************************************************************ */
-std::array< double, int(4) > NSE2D::get_errors() const
+std::array< double, int(5) > NSE2D::get_errors() const
 {
   return errors;
 }
@@ -806,4 +789,9 @@ double NSE2D::getFullResidual() const
   return this->oldResiduals.back().fullResidual;
 }
 
+/** ************************************************************************ */
+void NSE2D::reset_residuals()
+{
+  this->oldResiduals = FixedSizeQueue<10, Residuals>();
+}
 

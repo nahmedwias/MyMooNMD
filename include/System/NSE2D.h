@@ -22,9 +22,8 @@
 #include <ParameterDatabase.h>
 #include <Solver.h>
 #include <Example_NSE2D.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 #include <MainUtilities.h> // FixedSizeQueue
-#include <PostProcessing2D.h>
 #include <utility>
 #include <array>
 
@@ -43,9 +42,9 @@ class NSE2D
     struct System_per_grid
     {
       /** @brief Finite Element space for the velocity */
-      TFESpace2D velocity_space;
+      std::shared_ptr<const TFESpace2D> velocity_space;
       /** @brief Finite Element space for the pressure */
-      TFESpace2D pressure_space;
+      std::shared_ptr<const TFESpace2D> pressure_space;
 
       /** The system matrix. */
       BlockFEMatrix matrix;
@@ -69,8 +68,8 @@ class NSE2D
        * for struct takes ownership of the bad
        * classes TFEFunction2D, TFEVectFunct2D and TFESpace2D.
        */
-      //! Delete copy constructor.
-      System_per_grid(const System_per_grid&) = delete;
+      //! copy constructor.
+      System_per_grid(const System_per_grid&);
 
       //! Delete move constructor.
       System_per_grid(System_per_grid&&) = delete;
@@ -93,7 +92,7 @@ class NSE2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_NSE2D example;
+    Example_NSE2D example;
     
     /** @brief a local parameter database which constrols this class
      * 
@@ -106,7 +105,7 @@ class NSE2D
     ParameterDatabase db;
     
     /** @brief class for output handling (vtk and case files) */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
     
     /** @brief a solver object which will solve the linear system
      * 
@@ -137,9 +136,9 @@ class NSE2D
     /** @brief Errors to be accesed from outside the class
      * The array is filled during the function call NSE2D::output()
      * Currently, the errors store the L2 and H1 errors of the velocity
-     * and pressure
+     * and pressure and the L2 error of the divergence.
      */
-    std::array<double, int(4)> errors;
+    std::array<double, int(5)> errors;
     
     /** @brief set parameters in database
      * 
@@ -163,7 +162,10 @@ class NSE2D
     
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
-
+    
+    /// @brief default copy constructor (useful in derived classes)
+    NSE2D(const NSE2D &) = default;
+    
   public:
     
     /** @brief constructor 
@@ -257,9 +259,9 @@ class NSE2D
     TFEFunction2D & get_pressure()
     { return this->systems.front().p; }
     const TFESpace2D & get_velocity_space() const
-    { return this->systems.front().velocity_space; }
+    { return *this->systems.front().velocity_space.get(); }
     const TFESpace2D & get_pressure_space() const
-    { return this->systems.front().pressure_space; }
+    { return *this->systems.front().pressure_space.get(); }
     const BlockVector & get_solution() const
     { return this->systems.front().solution; }
     BlockVector & get_solution()
@@ -270,6 +272,10 @@ class NSE2D
     { return this->systems.front().solution.length(); }
     const Example_NSE2D & get_example() const
     { return example; }
+    void add_to_output(const TFEVectFunct2D* fe_vector_fct)
+    { outputWriter.add_fe_vector_function(fe_vector_fct); }
+    void add_to_output(const TFEFunction2D* fe_fct)
+    { outputWriter.add_fe_function(fe_fct); }
     /// @brief get the current residuals 
     /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
     /// called from NSE2D::stopIt
@@ -286,9 +292,13 @@ class NSE2D
     /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
     /// called from NSE2D::stopIt
     double getFullResidual() const;
+    /// @brief reset the residuals.
+    /// use this if you want to use this object again for a second nonlinear 
+    /// iteration.
+    void reset_residuals();
     /// @brief return the computed errors
     /// @details updated in NSE2D::stopIt
-    std::array<double, int(4)> get_errors() const;
+    std::array<double, int(5)> get_errors() const;
 };
 
 

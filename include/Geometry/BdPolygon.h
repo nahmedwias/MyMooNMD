@@ -36,10 +36,10 @@ class TBdPolygon : public TBoundComp2D
     int GetN_Points();
 
     /** return the coordinates of parameter value T */
-    virtual int GetXYofT(double T, double &X, double &Y);
+    virtual int GetXYofT(double T, double &X, double &Y) const override;
 
     /** return the parameter value T of coordinates (X, Y) */
-    virtual int GetTofXY(double X, double Y, double &T);
+    virtual int GetTofXY(double X, double Y, double &T) const override;
 
     /** read parameter from input file */
     virtual int ReadIn(std::istream &dat);

@@ -415,6 +415,20 @@ BlockFEMatrix BlockFEMatrix::CD3D( const TFESpace3D& space )
   return my_matrix;
 }
 
+BlockFEMatrix BlockFEMatrix::Darcy3D(const TFESpace3D& velocity,
+                                     const TFESpace3D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &pressure});
+
+  //fill in the blocks with correct matrices constructed solely for them
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&velocity, &pressure), {{0,1}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&pressure, &velocity), {{1,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&pressure, &pressure), {{1,1}}, {false});
+
+  return my_matrix;
+}
+
 BlockFEMatrix BlockFEMatrix::NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure)
 {
   BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
