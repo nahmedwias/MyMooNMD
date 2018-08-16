@@ -60,6 +60,11 @@ namespace Discacciati_Flow
 }
 
 
+namespace Geothermal_Energy_Brinkman2D
+{
+#include "Brinkman_2D/Geothermal_Energy_Brinkman2D.h"
+}
+
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Example_Brinkman2D::Example_Brinkman2D(
     const ParameterDatabase& user_input_parameter_db) 
@@ -329,6 +334,35 @@ Example_Brinkman2D::Example_Brinkman2D(
 
       Discacciati_Flow::ExampleFile();
       break;
+
+case 10: // Geothermal_Energy_Brinkman2D
+      /** exact_solution */
+      exact_solution.push_back( Geothermal_Energy_Brinkman2D::ExactU1 );
+      exact_solution.push_back( Geothermal_Energy_Brinkman2D::ExactU2 );
+      exact_solution.push_back( Geothermal_Energy_Brinkman2D::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( Geothermal_Energy_Brinkman2D::BoundCondition );
+      boundary_conditions.push_back( Geothermal_Energy_Brinkman2D::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( Geothermal_Energy_Brinkman2D::U1BoundValue );
+      boundary_data.push_back( Geothermal_Energy_Brinkman2D::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = Geothermal_Energy_Brinkman2D::LinCoeffs;
+
+      // read parameters from local database
+      Geothermal_Energy_Brinkman2D::viscosity = get_viscosity();
+      Geothermal_Energy_Brinkman2D::effective_viscosity = get_effective_viscosity();
+      Geothermal_Energy_Brinkman2D::permeability = get_permeablity();
+
+      Geothermal_Energy_Brinkman2D::ExampleFile();
+      break;
+
+
 
     default:
       ErrThrow("Unknown Brinkman example!");
