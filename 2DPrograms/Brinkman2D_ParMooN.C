@@ -18,6 +18,34 @@
 // This function refers to the case parmoon_db["coefficient_function_type"].is(1)
 // It describes, e.g., a permeability field in an analytic way
 // A corresponding FEFunction2D is constructed via interpolate(analytic_coefficient_function) for each refinement step and then it is used in the assemble routine
+
+// for Discacciati_Flow.h : permeability
+/*
+void analytic_coefficient_function(double x, double y, double * values)
+{
+	if ( ( ( (x >=7  ) && (x <= 8  ) )  && ( (y >= 4) && (y <= 6) ) ) )
+	  {
+	  	 values[0] =  0.000001;
+	  }
+	else if ( ( ( (x >= 9) && (x <= 10) )  && ( (y>=2) && (y <= 4.2) ) ) )
+	  {
+	  	 values[0] =  0.000001;
+	  }
+  else if ( ( (x >=5  ) && ( (y>=2) && (y <= 6) ) ) )
+  {
+    values[0] =   0.01;
+  }
+  else
+  {
+    values[0] =  10000000000;
+  }
+}*/
+
+
+/* ************************************************************************** */
+// This function refers to the case parmoon_db["coefficient_function_type"].is(1)
+// It describes, e.g., a permeability field in an analytic way
+// A corresponding FEFunction2D is constructed via interpolate(analytic_coefficient_function) for each refinement step and then it is used in the assemble routine
 /*
 void analytic_coefficient_function(double x, double y, double * values)
 {
@@ -39,7 +67,7 @@ void analytic_coefficient_function(double x, double y, double * values)
 // This function refers to the case parmoon_db["coefficient_function_type"].is(1)
 // It describes, e.g., a certain permeability field in an analytic way
 // A corresponding FEFunction2D is constructed via interpolate(analytic_coefficient_function) for each refinement step and then it is used in the assemble routine
-void analytic_coefficient_function(double x, double y, double * values)
+/*void analytic_coefficient_function(double x, double y, double * values)
 {
   if (  (y-x >= 0.2)  || (y-0.8/0.7 * x <= - 0.8/0.7 * 0.3)  )
   {
@@ -50,18 +78,18 @@ void analytic_coefficient_function(double x, double y, double * values)
     values[0] = 1000.0;
   }
 }
+*/
 
 /* ************************************************************************** */
 // This function refers to the case parmoon_db["coefficient_function_type"].is(1)
 // It describes sources and sinks via an approximate delta distribution.
 // A corresponding FEFunction2D is constructed via interpolate(analytic_coefficient_function) for each refinement step and then it is used in the assemble routine
 
-/*
   void analytic_coefficient_function(double x, double y, double * values)
   {
-  values[0] = ( 1/sqrt((Pi*0.01*0.01) )* exp(-(((x-0.4)*(x-0.4))+((y-0.4)*(y-0.4)))/(0.01*0.01)) - 1/sqrt((Pi*0.01*0.01) )* exp(-(((x-0.6)*(x-0.6))+((y-0.6)*(y-0.6)))/(0.01*0.01)) )*100;
+  values[0] = ( 1/sqrt((Pi*0.01*0.01) )* exp(-(((x-0.4)*(x-0.4))+((y-0.4)*(y-0.4)))/(0.01*0.01)) - 1/sqrt((Pi*0.01*0.01) )* exp(-(((x-0.6)*(x-0.6))+((y-0.6)*(y-0.6)))/(0.01*0.01)) )*10000;
   }
- */
+
 
 
 // =======================================================================
@@ -110,9 +138,12 @@ int main(int argc, char* argv[])
   {
     if (i > 0 && parmoon_db["coefficient_function_type"].is(2))
     {
-      Domain.RegRefineAll();
+    	  i = n_ref;
+        for (size_t k = 0; k < i; k++)
+    	    {
+           Domain.RegRefineAll();
+    	     }
     }
-
     Output::print("========================================================================================================");
     Output::print("Level: ", i);
 
@@ -148,7 +179,7 @@ int main(int argc, char* argv[])
       coefficient_function.Interpolate(analytic_coefficient_function);
       //coefficient_function_vector.print("coefficient_function");
 
-      coefficient_function.WriteSol("/Home/flow/blank/PARMOON/Tests/Brinkman2D/Poiseuille_Hannukainen/Tria_mesh/Varying_Coefficient_Function", "written_coefficient_function_new");
+      ////coefficient_function.WriteSol("/Home/flow/blank/PARMOON/Tests/Brinkman2D/Poiseuille_Hannukainen/Tria_mesh/Varying_Coefficient_Function", "written_coefficient_function_new");
 
       //NEW LB Debug test:
       // double tmp_values[3];
@@ -157,9 +188,8 @@ int main(int argc, char* argv[])
 
       TFEFunction2D *coefficient_function_ptr;
       coefficient_function_ptr = &coefficient_function;
-      brinkman2d.assemble(coefficient_function_ptr);
+      brinkman2d.assemble(i, coefficient_function_ptr);
     }
-
     /* ********************************************************************* */
     // use an external file containing information on, e.g., the permeability field in the format of an FEFunction2D (see ReadSol() and WriteSol()) 
     // in combination with an appropriate mesh-file as input.
@@ -192,20 +222,19 @@ int main(int argc, char* argv[])
       TFEFunction2D *coefficient_function_ptr;
       coefficient_function_ptr = &coefficient_function;
 
-      brinkman2d.assemble(coefficient_function_ptr);
+      brinkman2d.assemble(i, coefficient_function_ptr);
     }
-
     /* ********************************************************************* */
     // just hand in a constant permeability
     else
     {
-      brinkman2d.assemble( );
+          brinkman2d.assemble( i );
     }
 
     timer.restart_and_print("assembling: ");
     brinkman2d.solve();
     timer.restart_and_print("solving: ");
-    brinkman2d.output(i+1);
+    brinkman2d.output(i);
     timer.restart_and_print("creating the output: ");
 
 //=========================================================================
@@ -225,7 +254,9 @@ int main(int argc, char* argv[])
     //      Output::print("PkPk_stab: ",TDatabase::ParamDB->PkPk_stab);
     //      Output::print("equal_order_stab_weight_PkPk: ",TDatabase::ParamDB->equal_order_stab_weight_PkPk);
 
-} //end for(int i = 0; i< n_ref; i++), Compute on all levels
+
+  Domain.RegRefineAll();
+  } //end for(int i = 0; i< n_ref; i++), Compute on all levels
 
 Output::close_file();
 return 0;
