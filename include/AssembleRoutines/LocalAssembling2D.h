@@ -146,7 +146,7 @@ class LocalAssembling2D
     std::vector<MultiIndex2D> FEValue_MultiIndex;
 
     /** values of parameter functions stored for computing local forms */
-    std::vector< std::vector<double> > parameter_functions_values;
+    std::vector<double> parameter_functions_values;
     
     /** Depending on the NSTYPE and the NSE_NONLINEAR_FORM all parameters are 
      * set within this function. This function is called from the constructor 
@@ -273,9 +273,8 @@ class LocalAssembling2D
                        double *Y,
                        int *N_BaseFuncts,
                        BaseFunct2D *BaseFuncts,
-                       double **Parameters,
                        double **AuxArray,
-                       TBaseCell *Cell,
+                       TBaseCell *Cell, int cell_num,
                        int N_Matrices,
                        int N_Rhs,
                        double ***LocMatrix,
@@ -293,49 +292,11 @@ class LocalAssembling2D
                          int N_Rhs,
                          double ***LocMatrix,
                          double **LocRhs,
-                         double factor=1.);
-    
-    
-    void GetLocalForms(int N_Points,
-                       double *weights,
-                       double *AbsDetjk,
-                       double *X,
-                       double *Y,
-                       int *N_BaseFuncts,
-                       BaseFunct2D *BaseFuncts,
-                       TBaseCell *Cell,
-                       int N_Matrices,
-                       int N_Rhs,
-                       double ***LocMatrix,
-                       double **LocRhs,
-                       double factor = 1.);
-    
-    void GetLocalForms(int N_Points,
-                       double *weights,
-                       double *AbsDetjk,
-                       double *X,
-                       double *Y,
-                       int *N_BaseFuncts,
-                       BaseFunct2D *BaseFuncts,
-                       TBaseCell *Cell,
-                       double ***LocMatrix,
-                       double **LocRhs,
-                       double factor = 1.);
-    
+                         double factor=1.);    
     
     /** return all parameters at all quadrature points */
-    void GetParameters(int n_points, TCollection *Coll,
-                       TBaseCell *cell, int cellnum,
-                       double *x, double *y,
-                       double **Parameters);
-
-    /** return all parameters at boundary points */
-    void GetParameters(int N_Points, TCollection *Coll,
-                       TBaseCell *cell, int cellnum,
-                       double *s, int joint,
-                       double **Parameters);
-    
-    //HIER///////////////////////////////////////////////////
+    void GetParameters(int n_points, TBaseCell *cell, int cellnum,
+                       double *x, double *y);
     
     void compute_parameters(int n_points, TCollection *Coll,
                             TBaseCell *cell, int cellnum,

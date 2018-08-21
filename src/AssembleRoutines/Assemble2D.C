@@ -6997,18 +6997,6 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   }
     
     FE2D LocalUsedElements[N_FEs2D];
-    
-    double *Param[MaxN_QuadPoints_2D];
-    for(size_t i=0;i<MaxN_QuadPoints_2D;++i) //initialize Param
-    {
-        // NOTE: The number 10 is magic here.
-        // In the current setup it may well happen, that a Coefficient function
-        // expects to evaluate parameters, but the local assembling object
-        // will not make use of them (N_Parameters = 0) - nevertheless the array
-        // must be initialized to something.
-        Param[i]=new double[10]{0.0};
-    }
-    
     double *righthand;
     double **Matrices;
     double ***LocMatrices, **LocRhs;
@@ -7074,23 +7062,6 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     for(int i=0;i<n_rhs;i++)
       LocRhs[i] = righthand+i*MaxN_BaseFunctions2D;
   }                                               // endif n_rhs
-
-  //N_Parameters = Parameters->GetN_Parameters();
-  int N_Parameters = la.GetN_Parameters();
-  
-#ifdef __3D__
-  N_Parameters += 7;                              // (u, ux, uy, uz, nx, ny, nz)
-#endif
-
-  if(N_Parameters)
-  {
-    double *aux = new double [MaxN_QuadPoints_2D*N_Parameters];
-    for(int j=0;j<MaxN_QuadPoints_2D;j++)
-    {
-      delete[] Param[j]; //clear away the default initialized array
-      Param[j] = aux + j*N_Parameters;
-    }
-  }
 
   // 40 <= number of terms in bilinear form
   // DUE NOTE CHANGE BELOW 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
@@ -7159,15 +7130,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       double *weights, *xi, *eta;
       double X[MaxN_QuadPoints_2D],Y[MaxN_QuadPoints_2D];
       double AbsDetjk[MaxN_QuadPoints_2D];
-      
-    TFEDatabase2D::GetOrig(N_LocalUsedElements, LocalUsedElements,
-                           Coll, cell, SecondDer,
-                           N_Points, xi, eta, weights, X, Y, AbsDetjk);
     
-    //Parameters->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param);
-    la.GetParameters(N_Points, Coll, cell, i, X, Y, Param);
     bool is_sdfem = (la.get_disctype() == SDFEM);
-
     if( is_sdfem || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
       || (TDatabase::ParamDB->CELL_MEASURE == 4))
     {
@@ -7182,24 +7146,12 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
         TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
       TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
     }
-
-    // use DiscreteForm to assemble a few matrices and
-    // right-hand sides at once
-
-    /*
-    if(DiscreteForm)
-    {
-      DiscreteForm->GetLocalForms(N_Points, weights, AbsDetjk,
-        hK, X, Y,
-        LocN_BF, LocBF,
-        Param, AuxArray,
-        cell,
-        N_AllMatrices, n_rhs,
-        LocMatrices, LocRhs);
-    }
-    */
+    TFEDatabase2D::GetOrig(N_LocalUsedElements, LocalUsedElements,
+                           Coll, cell, SecondDer,
+                           N_Points, xi, eta, weights, X, Y, AbsDetjk);
+    
     la.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, LocN_BF, LocBF,
-                     Param, AuxArray, cell, N_AllMatrices, n_rhs, LocMatrices,
+                     AuxArray, cell, i, N_AllMatrices, n_rhs, LocMatrices,
                      LocRhs);
 
     int N_Joints = cell->GetN_Joints();
@@ -7969,18 +7921,6 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     delete [] HangingRhs;
     delete [] righthand;
     delete [] LocRhs;
-  }
-
-  if(N_Parameters)
-  {//Param was used and has to be deleted
-    delete [] Param[0];
-  }
-  else
-  { //we have to delete the default initialized thing
-    for(int j=0;j<MaxN_QuadPoints_2D;j++)
-    {
-      delete[] Param[j];
-    }
   }
 
   if(N_AllMatrices)
