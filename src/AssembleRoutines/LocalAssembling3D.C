@@ -1008,7 +1008,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
 {
   //NOTE: change according to the discretization schemes used
   // changing needed for turbulent models and for the newton method
-  this->N_Parameters = 12;
+  this->N_Parameters = 15;
   this->N_ParamFct = 1;
   this->ParameterFct =  { TimeNSParamsVelo_GradVelo3D };
   this->N_FEValues = 12;
@@ -1070,9 +1070,9 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->Needs2ndDerivatives[0] = false;
               this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 13;
-              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+              this->N_Matrices = 15;
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 0 };
 
@@ -1096,9 +1096,9 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
               this->Needs2ndDerivatives[0] = false;
               this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 16;
-              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->N_Matrices = 18;
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
               this->N_Rhs = 4;
               this->RhsSpace = { 0, 0, 0, 1};
 
