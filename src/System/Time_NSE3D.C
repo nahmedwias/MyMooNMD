@@ -298,6 +298,14 @@ void Time_NSE3D::check_and_set_parameters()
    
    time_stepping_scheme.n_scale_block = 6;
    time_stepping_scheme.b_bt_linear_nl = "linear";
+
+   // This is a hot fix: only the Smagorinsky routines with Laplace Type=1
+   // (D(u):D(v) formulation) can be used properly. In the other case, the
+   // block matrices passed to the routine are not correct, throwing a segfault.
+   if(TDatabase::ParamDB->LAPLACETYPE==0)
+   {
+     ErrThrow("Smagorinsky works only with LAPLACETYPE = 1 so far.");
+   }
  }
  
  // the only case where one have to re-assemble the right hand side
