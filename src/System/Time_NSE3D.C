@@ -1,7 +1,6 @@
 #include <Time_NSE3D.h>
 #include <Database.h>
 #include <Assemble3D.h>
-#include <LocalAssembling3D.h>
 #include <LinAlg.h>
 #include <DirectSolver.h>
 #include <GridTransfer.h>
@@ -46,6 +45,9 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default solution in out database
   ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
   db.merge(in_out_db,true);
+  
+  // a default local assembling database
+  db.merge(LocalAssembling3D::default_local_assembling_database());
 
   return db;
 }
@@ -406,7 +408,7 @@ void Time_NSE3D::assemble_initial_time()
   for(auto &s : this->systems_)
   {
     // assemble the initial matrices and right hand side
-    call_assembling_routine(s,LocalAssembling3D_type::TNSE3D_LinGAL);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_LinGAL);
     // manage dirichlet condition by copying non-actives DoFsfrom rhs to solution
     s.solution_.copy_nonactive(s.rhs_);
   }
@@ -466,7 +468,7 @@ void Time_NSE3D::assemble_rhs()
   // preparation of the right hand side for the system solve
   rhs_from_time_disc.reset();
   // calling assembling routine
-  call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_Rhs);
+  call_assembling_routine(s, LocalAssembling_type::TNSE3D_Rhs);
   BlockVector temp = s.rhs_;
   // copy right hand side 
   rhs_from_time_disc = s.rhs_;
@@ -542,7 +544,7 @@ void Time_NSE3D::assemble_nonlinear_term()
     this->restrict_function();
   for(System_per_grid &s : this->systems_)
   {
-    call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_NLGAL);
   }
 }
 
@@ -1019,7 +1021,7 @@ bool Time_NSE3D::imex_scheme(bool print_info)
 
 /**************************************************************************** */
 void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s, 
-                          LocalAssembling3D_type type)
+                          LocalAssembling_type type)
 {
   std::vector<const TFESpace3D*> space_mat;
   std::vector<const TFESpace3D*> space_rhs;
@@ -1035,7 +1037,7 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   set_matrices_rhs(s, type, sqMat, reMat, rhs_array);
   // find out if we have to do upwinding
   bool do_upwinding = false;
-  if(type != LocalAssembling3D_type::TNSE3D_Rhs)
+  if(type != LocalAssembling_type::TNSE3D_Rhs)
   {
       bool mdml =  solver_.is_using_multigrid()
                   && solver_.get_multigrid()->is_using_mdml();
@@ -1059,12 +1061,11 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   boundary_values[2] = example_.get_bd(2);
   boundary_values[3] = example_.get_bd(3);
   
-  const LocalAssembling3D
-              localAssembling(this->db_, type,
-                              fefunctions.data(),this->example_.get_coeffs(),
-                              this->get_space_disc_global());
+  LocalAssembling3D localAssembling(this->db_, type, fefunctions.data(),
+                                    this->example_.get_coeffs(),
+                                    this->get_space_disc_global());
 
-  if (type == LocalAssembling3D_type::TNSE3D_Rhs) {
+  if (type == LocalAssembling_type::TNSE3D_Rhs) {
     Output::print(" ** START ASSEMBLE PRESSURE BC ON RHS **");
 
     const TFESpace3D *v_space = &s.velocitySpace_;
@@ -1105,7 +1106,7 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
              boundary_conditions, boundary_values.data(), localAssembling);
   
   
-  if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
+  if(do_upwinding && type != LocalAssembling_type::TNSE3D_Rhs)
   {
     double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
     switch(TDatabase::ParamDB->NSTYPE)
@@ -1156,7 +1157,7 @@ void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s,
   functions[3] = &s.p_;
 }
 /**************************************************************************** */
-void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling3D_type type,
+void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling_type type,
         std::vector<TSquareMatrix3D*> &sqMat, std::vector<TMatrix3D*> &reMat,
         std::vector<double*> &rhs_array)
 {
@@ -1171,7 +1172,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
   
   switch(type)
   {
-    case LocalAssembling3D_type::TNSE3D_LinGAL:
+    case LocalAssembling_type::TNSE3D_LinGAL:
     {
       rhs_array.resize(3);
       rhs_array[0] = s.rhs_.block(0);
@@ -1273,7 +1274,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
     }
     break;// case LocalAssembling3D_type::TNSE3D_LinGAL
     //===============================================
-    case LocalAssembling3D_type::TNSE3D_NLGAL:
+    case LocalAssembling_type::TNSE3D_NLGAL:
     {
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -1314,7 +1315,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
     }
     break;
     //===============================================
-    case LocalAssembling3D_type::TNSE3D_Rhs:
+    case LocalAssembling_type::TNSE3D_Rhs:
     {
       rhs_array.resize(3);
       rhs_array[0] = s.rhs_.block(0);

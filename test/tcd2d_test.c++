@@ -123,6 +123,7 @@ int main(int argc, char* argv[])
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
     db["example"] = 0;
     db["reynolds_number"] = 1;
 

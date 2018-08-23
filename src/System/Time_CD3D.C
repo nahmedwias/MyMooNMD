@@ -1,6 +1,5 @@
 #include <Time_CD3D.h>
 #include <Database.h>
-#include <LocalAssembling3D.h>
 #include <Assemble3D.h>
 #include <LinAlg.h>
 #include <Multigrid.h>
@@ -33,6 +32,9 @@ ParameterDatabase get_default_TCD3D_parameters()
   // a default afc database
   ParameterDatabase afc_db = AlgebraicFluxCorrection::default_afc_database();
   parmoon_db.merge(afc_db, true);
+  
+  // a default local assembling database
+  parmoon_db.merge(LocalAssembling3D::default_local_assembling_database());
 
   return parmoon_db;  
 }
@@ -308,7 +310,7 @@ void Time_CD3D::check_and_set_parameters()
 //==============================================================================
 void Time_CD3D::assemble_initial_time()
 {
-  LocalAssembling3D_type allMatrices = LocalAssembling3D_type::TCD3D;
+  LocalAssembling_type allMatrices = LocalAssembling_type::TCD3D;
   for(auto &s : this->systems_)
   {
     TFEFunction3D *feFunction = {&s.feFunction_};
@@ -334,7 +336,7 @@ void Time_CD3D::assemble()
   // which comes from the time discretization of the SUPG method. We have 
   // to assemble the Mass matrix also for each time step due to the convection 
   // field which might also depend on time as well.
-  LocalAssembling3D_type stiffMatrixRhs = LocalAssembling3D_type::TCD3DStiffRhs;
+  LocalAssembling_type stiffMatrixRhs = LocalAssembling_type::TCD3DStiffRhs;
   for(auto &s : this->systems_)
   {
     TFEFunction3D *feFunction = {&s.feFunction_};

@@ -19,12 +19,11 @@
 #include <Example_TimeCD3D.h>
 #include <Solver.h>
 #include <DataWriter.h>
+#include "LocalAssembling.h"
 
 #include <vector>
 #include <array>
 #include <deque>
-
-class LocalAssembling3D; //forward declaration
 
 class Time_CD3D
 {

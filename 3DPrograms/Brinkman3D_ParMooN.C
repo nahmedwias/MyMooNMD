@@ -10,16 +10,10 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <LinAlg.h>
 #include <Brinkman3D.h>
-#include <MainUtilities.h>
-#include <LocalAssembling3D.h>
 #include <Example_Brinkman3D.h>
-#include <ParameterDatabase.h>
-#include <MooNMD_Io.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <PETScSolver.h>
 #include <Chrono.h> //for a stopwatch which measures time spent in program parts
 
 // =======================================================================

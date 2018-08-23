@@ -3,7 +3,7 @@
 #include <MainUtilities.h>
 #include <FEDatabase2D.h>
 #include <Time_NSE2D.h>
-
+#include "AuxParam2D.h" // used in MixingLayerSlipSmallSquares.h
 #include <string>
 
 namespace bsp1              // case 0

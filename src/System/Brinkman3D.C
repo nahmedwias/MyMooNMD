@@ -4,7 +4,7 @@
 #include <DirectSolver.h>
 #include <Assemble3D.h> ///#include <Assembler4.h>
 #include <Database.h>
-#include <LocalAssembling3D.h>
+#include "LocalAssembling.h"
 #include <sys/stat.h>
 #include <PETScSolver.h>
 #include <BoundaryAssembling3D.h>
@@ -444,20 +444,19 @@ void Brinkman3D::assemble()
         feFunction[3]=&s.p;
         
         
-        LocalAssembling3D_type type;
+        LocalAssembling_type type;
         
         if (TDatabase::ParamDB->NSTYPE != 14 && TDatabase::ParamDB->NSTYPE !=4)
         {
             ErrThrow("WARNING: Matrix is not initialized in the right format. For standard Galerkin applied to the Brinkman problem, NSTYPE 4 or NSTYPE 14 has to be chosen.");
         }
         else
-            type = LocalAssembling3D_type::Brinkman3D_Galerkin;
+            type = LocalAssembling_type::Brinkman3D_Galerkin;
         //        }
         
         // local assembling object
-        const LocalAssembling3D la(this->brinkman3d_db, type,
-                                   feFunction.data(),
-                                   example.get_coeffs());
+        LocalAssembling3D la(this->brinkman3d_db, type, feFunction.data(),
+                             example.get_coeffs());
         
         
         // assemble now the matrices and right hand side
@@ -484,7 +483,7 @@ void Brinkman3D::assemble()
         { 
             if (TDatabase::ParamDB->NSTYPE == 14)
               { 
-                 type = LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1;
+                 type = LocalAssembling_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1;
                 if (TDatabase::ParamDB->VELOCITY_SPACE==1)
                     Output::print<>("P1/P1 Stabilization");
                 else if (TDatabase::ParamDB->VELOCITY_SPACE==2)
@@ -492,9 +491,8 @@ void Brinkman3D::assemble()
                 else ErrThrow("WARNING: You have switched on Pk/Pk-stabilization, but therefore velocity space order and pressure space order should be either 1 or 2.");
                 
                 // local assembling object
-                const LocalAssembling3D la2(this->brinkman3d_db, type,
-                                            feFunction.data(),
-                                            example.get_coeffs());
+                LocalAssembling3D la2(this->brinkman3d_db, type,
+                                      feFunction.data(), example.get_coeffs());
                 
                 // assemble now the matrices and right hand side
                 Assemble3D(N_FESpaces, fespmat,
