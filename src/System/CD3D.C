@@ -3,7 +3,7 @@
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <LinAlg.h>
-#include <LocalAssembling3D.h>
+#include "LocalAssembling.h"
 #include <Assemble3D.h>
 
 #include <DirectSolver.h>
@@ -32,6 +32,9 @@ ParameterDatabase get_default_CD3D_parameters()
   // a default output database - needed here as long as there's no class handling the output
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
+  
+  // a default local assembling database
+  db.merge(LocalAssembling3D::default_local_assembling_database());
 
   return db;
 }
@@ -151,8 +154,7 @@ void CD3D::output_problem_size_info() const
 /** ************************************************************************ */
 void CD3D::assemble()
 {
-  //determine the local assembling type to be CD3D
-  LocalAssembling3D_type laType = LocalAssembling3D_type::CD3D;
+  LocalAssembling_type laType = LocalAssembling_type::ConvDiff;
   // this loop has more than one iteration only in case of multigrid
   for(auto & s : systems_)
   {

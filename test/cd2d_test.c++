@@ -30,7 +30,7 @@
 #include <Multigrid.h>
 
 #include <Chrono.h>
-#include <LocalAssembling2D.h>
+#include "LocalAssembling.h"
 #include <MainUtilities.h> //for error measuring
 
 // compare the computed errors in the Darcy2D object with the given ones in 
@@ -278,6 +278,7 @@ int main(int argc, char* argv[])
     Output::print("\ntesting with algebraic flux correction");
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling<2>::default_local_assembling_database());
     db["problem_type"] = 1;
     db["example"] = 3; //Sharp Boundary Layer Example
 

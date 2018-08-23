@@ -1,11 +1,10 @@
 #include <Saddle_point_preconditioner.h>
 #include <ParameterDatabase.h>
+#include "LocalAssembling.h"
 #ifdef __2D__
-#include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 #include <SquareMatrix2D.h>
 #else
-#include <LocalAssembling3D.h>
 #include <Assemble3D.h>
 #include <SquareMatrix3D.h>
 #endif

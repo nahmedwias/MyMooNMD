@@ -1969,7 +1969,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     Coll->GetCell(icell)->SetCellIndex(icell);
   for(int icell=0; icell<N_Cells; icell++)
   {
-    double **LocRhs;
+    double **LocRhs = nullptr;
     if(n_rhs)
     {
       LocRhs = new double* [n_rhs];
@@ -2044,11 +2044,6 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                            cell, SecondDer, N_Points, xi, eta, weights, X, Y,
                            AbsDetjk);
     
-    // this could provide values of FE functions during the local assemble
-    // routine, not yet supported.
-    //la.GetParameters(N_Points,Coll, cell,icell, xi,eta, X,Y, Param);
-    la.compute_parameters(N_Points, Coll, cell, icell, X, Y);
-
     // ########################################################################
     // assemble local matrices and right hand sides
     // ########################################################################
@@ -2073,9 +2068,9 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       }
     }                                               // endif N_AllMatrices
     
-    la.get_local_forms(N_Points, weights, AbsDetjk, X, Y, &LocN_BF[0],
-                       &LocBF[0], cell, N_AllMatrices, n_rhs, LocMatrices, 
-                       LocRhs);
+    la.GetLocalForms(N_Points, weights, AbsDetjk, {{X, Y}}, &LocN_BF[0],
+                     &LocBF[0], cell, icell, N_AllMatrices, n_rhs, LocMatrices,
+                     LocRhs);
     
     // ########################################################################
     // add local matrices to global matrices (ansatz == test)
@@ -3816,9 +3811,9 @@ TAuxParam2D *Parameters)
 {
   double w,integrant,tau_par;
   int N_AllMatrices = n_sqmatrices+n_matrices,out;
-  int i,j,k,l,l3,n,m,r,q,dummy,N_UsedElements,ii,jj,ll;
+  int i,j,k,l,l3,n,m,r,q,dummy = 0,N_UsedElements,ii,jj,ll;
   int N_Cells, N_Points, N_Parameters, N_Points1D, N_Edges, N_;
-  int N_Joints, ref_n;
+  int N_Joints, ref_n = 0;
   int Used[N_FEs2D];
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
@@ -3833,27 +3828,27 @@ TAuxParam2D *Parameters)
   TJoint *joint;
   TBoundEdge *boundedge;
   TIsoBoundEdge *isoboundedge;
-  int **GlobalNumbers, **BeginIndex;
-  int **RhsGlobalNumbers, **RhsBeginIndex;
-  int **TestGlobalNumbers, **TestBeginIndex;
-  int **AnsatzGlobalNumbers, **AnsatzBeginIndex;
+  int **GlobalNumbers = nullptr, **BeginIndex = nullptr;
+  int **RhsGlobalNumbers = nullptr, **RhsBeginIndex = nullptr;
+  int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
+  int **AnsatzGlobalNumbers = nullptr, **AnsatzBeginIndex = nullptr;
   BF2DRefElements bf2Drefelements;
   double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D], X_neigh[MaxN_QuadPoints_2D], Y_neigh[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjk_neigh[MaxN_QuadPoints_2D],*AbsDetjk1D[4];
   double *Param[MaxN_QuadPoints_2D];
-  double *righthand;
-  double **Matrices, *aux, *aux2 ;
-  double ***LocMatrices, **LocRhs;
+  double *righthand = nullptr;
+  double **Matrices = nullptr, *aux, *aux2 ;
+  double ***LocMatrices = nullptr, **LocRhs = nullptr;
   double *Coeffs[MaxN_QuadPoints_2D];
   int *DOF, ActiveBound, end;
   double *Entries,*Entries1;
   const int *ColInd, *RowPtr;
   const int *ColInd1, *RowPtr1;
   double *RHS;
-  double **HangingEntries, **HangingRhs;
+  double **HangingEntries = nullptr, **HangingRhs = nullptr;
   const TBoundComp *BoundComp;
-  double t0, t1, t, s,integral;
+  double t0, t1, t, s,integral = 0.;
   int comp, dof_ii,dof_jj, found;
   BoundCond Cond0, Cond1;
   BoundCondFunct2D *BoundaryCondition;
@@ -5310,11 +5305,11 @@ TAuxParam2D *Parameters)
 {
   const int MaxN_BaseFunctions2D_Ersatz =100;
 
-  double w,integrant,tau_par,sigma_par;
+  double w,integrant = 0.,tau_par,sigma_par;
   int N_AllMatrices = n_sqmatrices+n_matrices,out;
   int i,j,k,l,l3,n,m,r,q,dummy,N_UsedElements,ii,jj,ll,weak;
   int N_Cells, N_Points, N_Parameters, N_Points1D, N_Edges, N_;
-  int N_Joints, ref_n;
+  int N_Joints, ref_n = 0;
   int Used[N_FEs2D];
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
@@ -5329,18 +5324,18 @@ TAuxParam2D *Parameters)
   TJoint *joint;
   TBoundEdge *boundedge;
   TIsoBoundEdge *isoboundedge;
-  int **GlobalNumbers, **BeginIndex;
-  int **RhsGlobalNumbers, **RhsBeginIndex;
-  int **TestGlobalNumbers, **TestBeginIndex;
-  int **AnsatzGlobalNumbers, **AnsatzBeginIndex;
+  int **GlobalNumbers = nullptr, **BeginIndex = nullptr;
+  int **RhsGlobalNumbers = nullptr, **RhsBeginIndex = nullptr;
+  int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
+  int **AnsatzGlobalNumbers = nullptr, **AnsatzBeginIndex = nullptr;
   BF2DRefElements bf2Drefelements;
   double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D], X_neigh[MaxN_QuadPoints_2D], Y_neigh[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjk_neigh[MaxN_QuadPoints_2D],*AbsDetjk1D[4];
   double *Param[MaxN_QuadPoints_2D];
-  double *righthand;
-  double **Matrices, *aux, *aux2, *aux4;
-  double ***LocMatrices, **LocRhs;
+  double *righthand = nullptr;
+  double **Matrices = nullptr, *aux, *aux2, *aux4;
+  double ***LocMatrices = nullptr, **LocRhs = nullptr;
   double *Coeffs[MaxN_QuadPoints_2D];
   int *DOF, ActiveBound, end;
   double *Entries,*Entries1;
@@ -6997,13 +6992,13 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   }
     
     FE2D LocalUsedElements[N_FEs2D];
-    double *righthand;
-    double **Matrices;
-    double ***LocMatrices, **LocRhs;
+    double **Matrices = nullptr;
+    double ***LocMatrices = nullptr;
+    double **LocRhs = nullptr;
     int LocN_BF[N_BaseFuncts2D];
     BaseFunct2D LocBF[N_BaseFuncts2D];
-    double *AuxArray[MaxN_QuadPoints_2D];
-    double **HangingEntries, **HangingRhs;
+    double **HangingEntries = nullptr;
+    double **HangingRhs = nullptr;
 
 #ifdef __3D__
     double z0, z1;
@@ -7058,21 +7053,15 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     }                                             // endfor
 
     LocRhs = new double* [n_rhs];
-    righthand = new double [n_rhs*MaxN_BaseFunctions2D];
+    double *righthand = new double [n_rhs*MaxN_BaseFunctions2D];
     for(int i=0;i<n_rhs;i++)
       LocRhs[i] = righthand+i*MaxN_BaseFunctions2D;
   }                                               // endif n_rhs
 
-  // 40 <= number of terms in bilinear form
-  // DUE NOTE CHANGE BELOW 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
-  double *aux = new double [MaxN_QuadPoints_2D*40];
-  for(int j=0;j<MaxN_QuadPoints_2D;j++)
-    AuxArray[j] = aux + j*40;
-
   int N_AllMatrices = n_sqmatrices+n_matrices;
   if(N_AllMatrices)
   {
-    aux = new double
+    double * aux = new double
       [N_AllMatrices*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
     Matrices = new double* [N_AllMatrices*MaxN_BaseFunctions2D];
     for(int j=0;j<N_AllMatrices*MaxN_BaseFunctions2D;j++)
@@ -7150,9 +7139,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
                            Coll, cell, SecondDer,
                            N_Points, xi, eta, weights, X, Y, AbsDetjk);
     
-    la.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, LocN_BF, LocBF,
-                     AuxArray, cell, i, N_AllMatrices, n_rhs, LocMatrices,
-                     LocRhs);
+    la.GetLocalForms(N_Points, weights, AbsDetjk, {{X, Y}}, LocN_BF, LocBF,
+                     cell, i, N_AllMatrices, n_rhs, LocMatrices, LocRhs);
 
     int N_Joints = cell->GetN_Joints();
     // ####################################################################
@@ -7405,7 +7393,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
       int N_ = N_BaseFunct[CurrentElement];
 
-      double *local_rhs = LocRhs[j]; // == righthand+j*MaxN_BaseFunctions2D;
+      double *local_rhs = LocRhs[j];
       double *RHS = rhs[j];
       if(RHS == nullptr)
       {
@@ -7919,7 +7907,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     for(int i=0;i<n_rhs;i++)
     delete [] HangingRhs[i];
     delete [] HangingRhs;
-    delete [] righthand;
+    delete [] LocRhs[0];
     delete [] LocRhs;
   }
 
@@ -7929,8 +7917,6 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     delete [] Matrices[0];
     delete [] Matrices;
   }
-
-  delete [] AuxArray[0];
 }                                                 // end of Assemble
 
 

@@ -7,6 +7,7 @@
 #include <Darcy2D.h>
 #include <Assemble2D.h>
 #include <MainUtilities.h>
+#include <AuxParam2D.h>
 
 
 ParameterDatabase get_default_Darcy2D_parameters()
@@ -153,8 +154,8 @@ void Darcy2D::assemble()
     // pointers to finite element functions, i.e. TFEFunction2D **.
     TFEFunction2D *fe_functions[2] = { &s.u, &s.p };
     // create a local assembling object which is needed to assemble the matrices
-    LocalAssembling2D la(Darcy2D_Galerkin, fe_functions,
-                         this->example.get_coeffs());
+    LocalAssembling2D la(this->db, LocalAssembling_type::Darcy,
+                         fe_functions, this->example.get_coeffs());
     
     // everything which follows within this for loop only has the goal to call
     // Assemble2D_VectFE at the end. 

@@ -1,6 +1,6 @@
 #include <NSE3D.h>
 #include <Database.h>
-#include <LocalAssembling3D.h>
+#include "LocalAssembling.h"
 #include <Assemble3D.h>
 #include <MainUtilities.h>
 #include <LinAlg.h>
@@ -38,8 +38,6 @@ ParameterDatabase get_default_NSE3D_parameters()
   
   db.merge(LocalAssembling3D::default_local_assembling_database(), true);
   
-  db.merge(LocalAssembling3D::default_local_assembling_database(), true);
-
   //stokes case - reduce no nonlin its TODO remove global database dependency
   if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
   {
@@ -496,7 +494,7 @@ void NSE3D::assemble_linear_terms()
     feFunction[3]=&s.p_;
 
     // local assembling object    
-    const LocalAssembling3D la(this->db, LocalAssembling3D_type::NSE3D_Linear, 
+    LocalAssembling3D la(this->db, LocalAssembling_type::NSE3D_Linear, 
                          feFunction.data(), example_.get_coeffs());
     
     //HOTFIX: Check the documentation - this ensures that in Galerkin disc,
@@ -675,9 +673,8 @@ void NSE3D::assemble_non_linear_term()
           mat->reset();
       }
       // local assembling object    
-      const LocalAssembling3D la(this->db, 
-                                 LocalAssembling3D_type::NSE3D_NonLinear, 
-                                 feFunction.data(), example_.get_coeffs());
+      LocalAssembling3D la(this->db, LocalAssembling_type::NSE3D_NonLinear, 
+                           feFunction.data(), example_.get_coeffs());
       
       //HOTFIX: Check the documentation!
       assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;

@@ -36,8 +36,8 @@
 #include <deque>
 #include <array>
 #include <list>
+#include "LocalAssembling.h"
 
-class LocalAssembling3D; //forward declaration
 class Example_CD3D;
 
 
