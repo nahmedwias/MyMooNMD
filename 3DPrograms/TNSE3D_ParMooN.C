@@ -12,7 +12,6 @@
 #include <MeshPartition.h>
 #include <Chrono.h>
 #include <TetGenMeshLoader.h>
-#include <Output3D.h>
 #include <LoopInfo.h>
 #include <TimeDiscretizations.h>
 
@@ -111,10 +110,6 @@ int main(int argc, char* argv[])
        , maxSubDomainPerDof
 #endif       
     );
-  TCollection* coll = gridCollections.front();
-  TOutput3D output(0,0,0,0,std::addressof(domain),coll);
-  
-  output.WriteVtk("mesh.vtk");
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
   // set some parameters for time stepping

@@ -57,7 +57,7 @@ class TFEFunction3D
     ~TFEFunction3D();
 
     /** return name */
-    std::string GetName()
+    std::string GetName() const
     { return Name; }
 
     /** return description */
@@ -65,20 +65,25 @@ class TFEFunction3D
     { return Description; }
 
     /** return fe space */
-    const TFESpace3D *GetFESpace3D()
-    { return FESpace3D; }
-
-    /** return fe space */
     const TFESpace3D *GetFESpace3D() const
+    { return FESpace3D; }
+    
+    /** return fe space */
+    const TFESpace *GetFESpace() const
     { return FESpace3D; }
 
     /** return length */
-    int GetLength()
+    int GetLength() const
     { return Length; }
 
     /** return vector of data */
+    const double *GetValues() const
+    { return Values; }
+    
+    /** return vector of data */
     double *GetValues()
     { return Values; }
+
 
     /** @brief calculate errors to given function 
      * 
@@ -91,7 +96,7 @@ class TFEFunction3D
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors) const;
     
-    void GetErrorsForVectorValuedFunction(DoubleFunct3D ** const Exact,
+    void GetErrorsForVectorValuedFunction(DoubleFunct3D * const * const Exact,
                                           ErrorMethod3D * const ErrMeth,
                                           double * const errors);
 
@@ -125,15 +130,15 @@ class TFEFunction3D
 
     /** determine the value of function and its first derivatives at
         the given point */
-    void FindGradientLocal(TBaseCell *cell, int cell_no, 
+    void FindGradientLocal(const TBaseCell *cell, int cell_no, 
                            double x, double y, double z, 
                            double *values);
 
     /** determine the value of function
         the given point */
-    void FindValueLocal(TBaseCell *cell, int cell_no, 
-                           double x, double y, double z, 
-                           double *values);
+    void FindValueLocal(const TBaseCell *cell, int cell_no, 
+                        double x, double y, double z, 
+                        double *values) const;
 
     /** calculate the interpolation of an exact function */
     void Interpolate(DoubleFunct3D *Exact);
@@ -175,6 +180,8 @@ class TFEFunction3D
      */
     void compute_integral_and_measure(double& integral, double& measure) const;
 
+    
+    
   /** @brief Set Dirichlet values according to boundary conditions */
     void SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
                                    BoundValueFunct3D *BoudaryValue);

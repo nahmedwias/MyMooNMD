@@ -22,7 +22,7 @@
 class TRefTrans3D
 {
   protected:
-    TBaseCell *Cell;
+    const TBaseCell *Cell;
 
   public:
     /** constuctor */
@@ -44,10 +44,10 @@ class TRefTrans3D
 
     /** calculate functions and derivatives from reference element
         to original element */
-    void GetOrigValues(TBaseCell *cell);
+    void GetOrigValues(const TBaseCell *cell);
 
     /** set original element to cell */
-    virtual void SetCell(TBaseCell *cell)
+    virtual void SetCell(const TBaseCell *cell)
     {  Cell = cell; }
 
     /** return outer normal unit vector */

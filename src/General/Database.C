@@ -397,9 +397,6 @@ void TDatabase::SetDefaultParameters()
     
   ParamDB->SIGMA_PERM = 1;
 
-  ParamDB->VISCOSITY = 1;
-  ParamDB->EFFECTIVE_VISCOSITY = 1;
-  ParamDB->PERMEABILITY = 1;
   ParamDB->equal_order_stab_weight_PkPk = 0;
   ParamDB->grad_div_stab_weight = 0;
   ParamDB->SIGN_MATRIX_BI = 1;
@@ -1087,9 +1084,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("WEAK_BC_SIGMA: ", ParamDB->WEAK_BC_SIGMA);
   printToFile("WEAK_BC: ", ParamDB->WEAK_BC);
 
-  printToFile("EFFECTIVE_VISCOSITY: " ,ParamDB->EFFECTIVE_VISCOSITY);
-  printToFile("VISCOSITY: ", ParamDB->VISCOSITY);
-  printToFile("PERMEABILITY: ", ParamDB->PERMEABILITY);
   printToFile("EQUAL_ORDER_STAB_WEIGHT_PkPk: ", ParamDB->equal_order_stab_weight_PkPk); 
   printToFile("GRAD_DIV_STAB_WEIGHT: ", ParamDB->grad_div_stab_weight); 
   printToFile("SIGN_MATRIX_BI: ", ParamDB->SIGN_MATRIX_BI);

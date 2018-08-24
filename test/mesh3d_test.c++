@@ -201,6 +201,7 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database() ,true);
   db.merge(Example3D::default_example_database());
+  db.merge(LocalAssembling3D::default_local_assembling_database());
   db["problem_type"] = 1;
   db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 3);
   db.add("multigrid_n_levels", (size_t) 0, "",(size_t) 0, (size_t) 3);

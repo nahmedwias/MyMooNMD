@@ -9,21 +9,29 @@
 #include <ParameterDatabase.h>
 #include <memory>
 #include <BlockFEMatrix.h>
+#include <AuxParam2D.h>
+
+ void Coefficient_Function(double *in, double *out) 
+  {
+  // coordinates:  x at in[0], y at in[1]
+  // value of conductivity at in[2]
+   out[0] = in[2]; 
+}
 
 // Create a Brinkman specific database
 ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
 {
   Output::print<5>("creating a default Brinkman2D parameter database");
 
-  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-  db.set_name("Brinkman2D parameter database");
+  ParameterDatabase brinkman2d_db = ParameterDatabase::parmoon_default_database();
+  brinkman2d_db.set_name("Brinkman2D parameter database");
 
-  db.add("Galerkin_type", "symmetric Galerkin formulation", 
+  brinkman2d_db.add("Galerkin_type", "symmetric Galerkin formulation", 
       "This string enables to choose between symmetry and non-symmetry of the standard Galerkin scheme."
       "This might be irrelevant for direct solvers as long as no addiditional terms (stabilization) are apparent.",
       {"symmetric Galerkin formulation", "nonsymmetric Galerkin formulation"});
 
-  db.add("PkPk_stab", false,
+  brinkman2d_db.add("PkPk_stab", false,
       "Use a Brinkman specific assembling routine corresponding to a "
       "residual-based equal-order stabilization for the Brinkman problem."
       "This only works in two space dimensions and is currently only " 
@@ -31,7 +39,7 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
       "Usually this is used in the main program.",
       {true,false});
 
-  db.add("EqualOrder_PressureStab_type", "symmetric GLS", 
+  brinkman2d_db.add("EqualOrder_PressureStab_type", "symmetric GLS", 
       "This string sets the type of residual-based momentum stabilization," 
       "usually used for the stabilization of P_k/P_k finite elements, for the" 
       "Brinkman problem in 2D. For stability of the method, the chosen "
@@ -39,25 +47,30 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
       "variants of the standard Galerkin scheme (symmetry or non-symmetry).",
       {"symmetric GLS", "nonsymmetric GLS"});
 
-  db.add("GradDiv_stab", false,
+  brinkman2d_db.add("GradDiv_stab", false,
       "Use an assembling routine for the stabilization of the "
       "divergence constraint.This only works in two space dimensions and"
       " is meaningfull for the finite elemnt space P1/P1 only."
       "Usually this is used in the main program.",
       {true,false});
-  db.add("equal_order_stab_scaling", "by h_T",
+  brinkman2d_db.add("equal_order_stab_scaling", "by h_T",
       "This string enables to switch between the prefactor h_T^2/(mueff + sigma h_T^2) and h_T^2/(mueff + sigma L_0^2) for some characteristic length of the domain.",
       {"by h_T", "by L_0"});
 
-  db.add("equal_order_stab_weight_PkPk", (double) 0., "", (double) -1000, (double) 1000 );
+  brinkman2d_db.add("equal_order_stab_weight_PkPk", (double) 0., "", (double) -1000, (double) 1000 );
 
-  db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
-  db.add("corner_stab_weight", (double)  0.0, "This quantity is the weight of the corner stabilization used for Nitsche corners of the domain", (double) -1000.0 , (double) 1000.0 );
+  brinkman2d_db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
+  brinkman2d_db.add("corner_stab_weight", (double)  0.0, "This quantity is the weight of the corner stabilization used for Nitsche corners of the domain", (double) -1000.0 , (double) 1000.0 );
 
-
+  brinkman2d_db.add("coefficient_function_type", (size_t) 0., "Set the parameter equal to 0 if the"
+		  " coefficients are constant, if you want to use a coefficient function that is spatially "
+		  "varying and analytically defined in ParMooN_Brinkman2D.C, set this parameter equal to 1 "
+		  "and then adjust coeffs via parameters in the example file; if you want to use a coefficient "
+		  "function that is spatially varying and defined by a .mesh-file combined with a file describing "
+		  "a corresponding FEFunction2D, set this parameter equal to 2 ", (size_t) 0.,(size_t) 2.);
 
   /* // Possible candidates for own database (maybe also a boundary assembling database, or into the assembling 2d database)
-     db.add("s1", 0.0,
+     brinkman2d_db.add("s1", 0.0,
      "Use an assembling routine corresponding to a residual-based "
      "equal-order stabilization for the Brinkman problem."
      "This only works in two space "
@@ -65,7 +78,7 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
      "Usually this is used in the main program.",
      {-1.0, 0.0, 1.0});
 
-     db.add("s2", 0.0,
+     brinkman2d_db.add("s2", 0.0,
      "Use an assembling routine corresponding to a residual-based "
      "equal-order stabilization for the Brinkman problem."
      "This only works in two space "
@@ -73,7 +86,7 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
      "Usually this is used in the main program.",
      {-1.0, 0.0, 1.0});
 
-     db.add("equal_order_stab_weight_PkPk", 0.0,
+     brinkman2d_db.add("equal_order_stab_weight_PkPk", 0.0,
      "Use an assembling routine corresponding to a residual-based "
      "equal-order stabilization for the Brinkman problem."
      "This only works in two space "
@@ -81,11 +94,11 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
      "Usually this is used in the main program.",-1000.0,1000.0);
    */
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
-  db.merge(out_db, true); // merge the database 'db' with the database out_db
+  brinkman2d_db.merge(out_db, true); // merge the database 'db' with the database out_db
 
-  //Output::print("!!!!!!!!!!Solver type: ", db["solver_type"]);
+  //Output::print("!!!!!!!!!!Solver type: ", brinkman2d_db["solver_type"]);
 
-  return db;
+  return brinkman2d_db;
 }
 
 
@@ -147,15 +160,15 @@ Brinkman2D::Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
 Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db,
     const Example_Brinkman2D & e,
     unsigned int reference_id)
-: db(Brinkman2D::get_default_Brinkman2D_parameters()), solver(param_db),
+: brinkman2d_db(Brinkman2D::get_default_Brinkman2D_parameters()), solver(param_db),
   outputWriter(param_db),
   systems(), example(e), defect(), oldResiduals(), 
   initial_residual(1e10), errors()
 {
-  this->db.merge(param_db,true);   
-  // db.info(true); 
+  this->brinkman2d_db.merge(param_db,true);   
+  // brinkman2d_db.info(true); 
 
-  // TODO LB 13.11.17    check_and_set_assemble_type(db["EqualOrder_PressureStab_type"], db["brinkman_assemble_option"]);
+  // TODO LB 13.11.17    check_and_set_assemble_type(brinkman2d_db["EqualOrder_PressureStab_type"], brinkman2d_db["brinkman_assemble_option"]);
 
   // set the velocity and preesure spaces
   std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
@@ -220,7 +233,7 @@ void Brinkman2D::set_parameters()
 /** ************************************************************************ */
 void Brinkman2D::check_input_parameters()
 {
-  // if (db["EqualOrder_PressureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") || db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation")  )
+  // if (brinkman2d_db["EqualOrder_PressureStab_type"].is("symmetric GLS") && brinkman2d_db["Galerkin_type"].is("nonsymmetric Galerkin formulation") || brinkman2d_db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && brinkman2d_db["Galerkin_type"].is("symmetric Galerkin formulation")  )
   // { 
   //   Output::print("Warning, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability.");
   //   //getch();
@@ -229,7 +242,8 @@ void Brinkman2D::check_input_parameters()
 }
 
 /** ************************************************************************ */
-void Brinkman2D::assemble()
+void Brinkman2D::assemble(TFEFunction2D* coefficient_function)
+
 {
   //Valgrind test start
   //std::vector<int> testvector(5,1);
@@ -240,47 +254,55 @@ void Brinkman2D::assemble()
   //Output::print("testvector.at(7)", testvector.at(7));
   //Valgrind test end
 
+const TFESpace2D *coefficient_function_space;
+
   for(System_per_grid& s : this->systems)
   {
     s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
 
-    const TFESpace2D * v_space = &s.velocity_space;
-    const TFESpace2D * p_space = &s.pressure_space;
+    const TFESpace2D *v_space = &s.velocity_space;
+    const TFESpace2D *p_space = &s.pressure_space;
     std::array<BoundValueFunct2D*, 3> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];
     non_const_bound_values[2] = example.get_bd()[2];
 
-    //same for all: the local asembling object
-    TFEFunction2D *fe_functions[3] =
-    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
+    //same for all: the local assembling object
+    TFEFunction2D *fe_functions[4] =
+    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, NULL };
 
-    if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("nonsymmetric Galerkin formulation") )
+    if (coefficient_function)
+    {
+      coefficient_function_space = coefficient_function->GetFESpace2D();
+      fe_functions[3] = coefficient_function;
+    }
+
+    if ( brinkman2d_db["PkPk_stab"].is(false) && brinkman2d_db["Galerkin_type"].is("nonsymmetric Galerkin formulation") )
     {
       TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
     }
-    else if ( db["PkPk_stab"].is(false) && db["Galerkin_type"].is("symmetric Galerkin formulation") )
+    else if ( brinkman2d_db["PkPk_stab"].is(false) && brinkman2d_db["Galerkin_type"].is("symmetric Galerkin formulation") )
     {
       TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
     }
-    else if ( db["PkPk_stab"].is(true) )
+    else if ( brinkman2d_db["PkPk_stab"].is(true) )
     {
-      if ( db["Galerkin_type"].is("nonsymmetric Galerkin formulation") && db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") )
+      if ( brinkman2d_db["Galerkin_type"].is("nonsymmetric Galerkin formulation") && brinkman2d_db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") )
       {
         TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
       }
-      else if ( db["PkPk_stab"].is(true)  && db["Galerkin_type"].is("symmetric Galerkin formulation")  && db["EqualOrder_PressureStab_type"].is("symmetric GLS") )
+      else if ( brinkman2d_db["PkPk_stab"].is(true)  && brinkman2d_db["Galerkin_type"].is("symmetric Galerkin formulation")  && brinkman2d_db["EqualOrder_PressureStab_type"].is("symmetric GLS") )
       {
         TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
       }
-      else if (db["EqualOrder_PressureStab_type"].is("symmetric GLS") && db["Galerkin_type"].is("nonsymmetric Galerkin formulation"))
+      else if (brinkman2d_db["EqualOrder_PressureStab_type"].is("symmetric GLS") && brinkman2d_db["Galerkin_type"].is("nonsymmetric Galerkin formulation"))
       {
         Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Therefore, both were set to be symmetric. Are you sure you want to continue?");
         TDatabase::ParamDB->SIGN_MATRIX_BI = -1;
         //double tmp;
         //std::cin>>tmp;
       }
-      else if (db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && db["Galerkin_type"].is("symmetric Galerkin formulation"))
+      else if (brinkman2d_db["EqualOrder_PressureStab_type"].is("nonsymmetric GLS") && brinkman2d_db["Galerkin_type"].is("symmetric Galerkin formulation"))
       {
         Output::print("WARNING, the stabilization type does not fit perfectly to the sign of the divergence constraint. This might cause instability. Therefore, both were set to be nonsymmetric. Are you sure you want to continue?");
         TDatabase::ParamDB->SIGN_MATRIX_BI = 1;
@@ -292,58 +314,109 @@ void Brinkman2D::assemble()
       }
     } 
 
-    LocalAssembling2D_type type;
+    LocalAssembling_type type;
     // use a list of LocalAssembling2D objects
     std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
 
-    type = Brinkman2D_Galerkin1;
-    std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, fe_functions,
-          this->example.get_coeffs()));
+    type = LocalAssembling_type::Brinkman2D_Galerkin1;
+    std::shared_ptr <LocalAssembling2D> la(
+      new LocalAssembling2D(this->brinkman2d_db, type,fe_functions,
+                            this->example.get_coeffs()));
+
+       if (coefficient_function)
+    {
+      // modify la such that it includes the TFEFunction2D coefficient_function
+      la->setBeginParameter({0});
+      la->setN_ParamFct(1);
+      la->setParameterFct({Coefficient_Function});
+      la->setN_FeValues(1);
+      la->setFeValueFctIndex({3});
+      la->setFeValueMultiIndex({D00});
+    }
+
     la_list.push_back(la);
-    Output::print<>("The ", db["Galerkin_type"].value_as_string(), " has been used.");
+    Output::print<>("The ", brinkman2d_db["Galerkin_type"].value_as_string(), " has been used.");
 
-
-    if (db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE >= 1)
+    if (brinkman2d_db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE >= 1)
     {
-      if (db["equal_order_stab_scaling"].is("by h_T"))
+      if (brinkman2d_db["equal_order_stab_scaling"].is("by h_T"))
       {
         TDatabase::ParamDB->l_T = 1;
       }
-      else if (db["equal_order_stab_scaling"].is("by L_0"))
+      else if (brinkman2d_db["equal_order_stab_scaling"].is("by L_0"))
       {
         TDatabase::ParamDB->l_T = -1;
       }
-      type = Brinkman2D_Galerkin1ResidualStabP1;
-      std::shared_ptr <LocalAssembling2D> la_P1P1stab(new LocalAssembling2D(type, fe_functions,
-            this->example.get_coeffs()));
+      type = LocalAssembling_type::Brinkman2D_Galerkin1ResidualStabP1;
+      std::shared_ptr <LocalAssembling2D> la_P1P1stab(
+        new LocalAssembling2D(this->brinkman2d_db, type, fe_functions,
+                              this->example.get_coeffs()));
+
+if (coefficient_function)
+    {
+      // modify la such that it includes the TFEFunction2D coefficient_function
+      la_P1P1stab->setBeginParameter({0});
+      la_P1P1stab->setN_ParamFct(1);
+      la_P1P1stab->setParameterFct({Coefficient_Function});
+      la_P1P1stab->setN_FeValues(1);
+      la_P1P1stab->setFeValueFctIndex({3});
+      la_P1P1stab->setFeValueMultiIndex({D00});
+    }
+     
       la_list.push_back(la_P1P1stab);
-      Output::print<>("The ", db["EqualOrder_PressureStab_type"].value_as_string(), " stabilization for P1/P1 has been applied.");
+      Output::print<>("The ", brinkman2d_db["EqualOrder_PressureStab_type"].value_as_string(), " stabilization for P1/P1 has been applied.");
     }
-    if(db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE > 1)
+    if(brinkman2d_db["PkPk_stab"].is(true) && TDatabase::ParamDB->VELOCITY_SPACE > 1)
     {
-      if (db["equal_order_stab_scaling"].is("by h_T"))
+      if (brinkman2d_db["equal_order_stab_scaling"].is("by h_T"))
       {
         TDatabase::ParamDB->l_T = 1;
       }
-      else if (db["equal_order_stab_scaling"].is("by L_0"))
+      else if (brinkman2d_db["equal_order_stab_scaling"].is("by L_0"))
       {
         TDatabase::ParamDB->l_T = -1;
       }
-      type = Brinkman2D_Galerkin1ResidualStabP2;
-      std::shared_ptr <LocalAssembling2D> la_P2P2stab(new LocalAssembling2D(type, fe_functions,
-            this->example.get_coeffs()));
-      la_list.push_back(la_P2P2stab);
-      Output::print<>("The ", db["EqualOrder_PressureStab_type"].value_as_string(), " stabilization for Pk/Pk, k>=2,  has been applied.");
+      type = LocalAssembling_type::Brinkman2D_Galerkin1ResidualStabP2;
+      std::shared_ptr <LocalAssembling2D> la_P2P2stab(
+        new LocalAssembling2D(this->brinkman2d_db, type, fe_functions,
+                              this->example.get_coeffs()));
+      
+    if (coefficient_function)
+    {
+      // modify la such that it includes the TFEFunction2D coefficient_function
+      la_P2P2stab->setBeginParameter({0});
+      la_P2P2stab->setN_ParamFct(1);
+      la_P2P2stab->setParameterFct({Coefficient_Function});
+      la_P2P2stab->setN_FeValues(1);
+      la_P2P2stab->setFeValueFctIndex({3});
+      la_P2P2stab->setFeValueMultiIndex({D00});
+    }
+
+la_list.push_back(la_P2P2stab);
+      Output::print<>("The ", brinkman2d_db["EqualOrder_PressureStab_type"].value_as_string(), " stabilization for Pk/Pk, k>=2,  has been applied.");
 
     }
 
-    if (db["GradDiv_stab"].is(true))
+    if (brinkman2d_db["GradDiv_stab"].is(true))
     {
       Output::print("Grad-Div stabilization has been applied.");
-      type = Brinkman2D_GradDivStabilization;
-      std::shared_ptr <LocalAssembling2D> la_graddiv(new LocalAssembling2D(type, fe_functions,
-            this->example.get_coeffs()));
-      la_list.push_back(la_graddiv);
+      type = LocalAssembling_type::Brinkman2D_GradDivStabilization;
+      std::shared_ptr <LocalAssembling2D> la_graddiv(
+        new LocalAssembling2D(this->brinkman2d_db, type, fe_functions,
+                              this->example.get_coeffs()));
+   
+        if (coefficient_function)
+    {
+      // modify la such that it includes the TFEFunction2D coefficient_function
+      la_graddiv->setBeginParameter({0});
+      la_graddiv->setN_ParamFct(1);
+      la_graddiv->setParameterFct({Coefficient_Function});
+      la_graddiv->setN_FeValues(1);
+      la_graddiv->setFeValueFctIndex({3});
+      la_graddiv->setFeValueMultiIndex({D00});
+    }
+
+   la_list.push_back(la_graddiv);
     }
 
     /* //--------------------------------------------------------------------------------------------------
@@ -393,6 +466,12 @@ void Brinkman2D::assemble()
     // Brinkmann-specific choices
     std::vector<const TFESpace2D*> spaces_for_matrix;
     spaces_for_matrix.resize(2);
+
+    if (coefficient_function)
+    { spaces_for_matrix.resize(3);
+      spaces_for_matrix[2] = coefficient_function_space;
+    }
+
     spaces_for_matrix[0] = v_space;
     spaces_for_matrix[1] = p_space;
 
@@ -406,7 +485,6 @@ void Brinkman2D::assemble()
     Ass.Assemble2D(s.matrix,s.rhs,
         spaces_for_matrix,spaces_for_rhs,
         example,la_list);
-
     //===========================================================================//
     // Weakly Imposing Essential Boundary Conditions - Boundary Integrals
 
@@ -482,19 +560,20 @@ void Brinkman2D::assemble()
             " with Nitsche parameter: ", TDatabase::ParamDB->nitsche_penalty[k], " .");
       }
 
+
       BoundaryAssembling2D::matrix_gradu_n_v(s.matrix, v_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
-          -1. * TDatabase::ParamDB->EFFECTIVE_VISCOSITY);      // mult  ; if all is in t^2, then mult = -1.*t*t is appropriate with t^2 matches TDatabase::ReadParam->EFFECTIVE_VISCOSITY
+          -1. * (double)brinkman2d_db["effective_viscosity"]); // mult  ; if all is in t^2, then mult = -1.*t*t is appropriate with t^2 matches brinkman2d_db["effective_viscosity"]
 
       BoundaryAssembling2D::matrix_gradv_n_u(s.matrix, v_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
-          -1. * TDatabase::ParamDB->s1 * TDatabase::ParamDB->EFFECTIVE_VISCOSITY);                   // mult ; if all is in t^2, then mult =-1.*TDatabase::ParamDB->s1*t*t is appropriate
+          -1. * TDatabase::ParamDB->s1 * (double) brinkman2d_db["effective_viscosity"]); // mult ; if all is in t^2, then mult =-1.*TDatabase::ParamDB->s1*t*t is appropriate
 
       BoundaryAssembling2D::rhs_gradv_n_uD(s.rhs, v_space,
           this->example.get_bd(0),                                 // access to U1BoundValue in the example,
           this->example.get_bd(1),                                 // access to U2BoundValue in the example,
           TDatabase::ParamDB->nitsche_boundary_id[k],    // boundary component
-          -1. * TDatabase::ParamDB->s1 * TDatabase::ParamDB->EFFECTIVE_VISCOSITY);   // mult ; if all is in t^2, then mult =-1.*TDatabase::ParamDB->s1*t*t is appropriate
+          -1. * TDatabase::ParamDB->s1 * (double) brinkman2d_db["effective_viscosity"]); // mult ; if all is in t^2, then mult =-1.*TDatabase::ParamDB->s1*t*t is appropriate
 
       BoundaryAssembling2D::matrix_p_v_n(s.matrix, v_space, p_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],         // boundary component
@@ -513,7 +592,7 @@ void Brinkman2D::assemble()
       BoundaryAssembling2D::matrix_u_v(s.matrix, v_space,
           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
           //t*t*TDatabase::ParamDB->nitsche_penalty[k],   //t*TDatabase::ParamDB->nitsche_penalty[k],             // mult
-          TDatabase::ParamDB->nitsche_penalty[k]* TDatabase::ParamDB->EFFECTIVE_VISCOSITY,   //mueff*TDatabase::ParamDB->nitsche_penalty[k],             // mult
+          TDatabase::ParamDB->nitsche_penalty[k] * (double) brinkman2d_db["effective_viscosity"], //mueff*TDatabase::ParamDB->nitsche_penalty[k],             // mult
           true);                                                // rescale local integral by edge values
 
       BoundaryAssembling2D::rhs_uD_v(s.rhs, v_space,
@@ -521,19 +600,20 @@ void Brinkman2D::assemble()
           this->example.get_bd(1),                                 // access to U2BoundValue in the example,
           TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
           //t*t*TDatabase::ParamDB->nitsche_penalty[k],                // mult
-          TDatabase::ParamDB->nitsche_penalty[k]* TDatabase::ParamDB->EFFECTIVE_VISCOSITY,                // mult
+          TDatabase::ParamDB->nitsche_penalty[k]* (double) brinkman2d_db["effective_viscosity"], //mult
           true);            // rescale local integral by edge values 
 
       // LB TEST 19.01.18
       BoundaryAssembling2D::matrix_u_n_v_n(s.matrix, v_space, 
           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component↲
-          TDatabase::ParamDB->nitsche_penalty[k]* (TDatabase::ParamDB->VISCOSITY/TDatabase::ParamDB->PERMEABILITY) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0, true);
+          TDatabase::ParamDB->nitsche_penalty[k]* ((double) brinkman2d_db["viscosity"]/(double) brinkman2d_db["permeability"]) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0, true);
       //LB TEST 19.01.18^
     }
     //New LB 15.01.18
     BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(s.matrix, v_space, // TDatabase::ParamDB->nitsche_boundary_id[k], 
         1, // nBoundaryParts
-        (double) db["corner_stab_weight"] * (TDatabase::ParamDB->EFFECTIVE_VISCOSITY + (TDatabase::ParamDB->VISCOSITY/TDatabase::ParamDB->PERMEABILITY) * ( TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0 )));
+        (double) brinkman2d_db["corner_stab_weight"] * ((double) brinkman2d_db["effective_viscosity"] + ((double) brinkman2d_db["viscosity"]/(double) brinkman2d_db["permeability"]) * ( TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0 )));
+
     //NewLB 15.01.18^
 
     //--------------------------------------------------------------------------------------------------
@@ -569,8 +649,8 @@ bool Brinkman2D::stopIt(unsigned int iteration_counter)
   // the residual from 10 iterations ago
   const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
 
-  const unsigned int Max_It = db["nonlinloop_maxit"];
-  const double convergence_speed = db["nonlinloop_slowfactor"];
+  const unsigned int Max_It = brinkman2d_db["nonlinloop_maxit"];
+  const double convergence_speed = brinkman2d_db["nonlinloop_slowfactor"];
   bool slow_conv = false;
 
   if( normOfResidual >= convergence_speed*oldNormOfResidual )
@@ -578,8 +658,8 @@ bool Brinkman2D::stopIt(unsigned int iteration_counter)
     slow_conv = true;
   }
 
-  double limit = db["nonlinloop_epsilon"];
-  if ( db["nonlinloop_scale_epsilon_with_size"] )
+  double limit = brinkman2d_db["nonlinloop_epsilon"];
+  if ( brinkman2d_db["nonlinloop_scale_epsilon_with_size"] )
   {
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
@@ -633,7 +713,17 @@ void Brinkman2D::computeNormsOfResiduals()
 void Brinkman2D::solve()
 {
   System_per_grid& s = this->systems.front();
+
+
+  /* if (brinkman2d_db["preconditioner"].is("augmented_Lagrangian_based"))
+     {
+     this->solver.solve_augmented(s.matrix, s.rhs, s.solution);
+     }
+     else
+     {*/
   this->solver.solve(s.matrix, s.rhs, s.solution);
+  //}
+
 
   // /// @todo consider storing an object of DirectSolver in this class
   //DirectSolver direct_solver(s.matrix,
@@ -649,20 +739,26 @@ void Brinkman2D::solve()
 /** ************************************************************************ */
 void Brinkman2D::output(int level, int i)
 {
-  bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+  bool no_output = !brinkman2d_db["output_write_vtk"] && !brinkman2d_db["output_compute_errors"];
   if( no_output )
     return;
 
   System_per_grid& s = this->systems.front();
-  TFEFunction2D* u1 = s.u.GetComponent(0);
-  TFEFunction2D* u2 = s.u.GetComponent(1);
+  this->u1 = s.u.GetComponent(0);
+  this->u2 = s.u.GetComponent(1);
+
+  /* For Thermohydraulic_Brinkman2D */
+  u1->WriteSol("/Users/blank/ParMooN/Tests/Thermohydraulic_Brinkman2D", "Brinkman_ux");
+  u2->WriteSol("/Users/blank/ParMooN/Tests/Thermohydraulic_Brinkman2D", "Brinkman_uy");
+
 
   //----------------------------------------------------------------------------------
   // The following output is made for the geometry channel.mesh or channel_simple.mesh
   if (Output::getVerbosity() == 5)
   {Output::print("The values the solution u1, u2 takes at the line y=1 are saved in u_values_atline.txt.");
     std::ostringstream oss;
-    oss << "u_values_LineCut_2Neumann2NSPFNitsche_ExponentialFlow_Perm_" << TDatabase::ParamDB->PERMEABILITY << "EffVisc" << TDatabase::ParamDB->EFFECTIVE_VISCOSITY << "Visc" << TDatabase::ParamDB->VISCOSITY << "_level_" << level << "scaling_by_L0.txt";
+        oss << "u_values_LineCut_2Neumann2NSPFNitsche_ExponentialFlow_Perm_" << (double) brinkman2d_db["permeability"] << "EffVisc" << (double) brinkman2d_db["effective_viscosity"] << "Visc" << (double) brinkman2d_db["viscosity"] << "_level_" << level << "scaling_by_L0.txt";
+
     std::string var = oss.str();
     std::ofstream velfile(var);
 
@@ -688,7 +784,7 @@ void Brinkman2D::output(int level, int i)
 
   // print the value of the largest and smallest entry in the finite element
   // vector
-  if( (size_t)db["verbosity"]> 1 )
+  if( (size_t) brinkman2d_db["verbosity"]> 1 )
   {
     u1->PrintMinMax();
     u2->PrintMinMax();
@@ -702,7 +798,7 @@ void Brinkman2D::output(int level, int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(db["output_compute_errors"])
+  if(brinkman2d_db["output_compute_errors"])
   {
     std::array<double, 8> errors_temporary;
     errors_temporary.fill(0);
@@ -746,7 +842,8 @@ void Brinkman2D::output(int level, int i)
     TAuxParam2D aux;
     const TFESpace2D * pointer_to_p_space = &s.pressure_space;
     s.p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
-        example.get_coeffs(), &aux, 1, &pointer_to_p_space,
+        nullptr, &aux, 1, &pointer_to_p_space,
+ //example.get_coeffs(), &aux, 1, &pointer_to_p_space,
         errors_temporary.data() + 3);
     
     errors_temporary.at(5) = boundary_error_l2;
@@ -904,4 +1001,5 @@ std::ostream& operator<<(std::ostream& s, const Brinkman2D::Residuals& n)
     << n.massResidual << "\t" << setw(14) << n.fullResidual;
   return s;
 }
+
 

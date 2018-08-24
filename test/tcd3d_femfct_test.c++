@@ -128,6 +128,7 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example3D::default_example_database());
     db.merge(ParameterDatabase::default_output_database());
+    db.merge(LocalAssembling3D::default_local_assembling_database());
     db["problem_type"] = 1;
     db["example"] = 0;
     db["diffusion_coefficient"] = 1e-6;

@@ -78,7 +78,7 @@ class TQuadBilinear : public TRefTrans2D
                        int _BaseVectDim = 1);
 
     /** set element to cell */
-    void SetCell(TBaseCell * cell);
+    void SetCell(const TBaseCell * cell);
 
     /** return outer normal vector */
     void GetOuterNormal(int j, double zeta,

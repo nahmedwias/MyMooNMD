@@ -54,7 +54,9 @@ QuadFormula1D TFEDatabase3D::QFLineFromDegree[MAXDEGREE] = { Gauss1Line };
 int TFEDatabase3D::HighestAccuracyLine = 0;
 
 QuadFormula2D TFEDatabase3D::QFTriaFromDegree[MAXDEGREE] = { BaryCenterTria };
+int TFEDatabase3D::HighestAccuracyTria = 0;
 QuadFormula2D TFEDatabase3D::QFQuadFromDegree[MAXDEGREE] = { VertexQuad };
+int TFEDatabase3D::HighestAccuracyQuad = 0;
 
 TFE3D *TFEDatabase3D::FEs3D[N_FEs3D] = { nullptr };
 TFEDesc3D *TFEDatabase3D::FEDescs3D[N_FEDescs3D] = { nullptr };
@@ -121,9 +123,11 @@ BF3DRefElements TFEDatabase3D::RefElementFromFE3D[N_FEs3D] = { BFUnitTetrahedron
 
 /** get tetrahedron quadrature formula for given acuracy */
 QuadFormula3D TFEDatabase3D::QFTetraFromDegree[MAXDEGREE] = { BaryCenterTetra };
+int TFEDatabase3D::HighestAccuracyTetra = 0;
 
 /** get hexahedron quadrature formula for given acuracy */
 QuadFormula3D TFEDatabase3D::QFHexaFromDegree[MAXDEGREE] = { VertexHexa };
+int TFEDatabase3D::HighestAccuracyHexa = 0;
 
 /** get hexahedron quadrature formula for convolution */
 QuadFormula3D TFEDatabase3D::QFConvolutionHexaFromDegree[MAXDEGREE] = { VerticesAndOrigin };
@@ -989,6 +993,8 @@ void TFEDatabase3D::GenerateArrays()
   QFHexaFromDegree[16] = Gauss9Hexa;
   QFHexaFromDegree[17] = Gauss9Hexa;
   
+  HighestAccuracyHexa = 17;
+  
   QFConvolutionHexaFromDegree[0] = VerticesAndOrigin;
   QFConvolutionHexaFromDegree[1] = VerticesAndOrigin15;
   QFConvolutionHexaFromDegree[2] = VerticesAndOrigin57;
@@ -1004,6 +1010,8 @@ void TFEDatabase3D::GenerateArrays()
   QFTetraFromDegree[8] = P8Tetra;
   QFTetraFromDegree[9] = P8Tetra;
   QFTetraFromDegree[10] = P8Tetra;
+  
+  HighestAccuracyTetra = 10;
 
   QFQuadFromDegree[0] = Gauss2Quad;
   QFQuadFromDegree[1] = Gauss2Quad;
@@ -1023,6 +1031,8 @@ void TFEDatabase3D::GenerateArrays()
   QFQuadFromDegree[15] = Gauss8Quad;
   QFQuadFromDegree[16] = Gauss9Quad;
   QFQuadFromDegree[17] = Gauss9Quad;
+  
+  HighestAccuracyQuad = 17;
 
   QFTriaFromDegree[0] = MidPointTria;
   QFTriaFromDegree[1] = MidPointTria;
@@ -1044,6 +1054,8 @@ void TFEDatabase3D::GenerateArrays()
   QFTriaFromDegree[17] = Degree19Tria;
   QFTriaFromDegree[18] = Degree19Tria;
   QFTriaFromDegree[19] = Degree19Tria;
+  
+  HighestAccuracyTria = 19;
   
   QFLineFromDegree[0] = Gauss1Line;
   QFLineFromDegree[1] = Gauss1Line;
@@ -1485,7 +1497,7 @@ void TFEDatabase3D::GetOrigFromRef(RefTrans3D RefTrans, int n_points,
     on the original element */
 void TFEDatabase3D::GetOrigValues(RefTrans3D RefTrans,
                 double xi, double eta, double zeta,
-                TBaseFunct3D *bf, TCollection *Coll, TBaseCell *cell,
+                TBaseFunct3D *bf, TCollection *Coll, const TBaseCell *cell,
                 double *uref, double *uxiref, double *uetaref, double *uzetaref,
                 double *uorig, double *uxorig, double *uyorig, double *uzorig)
 {
@@ -1530,7 +1542,7 @@ void TFEDatabase3D::GetOrigValues(RefTrans3D RefTrans,
 }
 
 /** set cell for reference transformation */
-void TFEDatabase3D::SetCellForRefTrans(TBaseCell *cell, 
+void TFEDatabase3D::SetCellForRefTrans(const TBaseCell *cell, 
                                      RefTrans3D reftrans)
 {
   TRefTrans3D *rt;

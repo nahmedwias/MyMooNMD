@@ -114,6 +114,12 @@ class TDomain
      *
      */
      TDomain(const ParameterDatabase& db, const char *ParamFile = nullptr);
+     
+    /** @brief copy constructor, deleted as a precaution */
+    TDomain(const TDomain&) = delete;
+     
+    /** @brief Default copy assignment operator, deleted as a precaution */
+    TDomain& operator=(const TDomain&) = delete;
     
     /** @brief destructor */
     ~TDomain();

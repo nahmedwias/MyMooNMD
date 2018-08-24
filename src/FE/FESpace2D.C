@@ -1184,7 +1184,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE2D TFESpace2D::GetFE2D(int i, TBaseCell *cell) const
+FE2D TFESpace2D::GetFE2D(int i, const TBaseCell *cell) const
 {
   FE2D ret;
 
@@ -1244,13 +1244,20 @@ void TFESpace2D::FindUsedElements()
   //   OutPut("UsedElement[" << i << "]: " << UsedElements[i] << endl);
 }
 
+int TFESpace2D::GetBaseVectDim() const 
+{
+  // the desired information is stored in the BasisFunction2D object. We take 
+  // the one on the first cell, on all other cells it should be the same
+  return this->get_fe(0).GetBaseFunct2D()->GetBaseVectDim();
+}
+
 void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 {
   int i, j, k, l, m, n, comp, N_Edges;
   int *v;
   TBaseCell *cell, *neigh, *child1;
   TJoint *joint;
-  TBoundComp2D *BoundComp;
+  const TBoundComp2D *BoundComp;
   TBoundEdge *BoundEdge;
   double t0,t1;
   BoundCond Cond0, Cond1;

@@ -26,7 +26,7 @@ int TBdCylinder::ReadIn(std::istream &dat)
 
 /** return the coordinates {X, Y, Z} of parameter values T and S*/
 int TBdCylinder::GetXYZofTS(double T, double S, double &X, double &Y,
-                            double &Z)
+                            double &Z) const
 {
   double alpha = mRadius*cos(T);
   double beta  = mRadius*sin(T);
@@ -41,7 +41,7 @@ int TBdCylinder::GetXYZofTS(double T, double S, double &X, double &Y,
 
 /** return the parameter values T and S of coordinates (X, Y, Z) */
 int TBdCylinder::GetTSofXYZ(double X, double Y, double Z, double &T,
-                            double &S)
+                            double &S) const
 {
   double x, y, z, a, b;
   
@@ -65,7 +65,7 @@ int TBdCylinder::GetXYZandTS(int N_Points, double *LinComb,
                             double *xp, double *yp, double *zp,
                             double *tp, double *sp,
                             double &X, double &Y, double &Z,
-                            double &T, double &S)
+                            double &T, double &S) const
 {
   double tmp, x, y, z;
   

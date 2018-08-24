@@ -15,7 +15,7 @@
 #include <Constants.h>
 #include <FEDatabase2D.h>
 
-#include "LocalAssembling2D.h"
+#include "LocalAssembling.h"
 
 #ifdef __3D__
 #include <Aux2D3D.h>
@@ -41,23 +41,6 @@ void Assemble2D(int n_fespaces,
                 bool ignore_boundary_for_rhs = false
                 );
 
-//Hier/////////////////////////////////////////////////
-/** a function from a finite element space */
-void Assemble2D(int n_fespaces,
-                const TFESpace2D** fespaces,
-                int n_sqmatrices,
-                TSquareMatrix2D** sqmatrices,
-                int n_matrices,
-                TMatrix2D** matrices,
-                int n_rhs,
-                double** rhs,
-                const TFESpace2D** ferhs,
-                TDiscreteForm2D* DiscreteForm,
-                BoundCondFunct2D** BoundaryConditions,
-                BoundValueFunct2D** BoundaryValues,
-                TAuxParam2D* Parameters,
-                int AssemblePhaseID = -1
-                );
 
 /** assembling of matrices multiplied by a factor */
 void Assemble2D_FCT(int n_fespaces, TFESpace2D **fespaces, int n_sqmatrices,

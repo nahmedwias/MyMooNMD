@@ -50,14 +50,17 @@ void BilinearCoeffs(int n_points, double *x, double *y,
   for(int i = 0; i < n_points; i++)
   {
     coeffs[i][0] = eps;
-    coeffs[i][1] = 0;
-    coeffs[i][2] = 0;
+    coeffs[i][1] = 0;// parameters[i][0]; //0
+    coeffs[i][2] = 0;//parameters[i][1]; //0;
     coeffs[i][3] = 0;
     
     Exact(x[i], y[i], exact);
+
     coeffs[i][4] = -coeffs[i][0]*exact[3]; // diffusion
     coeffs[i][4] += coeffs[i][1]*exact[1] + coeffs[i][2]*exact[2]; // convection
     coeffs[i][4] += coeffs[i][3]*exact[0]; // reaction
+
+  // coeffs[i][4] = 0;
   }
 }
 

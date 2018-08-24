@@ -30,8 +30,10 @@ public:
                    const TFESpace3D *U_Space,
                    BoundValueFunct3D *given_boundary_data,
                    std::vector<TBaseCell*> &boundaryCells,
-                   int comp, double mult
+                   int bd_component_id, double mult
                    );
+
+
 
     
     /** @brief integral (u, v)_{[boundary_component_id]}

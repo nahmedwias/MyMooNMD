@@ -23,6 +23,7 @@
 #include <TetraAffin.h>
 #include <TetraIsoparametric.h>
 #include <Database.h>
+#include <BoundFace.h>
 
 #include <fstream>
 #include <stdlib.h>
@@ -244,6 +245,119 @@ void TFEVectFunct3D::DataToGrid()
       cell->GetVertex(j)->SetCoords(X[j], Y[j], Z[j]);
     }
   } // endfor i
+}
+
+/** compute integral and measure */
+void TFEVectFunct3D::compute_flux(int surface_id, double& flux) const
+{
+  flux = 0.;
+
+  TCollection *coll = FESpace3D->GetCollection();
+
+  for(size_t i=0; i< coll->GetN_Cells(); i++) {
+    TBaseCell* cell = coll->GetCell(i); //boundaryCells[i];
+
+    int *DOF = FESpace3D->GetGlobalDOF(cell->GetCellIndex());
+    for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
+      TJoint* joint = cell->GetJoint(joint_id);
+            
+      if (joint->GetType() == BoundaryFace ||
+	  joint->GetType() == IsoBoundFace) {
+                
+	// convert the joint to an object of BoundFace type
+	TBoundFace *boundface = (TBoundFace *)joint;
+
+	/// check if the face is on the desired component
+	if (boundface->GetBoundComp()->get_physical_id()==surface_id) {
+
+
+	  // ===================
+	  // get quadrature data
+	  // ===================
+	  int nFaceVertices = cell->getNumberOfFaceVertices(joint_id);
+	  // set quadrature formula and compute quadrature info
+	  FE3D FEId = FESpace3D->GetFE3D(cell->GetCellIndex(),cell);
+	  int fe_degree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
+                        
+	  QuadFormula2D FaceQuadFormula; //=BaryCenterTria;
+	  switch(nFaceVertices) {
+	  case 3:
+	    // triangular face
+	    FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*fe_degree);
+	    FaceQuadFormula = Gauss3Tria;
+	    break;
+	  case 4:
+	    // quadrilateral face
+	    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*fe_degree);
+	    break;
+	  }
+	  int N_Points;
+	  double* faceWeights;
+	  double *t,*s;
+	  // get a quadrature formula good enough for the velocity FE space
+	  TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
+	  qf2->GetFormulaData(N_Points, faceWeights, t, s);
+  
+	  // ====================================
+	  // generate data on reference mesh cell for the 2d face of 3d cell
+	  TFEDatabase3D::GetBaseFunct3DFromFE3D(FEId)
+	    ->MakeRefElementData(FaceQuadFormula);
+                        
+	  BaseFunct3D *BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
+	  int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+                        
+                        
+	  // values of base functions in all quadrature points on face
+	  double **JointValues = TFEDatabase3D::GetJointValues3D
+	    (BaseFuncts[FEId], FaceQuadFormula, joint_id);
+                        
+	  TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])->ChangeBF(FESpace3D->GetCollection(),
+								    cell, N_Points, JointValues);
+                        
+  
+	  // compute normal vector
+	  std::vector<double> normal;
+	  double transformationDeterminant;
+
+	  cell->computeNormalAndTransformationData(joint_id,
+						   normal,
+						   transformationDeterminant);
+	  
+	  // note: the normal computed above is not always directed outward (for boundary cells)
+	  normal.resize(3);
+	  double x,y,z;
+	  ///@attention we assume that the bound.face is planar
+	  boundface->GetXYZofTS(t[0], s[0], x, y, z);
+	  boundface->get_normal_vector(x,y,z,normal[0],normal[1],normal[2]);
+	  Output::print<4>(" ** computed normal vector on (", x ,",", y , "," , z,
+			   ") => n = (",normal[0],",",normal[1],",",normal[2],")");
+	    
+	  // compute \int_F u.n = sum_{gauss pt} w_k \sum_j u_j.n phi_j(x_k)
+	  double value = 0;
+	  for(size_t l=0; l < N_Points; l++) {
+	    double u_n = 0;
+	    
+	    // compute u.n on l-th Gauss point
+	    for(size_t k=0; k<N_BaseFunct[FEId]; k++) {
+	      int global_dof_from_local = DOF[k];
+	      for(size_t icoor=0; icoor<3; icoor++) {
+		double *u_icoor_values = this->GetComponent(icoor)->GetValues();
+		double u_icoor_on_x_k = u_icoor_values[ DOF[k] ];
+		u_n += JointValues[l][k]* (u_icoor_on_x_k*normal[icoor]) ;
+	      }
+	    }
+	      
+	    value += faceWeights[l] * transformationDeterminant * u_n;
+	  }
+	  
+	  flux += value;
+	  
+	}
+	
+      }
+    }
+  }
+
 }
 
 /** calculate errors to given vector function */
@@ -490,11 +604,11 @@ double TFEVectFunct3D::GetL2NormDivergenceError(DoubleFunct3D* Exact_u1,
       }
       double local_divergence_exact = 0;
       double exact_val[5];
-      Exact_u1(X[j], Y[j], Z[i], exact_val);
+      Exact_u1(X[j], Y[j], Z[j], exact_val);
       local_divergence_exact += exact_val[1];
-      Exact_u2(X[j], Y[j], Z[i], exact_val);
+      Exact_u2(X[j], Y[j], Z[j], exact_val);
       local_divergence_exact += exact_val[2];
-      Exact_u3(X[j], Y[j], Z[i], exact_val);
+      Exact_u3(X[j], Y[j], Z[j], exact_val);
       local_divergence_exact += exact_val[3];
       
       auto local_div_error = local_divergence_fe - local_divergence_exact;
@@ -504,6 +618,20 @@ double TFEVectFunct3D::GetL2NormDivergenceError(DoubleFunct3D* Exact_u1,
   div_error = std::sqrt(div_error);
   return div_error;
 } // TFEVectFunct3D::GetL2NormDivergenceError
+
+
+void TFEVectFunct3D::FindValueLocal(const TBaseCell* cell, int cell_no, 
+				    double x, double y, double z, 
+				    double* values) const
+{
+ this->TFEFunction3D::FindValueLocal(cell, cell_no, x, y, z, values);
+ auto u2 = this->GetComponent(1);
+ u2->FindValueLocal(cell, cell_no, x, y, z, values+1);
+ auto u3 = this->GetComponent(2);
+ u3->FindValueLocal(cell, cell_no, x, y, z, values+2);
+ delete u2;
+ delete u3;
+}
 
 
 /** write the solution into a data file - written by Sashi **/

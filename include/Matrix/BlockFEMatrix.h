@@ -299,6 +299,22 @@ class BlockFEMatrix : public BlockMatrix
      */
     static BlockFEMatrix CD3D( const TFESpace3D& space );
     
+    /**
+     * Named constructor for a matrix for Darcy type problems in 3D.
+     * Creates a 2x2 block matrix of the form
+     *  ( A  B1' )
+     *  ( B2 C   ),
+     * where A is velocity-velocity coupling, B1' velocity-pressure,
+     * B2 pressure-velocity and C pressure-pressure coupling.
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for Darcy problems in 2D.
+     */
+    static BlockFEMatrix Darcy3D( const TFESpace3D& velocity,
+                                  const TFESpace3D& pressure);
     
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 1.

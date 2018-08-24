@@ -43,11 +43,11 @@ class TBdCylinder : public TBoundComp3D
     // Methods
     /** return the coordinates {X, Y, Z} of parameter values T and S */
     virtual int GetXYZofTS(double T, double S, double &X, double &Y,
-                          double &Z);
+                          double &Z) const override;
     
      /** return the parameter values T and S of coordinates (X, Y, Z) */
     virtual int GetTSofXYZ(double X, double Y, double Z, double &T,
-                           double &S);
+                           double &S) const override;
 			   
     /** return parameters and coordinates of a given linear
         combination of vertices */
@@ -55,10 +55,10 @@ class TBdCylinder : public TBoundComp3D
                             double *xp, double *yp, double *zp,
                             double *tp, double *sp,
                             double &X, double &Y, double &Z,
-                            double &T, double &S);
+                            double &T, double &S) const override;
 
     virtual void get_normal_vector(double x, double y, double z,
-				   double& nx, double& ny, double &nz){
+				   double& nx, double& ny, double &nz) const override{
       Output::print(" ** ERROR: get_normal_vector() not yet implemented for BdCylinder ");
       exit(1);
     };

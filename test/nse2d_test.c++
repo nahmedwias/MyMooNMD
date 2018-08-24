@@ -31,33 +31,36 @@
 #include <Multigrid.h>
 #include <Chrono.h>
 #include <algorithm>
+#include "LocalAssembling.h"
+
+double accuracy = 1e-6;
 
 void compare(const NSE2D& nse2d, std::array<double, int(5)> errors)
 {
   std::array<double, int(5)> computed_errors = nse2d.get_errors();
   
   // check the L2-error of the velcoity
-  if( fabs(computed_errors[0]-errors[0]) > 1e-6 )
+  if( fabs(computed_errors[0]-errors[0]) > accuracy )
   {
     ErrThrow("L2 norm of velocity: ", computed_errors[0], "  ", errors[0]);
   }
   // check the L2-error of the divergence of the velocity
-  if( fabs(computed_errors[1] - errors[1]) > 1e-6 )
+  if( fabs(computed_errors[1] - errors[1]) > accuracy )
   {
     ErrThrow("L2 norm of divergence: ", std::setprecision(14), computed_errors[1], "  ", errors[1]);
   }
   // check the H1-error of the velcoity
-  if( fabs(computed_errors[2] - errors[2]) > 1e-6 )
+  if( fabs(computed_errors[2] - errors[2]) > accuracy )
   {
     ErrThrow("H1 norm of velocity: ", computed_errors[2], "  ", errors[2]);
   }
   // check the L2-error of the pressure
-  if( fabs(computed_errors[3] - errors[3]) > 1e-6)
+  if( fabs(computed_errors[3] - errors[3]) > accuracy)
   {
     ErrThrow("L2 norm of pressure: ", computed_errors[3], "  ", errors[3]);
   }
   // check the H1-error of the pressure
-  if(fabs(computed_errors[4] - errors[4]) > 1e-6 )
+  if(fabs(computed_errors[4] - errors[4]) > accuracy )
   {
     ErrThrow("H1 norm of pressure: ", computed_errors[4], "  ", errors[4]);
   }
@@ -90,6 +93,9 @@ void check(TDomain &domain, ParameterDatabase db,
            int nonlinear_form,
            std::array<double, int(5)> errors)
 {
+  Output::print("\n\nCalling check with velocity_order=", velocity_order,
+                ", nstype=", nstype, ", laplace_type=", laplace_type, 
+                ", and nonlinear_form=", nonlinear_form);
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
   db.merge(Multigrid::default_multigrid_database());
@@ -150,16 +156,19 @@ void check(TDomain &domain, ParameterDatabase db,
                           + std::to_string(nstype));
 }
 
+template <int laplace_type>
 void check_one_element(TDomain& domain, ParameterDatabase db,
                        int velocity_order,
                        std::array<double, int(5)> errors)
 {
-  int laplace_type = 0;
   int nonlinear_form = 0;
-  // NSTYPE = 1
-  check(domain, db, velocity_order, 1, laplace_type, nonlinear_form, errors);
-  // NSTYPE = 2
-  check(domain, db, velocity_order, 2, laplace_type, nonlinear_form, errors);
+  if(laplace_type == 0)
+  {
+    // NSTYPE = 1
+    check(domain, db, velocity_order, 1, laplace_type, nonlinear_form, errors);
+    // NSTYPE = 2
+    check(domain, db, velocity_order, 2, laplace_type, nonlinear_form, errors);
+  }
   // NSTYPE = 3
   check(domain, db, velocity_order, 3, laplace_type, nonlinear_form, errors);
   // NSTYPE is 4
@@ -184,6 +193,7 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(ParameterDatabase::default_output_database());
     db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
 
     db["problem_type"].set<size_t>(5);
     db["example"] = 2;
@@ -221,49 +231,49 @@ int main(int argc, char* argv[])
     errors = {{ 0.005005607397208, 0.085596036177161, 0.15666212408257,
                 0.071089608676709, 1.3407900222228 }};
     // VELOCITY_SPACE = 2 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 2, errors);
+    check_one_element<0>(domain, db, 2, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P3/P2 elements");
     errors = {{ 0.00028020829779642, 0.0061977013305504, 0.011391210186952,
                 0.0053396813413967, 0.20779333160236 }};
     // VELOCITY_SPACE = 3 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 3, errors);
+    check_one_element<0>(domain, db, 3, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P4/P3 elements");
     errors = {{ 1.1817023010728e-05, 0.00029575269112296, 0.0006435418450572, 
                 0.00050496270735108, 0.026998702772064 }};
     // VELOCITY_SPACE = 4 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 4, errors);
+    check_one_element<0>(domain, db, 4, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P5/P4 elements");
     errors = {{ 4.3466391168252e-07, 1.4197002168949e-05, 2.793323812439e-05,
                 2.1824211773585e-05, 0.0016936362911126 }};
     // VELOCITY_SPACE = 5 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 5, errors);
+    check_one_element<0>(domain, db, 5, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P2-bubble/P1-disc elements");
     errors = {{ 0.0071886299046824, 0.081842610256743, 0.21185558654462,
                 0.36754876295023, 5.3058522557418 }};
     // VELOCITY_SPACE = 22 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 22, errors);
+    check_one_element<0>(domain, db, 22, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P3-bubble/P2-disc elements");
     errors = {{ 0.00026037876329326, 0.0057269486642841, 0.010856952083039,
                 0.013201231959059, 0.39888576555041 }};
     // VELOCITY_SPACE = 23 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 23, errors);
+    check_one_element<0>(domain, db, 23, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P4-bubble/P3-disc elements");
     errors = {{ 1.2032722339771e-05, 0.00024376809624887, 0.00055164963287203,
                 0.00063706731983293, 0.027783948983068 }};
     // VELOCITY_SPACE = 24 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 24, errors);
+    check_one_element<0>(domain, db, 24, errors);
   } // end program 1
   //=========================================================================
   /** Program 2
@@ -280,6 +290,7 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(ParameterDatabase::default_output_database());
     db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
     db["problem_type"].set<size_t>(5);
     db["example"] = 2;
 
@@ -316,56 +327,56 @@ int main(int argc, char* argv[])
     errors = {{ 0.004083204524442, 0.05101317284072, 0.10522635824261,
                 0.017686667902813, 0.51182308944019 }};
     // VELOCITY_SPACE  = 2
-    check_one_element(domain, db, 2, errors);
+    check_one_element<0>(domain, db, 2, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q3/Q2 elements");
     errors = {{ 0.00019319433716041, 0.003563918945437, 0.0071078507849009,
                 0.0018446328461379, 0.057123632497266 }};
     // VELOCITY_SPACE  = 3
-    check_one_element(domain, db, 3, errors);
+    check_one_element<0>(domain, db, 3, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q4/Q3 elements");
     errors = {{ 6.9434747253041e-06, 0.0001677182257252, 0.00035212311261646,
                 9.4703269177756e-05, 0.0048368160352994 }};
     // VELOCITY_SPACE  = 4
-    check_one_element(domain, db, 4, errors);
+    check_one_element<0>(domain, db, 4, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q5/Q4 elements");
     errors = {{ 2.3951237974726e-07, 6.8246180893733e-06, 1.4163394749406e-05,
                 4.9000676557526e-06, 0.00030469183949993 }};
     // VELOCITY_SPACE  = 5
-    check_one_element(domain, db, 5, errors);
+    check_one_element<0>(domain, db, 5, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q2/P1-disc elements");
     errors = {{ 0.0040557267369371, 0.05094007770388, 0.10564123627325,
                 0.030975452768144, 0.70842776239597 }};
     // VELOCITY_SPACE  = 22
-    check_one_element(domain, db, 22, errors);
+    check_one_element<0>(domain, db, 22, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q3/P2-disc elements");
     errors = {{ 0.00020642736694367, 0.0042373143298489, 0.0075794259144329,
                 0.0039793392063018, 0.13655739379564 }};
     // VELOCITY_SPACE  = 23
-    check_one_element(domain, db, 23, errors);
+    check_one_element<0>(domain, db, 23, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q4/P3-disc elements");
     errors = {{ 9.9544541389566e-06, 0.00032338687271106, 0.00045888380841742,
                 0.00037625559674667, 0.01835259073302 }};
     // VELOCITY_SPACE  = 24
-    check_one_element(domain, db, 24, errors);
+    check_one_element<0>(domain, db, 24, errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q5/P4-disc elements");
     errors = {{ 5.3747286967048e-07, 2.4122655352531e-05, 2.7997005479668e-05,
                 2.81141239001e-05, 0.0018176331985532 }};
     // VELOCITY_SPACE  = 25
-    check_one_element(domain, db, 25, errors);
+    check_one_element<0>(domain, db, 25, errors);
   }
   
   return 0;
