@@ -179,11 +179,7 @@ void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
       bb = fabs(c33);
 
   // this is \tilde tau
-  delta = Compute_SDFEM_delta(hK, c00, c11, c22, 
-#ifdef __3D__
-                              c33,
-#endif
-                              c44, bb);
+  delta = Compute_SDFEM_delta<3>(hK, c00, {{c11, c22, c33}}, c44, bb);
   
   // scale appropriately, after it is used for the SOLD scheme
   delta *= val;
@@ -280,11 +276,7 @@ void MatricesAKSRhsAssemble_SUPG(double Mult, double *coeff, double *param,
       bb = fabs(c33);
 
   // this is \tilde tau
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22,
-#ifdef __3D__
-                            c33,
-#endif
-                            c44, bb);
+  tau = Compute_SDFEM_delta<3>(hK, c00, {{c11, c22, c33}}, c44, bb);
 
   if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
   {
@@ -296,11 +288,8 @@ void MatricesAKSRhsAssemble_SUPG(double Mult, double *coeff, double *param,
 	  -theta3*time_step*c6 - theta4*time_step*c5;
       c6 = time_step * theta4 * c5;
       // compute the parameter, c6 is just a dummy
-      sigma = Compute_SOLD_sigma(hK, c00, c11, c22,
-#ifdef __3D__
-                                 c33,
-#endif
-                                 c44, c6, bb, tau, param, res, 1,1);
+      sigma = Compute_SOLD_sigma<3>(hK, c00, {{c11, c22, c33}}, c44, c6, bb,
+                                    tau, param, res, 1,1);
       //OutPut( param[0] << " " << param[4] <<  " " << res << " " <<  sigma << endl);
       val2 = Mult * sigma;
       if (TDatabase::ParamDB->SOLD_TYPE==2)
@@ -810,16 +799,13 @@ void MatricesA_Assemble_SUPG_Bulk3D(double Mult, double *coeff, double *param,
     }
   }
 
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22,
-#ifdef __3D__
-                            c33,
-#endif
-                            c44, bb);
+  tau = Compute_SDFEM_delta<3>(hK, c00, {{c11, c22, c33}}, c44, bb);
 /*
   if (!sold_type)
       sigma = 0;
   else
-      sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, bb, tau, param);
+      sigma = Compute_SOLD_sigma<3>(hK, c0, {{c1, c2, c3}}, c4, c5, bb, tau,
+                                    param);
 */
  
   if (sold_type < 2)
@@ -961,16 +947,13 @@ void Rhs_Assemble_SUPG_Bulk3D(double Mult, double *coeff, double *param,
     }
   }
 
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22,
-#ifdef __3D__
-                            c33,
-#endif
-                            c44, bb);
+  tau = Compute_SDFEM_delta<3>(hK, c00, {{c11, c22, c33}}, c44, bb);
 
 /*  if (!sold_type)
       sigma = 0;
   else
-      sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, bb, tau, param);
+      sigma = Compute_SOLD_sigma<3>(hK, c0, {{c1, c2, c3}}, c4, c5, bb, tau,
+                                    param);
 */ 
   if (sold_type < 2)
   {

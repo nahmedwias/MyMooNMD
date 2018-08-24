@@ -544,7 +544,7 @@ void MatrixMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
   else
       bb = fabs(c22);
   // this is tau
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
+  tau = Compute_SDFEM_delta<2>(hK, c00, {{c11, c22}}, c33, bb);
 
   for(i=0;i<N_T;i++)
    {
