@@ -373,36 +373,25 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       this->N_Rhs = 1;
       this->RhsSpace = { 0 };
       this->N_Terms = d+1;
-      //this->Derivatives = { D100, D010, D001, D000 };
+      //this->Derivatives = { D000, D100, D010, D001 }; // or {D00, D10, D01}
       this->Derivatives = indices_up_to_order<d>(1);
-      this->Derivatives.erase(this->Derivatives.begin());
-      this->Derivatives.push_back(indices_up_to_order<d>(0)[0]);
       this->Needs2ndDerivatives = new bool[1];
       this->Needs2ndDerivatives[0] = false;
       this->FESpaceNumber = std::vector<int>(d+1, 0);
       this->Manipulate = nullptr;
-      this->local_assemblings_routines.push_back(BilinearAssembleGalerkin);
-      if(disc_type.is("supg") && d == 3)
+      this->local_assemblings_routines.push_back(BilinearAssembleGalerkin<d>);
+      if((disc_type.is("supg") || disc_type.is("gls")))
       {
-        // second derivatives are not supported yet
-        // the method is used for the convection dominant case
-        // => coefficient of laplace is smaller
-        this->local_assemblings_routines.push_back(BilinearAssemble_SD);
-      }
-      else if((disc_type.is("supg") || disc_type.is("gls")) && d == 2)
-      {
-        this->N_Terms = 5;
-        auto sot = indices_up_to_order<d>(2);
-        this->Derivatives.push_back(sot[3]);
-        this->Derivatives.push_back(sot[5]);
+        this->Derivatives = indices_up_to_order<d>(2);
+        this->N_Terms = this->Derivatives.size();
         this->Needs2ndDerivatives[0] = true;
         this->FESpaceNumber = std::vector<int>(d+d+1, 0);
         if(disc_type.is("supg"))
           this->local_assemblings_routines.push_back(
-                    BilinearAssemble_SD);
+                    BilinearAssemble_SD<d>);
         else
           this->local_assemblings_routines.push_back(
-                    BilinearAssemble_GLS);
+                    BilinearAssemble_GLS<d>);
       }
       else if(!disc_type.is("galerkin"))
       {

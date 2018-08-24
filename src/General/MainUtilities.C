@@ -735,7 +735,7 @@ void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk,
     // if (Y[i]>TDatabase::ParamDB->P6) continue;
 
     // SUPG parameter
-    delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
+    delta = Compute_SDFEM_delta<2>(hK, c0, {{c1, c2}}, c3, c5);
     
     deriv = Der[i];
     exactval = Exact[i];
@@ -1005,7 +1005,7 @@ void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk
     c2 = coeff[2];
     // double c3 = coeff[3];
     c5 = MAX(fabs(c1),fabs(c2));
-    delta = Compute_SDFEM_delta(hK, coeff[0], coeff[1], coeff[2], coeff[3], c5);
+    delta = Compute_SDFEM_delta<2>(hK, coeff[0], {{coeff[1], coeff[2]}}, coeff[3], c5);
     if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 120814)
       delta = TDatabase::ParamDB->INTERNAL_P1_Array[TDatabase::ParamDB->INTERNAL_LEVEL];
 
