@@ -97,6 +97,11 @@ class TMatrix
      */
     TMatrix(int nRows, int nCols);
 
+    /**
+     * @brief Generates a diagonal matrix with entries from input std::vector<double> diag
+     */
+    TMatrix(std::vector<double> diag, std::shared_ptr<TStructure> Structure);
+
     /// @brief Default copy constructor
     ///
     /// Performs a deep copy of the entries, but not of the structure.
@@ -197,7 +202,7 @@ class TMatrix
     /// diagonal. In that case it will have a zero there. The length of this
     /// vector is the minimum of the number of rows and columns.
     std::vector<double> get_diagonal() const;
-    
+
     /** @brief return the norm of the matrix 
      * 
      * The parameter \p p determines which norm to compute. Choose \p as  
@@ -362,7 +367,20 @@ class TMatrix
      */ 
     TMatrix* multiply(const TMatrix * const B, double a = 1.0) const;
     
-    
+    /**
+        * @brief compute matrix-matrix product C = A * diag[d] * B,
+        *
+        * 'A' is this matrix, 'd' is a vector, 'B' is given. Then matrix
+        * 'C' is created during this function and the user is responsible to
+        * delete C.
+        *
+        * Note that this is rather slow.
+        *
+        * @param B matrix to be multiplied (from right) to this matrix
+        * @param d vector
+        */
+       TMatrix* multiply(const TMatrix * const B, std::vector< double > d) const;
+
     /**
      * @brief multiply this matrix B with its transposed B^T from the right
      * 

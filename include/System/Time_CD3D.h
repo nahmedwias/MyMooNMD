@@ -18,12 +18,12 @@
 #include <BlockVector.h>
 #include <Example_TimeCD3D.h>
 #include <Solver.h>
+#include <DataWriter.h>
+#include "LocalAssembling.h"
 
 #include <vector>
 #include <array>
 #include <deque>
-
-class LocalAssembling3D; //forward declaration
 
 class Time_CD3D
 {
@@ -126,6 +126,7 @@ class Time_CD3D
      */
     std::deque<SystemPerGrid> systems_;
     
+    
     /** @brief Definition of the used example */
     const Example_TimeCD3D example_;
     
@@ -138,6 +139,9 @@ class Time_CD3D
     
     /** @brief store the errors to compute accumulated error norms */
     std::array<double, 5> errors_;
+    
+    /** @brief output object */
+    DataWriter3D outputWriter;
 
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;

@@ -142,10 +142,11 @@ class TBaseFunct3D
       { return BF2Change; }
 
     /** change basis functions on cell if needed */
-    void ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values);
+    void ChangeBF(TCollection *Coll, const TBaseCell *Cell, double *Values);
 
     /** change basis functions on cell in all points if needed */
-    void ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, double **Values);
+    void ChangeBF(TCollection *Coll, const TBaseCell *Cell, int N_Points,
+                  double **Values);
 
     /** return BaseFunct_ID */
     BaseFunct3D GetID() const

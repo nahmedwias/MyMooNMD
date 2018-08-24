@@ -64,6 +64,9 @@ class TFE3D
     /** return BaseFunct3D_ID */
     BaseFunct3D GetBaseFunct3D_ID() const
       { return BaseFunct_ID; };
+    
+    BaseFunct3D get_id() const
+      { return BaseFunct_ID; };
 
     /** return BaseFunct3D */
     TBaseFunct3D *GetBaseFunct3D() const

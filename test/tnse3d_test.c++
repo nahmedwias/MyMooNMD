@@ -329,6 +329,7 @@ int main(int argc, char* argv[])
   db.merge(ParameterDatabase::default_nonlinit_database());
   db.merge(Example3D::default_example_database());
   db.merge(TimeDiscretization::default_TimeDiscretization_database());
+  db.merge(LocalAssembling3D::default_local_assembling_database());
   db["problem_type"].set<size_t>(6);
   db["nonlinloop_slowfactor"]=1.;
   db.add("boundary_file", "Default_UnitCube", "");

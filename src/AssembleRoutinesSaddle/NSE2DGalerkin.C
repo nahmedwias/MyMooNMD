@@ -5,775 +5,217 @@
 Hotfixglobal_AssembleNSE assemble_nse(Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION);
 
 // =================================================================================
-
-void NSType1Galerkin(double Mult, double *coeff, double *param, double hK,
-                     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
-                     double **LocRhs)
+void NSLaplaceGradGradSingle(double Mult, double *coeff, double *param,
+                             double hK, double **OrigValues, int *N_BaseFuncts,
+                             double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixB1, **MatrixB2;
-  double *Rhs1, *Rhs2, val;
-  double *MatrixRow, *MatrixRow1, *MatrixRow2;
-  double ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_U, N_P;
-  double c0, c1, c2;
-  double u1, u2;
-
-  MatrixA = LocMatrices[0];
-  MatrixB1 = LocMatrices[1];
-  MatrixB2 = LocMatrices[2];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
+  double ansatz10, ansatz01, test10, test01;
+  double ** MatrixA = LocMatrices[0];
+  int N_U = N_BaseFuncts[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double nu = coeff[0]; // = 1/reynolds_number
+  
+  for(int i = 0; i < N_U; i++)
   {
-    MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
-
-    for(j=0;j<N_U;j++)
+    test10 = u_x[i];
+    test01 = u_y[i];
+    for(int j = 0; j < N_U; j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-        val += (u1*ansatz10+u2*ansatz01)*test00;
-
-      MatrixRow[j] += Mult * val;
-    }                            // endfor j
-  }                              // endfor i
- 
-  for(i=0;i<N_P;i++)
-  {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-
-    test00 = Orig3[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val = -Mult*test00*ansatz10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*test00*ansatz01;
-      MatrixRow2[j] += val;
-    }                            // endfor j
-
-  }                              // endfor i
-}
-
-// =================================================================================
-void NSType2Galerkin(double Mult, double *coeff, double *param, double hK, 
-                     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
-                     double **LocRhs)
-{
-  double **MatrixA, **MatrixB1, **MatrixB2;
-  double **MatrixB1T, **MatrixB2T;
-  double *Rhs1, *Rhs2, val;
-  double *MatrixRow, *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_U, N_P;
-  double c0, c1, c2;
-  double u1, u2;
-
-  MatrixA = LocMatrices[0];
-  MatrixB1 = LocMatrices[1];
-  MatrixB2 = LocMatrices[2];
-  MatrixB1T = LocMatrices[3];
-  MatrixB2T = LocMatrices[4];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
-  {
-    MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-     //HOTFIX: Check the documentation!
-     if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-       val += (u1*ansatz10+u2*ansatz01)*test00;
-
-      MatrixRow[j] += Mult * val;
-    }                            // endfor j
-
-    MatrixRow1 = MatrixB1T[i];
-    MatrixRow2 = MatrixB2T[i];
-    for(j=0;j<N_P;j++)
-    {
-      ansatz00 = Orig3[j];
-
-      val = -Mult*ansatz00*test10;
-      MatrixRow1[j] += val;
-      val = -Mult*ansatz00*test01;
-      MatrixRow2[j] += val;
+      ansatz10 = u_x[j];
+      ansatz01 = u_y[j];
+      MatrixA[i][j] += Mult * nu*(test10*ansatz10+test01*ansatz01);
     }
-  }                              // endfor i
-
-  for(i=0;i<N_P;i++)
-  {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-
-    test00 = Orig3[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val = -Mult*test00*ansatz10;
-      MatrixRow1[j] += val;
-      val = -Mult*test00*ansatz01;
-      MatrixRow2[j] += val;
-    }                            // endfor j
-
-  }                              // endfor i
+  }
 }
 
-// =================================================================================
-void NSType1_2NLGalerkin(double Mult, double *coeff, double *param, double hK,
+void NSLaplaceGradGrad(double Mult, double *coeff, double *param,
+                       double hK, double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs)
+{
+  double ansatz10, ansatz01, test10, test01;
+  double ** MatrixA11 = LocMatrices[0];
+  double ** MatrixA22 = LocMatrices[3];
+  int N_U = N_BaseFuncts[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double nu = coeff[0]; // = 1/reynolds_number
+  
+  for(int i = 0; i < N_U; i++)
+  {
+    test10 = u_x[i];
+    test01 = u_y[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      ansatz10 = u_x[j];
+      ansatz01 = u_y[j];
+      double val = Mult * nu*(test10*ansatz10+test01*ansatz01);
+      MatrixA11[i][j] += val;
+      MatrixA22[i][j] += val;
+    }
+  }
+}
+
+void NSLaplaceDeformation(double Mult, double *coeff, double *param, double hK,
+                          double **OrigValues, int *N_BaseFuncts,
+                          double ***LocMatrices, double **LocRhs)
+{
+  double ansatz10, ansatz01, test10, test01;
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double **MatrixA21 = LocMatrices[2];
+  double **MatrixA22 = LocMatrices[3];
+  int N_U = N_BaseFuncts[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double nu = coeff[0];
+  for(int i = 0; i < N_U; i++)
+  {
+    test10 = u_x[i];
+    test01 = u_y[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      ansatz10 = u_x[j];
+      ansatz01 = u_y[j];
+      MatrixA11[i][j] += Mult * 2*nu*(test10*ansatz10+0.5*test01*ansatz01);
+      MatrixA12[i][j] += Mult * nu*(test01*ansatz10);
+      MatrixA21[i][j] += Mult * nu*(test10*ansatz01);
+      MatrixA22[i][j] += Mult * 2*nu*(0.5*test10*ansatz10+test01*ansatz01);
+    }
+  }
+}
+
+void NSDivergenceBlocks(double Mult, double *coeff, double *param, double hK,
+                        double **OrigValues, int *N_BaseFuncts,
+                        double ***LocMatrices, double **LocRhs)
+{
+  double ansatz10, ansatz01, test00;
+  double ** MatrixB1 = LocMatrices[5];
+  double ** MatrixB2 = LocMatrices[6];
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+  double * Orig1 = OrigValues[1];         // p
+  double * Orig2 = OrigValues[2];         // u_x
+  double * Orig3 = OrigValues[3];         // u_y
+  for(int i = 0; i < N_P; i++)
+  {
+    test00 = Orig1[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      MatrixB1[i][j] += -Mult*test00*ansatz10;
+      MatrixB2[i][j] += -Mult*test00*ansatz01;
+    }
+  }
+}
+
+void NSGradientBlocks(double Mult, double *coeff, double *param, double hK,
+                      double **OrigValues, int *N_BaseFuncts,
+                      double ***LocMatrices, double **LocRhs)
+{
+  double ansatz00, test10, test01;
+  double ** MatrixB1T = LocMatrices[7];
+  double ** MatrixB2T = LocMatrices[8];
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+  double * Orig1 = OrigValues[1];         // p
+  double * Orig2 = OrigValues[2];         // u_x
+  double * Orig3 = OrigValues[3];         // u_y
+  for(int i = 0; i < N_U; i++)
+  {
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    for(int j = 0; j < N_P; j++)
+    {
+      ansatz00 = Orig1[j];
+      MatrixB1T[i][j] += -Mult*ansatz00*test10;
+      MatrixB2T[i][j] += -Mult*ansatz00*test01;
+    }
+  }
+}
+
+void NSRightHandSide(double Mult, double *coeff, double *param, double hK,
+                     double **OrigValues, int *N_BaseFuncts,
+                     double ***LocMatrices, double **LocRhs)
+{
+  double test00;
+  double * Rhs1 = LocRhs[0];
+  double * Rhs2 = LocRhs[1];
+  double * Rhs3 = LocRhs[2];
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+  double * u = OrigValues[0];
+  double * p = OrigValues[1];
+  double f1 = coeff[1];
+  double f2 = coeff[2];
+  double g = coeff[3]; // divergence
+  for(int i = 0; i < N_U; i++)
+  {
+    test00 = u[i];
+    Rhs1[i] += Mult*test00*f1;
+    Rhs2[i] += Mult*test00*f2;
+  }
+  for(int i = 0; i < N_P; i++)
+  {
+    test00 = p[i];
+    Rhs3[i] += -Mult*test00*g;
+  }
+}
+
+void NSNonlinearTermSingle(double Mult, double *coeff, double *param, double hK,
                          double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
                          double **LocRhs)
 {
-  double **MatrixA;
-  double val;
-  double *MatrixRow;
-  double ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U;
-  double c0;
-  double u1, u2;
-
-  MatrixA = LocMatrices[0];
-
-  N_U = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-
-  c0 = coeff[0];                 // nu
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
+  double test00, ansatz10, ansatz01;
+  double ** MatrixA = LocMatrices[0];
+  int N_U = N_BaseFuncts[0];
+  double * u   = OrigValues[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double u1 = param[0];        
+  double u2 = param[1];        
+  for(int i = 0; i < N_U; i++)
   {
-    MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    for(j=0;j<N_U;j++)
+    test00 = u[i];
+    for(int j = 0; j < N_U; j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-
-      MatrixRow[j] += Mult * val;
+      ansatz10 = u_x[j];
+      ansatz01 = u_y[j];
+      MatrixA[i][j] += Mult * (u1*ansatz10 + u2*ansatz01) * test00;
     }                            // endfor j
   }                              // endfor i
 }
-// =================================================================================
-void NSType3Galerkin(double Mult, double *coeff, double *param, double hK,
-                     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
-                     double **LocRhs)
-{
-  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
-  double **MatrixB1, **MatrixB2;
-  double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
-  double *MatrixRow1, *MatrixRow2;
-  double ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j,N_U, N_P;
-  double c0, c1, c2;
-  double u1, u2;
 
-  MatrixA11 = LocMatrices[0];
-//  MatrixA12 = LocMatrices[1];
-//  MatrixA21 = LocMatrices[2];
-  MatrixA22 = LocMatrices[3];
-  MatrixB1  = LocMatrices[4];
-  MatrixB2  = LocMatrices[5];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-//    Matrix12Row = MatrixA12[i];
-//    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-        val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix11Row[j] += Mult * val;
-
-      // val  = 0;
-      // Matrix12Row[j] += Mult * val;
-
-      // val  = 0;
-      // Matrix21Row[j] += Mult * val;
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-        val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix22Row[j] += Mult * val;
-
-    }                            // endfor j
-  }                              // endfor i
-
-  for(i=0;i<N_P;i++)
-  {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-
-    test00 = Orig3[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val = -Mult*test00*ansatz10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*test00*ansatz01;
-      MatrixRow2[j] += val;
-    }                            // endfor j
-
-  }                              // endfor i
-}
-
-// =================================================================================
-void NSType4Galerkin(double Mult, double *coeff, double *param, double hK,
-                     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
-                     double **LocRhs)
-{
-  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
-  double **MatrixB1, **MatrixB2;
-  double **MatrixB1T, **MatrixB2T;
-  double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix22Row;  // *Matrix21Row, *Matrix12Row;
-  double *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j,N_U, N_P;
-  double c0, c1, c2;
-  double u1,u2;
-
-  MatrixA11 = LocMatrices[0];
-//  MatrixA12 = LocMatrices[1];
-//  MatrixA21 = LocMatrices[2];
-  MatrixA22 = LocMatrices[3];
-  int offset = TDatabase::ParamDB->NSTYPE == 14 ? 1 : 0;
-  MatrixB1 = LocMatrices[4+offset];
-  MatrixB2 = LocMatrices[5+offset];
-  MatrixB1T = LocMatrices[6+offset];
-  MatrixB2T = LocMatrices[7+offset];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-//    Matrix12Row = MatrixA12[i];
-//    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-        val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix11Row[j] += Mult * val;
-
-      // val  = 0;
-      // Matrix12Row[j] += Mult * val;
-
-      // val  = 0;
-      // Matrix21Row[j] += Mult * val;
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      //HOTFIX: Check the documentation!
-      if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
-        val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix22Row[j] += Mult * val;
-
-    }                            // endfor j
-
-    MatrixRow1 = MatrixB1T[i];
-    MatrixRow2 = MatrixB2T[i];
-    for(j=0;j<N_P;j++)
-    {
-      ansatz00 = Orig3[j];
-
-      val = -Mult*ansatz00*test10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*ansatz00*test01;
-      MatrixRow2[j] += val;
-    }
-  }                              // endfor i
-
-  for(i=0;i<N_P;i++)
-  {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-
-    test00 = Orig3[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val = -Mult*test00*ansatz10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*test00*ansatz01;
-      MatrixRow2[j] += val;
-    }                            // endfor j
-
-  }                              // endfor i
-}
-// =================================================================================
-void NSType3_4NLGalerkin(double Mult, double *coeff, double *param, double hK,
+void NSNonlinearTerm(double Mult, double *coeff, double *param, double hK,
                          double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
                          double **LocRhs)
 {
-  double **MatrixA11, **MatrixA22;
-  double val;
-  double *Matrix11Row, *Matrix22Row;
-  double ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U;
-  double c0;
-  double u1, u2;
-
-  MatrixA11 = LocMatrices[0];
-  MatrixA22 = LocMatrices[1];
-
-  N_U = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-
-  c0 = coeff[0];                 // nu
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
+  double test00, ansatz10, ansatz01;
+  double ** MatrixA11 = LocMatrices[0];
+  double ** MatrixA22 = LocMatrices[3];
+  int N_U = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  double * u_x = OrigValues[2];
+  double * u_z = OrigValues[3];
+  double u1 = param[0];
+  double u2 = param[1];
+  for(int i = 0; i < N_U; i++)
   {
-    Matrix11Row = MatrixA11[i];
-    Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    for(j=0;j<N_U;j++)
+    test00 = u[i];
+    for(int j = 0; j < N_U; j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix11Row[j] += Mult * val;
-
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix22Row[j] += Mult * val;
-
-    }                            // endfor j
-  }                              // endfor i
-}
-// =================================================================================
-
-void NSType3GalerkinDD(double Mult, double *coeff, double *param, double hK,
-                       double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
-                       double **LocRhs)
-{
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
-  double **MatrixB1, **MatrixB2;
-  double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-  double *MatrixRow1, *MatrixRow2;
-  double ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_U, N_P;
-  double c0, c1, c2;
-  double u1, u2;
-
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
-  MatrixA22 = LocMatrices[3];
-  MatrixB1  = LocMatrices[4];
-  MatrixB2  = LocMatrices[5];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix11Row[j] += Mult * val;
-
-      val  = c0*(test01*ansatz10);
-      Matrix12Row[j] += Mult * val;
-
-      val  = c0*(test10*ansatz01);
-      Matrix21Row[j] += Mult * val;
-
-      val  = 2*c0*(0.5*test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix22Row[j] += Mult * val;
-
-    }                            // endfor j
-  }                              // endfor i
-
-  for(i=0;i<N_P;i++)
-  {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-
-    test00 = Orig3[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val = -Mult*test00*ansatz10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*test00*ansatz01;
-      MatrixRow2[j] += val;
-    }                            // endfor j
-
-  }                              // endfor i
-}
-
-// =================================================================================
-void NSType4GalerkinDD(double Mult, double *coeff, double *param, double hK,
-                       double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
-                       double **LocRhs)
-{
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
-  double **MatrixB1, **MatrixB2;
-  double **MatrixB1T, **MatrixB2T;
-  double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-  double *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j,N_U, N_P;
-  double c0, c1, c2;
-  double u1, u2;
-
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
-  MatrixA22 = LocMatrices[3];
-  int offset = TDatabase::ParamDB->NSTYPE == 14 ? 1 : 0;
-  MatrixB1 = LocMatrices[4+offset];
-  MatrixB2 = LocMatrices[5+offset];
-  MatrixB1T = LocMatrices[6+offset];
-  MatrixB2T = LocMatrices[7+offset];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
-    Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    Rhs1[i] += Mult*test00*c1;
-    Rhs2[i] += Mult*test00*c2;
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix11Row[j] += Mult * val;
-
-      val  = c0*(test01*ansatz10);
-      Matrix12Row[j] += Mult * val;
-
-      val  = c0*(test10*ansatz01);
-      Matrix21Row[j] += Mult * val;
-
-      val  = 2*c0*(0.5*test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix22Row[j] += Mult * val;
-
-    }                            // endfor j
-
-    MatrixRow1 = MatrixB1T[i];
-    MatrixRow2 = MatrixB2T[i];
-    for(j=0;j<N_P;j++)
-    {
-      ansatz00 = Orig3[j];
-
-      val = -Mult*ansatz00*test10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*ansatz00*test01;
-      MatrixRow2[j] += val;
+      ansatz10 = u_x[j];
+      ansatz01 = u_z[j];
+      MatrixA11[i][j] += Mult * (u1*ansatz10 + u2*ansatz01)*test00;
+      MatrixA22[i][j] += Mult * (u1*ansatz10 + u2*ansatz01)*test00;
     }
-  }                              // endfor i
-
-  for(i=0;i<N_P;i++)
-  {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-
-    test00 = Orig3[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val = -Mult*test00*ansatz10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*test00*ansatz01;
-      MatrixRow2[j] += val;
-    }                            // endfor j
-
-  }                              // endfor i
+  }
 }
 
-// =================================================================================
-void NSType3_4NLGalerkinDD(double Mult, double *coeff, double *param, double hK,
-                           double **OrigValues, int *N_BaseFuncts, double ***LocMatrices,
-                           double **LocRhs)
+
+void NSParamsVelo(double *in, double *out)
 {
-  double **MatrixA11, **MatrixA22;
-  double val;
-  double *Matrix11Row, *Matrix22Row;
-  double ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U;
-  double c0;
-  double u1, u2;
-
-  MatrixA11 = LocMatrices[0];
-  MatrixA22 = LocMatrices[1];
-
-  N_U = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-
-  c0 = coeff[0];                 // nu
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
-  {
-    Matrix11Row = MatrixA11[i];
-    Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    for(j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix11Row[j] += Mult * val;
-
-      val  = 2*c0*(0.5*test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
-      Matrix22Row[j] += Mult * val;
-
-    }                            // endfor j
-  }                              // endfor i
+  out[0] = in[2];                // u1old
+  out[1] = in[3];                // u2old
 }

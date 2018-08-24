@@ -426,7 +426,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell) const
+FE3D TFESpace3D::GetFE3D(int i, const TBaseCell *cell) const
 {
   FE3D ret;
 
@@ -444,7 +444,7 @@ const TFE3D& TFESpace3D::get_fe(unsigned int cell_number) const
   if((int)cell_number >= this->N_Cells)
     ErrThrow("unable to find the finite element for cell ", cell_number, 
              ". There are only ", this->N_Cells, " cells");
-  TBaseCell * cell = this->Collection->GetCell(cell_number);
+  const TBaseCell * cell = this->Collection->GetCell(cell_number);
   // find finite element id
   FE3D fe_id = this->GetFE3D(cell_number, cell);
   // get the finite element from the database
@@ -455,7 +455,7 @@ const TFE3D& TFESpace3D::get_fe(unsigned int cell_number) const
 
 void TFESpace3D::FindUsedElements()
 {
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int i, j, N_;
   int Used[N_FEs3D];
 
@@ -2082,6 +2082,13 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 //   #endif
 }
 
+int TFESpace3D::GetBaseVectDim() const
+{
+  // the desired information is stored in the BasisFunction2D object. We take 
+  // the one on the first cell, on all other cells it should be the same
+  return this->get_fe(0).GetBaseFunct3D()->GetBaseVectDim();
+}
+
 TFESpace3D::~TFESpace3D()
 {
   if (UsedElements)
@@ -2407,6 +2414,77 @@ bool TFESpace3D::CheckMesh() const
   return true;
 } 
 
+// ===========================================================================
+void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m,
+				  std::vector<double>& qWeights,std::vector<double>& qPointsT,
+				  std::vector<double>& qPointsS,
+				  std::vector< std::vector<double> >& basisFunctionsValues) const
+{
+  int nFaceVertices = cell->getNumberOfFaceVertices(m);
+  
+  // set quadrature formula and compute quadrature info
+  FE3D FEId = this->GetFE3D(cell->GetCellIndex(),cell);
+  int fe_degree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
+                        
+  QuadFormula2D FaceQuadFormula; //=BaryCenterTria;
+  switch(nFaceVertices) {
+  case 3:
+    // triangular face
+    FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*fe_degree);
+    FaceQuadFormula = Gauss3Tria;
+    break;
+  case 4:
+    // quadrilateral face
+    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*fe_degree);
+    break;
+  }
+  
+  int N_Points;
+  double* faceWeights;
+  double *t,*s;
+  // get a quadrature formula good enough for the velocity FE space
+  TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
+  qf2->GetFormulaData(N_Points, faceWeights, t, s);
+
+  // ====================================
+  // generate data on reference mesh cell for the 2d face of 3d cell
+  TFEDatabase3D::GetBaseFunct3DFromFE3D(FEId)
+    ->MakeRefElementData(FaceQuadFormula);
+                        
+  BaseFunct3D *BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
+  int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+                        
+  // values of base functions in all quadrature points on face
+  double **JointValues = TFEDatabase3D::GetJointValues3D
+    (BaseFuncts[FEId], FaceQuadFormula, m);
+                        
+  TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])->ChangeBF(this->GetCollection(),
+							    cell, N_Points, JointValues);
+
+  // ====================================
+  // convert the double* to vectors
+  
+  qWeights.resize(N_Points);
+  qPointsT.resize(N_Points);
+  qPointsS.resize(N_Points);
+  for (size_t k=0; k<(size_t)N_Points; k++) {
+    qWeights[k] = faceWeights[k];
+    qPointsT[k] = t[k];
+    qPointsS[k] = s[k];
+  }
+
+  
+  basisFunctionsValues.resize(qWeights.size());                       
+  for (unsigned int l=0; l<qWeights.size(); l++) {
+    basisFunctionsValues[l].resize(N_BaseFunct[FEId]);                          
+    for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
+      basisFunctionsValues[l][k]=JointValues[l][k];
+    }
+  }
+  // ====================================
+  
+}
+
 #ifdef _MPI
 void TFESpace3D::initialize_parallel(int maxSubDomainPerDof)
 {
@@ -2417,4 +2495,5 @@ void TFESpace3D::initialize_parallel(int maxSubDomainPerDof)
   comm_ .reset(new TParFECommunicator3D(mapper_.get()));
 }
 #endif
+
 

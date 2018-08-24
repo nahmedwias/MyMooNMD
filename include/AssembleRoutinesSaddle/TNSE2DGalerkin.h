@@ -39,4 +39,13 @@ void TimeNSType4GalerkinDD(double Mult, double *coeff, double *param, double hK,
 void TimeNSType3_4NLGalerkinDD(double Mult, double *coeff, double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
                 double **LocRhs);
+
+// ======================================================================
+// right-hand side ONLY
+// ======================================================================
+void TimeNSRHS(double Mult, double *coeff, 
+               double *param, double hK, 
+               double **OrigValues, int *N_BaseFuncts,
+               double ***LocMatrices, double **LocRhs);
+
 #endif // TNSE2DGALERKIN_H

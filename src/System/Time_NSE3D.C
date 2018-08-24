@@ -1,9 +1,7 @@
 #include <Time_NSE3D.h>
 #include <Database.h>
 #include <Assemble3D.h>
-#include <LocalAssembling3D.h>
 #include <LinAlg.h>
-#include <Output3D.h>
 #include <DirectSolver.h>
 #include <GridTransfer.h>
 #include <Upwind3D.h>
@@ -12,7 +10,7 @@
 #include <MainUtilities.h>
 #include <Multigrid.h>
 
-#include <LocalAssembling3D.h>
+#include <BoundaryAssembling3D.h>
 
 #include <sys/stat.h>
 
@@ -47,6 +45,9 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default solution in out database
   ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
   db.merge(in_out_db,true);
+  
+  // a default local assembling database
+  db.merge(LocalAssembling3D::default_local_assembling_database());
 
   return db;
 }
@@ -114,7 +115,7 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
 , int maxSubDomainPerDof
 #endif  
 )
-: db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
+: db_(get_default_TNSE3D_parameters()), outputWriter(param_db),systems_(), example_(ex),
    solver_(param_db), defect_(), old_residual_(), 
    initial_residual_(1e10), errors_(), oldtau_(), 
    time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false),
@@ -299,6 +300,14 @@ void Time_NSE3D::check_and_set_parameters()
    
    time_stepping_scheme.n_scale_block = 6;
    time_stepping_scheme.b_bt_linear_nl = "linear";
+
+   // This is a hot fix: only the Smagorinsky routines with Laplace Type=1
+   // (D(u):D(v) formulation) can be used properly. In the other case, the
+   // block matrices passed to the routine are not correct, throwing a segfault.
+   if(TDatabase::ParamDB->LAPLACETYPE==0)
+   {
+     ErrThrow("Smagorinsky works only with LAPLACETYPE = 1 so far.");
+   }
  }
  
  // the only case where one have to re-assemble the right hand side
@@ -399,7 +408,7 @@ void Time_NSE3D::assemble_initial_time()
   for(auto &s : this->systems_)
   {
     // assemble the initial matrices and right hand side
-    call_assembling_routine(s,LocalAssembling3D_type::TNSE3D_LinGAL);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_LinGAL);
     // manage dirichlet condition by copying non-actives DoFsfrom rhs to solution
     s.solution_.copy_nonactive(s.rhs_);
   }
@@ -459,7 +468,7 @@ void Time_NSE3D::assemble_rhs()
   // preparation of the right hand side for the system solve
   rhs_from_time_disc.reset();
   // calling assembling routine
-  call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_Rhs);
+  call_assembling_routine(s, LocalAssembling_type::TNSE3D_Rhs);
   BlockVector temp = s.rhs_;
   // copy right hand side 
   rhs_from_time_disc = s.rhs_;
@@ -535,7 +544,7 @@ void Time_NSE3D::assemble_nonlinear_term()
     this->restrict_function();
   for(System_per_grid &s : this->systems_)
   {
-    call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_NLGAL);
   }
 }
 
@@ -777,6 +786,12 @@ void Time_NSE3D::output(int m, int &image)
   TFEFunction3D* u2 = s.u_.GetComponent(1);
   TFEFunction3D* u3 = s.u_.GetComponent(2);
 
+  Output::print("** COMPUTING FLUX **");
+  double flux;
+  s.u_.compute_flux(3, flux);
+  Output::print("** FLUX ON 3 = ", flux,
+		" ** Expected: ", 2*3.1415*TDatabase::TimeDB->CURRENTTIME);
+  
   if((size_t)db_["verbosity"]> 1)
   {
     u1->PrintMinMax();
@@ -785,39 +800,10 @@ void Time_NSE3D::output(int m, int &image)
     s.p_.PrintMinMax();
   }
 
-  if((m==0) || (m % TDatabase::TimeDB->STEPS_PER_IMAGE == 0) )
-  {
-    if(db_["output_write_vtk"])
-    {
-      // last argument in the following is domain but is never used in this class
-      TOutput3D output(5, 5, 2, 1, NULL);
-      output.AddFEFunction(&s.p_);
-      output.AddFEVectFunct(&s.u_);
-#ifdef _MPI
-      char SubID[] = "";
-      if(my_rank == 0)
-        mkdir(db_["output_vtk_directory"], 0777);
-      std::string dir = db_["output_vtk_directory"];
-      std::string base = db_["output_basename"];
-      output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);
-      image++;
-#else
-    // Create output directory, if not already existing.
-    mkdir(db_["output_vtk_directory"], 0777);
-    std::string filename = db_["output_vtk_directory"];
-    filename += "/" + db_["output_basename"].value_as_string();
-
-      if(image<10) filename += ".0000";
-      else if(image<100) filename += ".000";
-      else if(image<1000) filename += ".00";
-      else if(image<10000) filename += ".0";
-      else filename += ".";
-      filename += std::to_string(image) + ".vtk";
-      output.WriteVtk(filename.c_str());
-      image++;
-#endif
-    }
-  }
+  // write solution to a vtk file
+  outputWriter.add_fe_function(&s.p_);
+  outputWriter.add_fe_vector_function(&s.u_);
+  outputWriter.write(image);
 
   // Measure errors to known solution
   // if an exact solution is not known, it is usually set to be zero, so that
@@ -1035,7 +1021,7 @@ bool Time_NSE3D::imex_scheme(bool print_info)
 
 /**************************************************************************** */
 void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s, 
-                          LocalAssembling3D_type type)
+                          LocalAssembling_type type)
 {
   std::vector<const TFESpace3D*> space_mat;
   std::vector<const TFESpace3D*> space_rhs;
@@ -1051,7 +1037,7 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   set_matrices_rhs(s, type, sqMat, reMat, rhs_array);
   // find out if we have to do upwinding
   bool do_upwinding = false;
-  if(type != LocalAssembling3D_type::TNSE3D_Rhs)
+  if(type != LocalAssembling_type::TNSE3D_Rhs)
   {
       bool mdml =  solver_.is_using_multigrid()
                   && solver_.get_multigrid()->is_using_mdml();
@@ -1075,17 +1061,52 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   boundary_values[2] = example_.get_bd(2);
   boundary_values[3] = example_.get_bd(3);
   
-  const LocalAssembling3D
-              localAssembling(type,
-                              fefunctions.data(),this->example_.get_coeffs(),
-                              this->get_space_disc_global()); 
+  LocalAssembling3D localAssembling(this->db_, type, fefunctions.data(),
+                                    this->example_.get_coeffs(),
+                                    this->get_space_disc_global());
+
+  if (type == LocalAssembling_type::TNSE3D_Rhs) {
+    Output::print(" ** START ASSEMBLE PRESSURE BC ON RHS **");
+
+    const TFESpace3D *v_space = &s.velocitySpace_;
+    const TFESpace3D *p_space = &s.pressureSpace_;
+    // get all cells: this is at the moment needed for the boundary assembling
+    /// @todo get only the (relevant) boundary cells
+    /// e.g., bdCells = coll->get_cells_on_component(i)
+    TCollection* coll = v_space->GetCollection();
+    std::vector<TBaseCell*> allCells;
+    for (int i=0 ; i < coll->GetN_Cells(); i++)
+    {
+      allCells.push_back(coll->GetCell(i));
+    }
+	
+    BoundaryAssembling3D bi;
+    for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+    {
+      
+      double t=TDatabase::TimeDB->CURRENTTIME;
+      double PI = acos(-1.0);
+      double pressure_of_t = TDatabase::ParamDB->neumann_boundary_value[k]*sin(2*PI*t);
+
+      Output::print(" ** set value ", pressure_of_t,
+		    " on boundary ",TDatabase::ParamDB->neumann_boundary_id[k]);
+      
+      bi.rhs_g_v_n(s.rhs_,v_space,nullptr,
+		   allCells,
+		   TDatabase::ParamDB->neumann_boundary_id[k],
+		   pressure_of_t);
+    }
+
+  }
+  
   // assemble all the matrices and right hand side 
   Assemble3D(space_mat.size(), space_mat.data(),
 	     sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
              rhs_array.size(), rhs_array.data(), space_rhs.data(),
              boundary_conditions, boundary_values.data(), localAssembling);
   
-  if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
+  
+  if(do_upwinding && type != LocalAssembling_type::TNSE3D_Rhs)
   {
     double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
     switch(TDatabase::ParamDB->NSTYPE)
@@ -1136,7 +1157,7 @@ void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s,
   functions[3] = &s.p_;
 }
 /**************************************************************************** */
-void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling3D_type type,
+void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling_type type,
         std::vector<TSquareMatrix3D*> &sqMat, std::vector<TMatrix3D*> &reMat,
         std::vector<double*> &rhs_array)
 {
@@ -1151,7 +1172,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
   
   switch(type)
   {
-    case LocalAssembling3D_type::TNSE3D_LinGAL:
+    case LocalAssembling_type::TNSE3D_LinGAL:
     {
       rhs_array.resize(3);
       rhs_array[0] = s.rhs_.block(0);
@@ -1253,7 +1274,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
     }
     break;// case LocalAssembling3D_type::TNSE3D_LinGAL
     //===============================================
-    case LocalAssembling3D_type::TNSE3D_NLGAL:
+    case LocalAssembling_type::TNSE3D_NLGAL:
     {
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -1294,7 +1315,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
     }
     break;
     //===============================================
-    case LocalAssembling3D_type::TNSE3D_Rhs:
+    case LocalAssembling_type::TNSE3D_Rhs:
     {
       rhs_array.resize(3);
       rhs_array[0] = s.rhs_.block(0);

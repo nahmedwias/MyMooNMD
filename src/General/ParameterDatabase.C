@@ -89,6 +89,11 @@ void ParameterDatabase::add(std::string name, T value, std::string description)
 template void ParameterDatabase::add(std::string n, bool v,      std::string d);
 template void ParameterDatabase::add(std::string n, int v,       std::string d);
 template void ParameterDatabase::add(std::string n, size_t v,    std::string d);
+template<> void ParameterDatabase::add(std::string n, unsigned int v,
+                                       std::string d)
+{
+  this->add(n, static_cast<size_t>(v), d);
+}
 template void ParameterDatabase::add(std::string n, double v,    std::string d);
 template void ParameterDatabase::add(std::string n,std::string v,std::string d);
 template<> void ParameterDatabase::add(std::string n,const char* v,
@@ -863,6 +868,8 @@ void add_range_to_parameter(Parameter& p,
         {
           long min = stol(min_string);
           long max = stol(max_string);
+          if(min > max)
+            std::swap(min, max);
           if(p.get_type() == Parameter::types::_size_t 
             || p.get_type() == Parameter::types::_size_t_vec)
           {
@@ -926,11 +933,14 @@ void add_range_to_parameter(Parameter& p,
       {
         double min = stod(min_string);
         double max = stod(max_string);
+        if(min > max)
+          std::swap(min, max);
         p.set_range(min, max);
       }
       catch(...)
       {
-        ErrThrow("could not read range for double parameter");
+        ErrThrow("could not read range for double parameter ", min_string,
+                 ",", max_string);
       }
       break;
     }
@@ -1250,21 +1260,6 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
   
   db.add("script_mode", false, "Set ParMooN into script mode. This means all "
          "output is written to the outfile and not to console.");
-  
-  db.add("space_discretization_type", "galerkin",
-         "Replaces the global parameter DISCTYPE.",
-         {"galerkin",      // = old global DISCTYPE = GALERKIN = 1
-          "supg","sdfem",  // = old global DISCTYPE = SUPG/SDFEM = 2
-          "upwind",        // = old global DISCTYPE = UPWIND = 3
-          "smagorinsky",   // = old global DISCTYPE = SMAGORINSKY = 4
-          "cip",           // = old global DISCTYPE = CIP = 4
-          "dg",           // = old global DISCTYPE = DG  = 5
-          "gls",           // = old global DISCTYPE = GLS = 6
-          "vms_projection",     // = old global DISCTYPE = VMS_PROJECTION = 9
-          "vms_projection_expl",// = old global DISCTYPE = VMS_PROJECTION_EXPL = 10
-          "local_projection",   // = old global DISCTYPE = LOCAL_PROJECTION = 14
-          "local_projection_2_level", // = old global DISCTYPE = LOCAL_PROJECTION_2_LEVEL = 15
-         "residual_based_vms"}); 
 
   return db;
 }
@@ -1357,6 +1352,11 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	  db.add("output_write_vtk", false,
 			  "This parameter can control, whether an output method"
 			  "of a system class will produce VTK output or not.",
+			  {true,false});
+    
+    db.add("output_write_vtu", false,
+			  "This parameter can control, whether an output method"
+			  "of a system class will produce VTU output or not.",
 			  {true,false});
 
 	  db.add("output_write_case", false,

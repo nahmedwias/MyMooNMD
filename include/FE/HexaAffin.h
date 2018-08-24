@@ -86,7 +86,7 @@ class THexaAffin : public TRefTrans3D
                 int _BaseVectDim = 1);
 
     /** set element to cell */
-    void SetCell(TBaseCell * cell);
+    void SetCell(const TBaseCell * cell);
 
     /** return outer normal unit vector */
     void GetOuterNormal(int j, double s, double t,

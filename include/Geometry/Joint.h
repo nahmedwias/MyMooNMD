@@ -116,7 +116,7 @@ class TJoint
     /** set the neighbour to Neighb */
     int SetNeighbour(TBaseCell *Neighb);
     /** return the neighbour of this joint which is not equal to Me */
-    TBaseCell *GetNeighbour(TBaseCell *Me) const;
+    TBaseCell *GetNeighbour(const TBaseCell *Me) const;
 
     /** set neighbour i to Neighb */
     int SetNeighbour(int i, TBaseCell *Neighb);

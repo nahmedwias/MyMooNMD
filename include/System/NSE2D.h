@@ -22,7 +22,7 @@
 #include <ParameterDatabase.h>
 #include <Solver.h>
 #include <Example_NSE2D.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 #include <MainUtilities.h> // FixedSizeQueue
 #include <utility>
 #include <array>
@@ -105,7 +105,7 @@ class NSE2D
     ParameterDatabase db;
     
     /** @brief class for output handling (vtk and case files) */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
     
     /** @brief a solver object which will solve the linear system
      * 

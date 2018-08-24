@@ -30,7 +30,7 @@
 #include <Multigrid.h>
 
 #include <Chrono.h>
-#include <LocalAssembling2D.h>
+#include "LocalAssembling.h"
 #include <MainUtilities.h> //for error measuring
 
 // compare the computed errors in the Darcy2D object with the given ones in 
@@ -273,15 +273,12 @@ int main(int argc, char* argv[])
                          "preconditioner");
   
   
-  // Old test using algebraic flux correction
-  /** Program 1
-   *  This program tests direct solve with galerkin discretization and
-   *  fem-tvd-type algebraic flux correction.
-   */
+  // test using algebraic flux correction and supg
   {
     Output::print("\ntesting with algebraic flux correction");
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling<2>::default_local_assembling_database());
     db["problem_type"] = 1;
     db["example"] = 3; //Sharp Boundary Layer Example
 
@@ -315,13 +312,27 @@ int main(int argc, char* argv[])
 
     //Here the actual computations take place
     //=========================================================================
-    CD2D cd2d(domain, db);
-    cd2d.assemble();
-    cd2d.solve();
-    cd2d.output();
-    std::array<double,4> errors = {{ 0.50027303740007, 1.9014330185425, 
-                                     0.27525625829906, 0.99990856127083 }};
-    compareErrors(cd2d, errors); // throws in case of a difference
+    {
+      CD2D cd2d(domain, db);
+      cd2d.assemble();
+      cd2d.solve();
+      cd2d.output();
+      std::array<double,4> errors = {{ 0.50027303740007, 1.9014330185425, 
+                                      0.27525625829906, 0.99990856127083 }};
+      compareErrors(cd2d, errors); // throws in case of a difference
+    }
+    {
+      db["algebraic_flux_correction"] = "none";
+      db["space_discretization_type"] = "supg";
+      // supg
+      CD2D cd2d(domain, db);
+      cd2d.assemble();
+      cd2d.solve();
+      cd2d.output();
+      std::array<double,4> errors = {{ 0.551399713222, 2.77164348756, 
+                                      0.350351339694, 1.16422519026 }};
+      compareErrors(cd2d, errors); // throws in case of a difference
+    }
     //=========================================================================
   } // end program 1
   

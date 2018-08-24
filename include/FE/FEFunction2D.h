@@ -70,6 +70,10 @@ class TFEFunction2D
     /** return fe space */
     const TFESpace2D *GetFESpace2D() const
     { return FESpace2D; }
+    
+    /** return fe space */
+    const TFESpace *GetFESpace() const
+    { return FESpace2D; }
 
     /** return length */
     int GetLength() const
@@ -108,12 +112,12 @@ class TFEFunction2D
 
     /** determine the value of function and its first derivatives at
       the given point */
-    void FindGradientLocal(TBaseCell *cell, int cell_no, double x, double y,
+    void FindGradientLocal(const TBaseCell *cell, int cell_no, double x, double y,
         double *values) const ;
 
     /** determine the value of function at
       the given point */
-    void FindValueLocal(TBaseCell *cell, int cell_no, double x, double y, 
+    void FindValueLocal(const TBaseCell *cell, int cell_no, double x, double y, 
         double *values) const;
 
     /** calculate the interpolation of an exact function */
@@ -182,11 +186,6 @@ class TFEFunction2D
 
     /** Retun the mass, domain volume and mean values of the function - added by sashi */
     void GetMassAndMean(double *OutVal);
-
-    /**
-     * @brief return the values of FE function on mesh nodes 
-     */
-    void computeNodeValues(std::vector<double>& solutionAtNode) const;
 
     /** multiply function with a scalar alpha. Only non-Dirichlet dofs are 
       multiplied! */

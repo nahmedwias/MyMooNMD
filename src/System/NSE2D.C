@@ -8,6 +8,7 @@
 #include <Assemble2D.h>
 
 #include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
+#include <AuxParam2D.h>
 
 ParameterDatabase get_default_NSE2D_parameters()
 {
@@ -23,6 +24,8 @@ ParameterDatabase get_default_NSE2D_parameters()
   // a default output database - needed here as long as there's no class handling the output
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
+  
+  db.merge(LocalAssembling2D::default_local_assembling_database(), true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
   if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
@@ -313,9 +316,9 @@ void NSE2D::assemble()
     size_t n_rect_mat;
     TMatrix2D *rect_matrices[4]{nullptr};//it's four pointers maximum (Types 2, 4, 14)
 
-    size_t N_Rhs = 2; //is 3 if NSE type is 4 or 14
-    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; //third place gets only filled
-    const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
+    size_t N_Rhs = 3;
+    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
+    const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
 
     BoundCondFunct2D * boundary_conditions[3] = {
       v_space->GetBoundCondition(), v_space->GetBoundCondition(),
@@ -329,11 +332,13 @@ void NSE2D::assemble()
     //same for all: the local asembling object
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la(NSE2D_All, fe_functions, example.get_coeffs());
+    LocalAssembling2D la(this->db, LocalAssembling_type::NSE3D_Linear,
+                         fe_functions, example.get_coeffs());
 
     std::vector<std::shared_ptr<FEMatrix>> blocks =
         s.matrix.get_blocks_uniquely();
-
+    n_sq_mat = 5;
+    n_rect_mat = 4;
     switch(TDatabase::ParamDB->NSTYPE)
     {// switch over known Block Matrix types, treat each one individually,
       // using a priori knowledge about the structure and the way it fits
@@ -342,74 +347,45 @@ void NSE2D::assemble()
       // we have to use reinterpret_casts because dynamic downcasting won't work here
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
-        n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-
-        n_rect_mat = 2;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-
         break;
       case 2:
-        n_sq_mat = 1;
         sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-
-        n_rect_mat = 4;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
         rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get()); //than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-
         break;
       case 3:
-        n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
         sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-
-        n_rect_mat = 2;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
         break;
-
       case 4:
-        n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
         sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-
-        n_rect_mat = 4;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
         rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-        RHSs[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
-        fesprhs[2]  = p_space;
-        N_Rhs = 3;
-
         break;
-
       case 14:
-        n_sq_mat = 5;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
         sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
         sq_matrices[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-
-        n_rect_mat = 4;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
         rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
         rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
         rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-        RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
-        fesprhs[2]  = p_space;
-        N_Rhs = 3;
-
         break;
       default:
         ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
@@ -475,31 +451,35 @@ void NSE2D::assemble_nonlinear_term()
   {
     //hold the velocity space, we'll need it...
     const TFESpace2D * v_space = s.velocity_space.get();
+    const TFESpace2D * p_space = s.pressure_space.get();
 
     //the variables we will have to fill for the call to Assemble2D
-    size_t n_fe_spaces = 1;
-    const TFESpace2D* fe_spaces[1]{v_space};
+    size_t n_fe_spaces = 2;
+    const TFESpace2D* fe_spaces[2]{v_space, p_space};
 
-    size_t n_sq_mat;
-    TSquareMatrix2D* sq_mat[2]{nullptr};//two pointers maximum
+    size_t n_sq_mat = 5;
+    TSquareMatrix2D* sq_mat[5]{nullptr};//two pointers maximum
 
-    size_t n_rect_mat = 0;
-    TMatrix2D** rect_mat = nullptr;
+    size_t n_rect_mat = 4;
+    TMatrix2D* rect_mat[4]{nullptr};
 
-    size_t n_rhs = 0;
-    double** rhs = nullptr;
-    const TFESpace2D** fe_rhs = nullptr;
+    size_t n_rhs = 3;
+    double *rhs[3] = {nullptr, nullptr, nullptr};
+    const TFESpace2D* fe_rhs[3] = {v_space, v_space, p_space};
 
-    BoundCondFunct2D * boundary_conditions[1] = { v_space->GetBoundCondition() };
-    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+    BoundCondFunct2D * boundary_conditions[2] = { v_space->GetBoundCondition(),
+                                                  p_space->GetBoundCondition()};
+    std::array<BoundValueFunct2D*, 4> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];
     non_const_bound_values[2] = example.get_bd()[2];
+    non_const_bound_values[3] = example.get_bd()[3];
 
     TFEFunction2D *fe_functions[3] = 
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la_nonlinear(NSE2D_NL, fe_functions,
-                                   this->example.get_coeffs());
+    LocalAssembling2D la_nonlinear(this->db,
+                                   LocalAssembling_type::NSE3D_NonLinear,
+                                   fe_functions, this->example.get_coeffs());
 
     //fetch us (a) pointer(s) to the diagonal A block(s)
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
@@ -512,15 +492,16 @@ void NSE2D::assemble_nonlinear_term()
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
       case 2:
-        n_sq_mat = 1;
         sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         break;
       case 3:
       case 4:
       case 14:
-        n_sq_mat = 2;
+        blocks = s.matrix.get_blocks_uniquely({{0,0},{0,1},{1,0},{1,1}});
         sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        sq_mat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(2).get());
+        sq_mat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         break;
       default:
         ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
@@ -538,7 +519,8 @@ void NSE2D::assemble_nonlinear_term()
       for(size_t i =0; i < n_sq_mat; ++i)
       {
         //reset the matrices, linear part is assembled anew
-        sq_mat[i]->reset();
+        if(sq_mat[i] != nullptr)
+          sq_mat[i]->reset();
       }
 
       //HOTFIX: Check the documentation!
@@ -740,17 +722,17 @@ void NSE2D::output(int i)
     
     errors.at(0) = sqrt(err[0]*err[0] + err[2]*err[2]);
     errors.at(2) = sqrt(err[1]*err[1] + err[3]*err[3]);    
-    Output::print<1>("L2(u)     : ", setprecision(10), errors[0]);
-    Output::print<1>("L2(div(u)): ", setprecision(10), errors[1]);
-    Output::print<1>("H1-semi(u): ", setprecision(10), errors[2]);
+    Output::print<1>("L2(u)     : ", setprecision(14), errors[0]);
+    Output::print<1>("L2(div(u)): ", setprecision(14), errors[1]);
+    Output::print<1>("H1-semi(u): ", setprecision(14), errors[2]);
     // errors in pressure
     s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &pressure_space, err);
     
     errors.at(3) = err[0];
     errors.at(4) = err[1];    
-    Output::print<1>("L2(p)     : ", setprecision(10), errors[3]);
-    Output::print<1>("H1-semi(p): ", setprecision(10), errors[4]);    
+    Output::print<1>("L2(p)     : ", setprecision(14), errors[3]);
+    Output::print<1>("H1-semi(p): ", setprecision(14), errors[4]);    
     
   } // if(this->db["compute_errors"])
   delete u1;

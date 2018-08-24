@@ -27,6 +27,8 @@
 #include <ParameterDatabase.h>
 #include <Solver.h>
 
+#include <DataWriter.h>
+
 #include <FEFunction3D.h>
 #include <Example_CD3D.h>
 
@@ -34,8 +36,8 @@
 #include <deque>
 #include <array>
 #include <list>
+#include "LocalAssembling.h"
 
-class LocalAssembling3D; //forward declaration
 class Example_CD3D;
 
 
@@ -51,7 +53,7 @@ class CD3D
     struct SystemPerGrid
     {
       /** @brief Finite Element space */
-      TFESpace3D feSpace_;
+      std::shared_ptr<TFESpace3D> feSpace_;
       /** @brief the system matrix */
       BlockFEMatrix matrix_;
       /** @brief the right hand side vector */
@@ -117,11 +119,15 @@ class CD3D
      * 
      * The database given to the constructor will be merged into this one. Only 
      * parameters which are of interest to this class are stored (and the 
-     * defualt ParMooN parameters). Note that this usually does not include 
+     * default ParMooN parameters). Note that this usually does not include 
      * other parameters such as solver parameters. Those are only in the 
      * CD3D::solver object.
      */
     ParameterDatabase db;
+    
+    /** @brief class for output handling */
+    DataWriter3D outputWriter;
+
     
     /** @brief a solver object which will solve the linear system
      * 
@@ -256,7 +262,7 @@ class CD3D
     /** @brief Get the fe space on the currently finest grid.*/
     const TFESpace3D & getSpace() const
     {
-      return systems_.front().feSpace_;
+      return *systems_.front().feSpace_;
     }
 
     /** @brief Get the solution vector on the currently finest grid.*/
