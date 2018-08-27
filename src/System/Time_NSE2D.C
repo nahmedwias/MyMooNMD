@@ -512,9 +512,9 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
   // boundary conditions and boundary values array
   // boundary conditions:
   BoundCondFunct2D* bc[3] = {
-    s.velocity_space->GetBoundCondition(),
-    s.velocity_space->GetBoundCondition(),
-    s.pressure_space->GetBoundCondition()};
+    s.velocity_space->get_boundary_condition(),
+    s.velocity_space->get_boundary_condition(),
+    s.pressure_space->get_boundary_condition()};
   
   // boundary values:
   std::vector<BoundValueFunct2D*>bv(3);
@@ -997,9 +997,9 @@ void Time_NSE2D::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
     mass_blocks = s.mass_matrix.get_blocks_uniquely(true);
     
     BoundCondFunct2D* bc[3] = {
-    s.velocity_space->GetBoundCondition(),
-    s.velocity_space->GetBoundCondition(),
-    s.pressure_space->GetBoundCondition()};
+    s.velocity_space->get_boundary_condition(),
+    s.velocity_space->get_boundary_condition(),
+    s.pressure_space->get_boundary_condition()};
     // boundary values:
     std::vector<BoundValueFunct2D*>bv(3);
     bv[0]=example.get_bd(0);

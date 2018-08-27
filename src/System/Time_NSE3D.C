@@ -1052,8 +1052,10 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   }
   // Boundary conditions and value
   BoundCondFunct3D * boundary_conditions[4] = {
-    s.velocitySpace_.getBoundCondition(), s.velocitySpace_.getBoundCondition(),
-    s.velocitySpace_.getBoundCondition(), s.pressureSpace_.getBoundCondition() };
+    s.velocitySpace_.get_boundary_condition(),
+    s.velocitySpace_.get_boundary_condition(),
+    s.velocitySpace_.get_boundary_condition(),
+    s.pressureSpace_.get_boundary_condition() };
 
   std::array<BoundValueFunct3D*, 4> boundary_values;
   boundary_values[0] = example_.get_bd(0);

@@ -175,7 +175,7 @@ void Darcy2D::assemble()
     double *RHSs[n_rhs] = {s.rhs.block(0), s.rhs.block(1)};
     
     BoundCondFunct2D * boundary_conditions[n_fe_spaces] = {
-      v_space->GetBoundCondition(), p_space->GetBoundCondition() };
+      v_space->get_boundary_condition(), p_space->get_boundary_condition() };
     std::array<BoundValueFunct2D*, n_fe_spaces> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];

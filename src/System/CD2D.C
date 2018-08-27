@@ -287,7 +287,7 @@ void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coeffic
     fe_spaces[0] =  s.fe_space.get();
     const TFESpace2D * fe_space = s.fe_space.get();
 
-    BoundCondFunct2D * boundary_conditions = fe_spaces[0]->GetBoundCondition();
+    auto * boundary_conditions = fe_spaces[0]->get_boundary_condition();
     int N_Matrices = 1;
     double * rhs_entries = s.rhs.get_entries();
 
