@@ -426,8 +426,8 @@ void Brinkman3D::assemble()
         
         // boundary conditions and boundary values
         BoundCondFunct3D * boundary_conditions[4]={
-            fespmat[0]->getBoundCondition(), fespmat[0]->getBoundCondition(),
-            fespmat[0]->getBoundCondition(), fespmat[1]->getBoundCondition() };
+            fespmat[0]->get_boundary_condition(), fespmat[0]->get_boundary_condition(),
+            fespmat[0]->get_boundary_condition(), fespmat[1]->get_boundary_condition() };
         
         std::array<BoundValueFunct3D*, 4> non_const_bound_values;
         non_const_bound_values[0]=example.get_bd()[0];

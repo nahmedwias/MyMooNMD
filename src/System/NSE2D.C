@@ -321,8 +321,8 @@ void NSE2D::assemble()
     const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
 
     BoundCondFunct2D * boundary_conditions[3] = {
-      v_space->GetBoundCondition(), v_space->GetBoundCondition(),
-      p_space->GetBoundCondition() };
+      v_space->get_boundary_condition(), v_space->get_boundary_condition(),
+      p_space->get_boundary_condition() };
 
     std::array<BoundValueFunct2D*, 3> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
@@ -467,8 +467,8 @@ void NSE2D::assemble_nonlinear_term()
     double *rhs[3] = {nullptr, nullptr, nullptr};
     const TFESpace2D* fe_rhs[3] = {v_space, v_space, p_space};
 
-    BoundCondFunct2D * boundary_conditions[2] = { v_space->GetBoundCondition(),
-                                                  p_space->GetBoundCondition()};
+    BoundCondFunct2D * boundary_conditions[2]
+      = { v_space->get_boundary_condition(), p_space->get_boundary_condition()};
     std::array<BoundValueFunct2D*, 4> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];

@@ -143,7 +143,7 @@ class TFESpace2D : public TFESpace
       */
      void info() const;
      /** return boundary condition */
-    BoundCondFunct2D *GetBoundCondition() const
+    BoundCondFunct2D *get_boundary_condition() const
     { return BoundCondition; }
     
     friend  bool operator== (const TFESpace2D &lhs, const TFESpace2D &rhs);

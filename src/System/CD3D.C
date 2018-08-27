@@ -285,7 +285,7 @@ void CD3D::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_as
 {//FIXME the body of this function was copy and paste
 
   const TFESpace3D * fe_space = s.feSpace_.get();
-  BoundCondFunct3D * boundary_conditions = fe_space->getBoundCondition();
+  auto * boundary_conditions = fe_space->get_boundary_condition();
   int N_Matrices = 1;
   double * rhs_entries = s.rhs_.get_entries();
 
