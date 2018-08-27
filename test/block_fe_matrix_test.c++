@@ -62,15 +62,15 @@ int main(int argc, char* argv[])
 
   TFESpace2D first_fe_space(coll, (char*)"first_fe_space",
                             (char*)"first_fe_space", //may act as velo space dummy
-                            BoundConditionNSE, first_ansatz_order, nullptr);
+                            BoundConditionNSE, first_ansatz_order);
   
   TFESpace2D second_fe_space(coll, (char*)"second_fe_space",
                              (char*)"second_fe_space", //may act as pressure space dummy
-                             BoundCondition_FEM_FCT, second_ansatz_order, nullptr);
+                             BoundCondition_FEM_FCT, second_ansatz_order);
 
   TFESpace2D third_fe_space(coll, (char*)"third_fe_space",
                             (char*)"third_fe_space", //yet another space
-                            BoundConditionNSE, third_ansatz_order, nullptr);
+                            BoundConditionNSE, third_ansatz_order);
   {
     //test default constructor
     BlockFEMatrix zero_matrix;
