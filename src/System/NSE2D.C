@@ -1,5 +1,4 @@
 #include <NSE2D.h>
-#include <MainUtilities.h> // GetVelocityAndPressureSpace
 #include <Database.h>
 #include <LinAlg.h> // Ddot, IntoL20FEFunction
 #include <Upwind.h>
@@ -48,9 +47,9 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders,
                NSE2D::Matrix type)
  : velocity_space(new TFESpace2D(&coll, "u", "Navier--Stokes velocity", example.get_bc(0),
-                  velocity_pressure_orders.first, nullptr)),
+                  velocity_pressure_orders.first)),
    pressure_space(new TFESpace2D(&coll, "p", "Navier--Stokes pressure", example.get_bc(2),
-                  velocity_pressure_orders.second, nullptr))
+                  velocity_pressure_orders.second))
 {
   // build the matrix due to NSE type
   switch (type)

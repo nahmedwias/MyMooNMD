@@ -45,9 +45,9 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example,
                   TCollection& coll, std::pair< int, int > order,
                   Time_NSE2D::Matrix type)
  : velocity_space(new TFESpace2D(&coll, "u", "velocity space",  example.get_bc(0),
-                  order.first, nullptr)),
+                  order.first)),
    pressure_space(new TFESpace2D(&coll, "p", "pressure space", example.get_bc(2),
-                  order.second, nullptr))
+                  order.second))
 {
   switch(type)
   {
@@ -1053,7 +1053,7 @@ void Time_NSE2D::prepared_postprocessing(TCollection *coll)
 {
   stream_function_space
      = std::make_shared<TFESpace2D>(coll, (char*)"stream function space",
-                         (char*)"stream function space", example.get_bc(0), 1, nullptr);
+                         (char*)"stream function space", example.get_bc(0), 1);
   n_psi = stream_function_space->GetN_DegreesOfFreedom();
   psi.resize(n_psi, 0.);
   stream_function
@@ -1067,7 +1067,7 @@ void Time_NSE2D::prepared_postprocessing(TCollection *coll)
     zero_vorticity = -4711;
     vorticity_space
       =std::make_shared<TFESpace2D>(coll, (char*)"vorticity space", (char*)"vorticity space",
-                                example.get_bc(0), ContP_USpace, 1, nullptr);
+                                example.get_bc(0), ContP_USpace, 1);
     n_vort_dofs = vorticity_space->GetN_DegreesOfFreedom();
     vorticity.resize(2*n_vort_dofs, 0.);
     vorticity_funct 

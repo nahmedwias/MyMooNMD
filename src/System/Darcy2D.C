@@ -31,10 +31,10 @@ Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
                                           TCollection& coll)
  : velocity_space(new TFESpace2D(&coll, "u", "Darcy velocity",
                                  example.get_bc(0), 
-                                 TDatabase::ParamDB->VELOCITY_SPACE, nullptr)),
+                                 TDatabase::ParamDB->VELOCITY_SPACE)),
    pressure_space(new TFESpace2D(&coll, "p", "Darcy pressure",
                                  example.get_bc(1),
-                                 TDatabase::ParamDB->PRESSURE_SPACE, nullptr))
+                                 TDatabase::ParamDB->PRESSURE_SPACE))
 
 {
   /// @note witout this call, we could switch save the FESpaces as const, ie, 

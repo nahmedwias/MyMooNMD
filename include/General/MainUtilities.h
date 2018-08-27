@@ -247,45 +247,6 @@ void LInfU(int N_Points, double **Coeffs, double **Params,
            TBaseCell *cell);
 
 
-#ifdef __2D__
-
-// ====================================================================
-// get velocity and pressure space from user defined parameters  
-// ====================================================================
-int GetVelocityAndPressureSpace(TCollection *coll,
-                                BoundCondFunct2D *BoundCondition,
-                                TCollection *mortarcoll,
-                                TFESpace2D* &velocity_space,
-                                TFESpace2D* &pressure_space,
-                                int* pressure_space_code,
-                                int velo_order, int pressure_order);
-
-
-#endif
-
-#ifdef __3D__
-
-// ====================================================================
-// get velocity and pressure space from user defined parameters  
-// ====================================================================
-int GetVelocityAndPressureSpace3D(TCollection *coll,
-                                BoundCondFunct3D *BoundCondition,
-                                TFESpace3D* &velocity_space,
-                                TFESpace3D* &pressure_space,
-                                int* pressure_space_code,
-                                int velo_order, int pressure_order);
-
-// ====================================================================
-// get velocity and pressure space for MG_TYPE 2 
-// ====================================================================
-int GetVelocityAndPressureSpaceLow3D(TCollection *coll,
-                                     BoundCondFunct3D *BoundCondition,
-                                     TFESpace3D* &velocity_space,
-                                     int *velocity_space_code,
-                                     TFESpace3D* &pressure_space,
-                                     int *pressure_space_code,
-                                     int velo_order, int pressure_order);
-#endif
 void ExactNull(double x, double y, double z, double *values);
 void ExactNull(double x, double y, double *values);
 int ComputeNewTimeStep(double err); 
