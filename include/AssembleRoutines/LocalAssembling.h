@@ -62,11 +62,6 @@ enum class LocalAssembling_type
 // see http://stackoverflow.com/questions/3342726/c-print-out-enum-value-as-text
 std::ostream& operator<<(std::ostream& out, const LocalAssembling_type value);
 
-//Forward declarations
-class TFEFunction3D;
-class TAuxParam3D;
-class TDiscreteForm3D;
-
 template <int d>
 class LocalAssembling
 {

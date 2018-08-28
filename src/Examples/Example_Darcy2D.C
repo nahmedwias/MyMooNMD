@@ -29,7 +29,6 @@ namespace five_spot
 }
 
 
-
 Example_Darcy2D::Example_Darcy2D(
   const ParameterDatabase& user_input_parameter_db)
  : Example2D(user_input_parameter_db)
@@ -134,11 +133,11 @@ Example_Darcy2D::Example_Darcy2D(
       break;
     default:
       ErrThrow("Unknown name of the mixed Darcy example!");
-      exit(0);
+      break;
   }
 }
 
-void Example_Darcy2D::do_post_processing(Darcy2D& darcy2d) const
+void Example_Darcy2D::do_post_processing(Darcy<2>& darcy2d) const
 {
   if(post_processing_stat)
   {

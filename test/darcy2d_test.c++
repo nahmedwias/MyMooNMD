@@ -1,8 +1,8 @@
 /**
- * @brief A test program for the solving of Darcy2D problems.
+ * @brief A test program for the solving of Darcy problems in 2D.
  *
- * This serves as a test for the solving of Darcy2D problems. It is intended to
- * perform Darcy2D calculations with different examples in different setups to 
+ * This serves as a test for the solving of Darcy problems. It is intended to
+ * perform Darcy calculations with different examples in different setups to 
  * test a wide variety of ParMooN core functionality.
  * So far only one such test is implemented.
  *
@@ -22,15 +22,15 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Darcy2D.h>
+#include <Darcy.h>
 #include <Chrono.h>
 #include <cmath>
 
 #include <petscksp.h>
 
-// compare the computed errors in the Darcy2D object with the given ones in 
+// compare the computed errors in the Darcy object with the given ones in 
 // the array
-void compareErrors(const Darcy2D& darcy2d, std::array<double, 5> errors)
+void compareErrors(const Darcy<2>& darcy2d, std::array<double, 5> errors)
 {
   const double eps = 2e-9;
   
@@ -71,7 +71,7 @@ void check_darcy2d(TDomain & domain, ParameterDatabase& db, int velocityCode,
   // automatically choose pressure space to get inf-sup stable pair
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   
-  Darcy2D darcy2d(domain, db);
+  Darcy<2> darcy2d(domain, db);
   darcy2d.assemble();
   darcy2d.solve();
   darcy2d.output();

@@ -188,10 +188,16 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   list(APPEND parmoon_tests ParMooN_test_tnse2d)
 	
   # test for hdiv elements
-  add_executable(ParMooN_test_hdiv Hdiv_element_test.c++)
-  target_link_libraries(ParMooN_test_hdiv parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(hdiv ParMooN_test_hdiv)
-  list(APPEND parmoon_tests ParMooN_test_hdiv)
+  add_executable(ParMooN_test_hdiv_2d Hdiv_element_test.c++)
+  target_link_libraries(ParMooN_test_hdiv_2d parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(hdiv_2d ParMooN_test_hdiv_2d)
+  list(APPEND parmoon_tests ParMooN_test_hdiv_2d)
+  add_executable(ParMooN_test_hdiv_3d Hdiv_element_test.c++)
+  target_link_libraries(ParMooN_test_hdiv_3d parmoon_3d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(hdiv_3d ParMooN_test_hdiv_3d)
+  list(APPEND parmoon_tests ParMooN_test_hdiv_3d)
   
   #cd3d solver tests
   set(_EXEC_NAME ParMooN_test_cd3d_solver_seq)
