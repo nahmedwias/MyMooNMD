@@ -31,7 +31,7 @@ NSE2D_Adjoint::NSE2D_Adjoint(const NSE2D& nse2d,
                                        adjoint_bd,
                                        this->NSE2D::example.get_coeffs(),
                                        this->NSE2D::example.get_nu());
-  this->NSE2D::outputWriter = PostProcessing2D(param_db);
+  this->NSE2D::outputWriter = DataWriter2D(param_db);
   this->NSE2D::outputWriter.add_fe_vector_function(&this->get_velocity());
   this->NSE2D::outputWriter.add_fe_function(&this->get_pressure());
   this->NSE2D::solver = Solver<BlockFEMatrix, BlockVector>(param_db);
