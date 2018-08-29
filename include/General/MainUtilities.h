@@ -68,11 +68,11 @@ void SwapIntArray(int *intarray, int length);
 // ====================================================================
 // calculate the streamfunction from the (u1, u2) velocity field
 // ====================================================================
-void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
-                    TFESpace2D *stream, double *psi);
+void StreamFunction(const TFESpace2D *velo, double *u1, double *u2,
+                    const TFESpace2D *stream, double *psi);
 
-void ComputeVorticityDivergence(TFESpace2D *velo, TFEFunction2D *u1, TFEFunction2D *u2,
-                      TFESpace2D *vorticity, double *vort, double *div);
+void ComputeVorticityDivergence(const TFESpace2D *velo, TFEFunction2D *u1, TFEFunction2D *u2,
+                      const TFESpace2D *vorticity, double *vort, double *div);
 
 // determine L2 and H1 error
 void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
