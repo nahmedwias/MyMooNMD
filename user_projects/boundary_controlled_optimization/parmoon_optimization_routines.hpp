@@ -1,6 +1,7 @@
 #include "ParameterDatabase.h"
 #include "MooNMD_Io.h"
 #include <nlopt.hpp>
+#include <algorithm>
 
 namespace parmoon_opt
 {
@@ -16,6 +17,7 @@ namespace parmoon_opt
                              void *data)
   {
     Output::print(); // newline
+    Output::print("ENTERING EVALUATE_FUNCTIONAL WRAPPER FROM parmoon_opt NAMESPACE."); // newline
     auto this_object = reinterpret_cast<Opt*>(data);
     return this_object->compute_functional_and_derivative(n, x, grad);
   }
