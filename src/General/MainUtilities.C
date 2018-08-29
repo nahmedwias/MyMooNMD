@@ -124,8 +124,8 @@ int VertexNumber(int IEH, int NVE)
   return ret;
 }
 
-void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
-                    TFESpace2D *stream, double *psi)
+void StreamFunction(const TFESpace2D *velo, double *u1, double *u2,
+                    const TFESpace2D *stream, double *psi)
 {
   int IEH,IEL,k,l, N_Cells, NVE, NVE2, NVT, VertNum, m, l1;
   TCollection *Coll;
@@ -509,9 +509,9 @@ void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
   delete CellList;
 }
 
-void ComputeVorticityDivergence(TFESpace2D *velo, TFEFunction2D *u1, 
+void ComputeVorticityDivergence(const TFESpace2D *velo, TFEFunction2D *u1,
                                 TFEFunction2D *u2,
-                                TFESpace2D *vorticity_space, 
+                                const TFESpace2D *vorticity_space,
                                 double *vort,  double *div)
 {
   int i, j, N_Cells, index, *DOF, N_loc_dofVort, N_Vort;

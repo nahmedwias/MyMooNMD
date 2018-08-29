@@ -44,57 +44,71 @@ ParameterDatabase get_default_TNSE2D_parameters()
 Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example,
                   TCollection& coll, std::pair< int, int > order,
                   Time_NSE2D::Matrix type)
- : velocity_space(&coll, "u", "velocity space",  example.get_bc(0),
-                  order.first, nullptr),
-   pressure_space(&coll, "p", "pressure space", example.get_bc(2),
-                  order.second, nullptr)
+ : velocity_space(new TFESpace2D(&coll, "u", "velocity space",  example.get_bc(0),
+                  order.first, nullptr)),
+   pressure_space(new TFESpace2D(&coll, "p", "pressure space", example.get_bc(2),
+                  order.second, nullptr))
 {
   switch(type)
   {
     case Time_NSE2D::Matrix::Type1:
-      matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type1(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type1(*velocity_space, *pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type1(*velocity_space, *pressure_space);
       break;
     case Time_NSE2D::Matrix::Type2:
-      matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type2(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type2(*velocity_space, *pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type2(*velocity_space, *pressure_space);
       break;
     case Time_NSE2D::Matrix::Type3:
-      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type3(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type3(*velocity_space, *pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type3(*velocity_space, *pressure_space);
       break;
     case Time_NSE2D::Matrix::Type4:
-      matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type4(*velocity_space, *pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(*velocity_space, *pressure_space);
       break;
     case Time_NSE2D::Matrix::Type14:
-      matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type14(*velocity_space, *pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(*velocity_space, *pressure_space);
       break;
   }
   rhs = BlockVector(matrix, true);
   solution = BlockVector(matrix, false);
-  u = TFEVectFunct2D(&velocity_space, "u", "u", solution.block(0),
+  u = TFEVectFunct2D(velocity_space.get(), "u", "u", solution.block(0),
     solution.length(0), 2);
-  p = TFEFunction2D(&pressure_space,"p","p", this->solution.block(2),
+  p = TFEFunction2D(pressure_space.get(),"p","p", this->solution.block(2),
     solution.length(2));
   solution_m1 = BlockVector(matrix, false);
-  u_m1 = TFEVectFunct2D(&velocity_space, "u", "u", solution_m1.block(0),
+  u_m1 = TFEVectFunct2D(velocity_space.get(), "u", "u", solution_m1.block(0),
        solution_m1.length(0), 2);
-  p_m1 = TFEFunction2D(&pressure_space,"p","p", this->solution_m1.block(2),
+  p_m1 = TFEFunction2D(pressure_space.get(),"p","p", this->solution_m1.block(2),
     solution_m1.length(2));
   solution_m2 = BlockVector(matrix, false);
-  u_m2 = TFEVectFunct2D(&velocity_space,"u","u", solution_m2.block(0),
+  u_m2 = TFEVectFunct2D(velocity_space.get(),"u","u", solution_m2.block(0),
                         solution_m2.length(0), 2);
-  p_m2 = TFEFunction2D(&pressure_space,"p","p", this->solution_m2.block(2),
+  p_m2 = TFEFunction2D(pressure_space.get(),"p","p", this->solution_m2.block(2),
        solution_m2.length(2));
   combined_old_sols = BlockVector(matrix, false);
-  comb_old_u = TFEVectFunct2D(&velocity_space,"u","u", combined_old_sols.block(0),
+  comb_old_u = TFEVectFunct2D(velocity_space.get(),"u","u", combined_old_sols.block(0),
        combined_old_sols.length(0), 2);
   extrapolate_sol = BlockVector(matrix, false);
-  extrapolate_u = TFEVectFunct2D(&velocity_space,"u","u", extrapolate_sol.block(0),
+  extrapolate_u = TFEVectFunct2D(velocity_space.get(),"u","u", extrapolate_sol.block(0),
        extrapolate_sol.length(0), 2);
 }
+
+/** ************************************************************************ */
+Time_NSE2D::System_per_grid::System_per_grid(const System_per_grid& other)
+ : velocity_space(other.velocity_space), pressure_space(other.pressure_space),
+   matrix(other.matrix), rhs(other.rhs), solution(other.solution)
+{
+  // the fe functions must be newly created, because copying would mean
+  // referencing the BlockVectors in 'other'.
+  u = TFEVectFunct2D(velocity_space.get(), "u", "u", solution.block(0),
+                     solution.length(0), 2);
+  p = TFEFunction2D(pressure_space.get(), "p", "p", solution.block(2),
+                    solution.length(2));
+}
+
 
 /**************************************************************************** */
 Time_NSE2D::Time_NSE2D(const TDomain& domain,
@@ -205,6 +219,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain,
   }
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
+  this->rhs_from_time_disc.copy_structure(this->systems.front().rhs);
 
   outputWriter.add_fe_vector_function(&this->get_velocity());
   outputWriter.add_fe_function(&this->get_pressure());
@@ -450,7 +465,7 @@ void Time_NSE2D::assemble_matrices_rhs(unsigned int it_counter)
     if(db["space_discretization_type"].is("local_projection"))
       update_matrices_lps(s);
   }
-  
+
   // slip boundary modification of matrices
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 )
   {
@@ -497,9 +512,9 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
   // boundary conditions and boundary values array
   // boundary conditions:
   BoundCondFunct2D* bc[3] = {
-    s.velocity_space.GetBoundCondition(),
-    s.velocity_space.GetBoundCondition(),
-    s.pressure_space.GetBoundCondition()};
+    s.velocity_space->GetBoundCondition(),
+    s.velocity_space->GetBoundCondition(),
+    s.pressure_space->GetBoundCondition()};
   
   // boundary values:
   std::vector<BoundValueFunct2D*>bv(3);
@@ -664,7 +679,7 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s,
           sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
           
           sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-	  sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
+          sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());
           if(TDatabase::ParamDB->NSTYPE == 14)
           {// C block
             sqMat.resize(7);
@@ -796,12 +811,12 @@ void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
   spaces.resize(2);
   spaces_rhs.resize(3);
 
-  spaces[0] = &s.velocity_space;
-  spaces[1] = &s.pressure_space;
+  spaces[0] = s.velocity_space.get();
+  spaces[1] = s.pressure_space.get();
 
-  spaces_rhs[0] = &s.velocity_space;
-  spaces_rhs[1] = &s.velocity_space;
-  spaces_rhs[2] = &s.pressure_space;
+      spaces_rhs[0] = s.velocity_space.get();
+      spaces_rhs[1] = s.velocity_space.get();
+      spaces_rhs[2] = s.pressure_space.get();
   // standard for all methods.
   functions.resize(3);  
   functions[0] = s.u.GetComponent(0);
@@ -913,7 +928,7 @@ void Time_NSE2D::restrict_function()
     std::vector<size_t> u_ns_dofs;
     for(auto &s : systems )
     {
-      spaces.push_back(&s.velocity_space);
+      spaces.push_back(s.velocity_space.get());
       u_entries.push_back(s.solution.block(block));
       u_ns_dofs.push_back(s.solution.length(block));
     }
@@ -968,7 +983,7 @@ void Time_NSE2D::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
 
   for(System_per_grid& s: this->systems)
   {
-    spaces_mat[0] = &s.velocity_space;
+    spaces_mat[0] = s.velocity_space.get();
     rhs_space[0] = spaces_mat[0];
     rhs_space[1] = spaces_mat[0];
 
@@ -982,9 +997,9 @@ void Time_NSE2D::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
     mass_blocks = s.mass_matrix.get_blocks_uniquely(true);
     
     BoundCondFunct2D* bc[3] = {
-    s.velocity_space.GetBoundCondition(),
-    s.velocity_space.GetBoundCondition(),
-    s.pressure_space.GetBoundCondition()};
+    s.velocity_space->GetBoundCondition(),
+    s.velocity_space->GetBoundCondition(),
+    s.pressure_space->GetBoundCondition()};
     // boundary values:
     std::vector<BoundValueFunct2D*>bv(3);
     bv[0]=example.get_bd(0);
@@ -1297,11 +1312,11 @@ void Time_NSE2D::output(int m)
   
   int n= s.solution.length(0);
   double *sol = s.solution.get_entries();
-  StreamFunction(&s.velocity_space, sol,sol+n,
+  StreamFunction(s.velocity_space.get(), sol,sol+n,
                     stream_function_space.get(), psi.data());
   if(db["example"].is(6))// mixing layer example
   {
-    ComputeVorticityDivergence(&s.velocity_space,u1, u2, vorticity_space.get(),
+    ComputeVorticityDivergence(s.velocity_space.get(),u1, u2, vorticity_space.get(),
                               vorticity_funct->GetValues(), divergence->GetValues());
     example.do_post_processing(*this, zero_vorticity);
   }
