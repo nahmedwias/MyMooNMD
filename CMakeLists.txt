@@ -33,9 +33,9 @@ set(ParMooN_VERSION_MAJOR 1)
 set(ParMooN_VERSION_MINOR 1)
 
 # Enable Fortran compiling, linking and mangling.
-#enable_language(Fortran)
-#include(FortranCInterface) 
-#get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} /Users/blank/ParMooN/ParMooN/gfortran64)
+enable_language(Fortran)
+include(FortranCInterface) 
+#get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} gfortran)
 
 # Determine ParMoon-internal architecture variable "_ARCH" from the used system.
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")

@@ -26,6 +26,7 @@
 #include <ParameterDatabase.h>
 #include <Solver.h>
 #include <PostProcessing2D.h>
+#include <anderson.h>
 
 class Multigrid;
 
@@ -253,7 +254,14 @@ class CD2D
 
     //! Delete move assignment operator.
     CD2D& operator=(CD2D&&) = delete;
-
+    
+    //Dynamic Damping from [JK08]
+    void dynamic_damping(const int iteration);
+    
+    void anderson_acceleration_damping(int N_Unknowns, int iteration, 
+     std::list<std::vector<double>> & solAnderson,
+     std::list<std::vector<double>> & deltaAnderson);
+    
     //! Destructor. Still leaks memory (esp. because of the multigrid objeect).
     ~CD2D();
 
@@ -285,6 +293,8 @@ class CD2D
      * time_rhs: Time taken to compute one Fixed_point_RHS iteration
      */    
     double time_total, time_rhs, time_newton;
+    //counts the number of steps between two range of residue
+    int count_steps;
     
     /*
      * rejected_steps: rejected iteration steps
@@ -303,6 +313,7 @@ class CD2D
      */
     double up_param;
      
+    BlockVector alphas_x_i;
     BlockVector old_solution;
     //Copy the RHS after the first iteration is done so that it can be used for Fixed_point_RHS
     BlockVector rhs_copy;
@@ -310,6 +321,16 @@ class CD2D
     int is_not_afc_fixed_point_rhs;
     //copy for the AFC steady state function
     BlockFEMatrix matrix_copy;
+    //thresh_hold_fpm: to check the number of jumps between two residues
+    double thresh_hold_fpm;
+    
+    //storage of anderson previous updates
+    std::list<std::vector<double>>  solAnderson;
+    std::list<std::vector<double>>  deltaAnderson;
+
+    
+    //number of steps in anderson acceleration
+    int kAnderson;
 };
 
 #endif // __CD2D_H__

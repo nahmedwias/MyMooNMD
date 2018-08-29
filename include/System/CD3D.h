@@ -31,6 +31,7 @@
 
 #include <FEFunction3D.h>
 #include <Example_CD3D.h>
+#include <anderson.h>
 
 #include <vector>
 #include <deque>
@@ -294,6 +295,16 @@ class CD3D
     {
       return db;
     }
+    
+     const int & get_global_disc_type() const
+    {
+      return global_space_type;
+    }
+    
+    int & get_global_disc_type() 
+    {
+      return global_space_type;
+    }
 
     /** ************************************************************************ */
     std::array< double, int(2) > get_errors() const
@@ -316,6 +327,13 @@ class CD3D
 
     /** Delete move assignment. This class may not be moved yet. */
     CD3D& operator=(CD3D&&) = delete;
+    
+    //Dynamic Damping from [JK08]
+    void dynamic_damping(const int iteration);
+    
+    void anderson_acceleration_damping(int N_Unknowns, int iteration, 
+     std::list<std::vector<double>> & solAnderson,
+     std::list<std::vector<double>> & deltaAnderson);
 
     //! Default destructor. Does most likely cause memory leaks.
     ~CD3D() = default;
@@ -366,6 +384,7 @@ class CD3D
      */
     double up_param;
      
+    BlockVector alphas_x_i;
     BlockVector old_solution;
     //Copy the RHS after the first iteration is done so that it can be used for Fixed_point_RHS
     BlockVector rhs_copy;
@@ -373,6 +392,15 @@ class CD3D
     int is_not_afc_fixed_point_rhs;
     //copy for the AFC steady state function
     BlockFEMatrix matrix_copy;   
+    
+    //storage of anderson previous updates
+    std::list<std::vector<double>>  solAnderson;
+    std::list<std::vector<double>>  deltaAnderson;
+    
+    //number of steps in anderson acceleration
+    int kAnderson;
+    
+    int global_space_type;
     
     void call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& la);
 

@@ -319,8 +319,8 @@ int main(int argc, char* argv[])
     cd2d.assemble(0);
     cd2d.solve(0);
     cd2d.output();
-    std::array<double,4> errors = {{ 0.50027303740007, 1.9014330185425, 
-                                     0.27525625829906, 0.99990856127083 }};
+    std::array<double,4> errors = {{0.45135188860678, 2.5108133471501,
+                                    0.44554697431225, 1.1509707646783}};
     compareErrors(cd2d, errors); // throws in case of a difference
     //=========================================================================
   } // end program 1
