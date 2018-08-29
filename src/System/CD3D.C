@@ -7,6 +7,8 @@
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>
 #include <LocalProjection.h>
+#include <anderson.h>
+
 #include <PostProcessing3D.h>
 #include <Upwind3D.h>
 #include <Multigrid.h>
@@ -92,7 +94,7 @@ ParameterDatabase get_default_CD3D_parameters()
 #endif
   )
   : systems_(), example_(example), db(get_default_CD3D_parameters()),
-    outputWriter(param_db), solver(param_db), errors_()
+    outputWriter(param_db), solver(param_db), errors_(),  alphas_x_i(), old_solution()
   {
     this->db.merge(param_db, false); // update this database with given values
     this->checkParameters();
@@ -139,7 +141,9 @@ ParameterDatabase get_default_CD3D_parameters()
           matrices.push_front(&systems_.back().matrix_);
         }
         mg->initialize(matrices);
-      }
+    }
+    alphas_x_i=this->systems_.front().solution_;
+    old_solution=this->systems_.front().solution_;
       // print useful information
       this->output_problem_size_info();
       time_newton=0, time_rhs=0;
@@ -179,42 +183,26 @@ void CD3D::assemble(const int iteration)
   {
     TFEFunction3D * pointer_to_function = &s.feFunction_;
     int afc_ini_supg = 0;
-    int disc_type_code = 0;
  
     std::shared_ptr<LocalAssembling3D> la;
-    
-    if (db["space_discretization_type"].is("galerkin"))
-    {
-      disc_type_code = GALERKIN;   
-    }
-    else if (db["space_discretization_type"].is("supg"))
-    {
-      disc_type_code = SUPG;
-    }
-    else if (db["space_discretization_type"].is("upwind"))
-    {
-      disc_type_code = GALERKIN;   
-    }
-    else
-      ErrThrow("space_discretization_type ", db["space_discretization_type"].get_name(), " not implemented !");
     
     if(!db["algebraic_flux_correction"].is("none") && iteration==0 
      && db["afc_initial_iterate"].is("supg"))
     {
-      disc_type_code = SUPG;
+      global_space_type = 2;
       afc_ini_supg = 1; 
       // create a local assembling object which is needed to assemble the matrix
-      la = std::make_shared<LocalAssembling3D>(t, &pointer_to_function, example_.get_coeffs(), disc_type_code);
+      la = std::make_shared<LocalAssembling3D>(t, &pointer_to_function, example_.get_coeffs(), global_space_type);
     }
     else
     {
       // create a local assembling object which is needed to assemble the matrix
-      //LocalAssembling3D la(t, &pointer_to_function, example.get_coeffs(),disc_type_code);
-      //disc_type_code = (int) db["space_discretization_type"];
-      Output::print<2>("assembling discretization ",disc_type_code);
-      la = std::make_shared<LocalAssembling3D>(t, &pointer_to_function, example_.get_coeffs(),disc_type_code);
+      //LocalAssembling3D la(t, &pointer_to_function, example.get_coeffs(),global_space_type);
+      //global_space_type = (int) db["space_discretization_type"];
+      Output::print<2>("assembling discretization ",global_space_type);
+      la = std::make_shared<LocalAssembling3D>(t, &pointer_to_function, example_.get_coeffs(),global_space_type);
     }
-    if(!db["algebraic_flux_correction"].is("none") && iteration==0 )
+    /*if(!db["algebraic_flux_correction"].is("none") && iteration==0 )
     {
       if (db["afc_limiter"].is("kuzmin"))
       {
@@ -228,36 +216,18 @@ void CD3D::assemble(const int iteration)
 	  Output::print<2>("limiter set to kuzmin");
 	}
       }
-    }
-    // assemble the system matrix with given local assembling, solution and rhs
-    const TFESpace3D * fe_space = s.feSpace_.get();
-    BoundCondFunct3D * boundary_conditions = fe_space->getBoundCondition();
-    int N_Matrices = 1;
-    double * rhs_entries = s.rhs_.get_entries();
-
+    }*/
+    
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
     TSquareMatrix3D * matrix = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
     
-    BoundValueFunct3D * non_const_bound_value[1] {example_.get_bd()[0]};
+    //BoundValueFunct3D * non_const_bound_value[1] {example_.get_bd()[0]};
     
-    //Previous Implementation
-    /*s.rhs_.reset();
-    matrix->reset();
-    Output::print<4>("call assemble");
-    // assemble
-    Assemble3D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
-	       &fe_space, &boundary_conditions, non_const_bound_value, *la);*/
     if(is_not_afc_fixed_point_rhs==1)  
     {
-      // reset right hand side and matrix to zero (just in case)
-      s.rhs_.reset();
-      matrix->reset();
-      Output::print<4>("call assemble");
-      // assemble
-      Assemble3D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
-                 &fe_space, &boundary_conditions, non_const_bound_value, *la);
+      call_assembling_routine(s, *la);
       if(iteration==1)
-	rhs_copy=s.rhs_;  
+        rhs_copy=s.rhs_;  
     }
     //for FIXED_POINT_RHS and iteration>1
     else
@@ -270,11 +240,11 @@ void CD3D::assemble(const int iteration)
     {
       if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
       {
-	UltraLocalProjection3D((void *)&matrix, false);
+        UltraLocalProjection3D((void *)&matrix, false);
       }
       else
       {
-	ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
+        ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
       }  
     }
     bool finest_grid = &systems_.front() == &s;
@@ -282,16 +252,16 @@ void CD3D::assemble(const int iteration)
     {
       if ((mdml && !finest_grid) || (db["space_discretization_type"].is("upwind")))
       {
-	Output::print<2>("upwind for convection-diffusion equation");
-	UpwindForConvDiff(matrix, rhs_entries, fe_space, 
-			  *la);  
+        Output::print<2>("upwind for convection-diffusion equation");
+        UpwindForConvDiff(matrix, s.rhs_.get_entries(), s.feSpace_.get(), 
+                          *la);  
       }
       if (!db["algebraic_flux_correction"].is("none")&&(iteration==0)&&
-	db["afc_initial_iterate"].is("upwind"))
+          db["afc_initial_iterate"].is("upwind"))
       {
-	Output::print<2>("upwind for convection-diffusion equation");
-	UpwindForConvDiff(matrix, rhs_entries, fe_space, 
-			  *la);  
+        Output::print<2>("upwind for convection-diffusion equation");
+        UpwindForConvDiff(matrix, s.rhs_.get_entries(), s.feSpace_.get(), 
+                          *la);  
       }
     }
     if (afc_ini_supg == 1)
@@ -308,7 +278,24 @@ void CD3D::assemble(const int iteration)
   }
 
   if (iteration == 0)
-     db["afc_fixed_point_derivative_weight_factor"] = 0.0;
+  {
+   db["afc_fixed_point_derivative_weight_factor"] = 0.0;
+    // the following flags are for the BAIL proceedings
+    // switch to fixed point rhs
+    if (((int)db["afc_nonlinloop_switch_to_newton_scheme"]==10)||
+        ((int)db["afc_nonlinloop_switch_to_newton_scheme"]==20))
+    {
+      db["afc_fixed_point_matrix_weight"] = 0.0;
+      db["afc_fixed_point_derivative_weight_factor"] = 0.0;
+    }
+    // switch to fixed point matrix 
+    if (((int)db["afc_nonlinloop_switch_to_newton_scheme"]==11)||
+       ((int)db["afc_nonlinloop_switch_to_newton_scheme"]==21)) 
+    {
+      db["afc_fixed_point_matrix_weight"] = 1.0;
+      db["afc_fixed_point_derivative_weight_factor"] = 0.0;
+    }
+  }
 
   if(!db["algebraic_flux_correction"].is("none"))
     do_algebraic_flux_correction(iteration, is_not_afc_fixed_point_rhs);
@@ -329,7 +316,6 @@ bool CD3D::solve(const int iteration)
   BlockVector res = s.rhs_;
   BlockVector current_rhs = s.rhs_;
   BlockVector current_sol = s.solution_;
-  double omega = db["afc_nonlinloop_damping_factor"];
   AlgebraicFluxCorrection::Iteration_Scheme it_scheme = string_to_it_scheme(db["afc_iteration_scheme"]);
   is_not_afc_fixed_point_rhs=0;
   
@@ -387,62 +373,29 @@ bool CD3D::solve(const int iteration)
   
   if(!db["algebraic_flux_correction"].is("none"))
   {
-    int first_damp=1;
-    while(1)
+    if ((db["afc_nonlinloop_anderson_acc"].is("yes"))&&(iteration >= 
+      (int)db["afc_nonlinloop_anderson_acc_start"]))
+    {
+      int N_Unknowns=res.length();
+      anderson_acceleration_damping(N_Unknowns,iteration, solAnderson, deltaAnderson);
+    }
+    
+    //Constant Damping
+    if (db["afc_nonlinloop_damping_factor_constant"].is("yes"))
     {
       // compute proposal for the next solution 
       AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, s.solution_, db);
-      // assemble might change matrix and rhs
       assemble(iteration);
       // calculation of residual r_k+1
       res = s.rhs_;
       s.matrix_.apply_scaled_add(s.solution_ , res ,-1.0); 
       // compute the norm of the residual vector, residual_old is the norm of residual r_k
-      residual = res.norm();     
+      residual = res.norm();
       Output::print<4>("  residual for proposed new iterate ", residual);
-      // accept the first damping parameter
-      if (iteration==1)
-	break;
-      // fixed damping parameter
-      if (db["afc_nonlinloop_damping_factor_constant"].is("yes"))
-	break;
-      // if the norm of the residual vector decreases or if the damping parameter is already very small
-      // then accept the new iterate 
-      if (residual<residual_old || omega<=(double)db["afc_nonlinloop_damping_factor_min_tol"]*(double)db["afc_nonlinloop_damping_factor_min"])
-      {
-	// if the norm of the residual decreases without having decreased the damping 
-	// parameter in this step, then increase the damping parameter if possible
-	if(residual<residual_old &&first_damp==1)
-	{
-	  db["afc_nonlinloop_damping_factor_max"]=std::min((double)db["afc_nonlinloop_damping_factor_max_global"],
-							     (double)db["afc_nonlinloop_damping_factor_max_increase"]
-	                                                      *(double)db["afc_nonlinloop_damping_factor_max"]);
-	  omega=std::min((double)db["afc_nonlinloop_damping_factor_max"],(double)db["afc_nonlinloop_damping_factor_increase"]*omega);   
-	}
-	Output::print<2>("  iterate accepted, damping factor ", omega, " ", db["afc_nonlinloop_damping_factor_max"]);
-	db["afc_nonlinloop_damping_factor"] = omega;
-	break;
-      }
-      else
-      {
-	rejected_steps++;
-	// get starting situation back 
-	s.solution_ = current_sol;
-	s.rhs_ = current_rhs;
-	// reduce damping factor  
-	omega=std::max((double)db["afc_nonlinloop_damping_factor_min"],
-		       omega*(double)db["afc_nonlinloop_damping_factor_decrease"]);
-	// reduce maximal value for damping factor
-	if(first_damp==1)
-	{
-	  db["afc_nonlinloop_damping_factor_max"]=std::max((double)db["afc_nonlinloop_damping_factor_min"],
-							   (double)db["afc_nonlinloop_damping_factor_max_decrease"]*(double)db["afc_nonlinloop_damping_factor_max"]);
-	  first_damp=0;	  
-	}
-	Output::print<2>("  iterate rejected, res old ", residual_old, " res new: ", residual, " damping factor :", omega);
-	db["afc_nonlinloop_damping_factor"] = omega;
-      }
     }
+    //Dynamic Damping from [JK08]
+    else 
+      dynamic_damping(iteration);
   }
 
   old_solution.add_scaled(s.solution_,-1.0); 
@@ -481,37 +434,272 @@ bool CD3D::solve(const int iteration)
   t = GetTime() - t;
   Output::print<4>("  iteration done in ", t, " seconds");
   
-  double thresh_hold = 1e-5;
-  if (residual <= thresh_hold)
+  
+  if ((db["afc_iteration_scheme"].is("newton"))&&((int)db["afc_nonlinloop_switch_to_newton_scheme"]==1))
   {
-    double omega_derivative = (double)db["afc_fixed_point_derivative_weight_factor"];
-    // first application
-    if (omega_derivative < 1e-3)
-      omega_derivative = 0.25;
-    if (residual/residual_old > 0.99)
+    double threshold = (double)db["afc_change_method_threshold"];
+    if (residual <= threshold)
     {
-      omega_derivative *=0.999;
-      if (omega_derivative < 0.1)
-	omega_derivative = 0.1;   
+      double omega_derivative = (double)db["afc_fixed_point_derivative_weight_factor"];
+      // first application
+      if (omega_derivative < 1e-3)
+        omega_derivative = 0.25;
+      if (residual/residual_old > 0.99)
+      {
+        omega_derivative *=0.999;
+        if (omega_derivative < 0.1)
+          omega_derivative = 0.1;
+      }
+      if (residual/residual_old < 0.99)
+      {
+        omega_derivative *=1.001;
+        if (omega_derivative >1.0)
+          omega_derivative = 1.0;
+      }
+      db["afc_fixed_point_derivative_weight_factor"] = omega_derivative;
     }
-    if (residual/residual_old < 0.99)
+    // go back to former method
+    if (residual > 100*threshold)
     {
-      omega_derivative *=1.001;
-      if (omega_derivative >1.0)
-	omega_derivative = 1.0;   
-    }   
-    db["afc_fixed_point_derivative_weight_factor"] = omega_derivative;
-    Output::print<2>("afc_fixed_point_derivative_weight_factor ",  omega_derivative);
-    // Output::print<2>("Newton part activated");
+      db["afc_fixed_point_derivative_weight_factor"] = 0.0;
+    }
+    Output::print<2>("afc_fixed_point_derivative_weight_factor ",  (double)db["afc_fixed_point_derivative_weight_factor"]);
   }
-  if (residual > 100*thresh_hold)
+
+  /*********************************************************************************************/
+  // this scheme is for the BAIL proceedings 
+  /*********************************************************************************************/
+  if ((db["afc_iteration_scheme"].is("newton"))&&((int)db["afc_nonlinloop_switch_to_newton_scheme"]>=10))
   {
-    db["afc_fixed_point_derivative_weight_factor"] = 0.0;
-    // Output::print<2>("Newton part activated");
-  }  
+    double threshold = (double)db["afc_change_method_threshold"];
+    // switch to formal Newton 
+    if (residual <= threshold)
+    {
+        db["afc_fixed_point_matrix_weight"] = 1.0;
+        db["afc_fixed_point_derivative_weight_factor"] = 1.0;
+    }
+    /*else
+    {
+        if (residual > 10*threshold)
+    {
+        db["afc_fixed_point_matrix_weight"] = 0.0;
+        db["afc_fixed_point_derivative_weight_factor"] = 0.0;
+    }
+    }*/
+    if (residual > 100*threshold)
+    {
+      if ((int)db["afc_nonlinloop_switch_to_newton_scheme"]==20)
+      {
+        db["afc_fixed_point_matrix_weight"] = 0.0;
+        db["afc_fixed_point_derivative_weight_factor"] = 0.0;
+      }
+      if ((int)db["afc_nonlinloop_switch_to_newton_scheme"]==21)
+      {
+        db["afc_fixed_point_matrix_weight"] = 1.0;
+        db["afc_fixed_point_derivative_weight_factor"] = 0.0;
+      }
+    }
+    Output::print<2>("afc_fixed_point_matrix_weight ",  (double)db["afc_fixed_point_matrix_weight"]);
+  }
   residual_old=residual;   
   return(false);   
 }
+/** ************************************************************************ */
+void CD3D::dynamic_damping(const int iteration)
+{
+  SystemPerGrid& s = this->systems_.front();
+  double omega = db["afc_nonlinloop_damping_factor"];
+  int first_damp=1;
+  BlockVector res = s.rhs_;
+  BlockVector current_rhs = s.rhs_;
+  BlockVector current_sol = s.solution_;
+  int check_anderson=0;
+  if(iteration<=(int)db["afc_nonlinloop_anderson_acc_vec"]+(int)db["afc_nonlinloop_anderson_acc_start"])
+    check_anderson=1;
+  while(1)
+  {
+    // damping from WN11
+    if(db["afc_anderson_damping"].is("yes"))
+    {
+      if(db["afc_nonlinloop_anderson_acc"].is("yes"))
+      {
+	if(check_anderson==1)
+	  AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, s.solution_, db);
+	//starts anderson damping after the vectors are stored
+	else
+	{
+	  s.solution_.scale(omega);
+	  s.solution_.add_scaled(alphas_x_i, 1.-omega);
+	}
+      }
+      else
+	AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, s.solution_, db);
+      assemble(iteration);
+      // calculation of residual r_k+1
+      res = s.rhs_;
+      s.matrix_.apply_scaled_add(s.solution_ , res ,-1.0); 
+      // compute the norm of the residual vector, residual_old is the norm of residual r_k
+      residual = res.norm();
+      Output::print<4>("  residual for proposed new iterate ", residual);
+      // accept the first damping parameter
+      if (iteration==1)
+	break;
+      if(db["afc_nonlinloop_anderson_acc"].is("yes") && check_anderson==1)
+	break;
+    }
+    // dynamic damping from JK08
+    else
+    {
+       AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, s.solution_, db);
+       assemble(iteration);
+       // calculation of residual r_k+1
+       res = s.rhs_;
+       s.matrix_.apply_scaled_add(s.solution_ , res ,-1.0); 
+       // compute the norm of the residual vector, residual_old is the norm of residual r_k
+       residual = res.norm();
+       Output::print<4>("  residual for proposed new iterate ", residual);
+       // accept the first damping parameter
+       if (iteration==1)
+	 break;
+    }
+    // if the norm of the residual vector decreases or if the damping parameter is already very small
+    // then accept the new iterate 
+    if (residual<residual_old || omega<=(double)db["afc_nonlinloop_damping_factor_min_tol"]*(double)db["afc_nonlinloop_damping_factor_min"])
+    {
+      // if the norm of the residual decreases without having decreased the damping 
+      // parameter in this step, then increase the damping parameter if possible
+      if(residual<residual_old &&first_damp==1)
+      {
+	db["afc_nonlinloop_damping_factor_max"]=std::min((double)db["afc_nonlinloop_damping_factor_max_global"],
+							 (double)db["afc_nonlinloop_damping_factor_max_increase"]
+							 *(double)db["afc_nonlinloop_damping_factor_max"]);
+	omega=std::min((double)db["afc_nonlinloop_damping_factor_max"],(double)db["afc_nonlinloop_damping_factor_increase"]*omega);   
+      }
+      Output::print<2>("  iterate accepted, damping factor ", omega, " ", db["afc_nonlinloop_damping_factor_max"]);
+      db["afc_nonlinloop_damping_factor"] = omega;
+      break;  
+    }
+    else
+    {
+      if (db["afc_nonlinloop_anderson_acc"].is("no"))
+      {
+        rejected_steps++;
+        // get starting situation back 
+        s.solution_ = current_sol;
+        s.rhs_ = current_rhs;
+      }
+      // reduce damping factor  
+      omega=std::max((double)db["afc_nonlinloop_damping_factor_min"],
+		     omega*(double)db["afc_nonlinloop_damping_factor_decrease"]);
+      // reduce maximal value for damping factor
+      if(first_damp==1)
+      {
+	db["afc_nonlinloop_damping_factor_max"]=std::max((double)db["afc_nonlinloop_damping_factor_min"],
+							 (double)db["afc_nonlinloop_damping_factor_max_decrease"]*(double)db["afc_nonlinloop_damping_factor_max"]);
+	first_damp=0;	  
+      }
+      Output::print<2>("  iterate rejected, res old ", residual_old, " res new: ", residual, " damping factor :", omega);
+      db["afc_nonlinloop_damping_factor"] = omega;  
+      if(newton_iterate==1 && omega<=(double)db["afc_damping_bound_newton"])
+	newton_flag=1;
+    } 
+    // if Anderson acceleration, then only reduction of the damping parameter
+    // but no computation of different update
+    if ((db["afc_nonlinloop_anderson_acc"].is("yes"))&&(iteration >= 
+      (int)db["afc_nonlinloop_anderson_acc_start"])) 
+      break;
+  }  
+}
+/** ************************************************************************ */
+void CD3D::anderson_acceleration_damping(int N_Unknowns, const int iteration, 
+     std::list<std::vector<double>> & solAnderson,
+     std::list<std::vector<double>> & deltaAnderson)
+{
+  SystemPerGrid& s = this->systems_.front();
+  int k;
+  
+  std::vector <double> newSol(N_Unknowns);
+  std::vector <double> newDelta(N_Unknowns);
+  
+  int lwork, ierr;
+  lwork=-1;
+  double temp;
+  
+  int ndim, kdim;
+  double *residuals, *fpast, *work;
+  int kAnderson = (int)db["afc_nonlinloop_anderson_acc_vec"];
+  BlockVector update, new_solution;
+  update = s.solution_;
+  
+  // update =\hat u^{\nu+1}-\tilde{u^{\nu}}
+  update.add_scaled(old_solution,-1.0);
+
+  //collect data for previous iterations
+  for(int i=0;i<N_Unknowns;i++)
+  {
+    newDelta[i]=s.solution_[i];
+    newSol[i]=update[i];  
+  }
+  //update list deltaAnderson
+  //add new element at the end
+  deltaAnderson.push_back(newDelta);
+  //if list has sufficiently many entries, remove first entry
+  if((int)deltaAnderson.size()>kAnderson)
+    deltaAnderson.pop_front();
+  
+  //update list solAnderson
+  solAnderson.push_back(newSol);
+  if((int)solAnderson.size()>kAnderson)
+    solAnderson.pop_front();
+  
+  //Use Anderson acceleration if there are sufficiently many entries
+  if((iteration>kAnderson+(int)db["afc_nonlinloop_anderson_acc_start"]) && ((int)solAnderson.size()==kAnderson))
+  {
+    ndim=N_Unknowns;
+    kdim=kAnderson;
+    //entries for solution
+    residuals=new double[2*ndim*kdim];
+    //entries for updates
+    fpast=residuals+ndim*kdim;
+    
+    //copy arrays
+    std::list <std::vector<double>>::iterator i_delta = deltaAnderson.begin();
+    std::list <std::vector<double>>::iterator i_sol = solAnderson.begin();
+    for(int i=0;i<kdim;i++)
+    {
+      //advance list iterators to next element
+      for(int j=0;j<ndim;j++)
+      {
+	if(i<kdim) 
+	{
+	  k=i*ndim+j;
+	  fpast[k]=i_delta->at(j);
+	  residuals[k]=i_sol->at(j);
+	}
+      }
+      std::advance(i_delta,1);
+      std::advance(i_sol,1);  
+    }     //end of loop i
+    //set initial length of work array=-1
+    if(lwork==-1)
+    {
+      //the first call sets the length of work
+      //anderson_acceleration(ndim, kdim, &s.solution[0], fpast, residuals,
+	//		    &temp, lwork, &ierr);  
+      anderson_acceleration(ndim, kdim, &s.solution_[0], fpast, residuals,
+			    &temp, lwork, &ierr, &alphas_x_i[0]);  
+    }
+    lwork=(int)temp;
+    work=new double[lwork];
+    Output::print<2>("Call anderson acceleration, iteration=", iteration-kAnderson-(int)db["afc_nonlinloop_anderson_acc_start"]);
+    anderson_acceleration(ndim, kdim, &s.solution_[0], fpast, residuals,
+			  work, lwork, &ierr, &alphas_x_i[0]);
+    //s.solution = new_solution;
+    delete[] work;
+    delete[] residuals;  
+  }
+}
+/** ************************************************************************ */
 
 /** ************************************************************************ */
 void CD3D::output(int i)
@@ -809,6 +997,15 @@ void CD3D::checkParameters()
       db["problem_type"] = 1;
     }
   }
+  if(db["space_discretization_type"].is("galerkin"))
+    global_space_type=1;
+  else if(db["space_discretization_type"].is("supg"))
+    global_space_type=2;
+  else if(db["space_discretization_type"].is("upwind"))
+    global_space_type=1;
+  else
+    ErrThrow("space_discretization_type ", db["space_discretization_type"].get_name(), " not implemented !");   
+  
 
   //an error when using ansatz order 0
   if(TDatabase::ParamDB->ANSATZ_ORDER == 0)

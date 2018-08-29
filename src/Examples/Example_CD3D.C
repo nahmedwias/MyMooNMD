@@ -33,6 +33,11 @@ namespace test_p2
   #include "CD_3D/test_p2.h"
 }
 
+namespace BJKR18
+{
+  #include "CD_3D/BJKR18.h"
+}
+
 //=========================================================================
 
 Example_CD3D::Example_CD3D(const ParameterDatabase& user_input_parameter_db)
@@ -78,6 +83,27 @@ Example_CD3D::Example_CD3D(const ParameterDatabase& user_input_parameter_db)
       problem_coefficients = hemker_3d::BilinearCoeffs;
       
       hemker_3d::PECLET_NUMBER = this->get_nu();
+      
+      ExampleFile();
+      break;
+    }
+    
+    case 2:
+    {
+      using namespace BJKR18;
+      /** exact_solution */
+      exact_solution.push_back( BJKR18::Exact );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( BJKR18::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( BJKR18::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = BJKR18::BilinearCoeffs;
+      
+      BJKR18::PECLET_NUMBER = this->get_nu();
       
       ExampleFile();
       break;
