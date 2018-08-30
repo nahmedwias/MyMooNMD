@@ -711,6 +711,19 @@ void local_assembling_velocity_mass(double Mult, double *coeff, double *param,
         MatrixM_row[j] += Mult*(ansatz00_y*test00_y);
       }                            // endfor j
     }                              // endfor i
+#ifdef __3D__
+    for(int i = 0; i < N_U; i++)
+    {
+      double *MatrixM_row  = MatrixM[i];
+      double test00_z = u_values[i + 2*N_U];
+      
+      for(int j = 0; j < N_U; j++)
+      {
+        double ansatz00_z = u_values[j+2*N_U];
+        MatrixM_row[j] += Mult*(ansatz00_z*test00_z);
+      }                            // endfor j
+    }                              // endfor i
+#endif // 3D
   }
 }
 /* ****************************************************** */

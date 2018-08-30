@@ -95,11 +95,14 @@ Darcy<d>::Darcy(const TDomain& domain, const ParameterDatabase& param_db,
   int n_u_active = v_space.GetActiveBound();
   int n_p = p_space.GetN_DegreesOfFreedom();
   int n_dof = n_u + n_p;
+  int n_cells = coll->GetN_Cells();
   
-  Output::print<1>(" dof velocity (vector-valued) : ", setw(5), n_u);
-  Output::print<1>(" active dof velocity          : ", setw(5), n_u_active);
-  Output::print<1>(" dof pressure                 : ", setw(5), n_p);
-  Output::print<1>(" dof all                      : ", setw(5), n_dof);
+  Output::stat<1>("Darcy", "Mesh data and problem size in ", d, "D");
+  Output::dash<1>("cells                        : ", setw(5), n_cells);
+  Output::dash<1>("dof velocity (vector-valued) : ", setw(5), n_u);
+  Output::dash<1>("active dof velocity          : ", setw(5), n_u_active);
+  Output::dash<1>("dof pressure                 : ", setw(5), n_p);
+  Output::dash<1>("dof all                      : ", setw(5), n_dof);
 }
 
 /** ************************************************************************ */

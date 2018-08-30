@@ -3,7 +3,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <Darcy3D.h>
+#include <Darcy.h>
 #include <Example_Darcy2D.h>
 
 // =======================================================================
