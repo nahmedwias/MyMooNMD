@@ -63,7 +63,7 @@ class Time_BoundaryControlledOptimization
     /// This essentially sets copies the values to the right-hand side
     void apply_control_and_solve(const double * x);
     
-    void apply_control_in_rhs_and_sol(const double * x);
+    void impose_control_in_rhs_and_sol(const double * x, int current_time_step);
 
     /// @brief compute \f$ \hat J \f$ using the (primal) solution and control
     double compute_functional() const;
