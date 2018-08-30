@@ -17,7 +17,8 @@ namespace parmoon_opt
                              void *data)
   {
     Output::print(); // newline
-    Output::print("ENTERING EVALUATE_FUNCTIONAL WRAPPER FROM parmoon_opt NAMESPACE."); // newline
+    Output::info<5>("parmoon_opt::evaluate_functional,", "Entering wrapper "
+        "from parmoon_opt namespace.");
     auto this_object = reinterpret_cast<Opt*>(data);
     return this_object->compute_functional_and_derivative(n, x, grad);
   }

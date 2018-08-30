@@ -157,7 +157,11 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
 //   {
 //     Output::print("control_dof ", e);
 //   }
-  n_control = 2 * control_dofs.size(); // space dimension 2
+  // Get the number of time steps
+  double dt = this->tnse_primal.get_time_stepping_scheme().get_step_length();
+  double n_time_steps = TDatabase::TimeDB->ENDTIME/ dt + 1 ;
+  Output::print<5>("Number of time steps = ", n_time_steps);
+  n_control = 2 * control_dofs.size() * n_time_steps; // space dimension 2
   
   control_old = std::vector<double>(n_control, 0.0);
   Output::print<3>("Created the Time_BoundaryControlledOptimization object, ",
@@ -174,7 +178,7 @@ double Time_BoundaryControlledOptimization::compute_functional_and_derivative(
              " of the control space");
   }
   ++n_calls;
-  Output::print<2>("Call to 'compute_functional_and_derivative' ", n_calls);
+  Output::print<1>("Call to 'compute_functional_and_derivative' ", n_calls);
   if(n_calls > 1)
   {
     double norm_diff_control = std::sqrt(
@@ -183,20 +187,27 @@ double Time_BoundaryControlledOptimization::compute_functional_and_derivative(
     double norm_mean_control = std::sqrt(
       std::inner_product(x, x+n, control_old.begin(), 0.0, std::plus<double>(),
                          [](double a, double b){ return (a+b) * (a+b) / 4.; }));
-    Output::print("diff of control (in l2): ", norm_diff_control,
+    Output::print<1>("diff of control (in l2): ", norm_diff_control,
                   "  mean: ", norm_mean_control);
   }
   std::copy(x, x+n, control_old.begin());
+  Output::print<2>("Control vector (", n, " dofs):");
+  auto n_dof_per_component = control_dofs.size();
+  auto n_time_steps = n_control / (2*n_dof_per_component);
+  for(auto i = 0u; i < n_time_steps; ++i)
+  {
+    for(auto j = 0u; j < n_dof_per_component; ++j)
+    {
+    Output::print("Time step i=", i, " x[i]=", x[j+i*2*n_dof_per_component],
+                  " y[i]=", x[j+i*2*n_dof_per_component+n_dof_per_component]);
+    }
+  }
   
-  Output::print("ENTERING INTO apply_control_and_solve!");
-
   apply_control_and_solve(x);
 
-  Output::print("LEAVING THE PROGRAM AFTER FIRST CALL TO apply_control_and_solve, "
-      "JUST BEFORE CALL TO compute_functional!");
-  Output::print("Resetting time to 0 after solve!");
+  Output::print<5>("Resetting time to 0 after solve!");
   TDatabase::TimeDB->CURRENTTIME = 0;
-//  exit(0);
+
   current_J_hat = compute_functional();
   if(grad != nullptr)
   {
@@ -233,7 +244,7 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
   tss.set_time_disc_parameters();
 
   {///interpolate initial condition from the example
-    Output::info("Initial Solution", "Interpolating initial solution from example.");
+    Output::info<5>("Initial Solution", "Interpolating initial solution from example.");
     TFEFunction2D * u1 = tnse_primal.get_velocity_component(0);
     TFEFunction2D * u2 = tnse_primal.get_velocity_component(1);
     TFEFunction2D&  p = tnse_primal.get_pressure();
@@ -243,7 +254,7 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
   }
 
   // apply control x
-  apply_control_in_rhs_and_sol(x);
+  impose_control_in_rhs_and_sol(x, tss.current_step_);
 
   tnse_primal.assemble_initial_time();
   tnse_primal.output(tss.current_step_);
@@ -268,7 +279,7 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
     tnse_primal.assemble_matrices_rhs(0);
 
     // apply control x
-    apply_control_in_rhs_and_sol(x);
+    impose_control_in_rhs_and_sol(x,tss.current_step_);
 
     LoopInfo loop_info("nonlinear");
     loop_info.print_time_every_step = true;
@@ -293,24 +304,28 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
       tnse_primal.assemble_matrices_rhs(i+1);
 
     }
-    tnse_primal.output(tss.current_step_);
+//    tnse_primal.output(tss.current_step_);
   }
-//  tnse_primal.output(n_calls);  // not needed anymore
-  Output::print("apply_control_and_solve: END OF PRIMAL SOLVE");
+  tnse_primal.output(n_calls);  // not needed anymore
 }
 
-void Time_BoundaryControlledOptimization::apply_control_in_rhs_and_sol(const double* x){
+void Time_BoundaryControlledOptimization::impose_control_in_rhs_and_sol(const double* x,
+                                                                        int current_time_step){
   auto& rhs = this->tnse_primal.get_rhs_from_time_disc();
   auto& sol = this->tnse_primal.get_solution();
   int length = rhs.length(0);
   auto n_dof_per_component = control_dofs.size();
+  int time_index = 2*n_dof_per_component*current_time_step;
   for(auto i = 0u; i < n_dof_per_component; ++i)
   {
-    rhs[control_dofs[i]] = x[i];
-    rhs[control_dofs[i] + length] = x[i+n_dof_per_component];
-    sol[control_dofs[i]] = x[i];
-    sol[control_dofs[i] + length] = x[i+n_dof_per_component];
-    Output::print("Control_dofs i ", x[i]);
+    rhs[control_dofs[i]] = x[i+time_index];
+    rhs[control_dofs[i] + length] = x[i+n_dof_per_component+time_index];
+    sol[control_dofs[i]] = x[i+time_index];
+    sol[control_dofs[i] + length] = x[i+n_dof_per_component+time_index];
+//    Output::print("Control_dofs i=",i, " in time step=", current_time_step,
+//                  " equals:", x[i+time_index]);
+//    Output::print("Control_dofs i=",i+n_dof_per_component, " in time step=",
+//    current_time_step, " equals:", x[i+n_dof_per_component+time_index]);
    }
 }
 
