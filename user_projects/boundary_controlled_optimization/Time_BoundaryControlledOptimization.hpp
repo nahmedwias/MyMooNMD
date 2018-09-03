@@ -32,7 +32,7 @@ class Time_BoundaryControlledOptimization
     unsigned n_control;
     /// @brief the dofs which are to be controlled.
     /// These are the dofs of the space for each component, it is therefore
-    /// n_control = 2*control_dofs.size();
+    /// n_control = 2*control_dofs.size() multiplied by the number of time steps
     std::vector<int> control_dofs;
     /// @brief the Navier--Stokes object representing the primal solve
     Time_NSE2D tnse_primal;
@@ -41,7 +41,27 @@ class Time_BoundaryControlledOptimization
     /// @brief Stokes solution as a 'desired state'
     std::shared_ptr<BlockVector> stokes_fe_vector;
     std::shared_ptr<TFEVectFunct2D> stokes_sol;
+
+    /// @brief Number of time steps of the time-dependent primal (and adjoint) NSE
+    int n_time_steps_;
+    /// @brief a struct which stores one solution of tnse_primal at a given step t
+    struct tnse_primal_solution{
+        BlockVector vector_at_timestep_t_;
+        int timestep_t_;
+        TFEVectFunct2D u_at_timestep_t_;
+        TFEFunction2D p_at_timestep_t_;
+
+        /** @brief default constructor*/
+        tnse_primal_solution();
+
+        /** @brief constructor*/
+        tnse_primal_solution(const BlockVector& solution_vector, int step,
+                             const TFEVectFunct2D& u_sol,const TFEFunction2D& p_sol);
+    };
     
+    /// @brief a collection which stores all the solutions of tnse_primal in time
+     std::deque<tnse_primal_solution> tnse_primal_solutions_;
+
     
     /// variables during the optimization loop
     /// @brief keeping track of the optimization loop:
@@ -66,13 +86,20 @@ class Time_BoundaryControlledOptimization
     void impose_control_in_rhs_and_sol(const double * x, int current_time_step);
 
     /// @brief compute \f$ \hat J \f$ using the (primal) solution and control
-    double compute_functional() const;
+    double compute_functional_at_t(int time_step) const;
     
+    /// @brief compute \int_t0^t1 \f$ \hat J \f$ using the (primal) solution and control
+    double compute_functional_in_time(int t0, int t1) const;
+
     /// @brief using the (primal) solution, compute the adjoint
     void solve_adjoint_equation();
     
     /// @brief compute \f$ \hat J' \f$ using the adjoint solution and control
     void compute_derivative(const double * x, double* grad) const;
+
+    /// @brief write solution vectors of all time steps into files (only for
+    /// checking and debugging purposes)
+    void write_all_solutions();
 };
 
 #endif // TIMEBOUNDARYCONTROLLEDOPTIMIZATION_H

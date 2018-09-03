@@ -53,6 +53,26 @@ ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db)
   return adjoint_db;
 }
 
+Time_BoundaryControlledOptimization::tnse_primal_solution::tnse_primal_solution()
+  {
+
+  }
+
+Time_BoundaryControlledOptimization::tnse_primal_solution::tnse_primal_solution(
+    const BlockVector& solution_vector, int step, const TFEVectFunct2D& u_sol,
+    const TFEFunction2D& p_sol)
+: vector_at_timestep_t_(solution_vector),timestep_t_(step)
+  {
+  // the fe functions must be newly created, because copying would mean
+  // referencing the BlockVectors in 'other'.
+  u_at_timestep_t_ = TFEVectFunct2D(u_sol.GetFESpace2D(), "u", "u",
+                                    vector_at_timestep_t_.block(0),
+                                    vector_at_timestep_t_.length(0), 2);
+  p_at_timestep_t_ = TFEFunction2D(p_sol.GetFESpace2D(), "p", "p",
+                                   vector_at_timestep_t_.block(2),
+                                   vector_at_timestep_t_ .length(2));
+  }
+
 
 Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
   const TDomain& domain, const ParameterDatabase& param_db)
@@ -65,6 +85,8 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
                         "", stokes_fe_vector->get_entries(), 
                         tnse_primal.get_velocity_space().GetN_DegreesOfFreedom(),
                         2)),
+   n_time_steps_(0),
+   tnse_primal_solutions_(),
    optimization_info("optimization", true, true, 1), // 1 -> full verbosity
    nonlinear_info("nonlinear", true, true, 3),
    current_J_hat(std::numeric_limits<double>::infinity()), 
@@ -74,13 +96,25 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
   Output::print<5>("Creating the Time_BoundaryControlledOptimization object");
   db.merge(param_db, false);
   
+  // Set the number of time steps from database of tnse_primal member
+  /* TODO: this step can be done much more nicely if the global parameter
+   * ENDTIME is deleted and replaced by the local "end_time" stored in tnse_primal.
+   * Unfortunately, the latter one is not used it. Once it is the case,
+   * n_time_steps_ can be directly set in the initialization of the members,
+   * just above (tnse_primal.get_time_stepping_scheme().get_end_time() instead
+   * of 0)
+   *
+   */
+  double dt = this->tnse_primal.get_time_stepping_scheme().get_step_length();
+  n_time_steps_ = (TDatabase::TimeDB->ENDTIME/ dt) + 1 ;
+
   // assemble linear (Stokes) parts
+  // TODO: REMOVE THIS STOKES SOLUTION?
   TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 0;
 //  tnse_primal.assemble();
   // solve a Stokes system once, to store its solution (as 'desired state')
 //  tnse_primal.solve();
   *stokes_fe_vector = tnse_primal.get_solution(); // copy
-  
 //  tnse_primal.add_to_output(stokes_sol.get());
   
   // the id of the component on which the control is to be applied
@@ -147,7 +181,7 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
       }
     }
   }
-  // sort and remove dublicates
+  // sort and remove duplicates
   std::sort(control_dofs.begin(), control_dofs.end());
   auto it = std::unique(control_dofs.begin(), control_dofs.end());
   control_dofs.resize(std::distance(control_dofs.begin(), it));
@@ -157,11 +191,8 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
 //   {
 //     Output::print("control_dof ", e);
 //   }
-  // Get the number of time steps
-  double dt = this->tnse_primal.get_time_stepping_scheme().get_step_length();
-  double n_time_steps = TDatabase::TimeDB->ENDTIME/ dt + 1 ;
-  Output::print<5>("Number of time steps = ", n_time_steps);
-  n_control = 2 * control_dofs.size() * n_time_steps; // space dimension 2
+
+  n_control = 2 * control_dofs.size() * n_time_steps_; // space dimension 2
   
   control_old = std::vector<double>(n_control, 0.0);
   Output::print<3>("Created the Time_BoundaryControlledOptimization object, ",
@@ -205,10 +236,13 @@ double Time_BoundaryControlledOptimization::compute_functional_and_derivative(
   
   apply_control_and_solve(x);
 
+  // Write all the solutions - for validation and debugging purposes
+//  write_all_solutions();
+
   Output::print<5>("Resetting time to 0 after solve!");
   TDatabase::TimeDB->CURRENTTIME = 0;
 
-  current_J_hat = compute_functional();
+  current_J_hat = compute_functional_in_time(0, n_time_steps_);
   if(grad != nullptr)
   {
     ++n_computation_derivative;
@@ -223,6 +257,8 @@ double Time_BoundaryControlledOptimization::compute_functional_and_derivative(
 //     }
   }
   
+  // clear all primal solutions of current optimization iteration (VERY IMPORTANT LINE!)
+  tnse_primal_solutions_.clear();
   
   if(n_calls == 1)
   {
@@ -255,6 +291,10 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
 
   // apply control x
   impose_control_in_rhs_and_sol(x, tss.current_step_);
+
+  // save solution for later use (cost functional and adjoint problem)
+  tnse_primal_solutions_.emplace_back(tnse_primal.get_solution(),tss.current_step_,
+                                      tnse_primal.get_velocity(),tnse_primal.get_pressure());
 
   tnse_primal.assemble_initial_time();
   tnse_primal.output(tss.current_step_);
@@ -304,9 +344,13 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
       tnse_primal.assemble_matrices_rhs(i+1);
 
     }
-//    tnse_primal.output(tss.current_step_);
+    // save solution for later use (cost functional and adjoint problem)
+    tnse_primal_solutions_.emplace_back(tnse_primal.get_solution(),tss.current_step_,
+                                        tnse_primal.get_velocity(),tnse_primal.get_pressure());
+
+    tnse_primal.output(tss.current_step_); // use this line to output everything
   }
-  tnse_primal.output(n_calls);  // not needed anymore
+//  tnse_primal.output(n_calls);  // use this line to output only the last step
 }
 
 void Time_BoundaryControlledOptimization::impose_control_in_rhs_and_sol(const double* x,
@@ -329,13 +373,32 @@ void Time_BoundaryControlledOptimization::impose_control_in_rhs_and_sol(const do
    }
 }
 
-
-double Time_BoundaryControlledOptimization::compute_functional() const
+double Time_BoundaryControlledOptimization::compute_functional_in_time(int t0, int t1) const
 {
-  auto u = tnse_primal.get_velocity();
+  double functional_value = 0;
+  for (int i = t0; i < t1; ++i)
+  {
+    functional_value += compute_functional_at_t(i);
+  }
+
+  if(n_calls > 1)
+  {
+    Output::print("difference to previous functional ",
+                  current_J_hat - functional_value);
+  }
+  return functional_value;
+}
+
+double Time_BoundaryControlledOptimization::compute_functional_at_t(int time_step) const
+{
+  if (time_step > n_time_steps_ - 1)
+    ErrThrow("The functional can not be computed at t = ", time_step, " > ", n_time_steps_-1);
+
+  auto u = tnse_primal_solutions_.at(time_step).u_at_timestep_t_;
   auto u1 = u.GetComponent(0);
   auto u2 = u.GetComponent(1);
-  //auto p = tnse_primal.get_pressure();
+  //auto p = tnse_primal_solutions_.at(time_step).p_at_timestep_t_();
+
   // the id of the component on which the control is to be applied
   int comp = db["controlled_boundary_component"];
   double alpha = db["alpha_cost"];
@@ -344,9 +407,9 @@ double Time_BoundaryControlledOptimization::compute_functional() const
   auto l2_norm_on_boundary2 = u2->get_L2_norm_on_boundary(comp);
   auto l2_norm_on_boundary = l2_norm_on_boundary1*l2_norm_on_boundary1
    + l2_norm_on_boundary2*l2_norm_on_boundary2;
-  
-  
-  auto compute_L2_norm_of_curl = 
+
+
+  auto compute_L2_norm_of_curl =
   [&](){
     if(db["restricted_curl_functional"])
     {
@@ -365,7 +428,7 @@ double Time_BoundaryControlledOptimization::compute_functional() const
       return std::get<1>(div_curl)*std::get<1>(div_curl);
     }
   };
-  auto compute_backward_facing_step = 
+  auto compute_backward_facing_step =
   [&](){
     std::vector<double> values(1);
     auto f = [](std::vector<double>& v, std::array<double, 8> e)
@@ -377,7 +440,7 @@ double Time_BoundaryControlledOptimization::compute_functional() const
     u.get_functional_value(values, f);
     return values[0]*values[0];
   };
-  auto compute_L2_norm_diff_stokes = 
+  auto compute_L2_norm_diff_stokes =
   [&](){
     const BlockVector& primal_sol = tnse_primal.get_solution();
     *this->stokes_fe_vector -= primal_sol;
@@ -386,7 +449,7 @@ double Time_BoundaryControlledOptimization::compute_functional() const
     auto u2_diff = this->stokes_sol->GetComponent(1);
     auto u1_diff_l2_norm = u1_diff->get_L2_norm();
     auto u2_diff_l2_norm = u2_diff->get_L2_norm();
-    auto l2_norm_diff = u1_diff_l2_norm * u1_diff_l2_norm 
+    auto l2_norm_diff = u1_diff_l2_norm * u1_diff_l2_norm
                       + u2_diff_l2_norm * u2_diff_l2_norm;
     *this->stokes_fe_vector *= -1.;
     *this->stokes_fe_vector += primal_sol;
@@ -394,7 +457,7 @@ double Time_BoundaryControlledOptimization::compute_functional() const
     delete u2_diff;
     return l2_norm_diff;
   };
-  
+
   auto curl = compute_L2_norm_of_curl();
   auto min_max_bfs = compute_backward_facing_step();
   auto l2_norm_diff = compute_L2_norm_diff_stokes();
@@ -402,14 +465,9 @@ double Time_BoundaryControlledOptimization::compute_functional() const
   functional_value += 0.5 * curl * cost_functional[0];
   functional_value += 0.5 * min_max_bfs * cost_functional[1];
   functional_value += 0.5 * l2_norm_diff * cost_functional[2];
-  Output::print("functional parts: curl ", curl, ",   min_max ", min_max_bfs,
+  Output::print("functional parts at time step i ", time_step, " : curl ", curl, ",   min_max ", min_max_bfs,
                 ",   l2_norm_diff ", l2_norm_diff, ",   cost ",
                 alpha * l2_norm_on_boundary);
-  if(n_calls > 1)
-  {
-    Output::print("difference to previous functional ", 
-                  current_J_hat - functional_value);
-  }
   
   delete u1;
   delete u2;
@@ -456,5 +514,27 @@ void Time_BoundaryControlledOptimization::compute_derivative(const double* x,
 //                   tnse_adjoint.get_rhs()[i], " \t residual ",
 //                   adjoint_residual[i]);
 //   }
+}
+
+void Time_BoundaryControlledOptimization::write_all_solutions()
+{
+  std::string name;
+  if (tnse_primal_solutions_.size()!=n_time_steps_)
+  {
+    ErrThrow("The number of saved solutions must be equal to the number of "
+        "time steps!");
+  }
+  else
+  {
+    for (unsigned int i = 0; i < tnse_primal_solutions_.size(); ++i)
+    {
+      Output::print(tnse_primal_solutions_.at(i).timestep_t_);
+      name = "sol_vectors";
+      name += std::to_string(i);
+      tnse_primal_solutions_.at(i).vector_at_timestep_t_.write(name);
+      tnse_primal_solutions_.at(i).u_at_timestep_t_.WriteSol(i,"./","sol_fefuncts");
+    }
+  }
+//  exit(0);
 }
 
