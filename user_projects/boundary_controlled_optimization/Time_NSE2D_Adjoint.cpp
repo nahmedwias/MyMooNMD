@@ -103,7 +103,7 @@ void Time_NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& 
 //  const TFESpace2D *fe_rhs[3] = {v_space, v_space};
 //
 //  BoundCondFunct2D * boundary_conditions[2] = {
-//    v_space->GetBoundCondition(), v_space->GetBoundCondition() };
+//    v_space->get_boundary_condtion(), v_space->get_boundary_condition() };
 //  BoundValueFunct2D* non_const_bound_values[2] =
 //    { BoundaryValueHomogenous, BoundaryValueHomogenous };
 //
