@@ -190,6 +190,11 @@ class NSE2D
     NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
           const Example_NSE2D _example, unsigned int reference_id = -4711);
     
+    /** @brief return a database with all parameters necessary for 
+     * Navier--Stokes.
+     */
+    static ParameterDatabase default_NSE_database();
+    
     /** @brief assemble matrix, 
      * 
      * This assembles everything which is not related to the nonlinear term.

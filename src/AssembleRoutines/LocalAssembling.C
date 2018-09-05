@@ -16,16 +16,15 @@
 #include <ConvDiff2D.h>
 #include <FEDatabase2D.h>
 #endif
+#include "NSE_local_assembling_routines.h"
 #include <DarcyMixed.h>
 
-#include <NSE3DGalerkin.h>
 #include <Brinkman3D_Mixed.h>
 #include <TCD3D.h> // local routines for time convection-diffusion-reaction
 #include <TNSE3D_FixPo.h>
 #include <TNSE3D_ParamRout.h>
 #include <TNSE3DSmagorinsky.h>
 #include <TNSE3D_ParamRout.h>
-#include <NSE2DGalerkin.h>
 #include <TNSE2DGalerkin.h>
 #include <Brinkman2D_Mixed.h>
 
@@ -364,7 +363,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       break;
     }
     ///////////////////////////////////////////////////////////////////////////
-    // CD3D: stationary convection diffusion problems
+    // stationary convection diffusion problems
     case LocalAssembling_type::ConvDiff:
     {
       this->N_Matrices = 1;
@@ -747,7 +746,7 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "The type of discretization. Note that not all types are possible for "
          "all problem classes.",
          {"galerkin", "supg", "upwind", "smagorinsky", "cip", "dg", "gls",
-          "vms_projection", "vms_projection_expl", "local_projection",
+          "pspg", "vms_projection", "vms_projection_expl", "local_projection",
           "local_projection_2_level", "residual_based_vms"}); 
   
   return db;
@@ -933,6 +932,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   bool with_coriolis = db["with_coriolis_force"];
   //bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
   bool laplace_type_deformation = this->db["laplace_type_deformation"];
+  std::string disc_type = this->db["space_discretization_type"];
   int nstype = TDatabase::ParamDB->NSTYPE;
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
@@ -948,6 +948,16 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM>0)
   {
     ErrThrow("Skew symmetric case is not implemented for all NSTYPE");
+  }
+  if(disc_type != std::string("galerkin") && disc_type != std::string("pspg"))
+  {
+    ErrThrow("unsupported space_discretization_type for NSE", d, "D: ",
+             disc_type);
+  }
+  if(disc_type == std::string("pspg") && (nstype != 14))
+  {
+    ErrThrow("for PSPG stabilization we need separate B and BT blocks as well "
+             "as a C block, i.e., nstype 14");
   }
   // common for all NSTYPE, Discrete forms, etc
   this->N_Rhs = d+1;
@@ -966,7 +976,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   this->Manipulate = nullptr;
   this->N_Parameters = d;
   this->N_ParamFct = 1;
-  this->ParameterFct =  { d == 3 ? NSParamsVelo3D : NSParamsVelo };
+  this->ParameterFct =  { NSParamsVelocity<d> };
   this->N_FEValues = d;
   this->FEValue_FctIndex = std::vector<int>(d);
   std::iota(this->FEValue_FctIndex.begin(), this->FEValue_FctIndex.end(), 0);
@@ -985,37 +995,57 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   }
   if(laplace_type_deformation)
   {
-    this->local_assemblings_routines.push_back(NSLaplaceDeformation);
+    this->local_assemblings_routines.push_back(NSLaplaceDeformation<d>);
   }
   else
   {
     if(nstype == 1 || nstype == 2)
     {
-      this->local_assemblings_routines.push_back(NSLaplaceGradGradSingle);
+      this->local_assemblings_routines.push_back(NSLaplaceGradGradSingle<d>);
     }
     else
     {
-      this->local_assemblings_routines.push_back(NSLaplaceGradGrad);
+      this->local_assemblings_routines.push_back(NSLaplaceGradGrad<d>);
     }
+  }
+  bool pspg = (disc_type == std::string("pspg"));
+  if(pspg)
+  {
+    this->N_Terms = 2*d+2+d*(d+1)/2;
+    auto soi = indices_up_to_order<d>(2);
+    this->Derivatives.insert(this->Derivatives.end(), soi.begin()+1, soi.end());
+    // Derivatives = { D000, D000, D100, D010, D001, D100, D010, D001, 
+    //                 D200, D110, D101, D020, D011, D002 }
+    // or            { D00, D00, D10, D01, D10, D01, D20, D11, D02}
+    for(int i = 0; i < d; ++i)
+      this->FESpaceNumber.push_back(1);
+    for(int i = 0; i < d*(d+1)/2; ++i)
+      this->FESpaceNumber.push_back(0);
+    // FESpaceNumber = {0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0}
+    // or              {0, 1, 0, 0, 1, 1, 0, 0, 0}
+    this->Needs2ndDerivatives[0] = true;
+    this->local_assemblings_routines.push_back(NSPSPG<d>);
   }
   switch(type)
   {
     case LocalAssembling_type::NSE3D_Linear:
-      this->local_assemblings_routines.push_back(NSDivergenceBlocks);
-      this->local_assemblings_routines.push_back(NSRightHandSide);
+      this->local_assemblings_routines.push_back(NSDivergenceBlocks<d>);
+      this->local_assemblings_routines.push_back(NSRightHandSide<d>);
       if(nstype == 2 || nstype == 4 || nstype == 14)
       {
-        this->local_assemblings_routines.push_back(NSGradientBlocks);
+        this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
       }
+      if(pspg)
+        this->local_assemblings_routines.push_back(NSPSPG_RightHandSide<d>);
       break;
     case LocalAssembling_type::NSE3D_NonLinear:
       if(nstype == 1 || nstype == 2)
       {
-        this->local_assemblings_routines.push_back(NSNonlinearTermSingle);
+        this->local_assemblings_routines.push_back(NSNonlinearTermSingle<d>);
       }
       else
       {
-        this->local_assemblings_routines.push_back(NSNonlinearTerm);
+        this->local_assemblings_routines.push_back(NSNonlinearTerm<d>);
       }
       break;
     default:
@@ -1039,7 +1069,7 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
   // changing needed for turbulent models and for the newton method
   this->N_Parameters = d;
   this->N_ParamFct = 1;
-  this->ParameterFct =  { d == 3 ? TimeNSParamsVelo3D : NSParamsVelo };
+  this->ParameterFct =  { NSParamsVelocity<d> };
   this->N_FEValues = d;
   this->FEValue_FctIndex = std::vector<int>(d);
   std::iota(this->FEValue_FctIndex.begin(), this->FEValue_FctIndex.end(), 0);

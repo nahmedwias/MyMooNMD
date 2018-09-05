@@ -1623,6 +1623,11 @@ void check_parameters_consistency_NSE(ParameterDatabase& db)
 #else
   int my_rank = 0;
 #endif
+  if(!db.contains("space_discretization_type"))
+  {
+    ErrThrow("check_parameters_consistency_NSE: you need to set the "
+             "space_discretization_type");
+  }
 
   // Newton method
   if ((TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)&&(TDatabase::ParamDB->NSTYPE<=2))
@@ -1662,34 +1667,6 @@ void check_parameters_consistency_NSE(ParameterDatabase& db)
     TDatabase::ParamDB->NSTYPE = 4 ;
     if(my_rank==0)
       Output::warn<1>("NSE Parameter Consistency","NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
-  }
-
-  // equal order
-  if (TDatabase::ParamDB->NSTYPE == 14)
-  {
-    if (!(db["space_discretization_type"].is("sdfem")))
-    {
-      db["space_discretization_type"].set("sdfem");
-      if(my_rank==0)
-      {
-        Output::warn<1>("NSE Parameter Consistency","discretization_type changed to SDFEM "
-            "because NSTYPE 14!!!");
-      }
-    }
-/*
-      if (TDatabase::ParamDB->SC_SMOOTHER_SADDLE<3)
-      {
-    TDatabase::ParamDB->SC_SMOOTHER_SADDLE+=2;
-    OutPut("SC_SMOOTHER_SADDLE changed to " << TDatabase::ParamDB->SC_SMOOTHER_SADDLE);
-    OutPut(" because of continuous pressure"<< endl);
-      }
-      if (TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE<3)
-      {
-    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE+=2;
-    OutPut("SC_COARSE_SMOOTHER_SADDLE changed to " << TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE);
-    OutPut(" because of continuous pressure"<< endl);
-      }
-*/
   }
 
   // rotational form

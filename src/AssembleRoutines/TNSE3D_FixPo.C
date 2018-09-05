@@ -14,6 +14,10 @@
 
 #include "../../include/AssembleRoutines/ConvDiff.h"
 #include <CommonRoutineTNSE3D.h>
+
+Hotfixglobal_AssembleNSE assemble_nse(Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION);
+
+
 // ======================================================================
 // compute turbulent viscosity for LES 
 // ======================================================================

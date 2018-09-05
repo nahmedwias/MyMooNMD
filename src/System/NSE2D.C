@@ -9,7 +9,7 @@
 #include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 #include <AuxParam2D.h>
 
-ParameterDatabase get_default_NSE2D_parameters()
+ParameterDatabase NSE2D::default_NSE_database()
 {
   Output::print<5>("creating a default NSE2D parameter database");
   // we use a parmoon default database because this way these parameters are
@@ -110,7 +110,7 @@ NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 /** ************************************************************************ */
 NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
              const Example_NSE2D e, unsigned int reference_id)
-    : systems(), example(e), db(get_default_NSE2D_parameters()), 
+    : systems(), example(e), db(default_NSE_database()), 
       outputWriter(param_db), solver(param_db), defect(), oldResiduals(), 
       initial_residual(1e10), errors()
 {
@@ -264,7 +264,8 @@ void NSE2D::get_velocity_pressure_orders(
       break;
     // continuous pressure spaces
     case 1: case 2: case 3: case 4: case 5:
-      pressure_order = 1;
+      // nothing to do
+      //pressure_order = 1;
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
