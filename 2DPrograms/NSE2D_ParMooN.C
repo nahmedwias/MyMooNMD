@@ -29,9 +29,8 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase; 
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  std::ifstream fs(argv[1]);
-  parmoon_db.read(fs);
-  fs.close();
+  parmoon_db.merge(NSE2D::default_NSE_database());
+  parmoon_db.read(argv[1]);
   
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(parmoon_db, argv[1]);
