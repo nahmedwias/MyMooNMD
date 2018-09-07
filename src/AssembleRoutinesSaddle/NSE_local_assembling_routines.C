@@ -300,9 +300,11 @@ void NSCoriolis(double Mult, double *coeff, double *param, double hK,
   } // endfor i
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// stabilizations
 double compute_PSPG_delta(double hK, double nu)
 {
-  return 0.01 * hK * hK / nu;
+  return 0.1 * hK * hK / nu;
 }
 
 template <int d>
@@ -372,6 +374,161 @@ void NSPSPG_RightHandSide(double Mult, double *coeff, double *param, double hK,
   }
 }
 
+double compute_GLS_delta(double hK, double nu)
+{
+  return 0.1 * hK * hK / nu;
+}
+// common implementation for symmetric and non-symmetric GLS:
+template<int d>
+void NS_GLS(double Mult, double *coeff, double *param, double hK,
+            double **OrigValues, int *N_BaseFuncts,
+            double ***LocMatrices, double **LocRhs, int sign)
+{
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA22 = LocMatrices[d+1];
+  double ** MatrixA33 = d == 2 ? nullptr : LocMatrices[8];
+  double ** MatrixB1 = LocMatrices[d == 2 ? 5 : 10];
+  double ** MatrixB2 = LocMatrices[d == 2 ? 6 : 11];
+  double ** MatrixB3 = d == 2 ? nullptr : LocMatrices[12];
+  double ** MatrixB1T = LocMatrices[d == 2 ? 7 : 13];
+  double ** MatrixB2T = LocMatrices[d == 2 ? 8 : 14];
+  double ** MatrixB3T = d == 2 ? nullptr : LocMatrices[15];
+  double ** MatrixC = LocMatrices[d == 2 ? 4 : 9];
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+  double * p_x = OrigValues[2+d];
+  double * p_y = OrigValues[3+d];
+  double * p_z = d == 2 ? nullptr : OrigValues[4+d];
+  double * u_xx = OrigValues[2+2*d];
+  double * u_yy = OrigValues[2+2*d+d];
+  double * u_zz = d == 2 ? nullptr : OrigValues[13];
+  double nu = coeff[0]; // = 1/reynolds_number
+  double delta = compute_PSPG_delta(hK, nu);
+  for(int i = 0; i < N_U; i++)
+  {
+    double laplace_v = nu * (u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]));
+    laplace_v *= delta * sign;
+    for(int j = 0; j < N_U; j++)
+    {
+      double laplace_u = nu * (u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]));
+      MatrixA11[i][j] -= Mult*laplace_v*laplace_u;
+      MatrixA22[i][j] -= Mult*laplace_v*laplace_u;
+      if(d == 3)
+        MatrixA33[i][j] -= Mult*laplace_v*laplace_u;
+    }
+    for(int j = 0; j < N_P; j++)
+    {
+      double ansatz_x = p_x[j];
+      double ansatz_y = p_y[j];
+      double ansatz_z = d == 2 ? 0. : p_z[j];
+      MatrixB1T[i][j] += Mult * laplace_v * ansatz_x;
+      MatrixB2T[i][j] += Mult * laplace_v * ansatz_y;
+      if(d == 3)
+        MatrixB3T[i][j] += Mult * laplace_v * ansatz_z;
+    }
+  }
+  for(int i = 0; i < N_P; i++)
+  {
+    double test_x = delta * p_x[i];
+    double test_y = delta * p_y[i];
+    double test_z = d == 2 ? 0. : delta * p_z[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      double laplace_u = nu * (u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]));
+      MatrixB1[i][j] += Mult*test_x*laplace_u;
+      MatrixB2[i][j] += Mult*test_y*laplace_u;
+      if(d == 3)
+        MatrixB3[i][j] += Mult*test_z*laplace_u;
+    }
+    for(int j = 0; j < N_P; j++)
+    {
+      double ansatz_x = p_x[j];
+      double ansatz_y = p_y[j];
+      double ansatz_z = d == 2 ? 0. : p_z[j];
+      MatrixC[i][j] -= Mult * (test_x*ansatz_x + test_y*ansatz_y 
+                              +test_z*ansatz_z);
+    }
+  }
+}
+
+template<int d>
+void NS_GLS_RightHandSide(double Mult, double *coeff, double *param, double hK,
+                          double **OrigValues, int *N_BaseFuncts,
+                          double ***LocMatrices, double **LocRhs, int sign)
+{
+  double * Rhs1 = LocRhs[0];
+  double * Rhs2 = LocRhs[1];
+  double * Rhs3 = d == 2 ? nullptr : LocRhs[2];
+  double * Rhs_div = LocRhs[d];
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+  double * p_x = OrigValues[2+d];
+  double * p_y = OrigValues[3+d];
+  double * p_z = d == 2 ? nullptr : OrigValues[4+d];
+  double * u_xx = OrigValues[2+2*d];
+  double * u_yy = OrigValues[2+2*d+d];
+  double * u_zz = d == 2 ? nullptr : OrigValues[13];
+  double nu = coeff[0]; // = 1/reynolds_number
+  double f1 = coeff[1];
+  double f2 = coeff[2];
+  double f3 = d == 2 ? 0. : coeff[3];
+  double delta = compute_PSPG_delta(hK, nu);
+  for(int i = 0; i < N_U; i++)
+  {
+    double laplace_v = -nu * (u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]));
+    laplace_v *= sign * delta;
+    Rhs1[i] += Mult * laplace_v * f1;
+    Rhs2[i] += Mult * laplace_v * f2;
+    if(d == 3)
+      Rhs3[i] += Mult * laplace_v * f3;
+  }
+  for(int i = 0; i < N_P; i++)
+  {
+    double test_x = p_x[i];
+    double test_y = p_y[i];
+    double test_z = d == 2 ? 0. : p_z[i];
+    Rhs_div[i] -= Mult * delta * (test_x*f1 + test_y*f2 + test_z*f3);
+  }
+}
+
+
+template <int d>
+void NSsymmGLS(double Mult, double *coeff, double *param, double hK,
+               double **OrigValues, int *N_BaseFuncts,
+               double ***LocMatrices, double **LocRhs)
+{
+  NS_GLS<d>(Mult, coeff, param, hK, OrigValues, N_BaseFuncts, LocMatrices,
+            LocRhs, 1);
+}
+
+template <int d>
+void NSsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
+                             double hK, double **OrigValues, int *N_BaseFuncts,
+                             double ***LocMatrices, double **LocRhs)
+{
+  NS_GLS_RightHandSide<d>(Mult, coeff, param, hK, OrigValues, N_BaseFuncts,
+                          LocMatrices, LocRhs, 1);
+}
+
+template <int d>
+void NSnonsymmGLS(double Mult, double *coeff, double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs)
+{
+  NS_GLS<d>(Mult, coeff, param, hK, OrigValues, N_BaseFuncts, LocMatrices,
+            LocRhs, -1);
+}
+
+template <int d>
+void NSnonsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
+                                double hK, double **OrigValues,
+                                int *N_BaseFuncts, double ***LocMatrices,
+                                double **LocRhs)
+{
+  NS_GLS_RightHandSide<d>(Mult, coeff, param, hK, OrigValues, N_BaseFuncts,
+                          LocMatrices, LocRhs, -1);
+}
+
 template <int d>
 void NSParamsVelocity(double *in, double *out)
 {
@@ -413,6 +570,18 @@ template void NSPSPG<2>(
 template void NSPSPG_RightHandSide<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSsymmGLS<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSsymmGLS_RightHandSide<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSnonsymmGLS<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSnonsymmGLS_RightHandSide<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 // not yet available
 // template void NSCoriolis<2>(
 //   double Mult, double *coeff, double *param, double hK, double **OrigValues,
@@ -452,6 +621,18 @@ template void NSPSPG<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void NSPSPG_RightHandSide<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSsymmGLS<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSsymmGLS_RightHandSide<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSnonsymmGLS<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSnonsymmGLS_RightHandSide<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 #endif // 3D

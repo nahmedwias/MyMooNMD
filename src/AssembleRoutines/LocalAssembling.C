@@ -745,9 +745,10 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
   db.add("space_discretization_type", "galerkin",
          "The type of discretization. Note that not all types are possible for "
          "all problem classes.",
-         {"galerkin", "supg", "upwind", "smagorinsky", "cip", "dg", "gls",
-          "pspg", "vms_projection", "vms_projection_expl", "local_projection",
-          "local_projection_2_level", "residual_based_vms"}); 
+         {"galerkin", "supg", "upwind", "smagorinsky", "cip", "dg", "symm_gls",
+          "nonsymm_gls" "pspg", "vms_projection", "vms_projection_expl",
+          "local_projection", "local_projection_2_level",
+          "residual_based_vms"}); 
   
   return db;
 }
@@ -933,6 +934,10 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   //bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
   bool laplace_type_deformation = this->db["laplace_type_deformation"];
   std::string disc_type = this->db["space_discretization_type"];
+  bool galerkin = (disc_type == std::string("galerkin"));
+  bool pspg = (disc_type == std::string("pspg"));
+  bool symm_gls = (disc_type == std::string("symm_gls"));
+  bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
   int nstype = TDatabase::ParamDB->NSTYPE;
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
@@ -949,15 +954,16 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   {
     ErrThrow("Skew symmetric case is not implemented for all NSTYPE");
   }
-  if(disc_type != std::string("galerkin") && disc_type != std::string("pspg"))
+  if(!galerkin && !pspg && !symm_gls && !nonsymm_gls)
   {
     ErrThrow("unsupported space_discretization_type for NSE", d, "D: ",
              disc_type);
   }
-  if(disc_type == std::string("pspg") && (nstype != 14))
+  if((pspg || symm_gls || nonsymm_gls) && nstype != 14)
   {
-    ErrThrow("for PSPG stabilization we need separate B and BT blocks as well "
-             "as a C block, i.e., nstype 14");
+    ErrThrow("for PSPG, symmetric GLS and non-symmetric GLS stabilization we "
+             "need separate B and BT blocks as well as a C block, i.e., "
+             "nstype 14");
   }
   // common for all NSTYPE, Discrete forms, etc
   this->N_Rhs = d+1;
@@ -1008,8 +1014,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       this->local_assemblings_routines.push_back(NSLaplaceGradGrad<d>);
     }
   }
-  bool pspg = (disc_type == std::string("pspg"));
-  if(pspg)
+  if(pspg || symm_gls || nonsymm_gls) // need second derivatives
   {
     this->N_Terms = 2*d+2+d*(d+1)/2;
     auto soi = indices_up_to_order<d>(2);
@@ -1024,7 +1029,12 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
     // FESpaceNumber = {0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0}
     // or              {0, 1, 0, 0, 1, 1, 0, 0, 0}
     this->Needs2ndDerivatives[0] = true;
-    this->local_assemblings_routines.push_back(NSPSPG<d>);
+    if(pspg)
+      this->local_assemblings_routines.push_back(NSPSPG<d>);
+    else if(symm_gls)
+      this->local_assemblings_routines.push_back(NSsymmGLS<d>);
+    else if(nonsymm_gls)
+      this->local_assemblings_routines.push_back(NSnonsymmGLS<d>);
   }
   switch(type)
   {
@@ -1037,6 +1047,11 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       }
       if(pspg)
         this->local_assemblings_routines.push_back(NSPSPG_RightHandSide<d>);
+      else if(symm_gls)
+        this->local_assemblings_routines.push_back(NSsymmGLS_RightHandSide<d>);
+      else if(nonsymm_gls)
+        this->local_assemblings_routines.push_back(
+          NSnonsymmGLS_RightHandSide<d>);
       break;
     case LocalAssembling_type::NSE3D_NonLinear:
       if(nstype == 1 || nstype == 2)

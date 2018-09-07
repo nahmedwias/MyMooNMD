@@ -30,6 +30,10 @@ namespace backward_facing_step
 {
   #include "NSE_2D/backward_facing_step.h"
 }
+namespace exampleD3
+{
+  #include "NSE_2D/polynomial_solution.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -153,6 +157,29 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       // Set dimensionless viscosity
       backward_facing_step::DIMENSIONLESS_VISCOSITY = get_nu();
       backward_facing_step::ExampleFile();
+      break;
+    case 5:
+      /** exact_solution */
+      exact_solution.push_back( exampleD3::ExactU1 );
+      exact_solution.push_back( exampleD3::ExactU2 );
+      exact_solution.push_back( exampleD3::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( exampleD3::BoundCondition );
+      boundary_conditions.push_back( exampleD3::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( exampleD3::U1BoundValue );
+      boundary_data.push_back( exampleD3::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = exampleD3::LinCoeffs;
+      
+      // Set dimensionless viscosity
+      exampleD3::DIMENSIONLESS_VISCOSITY = get_nu();
+      exampleD3::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");
