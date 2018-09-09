@@ -9,6 +9,7 @@
 #include <ParameterDatabase.h>
 #include <memory>
 #include <BlockFEMatrix.h>
+#include <AuxParam2D.h>
 
  void Coefficient_Function(double *in, double *out) 
   {
@@ -313,13 +314,14 @@ const TFESpace2D *coefficient_function_space;
       }
     } 
 
-    LocalAssembling2D_type type;
+    LocalAssembling_type type;
     // use a list of LocalAssembling2D objects
     std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
 
-    type = Brinkman2D_Galerkin1;
-    std::shared_ptr <LocalAssembling2D> la(new LocalAssembling2D(type, fe_functions,
-          this->example.get_coeffs()));
+    type = LocalAssembling_type::Brinkman2D_Galerkin1;
+    std::shared_ptr <LocalAssembling2D> la(
+      new LocalAssembling2D(this->brinkman2d_db, type,fe_functions,
+                            this->example.get_coeffs()));
 
        if (coefficient_function)
     {
@@ -345,9 +347,10 @@ const TFESpace2D *coefficient_function_space;
       {
         TDatabase::ParamDB->l_T = -1;
       }
-      type = Brinkman2D_Galerkin1ResidualStabP1;
-      std::shared_ptr <LocalAssembling2D> la_P1P1stab(new LocalAssembling2D(type, fe_functions,
-            this->example.get_coeffs()));
+      type = LocalAssembling_type::Brinkman2D_Galerkin1ResidualStabP1;
+      std::shared_ptr <LocalAssembling2D> la_P1P1stab(
+        new LocalAssembling2D(this->brinkman2d_db, type, fe_functions,
+                              this->example.get_coeffs()));
 
 if (coefficient_function)
     {
@@ -373,9 +376,10 @@ if (coefficient_function)
       {
         TDatabase::ParamDB->l_T = -1;
       }
-      type = Brinkman2D_Galerkin1ResidualStabP2;
-      std::shared_ptr <LocalAssembling2D> la_P2P2stab(new LocalAssembling2D(type, fe_functions,
-            this->example.get_coeffs()));
+      type = LocalAssembling_type::Brinkman2D_Galerkin1ResidualStabP2;
+      std::shared_ptr <LocalAssembling2D> la_P2P2stab(
+        new LocalAssembling2D(this->brinkman2d_db, type, fe_functions,
+                              this->example.get_coeffs()));
       
     if (coefficient_function)
     {
@@ -396,9 +400,10 @@ la_list.push_back(la_P2P2stab);
     if (brinkman2d_db["GradDiv_stab"].is(true))
     {
       Output::print("Grad-Div stabilization has been applied.");
-      type = Brinkman2D_GradDivStabilization;
-      std::shared_ptr <LocalAssembling2D> la_graddiv(new LocalAssembling2D(type, fe_functions,
-            this->example.get_coeffs()));
+      type = LocalAssembling_type::Brinkman2D_GradDivStabilization;
+      std::shared_ptr <LocalAssembling2D> la_graddiv(
+        new LocalAssembling2D(this->brinkman2d_db, type, fe_functions,
+                              this->example.get_coeffs()));
    
         if (coefficient_function)
     {

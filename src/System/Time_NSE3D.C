@@ -1,7 +1,6 @@
 #include <Time_NSE3D.h>
 #include <Database.h>
 #include <Assemble3D.h>
-#include <LocalAssembling3D.h>
 #include <LinAlg.h>
 #include <DirectSolver.h>
 #include <GridTransfer.h>
@@ -14,7 +13,6 @@
 #include <PrePost_Cylinder_Square.h>
 #include <BoundaryAssembling3D.h>
 
-#include <LocalAssembling3D.h>
 #include <Variational_MultiScale3D.h>
 
 #include <sys/stat.h>
@@ -50,6 +48,9 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default solution in out database
   ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
   db.merge(in_out_db,true);
+  
+  // a default local assembling database
+  db.merge(LocalAssembling3D::default_local_assembling_database());
 
   return db;
 }
@@ -398,7 +399,7 @@ void Time_NSE3D::check_and_set_parameters()
    db_["extrapolate_velocity"] = true;
    
    Output::info<1>("check_and_set_parameters",
-		   "The IMEX scheme has been chosen as a time discretization scheme!\n");
+      "The IMEX scheme has been chosen as a time discretization scheme!\n");
  }
  
  // the only case where one have to re-assemble the right hand side
@@ -499,7 +500,7 @@ void Time_NSE3D::assemble_initial_time()
   for(auto &s : this->systems_)
   {
     // assemble the initial matrices and right hand side
-    call_assembling_routine(s,LocalAssembling3D_type::TNSE3D_LinGAL);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_LinGAL);
     // manage dirichlet condition by copying non-actives DoFsfrom rhs to solution
     s.solution_.copy_nonactive(s.rhs_);
 
@@ -640,7 +641,7 @@ void Time_NSE3D::assemble_rhs(bool ass_rhs)
     s.rhs_.reset();
     // preparation of the right hand side for the system solve
     // calling assembling routine
-    call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_Rhs);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_Rhs);
   }
   BlockVector temp = s.rhs_;
   // copy right hand side 
@@ -757,7 +758,7 @@ void Time_NSE3D::assemble_nonlinear_term()
   // assemble the system
   for(System_per_grid &s : this->systems_)
   {
-    call_assembling_routine(s, LocalAssembling3D_type::TNSE3D_NLGAL);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_NLGAL);
     
     if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION == 1)
     {
@@ -1032,7 +1033,7 @@ void Time_NSE3D::solve()
 /**************************************************************************** */
 void Time_NSE3D::output(int m, int &image)
 {
-    System_per_grid& s = this->systems_.front();
+  System_per_grid& s = this->systems_.front();
 #ifdef _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -1366,7 +1367,7 @@ bool Time_NSE3D::imex_scheme(bool print_info)
 
 /**************************************************************************** */
 void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s, 
-                          LocalAssembling3D_type type)
+                          LocalAssembling_type type)
 {
   std::vector<const TFESpace3D*> space_mat;
   std::vector<const TFESpace3D*> space_rhs;
@@ -1382,7 +1383,7 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   set_matrices_rhs(s, type, sqMat, reMat, rhs_array);
   // find out if we have to do upwinding
   bool do_upwinding = false;  
-  if(type != LocalAssembling3D_type::TNSE3D_Rhs && db_["space_discretization_type"].is("galerkin"))
+  if(type != LocalAssembling_type::TNSE3D_Rhs)
   {
     bool mdml =  solver_.is_using_multigrid()
                  && solver_.get_multigrid()->is_using_mdml();
@@ -1406,10 +1407,9 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   boundary_values[2] = example_.get_bd(2);
   boundary_values[3] = example_.get_bd(3);
   
-  const LocalAssembling3D
-              localAssembling(this->db_, type,
-                              fefunctions.data(),this->example_.get_coeffs(),
-                              this->get_space_disc_global()); 
+  LocalAssembling3D localAssembling(this->db_, type, fefunctions.data(),
+                                    this->example_.get_coeffs(),
+                                    this->get_space_disc_global());
   // assemble all the matrices and right hand side 
   Assemble3D(space_mat.size(), space_mat.data(),
 	     sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
@@ -1417,8 +1417,8 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
              boundary_conditions, boundary_values.data(), localAssembling);
   
 
+  if(do_upwinding && type != LocalAssembling_type::TNSE3D_Rhs)
   // do upwinding for the mdml case
- if(do_upwinding && type != LocalAssembling3D_type::TNSE3D_Rhs)
    this->do_upwinding_for_mdml(sqMat, fefunctions, type);
 }
 /**************************************************************************** */
@@ -1491,7 +1491,7 @@ void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s,
   }
 }
 /**************************************************************************** */
-void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling3D_type type,
+void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling_type type,
         std::vector<TSquareMatrix3D*> &sqMat, std::vector<TMatrix3D*> &reMat,
         std::vector<double*> &rhs_array)
 {
@@ -1506,7 +1506,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
   
   switch(type)
   {
-    case LocalAssembling3D_type::TNSE3D_LinGAL:
+    case LocalAssembling_type::TNSE3D_LinGAL:
     {
       rhs_array.resize(3);
       rhs_array[0] = s.rhs_.block(0);
@@ -1668,10 +1668,10 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 	  ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
 		   " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
       }// endswitch NSTYPE
-      break;// case LocalAssembling3D_type::TNSE3D_LinGAL
+      break;// case LocalAssembling_type::TNSE3D_LinGAL
     }
     //===============================================
-    case LocalAssembling3D_type::TNSE3D_NLGAL:
+    case LocalAssembling_type::TNSE3D_NLGAL:
     {
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -1786,7 +1786,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
     }
     break;
     //===============================================
-    case LocalAssembling3D_type::TNSE3D_Rhs:
+    case LocalAssembling_type::TNSE3D_Rhs:
     {
       rhs_array.resize(3);
       rhs_array[0] = s.rhs_.block(0);
@@ -1813,7 +1813,7 @@ void Time_NSE3D::set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssemblin
 }
 /**************************************************************************** */
 void Time_NSE3D::do_upwinding_for_mdml(std::vector<TSquareMatrix3D*> &sqMat, 
-std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type)
+std::vector<TFEFunction3D*> fefunctions, LocalAssembling_type type)
 {
   if(!db_["space_discretization_type"].is("galerkin"))
   {
@@ -1831,7 +1831,7 @@ std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type)
     case 3:
     case 4:
     case 14:
-      if(type == LocalAssembling3D_type::TNSE3D_LinGAL)
+      if(type == LocalAssembling_type::TNSE3D_LinGAL)
       {
 	UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
 				fefunctions[2], one_over_nu);
@@ -1841,7 +1841,7 @@ std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type)
 				fefunctions[2], one_over_nu);
       }
       else if(!db_["space_discretization_type"].is("galerkin") 
-	      && type == LocalAssembling3D_type::TNSE3D_NLGAL)
+	      && type == LocalAssembling_type::TNSE3D_NLGAL)
       {
 	UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
 				fefunctions[2], one_over_nu);
@@ -1851,7 +1851,7 @@ std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type)
 				fefunctions[2], one_over_nu);
       }
       else if(db_["space_discretization_type"].is("galerkin") 
-	      && type == LocalAssembling3D_type::TNSE3D_NLGAL)
+	      && type == LocalAssembling_type::TNSE3D_NLGAL)
       {
 	UpwindForNavierStokes3D(sqMat[0], fefunctions[0], fefunctions[1],
 				fefunctions[2], one_over_nu);

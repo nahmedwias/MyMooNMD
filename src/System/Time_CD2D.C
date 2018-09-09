@@ -3,9 +3,9 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <AlgebraicFluxCorrection.h>
-#include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 #include <LocalProjection.h>
+#include <AuxParam2D.h>
 
 
 /**************************************************************************** */
@@ -31,6 +31,8 @@ ParameterDatabase get_default_TCD2D_parameters()
   
   ParameterDatabase rom_db = ParameterDatabase::default_rom_database();
   db.merge(rom_db, true);
+  // a default local assembling database
+  db.merge(LocalAssembling2D::default_local_assembling_database(), true);
 
   return db;
 }
@@ -219,16 +221,16 @@ void Time_CD2D::set_parameters()
 /**************************************************************************** */
 void Time_CD2D::assemble_initial_time()
 {
-  LocalAssembling2D_type mass = LocalAssembling2D_type::TCD2D_Mass;
-  LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;
+  LocalAssembling_type mass = LocalAssembling_type::TCD2D_Mass;
+  LocalAssembling_type stiff_rhs = LocalAssembling_type::TCD2D;
 
   for(auto &s : this->systems)
   {
     // assemble mass matrix, stiffness matrix and rhs
     TFEFunction2D* fe_funct[1] = {&s.fe_function}; //wrap up as '**'
-    LocalAssembling2D la_mass(mass, fe_funct,
+    LocalAssembling2D la_mass(this->db, mass, fe_funct,
                               this->example.get_coeffs());
-    LocalAssembling2D la_a_rhs(stiff_rhs, fe_funct,
+    LocalAssembling2D la_a_rhs(this->db, stiff_rhs, fe_funct,
                                this->example.get_coeffs());
 
     call_assembling_routine(s, la_a_rhs, la_mass , true);
@@ -263,24 +265,24 @@ void Time_CD2D::assemble_initial_time()
 /**************************************************************************** */
 void Time_CD2D::assemble()
 {
-  LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;  
+  LocalAssembling_type stiff_rhs = LocalAssembling_type::TCD2D;  
   
   for(auto &s : this->systems)
   {
 
     TFEFunction2D * pointer_to_function = &s.fe_function;
     // create two local assembling object (second one will only be needed in SUPG case)
-    LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
+    LocalAssembling2D la_a_rhs(this->db, stiff_rhs, &pointer_to_function,
                                this->example.get_coeffs());
 
     if(db["space_discretization_type"].is("supg"))
     {
       // In the SUPG case:
       // M = (u,v) + \tau (u,b.grad v)
-      LocalAssembling2D_type mass_supg = LocalAssembling2D_type::TCD2D_Mass;;
+      LocalAssembling_type mass_supg = LocalAssembling_type::TCD2D_Mass;;
 
-      LocalAssembling2D la_m_supg(mass_supg, &pointer_to_function,
-                               this->example.get_coeffs());
+      LocalAssembling2D la_m_supg(this->db, mass_supg, &pointer_to_function,
+                                  this->example.get_coeffs());
 
       //call assembling, including mass matrix (SUPG!)
       call_assembling_routine(s, la_a_rhs, la_m_supg , true);

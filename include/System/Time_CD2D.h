@@ -21,11 +21,10 @@
 #include <Domain.h>
 #include <DataWriter.h>
 #include <Solver.h>
+#include "LocalAssembling.h"
 
 #include <vector>
 #include <deque>
-
-class LocalAssembling2D; //forward declaration
 
 class Time_CD2D
 {

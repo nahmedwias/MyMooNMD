@@ -12,7 +12,6 @@
 #include <Database.h>
 #include <MainUtilities.h>
 #include <LocalProjection.h>
-#include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 
 
@@ -89,10 +88,10 @@ void POD_TCDR2D::set_parameters()
 void POD_TCDR2D::assemble_gramian()
 {
   Output::print<1>("Assembling the gramian matrix for POD computation...");
-  LocalAssembling2D_type type;
+  LocalAssembling_type type;
   if (rom_db["pod_inner_product"].get<std::string>() == "l2")
   {
-	type = LocalAssembling2D_type::TCD2D_Mass;
+	type = LocalAssembling_type::TCD2D_Mass;
   }
   else if (rom_db["pod_inner_product"].get<std::string>() == "eucl")
   {
@@ -101,7 +100,7 @@ void POD_TCDR2D::assemble_gramian()
   }
 
   TFEFunction2D * pointer_to_function = &this->fe_function;
-  LocalAssembling2D la_mat(type, &pointer_to_function, this->example.get_coeffs());
+  LocalAssembling2D la_mat(this->get_db(), type, &pointer_to_function, this->example.get_coeffs());
   const TFESpace2D * _fe_space = &this->fe_space;
   BoundCondFunct2D * boundary_conditions = _fe_space->GetBoundCondition();
   int N_Matrices = 1;

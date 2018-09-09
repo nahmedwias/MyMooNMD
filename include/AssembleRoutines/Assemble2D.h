@@ -15,7 +15,7 @@
 #include <Constants.h>
 #include <FEDatabase2D.h>
 
-#include "LocalAssembling2D.h"
+#include "LocalAssembling.h"
 
 #ifdef __3D__
 #include <Aux2D3D.h>

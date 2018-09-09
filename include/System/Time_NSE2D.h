@@ -30,7 +30,7 @@
 #include <ParameterDatabase.h>
 #include <DataWriter.h>
 #include <Residuals.h>
-#include <LocalAssembling2D.h>
+#include "LocalAssembling.h"
 #include <TimeDiscretizations.h>
 
 
@@ -366,17 +366,20 @@ public:
     
 private:
   /// @brief this routines wraps up the call to Assemble2D
-  void call_assembling_routine(Time_NSE2D::System_per_grid& s, 
-                          LocalAssembling2D_type type);
+  void call_assembling_routine(Time_NSE2D::System_per_grid& s,
+                               LocalAssembling_type type);
   /// @brief set the matrices and right hand side depending on the
   /// assemling routines, nstypes and the methods
-  void set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssembling2D_type type,
-        std::vector<TSquareMatrix2D*> &sqMat, std::vector<TMatrix2D*> &reMat,
-        std::vector<double*> &rhs);
+  void set_matrices_rhs(Time_NSE2D::System_per_grid& s,
+                        LocalAssembling_type type,
+                        std::vector<TSquareMatrix2D*> &sqMat,
+                        std::vector<TMatrix2D*> &reMat,
+                        std::vector<double*> &rhs);
   /// @brief set the spaces depending on disc types
-  void set_arrays(Time_NSE2D::System_per_grid& s, 
-        std::vector<const TFESpace2D*> &spaces, std::vector< const TFESpace2D* >& spaces_rhs,
-        std::vector< TFEFunction2D*> &functions);  
+  void set_arrays(Time_NSE2D::System_per_grid& s,
+                  std::vector<const TFESpace2D*> &spaces,
+                  std::vector< const TFESpace2D* >& spaces_rhs,
+                  std::vector< TFEFunction2D*> &functions);  
   /// @brief restrict the function to on every grid
   /// nonliear assembling requires an approximate velocity
   /// on every grid
