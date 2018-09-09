@@ -8,6 +8,7 @@
 #include <Assemble2D.h>
 
 #include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
+#include <AuxParam2D.h>
 
 ParameterDatabase get_default_NSE2D_parameters()
 {
@@ -331,7 +332,8 @@ void NSE2D::assemble()
     //same for all: the local asembling object
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la(NSE2D_All, fe_functions, example.get_coeffs());
+    LocalAssembling2D la(this->db, LocalAssembling_type::NSE3D_Linear,
+                         fe_functions, example.get_coeffs());
 
     std::vector<std::shared_ptr<FEMatrix>> blocks =
         s.matrix.get_blocks_uniquely();
@@ -475,8 +477,9 @@ void NSE2D::assemble_nonlinear_term()
 
     TFEFunction2D *fe_functions[3] = 
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la_nonlinear(NSE2D_NL, fe_functions,
-                                   this->example.get_coeffs());
+    LocalAssembling2D la_nonlinear(this->db,
+                                   LocalAssembling_type::NSE3D_NonLinear,
+                                   fe_functions, this->example.get_coeffs());
 
     //fetch us (a) pointer(s) to the diagonal A block(s)
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});

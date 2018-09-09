@@ -17,7 +17,7 @@
 #include <BlockVector.h>
 #include <BlockFEMatrix.h>
 #include <Example2D.h>
-#include "LocalAssembling2D.h"
+#include "LocalAssembling.h"
 #include <memory>
 
 #ifdef __3D__

@@ -29,7 +29,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <Example_Brinkman2D.h>
-#include <LocalAssembling2D.h>
+#include "LocalAssembling.h"
 #include <BoundaryAssembling2D.h>
 #include <MainUtilities.h> //for error measuring
 #include <Chrono.h>

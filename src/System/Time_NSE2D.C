@@ -10,6 +10,7 @@
 #include <LocalProjection.h>
 #include <Hotfixglobal_AssembleNSE.h>
 #include <Upwind.h>
+#include <AuxParam2D.h>
 #include <LocalProjection.h>
 
 /* *************************************************************************** */
@@ -32,6 +33,9 @@ ParameterDatabase get_default_TNSE2D_parameters()
   // a default solution in out database
   ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();
   db.merge(in_out_db,true);
+  
+  // a default local assembling database
+  db.merge(LocalAssembling2D::default_local_assembling_database());
   
   return db;
 }
@@ -398,7 +402,7 @@ void Time_NSE2D::assemble_initial_time()
   }
   for(auto &s : this->systems)
   {
-    call_assembling_routine(s, TNSE2D);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_LinGAL);
     //update matrices for local projection stabilization
     if(db["space_discretization_type"].is("local_projection"))
       update_matrices_lps(s);
@@ -428,7 +432,7 @@ void Time_NSE2D::assemble_matrices_rhs(unsigned int it_counter)
     rhs_from_time_disc.reset();
     System_per_grid& s = this->systems.front();
     // only assembles the right-hand side
-    call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_Rhs);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_Rhs);
     // copy the non active to the solution vector
     // since the rhs vector will be passed to the solver
     // and is modified with matrix vector multiplication
@@ -468,7 +472,7 @@ void Time_NSE2D::assemble_matrices_rhs(unsigned int it_counter)
     this->restrict_function();
   for(System_per_grid & s : systems)
   {
-    call_assembling_routine(s, LocalAssembling2D_type::TNSE2D_NL);
+    call_assembling_routine(s, LocalAssembling_type::TNSE3D_NLGAL);
     // update matrices with local projection term
     if(db["space_discretization_type"].is("local_projection"))
       update_matrices_lps(s);
@@ -502,7 +506,7 @@ void Time_NSE2D::assemble_matrices_rhs(unsigned int it_counter)
 
 /**************************************************************************** */
 void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
-                               LocalAssembling2D_type type)
+                                         LocalAssembling_type type)
 {
   // set arrays of spaces for matrices and rhs
   std::vector<const TFESpace2D*> spaces_mat;
@@ -531,8 +535,9 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
   bv[2]=example.get_bd(2);
 
   // local assembling settings
-  LocalAssembling2D la(type, fefunctios.data(),
-                       this->example.get_coeffs(), this->get_space_disc_global());
+  LocalAssembling2D la(this->db, type, fefunctios.data(),
+                       this->example.get_coeffs(),
+                       this->get_space_disc_global());
 
   // find out if we have to do upwinding
   bool do_upwinding = false;
@@ -633,8 +638,11 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
 }
 
 /**************************************************************************** */
-void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssembling2D_type type, std::vector< TSquareMatrix2D* >& sqMat,
-                   std::vector< TMatrix2D* >& reMat, std::vector< double* >& rhs_array)
+void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s,
+                                  LocalAssembling_type type,
+                                  std::vector< TSquareMatrix2D* >& sqMat,
+                                  std::vector< TMatrix2D* >& reMat,
+                                  std::vector< double* >& rhs_array)
 {
   sqMat.resize(0);
   reMat.resize(0);
@@ -651,7 +659,7 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
               = s.mass_matrix.get_blocks_uniquely(true);
   switch(type)
   {
-    case TNSE2D:
+    case LocalAssembling_type::TNSE3D_LinGAL:
     {
       rhs_array[0] = s.rhs.block(0);
       rhs_array[1] = s.rhs.block(1);
@@ -759,7 +767,7 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
       break;
     }// case TNSE2D
 // case TNSE2D       
-    case TNSE2D_NL:
+    case LocalAssembling_type::TNSE3D_NLGAL:
     {
       // no right-hand side needs to be assembled here (with a few exceptions)
       switch(TDatabase::ParamDB->NSTYPE)
@@ -886,7 +894,7 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
     }// endswitch TNSE2D_NL
     break;
 //---------------------------    
-    case TNSE2D_Rhs:
+    case LocalAssembling_type::TNSE3D_Rhs:
     {
       // no matrices to be assembled
       sqMat.resize(0);
@@ -900,7 +908,7 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s, LocalAssemblin
       break;
     }
     default:
-      ErrThrow("The assembling type ",type, " is unknown to Time_NSE2D.");
+      ErrThrow("The assembling type ", type, " is unknown to Time_NSE2D.");
       
   }
   // reset matrices

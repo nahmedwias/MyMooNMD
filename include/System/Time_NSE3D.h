@@ -27,7 +27,7 @@
 #include <FESpace3D.h>
 #include <Example_TimeNSE3D.h>
 #include <TimeDiscretizations.h>
-#include <LocalAssembling3D.h>
+#include "LocalAssembling.h"
 
 
 #include <ParameterDatabase.h>
@@ -464,24 +464,27 @@ class Time_NSE3D
 private:
   
   /// @brief this routines wraps up the call to Assemble3D
-  void call_assembling_routine(Time_NSE3D::System_per_grid& s, 
-                          LocalAssembling3D_type type);
+  void call_assembling_routine(Time_NSE3D::System_per_grid& s,
+                               LocalAssembling_type type);
   /// @brief set the matrices and right hand side depending on the
   /// assemling routines, nstypes and the methods
-  void set_matrices_rhs(Time_NSE3D::System_per_grid& s, LocalAssembling3D_type type,
-        std::vector<TSquareMatrix3D*> &sqMat, std::vector<TMatrix3D*> &reMat,
-        std::vector<double*> &rhs_array);
+  void set_matrices_rhs(Time_NSE3D::System_per_grid& s,
+                        LocalAssembling_type type,
+                        std::vector<TSquareMatrix3D*> &sqMat,
+                        std::vector<TMatrix3D*> &reMat,
+                        std::vector<double*> &rhs_array);
   /// @brief set the spaces depending on disc types
-  void set_arrays(Time_NSE3D::System_per_grid& s, 
-        std::vector<const TFESpace3D*> &spaces, std::vector< const TFESpace3D* >& spaces_rhs,
-        std::vector< TFEFunction3D*> &functions);  
+  void set_arrays(Time_NSE3D::System_per_grid& s,
+                  std::vector<const TFESpace3D*> &spaces,
+                  std::vector< const TFESpace3D* >& spaces_rhs,
+                  std::vector< TFEFunction3D*> &functions);  
   
   /// @brief
   void restrict_function();
   
   /// @brief do upwinding for the multigrid multilevel method
   void do_upwinding_for_mdml(std::vector<TSquareMatrix3D*> &sqMat, 
-	std::vector<TFEFunction3D*> fefunctions, LocalAssembling3D_type type);
+	std::vector<TFEFunction3D*> fefunctions, LocalAssembling_type type);
 };
 
 

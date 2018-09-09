@@ -79,7 +79,7 @@ void TimeNSType1Smagorinsky3D(double Mult, double *coeff,
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                       test001*ansatz001);
       val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      
+
       MatrixRow[j] += Mult * val;
 
       val = ansatz000*test000;
@@ -193,9 +193,9 @@ void TimeNSType2Smagorinsky3D(double Mult, double *coeff,
 
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                       test001*ansatz001);
-      
+
       val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      
+
       MatrixRow[j] += Mult * val;
 
       val = ansatz000*test000;
@@ -217,7 +217,7 @@ void TimeNSType2Smagorinsky3D(double Mult, double *coeff,
       MatrixRow3[j] += val;
     }
   } // endfor i
-  
+
   for(i=0;i<N_P;i++)
   {
     MatrixRow1 = MatrixB1[i];
@@ -332,7 +332,7 @@ void TimeNSType3Smagorinsky3D(double Mult, double *coeff,
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
-      
+
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
 
@@ -446,7 +446,7 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
   double *gradu = &param[3];
   double *uConv = &param[0];
   mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z, -4711);
-  
+
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -480,12 +480,12 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
-      
+
       val  = viscosity*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001);
 
       val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      
+
       Matrix11Row[j] += Mult * val;
 
       val  = viscosity*(test010*ansatz100);
@@ -501,7 +501,7 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
                    +test001*ansatz001);
 
       val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      
+
       Matrix22Row[j] += Mult * val;
 
       val  = viscosity*(test001*ansatz010);
@@ -517,7 +517,7 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
                    +2*test001*ansatz001);
 
       val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      
+
       Matrix33Row[j] += Mult * val;
 
       val = Mult*(ansatz000*test000);
@@ -550,7 +550,7 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
       val = -Mult*test000*ansatz001;
       MatrixRow3[j] += val;
     } // endfor j
-  } // endfor i      
+  } // endfor i
 }
 
 
@@ -619,7 +619,7 @@ void TimeNSType4Smagorinsky3D(double Mult, double *coeff,
   double *gradu = &param[3];
   double *uConv = &param[0];
   mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z, -4711);
-  
+
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -644,7 +644,7 @@ void TimeNSType4Smagorinsky3D(double Mult, double *coeff,
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
-      
+
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
 
@@ -776,7 +776,7 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
   double *gradu = &param[3];
   double *uConv = &param[0];
   mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z, -4711);
-  
+
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -810,7 +810,7 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
-      
+
       val  = viscosity*(2*test100*ansatz100+test010*ansatz010
                    +test001*ansatz001);
       val += (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
@@ -923,11 +923,11 @@ void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff,
   Orig3 = OrigValues[3]; // u
 
   c0 = coeff[0]; // nu
- 
+
   u1 = param[0]; // u1old
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
-  
+
   double *x = &param[12];
   double *y = &param[13];
   double *z = &param[14];
@@ -935,7 +935,7 @@ void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff,
   double *gradu = &param[3];
   double *uConv = &param[0];
   mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z, -4711);
-  
+
 
   for(i=0;i<N_U;i++)
   {
@@ -950,7 +950,7 @@ void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff,
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
-      
+
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
 
@@ -1004,7 +1004,7 @@ void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff,
   double *gradu = &param[3];
   double *uConv = &param[0];
   mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z, -4711);
- 
+
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
@@ -1020,7 +1020,7 @@ void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff,
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
-      
+
       val  = (c0+mu)*(test100*ansatz100+test010*ansatz010+
                  test001*ansatz001);
 
@@ -1087,7 +1087,7 @@ void TimeNSType3_4NLSmagorinskyDD3D(double Mult, double *coeff,
   double *uConv = &dummy_param[0];
 
   mu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z, -4711);
-  
+
   viscosity = Mult*(mu/2.0+c0);
 
   for(i=0;i<N_U;i++)
@@ -1107,19 +1107,19 @@ void TimeNSType3_4NLSmagorinskyDD3D(double Mult, double *coeff,
     test000 = Mult*Orig3[i];
 
     for(j=0;j<N_U;j++)
-    {      
+    {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
       ansatz001 = Orig2[j];
 
       val1 = (u1*ansatz100+u2*ansatz010+u3*ansatz001)*test000;
-      
+
       val2 = test100*ansatz100;
       val3 = test010*ansatz010;
       val4 = test001*ansatz001;
       val1 += val2+val3+val4;
       Matrix11Row[j] += val2+val1;
-      Matrix12Row[j] += test010*ansatz100; 
+      Matrix12Row[j] += test010*ansatz100;
       Matrix13Row[j] += test001*ansatz100;
       Matrix21Row[j] += test100*ansatz010;
       Matrix22Row[j] += val3+val1;

@@ -41,6 +41,7 @@
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <Multigrid.h>
+#include "LocalAssembling.h"
 
 #ifdef _MPI
 #include <mpi.h>
@@ -293,6 +294,7 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
+  db.merge(LocalAssembling3D::default_local_assembling_database());
 
   db["problem_type"].set<size_t>(5);
   

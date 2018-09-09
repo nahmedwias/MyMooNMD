@@ -3,13 +3,14 @@
 #include <Multigrid.h>
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
-#include <LocalAssembling2D.h>
+#include "LocalAssembling.h"
 #include <Assemble2D.h>
 #include <Upwind.h>
 #include <LocalProjection.h>
 
 #include <Assembler4.h>
 #include <BoundaryAssembling2D.h>
+#include <AuxParam2D.h>
 
 
 void Coefficient_Function_CD2D(double *in, double *out)
@@ -43,6 +44,8 @@ ParameterDatabase get_default_CD2D_parameters()
   // a default afc database
   ParameterDatabase afc_db = AlgebraicFluxCorrection::default_afc_database();
   db.merge(afc_db, true);
+  // default local assembling database
+  db.merge(LocalAssembling<2>::default_local_assembling_database(), true);
 
   return db;
 }
@@ -214,15 +217,15 @@ void CD2D::set_parameters()
 /** ************************************************************************ */
 void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coefficient_function2)
 {
-	const TFESpace2D *coefficient_function1_space;
-	const TFESpace2D *coefficient_function2_space;
+	const TFESpace2D *coefficient_function1_space = nullptr;
+	const TFESpace2D *coefficient_function2_space = nullptr;
 
- LocalAssembling2D_type type;
+ LocalAssembling_type type;
  // use a list of LocalAssembling2D objects
  std::vector< std::shared_ptr <LocalAssembling2D >> la_list;
 
 
-  type = LocalAssembling2D_type::ConvDiff;
+  type = LocalAssembling_type::ConvDiff;
   int disctype = 1; // Galerkin
   if(db["space_discretization_type"].is("supg") 
     || db["space_discretization_type"].is("sdfem"))
@@ -253,7 +256,7 @@ void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coeffic
 	  }
 
 	  std::shared_ptr <LocalAssembling2D> la(
-      new LocalAssembling2D(type, pointer_to_fe_functions, 
+      new LocalAssembling2D(this->db, type, pointer_to_fe_functions, 
                             this->example.get_coeffs(), disctype));
 
 	  if  ((coefficient_function1) && (coefficient_function2))

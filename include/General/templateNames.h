@@ -10,6 +10,9 @@ class TFESpace3D;
 class TFEVectFunct2D;
 class TFEVectFunct3D;
 
+#include "Enumerations.h"
+#include "Constants.h"
+
 /**
  * @brief this struct gives us the opportunity to write code which does not
  * depend on the space dimension.
@@ -31,6 +34,11 @@ struct Template_names<2>
   typedef TFEFunction2D FEFunction;
   typedef TFESpace2D FESpace;
   typedef TFEVectFunct2D FEVectFunct;
+  typedef std::vector<MultiIndex2D> MultiIndex_vector;
+  typedef BaseFunct2D BaseFunct;
+  typedef CoeffFct2D CoeffFct;
+  typedef AssembleFctParam2D AssembleFctParam;
+  typedef ManipulateFct2D ManipulateFct;
 };
 template <>
 struct Template_names<3>
@@ -39,6 +47,11 @@ struct Template_names<3>
   typedef TFEFunction3D FEFunction;
   typedef TFESpace3D FESpace;
   typedef TFEVectFunct3D FEVectFunct;
+  typedef std::vector<MultiIndex3D> MultiIndex_vector;
+  typedef BaseFunct3D BaseFunct;
+  typedef CoeffFct3D CoeffFct;
+  typedef AssembleFctParam3D AssembleFctParam;
+  typedef ManipulateFct3D ManipulateFct;
 };
 
 #endif // INCLUDE_GENERAL_TEMPLATENAMES_H_

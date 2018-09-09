@@ -15,7 +15,7 @@
 #include <AllClasses.h>
 #include <Constants.h>
 
-#include "LocalAssembling3D.h"
+#include "LocalAssembling.h"
 
 /**
  * @brief Assembling method which takes a LocalAssembling3D object replacing the deprecated
@@ -30,7 +30,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces,
 				int n_rhs, double** rhs,  const TFESpace3D** ferhs,
 				BoundCondFunct3D** BoundaryConditions,
                 BoundValueFunct3D** BoundaryValues,
-				const LocalAssembling3D& la);
+				LocalAssembling3D& la);
 
 
 /** a function from a finite element space */

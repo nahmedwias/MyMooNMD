@@ -31,6 +31,7 @@
 #include <Multigrid.h>
 #include <Chrono.h>
 #include <algorithm>
+#include "LocalAssembling.h"
 
 double accuracy = 1e-6;
 
@@ -192,6 +193,7 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(ParameterDatabase::default_output_database());
     db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
 
     db["problem_type"].set<size_t>(5);
     db["example"] = 2;
@@ -288,6 +290,7 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(ParameterDatabase::default_output_database());
     db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
     db["problem_type"].set<size_t>(5);
     db["example"] = 2;
 

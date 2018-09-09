@@ -40,7 +40,6 @@
 #include <ParameterDatabase.h>
 #include <Example_TimeCD2D.h>
 #include <TCD2D_POD_LocalAssemble.h>
-#include <LocalAssembling2D.h>
 
 
 #include <fstream>

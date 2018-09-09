@@ -306,7 +306,6 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
                            this->Coll, cell, SecondDer,
                            N_Points, xi, eta, weights, X, Y, AbsDetjk);
     
-    la->compute_parameters(N_Points, this->Coll, cell, i, X, Y);
     bool is_sdfem =(la->get_disctype() == SDFEM);
 
     if( is_sdfem
@@ -325,10 +324,9 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
         TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
     }
 
-    la->get_local_forms(N_Points, weights, AbsDetjk, X, Y, LocN_BF, LocBF,
-		       //AuxArray,
-		       cell, n_all_matrices, n_rhs_blocks, LocMatrices,
-		       LocRhs);
+    la->GetLocalForms(N_Points, weights, AbsDetjk, {{X, Y}}, LocN_BF, LocBF,
+                      cell, i, n_all_matrices, n_rhs_blocks, LocMatrices,
+                      LocRhs);
 }
 
 //================================================================================

@@ -8,14 +8,8 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <ParameterDatabase.h>
-#include <LinAlg.h>
 #include <Brinkman2D.h>
-#include <MainUtilities.h>
-#include <LocalAssembling2D.h>
-#include <Example_Brinkman2D.h>
 #include <Chrono.h>
-#include <MooNMD_Io.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 

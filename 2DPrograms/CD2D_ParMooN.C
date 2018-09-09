@@ -14,9 +14,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <LocalAssembling2D.h>
-#include <Example_CD2D.h>
-
 // =======================================================================
 // main program
 // =======================================================================

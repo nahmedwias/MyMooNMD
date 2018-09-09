@@ -40,7 +40,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
                 TSquareMatrix3D** sqmatrices, int n_matrices,
                 TMatrix3D** matrices, int n_rhs, double** rhs,
                 const TFESpace3D** ferhs, BoundCondFunct3D** BoundaryConditions,
-                BoundValueFunct3D** BoundaryValues, const LocalAssembling3D& la)
+                BoundValueFunct3D** BoundaryValues, LocalAssembling3D& la)
 {
 //   if(n_rhs != la.get_n_rhs())
 //   {
@@ -80,7 +80,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  double ***LocMatrices=nullptr, **LocRhs=nullptr;
 	  int LocN_BF[N_BaseFuncts3D];
 	  BaseFunct3D LocBF[N_BaseFuncts3D];
-	  double *AuxArray[MaxN_QuadPoints_3D];
 	  int *DOF, ActiveBound, DirichletBound, end, last;
 	  int *TestDOF, *AnsatzDOF;
 	  double *Entries;
@@ -179,12 +178,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    for(j=0;j<MaxN_QuadPoints_3D;j++)
 	      Param[j] = aux + j*N_Parameters;
 	  }
-
-	  // 20 <= number of term in bilinear form
-	  // DO NOT CHANGE 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
-	  aux = new double [MaxN_QuadPoints_3D*20];
-	  for(j=0;j<MaxN_QuadPoints_3D;j++)
-	    AuxArray[j] = aux + j*20;
 
 	  if(N_AllMatrices)
 	  {
@@ -299,13 +292,8 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	                                    N_Points, xi, eta, zeta, weights,
 	                                    X, Y, Z, AbsDetjk);
 
-	//     cout << "AbsDetjk: " << AbsDetjk[0] << endl;
-
-	    //OutPut("params " << TDatabase::ParamDB->INTERNAL_LEVEL << endl);
-	    la.GetParameters(N_Points, Coll, cell, i,X, Y, Z, Param);
-	    bool is_sdfem = (la.get_disctype() == SDFEM);
-	    bool is_rbvms = (la.get_disctype() == RBVMS);
-
+      bool is_sdfem = (la.get_disctype() == SDFEM);
+      bool is_rbvms = (la.get_disctype() == RBVMS);
 	    if ( is_sdfem || is_rbvms
 	        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
 	        || (TDatabase::ParamDB->CELL_MEASURE == 4)
@@ -324,16 +312,10 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	        TDatabase::ParamDB->INTERNAL_VERTEX_X[4] = -4711;
 	      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
 	    }
-
 	    // use local assembling object to assemble a few matrices and
 	    // right-hand sides at once
-	    la.GetLocalForms(N_Points, weights, AbsDetjk,
-						 X, Y, Z,
-						 LocN_BF, LocBF,
-						 Param, AuxArray,
-						 cell,
-						 N_AllMatrices, n_rhs,
-						 LocMatrices, LocRhs);
+	    la.GetLocalForms(N_Points, weights, AbsDetjk, {{X, Y, Z}}, LocN_BF, LocBF,
+                       cell, i, N_AllMatrices, n_rhs, LocMatrices, LocRhs);
 
 	    //OutPut("local form done " << i << endl);
 	    time1 = GetTime();
@@ -1081,9 +1063,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    delete [] Matrices[0];
 	    delete [] Matrices;
 	  }
-
-	  delete [] AuxArray[0];
-
 
 	/*
 	#ifdef _MPI

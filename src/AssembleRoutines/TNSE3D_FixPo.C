@@ -4497,7 +4497,7 @@ void TimeNSType3_4NLDivDivDD3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  tau = DivDivStab3D(u1,u2,u3,hK,c0);
+  tau = 0;//DivDivStab3D(u1,u2,u3,hK,c0);
   //OutPut(" "<<tau);
   // for time-dependent problems, the div-div term is incorporated
   // into the matrix A which will be multiplied with theta1

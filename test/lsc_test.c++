@@ -27,8 +27,9 @@
 #include <NSE2D.h>
 #include <Solver.h>
 #include <Example_NSE2D.h>
+#include "LocalAssembling.h"
 
-#include "algorithm"
+#include <algorithm>
 
 std::vector<int> reynolds_numbers = {10, 100};//,1000};
 
@@ -71,6 +72,7 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_output_database());
     db.merge(Example2D::default_example_database());
     db.merge(Solver<>::default_solver_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
 
     db["problem_type"].set<size_t>(5);
     db["example"] = 1; //lid driven cavity example
