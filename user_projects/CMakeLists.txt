@@ -21,4 +21,5 @@
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
 
+add_subdirectory(boundary_controlled_optimization)
 set(parmoon_tests ${parmoon_tests} PARENT_SCOPE)
