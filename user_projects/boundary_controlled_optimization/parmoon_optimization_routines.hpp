@@ -56,7 +56,7 @@ namespace parmoon_opt
     // call the optimization routine. Note that there is also a variant without
     // explicitly passing minf, but then there will be a copy of 'x'.
     try{ opt.optimize(x, minf); }
-    catch(...){};
+    catch(...){Output::print("EXCEPTION");};
     print_summary(opt, x, opt_db["print_final_solution"]);
   }
   
@@ -145,11 +145,11 @@ namespace parmoon_opt
     auto result = opt.last_optimize_result();
     if(result < 0)
     {
-      Output::warn("optimization", "nlopt failed!");
+      Output::warn("optimization", "nlopt failed! ", result );
     }
     Output::print("optimization done because ", termination_reason(result));
     Output::print("found minimum ", opt.last_optimum_value(), "  after ",
-                  opt.get_numevals(), " evaulations with the algorithm ",
+                  opt.get_numevals(), " evaluations with the algorithm ",
                   opt.get_algorithm_name());
     double norm_solution = std::accumulate(x.begin(), x.end(), 0.0, 
                                            [](double a, double b) 

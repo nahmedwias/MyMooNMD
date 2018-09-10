@@ -28,11 +28,74 @@ ParameterDatabase Time_BoundaryControlledOptimization::default_BCO_database()
          "Switch between a few possible cost functionals via weights. The "
          "order of the functionals is: L2_norm_of_curl, backward_facing_step, " 
          "L2_norm_diff_stokes", 0., 1.);
+
   db.add("restricted_curl_functional", false, 
          "The L2_norm_of_curl functional can be restricted such the the "
          "integral is taken only on a subdomain Omega intersected with x<10 ");
   
+  db.add("control_depends_on_time", true,
+         "Activate it if you want to allow the control dofs to vary in time. The "
+         "control space size will be multiplied by the number of time steps.");
+
+  db.add("control_depends_on_space", true,
+         "Activate it if you want to allow the control dofs to vary in space. The "
+         "control space size will be multiplied by the number of time steps.");
+
+  db.add("control_in_x_direction", true,
+         "Activate it if you want that the control space includes the x component"
+         "at the boundary.");
+
+  db.add("control_in_y_direction", true,
+         "Activate it if you want that the control space includes the y component"
+         "at the boundary.");
+
   return db;
+}
+
+bool Time_BoundaryControlledOptimization::check_input_parameter_consistency(const ParameterDatabase& param_db)
+{
+  ParameterDatabase db = Time_BoundaryControlledOptimization::default_BCO_database();
+  db.merge(param_db, false);
+
+  bool consistent = true;
+
+  if (!db["control_in_x_direction"] && !db["control_in_y_direction"])
+  {
+    Output::warn("check_input_parameter_consistency", "the control should have at "
+        "least one component, either x or y!");
+    consistent = false;
+  }
+
+  std::vector<double> functional_weights = db["cost_functional"];
+  double total_weights = 0;
+  for (unsigned int i = 0; i < functional_weights.size(); ++i)
+    total_weights += functional_weights.at(i);
+  if (total_weights == 0 )
+  {
+    Output::warn("check_input_parameter_consistency", "the cost functional is zero!");
+    consistent = false;
+  }
+
+  if (db["control_depends_on_time"] && !db["control_depends_on_space"])
+  {
+    Output::info<5>("check_input_parameter_consistency", " The control is "
+        "only time-dependent!");
+  }
+
+  if (!db["control_depends_on_time"] && db["control_depends_on_space"])
+  {
+    Output::info<5>("check_input_parameter_consistency", " The control is "
+        "only space-dependent, although you are running optimization on time-dependent "
+        "problems!");
+  }
+
+  if (!db["control_depends_on_time"] && !db["control_depends_on_space"])
+  {
+    Output::info<5>("check_input_parameter_consistency", " The control is "
+        "independent from time and space!");
+  }
+
+  return consistent;
 }
 
 
@@ -95,6 +158,8 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
 {
   Output::print<5>("Creating the Time_BoundaryControlledOptimization object");
   db.merge(param_db, false);
+  if (!check_input_parameter_consistency(db))
+    ErrThrow("Inconsistent input parameters!");
   
   // Set the number of time steps from database of tnse_primal member
   /* TODO: this step can be done much more nicely if the global parameter
@@ -192,8 +257,22 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
 //     Output::print("control_dof ", e);
 //   }
 
-  n_control = 2 * control_dofs.size() * n_time_steps_; // space dimension 2
-  
+  // Set the size of the control
+  // minimum value: 1 (time- and space-INdependent)
+  // maximum value: 2 * control_dofs.size()*n_time_steps (time- and space-dependent)
+  n_control = 1;
+  if (db["control_depends_on_time"])
+    n_control *= n_time_steps_;
+
+  int n_components = 0;
+  if (db["control_in_x_direction"])
+    n_components++;
+  if (db["control_in_y_direction"])
+    n_components++;
+
+  auto n_dof_per_component = db["control_depends_on_space"] ? control_dofs.size() : 1;
+  n_control *= n_components*n_dof_per_component;
+
   control_old = std::vector<double>(n_control, 0.0);
   Output::print<3>("Created the Time_BoundaryControlledOptimization object, ",
                    "n_control = ", n_control);
@@ -229,7 +308,7 @@ double Time_BoundaryControlledOptimization::compute_functional_and_derivative(
   {
     for(auto j = 0u; j < n_dof_per_component; ++j)
     {
-    Output::print("Time step i=", i, " x[i]=", x[j+i*2*n_dof_per_component],
+    Output::print<5>("Time step i=", i, " x[i]=", x[j+i*2*n_dof_per_component],
                   " y[i]=", x[j+i*2*n_dof_per_component+n_dof_per_component]);
     }
   }
@@ -358,18 +437,47 @@ void Time_BoundaryControlledOptimization::impose_control_in_rhs_and_sol(const do
   auto& rhs = this->tnse_primal.get_rhs_from_time_disc();
   auto& sol = this->tnse_primal.get_solution();
   int length = rhs.length(0);
-  auto n_dof_per_component = control_dofs.size();
-  int time_index = 2*n_dof_per_component*current_time_step;
-  for(auto i = 0u; i < n_dof_per_component; ++i)
+
+  bool depends_on_time  = db["control_depends_on_time"];
+  bool depends_on_space = db["control_depends_on_space"];
+  bool x_direction = db["control_in_x_direction"];
+  bool y_direction = db["control_in_y_direction"];
+
+  int n_components = 0;
+  if (x_direction)
+    n_components++;
+  if (y_direction)
+    n_components++;
+  auto n_dof_per_component = depends_on_space ? control_dofs.size() : 1;
+  auto n_control_per_time_step = n_components * n_dof_per_component;
+
+  int time_index = depends_on_time ? current_time_step*n_control_per_time_step : 0;
+
+  for(auto i = 0u; i < control_dofs.size(); ++i)
   {
-    rhs[control_dofs[i]] = x[i+time_index];
-    rhs[control_dofs[i] + length] = x[i+n_dof_per_component+time_index];
-    sol[control_dofs[i]] = x[i+time_index];
-    sol[control_dofs[i] + length] = x[i+n_dof_per_component+time_index];
-//    Output::print("Control_dofs i=",i, " in time step=", current_time_step,
-//                  " equals:", x[i+time_index]);
-//    Output::print("Control_dofs i=",i+n_dof_per_component, " in time step=",
-//    current_time_step, " equals:", x[i+n_dof_per_component+time_index]);
+    int control_index = time_index;
+    if(depends_on_space)
+      control_index += i;
+
+    if (x_direction && control_index >= n_control)
+          ErrThrow("ERROR", control_index, " ", n_control);
+
+    rhs[control_dofs[i]] = x_direction ? x[control_index] : 0.;
+    sol[control_dofs[i]] = x_direction ? x[control_index] : 0.;
+
+    if(x_direction)
+      control_index += n_dof_per_component;
+
+    if (y_direction && control_index >= n_control)
+      ErrThrow("ERROR", control_index, " ", n_control);
+
+    rhs[control_dofs[i] + length] = y_direction ? x[control_index]: 0.;
+    sol[control_dofs[i] + length] = y_direction ? x[control_index]: 0.;
+
+    Output::print("Control_dofs x_component: i=",i, " in time step=", current_time_step,
+                  " equals:", rhs[control_dofs[i]]);
+    Output::print("Control_dofs y_component: i=", i, " in time step=",
+    current_time_step, " equals:", rhs[control_dofs[i] + length]);
    }
 }
 
