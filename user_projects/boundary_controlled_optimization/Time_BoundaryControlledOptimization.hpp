@@ -25,6 +25,8 @@ class Time_BoundaryControlledOptimization
     
     static ParameterDatabase default_BCO_database();
     
+    static bool check_input_parameter_consistency(const ParameterDatabase& db);
+
   protected:
     /// @brief keep all parameters for this optimization in one database
     ParameterDatabase db;
