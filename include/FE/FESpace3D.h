@@ -100,7 +100,7 @@ class TFESpace3D : public TFESpace
     virtual int GetBaseVectDim() const; 
 
    /** @return The boundary condition function pointer. */
-   BoundCondFunct3D* getBoundCondition() const
+   BoundCondFunct3D* get_boundary_condition() const
    { return boundCondition_; }
 
     /** return number of active degrees of freedom */

@@ -552,7 +552,7 @@ void Time_CD3D::call_assembling_routine(Time_CD3D::SystemPerGrid& system,
   system.rhs_.reset(); // reset to zeros 
   const TFESpace3D *feSpaceRhs = &system.feSpace_;
   
-  BoundCondFunct3D * boundCond = feSpace->getBoundCondition();
+  BoundCondFunct3D * boundCond = feSpace->get_boundary_condition();
   
   BoundValueFunct3D * boundValue[1]{example_.get_bd()[0]};  
   

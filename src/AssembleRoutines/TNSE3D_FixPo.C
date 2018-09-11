@@ -14,6 +14,10 @@
 
 #include "../../include/AssembleRoutines/ConvDiff.h"
 #include <CommonRoutineTNSE3D.h>
+
+Hotfixglobal_AssembleNSE assemble_nse(Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION);
+
+
 // ======================================================================
 // compute turbulent viscosity for LES 
 // ======================================================================
@@ -299,11 +303,11 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       // hk is just the value if the filter width would be zero (this should not happen)
       
       hk = delta/2.0;
-      delta_x = Mesh_size_in_convection_direction(hk,1,0,0);
+      delta_x = Mesh_size_in_convection_direction<3>(hk, {{1,0,0}});
       delta_x *=delta_x;
-      delta_y = Mesh_size_in_convection_direction(hk,0,1,0);
+      delta_y = Mesh_size_in_convection_direction<3>(hk, {{0,1,0}});
       delta_y *=delta_y;
-      delta_z = Mesh_size_in_convection_direction(hk,0,0,1);
+      delta_z = Mesh_size_in_convection_direction<3>(hk, {{0,0,1}});
       delta_z *=delta_z;
 
       // compute second invariant of gradient of velocity, scaled with filter widht in coordinate directions
@@ -397,11 +401,11 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       // compute filter width in coordinate directions
       // hk is just the value if the filter width would be zero (this should not happen)
       hk = delta/2.0;
-      delta_x = Mesh_size_in_convection_direction(hk,1,0,0);
+      delta_x = Mesh_size_in_convection_direction<3>(hk, {{1,0,0}});
       delta_x *= delta_x;
-      delta_y = Mesh_size_in_convection_direction(hk,0,1,0);
+      delta_y = Mesh_size_in_convection_direction<3>(hk, {{0,1,0}});
       delta_y *= delta_y;
-      delta_z = Mesh_size_in_convection_direction(hk,0,0,1);
+      delta_z = Mesh_size_in_convection_direction<3>(hk, {{0,0,1}});
       delta_z *= delta_z;
       
       mu_max = 4 * ( 1./delta_x + 1./delta_y + 1./delta_z );
@@ -436,9 +440,9 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       // compute filter width in coordinate directions
       // hk is just the value if the filter width would be zero (this should not happen)
       hk = delta/2.0;
-      delta_x = Mesh_size_in_convection_direction(hk,1,0,0);
-      delta_y = Mesh_size_in_convection_direction(hk,0,1,0);
-      delta_z = Mesh_size_in_convection_direction(hk,0,0,1);
+      delta_x = Mesh_size_in_convection_direction<3>(hk, {{1,0,0}});
+      delta_y = Mesh_size_in_convection_direction<3>(hk, {{0,1,0}});
+      delta_z = Mesh_size_in_convection_direction<3>(hk, {{0,0,1}});
       
       /* TODO: change cell width hk using CELL_MEASURE (more elegant), now too slow! */
       

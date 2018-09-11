@@ -1635,6 +1635,11 @@ void check_parameters_consistency_NSE(ParameterDatabase& db)
 #else
   int my_rank = 0;
 #endif
+  if(!db.contains("space_discretization_type"))
+  {
+    ErrThrow("check_parameters_consistency_NSE: you need to set the "
+             "space_discretization_type");
+  }
 
   // Newton method
   if ((TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)&&(TDatabase::ParamDB->NSTYPE<=2))

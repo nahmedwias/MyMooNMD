@@ -181,6 +181,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       
       initialCondition.push_back(backward_facing_step::InitialU1);
       initialCondition.push_back(backward_facing_step::InitialU2);
+      initialCondition.push_back(backward_facing_step::InitialP);
       
       backward_facing_step::ExampleFile();
       backward_facing_step::DIMENSIONLESS_VISCOSITY = this->get_nu();
@@ -266,6 +267,18 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       ErrThrow("Unknown time-dependent Example_TimeNSE2D example!");
   }
 }
+
+Example_TimeNSE2D::Example_TimeNSE2D(std::vector <DoubleFunct2D*> exact,
+                   std::vector <BoundCondFunct2D*> bc,
+                   std::vector <BoundValueFunct2D*> bd,
+                   CoeffFct2D coeffs,
+                   bool timedependentrhs, bool timedependentcoeffs,
+                   std::vector <DoubleFunct2D*> init_cond)
+  : Example_NonStationary2D(exact, bc, bd, coeffs, timedependentrhs,
+                            timedependentcoeffs, init_cond)
+  {
+
+  };
 
 void Example_TimeNSE2D::do_post_processing(Time_NSE2D& tnse2d, double& val, int count) const
 {

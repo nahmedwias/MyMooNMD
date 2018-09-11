@@ -1398,8 +1398,10 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
   }
   // Boundary conditions and value
   BoundCondFunct3D * boundary_conditions[4] = {
-    s.velocitySpace_.getBoundCondition(), s.velocitySpace_.getBoundCondition(),
-    s.velocitySpace_.getBoundCondition(), s.pressureSpace_.getBoundCondition() };
+    s.velocitySpace_.get_boundary_condition(),
+    s.velocitySpace_.get_boundary_condition(),
+    s.velocitySpace_.get_boundary_condition(),
+    s.pressureSpace_.get_boundary_condition() };
 
   std::array<BoundValueFunct3D*, 4> boundary_values;
   boundary_values[0] = example_.get_bd(0);
@@ -1941,11 +1943,9 @@ void Time_NSE3D::modify_slip_bc(bool BT_Mass, bool slip_A_nl,
   std::vector<std::shared_ptr<FEMatrix>> mass_blocks;
   mass_blocks = s.massMatrix_.get_blocks_uniquely(true);
   
-  BoundCondFunct3D* bc[4] = {
-  s.velocitySpace_.getBoundCondition(),
-  s.velocitySpace_.getBoundCondition(),
-  s.velocitySpace_.getBoundCondition(),
-  s.pressureSpace_.getBoundCondition()};
+  BoundCondFunct3D* bc[1] = {
+  s.velocitySpace_.get_boundary_condition()};
+
   // boundary values:
   std::vector<BoundValueFunct3D*>bv(4);
   bv[0]=example_.get_bd(0);

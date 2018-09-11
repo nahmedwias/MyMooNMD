@@ -2819,7 +2819,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
       hK = cell->GetDiameter(); 
       // get coefficients in center of mesh cell 
       Coeff(1, &sx ,&sy, &params, &coeffs);
-      hK = Mesh_size_in_convection_direction(hK, coeffs[1], coeffs[2]); 
+      hK = Mesh_size_in_convection_direction<2>(hK, {{coeffs[1], coeffs[2]}});
       break;
   default: // diameter
       hK = cell->GetDiameter();

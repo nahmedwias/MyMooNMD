@@ -289,6 +289,14 @@ target_compile_definitions(cd3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(cd3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### Darcy3D ###
+add_executable(darcy3d ${PROJECT_SOURCE_DIR}/3DPrograms/Darcy3D_ParMooN.C)
+set_target_properties(darcy3d PROPERTIES OUTPUT_NAME parMooN_darcy3d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(darcy3d PUBLIC -D__3D__)
+# Link in the required libraries.
+target_link_libraries(darcy3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ### TCD3D ###
 add_executable(tcd3d ${PROJECT_SOURCE_DIR}/3DPrograms/TCD3D_ParMooN.C)
 set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${PARMOON_PARALLEL_TYPE})

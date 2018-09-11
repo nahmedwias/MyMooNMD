@@ -42,19 +42,6 @@ int SpacesNumbers_UPW1[2] = { 0, 0 };
 //static MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
 
 
-// Galerkin
-void BilinearAssembleGalerkin(double Mult, double *coeff, double* param,
-                              double hK, double **OrigValues, int *N_BaseFuncts,
-                              double ***LocMatrices, double **LocRhs);
-
-void BilinearAssemble_SD(double Mult, double *coeff, double* param,
-                         double hK, double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs);
-
-void BilinearAssemble_GLS(double Mult, double *coeff, double* param,
-                         double hK, double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs);
-
 /*
 void BilinearAssemble_UPW1(double Mult, double *coeff, double hK,
                            double **OrigValues, int *N_BaseFuncts,

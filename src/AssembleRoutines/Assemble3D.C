@@ -2346,23 +2346,11 @@ void Assemble3D_mixed(int n_fespaces, const TFESpace3D **fespaces,
 int n_sqmatrices, TSquareMatrix3D **sqmatrices,
 int n_matrices, TMatrix3D **matrices,
 int n_rhs, double **rhs, const TFESpace3D **ferhs,
-TDiscreteForm3D *DiscreteForm3D,
+LocalAssembling3D& la,
 BoundCondFunct3D **BoundaryConditions,
-BoundValueFunct3D **BoundaryValues,
-TAuxParam3D *Parameters)
+BoundValueFunct3D **BoundaryValues)
 {
-  if(Parameters)
-  {
-    ErrMsg("input 'Parameters' of type 'TAuxParam3D*' is "<<
-          "not set to nullptr. This is usually done if you want values of FE "<<
-          "functions during local assembling, for example in nonlinear "
-          "problems. This is not yet supported. Exiting.");
-    exit(1);
-  }
-  
-  double hK;
   int N_AllMatrices = n_sqmatrices+n_matrices;
-  int i,j,k,l,l1,l3,n,m, N_LocalUsedElements;
   int N_Points, N_;
   int N_Test, N_Ansatz, N_Joints;
   const TFESpace3D *fespace;
@@ -2382,7 +2370,6 @@ TAuxParam3D *Parameters)
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
-  double *Param[MaxN_QuadPoints_3D];
   double *local_rhs;
   double *righthand =nullptr;
   double **Matrices =nullptr, *aux;
@@ -2390,7 +2377,6 @@ TAuxParam3D *Parameters)
   double ***LocMatrices =nullptr, **LocRhs =nullptr;
   int LocN_BF[N_BaseFuncts3D];
   BaseFunct3D LocBF[N_BaseFuncts3D];
-  double *AuxArray[MaxN_QuadPoints_3D];
   int *DOF, ActiveBound, DirichletBound, begin, end, middle;
   int *TestDOF, *AnsatzDOF;
   double *Entries;
@@ -2435,7 +2421,7 @@ TAuxParam3D *Parameters)
   {
     GlobalNumbers = new int* [n_sqmatrices];
     BeginIndex = new int* [n_sqmatrices];
-    for(i=0;i<n_sqmatrices;i++)
+    for(int i = 0; i < n_sqmatrices; ++i)
     {
       fespace = sqmatrices[i]->GetFESpace3D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
@@ -2449,7 +2435,7 @@ TAuxParam3D *Parameters)
     AnsatzGlobalNumbers = new int* [n_matrices];
     TestBeginIndex = new int* [n_matrices];
     AnsatzBeginIndex = new int* [n_matrices];
-    for(i=0;i<n_matrices;i++)
+    for(int i = 0; i < n_matrices; ++i)
     {
       fespace = (TFESpace3D *) matrices[i]->GetTestSpace3D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
@@ -2464,7 +2450,7 @@ TAuxParam3D *Parameters)
   {
     RhsBeginIndex = new int* [n_rhs];
     RhsGlobalNumbers = new int* [n_rhs];
-    for(i=0;i<n_rhs;i++)
+    for(int i = 0; i < n_rhs; ++i)
     {
       fespace = ferhs[i];
       RhsBeginIndex[i] = fespace->GetBeginIndex();
@@ -2473,42 +2459,37 @@ TAuxParam3D *Parameters)
 
     LocRhs = new double* [n_rhs];
     righthand = new double [n_rhs*MaxN_BaseFunctions3D];
-    for(i=0;i<n_rhs;i++)
+    for(int i = 0; i < n_rhs; ++i)
       LocRhs[i] = righthand+i*MaxN_BaseFunctions3D;
 
   }                                               // endif n_rhs
   
-  // 20 <= number of term in bilinear form
-  // DUE NOTE CHANGE 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
-  aux = new double [MaxN_QuadPoints_3D*20];
-  for(j=0;j<MaxN_QuadPoints_3D;j++)
-    AuxArray[j] = aux + j*20;
   if(N_AllMatrices)
   {
     aux = new double
       [N_AllMatrices*MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
     Matrices = new double* [N_AllMatrices*MaxN_BaseFunctions3D];
-    for(j=0;j<N_AllMatrices*MaxN_BaseFunctions3D;j++)
+    for(int j = 0; j < N_AllMatrices*MaxN_BaseFunctions3D; ++j)
       Matrices[j] = aux+j*MaxN_BaseFunctions3D;
 
     LocMatrices = new double** [N_AllMatrices];
-    for(i=0;i<N_AllMatrices;i++)
+    for(int i = 0; i < N_AllMatrices; ++i)
       LocMatrices[i] = Matrices+i*MaxN_BaseFunctions3D;
   }                                               // endif N_AllMatrices
-  SecondDer = DiscreteForm3D->GetNeeds2ndDerivatives();
+  SecondDer = la.GetNeeds2ndDerivatives();
   
 
   // all spaces use same Coll
   TCollection *Coll = fespaces[0]->GetCollection();
   int N_Cells = Coll->GetN_Cells();
 
-  for(i=0;i<N_Cells;i++)
+  for(int i = 0; i < N_Cells; ++i)
     Coll->GetCell(i)->SetClipBoard(i);
 
   // ########################################################################
   // loop over all cells
   // ########################################################################
-  for(i=0;i<N_Cells;i++)
+  for(int i = 0; i < N_Cells; ++i)
   {
     TBaseCell *cell = Coll->GetCell(i);
     
@@ -2528,6 +2509,7 @@ TAuxParam3D *Parameters)
       }
     }
     
+    double hK = 0.;
     switch (TDatabase::ParamDB->CELL_MEASURE)
     {
       // cases 4 and 5 are specially treated for special problems
@@ -2555,7 +2537,7 @@ TAuxParam3D *Parameters)
     // ####################################################################
     // find local used elements on this cell
     // ####################################################################
-    for(j=0;j<n_fespaces;j++)
+    for(int j = 0; j < n_fespaces; ++j)
     {
       CurrentElement = fespaces[j]->GetFE3D(i, cell);
       LocalUsedElements[j] = CurrentElement;
@@ -2563,7 +2545,7 @@ TAuxParam3D *Parameters)
       LocBF[j] = BaseFuncts[CurrentElement];
     }
 
-    N_LocalUsedElements = n_fespaces;
+    int N_LocalUsedElements = n_fespaces;
 
     // ####################################################################
     // calculate values on original element
@@ -2574,34 +2556,16 @@ TAuxParam3D *Parameters)
       N_Points, xi, eta, zeta, weights,
       X, Y, Z, AbsDetjk);
     
-    // this could provide values of FE functions during the local assemble
-    // routine, not yet supported.
-    //Parameters->GetParameters(N_Points, cell, i, xi, eta, zeta,
-    //  X, Y, Z, Param);
-    
-    // use DiscreteForm to assemble a few matrices and
-    // right-hand sides at once
-    if(DiscreteForm3D)
-      DiscreteForm3D->GetLocalForms(N_Points, weights, AbsDetjk,
-        hK, X, Y, Z,
-        LocN_BF, LocBF,
-        Param, AuxArray,
-        cell,
-        N_AllMatrices, n_rhs,
-        LocMatrices, LocRhs);
-    else
-    {
-      ErrMsg("Assemble3D_mixed: no DiscreteForm3D given. Exit");
-      exit(0);
-    }
-   
+    // assemble a few matrices and right-hand sides at once
+    la.GetLocalForms(N_Points, weights, AbsDetjk, {{X, Y, Z}}, LocN_BF, LocBF,
+                     cell, i, N_AllMatrices, n_rhs, LocMatrices, LocRhs);
 
     time1 = GetTime();
     // ####################################################################
     // add local matrices to global matrices (ansatz == test)
     // ####################################################################
 
-    for(j=0;j<n_sqmatrices;j++)
+    for(int j = 0; j < n_sqmatrices; ++j)
     {
       // find space for this bilinear form
       fespace = sqmatrices[j]->GetFESpace3D();
@@ -2620,21 +2584,21 @@ TAuxParam3D *Parameters)
         ActiveBound = DirichletBound = sqmatrices[j]->GetN_Rows();
       }
       // add local matrix to global
-      for(m=0;m<N_;m++)
+      for(int m = 0; m < N_; ++m)
       {
-        l=DOF[m];
+        int l=DOF[m];
         MatrixRow = Matrix[m];
         // cout << "DOF: " << l << endl;
         if(l<ActiveBound)
         {
           // node l is inner or Neumann node
           // for all dof
-          for(k=0;k<N_;k++)
+          for(int k = 0; k < N_; ++k)
           {
 
             begin = RowPtr[l];
             end = RowPtr[l+1]-1;
-            l1 = DOF[k];
+            int l1 = DOF[k];
             if(ColInd[begin] == l1)
             {
               Entries[begin] += MatrixRow[k];
@@ -2667,7 +2631,7 @@ TAuxParam3D *Parameters)
         else
         {
           // Dirichlet node
-          n=RowPtr[l];
+          int n=RowPtr[l];
           if(ColInd[n]==l)
           {
             Entries[n]=1.0;
@@ -2678,7 +2642,7 @@ TAuxParam3D *Parameters)
     // ####################################################################
     // add local matrices to global matrices (ansatz != test)
     // ####################################################################
-    for(j=0;j<n_matrices;j++)
+    for(int j = 0; j < n_matrices; ++j)
     {
       TestElement = ((TFESpace3D *) matrices[j]->GetTestSpace3D())
                     ->GetFE3D(i, cell);
@@ -2701,16 +2665,16 @@ TAuxParam3D *Parameters)
                         ->GetActiveBound();
       
       // add local matrix to global
-      for(m=0;m<N_Test;m++)
+      for(int m = 0; m < N_Test; ++m)
       {
-        l=TestDOF[m];
+        int l=TestDOF[m];
         if(l >= ActiveBound)
           continue;
         MatrixRow = Matrix[m];
         // cout << "DOF: " << l << endl;
-        for(k=0;k<N_Ansatz;k++)
+        for(int k = 0; k < N_Ansatz; ++k)
         {
-          l1 = AnsatzDOF[k];
+          int l1 = AnsatzDOF[k];
           begin = RowPtr[l];
           end = RowPtr[l+1]-1;
           middle = (begin+end)/2;
@@ -2740,7 +2704,7 @@ TAuxParam3D *Parameters)
     // ####################################################################
     // add local right-hand sides to global right-hand side
     // ####################################################################
-    for(j=0;j<n_rhs;j++)
+    for(int j = 0; j < n_rhs; ++j)
     {
       //OutPut("rhs " << j << endl);
       fespace = ferhs[j];
@@ -2758,9 +2722,9 @@ TAuxParam3D *Parameters)
       DOF = RhsGlobalNumbers[j] + RhsBeginIndex[j][i];
 
       // add local right-hand side to the global one
-      for(m=0;m<N_;m++)
+      for(int m = 0; m < N_; ++m)
       {
-        l=DOF[m];
+        int l=DOF[m];
         // cout << "DOF: " << l << endl;
         if(l<ActiveBound)
         {
@@ -2777,7 +2741,7 @@ TAuxParam3D *Parameters)
       
       // setting Dirichlet boundary condition
       N_Joints = cell->GetN_Faces();
-      for(m=0;m<N_Joints;m++)
+      for(int m = 0; m < N_Joints; ++m)
       {
         joint = cell->GetJoint(m);
         OuterBoundary = false;
@@ -2796,7 +2760,7 @@ TAuxParam3D *Parameters)
           // coordines of center are computed, this is where boundary 
           // conditions are taken
           xf = 0; yf = 0; zf = 0; 
-          for (l1=0;l1<TmpLen[m];l1++)
+          for (int l1 = 0; l1 < TmpLen[m]; ++l1)
           {
             cell->GetVertex(TmpFV[m*MaxLen+l1])
               ->GetCoords(X[l1], Y[l1], Z[l1]);
@@ -2816,7 +2780,7 @@ TAuxParam3D *Parameters)
               TFEDatabase3D::GetOrigFromRef(reftrans, N_Points, xi, eta, zeta,
                                             X, Y, Z, AbsDetjk);
               
-              for(l1=0;l1<N_Points;l1++)
+              for(int l1 = 0; l1 < N_Points; ++l1)
               {
                 BoundaryValue(X[l1], Y[l1], Z[l1], PointValues[l1]);
               }
@@ -2826,15 +2790,16 @@ TAuxParam3D *Parameters)
               EdgeDOF = FEDesc_Obj->GetJointDOF(m);
               N_EdgeDOF = FEDesc_Obj->GetN_JointDOF();
               
-              for(l=0;l<N_EdgeDOF;l++)
+              for(int l = 0; l < N_EdgeDOF; ++l)
               {
                 RHS[DOF[EdgeDOF[l]]] = FunctionalValues[l];
               }
               break;
 
             case NEUMANN:
+            {
               // cout << "Neumann condition in Assemble3D" << endl;
-              l = TFEDatabase3D::GetPolynomialDegreeFromFE3D
+              int l = TFEDatabase3D::GetPolynomialDegreeFromFE3D
                 (CurrentElement);
               switch(TmpLen[m])
               {
@@ -2905,9 +2870,12 @@ TAuxParam3D *Parameters)
                     // cout << "PV: " << t0 << endl;
                     // cout << t1 << endl;
                     t0 *= FaceWeights[l]*t2;
-                    for(k=0;k<N_;k++)
-                      if((l3 = DOF[k])<ActiveBound)
+                    for(int k = 0; k < N_; ++k)
+                    {
+                      int l3 = DOF[k];
+                      if(l3 < ActiveBound)
                         RHS[l3] += t0*JointValue[k];
+                    }
                   }                               // endfor l
                   break;
 
@@ -2959,21 +2927,22 @@ TAuxParam3D *Parameters)
                     t1 = nx*nx+ny*ny+nz*nz;
                     // cout << t1 << endl;
                     t0 *= FaceWeights[l]*sqrt(t1);
-                    for(k=0;k<N_;k++)
-                      if((l3 = DOF[k])<ActiveBound)
+                    for(int k = 0; k < N_; ++k)
+                    {
+                      int l3 = DOF[k];
+                      if(l3 < ActiveBound)
                         RHS[l3] += t0*JointValue[k];
+                    }
                   }                               // endfor l
                   break;
               }
               TFEDatabase3D::GetBaseFunct3D(BaseFuncts[CurrentElement])
                 ->ChangeBF(Coll, cell, N_Points, JointValues);
               break;
-	      
+            }
          default:
-	   
-	 break;  	      
-          }                                       // endswitch Cond0
- 
+           break;
+          }                                       // endswitch Cond0=
         }                                         // endif
       }                                           // endfor m
     }                                             // endfor j
@@ -3018,7 +2987,6 @@ TAuxParam3D *Parameters)
     delete Matrices[0];
     delete Matrices;
   }
-  delete AuxArray[0];
 
   time_total = GetTime() - time_total;
 }

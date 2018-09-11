@@ -14,8 +14,8 @@ ROM_TCDR2D::ROM_TCDR2D(TCollection& coll, const ParameterDatabase& param_db,
 		const Example_TimeCD2D& ex)
   : ROM(param_db),
     example(ex),
-    fe_space(&coll, (char*)"space", (char*)"cd2d space", example.get_bc(0),
-	    	   TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
+    fe_space(&coll, (char*)"space", (char*)"cd2d space", example.get_bc(0), 
+             TDatabase::ParamDB->ANSATZ_ORDER),
     gramian_matrix({&fe_space}),
 	full_sol(this->gramian_matrix, false),
     fe_function(&this->fe_space, (char*)"c", (char*)"c", this->full_sol.get_entries(),
@@ -331,7 +331,7 @@ void ROM_TCDR2D::assemble(BlockFEMatrix &mat, AssembleFctParam2D *local_assemble
                            fe_value_multi_index);
 
   const TFESpace2D * _fe_space = &this->fe_space;
-  BoundCondFunct2D * boundary_conditions = _fe_space->GetBoundCondition();
+  BoundCondFunct2D * boundary_conditions = _fe_space->get_boundary_condition();
   BoundValueFunct2D * non_const_bound_value[1] {this->example.get_bd()[0]};
   //fetch matrix as block
   std::vector<std::shared_ptr<FEMatrix>> mat_blocks = mat.get_blocks_uniquely();
@@ -376,7 +376,7 @@ void ROM_TCDR2D::assemble(BlockVector &rhs, AssembleFctParam2D *local_assemble_p
                            fe_value_multi_index);
 
   const TFESpace2D * _fe_space = &this->fe_space;
-  BoundCondFunct2D * boundary_conditions = _fe_space->GetBoundCondition();
+  BoundCondFunct2D * boundary_conditions = _fe_space->get_boundary_condition();
   BoundValueFunct2D * non_const_bound_value[1] {this->example.get_bd()[0]};
   
   double * rhs_entries = rhs.get_entries();

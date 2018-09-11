@@ -573,7 +573,7 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       // copy u_tmp and p_star back to r
       for(unsigned int i = 0; i < n_blocks - 1; i++)
         r.add(u_tmp.block(i), i);
-        r.copy(p_star.block(0), n_blocks-1);
+      r.copy(p_star.block(0), n_blocks-1);
       
       if(this->damping_factor != 1.0)
       {
@@ -711,6 +711,19 @@ void local_assembling_velocity_mass(double Mult, double *coeff, double *param,
         MatrixM_row[j] += Mult*(ansatz00_y*test00_y);
       }                            // endfor j
     }                              // endfor i
+#ifdef __3D__
+    for(int i = 0; i < N_U; i++)
+    {
+      double *MatrixM_row  = MatrixM[i];
+      double test00_z = u_values[i + 2*N_U];
+      
+      for(int j = 0; j < N_U; j++)
+      {
+        double ansatz00_z = u_values[j+2*N_U];
+        MatrixM_row[j] += Mult*(ansatz00_z*test00_z);
+      }                            // endfor j
+    }                              // endfor i
+#endif // 3D
   }
 }
 /* ****************************************************** */
@@ -1024,8 +1037,8 @@ void Saddle_point_preconditioner::computeBdryCorrectionMatrix(
         double t_c = (edge.GetStartParameter() + edge.GetEndParameter()) / 2.;
         // the 0 for velo space, componentID for global ID of the boundary 
         // component,
-        this->velocity_space->GetBoundCondition()(componentID, t_c, 
-                                                  componentType);
+        this->velocity_space->get_boundary_condition()(componentID, t_c, 
+                                                       componentType);
         if(componentType == DIRICHLET)
         {
           //OutPut("Found a cell with a Dirchlet boundary edge." << endl);
@@ -1128,7 +1141,7 @@ void Saddle_point_preconditioner::computeBdryCorrectionMatrix(
         y /= face_vertex_length[iJoints];
         z /= face_vertex_length[iJoints];
         // the 0 for velo space, 1 would be pressure
-        this->velocity_space->getBoundCondition()(x, y, z, componentType);
+        this->velocity_space->get_boundary_condition()(x, y, z, componentType);
         if(componentType == DIRICHLET)
         {
           //OutPut("Found a cell with a Dirchlet boundary edge." << endl);
@@ -1260,7 +1273,7 @@ void Saddle_point_preconditioner::fill_AL_weight_W()
 		{
 			Output::print<1>("Started to compute lumped pressure mass matrix for Augm. Lagr. prec.");
 			double row_sum_pressure_mass = 0.;
-			for (int j = 0; j < n_diagonal_entries_pressure_block; j++)
+			for (auto j = 0u; j < n_diagonal_entries_pressure_block; j++)
 			{
 				row_sum_pressure_mass += pressure_mass.get(d, j);
 			}
@@ -1350,7 +1363,7 @@ void Saddle_point_preconditioner::fill_augmented_matrix_and_rhs()
 	aug_blocks_for_rhs.resize((n_rows));
 
 	//form the matrices gamma*B_i^TW^{-1} for the augmentation of the rhs
-	for (int block_row = 0; block_row < n_rows-1; block_row++)
+	for (auto block_row = 0u; block_row < n_rows-1; block_row++)
 	{
 		grad_block_M = M->get_block(block_row, n_rows-1, transp );
 
@@ -1378,7 +1391,7 @@ BlockVector Saddle_point_preconditioner::get_augmented_blockvector(const BlockVe
 	BlockVector aug_right_hand_side(right_hand_side);//BlockVector(this->M);
 	const double* g = right_hand_side.block(2);
 	bool transp2;
-	for (int k= 0; k < right_hand_side.n_blocks(); k++ )
+	for (auto k= 0u; k < right_hand_side.n_blocks(); k++ )
 	{
 		std::shared_ptr< const TMatrix > ptr_to_aug_blocks = this->augmentation_matrix_for_rhs.get_block (k, 0, transp2);
 		ptr_to_aug_blocks->multiply(g, aug_right_hand_side.block(k), 1.);

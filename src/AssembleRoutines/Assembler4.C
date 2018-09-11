@@ -345,7 +345,7 @@ void Assembler4::impose_boundary_conditions(int i_cell,
       double *RHS = this->rhs_blocks[j];
       
       FE2D CurrentElement = fespace->GetFE2D(i_cell, cell);
-      BoundCondFunct2D *BoundaryCondition = fespace->GetBoundCondition();
+      BoundCondFunct2D *BoundaryCondition = fespace->get_boundary_condition();
       BoundValueFunct2D *BoundaryValue = example.get_bd()[j];
       TFE2D *ele = TFEDatabase2D::GetFE2D(CurrentElement);
       double t0,t1;

@@ -25,26 +25,16 @@
 #include <string.h>
 #include <sstream>
 
-
-double Mesh_size_in_convection_direction(double hK, double b1, double b2)
-{
-  if(TDatabase::ParamDB->INTERNAL_HK_CONVECTION < 0)
-  {
-    // not yet computed for this mesh cell
-    TDatabase::ParamDB->INTERNAL_HK_CONVECTION = 
-      Mesh_size_in_convection_direction_without_storing(hK, b1, b2);
-  }
-  // else: already computed for this mesh cell
-  return TDatabase::ParamDB->INTERNAL_HK_CONVECTION;
-}
-
-
-double Mesh_size_in_convection_direction_without_storing(double hK, double b1,
-                                                         double b2)
+template<>
+double Mesh_size_in_convection_direction_without_storing<2>(
+  double hK, std::array<double, 2> convection)
 {
   int i;
   double x[4], y[4], sx, sy, a[16], b[16], den, val, norm_b;
 
+  // compute numerator
+  norm_b = std::sqrt(convection[0]*convection[0] + convection[1]*convection[1]);
+  
   // triangles
   if (TDatabase::ParamDB->INTERNAL_VERTEX_X[3] == -4711)
   {
@@ -68,15 +58,12 @@ double Mesh_size_in_convection_direction_without_storing(double hK, double b1,
     // solve system for the coefficients of the bilinear function
     SolveMultipleSystems(a,b,3,3,3,3);
 
-    // compute numerator
-    norm_b = sqrt(b1*b1 + b2*b2);
     // compute denominator
     den = 0;
     for (i=0;i<3;i++)
     {
-      // value of gradient basis fct. in bary centre
-      // is a constant
-      den += fabs(b1*b[3*i+1]+b2*b[3*i+2]);
+      // value of gradient basis fct. in bary centre is a constant
+      den += fabs(convection[0]*b[3*i+1] + convection[1]*b[3*i+2]);
     }
     // return the mesh size in convection direction
     if (den<1e-10)
@@ -114,19 +101,16 @@ double Mesh_size_in_convection_direction_without_storing(double hK, double b1,
     // solve system for the coefficients of the bilinear function
     SolveMultipleSystems(a,b,4,4,4,4);
 
-    // compute numerator
-    norm_b = sqrt(b1*b1 + b2*b2);
     // compute denominator
     den = 0;
     for (i=0;i<4;i++)
     {
       // value of gradient basis fct. in bary centre
-      val = b1*(b[4*i+1] + b[4*i+3] * sy);
-      val += b2*(b[4*i+2] + b[4*i+3] * sx);
+      val = convection[0]*(b[4*i+1] + b[4*i+3] * sy);
+      val += convection[1]*(b[4*i+2] + b[4*i+3] * sx);
       den += fabs(val);
     }
     // return the mesh size in convection direction
-    //OutPut(b1 << " " << b2 << " " << fabs(den) << " " << 2*norm_b/fabs(den) << " " );
     if (den<1e-10)
     {
       return(hK);
@@ -138,25 +122,17 @@ double Mesh_size_in_convection_direction_without_storing(double hK, double b1,
   }
 }
 
-double Mesh_size_in_convection_direction(double hK, double b1, double b2, 
-                                         double b3)
-{
-  if(TDatabase::ParamDB->INTERNAL_HK_CONVECTION < 0)
-  {
-    // not yet computed for this mesh cell
-    TDatabase::ParamDB->INTERNAL_HK_CONVECTION = 
-      Mesh_size_in_convection_direction_without_storing(hK, b1, b2, b3);
-  }
-  // else: already computed for this mesh cell
-  return TDatabase::ParamDB->INTERNAL_HK_CONVECTION;
-}
-
-double Mesh_size_in_convection_direction_without_storing(double hK, double b1, double b2, 
-           double b3)
+template<>
+double Mesh_size_in_convection_direction_without_storing<3>(
+  double hK, std::array<double, 3> convection)
 {
   int i;
   double x[8], y[8], z[8], sx, sy, sz, a[64], b[64], den, val, norm_b;
 
+  // compute numerator
+  norm_b = std::sqrt(convection[0]*convection[0] + convection[1]*convection[1]
+                     + convection[2]*convection[2]);
+  
   // tetrahedra
   if (TDatabase::ParamDB->INTERNAL_VERTEX_X[4] == -4711)
   {
@@ -184,15 +160,14 @@ double Mesh_size_in_convection_direction_without_storing(double hK, double b1, d
     // SolveMultipleSystemsLapack(a,b,4,4,4,4);
     SolveMultipleSystems(a,b,4,4,4,4);
     
-    // compute numerator
-    norm_b = sqrt(b1*b1 + b2*b2 + b3*b3);
     // compute denominator 
     den = 0;
     for (i=0;i<4;i++)
     {
       // value of gradient basis fct. in bary centre
       // is a constant
-      den += fabs(b1*b[4*i+1]+b2*b[4*i+2]+b3*b[4*i+3]);
+      den += std::abs(convection[0]*b[4*i+1] + convection[1]*b[4*i+2]
+                      +convection[2]*b[4*i+3]);
     } 
     // return the mesh size in convection direction
     if (den<1e-10)
@@ -246,20 +221,17 @@ double Mesh_size_in_convection_direction_without_storing(double hK, double b1, d
     //SolveMultipleSystemsLapack(a,b,8,8,8,8);
     SolveMultipleSystems(a,b,8,8,8,8);
 
-    // compute numerator
-    norm_b = sqrt(b1*b1 + b2*b2 + b3*b3);
     // compute denominator 
     den = 0;
     for (i=0;i<8;i++)
     {
       // value of gradient basis fct. in bary centre
-      val = b1*(b[8*i+1]+ b[8*i+4]*sy + b[8*i+5]*sz + b[8*i+7]*sy*sz);
-      val += b2*(b[8*i+2]+ b[8*i+4]*sx + b[8*i+6]*sz + b[8*i+7]*sx*sz);
-      val += b3*(b[8*i+3]+ b[8*i+5]*sx + b[8*i+6]*sy + b[8*i+7]*sx*sy);
-      den += fabs(val);
+      val = convection[0]*(b[8*i+1]+ b[8*i+4]*sy + b[8*i+5]*sz + b[8*i+7]*sy*sz);
+      val += convection[1]*(b[8*i+2]+ b[8*i+4]*sx + b[8*i+6]*sz + b[8*i+7]*sx*sz);
+      val += convection[2]*(b[8*i+3]+ b[8*i+5]*sx + b[8*i+6]*sy + b[8*i+7]*sx*sy);
+      den += std::abs(val);
     } 
     // return the mesh size in convection direction
-    //OutPut(b1 << " " << b2 << " " << fabs(den) << " " << 2*norm_b/fabs(den) << " " );
     if (den<1e-10)
     {
       return(hK);
@@ -271,6 +243,22 @@ double Mesh_size_in_convection_direction_without_storing(double hK, double b1, d
   }
 }
 
+template<int d>
+double Mesh_size_in_convection_direction(double hK, std::array<double, d> b)
+{
+  if(TDatabase::ParamDB->INTERNAL_HK_CONVECTION < 0)
+  {
+    // not yet computed for this mesh cell
+    TDatabase::ParamDB->INTERNAL_HK_CONVECTION = 
+      Mesh_size_in_convection_direction_without_storing<d>(hK, b);
+  }
+  // else: already computed for this mesh cell
+  return TDatabase::ParamDB->INTERNAL_HK_CONVECTION;
+}
+template 
+double Mesh_size_in_convection_direction<3>(double hK, std::array<double, 3> b);
+template 
+double Mesh_size_in_convection_direction<2>(double hK, std::array<double, 2> b);
 
 
 /******************************************************************************/
@@ -280,14 +268,10 @@ double Mesh_size_in_convection_direction_without_storing(double hK, double b1, d
 //
 /******************************************************************************/
 
-#ifdef __2D__
-double Compute_SDFEM_delta(double hK, double eps, double b1, double b2,
-double react, double linfb)
-#endif
-#ifdef __3D__
-double Compute_SDFEM_delta(double hK, double eps, double b1, double b2, double b3,
-double react, double linfb)
-#endif
+template <int d>
+double Compute_SDFEM_delta(double hK, double eps, 
+                           std::array<double, d> convection,
+                           double react, double linfb)
 {
   double delta0 = TDatabase::ParamDB->DELTA0;
   double delta1 = TDatabase::ParamDB->DELTA1;
@@ -303,11 +287,7 @@ double react, double linfb)
   // compute cell diameter in convection direction
 
   if(TDatabase::ParamDB->CELL_MEASURE==4)
-    h_K = Mesh_size_in_convection_direction(hK, b1, b2
-      #ifdef __3D__
-      , b3
-      #endif
-    );
+    h_K = Mesh_size_in_convection_direction<d>(hK, convection);
   else
     h_K = hK;
 
@@ -321,16 +301,15 @@ double react, double linfb)
     case 7:
     case 8:
     case 11:
-      norm_b = b1*b1+b2*b2;
-      #ifdef __3D__
-      norm_b += b3*b3;
-      #endif
-      norm_b = sqrt(norm_b);
+      norm_b = convection[0]*convection[0] + convection[1]*convection[1];
+      if(d == 3)
+        norm_b += convection[2]*convection[2];
+      norm_b = std::sqrt(norm_b);
       break;
   }
 
   // just for safety
-  reaction = fabs(react);
+  reaction = std::abs(react);
 
   switch (TDatabase::ParamDB->SDFEM_TYPE)
   {
@@ -555,21 +534,17 @@ double react, double linfb)
 // should be neglibible in the computing time
 // ========================================================================
 
-#ifdef __2D__
-double Compute_SOLD_sigma(double hK, double eps, double b1,
-double b2, double c, double f,
-double linfb, double deltaK, double *param,
-double residual, int residual_computed,
-int time_dependent_problem)
-#endif
-#ifdef __3D__
-double Compute_SOLD_sigma(double hK, double eps, double b1,
-double b2, double b3, double c, double f,
-double linfb, double deltaK, double *param,
-double residual, int residual_computed,
-int time_dependent_problem)
-#endif
+template <int d>
+double Compute_SOLD_sigma(double hK, double eps, 
+                          std::array<double, d> convection, double c, double f,
+                          double linfb, double deltaK, double *param,
+                          double residual, int residual_computed,
+                          int time_dependent_problem)
 {
+  if(param == nullptr)
+  {
+    ErrThrow("Compute_SOLD_sigma needs param to be valid but it's nullptr");
+  }
   int sold_parameter_type = TDatabase::ParamDB->SOLD_PARAMETER_TYPE, i, N;
   double u_x, u_y, u_z, sigma, res=0.0, norm_b2, value;
   double b1_orth, b2_orth,  b3_orth, norm_der_u2, linfb_orth, z1, z2, z3, linfz, normz;
@@ -577,48 +552,39 @@ int time_dependent_problem)
   double epsilon= 1e-10, hK_project, y, z, u_xx=0., u_yy=0.;
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   double theta1 = TDatabase::TimeDB->THETA1;
-#ifdef __2D__
-  static double b3 = 0.0;
-  u_z = 0.0;
-#endif
-#ifdef __3D__
-  u_z = param[3];
-  u_xx = 0.0;
-  u_yy = 0.0;
-#endif
+  std::array<double, 3> b;
+  if(d == 3) b = {{convection[0], convection[1], convection[2]}};
+  if(d == 2) b = {{convection[0], convection[1], 0.}};
+  u_z = d == 2 ? 0.0 : param[3];
   // square of norm of convection
-  norm_b2 =  b1*b1 + b2*b2 + b3*b3;
+  norm_b2 =  b[0]*b[0] + b[1]*b[1] + b[2]*b[2];
 
   // the residual is already computed
   // if neither residual nor params are provided: initialization is res=0
   if (residual_computed)
     res = residual;
 
-  // parameters are provided
-  if (param!=nullptr)
-  {
-    u_x = param[1];
-    u_y = param[2];
-    // square of the norm of the derivative of the current solution
-    norm_der_u2 = u_x*u_x + u_y*u_y + u_z*u_z;
+  u_x = param[1];
+  u_y = param[2];
+  // square of the norm of the derivative of the current solution
+  norm_der_u2 = u_x*u_x + u_y*u_y + u_z*u_z;
 
-    // compute the residual if this is not already done
-    // in 3D, the Laplacian is not provided and the corresponding factors
-    // were set to be zero
-    if (!residual_computed)
-      // only for stationary problems
-      res = - eps*(u_xx + u_yy) + b1*u_x + b2*u_y + +b3 *u_z + c*param[0] - f;
-  }
+  // compute the residual if this is not already done
+  // in 3D, the Laplacian is not provided and the corresponding factors
+  // were set to be zero
+  if (!residual_computed)
+    // only for stationary problems
+    res = - eps*(u_xx + u_yy) + b[0]*u_x + b[1]*u_y + +b[2] *u_z + c*param[0] - f;
 
   // compute the parameter for the SOLD scheme
   switch (sold_parameter_type)
   {
     case JSW87:                                   // Johnson,Schatz,Wahlbin (1987) (linear)
 #ifdef __2D__
-      hK_project = Mesh_size_in_convection_direction(hK, b1, b2);
+      hK_project = Mesh_size_in_convection_direction<2>(hK, {{b[0], b[1]}});
 #endif
 #ifdef __3D__
-      hK_project = Mesh_size_in_convection_direction(hK, b1, b2, b3);
+      hK_project = Mesh_size_in_convection_direction<3>(hK, b);
 #endif
       sigma = sqrt(norm_b2)*hK_project*sqrt(hK_project) - eps;
       if (sigma < 0)
@@ -631,7 +597,7 @@ int time_dependent_problem)
         sigma = 0;
         break;
       }
-      value = b1*u_x + b2*u_y + b3* u_z;          // b \cdot \nabla u^h
+      value = b[0]*u_x + b[1]*u_y + b[2]* u_z;       // b \cdot \nabla u^h
       // (b \cdot \nabla u^h) u_x/||\nabla u^h||^2
       b1_orth = value * u_x/ norm_der_u2;
       b2_orth = value * u_y/ norm_der_u2;
@@ -645,10 +611,10 @@ int time_dependent_problem)
         linfb_orth = fabs(b3_orth);
       // \tau(\b_orth)
 #ifdef __2D__
-      value = Compute_SDFEM_delta(hK, eps, b1_orth, b2_orth, c, linfb_orth);
+      value = Compute_SDFEM_delta<2>(hK, eps, {{b1_orth, b2_orth}}, c, linfb_orth);
 #endif
 #ifdef __3D__
-      value = Compute_SDFEM_delta(hK, eps, b1_orth, b2_orth, b3_orth, c, linfb_orth);
+      value = Compute_SDFEM_delta<3>(hK, eps, {{b1_orth, b2_orth, b3_orth}}, c, linfb_orth);
 #endif
       // sigma = max ( \tau(b_orth) - \tau(b))
       if (value > deltaK)
@@ -660,7 +626,7 @@ int time_dependent_problem)
       }
       //OutPut("sigma " << sigma << " orth " << value << " deltaK " << deltaK << endl);
       //OutPut("u_x " << u_x << " u_y " << u_y << endl);
-      value = b1*u_x + b2*u_y + b3*u_z;           // b \cdot nabla u^h
+      value = b[0]*u_x + b[1]*u_y + b[2]*u_z;           // b \cdot nabla u^h
       if (norm_der_u2>0)
         // sigma = sigma * residual * (b\cdot u^h)/||\nabla u^h||^2
         sigma *= res*value/norm_der_u2;
@@ -674,7 +640,7 @@ int time_dependent_problem)
         sigma = 0;
         break;
       }
-      alpha = b1*u_x + b2*u_y + b3*u_z;           // b \cdot \nabla u^h
+      alpha = b[0]*u_x + b[1]*u_y + b[2]*u_z;           // b \cdot \nabla u^h
       // (b \cdot \nabla u^h) u_x/||\nabla u^h||^2
       b1_orth = alpha * u_x/ norm_der_u2;
       b2_orth = alpha * u_y/ norm_der_u2;
@@ -684,10 +650,10 @@ int time_dependent_problem)
       value = rho/sqrt(norm_b2);
       value = 2*value*(1-value);
 #ifdef __2D__
-      kappa = Mesh_size_in_convection_direction_without_storing(hK,b1_orth,b2_orth);
+      kappa = Mesh_size_in_convection_direction_without_storing<2>(hK,{{b1_orth,b2_orth}});
 #endif
 #ifdef __3D__
-      kappa = Mesh_size_in_convection_direction_without_storing(hK,b1_orth,b2_orth,b3_orth);
+      kappa = Mesh_size_in_convection_direction_without_storing<3>(hK,{{b1_orth,b2_orth,b3_orth}});
 #endif
       lambda = 1.0/TDatabase::ParamDB->INTERNAL_POLYNOMIAL_DEGREE;
       sigma = lambda * kappa * value/(2*rho)*res*alpha/norm_der_u2;
@@ -704,7 +670,7 @@ int time_dependent_problem)
         sigma = 0;
         break;
       }
-      alpha = b1*u_x + b2*u_y + b3*u_z;           // b \cdot \nabla u^h
+      alpha = b[0]*u_x + b[1]*u_y + b[2]*u_z;           // b \cdot \nabla u^h
       // (b \cdot \nabla u^h) u_x/||\nabla u^h||^2
       b1_orth = alpha * u_x/ norm_der_u2;
       b2_orth = alpha * u_y/ norm_der_u2;
@@ -714,10 +680,10 @@ int time_dependent_problem)
       value = rho/sqrt(norm_b2);
       value = 2*value*(1-value);
 #ifdef __2D__
-      kappa = Mesh_size_in_convection_direction_without_storing(hK,b1_orth,b2_orth);
+      kappa = Mesh_size_in_convection_direction_without_storing<2>(hK,{{b1_orth,b2_orth}});
 #endif
 #ifdef __3D__
-      kappa = Mesh_size_in_convection_direction_without_storing(hK,b1_orth,b2_orth,b3_orth);
+      kappa = Mesh_size_in_convection_direction_without_storing<3>(hK,{{b1_orth,b2_orth,b3_orth}});
 #endif
       lambda = 1.0/TDatabase::ParamDB->INTERNAL_POLYNOMIAL_DEGREE;
       sigma = lambda * kappa * kappa* value/(2*rho)*res*alpha/sqrt(norm_der_u2);
@@ -746,10 +712,10 @@ int time_dependent_problem)
       if (linfz < fabs(z3))
         linfz = fabs(z3);
 #ifdef __2D__
-      value = Compute_SDFEM_delta(hK, eps, z1, z2, c, linfz);
+      value = Compute_SDFEM_delta<2>(hK, eps, {{z1, z2}}, c, linfz);
 #endif
 #ifdef __3D__
-      value = Compute_SDFEM_delta(hK, eps, z1, z2, z3, c, linfz);
+      value = Compute_SDFEM_delta<3>(hK, eps, {{z1, z2, z3}}, c, linfz);
 #endif
       if (value > deltaK)
         sigma = value - deltaK;
@@ -810,10 +776,10 @@ int time_dependent_problem)
       if (linfz < fabs(z3))
         linfz = fabs(z3);
 #ifdef __2D__
-      value = Compute_SDFEM_delta(hK, eps, z1, z2, c, linfz);
+      value = Compute_SDFEM_delta<2>(hK, eps, {{z1, z2}}, c, linfz);
 #endif
 #ifdef __3D__
-      value = Compute_SDFEM_delta(hK, eps, z1, z2, z3, c, linfz);
+      value = Compute_SDFEM_delta<3>(hK, eps, {{z1, z2, z3}}, c, linfz);
 #endif
       if (value > deltaK)
         sigma = value - deltaK;
@@ -833,10 +799,10 @@ int time_dependent_problem)
       }
 
 #ifdef __2D__
-      hK_project = Mesh_size_in_convection_direction(hK, b1, b2);
+      hK_project = Mesh_size_in_convection_direction<2>(hK, {{b[0], b[1]}});
 #endif
 #ifdef __3D__
-      hK_project = Mesh_size_in_convection_direction(hK, b1, b2,b3);
+      hK_project = Mesh_size_in_convection_direction<3>(hK, b);
 #endif
       beta = pow(hK_project,1-alpha*alpha);
       if (beta > 1)
@@ -895,7 +861,7 @@ int time_dependent_problem)
       {
         normz *= theta1*time_step;
       }
-      value = b1*u_x + b2*u_y + b3*u_z;
+      value = b[0]*u_x + b[1]*u_y + b[2]*u_z;
 
       if (res==0)
         value = 1;
@@ -919,7 +885,7 @@ int time_dependent_problem)
         sigma = 0;
         break;
       }
-      value = b1*u_x + b2*u_y + b3*u_z;
+      value = b[0]*u_x + b[1]*u_y + b[2]*u_z;
       b1_orth = value * u_x/ norm_der_u2;
       b2_orth = value * u_y/ norm_der_u2;
       b3_orth = value * u_z/ norm_der_u2;
@@ -1028,9 +994,9 @@ int time_dependent_problem)
       }
       if (norm_b2>0)
       {
-        z1 = (1-b1*b1/norm_b2)*u_x - b1*(b2*u_y+ b3*u_z)/norm_b2;
-        z2 = -b2*(b1*u_x + b3*u_z)/norm_b2 + (1-b2*b2/norm_b2)*u_y;
-        z3 = -b3*(b1*u_x + b2*u_y)/norm_b2 + (1-b3*b3/norm_b2)*u_z;
+        z1 = (1-b[0]*b[0]/norm_b2)*u_x - b[0]*(b[1]*u_y+ b[2]*u_z)/norm_b2;
+        z2 = -b[1]*(b[0]*u_x + b[2]*u_z)/norm_b2 + (1-b[1]*b[1]/norm_b2)*u_y;
+        z3 = -b[2]*(b[0]*u_x + b[1]*u_y)/norm_b2 + (1-b[2]*b[2]/norm_b2)*u_z;
       }
       else
       {
@@ -1059,9 +1025,9 @@ int time_dependent_problem)
       res = res*tanh(res/2.0);
       if (norm_b2>0)
       {
-        z1 = (1-b1*b1/norm_b2)*u_x - b1*(b2*u_y+ b3*u_z)/norm_b2;
-        z2 = -b2*(b1*u_x + b3*u_z)/norm_b2 + (1-b2*b2/norm_b2)*u_y;
-        z3 = -b3*(b1*u_x + b2*u_y)/norm_b2 + (1-b3*b3/norm_b2)*u_z;
+        z1 = (1-b[0]*b[0]/norm_b2)*u_x - b[0]*(b[1]*u_y+ b[2]*u_z)/norm_b2;
+        z2 = -b[1]*(b[0]*u_x + b[2]*u_z)/norm_b2 + (1-b[1]*b[1]/norm_b2)*u_y;
+        z3 = -b[2]*(b[0]*u_x + b[1]*u_y)/norm_b2 + (1-b[2]*b[2]/norm_b2)*u_z;
       }
       else
       {
@@ -1092,10 +1058,10 @@ int time_dependent_problem)
       norm_der_u2 /= (y*y);
       norm_der_u2 = pow(norm_der_u2,beta/2.0-1);
 #ifdef __2D__
-      hK_project = Mesh_size_in_convection_direction_without_storing(hK, u_x, u_y)/2.0;
+      hK_project = Mesh_size_in_convection_direction_without_storing<2>(hK, {{u_x, u_y}})/2.0;
 #endif
 #ifdef __3D__
-      hK_project = Mesh_size_in_convection_direction_without_storing(hK, u_x, u_y, u_z)/2.0;
+      hK_project = Mesh_size_in_convection_direction_without_storing<3>(hK, {{u_x, u_y, u_z}})/2.0;
 #endif
       sigma = TDatabase::ParamDB->SOLD_CONST * z * norm_der_u2 * pow(hK_project,beta);
       //OutPut(sigma << " ");
@@ -1103,10 +1069,10 @@ int time_dependent_problem)
 
     case JSW87_1:                                 // Johnson,Schatz,Wahlbin (1987) (linear)
 #ifdef __2D__
-      hK_project = Mesh_size_in_convection_direction(hK, b1, b2);
+      hK_project = Mesh_size_in_convection_direction<2>(hK, {{b[0], b[1]}});
 #endif
 #ifdef __3D__
-      hK_project = Mesh_size_in_convection_direction(hK, b1, b2, b3);
+      hK_project = Mesh_size_in_convection_direction<3>(hK, b);
 #endif
       sigma = sqrt(norm_b2)*hK_project*sqrt(hK_project) - eps;
       sigma /= theta1*time_step;
@@ -1146,8 +1112,7 @@ int time_dependent_problem)
       break;
 
     default :
-      OutPut("SOLD type " << sold_parameter_type << " not available" << endl);
-      exit(4711);
+      ErrThrow("SOLD type ", sold_parameter_type, " not available");
   }
 #ifdef __2D__
   i = 5;
@@ -1172,6 +1137,19 @@ int time_dependent_problem)
 
   return (sigma);
 }
+
+template
+double Compute_SOLD_sigma<2>(double hK, double eps, 
+                             std::array<double, 2> convection, double c,
+                             double f, double linfb, double deltaK,
+                             double *param, double residual,
+                             int residual_computed, int time_dependent_problem);
+template
+double Compute_SOLD_sigma<3>(double hK, double eps, 
+                             std::array<double, 3> convection, double c,
+                             double f, double linfb, double deltaK,
+                             double *param, double residual,
+                             int residual_computed, int time_dependent_problem);
 
 /*************************************************************************/
 // estimate of coercivity constant 
@@ -1809,5 +1787,345 @@ double ComputeAlpha(double hK) // copy from TCD2D.C
   t = 1/tanh(Pe) - 1/Pe;
   alpha = t*hK/(2*b);
   return(alpha);
+}
+
+template<>
+void BilinearAssembleGalerkin<2>(double Mult, double *coeff, double* param, 
+                                 double hK, double **OrigValues,
+                                 int *N_BaseFuncts, double ***LocMatrices,
+                                 double **LocRhs)
+{
+  double val;
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+  int j;
+  
+  double **Matrix = LocMatrices[0];
+  double *Rhs = LocRhs[0];
+
+  const int N_ = N_BaseFuncts[0];
+
+  double *u = OrigValues[0];
+  double *ux = OrigValues[1];
+  double *uy = OrigValues[2];
+
+  // coefficients
+  const double c0 = coeff[0]; // eps
+  const double c1 = coeff[1]; // b_1
+  const double c2 = coeff[2]; // b_2
+  const double c3 = coeff[3]; // c
+  const double c4 = coeff[4]; // f
+
+  for(int i=0;i<N_;i++)
+  {
+    // test function
+    test10 = ux[i]; // xi derivative
+    test01 = uy[i]; // eta derivative
+    test00 = u[i]; // function
+    
+    // assemble rhs
+    // quad_weigth * test_function * f
+    Rhs[i] += Mult*test00*c4;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz10 = ux[j]; // xi derivative
+      ansatz01 = uy[j]; // eta derivative
+      ansatz00 = u[j]; // function
+
+      // assemble viscous term
+      // eps (test_x ansatz_x + test_y ansatz_y)
+      val = c0*(test10*ansatz10+test01*ansatz01);
+      // assemble convective term
+      // (b_1 ansatz_x + b_2 ansatz_y) test
+      val += (c1*ansatz10+c2*ansatz01)*test00;
+      // assemble reactive term
+      // c  ansatz test
+      val += c3*ansatz00*test00;
+
+      // quad weigth
+      val *= Mult;
+
+      // update matrix entry
+      Matrix[i][j] += val;
+    } // endfor j
+  } // endfor i
+}
+
+template<>
+void BilinearAssembleGalerkin<3>(double Mult, double *coeff, double* param, 
+                                 double hK, double **OrigValues,
+                                 int *N_BaseFuncts, double ***LocMatrices,
+                                 double **LocRhs)
+{
+  double val;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double test000, test100, test010, test001;
+  double ** Matrix = LocMatrices[0];
+  double * Rhs = LocRhs[0];
+  int N_ = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  double * ux = OrigValues[1];
+  double * uy = OrigValues[2];
+  double * uz = OrigValues[3];
+  double nu = coeff[0];
+  double b_1 = coeff[1];
+  double b_2 = coeff[2];
+  double b_3 = coeff[3];
+  double c = coeff[4];
+  double f = coeff[5];
+  for(int i = 0; i < N_; i++)
+  {
+    test100 = ux[i];
+    test010 = uy[i];
+    test001 = uz[i];
+    test000 = u[i];
+    Rhs[i] += Mult*test000*f;
+    for(int j = 0; j < N_; j++)
+    {
+      ansatz100 = ux[j];
+      ansatz010 = uy[j];
+      ansatz001 = uz[j];
+      ansatz000 = u[j];
+      val = nu *(test100*ansatz100 + test010*ansatz010 + test001*ansatz001);
+      val += (b_1*ansatz100 + b_2*ansatz010 + b_3*ansatz001)*test000;
+      val += c*ansatz000*test000;
+      Matrix[i][j] += val*Mult;
+    }
+  }
+}
+
+template<>
+void BilinearAssemble_SD<2>(double Mult, double *coeff, double* param,
+                            double hK, double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+  double val, *MatrixRow;
+  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double test10, test01;
+  int j;
+  double bgradv;
+
+  double **Matrix = LocMatrices[0];
+  double *Rhs = LocRhs[0];
+
+  const int N_ = N_BaseFuncts[0];
+
+  const double *u = OrigValues[0];
+  const double *ux = OrigValues[1];
+  const double *uy = OrigValues[2];
+  const double *uxx = OrigValues[3];
+  const double *uyy = OrigValues[5];
+
+  const double c0 = coeff[0]; // nu
+  const double c1 = coeff[1]; // b_1
+  const double c2 = coeff[2]; // b_2
+  const double c3 = coeff[3]; // c
+  const double c4 = coeff[4]; // f
+  const double c5 = coeff[5]; // \|b\|_infty (in the entire cell)
+
+  const double delta = Compute_SDFEM_delta<2>(hK, c0, {{c1, c2}}, c3, c5);
+
+  for(int i=0;i<N_;i++)
+  {
+    MatrixRow = Matrix[i];
+    test10 = ux[i];
+    test01 = uy[i];
+    //double test00 = Orig2[i];
+
+    bgradv = c1*test10+c2*test01;
+
+    Rhs[i] += Mult*delta*bgradv*c4;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz10 = ux[j];
+      ansatz01 = uy[j];
+      ansatz00 = u[j];
+      ansatz20 = uxx[j];
+      ansatz02 = uyy[j];
+      
+      // assemble stabilization
+      val = delta * ( -c0*(ansatz20 + ansatz02)
+                       +c1*ansatz10 + c2*ansatz01
+                       +c3*ansatz00 ) * bgradv;
+      
+      // quad weigth
+      val *=Mult;
+      
+      // update matrix entry
+      MatrixRow[j] += val;
+    } // endfor j
+  } // endfor i
+}
+
+template<>
+void BilinearAssemble_SD<3>(double Mult, double *coeff, double* param,
+                            double hK, double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+  double val;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double ansatz200, ansatz020, ansatz002;
+  double test100, test010, test001;
+  double ** Matrix = LocMatrices[0];
+  double * Rhs = LocRhs[0];
+  int N_ = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  double * ux = OrigValues[1];
+  double * uy = OrigValues[2];
+  double * uz = OrigValues[3];
+  double * uxx = OrigValues[4];
+  double * uyy = OrigValues[7];
+  double * uzz = OrigValues[9];
+  double nu = coeff[0];
+  double b_1 = coeff[1];
+  double b_2 = coeff[2];
+  double b_3 = coeff[3];
+  double c = coeff[4];
+  double f = coeff[5];
+  double b_norm = coeff[6];
+  double delta = Compute_SDFEM_delta<3>(hK, nu, {{b_1, b_2, b_3}}, c, b_norm);
+  for(int i = 0; i < N_; i++)
+  {
+    test100 = ux[i];
+    test010 = uy[i];
+    test001 = uz[i];
+    double bgradv = b_1*test100 + b_2*test010 + b_3*test001;
+    Rhs[i] += Mult*(delta*bgradv)*f;
+    for(int j = 0; j < N_; j++)
+    {
+      ansatz100 = ux[j];
+      ansatz010 = uy[j];
+      ansatz001 = uz[j];
+      ansatz000 = u[j];
+      ansatz200 = uxx[j];
+      ansatz020 = uyy[j];
+      ansatz002 = uzz[j];
+      val = -nu * (ansatz200 + ansatz020 + ansatz002);
+      val += b_1*ansatz100 + b_2*ansatz010 + b_3*ansatz001 + c*ansatz000;
+      Matrix[i][j] += val * delta * bgradv * Mult;
+    }
+  }
+}
+
+template<>
+void BilinearAssemble_GLS<2>(double Mult, double *coeff, double* param,
+                             double hK, double **OrigValues, int *N_BaseFuncts,
+                             double ***LocMatrices, double **LocRhs)
+{
+  double val;
+  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double test00, test10, test01, test20, test02;
+  double Lu;
+
+  double **Matrix = LocMatrices[0];
+  double *Rhs = LocRhs[0];
+
+  const int N_ = N_BaseFuncts[0];
+
+  const double * u = OrigValues[0];
+  const double * ux = OrigValues[1];
+  const double * uy = OrigValues[2];
+  const double * uxx = OrigValues[3];
+  const double * uyy = OrigValues[5];
+
+  const double c0 = coeff[0];                                  // nu
+  const double c1 = coeff[1];                                  // b_1
+  const double c2 = coeff[2];                                  // b_2
+  const double c3 = coeff[3];                                  // c
+  const double c4 = coeff[4];                                  // f
+  const double c5 = coeff[5];                                  // \|b\|_infty
+
+  const double delta = Compute_SDFEM_delta<2>(hK, c0, {{c1, c2}}, c3, c5);
+
+  for(int i = 0; i < N_; i++)
+  {
+    test10 = ux[i];
+    test01 = uy[i];
+    test00 = u[i];
+    test20 = uxx[i];
+    test02 = uyy[i];
+      
+    Lu = (-c0*(test20+test02)+c1*test10+c2*test01 +c3*test00);
+    Rhs[i] += Mult*delta*Lu*c4;
+
+    for(int j = 0; j < N_; j++)
+    {
+      ansatz10 = ux[j];
+      ansatz01 = uy[j];
+      ansatz00 = u[j];
+      ansatz20 = uxx[j];
+      ansatz02 = uyy[j];
+      val = delta * (-c0*(ansatz20+ansatz02)
+            +c1*ansatz10+c2*ansatz01
+            +c3*ansatz00) * Lu;
+      val *=Mult;
+      Matrix[i][j] += val;
+    }
+  }
+}
+
+template<>
+void BilinearAssemble_GLS<3>(double Mult, double *coeff, double* param,
+                             double hK, double **OrigValues, int *N_BaseFuncts,
+                             double ***LocMatrices, double **LocRhs)
+{
+  double val;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double ansatz200, ansatz020, ansatz002;
+  double test000, test100, test010, test001, test200, test020, test002;
+  double Lu;
+
+  double **Matrix = LocMatrices[0];
+  double *Rhs = LocRhs[0];
+
+  const int N_ = N_BaseFuncts[0];
+
+  const double * u = OrigValues[0];
+  const double * ux = OrigValues[1];
+  const double * uy = OrigValues[2];
+  const double * uz = OrigValues[3];
+  const double * uxx = OrigValues[4];
+  const double * uyy = OrigValues[7];
+  const double * uzz = OrigValues[9];
+
+  double nu = coeff[0];
+  double b_1 = coeff[1];
+  double b_2 = coeff[2];
+  double b_3 = coeff[3];
+  double c = coeff[4];
+  double f = coeff[5];
+  double b_norm = coeff[6];
+
+  const double delta = Compute_SDFEM_delta<3>(hK, nu, {{b_1, b_2, b_3}}, c,
+                                              b_norm);
+  for(int i = 0; i < N_; i++)
+  {
+    test100 = ux[i];
+    test010 = uy[i];
+    test001 = uz[i];
+    test000 = u[i];
+    test200 = uxx[i];
+    test020 = uyy[i];
+    test002 = uzz[i];
+    Lu = -nu*(test200 + test020 + test002);
+    Lu += + b_1*test100 + b_2*test010 + b_3*test001 + c*test000;
+    Rhs[i] += Mult*delta*Lu*f;
+    for(int j = 0; j < N_; j++)
+    {
+      ansatz100 = ux[j];
+      ansatz010 = uy[j];
+      ansatz001 = uz[j];
+      ansatz000 = u[j];
+      ansatz200 = uxx[j];
+      ansatz020 = uyy[j];
+      ansatz002 = uzz[j];
+      val = -nu*(ansatz200 + ansatz020 + ansatz002);
+      val += b_1*ansatz100 + b_2*ansatz010 + b_3*ansatz001 + c*ansatz000;
+      val *=Mult * delta * Lu;
+      Matrix[i][j] += val;
+    }
+  }
 }
 

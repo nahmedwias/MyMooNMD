@@ -57,100 +57,6 @@ void Compute_Crosswind_Plane(double *n, double *v1, double *v2)
   }
 }
 
-void BilinearAssembleGalerkin(double Mult, double *coeff, double* param,
-                              double hK, double **OrigValues, int *N_BaseFuncts,
-                              double ***LocMatrices, double **LocRhs)
-{
-  double val;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  double test000, test100, test010, test001;
-  double ** Matrix = LocMatrices[0];
-  double * Rhs = LocRhs[0];
-  int N_ = N_BaseFuncts[0];
-  double * Orig0 = OrigValues[0];
-  double * Orig1 = OrigValues[1];
-  double * Orig2 = OrigValues[2];
-  double * Orig3 = OrigValues[3];
-  double nu = coeff[0];
-  double b_1 = coeff[1];
-  double b_2 = coeff[2];
-  double b_3 = coeff[3];
-  double c = coeff[4];
-  double f = coeff[5];
-  for(int i = 0; i < N_; i++)
-  {
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-    Rhs[i] += Mult*test000*f;
-    for(int j = 0; j < N_; j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-      val = nu *(test100*ansatz100 + test010*ansatz010 + test001*ansatz001);
-      val += (b_1*ansatz100 + b_2*ansatz010 + b_3*ansatz001)*test000;
-      val += c*ansatz000*test000;
-      Matrix[i][j] += val*Mult;
-    }
-  }
-}
-
-
-// SDFEM without 2nd derivatives
-void BilinearAssemble_SD(double Mult, double *coeff, double* param, 
-                         double hK, double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs)
-{
-  double val;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  double test000, test100, test010, test001;
-  double ** Matrix = LocMatrices[0];
-  double * Rhs = LocRhs[0];
-  int N_ = N_BaseFuncts[0];
-  double * Orig0 = OrigValues[0];
-  double * Orig1 = OrigValues[1];
-  double * Orig2 = OrigValues[2];
-  double * Orig3 = OrigValues[3];
-  double nu = coeff[0];
-  double b_1 = coeff[1];
-  double b_2 = coeff[2];
-  double b_3 = coeff[3];
-  double c = coeff[4];
-  double f = coeff[5];
-  double b_norm = coeff[6];
-  double delta = Compute_SDFEM_delta(hK, nu, b_1, b_2, b_3, c, b_norm);
-  for(int i = 0; i < N_; i++)
-  {
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-    double bgradv = b_1*test100+ b_2 *test010+ b_3 *test001;
-    Rhs[i] += Mult*(delta*bgradv)*f;
-    for(int j = 0; j < N_; j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-      val = b_1*ansatz100 + b_2 *ansatz010 + b_3 *ansatz001 + c*ansatz000;
-      Matrix[i][j] += val * delta * bgradv * Mult;
-    }
-  }
-}
-
-void BilinearAssemble_GLS(double Mult, double *coeff, double* param, 
-                         double hK, double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs)
-{
-  ErrThrow("BilinearAssemble_GLS to be implemented in 3D");
-}
-
-
-
 /*
 void BilinearAssemble_UPW1(double Mult, double *coeff, double hK,
                            double **OrigValues, int *N_BaseFuncts,
@@ -289,9 +195,10 @@ double ***LocMatrices, double **LocRhs)
   c5 = coeff[5];                 // f
   c6 = coeff[6];                 // \|b\|_infty
 
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c4, c6);
+  delta = Compute_SDFEM_delta<3>(hK, c0, {{c1, c2, c3}}, c4, c6);
 
-  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, c6, delta, param, 0, 0, 0);
+  sigma = Compute_SOLD_sigma<3>(hK, c0, {{c1, c2, c3}}, c4, c5, c6, delta,
+                                param, 0, 0, 0);
 
   for(i=0;i<N_;i++)
   {
@@ -364,9 +271,10 @@ double ***LocMatrices, double **LocRhs)
   c5 = coeff[5];                 // f
   c6 = coeff[6];                 // \|b\|_infty
 
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c4, c6);
+  delta = Compute_SDFEM_delta<3>(hK, c0, {{c1, c2, c3}}, c4, c6);
 
-  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, c6, delta, param, 0, 0, 0);
+  sigma = Compute_SOLD_sigma<3>(hK, c0, {{c1, c2, c3}}, c4, c5, c6, delta,
+                                param, 0, 0, 0);
 
   norm_b = c1*c1+c2*c2+c3*c3;
 

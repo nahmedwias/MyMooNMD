@@ -41,7 +41,7 @@ ParameterDatabase get_default_TCD2D_parameters()
 Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
                                             TCollection& coll)
 : fe_space(&coll, "space", "time_cd2d space", example.get_bc(0),
-           TDatabase::ParamDB->ANSATZ_ORDER, nullptr)
+           TDatabase::ParamDB->ANSATZ_ORDER)
 {
   stiff_matrix = BlockFEMatrix::CD2D(fe_space);
   mass_matrix = BlockFEMatrix::CD2D(fe_space);
@@ -526,7 +526,7 @@ void Time_CD2D::call_assembling_routine(
   // Assemble mass matrix, stiffness matrix and rhs
   //...variables which are the same for both
   const TFESpace2D * fe_space = &s.fe_space;
-  BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
+  BoundCondFunct2D * boundary_conditions = fe_space->get_boundary_condition();
   int N_Matrices = 1;
   double * rhs_entries = s.rhs.get_entries();
 

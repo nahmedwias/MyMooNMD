@@ -38,12 +38,7 @@ public:
                    std::vector <BoundValueFunct2D*> bd, 
                    CoeffFct2D coeffs,
                    bool timedependentrhs, bool timedependentcoeffs,
-                   std::vector <DoubleFunct2D*> init_cond)
-  : Example_NonStationary2D(exact, bc, bd, coeffs, timedependentrhs, 
-                          timedependentcoeffs, init_cond)
-  {
-
-  };
+                   std::vector <DoubleFunct2D*> init_cond);
 
   /// Apply the function stored as post processing routine.
   void do_post_processing(Time_NSE2D& tnse2d, double& val, int count=0) const;
