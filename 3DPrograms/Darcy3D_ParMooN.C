@@ -1,14 +1,8 @@
 // =======================================================================
 //
-// Purpose:     main program for solving a stationary scalar equation using ParMooN
-//
-// Author:      Sashikumaar Ganesan
-//
-// History:     Implementation started on 22.08.2014
-// =======================================================================
 #include <Domain.h>
 #include <Database.h>
-#include <FEDatabase2D.h>
+#include <FEDatabase3D.h>
 #include <Darcy.h>
 #include <Example_Darcy2D.h>
 
@@ -20,7 +14,7 @@ int main(int argc, char* argv[])
   double t_start = GetTime();
   //  declaration of database, you need this in every program
   TDatabase Database;
-  TFEDatabase2D FEDatabase;
+  TFEDatabase3D FEDatabase;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.read(std::string(argv[1]));
   
@@ -40,18 +34,30 @@ int main(int argc, char* argv[])
   for(size_t i = 0; i < n_ref; i++)
     domain.RegRefineAll();
   
-  // write grid into an Postscript file
-  if(parmoon_db["output_write_ps"])
-    domain.PS("Domain.ps", It_Finest, 0);
-  
   // choose example according to the value of db["example"]
-  Example_Darcy2D example(parmoon_db);
+  Example_Darcy3D example(parmoon_db);
   
   //=========================================================================
-  Darcy<2> darcy2d(domain, parmoon_db, example);
-  darcy2d.assemble();
-  darcy2d.solve();
-  darcy2d.output();
+  Darcy<3> darcy3d(domain, parmoon_db, example);
+  darcy3d.assemble();
+  darcy3d.solve();
+//   double a = 1./3.;
+//   darcy3d.get_solution()[12] = -a;
+//   darcy3d.get_solution()[13] = a;
+//   darcy3d.get_solution()[14] = a;
+//   darcy3d.get_solution()[15]= -a;
+// 
+//   darcy3d.get_solution()[24] = a;
+//   darcy3d.get_solution()[25] = -a;
+//   darcy3d.get_solution()[26] = -a;
+//   darcy3d.get_solution()[27] = a;
+//   auto& space = darcy3d.get_velocity_space();
+//   double v[3];
+//   darcy3d.get_velocity().FindValueLocal(space.GetCollection()->GetCell(0), 
+//                                         0, 1., 0.5, 0.5, v);
+//   Output::print("values: ", v[0], ", ", v[1], ", ", v[2]);
+//   darcy3d.get_solution().print("sol");
+  darcy3d.output();
   //=========================================================================
   
   Output::print<1>("used time: ", GetTime() - t_start, " seconds");

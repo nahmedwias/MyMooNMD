@@ -234,7 +234,7 @@ Parameter::Parameter(const Parameter& p)
    double_min(p.double_min), double_max(p.double_max),
    string_range(p.string_range)
 {
-  Output::print<4>("Parameter(const Parameter& p)\tname: ", this->name);
+  Output::print<5>("Parameter(const Parameter& p)\tname: ", this->name);
 }
 
 /* ************************************************************************** */

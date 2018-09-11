@@ -14,20 +14,6 @@
 /** ========================================================================= */
 // CD2D: stationary convection diffusion problems
 
-// Galerkin
-void BilinearAssembleGalerkin(double Mult, double *coeff, double* param, 
-                              double hK, double **OrigValues, int *N_BaseFuncts,
-                              double ***LocMatrices, double **LocRhs);
-// SDFEM - Streamline Diffusion Finite Element Method, SUPG - Streamline Upwind 
-// Petrov Galerkin
-void BilinearAssemble_SD(double Mult, double *coeff, double* param, double hK,
-                         double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs);
-// GLS - Galerkin Least Squares
-void BilinearAssemble_GLS(double Mult, double *coeff, double* param, double hK,
-                          double **OrigValues, int *N_BaseFuncts,
-                          double ***LocMatrices, double **LocRhs);
-
 void BilinearAssemble_Axial3D(double Mult, double *coeff, double* param,
                               double hK, double **OrigValues, int *N_BaseFuncts,
                               double ***LocMatrices, double **LocRhs);

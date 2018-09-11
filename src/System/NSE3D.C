@@ -478,8 +478,8 @@ void NSE3D::assemble_linear_terms()
 
     // boundary conditions and boundary values
     BoundCondFunct3D * boundContion[4]={
-      spaces[0]->getBoundCondition(), spaces[0]->getBoundCondition(),
-      spaces[0]->getBoundCondition(), spaces[1]->getBoundCondition() };
+      spaces[0]->get_boundary_condition(), spaces[0]->get_boundary_condition(),
+      spaces[0]->get_boundary_condition(), spaces[1]->get_boundary_condition()};
       
     std::array<BoundValueFunct3D*, 4> boundValues;
     boundValues[0]=example_.get_bd()[0];
@@ -648,7 +648,7 @@ void NSE3D::assemble_non_linear_term()
 
     // boundary conditions and boundary values
     BoundCondFunct3D * boundCondition[1]={
-      spaces[0]->getBoundCondition() };
+      spaces[0]->get_boundary_condition() };
 
     std::array<BoundValueFunct3D*, 3> boundValues;
     boundValues[0]=example_.get_bd()[0];

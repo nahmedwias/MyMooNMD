@@ -61,7 +61,7 @@ void mat_p_q_supg(double Mult, double *coeff,
   c5 = coeff[5];                                  // \|b\|_infty
 
   //NOTE definition of SUPG parameter as for a stationary problem
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
+  delta = 0;//Compute_SDFEM_delta<2>(hK, c0, c1, c2, c3, c5);
 
   for(i=0;i<N_;i++)
   {
@@ -167,7 +167,7 @@ void rhs_f_q_supg(double Mult, double *coeff,
   c5 = coeff[5];                                  // \|b\|_infty
 
   //NOTE definition of SUPG parameter as for a stationary problem
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
+  delta = 0;//Compute_SDFEM_delta<2>(hK, c0, c1, c2, c3, c5);
 
   for(int i=0;i<N_P;i++)
   {
@@ -269,7 +269,7 @@ void mat_cdr_supg(double Mult, double *coeff, double *param,
   c5 = coeff[5];                                  // \|b\|_infty
 
   //NOTE definition of SUPG parameter as for a stationary problem
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
+  delta = 0;//Compute_SDFEM_delta<2>(hK, c0, c1, c2, c3, c5);
 
   for(i=0;i<N_;i++)
   {

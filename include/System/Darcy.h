@@ -1,21 +1,13 @@
-/** ************************************************************************ 
-*
-* @class     Darcy2D
-* @brief     store everything needed to solve a Darcy problem in 2D
-*
-* Store matrix, right hand side, FE spaces, FE functions and the solution 
-* vector of a Darcy2 problem. This wraps up everything which is necessary to 
-* solve a Darcy problem in 2D.
-* 
- ************************************************************************  */
-
-
-#ifndef __SYSTEMDARCY2D__
-#define __SYSTEMDARCY2D__
+#ifndef __SYSTEMDARCY3D__
+#define __SYSTEMDARCY3D__
 
 #include <BlockFEMatrix.h>
+#ifdef __2D__
 #include <Example_Darcy2D.h>
-#include <FEFunction2D.h>
+#else
+#include <Example_Darcy3D.h>
+#include <FEFunction3D.h>
+#endif
 #include <BlockVector.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
@@ -24,22 +16,27 @@
 #include <deque>
 #include <array>
 
-/**class for 2D scalar system matrix */
-class Darcy2D
+template <int d>
+class Darcy
 {
+  public:
+    using FEFunction = typename Template_names<d>::FEFunction;
+    using FESpace = typename Template_names<d>::FESpace;
+    using Example_Darcy = typename Template_names<d>::Example_Darcy;
+  
   protected:
     
     /** @brief store a complete system on a particular grid
      * 
      * This combines a matrix, rhs, solution, spaces and functions needed to 
-     * describe one Darcy problem in 2D.
+     * describe one Darcy problem in 3D.
      */
     struct System_per_grid
     {
       /** @brief Finite Element space for the velocity */
-      std::shared_ptr<TFESpace2D> velocity_space;
+      std::shared_ptr<FESpace> velocity_space;
       /** @brief Finite Element space for the pressure */
-      std::shared_ptr<TFESpace2D> pressure_space;
+      std::shared_ptr<FESpace> pressure_space;
       /** @brief the system matrix (here one block) 
        *  [ A  BT ]
        *  [ B  C  ]
@@ -50,12 +47,12 @@ class Darcy2D
       /** @brief solution vector with two components. */
       BlockVector solution;
       /** @brief Finite Element function for velocity */
-      TFEFunction2D u;
+      FEFunction u;
       /** @brief Finite Element function for pressure */
-      TFEFunction2D p;
+      FEFunction p;
       
       /** @brief constructor */
-      System_per_grid(const Example_Darcy2D& example, TCollection& coll);
+      System_per_grid(const Example_Darcy& example, TCollection& coll);
       
       //! Delete copy constructor.
       System_per_grid(const System_per_grid&) = delete;
@@ -81,7 +78,7 @@ class Darcy2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_Darcy2D example;
+    const Example_Darcy example;
     
     /** @brief a local parameter database which constrols this class
      * 
@@ -89,7 +86,7 @@ class Darcy2D
      * parameters which are of interest to this class are stored (and the 
      * defualt ParMooN parameters). Note that this usually does not include 
      * other parameters such as solver parameters. Those are only in the 
-     * Darcy2D::solver object.
+     * Darcy3D::solver object.
      */
     ParameterDatabase db;
     
@@ -97,7 +94,7 @@ class Darcy2D
      * 
      * @warning case output for vector valued functions is not correctly working
      */
-    DataWriter2D outputWriter;
+    DataWriter<d> outputWriter;
     
     /** @brief a solver object which will solve the linear system
      * 
@@ -108,9 +105,9 @@ class Darcy2D
     
     /** @brief store the errors to access them from outside this class
      * 
-     * This array is filled during a call to Darcy2D::output if 
+     * This array is filled during a call to Darcy3D::output if 
      * TDatabase::ParamDB->MEASURE_ERRORS is set to true. The exact solution is
-     * taken from Darcy2D::example. If that example does not provide an exact 
+     * taken from Darcy3D::example. If that example does not provide an exact 
      * solution, typically it is set to be zero, so that this array contains
      * the norms of the solution instead of the error.
      * 
@@ -139,10 +136,10 @@ class Darcy2D
     
     /** @brief constructor 
      * 
-     * This constructor calls the other constructor creating an Example_Darcy2D
+     * This constructor calls the other constructor creating an Example_Darcy
      * object for you. See there for more documentation.
      */
-    Darcy2D(const TDomain& domain, const ParameterDatabase & db,
+    Darcy(const TDomain& domain, const ParameterDatabase & db,
             int reference_id = -4711);
     
     /** @brief constructor 
@@ -155,23 +152,23 @@ class Darcy2D
      * The reference_id can be used if only the cells with the give reference_id
      * should be used. The default implies all cells.
      */
-    Darcy2D(const TDomain& domain, const ParameterDatabase & db,
-            const Example_Darcy2D ex, int reference_id = -4711);
+    Darcy(const TDomain& domain, const ParameterDatabase & db,
+          const Example_Darcy ex, int reference_id = -4711);
     
     //! Delete copy constructor.
-    Darcy2D(const Darcy2D&) = delete;
+    Darcy(const Darcy&) = delete;
 
     //! Delete move constructor.
-    Darcy2D(Darcy2D&&) = delete;
+    Darcy(Darcy&&) = delete;
 
     //! Delete copy assignment operator.
-    Darcy2D& operator=(const Darcy2D&) = delete;
+    Darcy& operator=(const Darcy&) = delete;
 
     //! Delete move assignment operator.
-    Darcy2D& operator=(Darcy2D&&) = delete;
+    Darcy& operator=(Darcy&&) = delete;
     
     /** @brief standard destructor */
-    ~Darcy2D();
+    ~Darcy();
     
     /** @brief assemble matrix, 
      * 
@@ -198,7 +195,7 @@ class Darcy2D
     
     /// @name return computed errors
     ///
-    /// You have to call Darcy2D::output for any of these to return a 
+    /// You have to call Darcy3D::output for any of these to return a 
     /// meaningful value.
     //@{
     /// @brief return the computed L2 error of the velocity
@@ -222,24 +219,24 @@ class Darcy2D
     { return this->systems.front().rhs; }
     BlockVector & get_rhs()
     { return this->systems.front().rhs; }
-    const TFEFunction2D & get_velocity() const
+    const FEFunction & get_velocity() const
     { return this->systems.front().u; }
-    const TFEFunction2D & get_pressure() const
+    const FEFunction & get_pressure() const
     { return this->systems.front().p; }
-    const TFESpace2D & get_velocity_space() const
+    const FESpace & get_velocity_space() const
     { return *this->systems.front().velocity_space; }
-    const TFESpace2D & get_pressure_space() const
+    const FESpace & get_pressure_space() const
     { return *this->systems.front().pressure_space; }
-    const BlockVector & get_solution() const
-    { return this->systems.front().solution; }
-    BlockVector & get_solution()
-    { return this->systems.front().solution; }
+    const BlockVector & get_solution() const;
+//     { return this->systems.front().solution; }
+    BlockVector & get_solution();
+//     { return this->systems.front().solution; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
-    const Example_Darcy2D& get_example() const
+    const Example_Darcy& get_example() const
     { return example; }
     const ParameterDatabase & get_db() const
     { return db; }
 };
 
-#endif // __SYSTEMMATDARCY2D__
+#endif // __SYSTEMMATDARCY3D__

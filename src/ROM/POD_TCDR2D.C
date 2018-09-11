@@ -20,8 +20,7 @@ POD_TCDR2D::POD_TCDR2D(TCollection& coll, const ParameterDatabase& param_db,
 		const Example_TimeCD2D& ex)
  : POD(param_db),
    example(ex),
-   fe_space(&coll, (char*)"space", (char*)"cd2d space", example.get_bc(0),
-         TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
+   fe_space(&coll, (char*)"space", (char*)"cd2d space", example.get_bc(0), TDatabase::ParamDB->ANSATZ_ORDER),
    // TODO CB: Building the matrix here and rebuilding later is due to the
    // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
    // which do neither provide default constructors nor working copy assignments.)
@@ -102,7 +101,7 @@ void POD_TCDR2D::assemble_gramian()
   TFEFunction2D * pointer_to_function = &this->fe_function;
   LocalAssembling2D la_mat(this->get_db(), type, &pointer_to_function, this->example.get_coeffs());
   const TFESpace2D * _fe_space = &this->fe_space;
-  BoundCondFunct2D * boundary_conditions = _fe_space->GetBoundCondition();
+  BoundCondFunct2D * boundary_conditions = _fe_space->get_boundary_condition();
   int N_Matrices = 1;
   BoundValueFunct2D * non_const_bound_value[1] {this->example.get_bd()[0]};
 

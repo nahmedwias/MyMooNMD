@@ -106,8 +106,7 @@ int GetSignOfThisDOF<2>(int N_DOF, int DOF)
     }
     else
     {
-      Error("VELOCITY_SPACE has to be set to either 1002 or 1003\n");
-      exit(0);
+      ErrThrow("VELOCITY_SPACE has to be set to either 1002 or 1003\n");
     }
     break;
   case 40:// Raviart-Thomas third order, quadrilaterals
@@ -117,9 +116,7 @@ int GetSignOfThisDOF<2>(int N_DOF, int DOF)
       return 1;
     break;
   default:
-       OutPut("N_DOF" << N_DOF << endl);
-       OutPut("WARNING: Unknown Raviart-Thomas or BDM element !" << endl);
-       return 1;
+       ErrThrow("WARNING: Unknown Raviart-Thomas or BDM element !", N_DOF);
        break;
   }
   //dummy return, should not be reached
@@ -210,8 +207,8 @@ int GetSignOfThisDOF<3>(int N, int i)
                 return 1;
         break;
     default:
-      ErrMsg("unsupported number of degrees of freedom for mixed elements");
-      exit(0);
+      ErrThrow("unsupported number of degrees of freedom for mixed elements ",
+               N);
       break;
   }
   return 1;

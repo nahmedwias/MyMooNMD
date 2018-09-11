@@ -1,5 +1,4 @@
 #include <NSE2D.h>
-#include <MainUtilities.h> // GetVelocityAndPressureSpace
 #include <Database.h>
 #include <LinAlg.h> // Ddot, IntoL20FEFunction
 #include <Upwind.h>
@@ -10,7 +9,7 @@
 #include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 #include <AuxParam2D.h>
 
-ParameterDatabase get_default_NSE2D_parameters()
+ParameterDatabase NSE2D::default_NSE_database()
 {
   Output::print<5>("creating a default NSE2D parameter database");
   // we use a parmoon default database because this way these parameters are
@@ -48,9 +47,9 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders,
                NSE2D::Matrix type)
  : velocity_space(new TFESpace2D(&coll, "u", "Navier--Stokes velocity", example.get_bc(0),
-                  velocity_pressure_orders.first, nullptr)),
+                  velocity_pressure_orders.first)),
    pressure_space(new TFESpace2D(&coll, "p", "Navier--Stokes pressure", example.get_bc(2),
-                  velocity_pressure_orders.second, nullptr))
+                  velocity_pressure_orders.second))
 {
   // build the matrix due to NSE type
   switch (type)
@@ -111,7 +110,7 @@ NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 /** ************************************************************************ */
 NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
              const Example_NSE2D e, unsigned int reference_id)
-    : systems(), example(e), db(get_default_NSE2D_parameters()), 
+    : systems(), example(e), db(default_NSE_database()), 
       outputWriter(param_db), solver(param_db), defect(), oldResiduals(), 
       initial_residual(1e10), errors()
 {
@@ -265,7 +264,8 @@ void NSE2D::get_velocity_pressure_orders(
       break;
     // continuous pressure spaces
     case 1: case 2: case 3: case 4: case 5:
-      pressure_order = 1;
+      // nothing to do
+      //pressure_order = 1;
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
@@ -321,8 +321,8 @@ void NSE2D::assemble()
     const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
 
     BoundCondFunct2D * boundary_conditions[3] = {
-      v_space->GetBoundCondition(), v_space->GetBoundCondition(),
-      p_space->GetBoundCondition() };
+      v_space->get_boundary_condition(), v_space->get_boundary_condition(),
+      p_space->get_boundary_condition() };
 
     std::array<BoundValueFunct2D*, 3> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
@@ -467,8 +467,8 @@ void NSE2D::assemble_nonlinear_term()
     double *rhs[3] = {nullptr, nullptr, nullptr};
     const TFESpace2D* fe_rhs[3] = {v_space, v_space, p_space};
 
-    BoundCondFunct2D * boundary_conditions[2] = { v_space->GetBoundCondition(),
-                                                  p_space->GetBoundCondition()};
+    BoundCondFunct2D * boundary_conditions[2]
+      = { v_space->get_boundary_condition(), p_space->get_boundary_condition()};
     std::array<BoundValueFunct2D*, 4> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
     non_const_bound_values[1] = example.get_bd()[1];

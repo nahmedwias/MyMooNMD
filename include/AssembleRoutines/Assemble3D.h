@@ -47,14 +47,13 @@ void ModifyMatrixSlipBC(TSquareMatrix3D **sqmatrices, TMatrix3D **matrices,
 /** assemble mixed finite elements such as Raviart-Thomas or
  * Brezzi-Douglas-Marini.
  */
-void Assemble3D_mixed(int n_fespaces, const TFESpace3D **fespaces,
-int n_sqmatrices, TSquareMatrix3D **sqmatrices,
-int n_matrices, TMatrix3D **matrices,
-int n_rhs, double **rhs, const TFESpace3D **ferhs,
-TDiscreteForm3D *DiscreteForm3D,
-BoundCondFunct3D **BoundaryConditions,
-BoundValueFunct3D **BoundaryValues,
-TAuxParam3D *Parameters);
+void Assemble3D_mixed(int n_fespaces, const TFESpace3D** fespaces,
+                      int n_sqmatrices, TSquareMatrix3D** sqmatrices,
+                      int n_matrices, TMatrix3D** matrices, int n_rhs,
+                      double** rhs, const TFESpace3D** ferhs,
+                      LocalAssembling3D& la,
+                      BoundCondFunct3D** BoundaryConditions,
+                      BoundValueFunct3D** BoundaryValues);
 
 
 

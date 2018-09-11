@@ -53,7 +53,7 @@ ParameterDatabase get_default_CD2D_parameters()
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
                                        TCollection& coll, int ansatz_order)
 : fe_space(new TFESpace2D(&coll, "space", "cd2d fe_space", example.get_bc(0),
-                          ansatz_order, nullptr))
+                          ansatz_order))
 {
   matrix = BlockFEMatrix::CD2D(*fe_space);
 
@@ -287,7 +287,7 @@ void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coeffic
     fe_spaces[0] =  s.fe_space.get();
     const TFESpace2D * fe_space = s.fe_space.get();
 
-    BoundCondFunct2D * boundary_conditions = fe_spaces[0]->GetBoundCondition();
+    auto * boundary_conditions = fe_spaces[0]->get_boundary_condition();
     int N_Matrices = 1;
     double * rhs_entries = s.rhs.get_entries();
 

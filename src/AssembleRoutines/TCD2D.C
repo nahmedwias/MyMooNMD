@@ -365,7 +365,7 @@ void MatricesA_Assemble_SUPG_Bulk(double Mult, double *coeff, double *param,
       bb = fabs(c11);
   else
       bb = fabs(c22);
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
+  tau = Compute_SDFEM_delta<2>(hK, c00, {{c11, c22}}, c33, bb);
   for(i=0;i<N_;i++)
   {
       MatrixRowA = MatrixA[i];
@@ -452,7 +452,8 @@ void MatricesA_Assemble_SUPG_Bulk(double Mult, double *coeff, double *param,
   param_sold[2] = param[12];  // c_y
   param_sold[3] = 0;
   param_sold[4] = 0;
-  sigma = Compute_SOLD_sigma(hK, c00, c11, c22, c33, c44, bb, tau, param_sold, 0, 0,1);
+  sigma = Compute_SOLD_sigma<2>(hK, c00, {{c11, c22}}, c33, c44, bb, tau,
+                                param_sold, 0, 0,1);
   for(i=0;i<N_;i++)
   {
       MatrixRowA = MatrixA[i];
@@ -516,7 +517,7 @@ void Rhs_Assemble_SUPG_Bulk(double Mult, double *coeff, double *param,
       bb = fabs(c11);
   else
       bb = fabs(c22);
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
+  tau = Compute_SDFEM_delta<2>(hK, c00, {{c11, c22}}, c33, bb);
 
   for(i=0;i<N_;i++) 
   {

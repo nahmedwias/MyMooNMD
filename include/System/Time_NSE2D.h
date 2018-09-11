@@ -48,9 +48,9 @@ class Time_NSE2D
     struct System_per_grid
     {
       /** @brief Finite element space for velocity*/
-      TFESpace2D velocity_space;
+      std::shared_ptr<const TFESpace2D> velocity_space;
       /** @brief Finite element space for pressure*/
-      TFESpace2D pressure_space;
+      std::shared_ptr<const TFESpace2D> pressure_space;
 
       /** @brief system matrix
        *  [ A11  A12  B1 ]
@@ -115,7 +115,14 @@ class Time_NSE2D
       /** @brief constructor*/
       System_per_grid(const Example_TimeNSE2D& example, TCollection& coll,
                       std::pair<int,int> order, Time_NSE2D::Matrix type);
+
+      /** @brief copy constructor*/
+      System_per_grid(const System_per_grid&);
     };
+
+    /// @brief default copy constructor (useful in derived classes)
+    Time_NSE2D(const Time_NSE2D &) = default;
+
     /** @brief a local parameter database which controls this class
      *
      * The database given to the constructor will be merged into this one. Only
@@ -324,6 +331,8 @@ public:
     { return this->systems.front().matrix; }*/
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }
+    BlockVector & get_rhs()
+    { return this->systems.front().rhs; }
 
     const TFEVectFunct2D & get_velocity() const
     { return this->systems.front().u; }
@@ -341,10 +350,12 @@ public:
     { return this->systems.front().p; }
 
     const TFESpace2D & get_velocity_space() const
-    { return this->systems.front().velocity_space; }
+    { return *this->systems.front().velocity_space.get(); }
     const TFESpace2D & get_pressure_space() const
-    { return this->systems.front().pressure_space; }
+    { return *this->systems.front().pressure_space.get(); }
     const BlockVector & get_solution() const
+    { return this->systems.front().solution; }
+    BlockVector & get_solution()
     { return this->systems.front().solution; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
@@ -363,6 +374,11 @@ public:
     {return time_stepping_scheme;}
     
     int get_space_disc_global() {return space_disc_global;}
+
+    void add_to_output(const TFEVectFunct2D* fe_vector_fct)
+    { outputWriter.add_fe_vector_function(fe_vector_fct); }
+    void add_to_output(const TFEFunction2D* fe_fct)
+    { outputWriter.add_fe_function(fe_fct); }
     
 private:
   /// @brief this routines wraps up the call to Assemble2D
