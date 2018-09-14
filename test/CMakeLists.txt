@@ -179,6 +179,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(nse2d ParMooN_test_nse2d)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
   
+  #stokes equal order test
+  add_executable(ParMooN_test_stokes_equal_order stokes_equal_order_test.c++)
+  target_link_libraries(ParMooN_test_stokes_equal_order parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(stokes_equal_order ParMooN_test_stokes_equal_order)
+  list(APPEND parmoon_tests ParMooN_test_stokes_equal_order)
+  
   #lsc / (bc-lsc!) test
   add_executable(ParMooN_test_lsc lsc_test.c++)
   target_link_libraries(ParMooN_test_lsc parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})

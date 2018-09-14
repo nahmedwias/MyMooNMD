@@ -268,10 +268,6 @@ void NSE3D::check_parameters()
   {
     ErrThrow("Every LAPLACETYPE except 0 is untested!");
   }
-  if(!db["space_discretization_type"].is("galerkin"))
-  {
-    ErrThrow("Every 'space_discretizatin_type' except 'galerkin' is untested!");
-  }
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM != 0)
   {
     ErrThrow("Every NSE_NONLINEAR_FORM except 0 is untested!");
