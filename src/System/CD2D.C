@@ -12,6 +12,10 @@
 #include <BoundaryAssembling2D.h>
 #include <AuxParam2D.h>
 
+#include <ParMooN_repository_info.h>
+
+const std::string path = parmoon::source_directory;
+const std::string path_to_repo = path + "/data/input_files/";
 
 void Coefficient_Function_CD2D(double *in, double *out)
 {
@@ -38,10 +42,10 @@ ParameterDatabase CD2D::get_default_CD2D_parameters()
 		  "function that are spatially varying and analytically defined, set this parameter equal to 3; if you want to use two coefficient "
 		  "functions from files ... .Sol, set this parameter equal to 4 ", (int) 0.,(int) 4.);
 
-  db.add("read_velocity1_function_directory", "." , "This allows to use coefficient_function_type 4 and .... "
+  db.add("read_velocity1_function_directory", path_to_repo + "u1.Sol" , "This allows to use coefficient_function_type 4 and .... "
   		"The File has to fit with the mesh (refinement level). A default file  is contained in input_files/ .");
 
-  db.add("read_velocity2_function_directory", "." , "This allows to use coefficient_function_type 4 and .... "
+  db.add("read_velocity2_function_directory", path_to_repo + "u2.Sol", "This allows to use coefficient_function_type 4 and .... "
   		"The File has to fit with the mesh (refinement level). A default file  is contained in input_files/ .");
 
   db.add("write_coefficient_function_directory", "." , "");

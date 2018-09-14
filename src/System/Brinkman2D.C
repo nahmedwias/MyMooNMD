@@ -13,6 +13,11 @@
 #include <Vertex.h>
 #include <AuxParam2D.h>
 
+#include <ParMooN_repository_info.h>
+
+const std::string path = parmoon::source_directory;
+const std::string path_to_repo = path + "/data/input_files/";
+
  void Coefficient_Function(double *in, double *out) 
   {
   // coordinates:  x at in[0], y at in[1]
@@ -55,6 +60,7 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
       " is meaningfull for the finite elemnt space P1/P1 only."
       "Usually this is used in the main program.",
       {true,false});
+
   brinkman2d_db.add("equal_order_stab_scaling", "by h_T",
       "This string enables to switch between the prefactor h_T^2/(mueff + sigma h_T^2) and h_T^2/(mueff + sigma L_0^2) for some characteristic length of the domain.",
       {"by h_T", "by L_0"});
@@ -62,6 +68,7 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
   brinkman2d_db.add("equal_order_stab_weight_PkPk", (double) 0., "", (double) -1000, (double) 1000 );
 
   brinkman2d_db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
+
   brinkman2d_db.add("corner_stab_weight", (double)  0.0, "This quantity is the weight of the corner stabilization used for Nitsche corners of the domain", (double) -1000.0 , (double) 1000.0 );
 
   brinkman2d_db.add("coefficient_function_type", (int) 0 ,
@@ -87,13 +94,15 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
   		"assembling. Therefore coeff[9] has to be set equal to parameters[0] in the respective example file "
   		"(see e.g. Geothermal_Energy_Brinkman2D.h).", {true,false});
 
-  brinkman2d_db.add("read_coefficient_function_directory", "../data/input_files/written_coefficient_function_new0.Sol" , "This allows to use coefficient_function_type 2 and 3. "
+  brinkman2d_db.add("read_coefficient_function_directory", path_to_repo + "default_written_coefficient_function.Sol" ,
+  		"This allows to use coefficient_function_type 2 and 3. "
   		"The File has to fit with the mesh (refinement level). A default file  is contained in input_files/ .");
 
   brinkman2d_db.add("write_coefficient_function_directory", "." , "");
 
   brinkman2d_db.add("write_velocity1_directory", "." , "This allows to save the computed Brinkmna2d velocity in "
   		"x-direction in a file for later use ( used in coefficient_function_type 3. ");
+
   brinkman2d_db.add("write_velocity2_directory", "." , "This allows to save the computed Brinkmna2d velocity in "
   		"y-direction in a file for later use ( used in coefficient_function_type 3. ");
 
@@ -806,8 +815,8 @@ void Brinkman2D::output(int level, int i)
   this->u2 = s.u.GetComponent(1);
 
   /* For Thermohydraulic_Brinkman2D */
-  u1->WriteSol("/Users/blank/ParMooN/Tests/Thermohydraulic_Brinkman2D", "Brinkman_ux");
-  u2->WriteSol("/Users/blank/ParMooN/Tests/Thermohydraulic_Brinkman2D", "Brinkman_uy");
+  u1->WriteSol(brinkman2d_db["write_velocity1_directory"], "Brinkman_ux");
+  u2->WriteSol(brinkman2d_db["write_velocity2_directory"], "Brinkman_uy");
 
 
   //----------------------------------------------------------------------------------
@@ -995,7 +1004,7 @@ void Brinkman2D::findPeriodicDOFs()
 
 	int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
 
-	const int n_dofs = fespace->GetN_DegreesOfFreedom();
+	//const int n_dofs = fespace->GetN_DegreesOfFreedom();
 	int N_Cells = coll->GetN_Cells();
 	// first loop over cells
 	for(int cell = 0; cell < N_Cells; cell++)
