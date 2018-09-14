@@ -289,6 +289,25 @@ class TMatrix
      */
     void reorderMatrix();
     
+    /////////////// Routines for periodic boundary conditions /////////////////
+    /**
+    * @brief replace several rows in the matrix with new entries.
+    *
+    * Replace rows by new ones. This creates a new structure for the sparsity
+    * pattern of the matrix. Therefore reallocation is necessary.
+    *
+    * If there are no rows to change, i.e. if entries.size()==0, nothing is·
+    * done.
+    *·
+    * This will create a new structure for this matrix. The structure·
+    * previously belonging to this matrix is not changed. So other matrices·
+    * are not affected.
+    *
+    * @param entries for every row a map of columns-to-entries map
+    */
+    void changeRows(std::map<int,std::map<int,double> > entries);
+    ///////////////// ///////////////// ///////////////// /////////////////
+
     /// @brief return ordering of columns, see TStructure::ColOrder
     int GetColOrder() const
     { return structure->GetColOrder(); }
