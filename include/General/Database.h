@@ -305,9 +305,9 @@ struct TParaDB
     discrete formulation for Brinkman problems. It is internally set 
     according to the input (string) assigned to the parameters 
     EqualOrder_PressureStab_type and Galerkin_type. That is, 
-    it is NOT readed from the input-file via ReadParam.C. 
-    By default it is SIGN_MATRIX_BI = 1, i.e., unsymmetry;
-    -1 would corresdpond to symmetry and additionally the implementation 
+    it is NOT read from the input-file via ReadParam.C. 
+    By default it is SIGN_MATRIX_BI = 1, i.e., nonsymmetry;
+    -1 would correspond to symmetry and additionally the implementation 
     could be widened to allow for scalings that do not have absolute value 1.
     In detail, this parameter decides wether the divergence constraint is 
     added or subtracted and adapts stabilizations if apparent. 
@@ -322,9 +322,15 @@ struct TParaDB
     h_T^2/(mueff+sigma h_T^2) (l_T = 1) or h_T^2/(mueff+sigma L_0^2) (l_T = -1). 
     The quantity L_0 should be chosen as some characteristic length, e.g the 
     diameter of the domain. i
-    By default, L_0 = 1 and can ba set in the inputfile. */
+    By default, L_0 = 1 and can be set in the input file. */
   int l_T;
   double L_0;
+
+/**
+Parameter enables the use of a function on the rhs of the divergence constraint 
+in Brinkman2d.
+*/
+bool SOURCE_SINK_FUNCTION;
  
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */
