@@ -35,6 +35,10 @@
 #include <Chrono.h>
 #include <algorithm>
 
+#include <ParMooN_repository_info.h>
+
+const std::string path = parmoon::source_directory;
+const std::string path_to_repo = path + "/data/mesh/";
 
 //----------------------------------------------------------------------------
 // compare the computed errors in the Brinkman2D object with the given ones in
@@ -148,12 +152,22 @@ void check_brinkman2d(TDomain & domain, ParameterDatabase& db, int velocityCode,
 
   Brinkman2D brinkman2d(domain, db);
   brinkman2d.assemble();
+
+/////////////// Routines for periodic boundary conditions /////////////////
+if(db["example"].is(11))
+{
+	brinkman2d.findPeriodicDOFs();
+	brinkman2d.checkPeriodicDOFs();
+	brinkman2d.makePeriodicBoundary();
+}
+
   brinkman2d.solve();
   brinkman2d.output(nRefinements);
 
   // compare computed with given errors
   compareErrors(brinkman2d, reference_errors); 
 }
+
 //----------------------------------------------------------------------
 // Here the actual computations take place
 // This version includes boundary errors
@@ -169,288 +183,26 @@ void check_brinkman2d_New(TDomain & domain, ParameterDatabase& db, int velocityC
 
   Brinkman2D brinkman2d(domain, db);
   brinkman2d.assemble();
+
+/////////////// Routines for periodic boundary conditions /////////////////
+if(db["example"].is(11))
+{
+	brinkman2d.findPeriodicDOFs();
+	brinkman2d.checkPeriodicDOFs();
+	brinkman2d.makePeriodicBoundary();
+}
+
   brinkman2d.solve();
   brinkman2d.output(nRefinements);
 
   // compare computed with given errors
   compareAllErrors(brinkman2d, reference_errors); 
 }
-////======================================================================================================
-//void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
-//{
-//    std::array<double, 4> reference_errors;
-//    
-//    // default construct a domain object
-//    TDomain domain(db);
-//    
-//    // Initialization of the default parameters
-//    TDatabase::SetDefaultParameters();
-//    
-//    // refine grid up to the coarsest level
-//    for(unsigned int i = 0; i < nRefinements; i++)
-//    {
-//        domain.RegRefineAll();
-//    }
-//    
-//    //------------------------------------------------------------------------------------------------------------
-//    Output::print("\nStarting with P2/P1 on quads for Poiseuille flow with visc_eff=1, visc=1, perm=1 for example ",db["example"] );
-//    reference_errors = {{ 2.0257088643869e-16, 2.1906901043565e-15, 5.9796305144209e-15, 4.8385464788293e-14 }};
-//    
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    
-//    //    //------------------------------------------------------------------------------------------------------------
-//    //    db["effective_viscosity"]=0.01;
-//    //    db["viscosity"]=10;
-//    //    db["permeability"]=2;
-//    //
-//    //    Output::print("\nStarting with P2/P1 on quads for Poiseuille flow with visc_eff=0.01, visc=10, perm=2");
-//    //    reference_errors = {{1.9508695699745e-16,3.6646227316896e-15,1.3277195222811e-16,1.0734187033819e-15}};
-//    //
-//    //    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    //
-//    //    db["effective_viscosity"]=1;
-//    //    db["viscosity"]=1;
-//    //    db["permeability"]=1;
-//    
-//    //------------------------------------------------------------------------------------------------------------
-//    db["example"] = 1; // Poiseuille_Hannukainen
-//    Output::print("\nStarting with P2/P1 on quads with visc_eff=1, visc=1, perm=1 for example ",db["example"] );
-//    reference_errors = {{2.2608321672551e-05, 0.00059223693639448, 9.7288545102352e-06,9.0848530457398e-05}};
-//    
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    db["example"] = 0; // Poiseuille
-//    
-//    
-//    //------------------------------------------------------------------------------------------------------------
-//    db["example"] = 1; // Poiseuille_Hannukainen
-//    db["effective_viscosity"]=0.001;
-//    db["viscosity"]=1;
-//    db["permeability"]=1;
-//    
-//    Output::print("\nStarting with P2/P1 on quads for Poiseuille flow with visc_eff=0.001, visc=1, perm=2 for example ",db["example"] );
-//    reference_errors = {{0.097304080869912,2.9931806337455,0.00323505572483,0.027631651143564}};
-//    
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    
-//    db["effective_viscosity"]=1;
-//    db["viscosity"]=1;
-//    db["permeability"]=1;
-//    db["example"] = 0; // Poiseuille
-//    
-//    //------------------------------------------------------------------------------------------------------------
-//    db["example"] = 2; // Poiseuille_Hannukainen with inscribed sphere
-//    Output::print("\nStarting with P2/P1 on quads with visc_eff=1, visc=1, perm=1 for example ",db["example"] );
-//    reference_errors = {{0.81900218507518,11.068008588367,81.992399830346, 294.15272705334}};
-//    
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    db["example"] = 0; // Poiseuille
-//    
-//    //------------------------------------------------------------------------------------------------------------
-//    db["example"] = 3; // sincos
-//    Output::print("\nStarting with P2/P1 on quads with visc_eff=1, visc=1, perm=1 for example ",db["example"] );
-//    reference_errors = {{0.0040823711607968, 0.10522135481493,0.017649828876871, 0.51271046930702}};
-//    
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    db["example"] = 0; // Poiseuille
-//    
-//    //------------------------------------------------------------------------------------------------------------
-//    db["example"] = 4; // sincos2
-//    Output::print("\nStarting with P2/P1 on quads with visc_eff=1, visc=1, perm=1 for example ",db["example"]);
-//    reference_errors = {{0.0466869785743,1.2606661474721, 0.15644878749027,2.5764786606906}};
-//    
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    db["example"] = 0; // Poiseuille
-//}
-//
-////======================================================================================================
-//void tests_on_quads_stab(unsigned int nRefinements, ParameterDatabase& db)
-//{
-//    std::array<double, 4>  reference_errors;
-//    
-//    // default construct a domain object
-//    TDomain domain(db);
-//    
-//    // Initialization of the default parameters
-//    TDatabase::SetDefaultParameters();
-//    
-//    // refine grid up to the coarsest level
-//    for(unsigned int i = 0; i < nRefinements; i++)
-//    {
-//        domain.RegRefineAll();
-//    }
-//    
-//    //------------------------------------------------------------------------------------------------------------
-//    //P1P1
-//    Output::print("\nStarting with residual-based equal-order stabilization for P1/P1 (parameter=0.4) on quads with visc_eff=1, visc=1, perm=1 for example ",db["example"]);
-//    reference_errors = {{ 0.20649934279357,0.97728617227336, 1.3352827196758, 5.1734925650333}};
-//    
-//    db["P1P1_stab"] = true;
-//    TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.4;
-//    
-//    check_brinkman2d(domain, db, 1,1, reference_errors, nRefinements);
-//    
-//    db["P1P1_stab"] = false;
-//    
-//    //------------------------------------------------------------------------------------------------------------
-//    //P2P2
-//    Output::print("\nStarting with residual-based equal-order stabilization for P2/P2 (parameter=0.4) on quads with visc_eff=1, visc=1, perm=1 for example ",db["example"]);
-//    reference_errors = {{0.11209308296508,1.6714743655252, 0.88411612007029, 10.192320142372}};
-//    
-//    db["P2P2_stab"] = true;
-//    TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.4;
-//    
-//    check_brinkman2d(domain, db, 2,2, reference_errors, nRefinements);
-//    
-//    db["P2P2_stab"] = false;
-//    
-//    //------------------------------------------------------------------------------------------------------------
-//    //P2P2
-//    db["example"] = 1; // Poiseuille_Hannukainen
-//    Output::print("\nStarting with residual-based equal-order stabilization for P2/P2 (parameter=0.4) on quads with visc_eff=1, visc=1, perm=1 for example ",db["example"]);
-//    reference_errors = {{0.012909128829698,0.19363961444426,0.10019110454835,1.1661459244268}};
-//    
-//    db["P2P2_stab"] = true;
-//    TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.4;
-//    
-//    check_brinkman2d(domain, db, 2,2, reference_errors, nRefinements);
-//    
-//    db["P2P2_stab"] = false;
-//    db["example"] = 0; // Poiseuille
-//    
-//}
-//
-////======================================================================================================
-//void tests_on_quads_Nitsche(unsigned int nRefinements, ParameterDatabase& db)
-//{
-//    // default construct a domain object
-//    TDomain domain(db);
-//    
-//    // Initialization of the default parameters
-//    TDatabase::SetDefaultParameters();
-//    
-//    std::array<double, 4>  reference_errors;
-//    
-//    // refine grid up to the coarsest level
-//    for(unsigned int i = 0; i < nRefinements; i++)
-//    {
-//        domain.RegRefineAll();
-//    }
-//    //--------------------------------------------------------------------------------------------------------------------
-//    
-//    TDatabase::ParamDB->n_nitsche_boundary=4;
-//    TDatabase::ParamDB->nitsche_boundary_id={0, 1, 2, 3};
-//    TDatabase::ParamDB->nitsche_penalty={1000, 1000, 1000, 1000};
-//    Output::print("\nstarting with Nitsche (parameter 1000) on P2/P1 on quads with visc_eff=1, visc=1, perm= 1");
-//    reference_errors = {{0.00071104275913606,0.0086539449600541,0.0137946704876,0.11201103666807}};
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    
-//    
-//    //--------------------------------------------------------------------------------------------------------------------
-//    TDatabase::ParamDB->n_nitsche_boundary=2;
-//    TDatabase::ParamDB->nitsche_boundary_id={0, 2};
-//    TDatabase::ParamDB->nitsche_penalty={1000, 1000};
-//    TDatabase::ParamDB->n_neumann_boundary=2;
-//    TDatabase::ParamDB->neumann_boundary_id={1,3};
-//    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    Output::print("\nstarting with Nitsche (parameter 1000)  on P2/P1 on quads with Neumann and visc_eff=1, visc=1, perm= 1");
-//    reference_errors = {{0.0018492680116681, 0.00052482584609959, 0.5, 2.0166230982544e-14}};
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    
-//    
-//    //--------------------------------------------------------------------------------------------------------------------
-//    TDatabase::ParamDB->n_nitsche_boundary=2;
-//    TDatabase::ParamDB->nitsche_boundary_id={0, 2};
-//    TDatabase::ParamDB->nitsche_penalty={1000, 1000};
-//    TDatabase::ParamDB->n_neumann_boundary=2;
-//    TDatabase::ParamDB->neumann_boundary_id={1,3};
-//    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    db["effective_viscosity"]=0.001;
-//    db["viscosity"]=10;
-//    db["permeability"]=1;
-//    Output::print("\nstarting with Nitsche (parameter 1000)  on P2/P1 on quads with Neumann and visc_eff=0.001, visc=10, perm= 1");
-//    reference_errors = {{4.8144012875101e-05,0.0010541202262723, 0.5,1.184219258062e-15}};
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    
-//    //--------------------------------------------------------------------------------------------------------------------
-//    TDatabase::ParamDB->n_nitsche_boundary=2;
-//    TDatabase::ParamDB->nitsche_boundary_id={0, 2};
-//    TDatabase::ParamDB->nitsche_penalty={1000, 1000};
-//    TDatabase::ParamDB->n_neumann_boundary=2;
-//    TDatabase::ParamDB->neumann_boundary_id={1,3};
-//    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    db["effective_viscosity"]=0.001;
-//    db["viscosity"]=10;
-//    db["permeability"]=1;
-//    db["example"] = 1; // Poiseuille_Hannukainen
-//    Output::print("\nstarting with Nitsche (parameter 1000) on P2/P1 on quads with Neumann and visc_eff=0.001, visc=10, perm= 1");
-//    reference_errors = {{ 0.19394824424421,3.8205668689833,0.5,1.0532389294782e-15}};
-//    check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
-//    
-//    db["example"] = 0; // Poiseuille
-//    
-//    //--------------------------------------------------------------------------------------------------------------------
-//    TDatabase::ParamDB->n_nitsche_boundary=2;
-//    TDatabase::ParamDB->nitsche_boundary_id={0, 2};
-//    TDatabase::ParamDB->nitsche_penalty={1000, 1000};
-//    TDatabase::ParamDB->n_neumann_boundary=2;
-//    TDatabase::ParamDB->neumann_boundary_id={1,3};
-//    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    db["effective_viscosity"]=0.001;
-//    db["viscosity"]=10;
-//    db["permeability"]=1;
-//    db["example"] = 1; // Poiseuille_Hannukainen
-//    Output::print("\nstarting with Nitsche (parameter 1000) on P2/P2 on quads with Neumann and visc_eff=0.001, visc=10, perm= 1");
-//    reference_errors = {{0.19394824424421,3.8205668689833,2.8822850639982,87.950352486737}};
-//    check_brinkman2d(domain, db, 2,2, reference_errors, nRefinements);
-//    
-//    db["example"] = 0; // Poiseuille
-//    
-//    //--------------------------------------------------------------------------------------------------------------------
-//    TDatabase::ParamDB->n_nitsche_boundary=2;
-//    TDatabase::ParamDB->nitsche_boundary_id={0, 2};
-//    TDatabase::ParamDB->nitsche_penalty={1000, 1000};
-//    TDatabase::ParamDB->n_neumann_boundary=2;
-//    TDatabase::ParamDB->neumann_boundary_id={1,3};
-//    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    db["effective_viscosity"]=0.001;
-//    db["viscosity"]=10;
-//    db["permeability"]=1;
-//    db["PkPk_stab"]=true;
-//    TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.4;
-//    db["example"] = 1; // Poiseuille_Hannukainen
-//    Output::print("\nstarting with Nitsche (parameter 1000) on P1/P1 on quads with Stab (parameter=0.4), Neumann and visc_eff=0.001, visc=10, perm= 1 ");
-//    reference_errors = {{0.3582641143964,3.3275876201918,0.5119324115733,1.2550049173583}};
-//    check_brinkman2d(domain, db, 1,1, reference_errors, nRefinements);
-//    
-//    db["example"] = 0; // Poiseuille
-//    db["PkPk_stab"]=false;
-//    
-//    //--------------------------------------------------------------------------------------------------------------------
-//    TDatabase::ParamDB->n_nitsche_boundary=2;
-//    TDatabase::ParamDB->nitsche_boundary_id={0, 2};
-//    TDatabase::ParamDB->nitsche_penalty={1000, 1000};
-//    TDatabase::ParamDB->n_neumann_boundary=2;
-//    TDatabase::ParamDB->neumann_boundary_id={1,3};
-//    TDatabase::ParamDB->neumann_boundary_value={-1, 0};
-//    db["effective_viscosity"]=0.001;
-//    db["viscosity"]=10;
-//    db["permeability"]=1;
-//    db["PkPk_stab"]=true;
-//    TDatabase::ParamDB->equal_order_stab_weight_PkPk=0.4;
-//    db["example"] = 1; // Poiseuille_Hannukainen
-//    Output::print("\nstarting with Nitsche (parameter 1000) on P2/P2 on quads with Stab (parameter=0.4), Neumann and visc_eff=0.001, visc=10, perm= 1");
-//    reference_errors = {{2.7665723232465,38.383469514259,3.8290546915193,26.920248715798}};
-//    check_brinkman2d(domain, db, 2,2, reference_errors, nRefinements);
-//    
-//    db["example"] = 0; // Poiseuille
-//    db["P2P2_stab"]=false;
-//}
-
 
 
 
 //################# EXAMPLE 1 - Exponential Flow (Hannukainen & Co) ####################################
-//======================================================================================================
+
 void tests_on_triangles_P2P1_Example1(unsigned int nRefinements, ParameterDatabase& db)
 { // default construct a domain object
   TDomain domain(db);
@@ -462,7 +214,7 @@ void tests_on_triangles_P2P1_Example1(unsigned int nRefinements, ParameterDataba
     domain.RegRefineAll();
   }
   std::array<double, 5>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------
+
   db["example"] = 1; // Poiseuille_Hannukainen
   db["permeability"] = 1.;
   db["effective_viscosity"] = 0.004;
@@ -503,7 +255,7 @@ void tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche_Example1(unsigned in
     domain.RegRefineAll();
   }
   std::array<double, 5>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+ 
   db["example"] = 1; // Poiseuille_Hannukainen
   db["permeability"] = 1.;
   db["effective_viscosity"] = 0.004;
@@ -538,7 +290,7 @@ void tests_on_triangles_P1P1_GLSStab_Example1(unsigned int nRefinements, Paramet
     domain.RegRefineAll();
   }
   std::array<double, 5>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+  
   db["example"] = 1; // Poiseuille_Hannukainen
   db["permeability"] = 1.;
   db["effective_viscosity"] = 0.004;
@@ -582,7 +334,7 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_Example1(uns
     domain.RegRefineAll();
   }
   std::array<double, 5>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+
   db["example"] = 1; // Poiseuille_Hannukainen
   db["permeability"] = 1.;
   db["effective_viscosity"] = 0.004;
@@ -627,7 +379,7 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab1
     domain.RegRefineAll();
   }
   std::array<double, 5>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+ 
   db["example"] = 1; // Poiseuille_Hannukainen
   db["permeability"] = 1.;
   db["effective_viscosity"] = 0.004;
@@ -675,7 +427,7 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_
     domain.RegRefineAll();
   }
   std::array<double, 5>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+
   db["example"] = 1; // Poiseuille_Hannukainen
   db["permeability"] = 1.;
   db["effective_viscosity"] = 0.004;
@@ -726,7 +478,7 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_
     domain.RegRefineAll();
   }
   std::array<double, 5>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+
   db["example"] = 8; // Poiseuille_Hannukainen
   db["permeability"] = 1;
   db["effective_viscosity"] = 0.;
@@ -774,7 +526,7 @@ void tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_
     domain.RegRefineAll();
   }
   std::array<double, 5>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+
   db["example"] = 8; // Poiseuille_Hannukainen
   db["permeability"] = 0.00001;
   db["effective_viscosity"] = 0.;
@@ -940,7 +692,7 @@ void tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
     domain.RegRefineAll();
   }
   std::array<double, 8>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+
   db["example"] = 8; // SinCos BadiaCodina
   db["permeability"] = 0.001;
   db["effective_viscosity"] = 0.;
@@ -975,7 +727,9 @@ void tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
   //TDatabase::ParamDB->l_T = -1;
 
  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS) (0.1), Grad-Div stab (0.1), corner stab (1), scaling by L_0 (0.1), penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 1, perm = 0.001");
-  reference_errors = {{0.0009227556862607, 0.68537870569107, 0.97251316225737, 0.10670734510353, 110.50582765597, 0.0049705167016144, 0.0023616321724773}};
+
+  reference_errors = {{0.42679932017637, 11.721665354721, 15.463776092232, 36.359814532241, 1717.712382925, 1.3868446186387, 1.0439538851369}};
+
   check_brinkman2d_New(domain, db, 1, 1, reference_errors, nRefinements); 
 
 }
@@ -989,7 +743,7 @@ void tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
     domain.RegRefineAll();
   }
   std::array<double, 8>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+ 
   db["example"] = 1; // Poiseuille_Hannukainen
   db["permeability"] = 10;
   db["effective_viscosity"] = 0.00001;
@@ -1023,8 +777,10 @@ void tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
   //l_T=-1
   //TDatabase::ParamDB->l_T = -1;
 
- Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS) (0.1), Grad-Div stab (0.1), corner stab (1), scaling by L_0 (0.1), penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 1, perm = 0.001");
-  reference_errors = {{0.26758348461979, 0.27660180763361, 28.548747008085, 3.0184064668482e-5, 0.012638134363589, 2.708449611399, 0.0065121848533241}};
+ Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 1, P1/P1-Stab (non-symmetric GLS) (0.1), Grad-Div stab (0.1), corner stab (1), scaling by L_0 (0.1), penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 1, perm = 0.001");
+
+  reference_errors = {{0.83048830850642, 6.418943841256, 79.759909017578, 0.00097536094080783, 0.028344716213816, 14.017340685057, 1.5519014816554}};
+
   check_brinkman2d_New(domain, db, 1, 1, reference_errors, nRefinements); 
 
 }
@@ -1038,7 +794,7 @@ void tests_on_triangles_P2P2_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
     domain.RegRefineAll();
   }
   std::array<double, 8>  reference_errors;
-  //--------------------------------------------------------------------------------------------------------------------↲
+
   db["example"] = 1; // Poiseuille_Hannukainen
   db["permeability"] = 10;
   db["effective_viscosity"] = 0.00001;
@@ -1072,11 +828,82 @@ void tests_on_triangles_P2P2_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
   //l_T=-1
   //TDatabase::ParamDB->l_T = -1;
 
- Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 8, P1/P1-Stab (non-symmetric GLS) (0.1), Grad-Div stab (0.1), corner stab (1), scaling by L_0 (0.1), penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 1, perm = 0.001");
-  reference_errors = {{0.014505696395323, 0.050048815242381, 2.8694217752035, 3.2893923393833e-6, 0.0029729670540557, 0.10649331439528, 0.0015928285252614}};
+ Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 1, P2/P2-Stab (non-symmetric GLS) (0.1), Grad-Div stab (0.1), corner stab (1), scaling by L_0 (0.1), penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 1, perm = 0.001");
+
+  reference_errors = {{0.62363839833849, 1.0492228233602, 69.729941358015, 9.1990083634642e-05, 0.0046073708563482, 12.146138140402, 0.092490981212859}};
+
   check_brinkman2d_New(domain, db, 2, 2, reference_errors, nRefinements); 
 
 }
+
+
+//################# EXAMPLE 11 - Riverbed ####################################
+// includes boundary errors
+void tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example11(unsigned int nRefinements, ParameterDatabase& db)
+{ 
+
+  db["boundary_file"].set(path_to_repo + "doubleRiverbed.PRM", false); // ( "../ParMooN/data/mesh/doubleRiverbed.PRM", false);
+  db["geo_file"].set(path_to_repo + "doubleRiverbed3.mesh", false); // ("../ParMooN/data/mesh/doubleRiverbed3.mesh", false);
+
+ db["example"] = 11; // Riverbed
+
+  TDomain domain(db);
+  TDatabase::SetDefaultParameters();
+
+  for(unsigned int i = 0; i < nRefinements; i++)
+  {
+    domain.RegRefineAll();
+  }
+
+  std::array<double, 8>  reference_errors;
+
+ 
+  db["permeability"] = -2.;
+  db["effective_viscosity"] = 1.;
+  db["viscosity"] = 1.;
+
+  db["coefficient_function_type"] = 0;
+
+  //Note that the parameters below have to be set in db AND TDatabase↲ 
+  db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
+
+  db["PkPk_stab"] = true;
+  db["equal_order_stab_weight_PkPk"] = 0.5;
+  TDatabase::ParamDB->equal_order_stab_weight_PkPk = 0.5;
+
+  db["GradDiv_stab"] = true;
+  TDatabase::ParamDB->grad_div_stab_weight = 0.1;
+
+  db["EqualOrder_PressureStab_type"] = "nonsymmetric GLS";
+  db["equal_order_stab_scaling"] = "by L_0";
+  TDatabase::ParamDB->L_0 = 0.1;
+
+  db["corner_stab_weight"] = 0.1;
+
+  //TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
+  
+  TDatabase::ParamDB->n_neumann_boundary = 4;
+  TDatabase::ParamDB->neumann_boundary_id = {0, 2, 3, 5};
+  TDatabase::ParamDB->neumann_boundary_value = {0.001, 0,  0,  0.001};
+
+  TDatabase::ParamDB->n_nitsche_boundary = 2;
+  TDatabase::ParamDB->nitsche_boundary_id = {1, 4};
+  TDatabase::ParamDB->nitsche_penalty = {0, 0};
+  TDatabase::ParamDB->s1 = -1;
+  TDatabase::ParamDB->s2 = -1;
+
+  //l_T=-1
+  //TDatabase::ParamDB->l_T = -1;
+
+ Output::print("\nstarting with Brinkman2D on Riverbed, Example 11, P1/P1-Stab (non-symmetric GLS) (0.5), Grad-Div stab (0.1), corner stab (0.1), scaling by L_0 (0.1), penalty-free non-symmetric Nitsche approach and with physical parameters as set in the example file.");
+
+  reference_errors = {{0.0045336169529337, 0.01367163604282, 0.041823496986892,  0.00057172495047007,  0.0010079231509394,  1.8300267399471e-05,  1.1929246910012e-06}};
+
+  check_brinkman2d_New(domain, db, 1, 1, reference_errors, nRefinements); 
+
+}
+
+
 
 // ========================================================================
 // =======================================================================
@@ -1085,14 +912,14 @@ void tests_on_triangles_P2P2_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
 // ========================================================================
 int main(int argc, char* argv[])
 {
+
   //  declaration of databases
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
   // high order quadrature for computing errors
-  // TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
+  TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
 
-  unsigned int nRefinements = 2;
   Output::setVerbosity(2);
 
   //---------------------------------------------------------------------
@@ -1100,49 +927,49 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(ParameterDatabase::default_output_database(),true);
   db.merge(Example2D::default_example_database(),true);
-  
+ // db.merge(TDomain::default_domain_parameters(), true);  
+
   db.merge(Brinkman2D::get_default_Brinkman2D_parameters(),true);
 
   db["example"] = 1;
   db["output_compute_errors"] = true;
   db["output_write_vtk"] = false;
-  //db.add("boundary_file", "Default_UnitSquare", "");
+
+  db.add("boundary_file", "Default_UnitSquare", "");
   db.add("geo_file", "TwoTriangles", "", {"UnitSquare","Default_UnitSquare", "TwoTriangles"});
+
   //db.add("P1P1_stab", (bool) false, "" );
   //db.add("PkPk_stab", (bool) false, "", {true, false} );
   //db.add("equal_order_stab_weight_PkPk", (double) 0., "", (double) -1000, (double) 1000 );
   //db.add("refinement_n_initial_steps", (size_t) 2.0 , "", (size_t) 0, (size_t) 10000);
 
-  //----------------------------------------
-  //tests_on_quads(nRefinements, db);
 
-  //----------------------------------------
-  // tests_on_quads_stab(nRefinements, db);
 
-  //----------------------------------------
-  //tests_on_quads_Nitsche(nRefinements, db);
+  tests_on_triangles_P2P1_Example1(2, db);
 
-  tests_on_triangles_P2P1_Example1(nRefinements, db);
+  tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche_Example1(2, db);
 
-  tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche_Example1(nRefinements, db);
+  tests_on_triangles_P1P1_GLSStab_Example1(2, db);
 
-  tests_on_triangles_P1P1_GLSStab_Example1(nRefinements, db);
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_Example1(2, db);
 
-  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_Example1(nRefinements, db);
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab100_Example1(2, db);
 
-  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab100_Example1(nRefinements, db);
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(2, db);
 
-  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(nRefinements, db);
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example8(2, db);
 
-  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example8(nRefinements, db);
+  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_smallK_Example8(2, db);
 
-  tests_on_triangles_P1P1_GLSStab_PenaltyFreeNonSymmetricNitsche_GradDivStab_smallK_Example8(nRefinements, db);
+
 
 // Tests including boundary errors
-nRefinements = 7;
-tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example8(nRefinements, db);
-tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(nRefinements, db);
-tests_on_triangles_P2P2_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(nRefinements, db);
+tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example8(3, db);
+tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(3, db);
+tests_on_triangles_P2P2_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(3, db);
+
+tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example11(0, db);
+
 
 return 0;
 }
