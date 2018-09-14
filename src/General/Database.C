@@ -402,6 +402,8 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SIGN_MATRIX_BI = 1;
   ParamDB->l_T = 1;
   ParamDB->L_0 = 1;
+  ParamDB->SOURCE_SINK_FUNCTION = false;
+
   
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
@@ -1089,6 +1091,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("SIGN_MATRIX_BI: ", ParamDB->SIGN_MATRIX_BI);
   printToFile("l_T: ", ParamDB->l_T);
   printToFile("L_0: ", ParamDB->L_0); 
+  printToFile("SOURCE_SINK_FUNCTION: ", ParamDB->SOURCE_SINK_FUNCTION);
 
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);
