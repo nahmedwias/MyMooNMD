@@ -177,6 +177,9 @@ class CD2D
      * on all grids are assembled.
      */
 
+    // Initialize/Declare CD2D database, called with the constructor (for the use outside CD2D.C)
+    static ParameterDatabase get_default_CD2D_parameters();
+
     void assemble(TFEFunction2D* coefficient_function1 = nullptr, TFEFunction2D* coefficient_function2 = nullptr);
     
     /** @brief solve the system */
