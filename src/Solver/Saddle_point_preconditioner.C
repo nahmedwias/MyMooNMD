@@ -33,7 +33,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     pressure_mass(), gradient_block(nullptr),
     divergence_block(nullptr), velocity_solver(nullptr), inverse_diagonal(), 
     velocity_space(&m.get_row_space(0)), pressure_space(nullptr),
-    damping_factor(1.0), gamma(100.), Poisson_solver_matrix(nullptr),
+    damping_factor(1.0), gamma(1.), Poisson_solver_matrix(nullptr),
     Poisson_solver(nullptr), up_star(m), bdryCorrectionMatrix_(),
     poissonMatrixBdry_(nullptr), poissonSolverBdry_(nullptr)
 {
@@ -78,6 +78,11 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
 		this->fill_augmented_matrix_and_rhs();
 	}
 
+	if (db.contains("gamma"))
+	{
+		this->gamma = db["gamma"];
+	}
+
 	{
 		// velocity solver database
 		ParameterDatabase vs_db = Solver<>::default_solver_database();
@@ -91,6 +96,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
 		}
 		else if(db.has_nested_database(db_name))
 		{//...the input database has a nested database of the required name
+			cout<< "!!!!!!!!!!!!!  JAAAAAAAAAAAA"<<endl;
 			vs_db.merge(db.get_nested_database(db_name), false);
 		}
 
@@ -100,6 +106,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
 					"Note that solving systems within LSC using some "
 					"iterative routine requires a flexible solver.");
 		}
+
 #ifdef _SEQ
 
 		/* vs_db["iterative_solver_type"] = "fgmres"; //NEW
@@ -762,7 +769,7 @@ void Saddle_point_preconditioner::fill_pressure_mass_matrix()
     typedef BoundValueFunct3D BoundValueFunct;
 #endif
 
-    // create an approriate LocalAssembling2D object:
+    // create an appropriate LocalAssembling2D object:
     // We will assemble a pressure block and then create a BlockMatrix
     int n_terms = 1; // only 1 term (p,q)
     std::vector<MultiIndex> derivatives(1, p); // that one term is the value

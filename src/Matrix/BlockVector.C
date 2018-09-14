@@ -392,7 +392,7 @@ void BlockVector::write(std::string filename) const
   //loop through matrix and print each entry
   for(auto it : entries)
   {
-    vectorfile << it << "\n";
+    vectorfile << setprecision(16) <<  it << "\n";
   }
 
 

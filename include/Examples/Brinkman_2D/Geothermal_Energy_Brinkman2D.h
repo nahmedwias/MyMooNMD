@@ -1,11 +1,6 @@
 // Brinkman 2D problem, 
-/* Geothermal Energy
- */
-
-// author: Laura Blank
-
-/*
-   Domain =  [0,1]x[0,1]
+/** Geothermal Energy
+  * author: Laura Blank
  */
 
 
@@ -27,30 +22,26 @@ void ExampleFile()
 
 void ExactU1(double x, double y, double *values)
 {
-  double K = permeability;
-  double mu = viscosity;
-  double mu_eff = effective_viscosity;
-
-    values[0] = 0;                                                                  //u1
-    values[1] = 0;                                                                  //u1_x
-    values[2] = 0;                                                                  //u1_y
-    values[3] = 0;                                                                  //Delta u1
+    values[0] = 0;           //u1
+    values[1] = 0;           //u1_x
+    values[2] = 0;           //u1_y
+    values[3] = 0;           //Delta u1
 }
 
 void ExactU2(double x, double y, double *values)
 {
-  values[0] = 0;            //u2
-  values[1] = 0;            //u2_x
-  values[2] = 0;            //u2_y
-  values[3] = 0;            //Delta u2
+    values[0] = 0;            //u2
+    values[1] = 0;            //u2_x
+    values[2] = 0;            //u2_y
+    values[3] = 0;            //Delta u2
 }
 
 void ExactP(double x, double y, double *values)
 {
-  values[0] = 0;                          //p
-  values[1] = 0;                          //p_x
-  values[2] = 0;                          //p_y
-  values[3] = 0;                          //Delta p=p_xx+p_yy
+    values[0] = 0;            //p
+    values[1] = 0;            //p_x
+    values[2] = 0;            //p_y
+    values[3] = 0;            //Delta p=p_xx+p_yy
 }
 
 // ========================================================================
@@ -82,12 +73,9 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  double K = permeability;
-  double mu = viscosity;
-  double mu_eff = effective_viscosity;
-
   // loop to impose Neumann boundary conditions
-  // Since we are using the Neumann boundary condition via boundaryAssembling, the boundvalue here has to be alway zero!!!!
+  // Since we are using the Neumann boundary condition via boundaryAssembling2d(), 
+  // the boundvalue here has to be alway zero!!!!
   for (int j = 0; j < TDatabase::ParamDB->n_neumann_boundary; j++)
   {
     if ( BdComp == TDatabase::ParamDB->neumann_boundary_id[j])
@@ -95,11 +83,11 @@ void U1BoundValue(int BdComp, double Param, double &value)
       switch(BdComp)
       {
         case 1:
-          value = 0.;//TDatabase::ParamDB->neumann_boundary_value[j];
+          value = 0.; //TDatabase::ParamDB->neumann_boundary_value[j];
           break;
         case 3:
-        value = 0.;//TDatabase::ParamDB->neumann_boundary_value[j];
-        break;
+          value = 0.; //TDatabase::ParamDB->neumann_boundary_value[j];
+          break;
         default:
           Output::print("I cannot impose Neumann boundary condition on component ", BdComp);
           exit(1);
@@ -112,15 +100,13 @@ void U1BoundValue(int BdComp, double Param, double &value)
   // loop to impose (strong or weak) Dirichlet
   switch(BdComp)
   {
-    case 0: value = 0; // u.n=0
+    case 0: value = 0; 
             break;
-    case 1: value = 1000; //K/mu * (1+exp(1/t)-exp((1-Param)/t) - exp(Param/t)) / (1+exp(1/t)); //p=...
-            //value = 0; // TEST:sources/sinks,
+    case 1: value = 0; 
             break;
-    case 2: value = 0; // u.n=0
+    case 2: value = 0; 
             break;
-    case 3: value = 1000; //K/mu * (1+exp(1/t)-exp((Param)/t) - exp((1-Param)/t)) / (1+exp(1/t)); // p=...
-            //value = 0; // TEST: sources/sinks,
+    case 3: value = 0;
             break;
     default: cout << "No boundary component with this number." << endl;
              break;
@@ -134,7 +120,8 @@ void U2BoundValue(int BdComp, double Param, double &value)
   double mu_eff = effective_viscosity;
 
   // loop to impose Neumann boundary conditions
-  // Since we are using the Neumann boundary condition via boundaryAssembling, the boundvalue here has to be alway zero!!!!
+  // Since we are using the Neumann boundary condition via boundaryAssembling2d(), 
+  // the boundvalue here has to be alway zero!!!!
   for (int j = 0; j < TDatabase::ParamDB->n_neumann_boundary; j++)
   {
   	if ( BdComp == TDatabase::ParamDB->neumann_boundary_id[j])
@@ -142,10 +129,10 @@ void U2BoundValue(int BdComp, double Param, double &value)
   		switch(BdComp)
   		{
   		case 1:
-  			value = 0.;//TDatabase::ParamDB->neumann_boundary_value[j];
+  			value = 0.; //TDatabase::ParamDB->neumann_boundary_value[j];
   			break;
   		case 3:
-  			value = 0.;//TDatabase::ParamDB->neumann_boundary_value[j];
+  			value = 0.; //TDatabase::ParamDB->neumann_boundary_value[j];
   			break;
   		default:
   			Output::print("I cannot impose Neumann boundary condition on component ", BdComp);
@@ -159,9 +146,9 @@ void U2BoundValue(int BdComp, double Param, double &value)
   // loop to impose (strong or weak) Dirichlet
   switch(BdComp)
   {
-    case 0: value = 0; // u.n=0, n=(0,1)
+    case 0: value = 0; 
             break;
-    case 2: value = 0; // u.n=0, n=(0,-1)
+    case 2: value = 0; 
             break;
     default: cout << "No boundary component with this number." << endl;
              break;
@@ -176,18 +163,16 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *x, double *y,
     double **parameters, double **coeffs)
 {
-
   double val_u1[4];
   double val_u2[4];
   double val_p[4];
 
   for(int i = 0; i < n_points; i++)
   {
-
     // physical parameters
-    coeffs[i][4] = viscosity; //TDatabase::ParamDB->VISCOSITY;
-    coeffs[i][5] = effective_viscosity; //TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    coeffs[i][6] = permeability; //TDatabase::ParamDB->PERMEABILITY;
+    coeffs[i][4] = viscosity;
+    coeffs[i][5] = effective_viscosity; 
+    coeffs[i][6] = permeability; 
 
     /*
        if (x[i] < 0.5 && y[i] < 0.5)
@@ -212,11 +197,8 @@ void LinCoeffs(int n_points, double *x, double *y,
        coeffs[i][9]= parameters[i][0];
        }
 
-
-
     // Adimensional parameter t^2 = mue/mu*K
     coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
-
 
     // (f1,f2)(x,y): RHS for momentum equation
     ExactU1(x[i], y[i], val_u1);

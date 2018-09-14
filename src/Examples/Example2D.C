@@ -42,7 +42,7 @@ ParameterDatabase Example2D::default_example_database()
   /** TDatabase::ParamDB->PERMEABILITY */
   db.add("permeability", (double) 1.,
       "permeability coefficient: a factor in front of the resistance term.",
-      (double) 0., (double) 1000000.);
+      (double) -2., (double) 1000000.);
 
   /** TDatabase::ParamDB->VISCOSITY */
   db.add("viscosity", (double) 1.,
