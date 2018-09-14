@@ -65,7 +65,7 @@ class TDiscreteForm2D
 
     /** function doing the real assembling using parameters from 
         argument list */
-    AssembleFctParam2D *AssembleParam;
+    AssembleFctParam AssembleParam;
 
     /** function for manipulating the coefficients */
     ManipulateFct2D *Manipulate;
@@ -90,7 +90,7 @@ class TDiscreteForm2D
         MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFctParam2D *assembleparam, CoeffFct2D coeffs,
+        AssembleFctParam assembleparam, CoeffFct2D coeffs,
         ManipulateFct2D *manipulate);
 
     /** destructor */
@@ -159,7 +159,7 @@ class TDiscreteForm2D
     int get_RhsSpace(int i) const
     { return RhsSpace[i]; }
     
-    AssembleFctParam2D * get_AssembleParam() const
+    AssembleFctParam get_AssembleParam() const
     { return AssembleParam; }
     
     ManipulateFct2D * get_Manipulate() const

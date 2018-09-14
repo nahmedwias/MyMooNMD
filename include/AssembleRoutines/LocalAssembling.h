@@ -68,7 +68,6 @@ class LocalAssembling
   using FEFunction = typename Template_names<d>::FEFunction;
   using MultiIndex_vector = typename Template_names<d>::MultiIndex_vector;
   using CoeffFct = typename Template_names<d>::CoeffFct;
-  using AssembleFctParam = typename Template_names<d>::AssembleFctParam;
   using ManipulateFct = typename Template_names<d>::ManipulateFct;
   using BaseFunct = typename Template_names<d>::BaseFunct;
   
@@ -116,7 +115,7 @@ class LocalAssembling
 
     /** @brief function doing the real assembling using parameters from 
      *         argument list */
-    std::vector<AssembleFctParam*> local_assemblings_routines;
+    std::vector<AssembleFctParam> local_assemblings_routines;
 
     /** function for manipulating the coefficients */
     ManipulateFct *Manipulate;
@@ -299,7 +298,7 @@ class LocalAssembling
                     std::vector<int> myColumnSpace,
                     std::vector<int> myRhsSpace,
                     CoeffFct myCoeffs, 
-                    AssembleFctParam* myAssembleParam,
+                    AssembleFctParam myAssembleParam,
                     ManipulateFct* myManipulate,
                     int myN_Matrices, int myN_Rhs,
                     int myN_ParamFct, std::vector<ParamFct*> myParameterFct,

@@ -88,16 +88,11 @@ typedef std::function<void(int, double*, double*, double*, double**, double**)>
 typedef void AssembleFct2D(double, double *, double, double **, 
                            int *, double ***, double **);
 
-typedef void AssembleFctParam2D(double, double *, double *,
-                                double, double **, 
-                                int *, double ***, double **);
+typedef std::function<void(double, double *, double *, double, double **, 
+                           int *, double ***, double **)> AssembleFctParam;
 
 typedef void AssembleFct3D(double, double *, double, double **, 
                            int *, double ***, double **);
-
-typedef void AssembleFctParam3D(double, double *, double *,
-                                double, double **, 
-                                int *, double ***, double **);
 
 class TBaseCell;
 typedef void ManipulateFct2D(int, double **, double **, TBaseCell *);
