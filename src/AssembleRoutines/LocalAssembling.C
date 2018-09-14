@@ -634,7 +634,7 @@ LocalAssembling<d>::LocalAssembling(
   int myN_Terms, MultiIndex_vector myDerivatives,
   std::vector<int> myFESpaceNumber, std::vector<int> myRowSpace,
   std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
-  CoeffFct myCoeffs, AssembleFctParam* myAssembleParam,
+  CoeffFct myCoeffs, AssembleFctParam myAssembleParam,
   ManipulateFct* myManipulate, int myN_Matrices, int myN_Rhs,
   int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
   std::vector<int> myBeginParameter, int myN_Parameters,
@@ -746,9 +746,15 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "The type of discretization. Note that not all types are possible for "
          "all problem classes.",
          {"galerkin", "supg", "upwind", "smagorinsky", "cip", "dg", "symm_gls",
-          "nonsymm_gls" "pspg", "vms_projection", "vms_projection_expl",
+          "nonsymm_gls", "pspg", "vms_projection", "vms_projection_expl",
           "local_projection", "local_projection_2_level",
           "residual_based_vms"}); 
+  
+  db.add("pspg_delta0", 0.1, 
+         "the stabilization parameter for pspg (Pressure Stabilization Petrov "
+         "Galerkin) is delta0 * h^2 /nu, where h is a cell measure (e.g. "
+         "diameter), nu is the inverse of the reynolds number, and delta0 is "
+         " this parameter.", 0., 10.);
   
   return db;
 }
@@ -845,7 +851,7 @@ void LocalAssembling<d>::GetLocalForms(int N_Points, double *weights,
     for(j=0; j<N_Terms; j++)
       OrigValues[j] = AllOrigValues[j][i];
 
-    for(auto lar : local_assemblings_routines)
+    for(auto& lar : local_assemblings_routines)
       lar(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, LocMatrix, LocRhs);
   } // end loop over quadrature points 
 }
@@ -879,12 +885,11 @@ void LocalAssembling<d>::GetParameters(int n_points,
 #endif
     auto& fe = fespace->get_fe(cellnum);
     auto BaseFunct_Id = fe.get_id();
+    N_BaseFunct[j] = fe.GetN_DOF();
 #ifdef __3D__
-    N_BaseFunct[j]=TFEDatabase3D::GetBaseFunct3D(BaseFunct_Id)->GetDimension();
     orig_values[j] = TFEDatabase3D::GetOrigElementValues(BaseFunct_Id,
                                                          FEValue_MultiIndex[j]);
 #else
-    N_BaseFunct[j]=TFEDatabase2D::GetBaseFunct2D(BaseFunct_Id)->GetDimension();
     orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id, 
                                                          FEValue_MultiIndex[j]);
 #endif
@@ -1014,6 +1019,9 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       this->local_assemblings_routines.push_back(NSLaplaceGradGrad<d>);
     }
   }
+  
+  using namespace std::placeholders;
+  double pspg_delta0 = db["pspg_delta0"];
   if(pspg || symm_gls || nonsymm_gls) // need second derivatives
   {
     this->N_Terms = 2*d+2+d*(d+1)/2;
@@ -1030,11 +1038,14 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
     // or              {0, 1, 0, 0, 1, 1, 0, 0, 0}
     this->Needs2ndDerivatives[0] = true;
     if(pspg)
-      this->local_assemblings_routines.push_back(NSPSPG<d>);
+      this->local_assemblings_routines.push_back(
+        std::bind(NSPSPG<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
     else if(symm_gls)
-      this->local_assemblings_routines.push_back(NSsymmGLS<d>);
+      this->local_assemblings_routines.push_back(
+        std::bind(NSsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
     else if(nonsymm_gls)
-      this->local_assemblings_routines.push_back(NSnonsymmGLS<d>);
+      this->local_assemblings_routines.push_back(
+        std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
   }
   switch(type)
   {
@@ -1046,12 +1057,17 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
         this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
       }
       if(pspg)
-        this->local_assemblings_routines.push_back(NSPSPG_RightHandSide<d>);
+        this->local_assemblings_routines.push_back(
+          std::bind(NSPSPG_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+                    pspg_delta0));
       else if(symm_gls)
-        this->local_assemblings_routines.push_back(NSsymmGLS_RightHandSide<d>);
+        this->local_assemblings_routines.push_back(
+          std::bind(NSsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+                    pspg_delta0));
       else if(nonsymm_gls)
         this->local_assemblings_routines.push_back(
-          NSnonsymmGLS_RightHandSide<d>);
+          std::bind(NSnonsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7,
+                    _8, pspg_delta0));
       break;
     case LocalAssembling_type::NSE3D_NonLinear:
       if(nstype == 1 || nstype == 2)

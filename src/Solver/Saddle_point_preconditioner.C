@@ -740,7 +740,6 @@ void Saddle_point_preconditioner::fill_pressure_mass_matrix()
     typedef MultiIndex2D MultiIndex;
     MultiIndex p = D00; // value, no derivatives
     typedef CoeffFct2D CoeffFct;
-    typedef AssembleFctParam2D AssembleFctParam;
     typedef ManipulateFct2D ManipulateFct;
     typedef TFEFunction2D FEFunction;
     typedef LocalAssembling2D LocalAssembling;
@@ -753,7 +752,6 @@ void Saddle_point_preconditioner::fill_pressure_mass_matrix()
     typedef MultiIndex3D MultiIndex;
     MultiIndex p = D000; // value, no derivatives
     typedef CoeffFct3D CoeffFct;
-    typedef AssembleFctParam3D AssembleFctParam;
     typedef ManipulateFct3D ManipulateFct;
     typedef TFEFunction3D FEFunction;
     typedef LocalAssembling3D LocalAssembling;
@@ -773,7 +771,7 @@ void Saddle_point_preconditioner::fill_pressure_mass_matrix()
     std::vector<int> column_space(1, 0); // 1 matrix
     std::vector<int> rhs_space(1, 0); // not needed
     CoeffFct coeff; // no coefficients
-    AssembleFctParam* local_assembling_function = 
+    AssembleFctParam local_assembling_function = 
       local_assembling_pressure_mass_matrix;
     ManipulateFct * manipulate = nullptr; // not needed
     int n_matrices = 1; // assemble only one matrix
@@ -872,7 +870,6 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     typedef MultiIndex2D MultiIndex;
     MultiIndex v = D00; // value, no derivatives
     typedef CoeffFct2D CoeffFct;
-    typedef AssembleFctParam2D AssembleFctParam;
     typedef ManipulateFct2D ManipulateFct;
     typedef TFEFunction2D FEFunction;
     typedef LocalAssembling2D LocalAssembling;
@@ -885,7 +882,6 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     typedef MultiIndex3D MultiIndex;
     MultiIndex v = D000; // value, no derivatives
     typedef CoeffFct3D CoeffFct;
-    typedef AssembleFctParam3D AssembleFctParam;
     typedef ManipulateFct3D ManipulateFct;
     typedef TFEFunction3D FEFunction;
     typedef LocalAssembling3D LocalAssembling;
@@ -906,7 +902,7 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     std::vector<int> column_space(1, 0); // 1 matrix
     std::vector<int> rhs_space(1, 0); // not needed
     CoeffFct coeff; // no coefficients
-    AssembleFctParam* local_assembling_function = 
+    AssembleFctParam local_assembling_function = 
       local_assembling_velocity_mass;
     ManipulateFct * manipulate = nullptr; // not needed
     int n_matrices = 1; // assemble only one matrix
