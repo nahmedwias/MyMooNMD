@@ -120,39 +120,28 @@ void InitialP(double x, double y,  double z, double *values)
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
-  static double eps = DIMENSIONLESS_VISCOSITY;
-  int i;
-  double *coeff, x, y, z;
-
-  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)// STOKES
+  const double eps = DIMENSIONLESS_VISCOSITY;
+  for(int i=0;i<n_points;i++)
   {
-    for(i=0;i<n_points;i++)
+    coeffs[i][0] = eps;
+    coeffs[i][1] = -6*eps + 3; // f1
+    coeffs[i][2] = -2*eps - 2; // f2
+    coeffs[i][3] = -10*eps + 7; // f3
+    coeffs[i][4] = 0.; // divergence
+  }
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE != 3) // Navier-Stokes
+  {
+    for(int i=0;i<n_points;i++)
     {
-      coeff = coeffs[i];
-      
-      coeff[0] = eps;
-      coeff[1] = -6*eps + 3; // f1
-      coeff[2] = -2*eps - 2; // f2
-      coeff[3] = -10*eps + 7; // f3
+      double x = X[i];
+      double y = Y[i];
+      double z = Z[i];
+      coeffs[i][1] += 2*x*x*x + 2*x*y*y-2*x*z*z +2*y*x*x+ 4*x*y*z + 26*y
+                      + 10 *y*y*z; // f1
+      coeffs[i][2] += +2*x*x*x -2 *x*x*z + 12*x*y*y + 2*z*y*y + 2*x*z*z
+                      + 2*z*z*z; // f2
+      coeffs[i][3] += 2*x*x*z -2*z*y*y-2*z*z*z + 10 *y*x*x + 20*x*y*z + 130*y
+                     -10 *x*y*y ; // f3
     }
   }
-  else // Navier-Stokes
-  {
-    for(i=0;i<n_points;i++)
-    {
-      coeff = coeffs[i];
-      
-      x = X[i];
-      y = Y[i];
-      z = Z[i];
-      coeff[0] = eps;
-      coeff[1] = -6*eps + 3 + 2*x*x*x + 2*x*y*y-2*x*z*z +2*y*x*x+ 4*x*y*z
-        +26*y + 10 *y*y*z; // f1
-      coeff[2] = -2*eps - 2 +2*x*x*x -2 *x*x*z + 12*x*y*y + 2*z*y*y +2*x*z*z
-        + 2*z*z*z; // f2
-      coeff[3] = -10*eps + 7 + 2*x*x*z -2*z*y*y-2*z*z*z + 10 *y*x*x 
-        + 20*x*y*z + 130*y -10 *x*y*y ; // f3
-    }
-  }
-    
 }
