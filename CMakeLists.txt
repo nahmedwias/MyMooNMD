@@ -239,6 +239,15 @@ target_compile_definitions(thermohydraulic_brinkman2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(thermohydraulic_brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### TThermohydraulic Brinkman2D ###
+# Standard executable target.
+add_executable(tthermohydraulic_brinkman2d ${PROJECT_SOURCE_DIR}/2DPrograms/TThermohydraulic_Brinkman2D_ParMooN.C)
+set_target_properties(tthermohydraulic_brinkman2d PROPERTIES OUTPUT_NAME parMooN_tthermohydraulic_brinkman2d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(tthermohydraulic_brinkman2d PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(tthermohydraulic_brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ### MESH ###
 # Standard executable target.
 add_executable(mesh ${PROJECT_SOURCE_DIR}/2DPrograms/mesh_ParMooN.C)
