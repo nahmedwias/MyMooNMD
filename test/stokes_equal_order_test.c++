@@ -1,33 +1,10 @@
-/**
- * @brief A test program for the solving of NSE2D problems.
- *
- * This serves as a test for the solving of NSE2D problems. It is intended to
- * perform NSE2D calculations with different examples in different setups to test
- * a wide variety of ParMooN core functionality.
- * So far only one such test is implemented.
- *
- * The norms of the solution are compared with reference norms.
- * If those are not approximated well enough (or something in the process goes wrong)
- * the test fails.
- *
- * Should this test fail, there are two possibilities: either you made a mistake
- * which broke the programs functionality. Then you must find the mistake.
- * Or you changed some program setup (e.g. changed the default solver). Then this tests
- * shows you how many other program parts are affected by your changes.
- * If you are not perfectly sure how to repair this, it is a good idea
- * to describe your changes in the forum and request support.
- *
- *
- * @author Naveed, Ulrich, Clemens
- *
- */
-
 #include <Domain.h>
 #include <Database.h>
 #include <ParameterDatabase.h>
 #include <FEDatabase2D.h>
+#include <FEDatabase3D.h>
 #include <NSE2D.h>
-#include <Example_NSE2D.h>
+#include <NSE3D.h>
 #include <Multigrid.h>
 #include <Chrono.h>
 #include <algorithm>
@@ -35,59 +12,76 @@
 
 double accuracy = 1e-6;
 
-void compare(const NSE2D& stokes, std::array<double, int(5)> errors)
+#ifdef __2D__
+typedef TFEDatabase2D OldDatabase;
+typedef NSE2D Stokes;
+typedef TDomain Grids;
+#else // 3D
+typedef TFEDatabase3D OldDatabase;
+typedef NSE3D Stokes;
+typedef std::list<TCollection*> Grids;
+#endif
+
+void compare(const Stokes& stokes, std::array<double, int(5)> errors)
 {
   std::array<double, int(5)> computed_errors = stokes.get_errors();
   
   // check the L2-error of the velcoity
-  if( fabs(computed_errors[0]-errors[0]) > accuracy )
+  if( std::abs(computed_errors[0]-errors[0]) > accuracy )
   {
-    ErrThrow("L2 norm of velocity: ", computed_errors[0], "  ", errors[0]);
+    ErrThrow("L2 norm of velocity: computed ", computed_errors[0],
+             "; expected ", errors[0]);
   }
   // check the L2-error of the divergence of the velocity
-  if( fabs(computed_errors[1] - errors[1]) > accuracy )
+  if( std::abs(computed_errors[1] - errors[1]) > accuracy )
   {
-    ErrThrow("L2 norm of divergence: ", std::setprecision(14), computed_errors[1], "  ", errors[1]);
+    ErrThrow("L2 norm of divergence: computed ", computed_errors[1],
+             "; expected ", errors[1]);
   }
   // check the H1-error of the velcoity
-  if( fabs(computed_errors[2] - errors[2]) > accuracy )
+  if( std::abs(computed_errors[2] - errors[2]) > accuracy )
   {
-    ErrThrow("H1 norm of velocity: ", computed_errors[2], "  ", errors[2]);
+    ErrThrow("H1 norm of velocity: computed ", computed_errors[2],
+             "; expected ", errors[2]);
   }
   // check the L2-error of the pressure
-  if( fabs(computed_errors[3] - errors[3]) > accuracy)
+  if( std::abs(computed_errors[3] - errors[3]) > accuracy)
   {
-    ErrThrow("L2 norm of pressure: ", computed_errors[3], "  ", errors[3]);
+    ErrThrow("L2 norm of pressure: computed ", computed_errors[3],
+             "; expected ", errors[3]);
   }
   // check the H1-error of the pressure
-  if(fabs(computed_errors[4] - errors[4]) > accuracy )
+  if(std::abs(computed_errors[4] - errors[4]) > accuracy )
   {
-    ErrThrow("H1 norm of pressure: ", computed_errors[4], "  ", errors[4]);
+    ErrThrow("H1 norm of pressure: computed ", computed_errors[4],
+             "; expected ", errors[4]);
   }
 }
 
-void compute(TDomain &domain, ParameterDatabase& db,
+void compute(Grids &domain, ParameterDatabase& db,
              std::array<double, int(5)> errors)
 {
-  NSE2D stokes(domain, db);
+#ifdef __2D__
+  Stokes stokes(domain, db);
   stokes.assemble();
+#else // 3D, this needs to be refactored and made nicer in 3D
+  Example_NSE3D example(db);
+  Stokes stokes(domain, db, example);
+  stokes.assemble_linear_terms();
+#endif
   stokes.solve();
   stokes.output();
   // compare now the errors
   compare(stokes, errors);
 }
 
-void check(TDomain &domain, ParameterDatabase db,
+void check(Grids &domain, ParameterDatabase db,
            int velocity_order, int laplace_type,
-           int nonlinear_form,
            std::array<double, int(5)> errors)
 {
   Output::print("\n\nCalling check with velocity_order=", velocity_order,
-                ", laplace_type=", laplace_type, ", and nonlinear_form=",
-                nonlinear_form);
+                ", laplace_type=", laplace_type);
   db.merge(Solver<>::default_solver_database());
-  db.merge(ParameterDatabase::default_nonlinit_database());
-  db.merge(Multigrid::default_multigrid_database());
   db["problem_type"] = 5;
   db["solver_type"] = "direct";
   db["iterative_solver_type"] = "fgmres";
@@ -98,29 +92,39 @@ void check(TDomain &domain, ParameterDatabase db,
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = velocity_order;
   TDatabase::ParamDB->LAPLACETYPE = laplace_type;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
+  TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;
   
   Chrono timer;
   compute(domain, db, errors);
-  timer.restart_and_print("nse2d direct solver,                    velocity "
+  timer.restart_and_print("stokes direct solver,                    velocity "
                           + std::to_string(velocity_order));
   
-  // we have to reset the space codes because they are changed in nse2d
+#ifdef __3D__
+  // too slow, needs more testing (e.g. which smoother is useful)
+  if(velocity_order > 2)
+    return;
+#endif
+  
+  // we have to reset the space codes because they are changed in nse2d/nse3d
   TDatabase::ParamDB->PRESSURE_SPACE = velocity_order;
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   
   db["solver_type"] = "iterative";
   compute(domain, db, errors);
-  timer.restart_and_print("nse2d fgmres(lsc preconditioner),       velocity "
+  timer.restart_and_print("stokes fgmres(lsc preconditioner),       velocity "
                           + std::to_string(velocity_order));
   
-  // we have to reset the space codes because they are changed in nse2d
+#ifdef __3D__
+  // too slow with multigrid, needs more testing (e.g. which smoother is useful)
+  if(velocity_order > 1)
+    return;
+#endif
+  
+  // we have to reset the space codes because they are changed in nse2d/nse3d
   TDatabase::ParamDB->PRESSURE_SPACE = velocity_order;
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   
-
   db["preconditioner"] = "multigrid";
-  db["multigrid_n_levels"] = db["refinement_n_initial_steps"].get<size_t>();
   //choose smoother on fine grid according to element
   std::vector<int> disc_p = {12,13,14,15,22,23,24};
   if(std::find(disc_p.begin(), disc_p.end(), velocity_order) != disc_p.end())
@@ -135,47 +139,14 @@ void check(TDomain &domain, ParameterDatabase db,
   db["multigrid_correction_damp_factor"] = 1.0;
   db["multigrid_vanka_damp_factor"] = 1.0;
   compute(domain, db, errors);
-  timer.restart_and_print("nse2d fgmres(multigrid preconditioner), velocity "
+  timer.restart_and_print("stokes fgmres(multigrid preconditioner), velocity "
                           + std::to_string(velocity_order));
 }
 
-template <int laplace_type>
-void check_one_element(TDomain& domain, ParameterDatabase db,
-                       int velocity_order,
-                       std::array<double, int(5)> errors)
-{
-  int nonlinear_form = 0;
-  check(domain, db, velocity_order, laplace_type, nonlinear_form, errors);
-}
-
-void pspg_on_triangles()
-{
-  TDatabase Database;
 #ifdef __2D__
-  TFEDatabase2D FEDatabase;
-#else
-  TFEDatabase3D FEDatabase;
-#endif
-  
-  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-  db.merge(ParameterDatabase::default_nonlinit_database());
-  db.merge(ParameterDatabase::default_output_database());
-  db.merge(NSE2D::default_NSE_database());
-  db.merge(TDomain::default_domain_parameters());
-
-  db["problem_type"].set<size_t>(3); // Stokes
-  db["example"] = 2;
-  db["refinement_n_initial_steps"] = 2;
-  db["boundary_file"] = "Default_UnitSquare";
+void pspg_on_triangles(ParameterDatabase db)
+{
   db["geo_file"] = "TwoTriangles";
-  
-  db["reynolds_number"] = 1;
-  TDatabase::ParamDB->FLOW_PROBLEM_TYPE=3;
-  db["space_discretization_type"] = "pspg";
-  db["laplace_type_deformation"] = false;
-  TDatabase::ParamDB->NSTYPE = 14;
-  TDatabase::ParamDB->LAPLACETYPE = 0;
-  
   // possibly parameters in the database
   check_parameters_consistency_NSE(db);
   
@@ -190,60 +161,33 @@ void pspg_on_triangles()
   std::array<double, int(5)> errors;
   
   //=========================================================================
-  Output::print<1>("\nTesting the P1/P1 elements");
+  Output::print<1>("\nTesting the P1/P1 elements on triangles");
   errors = {{ 0.14425380968049, 0.89062163325473, 1.5272900521314,
               1.3353534209894, 8.0717803059975 }};
-  check_one_element<0>(domain, db, 1, errors);
+  check(domain, db, 1, 0, errors);
   
   //=========================================================================
-  Output::print<1>("\nTesting the P2/P2 elements");
+  Output::print<1>("\nTesting the P2/P2 elements on triangles");
   errors = {{ 0.0094075018094777, 0.092498252374659, 0.16396168888847,
               0.10814807138916, 1.9898182882992 }};
-  check_one_element<0>(domain, db, 2, errors);
+  check(domain, db, 2, 0, errors);
 
   //=========================================================================
-  Output::print<1>("\nTesting the P3/P3 elements");
+  Output::print<1>("\nTesting the P3/P3 elements on triangles");
   errors = {{ 0.0013655488005913, 0.012260506129698, 0.017792417110209,
               0.022236536026839, 0.3674535115527 }};
-  check_one_element<0>(domain, db, 3, errors);
+  check(domain, db, 3, 0, errors);
 
   //=========================================================================
-  Output::print<1>("\nTesting the P4/P4 elements");
+  Output::print<1>("\nTesting the P4/P4 elements on triangles");
   errors = {{ 5.7237636133624e-05, 0.0015288367247389, 0.0016535091698868,
               0.0017097099552422, 0.072004774733194 }};
-  check_one_element<0>(domain, db, 4, errors);
-  
-  //=========================================================================
-  
-  db["geo_file"] = "UnitSquare";
+  check(domain, db, 4, 0, errors);
 }
 
-void pspg_on_quads()
+void pspg_on_quads(ParameterDatabase db)
 {
-  TDatabase Database;
-#ifdef __2D__
-  TFEDatabase2D FEDatabase;
-#else
-  TFEDatabase3D FEDatabase;
-#endif
-  
-  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-  db.merge(ParameterDatabase::default_nonlinit_database());
-  db.merge(ParameterDatabase::default_output_database());
-  db.merge(NSE2D::default_NSE_database());
-  db.merge(TDomain::default_domain_parameters());
-  db["problem_type"].set<size_t>(3); // Stokes
-  db["example"] = 2;
-  db["refinement_n_initial_steps"] = 2;
-  db["boundary_file"] = "Default_UnitSquare";
   db["geo_file"] = "UnitSquare";
-  db["reynolds_number"] = 1;
-  TDatabase::ParamDB->FLOW_PROBLEM_TYPE=3;
-  db["space_discretization_type"] = "pspg";
-  db["laplace_type_deformation"] = false;
-  TDatabase::ParamDB->NSTYPE = 14;
-  TDatabase::ParamDB->LAPLACETYPE = 0;
-  
   // possibly parameters in the database
   check_parameters_consistency_NSE(db);
   
@@ -258,36 +202,146 @@ void pspg_on_quads()
   std::array<double, int(5)> errors;
   
   //=========================================================================
-  Output::print<1>("\nTesting the Q1/Q1 elements");
+  Output::print<1>("\nTesting the Q1/Q1 elements on quads");
   errors = {{ 0.14770518128781, 0.5612829754172, 1.1794990495543,
               1.3441843485325, 8.0847736329225 }};
-  check_one_element<0>(domain, db, 1, errors);
+  check(domain, db, 1, 0, errors);
   
   //=========================================================================
-  Output::print<1>("\nTesting the Q2/Q2 elements");
+  Output::print<1>("\nTesting the Q2/Q2 elements on quads");
   errors = {{ 0.0067110682559855, 0.065269023656333, 0.11630741869309,
               0.092921606881003, 1.5925769236787 }};
-  check_one_element<0>(domain, db, 2, errors);
+  check(domain, db, 2, 0, errors);
 
   //=========================================================================
-  Output::print<1>("\nTesting the Q3/Q3 elements");
+  Output::print<1>("\nTesting the Q3/Q3 elements on quads");
   errors = {{ 0.0012077200634523, 0.011283264757702, 0.015848841146417,
               0.023611185292096, 0.33408390051687 }};
-  check_one_element<0>(domain, db, 3, errors);
+  check(domain, db, 3, 0, errors);
 
   //=========================================================================
-  Output::print<1>("\nTesting the Q4/Q4 elements");
+  Output::print<1>("\nTesting the Q4/Q4 elements on quads");
   errors = {{ 2.9945160214221e-05, 0.00041913940235019, 0.00061350090960876,
               0.00083988300949934, 0.023863686042054 }};
-  check_one_element<0>(domain, db, 4, errors);
+  check(domain, db, 4, 0, errors);
 }
+#endif // 2D
+
+#ifdef __3D__
+void pspg_on_tetrahedra(ParameterDatabase db)
+{
+  db["geo_file"] = "Default_UnitCube_Tetra";
+  // possibly parameters in the database
+  check_parameters_consistency_NSE(db);
+  
+  // default construct a domain object
+  TDomain domain(db);
+  // unfortunately the domain refinement depends on whether multigrid is used 
+  // or not. So the corresponding values are set here
+  db["solver_type"] = "iterative";
+  db["preconditioner"] = "multigrid";
+  Grids grids = domain.refine_and_get_hierarchy_of_collections(db);
+  std::array<double, int(5)> errors;
+  
+  //=========================================================================
+  Output::print<1>("\nTesting the P1/P1 elements on tetrahedra");
+  errors = {{ 0.29285842764476, 1.7431669708558, 2.9734925486895,
+              1.8843195210647, 15.547490346215 }};
+  check(grids, db, 1, 0, errors);
+  
+  //=========================================================================
+  Output::print<1>("\nTesting the P2/P2 elements on tetrahedra");
+  errors = {{ 0.08968982096761, 0.66817478276149, 0.94421281958215,
+              1.0325260352197, 9.6560759201588 }};
+  check(grids, db, 2, 0, errors);
+
+  //=========================================================================
+//   Output::print<1>("\nTesting the P3/P3 elements on tetrahedra");
+//   errors = {{  }};
+//   check(grids, db, 3, 0, errors);
+// 
+  // no P4 elements on tetrahedra implemented
+}
+
+void pspg_on_hexahedra(ParameterDatabase db)
+{
+  db["geo_file"] = "Default_UnitCube_Hexa";
+  // possibly parameters in the database
+  check_parameters_consistency_NSE(db);
+  
+  // default construct a domain object
+  TDomain domain(db);
+  // unfortunately the domain refinement depends on whether multigrid is used 
+  // or not. So the corresponding values are set here
+  db["solver_type"] = "iterative";
+  db["preconditioner"] = "multigrid";
+  Grids grids = domain.refine_and_get_hierarchy_of_collections(db);
+  std::array<double, int(5)> errors;
+  
+  //=========================================================================
+  Output::print<1>("\nTesting the Q1/Q1 elements on hexahedra");
+  errors = {{ 0.22856023489804, 0.89092443247775, 1.6452219971921,
+              1.973590165051, 15.739699775035 }};
+  check(grids, db, 1, 0, errors);
+  
+  //=========================================================================
+  Output::print<1>("\nTesting the Q2/Q2 elements on hexahedra");
+  errors = {{ 0.0069455335607669, 0.082635103449365, 0.13147215146863,
+              0.14765503705692, 2.3797784866446 }};
+  check(grids, db, 2, 0, errors);
+
+  // the following tests take too long for the tests
+  return;
+  //=========================================================================
+  Output::print<1>("\nTesting the Q3/Q3 elements on hexahedra");
+  errors = {{ 0.0022527831353322, 0.027168669298461, 0.030403766396944,
+              0.035154057676842, 0.82782568660416 }};
+  check(grids, db, 3, 0, errors);
+
+  //=========================================================================
+  Output::print<1>("\nTesting the Q4/Q4 elements on hexahedra");
+  errors = {{ 4.8691604234513e-05, 0.0007091120130668, 0.0011725745728817,
+              0.0020906154874585, 0.044064601854262 }};
+  check(grids, db, 4, 0, errors);
+}
+#endif // 3D
 
 // =======================================================================
 // main program
 // =======================================================================
 int main(int argc, char* argv[])
 {
-  pspg_on_triangles();
-  pspg_on_quads();
+  TDatabase Database;
+  OldDatabase FEDatabase;
+  
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(ParameterDatabase::default_nonlinit_database());
+  db.merge(ParameterDatabase::default_output_database());
+  db.merge(Stokes::default_NSE_database());
+  db.merge(TDomain::default_domain_parameters());
+  db.merge(Multigrid::default_multigrid_database());
+
+  db["problem_type"].set<size_t>(3); // Stokes
+  db["example"] = 2;
+  db["reynolds_number"] = 1;
+  db["refinement_n_initial_steps"] = 2;
+  db["multigrid_n_levels"] = db["refinement_n_initial_steps"].get<size_t>();
+  TDatabase::ParamDB->FLOW_PROBLEM_TYPE=3;
+  db["space_discretization_type"] = "pspg";
+  db["laplace_type_deformation"] = false;
+  TDatabase::ParamDB->NSTYPE = 14;
+  TDatabase::ParamDB->LAPLACETYPE = 0;
+  db["boundary_file"] = "Default_UnitSquare";
+  
+  
+#ifdef __2D__
+  pspg_on_triangles(db);
+  pspg_on_quads(db);
+#else // 3D
+  db["boundary_file"] = "Default_UnitCube";
+  pspg_on_tetrahedra(db);
+  pspg_on_hexahedra(db);
+#endif
+  
   return 0;
 }

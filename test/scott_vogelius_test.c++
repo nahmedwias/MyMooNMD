@@ -48,7 +48,7 @@ void check_3d(ParameterDatabase db, const std::list<TCollection*>& colls,
   nse.solve();
   nse.output();
   
-  auto div_error = nse.get_errors()[2];
+  auto div_error = nse.get_errors()[1];
   if(div_error > 1.e-12)
   {
     ErrThrow("Scott-Vogelius elements should lead to zero divergence, but ",
