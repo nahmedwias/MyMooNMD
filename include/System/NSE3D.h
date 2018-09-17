@@ -192,6 +192,11 @@ class NSE3D
 #endif
 
 
+    /** @brief return a database with all parameters necessary for 
+     * Navier--Stokes.
+     */
+    static ParameterDatabase default_NSE_database();
+    
     /**
      * @brief Check whether the program will be working with the
      * current input parameters.

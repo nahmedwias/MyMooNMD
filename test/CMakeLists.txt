@@ -180,10 +180,14 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   list(APPEND parmoon_tests ParMooN_test_nse2d)
   
   #stokes equal order test
-  add_executable(ParMooN_test_stokes_equal_order stokes_equal_order_test.c++)
-  target_link_libraries(ParMooN_test_stokes_equal_order parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(stokes_equal_order ParMooN_test_stokes_equal_order)
-  list(APPEND parmoon_tests ParMooN_test_stokes_equal_order)
+  add_executable(ParMooN_test_stokes_equal_order2d stokes_equal_order_test.c++)
+  target_link_libraries(ParMooN_test_stokes_equal_order2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(stokes_equal_order2d ParMooN_test_stokes_equal_order2d)
+  list(APPEND parmoon_tests ParMooN_test_stokes_equal_order2d)
+  add_executable(ParMooN_test_stokes_equal_order3d stokes_equal_order_test.c++)
+  target_link_libraries(ParMooN_test_stokes_equal_order3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(stokes_equal_order3d ParMooN_test_stokes_equal_order3d)
+  list(APPEND parmoon_tests ParMooN_test_stokes_equal_order3d)
   
   #lsc / (bc-lsc!) test
   add_executable(ParMooN_test_lsc lsc_test.c++)

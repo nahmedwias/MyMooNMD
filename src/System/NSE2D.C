@@ -26,6 +26,7 @@ ParameterDatabase NSE2D::default_NSE_database()
   
   db.merge(LocalAssembling2D::default_local_assembling_database(), true);
   db.merge(Example2D::default_example_database(), true);
+  db.merge(Solver<>::default_solver_database(), true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
   if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
