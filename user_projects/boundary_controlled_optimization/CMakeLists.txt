@@ -15,7 +15,7 @@ set_target_properties(BCO_LIB_2D PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 set(all_bco_libs BCO_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} 
     ${_EXTERN_LIBRARIES} ${NLOPT_LIBRARIES})
 
-add_executable(bco2d ${bco_dir}/main.cpp)
+add_executable(bco2d ${bco_dir}/BCO2D_ParMooN.cpp)
 set_target_properties(bco2d PROPERTIES OUTPUT_NAME 
 parMooN_bco2d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
