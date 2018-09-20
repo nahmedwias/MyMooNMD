@@ -782,7 +782,10 @@ void LocalAssembling<d>::GetLocalForms(int N_Points, double *weights,
   double *coefficients[N_Points];
   for(int i=0; i<N_Points; i++)
   {
-    parameters[i] = &this->parameter_functions_values[i*N_Parameters];
+    if(N_ParamFct == 0)
+      parameters[i] = nullptr;
+    else
+      parameters[i] = &this->parameter_functions_values[i*N_Parameters];
     coefficients[i] = local_coefficients[i].data();
   }
 
@@ -846,7 +849,7 @@ void LocalAssembling<d>::GetLocalForms(int N_Points, double *weights,
     Coeff = local_coefficients[i].data();
     Coeff[19] = AbsDetjk[i];
    
-    Param = &this->parameter_functions_values[i*N_Parameters];
+    Param = parameters[i];
 
     for(j=0; j<N_Terms; j++)
       OrigValues[j] = AllOrigValues[j][i];
