@@ -928,7 +928,7 @@ void NSE3D::output(int i)
     err_send[3]=err_u2[1];
     err_send[4]=err_u3[0];
     err_send[5]=err_u3[1];
-    err_send[6]=div_error;
+    err_send[6]=div_error*div_error;
     err_send[7]=err_p[0];
     err_send[8]=err_p[1];
 
