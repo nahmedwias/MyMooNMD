@@ -362,6 +362,12 @@ class LocalAssembling
     int get_n_rhs() const
     { return N_Rhs; }
     
+    void ResetCoeffFct(CoeffFct f)
+    { Coeffs = f; }
+    
+    void SetN_Parameters(int n)
+    { N_Parameters = n; }
+    
     void setBeginParameter(const std::vector<int>& beginParameter)
     { BeginParameter = beginParameter; }
     
