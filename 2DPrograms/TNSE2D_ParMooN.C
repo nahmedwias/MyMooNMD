@@ -15,20 +15,16 @@ int main(int argc, char* argv[])
   TFEDatabase2D FEDatabase2D;
 
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  std::ifstream fs(argv[1]);
-  parmoon_db.read(fs);
-  fs.close();
-  //std::string time_disc = parmoon_db["time_discretization"];
-  //parmoon_db.merge(ParameterDatabase::default_time_database(time_disc), true);
+  parmoon_db.read(argv[1]);
+  
+  Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
 
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
   TDomain Domain(parmoon_db, argv[1]);
-
-  Output::set_outfile(parmoon_db["outfile"]);
-  Output::setVerbosity(parmoon_db["verbosity"]);
 
   parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);

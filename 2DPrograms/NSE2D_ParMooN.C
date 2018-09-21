@@ -32,12 +32,12 @@ int main(int argc, char* argv[])
   parmoon_db.merge(NSE2D::default_NSE_database());
   parmoon_db.read(argv[1]);
   
+  //open OUTFILE, this is where all output is written to (additionally to console)
+  Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
+  
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(parmoon_db, argv[1]);
-  
-  //open OUTFILE, this is where all output is written to (additionally to console)
-  Output::set_outfile(parmoon_db["outfile"]);
-  Output::setVerbosity(parmoon_db["verbosity"]);
   
   // possibly change parameters in the database, if they are not meaningful now
   check_parameters_consistency_NSE(parmoon_db);

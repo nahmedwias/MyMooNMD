@@ -61,10 +61,15 @@ int main(int argc, char* argv[])
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.merge(ParameterDatabase::default_tetgen_database(), true);
-
-  std::ifstream fs(argv[1]);
-  parmoon_db.read(fs);
-  fs.close();
+  parmoon_db.read(argv[1]);
+  
+  //open OUTFILE, this is where all output is written to (additionally to console)
+  if(my_rank==0)
+  {
+    Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
+  }
+  Output::setVerbosity(parmoon_db["verbosity"]);
+  
 #ifdef _MPI
   TDatabase::ParamDB->Comm = comm;
 #endif
@@ -85,13 +90,6 @@ int main(int argc, char* argv[])
   if(parmoon_db["problem_type"].is(0))
     parmoon_db["problem_type"] = 6;
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
-
-  //open OUTFILE, this is where all output is written to (additionally to console)
-  if(my_rank==0)
-  {
-    Output::set_outfile(parmoon_db["outfile"]);
-  }
-  Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
   {
