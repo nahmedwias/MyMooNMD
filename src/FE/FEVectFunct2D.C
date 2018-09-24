@@ -714,6 +714,8 @@ double TFEVectFunct2D::GetL2NormDivergenceError(DoubleFunct2D *Exact_u1,DoubleFu
       div_error += AbsDetJK[j] * weights[j] * fabs(loc_div_values_FEsolution - loc_div_values_exact_solution) * fabs(loc_div_values_FEsolution - loc_div_values_exact_solution);
     } // endfor j
   } // endfor i
+  delete [] aux1;
+  delete [] aux2;
   div_error = sqrt(div_error);
   return div_error;
 } // TFEVectFunct2D::GetL2NormDivergenceError
