@@ -5,6 +5,7 @@
 #include <GridTransfer.h>
 #include <Multigrid.h>
 #include <Assemble2D.h>
+#include <NSE_local_assembling_routines.h>
 
 #include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 #include <AuxParam2D.h>
@@ -681,6 +682,22 @@ void NSE2D::solve()
     s.p.project_into_L20();
 }
 
+
+// this is a bad implementation, we need to find ways to pass parameters to the
+// TFEFunction2D::GetErrors method
+double delta0 = 0.;
+void natural_error_norm_infsup_stabilizations(
+  int N_Points, double *X, double *Y, double *AbsDetjk, double *Weights,
+  double hK, double **Der, double **Exact, double **coeffs, double *LocError);
+void parameter_function_for_errors(double *in, double *out)
+{
+  out[0] = in[2]; // u1 (for conformity within the coefficient function)
+  out[1] = in[3]; // u2 (for conformity within the coefficient function)
+  out[2] = in[4]; // u1_xx
+  out[3] = in[5]; // u1_yy
+  out[4] = in[6]; // u2_xx
+  out[5] = in[7]; // u2_yy
+}
 /** ************************************************************************ */
 void NSE2D::output(int i)
 {
@@ -736,6 +753,35 @@ void NSE2D::output(int i)
     Output::print<1>("L2(p)     : ", setprecision(14), errors[3]);
     Output::print<1>("H1-semi(p): ", setprecision(14), errors[4]);    
     
+    auto sdt(db["space_discretization_type"]);
+    bool pspg = sdt.is("pspg");
+    bool symm_gls = sdt.is("symm_gls");
+    bool nonsymm_gls = sdt.is("nonsymm_gls");
+    if(pspg || symm_gls || nonsymm_gls)
+    {
+      double nu = example.get_nu();
+      double error_in_natural_norm = nu * errors[2]*errors[2];
+      if(symm_gls)
+        error_in_natural_norm += (1./nu) * errors[3]*errors[3];
+      delta0 = db["pspg_delta0"];
+      TFEFunction2D* fe_functions_u[2] = {u1, u2};
+      int fevalue_fctindex[6] = {0, 1, 0, 0, 1, 1};
+      MultiIndex2D fevalue_multiindex[6] = {D00, D00, D20, D02, D20, D02};
+      int beginparameter = 0;
+      ParamFct * parameter_function = &parameter_function_for_errors;
+      TAuxParam2D NSE_aux(1, 6, fe_functions_u, &parameter_function, 
+                          fevalue_fctindex, fevalue_multiindex, 6,
+                          &beginparameter);
+      s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 1,
+                    natural_error_norm_infsup_stabilizations,
+                    get_example().get_coeffs(), &NSEaux_error, 1,
+                    &pressure_space, err);
+      error_in_natural_norm += err[0]*err[0];
+      error_in_natural_norm = std::sqrt(error_in_natural_norm);
+      errors[5] = error_in_natural_norm;
+      Output::print("Error in natural(", sdt, ") norm: ", std::setprecision(14),
+                    errors[5]);
+    }
   } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
@@ -765,7 +811,7 @@ void NSE2D::output_problem_size_info() const
 }
 
 /** ************************************************************************ */
-std::array< double, int(5) > NSE2D::get_errors() const
+std::array< double, int(6) > NSE2D::get_errors() const
 {
   return errors;
 }
@@ -800,3 +846,26 @@ void NSE2D::reset_residuals()
   this->oldResiduals = FixedSizeQueue<10, Residuals>();
 }
 
+
+void natural_error_norm_infsup_stabilizations(int N_Points, double *X,
+                                              double *Y, double *AbsDetjk,
+                                              double *Weights, double hK,
+                                              double **Der, double **Exact,
+                                              double **coeffs, double *LocError)
+{
+  LocError[0] = 0.0;
+  for(int i=0;i<N_Points;i++)
+  {
+    double nu = coeffs[i][0];
+    double delta = compute_PSPG_delta(delta0, hK, nu);
+    double *deriv = Der[i];
+    double *exactval = Exact[i];
+    double w = delta*Weights[i]*AbsDetjk[i];
+
+    double t = deriv[1]-exactval[1];
+    LocError[0] += w*t*t;
+      
+    t = deriv[2]-exactval[2];
+    LocError[0] += w*t*t;
+  }
+}

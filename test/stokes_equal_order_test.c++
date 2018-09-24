@@ -24,7 +24,7 @@ typedef std::list<TCollection*> Grids;
 
 void compare(const Stokes& stokes, std::array<double, int(5)> errors)
 {
-  std::array<double, int(5)> computed_errors = stokes.get_errors();
+  auto computed_errors = stokes.get_errors();
   
   // check the L2-error of the velcoity
   if( std::abs(computed_errors[0]-errors[0]) > accuracy )
