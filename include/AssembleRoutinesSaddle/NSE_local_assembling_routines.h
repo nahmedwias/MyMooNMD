@@ -50,7 +50,7 @@ void NSCoriolis(double Mult, double *coeff, double *param, double hK,
 // stabilization terms
 
 // PSPG (Pressure stabilization Petrov-Galerkin)
-double compute_PSPG_delta(double hK, double nu);
+double compute_PSPG_delta(double delta0, double hK, double nu);
 template <int d>
 void NSPSPG(double Mult, double *coeff, double *param, double hK,
             double **OrigValues, int *N_BaseFuncts,
