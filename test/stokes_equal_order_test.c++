@@ -82,7 +82,7 @@ void check(Grids &domain, ParameterDatabase db,
   Output::print("\n\nCalling check with velocity_order=", velocity_order,
                 ", laplace_type=", laplace_type);
   db.merge(Solver<>::default_solver_database());
-  db["problem_type"] = 5;
+  // db["problem_type"] = 5;
   db["solver_type"] = "direct";
   db["iterative_solver_type"] = "fgmres";
   db["residual_tolerance"] = 1.e-12;
@@ -304,6 +304,39 @@ void pspg_on_hexahedra(ParameterDatabase db)
               0.0020906154874585, 0.044064601854262 }};
   check(grids, db, 4, 0, errors);
 }
+
+void check_other_stabilizations(ParameterDatabase db)
+{
+  db["geo_file"] = "Default_UnitCube_Hexa";
+  db["example"] = 0; // linear velocity, constant pressure example
+  db["solver_type"] = "direct";
+  TDatabase::ParamDB->VELOCITY_SPACE = 1;
+  TDatabase::ParamDB->PRESSURE_SPACE = 1;
+  TDatabase::ParamDB->LAPLACETYPE = 0;
+  TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;
+  check_parameters_consistency_NSE(db);
+  // default construct a domain object
+  TDomain domain(db);
+  Grids grids = domain.refine_and_get_hierarchy_of_collections(db);
+  std::array<double, int(5)> errors{0.};
+  
+  // note: for this example f=0 and using Q1/Q1 the laplacians vanish so that
+  // each of the methods used below should give the same solution. Furthermore 
+  // that solution is in the ansatz space and the computed errors are therefore
+  // (close to) zero.
+  db["space_discretization_type"] = "symm_gls";
+  accuracy = 1.e-12;
+  Chrono timer;
+  compute(grids, db, errors);
+  timer.restart_and_print("stokes direct solver, symmetric GLS");
+  db["space_discretization_type"] = "nonsymm_gls";
+  compute(grids, db, errors);
+  timer.restart_and_print("stokes direct solver, non-symmetric GLS");
+  db["space_discretization_type"] = "brezzi_pitkaeranta";
+  compute(grids, db, errors);
+  timer.restart_and_print("stokes direct solver, Brezzi-Pitkaeranta");
+}
+
 #endif // 3D
 
 // =======================================================================
@@ -341,6 +374,7 @@ int main(int argc, char* argv[])
   db["boundary_file"] = "Default_UnitCube";
   pspg_on_tetrahedra(db);
   pspg_on_hexahedra(db);
+  check_other_stabilizations(db);
 #endif
   
   return 0;
