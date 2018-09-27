@@ -4,7 +4,7 @@
 
 // we use a tensor product of a 2-point Gauss quadrature on each face (which is 
 // exact for polynomials up to order 3)
-constexpr double s13 = std::sqrt(1./3.);
+const double s13 = std::sqrt(1./3.);
 /* for all functionals, these should use (higher order) quadrature formulas as 
 well. We need to find a much easier way to implement this. */
 static double NF_N_H_RT0_3D_Xi[] =

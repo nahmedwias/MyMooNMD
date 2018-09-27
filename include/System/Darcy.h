@@ -4,6 +4,7 @@
 #include <BlockFEMatrix.h>
 #ifdef __2D__
 #include <Example_Darcy2D.h>
+#include <FEFunction2D.h>
 #else
 #include <Example_Darcy3D.h>
 #include <FEFunction3D.h>

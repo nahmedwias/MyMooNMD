@@ -1659,18 +1659,19 @@ void DataWriter<d>::writeCoord(std::ofstream& f)
   unsigned int N_Vertices = Coll->GetN_Vertices();
   for(unsigned int i = 0; i < N_Vertices; i++)
   {
-    // f.setf(ios_base::scientific);
-    f.precision(12);
+    ///@attention case output works only with this format
+    f.setf(std::ios_base::scientific);
+    f.precision(5);
     f.width(12);
     f << Coll->GetCoord(i * d);
     f << " ";
-    // f.setf(ios_base::scientific);
-    f.precision(12);
+    f.setf(std::ios_base::scientific);
+    f.precision(5);
     f.width(12);
     f << Coll->GetCoord(i * d + 1);
     f << " ";
-    // f.setf(ios_base::scientific);
-    f.precision(12);
+    f.setf(std::ios_base::scientific);
+    f.precision(5);
     f.width(12);
     if(d == 2)
     {
