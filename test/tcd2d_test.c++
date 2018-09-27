@@ -111,9 +111,6 @@ void time_integration(int td, Time_CD2D& tcd, TimeDiscretization& tss)
 		     TDatabase::TimeDB->CURRENTTIME);
     tcd.assemble();
     tcd.solve();
-    
-    tcd.descale_stiffness(tau, TDatabase::TimeDB->THETA1);
-
     testCN(tcd, step);
   }
   

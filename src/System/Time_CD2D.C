@@ -46,7 +46,6 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
 
   rhs = BlockVector(stiff_matrix, true);
   solution = BlockVector(stiff_matrix, false);
-  old_Au = BlockVector(stiff_matrix, true);
   fe_function = TFEFunction2D(&fe_space, "c", "c",
                               solution.get_entries(), solution.length());
   solution_m1 = BlockVector(stiff_matrix, false);
@@ -288,24 +287,6 @@ void Time_CD2D::assemble()
 }
 
 /**************************************************************************** */
-
-void Time_CD2D::descale_stiffness(double tau, double theta_1)
-{
-    // restore stiffness matrix and store old_Au on all grids
-    if(db["algebraic_flux_correction"].is("none"))
-    {
-      for(auto &s : this->systems)
-        time_stepping_scheme.reset_linear_matrices(s.stiff_matrix, s.mass_matrix);
-    }
-    else
-    {
-      //in AFC case the stiffness matrix is "ruined" by now -
-      Output::print("AFC does not yet reset the stiffness"
-          "matrix and old_Au correctly!");
-    }
-}
-
-/**************************************************************************** */
 void Time_CD2D::solve()
 {
   double t = GetTime();
@@ -317,6 +298,20 @@ void Time_CD2D::solve()
   Output::print<2>("solution ", sqrt(Ddot(s.solution.length(),
                                           s.solution.get_entries(),
                                           s.solution.get_entries())) );
+  
+  // restore stiffness matrix
+  if(db["algebraic_flux_correction"].is("none"))
+  {
+    for(auto &s : this->systems)
+      time_stepping_scheme.reset_linear_matrices(s.stiff_matrix, s.mass_matrix);
+  }
+  else
+  {
+    //in AFC case the stiffness matrix is "ruined" by now -
+    Output::print("AFC does not yet reset the stiffness"
+        "matrix and old_Au correctly!");
+  }
+    
   s.solution_m2 = s.solution_m1;
   s.solution_m1 = s.solution;
   
