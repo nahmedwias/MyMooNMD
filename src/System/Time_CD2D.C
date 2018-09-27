@@ -49,32 +49,12 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
   old_Au = BlockVector(stiff_matrix, true);
   fe_function = TFEFunction2D(&fe_space, "c", "c",
                               solution.get_entries(), solution.length());
-}
-
-
-/**************************************************************************** */
-
-void Time_CD2D::System_per_grid::descale_stiff_matrix(double tau, double theta_1)
-{
-  if (tau==0 || theta_1 == 0)
-  {
-    ErrThrow("I will not divide by zero in descaling! tau=", tau, "theta_1=", theta_1);
-  }
-  //subtract the mass matrix (TODO smells like cancellation)...
-  const FEMatrix& mass_block = *mass_matrix.get_blocks().at(0).get();
-  //subtract the mass matrix...
-  stiff_matrix.add_matrix_actives(mass_block, -1.0, {{0,0}}, {false});
-  //...and descale the stiffness matrix...
-  const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
-  stiff_matrix.scale_blocks_actives(1./(tau*theta_1), cell_positions);
-}
-
-/**************************************************************************** */
-
-void Time_CD2D::System_per_grid::update_old_Au()
-{
-  // the stiffness matrix must have been descaled (pure transport operator)
-  stiff_matrix.apply(solution,old_Au);
+  solution_m1 = BlockVector(stiff_matrix, false);
+  u_m1 = TFEFunction2D(&fe_space,"um1","um1", solution_m1.get_entries(),
+                       solution_m1.length());
+  solution_m2 = BlockVector(stiff_matrix, false);
+  u_m2 = TFEFunction2D(&fe_space,"um2","um2", solution_m2.get_entries(),
+                       solution_m2.length());
 }
 
 /**************************************************************************** */
@@ -89,7 +69,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		const Example_TimeCD2D& ex, int reference_id)
  : db(get_default_TCD2D_parameters()), solver(param_db), systems(), example(ex),
-   errors(5, 0.0), timeDependentOutput(param_db)
+   errors(5, 0.0), timeDependentOutput(param_db), time_stepping_scheme(param_db)
 {
   db.merge(param_db, false);
   this->set_parameters();
@@ -142,6 +122,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
     }
     multigrid->initialize(matrices);
   }
+  this->rhs_from_time_disc.copy_structure(this->systems.front().rhs);
 }
 
 /**************************************************************************** */
@@ -219,20 +200,14 @@ void Time_CD2D::set_parameters()
 /**************************************************************************** */
 void Time_CD2D::assemble_initial_time()
 {
-  LocalAssembling_type mass = LocalAssembling_type::TCD2D_Mass;
-  LocalAssembling_type stiff_rhs = LocalAssembling_type::TCD2D;
-
   for(auto &s : this->systems)
   {
     // assemble mass matrix, stiffness matrix and rhs
     TFEFunction2D* fe_funct[1] = {&s.fe_function}; //wrap up as '**'
-    LocalAssembling2D la_mass(this->db, mass, fe_funct,
-                              this->example.get_coeffs());
-    LocalAssembling2D la_a_rhs(this->db, stiff_rhs, fe_funct,
+    LocalAssembling2D la_a_rhs(this->db, LocalAssembling_type::TCDStiffMassRhs, fe_funct,
                                this->example.get_coeffs());
 
-    call_assembling_routine(s, la_a_rhs, la_mass , true);
-
+    call_assembling_routine(s, la_a_rhs, true);
     // apply local projection stabilization method on stiffness matrix only!
     if(db["space_discretization_type"].is("local_projection")
         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
@@ -252,102 +227,62 @@ void Time_CD2D::assemble_initial_time()
       }
 
     }
-
-    s.stiff_matrix.apply(s.solution,s.old_Au); //put up initial old_Au
   }
 
   System_per_grid& s = systems.front();
   old_rhs = s.rhs; //put up initial old_rhs
+  s.solution_m1 = s.solution;
+  s.solution_m2 = s.solution_m1;
 }
 
 /**************************************************************************** */
 void Time_CD2D::assemble()
 {
-  LocalAssembling_type stiff_rhs = LocalAssembling_type::TCD2D;  
-  
   for(auto &s : this->systems)
   {
-
     TFEFunction2D * pointer_to_function = &s.fe_function;
-    // create two local assembling object (second one will only be needed in SUPG case)
-    LocalAssembling2D la_a_rhs(this->db, stiff_rhs, &pointer_to_function,
-                               this->example.get_coeffs());
-
+    bool assemble_both = false;
+    LocalAssembling_type la_type = LocalAssembling_type::TCDStiffRhs;
     if(db["space_discretization_type"].is("supg"))
     {
-      // In the SUPG case:
-      // M = (u,v) + \tau (u,b.grad v)
-      LocalAssembling_type mass_supg = LocalAssembling_type::TCD2D_Mass;;
-
-      LocalAssembling2D la_m_supg(this->db, mass_supg, &pointer_to_function,
-                                  this->example.get_coeffs());
-
-      //call assembling, including mass matrix (SUPG!)
-      call_assembling_routine(s, la_a_rhs, la_m_supg , true);
+      assemble_both = true;
+      la_type = LocalAssembling_type::TCDStiffMassRhs;
     }
-    else
-    {//call assembling, ignoring mass matrix part (third argument is not relevant)
-      call_assembling_routine(s, la_a_rhs, la_a_rhs , false);
-    }
+    LocalAssembling2D la(this->db, la_type, &pointer_to_function,
+                               this->example.get_coeffs());
+    call_assembling_routine(s, la, assemble_both);
   }
   
   // here the modifications due to time discretization begin
   if (!db["algebraic_flux_correction"].is("none") )
   {
     do_algebraic_flux_correction();
+    rhs_from_time_disc = this->systems.front().rhs;
     return; // modifications due to time discretization are per-
             // formed inside the afc scheme, so step out here!
   }
 
-  double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  // preparing rhs 
   System_per_grid& s = this->systems.front();
-  
-  if(TDatabase::TimeDB->THETA4)
-  {
-    // scale by time step length and theta4 (only active dofs)
-    s.rhs.scaleActive(tau*TDatabase::TimeDB->THETA4);    
-    // add old right hand side scaled by time step length and theta3 (only 
-    // active dofs)
-    if(TDatabase::TimeDB->THETA3 != 0.)
-      s.rhs.addScaledActive((this->old_rhs), tau*TDatabase::TimeDB->THETA3);	
+  rhs_from_time_disc.reset();
+  rhs_from_time_disc = s.rhs;
+  // all matrices are available
+  unsigned int n_sols = time_stepping_scheme.n_old_solutions();
+  std::vector <BlockVector> old_sols(n_sols);
+  old_sols[0] = s.solution_m1;
+  if(old_sols.size() == 2)
+    old_sols[1] = s.solution_m2;
+  std::vector<BlockVector> rhs_(2);
+  rhs_[0] = rhs_from_time_disc;
+  rhs_[1] = old_rhs;
+  // prepare the right hand side from the previous time step
+  time_stepping_scheme.prepare_rhs_from_time_disc(s.stiff_matrix, 
+                                                  s.mass_matrix, rhs_, old_sols);
+  rhs_from_time_disc = rhs_[0];
+  old_rhs=s.rhs;
+  rhs_from_time_disc.copy_nonactive(s.rhs);
 
-    // save old right hand side (only if THETA3 != 0)
-    if(TDatabase::TimeDB->THETA3)
-    {
-      this->old_rhs.addScaledActive(s.rhs, -1./(tau*TDatabase::TimeDB->THETA3));
-      this->old_rhs.scaleActive(-TDatabase::TimeDB->THETA3/TDatabase::TimeDB->THETA4);
-    }
-  }
-  else
-  {
-    if(TDatabase::TimeDB->TIME_DISC == 0)
-    {
-      ErrThrow("Forward Euler method is not supported. "
-          "Choose TDatabase::TimeDB->TIME_DISC as 1 (bw Euler)"
-          " or 2 (Crank-Nicoloson)");
-    }
-  }
-  
   for(auto &s : this->systems)
-  {
-    // rhs += M*uold
-    s.mass_matrix.apply_scaled_add_actives(s.solution, s.rhs, 1.0);
-    // rhs -= tau*theta2*A_old*uold
-    s.rhs.addScaledActive(s.old_Au, -tau*TDatabase::TimeDB->THETA2);
-    
-    // preparing the left hand side, i.e., the system matrix
-    // stiffness matrix is scaled by tau*THETA1, after solving 
-    // the matrix needs to be descaled if the coeffs does not depends
-    // on time
-
-    //scale  stiffness matrix...
-    const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
-    s.stiff_matrix.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, cell_positions);
-    // ...and add the mass matrix
-    const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
-    s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
-  }  
+    time_stepping_scheme.prepare_system_matrix(s.stiff_matrix, s.mass_matrix);
   //this->systems[0].rhs.copy_nonactive(this->systems[0].solution);
   systems[0].solution.copy_nonactive(systems[0].rhs);
 }
@@ -360,10 +295,7 @@ void Time_CD2D::descale_stiffness(double tau, double theta_1)
     if(db["algebraic_flux_correction"].is("none"))
     {
       for(auto &s : this->systems)
-      {
-        s.descale_stiff_matrix(tau, theta_1);
-        s.update_old_Au();
-      }
+        time_stepping_scheme.reset_linear_matrices(s.stiff_matrix, s.mass_matrix);
     }
     else
     {
@@ -379,13 +311,15 @@ void Time_CD2D::solve()
   double t = GetTime();
   System_per_grid& s = this->systems.front();
   
-  this->solver.solve(s.stiff_matrix, s.rhs, s.solution);
-  
+  this->solver.solve(s.stiff_matrix, rhs_from_time_disc, s.solution);
   t = GetTime() - t;
   Output::print<1>("time for solving: ",  t);
   Output::print<2>("solution ", sqrt(Ddot(s.solution.length(),
                                           s.solution.get_entries(),
                                           s.solution.get_entries())) );
+  s.solution_m2 = s.solution_m1;
+  s.solution_m1 = s.solution;
+  
 }
 
 /**************************************************************************** */
@@ -516,41 +450,35 @@ void Time_CD2D::do_algebraic_flux_correction()
 }
 
 void Time_CD2D::call_assembling_routine(
-    System_per_grid& s,
-    LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
-    bool assemble_both)
+    System_per_grid& s, LocalAssembling2D& la,bool assemble_both)
 {
-
   // Assemble mass matrix, stiffness matrix and rhs
   //...variables which are the same for both
   const TFESpace2D * fe_space = &s.fe_space;
   BoundCondFunct2D * boundary_conditions = fe_space->get_boundary_condition();
-  int N_Matrices = 1;
+  int N_Matrices = 2;
   double * rhs_entries = s.rhs.get_entries();
 
   BoundValueFunct2D * non_const_bound_value[1] {example.get_bd()[0]};
 
   //fetch stiffness matrix as block
   std::vector<std::shared_ptr<FEMatrix>> stiff_blocks = s.stiff_matrix.get_blocks_uniquely();
-  TSquareMatrix2D * stiff_block[1]{reinterpret_cast<TSquareMatrix2D*>(stiff_blocks.at(0).get())};
-
-  // Do the Assembling!
-
+  if(assemble_both)
+    N_Matrices=2;
+  else
+    N_Matrices=1;
+  TSquareMatrix2D * matrices[N_Matrices];
+  matrices[0] = {reinterpret_cast<TSquareMatrix2D*>(stiff_blocks.at(0).get())};
+  matrices[0]->reset();
+  if(N_Matrices==2){
+    std::vector<std::shared_ptr<FEMatrix>> mass_blocks = s.mass_matrix.get_blocks_uniquely();
+    matrices[1] = {reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get())};
+    matrices[1]->reset();
+  }
   //...stiffness matrix is second
   // reset right hand side and matrix to zero
   s.rhs.reset();
-  stiff_block[0]->reset();
-  Assemble2D(1, &fe_space, N_Matrices, stiff_block, 0, nullptr, 1, &rhs_entries,
-             &fe_space, &boundary_conditions, non_const_bound_value, la_stiff);
-
-  // If assemble_both is true, we also (re)assemble the mass matrix.
-  if (assemble_both)
-  {
-    std::vector<std::shared_ptr<FEMatrix>> mass_blocks = s.mass_matrix.get_blocks_uniquely();
-    TSquareMatrix2D * mass_block[1]{reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get())};
-
-    mass_block[0]->reset();
-    Assemble2D(1, &fe_space, N_Matrices, mass_block, 0, nullptr, 0, nullptr,
-               nullptr, &boundary_conditions, non_const_bound_value, la_mass);
-  }
+  
+  Assemble2D(1, &fe_space, N_Matrices, matrices, 0, nullptr, 1, &rhs_entries,
+             &fe_space, &boundary_conditions, non_const_bound_value, la);
 }

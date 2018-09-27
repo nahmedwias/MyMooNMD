@@ -22,6 +22,7 @@
 #include <DataWriter.h>
 #include <Solver.h>
 #include "LocalAssembling.h"
+#include "TimeDiscretizations.h"
 
 #include <vector>
 #include <deque>
@@ -51,6 +52,15 @@ class Time_CD2D
       BlockVector old_Au;
       /** @brief Finite element function */
       TFEFunction2D fe_function;
+      /** @brief
+       * old solution for the computation of the residual
+       * that passes as an FEFunction to the local assembling
+       * routines
+       */
+      BlockVector solution_m1;
+      TFEFunction2D u_m1;
+      BlockVector solution_m2;
+      TFEFunction2D u_m2;
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
@@ -141,6 +151,11 @@ class Time_CD2D
     /// @brief class for handling (time dependent) output 
     DataWriter2D timeDependentOutput;
     
+    /// @brief time stepping scheme object to access everything
+    TimeDiscretization time_stepping_scheme;
+    /// @brief system right hand side which passes to the solver
+    BlockVector rhs_from_time_disc;
+    
   public:
     /** @brief constructor
      * This constructor calls the other constructor creating an Example_CD2D
@@ -174,6 +189,10 @@ class Time_CD2D
      * are also prepared within the function
      */
     void assemble();
+    
+    /**
+     */
+    void prepare_rhs();
     
     /**
      * Descales the stiffness matrices from the modifications due to time
@@ -220,6 +239,11 @@ class Time_CD2D
     const ParameterDatabase & get_db() const
     { return db; }
     
+    TimeDiscretization& get_time_stepping_scheme()
+    {return time_stepping_scheme;}
+    const TimeDiscretization& get_time_stepping_scheme() const
+    {return time_stepping_scheme;}
+    
     /**
     * @brief return the computed errors at each discre time point
     * 
@@ -245,19 +269,14 @@ class Time_CD2D
      * to avoid code duping. Is really not written very sophisticated,
      * use it with care.
      * @param block_mat should be one system's stiffness or mass matrix.
-     * @param la_stiff A fittingly constructed LocalAssemble2D object which
+     * @param la A fittingly constructed LocalAssemble2D object which
      * is responsible for the assembling of the stiffness matrix and right hand
      * side.
-     * @param la_masse A fittingly constructed LocalAssemble2D object which
-     * is responsible for the assembling of the mass matrix. The mass matrix
-     * will not be assembled and la_mass will be ignored, when assemble_both
-     * is 'false'.
      * @param assemble_both If true, both stiffness (+rhs) and mass matrix are
      * assembled, if false only stiffness matrix and rhs.
      */
     void call_assembling_routine(Time_CD2D::System_per_grid& system,
-                                 LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
-                                 bool assemble_both);
+                                 LocalAssembling2D& la, bool assemble_both);
 };
 
 #endif
