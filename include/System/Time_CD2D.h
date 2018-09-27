@@ -47,9 +47,6 @@ class Time_CD2D
       BlockVector rhs;
       /** @brief solution vector */
       BlockVector solution;
-      /** Stores stiffness_matrix * solution of last time step -
-       *  this is needed in (partly) explicit time stepping schemes.*/
-      BlockVector old_Au;
       /** @brief Finite element function */
       TFEFunction2D fe_function;
       /** @brief
@@ -64,19 +61,6 @@ class Time_CD2D
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
-
-      /**
-       * Reset the stiffness matrix A to its 'pure' state before the
-       * modifications due to a one-step/fractional-step theta scheme.
-       * Sets A = 1/(tau*theta_1)*(A - mass)
-       * This is for the case we want to reuse A in the next time step.
-       *
-       * @param tau The current time step length.
-       * @param theta_1 The impliciteness parameter for the transport (e.g. 1 for bw Euler).
-       */
-      void descale_stiff_matrix(double tau, double theta_1);
-
-      void update_old_Au();
 
       /**
        * Special member functions mostly deleted,
@@ -189,29 +173,6 @@ class Time_CD2D
      * are also prepared within the function
      */
     void assemble();
-    
-    /**
-     */
-    void prepare_rhs();
-    
-    /**
-     * Descales the stiffness matrices from the modifications due to time
-     * discretization (one step/fractional step theta).
-     * This should be called after all solve() of the current time step
-     * have been performed and the stiffness should be reused.
-     *
-     * Sets A := 1/(theta_1 * tau) * (A - M), where A is stiffness matrix and
-     * M mass matrix, on all grids.
-     *
-     * As a side effect, it updates the "old_Au" value which will be needed
-     * for the next time step.
-     *
-     *
-     * @param[in] tau The current timestep length.
-     * @param[in] theta_1 The impliciteness parameter for the transport
-     * (e.g. 1 for bw Euler).
-     */
-    void descale_stiffness(double tau, double theta_1);
 
     /** @brief solve the system
      */
