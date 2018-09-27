@@ -83,6 +83,12 @@ void NSnonsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
                                 int *N_BaseFuncts, double ***LocMatrices,
                                 double **LocRhs, double delta0);
 
+template <int d>
+void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
+                          double **OrigValues, int *N_BaseFuncts,
+                          double ***LocMatrices, double **LocRhs,
+                          double delta0);
+
 ///////////////////////////////////////////////////////////////////////////////
 // routines to pass parameters (values of fe functions) to local assembling 
 // routines

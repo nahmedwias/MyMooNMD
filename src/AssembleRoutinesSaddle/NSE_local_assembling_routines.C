@@ -532,6 +532,34 @@ void NSnonsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
 }
 
 template <int d>
+void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
+                          double **OrigValues, int *N_BaseFuncts,
+                          double ***LocMatrices, double **LocRhs, double delta0)
+{
+  double ** MatrixC = LocMatrices[d == 2 ? 4 : 9];
+  int N_P = N_BaseFuncts[1];
+  double * p_x = OrigValues[2+d];
+  double * p_y = OrigValues[3+d];
+  double * p_z = d == 2 ? nullptr : OrigValues[4+d];
+  double nu = coeff[0]; // = 1/reynolds_number
+  double delta = compute_PSPG_delta(0.1, hK, nu);
+  for(int i = 0; i < N_P; i++)
+  {
+    double test_x = delta * p_x[i];
+    double test_y = delta * p_y[i];
+    double test_z = d == 2 ? 0. : delta * p_z[i];
+    for(int j = 0; j < N_P; j++)
+    {
+      double ansatz_x = p_x[j];
+      double ansatz_y = p_y[j];
+      double ansatz_z = d == 2 ? 0. : p_z[j];
+      MatrixC[i][j] -= Mult * (test_x*ansatz_x + test_y*ansatz_y 
+                              +test_z*ansatz_z);
+    }
+  }
+}
+
+template <int d>
 void NSParamsVelocity(double *in, double *out)
 {
   out[0] = in[d]; // u1old
@@ -582,6 +610,9 @@ template void NSnonsymmGLS<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 template void NSnonsymmGLS_RightHandSide<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+template void NS_BrezziPitkaeranta<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 // not yet available
@@ -635,6 +666,9 @@ template void NSnonsymmGLS<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 template void NSnonsymmGLS_RightHandSide<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+template void NS_BrezziPitkaeranta<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 #endif // 3D

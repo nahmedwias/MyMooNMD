@@ -746,8 +746,8 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "The type of discretization. Note that not all types are possible for "
          "all problem classes.",
          {"galerkin", "supg", "upwind", "smagorinsky", "cip", "dg", "symm_gls",
-          "nonsymm_gls", "pspg", "vms_projection", "vms_projection_expl",
-          "local_projection", "local_projection_2_level",
+          "nonsymm_gls", "pspg", "brezzi_pitkaeranta", "vms_projection",
+          "vms_projection_expl", "local_projection", "local_projection_2_level",
           "residual_based_vms"}); 
   
   db.add("pspg_delta0", 0.1, 
@@ -946,6 +946,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   bool pspg = (disc_type == std::string("pspg"));
   bool symm_gls = (disc_type == std::string("symm_gls"));
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
+  bool brezzi_pitkaeranta = (disc_type == std::string("brezzi_pitkaeranta"));
   int nstype = TDatabase::ParamDB->NSTYPE;
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
@@ -962,7 +963,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   {
     ErrThrow("Skew symmetric case is not implemented for all NSTYPE");
   }
-  if(!galerkin && !pspg && !symm_gls && !nonsymm_gls)
+  if(!galerkin && !pspg && !symm_gls && !nonsymm_gls && !brezzi_pitkaeranta)
   {
     ErrThrow("unsupported space_discretization_type for NSE", d, "D: ",
              disc_type);
@@ -1049,6 +1050,16 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
     else if(nonsymm_gls)
       this->local_assemblings_routines.push_back(
         std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
+  }
+  else if(brezzi_pitkaeranta)
+  {
+    this->N_Terms += d; // the pressure derivatives
+    this->Derivatives.insert(this->Derivatives.end(), foi.begin()+1, foi.end());
+    for(int i = 0; i < d; ++i)
+      this->FESpaceNumber.push_back(1);
+    this->local_assemblings_routines.push_back(
+      std::bind(NS_BrezziPitkaeranta<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+                pspg_delta0));
   }
   switch(type)
   {
