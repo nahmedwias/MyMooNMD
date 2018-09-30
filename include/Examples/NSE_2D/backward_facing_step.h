@@ -70,6 +70,9 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeffs[i][1] = 0.; // f1
     coeffs[i][2] = 0.; // f2
     coeffs[i][3] = 0.; // div(u)
+    // additional coefficient (used only in the Brinkman problem)
+    coeffs[i][4] = 0.;
+
   }
 }
 
@@ -84,5 +87,6 @@ void NonLinCoeffs(int n_points, double *x, double *y,
     coeffs[i][0] = DIMENSIONLESS_VISCOSITY;
     coeffs[i][1] = parameters[i][0]; // u1
     coeffs[i][2] = parameters[i][1]; // u2
+
   }
 }

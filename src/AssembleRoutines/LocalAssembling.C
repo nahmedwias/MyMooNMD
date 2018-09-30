@@ -755,6 +755,8 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "Galerkin) is delta0 * h^2 /nu, where h is a cell measure (e.g. "
          "diameter), nu is the inverse of the reynolds number, and delta0 is "
          " this parameter.", 0., 10.);
+
+  db.merge(ParameterDatabase::parmoon_default_database());
   
   return db;
 }
@@ -948,6 +950,8 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
   bool brezzi_pitkaeranta = (disc_type == std::string("brezzi_pitkaeranta"));
   int nstype = TDatabase::ParamDB->NSTYPE;
+  int problem_type = db["problem_type"];
+  
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
     ErrThrow("Newton method is not supported yet");
@@ -1021,6 +1025,19 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
     else
     {
       this->local_assemblings_routines.push_back(NSLaplaceGradGrad<d>);
+    }
+  }
+
+  // add Darcy (resistance) term for Brinkman problem
+  if (problem_type == 7)
+  {
+    if(nstype == 1 || nstype == 2)
+    {
+      this->local_assemblings_routines.push_back(NSResistanceMassMatrixSingle<d>);
+    }
+    else
+    {
+      this->local_assemblings_routines.push_back(NSResistanceMassMatrix<d>);
     }
   }
   

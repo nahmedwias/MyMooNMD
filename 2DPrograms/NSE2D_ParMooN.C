@@ -79,8 +79,8 @@ int main(int argc, char* argv[])
     Output::print(); // new line for a new nonlinear iteration
     ns.solve();
     
-    //no nonlinear iteration for Stokes problem
-    if(parmoon_db["problem_type"].is(3))
+    //no nonlinear iteration for Stokes or Brinkman problems
+    if(parmoon_db["problem_type"].is(3) || parmoon_db["problem_type"].is(7))
       break;
     
     ns.assemble_nonlinear_term();

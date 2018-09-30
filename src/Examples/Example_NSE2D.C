@@ -34,6 +34,10 @@ namespace exampleD3
 {
   #include "NSE_2D/polynomial_solution.h"
 }
+namespace brinkman_poiseuille
+{
+  #include "NSE_2D/Brinkman_Poiseuille.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
@@ -181,6 +185,31 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       exampleD3::DIMENSIONLESS_VISCOSITY = get_nu();
       exampleD3::ExampleFile();
       break;
+    case 6:
+      /** exact_solution */
+      exact_solution.push_back( brinkman_poiseuille::ExactU1 );
+      exact_solution.push_back( brinkman_poiseuille::ExactU2 );
+      exact_solution.push_back( brinkman_poiseuille::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( brinkman_poiseuille::U1BoundValue );
+      boundary_data.push_back( brinkman_poiseuille::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = brinkman_poiseuille::LinCoeffs;
+      
+      // Set dimensionless viscosity
+      brinkman_poiseuille::effective_viscosity = get_nu();
+      brinkman_poiseuille::sigma = get_inverse_permeability();
+      brinkman_poiseuille::ExampleFile();
+      break;
+
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
@@ -218,5 +247,10 @@ double Example_NSE2D::get_nu() const
   double inverse_reynolds = this->example_database["reynolds_number"];
   inverse_reynolds = 1/inverse_reynolds;
   return inverse_reynolds;
+}
+
+double Example_NSE2D::get_inverse_permeability() const
+{
+  return this->example_database["inverse_permeability"];
 }
 
