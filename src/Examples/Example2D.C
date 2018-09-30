@@ -35,6 +35,10 @@ ParameterDatabase Example2D::default_example_database()
       "Diffusion coefficient: a factor in front of the diffusion term.",
       0., 1.);
 
+  db.add("inverse_permeability", (double) 0.,
+      "viscosity/permeability: a factor in front of the resistance term.",
+      (double) 0., (double) 1000000.);
+
   /** TDatabase::ParamDB->PERMEABILITY */
   db.add("permeability", (double) 1.,
       "permeability coefficient: a factor in front of the resistance term.",

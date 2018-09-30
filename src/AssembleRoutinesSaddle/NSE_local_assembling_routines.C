@@ -1,6 +1,54 @@
 #include "NSE_local_assembling_routines.h"
 
 template<int d>
+void NSResistanceMassMatrixSingle(double Mult, double *coeff,
+				  double *param,
+				  double hK, double **OrigValues,
+				  int *N_BaseFuncts,
+				  double ***LocMatrices, double **LocRhs)
+{
+  double ** MatrixA = LocMatrices[0];
+  int N_U = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  
+  for(int i = 0; i < N_U; i++)
+  {
+    double test = u[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      double ansatz = u[j];
+      MatrixA[i][j] += Mult * coeff[4] * (test*ansatz) ;
+    }
+  }
+}
+
+template <int d>
+void NSResistanceMassMatrix(double Mult, double *coeff, double *param,
+		  double hK, double**OrigValues, int *N_BaseFuncts,
+		  double ***LocMatrices, double **LocRhs)
+{
+  double ** MatrixA11 = LocMatrices[0];
+  double ** MatrixA22 = LocMatrices[d+1];
+  double ** MatrixA33 = d == 2 ? nullptr : LocMatrices[8];
+  int N_U = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  
+  for(int i = 0; i < N_U; i++)
+  {
+    double test = u[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      double ansatz = u[j];
+      double val = Mult * coeff[4] * ( test*ansatz );
+      MatrixA11[i][j] += val;
+      MatrixA22[i][j] += val;
+      if(d == 3)
+        MatrixA33[i][j] += val;
+    }
+  }
+}
+
+template<int d>
 void NSLaplaceGradGradSingle(double Mult, double *coeff, double *param,
                              double hK, double **OrigValues, int *N_BaseFuncts,
                              double ***LocMatrices, double **LocRhs)
@@ -27,6 +75,7 @@ void NSLaplaceGradGradSingle(double Mult, double *coeff, double *param,
     }
   }
 }
+
 
 template <int d>
 void NSLaplaceGradGrad(double Mult, double *coeff, double *param,
@@ -570,6 +619,14 @@ void NSParamsVelocity(double *in, double *out)
 
 // explicit instatiations below:
 #ifdef __2D__
+template void NSResistanceMassMatrixSingle<2>(
+  double Mult, double *coeff,double *param,double hK,
+  double **OrigValues,int *N_BaseFuncts,double ***LocMatrices,
+  double **LocRhs);
+template void NSResistanceMassMatrix<2>(
+  double Mult, double *coeff,double *param,double hK,
+  double **OrigValues,int *N_BaseFuncts,double ***LocMatrices,
+  double **LocRhs);
 template void NSLaplaceGradGradSingle<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
@@ -622,6 +679,14 @@ template void NS_BrezziPitkaeranta<2>(
 template void NSParamsVelocity<2>(double *in, double *out);
 #endif // 2D
 #ifdef __3D__
+template void NSResistanceMassMatrixSingle<3>(
+  double Mult, double *coeff,double *param,double hK,
+  double **OrigValues,int *N_BaseFuncts,double ***LocMatrices,
+  double **LocRhs);
+template void NSResistanceMassMatrix<3>(
+  double Mult, double *coeff,double *param,double hK,
+  double **OrigValues,int *N_BaseFuncts,double ***LocMatrices,
+  double **LocRhs);
 template void NSLaplaceGradGradSingle<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);

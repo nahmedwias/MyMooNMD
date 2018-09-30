@@ -4,6 +4,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 // standard terms (needed for Galerkin)
 
+template<int d>
+void NSResistanceMassMatrixSingle(double Mult, double *coeff,
+				  double *param,
+				  double hK, double **OrigValues,
+				  int *N_BaseFuncts,
+				  double ***LocMatrices, double **LocRhs);
+
+template<int d>
+void NSResistanceMassMatrix(double Mult, double *coeff,
+			    double *param,
+			    double hK, double **OrigValues,
+			    int *N_BaseFuncts,
+			    double ***LocMatrices, double **LocRhs);
+
 template <int d>
 void NSLaplaceGradGradSingle(double Mult, double *coeff, double *param,
                              double hK, double**OrigValues, int *N_BaseFuncts,

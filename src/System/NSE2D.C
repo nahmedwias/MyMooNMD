@@ -284,7 +284,8 @@ void NSE2D::get_velocity_pressure_orders(
 
 void NSE2D::set_parameters()
 {
-  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5) &&
+     !db["problem_type"].is(7) )
   {
     Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
         "nor to Stokes. It is now reset to the default value for NSE (=5).");
@@ -438,7 +439,8 @@ void NSE2D::assemble_nonlinear_term()
   
   bool mdml =  this->solver.is_using_multigrid() 
             && this->solver.get_multigrid()->is_using_mdml();
-  bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+  bool is_stokes = this->db["problem_type"].is(3) ||
+    this->db["problem_type"].is(7); // otherwise Navier-Stokes
   
   if ((mdml && !is_stokes)|| db["space_discretization_type"].is("upwind"))
   {
