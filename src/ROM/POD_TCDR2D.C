@@ -90,7 +90,7 @@ void POD_TCDR2D::assemble_gramian()
   LocalAssembling_type type;
   if (rom_db["pod_inner_product"].get<std::string>() == "l2")
   {
-	type = LocalAssembling_type::TCD2D_Mass;
+	//type = LocalAssembling_type::TCD2D_Mass;
   }
   else if (rom_db["pod_inner_product"].get<std::string>() == "eucl")
   {

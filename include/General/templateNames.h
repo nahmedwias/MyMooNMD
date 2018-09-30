@@ -42,7 +42,6 @@ struct Template_names<2>
   typedef BaseFunct2D BaseFunct;
   typedef CoeffFct2D CoeffFct;
   typedef ErrorMethod2D ErrorMethod;
-  typedef AssembleFctParam2D AssembleFctParam;
   typedef ManipulateFct2D ManipulateFct;
   typedef BoundCondFunct2D BoundaryConditionFunction;
   typedef BoundValueFunct2D BoundaryValuesFunction;
@@ -60,7 +59,6 @@ struct Template_names<3>
   typedef BaseFunct3D BaseFunct;
   typedef CoeffFct3D CoeffFct;
   typedef ErrorMethod3D ErrorMethod;
-  typedef AssembleFctParam3D AssembleFctParam;
   typedef ManipulateFct3D ManipulateFct;
   typedef BoundCondFunct3D BoundaryConditionFunction;
   typedef BoundValueFunct3D BoundaryValuesFunction;

@@ -20,7 +20,7 @@
 #include <ParFECommunicator3D.h>
 #endif
 
-ParameterDatabase get_default_NSE3D_parameters()
+ParameterDatabase NSE3D::default_NSE_database()
 {
   Output::print<5>("creating a default NSE3D parameter database");
   // we use a parmoon default database because this way these parameters are
@@ -29,14 +29,15 @@ ParameterDatabase get_default_NSE3D_parameters()
   db.set_name("NSE3D parameter database");
   
   //NSE3D requires a nonlinear iteration, set up a nonlinit_database and merge
-  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
-  db.merge(nl_db,true);
+  db.merge(ParameterDatabase::default_nonlinit_database(), true);
 
   // a default output database - needed here as long as there's no class handling the output
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
   
   db.merge(LocalAssembling3D::default_local_assembling_database(), true);
+  db.merge(Example3D::default_example_database(), true);
+  db.merge(Solver<>::default_solver_database(), true);
   
   //stokes case - reduce no nonlin its TODO remove global database dependency
   if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
@@ -155,7 +156,7 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
 #ifdef _MPI
              , int maxSubDomainPerDof
 #endif
-) : systems_(), example_(example), db(get_default_NSE3D_parameters()), outputWriter(param_db),
+) : systems_(), example_(example), db(default_NSE_database()), outputWriter(param_db),
     solver(param_db), defect_(), old_residuals_(), initial_residual_(1e10), 
     errors_()
 {
@@ -267,10 +268,6 @@ void NSE3D::check_parameters()
   if(TDatabase::ParamDB->LAPLACETYPE != 0)
   {
     ErrThrow("Every LAPLACETYPE except 0 is untested!");
-  }
-  if(!db["space_discretization_type"].is("galerkin"))
-  {
-    ErrThrow("Every 'space_discretizatin_type' except 'galerkin' is untested!");
   }
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM != 0)
   {
@@ -931,7 +928,7 @@ void NSE3D::output(int i)
     err_send[3]=err_u2[1];
     err_send[4]=err_u3[0];
     err_send[5]=err_u3[1];
-    err_send[6]=div_error;
+    err_send[6]=div_error*div_error;
     err_send[7]=err_p[0];
     err_send[8]=err_p[1];
 
@@ -955,8 +952,8 @@ void NSE3D::output(int i)
 #endif
 
     errors_.at(0) = sqrt(err_u1[0]*err_u1[0] + err_u2[0]*err_u2[0] + err_u3[0]*err_u3[0]);//L2
-    errors_.at(1) = sqrt(err_u1[1]*err_u1[1] + err_u2[1]*err_u2[1] + err_u3[1]*err_u3[1]);//H1-semi
-    errors_.at(2) = div_error;
+    errors_.at(1) = div_error;
+    errors_.at(2) = sqrt(err_u1[1]*err_u1[1] + err_u2[1]*err_u2[1] + err_u3[1]*err_u3[1]);//H1-semi
     errors_.at(3) = err_p[0];
     errors_.at(4) = err_p[1];
 
@@ -964,11 +961,11 @@ void NSE3D::output(int i)
     if(my_rank == 0)
     {
       Output::stat("NSE3D", "Measured errors");
-      Output::dash("L2(u)     : ", setprecision(10), errors_.at(0));
-      Output::dash("H1-semi(u): ", setprecision(10), errors_.at(1));
-      Output::dash("L2(div(u)): ", setprecision(10), errors_.at(2));
-      Output::dash("L2(p)     : ", setprecision(10), errors_.at(3));
-      Output::dash("H1-semi(p): ", setprecision(10), errors_.at(4));
+      Output::dash("L2(u)     : ", setprecision(14), errors_.at(0));
+      Output::dash("L2(div(u)): ", setprecision(14), errors_.at(1));
+      Output::dash("H1-semi(u): ", setprecision(14), errors_.at(2));
+      Output::dash("L2(p)     : ", setprecision(14), errors_.at(3));
+      Output::dash("H1-semi(p): ", setprecision(14), errors_.at(4));
     }
   } // if(this->db["compute_errors"])
   delete u1;

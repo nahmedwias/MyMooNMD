@@ -31,9 +31,7 @@ int main(int argc, char *argv[])
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  std::ifstream fs(argv[1]);
-  parmoon_db.read(fs);
-  fs.close();
+  parmoon_db.read(argv[1]);
   
   bool i_am_root = true;
 #ifdef _MPI
@@ -49,14 +47,14 @@ int main(int argc, char *argv[])
   Output::info("Time_CD3D", "MPI, using ", size, " processes");
 #endif
   
-  TFEDatabase3D feDatabase;
-  TDomain domain(parmoon_db, argv[1]);
-  
   // open outfile, this is where all output is written (additionally to console)
   if(i_am_root)
-    Output::set_outfile(parmoon_db["outfile"]);
+    Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
   
   Output::setVerbosity(parmoon_db["verbosity"]);
+  
+  TFEDatabase3D feDatabase;
+  TDomain domain(parmoon_db, argv[1]);
   
   if(i_am_root)
   {

@@ -50,37 +50,44 @@ void NSCoriolis(double Mult, double *coeff, double *param, double hK,
 // stabilization terms
 
 // PSPG (Pressure stabilization Petrov-Galerkin)
-double compute_PSPG_delta(double hK, double nu);
+double compute_PSPG_delta(double delta0, double hK, double nu);
 template <int d>
 void NSPSPG(double Mult, double *coeff, double *param, double hK,
             double **OrigValues, int *N_BaseFuncts,
-            double ***LocMatrices, double **LocRhs);
+            double ***LocMatrices, double **LocRhs, double delta0);
 template <int d>
 void NSPSPG_RightHandSide(double Mult, double *coeff, double *param, double hK,
                           double **OrigValues, int *N_BaseFuncts,
-                          double ***LocMatrices, double **LocRhs);
+                          double ***LocMatrices, double **LocRhs, double delta0);
 
 // symmetric GLS (Galerkin least-squares) method
 double compute_GLS_delta(double hK, double nu);
 template <int d>
 void NSsymmGLS(double Mult, double *coeff, double *param, double hK,
                double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs);
+               double ***LocMatrices, double **LocRhs, double delta0);
 template <int d>
 void NSsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
                              double hK, double **OrigValues, int *N_BaseFuncts,
-                             double ***LocMatrices, double **LocRhs);
+                             double ***LocMatrices, double **LocRhs,
+                             double delta0);
 
 // non-symmetric GLS (Galerkin least-squares) method
 template <int d>
 void NSnonsymmGLS(double Mult, double *coeff, double *param, double hK,
                   double **OrigValues, int *N_BaseFuncts,
-                  double ***LocMatrices, double **LocRhs);
+                  double ***LocMatrices, double **LocRhs, double delta0);
 template <int d>
 void NSnonsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
                                 double hK, double **OrigValues,
                                 int *N_BaseFuncts, double ***LocMatrices,
-                                double **LocRhs);
+                                double **LocRhs, double delta0);
+
+template <int d>
+void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
+                          double **OrigValues, int *N_BaseFuncts,
+                          double ***LocMatrices, double **LocRhs,
+                          double delta0);
 
 ///////////////////////////////////////////////////////////////////////////////
 // routines to pass parameters (values of fe functions) to local assembling 

@@ -30,9 +30,10 @@ int main(int argc, char* argv[])
   TFEDatabase2D FEDatabase;
   
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  std::ifstream fs(argv[1]);
-  parmoon_db.read(fs);
-  fs.close();
+  parmoon_db.read(argv[1]);
+  
+  Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
 
   // ======================================================================
   // set the database values and generate mesh
@@ -40,9 +41,6 @@ int main(int argc, char* argv[])
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
   TDomain Domain(parmoon_db, argv[1]);
   
-  Output::set_outfile(parmoon_db["outfile"]);
-  Output::setVerbosity(parmoon_db["verbosity"]);
-
   parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
@@ -61,15 +59,16 @@ int main(int argc, char* argv[])
   
   Example_TimeCD2D example( parmoon_db );
   Time_CD2D tcd(Domain, parmoon_db, example);
+  
+  TimeDiscretization& tss = tcd.get_time_stepping_scheme();
+  tss.current_step_ = 0;
+  tss.set_time_disc_parameters();
   // ======================================================================
   // assemble matrices and right hand side at start time  
   tcd.assemble_initial_time();
   // ======================================================================
   
   double end_time = TDatabase::TimeDB->ENDTIME; 
-  int step = 0;
-  int n_substeps = GetN_SubSteps();
-    
   tcd.output();
   // store initial condition as snapshot
   snaps.write_data(tcd.get_solution());
@@ -78,35 +77,22 @@ int main(int argc, char* argv[])
   // ======================================================================
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
-    step++;
+    tss.current_step_++;
     // Output::print("mem before: ", GetMemory());
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-    for(int j=0; j < n_substeps; ++j)
-    {
-      SetTimeDiscParameters(1);
-      if(step==1)
-      {
-        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
-        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
-        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
-        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
-      }
-      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-      TDatabase::TimeDB->CURRENTTIME += tau;
-      
-      Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-      
-      tcd.assemble();
-      
-      tcd.solve();
+    tss.set_time_disc_parameters();
+    double tau = parmoon_db["time_step_length"];
+    
+    TDatabase::TimeDB->CURRENTTIME += tau;
+    Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    SetTimeDiscParameters(1);
+    
+    tcd.assemble();    
+    tcd.solve();
       // write the snap shots
+    if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
       snaps.write_data(tcd.get_solution(), step);
-      tcd.descale_stiffness(tau, TDatabase::TimeDB->THETA1);
-
-      if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-        tcd.output();
-    }
-    // OutPut("mem after: " << GetMemory()<<endl);
+      tcd.output();
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");

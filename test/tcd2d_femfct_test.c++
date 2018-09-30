@@ -82,7 +82,7 @@ void testCN(Time_CD2D &tcd, int m)
   }
 }
 
-void time_integration(int td, Time_CD2D& tcd)
+void time_integration(int td, Time_CD2D& tcd, TimeDiscretization& tss)
 {
   TDatabase::TimeDB->TIME_DISC = td;
 
@@ -99,6 +99,7 @@ void time_integration(int td, Time_CD2D& tcd)
     step ++;
     TDatabase::TimeDB->INTERNAL_STARTTIME
        = TDatabase::TimeDB->CURRENTTIME;
+    tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
 
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
@@ -109,7 +110,6 @@ void time_integration(int td, Time_CD2D& tcd)
     tcd.assemble();
     tcd.solve();
 
-    tcd.descale_stiffness(tau, TDatabase::TimeDB->THETA1);
 
     testCN(tcd, step);
   }
@@ -125,6 +125,7 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example2D::default_example_database());
     db.merge(LocalAssembling2D::default_local_assembling_database());
+    db.merge(TimeDiscretization::default_TimeDiscretization_database(),true);
     db["example"] = 3;
     db["reynolds_number"] = 1e-20;
 
@@ -132,6 +133,10 @@ int main(int argc, char* argv[])
     db["algebraic_flux_correction"].set("fem-fct-cn");
 
     db["space_discretization_type"] = "galerkin";
+    db["time_discretization"] = "crank_nicolson";
+    db["time_start"]=0.;
+    db["time_end"]=0.02;
+    db["time_step_length"] = 0.001;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
 
     TDatabase::TimeDB->STARTTIME=0;
@@ -148,11 +153,16 @@ int main(int argc, char* argv[])
 
     db.add("solver_type", "direct", "", {"direct", "petsc"});
     Time_CD2D tcd(domain, db);
-    time_integration(2,tcd);
+    
+    TimeDiscretization& tss = tcd.get_time_stepping_scheme();
+    tss.current_step_ = 0;
+    tss.set_time_disc_parameters();
+    
+    time_integration(2,tcd, tss);
     
     db["solver_type"] = "petsc";
     Time_CD2D tcd_petsc(domain, db);
-    time_integration(2, tcd_petsc);
+    time_integration(2, tcd_petsc, tss);
   }
 }
 

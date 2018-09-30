@@ -1850,7 +1850,7 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
 #ifdef _MPI
     bool sbuf = is_enclosed_flow;
     bool rbuf = false;
-    MPI_Allreduce(&sbuf, &rbuf, 1, MPI::BOOL, MPI_LAND, MPI_COMM_WORLD);
+    MPI_Allreduce(&sbuf, &rbuf, 1, MPI_CXX_BOOL, MPI_LAND, MPI_COMM_WORLD);
     //rbuf will contain "true", if any of the processes held "true" before
     is_enclosed_flow = rbuf;
 #endif
