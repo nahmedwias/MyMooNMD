@@ -94,7 +94,7 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
         int n_terms, MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFctParam2D *assembleparam, CoeffFct2D coeffs,
+        AssembleFctParam assembleparam, CoeffFct2D coeffs,
         ManipulateFct2D *manipulate)
 {
   int i, j, max;

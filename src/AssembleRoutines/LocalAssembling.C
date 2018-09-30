@@ -17,6 +17,7 @@
 #include <FEDatabase2D.h>
 #endif
 #include "NSE_local_assembling_routines.h"
+#include "CD_local_assembling_routines.h"
 #include <DarcyMixed.h>
 
 #include <Brinkman3D_Mixed.h>
@@ -49,8 +50,7 @@ std::ostream& operator<<(std::ostream& out, const LocalAssembling_type value)
     PROCESS_VAL( Darcy );
     PROCESS_VAL(TCD3D);
     PROCESS_VAL(TCD3DStiffRhs);
-    PROCESS_VAL(TCD2D);
-    PROCESS_VAL(TCD2D_Mass);
+    PROCESS_VAL(TCDStiffMassRhs);
     PROCESS_VAL(NSE3D_Linear);
     PROCESS_VAL(NSE3D_NonLinear);
     PROCESS_VAL(TNSE3D_LinGAL);
@@ -399,6 +399,39 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       }
       break; // break for the type LocalAssembling3D_type::CD3D 
     }
+    case LocalAssembling_type::TCDStiffMassRhs:
+    case LocalAssembling_type::TCDStiffRhs:
+      this->set_parameters_for_tcd(type);
+      /*{
+        this->N_Matrices = 2;
+        this->RowSpace = { 0, 0 };
+        this->ColumnSpace = { 0, 0 };
+        this->N_Rhs = 1;
+        this->RhsSpace = { 0 };
+        this->N_Terms = d+1;
+        //this->Derivatives = { D000, D100, D010, D001 }; // or {D00, D10, D01}
+        this->Derivatives = indices_up_to_order<d>(1);
+        this->Needs2ndDerivatives = new bool[1];
+        this->Needs2ndDerivatives[0] = false;
+        this->FESpaceNumber = std::vector<int>(d+1, 0);
+        this->local_assemblings_routines.push_back(BilinearAssembleGalerkin<d>);
+        // this->local_assemblings_routines.push_back(LocalMatrixM);
+        this->Manipulate = nullptr;
+        if(disc_type.is("supg") )
+        {
+          this->Derivatives = indices_up_to_order<d>(2);
+          this->N_Terms = this->Derivatives.size();
+          this->Needs2ndDerivatives[0] = true;
+          this->FESpaceNumber = std::vector<int>(d+d+1, 0);          
+        }
+        else if(!disc_type.is("galerkin"))
+        {
+          ErrThrow("currently the discretization type ", disc_type,
+                   " is not supported by the class CD3D");
+        }
+      }
+      */break;
+    
     ///////////////////////////////////////////////////////////////////////////
     // TCD3D: nonstationary convection-diffusion-reaction problems
     case LocalAssembling_type::TCD3D:
@@ -490,76 +523,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
           break;
       }
       break;
-    }
-    case LocalAssembling_type::TCD2D:
-      if(d == 3) ErrThrow("unsupported local assembling type for 3D");
-      this->N_Matrices = 1;
-      this->RowSpace = { 0 };
-      this->ColumnSpace = { 0 };
-      this->N_Rhs = 1;
-      this->RhsSpace = { 0 };
-      this->Manipulate = nullptr;
-      if(disc_type.is("galerkin") && d == 2)
-      {
-        this->N_Terms = 3;
-        //this->Derivatives = { D10, D01, D00 };
-        this->Derivatives = indices_up_to_order<d>(1);
-        this->Derivatives.erase(this->Derivatives.begin());
-        this->Derivatives.push_back(indices_up_to_order<d>(0)[0]);
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = false;
-        this->FESpaceNumber = { 0, 0, 0 };
-#ifdef __2D__
-        this->local_assemblings_routines.push_back(LocalMatrixARhs);
-#endif
-      }
-      else if(disc_type.is("supg") && d == 2)
-      {
-        this->N_Terms = 5;
-        //this->Derivatives = { D10, D01, D00, D20, D02 };
-        auto sot = indices_up_to_order<d>(2);
-        this->Derivatives = {sot[1], sot[2], sot[0], sot[3], sot[5]};
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = true;
-        this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
-#ifdef __2D__
-            this->local_assemblings_routines.push_back(LocalMatrixARhs_SUPG);
-#endif
-      }
-      break;// case LocalAssembling2D_type::TCD2D:
-    case LocalAssembling_type::TCD2D_Mass:
-      if(d == 3) ErrThrow("unsupported local assembling type for 3D");
-      this->N_Matrices = 1;
-      this->RowSpace = { 0 };
-      this->ColumnSpace = { 0 };
-      this->N_Rhs = 0;
-      this->RhsSpace = { 0 };
-      this->Manipulate = nullptr;
-      if(disc_type.is("galerkin") && d == 2)
-      {
-        this->N_Terms = 1;
-        this->Derivatives = indices_up_to_order<d>(0);
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = false;
-        this->FESpaceNumber = { 0 };
-#ifdef __2D__
-        this->local_assemblings_routines.push_back(LocalMatrixM);
-#endif
-      }
-      else if(disc_type.is("supg") && d == 2)
-      {
-        this->N_Terms = 3;
-        //this->Derivatives = { D10, D01, D00 };
-        auto fot = indices_up_to_order<d>(1);
-        this->Derivatives = {fot[1], fot[2], fot[0]};
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = false;
-        this->FESpaceNumber = { 0, 0, 0 };
-#ifdef __2D__
-        this->local_assemblings_routines.push_back(LocalMatrixM_SUPG);
-#endif
-      }
-    break;  //LocalAssembling2D_type::TCD2D_Mass
+    } 
     ///////////////////////////////////////////////////////////////////////////
     case LocalAssembling_type::Darcy:
     {
@@ -618,7 +582,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       }
       break;
     default:
-      ErrThrow("Unknown or unhandled LocalAssembling3D_type case.");
+      ErrThrow("Unknown or unhandled LocalAssembling_type case. ", type);
   }
   
   AllOrigValues = new double** [N_Terms];
@@ -642,7 +606,7 @@ LocalAssembling<d>::LocalAssembling(
   int myN_Terms, MultiIndex_vector myDerivatives,
   std::vector<int> myFESpaceNumber, std::vector<int> myRowSpace,
   std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
-  CoeffFct myCoeffs, AssembleFctParam* myAssembleParam,
+  CoeffFct myCoeffs, AssembleFctParam myAssembleParam,
   ManipulateFct* myManipulate, int myN_Matrices, int myN_Rhs,
   int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
   std::vector<int> myBeginParameter, int myN_Parameters,
@@ -754,9 +718,15 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "The type of discretization. Note that not all types are possible for "
          "all problem classes.",
          {"galerkin", "supg", "upwind", "smagorinsky", "cip", "dg", "symm_gls",
-          "nonsymm_gls" "pspg", "vms_projection", "vms_projection_expl",
-          "local_projection", "local_projection_2_level",
+          "nonsymm_gls", "pspg", "brezzi_pitkaeranta", "vms_projection",
+          "vms_projection_expl", "local_projection", "local_projection_2_level",
           "residual_based_vms"}); 
+  
+  db.add("pspg_delta0", 0.1, 
+         "the stabilization parameter for pspg (Pressure Stabilization Petrov "
+         "Galerkin) is delta0 * h^2 /nu, where h is a cell measure (e.g. "
+         "diameter), nu is the inverse of the reynolds number, and delta0 is "
+         " this parameter.", 0., 10.);
   
   return db;
 }
@@ -784,7 +754,10 @@ void LocalAssembling<d>::GetLocalForms(int N_Points, double *weights,
   double *coefficients[N_Points];
   for(int i=0; i<N_Points; i++)
   {
-    parameters[i] = &this->parameter_functions_values[i*N_Parameters];
+    if(N_ParamFct == 0)
+      parameters[i] = nullptr;
+    else
+      parameters[i] = &this->parameter_functions_values[i*N_Parameters];
     coefficients[i] = local_coefficients[i].data();
   }
 
@@ -848,12 +821,12 @@ void LocalAssembling<d>::GetLocalForms(int N_Points, double *weights,
     Coeff = local_coefficients[i].data();
     Coeff[19] = AbsDetjk[i];
    
-    Param = &this->parameter_functions_values[i*N_Parameters];
+    Param = parameters[i];
 
     for(j=0; j<N_Terms; j++)
       OrigValues[j] = AllOrigValues[j][i];
 
-    for(auto lar : local_assemblings_routines)
+    for(auto& lar : local_assemblings_routines)
       lar(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, LocMatrix, LocRhs);
   } // end loop over quadrature points 
 }
@@ -887,12 +860,11 @@ void LocalAssembling<d>::GetParameters(int n_points,
 #endif
     auto& fe = fespace->get_fe(cellnum);
     auto BaseFunct_Id = fe.get_id();
+    N_BaseFunct[j] = fe.GetN_DOF();
 #ifdef __3D__
-    N_BaseFunct[j]=TFEDatabase3D::GetBaseFunct3D(BaseFunct_Id)->GetDimension();
     orig_values[j] = TFEDatabase3D::GetOrigElementValues(BaseFunct_Id,
                                                          FEValue_MultiIndex[j]);
 #else
-    N_BaseFunct[j]=TFEDatabase2D::GetBaseFunct2D(BaseFunct_Id)->GetDimension();
     orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id, 
                                                          FEValue_MultiIndex[j]);
 #endif
@@ -936,6 +908,50 @@ void LocalAssembling<d>::GetParameters(int n_points,
 }
 //========================================================================
 template<int d>
+void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
+{
+  this->N_Matrices = 2;
+  this->RowSpace = { 0, 0 };
+  this->ColumnSpace = { 0, 0 };
+  this->N_Rhs = 1;
+  this->RhsSpace = { 0 };
+  this->N_Terms = d+1;
+  //this->Derivatives = { D000, D100, D010, D001 }; // or {D00, D10, D01}
+  this->Derivatives = indices_up_to_order<d>(1);
+  this->Needs2ndDerivatives = new bool[1];
+  this->Needs2ndDerivatives[0] = false;
+  this->FESpaceNumber = std::vector<int>(d+1, 0);
+  this->Manipulate = nullptr;
+  
+  Parameter disc_type{this->db["space_discretization_type"]};
+  switch(type)
+  {
+    case LocalAssembling_type::TCDStiffMassRhs:
+      // stiffness matrix and rhs 
+      this->local_assemblings_routines.push_back(TCDStiff<d>);
+      // mass matrix 
+      this->local_assemblings_routines.push_back(TCDMass<d>);
+      // rhs 
+      this->local_assemblings_routines.push_back(TCDRhs<d>);
+      break;
+    case LocalAssembling_type::TCDStiffRhs:
+      // stiff matrix, rhs 
+      // stiffness matrix and rhs 
+      this->local_assemblings_routines.push_back(TCDStiff<d>);
+      // rhs 
+      this->local_assemblings_routines.push_back(TCDRhs<d>);
+      
+      if(disc_type.is("supg"))
+      {
+      }
+      break;
+      default:
+      ErrThrow("unknown LocalAssembling_type ", this->type);
+      break;
+  }
+}
+//========================================================================
+template<int d>
 void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
 {
   bool with_coriolis = db["with_coriolis_force"];
@@ -946,6 +962,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   bool pspg = (disc_type == std::string("pspg"));
   bool symm_gls = (disc_type == std::string("symm_gls"));
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
+  bool brezzi_pitkaeranta = (disc_type == std::string("brezzi_pitkaeranta"));
   int nstype = TDatabase::ParamDB->NSTYPE;
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
@@ -962,7 +979,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   {
     ErrThrow("Skew symmetric case is not implemented for all NSTYPE");
   }
-  if(!galerkin && !pspg && !symm_gls && !nonsymm_gls)
+  if(!galerkin && !pspg && !symm_gls && !nonsymm_gls && !brezzi_pitkaeranta)
   {
     ErrThrow("unsupported space_discretization_type for NSE", d, "D: ",
              disc_type);
@@ -1004,7 +1021,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   }
   else
   {
-    this->RowSpace = { 0, 0, 0, 0, 1, 1, 1, 0, 0 };
+    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0 };
     this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1 };
   }
   if(laplace_type_deformation)
@@ -1022,6 +1039,9 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       this->local_assemblings_routines.push_back(NSLaplaceGradGrad<d>);
     }
   }
+  
+  using namespace std::placeholders;
+  double pspg_delta0 = db["pspg_delta0"];
   if(pspg || symm_gls || nonsymm_gls) // need second derivatives
   {
     this->N_Terms = 2*d+2+d*(d+1)/2;
@@ -1038,11 +1058,24 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
     // or              {0, 1, 0, 0, 1, 1, 0, 0, 0}
     this->Needs2ndDerivatives[0] = true;
     if(pspg)
-      this->local_assemblings_routines.push_back(NSPSPG<d>);
+      this->local_assemblings_routines.push_back(
+        std::bind(NSPSPG<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
     else if(symm_gls)
-      this->local_assemblings_routines.push_back(NSsymmGLS<d>);
+      this->local_assemblings_routines.push_back(
+        std::bind(NSsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
     else if(nonsymm_gls)
-      this->local_assemblings_routines.push_back(NSnonsymmGLS<d>);
+      this->local_assemblings_routines.push_back(
+        std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
+  }
+  else if(brezzi_pitkaeranta)
+  {
+    this->N_Terms += d; // the pressure derivatives
+    this->Derivatives.insert(this->Derivatives.end(), foi.begin()+1, foi.end());
+    for(int i = 0; i < d; ++i)
+      this->FESpaceNumber.push_back(1);
+    this->local_assemblings_routines.push_back(
+      std::bind(NS_BrezziPitkaeranta<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+                pspg_delta0));
   }
   switch(type)
   {
@@ -1054,12 +1087,17 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
         this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
       }
       if(pspg)
-        this->local_assemblings_routines.push_back(NSPSPG_RightHandSide<d>);
+        this->local_assemblings_routines.push_back(
+          std::bind(NSPSPG_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+                    pspg_delta0));
       else if(symm_gls)
-        this->local_assemblings_routines.push_back(NSsymmGLS_RightHandSide<d>);
+        this->local_assemblings_routines.push_back(
+          std::bind(NSsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+                    pspg_delta0));
       else if(nonsymm_gls)
         this->local_assemblings_routines.push_back(
-          NSnonsymmGLS_RightHandSide<d>);
+          std::bind(NSnonsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7,
+                    _8, pspg_delta0));
       break;
     case LocalAssembling_type::NSE3D_NonLinear:
       if(nstype == 1 || nstype == 2)

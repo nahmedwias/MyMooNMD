@@ -37,7 +37,7 @@ double accuracy = 1e-6;
 
 void compare(const NSE2D& nse2d, std::array<double, int(5)> errors)
 {
-  std::array<double, int(5)> computed_errors = nse2d.get_errors();
+  auto computed_errors = nse2d.get_errors();
   
   // check the L2-error of the velcoity
   if( fabs(computed_errors[0]-errors[0]) > accuracy )

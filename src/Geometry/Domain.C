@@ -86,13 +86,13 @@ ParameterDatabase TDomain::default_domain_parameters()
         {"Default_UnitSquare", "Default_UnitCube"}
        );
    
-   db.add("geo_file", "Default_UnitSquare",
+   db.add("geo_file", "UnitSquare",
         "This files describes the computational mesh. You probably want to "
         "adjust this to be the path to some file which typically has the "
         "extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM "
         "files.",
         {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
-         "Default_UnitCube_Tetra","Default_UnitSquare"});
+         "Default_UnitCube_Tetra"});
    
    db.add("mesh_tetgen_file", std::string("Wuerfel"),
          "This files describes the computational mesh. Typically this files"

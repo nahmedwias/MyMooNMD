@@ -49,8 +49,8 @@ enum class LocalAssembling_type
     Darcy, // stationary Darcy problem (mixed form)
     TCD3D, // mass matrix (+ matrix comming from time discretization SUPG case)
     TCD3DStiffRhs, // stiffness matrix and right hand side
-    TCD2D, // stiffness matrix and rhs
-    TCD2D_Mass,// mass matrix, (+ K matrix in case of SUPG)
+    TCDStiffMassRhs,
+    TCDStiffRhs,
     NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
     TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
@@ -68,7 +68,6 @@ class LocalAssembling
   using FEFunction = typename Template_names<d>::FEFunction;
   using MultiIndex_vector = typename Template_names<d>::MultiIndex_vector;
   using CoeffFct = typename Template_names<d>::CoeffFct;
-  using AssembleFctParam = typename Template_names<d>::AssembleFctParam;
   using ManipulateFct = typename Template_names<d>::ManipulateFct;
   using BaseFunct = typename Template_names<d>::BaseFunct;
   
@@ -116,7 +115,7 @@ class LocalAssembling
 
     /** @brief function doing the real assembling using parameters from 
      *         argument list */
-    std::vector<AssembleFctParam*> local_assemblings_routines;
+    std::vector<AssembleFctParam> local_assemblings_routines;
 
     /** function for manipulating the coefficients */
     ManipulateFct *Manipulate;
@@ -159,6 +158,8 @@ class LocalAssembling
     
     static constexpr int n_local_coefficients = 40;
     std::vector<std::array<double, n_local_coefficients>> local_coefficients;
+    
+    void set_parameters_for_tcd(LocalAssembling_type type);
 
     /** Depending on the NSTYPE and the NSE_NONLINEAR_FORM all parameters are 
      * set within this function. This function is called from the constructor 
@@ -299,7 +300,7 @@ class LocalAssembling
                     std::vector<int> myColumnSpace,
                     std::vector<int> myRhsSpace,
                     CoeffFct myCoeffs, 
-                    AssembleFctParam* myAssembleParam,
+                    AssembleFctParam myAssembleParam,
                     ManipulateFct* myManipulate,
                     int myN_Matrices, int myN_Rhs,
                     int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
@@ -362,6 +363,12 @@ class LocalAssembling
     
     int get_n_rhs() const
     { return N_Rhs; }
+    
+    void ResetCoeffFct(CoeffFct f)
+    { Coeffs = f; }
+    
+    void SetN_Parameters(int n)
+    { N_Parameters = n; }
     
     void setBeginParameter(const std::vector<int>& beginParameter)
     { BeginParameter = beginParameter; }

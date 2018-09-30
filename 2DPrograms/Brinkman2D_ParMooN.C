@@ -83,9 +83,11 @@ int main(int argc, char* argv[])
   TFEDatabase2D FEDatabase;
 
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  std::ifstream fs(argv[1]); // the .dat file is transformed into a stream
-  parmoon_db.read(fs); // all parameters identified (according to read()) in the stream(.dat-file) are saved in parmoon_db
-  fs.close();
+  parmoon_db.read(argv[1]);
+  
+  // Open OUTFILE, this is where all output is written to (addionally to console)
+  Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
 
   // Set each variables' value in TDatabase using argv[1] (*.dat file)
   TDomain Domain(parmoon_db, argv[1]);
@@ -93,10 +95,6 @@ int main(int argc, char* argv[])
   // Test the mesh:
   //TCollection *coll = Domain.GetCollection(It_Finest, 0);
   //coll->writeMesh("test_mesh_file.mesh");
-
-  // Open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(parmoon_db["outfile"]);
-  Output::setVerbosity(parmoon_db["verbosity"]);
 
   // Write all Parameters to the OUTFILE (not to console) for later reference
   parmoon_db.write(Output::get_outfile());

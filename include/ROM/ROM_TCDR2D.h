@@ -86,11 +86,11 @@ class ROM_TCDR2D : public ROM
 
 	/** @brief assemble FE matrix by providing a local assembling routine 'local_assemble_param'
 	*/
-	void assemble(BlockFEMatrix &mat, AssembleFctParam2D *local_assemble_param);
+	void assemble(BlockFEMatrix &mat, AssembleFctParam *local_assemble_param);
 
 	/** @brief assemble FE rhs by providing a local assembling routine 'local_assemble_param'
 	*/
-	void assemble(BlockVector &rhs, AssembleFctParam2D *local_assemble_param);
+	void assemble(BlockVector &rhs, AssembleFctParam *local_assemble_param);
 
 	/**
 	 * @brief Assemble gramian matrix for reduction of finite element solution

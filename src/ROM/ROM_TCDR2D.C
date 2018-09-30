@@ -112,7 +112,7 @@ void ROM_TCDR2D::assemble_gramian()
 
   if (rom_db["pod_inner_product"].get<std::string>() == "l2")
   {
-	  this->assemble(this->gramian_matrix, mat_p_q);
+	  //this->assemble(this->gramian_matrix, mat_p_q);
   }
   else if (rom_db["pod_inner_product"].get<std::string>() == "eucl")
   {
@@ -133,22 +133,22 @@ void ROM_TCDR2D::assemble_reduce(bool only_rhs)
   
   if (!only_rhs)
   {
-    Output::print<1>("Assembling finite element mass matrix...");
-    this->assemble(fe_mass_mat, (supg) ? mat_p_q_supg : mat_p_q);
-    Output::print<1>("Reducing finite element mass matrix...");
-    this->mass_mat = ROM::reduce(fe_mass_mat.get_combined_matrix());
-    
-    Output::print<1>("Assembling finite element convection-diffusion-reaction matrix...");
-    this->assemble(fe_cdr_mat, (supg) ? mat_cdr_supg : mat_cdr);
-    
-    Output::print<1>("Reducing finite element convection-diffusion-reaction matrix...");
-    this->cdr_mat      = ROM::reduce(fe_cdr_mat.get_combined_matrix());
-    
-    Output::print<1>("Reducing finite element convection-diffusion-reaction matrix times snaps mean...");
-    this->cdr_mat_mean = ROM::reduce_mat_mean(fe_cdr_mat.get_combined_matrix());
+//     Output::print<1>("Assembling finite element mass matrix...");
+//     this->assemble(fe_mass_mat, (supg) ? mat_p_q_supg : mat_p_q);
+//     Output::print<1>("Reducing finite element mass matrix...");
+//     this->mass_mat = ROM::reduce(fe_mass_mat.get_combined_matrix());
+//     
+//     Output::print<1>("Assembling finite element convection-diffusion-reaction matrix...");
+//     this->assemble(fe_cdr_mat, (supg) ? mat_cdr_supg : mat_cdr);
+//     
+//     Output::print<1>("Reducing finite element convection-diffusion-reaction matrix...");
+//     this->cdr_mat      = ROM::reduce(fe_cdr_mat.get_combined_matrix());
+//     
+//     Output::print<1>("Reducing finite element convection-diffusion-reaction matrix times snaps mean...");
+//     this->cdr_mat_mean = ROM::reduce_mat_mean(fe_cdr_mat.get_combined_matrix());
   }
   Output::print<1>("Assembling finite element source term...");
-  this->assemble(fe_rhs, (supg) ? rhs_f_q_supg : rhs_f_q);
+  // this->assemble(fe_rhs, (supg) ? rhs_f_q_supg : rhs_f_q);
   
   Output::print<1>("Reducing source term...");
   this->source = ROM::reduce(fe_rhs.get_entries());
@@ -173,7 +173,7 @@ void ROM_TCDR2D::compute_initial_solution()
     
     /* assemble and reduce the stiffness matrix (without diffusion parameter) */
     BlockFEMatrix h1_mat = BlockFEMatrix::CD2D(fe_space);
-    this->assemble(h1_mat, mat_gradp_gradq);
+    //this->assemble(h1_mat, mat_gradp_gradq);
     ublas::matrix<double> red_h1_mat      = ROM::reduce(h1_mat.get_combined_matrix());
     ublas::vector<double> red_h1_mat_mean = ROM::reduce_mat_mean(h1_mat.get_combined_matrix());
     
@@ -300,7 +300,7 @@ void ROM_TCDR2D::output(int time_step)
 }
 
 /**************************************************************************** */
-void ROM_TCDR2D::assemble(BlockFEMatrix &mat, AssembleFctParam2D *local_assemble_param)
+void ROM_TCDR2D::assemble(BlockFEMatrix &mat, AssembleFctParam *local_assemble_param)
 {
   int n_matrices = 1;
   std::vector<int> row_space = { 0 };
@@ -324,28 +324,28 @@ void ROM_TCDR2D::assemble(BlockFEMatrix &mat, AssembleFctParam2D *local_assemble
   
   TFEFunction2D * pointer_to_function = &this->fe_function;
   
-  LocalAssembling2D la_mat(n_terms, derivatives, fe_space_number, row_space, col_space,
-                           rhs_space, this->example.get_coeffs(), local_assemble_param,
-                           manipulate, n_matrices, n_rhs, n_param_fct, param_fct, begin_param,
-                           n_param, &pointer_to_function, n_fe_values, fe_value_fct_index,
-                           fe_value_multi_index);
+//   LocalAssembling2D la_mat(n_terms, derivatives, fe_space_number, row_space, col_space,
+//                            rhs_space, this->example.get_coeffs(), local_assemble_param,
+//                            manipulate, n_matrices, n_rhs, n_param_fct, param_fct, begin_param,
+//                            n_param, &pointer_to_function, n_fe_values, fe_value_fct_index,
+//                            fe_value_multi_index);
 
-  const TFESpace2D * _fe_space = &this->fe_space;
-  BoundCondFunct2D * boundary_conditions = _fe_space->get_boundary_condition();
-  BoundValueFunct2D * non_const_bound_value[1] {this->example.get_bd()[0]};
-  //fetch matrix as block
-  std::vector<std::shared_ptr<FEMatrix>> mat_blocks = mat.get_blocks_uniquely();
-  TSquareMatrix2D * mat_block[1]{reinterpret_cast<TSquareMatrix2D*>(mat_blocks.at(0).get())};
-  
-  //do the assembling
-  mat_block[0]->reset();
-  Assemble2D(1, &_fe_space, n_matrices, mat_block, 0, NULL, 0, NULL,
-             NULL, &boundary_conditions, non_const_bound_value, la_mat);
+//   const TFESpace2D * _fe_space = &this->fe_space;
+//   BoundCondFunct2D * boundary_conditions = _fe_space->get_boundary_condition();
+//   BoundValueFunct2D * non_const_bound_value[1] {this->example.get_bd()[0]};
+//   //fetch matrix as block
+//   std::vector<std::shared_ptr<FEMatrix>> mat_blocks = mat.get_blocks_uniquely();
+//   TSquareMatrix2D * mat_block[1]{reinterpret_cast<TSquareMatrix2D*>(mat_blocks.at(0).get())};
+//   
+//   //do the assembling
+//   mat_block[0]->reset();
+//   Assemble2D(1, &_fe_space, n_matrices, mat_block, 0, NULL, 0, NULL,
+//              NULL, &boundary_conditions, non_const_bound_value, la_mat);
 }
 
 
 /**************************************************************************** */
-void ROM_TCDR2D::assemble(BlockVector &rhs, AssembleFctParam2D *local_assemble_param)
+void ROM_TCDR2D::assemble(BlockVector &rhs, AssembleFctParam *local_assemble_param)
 {
   int n_matrices = 0;
   std::vector<int> row_space = { 0 };
@@ -369,20 +369,20 @@ void ROM_TCDR2D::assemble(BlockVector &rhs, AssembleFctParam2D *local_assemble_p
   
   TFEFunction2D * pointer_to_function = &this->fe_function;
   
-  LocalAssembling2D la_rhs(n_terms, derivatives, fe_space_number, row_space, col_space,
-                           rhs_space, this->example.get_coeffs(), local_assemble_param,
-                           manipulate, n_matrices, n_rhs, n_param_fct, param_fct, begin_param,
-                           n_param, &pointer_to_function, n_fe_values, fe_value_fct_index,
-                           fe_value_multi_index);
+//   LocalAssembling2D la_rhs(n_terms, derivatives, fe_space_number, row_space, col_space,
+//                            rhs_space, this->example.get_coeffs(), local_assemble_param,
+//                            manipulate, n_matrices, n_rhs, n_param_fct, param_fct, begin_param,
+//                            n_param, &pointer_to_function, n_fe_values, fe_value_fct_index,
+//                            fe_value_multi_index);
 
-  const TFESpace2D * _fe_space = &this->fe_space;
-  BoundCondFunct2D * boundary_conditions = _fe_space->get_boundary_condition();
-  BoundValueFunct2D * non_const_bound_value[1] {this->example.get_bd()[0]};
-  
-  double * rhs_entries = rhs.get_entries();
-  rhs.reset();
-  
-  //do the assembling
-  Assemble2D(1, &_fe_space, 0, NULL, 0, NULL, n_rhs, &rhs_entries,
-             &_fe_space, &boundary_conditions, non_const_bound_value, la_rhs);
+//   const TFESpace2D * _fe_space = &this->fe_space;
+//   BoundCondFunct2D * boundary_conditions = _fe_space->get_boundary_condition();
+//   BoundValueFunct2D * non_const_bound_value[1] {this->example.get_bd()[0]};
+//   
+//   double * rhs_entries = rhs.get_entries();
+//   rhs.reset();
+//   
+//   //do the assembling
+//   Assemble2D(1, &_fe_space, 0, NULL, 0, NULL, n_rhs, &rhs_entries,
+//              &_fe_space, &boundary_conditions, non_const_bound_value, la_rhs);
 }
