@@ -130,6 +130,11 @@ void ChannelTau180::setParameters(ParameterDatabase &db)
       TDatabase::ParamDB->INTERNAL_BULK_MEAN = 17.5452;
       TDatabase::ParamDB->INTERNAL_BULK_SIMULATION = 17.5452;
     }
+    if (TDatabase::ParamDB->RE_NR==590)
+    {
+      TDatabase::ParamDB->INTERNAL_BULK_MEAN = 18.6544005283276;
+      TDatabase::ParamDB->INTERNAL_BULK_SIMULATION = 18.6544005283276;
+    }
     if (TDatabase::ParamDB->CELL_MEASURE==0)
     {
       TDatabase::ParamDB->CELL_MEASURE = 2;
