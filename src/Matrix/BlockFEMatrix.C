@@ -1845,7 +1845,7 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
 
   bool needs_prc = is_saddle_point_problem && is_enclosed_flow;
   
-  if(TDatabase::ParamDB->RE_NR == 180 || TDatabase::ParamDB->RE_NR == 395.)
+  if(TDatabase::ParamDB->RE_NR == 180 || TDatabase::ParamDB->RE_NR == 395. || TDatabase::ParamDB->RE_NR == 590)
   {
     needs_prc = false;
   }
