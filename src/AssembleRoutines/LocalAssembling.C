@@ -1059,6 +1059,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   // stabilization
   using namespace std::placeholders;
   double pspg_delta0 = db["pspg_delta0"];
+  double gls_stab = db["gls_stab"];
  
   
   if(pspg || symm_gls || nonsymm_gls) // need second derivatives
@@ -1081,10 +1082,10 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
         std::bind(NSPSPG<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
     else if(symm_gls)
       this->local_assemblings_routines.push_back(
-        std::bind(NSsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
+        std::bind(NSsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
     else if(nonsymm_gls)
       this->local_assemblings_routines.push_back(
-        std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
+        std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
   }
   else if(brezzi_pitkaeranta)
   {
