@@ -756,6 +756,21 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "diameter), nu is the inverse of the reynolds number, and delta0 is "
          " this parameter.", 0., 10.);
 
+  ///@todo add a parameter for the characteristic length L_0 (Brinkman case)  
+  db.add("graddiv_stab", 0., 
+         "the stabilization parameter for Grad-Div is delta0 (nu + sigma L_0^2), "
+	 " where L is a characteristic length (taken equal to 1), nu is the "
+	 "inverse of the reynolds number,"
+	 " sigma is the inverse of permeability, and delta0 is this parameter.", 0., 10.);
+
+  db.add("gls_stab", 0.1, 
+         "the stabilization parameter for GLS stabilization is "
+	 " delta0 h^2/(nu + sigma L_0^2), "
+	 " where L_0 is a characteristic length (taken equal to 1), nu is the "
+	 "inverse of the reynolds number,"
+	 " sigma is the inverse of permeability, and delta0 is this parameter.", 0., 10.);
+
+  
   db.merge(ParameterDatabase::parmoon_default_database());
   
   return db;
@@ -1040,9 +1055,12 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       this->local_assemblings_routines.push_back(NSResistanceMassMatrix<d>);
     }
   }
-  
+
+  // stabilization
   using namespace std::placeholders;
   double pspg_delta0 = db["pspg_delta0"];
+ 
+  
   if(pspg || symm_gls || nonsymm_gls) // need second derivatives
   {
     this->N_Terms = 2*d+2+d*(d+1)/2;
@@ -1078,10 +1096,36 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       std::bind(NS_BrezziPitkaeranta<d>, _1, _2, _3, _4, _5, _6, _7, _8,
                 pspg_delta0));
   }
+
+  // grad-div stabilization
+  
+  double graddiv_stab = db["graddiv_stab"];
+  if (fabs(graddiv_stab)>1e-10) 
+  {
+    Output::print(" ADD GRADDIV ");
+    this->local_assemblings_routines.push_back(
+					       std::bind(NSGradDiv<d>,
+							 _1, _2, _3, _4, _5, _6, _7, _8,
+							 graddiv_stab));
+  }
+  
+  
   switch(type)
   {
     case LocalAssembling_type::NSE3D_Linear:
-      this->local_assemblings_routines.push_back(NSDivergenceBlocks<d>);
+      //this->local_assemblings_routines.push_back(NSDivergenceBlocks<d>);
+      if(nonsymm_gls)
+      {
+	this->local_assemblings_routines.push_back(
+						   std::bind(NSDivergenceBlocks<d>,
+							     _1, _2, _3, _4, _5, _6,
+							     _7, _8, -1));
+      } else {
+	this->local_assemblings_routines.push_back(
+						   std::bind(NSDivergenceBlocks<d>,
+							     _1, _2, _3, _4, _5, _6,
+							     _7, _8, 1));
+      }
       this->local_assemblings_routines.push_back(NSRightHandSide<d>);
       if(nstype == 2 || nstype == 4 || nstype == 14)
       {
