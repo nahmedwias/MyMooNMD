@@ -33,7 +33,7 @@ void NSLaplaceDeformation(double Mult, double *coeff, double *param, double hK,
 template <int d>
 void NSDivergenceBlocks(double Mult, double *coeff, double *param, double hK,
                         double**OrigValues, int *N_BaseFuncts, double ***LocMatrices, 
-                        double **LocRhs);
+                        double **LocRhs, int sign=1);
 template <int d>
 void NSGradientBlocks(double Mult, double *coeff, double *param, double hK,
                       double**OrigValues, int *N_BaseFuncts,
@@ -63,6 +63,16 @@ void NSCoriolis(double Mult, double *coeff, double *param, double hK,
 ///////////////////////////////////////////////////////////////////////////////
 // stabilization terms
 
+// Grad-Div
+template <int d>
+void NSGradDiv(double Mult, double *coeff, double *param, double hK,
+            double **OrigValues, int *N_BaseFuncts,
+            double ***LocMatrices, double **LocRhs, double delta0);
+template <int d>
+void NSGradDiv_RightHandSide(double Mult, double *coeff, double *param, double hK,
+                          double **OrigValues, int *N_BaseFuncts,
+                          double ***LocMatrices, double **LocRhs, double delta0);
+
 // PSPG (Pressure stabilization Petrov-Galerkin)
 double compute_PSPG_delta(double delta0, double hK, double nu);
 template <int d>
@@ -75,7 +85,8 @@ void NSPSPG_RightHandSide(double Mult, double *coeff, double *param, double hK,
                           double ***LocMatrices, double **LocRhs, double delta0);
 
 // symmetric GLS (Galerkin least-squares) method
-double compute_GLS_delta(double hK, double nu);
+double compute_GLS_delta(double delta0, double hK, double nu, double sigma=0.);
+
 template <int d>
 void NSsymmGLS(double Mult, double *coeff, double *param, double hK,
                double **OrigValues, int *N_BaseFuncts,
