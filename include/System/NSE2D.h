@@ -211,6 +211,12 @@ class NSE2D
      * up correctly. 
      */
     void assemble_nonlinear_term();
+
+     /** @brief assemble boundary term
+      * Assemble terms defined over specific set of edges. These can
+      * be related to Neumann bc, or to Nitsche penalty method.
+     */
+    void assemble_boundary_terms();
     
     /** @brief solve the system */
     void solve();
