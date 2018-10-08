@@ -289,7 +289,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       //this->Derivatives = { D10, D01, D00, D00, D10, D01};                // u_x, u_y, u, p, p_x, p_y
       auto first_order_indices = indices_up_to_order<d>(1);
       this->Derivatives = {first_order_indices[1], first_order_indices[2]};
-      this->Derivatives.insert(this->Derivatives.end(), 2,
+      this->Derivatives.insert(this->Derivatives.end(), 1,
                               indices_up_to_order<d>(0)[0]);
       this->Derivatives.insert(this->Derivatives.end(),
                                first_order_indices.begin(),
@@ -318,7 +318,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       auto first_order_indices = indices_up_to_order<d>(1);
       auto second_order_indices = indices_up_to_order<d>(2);
       this->Derivatives = {first_order_indices[1], first_order_indices[2]};
-      this->Derivatives.insert(this->Derivatives.end(), 2,
+      this->Derivatives.insert(this->Derivatives.end(), 1,
                               indices_up_to_order<d>(0)[0]);
       this->Derivatives.insert(this->Derivatives.end(),
                                first_order_indices.begin(),
@@ -761,15 +761,23 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "the stabilization parameter for Grad-Div is delta0 (nu + sigma L_0^2), "
 	 " where L is a characteristic length (taken equal to 1), nu is the "
 	 "inverse of the reynolds number,"
-	 " sigma is the inverse of permeability, and delta0 is this parameter.", 0., 10.);
+	 " sigma is the inverse of permeability, and delta0 is this parameter.", 0., 10000.);
 
-  db.add("gls_stab", 0.1, 
+  db.add("gls_stab", 0.,
          "the stabilization parameter for GLS stabilization is "
 	 " delta0 h^2/(nu + sigma L_0^2), "
 	 " where L_0 is a characteristic length (taken equal to 1), nu is the "
 	 "inverse of the reynolds number,"
-	 " sigma is the inverse of permeability, and delta0 is this parameter.", 0., 10.);
+	 " sigma is the inverse of permeability, and delta0 is this parameter.", 0., 10000.);
 
+  db.add("L_0", 1.,
+         "the parameter for relating Stokes with Darcy terms in Brinkman problem "
+   " which is a characteristic length (by default equal to 1).", 0., 10000.);
+
+  db.add("corner_stab", 0.,
+         "the stabilization parameter needed for the Darcy limit of Brinkman in order"
+         "to restrict normal jumps of the velocity across corners of the domain"
+         "(by default equal to 0)", 0., 10000.);
   
   db.merge(ParameterDatabase::parmoon_default_database());
   
@@ -1084,8 +1092,14 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       this->local_assemblings_routines.push_back(
         std::bind(NSsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
     else if(nonsymm_gls)
+      {
       this->local_assemblings_routines.push_back(
         std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
+
+  ///    this->local_assemblings_routines.push_back(
+  ///      std::bind(NSnonsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
+  ///    Output::print(" ADD nonsymmGLS ");
+      }
   }
   else if(brezzi_pitkaeranta)
   {
@@ -1105,48 +1119,56 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   {
     Output::print(" ADD GRADDIV ");
     this->local_assemblings_routines.push_back(
-					       std::bind(NSGradDiv<d>,
-							 _1, _2, _3, _4, _5, _6, _7, _8,
-							 graddiv_stab));
+        std::bind(NSGradDiv<d>,
+            _1, _2, _3, _4, _5, _6, _7, _8,
+            graddiv_stab));
+
+    this->local_assemblings_routines.push_back(
+        std::bind(NSGradDiv_RightHandSide<d>,
+            _1, _2, _3, _4, _5, _6, _7, _8,
+            graddiv_stab));
   }
-  
-  
+
+
   switch(type)
   {
-    case LocalAssembling_type::NSE3D_Linear:
-      //this->local_assemblings_routines.push_back(NSDivergenceBlocks<d>);
-      if(nonsymm_gls)
-      {
-	this->local_assemblings_routines.push_back(
-						   std::bind(NSDivergenceBlocks<d>,
-							     _1, _2, _3, _4, _5, _6,
-							     _7, _8, -1));
-      } else {
-	this->local_assemblings_routines.push_back(
-						   std::bind(NSDivergenceBlocks<d>,
-							     _1, _2, _3, _4, _5, _6,
-							     _7, _8, 1));
-      }
-      this->local_assemblings_routines.push_back(NSRightHandSide<d>);
-      if(nstype == 2 || nstype == 4 || nstype == 14)
-      {
-        this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
-      }
-      if(pspg)
-        this->local_assemblings_routines.push_back(
+  case LocalAssembling_type::NSE3D_Linear:
+    //this->local_assemblings_routines.push_back(NSDivergenceBlocks<d>);
+    if(nonsymm_gls)
+    {
+      this->local_assemblings_routines.push_back(
+          std::bind(NSDivergenceBlocks<d>,
+              _1, _2, _3, _4, _5, _6,
+              _7, _8, -1));
+    }
+    else
+    {
+      this->local_assemblings_routines.push_back(
+          std::bind(NSDivergenceBlocks<d>,
+              _1, _2, _3, _4, _5, _6,
+              _7, _8, 1));
+    }
+    this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+        _7, _8, -1));
+    if(nstype == 2 || nstype == 4 || nstype == 14)
+    {
+      this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
+    }
+    if(pspg)
+      this->local_assemblings_routines.push_back(
           std::bind(NSPSPG_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
-                    pspg_delta0));
-      else if(symm_gls)
-        this->local_assemblings_routines.push_back(
+              pspg_delta0));
+    else if(symm_gls)
+      this->local_assemblings_routines.push_back(
           std::bind(NSsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
-                    pspg_delta0));
-      else if(nonsymm_gls)
-        this->local_assemblings_routines.push_back(
+              gls_stab)); ///pspg_delta0));
+    else if(nonsymm_gls)
+      this->local_assemblings_routines.push_back(
           std::bind(NSnonsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7,
-                    _8, pspg_delta0));
-      break;
-    case LocalAssembling_type::NSE3D_NonLinear:
-      if(nstype == 1 || nstype == 2)
+              _8, gls_stab)); ///pspg_delta0));
+    break;
+  case LocalAssembling_type::NSE3D_NonLinear:
+    if(nstype == 1 || nstype == 2)
       {
         this->local_assemblings_routines.push_back(NSNonlinearTermSingle<d>);
       }

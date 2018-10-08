@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
 		coll = brinkman2d->get_pressure_space().GetCollection();
 
 		TFESpace2D coefficient_function_FEspace(coll, "coefficient_function_FEspace", "s",
-				BoundConditionNoBoundCondition, 0, nullptr);
+				BoundConditionNoBoundCondition, 0);
 		BlockVector coefficient_function_vector(coefficient_function_FEspace.GetN_DegreesOfFreedom());
 
 		TFEFunction2D coefficient_function(&coefficient_function_FEspace, "coefficient_function", "coefficient_function",
@@ -338,7 +338,7 @@ int main(int argc, char* argv[])
 				// create a FEFunction which will serve as the coefficient_function:
 				// fe space of piecewise constant functions
 				TFESpace2D coefficient_function_FEspace(coll, "coefficient_function_FEspace", "s",
-						BoundConditionNoBoundCondition, 0, nullptr);
+						BoundConditionNoBoundCondition, 0);
 				BlockVector coefficient_function_vector(coefficient_function_FEspace.GetN_DegreesOfFreedom());
 				TFEFunction2D coefficient_function(
 						&coefficient_function_FEspace, "coefficient_function", "coefficient_function",
@@ -374,7 +374,7 @@ int main(int argc, char* argv[])
 				Output::print("It is assumed that a mesh and a fitting TFEFunction2D ReadSol() file are provided.");
 
 				TFESpace2D coefficient_function_FEspace(coll, "coefficient_function_FEspace", "s",
-						BoundConditionNoBoundCondition, 0, nullptr);
+						BoundConditionNoBoundCondition, 0);
 				BlockVector coefficient_function_vector(coefficient_function_FEspace.GetN_DegreesOfFreedom());
 
 				TFEFunction2D coefficient_function(&coefficient_function_FEspace, "coefficient_function", "coefficient_function",
@@ -496,9 +496,9 @@ int main(int argc, char* argv[])
 		// OLD 21.06.18: auto coll = cd2d.get_space().GetCollection();
 		// fe space of piecewise constant functions
 		TFESpace2D convection_function1_FEspace(coll, "convection_function1_FEspace", "s",
-				BoundConditionNoBoundCondition, 0, nullptr);
+				BoundConditionNoBoundCondition, 0);
 		TFESpace2D convection_function2_FEspace(coll, "convection_function2_FEspace", "s",
-				BoundConditionNoBoundCondition, 0, nullptr);
+				BoundConditionNoBoundCondition, 0);
 		BlockVector convection_function1_vector(convection_function1_FEspace.GetN_DegreesOfFreedom());
 		BlockVector convection_function2_vector(convection_function2_FEspace.GetN_DegreesOfFreedom());
 		TFEFunction2D convection_function1(
@@ -589,7 +589,7 @@ int main(int argc, char* argv[])
 		// OLD 21.06.18: auto coll = cd2d.get_space().GetCollection();
 		// fe space of piecewise constant functions
 		TFESpace2D convection_function1_FEspace(coll, "convection_function1_FEspace", "s",
-				BoundConditionNoBoundCondition, 0, nullptr);
+				BoundConditionNoBoundCondition, 0);
 		BlockVector convection_function1_vector(convection_function1_FEspace.GetN_DegreesOfFreedom());
 		TFEFunction2D convection_function1(
 				&convection_function1_FEspace, "convection_function1", "convection_function1",
@@ -626,9 +626,9 @@ int main(int argc, char* argv[])
 		/// read_coll = *tmp_collection;
 
 		TFESpace2D coefficient_function_u1_FEspace(coll, "coefficient_function_u1_FEspace", "s",
-				BoundConditionNoBoundCondition, 0, nullptr);
+				BoundConditionNoBoundCondition, 0);
 		TFESpace2D coefficient_function_u2_FEspace(coll, "coefficient_function_u2_FEspace", "s",
-				BoundConditionNoBoundCondition, 0, nullptr);
+				BoundConditionNoBoundCondition, 0);
 		BlockVector coefficient_function_u1_vector(coefficient_function_u1_FEspace.GetN_DegreesOfFreedom());
 		BlockVector coefficient_function_u2_vector(coefficient_function_u2_FEspace.GetN_DegreesOfFreedom());
 

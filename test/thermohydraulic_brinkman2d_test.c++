@@ -21,7 +21,7 @@
  * @author Laura Blank
  *
  */
-
+/*
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
@@ -356,12 +356,12 @@ int main(int argc, char* argv[])
 
   
 
-/*// Tests including boundary errors
-nRefinements = 7;
-tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example8(nRefinements, db);
-tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(nRefinements, db);
-tests_on_triangles_P2P2_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(nRefinements, db);
-*/
+// Tests including boundary errors
+//nRefinements = 7;
+//tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example8(nRefinements, db);
+//tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(nRefinements, db);
+//tests_on_triangles_P2P2_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_GradDivStab_Example1(nRefinements, db);
+
 
 return 0;
-}
+}*/

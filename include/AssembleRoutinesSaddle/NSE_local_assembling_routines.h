@@ -41,7 +41,7 @@ void NSGradientBlocks(double Mult, double *coeff, double *param, double hK,
 template <int d>
 void NSRightHandSide(double Mult, double *coeff, double *param, double hK,
                      double **OrigValues, int *N_BaseFuncts,
-                     double ***LocMatrices, double **LocRhs);
+                     double ***LocMatrices, double **LocRhs, int sign = 1);
 
 template <int d>
 void NSNonlinearTermSingle(double Mult, double *coeff, double *param, double hK,

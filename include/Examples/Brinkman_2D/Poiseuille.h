@@ -141,7 +141,7 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[4] = viscosity;
     coeff[5] = effective_viscosity;
     coeff[6] = permeability;
-    coeff[0] = 0.; (coeff[5] / coeff[4]) * coeff[6];
+    coeff[0] = 0.; // (coeff[5] / coeff[4]) * coeff[6];
     // if f1=coeff[1] is set to zero, we can see the effect of a change in the parameter t^2 in the solution,
     // but convergence rates are no longer meaningful since we do not know the analytical solution
 

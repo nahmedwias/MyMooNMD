@@ -166,14 +166,14 @@ class Time_CD2D
      * This includes the assembling of: Stiff_matrix, Mass_Matrix, 
      * (additional matrixK in case of SUPG stabilization), rhs
      */
-    void assemble_initial_time(TFEFunction2D* coefficient_function1 = nullptr, TFEFunction2D* coefficient_function2 = nullptr);
+    void assemble_initial_time();
     
     /** @brief assemble the matrices
      * this function will assemble the stiffness matrix and rhs
      * In addition the system matrix and the rhs which passes to the solver 
      * are also prepared within the function
      */
-     void assemble(TFEFunction2D* coefficient_function1 = nullptr, TFEFunction2D* coefficient_function2 = nullptr);
+     void assemble();
 
     /**
      * Descales the stiffness matrices from the modifications due to time

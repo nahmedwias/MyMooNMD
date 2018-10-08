@@ -12,7 +12,7 @@
 #include <LinAlg.h>
 #include <Brinkman2D.h>
 #include <MainUtilities.h>
-#include <LocalAssembling2D.h>
+#include <LocalAssembling.h>
 #include <Example_Brinkman2D.h>
 #include <Chrono.h>
 #include <MooNMD_Io.h>
@@ -262,7 +262,7 @@ int main(int argc, char* argv[])
 				auto coll = brinkman2d.get_pressure_space().GetCollection();
 				// fe space of piecewise constant functions
 				TFESpace2D coefficient_function_FEspace(coll, "coefficient_function_FEspace", "s",
-						BoundConditionNoBoundCondition, 0, nullptr);
+						BoundConditionNoBoundCondition, 0);
 				BlockVector coefficient_function_vector(coefficient_function_FEspace.GetN_DegreesOfFreedom());
 				TFEFunction2D coefficient_function(
 						&coefficient_function_FEspace, "coefficient_function", "coefficient_function",
@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
 				/// read_coll = *tmp_collection;
 
 				TFESpace2D coefficient_function_FEspace(coll, "coefficient_function_FEspace", "s",
-						BoundConditionNoBoundCondition, 0, nullptr);
+						BoundConditionNoBoundCondition, 0);
 				BlockVector coefficient_function_vector(coefficient_function_FEspace.GetN_DegreesOfFreedom());
 
 				TFEFunction2D coefficient_function(&coefficient_function_FEspace, "coefficient_function", "coefficient_function",
