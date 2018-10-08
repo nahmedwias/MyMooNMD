@@ -739,8 +739,12 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "determine the way the laplacian is discretized.");
   
   db.add("nse_nonlinear_form", "convective",
-         "Determine how the nonlinear term for Navier--Stokes is assembled.",
-         {"convective", "skew-symmetric", "rotational"});
+         "Determine how the nonlinear term for Navier--Stokes is assembled. "
+          "convective means ( (u.nabla) u, v), "
+          "skew_symmetric means (1/2) [((u.nabla) u, v) - ((u.nabla) v, u)], "
+          "rotational means ((nabla x u) x u, v), "
+          "emac means (D(u)u + div(u)u, v)",
+         {"convective", "skew_symmetric", "rotational", "divergence", "emac"});
   
   db.add("space_discretization_type", "galerkin",
          "The type of discretization. Note that not all types are possible for "
@@ -967,6 +971,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   //bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
   bool laplace_type_deformation = this->db["laplace_type_deformation"];
   std::string disc_type = this->db["space_discretization_type"];
+  Parameter nonlin_form(db["nse_nonlinear_form"]);
   bool galerkin = (disc_type == std::string("galerkin"));
   bool pspg = (disc_type == std::string("pspg"));
   bool symm_gls = (disc_type == std::string("symm_gls"));
@@ -983,12 +988,20 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   {
     if((nstype==1) || nstype==2)
     {
-      ErrThrow("LAPLACETYPE is only supported for NSTYPE 3, and 4");
+      ErrThrow("LAPLACETYPE is only supported for NSTYPE 3, 4, and 14");
     }
   }
-  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM>0)
+  if(nonlin_form.is("divergence"))
   {
-    ErrThrow("Skew symmetric case is not implemented for all NSTYPE");
+    ErrThrow("nse_nonlinear_form '", nonlin_form, "' is not yet implemented");
+  }
+  if(nonlin_form.is("rotational") || nonlin_form.is("emac"))
+  {
+    if((nstype==1) || nstype==2)
+    {
+      ErrThrow("nse_nonlinear_form", nonlin_form,
+               " is only supported for NSTYPE 3, 4, and 14");
+    }
   }
   if(!galerkin && !pspg && !symm_gls && !nonsymm_gls && !brezzi_pitkaeranta)
   {
@@ -1092,14 +1105,8 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       this->local_assemblings_routines.push_back(
         std::bind(NSsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
     else if(nonsymm_gls)
-      {
       this->local_assemblings_routines.push_back(
         std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
-
-  ///    this->local_assemblings_routines.push_back(
-  ///      std::bind(NSnonsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
-  ///    Output::print(" ADD nonsymmGLS ");
-      }
   }
   else if(brezzi_pitkaeranta)
   {
@@ -1113,22 +1120,17 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   }
 
   // grad-div stabilization
-  
   double graddiv_stab = db["graddiv_stab"];
-  if (fabs(graddiv_stab)>1e-10) 
+  if(std::abs(graddiv_stab) > 1e-10) 
   {
-    Output::print(" ADD GRADDIV ");
     this->local_assemblings_routines.push_back(
-        std::bind(NSGradDiv<d>,
-            _1, _2, _3, _4, _5, _6, _7, _8,
-            graddiv_stab));
+      std::bind(NSGradDiv<d>, _1, _2, _3, _4, _5, _6, _7, _8, graddiv_stab));
 
     this->local_assemblings_routines.push_back(
         std::bind(NSGradDiv_RightHandSide<d>,
             _1, _2, _3, _4, _5, _6, _7, _8,
             graddiv_stab));
   }
-
 
   switch(type)
   {
@@ -1144,9 +1146,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
     else
     {
       this->local_assemblings_routines.push_back(
-          std::bind(NSDivergenceBlocks<d>,
-              _1, _2, _3, _4, _5, _6,
-              _7, _8, 1));
+          std::bind(NSDivergenceBlocks<d>, _1, _2, _3, _4, _5, _6, _7, _8, 1));
     }
     this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
         _7, _8, -1));
@@ -1161,22 +1161,56 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
     else if(symm_gls)
       this->local_assemblings_routines.push_back(
           std::bind(NSsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
-              gls_stab)); ///pspg_delta0));
+              gls_stab));
     else if(nonsymm_gls)
       this->local_assemblings_routines.push_back(
           std::bind(NSnonsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7,
-              _8, gls_stab)); ///pspg_delta0));
+              _8, gls_stab));
     break;
   case LocalAssembling_type::NSE3D_NonLinear:
-    if(nstype == 1 || nstype == 2)
+    {
+      if(nonlin_form.is("convective"))
       {
-        this->local_assemblings_routines.push_back(NSNonlinearTermSingle<d>);
+        if(nstype == 1 || nstype == 2)
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_convective_Single<d>);
+        }
+        else
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_convective<d>);
+        }
+      }
+      else if(nonlin_form.is("skew_symmetric"))
+      {
+        if(nstype == 1 || nstype == 2)
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_skew_symmetric_Single<d>);
+        }
+        else
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_skew_symmetric<d>);
+        }
+      }
+      else if(nonlin_form.is("rotational"))
+      {
+        this->local_assemblings_routines.push_back(
+          NSNonlinearTerm_rotational<d>);
+      }
+      else if(nonlin_form.is("emac"))
+      {
+        this->local_assemblings_routines.push_back(
+          NSNonlinearTerm_emac<d>);
       }
       else
       {
-        this->local_assemblings_routines.push_back(NSNonlinearTerm<d>);
+        ErrThrow("unknown type for nse_nonlinear_form ", nonlin_form);
       }
       break;
+    }
     default:
       ErrThrow("unknown LocalAssembling3D_type ", this->type);
       break;

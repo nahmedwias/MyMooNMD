@@ -90,7 +90,7 @@ void compute(TDomain &domain, ParameterDatabase& db,
 
 void check(TDomain &domain, ParameterDatabase db,
            int velocity_order, int nstype, int laplace_type,
-           int nonlinear_form,
+           std::string nonlinear_form,
            std::array<double, int(5)> errors)
 {
   Output::print("\n\nCalling check with velocity_order=", velocity_order,
@@ -112,7 +112,7 @@ void check(TDomain &domain, ParameterDatabase db,
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->NSTYPE = nstype;
   TDatabase::ParamDB->LAPLACETYPE = laplace_type;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
+  db["nse_nonlinear_form"] = nonlinear_form;
   
   Chrono timer;
   compute(domain, db, errors);
@@ -158,11 +158,10 @@ void check(TDomain &domain, ParameterDatabase db,
 
 template <int laplace_type>
 void check_one_element(TDomain& domain, ParameterDatabase db,
-                       int velocity_order,
+                       int velocity_order, std::string nonlinear_form,
                        std::array<double, int(5)> errors)
 {
-  int nonlinear_form = 0;
-  if(laplace_type == 0)
+  if(laplace_type == 0 && nonlinear_form != "rotational")
   {
     // NSTYPE = 1
     check(domain, db, velocity_order, 1, laplace_type, nonlinear_form, errors);
@@ -231,49 +230,67 @@ int main(int argc, char* argv[])
     errors = {{ 0.005005607397208, 0.085596036177161, 0.15666212408257,
                 0.071089608676709, 1.3407900222228 }};
     // VELOCITY_SPACE = 2 and the pressure space is chosen in the class NSE2D
-    check_one_element<0>(domain, db, 2, errors);
+    check_one_element<0>(domain, db, 2, "convective", errors);
+    errors = {{ 0.0050114106331145, 0.085666162858643, 0.1566815102253,
+                0.071847726858966, 1.3492605707623 }};
+    check_one_element<0>(domain, db, 2, "skew_symmetric", errors);
+    errors = {{ 0.0058223133010986, 0.10151294631171, 0.16681755987828,
+                0.96438232852434, 5.9699892417666 }};
+    check_one_element<0>(domain, db, 2, "rotational", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P3/P2 elements");
     errors = {{ 0.00028020829779642, 0.0061977013305504, 0.011391210186952,
                 0.0053396813413967, 0.20779333160236 }};
     // VELOCITY_SPACE = 3 and the pressure space is chosen in the class NSE2D
-    check_one_element<0>(domain, db, 3, errors);
+    check_one_element<0>(domain, db, 3, "convective", errors);
+    errors = {{ 0.0002801683506044, 0.0061981261043577, 0.011391678805669,
+                0.005343732181067, 0.20790149851372 }};
+    check_one_element<0>(domain, db, 3, "skew_symmetric", errors);
+    errors = {{ 0.00034351517928429, 0.0096256533312287, 0.013780390342581,
+                0.98758071809952, 5.4577802210272 }};
+    check_one_element<0>(domain, db, 3, "rotational", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P4/P3 elements");
     errors = {{ 1.1817023010728e-05, 0.00029575269112296, 0.0006435418450572, 
                 0.00050496270735108, 0.026998702772064 }};
     // VELOCITY_SPACE = 4 and the pressure space is chosen in the class NSE2D
-    check_one_element<0>(domain, db, 4, errors);
+    check_one_element<0>(domain, db, 4, "convective", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P5/P4 elements");
     errors = {{ 4.3466391168252e-07, 1.4197002168949e-05, 2.793323812439e-05,
                 2.1824211773585e-05, 0.0016936362911126 }};
     // VELOCITY_SPACE = 5 and the pressure space is chosen in the class NSE2D
-    check_one_element<0>(domain, db, 5, errors);
+    check_one_element<0>(domain, db, 5, "convective", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P2-bubble/P1-disc elements");
     errors = {{ 0.0071886299046824, 0.081842610256743, 0.21185558654462,
                 0.36754876295023, 5.3058522557418 }};
     // VELOCITY_SPACE = 22 and the pressure space is chosen in the class NSE2D
-    check_one_element<0>(domain, db, 22, errors);
+    check_one_element<0>(domain, db, 22, "convective", errors);
+    errors = {{ 0.0071870075217203, 0.081812991627381, 0.21185522222301,
+                0.36760565517932, 5.3064844653778 }};
+    check_one_element<0>(domain, db, 22, "skew_symmetric", errors);
+    errors = {{ 0.0071856730855546, 0.081567156856757, 0.2120767352661,
+                1.0536610704615, 7.51116480206 }};
+    check_one_element<0>(domain, db, 22, "rotational", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P3-bubble/P2-disc elements");
     errors = {{ 0.00026037876329326, 0.0057269486642841, 0.010856952083039,
                 0.013201231959059, 0.39888576555041 }};
     // VELOCITY_SPACE = 23 and the pressure space is chosen in the class NSE2D
-    check_one_element<0>(domain, db, 23, errors);
+    check_one_element<0>(domain, db, 23, "convective", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P4-bubble/P3-disc elements");
     errors = {{ 1.2032722339771e-05, 0.00024376809624887, 0.00055164963287203,
                 0.00063706731983293, 0.027783948983068 }};
     // VELOCITY_SPACE = 24 and the pressure space is chosen in the class NSE2D
-    check_one_element<0>(domain, db, 24, errors);
+    check_one_element<0>(domain, db, 24, "convective", errors);
   } // end program 1
   //=========================================================================
   /** Program 2
@@ -327,56 +344,74 @@ int main(int argc, char* argv[])
     errors = {{ 0.004083204524442, 0.05101317284072, 0.10522635824261,
                 0.017686667902813, 0.51182308944019 }};
     // VELOCITY_SPACE  = 2
-    check_one_element<0>(domain, db, 2, errors);
+    check_one_element<0>(domain, db, 2, "convective", errors);
+    errors = {{ 0.0040835090784135, 0.051016841655666, 0.10523293839479,
+                0.017611281280989, 0.51158180834432 }};
+    check_one_element<0>(domain, db, 2, "skew_symmetric", errors);
+    errors = {{ 0.0046884833250869, 0.070877525721747, 0.11742828649332,
+                0.98755497621545, 5.7626046159782 }};
+    check_one_element<0>(domain, db, 2, "rotational", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q3/Q2 elements");
     errors = {{ 0.00019319433716041, 0.003563918945437, 0.0071078507849009,
                 0.0018446328461379, 0.057123632497266 }};
     // VELOCITY_SPACE  = 3
-    check_one_element<0>(domain, db, 3, errors);
+    check_one_element<0>(domain, db, 3, "convective", errors);
+    errors = {{ 0.00019316638866158, 0.0035638246364146, 0.0071078664938289,
+                0.0018454762090097, 0.057115940978707 }};
+    check_one_element<0>(domain, db, 3, "skew_symmetric", errors);
+    errors = {{ 0.00026177332079517, 0.0079927161285491, 0.010243629124348,
+                0.98774764559983, 5.4327961040808 }};
+    check_one_element<0>(domain, db, 3, "rotational", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q4/Q3 elements");
     errors = {{ 6.9434747253041e-06, 0.0001677182257252, 0.00035212311261646,
                 9.4703269177756e-05, 0.0048368160352994 }};
     // VELOCITY_SPACE  = 4
-    check_one_element<0>(domain, db, 4, errors);
+    check_one_element<0>(domain, db, 4, "convective", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q5/Q4 elements");
     errors = {{ 2.3951237974726e-07, 6.8246180893733e-06, 1.4163394749406e-05,
                 4.9000676557526e-06, 0.00030469183949993 }};
     // VELOCITY_SPACE  = 5
-    check_one_element<0>(domain, db, 5, errors);
+    check_one_element<0>(domain, db, 5, "convective", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q2/P1-disc elements");
     errors = {{ 0.0040557267369371, 0.05094007770388, 0.10564123627325,
                 0.030975452768144, 0.70842776239597 }};
     // VELOCITY_SPACE  = 22
-    check_one_element<0>(domain, db, 22, errors);
+    check_one_element<0>(domain, db, 22, "convective", errors);
+    errors = {{ 0.0040565847234025, 0.050939919166369, 0.10564293309485,
+                0.030954083022779, 0.70858252999859 }};
+    check_one_element<0>(domain, db, 22, "skew_symmetric", errors);
+    errors = {{ 0.0041643538522174, 0.055554927078881, 0.10980572753403,
+                0.98506275149849, 5.0128441624737 }};
+    check_one_element<0>(domain, db, 22, "rotational", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q3/P2-disc elements");
     errors = {{ 0.00020642736694367, 0.0042373143298489, 0.0075794259144329,
                 0.0039793392063018, 0.13655739379564 }};
     // VELOCITY_SPACE  = 23
-    check_one_element<0>(domain, db, 23, errors);
+    check_one_element<0>(domain, db, 23, "convective", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q4/P3-disc elements");
     errors = {{ 9.9544541389566e-06, 0.00032338687271106, 0.00045888380841742,
                 0.00037625559674667, 0.01835259073302 }};
     // VELOCITY_SPACE  = 24
-    check_one_element<0>(domain, db, 24, errors);
+    check_one_element<0>(domain, db, 24, "convective", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q5/P4-disc elements");
     errors = {{ 5.3747286967048e-07, 2.4122655352531e-05, 2.7997005479668e-05,
                 2.81141239001e-05, 0.0018176331985532 }};
     // VELOCITY_SPACE  = 25
-    check_one_element<0>(domain, db, 25, errors);
+    check_one_element<0>(domain, db, 25, "convective", errors);
   }
   
   return 0;

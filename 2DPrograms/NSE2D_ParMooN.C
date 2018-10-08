@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
   // in function 'stopIt' termination condition is checked
   for(unsigned int k = 1;; k++)
   {
-    Output::print(); // new line for a new nonlinear iteration
+    Output::print<3>(); // new line for a new nonlinear iteration
     ns.solve();
     
     //no nonlinear iteration for Stokes or Brinkman problems
