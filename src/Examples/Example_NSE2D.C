@@ -216,6 +216,9 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       // Set dimensionless viscosity
       brinkman_poiseuille::effective_viscosity = get_nu();
       brinkman_poiseuille::sigma = get_inverse_permeability();
+      brinkman_poiseuille::neumann_id = get_neumann_id();
+      brinkman_poiseuille::nitsche_id = get_nitsche_id();
+      
       brinkman_poiseuille::ExampleFile();
       break;
 case 7:
@@ -311,3 +314,13 @@ double Example_NSE2D::get_inverse_permeability() const
   return this->example_database["inverse_permeability"];
 }
 
+std::vector<size_t> Example_NSE2D::get_neumann_id() const
+{
+  return this->example_database["neumann_id"];
+}
+
+
+std::vector<size_t> Example_NSE2D::get_nitsche_id() const
+{
+  return this->example_database["nitsche_id"];
+}

@@ -54,6 +54,39 @@ ParameterDatabase Example2D::default_example_database()
       "effective_viscosity coefficient: a factor in front of the Laplacian term.",
       (double) 0., (double) 1000000.);
 
+  ///@todo boundary-related parameters could be moved soon to a dedicated class
+  // Neumann BC
+  db.add("neumann_id", {1u,1u,1u,1u,1u,1u,1u,1u,1u,1u},
+	 "Component ID of Neumann boundaries. On these edges the terms (hat p,v.n)_E"
+	 " will be assembled. The values -hat p- are given via the parameters "
+	 " neumann_values. "
+	 " Attention: at the moment max. 10 boundaries are allowed. This can be "
+	 " easily changed in the file " __FILE__,0u,999u);
+
+  db.add("neumann_value", {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.},
+	 " Neumann values to be assigned to the respetive boundary."
+	 " Warning: the length must be the same as the one given in neumann_boundary_id");
+
+  // Nitsche BC
+  db.add("nitsche_id", {1u,1u,1u,1u,1u,1u,1u,1u,1u,1u},
+	 "Component ID of boundaries where the Nitsche method is used to "
+	 " impose (weak) Dirichlet BC."
+	 " Attention: at the moment max. 10 boundaries are allowed. This can be "
+	 " easily changed in the file " __FILE__,0u,999u);
+  
+  db.add("nitsche_penalty", {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.},
+	 " Nitsche penalty (gamma) to be imposed on each boundary");
+
+
+  db.add("symmetric_nitsche_u",-1,
+	 " Coefficient for the term -(u,mu dv/dn) "
+	 " Symmetric version (symmetric_nitsche_u = 1): assemble -(mu du/dn,v)-(u,mu dv/dn), "
+	 " non-sym (symmetric_nitsche_u = -1): assemble -(mu du/dn,v)+(u,mu dv/dn)");
+  
+  db.add("symmetric_nitsche_p",-1,
+	 " Coefficient for the term (u.n,q) "
+	 " Symmetric version (symmetric_nitsche_p = 1): assemble (p,v.n)+(u.n,q), "
+	 " non-sym (symmetric_nitsche_u = -1): assemble (p,v.n)-(u.n,q)");
   return db;
 }
 
