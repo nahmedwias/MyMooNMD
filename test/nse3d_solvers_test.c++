@@ -15,7 +15,7 @@
  * We're only testing examples whose analytic solution is in the ansatz space,
  * thus we expect very small errors every time.
  * Fixed are discretization_type 1 (galerkin), LAPLACETYPE 0,
- * NSE_NONLINEAR_FORM 0 and SC_NONLIN_ITE_TYPE_SADDLE = 0.
+ * 'nse_nonlinear_form' 0 and SC_NONLIN_ITE_TYPE_SADDLE = 0.
  * Note that for these discretizations it is futile to choose any other NSTYPE
  * than 1 (see e.g. MooNMD documentation p. 35), but we vary them anyway, just
  * for the sake of testing the different types.
@@ -303,8 +303,8 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
 
   db["space_discretization_type"] = "galerkin"; //Galerkin discretization, nothing else implemented
+  db["nse_nonlinear_form"] = "convective";
   TDatabase::ParamDB->LAPLACETYPE = 0;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;
   TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
 
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output

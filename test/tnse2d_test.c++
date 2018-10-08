@@ -50,6 +50,7 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   db.merge(Solver<>::default_solver_database());
   db.merge(Example2D::default_example_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
+  db.merge(LocalAssembling<2>::default_local_assembling_database());
   db["problem_type"] = 5;
   db["example"] = 0;
   db["reynolds_number"] = 1;
@@ -65,7 +66,9 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->NSTYPE = nstype;
   TDatabase::ParamDB->LAPLACETYPE = laplace_type;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
+  db["nse_nonlinear_form"] = "convective";
+  if(nonlinear_form != 0)
+    ErrThrow("other nonlinear forms are not yet tested");
   
   // rough check
   if(time_disc == 1)

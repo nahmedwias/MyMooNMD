@@ -283,7 +283,6 @@ struct TParaDB
   double START_RE_NR;
   double RE_NR_INCREMENT;
   int FLOW_PROBLEM_TYPE;
-  int NSE_NONLINEAR_FORM;
   int NSTYPE;
   int LAPLACETYPE;
   int DEFECT_CORRECTION_TYPE;

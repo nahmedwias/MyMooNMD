@@ -2,7 +2,7 @@
 #define INCLUDE_ASSEMBLEROUTINESSADDLE_NSE_LOCAL_ASSEMBLING_ROUTINES_H
 
 ///////////////////////////////////////////////////////////////////////////////
-// standard terms (needed for Galerkin)
+// standard terms, linear (needed for Galerkin)
 
 template<int d>
 void NSResistanceMassMatrixSingle(double Mult, double *coeff,
@@ -43,14 +43,33 @@ void NSRightHandSide(double Mult, double *coeff, double *param, double hK,
                      double **OrigValues, int *N_BaseFuncts,
                      double ***LocMatrices, double **LocRhs, int sign = 1);
 
+///////////////////////////////////////////////////////////////////////////////
+// local assemblings for the nonlinear term
 template <int d>
-void NSNonlinearTermSingle(double Mult, double *coeff, double *param, double hK,
-                           double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs);
+void NSNonlinearTerm_convective_Single(
+  double Mult, double *coeff,double *param, double hK,double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template <int d>
-void NSNonlinearTerm(double Mult, double *coeff, double *param, double hK,
-                     double **OrigValues, int *N_BaseFuncts,
-                     double ***LocMatrices, double **LocRhs);
+void NSNonlinearTerm_convective(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template <int d>
+void NSNonlinearTerm_skew_symmetric_Single(
+  double Mult, double *coeff,double *param, double hK,double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template <int d>
+void NSNonlinearTerm_skew_symmetric(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template <int d>
+void NSNonlinearTerm_rotational(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+// Energy, Momentum, and Angular momentum Conserving (EMAC)
+template <int d>
+void NSNonlinearTerm_emac(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 
 ///////////////////////////////////////////////////////////////////////////////
 // more special terms

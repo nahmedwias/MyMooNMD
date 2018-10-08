@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
     for(unsigned int k=1;; k++)
     {
       if(my_rank == 0)
-        Output::print(); // new line for a new nonlinear iteration
+        Output::print<3>(); // new line for a new nonlinear iteration
       // solve the system
       timer_sol.start();
       nse3d.solve();

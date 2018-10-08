@@ -92,7 +92,7 @@ void check(Grids &domain, ParameterDatabase db,
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = velocity_order;
   TDatabase::ParamDB->LAPLACETYPE = laplace_type;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;
+  db["nse_nonlinear_form"] = "convective";
   
   Chrono timer;
   compute(domain, db, errors);
@@ -313,7 +313,7 @@ void check_other_stabilizations(ParameterDatabase db)
   TDatabase::ParamDB->VELOCITY_SPACE = 1;
   TDatabase::ParamDB->PRESSURE_SPACE = 1;
   TDatabase::ParamDB->LAPLACETYPE = 0;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;
+  db["nse_nonlinear_form"] = "convective";
   check_parameters_consistency_NSE(db);
   // default construct a domain object
   TDomain domain(db);
