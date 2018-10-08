@@ -72,7 +72,7 @@ ParameterDatabase CD2D::get_default_CD2D_parameters()
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
                                        TCollection& coll, int ansatz_order)
 : fe_space(new TFESpace2D(&coll, "space", "cd2d fe_space", example.get_bc(0),
-                          ansatz_order, nullptr))
+                          ansatz_order))
 {
   matrix = BlockFEMatrix::CD2D(*fe_space);
 

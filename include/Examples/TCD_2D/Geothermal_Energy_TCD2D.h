@@ -85,7 +85,7 @@ void BilinearCoeffs(int n_points, double *x, double *y,
         double **parameters, double **coeffs)
 {
   const double eps=1/TDatabase::ParamDB->PE_NR;
-  double t = TDatabase::TimeDB->CURRENTTIME;
+  //double t = TDatabase::TimeDB->CURRENTTIME;
 
   double T_in = 50.; 
   double a = 0.05;

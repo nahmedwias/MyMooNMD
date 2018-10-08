@@ -146,9 +146,9 @@ Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
     TCollection& coll, std::pair<int,int> velocity_pressure_orders,
     Brinkman2D::Matrix type)
   : velocity_space(&coll, "u", "Brinkman velocity", example.get_bc(0),
-      velocity_pressure_orders.first, nullptr),
+      velocity_pressure_orders.first),
   pressure_space(&coll, "p", "Brinkman pressure", example.get_bc(2),
-      velocity_pressure_orders.second, nullptr)
+      velocity_pressure_orders.second)
 {
   // Note that at the moment only Matrix::Type14 is allowed
   // (see the constructor the of a Brinkman2D object below)

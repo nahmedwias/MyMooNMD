@@ -39,7 +39,7 @@ void NSResistanceMassMatrix(double Mult, double *coeff, double *param,
     for(int j = 0; j < N_U; j++)
     {
       double ansatz = u[j];
-      double val = Mult * coeff[4] * ( test*ansatz );
+      double val = Mult * coeff[4] * ( test * ansatz );
       MatrixA11[i][j] += val;
       MatrixA22[i][j] += val;
       if(d == 3)
@@ -223,7 +223,7 @@ void NSGradientBlocks(double Mult, double *coeff, double *param, double hK,
 template <int d>
 void NSRightHandSide(double Mult, double *coeff, double *param, double hK,
                      double **OrigValues, int *N_BaseFuncts,
-                     double ***LocMatrices, double **LocRhs)
+                     double ***LocMatrices, double **LocRhs, int sign)
 {
   double * Rhs1 = LocRhs[0];
   double * Rhs2 = LocRhs[1];
@@ -248,7 +248,7 @@ void NSRightHandSide(double Mult, double *coeff, double *param, double hK,
   for(int i = 0; i < N_P; i++)
   {
     double test = p[i];
-    Rhs_div[i] -= Mult*test*g;
+    Rhs_div[i] -= Mult* sign * test * g;
   }
 }
 
@@ -379,33 +379,33 @@ void NSGradDiv(double Mult, double *coeff, double *param, double hK,
   double sigma = coeff[4]; // = 1/reynolds_number
   ///@todo generalize characteristic lenght. One could also give the option of
   // using L_0 = h
-  double L_0 = 1.; // characteristic length
+  double L_0 = 0.1; // characteristic length
 
-  double delta = (nu + sigma*L_0*L_0)*stab;
+  double delta = (nu + sigma*L_0*L_0) * stab;
   
   for(int i = 0; i < N_U; i++)
   {
-    double test_x = delta * u_x[i];
-    double test_y = delta * u_y[i];
-    double test_z = d == 2 ? 0. : delta * u_z[i];
+    double v_x =  u_x[i];
+    double v_y =  u_y[i];
+    double v_z = d == 2 ? 0. :  u_z[i];
     
     for(int j = 0; j < N_U; j++)
     {
       
-      MatrixA11[i][j] += delta*test_x*u_x[j];
-      MatrixA12[i][j] += delta*test_y*u_x[j];
-      if (d==3)
-	MatrixA13[i][j] += delta*test_z*u_x[j];
+      MatrixA11[i][j] += delta * v_x * u_x[j];
+      MatrixA12[i][j] += delta * v_x * u_y[j]; // v_y * u_x[j];
+      if (d == 3)
+	MatrixA13[i][j] += delta * v_x * u_z[j]; //v_z * u_x[j];
 
-      MatrixA21[i][j] += delta*test_x*u_y[j];
-      MatrixA22[i][j] += delta*test_y*u_y[j];
-      if (d==3)
-	MatrixA23[i][j] += delta*test_z*u_y[j];
+      MatrixA21[i][j] += delta * v_y * u_x[j]; //* v_x * u_y[j];
+      MatrixA22[i][j] += delta * v_y * u_y[j];
+      if (d == 3)
+	MatrixA23[i][j] += delta * v_y * u_z[j]; //* v_z * u_y[j];
 
-      if (d==3) {
-	MatrixA31[i][j] += delta*test_x*u_z[j];
-	MatrixA32[i][j] += delta*test_y*u_z[j];
-	MatrixA33[i][j] += delta*test_z*u_z[j];
+      if (d == 3) {
+	MatrixA31[i][j] += delta * v_z * u_x[j]; //* v_x * u_z[j];
+	MatrixA32[i][j] += delta * v_z * u_y[j];//* v_y * u_z[j];
+	MatrixA33[i][j] += delta * v_z * u_z[j];
       }
       
     }
@@ -430,17 +430,17 @@ void NSGradDiv_RightHandSide(double Mult, double *coeff, double *param, double h
   double sigma = coeff[4]; // = 1/permeability
   double L_0 = 1.;
   double g = coeff[3];
-  double delta = (nu + sigma*L_0*L_0)*stab;
+  double delta = (nu + sigma*L_0*L_0) * stab;
 
-  for(int i = 0; i < N_U; i++)
+  for (int i = 0; i < N_U; i++)
   {
-    double test_x = u_x[i];
-    double test_y = u_y[i];
-    double test_z = d == 2 ? 0. : u_z[i];
-    Rhs_u1[i] = delta * g * test_x;
-    Rhs_u2[i] = delta * g * test_y;
-    if (d==3)
-      Rhs_u3[i] = delta * g * test_z;
+    double v_x = u_x[i];
+    double v_y = u_y[i];
+    double v_z = d == 2 ? 0. : u_z[i];
+    Rhs_u1[i] = delta * g * v_x;
+    Rhs_u2[i] = delta * g * v_y;
+    if (d == 3)
+      Rhs_u3[i] = delta * g * v_z;
   }
 }
 
@@ -570,7 +570,7 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
 
     // multiply by -1 for non-sym GLS
     //laplace_v *= delta * sign *
-    double residue_v = delta * sign * (laplace_v - resistance_v);
+    double residue_v = laplace_v - resistance_v;
     
     for(int j = 0; j < N_U; j++)
     {
@@ -583,29 +583,29 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
       /*if(d == 3)
 	MatrixA33[i][j] -= Mult*laplace_v*laplace_u;
       */
-      MatrixA11[i][j] += Mult*residue_v*residue_u;
-      MatrixA22[i][j] += residue_v*residue_u;
-      if(d == 3)
-        MatrixA33[i][j] += Mult*residue_v*residue_u;
+      MatrixA11[i][j] += Mult * delta * sign * residue_v * residue_u;
+      MatrixA22[i][j] += Mult * delta * sign * residue_v * residue_u;
+      if (d == 3)
+        MatrixA33[i][j] += Mult * delta * sign * residue_v * residue_u;
     }
 
-    for(int j = 0; j < N_P; j++)
+    for (int j = 0; j < N_P; j++)
     {
       double ansatz_x = p_x[j];
       double ansatz_y = p_y[j];
       double ansatz_z = d == 2 ? 0. : p_z[j];
-      MatrixB1T[i][j] += Mult * residue_v * ansatz_x;
-      MatrixB2T[i][j] += Mult * residue_v * ansatz_y;
+      MatrixB1T[i][j] += Mult * delta * sign * residue_v * ansatz_x;
+      MatrixB2T[i][j] += Mult * delta * sign * residue_v * ansatz_y;
       if(d == 3)
-        MatrixB3T[i][j] += Mult * residue_v * ansatz_z;
+        MatrixB3T[i][j] += Mult * delta * sign * residue_v * ansatz_z;
     }
   }
   
-  for(int i = 0; i < N_P; i++)
+  for (int i = 0; i < N_P; i++)
   {
-    double q_x = delta * p_x[i];
-    double q_y = delta * p_y[i];
-    double q_z = d == 2 ? 0. : delta * p_z[i];
+    double q_x = p_x[i];
+    double q_y = p_y[i];
+    double q_z = d == 2 ? 0. : p_z[i];
     
     for(int j = 0; j < N_U; j++)
     {
@@ -613,10 +613,10 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
       double resistance_u = coeff[4] * u[j];
       double residue_u = -laplace_u + resistance_u;
       
-      MatrixB1[i][j] += sign * Mult * (-q_x) * residue_u;
-      MatrixB2[i][j] += sign * Mult * (-q_y) * residue_u;
+      MatrixB1[i][j] += sign * Mult * delta * (-q_x) * residue_u;
+      MatrixB2[i][j] += sign * Mult * delta * (-q_y) * residue_u;
       if(d == 3)
-        MatrixB3[i][j] += sign * Mult * (-q_z) * residue_u;
+        MatrixB3[i][j] += sign * Mult * delta * (-q_z) * residue_u;
     }
     for(int j = 0; j < N_P; j++)
     {
@@ -624,7 +624,7 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
       double ansatz_y = p_y[j];
       double ansatz_z = d == 2 ? 0. : p_z[j];
       // positive if sign=-1 (non-sym GLS)
-      MatrixC[i][j] -= sign * Mult *(q_x*ansatz_x + q_y*ansatz_y 
+      MatrixC[i][j] -= sign * Mult * delta * (q_x*ansatz_x + q_y*ansatz_y
                               +q_z*ansatz_z);
     }
   }
@@ -663,18 +663,18 @@ void NS_GLS_RightHandSide(double Mult, double *coeff, double *param, double hK,
     double laplace_v = nu * (u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]));
     double resistance_v = sigma * u[i];
     
-    double residue_v = sign * delta * (laplace_v - resistance_v);
-    Rhs1[i] += Mult * residue_v * f1;
-    Rhs2[i] += Mult * residue_v * f2;
+    double residue_v = (laplace_v - resistance_v);
+    Rhs1[i] += Mult * sign * delta * residue_v * f1;
+    Rhs2[i] += Mult * sign * delta * residue_v * f2;
     if(d == 3)
-      Rhs3[i] += Mult * residue_v * f3;
+      Rhs3[i] += Mult * sign * delta * residue_v * f3;
   }
   for(int i = 0; i < N_P; i++)
   {
-    double test_x = p_x[i];
-    double test_y = p_y[i];
-    double test_z = d == 2 ? 0. : p_z[i];
-    Rhs_div[i] -= Mult * delta * sign * (test_x*f1 + test_y*f2 + test_z*f3);
+    double q_x = p_x[i];
+    double q_y = p_y[i];
+    double q_z = d == 2 ? 0. : p_z[i];
+    Rhs_div[i] -= Mult * delta * sign * (q_x*f1 + q_y*f2 + q_z*f3);
   }
 }
 
@@ -781,7 +781,7 @@ template void NSGradientBlocks<2>(
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void NSRightHandSide<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, int sign=1);
 template void NSNonlinearTermSingle<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
@@ -847,7 +847,7 @@ template void NSGradientBlocks<3>(
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void NSRightHandSide<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, int sign=1);
 template void NSNonlinearTermSingle<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);

@@ -115,10 +115,6 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-  double K = permeability;
-  double mu = viscosity;
-  double mu_eff = effective_viscosity;
-
   // loop to impose Neumann boundary conditions
   // Since we are using the Neumann boundary condition via boundaryAssembling2d(), 
   // the boundvalue here has to be alway zero!!!!
