@@ -782,6 +782,22 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "the stabilization parameter needed for the Darcy limit of Brinkman in order"
          "to restrict normal jumps of the velocity across corners of the domain"
          "(by default equal to 0)", 0., 10000.);
+  // the following 'local projection stabilization' (lps) parameters are not 
+  // used in this class, but are somewhat similar to other parameters here.
+  db.add("lps_delta0", 0.1,
+         "The stabilization parameter for local projection stabilization (lps) "
+         "is delta0 * h^2 / nu, where h is a cell measure (e.g. diameter), nu "
+         "is the inverse of the reynolds number, and delta0 is this parameter. "
+         "Sometimes (in time-dependent problems) it is set to be "
+         "delta0 * hK / nu.");
+  db.add("lps_delta1", 0.1,
+         "The stabilization parameter for local projection stabilization (lps) "
+         "is delta0 * h^2 / nu, where h is a cell measure (e.g. diameter), nu "
+         "is the inverse of the reynolds number, and delta0 is 'lps_delta0'. "
+         "Sometimes (in time-dependent problems) it is set to be "
+         "delta1 * hK / nu, where delta1 is this parameter.");
+  db.add("lps_coeff_type", 0u, "Determine the way the local projection "
+         "stabilization (lps) parameter is computed.", 0u, 5u);
   
   db.merge(ParameterDatabase::parmoon_default_database());
   
@@ -977,6 +993,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   bool symm_gls = (disc_type == std::string("symm_gls"));
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
   bool brezzi_pitkaeranta = (disc_type == std::string("brezzi_pitkaeranta"));
+  bool local_projection = (disc_type == std::string("local_projection"));
   int nstype = TDatabase::ParamDB->NSTYPE;
   int problem_type = db["problem_type"];
   
@@ -1003,7 +1020,8 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
                " is only supported for NSTYPE 3, 4, and 14");
     }
   }
-  if(!galerkin && !pspg && !symm_gls && !nonsymm_gls && !brezzi_pitkaeranta)
+  if(!galerkin && !pspg && !symm_gls && !nonsymm_gls && !brezzi_pitkaeranta
+     && !local_projection)
   {
     ErrThrow("unsupported space_discretization_type for NSE", d, "D: ",
              disc_type);
