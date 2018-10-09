@@ -36,6 +36,10 @@ int main(int argc, char* argv[])
   Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
   
+  bool linear_problem = (parmoon_db["problem_type"].is(3)
+                         || parmoon_db["problem_type"].is(7));
+  TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = linear_problem;
+  
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(parmoon_db, argv[1]);
   
@@ -80,7 +84,7 @@ int main(int argc, char* argv[])
     ns.solve();
     
     //no nonlinear iteration for Stokes or Brinkman problems
-    if(parmoon_db["problem_type"].is(3) || parmoon_db["problem_type"].is(7))
+    if(linear_problem)
       break;
     
     ns.assemble_nonlinear_term();

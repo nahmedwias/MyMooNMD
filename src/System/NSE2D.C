@@ -7,6 +7,7 @@
 #include <Assemble2D.h>
 #include <NSE_local_assembling_routines.h>
 #include <BoundaryAssembling2D.h>
+#include "LPS_scott_zhang.h"
 
 #include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 #include <AuxParam2D.h>
@@ -418,6 +419,15 @@ void NSE2D::assemble()
     //tidy up
     delete fe_functions[0];
     delete fe_functions[1];
+    
+    if(db["space_discretization_type"].is("local_projection"))
+    {
+      LPS_parameter_set lp{db["lps_coeff_type"], db["lps_delta0"],
+                           db["lps_delta1"]};
+      auto C = LPS_for_pressure_Scott_Zhang(blocks.at(8), false,
+                                            this->example.get_nu(), lp);
+      s.matrix.replace_blocks(*C, {{2,2}}, {false}); // creates a copy
+    }
   }
 }
 

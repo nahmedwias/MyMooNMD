@@ -225,6 +225,30 @@ void pspg_on_quads(ParameterDatabase db)
               0.00083988300949934, 0.023863686042054 }};
   check(domain, db, 4, 0, errors);
 }
+
+void check_other_stabilizations(ParameterDatabase db)
+{
+  db["geo_file"] = "TwoTriangles";
+  db["example"] = 5;
+  db["solver_type"] = "direct";
+  TDatabase::ParamDB->VELOCITY_SPACE = 1;
+  TDatabase::ParamDB->PRESSURE_SPACE = 1;
+  check_parameters_consistency_NSE(db);
+  // default construct a domain object
+  TDomain domain(db);
+  // refine grid
+  size_t n_ref = domain.get_n_initial_refinement_steps();
+  for(unsigned int i=0; i < n_ref; i++)
+  {
+    domain.RegRefineAll();
+  }
+  std::array<double, int(5)> errors{0.89286842997152, 2.9279300657466,
+                                    11.015597277738, 3.3072741836106,
+                                    24.547961810913};
+  
+  db["space_discretization_type"] = "local_projection";
+  compute(domain, db, errors);
+}
 #endif // 2D
 
 #ifdef __3D__
@@ -374,8 +398,8 @@ int main(int argc, char* argv[])
   db["boundary_file"] = "Default_UnitCube";
   pspg_on_tetrahedra(db);
   pspg_on_hexahedra(db);
-  check_other_stabilizations(db);
 #endif
+  check_other_stabilizations(db);
   
   return 0;
 }

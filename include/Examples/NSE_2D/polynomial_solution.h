@@ -6,7 +6,7 @@ void ExampleFile()
   bool ns = (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 5);
   Output::print<1>("Example: 2d ", ns ? "Navier-" : "", "Stokes, ",
                    "polynomial_solution.h.");
-  Output::print<1>("         This is Example D.3 in Volker Johns book "
+  Output::print<1>("         This is Example D.3 in Volker John's book "
                    "\"Finite Element Methods for Incompressible Flow Problems\""
                    ", 2016");
 }
