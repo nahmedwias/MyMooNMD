@@ -56,6 +56,11 @@ ParameterDatabase Example2D::default_example_database()
 
   ///@todo boundary-related parameters could be moved soon to a dedicated class
   // Neumann BC
+  db.add("n_neumann_bd",0u,
+	 "Number of boundary components where Neumann BC are imposed"
+	 " This variable is used as a preliminary flag. The number of Neumann BC"
+	 " must match the length of the parameter neumann_id.",0u,9u);
+    
   db.add("neumann_id", {1u,1u,1u,1u,1u,1u,1u,1u,1u,1u},
 	 "Component ID of Neumann boundaries. On these edges the terms (hat p,v.n)_E"
 	 " will be assembled. The values -hat p- are given via the parameters "
@@ -68,6 +73,11 @@ ParameterDatabase Example2D::default_example_database()
 	 " Warning: the length must be the same as the one given in neumann_boundary_id");
 
   // Nitsche BC
+  db.add("n_nitsche_bd",0u,
+	 " Number of boundary components where Nitsche BC are imposed"
+	 " This variable is used as a preliminary flag. The number of Nitsche BC"
+	 " must match the length of the parameter nitsche_id",0u,9u);
+
   db.add("nitsche_id", {1u,1u,1u,1u,1u,1u,1u,1u,1u,1u},
 	 "Component ID of boundaries where the Nitsche method is used to "
 	 " impose (weak) Dirichlet BC."
