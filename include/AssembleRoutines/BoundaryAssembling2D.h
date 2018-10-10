@@ -18,10 +18,11 @@
 namespace BoundaryAssembling2D 
 {
 
-  /** @brief assemble integral (given 1D function, v \cdot n)_{L^2([boundary_component_id])}
-    @param[in] boundary_component_id: the boundary component to integrate on
-    @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
-    @param[in] given_boundary_data: the boundary pressure (as a finite element function)
+  /** 
+      @brief assemble (g, v \cdot n)_{L^2([boundary_component_id])}
+      @param[in] boundary_component_id: the boundary component to integrate on
+      @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
+      @param[in] given_boundary_data: the boundary pressure (as a finite element function)
    */
   void rhs_g_v_n(BlockVector &rhs,
       const TFESpace2D *U_Space,
@@ -29,6 +30,7 @@ namespace BoundaryAssembling2D
       int boundary_component_id,
       double mult
       ) ;
+  
   void rhs_g_v_n(BlockVector &rhs,
       const TFESpace2D *U_Space,
       BoundValueFunct2D *given_boundary_data,

@@ -1,8 +1,5 @@
 /** ************************************************************************
- *
  * @brief     Assemble boundary integrals to the matrix and add their values to the rhs
- *
- *
  * @author    Alfonso Caiazzo & Laura Blank
  * @date      28.10.16
  ************************************************************************  */
@@ -21,21 +18,25 @@ class BoundaryAssembling3D
 {
 public:
     
-    /** @brief assemble integral (pressure (given 1D function), v \cdot n)_{L^2([boundary_component_id])}
-     @param[in] boundary_component_id: the boundary component to integrate on
-     @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
-     @param[in] given_boundary_data: the boundary pressure (as a finite element function)
+    /** 
+      @brief assemble (g, v \cdot n)_{L^2([boundary_component_id])}
+      @param[in] boundary_component_id: the boundary component to integrate on
+      @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
+      @param[in] given_boundary_data: the boundary pressure (as a finite element function)
+      @param[in] boundaryCells: the list of all boundary cells 
      */
-    void rhs_g_v_n(BlockVector &rhs,
-                   const TFESpace3D *U_Space,
-                   BoundValueFunct3D *given_boundary_data,
-                   std::vector<TBaseCell*> &boundaryCells,
-                   int bd_component_id, double mult
-                   );
+  void rhs_g_v_n(BlockVector &rhs,
+		 const TFESpace3D *U_Space,
+		 BoundValueFunct3D *given_boundary_data,
+		 std::vector<TBaseCell*> &boundaryCells,
+		 int bd_component_id, double mult
+		 );
 
 
 
-    
+
+
+  
     /** @brief integral (u, v)_{[boundary_component_id]}
      @param[in] boundary_component_id: the boundary component to integrate on
      @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
